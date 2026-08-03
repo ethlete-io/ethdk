@@ -3,6 +3,7 @@
   "dest": "../../dist/libs/cdk",
   "assets": [
     "CHANGELOG.md",
+    "migration-map.json",
     "./src/lib/styles/**/*",
     "generators/generators.json",
     {

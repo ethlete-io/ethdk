@@ -1,0 +1,3626 @@
+{
+  "ACCORDION_COMPONENT": {
+    "docs": "/components/accordion",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "ACCORDION_TOKEN"
+  },
+  "ACCORDION_HINT_WRAPPER_DIRECTIVE": {
+    "kind": "removed",
+    "note": "the hint template is a content query on the accordion, not a DI token"
+  },
+  "ACCORDION_LABEL_WRAPPER_DIRECTIVE": {
+    "kind": "removed",
+    "note": "the label template is a content query on the accordion, not a DI token"
+  },
+  "AbstractComboboxBody": {
+    "kind": "removed",
+    "note": "internal base of the cdk combobox body"
+  },
+  "AbstractComboboxOption": {
+    "kind": "removed",
+    "note": "internal base of the cdk combobox option"
+  },
+  "AccordionComponent": {
+    "docs": "/components/accordion",
+    "kind": "move",
+    "note": "label, isOpen, isOpenByDefault and disabled carry over; adds headingLevel, arrow-key header navigation and a deferred etAccordionContent slot",
+    "package": "@ethlete/components",
+    "to": "AccordionComponent"
+  },
+  "AccordionGroupComponent": {
+    "docs": "/components/accordion",
+    "kind": "move",
+    "note": "autoCloseOthers carries over",
+    "package": "@ethlete/components",
+    "to": "AccordionGroupComponent"
+  },
+  "AccordionHintDirective": {
+    "kind": "removed",
+    "note": "styling-only marker; et-accordion renders the hint element itself"
+  },
+  "AccordionHintWrapperDirective": {
+    "docs": "/components/accordion",
+    "kind": "rename",
+    "note": "ng-template[et-accordion-hint-wrapper] becomes ng-template[etAccordionHint]",
+    "package": "@ethlete/components",
+    "to": "AccordionHintDirective"
+  },
+  "AccordionImports": {
+    "docs": "/components/accordion",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "ACCORDION_IMPORTS"
+  },
+  "AccordionLabelDirective": {
+    "kind": "removed",
+    "note": "styling-only marker; et-accordion renders the label element itself"
+  },
+  "AccordionLabelWrapperDirective": {
+    "docs": "/components/accordion",
+    "kind": "rename",
+    "note": "ng-template[et-accordion-label-wrapper] becomes ng-template[etAccordionLabel]",
+    "package": "@ethlete/components",
+    "to": "AccordionLabelDirective"
+  },
+  "ActiveTabUnderlineBarManager": {
+    "kind": "removed",
+    "note": "internal to the cdk underline implementation"
+  },
+  "ActiveTabUnderlineDirective": {
+    "docs": "/components/tabs",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "TabBarUnderlineDirective"
+  },
+  "ActiveTabUnderlineItem": {
+    "kind": "removed",
+    "note": "internal to the cdk underline implementation"
+  },
+  "AnimatedOverlayComponentBase": {
+    "kind": "removed",
+    "note": "the mounted component needs no base class"
+  },
+  "AnimatedOverlayDirective": {
+    "docs": "/components/overlays",
+    "kind": "replaced-by",
+    "note": "anchored surfaces mount through the overlay strategy controller instead of a host directive",
+    "package": "@ethlete/components",
+    "to": "createOverlayStrategyController"
+  },
+  "AnimatedOverlayMountConfig": {
+    "docs": "/components/overlays",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "OverlayStrategyControllerMountConfig"
+  },
+  "AnimatedOverlayState": {
+    "kind": "replaced-by",
+    "note": "the mount lifecycle is the core animated-lifecycle state",
+    "package": "@ethlete/core",
+    "to": "AnimatedLifecycleState"
+  },
+  "ArrowViewState": {
+    "kind": "removed",
+    "note": "internal to the cdk sort-header animation"
+  },
+  "ArrowViewStateTransition": {
+    "kind": "removed",
+    "note": "internal to the cdk sort-header animation"
+  },
+  "AutosizeTextareaDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "replaced-by",
+    "note": "autosizing is a resize mode on the control (TEXTAREA_RESIZE_MODES)",
+    "package": "@ethlete/components",
+    "to": "TextareaComponent"
+  },
+  "BRACKET_CONFIG_TOKEN": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "injectBracketConfig"
+  },
+  "BRACKET_DEFAULT_CONFIG": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "BRACKET_DEFAULTS"
+  },
+  "BRACKET_MATCH_ID_TOKEN": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "BRACKET_CARD_CONTEXT"
+  },
+  "BRACKET_ROUND_ID_TOKEN": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "BRACKET_CARD_CONTEXT"
+  },
+  "BRACKET_TOKEN": {
+    "kind": "removed",
+    "note": "the legacy renderer instance token has no equivalent"
+  },
+  "Bracket": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "the legacy layout builder class; the components renderer builds its map with createBracket",
+    "package": "@ethlete/components",
+    "to": "createBracket"
+  },
+  "BracketComponent": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "legacy portal-based et-bracket; the components bracket is the successor of et-new-bracket and takes a BracketDataSource",
+    "package": "@ethlete/components",
+    "to": "BracketComponent"
+  },
+  "BracketConfig": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "legacy portal config; the components config registers layouts and card components",
+    "package": "@ethlete/components",
+    "to": "BracketConfig"
+  },
+  "BracketImports": {
+    "docs": "/components/bracket",
+    "kind": "rename+reshape",
+    "note": "the cdk array is the legacy renderer; the components array is the successor of et-new-bracket",
+    "package": "@ethlete/components",
+    "to": "BRACKET_IMPORTS"
+  },
+  "BracketMatch": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "legacy renderer shape; the components type belongs to the BracketDataSource model",
+    "package": "@ethlete/components",
+    "to": "BracketMatch"
+  },
+  "BracketMatchComponent": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "legacy renderer partial",
+    "package": "@ethlete/components",
+    "to": "BracketDefaultMatchComponent"
+  },
+  "BracketMatchDirective": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "custom cards read the match from BRACKET_CARD_CONTEXT instead of a host directive",
+    "package": "@ethlete/components",
+    "to": "BracketCardContext"
+  },
+  "BracketNew": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "the BracketNew namespace is gone; the components bracket exports its symbols flat",
+    "package": "@ethlete/components",
+    "to": "BRACKET_IMPORTS"
+  },
+  "BracketRound": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "legacy renderer shape; the components type belongs to the BracketDataSource model",
+    "package": "@ethlete/components",
+    "to": "BracketRound"
+  },
+  "BracketRoundDirective": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "custom cards read the round from BRACKET_CARD_CONTEXT instead of a host directive",
+    "package": "@ethlete/components",
+    "to": "BracketCardContext"
+  },
+  "BracketRoundHeaderComponent": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "legacy renderer partial",
+    "package": "@ethlete/components",
+    "to": "BracketDefaultRoundHeaderComponent"
+  },
+  "BracketSwissColors": {
+    "docs": "/components/bracket",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "BracketSwissColors"
+  },
+  "BracketSwissConfig": {
+    "docs": "/components/bracket",
+    "kind": "rename+reshape",
+    "note": "swiss settings move onto the swissBracketLayout() factory",
+    "package": "@ethlete/components",
+    "to": "SwissBracketLayoutOptions"
+  },
+  "BreadcrumbComponent": {
+    "docs": "/components/breadcrumb",
+    "kind": "move",
+    "note": "adds a separator slot, localizable labels and structured data",
+    "package": "@ethlete/components",
+    "to": "BreadcrumbComponent"
+  },
+  "BreadcrumbImports": {
+    "docs": "/components/breadcrumb",
+    "kind": "rename",
+    "note": "overflow collapse is opt-in via etBreadcrumbCollapse + BREADCRUMB_COLLAPSE_IMPORTS",
+    "package": "@ethlete/components",
+    "to": "BREADCRUMB_IMPORTS"
+  },
+  "BreadcrumbItemDirective": {
+    "docs": "/components/breadcrumb",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "BreadcrumbItemDirective"
+  },
+  "BreadcrumbItemTemplateDirective": {
+    "docs": "/components/breadcrumb",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "BreadcrumbItemTemplateDirective"
+  },
+  "BreadcrumbOutletComponent": {
+    "docs": "/components/breadcrumb",
+    "kind": "move",
+    "note": "composes the trail from the crumbs each segment owns",
+    "package": "@ethlete/components",
+    "to": "BreadcrumbOutletComponent"
+  },
+  "BreadcrumbTemplateDirective": {
+    "docs": "/components/breadcrumb",
+    "kind": "rename+reshape",
+    "note": "etBreadcrumbTemplate becomes etBreadcrumbSegment, and a segment contributes only the crumbs its own view owns",
+    "package": "@ethlete/components",
+    "to": "BreadcrumbSegmentDirective"
+  },
+  "ButtonComponent": {
+    "docs": "/components/button",
+    "kind": "reshape",
+    "note": "a real button system: variant, size and color inputs plus theming instead of CSS-only classes",
+    "package": "@ethlete/components",
+    "to": "ButtonComponent"
+  },
+  "ButtonDirective": {
+    "docs": "/components/button",
+    "kind": "reshape",
+    "note": "a real button system: variant, size and color inputs plus theming instead of CSS-only classes",
+    "package": "@ethlete/components",
+    "to": "ButtonDirective"
+  },
+  "ButtonImports": {
+    "docs": "/components/button",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "BUTTON_IMPORTS"
+  },
+  "CAROUSEL_ITEM_NAV_TOKEN": {
+    "kind": "removed",
+    "note": "the control directives are injected by their own type, without a DI token"
+  },
+  "CAROUSEL_ITEM_TOKEN": {
+    "kind": "removed",
+    "note": "the control directives are injected by their own type, without a DI token"
+  },
+  "CAROUSEL_NEXT_BUTTON_TOKEN": {
+    "kind": "removed",
+    "note": "the control directives are injected by their own type, without a DI token"
+  },
+  "CAROUSEL_PREVIOUS_BUTTON_TOKEN": {
+    "kind": "removed",
+    "note": "the control directives are injected by their own type, without a DI token"
+  },
+  "CAROUSEL_TOGGLE_AUTO_PLAY_BUTTON_TOKEN": {
+    "kind": "removed",
+    "note": "the control directives are injected by their own type, without a DI token"
+  },
+  "CAROUSEL_TOKEN": {
+    "docs": "/components/carousel",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "CAROUSEL_TOKEN"
+  },
+  "CHECKBOX_FIELD_TOKEN": {
+    "kind": "removed",
+    "note": "inject FormFieldDirective directly"
+  },
+  "CHECKBOX_GROUP_CONTROL_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectionListControlDirective directly"
+  },
+  "CHECKBOX_GROUP_TOKEN": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SELECTION_LIST_TOKEN"
+  },
+  "CHECKBOX_TOKEN": {
+    "kind": "removed",
+    "note": "inject CheckboxDirective directly"
+  },
+  "CHEVRON_ICON": {
+    "docs": "/components/icon",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "CHEVRON_ICON"
+  },
+  "COLOR_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject ColorInputDirective directly"
+  },
+  "COMBOBOX_BODY_EMPTY_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "the slot directives are injected by their own type, without a DI token"
+  },
+  "COMBOBOX_BODY_ERROR_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "the slot directives are injected by their own type, without a DI token"
+  },
+  "COMBOBOX_BODY_LOADING_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "the slot directives are injected by their own type, without a DI token"
+  },
+  "COMBOBOX_BODY_MORE_ITEMS_HINT_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "the slot directives are injected by their own type, without a DI token"
+  },
+  "COMBOBOX_BODY_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectListboxDirective directly"
+  },
+  "COMBOBOX_CONFIG_TOKEN": {
+    "kind": "removed",
+    "note": "there is no global combobox config; configure each et-select"
+  },
+  "COMBOBOX_DEFAULT_CONFIG": {
+    "kind": "removed",
+    "note": "there is no global combobox config; configure each et-select"
+  },
+  "COMBOBOX_OPTION_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "the slot directives are injected by their own type, without a DI token"
+  },
+  "COMBOBOX_OPTION_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectOptionDirective directly"
+  },
+  "COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "the slot directives are injected by their own type, without a DI token"
+  },
+  "COMBOBOX_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectDirective directly"
+  },
+  "CarouselComponent": {
+    "docs": "/components/carousel",
+    "kind": "reshape",
+    "note": "native scroll-snapping instead of transforms; slides come from ng-template[etCarouselSlide] bound to your array, and autoPlay*/pauseAutoPlayOn* become autoplay*/autoplayTimeFor",
+    "package": "@ethlete/components",
+    "to": "CarouselComponent"
+  },
+  "CarouselDirective": {
+    "docs": "/components/carousel",
+    "kind": "reshape",
+    "note": "native scroll-snapping instead of transforms; slides come from ng-template[etCarouselSlide] bound to your array, and autoPlay*/pauseAutoPlayOn* become autoplay*/autoplayTimeFor",
+    "package": "@ethlete/components",
+    "to": "CarouselDirective"
+  },
+  "CarouselImports": {
+    "docs": "/components/carousel",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "CAROUSEL_IMPORTS"
+  },
+  "CarouselItemComponent": {
+    "docs": "/components/carousel",
+    "kind": "replaced-by",
+    "note": "projected et-carousel-item children become a typed ng-template[etCarouselSlide]",
+    "package": "@ethlete/components",
+    "to": "CarouselSlideDirective"
+  },
+  "CarouselItemDirective": {
+    "docs": "/components/carousel",
+    "kind": "move",
+    "note": "[etCarouselItem] still marks the item host",
+    "package": "@ethlete/components",
+    "to": "CarouselItemDirective"
+  },
+  "CarouselItemNavComponent": {
+    "docs": "/components/carousel",
+    "kind": "replaced-by",
+    "note": "the dots are built in (showDots, on by default)",
+    "package": "@ethlete/components",
+    "to": "CarouselComponent"
+  },
+  "CarouselItemNavDirective": {
+    "docs": "/components/carousel",
+    "kind": "replaced-by",
+    "note": "the dots are built in (showDots, on by default)",
+    "package": "@ethlete/components",
+    "to": "CarouselDirective"
+  },
+  "CarouselNextButtonDirective": {
+    "docs": "/components/carousel",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "CarouselNextDirective"
+  },
+  "CarouselPreviousButtonDirective": {
+    "docs": "/components/carousel",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "CarouselPreviousDirective"
+  },
+  "CarouselToggleAutoPlayButtonDirective": {
+    "docs": "/components/carousel",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "CarouselPlayToggleDirective"
+  },
+  "CarouselTransitionDirection": {
+    "kind": "removed",
+    "note": "the direction is derived from the scroll position"
+  },
+  "CarouselTransitionType": {
+    "docs": "/components/carousel",
+    "kind": "rename+reshape",
+    "note": "transitionType=\"mask-slide\" becomes transition=\"wipe\"; drivers are registered",
+    "package": "@ethlete/components",
+    "to": "CarouselTransition"
+  },
+  "CellDefDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "cell rendering is a template slot on the column",
+    "package": "@ethlete/components",
+    "to": "TableColumnTemplate"
+  },
+  "CellDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TableCellDirective"
+  },
+  "CheckboxComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "CheckboxComponent"
+  },
+  "CheckboxDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "CheckboxDirective"
+  },
+  "CheckboxFieldComponent": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "et-choice-field is the shell for the boolean controls",
+    "package": "@ethlete/components",
+    "to": "ChoiceFieldComponent"
+  },
+  "CheckboxFieldDirective": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one field directive drives every control",
+    "package": "@ethlete/components",
+    "to": "FormFieldDirective"
+  },
+  "CheckboxGroupComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "reshape",
+    "note": "CHECKBOX_GROUP_IMPORTS: et-checkbox-group with et-checkbox-option children and an et-checkbox-group-select-all row; signal forms only",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "CheckboxGroupComponent"
+  },
+  "CheckboxGroupControlDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "note": "the group splits into a presentation directive and a control directive",
+    "package": "@ethlete/components",
+    "to": "SelectionListControlDirective"
+  },
+  "CheckboxGroupDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "note": "one selection-list primitive drives the checkbox, radio and segmented groups",
+    "package": "@ethlete/components",
+    "to": "SelectionListDirective"
+  },
+  "CheckboxImports": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "note": "the multi-select group is CHECKBOX_GROUP_IMPORTS",
+    "package": "@ethlete/components",
+    "to": "CHECKBOX_IMPORTS"
+  },
+  "ColorInputComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "ColorInputComponent"
+  },
+  "ColorInputDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "ColorInputDirective"
+  },
+  "ColumnDefDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "one typed TableColumns<Row> object replaces the per-column definition directives",
+    "package": "@ethlete/components",
+    "to": "TableColumnDef"
+  },
+  "ComboboxBodyComponent": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "SelectPanelComponent"
+  },
+  "ComboboxBodyEmptyTemplateDirective": {
+    "docs": "/components/select",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectEmptyDirective"
+  },
+  "ComboboxBodyErrorTemplateDirective": {
+    "docs": "/components/select",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectErrorDirective"
+  },
+  "ComboboxBodyLoadingTemplateDirective": {
+    "docs": "/components/select",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectLoadingDirective"
+  },
+  "ComboboxBodyMoreItemsHintTemplateDirective": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "the load-more hint comes from the query option source",
+    "package": "@ethlete/components",
+    "to": "selectOptionsFromQuery"
+  },
+  "ComboboxComponent": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "et-select unifies select and combobox: an optional search input turns it into the combobox",
+    "package": "@ethlete/components",
+    "to": "SelectComponent"
+  },
+  "ComboboxConfig": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "configuration moves to per-instance inputs and slot directives",
+    "package": "@ethlete/components",
+    "to": "SelectComponent"
+  },
+  "ComboboxDirective": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "et-select unifies select and combobox: an optional search input turns it into the combobox",
+    "package": "@ethlete/components",
+    "to": "SelectDirective"
+  },
+  "ComboboxImports": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "et-select unifies select and combobox: an optional search input turns it into the combobox",
+    "package": "@ethlete/components",
+    "to": "SELECT_IMPORTS"
+  },
+  "ComboboxOptionComponent": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "SelectOptionComponent"
+  },
+  "ComboboxOptionTemplateDirective": {
+    "docs": "/components/select",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectOptionTemplateDirective"
+  },
+  "ComboboxSelectedOptionTemplateDirective": {
+    "docs": "/components/select",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectValueDirective"
+  },
+  "ConnectedMatches": {
+    "kind": "removed",
+    "note": "internal to the legacy renderer’s connector drawing"
+  },
+  "CreateFormChangesTrackerConfig": {
+    "docs": "/core/utilities",
+    "kind": "rename+reshape",
+    "package": "@ethlete/core",
+    "to": "CreateUnsavedChangesTrackerConfig"
+  },
+  "CreateNavigationDismissCheckerConfig": {
+    "docs": "/core/utilities",
+    "kind": "rename+reshape",
+    "package": "@ethlete/core",
+    "to": "CreateUnsavedChangesGuardConfig"
+  },
+  "CreateOverlayDismissCheckerConfig": {
+    "docs": "/components/overlays",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "CreateOverlayUnsavedChangesGuardConfig"
+  },
+  "CreateOverlayHandlerConfig": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "OverlayDefinitionConfig"
+  },
+  "CreateOverlayHandlerInnerConfig": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "OverlayOpenerConfig"
+  },
+  "CreateOverlayHandlerWithQueryParamLifecycleConfig": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "QueryParamOverlayDefinitionConfig"
+  },
+  "DATE_INPUT_FORMAT_TOKEN": {
+    "docs": "/components/date-time-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "DATE_FORMAT"
+  },
+  "DATE_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject DateInputDirective directly"
+  },
+  "DATE_TIME_INPUT_FORMAT_TOKEN": {
+    "docs": "/components/date-time-inputs",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "DATE_FORMAT"
+  },
+  "DATE_TIME_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject DateTimeInputDirective directly"
+  },
+  "DEFAULT_DATE_INPUT_FORMAT": {
+    "kind": "removed",
+    "note": "the DATE_FORMAT token defaults to the same ISO format"
+  },
+  "DEFAULT_DATE_TIME_INPUT_FORMAT": {
+    "kind": "removed",
+    "note": "the DATE_FORMAT token defaults to the same ISO format"
+  },
+  "DEFAULT_TIME_INPUT_FORMAT": {
+    "kind": "removed",
+    "note": "the TIME_FORMAT token defaults to the same format"
+  },
+  "DYNAMIC_FORM_FIELD_TOKEN": {
+    "kind": "removed",
+    "note": "inject FormFieldDirective directly"
+  },
+  "DYNAMIC_FORM_GROUP_TOKEN": {
+    "kind": "removed",
+    "note": "signal forms model groups in the schema; there is no group directive"
+  },
+  "DateInputComponent": {
+    "docs": "/components/date-time-inputs",
+    "kind": "reshape",
+    "note": "typed entry with an anchored calendar picker; signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "DateInputComponent"
+  },
+  "DateInputDirective": {
+    "docs": "/components/date-time-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "DateInputDirective"
+  },
+  "DateTimeInputComponent": {
+    "docs": "/components/date-time-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "DateTimeInputComponent"
+  },
+  "DateTimeInputDirective": {
+    "docs": "/components/date-time-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "DateTimeInputDirective"
+  },
+  "DecoratedFormFieldBase": {
+    "kind": "removed",
+    "note": "internal base of the cdk form-field decorators"
+  },
+  "DecoratedInputBase": {
+    "kind": "removed",
+    "note": "internal base of the cdk input decorators"
+  },
+  "DefaultSubmitButtonConfigFnConfig": {
+    "docs": "/components/filter-overlay",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "FilterOverlaySubmitState"
+  },
+  "DefaultValidatorErrorsService": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "a resolver function, not an injectable service",
+    "package": "@ethlete/components",
+    "to": "FormErrorMessageResolver"
+  },
+  "DragToDismissContext": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "DragToDismissContext"
+  },
+  "DragToDismissRef": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "DragToDismissRef"
+  },
+  "DynamicFormFieldDirective": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one field directive drives every control",
+    "package": "@ethlete/components",
+    "to": "FormFieldDirective"
+  },
+  "DynamicFormGroupDirective": {
+    "kind": "removed",
+    "note": "signal forms model groups in the schema; there is no group directive"
+  },
+  "EMAIL_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject InputDirective directly"
+  },
+  "ET_OVERLAY_CONFIG_CLASS_KEYS": {
+    "docs": "/components/overlays",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_CONFIG_CLASS_KEYS"
+  },
+  "EXPOSE_INPUT_VARS_TOKEN": {
+    "kind": "removed",
+    "note": "read the control state from the field’s own signals"
+  },
+  "EmailInputComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "replaced-by",
+    "note": "use et-input with type=\"email\"",
+    "package": "@ethlete/components",
+    "to": "InputComponent"
+  },
+  "EmailInputDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "replaced-by",
+    "note": "use et-input with type=\"email\"",
+    "package": "@ethlete/components",
+    "to": "InputDirective"
+  },
+  "ErrorComponent": {
+    "docs": "/components/forms",
+    "kind": "rename+reshape",
+    "note": "messages come from the signal-forms schema via provideFormErrorMessageResolver",
+    "package": "@ethlete/components",
+    "to": "FormErrorComponent"
+  },
+  "ExposeInputVarsContext": {
+    "kind": "removed",
+    "note": "read the control state from the field’s own signals"
+  },
+  "ExposeInputVarsDirective": {
+    "kind": "removed",
+    "note": "read the control state from the field’s own signals"
+  },
+  "FILTER_OVERLAY_CONFIG": {
+    "docs": "/components/filter-overlay",
+    "kind": "replaced-by",
+    "note": "provideFilterOverlay registers both the config and the service",
+    "package": "@ethlete/components",
+    "to": "FILTER_OVERLAY_TOKEN"
+  },
+  "FLOATING_UI_PLACEMENTS": {
+    "kind": "removed",
+    "note": "no successor constant; the components that take fallbacks type them as Placement[] from @floating-ui/dom directly"
+  },
+  "FilterOverlayConfig": {
+    "docs": "/components/filter-overlay",
+    "kind": "reshape",
+    "note": "adds drafts, previews and localizable labels",
+    "package": "@ethlete/components",
+    "to": "FilterOverlayConfig"
+  },
+  "FilterOverlayResult": {
+    "docs": "/components/filter-overlay",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "FilterOverlayResult"
+  },
+  "FilterOverlayService": {
+    "docs": "/components/filter-overlay",
+    "kind": "rename+reshape",
+    "note": "injectFilterOverlay() instead of an Angular service class",
+    "package": "@ethlete/components",
+    "to": "FilterOverlay"
+  },
+  "FilterOverlaySubmitButtonConfig": {
+    "docs": "/components/filter-overlay",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "FilterOverlaySubmitButton"
+  },
+  "FocusElementRegistryEntry": {
+    "kind": "removed",
+    "note": "the overlay runtime restores focus itself; @ethlete/core’s setupFocusTrap / applyInitialFocus cover manual cases"
+  },
+  "FooterCellDefDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "footer rendering is a template slot on the column",
+    "package": "@ethlete/components",
+    "to": "TableColumnTemplate"
+  },
+  "FooterCellDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TableFooterCellDirective"
+  },
+  "FooterRowComponent": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TableFooterDirective"
+  },
+  "FooterRowDefDirective": {
+    "kind": "removed",
+    "note": "column order is the TableColumns key order; there are no row definitions"
+  },
+  "FormChangesTrackerRef": {
+    "docs": "/core/utilities",
+    "kind": "rename+reshape",
+    "package": "@ethlete/core",
+    "to": "UnsavedChangesTrackerRef"
+  },
+  "FormFieldStateService": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "field state is signals on the directive, not an injectable service",
+    "package": "@ethlete/components",
+    "to": "FormFieldDirective"
+  },
+  "FormGroupStateService": {
+    "kind": "removed",
+    "note": "signal forms hold group state in the schema"
+  },
+  "FullscreenAnimationDeps": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "FullscreenAnimationDeps"
+  },
+  "FullscreenAnimationState": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "FullscreenAnimationState"
+  },
+  "HeaderCellDefDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "header rendering is a template slot on the column",
+    "package": "@ethlete/components",
+    "to": "TableColumnTemplate"
+  },
+  "HeaderCellDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TableHeaderCellDirective"
+  },
+  "HeaderRowComponent": {
+    "kind": "removed",
+    "note": "column order is the TableColumns key order; there are no row definitions"
+  },
+  "HeaderRowDefDirective": {
+    "kind": "removed",
+    "note": "column order is the TableColumns key order; there are no row definitions"
+  },
+  "ICONS_TOKEN": {
+    "docs": "/components/icon",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ICONS_TOKEN"
+  },
+  "ICON_DIRECTIVE_TOKEN": {
+    "docs": "/components/icon",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ICON_DIRECTIVE_TOKEN"
+  },
+  "IMAGE_CONFIG_TOKEN": {
+    "docs": "/components/picture",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "injectPictureConfig"
+  },
+  "INPUT_PREFIX_TOKEN": {
+    "kind": "removed",
+    "note": "inject InputPrefixDirective directly"
+  },
+  "INPUT_SUFFIX_TOKEN": {
+    "kind": "removed",
+    "note": "inject InputSuffixDirective directly"
+  },
+  "INPUT_TOKEN": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "the field reads its control through the FormFieldControl contract",
+    "package": "@ethlete/components",
+    "to": "FormFieldControl"
+  },
+  "IconDefinition": {
+    "docs": "/components/icon",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "IconDefinition"
+  },
+  "IconDirective": {
+    "docs": "/components/icon",
+    "kind": "reshape",
+    "note": "typed icon names, variants and a size input",
+    "package": "@ethlete/components",
+    "to": "IconDirective"
+  },
+  "IconImports": {
+    "docs": "/components/icon",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "ICON_IMPORTS"
+  },
+  "IfInputEmptyDirective": {
+    "kind": "removed",
+    "note": "bind on the control’s own signals"
+  },
+  "IfInputFilledDirective": {
+    "kind": "removed",
+    "note": "bind on the control’s own signals"
+  },
+  "IfSupportsShowPickerDirective": {
+    "kind": "removed",
+    "note": "the date and time controls ship their own anchored picker instead of showPicker()"
+  },
+  "InlineTabBodyComponent": {
+    "kind": "removed",
+    "note": "the panel renders its content directly, without a body host"
+  },
+  "InlineTabBodyHostDirective": {
+    "kind": "removed",
+    "note": "the panel renders its content directly, without a body host"
+  },
+  "InlineTabBodyOriginState": {
+    "kind": "removed",
+    "note": "the panel renders its content directly, without a body host"
+  },
+  "InlineTabBodyPositionState": {
+    "kind": "removed",
+    "note": "the panel renders its content directly, without a body host"
+  },
+  "InlineTabChangeEvent": {
+    "docs": "/components/tabs",
+    "kind": "replaced-by",
+    "note": "the group exposes its selection as a two-way model",
+    "package": "@ethlete/components",
+    "to": "TabGroupComponent"
+  },
+  "InlineTabComponent": {
+    "docs": "/components/tabs",
+    "kind": "rename+reshape",
+    "note": "et-inline-tab becomes et-tab",
+    "package": "@ethlete/components",
+    "to": "TabComponent"
+  },
+  "InlineTabContentDirective": {
+    "docs": "/components/tabs",
+    "kind": "replaced-by",
+    "note": "[etInlineTabContent] becomes the [etTabPanel] panel",
+    "package": "@ethlete/components",
+    "to": "TabPanelDirective"
+  },
+  "InlineTabHeaderComponent": {
+    "docs": "/components/tabs",
+    "kind": "replaced-by",
+    "note": "the tab bar is a directive with variants, sizes and orientations",
+    "package": "@ethlete/components",
+    "to": "TabBarDirective"
+  },
+  "InlineTabLabelDirective": {
+    "docs": "/components/tabs",
+    "kind": "rename+reshape",
+    "note": "[et-inline-tab-label] becomes [etTabLabel]",
+    "package": "@ethlete/components",
+    "to": "TabLabelDirective"
+  },
+  "InlineTabLabelWrapperDirective": {
+    "docs": "/components/tabs",
+    "kind": "replaced-by",
+    "note": "the bar renders its own triggers",
+    "package": "@ethlete/components",
+    "to": "TabBarTriggerDirective"
+  },
+  "InlineTabsComponent": {
+    "docs": "/components/tabs",
+    "kind": "rename+reshape",
+    "note": "et-inline-tabs becomes et-tab-group",
+    "package": "@ethlete/components",
+    "to": "TabGroupComponent"
+  },
+  "InputBase": {
+    "kind": "removed",
+    "note": "internal base of the cdk inputs"
+  },
+  "InputDirective": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "the shared cdk input plumbing (value$, errors, touched) is replaced by the signal-forms FormValueControl contract each control implements; the components InputDirective is et-input, the successor of TextInputDirective",
+    "package": "@ethlete/components",
+    "to": "FormFieldControl"
+  },
+  "InputFieldComponent": {
+    "docs": "/components/forms",
+    "kind": "rename+reshape",
+    "note": "one et-form-field shell replaces the per-control *-field wrappers; signal forms only",
+    "package": "@ethlete/components",
+    "to": "FormFieldComponent"
+  },
+  "InputImports": {
+    "docs": "/components/text-inputs",
+    "kind": "rename",
+    "note": "also FORM_FIELD_IMPORTS for the field shell, plus one array per control family",
+    "package": "@ethlete/components",
+    "to": "INPUT_IMPORTS"
+  },
+  "InputPrefixDirective": {
+    "docs": "/components/forms",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "InputPrefixDirective"
+  },
+  "InputStateService": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "control state is signals on the control, not an injectable service",
+    "package": "@ethlete/components",
+    "to": "FormFieldControl"
+  },
+  "InputSuffixDirective": {
+    "docs": "/components/forms",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "InputSuffixDirective"
+  },
+  "InputTouchedFn": {
+    "kind": "removed",
+    "note": "signal forms own the touched state"
+  },
+  "InputValueChangeFn": {
+    "kind": "removed",
+    "note": "signal forms own value propagation"
+  },
+  "InputValueUpdateType": {
+    "kind": "removed",
+    "note": "signal forms own value propagation"
+  },
+  "LABEL_TOKEN": {
+    "kind": "removed",
+    "note": "inject LabelDirective directly"
+  },
+  "LabelComponent": {
+    "docs": "/components/forms",
+    "kind": "rename+reshape",
+    "note": "et-label becomes the etLabel directive inside et-form-field",
+    "package": "@ethlete/components",
+    "to": "LabelDirective"
+  },
+  "LabelImports": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "the label ships with the field shell",
+    "package": "@ethlete/components",
+    "to": "FORM_FIELD_IMPORTS"
+  },
+  "LabelSuffixDirective": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "the optional/required marker is a label mode on et-form-field (FormFieldLabelMode)",
+    "package": "@ethlete/components",
+    "to": "FormFieldComponent"
+  },
+  "MASONRY_ITEM_TOKEN": {
+    "kind": "removed",
+    "note": "inject MasonryItemDirective directly"
+  },
+  "MAX_SAFE_INTEGER": {
+    "kind": "removed",
+    "note": "internal to the cdk data source"
+  },
+  "MENU": {
+    "kind": "removed",
+    "note": "inject MenuDirective directly"
+  },
+  "MENU_CHECKBOX_GROUP_TOKEN": {
+    "docs": "/components/menu",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "MENU_SELECTION_GROUP_TOKEN"
+  },
+  "MENU_CONTAINER": {
+    "kind": "removed",
+    "note": "the panel is mounted by the overlay runtime, not through a container token"
+  },
+  "MENU_GROUP_TITLE_TOKEN": {
+    "kind": "removed",
+    "note": "inject MenuGroupLabelComponent directly"
+  },
+  "MENU_GROUP_TOKEN": {
+    "docs": "/components/menu",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "MENU_SELECTION_GROUP_TOKEN"
+  },
+  "MENU_ITEM_TOKEN": {
+    "kind": "removed",
+    "note": "inject MenuItemDirective directly"
+  },
+  "MENU_RADIO_GROUP_TOKEN": {
+    "docs": "/components/menu",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "MENU_SELECTION_GROUP_TOKEN"
+  },
+  "MENU_SEARCH_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "inject MenuSearchDirective directly"
+  },
+  "MENU_TEMPLATE": {
+    "kind": "removed",
+    "note": "the panel is mounted by the overlay runtime, not through a template token"
+  },
+  "MENU_TRIGGER_TOKEN": {
+    "kind": "removed",
+    "note": "inject MenuTriggerDirective directly"
+  },
+  "MasonryComponent": {
+    "docs": "/components/masonry",
+    "kind": "rename+reshape",
+    "note": "et-masonry becomes [etMasonry]; columWidth becomes columnWidth (both it and gap accept a breakpoint map), and initializing/initialized become an isSettled() signal",
+    "package": "@ethlete/components",
+    "to": "MasonryDirective"
+  },
+  "MasonryDimensions": {
+    "docs": "/components/masonry",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "MasonryPlacement"
+  },
+  "MasonryImports": {
+    "docs": "/components/masonry",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "MASONRY_IMPORTS"
+  },
+  "MasonryItemComponent": {
+    "docs": "/components/masonry",
+    "kind": "rename+reshape",
+    "note": "[etMasonryItem] on your own element; items need no key",
+    "package": "@ethlete/components",
+    "to": "MasonryItemDirective"
+  },
+  "MaybeOverlayConsumerConfigWithData": {
+    "docs": "/components/overlay-openers",
+    "kind": "replaced-by",
+    "note": "data is part of the open config",
+    "package": "@ethlete/components",
+    "to": "OverlayOpenConfig"
+  },
+  "MenuCheckboxGroupDirective": {
+    "docs": "/components/menu",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "MenuCheckboxGroupComponent"
+  },
+  "MenuCheckboxItemComponent": {
+    "docs": "/components/menu",
+    "kind": "reshape",
+    "note": "built on MenuSelectionItemDirective",
+    "package": "@ethlete/components",
+    "to": "MenuCheckboxItemComponent"
+  },
+  "MenuComponent": {
+    "docs": "/components/menu",
+    "kind": "reshape",
+    "note": "rewritten on the components overlay runtime; adds a search field, shortcuts and roving focus",
+    "package": "@ethlete/components",
+    "to": "MenuComponent"
+  },
+  "MenuContainerComponent": {
+    "docs": "/components/menu",
+    "kind": "replaced-by",
+    "note": "the panel is a directive on your own element",
+    "package": "@ethlete/components",
+    "to": "MenuPanelDirective"
+  },
+  "MenuGroupDirective": {
+    "docs": "/components/menu",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "MenuSelectionGroupDirective"
+  },
+  "MenuGroupTitleDirective": {
+    "docs": "/components/menu",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "MenuGroupLabelComponent"
+  },
+  "MenuImports": {
+    "docs": "/components/menu",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "MENU_IMPORTS"
+  },
+  "MenuItemDirective": {
+    "docs": "/components/menu",
+    "kind": "reshape",
+    "note": "adds variants, activation events and shortcut support",
+    "package": "@ethlete/components",
+    "to": "MenuItemDirective"
+  },
+  "MenuRadioGroupDirective": {
+    "docs": "/components/menu",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "MenuRadioGroupComponent"
+  },
+  "MenuRadioItemComponent": {
+    "docs": "/components/menu",
+    "kind": "reshape",
+    "note": "built on MenuSelectionItemDirective",
+    "package": "@ethlete/components",
+    "to": "MenuRadioItemComponent"
+  },
+  "MenuSearchTemplateDirective": {
+    "docs": "/components/menu",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "MenuSearchDirective"
+  },
+  "MenuTriggerDirective": {
+    "docs": "/components/menu",
+    "kind": "reshape",
+    "note": "opens the panel through the components overlay runtime",
+    "package": "@ethlete/components",
+    "to": "MenuTriggerDirective"
+  },
+  "NATIVE_INPUT_REF_TOKEN": {
+    "kind": "removed",
+    "note": "each control owns its native element"
+  },
+  "NATIVE_SELECT_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectDirective directly"
+  },
+  "NATIVE_SELECT_OPTION_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectOptionDirective directly"
+  },
+  "NUMBER_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject NumberInputDirective directly"
+  },
+  "NativeInputRefDirective": {
+    "kind": "removed",
+    "note": "each control owns its native element"
+  },
+  "NativeSelectImports": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "no native-select successor; use et-select or a plain <select>",
+    "package": "@ethlete/components",
+    "to": "SELECT_IMPORTS"
+  },
+  "NativeSelectInputComponent": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "no native-select successor; use et-select or a plain <select>",
+    "package": "@ethlete/components",
+    "to": "SelectComponent"
+  },
+  "NativeSelectInputDirective": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "no native-select successor; use et-select or a plain <select>",
+    "package": "@ethlete/components",
+    "to": "SelectDirective"
+  },
+  "NativeSelectOptionComponent": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "no native-select successor; use et-select or a plain <select>",
+    "package": "@ethlete/components",
+    "to": "SelectOptionComponent"
+  },
+  "NativeSelectOptionDirective": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "no native-select successor; use et-select or a plain <select>",
+    "package": "@ethlete/components",
+    "to": "SelectOptionDirective"
+  },
+  "NativeSelectOptionValue": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "no native-select successor; use et-select or a plain <select>",
+    "package": "@ethlete/components",
+    "to": "SelectOptionData"
+  },
+  "NavTabLinkComponent": {
+    "docs": "/components/tabs",
+    "kind": "reshape",
+    "note": "also available headless as [etNavTabLink]",
+    "package": "@ethlete/components",
+    "to": "NavTabLinkComponent"
+  },
+  "NavTabsComponent": {
+    "docs": "/components/tabs",
+    "kind": "reshape",
+    "note": "also available headless as [etNavTabs]",
+    "package": "@ethlete/components",
+    "to": "NavTabsComponent"
+  },
+  "NavTabsOutletComponent": {
+    "docs": "/components/tabs",
+    "kind": "reshape",
+    "note": "also available headless as [etNavTabsOutlet]",
+    "package": "@ethlete/components",
+    "to": "NavTabsOutletComponent"
+  },
+  "NavigationDismissCheckerRef": {
+    "docs": "/core/utilities",
+    "kind": "rename+reshape",
+    "package": "@ethlete/core",
+    "to": "UnsavedChangesGuardRef"
+  },
+  "NewBracketComponent": {
+    "docs": "/components/bracket",
+    "kind": "rename+reshape",
+    "note": "et-new-bracket becomes et-bracket; layouts must be registered and the default cards need a matchNormalizer",
+    "package": "@ethlete/components",
+    "to": "BracketComponent"
+  },
+  "NewBracketConfig": {
+    "docs": "/components/bracket",
+    "kind": "rename+reshape",
+    "note": "the layout input is replaced by registered layout factories",
+    "package": "@ethlete/components",
+    "to": "BracketConfig"
+  },
+  "NewBracketDefaultMatchComponent": {
+    "docs": "/components/bracket",
+    "kind": "rename+reshape",
+    "note": "a real card built on et-match-card; needs a matchNormalizer",
+    "package": "@ethlete/components",
+    "to": "BracketDefaultMatchComponent"
+  },
+  "NewBracketDefaultRoundHeaderComponent": {
+    "docs": "/components/bracket",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "BracketDefaultRoundHeaderComponent"
+  },
+  "NoDataRowDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "the empty state is built in",
+    "package": "@ethlete/components",
+    "to": "TableComponent"
+  },
+  "NumberInputComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control; adds a stepper",
+    "package": "@ethlete/components",
+    "to": "NumberInputComponent"
+  },
+  "NumberInputDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "NumberInputDirective"
+  },
+  "OVERLAY_BACK_OR_CLOSE_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_BACK_OR_CLOSE_TOKEN"
+  },
+  "OVERLAY_BODY_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_BODY_TOKEN"
+  },
+  "OVERLAY_CLOSE_BLOCKER_TOKEN": {
+    "kind": "removed",
+    "note": "closing is gated by guard functions on the ref"
+  },
+  "OVERLAY_CONFIG": {
+    "docs": "/components/overlays",
+    "kind": "replaced-by",
+    "note": "read the merged config from the injected OverlayRef",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_REF"
+  },
+  "OVERLAY_DATA": {
+    "docs": "/components/overlays",
+    "kind": "replaced-by",
+    "note": "read the data from the injected OverlayRef",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_REF"
+  },
+  "OVERLAY_FOOTER_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_FOOTER_TOKEN"
+  },
+  "OVERLAY_HEADER_TEMPLATE_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_HEADER_TEMPLATE_TOKEN"
+  },
+  "OVERLAY_HEADER_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_HEADER_TOKEN"
+  },
+  "OVERLAY_MAIN_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_MAIN_TOKEN"
+  },
+  "OVERLAY_QUERY_PARAM_INPUT_NAME": {
+    "docs": "/components/overlay-openers",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_QUERY_PARAM_INPUT_NAME"
+  },
+  "OVERLAY_ROUTER_CONFIG_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_ROUTER_CONFIG_TOKEN"
+  },
+  "OVERLAY_ROUTER_LINK_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_ROUTER_LINK_TOKEN"
+  },
+  "OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN"
+  },
+  "OVERLAY_ROUTER_OUTLET_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_ROUTER_OUTLET_TOKEN"
+  },
+  "OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN"
+  },
+  "OverlayAutoFocusTarget": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayAutoFocusTarget"
+  },
+  "OverlayBackOrCloseDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayBackOrCloseDirective"
+  },
+  "OverlayBodyComponent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayBodyComponent"
+  },
+  "OverlayBodyDividerType": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayBodyDividerType"
+  },
+  "OverlayBreakpointConfig": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayBreakpointConfig"
+  },
+  "OverlayCloseBlockerDirective": {
+    "docs": "/components/overlays",
+    "kind": "replaced-by",
+    "note": "closing is gated by guard functions on the ref",
+    "package": "@ethlete/components",
+    "to": "OverlayCloseGuard"
+  },
+  "OverlayCloseCallEvent": {
+    "docs": "/components/overlays",
+    "kind": "replaced-by",
+    "note": "closing is gated by guard functions on the ref",
+    "package": "@ethlete/components",
+    "to": "OverlayCloseGuard"
+  },
+  "OverlayCloseDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayCloseDirective"
+  },
+  "OverlayConfig": {
+    "docs": "/components/overlays",
+    "kind": "reshape",
+    "note": "config merges definition → opener → open",
+    "package": "@ethlete/components",
+    "to": "OverlayConfig"
+  },
+  "OverlayConsumerConfig": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "OverlayOpenConfig"
+  },
+  "OverlayContainerComponent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayContainerComponent"
+  },
+  "OverlayDismissCheckerRef": {
+    "docs": "/components/overlays",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "OverlayUnsavedChangesGuardRef"
+  },
+  "OverlayDragToDismissConfig": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayDragToDismissConfig"
+  },
+  "OverlayFooterDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayFooterDirective"
+  },
+  "OverlayHandler": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "OverlayOpener"
+  },
+  "OverlayHandlerLinkDirective": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "QueryParamOverlayLinkDirective"
+  },
+  "OverlayHandlerWithQueryParamLifecycle": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "QueryParamOverlayOpener"
+  },
+  "OverlayHeaderDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayHeaderDirective"
+  },
+  "OverlayHeaderTemplateDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayHeaderTemplateDirective"
+  },
+  "OverlayHeaderTemplates": {
+    "kind": "removed",
+    "note": "the overlay router resolves header templates per route"
+  },
+  "OverlayImports": {
+    "docs": "/components/overlays",
+    "kind": "rename",
+    "note": "the content shell (title, header, body, main, footer, close) is OVERLAY_CONTENT_IMPORTS",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_IMPORTS"
+  },
+  "OverlayLayout": {
+    "docs": "/components/overlays",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "OverlayMode"
+  },
+  "OverlayMainDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayMainDirective"
+  },
+  "OverlayOriginCloneComponent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayOriginCloneComponent"
+  },
+  "OverlayPosition": {
+    "kind": "removed",
+    "note": "anchored positions are @floating-ui/dom Placement values"
+  },
+  "OverlayRef": {
+    "docs": "/components/overlays",
+    "kind": "reshape",
+    "note": "carries the merged config, the data and the close guards",
+    "package": "@ethlete/components",
+    "to": "OverlayRef"
+  },
+  "OverlayRole": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRole"
+  },
+  "OverlayRoute": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRoute"
+  },
+  "OverlayRouteHeaderTemplateOutletComponent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRouteHeaderTemplateOutletComponent"
+  },
+  "OverlayRouterConfig": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRouterConfig"
+  },
+  "OverlayRouterLinkDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRouterLinkDirective"
+  },
+  "OverlayRouterNavigateConfig": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRouterNavigateConfig"
+  },
+  "OverlayRouterNavigationDirection": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRouterNavigationDirection"
+  },
+  "OverlayRouterOutletComponent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRouterOutletComponent"
+  },
+  "OverlayRouterOutletDisabledTemplateDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRouterOutletDisabledTemplateDirective"
+  },
+  "OverlayRouterService": {
+    "docs": "/components/overlays",
+    "kind": "rename+reshape",
+    "note": "injectOverlayRouter() instead of an Angular service class",
+    "package": "@ethlete/components",
+    "to": "OverlayRouter"
+  },
+  "OverlayRouterTransitionType": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayRouterTransitionType"
+  },
+  "OverlaySharedRouteTemplateDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlaySharedRouteTemplateDirective"
+  },
+  "OverlaySharedRouteTemplateOutletComponent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlaySharedRouteTemplateOutletComponent"
+  },
+  "OverlaySidebarComponent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlaySidebarComponent"
+  },
+  "OverlaySidebarPageComponent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlaySidebarPageComponent"
+  },
+  "OverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayStrategy"
+  },
+  "OverlayStrategyBreakpoint": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayStrategyBreakpoint"
+  },
+  "OverlayStrategyContext": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayStrategyContext"
+  },
+  "OverlayTitleDirective": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "OverlayTitleDirective"
+  },
+  "OverlayWithRoutingImports": {
+    "docs": "/components/overlays",
+    "kind": "replaced-by",
+    "note": "the routing directives are imported individually",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_CONTENT_IMPORTS"
+  },
+  "OverlayWithSidebarImports": {
+    "docs": "/components/overlays",
+    "kind": "replaced-by",
+    "note": "the sidebar components are imported individually",
+    "package": "@ethlete/components",
+    "to": "OVERLAY_CONTENT_IMPORTS"
+  },
+  "PASSWORD_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject PasswordInputDirective directly"
+  },
+  "PROGRESS_SPINNER_DEFAULT_OPTIONS": {
+    "kind": "removed",
+    "note": "set the inputs per instance"
+  },
+  "PROGRESS_SPINNER_DEFAULT_OPTIONS_FACTORY": {
+    "kind": "removed",
+    "note": "set the inputs per instance"
+  },
+  "PaginateOptions": {
+    "docs": "/components/pagination",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "PaginateOptions"
+  },
+  "PaginatedTabHeaderDirective": {
+    "docs": "/components/tabs",
+    "kind": "replaced-by",
+    "note": "the bar scrolls with the scrollable instead of paginating",
+    "package": "@ethlete/components",
+    "to": "TabBarDirective"
+  },
+  "PaginatedTabHeaderItem": {
+    "kind": "removed",
+    "note": "internal to the cdk paginated header"
+  },
+  "PaginationComponent": {
+    "docs": "/components/pagination",
+    "kind": "reshape",
+    "note": "[(page)] two-way signal instead of a FormControl; items render with [et-button] and long page counts collapse behind ellipses (siblingCount / boundaryCount)",
+    "package": "@ethlete/components",
+    "to": "PaginationComponent"
+  },
+  "PaginationHeadService": {
+    "docs": "/components/pagination",
+    "kind": "rename+reshape",
+    "note": "the opt-in etPaginationSeo directive replaces headTitleTemplate / headFirstPageTitle / headAddCanonicalTag",
+    "package": "@ethlete/components",
+    "to": "PaginationSeoDirective"
+  },
+  "PaginationHeadServiceConfig": {
+    "docs": "/components/pagination",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "PaginationSeoDirective"
+  },
+  "PaginationImports": {
+    "docs": "/components/pagination",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "PAGINATION_IMPORTS"
+  },
+  "PaginationItem": {
+    "docs": "/components/pagination",
+    "kind": "reshape",
+    "note": "ellipsis items are part of the model (PaginationItemType)",
+    "package": "@ethlete/components",
+    "to": "PaginationItem"
+  },
+  "PaginationLinkDirective": {
+    "docs": "/components/pagination",
+    "kind": "replaced-by",
+    "note": "links mode takes urlForPage instead of a link directive",
+    "package": "@ethlete/components",
+    "to": "PaginationComponent"
+  },
+  "PasswordInputComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "PasswordInputComponent"
+  },
+  "PasswordInputDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "PasswordInputDirective"
+  },
+  "PasswordInputToggleComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "replaced-by",
+    "note": "the reveal toggle is built in",
+    "package": "@ethlete/components",
+    "to": "PasswordInputComponent"
+  },
+  "PictureComponent": {
+    "docs": "/components/picture",
+    "kind": "reshape",
+    "note": "alt is required (pass \"\" for decorative); the imgClass / pictureClass / figureClass / figcaptionClass passthroughs are replaced by fit plus host sizing and the stable element classes, and img() becomes naturalSize()",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "PictureComponent"
+  },
+  "PictureConfig": {
+    "docs": "/components/picture",
+    "kind": "reshape",
+    "note": "providePictureConfig prefixes each srcset candidate rather than the whole string",
+    "package": "@ethlete/components",
+    "to": "PictureConfig"
+  },
+  "PictureSource": {
+    "docs": "/components/picture",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "PictureSource"
+  },
+  "Primitive": {
+    "kind": "removed",
+    "note": "value-type helper of the cdk combobox"
+  },
+  "ProgressSpinnerComponent": {
+    "docs": "/components/loader",
+    "kind": "rename+reshape",
+    "note": "the mode input splits into a determinate boolean, renderBackground becomes track, multiColor is gone, and the default color is currentColor - set color for a theme",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "SpinnerComponent"
+  },
+  "ProgressSpinnerDefaultOptions": {
+    "kind": "removed",
+    "note": "set the inputs per instance"
+  },
+  "ProgressSpinnerMode": {
+    "kind": "removed",
+    "note": "determinate is a boolean input"
+  },
+  "QUERY_ERROR_TOKEN": {
+    "docs": "/components/query-error",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "QUERY_ERROR_TOKEN"
+  },
+  "QueryButtonComponent": {
+    "docs": "/components/button",
+    "kind": "replaced-by",
+    "note": "bind the query state to the button’s loading input; no one-second success/failure flash",
+    "package": "@ethlete/components",
+    "to": "ButtonComponent"
+  },
+  "QueryButtonDirective": {
+    "docs": "/components/button",
+    "kind": "replaced-by",
+    "note": "bind the query state to the button’s loading input; no one-second success/failure flash",
+    "package": "@ethlete/components",
+    "to": "ButtonDirective"
+  },
+  "QueryErrorComponent": {
+    "docs": "/components/query-error",
+    "kind": "reshape",
+    "note": "classifies nothing itself - @ethlete/query normalizes every error shape before it reaches query.error(), and legacyQueryErrorSource adapts a legacy query; the language input is gone (injectLocale + QUERY_ERROR_LABELS) and the app must register a color theme with type \"error\"",
+    "package": "@ethlete/components",
+    "to": "QueryErrorComponent"
+  },
+  "QueryErrorDirective": {
+    "docs": "/components/query-error",
+    "kind": "reshape",
+    "note": "works with the current query client",
+    "package": "@ethlete/components",
+    "to": "QueryErrorDirective"
+  },
+  "QueryErrorItem": {
+    "docs": "/components/query-error",
+    "kind": "replaced-by",
+    "note": "@ethlete/query normalizes error shapes before they reach the component",
+    "package": "@ethlete/components",
+    "to": "QueryErrorView"
+  },
+  "QueryErrorList": {
+    "docs": "/components/query-error",
+    "kind": "replaced-by",
+    "note": "@ethlete/query normalizes error shapes before they reach the component",
+    "package": "@ethlete/components",
+    "to": "QueryErrorView"
+  },
+  "RADIO_FIELD_TOKEN": {
+    "kind": "removed",
+    "note": "inject FormFieldDirective directly"
+  },
+  "RADIO_GROUP_TOKEN": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SELECTION_LIST_TOKEN"
+  },
+  "RADIO_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectionOptionDirective directly"
+  },
+  "RICH_FILTER_BUTTON_SLOT_TOKEN": {
+    "kind": "removed",
+    "note": "the floating-action directives are injected by their own type, without a DI token"
+  },
+  "RICH_FILTER_BUTTON_TOKEN": {
+    "kind": "removed",
+    "note": "the floating-action directives are injected by their own type, without a DI token"
+  },
+  "RICH_FILTER_CONTENT_TOKEN": {
+    "kind": "removed",
+    "note": "the floating-action directives are injected by their own type, without a DI token"
+  },
+  "RICH_FILTER_TOP_TOKEN": {
+    "kind": "removed",
+    "note": "the floating-action directives are injected by their own type, without a DI token"
+  },
+  "RadioComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "RadioComponent"
+  },
+  "RadioDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "replaced-by",
+    "note": "one option primitive drives radio, checkbox-option and segmented-button",
+    "package": "@ethlete/components",
+    "to": "SelectionOptionDirective"
+  },
+  "RadioFieldComponent": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one et-form-field shell replaces the per-control *-field wrappers; signal forms only",
+    "package": "@ethlete/components",
+    "to": "FormFieldComponent"
+  },
+  "RadioFieldDirective": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one field directive drives every control",
+    "package": "@ethlete/components",
+    "to": "FormFieldDirective"
+  },
+  "RadioGroupComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "reshape",
+    "note": "RADIO_GROUP_IMPORTS: et-radio-group with et-radio children; signal forms only",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "RadioGroupComponent"
+  },
+  "RadioGroupDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "note": "one selection-list primitive drives the checkbox, radio and segmented groups",
+    "package": "@ethlete/components",
+    "to": "SelectionListDirective"
+  },
+  "RadioImports": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "RADIO_GROUP_IMPORTS"
+  },
+  "Reference": {
+    "kind": "removed",
+    "note": "value-type helper of the cdk combobox"
+  },
+  "RichFilterButtonDirective": {
+    "docs": "/components/floating-action",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "FloatingActionTriggerDirective"
+  },
+  "RichFilterButtonSlotDirective": {
+    "docs": "/components/floating-action",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "FloatingActionAnchorDirective"
+  },
+  "RichFilterContentDirective": {
+    "docs": "/components/floating-action",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "FloatingActionScopeDirective"
+  },
+  "RichFilterHostComponent": {
+    "docs": "/components/floating-action",
+    "kind": "rename+reshape",
+    "note": "et-rich-filter-host becomes [etFloatingAction], and the ten boolean state classes become one derived data-state attribute",
+    "package": "@ethlete/components",
+    "to": "FloatingActionDirective"
+  },
+  "RichFilterImports": {
+    "docs": "/components/floating-action",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "FLOATING_ACTION_IMPORTS"
+  },
+  "RichFilterTopDirective": {
+    "docs": "/components/floating-action",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "FloatingActionTopDirective"
+  },
+  "RowComponent": {
+    "kind": "removed",
+    "note": "column order is the TableColumns key order; there are no row definitions"
+  },
+  "RowDefDirective": {
+    "kind": "removed",
+    "note": "column order is the TableColumns key order; there are no row definitions"
+  },
+  "SCROLLABLE_IGNORE_CHILD_ATTRIBUTE": {
+    "kind": "removed",
+    "note": "the directive selector is not derived from an exported attribute name"
+  },
+  "SCROLLABLE_IGNORE_CHILD_TOKEN": {
+    "kind": "removed",
+    "note": "inject ScrollableIgnoreChildDirective directly"
+  },
+  "SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE": {
+    "kind": "removed",
+    "note": "the directive selector is not derived from an exported attribute name"
+  },
+  "SCROLLABLE_IS_ACTIVE_CHILD_TOKEN": {
+    "kind": "removed",
+    "note": "inject ScrollableActiveChildDirective directly"
+  },
+  "SCROLLABLE_LOADING_TEMPLATE_TOKEN": {
+    "docs": "/components/scrollable",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "ScrollableLoadingTemplateRef"
+  },
+  "SCROLLABLE_PLACEHOLDER_ITEM_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "no placeholder scaffold; render your own placeholder items (e.g. et-skeleton) inside the scrollable"
+  },
+  "SCROLLABLE_PLACEHOLDER_OVERLAY_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "no placeholder scaffold; render your own placeholder items (e.g. et-skeleton) inside the scrollable"
+  },
+  "SEARCH_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject InputDirective directly"
+  },
+  "SEGMENTED_BUTTON_FIELD_TOKEN": {
+    "kind": "removed",
+    "note": "inject FormFieldDirective directly"
+  },
+  "SEGMENTED_BUTTON_GROUP_TOKEN": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SELECTION_LIST_TOKEN"
+  },
+  "SEGMENTED_BUTTON_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectionOptionDirective directly"
+  },
+  "SELECTION_LIST_FIELD": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SELECTION_LIST_TOKEN"
+  },
+  "SELECTION_LIST_OPTION": {
+    "kind": "removed",
+    "note": "inject SelectionOptionDirective directly"
+  },
+  "SELECT_BODY_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectListboxDirective directly"
+  },
+  "SELECT_FIELD_TOKEN": {
+    "kind": "removed",
+    "note": "inject FormFieldDirective directly"
+  },
+  "SELECT_OPTION_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectOptionDirective directly"
+  },
+  "SELECT_TOKEN": {
+    "kind": "removed",
+    "note": "inject SelectDirective directly"
+  },
+  "SHOW_PICKER_TRIGGER_TOKEN": {
+    "kind": "removed",
+    "note": "inject DatePickerTriggerDirective directly"
+  },
+  "SIDEBAR_OVERLAY_CONFIG": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "SIDEBAR_OVERLAY_CONFIG"
+  },
+  "SLIDER_THUMB_CONTENT_TEMPLATE_TOKEN": {
+    "kind": "removed",
+    "note": "inject SliderThumbLabelDirective directly"
+  },
+  "SLIDE_TOGGLE_TOKEN": {
+    "kind": "removed",
+    "note": "inject SwitchDirective directly"
+  },
+  "SORT_DEFAULT_OPTIONS": {
+    "kind": "removed",
+    "note": "sorting is configured per column"
+  },
+  "SORT_HEADER_COLUMN_DEF": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TableColumnDef"
+  },
+  "SORT_HEADER_INTL_PROVIDER": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "provideTableLabels"
+  },
+  "SORT_HEADER_INTL_PROVIDER_FACTORY": {
+    "kind": "removed",
+    "note": "provideTableLabels registers the labels"
+  },
+  "STATIC_FORM_FIELD_TOKEN": {
+    "kind": "removed",
+    "note": "inject FormFieldDirective directly"
+  },
+  "STATIC_FORM_GROUP_TOKEN": {
+    "kind": "removed",
+    "note": "signal forms model groups in the schema; there is no group directive"
+  },
+  "ScrollObserverScrollState": {
+    "docs": "/components/scrollable",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "ScrollableScrollState"
+  },
+  "ScrollableButtonPosition": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableButtonPosition"
+  },
+  "ScrollableComponent": {
+    "docs": "/components/scrollable",
+    "kind": "reshape",
+    "note": "the chrome is opt-in: SCROLLABLE_NAVIGATION_IMPORTS, SCROLLABLE_DARKEN_IMPORTS and SCROLLABLE_DRAG_IMPORTS instead of always-on buttons, masks and drag scrolling",
+    "package": "@ethlete/components",
+    "to": "ScrollableComponent"
+  },
+  "ScrollableDirection": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableDirection"
+  },
+  "ScrollableIgnoreChildDirective": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableIgnoreChildDirective"
+  },
+  "ScrollableImports": {
+    "docs": "/components/scrollable",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SCROLLABLE_IMPORTS"
+  },
+  "ScrollableIntersectionChange": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableIntersectionChange"
+  },
+  "ScrollableIsActiveChildDirective": {
+    "docs": "/components/scrollable",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "ScrollableActiveChildDirective"
+  },
+  "ScrollableItemSize": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableItemSize"
+  },
+  "ScrollableLoadingTemplateDirective": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableLoadingTemplateDirective"
+  },
+  "ScrollableLoadingTemplatePosition": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableLoadingTemplatePosition"
+  },
+  "ScrollablePlaceholderComponent": {
+    "kind": "removed",
+    "note": "no placeholder scaffold; render your own placeholder items (e.g. et-skeleton) inside the scrollable"
+  },
+  "ScrollablePlaceholderItemTemplateDirective": {
+    "kind": "removed",
+    "note": "no placeholder scaffold; render your own placeholder items (e.g. et-skeleton) inside the scrollable"
+  },
+  "ScrollablePlaceholderOverlayTemplateDirective": {
+    "kind": "removed",
+    "note": "no placeholder scaffold; render your own placeholder items (e.g. et-skeleton) inside the scrollable"
+  },
+  "ScrollableScrollMode": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableScrollMode"
+  },
+  "ScrollableScrollOrigin": {
+    "docs": "/components/scrollable",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ScrollableScrollOrigin"
+  },
+  "SearchInputClearComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "replaced-by",
+    "note": "clearable is an input on the control",
+    "package": "@ethlete/components",
+    "to": "InputComponent"
+  },
+  "SearchInputComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "replaced-by",
+    "note": "use et-input with type=\"search\"; clearable covers the clear button",
+    "package": "@ethlete/components",
+    "to": "InputComponent"
+  },
+  "SearchInputDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "replaced-by",
+    "note": "use et-input with type=\"search\"",
+    "package": "@ethlete/components",
+    "to": "InputDirective"
+  },
+  "SegmentedButtonComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "SegmentedButtonComponent"
+  },
+  "SegmentedButtonDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "replaced-by",
+    "note": "one option primitive drives radio, checkbox-option and segmented-button",
+    "package": "@ethlete/components",
+    "to": "SelectionOptionDirective"
+  },
+  "SegmentedButtonFieldComponent": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one et-form-field shell replaces the per-control *-field wrappers; signal forms only",
+    "package": "@ethlete/components",
+    "to": "FormFieldComponent"
+  },
+  "SegmentedButtonFieldDirective": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one field directive drives every control",
+    "package": "@ethlete/components",
+    "to": "FormFieldDirective"
+  },
+  "SegmentedButtonGroupComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "reshape",
+    "note": "SEGMENTED_BUTTON_IMPORTS: et-segmented-button-group with et-segmented-button children; signal forms only",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "SegmentedButtonGroupComponent"
+  },
+  "SegmentedButtonGroupDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "note": "one selection-list primitive drives the checkbox, radio and segmented groups",
+    "package": "@ethlete/components",
+    "to": "SelectionListDirective"
+  },
+  "SegmentedButtonGroupRenderAs": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "note": "renderAs=\"tabs\" becomes variant=\"tabs\"",
+    "package": "@ethlete/components",
+    "to": "SegmentedButtonGroupVariant"
+  },
+  "SegmentedButtonImports": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "SEGMENTED_BUTTON_IMPORTS"
+  },
+  "SelectBodyComponent": {
+    "docs": "/components/select",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectPanelComponent"
+  },
+  "SelectBodyDirective": {
+    "docs": "/components/select",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectListboxDirective"
+  },
+  "SelectComponent": {
+    "docs": "/components/select",
+    "kind": "reshape",
+    "note": "et-select unifies select and combobox: an optional search input turns it into the combobox; signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "SelectComponent"
+  },
+  "SelectDirective": {
+    "docs": "/components/select",
+    "kind": "reshape",
+    "note": "et-select unifies select and combobox: an optional search input turns it into the combobox; signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "SelectDirective"
+  },
+  "SelectFieldComponent": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one et-form-field shell replaces the per-control *-field wrappers; signal forms only",
+    "package": "@ethlete/components",
+    "to": "FormFieldComponent"
+  },
+  "SelectFieldDirective": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one field directive drives every control",
+    "package": "@ethlete/components",
+    "to": "FormFieldDirective"
+  },
+  "SelectImports": {
+    "docs": "/components/select",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SELECT_IMPORTS"
+  },
+  "SelectOptionComponent": {
+    "docs": "/components/select",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "SelectOptionComponent"
+  },
+  "SelectOptionDirective": {
+    "docs": "/components/select",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "SelectOptionDirective"
+  },
+  "SelectionListFieldComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "replaced-by",
+    "note": "the group splits into SelectionListDirective plus SelectionListControlDirective; CHECKBOX_GROUP_IMPORTS is the ready-made multi-select group",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "SelectionListDirective"
+  },
+  "SelectionListFieldDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectionListDirective"
+  },
+  "SelectionListImports": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "note": "CHECKBOX_GROUP_IMPORTS is the ready-made multi-select group",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "SELECTION_LIST_IMPORTS"
+  },
+  "SelectionListOptionComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "note": "label content plus an optional et-description secondary line (DESCRIPTION_IMPORTS)",
+    "package": "@ethlete/components",
+    "since": "1.0.0-next.34",
+    "to": "CheckboxOptionComponent"
+  },
+  "SelectionListOptionDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SelectionOptionDirective"
+  },
+  "ShowPickerTriggerDirective": {
+    "docs": "/components/date-time-inputs",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "DatePickerTriggerDirective"
+  },
+  "SidebarOverlayConfig": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "SidebarOverlayConfig"
+  },
+  "SidebarOverlayService": {
+    "docs": "/components/overlays",
+    "kind": "rename+reshape",
+    "note": "injectSidebarOverlay() instead of an Angular service class",
+    "package": "@ethlete/components",
+    "to": "SidebarOverlay"
+  },
+  "SkeletonComponent": {
+    "docs": "/components/skeleton",
+    "kind": "move",
+    "note": "loadingAllyText and animated carry over; colors come from the surface tokens and et-skeleton-text renders a paragraph of lines",
+    "package": "@ethlete/components",
+    "to": "SkeletonComponent"
+  },
+  "SkeletonImports": {
+    "docs": "/components/skeleton",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SKELETON_IMPORTS"
+  },
+  "SkeletonItemComponent": {
+    "docs": "/components/skeleton",
+    "kind": "reshape",
+    "note": "the default shape is \"text\"; add shape=\"rect\" for the cdk behavior",
+    "package": "@ethlete/components",
+    "to": "SkeletonItemComponent"
+  },
+  "SlideToggleComponent": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "SwitchComponent"
+  },
+  "SlideToggleDirective": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename+reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "SwitchDirective"
+  },
+  "SlideToggleFieldComponent": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "et-choice-field is the shell for the boolean controls",
+    "package": "@ethlete/components",
+    "to": "ChoiceFieldComponent"
+  },
+  "SlideToggleImports": {
+    "docs": "/components/choice-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SWITCH_IMPORTS"
+  },
+  "SliderComponent": {
+    "docs": "/components/slider",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control; RangeSliderComponent covers two-thumb ranges",
+    "package": "@ethlete/components",
+    "to": "SliderComponent"
+  },
+  "SliderFieldComponent": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one et-form-field shell replaces the per-control *-field wrappers; signal forms only",
+    "package": "@ethlete/components",
+    "to": "FormFieldComponent"
+  },
+  "SliderImports": {
+    "docs": "/components/slider",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "SLIDER_IMPORTS"
+  },
+  "SliderThumbContentTemplateDirective": {
+    "docs": "/components/slider",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "SliderThumbLabelDirective"
+  },
+  "SortDefaultOptions": {
+    "kind": "removed",
+    "note": "sorting is configured per column"
+  },
+  "SortDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "sortable: true per column and a two-way [(sort)]; sortMode=\"server\" for query-driven sorting",
+    "package": "@ethlete/components",
+    "to": "TableComponent"
+  },
+  "SortHeaderArrowPosition": {
+    "kind": "removed",
+    "note": "the sort indicator position is not configurable"
+  },
+  "SortHeaderColumnDef": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TableColumnDef"
+  },
+  "SortHeaderComponent": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "sortable: true on the column definition",
+    "package": "@ethlete/components",
+    "to": "TableColumnDef"
+  },
+  "SortHeaderIntl": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TableLabels"
+  },
+  "SortImports": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TABLE_IMPORTS"
+  },
+  "Sortable": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "TableSort"
+  },
+  "StaticFormFieldDirective": {
+    "docs": "/components/forms",
+    "kind": "replaced-by",
+    "note": "one field directive drives every control",
+    "package": "@ethlete/components",
+    "to": "FormFieldDirective"
+  },
+  "StaticFormGroupDirective": {
+    "kind": "removed",
+    "note": "signal forms model groups in the schema; there is no group directive"
+  },
+  "SwipeEndEvent": {
+    "docs": "/core/utilities",
+    "kind": "move",
+    "package": "@ethlete/core",
+    "to": "SwipeEndEvent"
+  },
+  "SwipeTracker": {
+    "docs": "/core/utilities",
+    "kind": "move",
+    "package": "@ethlete/core",
+    "to": "SwipeTracker"
+  },
+  "SwipeUpdateEvent": {
+    "docs": "/core/utilities",
+    "kind": "move",
+    "package": "@ethlete/core",
+    "to": "SwipeUpdateEvent"
+  },
+  "TAB": {
+    "kind": "removed",
+    "note": "inject TabComponent or TAB_PANEL_TOKEN directly"
+  },
+  "TABS_CONFIG": {
+    "kind": "removed",
+    "note": "the pagination and ink-bar options have no successor; the tab bar handles overflow itself"
+  },
+  "TAB_CONTENT": {
+    "kind": "removed",
+    "note": "inject TabPanelDirective directly"
+  },
+  "TAB_GROUP": {
+    "docs": "/components/tabs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "TAB_GROUP_TOKEN"
+  },
+  "TAB_LABEL": {
+    "kind": "removed",
+    "note": "inject TabLabelDirective directly"
+  },
+  "TEL_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject PhoneInputDirective directly"
+  },
+  "TEXTAREA_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject TextareaDirective directly"
+  },
+  "TEXT_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject InputDirective directly"
+  },
+  "TIMES_ICON": {
+    "docs": "/components/icon",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "TIMES_ICON"
+  },
+  "TIME_INPUT_FORMAT_TOKEN": {
+    "docs": "/components/date-time-inputs",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "TIME_FORMAT"
+  },
+  "TIME_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "inject TimeInputDirective directly"
+  },
+  "TOGGLETIP": {
+    "kind": "removed",
+    "note": "inject ToggletipDirective directly"
+  },
+  "TOGGLETIP_CONFIG": {
+    "kind": "removed",
+    "note": "no global config; configure each toggletip through its inputs"
+  },
+  "TOGGLETIP_DEFAULT_CONFIG": {
+    "kind": "removed",
+    "note": "no global config; configure each toggletip through its inputs"
+  },
+  "TOGGLETIP_DIRECTIVE": {
+    "kind": "removed",
+    "note": "inject ToggletipDirective directly"
+  },
+  "TOGGLETIP_TEMPLATE": {
+    "kind": "removed",
+    "note": "the content is passed to the mounted component, not through a DI token"
+  },
+  "TOGGLETIP_TEXT": {
+    "kind": "removed",
+    "note": "the content is passed to the mounted component, not through a DI token"
+  },
+  "TOOLTIP": {
+    "kind": "removed",
+    "note": "inject TooltipDirective directly"
+  },
+  "TOOLTIP_CONFIG": {
+    "kind": "removed",
+    "note": "no global config; configure each tooltip through its inputs"
+  },
+  "TOOLTIP_DEFAULT_CONFIG": {
+    "kind": "removed",
+    "note": "no global config; configure each tooltip through its inputs"
+  },
+  "TOOLTIP_DIRECTIVE": {
+    "kind": "removed",
+    "note": "inject TooltipDirective directly"
+  },
+  "TOOLTIP_TEMPLATE": {
+    "kind": "removed",
+    "note": "the content is passed to the mounted component, not through a DI token"
+  },
+  "TOOLTIP_TEXT": {
+    "kind": "removed",
+    "note": "the content is passed to the mounted component, not through a DI token"
+  },
+  "TabConfig": {
+    "kind": "removed",
+    "note": "the pagination and ink-bar options have no successor; the tab bar handles overflow itself"
+  },
+  "TabImports": {
+    "docs": "/components/tabs",
+    "kind": "rename",
+    "note": "NAV_TAB_IMPORTS for the router nav tabs",
+    "package": "@ethlete/components",
+    "to": "TAB_IMPORTS"
+  },
+  "TabPaginationScrollDirection": {
+    "kind": "removed",
+    "note": "internal to the cdk paginated header"
+  },
+  "TableBusyDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "[loading] / [error] take a query’s signals, with placeholder rows and a refetch bar",
+    "package": "@ethlete/components",
+    "to": "TableComponent"
+  },
+  "TableBusyOutletDirective": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "[loading] / [error] take a query’s signals, with placeholder rows and a refetch bar",
+    "package": "@ethlete/components",
+    "to": "TableComponent"
+  },
+  "TableComponent": {
+    "docs": "/components/table",
+    "kind": "reshape",
+    "note": "not built on @angular/cdk/table and type-safe end to end: a typed TableColumns<Row> bound to [columns] plus [data] for the rows",
+    "package": "@ethlete/components",
+    "to": "TableComponent"
+  },
+  "TableDataSource": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "the table’s own client mode, the exported sortRows() helper and the opt-in filter menus",
+    "package": "@ethlete/components",
+    "to": "TableComponent"
+  },
+  "TableDataSourcePageEvent": {
+    "kind": "removed",
+    "note": "pagination is driven by your own state or a query"
+  },
+  "TableDataSourcePaginator": {
+    "kind": "removed",
+    "note": "pagination is driven by your own state or a query"
+  },
+  "TableImports": {
+    "docs": "/components/table",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "TABLE_IMPORTS"
+  },
+  "TelInputComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "rename+reshape",
+    "note": "adds country-prefix handling and PHONE_INPUT_LABELS",
+    "package": "@ethlete/components",
+    "to": "PhoneInputComponent"
+  },
+  "TelInputDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "rename+reshape",
+    "note": "adds country-prefix handling and PHONE_INPUT_LABELS",
+    "package": "@ethlete/components",
+    "to": "PhoneInputDirective"
+  },
+  "TextColumnComponent": {
+    "docs": "/components/table",
+    "kind": "replaced-by",
+    "note": "a plain column entry replaces the text-column shorthand",
+    "package": "@ethlete/components",
+    "to": "TableColumns"
+  },
+  "TextInputComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "rename+reshape",
+    "note": "et-input with a type input; signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "InputComponent"
+  },
+  "TextInputDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "rename+reshape",
+    "note": "et-input with a type input; signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "InputDirective"
+  },
+  "TextareaInputComponent": {
+    "docs": "/components/text-inputs",
+    "kind": "rename+reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "TextareaComponent"
+  },
+  "TextareaInputDirective": {
+    "docs": "/components/text-inputs",
+    "kind": "rename+reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "TextareaDirective"
+  },
+  "TimeInputComponent": {
+    "docs": "/components/date-time-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "TimeInputComponent"
+  },
+  "TimeInputDirective": {
+    "docs": "/components/date-time-inputs",
+    "kind": "reshape",
+    "note": "signal forms only: binds via [formField] with no ControlValueAccessor layer, so reactive-forms apps keep the cdk control",
+    "package": "@ethlete/components",
+    "to": "TimeInputDirective"
+  },
+  "ToggletipCloseDirective": {
+    "docs": "/components/toggletip",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ToggletipCloseDirective"
+  },
+  "ToggletipComponent": {
+    "docs": "/components/toggletip",
+    "kind": "reshape",
+    "note": "themed arrow and surface from the theming systems",
+    "package": "@ethlete/components",
+    "to": "ToggletipComponent"
+  },
+  "ToggletipConfig": {
+    "docs": "/components/toggletip",
+    "kind": "replaced-by",
+    "note": "no global config; configure each toggletip through its inputs",
+    "package": "@ethlete/components",
+    "to": "ToggletipContent"
+  },
+  "ToggletipDirective": {
+    "docs": "/components/toggletip",
+    "kind": "reshape",
+    "note": "etToggletip carries the content; the trigger is the separate etToggletipTrigger",
+    "package": "@ethlete/components",
+    "to": "ToggletipDirective"
+  },
+  "ToggletipImports": {
+    "docs": "/components/toggletip",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "TOGGLETIP_IMPORTS"
+  },
+  "TooltipComponent": {
+    "docs": "/components/tooltip",
+    "kind": "reshape",
+    "note": "themed arrow and surface from the theming systems",
+    "package": "@ethlete/components",
+    "to": "TooltipComponent"
+  },
+  "TooltipConfig": {
+    "docs": "/components/tooltip",
+    "kind": "replaced-by",
+    "note": "no global config; configure each tooltip through its inputs",
+    "package": "@ethlete/components",
+    "to": "TooltipContent"
+  },
+  "TooltipDirective": {
+    "docs": "/components/tooltip",
+    "kind": "reshape",
+    "note": "tooltipAriaDescription becomes etTooltipAriaDescription; etTooltip and placement are unchanged",
+    "package": "@ethlete/components",
+    "to": "TooltipDirective"
+  },
+  "TooltipImports": {
+    "docs": "/components/tooltip",
+    "kind": "rename",
+    "package": "@ethlete/components",
+    "to": "TOOLTIP_IMPORTS"
+  },
+  "VALIDATOR_ERROR_SERVICE_TOKEN": {
+    "kind": "removed",
+    "note": "provideFormErrorMessageResolver registers the resolver"
+  },
+  "ValidationErrorsServiceType": {
+    "kind": "removed",
+    "note": "provideFormErrorMessageResolver registers the resolver"
+  },
+  "ValidatorErrors": {
+    "kind": "removed",
+    "note": "validation errors come from the signal-forms schema"
+  },
+  "ViewportTransformData": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "ViewportTransformData"
+  },
+  "WRITEABLE_INPUT_TOKEN": {
+    "kind": "removed",
+    "note": "no ControlValueAccessor layer; controls implement the signal-forms FormValueControl contract"
+  },
+  "WRITEABLE_INPUT_VALUE_ACCESSOR": {
+    "kind": "removed",
+    "note": "no ControlValueAccessor layer; controls implement the signal-forms FormValueControl contract"
+  },
+  "WriteableInputDirective": {
+    "kind": "removed",
+    "note": "no ControlValueAccessor layer; controls implement the signal-forms FormValueControl contract"
+  },
+  "_ActiveTabUnderlinePositioner": {
+    "kind": "removed",
+    "note": "internal to the cdk underline implementation"
+  },
+  "_MAT_INK_BAR_POSITIONER": {
+    "kind": "removed",
+    "note": "internal to the cdk underline implementation"
+  },
+  "_MAT_INK_BAR_POSITIONER_FACTORY": {
+    "kind": "removed",
+    "note": "internal to the cdk underline implementation"
+  },
+  "abortFullscreenAnimation": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "abortFullscreenAnimation"
+  },
+  "anchoredDialogOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "anchoredDialogOverlayStrategy"
+  },
+  "bottomSheetOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "bottomSheetOverlayStrategy"
+  },
+  "cleanupFullscreenAnimation": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "cleanupFullscreenAnimation"
+  },
+  "cleanupFullscreenAnimationStyles": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "cleanupFullscreenAnimationStyles"
+  },
+  "createBracketConfig": {
+    "kind": "removed",
+    "note": "the components bracket config is a plain object passed to provideBracketConfig"
+  },
+  "createComboboxConfig": {
+    "kind": "removed",
+    "note": "there is no global combobox config; configure each et-select"
+  },
+  "createFormChangesTracker": {
+    "docs": "/core/utilities",
+    "kind": "rename+reshape",
+    "note": "form becomes a generic source, and refreshDefaultFormValue()/restoreDefaultFormValue() become refreshDefaultValue()/restoreDefaultValue()",
+    "package": "@ethlete/core",
+    "to": "createUnsavedChangesTracker"
+  },
+  "createNavigationDismissChecker": {
+    "docs": "/core/utilities",
+    "kind": "rename+reshape",
+    "note": "accepts an AbstractControl, so reactive-forms apps can adopt it before signal forms; confirm replaces dismissCheckFn and is required per call site, and it adds a canDeactivate() route bridge and browser-tab locking",
+    "package": "@ethlete/core",
+    "to": "createUnsavedChangesGuard"
+  },
+  "createOverlayDismissChecker": {
+    "docs": "/components/overlays",
+    "kind": "rename+reshape",
+    "note": "confirm replaces dismissCheckFn and is required per call site",
+    "package": "@ethlete/components",
+    "to": "createOverlayUnsavedChangesGuard"
+  },
+  "createOverlayHandler": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "note": "no longer a factory returning a factory; config merges definition → opener → open",
+    "package": "@ethlete/components",
+    "to": "defineOverlay"
+  },
+  "createOverlayHandlerWithQueryParamLifecycle": {
+    "docs": "/components/overlay-openers",
+    "kind": "rename+reshape",
+    "note": "no longer a factory returning a factory; config merges definition → opener → open",
+    "package": "@ethlete/components",
+    "to": "defineQueryParamOverlay"
+  },
+  "createSwipeTracker": {
+    "docs": "/core/utilities",
+    "kind": "move",
+    "package": "@ethlete/core",
+    "signatureUnchanged": true,
+    "to": "createSwipeTracker"
+  },
+  "createToggletipConfig": {
+    "kind": "removed",
+    "note": "no global config; configure each toggletip through its inputs"
+  },
+  "createTooltipConfig": {
+    "kind": "removed",
+    "note": "no global config; configure each tooltip through its inputs"
+  },
+  "defaultSubmitButtonConfigFn": {
+    "docs": "/components/filter-overlay",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "resolveFilterOverlaySubmitButton"
+  },
+  "dialogOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "dialogOverlayStrategy"
+  },
+  "enableDragToDismiss": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "enableDragToDismiss"
+  },
+  "exactMatchOptions": {
+    "kind": "removed",
+    "note": "router link matching is configured per link"
+  },
+  "extractFirstImageUrl": {
+    "docs": "/components/picture",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "extractFirstImageUrl"
+  },
+  "findNextRelevantHtmlElement": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "findNextRelevantHtmlElement"
+  },
+  "fullScreenDialogOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "fullScreenDialogOverlayStrategy"
+  },
+  "getClosestOverlay": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "getClosestOverlay"
+  },
+  "getOriginCoordinatesAndDimensions": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "getOriginCoordinatesAndDimensions"
+  },
+  "injectAnchoredDialogStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectAnchoredDialogStrategy"
+  },
+  "injectAnchoredDialogStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectAnchoredDialogStrategyDefaults"
+  },
+  "injectBottomSheetStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectBottomSheetStrategy"
+  },
+  "injectBottomSheetStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectBottomSheetStrategyDefaults"
+  },
+  "injectBreadcrumbManager": {
+    "docs": "/components/breadcrumb",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectBreadcrumbManager"
+  },
+  "injectDialogStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectDialogStrategy"
+  },
+  "injectDialogStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectDialogStrategyDefaults"
+  },
+  "injectFocusRegistry": {
+    "kind": "removed",
+    "note": "the overlay runtime restores focus itself; @ethlete/core’s setupFocusTrap / applyInitialFocus cover manual cases"
+  },
+  "injectFullscreenDialogStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectFullscreenDialogStrategy"
+  },
+  "injectFullscreenDialogStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectFullscreenDialogStrategyDefaults"
+  },
+  "injectLeftSheetStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectLeftSheetStrategy"
+  },
+  "injectLeftSheetStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectLeftSheetStrategyDefaults"
+  },
+  "injectNewBracketConfig": {
+    "docs": "/components/bracket",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "injectBracketConfig"
+  },
+  "injectOverlayManager": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectOverlayManager"
+  },
+  "injectOverlayScrollBlocker": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectOverlayScrollBlocker"
+  },
+  "injectRightSheetStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectRightSheetStrategy"
+  },
+  "injectRightSheetStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectRightSheetStrategyDefaults"
+  },
+  "injectRouterNavigationState": {
+    "docs": "/core/signal-utils",
+    "kind": "move",
+    "package": "@ethlete/core",
+    "signatureUnchanged": true,
+    "to": "injectRouterNavigationState"
+  },
+  "injectTopSheetStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectTopSheetStrategy"
+  },
+  "injectTopSheetStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "injectTopSheetStrategyDefaults"
+  },
+  "isEmptyArray": {
+    "kind": "removed",
+    "note": "value-type helper of the cdk combobox"
+  },
+  "isHtmlElement": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "isHtmlElement"
+  },
+  "isObjectArray": {
+    "kind": "removed",
+    "note": "value-type helper of the cdk combobox"
+  },
+  "isPointerEvent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "isPointerEvent"
+  },
+  "isPrimitiveArray": {
+    "kind": "removed",
+    "note": "value-type helper of the cdk combobox"
+  },
+  "isScrollableChildActive": {
+    "docs": "/components/scrollable",
+    "kind": "replaced-by",
+    "package": "@ethlete/components",
+    "to": "ScrollableActiveChildRef"
+  },
+  "isScrollableChildIgnored": {
+    "kind": "removed",
+    "note": "the scrollable resolves ignored children itself"
+  },
+  "isTouchEvent": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "isTouchEvent"
+  },
+  "isUpperBracketMatch": {
+    "kind": "removed",
+    "note": "the components bracket derives the bracket side from the BracketDataSource"
+  },
+  "leftSheetOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "leftSheetOverlayStrategy"
+  },
+  "mergeOverlayBreakpointConfigs": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "mergeOverlayBreakpointConfigs"
+  },
+  "normalizePictureSizes": {
+    "docs": "/components/picture",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "normalizePictureSizes"
+  },
+  "normalizePictureSource": {
+    "docs": "/components/picture",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "normalizePictureSource"
+  },
+  "normalizeRoundType": {
+    "kind": "removed",
+    "note": "round types come from the BracketDataSource"
+  },
+  "orderRounds": {
+    "kind": "removed",
+    "note": "round order comes from the BracketDataSource"
+  },
+  "orderRoundsByRoundNumber": {
+    "kind": "removed",
+    "note": "round order comes from the BracketDataSource"
+  },
+  "paginate": {
+    "docs": "/components/pagination",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "paginate"
+  },
+  "provideAnchoredDialogStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideAnchoredDialogStrategy"
+  },
+  "provideAnchoredDialogStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideAnchoredDialogStrategyDefaults"
+  },
+  "provideBottomSheetStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideBottomSheetStrategy"
+  },
+  "provideBottomSheetStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideBottomSheetStrategyDefaults"
+  },
+  "provideBracketConfig": {
+    "docs": "/components/bracket",
+    "kind": "replaced-by",
+    "note": "legacy portal config; the components config registers layouts and card components",
+    "package": "@ethlete/components",
+    "to": "provideBracketConfig"
+  },
+  "provideBreadcrumbManager": {
+    "docs": "/components/breadcrumb",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideBreadcrumbManager"
+  },
+  "provideComboboxConfig": {
+    "docs": "/components/select",
+    "kind": "replaced-by",
+    "note": "et-select unifies select and combobox: an optional search input turns it into the combobox; there is no global config - configure each et-select and use provideSelectLabels for strings",
+    "package": "@ethlete/components",
+    "to": "SELECT_IMPORTS"
+  },
+  "provideDateFormat": {
+    "docs": "/components/date-time-inputs",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "provideDateFormat"
+  },
+  "provideDateTimeFormat": {
+    "docs": "/components/date-time-inputs",
+    "kind": "replaced-by",
+    "note": "date-time controls read the DATE_FORMAT wire format",
+    "package": "@ethlete/components",
+    "to": "provideDateFormat"
+  },
+  "provideDialogStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideDialogStrategy"
+  },
+  "provideDialogStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideDialogStrategyDefaults"
+  },
+  "provideFilterOverlayConfig": {
+    "docs": "/components/filter-overlay",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "provideFilterOverlay"
+  },
+  "provideFocusRegistry": {
+    "kind": "removed",
+    "note": "the overlay runtime restores focus itself; @ethlete/core’s setupFocusTrap / applyInitialFocus cover manual cases"
+  },
+  "provideFullscreenDialogStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideFullscreenDialogStrategy"
+  },
+  "provideFullscreenDialogStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideFullscreenDialogStrategyDefaults"
+  },
+  "provideIcons": {
+    "docs": "/components/icon",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideIcons"
+  },
+  "provideImageConfig": {
+    "docs": "/components/picture",
+    "kind": "rename+reshape",
+    "note": "prefixes each srcset candidate rather than the whole string",
+    "package": "@ethlete/components",
+    "to": "providePictureConfig"
+  },
+  "provideLeftSheetStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideLeftSheetStrategy"
+  },
+  "provideLeftSheetStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideLeftSheetStrategyDefaults"
+  },
+  "provideNewBracketConfig": {
+    "docs": "/components/bracket",
+    "kind": "rename+reshape",
+    "package": "@ethlete/components",
+    "to": "provideBracketConfig"
+  },
+  "provideOverlay": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "provideOverlay"
+  },
+  "provideOverlayManager": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideOverlayManager"
+  },
+  "provideOverlayRouterConfig": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideOverlayRouterConfig"
+  },
+  "provideOverlayScrollBlocker": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideOverlayScrollBlocker"
+  },
+  "provideRightSheetStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideRightSheetStrategy"
+  },
+  "provideRightSheetStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideRightSheetStrategyDefaults"
+  },
+  "provideSidebarOverlayConfig": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideSidebarOverlayConfig"
+  },
+  "provideSort": {
+    "kind": "removed",
+    "note": "sorting is configured per column"
+  },
+  "provideTimeFormat": {
+    "docs": "/components/date-time-inputs",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "signatureUnchanged": true,
+    "to": "provideTimeFormat"
+  },
+  "provideToggletipConfig": {
+    "kind": "removed",
+    "note": "no global config; configure each toggletip through its inputs"
+  },
+  "provideTooltipConfig": {
+    "kind": "removed",
+    "note": "no global config; configure each tooltip through its inputs"
+  },
+  "provideTopSheetStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideTopSheetStrategy"
+  },
+  "provideTopSheetStrategyDefaults": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "provideTopSheetStrategyDefaults"
+  },
+  "provideValidatorErrorsService": {
+    "docs": "/components/forms",
+    "kind": "rename+reshape",
+    "note": "messages resolve from the signal-forms schema (required(s.email, { message })) instead of a global service",
+    "package": "@ethlete/components",
+    "to": "provideFormErrorMessageResolver"
+  },
+  "rightSheetOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "rightSheetOverlayStrategy"
+  },
+  "signalVisibilityChangeClasses": {
+    "docs": "/components/floating-action",
+    "kind": "replaced-by",
+    "note": "the derived data-state attribute replaces the boolean class helper",
+    "package": "@ethlete/components",
+    "to": "FloatingActionState"
+  },
+  "startFullscreenEnterAnimation": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "startFullscreenEnterAnimation"
+  },
+  "startFullscreenLeaveAnimation": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "startFullscreenLeaveAnimation"
+  },
+  "subsetMatchOptions": {
+    "kind": "removed",
+    "note": "router link matching is configured per link"
+  },
+  "topSheetOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "topSheetOverlayStrategy"
+  },
+  "transformingBottomSheetToDialogOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "transformingBottomSheetToDialogOverlayStrategy"
+  },
+  "transformingFullScreenDialogToDialogOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "transformingFullScreenDialogToDialogOverlayStrategy"
+  },
+  "transformingFullScreenDialogToRightSheetOverlayStrategy": {
+    "docs": "/components/overlays",
+    "kind": "move",
+    "package": "@ethlete/components",
+    "to": "transformingFullScreenDialogToRightSheetOverlayStrategy"
+  }
+}

@@ -6,6 +6,9 @@
   "exports": {
     ".": {
       "css": "./src/lib/styles/index.css"
+    },
+    "./migration-map.json": {
+      "default": "./migration-map.json"
     }
   },
   "peerDependencies": {
