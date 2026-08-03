@@ -1,6 +1,6 @@
 {
   "profile": "sdk",
-  "targets": ["claude"],
+  "targets": ["claude", "codex"],
   "vars": {
     "lintCommand": "npx nx lint <project>",
     "lintFixCommand": "npx nx lint <project> --fix",
@@ -27,5 +27,6 @@
       "repo"
     ]
   },
-  "exclude": ["angular-patterns", "git-commit", "handoff", "rxjs-signals"]
+  "exclude": ["angular-patterns", "git-commit", "handoff", "rxjs-signals"],
+  "claudeMdImportsAgentsMd": true
 }
