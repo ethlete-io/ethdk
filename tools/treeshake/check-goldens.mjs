@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Size goldens for the published `@ethlete/*` packages — the regression guard for the tree-shaking
- * work recorded in `plans/tree-shaking-opportunities.md`.
+ * work recorded in `README.md`.
  *
  * Every entry in `goldens.json` is bundled the way a consumer app would bundle it (see harness.mjs)
  * and its gzipped size compared against the checked-in number. Growth past the tolerance fails, so

@@ -9,9 +9,8 @@ accidentally undo, and the questions nobody has answered yet.
 ## The seams
 
 Features register into the base table rather than templating into it, which is what keeps an unused
-feature out of the bundle. A–D are the original four; E–I came out of the 2026-08-04 decomposition
-(see `plans/bundle-size.md`), which moved expansion, grouped headers, loading placeholders and sticky
-columns out of the base:
+feature out of the bundle. A–D are the original four; E–I came out of the 2026-08-04 decomposition,
+which moved expansion, grouped headers, loading placeholders and sticky columns out of the base:
 
 - **A - `registerLeadColumn`**: leading utility cells (selection checkbox, expander).
 - **B - `registerHeaderAdornment`**: header chrome (filter trigger, resize grip), ordered by an
@@ -75,5 +74,6 @@ Two properties are easy to break and were deliberate:
   ~0.2 kB when their templates became components - the price of features having no view of their own.
   Absolute numbers from that run are not comparable to a fresh one; re-measure both sides together
   with `tools/treeshake`. The base is 17,102 B gz as of 2026-08-04, and the four features carved out of
-  it that day are goldens on both sides - see `plans/bundle-size.md` for what each cost and what a seam
-  itself costs (10-30 % of the slice it frees).
+  it that day are goldens on both sides. The 2026-08-04 slices banked 2,026 B (expansion), 440 B
+  (grouped headers), 999 B (loading placeholders) and 386 B (sticky columns); what a seam itself costs,
+  and why sticky came in at a third of its prediction, are in `tools/treeshake/README.md`.

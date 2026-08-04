@@ -39,10 +39,9 @@ shipped work deferred, and the strengths not worth re-auditing.
 - OTP resend affordance; tag-input Backspace-to-edit; per-tag validation;
   RTE text color/highlight + word count; switch thumb icons.
 
-Query devtools has its own live backlog in
-[`query-devtools-enhancements.md`](./query-devtools-enhancements.md); of this pass's
-three items, free-text search and the timing waterfall shipped 2026-08-04 and
-whole-session export is still open there.
+All three query-devtools items this pass raised - free-text search, the timing waterfall and
+whole-session export - shipped 2026-08-04; `apps/docs/components/query-devtools.md` is the
+current surface.
 
 ## 2. Deferred by the shipped work
 

@@ -25,9 +25,9 @@ import { MASONRY_TOKEN } from './masonry.tokens';
  *
  * It measures and positions, because CSS still can't: native masonry (`display: grid-lanes`, CSS Grid Level
  * 3) is not Baseline as of this writing, and CSS `columns` fills column by column, so the reading order of a
- * feed would no longer be its visual order. See `plans/cdk-port/07-masonry.md` for the full verdict. Items
- * are therefore absolutely positioned from their measured sizes, which keeps DOM order and reading order the
- * same and means a reflow never relayouts the page around it.
+ * feed would no longer be its visual order. Items are therefore absolutely positioned from their measured
+ * sizes, which keeps DOM order and reading order the same and means a reflow never relayouts the page
+ * around it.
  *
  * The measuring is per item and continuous (a `ResizeObserver` each), so a card whose image loads late, or
  * whose text reflows, moves the ones below it - the one thing cdk's one-shot `getBoundingClientRect()`

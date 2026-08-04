@@ -183,6 +183,69 @@ unannotated call (`ethlete/no-impure-top-level-provider` catches most of these),
 property read inside a top-level literal, or a destructured factory result. `decompose.mjs` on the
 failing entry names the file.
 
+## Ground rules for an audit
+
+- **Skip `libs/cdk`** (maintenance mode) and legacy query (`libs/query/src/lib/legacy/**`, the
+  reactive-forms `query-form/`).
+- **Breaking changes are fine in `components` and `query`.** Breaking `@ethlete/core` needs an Nx
+  migration generator shipped in the same release - the SDK is in a changesets major pre-release, so
+  there is no deprecation cycle. Precedents: `@ethlete/core:migrate-to-v5`,
+  `@ethlete/query:migrate-query-client-features`.
+- **Build variants with `nx build <lib> --skip-nx-cache`.** Nx has restored a cached `dist` for a
+  reverted tree three times and produced bogus baselines - once badly enough that a stale `query`
+  build made `components` fail to compile against it.
+
+### What a split costs at the top end
+
+Every opt-in has a price paid by the consumer who opts back in, and it is consistently larger than a
+line count suggests:
+
+- **A registration seam costs 10-30 % of the slice it frees.** The 2026-08-04 table decomposition
+  predicted 2,309 / 554 / 1,130 B and banked 2,026 / 440 / 999 once the registry, the row-VM field, the
+  outlet and the dev-mode error were paid for.
+- **A registry plus provider objects is not free either.** The RTE DOM-feature split costs **+844 B**
+  at the all-tools entry. Both sides want a golden so neither drifts.
+- **Raw-byte CSS duplication is a poor proxy for gz cost.** gzip already collapses two near-identical
+  sheets, and the audit's line-count estimates came in 4-5× over the measured bytes every time. Only
+  split _distinct_ CSS slices.
+- **A styles-only component is the wrong home for a feature's CSS unless the feature already uses the
+  style manager.** Routing the table's 48 lines of sticky CSS through one measured **955 B gz worse**
+  for a table that does pin, against the **113 B** they cost every table by staying in the base sheet.
+  The slider/range-slider dedupe was implemented and reverted for the same reason.
+- **Build a dev-only error inside the `ngDevMode` branch, not in a helper it is passed to.** Routing
+  call sites through `requireDomFeature(feature, method, provider)` kept the two string literals per
+  call through minification (the `throw` did not) - ~70 B gz. `if (ngDevMode) throw missing(…)` lets
+  esbuild drop the strings with the branch.
+
+## Settled - do not re-open
+
+Measured and rejected during the 2026-07-31 / 2026-08-01 / 2026-08-04 rounds:
+
+- **Injection-only CSS candidates.** The on-demand `injectStyleManager()` mounts shipped
+  (`2c0d3c9f7`); freeing the remaining bytes needs a breaking per-domain provider and they are
+  392 B (`choice-field`), 452 B (`carousel`) and 217 B (`cascader`).
+- **Per-feature RTE label defaults - 526 B**, for a new layering mechanism in `core`, a split of a
+  documented public constant and a second way to localize one domain.
+- **The table's per-cell sticky bindings - a further ~360 B.** Only the machinery moved out of the
+  base; the `[class.et-table-sticky-*]` / `[style.inset-inline-*]` bindings stayed, because no seam
+  lets a feature contribute an attribute to a cell the table draws. Cutting them needs a per-cell
+  decorator lookup - a method call inside a per-cell binding, which that component is built to avoid.
+- **`@floating-ui/dom` as an optional peer.** Anchored positioning is already opt-in at the bundle
+  level (`registerAnchoredPositionSetup`), so there is nothing to win in bytes; tooltip, menu,
+  toggletip and the RTE all reach for it, so the only gain is install footprint for a
+  dialog/drawer-only app - against a failure mode that is a build error rather than an install
+  warning. `date-fns` is optional because only the date stack uses it; not a precedent.
+- **`select` / `cascader` decomposition.** Nothing is retained a select does not use; the weight is
+  `components/forms` plus the overlay it genuinely needs. The lever is an RTE-style feature split.
+- **Bracket rounds-list-only layout** (~2 kB spread for an API split), **`FORM_FIELD_IMPORTS` barrel
+  split** (unlocks ~0.6 kB of affix CSS, breaking), **overlay strategy registration**, **`defineOverlay`
+  retention**, **`PHONE_COUNTRIES`**, **the date-picker stack**, **`injectRenderer`**,
+  **icon-button→spinner**, **notification and stream-manager barrel splits**, **query snapshot
+  laziness**, **gql over the query client**.
+- **Third-party import hygiene** (swept 2026-08-01): `date-fns` is imported per-function from the root
+  entry, rxjs uses modern paths outside story/debug files, `@angular/cdk` uses secondary entry points,
+  and core and components duplicate no implementations.
+
 ## Reading the numbers
 
 - **Compare gz, not min.** The `min` column is useful only for sourcemap attribution, where gzip
