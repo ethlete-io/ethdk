@@ -25,13 +25,32 @@ pipeline, the goldens and the rules for reading the numbers live in
 
 ## Open
 
-1. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
-   The barrel is fine (`TableComponent` alone 20.5 kB vs `TABLE_IMPORTS` 21.4 kB); the cost is inside
-   `table.component.ts` (32.7 kB min, ~40 % of the entry): sticky-column machinery
-   (`:447`, `:515-538`, `:1566`), autosizing (`:523`, `:1629-1664`), grouped headers (`:626-651`),
-   skeleton rows (pins `SkeletonItemComponent`, `:40`, `:246`, `:968`) and unconditional
-   expander/detail refs (`:686`, `:1053`). The registered-feature seams to decompose onto are
-   described in `table-api.md`.
+1. **Table monolith decomposition - 4,967 B gz for a plain table, measured 2026-08-04. L, only as a
+   deliberate project.** The barrel is fine (`TableComponent` alone 15.7 kB vs `TABLE_IMPORTS` 21.0 kB);
+   the cost is inside `table.component.ts`. Each slice was cut out of a pristine tree, rebuilt and
+   measured against the `table` golden (20,953 B) - `--external`, so these are pure `@ethlete` bytes:
+
+   | slice                                        | cut → entry | cost      | notes                                                                       |
+   | -------------------------------------------- | ----------- | --------- | --------------------------------------------------------------------------- |
+   | expander column + detail rows                | 18,644 B    | **2,309** | frees `TableExpanderCellComponent` + `TableDetailStylesComponent` + its CSS |
+   | placeholder rows (and the loading-cell bone) | 19,823 B    | **1,130** | frees `SkeletonItemComponent`; both bones must go or it stays pinned        |
+   | sticky columns                               | 19,906 B    | **1,047** | the measuring effect, `stickyVmOf`, the `hasSticky*` computeds, the CSS     |
+   | grouped headers                              | 20,399 B    | **554**   | `hasGroups`/`headerGroups`, the group row, `signalElementDimensions`        |
+   | autosizing                                   | 20,762 B    | **191**   | not worth a feature of its own - let it ride with resize if anything        |
+   | **all five at once**                         | 15,986 B    | **4,967** | 24 % of the entry; the individual cuts sum to 5,231, so ~264 B is shared    |
+
+   The top three are 90 % of the win. Two things the numbers do not show, both found while cutting:
+   - **The per-cell sticky bindings are the awkward part.** `[class.et-table-sticky-*]` /
+     `[style.inset-inline-*]` sit on header, body, footer _and_ lead cells in the base template, and a
+     registered feature cannot contribute an attribute to a cell the table renders. The 1,047 B assumes
+     they go too, so sticky needs either a new "cell decorator" seam or it only banks part of that.
+   - **Expansion can move without breaking the row typing.** Keep `expandedRowTemplate` /
+     `expandableRow` / `expandedKeys` as table inputs (which is what `table-api.md` says they must be -
+     a content-child directive cannot infer `T` with no column to bind), and move only the _rendering_:
+     the expander lead column already fits seam A, and the detail row needs a new row-slot seam next to
+     `registerLayer`. The feature reads the template off the host contract and renders it itself.
+
+   The registered-feature seams to decompose onto are described in `table-api.md`.
 
 ## Closed on 2026-08-04
 
