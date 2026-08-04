@@ -40,6 +40,10 @@ jobs:
       # drift from libs/agent-rules/content/**.
       - run: yarn nx build agent-rules && node dist/libs/agent-rules/src/index.js check
 
+      # Changeset notes are capped at one to two sentences / 40 words (see the `changeset` skill).
+      # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
+      - run: yarn lint:changesets
+
       - run: yarn nx run-many -t lint
 
       - run: yarn nx run-many -t test

@@ -12,6 +12,7 @@
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
     "commit": "yarn dlx @commitlint/prompt-cli",
     "docs": "nx serve docs",
+    "lint:changesets": "node ./tools/scripts/lint-changesets.js",
     "prepare": "husky",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",

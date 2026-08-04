@@ -174,6 +174,19 @@ Re-read the note and count. More than two sentences, or more than three bullets,
 means delete and rewrite - not trim. Then check every remaining clause answers
 "what do I now get?" rather than "how does it work?".
 
+### The bar is enforced, not advisory
+
+`yarn lint:changesets` fails on any unreleased changeset over **40 words**, with more
+than **one paragraph**, more than **three bullets**, or with frontmatter that names an
+unknown package or bump level. It runs in three places: a `PostToolUse` hook checks the
+single file the moment you write it, `.husky/pre-commit` checks the staged ones, and CI
+checks every unreleased one - so an over-long note comes straight back at you.
+
+When it fires, **delete the note and write the one-sentence version**. Do not shave
+words off the paragraphs you have until the count passes: a 40-word note that is a
+compressed guide is still the wrong thing. Only entries already listed in
+`.changeset/pre.json` are exempt, and only because they are locked.
+
 ## Editing and consolidating unreleased changesets
 
 A changeset is **unreleased** until its name appears in the `changesets` array of

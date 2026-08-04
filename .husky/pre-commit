@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# Holds staged changeset notes to the bar in the `changeset` skill (one to two sentences, 40 words).
+# Only staged files are passed, so a commit is never blocked by an over-long note someone else left
+# behind - and a commit touching no changeset skips the check entirely.
+
+staged=$(git diff --cached --name-only --diff-filter=ACM -- '.changeset/*.md')
+
+if [ -n "$staged" ]; then
+  # Word-split on purpose - changeset filenames never contain spaces.
+  # shellcheck disable=SC2086
+  node ./tools/scripts/lint-changesets.js $staged
+fi

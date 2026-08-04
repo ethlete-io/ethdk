@@ -6,6 +6,18 @@
     ]
   },
   "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/lint-changeset.py\"",
+            "timeout": 25
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [

@@ -38,6 +38,10 @@ jobs:
 
       - run: yarn nx format:check
 
+      # Changeset notes are capped at one to two sentences / 40 words (see the `changeset` skill).
+      # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
+      - run: yarn lint:changesets
+
       - run: yarn nx run-many -t lint
 
       - run: yarn nx run-many -t test
