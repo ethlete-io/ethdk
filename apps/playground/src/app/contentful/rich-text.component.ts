@@ -171,7 +171,8 @@ export class RichTextComponent {
 
     const data = clone(this.data());
 
-    const entry = data.includes.Entry.find((e) => e.sys.id === '1dpXB34M54E4Qm7U5Ox2R3');
+    const entries = data.includes.Entry as { sys: { id: string }; fields: { name?: string } }[];
+    const entry = entries.find((e) => e.sys.id === '1dpXB34M54E4Qm7U5Ox2R3');
     if (entry?.fields.name) {
       entry.fields.name = 'This is updated. The count of total updates is ' + this.updateCount;
 
