@@ -1,6 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
+import { ApplicationRef, createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { createQueryClient, createQueryCreator, QueryClientRef, QueryRuntimeErrorCode } from '../../http';
 import { QueryStateType } from '../query';
@@ -29,6 +29,26 @@ describe('LegacyQueryCreator.prepare', () => {
 
     httpTesting.expectOne('https://api.example.com/person').flush({ id: 1 });
     expect(query.rawState.type).toBe(QueryStateType.Success);
+  });
+
+  it('calls onSuccess for a mutation answered with 204 no content', async () => {
+    const creator = createLegacyQueryCreator({
+      name: 'legacyPostReport',
+      creator: createQueryCreator(undefined, { client, method: 'POST', route: '/report' }),
+    });
+
+    const query = TestBed.runInInjectionContext(() => creator.prepare({}));
+
+    query.execute();
+
+    let onSuccessCalls = 0;
+    query.onSuccess(() => onSuccessCalls++);
+
+    httpTesting.expectOne('https://api.example.com/report').flush(null, { status: 204, statusText: 'No Content' });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(query.rawState.type).toBe(QueryStateType.Success);
+    expect(onSuccessCalls).toBe(1);
   });
 
   it('throws a named error instead of NG0203 when called without an injection context', () => {

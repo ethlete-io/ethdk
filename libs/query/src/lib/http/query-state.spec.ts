@@ -1,3 +1,4 @@
+import { HttpEventType, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { setupQueryState } from './query-state';
 
@@ -41,5 +42,21 @@ describe('setupQueryState', () => {
     const state = setup<string>();
     state.rawResponse.set('hello' as never);
     expect(state.response()).toBe('hello');
+  });
+
+  it('should report success for an empty response body once the response event arrived', () => {
+    const state = setup<string>();
+
+    state.latestHttpEvent.set(new HttpResponse<never>({ status: 204 }));
+
+    expect(state.executionState()).toEqual({ type: 'success', response: null });
+  });
+
+  it('should stay null while only the sent event arrived', () => {
+    const state = setup<string>();
+
+    state.latestHttpEvent.set({ type: HttpEventType.Sent });
+
+    expect(state.executionState()).toBeNull();
   });
 });

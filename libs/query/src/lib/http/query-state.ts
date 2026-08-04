@@ -1,3 +1,4 @@
+import { HttpEventType } from '@angular/common/http';
 import { Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
 import { Observable, Subject, Subscription } from 'rxjs';
 import { QueryDevtoolsStatsRecorder } from '../devtools/query-devtools-stats';
@@ -145,10 +146,13 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
         type: 'failure',
         error: currentError,
       };
-    } else if (currentResponse) {
+    } else if (currentResponse !== null || latestHttpEvent()?.type === HttpEventType.Response) {
+      // A response event having arrived is what makes the execution a success, not a truthy body: a 204 (or any
+      // other empty payload) sets `response` to `null`, which would otherwise be indistinguishable from a query
+      // that never ran - leaving `filterSuccess`, `onSuccess` and the success handlers waiting forever.
       return {
         type: 'success',
-        response: currentResponse,
+        response: currentResponse as ResponseType<TArgs>,
       };
     } else {
       return null;
