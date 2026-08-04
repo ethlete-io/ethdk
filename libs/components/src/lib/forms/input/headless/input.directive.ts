@@ -37,11 +37,13 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
    */
   private nativeSyncSuppressed = false;
 
-  public hasValue = computed(() => this.mixed() || this.value().length > 0);
+  // A bound field may hold `null` for "empty" (a nullable string field, e.g. the query form's
+  // search field), so neither of these may assume a string is there.
+  public hasValue = computed(() => this.mixed() || !!this.value());
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
 
   /** The text the native input renders - empty while mixed so the raw value never reaches the DOM. */
-  public displayValue = computed(() => (this.mixed() ? '' : this.value()));
+  public displayValue = computed(() => (this.mixed() ? '' : (this.value() ?? '')));
 
   /** The placeholder the native input renders - `mixedLabel` overrides the consumer placeholder while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));

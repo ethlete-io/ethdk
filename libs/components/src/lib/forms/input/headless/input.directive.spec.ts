@@ -1,5 +1,6 @@
 import { Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { form, FormField } from '@angular/forms/signals';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { MASKED_INPUT_IMPORTS } from '../../masked-input/masked-input.imports';
@@ -65,6 +66,16 @@ class MixedMaskedInputTestHost {
   imports: [INPUT_IMPORTS],
 })
 class AriaLabelInputTestHost {}
+
+@Component({
+  template: `<input [formField]="searchForm.search" etInput />`,
+  imports: [InputDirective, FormField],
+})
+class NullableFieldTestHost {
+  // A nullable string field, e.g. the query form's search field while it is empty.
+  public model = signal<{ search: string | null }>({ search: null });
+  public searchForm = form(this.model);
+}
 
 @Component({
   template: `
@@ -181,6 +192,31 @@ describe('InputDirective', () => {
 
     it('should have text type by default', () => {
       expect(inputDir.type()).toBe('text');
+    });
+  });
+
+  describe('nullable bound field', () => {
+    let fixture: ComponentFixture<NullableFieldTestHost>;
+    let inputDir: InputDirective;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [NullableFieldTestHost] });
+      fixture = TestBed.createComponent(NullableFieldTestHost);
+      fixture.detectChanges();
+      inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
+    });
+
+    it('reads a null value as empty', () => {
+      expect(inputDir.hasValue()).toBe(false);
+      expect(inputDir.displayValue()).toBe('');
+    });
+
+    it('reports a value once the field holds text', () => {
+      fixture.componentInstance.model.set({ search: 'angular' });
+      fixture.detectChanges();
+
+      expect(inputDir.hasValue()).toBe(true);
+      expect(inputDir.displayValue()).toBe('angular');
     });
   });
 
