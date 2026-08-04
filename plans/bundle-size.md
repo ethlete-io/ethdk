@@ -25,12 +25,7 @@ pipeline, the goldens and the rules for reading the numbers live in
 
 ## Open
 
-1. **Injection-only CSS candidates** - a byte win needs a breaking opt-in, so do them as on-demand
-   mounts instead: choice-field card variant (`choice-field.component.css:235-340`, 2 kB, 66 % of the
-   sheet), carousel autoplay chrome (`carousel.component.css:165-349`, ~1.8-2.5 kB - autoplay is a
-   host directive, so bytes cannot move without breaking), cascader sheet-mode slice
-   (`cascader-panel.component.css:666-717` + keyframes, ~1 kB).
-2. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
+1. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
    The barrel is fine (`TableComponent` alone 20.5 kB vs `TABLE_IMPORTS` 21.4 kB); the cost is inside
    `table.component.ts` (32.7 kB min, ~40 % of the entry): sticky-column machinery
    (`:447`, `:515-538`, `:1566`), autosizing (`:523`, `:1629-1664`), grouped headers (`:626-651`),
@@ -101,6 +96,18 @@ from dependency bumps since the last audit, well inside tolerance.
 
 ## Measured as not worth doing - do not re-open
 
+- **Injection-only CSS candidates - the on-demand mounts already shipped, and the residual bytes are
+  217-452 B each, measured 2026-08-04.** All three slices the audit named became styles-only components
+  mounted through `injectStyleManager()` in `2c0d3c9f7`: `ChoiceFieldCardStylesComponent`,
+  `CarouselAutoplayStylesComponent` (plus `CarouselTransitionStylesComponent`) and
+  `CascaderSheetStylesComponent`. That is all the non-breaking part of the item, and it is what the item
+  was actually after - the mounts save injection and style recalculation for the majority who never use
+  the feature. What is left is bundle bytes, and each mount's reference is static, so freeing them needs
+  a breaking opt-in provider per domain. Stubbing each sheet and rebuilding:
+  `choice-field` 11,834 → 11,442 B (**392 B**), `carousel` 29,565 → 29,113 B (**452 B**), `cascader`
+  43,554 → 43,337 B (**217 B**). The audit's estimates (2 kB, ~1.8-2.5 kB, ~1 kB) came from raw CSS line
+  counts and are 4-5× the real gz cost - the same proxy failure as the slider dedupe below. A provider
+  and its docs cost a meaningful fraction of 400 B at the top end, so there is nothing here.
 - **Per-feature RTE label defaults - 526 B gz, measured 2026-08-04** (the 2026-08-01 audit guessed
   ~1 kB). Trimming `DEFAULT_RICH_TEXT_EDITOR_LABELS` to the ten keys an always-loaded editor reads
   (`toolbar` + the nine built-in tool buttons) takes the base entry 30,531 B → 30,005 B. Getting there
