@@ -1,6 +1,6 @@
 # Rules
 
-Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used with the `ethlete/` prefix (e.g. `ethlete/no-inject-chain`). Only `no-impure-top-level-provider` takes options; the rest take none.
+Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used with the `ethlete/` prefix (e.g. `ethlete/no-inject-chain`). Only `no-impure-top-level-provider` and `no-legacy-prepare-without-injector` take options; the rest take none.
 
 - **Fix** - 🔧 means the rule has an auto-fixer applied by `eslint --fix` / `nx lint --fix`.
 - **Default** - the severity set by the [`recommended` config](/eslint/). `warn` is used for migration-style rules where existing code may reasonably still violate them.
@@ -28,11 +28,12 @@ const getName = (user: User) => user.name;
 
 ## Dependency injection
 
-| Rule                            | What it enforces                                                                                      | Fix | Default |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-inject-chain`               | No member access chained directly off `inject()` - assign the injected value to a `const` first       |     | error   |
-| `no-typed-injected-element-ref` | `inject<ElementRef<HTMLElement>>(ElementRef)` - the generic goes on `inject()`, not on `ElementRef`   | 🔧  | error   |
-| `no-impure-top-level-provider`  | No module-scope destructuring of a factory call; optionally require `@__PURE__` on module-scope calls | 🔧  | error   |
+| Rule                                 | What it enforces                                                                                                                               | Fix | Default |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-inject-chain`                    | No member access chained directly off `inject()` - assign the injected value to a `const` first                                                |     | error   |
+| `no-typed-injected-element-ref`      | `inject<ElementRef<HTMLElement>>(ElementRef)` - the generic goes on `inject()`, not on `ElementRef`                                            | 🔧  | error   |
+| `no-impure-top-level-provider`       | No module-scope destructuring of a factory call; optionally require `@__PURE__` on module-scope calls                                          | 🔧  | error   |
+| `no-legacy-prepare-without-injector` | A legacy query creator's `prepare()` passes an explicit `injector` when it runs from a callback, outside the injection context that created it | 🔧  | error   |
 
 ```ts
 // ❌ chaining off inject()

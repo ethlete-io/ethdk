@@ -1,4 +1,4 @@
-# Style Guide v0.21.0
+# Style Guide v0.22.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -49,6 +49,7 @@ Run `npx nx lint <project> --fix` - the rules below are enforced (and mostly aut
 | Injected providers `private` by default, `protected` only when template/host-visible; explicit accessibility on reachable members | `ethlete/inject-member-accessibility`, `ethlete/template-member-accessibility`                                                                                                                                      |
 | No `inject(X).member` chaining; no pure member aliases                                                                            | `ethlete/no-inject-chain`, `ethlete/no-member-alias`                                                                                                                                                                |
 | No module-scope destructuring of a factory call; `@__PURE__` on module-scope calls in library source                              | `ethlete/no-impure-top-level-provider`                                                                                                                                                                              |
+| Legacy query `prepare()` in a callback passes an explicit `injector`                                                              | `ethlete/no-legacy-prepare-without-injector`                                                                                                                                                                        |
 | No redundant `@internal` on `private`/`protected` members                                                                         | `ethlete/no-redundant-internal`                                                                                                                                                                                     |
 | Observable vars/props end with `$`                                                                                                | `ethlete/require-dollar-suffix`                                                                                                                                                                                     |
 | No body in `subscribe()`; no `subscribe` in `pipe()`; no RxJS in `effect()`/`computed()`                                          | `ethlete/no-subscribe-with-body`, `ethlete/no-subscribe-in-pipe`, `ethlete/no-rxjs-in-effect`                                                                                                                       |

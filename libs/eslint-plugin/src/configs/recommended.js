@@ -247,6 +247,9 @@ const recommendedTs = {
     // Observable variables/properties must end with $
     'ethlete/require-dollar-suffix': 'error',
 
+    // Legacy query creator prepare() calls that run outside an injection context need an explicit injector
+    'ethlete/no-legacy-prepare-without-injector': 'error',
+
     // No .subscribe() inside a .pipe() callback
     'ethlete/no-subscribe-in-pipe': 'error',
 

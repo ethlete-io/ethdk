@@ -54,6 +54,7 @@ const noNativeHtmlInputName = require('./rules/no-native-html-input-name');
 const preferPresentTenseOutput = require('./rules/prefer-present-tense-output');
 const preferStaticBooleanProperties = require('./rules/prefer-static-boolean-properties');
 const noImpureTopLevelProvider = require('./rules/no-impure-top-level-provider');
+const noLegacyPrepareWithoutInjector = require('./rules/no-legacy-prepare-without-injector');
 const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -64,6 +65,7 @@ const plugin = {
   },
   rules: {
     'no-inject-chain': noInjectChain,
+    'no-legacy-prepare-without-injector': noLegacyPrepareWithoutInjector,
     'no-trivial-return-type': noTrivialReturnType,
     'no-subscribe-in-pipe': noSubscribeInPipe,
     'no-rxjs-in-effect': noRxjsInEffect,

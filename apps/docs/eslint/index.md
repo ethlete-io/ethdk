@@ -1,6 +1,6 @@
 # @ethlete/eslint-plugin
 
-Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide - 53 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access and TypeScript style. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
+Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide - 54 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access and TypeScript style. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
 
 ```bash
 yarn add --dev @ethlete/eslint-plugin
@@ -81,7 +81,7 @@ Besides the [custom `ethlete/*` rules](/eslint/rules), `recommendedTs` configure
 
 ## Fixing violations
 
-None of the custom rules take options - severities are the only knob, and the recommended config sets almost everything to `error` (a handful of `@ethlete/core`-migration rules are `warn`; see the [rule reference](/eslint/rules)). Run lint with `--fix` first and only hand-fix what remains:
+Almost none of the custom rules take options - severity is the only knob for all but two ([`no-impure-top-level-provider`](/eslint/rules#no-impure-top-level-provider) and [`no-legacy-prepare-without-injector`](/eslint/rules#no-legacy-prepare-without-injector)) - and the recommended config sets almost everything to `error` (a handful of `@ethlete/core`-migration rules are `warn`; see the [rule reference](/eslint/rules)). Run lint with `--fix` first and only hand-fix what remains:
 
 ```bash
 yarn nx lint <project> --fix
