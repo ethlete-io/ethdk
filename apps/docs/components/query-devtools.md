@@ -64,13 +64,43 @@ character the keyboard reports.
 
 | Tab           | Shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Queries**   | Every registered query, filterable by client. Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with) and [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions.                                                                       |
+| **Queries**   | Every registered query, [filterable by client, endpoint and live state](#finding-a-query-in-a-long-list). Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with) and [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions.           |
 | **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                     |
 | **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                               |
 | **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button, and [the client's own features with their configuration](#features-show-what-they-were-configured-with). |
 | **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+## Finding a query in a long list
+
+A real app registers a lot of queries, so the Queries tab narrows on three axes
+that stack:
+
+- **The client picker** scopes the list to one query client (or, after using
+  **Inspect**, to exactly the queries the picked element created).
+- **The filter box** matches a query's method, [resolved route](#routes-show-the-params-that-were-used),
+  full request URL and client name. Terms are whitespace-separated and **all** have
+  to match, so `get post` finds `GET /post/12` without the `POST` mutations that
+  `post` alone also matches.
+- **The status chips** - **Failing**, **Loading**, **Stale** - each carry the
+  number of queries they would leave. Picking several _widens_ the result
+  (failing **or** stale), the way a network panel's type chips do, and a chip with
+  no matches is disabled. The counts are computed before the chips are applied, so
+  a chip always states what picking it yields.
+
+The count next to the picker reads `12 of 87` while anything is narrowing the
+list, and **Clear filters** drops the term and the chips while keeping the client
+scope. The [Insomnia download](#export-to-insomnia) exports whatever is listed, so
+these filters pick what ends up in the collection.
+
+### Tabs say what they hold
+
+Each tab carries the number of entries behind it, and a second red badge with how
+many of them are failing - queries in an error state, stacks with an error, failed
+sequence steps, `request-error` rows in the event log. A query that fails in a tab
+you are not looking at is visible from the tab strip, which is what turns the
+panel from something you check into something that tells you.
 
 ## Routes show the params that were used
 
@@ -182,9 +212,9 @@ replayed, tweaked and shared outside the app:
 
 - **Insomnia** in the selected query's action row copies a one-request collection
   to the clipboard - import it with `Import > From Clipboard`.
-- **⤓ Insomnia** in the Queries toolbar downloads everything currently listed (the
-  client and inspect filters apply) as one collection, with a folder per query
-  client.
+- **⤓ Insomnia** in the Queries toolbar downloads everything currently listed
+  ([every filter applies](#finding-a-query-in-a-long-list)) as one collection, with
+  a folder per query client.
 
 Both export what the query actually sent: the resolved URL, the JSON body, and the
 headers as the request resolved them - the query client's headers with the
@@ -257,7 +287,8 @@ components are bound to, which the browser Network tab can't do:
 ## Persistence
 
 The view state - open/closed, panel height, active tab, selected client, selected
-query, inspect filter, value-explorer search and expanded tree paths - is
+query, inspect filter, the query filter term and status chips, value-explorer
+search and expanded tree paths - is
 persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives a
 page reload within the tab session without leaking devtools state across sessions.
 (Restoring the selected query relies on registry ids being stable across reloads,

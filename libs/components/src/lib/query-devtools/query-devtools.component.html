@@ -13,6 +13,7 @@
     <header class="et-query-devtools-header">
       <nav class="et-query-devtools-tabs" role="tablist">
         @for (tab of tabs; track tab.id) {
+          @let badge = tabBadges()[tab.id];
           <button
             [class.et-query-devtools-tab--active]="activeTab() === tab.id"
             [attr.aria-selected]="activeTab() === tab.id"
@@ -22,6 +23,17 @@
             role="tab"
           >
             {{ tab.label }}
+            @if (badge.count) {
+              <span class="et-query-devtools-tab-badge">{{ badge.count }}</span>
+            }
+            @if (badge.errors) {
+              <span
+                class="et-query-devtools-tab-badge et-query-devtools-tab-badge--error"
+                title="{{ badge.errors }} failing"
+              >
+                {{ badge.errors }}
+              </span>
+            }
           </button>
         }
       </nav>
@@ -73,47 +85,93 @@
           <div class="et-query-devtools-master-detail">
             <div class="et-query-devtools-list">
               <div [class.et-query-devtools-toolbar--filtered]="!!inspectFilterIds()" class="et-query-devtools-toolbar">
-                @if (inspectFilterIds(); as ids) {
-                  <span class="et-query-devtools-filter-chip">
-                    <span class="et-query-devtools-filter-icon" aria-hidden="true">⌖</span>
-                    Inspected element
-                    <span class="et-query-devtools-filter-count">{{ ids.length }}</span>
+                <div class="et-query-devtools-toolbar-row">
+                  @if (inspectFilterIds(); as ids) {
+                    <span class="et-query-devtools-filter-chip">
+                      <span class="et-query-devtools-filter-icon" aria-hidden="true">⌖</span>
+                      Inspected element
+                      <span class="et-query-devtools-filter-count">{{ ids.length }}</span>
+                    </span>
+                    <button
+                      (click)="clearInspectFilter()"
+                      class="et-query-devtools-filter-clear"
+                      type="button"
+                      title="Clear the inspection filter and show all queries"
+                    >
+                      <span aria-hidden="true">✕</span>
+                      Clear
+                    </button>
+                  } @else {
+                    <label class="et-query-devtools-field">
+                      <span>Client</span>
+                      <select
+                        #clientSelect
+                        [value]="selectedClientName() ?? ''"
+                        (change)="selectClient(clientSelect.value || null)"
+                        class="et-query-devtools-select"
+                      >
+                        <option value="">All clients</option>
+                        @for (name of clientNames(); track name) {
+                          <option [value]="name">{{ name }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
+                  <span class="et-query-devtools-count">
+                    @if (isQueryListNarrowed()) {
+                      {{ filteredQueries().length }} of {{ scopedQueryCount() }}
+                    } @else {
+                      {{ scopedQueryCount() }}
+                    }
                   </span>
                   <button
-                    (click)="clearInspectFilter()"
-                    class="et-query-devtools-filter-clear"
+                    [disabled]="!filteredQueries().length"
+                    (click)="downloadInsomniaCollection()"
+                    class="et-query-devtools-btn et-query-devtools-toolbar-btn"
                     type="button"
-                    title="Clear the inspection filter and show all queries"
+                    title="Download the listed queries as an Insomnia collection, with the auth provider's token refresh"
                   >
-                    <span aria-hidden="true">✕</span>
-                    Clear
+                    ⤓ Insomnia
                   </button>
-                } @else {
-                  <label class="et-query-devtools-field">
-                    <span>Client</span>
-                    <select
-                      #clientSelect
-                      [value]="selectedClientName() ?? ''"
-                      (change)="selectClient(clientSelect.value || null)"
-                      class="et-query-devtools-select"
+                </div>
+
+                <div class="et-query-devtools-toolbar-row">
+                  <input
+                    #queryFilterInput
+                    [value]="queryFilter()"
+                    (input)="queryFilter.set(queryFilterInput.value)"
+                    class="et-query-devtools-search"
+                    type="search"
+                    placeholder="filter method / route / url…"
+                    aria-label="Filter queries"
+                  />
+                  @for (facet of facets; track facet.id) {
+                    @let count = facetCounts()[facet.id];
+                    @let isActive = queryFacets().has(facet.id);
+                    <button
+                      [class.et-query-devtools-facet--active]="isActive"
+                      [attr.aria-pressed]="isActive"
+                      [disabled]="!count && !isActive"
+                      (click)="toggleFacet(facet.id)"
+                      class="et-query-devtools-chip et-query-devtools-facet"
+                      type="button"
                     >
-                      <option value="">All clients</option>
-                      @for (name of clientNames(); track name) {
-                        <option [value]="name">{{ name }}</option>
-                      }
-                    </select>
-                  </label>
-                  <span class="et-query-devtools-count">{{ filteredQueries().length }}</span>
-                }
-                <button
-                  [disabled]="!filteredQueries().length"
-                  (click)="downloadInsomniaCollection()"
-                  class="et-query-devtools-btn et-query-devtools-toolbar-btn"
-                  type="button"
-                  title="Download the listed queries as an Insomnia collection, with the auth provider's token refresh"
-                >
-                  ⤓ Insomnia
-                </button>
+                      {{ facet.label }}
+                      <span class="et-query-devtools-facet-count">{{ count }}</span>
+                    </button>
+                  }
+                  @if (isQueryListNarrowed()) {
+                    <button
+                      (click)="clearQueryFilters()"
+                      class="et-query-devtools-filter-clear et-query-devtools-toolbar-btn"
+                      type="button"
+                      title="Clear the search term and the status chips"
+                    >
+                      <span aria-hidden="true">✕</span>
+                      Clear filters
+                    </button>
+                  }
+                </div>
               </div>
 
               @for (item of filteredQueries(); track item.entry.id) {
@@ -142,7 +200,13 @@
                   }
                 </button>
               } @empty {
-                @if (inspectFilterIds()) {
+                <!-- An empty scope is a different problem from a filter that matches nothing, and only the
+                     latter is the user's own doing - so it names the way out. -->
+                @if (scopedQueryCount()) {
+                  <p class="et-query-devtools-empty">
+                    No query matches the filter · {{ scopedQueryCount() }} in scope.
+                  </p>
+                } @else if (inspectFilterIds()) {
                   <p class="et-query-devtools-empty">
                     The inspected element's queries are no longer registered. Clear the filter.
                   </p>

@@ -48,6 +48,12 @@ type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' 
 
 type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 
+/** A live-state facet the Queries list can be narrowed to. */
+type QueryListFacet = 'error' | 'loading' | 'stale';
+
+/** What a tab holds, as its badge reports it: how many entries, and how many of them are failing. */
+type TabBadge = { count: number; errors: number };
+
 /**
  * A chunk of a route as rendered: literal path text, a path param (`name` is the param it fills in) or
  * the query string of the request that ran. The kind becomes the segment's class.
@@ -96,6 +102,8 @@ type PersistedState = {
   selectedClientName?: string | null;
   selectedQueryId?: string | null;
   inspectFilterIds?: string[] | null;
+  queryFilter?: string;
+  queryFacets?: QueryListFacet[];
   jsonSearch?: string;
   expandedSteps?: string[];
   jsonExpanded?: string[];
@@ -233,6 +241,13 @@ export class QueryDevtoolsComponent {
     { id: 'events', label: 'Events' },
   ] satisfies { id: DevtoolsTab; label: string }[];
 
+  /** The status chips above the Queries list, in the order a problem is usually looked for. */
+  protected readonly facets = [
+    { id: 'error', label: 'Failing' },
+    { id: 'loading', label: 'Loading' },
+    { id: 'stale', label: 'Stale' },
+  ] satisfies { id: QueryListFacet; label: string }[];
+
   protected readonly shortcut = queryDevtoolsShortcutLabel();
 
   protected open = signal(this.persisted.open ?? false);
@@ -245,6 +260,12 @@ export class QueryDevtoolsComponent {
   // Independent per-drawer selection so the Stacks / Sequences drawers don't share the Queries tab's.
   protected stackSelectedQueryId = signal<string | null>(null);
   protected sequenceSelectedQueryId = signal<string | null>(null);
+
+  /** Free-text narrowing of the Queries list. Every whitespace-separated term has to match. */
+  protected queryFilter = signal(this.persisted.queryFilter ?? '');
+
+  /** The status facets the Queries list is narrowed to. Empty means no status narrowing. */
+  public queryFacets = signal<ReadonlySet<QueryListFacet>>(new Set(this.persisted.queryFacets ?? []));
 
   protected eventLog = signal<EventLogItem[]>([]);
 
@@ -328,19 +349,110 @@ export class QueryDevtoolsComponent {
     return Array.from(map, ([repository, info]) => ({ repository, ...info }));
   });
 
-  protected filteredQueries = computed(() => {
+  /**
+   * The queries the list is scoped to before the search box and the status chips narrow them further:
+   * either the picked client's, or exactly the inspected element's.
+   */
+  private scopedQueries = computed(() => {
     const entries = this.queryEntries();
     const inspectIds = this.inspectFilterIds();
 
-    let filtered: QueryDevtoolsEntry[];
-    if (inspectIds) {
-      filtered = entries.filter((e) => inspectIds.includes(e.id));
-    } else {
-      const client = this.selectedClientName();
-      filtered = client ? entries.filter((e) => e.meta.clientName === client) : entries;
+    if (inspectIds) return entries.filter((e) => inspectIds.includes(e.id));
+
+    const client = this.selectedClientName();
+
+    return client ? entries.filter((e) => e.meta.clientName === client) : entries;
+  });
+
+  private searchedQueries = computed(() => {
+    const items = this.scopedQueries().map((entry) => ({ entry, query: entry.handle as AnyQuery }));
+    const terms = this.queryFilter().trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+    if (!terms.length) return items;
+
+    return items.filter((item) => {
+      const haystack = this.queryHaystack(item.entry, item.query);
+
+      return terms.every((term) => haystack.includes(term));
+    });
+  });
+
+  /**
+   * How many queries each status chip would leave. Counted before the active chips are applied, so a
+   * chip always states what picking it yields rather than what the current selection happens to show.
+   */
+  protected facetCounts = computed(() => {
+    const counts: Record<QueryListFacet, number> = { error: 0, loading: 0, stale: 0 };
+
+    for (const { query } of this.searchedQueries()) {
+      const status = this.queryStatus(query);
+
+      if (status === 'error') counts.error++;
+      if (status === 'loading') counts.loading++;
+      if (this.isStale(query)) counts.stale++;
     }
 
-    return filtered.map((entry) => ({ entry, query: entry.handle as AnyQuery }));
+    return counts;
+  });
+
+  protected filteredQueries = computed(() => {
+    const facets = this.queryFacets();
+    const items = this.searchedQueries();
+
+    if (!facets.size) return items;
+
+    return items.filter(({ query }) => this.matchesFacets(query, facets));
+  });
+
+  /** How many queries are in scope, which is what the list would show unfiltered. */
+  protected scopedQueryCount = computed(() => this.scopedQueries().length);
+
+  /** Whether the search box or a status chip is narrowing the list beyond its scope. */
+  protected isQueryListNarrowed = computed(() => !!this.queryFilter().trim() || this.queryFacets().size > 0);
+
+  /** Cache entries across every client, for the Cache tab's badge. */
+  private cacheEntryCount = computed(() =>
+    this.repositories().reduce((total, { repository }) => {
+      // Read the version signal so the badge recounts on every cache mutation.
+      repository.subtle.cacheVersion();
+
+      return total + repository.subtle.cacheEntries().length;
+    }, 0),
+  );
+
+  /**
+   * What each tab holds, so a failing query in a tab that is not open is still visible. Reading it
+   * subscribes the tab bar to every entry's live state - which is the point of the badges.
+   */
+  protected tabBadges = computed<Record<DevtoolsTab, TabBadge>>(() => {
+    const queries = this.queryEntries();
+    const stacks = this.stackEntries();
+    const sequences = this.sequenceEntries();
+    const events = this.eventLog();
+
+    return {
+      queries: {
+        count: queries.length,
+        errors: queries.filter((entry) => this.queryStatus(entry.handle as AnyQuery) === 'error').length,
+      },
+      stacks: {
+        count: stacks.length,
+        errors: stacks.filter((entry) =>
+          entry.kind === 'paged-query-stack' ? !!this.asPagedStack(entry).error() : !!this.asStack(entry).anyError(),
+        ).length,
+      },
+      sequences: {
+        count: sequences.length,
+        errors: sequences.filter((entry) => (this.asSequence(entry)?.failedAt() ?? null) !== null).length,
+      },
+      auth: { count: this.authEntries().length, errors: 0 },
+      ws: { count: this.wsEntries().length, errors: 0 },
+      cache: { count: this.cacheEntryCount(), errors: 0 },
+      events: {
+        count: events.length,
+        errors: events.filter((event) => event.type === 'request-error').length,
+      },
+    };
   });
 
   protected selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
@@ -431,6 +543,8 @@ export class QueryDevtoolsComponent {
         selectedClientName: this.selectedClientName(),
         selectedQueryId: this.selectedQueryId(),
         inspectFilterIds: this.inspectFilterIds(),
+        queryFilter: this.queryFilter(),
+        queryFacets: [...this.queryFacets()],
         jsonSearch: this.jsonSearch(),
         expandedSteps: [...this.expandedSteps()],
         jsonExpanded: [...this.jsonExpandedPaths()],
@@ -534,6 +648,20 @@ export class QueryDevtoolsComponent {
 
   protected clearInspectFilter() {
     this.inspectFilterIds.set(null);
+  }
+
+  protected toggleFacet(facet: QueryListFacet) {
+    const next = new Set(this.queryFacets());
+
+    if (!next.delete(facet)) next.add(facet);
+
+    this.queryFacets.set(next);
+  }
+
+  /** Drops the search term and the status chips, keeping the client / inspection scope. */
+  protected clearQueryFilters() {
+    this.queryFilter.set('');
+    this.queryFacets.set(new Set());
   }
 
   protected toggleInspect() {
@@ -1105,6 +1233,27 @@ export class QueryDevtoolsComponent {
     if (activity.avgDurationMs !== null) parts.push(`avg ${this.formatDuration(activity.avgDurationMs)}`);
 
     return `activity: ${parts.join(' · ')}`;
+  }
+
+  /** A query matches the chips if it is in any of the picked states - chips widen, they don't intersect. */
+  private matchesFacets(query: AnyQuery, facets: ReadonlySet<QueryListFacet>) {
+    const status = this.queryStatus(query);
+
+    return (
+      (facets.has('error') && status === 'error') ||
+      (facets.has('loading') && status === 'loading') ||
+      (facets.has('stale') && this.isStale(query))
+    );
+  }
+
+  /**
+   * What the search box matches against: everything the row shows, plus the resolved request URL and the
+   * client name - so a term can name an endpoint, a param value, a query string or a client.
+   */
+  private queryHaystack(entry: QueryDevtoolsEntry, query: AnyQuery) {
+    const parts = [entry.meta.method, this.queryRoute(entry, query), this.requestUrl(query), entry.meta.clientName];
+
+    return parts.join(' ').toLowerCase();
   }
 
   /** {@link routeSegments} as a plain string, for the places that cannot render markup. */

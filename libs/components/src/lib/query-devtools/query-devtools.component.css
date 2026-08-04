@@ -107,6 +107,22 @@
     border-block-end-color: var(--_et-qdt-accent);
   }
 
+  .et-query-devtools-tab-badge {
+    display: inline-block;
+    margin-inline-start: 0.5rem;
+    padding-inline: 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 12%, transparent);
+    color: var(--_et-qdt-muted);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .et-query-devtools-tab-badge--error {
+    background: color-mix(in srgb, var(--_et-qdt-error) 25%, transparent);
+    color: var(--_et-qdt-fg);
+  }
+
   .et-query-devtools-header-actions {
     display: flex;
     align-items: center;
@@ -429,11 +445,28 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 0.8rem;
     padding: 0.8rem;
     position: sticky;
     inset-block-start: 0;
     background: var(--_et-qdt-bg);
+  }
+
+  /* A toolbar that carries more than one group of controls puts each on its own full-width line, so the
+     groups keep their own trailing edge instead of competing for one. */
+  .et-query-devtools-toolbar-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1 1 100%;
+    gap: 0.8rem;
+  }
+
+  /* The list column is a third of the panel, so a filter box sharing its line with the status chips would
+     leave neither enough room. Claiming the full line puts the chips underneath at any panel width. */
+  .et-query-devtools-toolbar-row .et-query-devtools-search {
+    flex: 1 1 100%;
   }
 
   /* Layered over the opaque base so the sticky toolbar still hides the rows scrolling under it; the
@@ -803,6 +836,39 @@
   .et-query-devtools-chip--success {
     color: var(--_et-qdt-success);
     border-color: color-mix(in srgb, var(--_et-qdt-success) 50%, transparent);
+  }
+
+  /* A chip that is also a filter toggle. Accent means "this filter is on" - the match count next to the
+     label is what says whether there is anything to look at, so the states never compete for colour. */
+  .et-query-devtools-facet {
+    appearance: none;
+    cursor: pointer;
+    color: var(--_et-qdt-muted);
+    font: inherit;
+    font-size: 1.1rem;
+    line-height: 1.4;
+  }
+
+  .et-query-devtools-facet:hover:not(:disabled) {
+    color: var(--_et-qdt-fg);
+    border-color: color-mix(in srgb, var(--_et-qdt-accent) 60%, transparent);
+  }
+
+  .et-query-devtools-facet:disabled {
+    color: var(--_et-qdt-subtle);
+    cursor: default;
+  }
+
+  .et-query-devtools-facet--active {
+    color: var(--_et-qdt-accent);
+    border-color: color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
+    background: color-mix(in srgb, var(--_et-qdt-accent) 14%, transparent);
+  }
+
+  .et-query-devtools-facet-count {
+    font-variant-numeric: tabular-nums;
+    color: inherit;
+    opacity: 0.75;
   }
 
   .et-query-devtools-card {
