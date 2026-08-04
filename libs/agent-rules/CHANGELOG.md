@@ -1,5 +1,11 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.3
+
+### Patch Changes
+
+- [`ca0bf2f`](https://github.com/ethlete-io/ethdk/commit/ca0bf2f09cd5bd925da52bdb17c93bb62bda8735) Thanks [@TomTomB](https://github.com/TomTomB)! - The `comments` rule is now an allowlist: four kinds of comment are allowed and everything else gets deleted.
+
 ## 0.1.0-next.2
 
 ### Minor Changes

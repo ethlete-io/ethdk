@@ -1,5 +1,22 @@
 # @ethlete/query
 
+## 6.0.0-next.25
+
+### Major Changes
+
+- [`e9fbdab`](https://github.com/ethlete-io/ethdk/commit/e9fbdab00dfe50a20c1b7fe284ab29fd91a25e77) Thanks [@TomTomB](https://github.com/TomTomB)! - `createWebSocketClient` now takes socket.io's `io` as a required option, so `@ethlete/query` no longer
+  pulls `socket.io-client` (~13 kB gz) into apps that never open a socket. New:
+  `createWebSocketTestDouble()` in `@ethlete/query/testing`.
+
+### Minor Changes
+
+- [`fb32936`](https://github.com/ethlete-io/ethdk/commit/fb32936caa749895fc77348a6213d0d3ab6bd056) Thanks [@TomTomB](https://github.com/TomTomB)! - Web socket devtools now record outgoing traffic and can emit test messages, and a request reports how long its last execution took via `subtle.lastDurationMs`.
+
+### Patch Changes
+
+- [`a50a6a0`](https://github.com/ethlete-io/ethdk/commit/a50a6a01e722746cf74fe6181d2da301912528ab) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `HttpRequestLoadingProgressState.speed`, which reported 1000x the actual rate (and
+  `Infinity` on a stalled or re-executed request), and show it in the query devtools.
+
 ## 6.0.0-next.24
 
 ### Minor Changes
