@@ -67,7 +67,7 @@ const createProviders = <T>(
  * `injectX()` below it. Nothing is created until the subtree provides it.
  *
  * Assign the result to one `const`, name the halves with {@link toProvideFn} / {@link toInjectFn} /
- * {@link toToken}, and put an `@__PURE__` annotation on each of those declarations. Never destructure
+ * {@link toToken}, and put a `__PURE__` annotation comment on each of those declarations. Never destructure
  * the definition: that declaration cannot be tree-shaken, so it ships the factory's whole closure to
  * every consumer. Enforced by `ethlete/no-impure-top-level-provider`.
  */
@@ -135,7 +135,7 @@ export const defineStaticRootProvider = <T>(
   };
 };
 
-/** The `provideX` half of a provider definition. A call, so `@__PURE__` makes it droppable. */
+/** The `provideX` half of a provider definition. A call, so a `__PURE__` annotation makes it droppable. */
 export const toProvideFn = <TDefinition extends { readonly provide: unknown }>(
   definition: TDefinition,
 ): TDefinition['provide'] => definition.provide;
