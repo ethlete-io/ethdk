@@ -1,5 +1,5 @@
 import { existsSync, lstatSync, readFileSync, readlinkSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { LOCAL_CONFIG_FILE_NAME, readLocalConfig, SyncConfig } from './config';
 import { filterContent, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
@@ -47,10 +47,36 @@ export const claudeMdImportsAgentsMd = (root: string) => {
   return /^@AGENTS\.md\s*$/m.test(readFileSync(path, 'utf8'));
 };
 
+/** Marks a directory as an `ethlete-sdk` checkout rather than some other folder. */
+const SDK_CHECKOUT_MARKERS = ['libs/components', 'libs/core', 'libs/agent-rules'];
+
+const describeSdkSourcePath = (options: { root: string; value: unknown }) => {
+  const { root, value } = options;
+
+  if (value === undefined) return [];
+
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return [`${LOCAL_CONFIG_FILE_NAME} has an invalid "sdkSourcePath" — use a path to an ethlete-sdk checkout.`];
+  }
+
+  const absolute = resolve(root, value);
+
+  if (!existsSync(absolute)) {
+    return [`${LOCAL_CONFIG_FILE_NAME} points "sdkSourcePath" at ${absolute}, which does not exist.`];
+  }
+
+  if (SDK_CHECKOUT_MARKERS.some((marker) => !existsSync(join(absolute, marker)))) {
+    return [`${LOCAL_CONFIG_FILE_NAME} points "sdkSourcePath" at ${absolute}, which is not an ethlete-sdk checkout.`];
+  }
+
+  return [];
+};
+
 /**
- * The local file only affects hook runtime, never sync output — so the warnings here are about
+ * The local file only affects runtime behavior, never sync output — so the warnings here are about
  * the mistakes that would otherwise fail silently: a file the hooks can't parse, a key that
- * suggests someone expected sync-time overrides, or a hook name nothing matches.
+ * suggests someone expected sync-time overrides, a hook name nothing matches, or an SDK path that
+ * no longer exists (the skills reading it would just report the checkout as missing).
  */
 const collectLocalConfigWarnings = (root: string) => {
   const local = readLocalConfig(root);
@@ -65,9 +91,11 @@ const collectLocalConfigWarnings = (root: string) => {
 
   if (local.unknownKeys.length > 0) {
     warnings.push(
-      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file only supports "disableHooks"; it never changes what sync writes.`,
+      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports "disableHooks" and "sdkSourcePath"; it never changes what sync writes.`,
     );
   }
+
+  warnings.push(...describeSdkSourcePath({ root, value: local.config.sdkSourcePath }));
 
   const disable = local.config.disableHooks;
 

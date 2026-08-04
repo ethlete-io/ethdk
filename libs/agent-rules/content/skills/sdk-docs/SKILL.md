@@ -68,3 +68,4 @@ So the table guide is `{%docsBaseUrl%}/components/table`, the menu guide
 
 - Data fetching has its own guide: {%skill:query%}
 - Theming tokens and how to register themes: {%skill:theming%}
+- When the docs cannot answer it, read the SDK source: {%skill:sdk-source%}

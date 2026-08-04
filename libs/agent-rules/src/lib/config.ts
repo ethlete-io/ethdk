@@ -46,14 +46,18 @@ const readRawConfig = (root: string) => {
 };
 
 /**
- * The gitignored local config is a per-machine override, read by the generated hook scripts at
- * runtime — never by `sync`. Sync output must be identical on every machine and in CI (the
- * generated files are committed and `check` diffs them), so the only thing a local file can do
- * is turn behavior off after emit: `disableHooks: true` silences every generated hook,
- * `disableHooks: ["context-warning"]` just the named ones.
+ * The gitignored local config holds per-machine values, read at runtime — by the generated hook
+ * scripts, and by the agent while following a skill — never by `sync`. Sync output must be
+ * identical on every machine and in CI (the generated files are committed and `check` diffs them),
+ * so nothing here may change what gets emitted:
+ *
+ * - `disableHooks: true` silences every generated hook, `["context-warning"]` just the named ones.
+ * - `sdkSourcePath` points at a local `ethlete-sdk` checkout, which the SDK source and local-build
+ *   skills read when they need the SDK's own sources instead of the published package.
  */
 export type LocalConfig = {
   disableHooks?: boolean | string[];
+  sdkSourcePath?: string;
 };
 
 export type LocalConfigState =
@@ -61,7 +65,7 @@ export type LocalConfigState =
   | { exists: true; valid: false }
   | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[] };
 
-const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks'];
+const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'sdkSourcePath'];
 
 export const readLocalConfig = (root: string): LocalConfigState => {
   const path = join(root, LOCAL_CONFIG_FILE_NAME);
