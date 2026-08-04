@@ -169,6 +169,188 @@ describe('query devtools stats', () => {
     });
   });
 
+  describe('run history', () => {
+    it('should start with no runs', () => {
+      expect(createQueryDevtoolsStats().runs()).toEqual([]);
+    });
+
+    it('should open a run for an execution that reached the network', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true, body: { a: 1 } });
+
+      const [run] = recorder.runs();
+
+      expect(recorder.runs().length).toBe(1);
+      expect(run?.index).toBe(1);
+      expect(run?.status).toBe('pending');
+      expect(run?.endedAt).toBe(null);
+      expect(run?.didRequest).toBe(true);
+      expect(run?.sentBytes).toBe(JSON.stringify({ a: 1 }).length);
+    });
+
+    it('should not open a run for an execution answered without a request', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: false });
+
+      expect(recorder.runs()).toEqual([]);
+      expect(recorder.current().executions).toBe(1);
+    });
+
+    it('should close the open run with the response it received', () => {
+      const recorder = createQueryDevtoolsStats();
+      const headers = new HttpHeaders({ 'content-length': '42' });
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordResponse({ headers, body: { a: 1 } });
+
+      const [run] = recorder.runs();
+
+      expect(recorder.runs().length).toBe(1);
+      expect(run?.status).toBe('success');
+      expect(run?.endedAt).not.toBe(null);
+      expect(run?.receivedBytes).toBe(42);
+      expect(run?.response).toEqual({ a: 1 });
+      expect(run?.hasResponse).toBe(true);
+    });
+
+    it('should close the open run as failed on an error', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordError();
+
+      const [run] = recorder.runs();
+
+      expect(recorder.runs().length).toBe(1);
+      expect(run?.status).toBe('error');
+      expect(run?.endedAt).not.toBe(null);
+      expect(run?.hasResponse).toBe(false);
+    });
+
+    it('should record a response no run was waiting for as an instant', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: false });
+      recorder.recordResponse({ body: { a: 1 } });
+
+      const [run] = recorder.runs();
+
+      expect(recorder.runs().length).toBe(1);
+      expect(run?.status).toBe('success');
+      expect(run?.didRequest).toBe(false);
+      expect(run?.startedAt).toBe(run?.endedAt);
+      expect(run?.response).toEqual({ a: 1 });
+    });
+
+    it('should abort a run whose query requested again before it ended', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordExecution({ didRequest: true });
+
+      const [first, second] = recorder.runs();
+
+      expect(first?.status).toBe('aborted');
+      expect(first?.endedAt).not.toBe(null);
+      expect(second?.status).toBe('pending');
+    });
+
+    it('should close the newest open run, leaving an aborted one alone', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordResponse({ body: null });
+
+      const [first, second] = recorder.runs();
+
+      expect(first?.status).toBe('aborted');
+      expect(second?.status).toBe('success');
+    });
+
+    it('should keep the run index climbing past the runs it dropped', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      for (let i = 0; i < 30; i++) {
+        recorder.recordExecution({ didRequest: true });
+        recorder.recordResponse({ body: null });
+      }
+
+      const runs = recorder.runs();
+
+      expect(runs.length).toBe(25);
+      expect(runs[0]?.index).toBe(6);
+      expect(runs[runs.length - 1]?.index).toBe(30);
+    });
+
+    it('should only retain the response bodies of the newest runs', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      for (let i = 0; i < 8; i++) {
+        recorder.recordExecution({ didRequest: true });
+        recorder.recordResponse({ body: { run: i } });
+      }
+
+      const withBody = recorder.runs().filter((run) => run.hasResponse);
+
+      expect(withBody.length).toBe(5);
+      expect(withBody[0]?.response).toEqual({ run: 3 });
+      expect(withBody[4]?.response).toEqual({ run: 7 });
+      // A dropped body reads the same as one that never arrived, so nothing renders a stale response.
+      expect(recorder.runs()[0]?.response).toBe(null);
+    });
+
+    it('should not count a run without a body against the retained window', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      for (let i = 0; i < 6; i++) {
+        recorder.recordExecution({ didRequest: true });
+        recorder.recordError();
+      }
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordResponse({ body: { a: 1 } });
+
+      expect(recorder.runs().filter((run) => run.hasResponse).length).toBe(1);
+    });
+
+    it('should keep the url each run went to', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true, url: '/posts?page=1' });
+      recorder.recordResponse({ body: null });
+      recorder.recordExecution({ didRequest: true, url: '/posts?page=2' });
+      recorder.recordResponse({ body: null });
+
+      expect(recorder.runs().map((run) => run.url)).toEqual(['/posts?page=1', '/posts?page=2']);
+    });
+
+    it('should attribute a run it did not request to the url the query was last pointed at', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: false, url: '/posts?page=1' });
+      recorder.recordResponse({ body: null });
+
+      expect(recorder.runs()[0]?.url).toBe('/posts?page=1');
+    });
+
+    it('should clear the runs and restart the numbering on reset', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordResponse({ body: null });
+      recorder.reset();
+
+      expect(recorder.runs()).toEqual([]);
+
+      recorder.recordExecution({ didRequest: true });
+
+      expect(recorder.runs()[0]?.index).toBe(1);
+    });
+  });
+
   describe('sumQueryDevtoolsStats', () => {
     it('should return empty stats without entries', () => {
       expect(sumQueryDevtoolsStats([undefined])).toEqual(sumQueryDevtoolsStats([]));

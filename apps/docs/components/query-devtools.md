@@ -62,15 +62,16 @@ character the keyboard reports.
 
 ## Tabs
 
-| Tab           | Shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Queries**   | Every registered query, [filterable by client, endpoint and live state](#finding-a-query-in-a-long-list). Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with) and [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions.           |
-| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                     |
-| **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                            |
-| **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                               |
-| **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button, and [the client's own features with their configuration](#features-show-what-they-were-configured-with). |
-| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Tab           | Shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Queries**   | Every registered query, [filterable by client, endpoint and live state](#finding-a-query-in-a-long-list). Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the [detail view](#the-detail-view-overview-history-data) shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with), [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost) and [every run it made](#run-history-and-response-diffs), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions. |
+| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                                                                                                           |
+| **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button, and [the client's own features with their configuration](#features-show-what-they-were-configured-with).                                                                                       |
+| **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ## Finding a query in a long list
 
@@ -79,10 +80,12 @@ that stack:
 
 - **The client picker** scopes the list to one query client (or, after using
   **Inspect**, to exactly the queries the picked element created).
-- **The filter box** matches a query's method, [resolved route](#routes-show-the-params-that-were-used),
-  full request URL and client name. Terms are whitespace-separated and **all** have
+- **The filter box** matches a query's method, [resolved route](#routes-show-the-params-that-were-used)
+  and the path of the request it made. Terms are whitespace-separated and **all** have
   to match, so `get post` finds `GET /post/12` without the `POST` mutations that
-  `post` alone also matches.
+  `post` alone also matches. The origin and the client name are deliberately not
+  matched - they repeat across nearly every entry, so a one-letter term would hit
+  everything through the host name. Scoping to a client is the picker's job.
 - **The status chips** - **Failing**, **Loading**, **Stale**, **Idle** (never
   executed) - each carry the number of queries they would leave. Picking several
   _widens_ the result (failing **or** stale), the way a network panel's type chips
@@ -210,6 +213,86 @@ the response they received. That makes each row honest about what it got, but me
 the totals can exceed what the network tab reports for a shared request.
 :::
 
+## The detail view: Overview, History, Data
+
+A query's detail holds more than fits one column, so it is split into three
+sub-tabs under the pinned head and action rows:
+
+| Sub-tab      | Holds                                                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Overview** | Base URL, route, request URL, status, cache key, last-executed time, `triggeredBy`, features, and the [Activity tiles](#activity-how-often-a-query-ran-and-what-it-cost). |
+| **History**  | [Every run the query made, and the response diff](#run-history-and-response-diffs). Carries the run count as a badge.                                                     |
+| **Data**     | The [value explorer](#beyond-a-read-only-view) (args, response or error) and the GraphQL document, if any.                                                                |
+
+The **Run** / **Edit** / **Force** actions stay above the sub-tabs, so nothing you
+act on is ever behind a tab. A failing query marks the **Data** sub-tab with a red
+badge, because that is where the error body lives - a failure never hides behind a
+tab that isn't open. Which sub-tab is open is [persisted](#persistence) and shared
+by the Queries tab and the Stacks / Sequences drawers.
+
+## Timeline: what overlapped with what
+
+The Activity tiles say a query ran 40 times. They cannot say it ran 40 times in two
+seconds. The **Timeline** tab draws every request as a bar on one shared axis, so
+concurrency is visible as concurrency:
+
+- **A mount stampede** - a screen's worth of bars all starting at 0.
+- **An N+1 chain** - a staircase, each bar starting where the previous one ended.
+- **A polling stampede** - the same endpoint restarting before the last one landed.
+
+The client picker and the **Inspect** filter scope the timeline exactly as they scope
+the Queries list, and every row is labelled with the URL **that run** went to - not
+the URL the query holds now - so a query whose args changed between runs stays
+readable. Clicking a bar opens that query in the Queries tab.
+
+Bars are coloured by outcome: green for a response, red for a failure, yellow while
+in flight (the bar grows with the clock), and a dashed grey outline for an **aborted**
+run - one whose query started another request before the response arrived, so the
+response it was waiting for can no longer reach it. Two markers are worth knowing:
+
+- A **`shared`** run is an instant, because the query received a response without
+  making a request of its own: a [poll](/query/features#withpolling), another consumer
+  of the same cache entry, or [another tab](/query/multi-tab). Only the arrival time
+  is knowable, so there is no duration to draw.
+- An execution answered from a **fresh cache entry** produces no bar at all. The
+  timeline is about requests; cache hits are counted by the Activity tiles' _without
+  a request_ sub-line instead.
+
+The axis is labelled with offsets from the first run, and the toolbar states the
+window (`13 runs · over 3.98s from 13:37:03`). **Reset** clears the run history and
+the counters of every listed query, which is how you scope a measurement to one
+interaction. Each query keeps its **last 25 runs**; when the tab shows more rows
+than it draws, the toolbar says how many older runs it left out.
+
+## Run history and response diffs
+
+The **History** sub-tab of a query's detail lists its runs newest first - run number,
+start time, duration, received size and outcome. It answers "did this actually
+re-request, or was that a cache hit?" without reading a rolling event log.
+
+The newest **5** runs also keep their response body, which is what makes the
+**Diff** button work: it compares a run's response against the newest older run that
+still holds one (not necessarily the run right before it - a failed run has no body to
+compare). The diff is a flat list of paths, which is the shape that answers the two
+questions worth asking:
+
+- _The list re-rendered - what changed?_
+- _Did that poll return anything new?_ → **identical**, in as many words.
+
+Each row reads `path`, `before`, `after`, coloured by kind: green for an added path,
+red for a removed one, accent for a changed value. Arrays of records are matched by a
+unique `id` rather than by index (`$.items[id=7].score`), so a list that gained or lost
+an item reports that one item instead of every index after it shifting. Anything else
+is compared by index (`$.items[2]`). Very large diffs are capped at 200 paths and say
+so.
+
+::: tip
+Bodies are only retained while the devtools are installed, and only for the newest few
+runs of each query - a polling query would otherwise hold on to every response it ever
+received. `provideQueryDevtools()` is what allocates any of it; an app without it pays
+nothing.
+:::
+
 ## Export to Insomnia
 
 Two buttons hand a request to [Insomnia](https://insomnia.rest) so it can be
@@ -291,7 +374,8 @@ components are bound to, which the browser Network tab can't do:
 
 ## Persistence
 
-The view state - open/closed, panel height, active tab, selected client, selected
+The view state - open/closed, panel height, active tab, the query detail's
+[sub-tab](#the-detail-view-overview-history-data), selected client, selected
 query, inspect filter, the query filter term and status chips, value-explorer
 search and expanded tree paths - is
 persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives a

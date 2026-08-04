@@ -24,28 +24,17 @@ combined, an `N of M` count, and per-tab entry counts with a red failing badge.
 Documented under
 [Finding a query in a long list](../apps/docs/components/query-devtools.md).
 
-### 2. Per-request history instead of aggregates only
+### 2. Per-request history instead of aggregates only — shipped
 
-`QueryDevtoolsStats` keeps running totals plus a single `lastDurationMs`
-(`query-devtools-stats.ts:8-51`). You can see that a query ran 40 times; you
-cannot see that it ran 40 times in two seconds.
-
-Add a bounded ring buffer per query (`{ startedAt, endedAt, status, bytes }`,
-last ~25) to the stats recorder. It unlocks two features that are impossible
-today:
-
-- **Waterfall / timeline tab.** Overlapping start→end bars across all queries -
-  what fires on mount, whether a chain is an N+1, whether polling is
-  stampeding. The Events tab is a flat list of wall-clock times and cannot show
-  overlap.
-- **Response diff across executions.** The value explorer only holds the
-  _current_ response; the previous one is gone. Diffing run N against N-1
-  answers "the list re-rendered, what changed?" and "did that poll return
-  anything new?".
-
-Cost note: the buffer is only ever allocated behind
-`createQueryDevtoolsStatsRecorder()`, so it stays out of a no-devtools bundle
-the same way the rest of the stats module does.
+Shipped 2026-08-04: a 25-run ring buffer on `QueryDevtoolsStatsHandle.runs`
+(`query-devtools-stats.ts`), retaining the newest 5 response bodies, with
+`pending` / `success` / `error` / `aborted` statuses and per-run URLs. On top of
+it: a **Timeline** tab drawing every request on one shared axis, and a
+**History** section per query with a path-level **response diff**
+(`query-devtools-diff.ts`, matching records by `id`). The query detail was split
+into Overview / History / Data sub-tabs at the same time. Documented under
+[Timeline](../apps/docs/components/query-devtools.md) and
+[Run history and response diffs](../apps/docs/components/query-devtools.md).
 
 ### 3. Retry and progress are invisible
 
@@ -110,6 +99,6 @@ question, which the panel currently cannot answer.
 
 ## Suggested order
 
-1 is shipped. Next is 2 (the ring buffer, which pays for both the waterfall and
-the diff). 5 is the largest single coverage win if breadth matters more than
-depth.
+1 and 2 are shipped. Next is 3 (retry / progress visibility, which the run
+history now has a natural home for - an attempt count per run). 5 is the largest
+single coverage win if breadth matters more than depth.

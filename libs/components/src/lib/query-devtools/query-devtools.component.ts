@@ -23,6 +23,7 @@ import {
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
   QueryDevtoolsFeature,
+  QueryDevtoolsRun,
   QueryDevtoolsStats,
   QueryDevtoolsStatsHandle,
   sumQueryDevtoolsStats,
@@ -35,6 +36,7 @@ import {
   WebSocketDevtoolsHandle,
 } from '@ethlete/query';
 import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, tap, timer } from 'rxjs';
+import { diffQueryDevtoolsResponses } from './query-devtools-diff';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
@@ -44,7 +46,13 @@ import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = Query<any>;
 
-type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' | 'events';
+type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events';
+
+/**
+ * The sections of the query detail drawer. The head and its actions stay pinned above them - the detail
+ * holds more than fits a column, and everything below the actions is reading material.
+ */
+type DetailTab = 'overview' | 'history' | 'data';
 
 type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -82,6 +90,36 @@ type QueryActivity = {
   hasActivity: boolean;
 };
 
+/**
+ * One run of one query, placed on the timeline's shared axis. `leftPct` / `widthPct` are percentages of
+ * the window every row is laid out against, which is what makes overlapping runs visible as overlap.
+ */
+type TimelineRow = {
+  key: string;
+  entryId: string;
+  method: string;
+  path: string;
+  run: QueryDevtoolsRun;
+  leftPct: number;
+  widthPct: number;
+
+  /** How long the run took, or `null` while it is still in flight. */
+  durationMs: number | null;
+};
+
+type Timeline = {
+  rows: TimelineRow[];
+
+  /** The start of the window the rows are laid out against. */
+  startedAt: number;
+
+  /** How long that window is - the axis every bar is a fraction of. */
+  windowMs: number;
+
+  /** How many older runs the view left out, so a capped timeline does not read as a complete one. */
+  hidden: number;
+};
+
 type EventLogItem = {
   id: number;
   timestamp: number;
@@ -99,6 +137,7 @@ type PersistedState = {
   open?: boolean;
   height?: number;
   activeTab?: DevtoolsTab;
+  detailTab?: DetailTab;
   selectedClientName?: string | null;
   selectedQueryId?: string | null;
   inspectFilterIds?: string[] | null;
@@ -119,6 +158,12 @@ const STORAGE_KEY = 'ethlete:query:devtools:v4';
 const MAX_EVENTS = 100;
 const DEFAULT_HEIGHT = 360;
 const MIN_HEIGHT = 200;
+
+/** How many bars the timeline draws. Past this the newest are kept and the rest are counted instead. */
+const MAX_TIMELINE_ROWS = 200;
+
+/** Where the timeline's axis labels sit, as fractions of the window. */
+const TIMELINE_TICKS = [0, 0.25, 0.5, 0.75, 1];
 
 const readPersistedState = (): PersistedState => {
   try {
@@ -238,8 +283,15 @@ export class QueryDevtoolsComponent {
     { id: 'auth', label: 'Auth' },
     { id: 'ws', label: 'Sockets' },
     { id: 'cache', label: 'Cache' },
+    { id: 'timeline', label: 'Timeline' },
     { id: 'events', label: 'Events' },
   ] satisfies { id: DevtoolsTab; label: string }[];
+
+  protected readonly detailTabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'history', label: 'History' },
+    { id: 'data', label: 'Data' },
+  ] satisfies { id: DetailTab; label: string }[];
 
   /** The status chips above the Queries list, in the order a problem is usually looked for. */
   protected readonly facets = [
@@ -255,6 +307,9 @@ export class QueryDevtoolsComponent {
   protected panelHeight = signal(this.persisted.height ?? DEFAULT_HEIGHT);
   protected resizing = signal(false);
   protected activeTab = signal<DevtoolsTab>(this.persisted.activeTab ?? 'queries');
+
+  /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */
+  protected detailTab = signal<DetailTab>(this.persisted.detailTab ?? 'overview');
   protected selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
   protected selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
 
@@ -283,6 +338,9 @@ export class QueryDevtoolsComponent {
 
   /** Bound callback passed into the value explorer to persist per-path expansion. Assigned in the constructor. */
   protected toggleJsonPath: (path: string, expand: boolean) => void;
+
+  /** The run whose response the diff is comparing, by run index, or `null` while no diff is open. */
+  protected diffRunIndex = signal<number | null>(null);
 
   /** JIT editor state (response / args editing on the selected query). */
   protected editorMode = signal<'none' | 'response' | 'args'>('none');
@@ -419,6 +477,88 @@ export class QueryDevtoolsComponent {
   /** Whether the search box or a status chip is narrowing the list beyond its scope. */
   protected isQueryListNarrowed = computed(() => !!this.queryFilter().trim() || this.queryFacets().size > 0);
 
+  /**
+   * Every run the scoped queries have recorded, oldest first. The client picker and the inspection
+   * filter narrow the timeline the same way they narrow the Queries list.
+   */
+  private scopedRuns = computed(() => {
+    const collected: { entry: QueryDevtoolsEntry; run: QueryDevtoolsRun }[] = [];
+
+    for (const entry of this.scopedQueries()) {
+      for (const run of entry.stats?.runs() ?? []) collected.push({ entry, run });
+    }
+
+    return collected.sort((a, b) => a.run.startedAt - b.run.startedAt);
+  });
+
+  /**
+   * Every scoped run laid out on one axis, so a stampede reads as overlapping bars and a chain as a
+   * staircase - which is what the Events tab's flat list of wall-clock times cannot show.
+   */
+  protected timeline = computed<Timeline>(() => {
+    const collected = this.scopedRuns();
+    const hidden = Math.max(0, collected.length - MAX_TIMELINE_ROWS);
+    const shown = hidden ? collected.slice(hidden) : collected;
+    const first = shown[0];
+
+    if (!first) return { rows: [], startedAt: 0, windowMs: 0, hidden: 0 };
+
+    // A run in flight has no end yet, so the window has to grow with the clock - otherwise its bar would
+    // freeze at the width it happened to be built with, the same trap `isStale` documents.
+    if (shown.some(({ run }) => run.endedAt === null)) this.clock();
+
+    const now = Date.now();
+    const startedAt = first.run.startedAt;
+    const endedAt = shown.reduce((latest, { run }) => Math.max(latest, run.endedAt ?? now), startedAt);
+    const windowMs = Math.max(1, endedAt - startedAt);
+
+    const rows = shown.map(({ entry, run }): TimelineRow => {
+      const url = run.url ?? this.requestUrl(entry.handle as AnyQuery);
+
+      return {
+        key: `${entry.id}:${run.index}`,
+        entryId: entry.id,
+        method: entry.meta.method ?? '',
+        path: url ? this.requestPath(url) : (entry.meta.route ?? ''),
+        run,
+        leftPct: ((run.startedAt - startedAt) / windowMs) * 100,
+        // An instant run - a cache entry filled by a poll or by another consumer - still needs a sliver
+        // of width to be visible at all.
+        widthPct: Math.max(0.4, (((run.endedAt ?? now) - run.startedAt) / windowMs) * 100),
+        durationMs: run.endedAt === null ? null : run.endedAt - run.startedAt,
+      };
+    });
+
+    return { rows, startedAt, windowMs, hidden };
+  });
+
+  /** Axis labels for the timeline, as offsets from the window's start. */
+  protected timelineTicks = computed(() => {
+    const { windowMs, rows } = this.timeline();
+
+    if (!rows.length) return [];
+
+    return TIMELINE_TICKS.map((fraction) => ({
+      pct: fraction * 100,
+      label: this.formatDuration(Math.round(windowMs * fraction)),
+    }));
+  });
+
+  /** How many runs every query has recorded, for the Timeline tab's badge. */
+  private runTotals = computed<TabBadge>(() => {
+    let count = 0;
+    let errors = 0;
+
+    for (const entry of this.queryEntries()) {
+      for (const run of entry.stats?.runs() ?? []) {
+        count++;
+        if (run.status === 'error') errors++;
+      }
+    }
+
+    return { count, errors };
+  });
+
   /** Cache entries across every client, for the Cache tab's badge. */
   private cacheEntryCount = computed(() =>
     this.repositories().reduce((total, { repository }) => {
@@ -457,6 +597,7 @@ export class QueryDevtoolsComponent {
       auth: { count: this.authEntries().length, errors: 0 },
       ws: { count: this.wsEntries().length, errors: 0 },
       cache: { count: this.cacheEntryCount(), errors: 0 },
+      timeline: this.runTotals(),
       events: {
         count: events.length,
         errors: events.filter((event) => event.type === 'request-error').length,
@@ -549,6 +690,7 @@ export class QueryDevtoolsComponent {
         open: this.open(),
         height: this.panelHeight(),
         activeTab: this.activeTab(),
+        detailTab: this.detailTab(),
         selectedClientName: this.selectedClientName(),
         selectedQueryId: this.selectedQueryId(),
         inspectFilterIds: this.inspectFilterIds(),
@@ -579,6 +721,7 @@ export class QueryDevtoolsComponent {
       this.editError.set(null);
       this.copiedReport.set(false);
       this.copiedInsomnia.set(false);
+      this.diffRunIndex.set(null);
 
       if (key !== this.lastSelectionKey) {
         this.lastSelectionKey = key;
@@ -771,9 +914,89 @@ export class QueryDevtoolsComponent {
     return this.activityOf(this.queriesForSequence(sequence).map((link) => link.stats));
   }
 
-  /** Clears an entry's counters, so the next interaction can be measured on its own. */
+  /** Clears an entry's counters and run history, so the next interaction can be measured on its own. */
   protected resetStats(entry: QueryDevtoolsEntry) {
     entry.stats?.reset();
+    this.diffRunIndex.set(null);
+  }
+
+  /** The same, for every query the timeline covers. */
+  protected resetTimeline() {
+    for (const entry of this.scopedQueries()) entry.stats?.reset();
+
+    this.diffRunIndex.set(null);
+  }
+
+  /** A query's runs, newest first - the order a history is read in. */
+  protected queryRuns(entry: QueryDevtoolsEntry): QueryDevtoolsRun[] {
+    return [...(entry.stats?.runs() ?? [])].reverse();
+  }
+
+  /**
+   * What a run's status dot and timeline bar colour by. `pending` reuses the panel's loading colour;
+   * `aborted` matches no rule and so falls back to the neutral one.
+   */
+  protected runStatus(run: QueryDevtoolsRun) {
+    return run.status === 'pending' ? 'loading' : run.status;
+  }
+
+  /** Whether a run can be diffed: it still holds its body, and so does an older run of the same query. */
+  protected canDiffRun(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun) {
+    if (!run.hasResponse) return false;
+
+    return (entry.stats?.runs() ?? []).some((other) => other.hasResponse && other.index < run.index);
+  }
+
+  protected toggleRunDiff(run: QueryDevtoolsRun) {
+    this.diffRunIndex.update((current) => (current === run.index ? null : run.index));
+  }
+
+  /**
+   * The response diff of the picked run against the newest older run that still holds a body - which is
+   * not necessarily the run right before it, since a failed run has none to compare.
+   *
+   * `null` unless a run is picked, so a closed diff costs nothing to walk.
+   */
+  protected responseDiff(entry: QueryDevtoolsEntry) {
+    const picked = this.diffRunIndex();
+
+    if (picked === null) return null;
+
+    const runs = entry.stats?.runs() ?? [];
+    const at = runs.findIndex((run) => run.index === picked);
+    const after = at === -1 ? null : runs[at];
+
+    if (!after?.hasResponse) return null;
+
+    for (let index = at - 1; index >= 0; index--) {
+      const before = runs[index];
+
+      if (before?.hasResponse) {
+        return { before, after, diff: diffQueryDevtoolsResponses(before.response, after.response) };
+      }
+    }
+
+    return null;
+  }
+
+  /** Opens the picked run's query in the Queries tab - the timeline is a way in, not a dead end. */
+  protected selectTimelineRow(row: TimelineRow) {
+    this.activeTab.set('queries');
+    this.selectedQueryId.set(row.entryId);
+  }
+
+  /** A diffed value on one line. Rendering the full tree per path would bury the paths themselves. */
+  protected diffValue(value: unknown) {
+    if (typeof value === 'string') return value.length > 80 ? `"${value.slice(0, 80)}…"` : `"${value}"`;
+    if (value === undefined) return 'undefined';
+
+    try {
+      const json = JSON.stringify(value) ?? 'undefined';
+
+      return json.length > 80 ? `${json.slice(0, 80)}…` : json;
+    } catch {
+      return '[unserializable]';
+    }
   }
 
   /** A byte count the way a network panel spells one out. */

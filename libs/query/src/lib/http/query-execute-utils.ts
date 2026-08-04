@@ -71,7 +71,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   state.lastTriggeredBy.set(runQueryOptions?.triggeredBy ?? null);
   state.subtle.request.set(request);
   state.subtle.bindRequestEvents(request);
-  state.subtle.devtoolsStats?.recordExecution({ didRequest: executed, body: args?.body });
+  state.subtle.devtoolsStats?.recordExecution({ didRequest: executed, body: args?.body, url: request.url });
 };
 
 export const circularQueryDependencyChecker = () => {

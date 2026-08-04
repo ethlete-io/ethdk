@@ -70,10 +70,67 @@ export type QueryDevtoolsPayload = {
   body: unknown;
 };
 
+/**
+ * How one run of a query ended. `aborted` is a run whose query started another request before the
+ * response arrived - the previous request's events are unbound at that point, so the response it was
+ * waiting for can no longer reach it.
+ */
+export type QueryDevtoolsRunStatus = 'pending' | 'success' | 'error' | 'aborted';
+
+/**
+ * A single run of a query, kept alongside the running totals so overlapping runs stay tellable apart -
+ * which is what turns "ran 40 times" into "ran 40 times in two seconds".
+ */
+export type QueryDevtoolsRun = {
+  /**
+   * Position in the query's lifetime, 1-based. Keeps climbing past the runs the buffer has dropped, so
+   * it is a stable identity as well as a run number.
+   */
+  index: number;
+
+  startedAt: number;
+
+  /** When the run ended, or `null` while it is still in flight. */
+  endedAt: number | null;
+
+  status: QueryDevtoolsRunStatus;
+
+  /**
+   * Whether this run is a request of the query's own. A response that arrives without one was produced
+   * by something else - a poll, another consumer of the same cache entry, another tab - and is recorded
+   * as an instant, since only its arrival time is knowable.
+   */
+  didRequest: boolean;
+
+  /**
+   * The URL this run went to. Kept per run rather than read off the query: a query whose args changed
+   * between runs would otherwise label every older run with the URL it happens to hold now.
+   */
+  url: string | null;
+
+  /** The size of the request body this run sent. */
+  sentBytes: number;
+
+  /** The size of the response body it received, or 0 until one has. */
+  receivedBytes: number;
+
+  /**
+   * The response body, so one run can be diffed against another. Only the newest few runs keep theirs -
+   * a polling query would otherwise retain every response it ever received.
+   */
+  response: unknown;
+
+  /** Whether {@link response} still holds this run's body; a dropped and an empty body both read `null`. */
+  hasResponse: boolean;
+};
+
 /** The read side of a stats recorder, as a {@link QueryDevtoolsEntry} exposes it to the panel. */
 export type QueryDevtoolsStatsHandle = {
   /** The live stats. */
   current: Signal<QueryDevtoolsStats>;
+
+  /** The query's most recent runs, oldest first. Bounded - older runs are dropped as new ones arrive. */
+  runs: Signal<readonly QueryDevtoolsRun[]>;
 
   /** Clears every counter, so a measurement can be scoped to a single interaction. */
   reset: () => void;
@@ -87,6 +144,9 @@ export type QueryDevtoolsStatsRecorder = QueryDevtoolsStatsHandle & {
 
     /** The request body it sent, for the outgoing byte count. */
     body?: unknown;
+
+    /** The URL it went to. @see QueryDevtoolsRun.url */
+    url?: string;
   }) => void;
 
   recordResponse: (payload: QueryDevtoolsPayload) => void;
@@ -114,6 +174,41 @@ const estimateBodySize = (body: unknown) => {
   }
 };
 
+/** How many runs a query keeps. Enough to see a stampede or a chain without growing unbounded. */
+const RUN_HISTORY = 25;
+
+/**
+ * How many of those runs keep their response body. Bodies dominate what the buffer retains, and a diff
+ * only ever looks a couple of runs back.
+ */
+const RESPONSE_HISTORY = 5;
+
+/** The index of the newest run still in flight, or -1 when none is. */
+const lastPendingRunIndex = (runs: readonly QueryDevtoolsRun[]) => {
+  for (let index = runs.length - 1; index >= 0; index--) {
+    if (runs[index]?.status === 'pending') return index;
+  }
+
+  return -1;
+};
+
+/**
+ * Drops the response body of every run past the newest {@link RESPONSE_HISTORY} that hold one. Mutates
+ * the array it is given, which is always one this module just built.
+ */
+const trimRetainedResponses = (runs: QueryDevtoolsRun[]) => {
+  let kept = 0;
+
+  for (let index = runs.length - 1; index >= 0; index--) {
+    const run = runs[index];
+
+    if (!run?.hasResponse) continue;
+    if (++kept > RESPONSE_HISTORY) runs[index] = { ...run, response: null, hasResponse: false };
+  }
+
+  return runs;
+};
+
 /**
  * The size of a payload in bytes, and whether that size is the one that went over the wire. Only a
  * `content-length` header is exact; everything else is measured by serializing the body.
@@ -135,16 +230,53 @@ export const measureQueryDevtoolsPayload = (payload: QueryDevtoolsPayload): { by
  */
 export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
   const stats = signal(EMPTY_STATS);
+  const runs = signal<readonly QueryDevtoolsRun[]>([]);
 
   // The baseline the next response's duration is measured against. Deliberately not part of the stats:
   // a duration is only ever reported once the response it belongs to has arrived.
   let lastExecutionAt: number | null = null;
 
-  const recordExecution: QueryDevtoolsStatsRecorder['recordExecution'] = ({ didRequest, body }) => {
+  // The URL of the last execution, whether or not it requested - so a response that arrives without a run
+  // of the query's own is still attributed to the URL the query was pointed at.
+  let lastUrl: string | null = null;
+
+  let runCounter = 0;
+
+  const appendRun = (run: Omit<QueryDevtoolsRun, 'index'>, previous: readonly QueryDevtoolsRun[]) => {
+    const appended: QueryDevtoolsRun = { ...run, index: ++runCounter };
+
+    runs.set(trimRetainedResponses([...previous, appended].slice(-RUN_HISTORY)));
+  };
+
+  /**
+   * Ends the newest run still in flight. A response with no run of the query's own waiting for it came
+   * from elsewhere (see {@link QueryDevtoolsRun.didRequest}), so it is recorded as an instant instead.
+   */
+  const endRun = (end: {
+    endedAt: number;
+    status: 'success' | 'error';
+    receivedBytes: number;
+    response: unknown;
+    hasResponse: boolean;
+  }) => {
+    const current = runs();
+    const pending = lastPendingRunIndex(current);
+
+    if (pending === -1) {
+      appendRun({ ...end, startedAt: end.endedAt, didRequest: false, url: lastUrl, sentBytes: 0 }, current);
+
+      return;
+    }
+
+    runs.set(trimRetainedResponses(current.map((run, index) => (index === pending ? { ...run, ...end } : run))));
+  };
+
+  const recordExecution: QueryDevtoolsStatsRecorder['recordExecution'] = ({ didRequest, body, url }) => {
     const now = Date.now();
     const sent = didRequest ? measureQueryDevtoolsPayload({ body }) : null;
 
     lastExecutionAt = now;
+    lastUrl = url ?? null;
 
     stats.update((current) => ({
       ...current,
@@ -154,6 +286,25 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
       hasEstimatedBytes: current.hasEstimatedBytes || (!!sent?.bytes && !sent.isExact),
       firstExecutedAt: current.firstExecutedAt ?? now,
     }));
+
+    // An execution answered from the cache, or one that joined a request already in flight, starts no
+    // run of its own - the response it eventually gets (if any) is what records one.
+    if (!didRequest) return;
+
+    appendRun(
+      {
+        startedAt: now,
+        endedAt: null,
+        status: 'pending',
+        didRequest: true,
+        url: lastUrl,
+        sentBytes: sent?.bytes ?? 0,
+        receivedBytes: 0,
+        response: null,
+        hasResponse: false,
+      },
+      runs().map((run) => (run.status === 'pending' ? { ...run, status: 'aborted', endedAt: now } : run)),
+    );
   };
 
   const recordResponse = (payload: QueryDevtoolsPayload) => {
@@ -170,16 +321,31 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
       lastDurationMs: duration,
       totalDurationMs: current.totalDurationMs + (duration ?? 0),
     }));
+
+    endRun({
+      endedAt: now,
+      status: 'success',
+      receivedBytes: received.bytes,
+      response: payload.body,
+      hasResponse: true,
+    });
   };
 
-  const recordError = () => stats.update((current) => ({ ...current, errors: current.errors + 1 }));
+  const recordError = () => {
+    stats.update((current) => ({ ...current, errors: current.errors + 1 }));
+
+    endRun({ endedAt: Date.now(), status: 'error', receivedBytes: 0, response: null, hasResponse: false });
+  };
 
   const reset = () => {
     lastExecutionAt = null;
+    lastUrl = null;
+    runCounter = 0;
     stats.set(EMPTY_STATS);
+    runs.set([]);
   };
 
-  return { current: stats.asReadonly(), reset, recordExecution, recordResponse, recordError };
+  return { current: stats.asReadonly(), runs: runs.asReadonly(), reset, recordExecution, recordResponse, recordError };
 };
 
 /**
