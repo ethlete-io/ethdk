@@ -12,12 +12,20 @@ import { V2QueryState, isQueryStateFailure, isQueryStateSuccess } from './query'
 // executes a v2/legacy query and awaits its settled `state$`, where the v3 variant awaits a query
 // snapshot. The shared error-mapping and `validateAsync` wiring live in `query-validator-core`.
 
-/** The args accepted by the creator's `prepare()` - includes `mock`/`config` extras. */
+/**
+ * The args accepted by the creator's `prepare()` - includes `mock`/`config` extras.
+ *
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type V2PrepareArgsOf<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator> = Parameters<
   TCreator['prepare']
 >[0];
 
-/** Config for {@link validateWithV2Query}. */
+/**
+ * Config for {@link validateWithV2Query}.
+ *
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type ValidateWithV2QueryConfig<
   TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
   TValue,
@@ -78,6 +86,8 @@ type PreparedV2Query<TData> = {
  *   });
  * });
  * ```
+ *
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export const validateWithV2Query = <
   TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,

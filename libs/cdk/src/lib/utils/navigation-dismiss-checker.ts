@@ -3,6 +3,9 @@ import { AbstractControl } from '@angular/forms';
 import { controlValueSignal, equal } from '@ethlete/core';
 import { Observable, of } from 'rxjs';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NavigationDismissCheckerRef<T> = {
   /**
    * Set the default form value to the current form value.
@@ -29,6 +32,9 @@ export type NavigationDismissCheckerRef<T> = {
   defaultFormValue: Signal<T>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type CreateNavigationDismissCheckerConfig<T extends AbstractControl> = {
   /**
    * The form to check for changes
@@ -70,6 +76,8 @@ export type CreateNavigationDismissCheckerConfig<T extends AbstractControl> = {
 /**
  * A utility function to enhance the ux of views containing forms.
  * It helps to prevent the user from accidentally losing unsaved form changes.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export const createNavigationDismissChecker = <T extends AbstractControl>(
   config: CreateNavigationDismissCheckerConfig<T>,

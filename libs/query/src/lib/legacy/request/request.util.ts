@@ -9,9 +9,15 @@ export {
   isNaN,
 } from '../../http/internal/request-route';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isRequestError = <T = unknown>(error: unknown): error is RequestError<T> =>
   error instanceof Object && 'status' in error && 'statusText' in error && 'url' in error;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const v2ExtractExpiresInSeconds = (headers: RequestHeaders) => {
   const cacheControl = headers['cache-control'];
   const age = headers['age'];
@@ -63,6 +69,9 @@ export const v2ExtractExpiresInSeconds = (headers: RequestHeaders) => {
   return expiresIn;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const serializeBody = (body: unknown): ArrayBuffer | URLSearchParams | Blob | FormData | string | null => {
   if (body === null || body === undefined) {
     return null;
@@ -86,6 +95,9 @@ export const serializeBody = (body: unknown): ArrayBuffer | URLSearchParams | Bl
   return (body as any).toString();
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const transformMethod = (config: { method: Method; transferVia?: 'GET' | 'POST' }) => {
   if (config.method === 'GQL_QUERY' || config.method === 'GQL_MUTATE') {
     if (!config.transferVia) {
@@ -98,6 +110,9 @@ export const transformMethod = (config: { method: Method; transferVia?: 'GET' | 
   return config.method;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const detectContentTypeHeader = (body: unknown) => {
   // An empty body has no content type.
   if (body === null) {
@@ -130,16 +145,25 @@ export const detectContentTypeHeader = (body: unknown) => {
   return null;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const hasHeader = (headers: RequestHeaders, header: string) => {
   return Object.keys(headers).some((key) => key.toLowerCase() === header.toLowerCase());
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const forEachHeader = (headers: RequestHeaders, callback: (value: string, key: string) => void) => {
   Object.entries(headers).forEach(([key, value]) => {
     callback(key, value);
   });
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const parseAllXhrResponseHeaders = (xhr: XMLHttpRequest) => {
   const headers = xhr.getAllResponseHeaders();
   const parsedHeaders: RequestHeaders = {};
@@ -158,6 +182,9 @@ export const parseAllXhrResponseHeaders = (xhr: XMLHttpRequest) => {
   return parsedHeaders;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const getResponseUrl = (xhr: XMLHttpRequest): string | null => {
   if ('responseURL' in xhr && xhr.responseURL) {
     return xhr.responseURL;
@@ -168,6 +195,9 @@ export const getResponseUrl = (xhr: XMLHttpRequest): string | null => {
   return null;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const v2ShouldRetryRequest: RequestRetryFn = (config) => {
   const defaultRetryDelay = 1000 + 1000 * config.currentRetryCount;
 

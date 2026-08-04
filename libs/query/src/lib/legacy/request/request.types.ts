@@ -1,5 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type Method =
   | 'GET'
   | 'POST'
@@ -17,6 +20,9 @@ export type Method =
   | 'GQL_MUTATE'
   | 'CUSTOM';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestError<Detail = unknown> = {
   url: string;
   status: number;
@@ -25,15 +31,27 @@ export type RequestError<Detail = unknown> = {
   httpErrorResponse: HttpErrorResponse;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestHeaders = Record<string, string>;
 export { BuildQueryStringConfig, PathParams, QueryParams } from '../../http/internal/request-route';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type V2CacheAdapterFn = (headers: RequestHeaders) => number | null;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestHeadersMethodMap = {
   [M in Method]?: RequestHeaders;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type PartialXhrState = {
   headers: RequestHeaders;
   status: number;
@@ -41,19 +59,31 @@ export type PartialXhrState = {
   url: string;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestRetryFnConfig = {
   error: RequestError;
   headers: RequestHeaders;
   currentRetryCount: number;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestRetryFnResult = {
   retry: boolean;
   delay?: number;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestRetryFn = (config: RequestRetryFnConfig) => RequestRetryFnResult;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestConfig = {
   method: Method;
   urlWithParams: string;
@@ -66,12 +96,18 @@ export type RequestConfig = {
   retryFn?: RequestRetryFn;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestProgress = {
   current: number;
   percentage?: number;
   total?: number;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type RequestEvent<Response = unknown> =
   | {
       type: 'start';

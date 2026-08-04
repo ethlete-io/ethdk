@@ -5,6 +5,9 @@ import { getOriginCoordinatesAndDimensions } from './overlay-origin';
 import { OverlayOriginCloneComponent } from './overlay-origin-clone.component';
 import { OverlayStrategyContext } from './types';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type ViewportTransformData = {
   viewportWidth: number;
   viewportHeight: number;
@@ -23,6 +26,9 @@ export type ViewportTransformData = {
   scaleY: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type FullscreenAnimationState = {
   readonly originElement: HTMLElement | null;
   readonly cloneComponentRef: ComponentRef<OverlayOriginCloneComponent> | null;
@@ -30,6 +36,9 @@ export type FullscreenAnimationState = {
   readonly isOriginHidden: boolean;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type FullscreenAnimationDeps = {
   readonly injector: EnvironmentInjector;
   readonly document: Document;
@@ -230,6 +239,9 @@ const removeReducedAnimationClass = (renderer: AngularRenderer, containerEl: HTM
   renderer.removeClass(containerEl, REDUCED_ANIMATION_CLASS);
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const cleanupFullscreenAnimationStyles = (
   containerEl: HTMLElement,
   renderer: AngularRenderer,
@@ -367,6 +379,9 @@ const destroyClone = (
   }
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const startFullscreenEnterAnimation = <T, R>(
   context: OverlayStrategyContext<T, R>,
   deps: FullscreenAnimationDeps,
@@ -465,6 +480,9 @@ export const startFullscreenEnterAnimation = <T, R>(
   return newState;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const startFullscreenLeaveAnimation = <T, R>(
   context: OverlayStrategyContext<T, R>,
   state: FullscreenAnimationState,
@@ -606,6 +624,9 @@ export const startFullscreenLeaveAnimation = <T, R>(
   };
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const cleanupFullscreenAnimation = (state: FullscreenAnimationState, deps: FullscreenAnimationDeps): void => {
   const { renderer, appRef } = deps;
 
@@ -679,6 +700,9 @@ export const cleanupFullscreenAnimation = (state: FullscreenAnimationState, deps
   restoreOrigin();
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const abortFullscreenAnimation = <T, R>(
   context: OverlayStrategyContext<T, R>,
   state: FullscreenAnimationState,

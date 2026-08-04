@@ -2,10 +2,16 @@ import { booleanAttribute, computed, Directive, inject, InjectionToken, input, i
 import { DomSanitizer } from '@angular/platform-browser';
 import { ICONS_TOKEN } from './icon-provider';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const ICON_DIRECTIVE_TOKEN = new InjectionToken<IconDirective>('ICON_DIRECTIVE_TOKEN');
 
 const svgColorAttributes = ['fill', 'stroke', 'stop-color', 'stop-opacity'];
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   selector: '[etIcon]',
 

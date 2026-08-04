@@ -22,6 +22,9 @@ import { ActiveTabUnderlineDirective } from '../../../utils';
 
 let nextUniqueId = 0;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: '[et-nav-tab-link]',
   template: `
@@ -166,6 +169,8 @@ function isActiveMatchOptions(
 /**
  * The equivalent `IsActiveMatchOptions` options for `isActive` is called with `true`
  * (exact = true).
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export const exactMatchOptions: IsActiveMatchOptions = {
   paths: 'exact',
@@ -177,6 +182,8 @@ export const exactMatchOptions: IsActiveMatchOptions = {
 /**
  * The equivalent `IsActiveMatchOptions` options for `isActive` is called with `false`
  * (exact = false).
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export const subsetMatchOptions: IsActiveMatchOptions = {
   paths: 'subset',

@@ -12,6 +12,9 @@ import {
 } from './round';
 import { TournamentMode } from './tournament';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracketBase<TRoundData, TMatchData> = {
   rounds: BracketMap<BracketRoundId, NewBracketRoundWithRelationsBase<TRoundData>>;
   matches: BracketMap<BracketMatchId, NewBracketMatchWithRelationsBase<TMatchData>>;
@@ -19,6 +22,9 @@ export type NewBracketBase<TRoundData, TMatchData> = {
   mode: TournamentMode;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type GenerateBracketDataOptions = {
   layout: BracketDataLayout;
 };
@@ -45,6 +51,9 @@ const sortSourceMatchesByRoundOrder = <TRoundData, TMatchData>(
   return { ...source, matches: sortedMatches };
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const createNewBracketBase = <TRoundData, TMatchData>(
   source: BracketDataSource<TRoundData, TMatchData>,
   options: GenerateBracketDataOptions,

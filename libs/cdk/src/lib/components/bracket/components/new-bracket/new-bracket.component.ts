@@ -33,6 +33,9 @@ import { NewBracketDefaultMatchComponent } from './new-bracket-default-match.com
 import { NewBracketDefaultRoundHeaderComponent } from './new-bracket-default-round-header.component';
 import { BracketSwissColors, injectNewBracketConfig } from './new-bracket.config';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-new-bracket',
   templateUrl: './new-bracket.component.html',

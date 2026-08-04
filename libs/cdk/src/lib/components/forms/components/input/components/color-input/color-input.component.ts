@@ -5,6 +5,9 @@ import { NativeInputRefDirective } from '../../../../directives/native-input-ref
 import { DecoratedInputBase } from '../../../../utils';
 import { COLOR_INPUT_TOKEN, ColorInputDirective } from '../../directives/color-input';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-color-input',
   templateUrl: './color-input.component.html',

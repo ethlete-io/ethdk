@@ -21,6 +21,9 @@ import {
 import { injectOverlayScrollBlocker } from './scroll-blocker';
 import { OverlaySidebarComponent } from './sidebar';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const OverlayImports = [
   OverlayCloseDirective,
   OverlayTitleDirective,
@@ -30,6 +33,9 @@ export const OverlayImports = [
   OverlayMainDirective,
 ] as const;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const OverlayWithRoutingImports = [
   ...OverlayImports,
   OverlayHeaderTemplateDirective,
@@ -42,8 +48,14 @@ export const OverlayWithRoutingImports = [
   OverlayRouterOutletDisabledTemplateDirective,
 ] as const;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const OverlayWithSidebarImports = [...OverlayWithRoutingImports, OverlaySidebarComponent] as const;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideOverlay = () => {
   return [
     Dialog,

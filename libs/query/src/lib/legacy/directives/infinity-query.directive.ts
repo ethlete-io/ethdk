@@ -46,10 +46,16 @@ type InfinityQueryContext<
   currentQuery: ConstructQuery<Q['queryCreator']> | null;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<any>>('INFINITY_QUERY_TOKEN');
 
 type DirectiveQueryCreator = AnyV2QueryCreator | AnyLegacyQueryCreator;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 @Directive({
   selector: '[etInfinityQuery]',
   exportAs: 'etInfinityQuery',

@@ -5,8 +5,14 @@ import { combineLatest, debounceTime, map, of, startWith, switchMap, takeUntil, 
 import { CHECKBOX_GROUP_CONTROL_TOKEN } from '../checkbox-group-control/checkbox-group-control.directive';
 import { CHECKBOX_TOKEN } from '../checkbox/checkbox.directive';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('ET_CHECKBOX_GROUP_DIRECTIVE_TOKEN');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   host: {
     role: 'group',

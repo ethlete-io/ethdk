@@ -1,5 +1,8 @@
 import { TOURNAMENT_MODE, TournamentMode } from './tournament';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const canRenderLayoutInTournamentMode = (layout: BracketDataLayout, mode: TournamentMode): boolean => {
   switch (mode) {
     case TOURNAMENT_MODE.SINGLE_ELIMINATION:
@@ -9,6 +12,9 @@ export const canRenderLayoutInTournamentMode = (layout: BracketDataLayout, mode:
   }
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const BRACKET_DATA_LAYOUT = {
   LEFT_TO_RIGHT: 'left-to-right',
 
@@ -16,4 +22,7 @@ export const BRACKET_DATA_LAYOUT = {
   MIRRORED: 'mirrored',
 } as const;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketDataLayout = (typeof BRACKET_DATA_LAYOUT)[keyof typeof BRACKET_DATA_LAYOUT];

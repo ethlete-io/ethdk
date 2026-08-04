@@ -19,6 +19,9 @@ import {
 } from '../query/query.types';
 import { V2QueryCreator } from './query-creator';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryPrepareFn<
   Arguments extends BaseArguments | undefined,
   Response,
@@ -34,8 +37,14 @@ export type QueryPrepareFn<
       args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders & WithConfig & WithMock<Response>,
     ) => V2Query<Response, Arguments, Route, Store, Data, Id>;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type AnyV2QueryCreator = V2QueryCreator<any, any, any, any, any, any>;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type V2QueryArgsOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
   T extends V2QueryCreator<infer Args, any, any, any, any, any>
     ? Args
@@ -47,6 +56,9 @@ export type V2QueryArgsOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQu
           ? LegacyArgumentsOfQueryArgs<Args>
           : never;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryResponseOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
   T extends V2QueryCreator<any, infer Response, any, any, any, any>
     ? Response
@@ -58,6 +70,9 @@ export type QueryResponseOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacy
           ? Response
           : never;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryRouteOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
   T extends V2QueryCreator<any, any, infer Route, any, any, any>
     ? Route
@@ -69,6 +84,9 @@ export type QueryRouteOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQue
           ? V2RouteType<LegacyArgumentsOfQueryArgs<Args>>
           : never;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryStoreOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
   T extends V2QueryCreator<any, any, any, infer Store, any, any>
     ? Store
@@ -80,6 +98,9 @@ export type QueryStoreOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQue
           ? Store
           : never;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryDataOf<T extends AnyV2QueryCreator | AnyLegacyQuery | AnyLegacyQueryCreator | AnyV2Query | null> =
   T extends V2QueryCreator<any, any, any, any, infer Data, any>
     ? Data
@@ -91,6 +112,9 @@ export type QueryDataOf<T extends AnyV2QueryCreator | AnyLegacyQuery | AnyLegacy
           ? Data
           : never;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryStoreIdOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
   T extends V2QueryCreator<any, any, any, any, any, infer StoreId>
     ? StoreId
@@ -102,4 +126,7 @@ export type QueryStoreIdOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQ
           ? StoreId
           : never;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type ConstructQuery<T extends AnyV2QueryCreator | AnyLegacyQueryCreator> = ReturnType<T['prepare']>;

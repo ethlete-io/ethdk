@@ -6,6 +6,9 @@ import { ScrollableLoadingTemplateDirective } from './directives/scrollable-load
 import { ScrollablePlaceholderItemTemplateDirective } from './directives/scrollable-placeholder-item-template';
 import { ScrollablePlaceholderOverlayTemplateDirective } from './directives/scrollable-placeholder-overlay-template';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const ScrollableImports = [
   ScrollableComponent,
   ScrollableIsActiveChildDirective,

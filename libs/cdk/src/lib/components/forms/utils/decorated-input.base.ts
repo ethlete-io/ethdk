@@ -7,6 +7,9 @@ import { INPUT_SUFFIX_TOKEN, InputSuffixDirective } from '../directives/input-su
 import { FormFieldStateService } from '../services';
 import { InputBase } from './input.base';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive()
 export class DecoratedInputBase extends InputBase {
   private readonly _formFieldStateService = inject(FormFieldStateService);

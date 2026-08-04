@@ -1,9 +1,15 @@
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type SwipeTracker = {
   update(event: TouchEvent | MouseEvent): SwipeUpdateEvent;
   end(): SwipeEndEvent;
   cancel(): void;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type SwipeEndEvent = {
   positivePixelPerSecondX: number;
   positivePixelPerSecondY: number;
@@ -17,6 +23,9 @@ export type SwipeEndEvent = {
   originClientY: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type SwipeUpdateEvent = {
   originClientX: number;
   originClientY: number;
@@ -37,6 +46,9 @@ const getClientXY = (event: TouchEvent | MouseEvent): { clientX: number; clientY
   return { clientX: (event as MouseEvent).clientX, clientY: (event as MouseEvent).clientY };
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const createSwipeTracker = (startEvent: TouchEvent | MouseEvent): SwipeTracker => {
   const { clientX: originClientX, clientY: originClientY } = getClientXY(startEvent);
   const startTime = Date.now();

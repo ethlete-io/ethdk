@@ -9,22 +9,34 @@ import { OverlayContainerComponent } from './common';
 import { OverlayConfig } from './overlay-config';
 import { OverlayPosition } from './strategies';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayCloseCallEvent<R = unknown> = {
   result: R | undefined;
   forced: boolean;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayLayout = {
   hasHeader: boolean;
   hasBody: boolean;
   hasFooter: boolean;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayHeaderTemplates = {
   current: TemplateRef<unknown> | null;
   previous: TemplateRef<unknown> | null;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class OverlayRef<T = any, R = any> {
   componentInstance: T | null = null;

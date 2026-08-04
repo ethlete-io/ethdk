@@ -12,13 +12,22 @@ import {
 } from '@angular/core';
 import { clamp, setInputSignal } from '@ethlete/core';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type ProgressSpinnerMode = 'determinate' | 'indeterminate';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type ProgressSpinnerDefaultOptions = {
   diameter?: number;
   strokeWidth?: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const PROGRESS_SPINNER_DEFAULT_OPTIONS = new InjectionToken<ProgressSpinnerDefaultOptions>(
   'PROGRESS_SPINNER_DEFAULT_OPTIONS',
   {
@@ -27,6 +36,9 @@ export const PROGRESS_SPINNER_DEFAULT_OPTIONS = new InjectionToken<ProgressSpinn
   },
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export function PROGRESS_SPINNER_DEFAULT_OPTIONS_FACTORY(): ProgressSpinnerDefaultOptions {
   return { diameter: BASE_SIZE, strokeWidth: BASE_STROKE_WIDTH };
 }
@@ -34,6 +46,9 @@ export function PROGRESS_SPINNER_DEFAULT_OPTIONS_FACTORY(): ProgressSpinnerDefau
 const BASE_SIZE = 100;
 const BASE_STROKE_WIDTH = 10;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-progress-spinner, et-spinner',
   templateUrl: './progress-spinner.component.html',

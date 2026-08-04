@@ -4,14 +4,23 @@ import { signalHostClasses } from '@ethlete/core';
 import { InputStateService } from '../../services';
 import { InputTouchedFn, InputValueChangeFn } from '../../types';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const WRITEABLE_INPUT_TOKEN = new InjectionToken<WriteableInputDirective>('ET_WRITEABLE_INPUT_DIRECTIVE_TOKEN');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const WRITEABLE_INPUT_VALUE_ACCESSOR = {
   provide: NG_VALUE_ACCESSOR,
   useExisting: forwardRef(() => WriteableInputDirective),
   multi: true,
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   exportAs: 'etWriteableInput',
   providers: [

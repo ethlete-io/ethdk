@@ -16,8 +16,14 @@ import {
 } from '@ethlete/query';
 import { OverlayRef } from './overlay-ref';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const FILTER_OVERLAY_CONFIG = new InjectionToken<FilterOverlayConfig>('FILTER_OVERLAY_CONFIG');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type FilterOverlayConfig<
   F extends FormGroup<any> = FormGroup<any>,
   Q extends AnyV2Query | AnyLegacyQuery = AnyV2Query,
@@ -53,17 +59,26 @@ export type FilterOverlayConfig<
   ) => FilterOverlaySubmitButtonConfig;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type FilterOverlaySubmitButtonConfig = {
   label: string;
   disabled: boolean;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type DefaultSubmitButtonConfigFnConfig<ResponseType = unknown> = {
   queryState: V2QueryState<ResponseType> | null;
   totalHits: number | null;
   locale?: 'en' | 'de';
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const defaultSubmitButtonConfigFn = (
   config: DefaultSubmitButtonConfigFnConfig,
 ): FilterOverlaySubmitButtonConfig => {
@@ -119,6 +134,9 @@ export const defaultSubmitButtonConfigFn = (
   };
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type FilterOverlayResult<FormValue = unknown> =
   | {
       didUpdate: false;
@@ -128,6 +146,9 @@ export type FilterOverlayResult<FormValue = unknown> =
       formValue: FormValue;
     };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Injectable()
 export class FilterOverlayService<F extends FormGroup, C extends ComponentType<unknown> | unknown = unknown> {
   config = inject<FilterOverlayConfig<F>>(FILTER_OVERLAY_CONFIG);
@@ -199,6 +220,9 @@ export class FilterOverlayService<F extends FormGroup, C extends ComponentType<u
   }
 }
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideFilterOverlayConfig = <
   F extends FormGroup<any> = FormGroup<any>,
   Q extends AnyV2Query | AnyLegacyQuery = AnyV2Query,

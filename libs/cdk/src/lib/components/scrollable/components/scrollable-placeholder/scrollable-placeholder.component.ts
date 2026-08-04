@@ -13,6 +13,9 @@ import { NgClassType } from '@ethlete/core';
 import { SCROLLABLE_PLACEHOLDER_ITEM_TEMPLATE_TOKEN } from '../../directives/scrollable-placeholder-item-template';
 import { SCROLLABLE_PLACEHOLDER_OVERLAY_TEMPLATE_TOKEN } from '../../directives/scrollable-placeholder-overlay-template';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-scrollable-placeholder',
   templateUrl: './scrollable-placeholder.component.html',

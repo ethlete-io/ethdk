@@ -2,6 +2,8 @@
  * A source to be used in a picture element.
  * @see https://www.mediaevent.de/html/picture.html
  * @see https://web.dev/learn/design/responsive-images
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export type PictureSource = {
   /**
@@ -42,6 +44,9 @@ export type PictureSource = {
   media?: string | null;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type PictureConfig = {
   baseUrl?: string;
 };

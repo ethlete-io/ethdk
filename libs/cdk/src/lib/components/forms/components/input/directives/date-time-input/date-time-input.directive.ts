@@ -4,10 +4,22 @@ import { format } from 'date-fns';
 import { combineLatest, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const DATE_TIME_INPUT_TOKEN = new InjectionToken<DateTimeInputDirective>('ET_DATE_TIME_INPUT_DIRECTIVE_TOKEN');
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const DATE_TIME_INPUT_FORMAT_TOKEN = new InjectionToken<string>('ET_DATE_TIME_INPUT_FORMAT_TOKEN');
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const DEFAULT_DATE_TIME_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm:ssxxx";
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideDateTimeFormat = (dateFormat: string) => ({
   provide: DATE_TIME_INPUT_FORMAT_TOKEN,
   useValue: dateFormat,
@@ -15,6 +27,9 @@ export const provideDateTimeFormat = (dateFormat: string) => ({
 
 const DATE_TIME_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   exportAs: 'etDateTimeInput',
   providers: [{ provide: DATE_TIME_INPUT_TOKEN, useExisting: DateTimeInputDirective }],

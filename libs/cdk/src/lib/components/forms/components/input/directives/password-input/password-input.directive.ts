@@ -3,8 +3,14 @@ import { createDestroy } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const PASSWORD_INPUT_TOKEN = new InjectionToken<PasswordInputDirective>('ET_PASSWORD_INPUT_DIRECTIVE_TOKEN');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   exportAs: 'etPasswordInput',
   providers: [{ provide: PASSWORD_INPUT_TOKEN, useExisting: PasswordInputDirective }],

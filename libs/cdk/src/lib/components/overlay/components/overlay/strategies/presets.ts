@@ -5,6 +5,9 @@ import { injectDialogStrategy } from './dialog';
 import { injectFullscreenDialogStrategy } from './full-screen';
 import { injectRightSheetStrategy } from './right-sheet';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const transformingBottomSheetToDialogOverlayStrategy = (customConfig?: {
   bottomSheet?: OverlayBreakpointConfig;
   dialog?: OverlayBreakpointConfig;
@@ -26,6 +29,9 @@ export const transformingBottomSheetToDialogOverlayStrategy = (customConfig?: {
   };
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const transformingFullScreenDialogToRightSheetOverlayStrategy = (customConfig?: {
   fullScreenDialog?: OverlayBreakpointConfig;
   rightSheet?: OverlayBreakpointConfig;
@@ -47,6 +53,9 @@ export const transformingFullScreenDialogToRightSheetOverlayStrategy = (customCo
   };
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const transformingFullScreenDialogToDialogOverlayStrategy = (customConfig?: {
   fullScreenDialog?: OverlayBreakpointConfig;
   dialog?: OverlayBreakpointConfig;

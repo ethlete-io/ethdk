@@ -44,6 +44,9 @@ import {
 
 type OmitNull<T> = T extends null ? never : T;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function filterSuccess() {
   return function <T extends V2QueryState | null, Response extends QueryStateResponseOf<OmitNull<T>>>(
     source: Observable<T>,
@@ -52,24 +55,36 @@ export function filterSuccess() {
   };
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function ignoreAutoRefresh() {
   return function <T extends V2QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => !isAutoRefresh(value))) as Observable<T>;
   };
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function filterFailure() {
   return function <T extends V2QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => isQueryStateFailure(value))) as Observable<Failure>;
   };
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function filterQueryStates(allowedStates: QueryStateType[]) {
   return function <T extends V2QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => value && allowedStates.includes(value.type))) as Observable<T>;
   };
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function takeUntilResponse(config?: { excludeNull?: boolean }) {
   return function <T extends V2QueryState | null>(source: Observable<T>) {
     return source.pipe(
@@ -84,18 +99,27 @@ export function takeUntilResponse(config?: { excludeNull?: boolean }) {
   };
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function filterNull() {
   return function <T>(source: Observable<T>) {
     return source.pipe(filter((value): value is OmitNull<T> => value !== null));
   };
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function switchQueryState() {
   return function <T extends AnyV2Query | AnyLegacyQuery | null, Data extends QueryDataOf<T>>(source: Observable<T>) {
     return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<V2QueryState<Data> | null>;
   };
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function switchQueryCollectionState() {
   return function <T extends AnyQueryCollection | null, Data extends AnyQueryCollectionData<OmitNull<T>>>(
     source: Observable<T>,
@@ -104,6 +128,9 @@ export function switchQueryCollectionState() {
   };
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const resetPageOnError =
   <T extends AnyV2Query | AnyLegacyQuery | null | undefined, J extends QueryForm<any>>(
     config: ResetPageOnErrorOperatorConfig<J>,
@@ -147,23 +174,44 @@ export const resetPageOnError =
     );
   };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isQueryStateLoading = (state: V2QueryState | null | undefined): state is Loading =>
   state?.type === QueryStateType.Loading;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isQueryStateSuccess = (state: V2QueryState | null | undefined): state is Success =>
   state?.type === QueryStateType.Success;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isQueryStateFailure = (state: V2QueryState | null | undefined): state is Failure =>
   state?.type === QueryStateType.Failure;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isQueryStateCancelled = (state: V2QueryState | null | undefined): state is Cancelled =>
   state?.type === QueryStateType.Cancelled;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isQueryStatePrepared = (state: V2QueryState | null | undefined): state is Prepared =>
   state?.type === QueryStateType.Prepared;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isAutoRefresh = (state: V2QueryState | null | undefined) => state?.meta.triggeredVia === 'auto';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const mergeHeaders = (...headers: Array<RequestHeaders | null | undefined>) => {
   return headers.reduce((acc, headers) => {
     if (!headers) {
@@ -177,6 +225,9 @@ export const mergeHeaders = (...headers: Array<RequestHeaders | null | undefined
   }, {});
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isGqlQueryConfig = <
   Response,
   Arguments extends BaseArguments | undefined,
@@ -198,6 +249,9 @@ export const isGqlQueryConfig = <
   return true;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isQuery = <T extends AnyV2Query | AnyLegacyQuery>(query: unknown): query is T => {
   if (!query || typeof query !== 'object' || Array.isArray(query)) {
     return false;
@@ -210,6 +264,9 @@ export const isQuery = <T extends AnyV2Query | AnyLegacyQuery>(query: unknown): 
   return true;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isQueryCollection = <T extends AnyQueryCollection>(query: unknown): query is T => {
   if (!query || typeof query !== 'object' || Array.isArray(query)) {
     return false;
@@ -222,11 +279,17 @@ export const isQueryCollection = <T extends AnyQueryCollection>(query: unknown):
   return true;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const createQueryCollection = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
 ) => new BehaviorSubject<R | null>(null);
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const createQueryCollectionSubject = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
@@ -245,6 +308,9 @@ export const createQueryCollectionSubject = <T extends AnyQueryCreatorCollection
   return subject;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const createQueryCollectionSignal = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
@@ -263,9 +329,15 @@ export const createQueryCollectionSignal = <T extends AnyQueryCreatorCollection,
   return _signal;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const extractQuery = <T extends AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>(v: T) =>
   (isQuery(v) ? v : isLegacyQuery(v) ? v : v?.query) ?? null;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const getDefaultHeaders = (
   headers: RequestHeaders | RequestHeadersMethodMap | null | undefined,
   method: Method,
@@ -281,6 +353,9 @@ export const getDefaultHeaders = (
   return headers as RequestHeaders;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const castQueryCreatorTypes = <
   QC extends AnyV2QueryCreator,
   Arguments extends V2QueryArgsOf<QC>,
@@ -305,6 +380,9 @@ export const castQueryCreatorTypes = <
   return config.creator as unknown as V2QueryCreator<OverrideArguments, OverrideResponse, Route, Store, Data, Id>;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const computeQueryMethod = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
   client: V2QueryClient;
@@ -321,6 +399,9 @@ export const computeQueryMethod = (config: {
   return method;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const computeQueryBody = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
   client: V2QueryClient;
@@ -352,6 +433,9 @@ export const computeQueryBody = (config: {
   return body;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const computeQueryAuthHeader = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
   client: V2QueryClient;
@@ -373,6 +457,9 @@ export const computeQueryAuthHeader = (config: {
   return authHeader;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const computeQueryHeaders = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
   client: V2QueryClient;
@@ -390,6 +477,9 @@ export const computeQueryHeaders = (config: {
   return mergedHeaders;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const computeQueryQueryParams = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
   client: V2QueryClient;
@@ -415,6 +505,9 @@ export const computeQueryQueryParams = (config: {
   return config.args?.queryParams;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const paginatedEntityValueUpdater =
   <
     T extends Paginated<unknown>,

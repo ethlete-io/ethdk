@@ -30,6 +30,9 @@ import {
 } from '../query';
 import { QueryDataOf } from '../query-creator';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryContainerConfig = {
   /**
    * If `true`, the previous query will be aborted when a new query is pushed into the container.
@@ -50,6 +53,9 @@ export type QueryContainerConfig = {
   stopPreviousPolling?: boolean;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryFilterConfig = {
   /**
    * If `true`, the response will be cached until the next response is received or the query fails.
@@ -58,6 +64,9 @@ export type QueryFilterConfig = {
   cacheResponse?: boolean;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const addQueryContainerHandling = (
   obs: Observable<AnyV2Query | AnyV2Query[] | AnyLegacyQuery | AnyLegacyQuery[] | null>,
   valueFn: () => AnyV2Query | AnyV2Query[] | AnyLegacyQuery | AnyLegacyQuery[] | null | undefined,
@@ -154,9 +163,15 @@ export const addQueryContainerHandling = (
   });
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Observable<T> | Subscribable<T>,
 ): Signal<T | undefined>;
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Observable<T> | Subscribable<T>,
   options: NoInfer<ToSignalOptions<T | undefined>> & {
@@ -164,6 +179,9 @@ export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
     requireSync?: false;
   } & QueryContainerConfig,
 ): Signal<T | undefined>;
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Observable<T> | Subscribable<T>,
   options: NoInfer<ToSignalOptions<T | null>> & {
@@ -171,6 +189,9 @@ export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
     requireSync?: false;
   } & QueryContainerConfig,
 ): Signal<T | null>;
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Observable<T> | Subscribable<T>,
   options: NoInfer<ToSignalOptions<T>> & {
@@ -178,6 +199,9 @@ export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
     requireSync: true;
   } & QueryContainerConfig,
 ): Signal<T>;
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null, const U extends T>(
   source: Observable<T> | Subscribable<T>,
   options: NoInfer<ToSignalOptions<T | U>> & {
@@ -186,6 +210,9 @@ export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null, cons
   } & QueryContainerConfig,
 ): Signal<T | U>;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null, U = undefined>(
   source: Observable<T> | Subscribable<T>,
   options?: ToSignalOptions<T | U> & { initialValue?: U } & QueryContainerConfig,
@@ -198,6 +225,9 @@ export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null, U = 
   return s as Signal<T | U>;
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function effectComputed<T extends AnyV2Query | AnyLegacyQuery | AnyV2Query[] | AnyLegacyQuery[] | null>(
   computation: () => T,
   injector: Injector,
@@ -226,6 +256,9 @@ export function effectComputed<T extends AnyV2Query | AnyLegacyQuery | AnyV2Quer
   return lastResult.asReadonly();
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function queryComputed<T extends AnyV2Query | AnyLegacyQuery | null>(
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
@@ -243,6 +276,8 @@ export function queryComputed<T extends AnyV2Query | AnyLegacyQuery | null>(
 /**
  * Creates a signal that will only be reactive until the first query is created.
  * All subsequent changes inside the computation will be ignored.
+ *
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export function queryComputedTillTruthy<T extends AnyV2Query | AnyLegacyQuery | null>(
   computation: () => T,
@@ -258,6 +293,9 @@ export function queryComputedTillTruthy<T extends AnyV2Query | AnyLegacyQuery | 
   return c;
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function queryArrayComputed<T extends AnyV2Query[] | AnyLegacyQuery[] | null>(
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
@@ -272,6 +310,9 @@ export function queryArrayComputed<T extends AnyV2Query[] | AnyLegacyQuery[] | n
   return c;
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function toQuerySubject<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Signal<T>,
   options?: ToObservableOptions & QueryContainerConfig,
@@ -283,6 +324,9 @@ export function toQuerySubject<T extends AnyV2Query | AnyLegacyQuery | null>(
   return obs;
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function queryStateSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>>(
   source: T,
   options?: QueryFilterConfig,
@@ -310,9 +354,15 @@ export function queryStateSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | 
   return rwSignal;
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryStateSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>> =
   Signal<QueryDataOf<QueryOf<ReturnType<T>>> | null> & { reset: () => void };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function queryStateResponseSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>>(
   source: T,
   options?: QueryFilterConfig,
@@ -332,6 +382,9 @@ export function queryStateResponseSignal<T extends Signal<AnyV2Query | AnyLegacy
   return dataSignal as QueryStateSignal<T>;
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function queryStateErrorSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>>(
   source: T,
 ) {
@@ -344,6 +397,9 @@ export function queryStateErrorSignal<T extends Signal<AnyV2Query | AnyLegacyQue
   });
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function queryStateLoadingSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>>(
   source: T,
 ) {

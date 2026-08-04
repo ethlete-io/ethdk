@@ -21,6 +21,9 @@ import {
 import { TableBusyDirective } from '../../partials/table-busy';
 import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-table, table[et-table]',
   exportAs: 'etTable',

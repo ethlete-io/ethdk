@@ -11,6 +11,7 @@ import {
   ensureConfigSuffix,
   ensureImportFromEthleteCore,
   ensureImportFromQuery,
+  legacyQueryDeprecationTag,
 } from './shared.js';
 
 const LEGACY_HTTP_METHOD = {
@@ -638,7 +639,7 @@ const getTypeParameter = (creator: LegacyQueryCreatorInfo) => {
 const generateLegacyWrapper = (creator: LegacyQueryCreatorInfo) => {
   // `name` is what lets a `prepare()` called outside an injection context name itself in the error
   // instead of surfacing as a bare NG0203.
-  return `export const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ name: '${toLegacyName(creator.name)}', creator: ${creator.name} });`;
+  return `/**\n * ${legacyQueryDeprecationTag(creator.name)}\n */\nexport const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ name: '${toLegacyName(creator.name)}', creator: ${creator.name} });`;
 };
 
 type CreateAuthProvidersOptions = {

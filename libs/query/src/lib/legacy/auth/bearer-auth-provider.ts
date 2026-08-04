@@ -16,6 +16,9 @@ import {
 } from './auth-provider.types';
 import { decryptBearer } from './auth-provider.utils';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthProvider {
   private readonly destroy$ = new Subject<boolean>();
   private readonly _currentRefreshQuery$ = new BehaviorSubject<ConstructQuery<T> | null>(null);

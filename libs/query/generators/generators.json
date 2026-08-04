@@ -15,6 +15,11 @@
       "schema": "./prep-for-query-v3/schema.json",
       "description": "Update code to prepare for migration to query v3"
     },
+    "deprecate-legacy-queries": {
+      "factory": "./deprecate-legacy-queries/migration",
+      "schema": "./deprecate-legacy-queries/schema.json",
+      "description": "Mark existing createLegacyQueryCreator wrappers as @deprecated so their call sites surface as still on v2"
+    },
     "migrate-query-opt-in-features": {
       "factory": "./migrate-query-opt-in-features/migration",
       "schema": "./migrate-query-opt-in-features/schema.json",

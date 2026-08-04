@@ -2,6 +2,9 @@ import { Directive, inject, ViewChild } from '@angular/core';
 import { INPUT_TOKEN } from '../directives/input';
 import { NATIVE_INPUT_REF_TOKEN, NativeInputRefDirective } from '../directives/native-input-ref';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive()
 export class InputBase {
   private readonly __nativeInputRef = inject(NATIVE_INPUT_REF_TOKEN, { optional: true });

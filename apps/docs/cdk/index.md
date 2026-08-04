@@ -3,7 +3,7 @@
 The original Angular UI toolkit of the Ethlete SDK - buttons, forms, overlays, tables, carousels and more, built on [`@ethlete/core`](/core/) and integrated with [`@ethlete/query`](/query/).
 
 ::: warning Maintenance mode
-`@ethlete/cdk` has been superseded by [`@ethlete/components`](/components/). It still receives bug fixes, but no new features. **Every CDK domain now has a successor** in `@ethlete/components` or `@ethlete/core` - see [the table below](#superseded-by-ethlete-components), and the callout at the top of each guide for the renames. Migrating a specific import? [**Migrating to components, symbol by symbol**](/cdk/migration) maps all 627 CDK exports to their successor. The one reason to still reach for a CDK control is **classic reactive forms**: the `@ethlete/components` form controls are signal-forms only (see [Forms](/cdk/forms)).
+`@ethlete/cdk` has been superseded by [`@ethlete/components`](/components/). It still receives bug fixes, but no new features. **Every CDK domain now has a successor** in `@ethlete/components` or `@ethlete/core` - see [the table below](#superseded-by-ethlete-components), and the callout at the top of each guide for the renames. Every export carries an `@deprecated` tag pointing at that successor, so remaining CDK usage strikes through in the editor - it is documentation, not a lint error, and intent to remove is v6. Migrating a specific import? [**Migrating to components, symbol by symbol**](/cdk/migration) maps all 627 CDK exports to their successor. The one reason to still reach for a CDK control is **classic reactive forms**: the `@ethlete/components` form controls are signal-forms only (see [Forms](/cdk/forms)).
 :::
 
 ```bash

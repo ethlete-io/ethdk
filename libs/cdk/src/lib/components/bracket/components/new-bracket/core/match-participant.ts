@@ -10,9 +10,18 @@ import {
 } from './round';
 import { TOURNAMENT_MODE } from './tournament';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type ParticipantMatchResult = 'win' | 'loss' | 'tie';
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type MatchParticipantSide = 'home' | 'away';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracketMatchParticipantBase = NewBracketParticipantBase & {
   result: ParticipantMatchResult | null;
   isEliminated: boolean;
@@ -23,9 +32,15 @@ export type NewBracketMatchParticipantBase = NewBracketParticipantBase & {
   side: MatchParticipantSide;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracketMatchParticipantWithRelationsBase = NewBracketMatchParticipantBase &
   NewBracketParticipantWithRelationsBase;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
   source: BracketDataSource<TRoundData, TMatchData>,
   participantId: MatchParticipantId | null,

@@ -6,12 +6,18 @@ import { FormGroupStateService, InputStateService } from '../../../../services';
 import { Primitive } from '../../../select/components/combobox/utils';
 import { SEGMENTED_BUTTON_TOKEN } from '../segmented-button/segmented-button.directive';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const SEGMENTED_BUTTON_GROUP_TOKEN = new InjectionToken<SegmentedButtonGroupDirective>(
   'ET_SEGMENTED_BUTTON_GROUP_DIRECTIVE_TOKEN',
 );
 
 let nextUniqueId = 0;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   providers: [{ provide: SEGMENTED_BUTTON_GROUP_TOKEN, useExisting: SegmentedButtonGroupDirective }],
   exportAs: 'etSegmentedButtonGroup',

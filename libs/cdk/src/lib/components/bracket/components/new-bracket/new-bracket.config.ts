@@ -9,9 +9,14 @@ import { BracketSwissGroupColorType } from './linked';
  * into the target group color on the last portion before touching its border.
  * Any CSS color value is allowed. Missing entries fall back to `currentColor`
  * (the `--bracket-line-color` / `--bracket-swiss-group-border-color` custom properties).
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export type BracketSwissColors = Partial<Record<BracketSwissGroupColorType, string>>;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type BracketSwissConfig<TRoundData = any, TMatchData = any> = {
   roundHeaderComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
@@ -22,6 +27,8 @@ export type BracketSwissConfig<TRoundData = any, TMatchData = any> = {
 /**
  * Default values for the et-new-bracket component inputs. Inputs set on the component
  * always win over the config.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NewBracketConfig<TRoundData = any, TMatchData = any> = {
@@ -63,5 +70,11 @@ const NEW_BRACKET_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<NewBrack
   { name: 'NewBracketConfig' },
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideNewBracketConfig = /* @__PURE__ */ toProvideFn(NEW_BRACKET_CONFIG_DEF);
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const injectNewBracketConfig = /* @__PURE__ */ toInjectFn(NEW_BRACKET_CONFIG_DEF);

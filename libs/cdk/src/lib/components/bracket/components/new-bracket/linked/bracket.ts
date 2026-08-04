@@ -16,6 +16,9 @@ import { BracketDataSource } from '../integrations';
 import { BracketMatchRelation, generateMatchRelationsNew } from './match-relations';
 import { BracketRoundRelation, generateRoundRelationsNew } from './round-relations';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracket<TRoundData, TMatchData> = {
   rounds: BracketMap<BracketRoundId, NewBracketRound<TRoundData, TMatchData>>;
   roundsByType: BracketMap<BracketRoundType, BracketMap<BracketRoundId, NewBracketRound<TRoundData, TMatchData>>>;
@@ -24,11 +27,17 @@ export type NewBracket<TRoundData, TMatchData> = {
   mode: TournamentMode;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracketRound<TRoundData, TMatchData> = NewBracketRoundBase<TRoundData> & {
   matches: BracketMap<BracketMatchId, NewBracketMatch<TRoundData, TMatchData>>;
   relation: BracketRoundRelation<TRoundData, TMatchData>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracketMatch<TRoundData, TMatchData> = NewBracketMatchBase<TMatchData> & {
   round: NewBracketRound<TRoundData, TMatchData>;
   home: NewBracketMatchParticipant<TRoundData, TMatchData> | null;
@@ -37,19 +46,31 @@ export type NewBracketMatch<TRoundData, TMatchData> = NewBracketMatchBase<TMatch
   relation: BracketMatchRelation<TRoundData, TMatchData>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracketParticipantMatch<TRoundData, TMatchData> = NewBracketMatch<TRoundData, TMatchData> & {
   me: NewBracketMatchParticipant<TRoundData, TMatchData>;
   opponent: NewBracketMatchParticipant<TRoundData, TMatchData> | null;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracketParticipant<TRoundData, TMatchData> = NewBracketParticipantBase & {
   matches: BracketMap<BracketMatchId, NewBracketParticipantMatch<TRoundData, TMatchData>>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type NewBracketMatchParticipant<TRoundData, TMatchData> = NewBracketMatchParticipantBase & {
   matches: BracketMap<BracketMatchId, NewBracketMatch<TRoundData, TMatchData>>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const createNewBracket = <TRoundData, TMatchData>(
   source: BracketDataSource<TRoundData, TMatchData>,
   options: GenerateBracketDataOptions,

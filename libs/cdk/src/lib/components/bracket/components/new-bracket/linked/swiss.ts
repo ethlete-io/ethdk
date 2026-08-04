@@ -1,8 +1,14 @@
 import { BracketMap, BracketMatchId, BracketRoundId, TOURNAMENT_MODE } from '../core';
 import { NewBracket, NewBracketMatch } from './bracket';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketRoundSwissGroupId = string & { __brand: 'BracketRoundSwissGroupId' };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketRoundSwissGroup<TRoundData, TMatchData> = {
   id: BracketRoundSwissGroupId;
   name: string;
@@ -10,23 +16,41 @@ export type BracketRoundSwissGroup<TRoundData, TMatchData> = {
   allowedMatchCount: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketRoundSwissGroupMap<TRoundData, TMatchData> = Map<
   BracketRoundSwissGroupId,
   BracketRoundSwissGroup<TRoundData, TMatchData>
 >;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketRoundSwissData<TRoundData, TMatchData> = {
   groups: BracketRoundSwissGroupMap<TRoundData, TMatchData>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketRoundMapWithSwissData<TRoundData, TMatchData> = Map<
   BracketRoundId,
   BracketRoundSwissData<TRoundData, TMatchData>
 >;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const SWISS_ADVANCE_WINS = 3;
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const SWISS_ELIMINATE_LOSSES = 3;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const BRACKET_SWISS_GROUP_COLOR_TYPE = {
   /** The starting group (0-0) */
   NEUTRAL: 'neutral',
@@ -41,9 +65,15 @@ export const BRACKET_SWISS_GROUP_COLOR_TYPE = {
   WARNING: 'warning',
 } as const;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketSwissGroupColorType =
   (typeof BRACKET_SWISS_GROUP_COLOR_TYPE)[keyof typeof BRACKET_SWISS_GROUP_COLOR_TYPE];
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const getSwissGroupColorType = (wins: number, losses: number): BracketSwissGroupColorType => {
   if (wins === 0 && losses === 0) return BRACKET_SWISS_GROUP_COLOR_TYPE.NEUTRAL;
   if (losses === SWISS_ELIMINATE_LOSSES - 1) return BRACKET_SWISS_GROUP_COLOR_TYPE.NEGATIVE;
@@ -54,6 +84,9 @@ export const getSwissGroupColorType = (wins: number, losses: number): BracketSwi
 
 const factorialCache = new Map<number, number>();
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatchesInRound: number) => {
   const ADVANCE_WINS = SWISS_ADVANCE_WINS;
   const ELIMINATE_LOSSES = SWISS_ELIMINATE_LOSSES;
@@ -97,6 +130,9 @@ export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatche
   }));
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateBracketRoundSwissGroupMaps = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
 ) => {

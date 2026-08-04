@@ -1,6 +1,9 @@
 import { BRACKET_ROUND_MIRROR_TYPE, COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../core';
 import { NewBracket, NewBracketRound } from './bracket';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // One round has one next round (the first round of the bracket)
 export type BracketRoundRelationNothingToOne<TRoundData, TMatchData> = {
   type: 'nothing-to-one';
@@ -9,6 +12,9 @@ export type BracketRoundRelationNothingToOne<TRoundData, TMatchData> = {
   nextRoundMatchFactor: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // One round has one previous round (eg. the finals round of the bracket in case of a single elimination bracket)
 export type BracketRoundRelationOneToNothing<TRoundData, TMatchData> = {
   type: 'one-to-nothing';
@@ -18,6 +24,9 @@ export type BracketRoundRelationOneToNothing<TRoundData, TMatchData> = {
   rootRoundMatchFactor: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // One round has one previous round and one next round (eg. a normal round in the bracket that is neither the start nor the end)
 export type BracketRoundRelationOneToOne<TRoundData, TMatchData> = {
   type: 'one-to-one';
@@ -29,6 +38,9 @@ export type BracketRoundRelationOneToOne<TRoundData, TMatchData> = {
   rootRoundMatchFactor: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // One round has two previous rounds and one next round (eg. the finals round in a double elimination bracket when the reverse finals is also being played)
 export type BracketRoundRelationTwoToOne<TRoundData, TMatchData> = {
   type: 'two-to-one';
@@ -43,6 +55,9 @@ export type BracketRoundRelationTwoToOne<TRoundData, TMatchData> = {
   lowerRootRoundMatchFactor: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // One round has two previous rounds and no next round (eg. the finals round in a double elimination bracket when the reverse finals is not being played)
 export type BracketRoundRelationTwoToNothing<TRoundData, TMatchData> = {
   type: 'two-to-nothing';
@@ -55,6 +70,9 @@ export type BracketRoundRelationTwoToNothing<TRoundData, TMatchData> = {
   lowerRootRoundMatchFactor: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketRoundRelation<TRoundData, TMatchData> =
   | BracketRoundRelationNothingToOne<TRoundData, TMatchData>
   | BracketRoundRelationOneToNothing<TRoundData, TMatchData>
@@ -350,6 +368,9 @@ const handleRegularRound = <TRoundData, TMatchData>(params: {
   }
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateRoundRelationsNew = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
 ): BracketRoundRelation<TRoundData, TMatchData>[] => {

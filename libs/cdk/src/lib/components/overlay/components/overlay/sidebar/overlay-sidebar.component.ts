@@ -5,6 +5,9 @@ import { OVERLAY_HEADER_TEMPLATE_TOKEN, OverlayBodyDividerType } from '../common
 import { OverlayRouterService } from '../routing';
 import { SidebarOverlayService } from './sidebar-overlay';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-overlay-sidebar',
   template: `

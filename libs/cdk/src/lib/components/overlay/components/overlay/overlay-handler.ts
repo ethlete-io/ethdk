@@ -19,6 +19,9 @@ import { OverlayConfig, OverlayConsumerConfig } from './overlay-config';
 import { injectOverlayManager, OVERLAY_DATA } from './overlay-manager';
 import { OverlayRef } from './overlay-ref';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type CreateOverlayHandlerConfig<T, D = unknown> = OverlayConfig<D> & {
   /** The overlay component. Use either this or the `template` property  */
   component?: ComponentType<T>;
@@ -27,6 +30,9 @@ export type CreateOverlayHandlerConfig<T, D = unknown> = OverlayConfig<D> & {
   template?: TemplateRef<T>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayHandler<T, D = unknown, R = unknown> = {
   /** Open the overlay using a combination of the given configs  */
   open: (config?: OverlayConsumerConfig<D>) => OverlayRef<T, R>;
@@ -44,6 +50,9 @@ export type OverlayHandler<T, D = unknown, R = unknown> = {
   injectOverlayData: () => D;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type CreateOverlayHandlerInnerConfig<R = unknown> = {
   /** A callback function to be executed once the overlay has been closed */
   afterClosed?: (result: R | null) => void;
@@ -55,6 +64,9 @@ export type CreateOverlayHandlerInnerConfig<R = unknown> = {
   afterOpened?: () => void;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverlayResult = unknown>(
   rootConfig: CreateOverlayHandlerConfig<TComponent, TOverlayData>,
 ) => {
@@ -133,6 +145,9 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
   return fn;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayHandlerWithQueryParamLifecycle<Q = string> = {
   /** Open the overlay using the provided query param value  */
   open: (queryParamValue: Q) => void;
@@ -141,6 +156,9 @@ export type OverlayHandlerWithQueryParamLifecycle<Q = string> = {
   close: () => void;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type CreateOverlayHandlerWithQueryParamLifecycleConfig<T> = Omit<
   OverlayConfig<unknown>,
   'data' | 'closeOnNavigation'
@@ -152,6 +170,9 @@ export type CreateOverlayHandlerWithQueryParamLifecycleConfig<T> = Omit<
   queryParamKey: string;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const OVERLAY_QUERY_PARAM_INPUT_NAME = 'overlayQueryParam';
 
 /**
@@ -162,6 +183,8 @@ export const OVERLAY_QUERY_PARAM_INPUT_NAME = 'overlayQueryParam';
  * You can then split the string inside the overlay component using computed signals.
  *
  * To open the overlay either use the `OverlayHandlerLinkDirective` or call the `.open` method of the returned handler.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export const createOverlayHandlerWithQueryParamLifecycle = <
   TComponent,

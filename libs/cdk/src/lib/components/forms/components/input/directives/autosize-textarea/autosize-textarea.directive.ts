@@ -3,6 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { signalElementDimensions } from '@ethlete/core';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   selector: 'et-textarea-input[etAutosize]',
   host: {

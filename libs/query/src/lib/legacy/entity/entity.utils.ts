@@ -3,6 +3,9 @@ import { map, of, switchMap, take, tap } from 'rxjs';
 import { EntityStore } from './entity-store';
 import { EntityKey, InsertFromConfig, RemoveFromConfig } from './entity.types';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export function mapToPaginated<T>(response: Paginated<T>) {
   return map((items) => ({ ...response, items }) as Paginated<T>);
 }
@@ -10,6 +13,8 @@ export function mapToPaginated<T>(response: Paginated<T>) {
 // FIXME: This breaks if SubStoreType is an array
 /**
  * Use an other store to represent a property of the current entity.
+ *
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export const insertFrom = <
   OriginStoreType,
@@ -39,6 +44,8 @@ export const insertFrom = <
 
 /**
  * Remove entities from a store based on a where function.
+ *
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export const removeFrom = <T>(store: EntityStore<T>, { where, id }: RemoveFromConfig<T>) => {
   store

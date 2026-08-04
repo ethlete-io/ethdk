@@ -10,6 +10,9 @@ import { InlineTabLabelWrapperDirective } from './partials/inline-tabs/inline-ta
 import { NavTabLinkComponent } from './partials/nav-tabs/nav-tab-link';
 import { NavTabsOutletComponent } from './partials/nav-tabs/nav-tabs-outlet';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const TabImports = [
   InlineTabsComponent,
   InlineTabBodyComponent,

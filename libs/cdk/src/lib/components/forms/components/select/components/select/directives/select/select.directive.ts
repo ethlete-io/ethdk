@@ -41,6 +41,9 @@ import { SelectKeyHandlerResult } from '../../private';
 import { SelectBodyDirective } from '../select-body';
 import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../select-option';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const SELECT_TOKEN = new InjectionToken<SelectDirective<any>>('ET_SELECT_INPUT_TOKEN');
 
@@ -57,6 +60,9 @@ type SelectBodyConfig<T extends SelectDirectiveBodyComponentBase> = {
   template: TemplateRef<unknown>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   hostDirectives: [AnimatedOverlayDirective, OverlayCloseBlockerDirective],
   providers: [

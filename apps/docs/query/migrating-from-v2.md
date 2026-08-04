@@ -22,6 +22,18 @@ yarn nx g @ethlete/query:migrate-to-query-v3 --include=libs/queries
 
 One coupling cannot be split: a query client and the creators built on it must be migrated in the same run, because the creators are rewritten in terms of the client's generated `xGet` / `xPostSecure` helpers.
 
+### The remaining work is visible in the editor
+
+Every legacy export is `@deprecated`, and each `legacy*` wrapper the codemod writes carries a tag naming the current-system creator to move to. Nothing fails to compile - the tag exists so that "what is still on v2" is strikethrough in the editor rather than a grep, and so the count shrinks visibly as you work through step 4.
+
+Workspaces that ran the codemod before the tags existed can add them to wrappers already in source:
+
+```bash
+yarn nx g @ethlete/query:deprecate-legacy-queries
+```
+
+It takes the same `--projects` / `--include` scoping, skips anything already tagged, and is safe to re-run.
+
 ## 2. Make it boot
 
 Three things are the difference between "it compiles" and "it works".

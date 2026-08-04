@@ -151,3 +151,63 @@ export const getLineNumber = (node: ts.Node, sourceFile: ts.SourceFile) => {
 
 export const getLineNumberFromPosition = (content: string, position: number) =>
   content.slice(0, position).split('\n').length;
+
+const MIGRATION_GUIDE_URL = 'https://ethlete-sdk-docs.web.app/query/migrating-from-v2';
+
+/**
+ * The tag every `createLegacyQueryCreator(…)` wrapper carries. The wrapper is a migration
+ * scaffold, so marking it is what turns "which call sites are still on v2" from a grep into
+ * strikethrough in the editor.
+ */
+export const legacyQueryDeprecationTag = (creatorName?: string) =>
+  `@deprecated Legacy (v2) query wrapper. Migrate the call sites to ${
+    creatorName ? `\`${creatorName}\`` : 'the query creator it wraps'
+  } and delete this wrapper - see ${MIGRATION_GUIDE_URL}.`;
+
+/**
+ * Adds a tag to `node`'s JSDoc, creating the block when there is none. Returns `null` when the
+ * tag is already there, so a caller can tell "nothing to do" from "rewritten".
+ *
+ * Leading `//` comments stay glued to the node - an `eslint-disable-next-line` only works from
+ * the line directly above.
+ */
+export const addJsDocTag = (content: string, sourceFile: ts.SourceFile, node: ts.Node, tag: string) => {
+  const jsDocs = (node as ts.Node & { jsDoc?: ts.JSDoc[] }).jsDoc ?? [];
+  const existing = jsDocs[jsDocs.length - 1];
+
+  const tagName = /^@\w+/.exec(tag)?.[0];
+
+  if (existing && tagName && new RegExp(`${tagName}\\b`).test(existing.getText())) {
+    return null;
+  }
+
+  if (existing) {
+    const start = existing.getStart(sourceFile);
+    const indentation = ' '.repeat(sourceFile.getLineAndCharacterOfPosition(start).character);
+    const text = existing.getText();
+    const body = text.slice(0, text.lastIndexOf('*/')).replace(/\s+$/, '');
+    // A one-line `/** … */` has to become a block before a tag line can be appended to it.
+    const opened = body.includes('\n') ? body : `/**\n${indentation} * ${body.slice(3).trim()}`;
+
+    return (
+      content.slice(0, start) +
+      `${opened}\n${indentation} *\n${indentation} * ${tag}\n${indentation} */` +
+      content.slice(existing.getEnd())
+    );
+  }
+
+  let start = node.getStart(sourceFile, false);
+
+  for (const comment of (ts.getLeadingCommentRanges(content, node.getFullStart()) ?? []).reverse()) {
+    if (comment.kind !== ts.SyntaxKind.SingleLineCommentTrivia) break;
+    if (!/^\n[ \t]*$/.test(content.slice(comment.end, start))) break;
+
+    start = comment.pos;
+  }
+
+  const indentation = ' '.repeat(sourceFile.getLineAndCharacterOfPosition(start).character);
+
+  return (
+    content.slice(0, start) + `/**\n${indentation} * ${tag}\n${indentation} */\n${indentation}` + content.slice(start)
+  );
+};

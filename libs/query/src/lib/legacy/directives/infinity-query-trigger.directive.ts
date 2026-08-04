@@ -2,6 +2,9 @@ import { computed, Directive, ElementRef, inject, input, OnDestroy, OnInit } fro
 import { fromEvent, Subject, takeUntil } from 'rxjs';
 import { INFINITY_QUERY_TOKEN, InfinityQueryDirective } from './infinity-query.directive';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 @Directive({
   selector: '[etInfinityQueryTrigger], et-infinity-query-trigger',
 })

@@ -1,5 +1,8 @@
 import { AnyV2QueryCreator, QueryResponseOf, V2QueryArgsOf } from '../query-creator';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type AuthProvider = {
   /**
    * The up to date auth header.
@@ -14,6 +17,9 @@ export type AuthProvider = {
   cleanUp(): void;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type AuthProviderBasicConfig = {
   /**
    * Basic auth username
@@ -26,6 +32,9 @@ export type AuthProviderBasicConfig = {
   password: string;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type AuthProviderCustomHeaderConfig = {
   /**
    * The custom header name
@@ -40,6 +49,9 @@ export type AuthProviderCustomHeaderConfig = {
   value: string;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type AuthProviderBearerConfig<T extends AnyV2QueryCreator> = {
   /**
    * The initial jwt
@@ -52,6 +64,9 @@ export type AuthProviderBearerConfig<T extends AnyV2QueryCreator> = {
   refreshConfig?: BearerRefreshConfig<T>;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type BearerRefreshConfig<T extends AnyV2QueryCreator> = {
   /**
    * The query used to trade the refresh token for a new token response.
@@ -138,6 +153,9 @@ export type BearerRefreshConfig<T extends AnyV2QueryCreator> = {
   responseAdapter?: (response: NonNullable<QueryResponseOf<T>>) => TokenResponse;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const enum AuthBearerRefreshStrategy {
   /**
    * Automatically refresh the token 5 minutes before expiration.
@@ -146,6 +164,9 @@ export const enum AuthBearerRefreshStrategy {
   BeforeExpiration = 'beforeExpiration',
 }
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type TokenResponse = {
   /**
    * The access token used inside the authorization http header.

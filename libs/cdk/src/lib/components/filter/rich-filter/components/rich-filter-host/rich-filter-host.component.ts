@@ -5,6 +5,9 @@ import { RICH_FILTER_BUTTON_SLOT_TOKEN } from '../../directives/rich-filter-butt
 import { RICH_FILTER_CONTENT_TOKEN } from '../../directives/rich-filter-content';
 import { RICH_FILTER_TOP_TOKEN, RichFilterTopDirective } from '../../directives/rich-filter-top';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-rich-filter-host, [et-rich-filter-host]',
   styleUrls: ['./rich-filter-host.component.scss'],
@@ -43,6 +46,9 @@ export class RichFilterHostComponent {
   }
 }
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // Below the component on purpose: an interpolated template literal above an inline `template:`
 // breaks Angular language service completions in it - see the
 // `ethlete/no-template-literal-before-inline-template` lint rule.

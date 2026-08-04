@@ -74,6 +74,9 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
   return point ? { x: point.clientX, y: point.clientY } : null;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-slider',
   templateUrl: './slider.component.html',

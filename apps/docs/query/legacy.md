@@ -4,6 +4,8 @@ The class-based `V2QueryClient` is the predecessor of the [current query system]
 
 ::: warning Maintenance mode
 The legacy client only receives bug fixes. Don't use it for new code - this page exists for teams maintaining existing apps and as a [migration map](#migrating-to-the-current-system).
+
+Every legacy export - including the `createLegacyQueryCreator` interop - carries an `@deprecated` tag, so call sites strike through in the editor and `V2QueryClient` and friends drop to the bottom of autocomplete. The tag is documentation, not a lint error: nothing breaks while you still depend on it. Intent to remove is v7.
 :::
 
 Unlike the current system, the legacy client is instantiated directly (no DI provider) and its state is RxJS-first:
@@ -100,3 +102,22 @@ yarn nx g @ethlete/query:migrate-to-query-v3
 Both accept `--skipFormat` to skip re-formatting the touched files. `migrate-to-query-v3` also accepts `--projects` (Nx project names) and `--include` (path prefixes) to migrate one app or library at a time - keep a query client and the creators built on it in the same run, though, since they are rewritten together.
 
 The generators are codemods over your source: review the resulting diff (and the report) rather than trusting it blindly.
+
+### Tracking what is still on the interop
+
+`migrate-to-query-v3` writes each wrapper it generates with an `@deprecated` tag naming the current-system creator to move to:
+
+```ts
+/**
+ * @deprecated Legacy (v2) query wrapper. Migrate the call sites to `getUsers` and delete this wrapper - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2.
+ */
+export const legacyGetUsers = createLegacyQueryCreator({ name: 'legacyGetUsers', creator: getUsers });
+```
+
+If you migrated before that existed, add the tags to wrappers already in your source:
+
+```bash
+yarn nx g @ethlete/query:deprecate-legacy-queries
+```
+
+It takes the same `--projects`, `--include` and `--skipFormat` options, only touches top-level `createLegacyQueryCreator(…)` declarations, appends to an existing JSDoc block rather than replacing it, and skips anything already tagged - so it is safe to re-run after each round of migration. Delete a wrapper (and its tag) once its last call site moves to the current-system creator; when the file is free of strikethrough, that endpoint is done.

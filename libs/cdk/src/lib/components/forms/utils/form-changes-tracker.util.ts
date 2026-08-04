@@ -2,6 +2,9 @@ import { assertInInjectionContext, computed, signal, Signal } from '@angular/cor
 import { AbstractControl } from '@angular/forms';
 import { controlValueSignal, equal } from '@ethlete/core';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type FormChangesTrackerRef<T> = {
   /**
    * Set the default form value to the current form value.
@@ -28,6 +31,9 @@ export type FormChangesTrackerRef<T> = {
   defaultFormValue: Signal<T>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type CreateFormChangesTrackerConfig<T extends AbstractControl> = {
   /**
    * The form to check for changes
@@ -52,6 +58,8 @@ export type CreateFormChangesTrackerConfig<T extends AbstractControl> = {
 
 /**
  * A utility function to enhance form usage by providing methods to manage form state and detect changes.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export const createFormChangesTracker = <T extends AbstractControl>(
   config: CreateFormChangesTrackerConfig<T>,

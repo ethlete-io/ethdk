@@ -3,12 +3,23 @@ import { Injector, StaticProvider, ViewContainerRef } from '@angular/core';
 import { EmptyObject } from '@ethlete/query';
 import { OverlayStrategyBreakpoint } from './strategies';
 
-/** Options for where to set focus to automatically on overlay open */
+/**
+ * Options for where to set focus to automatically on overlay open
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-heading';
 
-/** Valid ARIA roles for a overlay element. */
+/**
+ * Valid ARIA roles for a overlay element.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayRole = 'dialog' | 'alertdialog';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayConfig<D = unknown> = {
   /**
    * Conditionally applied overlay strategies based on breakpoints.
@@ -134,8 +145,13 @@ export type OverlayConfig<D = unknown> = {
 /**
  * Configuration utility type for overlays.
  * To be used inside your overlay opener method as a param to be passed to the overlay.open method.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export type OverlayConsumerConfig<D = void> = Omit<OverlayConfig<D>, 'strategies' | 'data'> &
   MaybeOverlayConsumerConfigWithData<D>;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type MaybeOverlayConsumerConfigWithData<D> = D extends void ? EmptyObject : { data: D };

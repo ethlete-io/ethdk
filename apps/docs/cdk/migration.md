@@ -11,6 +11,10 @@ that library asserts every public barrel export appears in the map exactly once,
 a real export - a symbol missing here means the map is out of date, not that the symbol has no
 successor.
 
+Every public cdk export is also `@deprecated`, so an import that still needs migrating strikes through
+in the editor and the whole library sinks to the bottom of autocomplete. The tag is documentation, not
+a lint error - nothing breaks while an app still depends on it. Intent to remove is v6.
+
 ::: warning Read this before concluding "there is no replacement"
 Migrating one real 47-file app by diffing `.d.ts` exports got **nine** symbols wrong the same way:
 a name that disappeared was read as a feature that disappeared. Three patterns cause almost all of

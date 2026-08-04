@@ -15,6 +15,9 @@ import {
 } from '../core';
 import { BracketDataSource, BracketMatchSource, BracketRoundSource } from './base';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateRoundTypeFromEthleteRoundType = (
   type: RoundType,
   tournamentMode: TournamentMode,
@@ -48,6 +51,9 @@ export const generateRoundTypeFromEthleteRoundType = (
   }
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateTournamentModeFormEthleteRounds = (
   source: RoundStageStructureWithMatchesView[],
 ): TournamentMode => {
@@ -78,6 +84,9 @@ export const generateTournamentModeFormEthleteRounds = (
   }
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateBracketDataForEthlete = (source: RoundStageStructureWithMatchesView[]) => {
   const tournamentMode = generateTournamentModeFormEthleteRounds(source);
 

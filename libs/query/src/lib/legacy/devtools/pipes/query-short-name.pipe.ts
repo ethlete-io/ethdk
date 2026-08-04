@@ -1,6 +1,9 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { AnyV2Query } from '../../query';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 @Pipe({ name: 'queryShortName' })
 export class QueryShortNamePipe implements PipeTransform {
   transform(value: AnyV2Query) {

@@ -1,5 +1,8 @@
 import { OverlayBreakpointConfig } from './types';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const ET_OVERLAY_CONFIG_CLASS_KEYS = new Set([
   'containerClass',
   'paneClass',
@@ -9,6 +12,9 @@ export const ET_OVERLAY_CONFIG_CLASS_KEYS = new Set([
   'bodyClass',
 ]);
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const mergeOverlayBreakpointConfigs = (...configs: OverlayBreakpointConfig[]): OverlayBreakpointConfig => {
   const combinedConfig: OverlayBreakpointConfig = {};
 

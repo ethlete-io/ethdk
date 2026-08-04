@@ -20,8 +20,14 @@ import { Subject } from 'rxjs';
 import { TAB_CONTENT } from '../inline-tab-content';
 import { InlineTabLabelDirective, TAB, TAB_LABEL } from '../inline-tab-label';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const TAB_GROUP = new InjectionToken<unknown>('TAB_GROUP');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-inline-tab',
   templateUrl: 'inline-tab.component.html',

@@ -30,7 +30,13 @@ const RIGHT_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvid
   },
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideRightSheetStrategyDefaults = /* @__PURE__ */ toProvideFn(RIGHT_SHEET_STRATEGY_DEFAULTS_DEF);
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const injectRightSheetStrategyDefaults = /* @__PURE__ */ toInjectFn(RIGHT_SHEET_STRATEGY_DEFAULTS_DEF);
 
 const RIGHT_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
@@ -81,9 +87,18 @@ const RIGHT_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   },
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideRightSheetStrategy = /* @__PURE__ */ toProvideFn(RIGHT_SHEET_STRATEGY_DEF);
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const injectRightSheetStrategy = /* @__PURE__ */ toInjectFn(RIGHT_SHEET_STRATEGY_DEF);
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const rightSheetOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},
 ): (() => OverlayStrategyBreakpoint[]) => {

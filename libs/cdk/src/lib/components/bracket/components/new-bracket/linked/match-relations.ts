@@ -4,9 +4,15 @@ import { BracketRoundRelation } from './round-relations';
 
 const FALLBACK_MATCH_RELATION_POSITION = -1 as BracketMatchPosition;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // Will usually be 0.5, 1 or 2. In Swiss this value will be gibberish
 export type BracketMatchFactor = number;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // One match has one previous match and one next match (this would be the case, if a group tournament is being displayed via a bracket)
 export type BracketMatchRelationOneToOne<TRoundData, TMatchData> = {
   type: 'one-to-one';
@@ -18,6 +24,9 @@ export type BracketMatchRelationOneToOne<TRoundData, TMatchData> = {
   nextRound: NewBracketRound<TRoundData, TMatchData>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // The match has no previous match but a single next match (eg. the start of the bracket)
 export type BracketMatchRelationNothingToOne<TRoundData, TMatchData> = {
   type: 'nothing-to-one';
@@ -27,6 +36,9 @@ export type BracketMatchRelationNothingToOne<TRoundData, TMatchData> = {
   nextRound: NewBracketRound<TRoundData, TMatchData>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // The match has no next match but a single previous match (eg. reverse finals)
 export type BracketMatchRelationOneToNothing<TRoundData, TMatchData> = {
   type: 'one-to-nothing';
@@ -36,6 +48,9 @@ export type BracketMatchRelationOneToNothing<TRoundData, TMatchData> = {
   previousRound: NewBracketRound<TRoundData, TMatchData>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // The match has two previous matches and one next match (eg. a normal match in the bracket that is neither the start nor the end)
 export type BracketMatchRelationTwoToOne<TRoundData, TMatchData> = {
   type: 'two-to-one';
@@ -49,6 +64,9 @@ export type BracketMatchRelationTwoToOne<TRoundData, TMatchData> = {
   nextRound: NewBracketRound<TRoundData, TMatchData>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 // The match has two previous matches and no next match (eg. the finals in a single elimination bracket)
 export type BracketMatchRelationTwoToNothing<TRoundData, TMatchData> = {
   type: 'two-to-nothing';
@@ -60,6 +78,9 @@ export type BracketMatchRelationTwoToNothing<TRoundData, TMatchData> = {
   previousLowerRound: NewBracketRound<TRoundData, TMatchData>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type BracketMatchRelation<TRoundData, TMatchData> =
   | BracketMatchRelationOneToOne<TRoundData, TMatchData>
   | BracketMatchRelationTwoToOne<TRoundData, TMatchData>
@@ -67,16 +88,25 @@ export type BracketMatchRelation<TRoundData, TMatchData> =
   | BracketMatchRelationOneToNothing<TRoundData, TMatchData>
   | BracketMatchRelationTwoToNothing<TRoundData, TMatchData>;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type MatchPositionMaps<TRoundData, TMatchData> = Map<
   BracketRoundId,
   Map<BracketMatchPosition, NewBracketMatch<TRoundData, TMatchData>>
 >;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateMatchPosition = (
   match: NewBracketMatch<unknown, unknown>,
   factor: BracketMatchFactor,
 ): BracketMatchPosition => Math.ceil(match.position * factor) as BracketMatchPosition;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateMatchRelationPositions = <TRoundData, TMatchData>(
   relation: BracketRoundRelation<TRoundData, TMatchData>,
   match: NewBracketMatch<TRoundData, TMatchData>,
@@ -308,6 +338,9 @@ const createTwoToNothingRelation = <TRoundData, TMatchData>(params: {
   };
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateMatchRelationsNew = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
 ): BracketMatchRelation<TRoundData, TMatchData>[] => {

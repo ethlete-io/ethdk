@@ -3,6 +3,9 @@ import { Breakpoint } from '@ethlete/core';
 import { OverlayContainerComponent } from '../../common';
 import { OverlayRef } from '../../overlay-ref';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayStrategyContext<T = unknown, R = unknown> = {
   overlayRef: OverlayRef<T, R>;
   containerEl: HTMLElement;
@@ -12,6 +15,9 @@ export type OverlayStrategyContext<T = unknown, R = unknown> = {
   origin?: HTMLElement | Event;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayStrategy = {
   /** Unique identifier for the strategy */
   id: string;
@@ -58,6 +64,9 @@ export type OverlayStrategy = {
   onAfterLeave?: <T = unknown, R = unknown>(context: OverlayStrategyContext<T, R>) => void;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayStrategyBreakpoint = {
   /**
    * Breakpoint to apply the strategy for. If a number is provided, it will be used as a pixel value.
@@ -71,7 +80,11 @@ export type OverlayStrategyBreakpoint = {
   strategy: OverlayStrategy;
 };
 
-/** Possible overrides for a overlay's position. */
+/**
+ * Possible overrides for a overlay's position.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayPosition = {
   /** Override for the overlay's top position. */
   top?: string;
@@ -86,6 +99,9 @@ export type OverlayPosition = {
   right?: string;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayDragToDismissConfig = {
   /** Direction in which the overlay can be dragged. */
   direction: 'to-top' | 'to-bottom' | 'to-left' | 'to-right';
@@ -105,6 +121,9 @@ export type OverlayDragToDismissConfig = {
   minVelocityToDismiss?: number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayBreakpointConfig = {
   /** Min-width of the overlay. If a number is provided, assumes pixel units. */
   minWidth?: number | string;

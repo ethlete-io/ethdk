@@ -4,6 +4,9 @@ import { combineLatest, map, pairwise, switchMap, tap } from 'rxjs';
 
 import { ACCORDION_COMPONENT } from '../accordion';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-accordion-group',
   templateUrl: './accordion-group.component.html',

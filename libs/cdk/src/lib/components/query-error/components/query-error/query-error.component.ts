@@ -4,6 +4,9 @@ import { extractQuery } from '@ethlete/query';
 import { QUERY_ERROR_TOKEN, QueryErrorDirective } from '../../directives/query-error';
 import { QueryErrorItem } from '../../types';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-query-error',
   templateUrl: './query-error.component.html',

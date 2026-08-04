@@ -60,6 +60,7 @@ export const getUsers = apiClient.get({
     expect(queries).toContain(
       "export const legacyGetUsers = createLegacyQueryCreator({ name: 'legacyGetUsers', creator: getUsers });",
     );
+    expect(queries).toContain('@deprecated Legacy (v2) query wrapper. Migrate the call sites to `getUsers`');
 
     // The rewrite leaves `def` and the client config behind; they must not survive as imports,
     // because `formatFiles` runs in the same invocation and lint fails on them.

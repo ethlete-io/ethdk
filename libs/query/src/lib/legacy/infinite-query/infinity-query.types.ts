@@ -3,22 +3,37 @@ import { BaseArguments, WithHeaders } from '../query';
 import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, V2QueryArgsOf } from '../query-creator';
 import { InfinityQuery } from './infinity-query';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type InfinityQueryParamLocation = 'path' | 'query' | 'body' | 'header' | 'variable';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type AppendItemsLocation = 'start' | 'end';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type PageParamCalculatorOptions = {
   page: number;
   totalPages: number | null;
   itemsPerPage: number;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type TotalPagesExtractorOptions<Arguments extends BaseArguments | undefined, QueryResponse> = {
   response: QueryResponse;
   itemsPerPage: number;
   args: Arguments;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type InfinityQueryConfig<
   QueryCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
   Arguments extends BaseArguments | undefined,
@@ -131,12 +146,21 @@ export type InfinityQueryConfig<
 
 type OmitUndefined<T> = T extends undefined ? never : T;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyInfinityQueryConfig = InfinityQueryConfig<any, any, any, any>;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyInfinityQuery = InfinityQuery<any, any, any, any, any>;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type InfinityQueryConfigType<
   QueryCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
   InfinityResponse extends unknown[],
@@ -147,6 +171,9 @@ export type InfinityQueryConfigType<
   InfinityResponse
 >;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type InfinityQueryOf<Cfg extends AnyInfinityQueryConfig | null> = InfinityQuery<
   NonNullable<Cfg>['queryCreator'],
   ConstructQuery<NonNullable<Cfg>['queryCreator']>,

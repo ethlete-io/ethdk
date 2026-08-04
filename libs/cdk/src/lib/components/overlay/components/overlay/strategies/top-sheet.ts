@@ -30,7 +30,13 @@ const TOP_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider
   },
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideTopSheetStrategyDefaults = /* @__PURE__ */ toProvideFn(TOP_SHEET_STRATEGY_DEFAULTS_DEF);
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const injectTopSheetStrategyDefaults = /* @__PURE__ */ toInjectFn(TOP_SHEET_STRATEGY_DEFAULTS_DEF);
 
 const TOP_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
@@ -81,9 +87,18 @@ const TOP_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   },
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideTopSheetStrategy = /* @__PURE__ */ toProvideFn(TOP_SHEET_STRATEGY_DEF);
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const injectTopSheetStrategy = /* @__PURE__ */ toInjectFn(TOP_SHEET_STRATEGY_DEF);
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const topSheetOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},
 ): (() => OverlayStrategyBreakpoint[]) => {

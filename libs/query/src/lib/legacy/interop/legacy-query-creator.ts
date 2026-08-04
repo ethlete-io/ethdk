@@ -39,12 +39,21 @@ const isInjectorUsable = (injector: Injector) => {
   }
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type LegacyArgumentsOfQueryArgs<T extends QueryArgs> = Omit<T, 'response' | 'headers'> & WithHeaders;
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type QueryArgsOfLegacyArguments<T extends BaseArguments | undefined, J> = Omit<T, 'mock' | 'headers'> & {
   headers?: HttpHeaders;
   response?: J;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type CreateLegacyQueryCreatorOptions<
   TArgs extends QueryArgs,
   Response,
@@ -67,6 +76,9 @@ export type CreateLegacyQueryCreatorOptions<
   name?: string;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type WithLegacyConfig = {
   /**
    * Additional configuration for this query.
@@ -79,6 +91,9 @@ export type WithLegacyConfig = {
   };
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type LegacyQueryPrepareFn<
   Arguments extends BaseArguments | undefined,
   Response,
@@ -91,9 +106,15 @@ export type LegacyQueryPrepareFn<
   args: Arguments & WithHeaders & WithLegacyConfig & WithInjector,
 ) => LegacyQuery<Response, Arguments, Route, Store, Data, Id, TNewQuery>;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyLegacyQueryCreator = LegacyQueryCreator<any, any, any, any, any>;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export class LegacyQueryCreator<
   TArgs extends QueryArgs,
   Response extends ResponseType<TArgs>,
@@ -221,6 +242,8 @@ export class LegacyQueryCreator<
  * **NOTE**: This is a temporary solution to support legacy queries. It will be removed in the future.
  *
  * **DO NOT TURN NEW QUERY CREATORS INTO LEGACY ONES MANUALLY. THIS IS ONLY NEEDED FOR MIGRATION PURPOSES.**
+ *
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export const createLegacyQueryCreator = <
   TArgs extends QueryArgs,

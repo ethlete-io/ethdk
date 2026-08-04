@@ -10,6 +10,9 @@ import {
 } from '../core';
 import { BracketDataSource, BracketMatchSource, BracketRoundSource } from './base';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateTournamentModeFormGgData = (source: GgData): TournamentMode => {
   switch (source.mode) {
     // case 'groups':
@@ -34,6 +37,9 @@ export const generateTournamentModeFormGgData = (source: GgData): TournamentMode
   }
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateRoundTypeFromGgMatch = (
   tournamentMode: TournamentMode,
   bracketType: string | null, // 'winner' | 'looser' | null,
@@ -77,6 +83,9 @@ export const generateRoundTypeFromGgMatch = (
   }
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const generateBracketDataForGg = (source: GgData) => {
   // roundNumber-stageNumber-bracketType
   type GgMatchRoundId = `${number}-${number}-${string | null}`;

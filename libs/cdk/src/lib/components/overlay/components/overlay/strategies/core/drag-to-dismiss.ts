@@ -8,12 +8,18 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
   return event.type[0] === 't';
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type DragToDismissContext<T, R> = {
   element: HTMLElement;
   overlayRef: OverlayRef<T, R>;
   config: OverlayDragToDismissConfig;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type DragToDismissRef = {
   unsubscribe: () => void;
 };
@@ -143,6 +149,8 @@ const shouldCancelDragForScrollableElement = (
 /**
  * Enables drag-to-dismiss functionality on an overlay element.
  * Returns a cleanup function to disable the feature.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export const enableDragToDismiss = <T, R>(context: DragToDismissContext<T, R>): DragToDismissRef => {
   const { element: el, overlayRef, config } = context;

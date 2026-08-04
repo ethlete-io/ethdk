@@ -5,6 +5,9 @@ import { createDestroy, equal } from '@ethlete/core';
 import { Observable, filter, finalize, from, map, merge, of, switchMap, takeUntil, tap } from 'rxjs';
 import { OverlayRef } from '../components/overlay';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type OverlayDismissCheckerRef = {
   /**
    * Destroys the dismiss checker. No further checks will be performed.
@@ -20,6 +23,9 @@ export type OverlayDismissCheckerRef = {
   refreshDefaultFormValue: () => void;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
   /**
    * The form to check for changes
@@ -90,6 +96,8 @@ export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
 /**
  * A utility function to enhance the ux of overlays containing forms.
  * It can prevent the user from accidentally closing the overlay when the form value is not equal to the default value.
+ *
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
 export const createOverlayDismissChecker = <T extends AbstractControl>(
   config: CreateOverlayDismissCheckerConfig<T>,

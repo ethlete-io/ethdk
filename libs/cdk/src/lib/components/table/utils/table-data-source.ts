@@ -7,6 +7,9 @@ import { SortDirective } from '../../sort/partials/sort';
 import { MAX_SAFE_INTEGER } from '../constants';
 import { TableDataSourcePageEvent, TableDataSourcePaginator } from '../types';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export class TableDataSource<T, P extends TableDataSourcePaginator = TableDataSourcePaginator> extends DataSource<T> {
   private readonly _data: BehaviorSubject<T[]>;
   private readonly _renderData = new BehaviorSubject<T[]>([]);

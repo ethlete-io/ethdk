@@ -38,10 +38,16 @@ import {
 } from '../query';
 import { RequestError } from '../request';
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export type CreateLegacyQueryOptions<TArgs extends QueryArgs> = {
   query: Query<TArgs>;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const transformExecStateToQueryState = <TArgs extends QueryArgs>(
   execState: QueryExecutionState<TArgs> | null,
 ): V2QueryState<ResponseType<TArgs>> => {
@@ -101,6 +107,9 @@ export const transformExecStateToQueryState = <TArgs extends QueryArgs>(
   }
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export const isLegacyQuery = <T extends AnyLegacyQuery>(query: unknown): query is T => {
   if (!query || typeof query !== 'object' || Array.isArray(query)) {
     return false;
@@ -113,9 +122,15 @@ export const isLegacyQuery = <T extends AnyLegacyQuery>(query: unknown): query i
   return true;
 };
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyLegacyQuery = LegacyQuery<any, any, any, any, any, any, any>;
 
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
 export class LegacyQuery<
   Response,
   Arguments extends BaseArguments | undefined,

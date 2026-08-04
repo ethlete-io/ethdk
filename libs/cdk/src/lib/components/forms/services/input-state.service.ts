@@ -5,6 +5,9 @@ import { BehaviorSubject, combineLatest, filter, map, Observable, of, Subject, s
 import { NativeInputRefDirective } from '../directives/native-input-ref';
 import { InputTouchedFn, InputValueChangeFn, InputValueUpdateType, ValidatorErrors } from '../types';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Injectable()
 export class InputStateService<T = unknown, J extends HTMLElement = HTMLElement> {
   readonly lastUpdateType$ = new BehaviorSubject<InputValueUpdateType | null>(null);

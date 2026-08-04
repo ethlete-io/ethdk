@@ -6,10 +6,16 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 import { CHECKBOX_TOKEN } from '../checkbox';
 import { CHECKBOX_GROUP_TOKEN } from '../checkbox-group';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const CHECKBOX_GROUP_CONTROL_TOKEN = new InjectionToken<CheckboxGroupControlDirective>(
   'ET_CHECKBOX_GROUP_CONTROL_TOKEN',
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   selector: '[etCheckboxGroupControl]',
   exportAs: 'etCheckboxGroupControl',

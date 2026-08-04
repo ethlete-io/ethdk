@@ -10,6 +10,9 @@ import {
 } from '@angular/core';
 import { TypedQueryList } from '@ethlete/core';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type ActiveTabUnderlineItem = OnInit &
   OnDestroy & {
     elementRef: ElementRef<HTMLElement>;
@@ -22,6 +25,9 @@ const ACTIVE_CLASS = 'et-active-tab-underline--active';
 
 const NO_TRANSITION_CLASS = 'et-active-tab-underline--no-transition';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export class ActiveTabUnderlineBarManager {
   private _currentItem: ActiveTabUnderlineItem | undefined;
 
@@ -46,6 +52,9 @@ export class ActiveTabUnderlineBarManager {
   }
 }
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({})
 export class ActiveTabUnderlineDirective implements OnInit, OnDestroy {
   readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -139,10 +148,16 @@ export class ActiveTabUnderlineDirective implements OnInit, OnDestroy {
   }
 }
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type _ActiveTabUnderlinePositioner = {
   (element: HTMLElement): { left: string; width: string };
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export function _MAT_INK_BAR_POSITIONER_FACTORY(): _ActiveTabUnderlinePositioner {
   const method = (element: HTMLElement) => ({
     left: element ? (element.offsetLeft || 0) + 'px' : '0',
@@ -152,6 +167,9 @@ export function _MAT_INK_BAR_POSITIONER_FACTORY(): _ActiveTabUnderlinePositioner
   return method;
 }
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const _MAT_INK_BAR_POSITIONER = new InjectionToken<_ActiveTabUnderlinePositioner>(
   'ET_ACTIVE_TAB_UNDERLINE_POSITIONER',
   {

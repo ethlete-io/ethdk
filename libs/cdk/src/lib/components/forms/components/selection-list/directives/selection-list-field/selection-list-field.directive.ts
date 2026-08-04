@@ -16,10 +16,16 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 import { Primitive } from '../../../select/components/combobox/utils';
 import { SELECTION_LIST_OPTION, SelectionListOptionDirective } from '../selection-list-option';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const SELECTION_LIST_FIELD = new InjectionToken<SelectionListFieldDirective>(
   'ET_SELECTION_LIST_FIELD_DIRECTIVE_TOKEN',
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   providers: [{ provide: SELECTION_LIST_FIELD, useExisting: SelectionListFieldDirective }],
   exportAs: 'etSelectionListField',

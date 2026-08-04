@@ -2,8 +2,14 @@ import { AfterViewInit, Component, ElementRef, inject, InjectionToken, Input, vi
 import { nextFrame } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_MASONRY_ITEM');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: '[et-masonry-item], et-masonry-item',
   template: `<div #innerElement class="et-masonry-item-inner"><ng-content /></div>`,

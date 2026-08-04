@@ -4,10 +4,22 @@ import { format, parse } from 'date-fns';
 import { combineLatest, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const TIME_INPUT_TOKEN = new InjectionToken<TimeInputDirective>('ET_TIME_INPUT_DIRECTIVE_TOKEN');
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const TIME_INPUT_FORMAT_TOKEN = new InjectionToken<string>('ET_TIME_INPUT_FORMAT_TOKEN');
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const DEFAULT_TIME_INPUT_FORMAT = 'HH:mm';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideTimeFormat = (timeFormat: string) => ({
   provide: TIME_INPUT_FORMAT_TOKEN,
   useValue: timeFormat,
@@ -15,6 +27,9 @@ export const provideTimeFormat = (timeFormat: string) => ({
 
 const TIME_INPUT_FORMAT = 'HH:mm';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   exportAs: 'etTimeInput',
   providers: [{ provide: TIME_INPUT_TOKEN, useExisting: TimeInputDirective }],

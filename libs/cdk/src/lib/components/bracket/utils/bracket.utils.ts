@@ -3,6 +3,9 @@ import { BracketMatch, BracketRound } from '../types';
 
 let bracketId = 0;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const isUpperBracketMatch = (match: RoundStageStructureWithMatchesView | null | undefined) => {
   if (!match) {
     return false;
@@ -17,6 +20,9 @@ export const isUpperBracketMatch = (match: RoundStageStructureWithMatchesView | 
   );
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const orderRounds = (rounds: RoundStageStructureWithMatchesView[]) => {
   const normalRounds = orderRoundsByRoundNumber(rounds.filter((r) => r.round.type === 'normal'));
   const winnerRounds = orderRoundsByRoundNumber(rounds.filter((r) => r.round.type === 'winner_bracket'));
@@ -28,6 +34,9 @@ export const orderRounds = (rounds: RoundStageStructureWithMatchesView[]) => {
   return [...winnerRounds, ...normalRounds, ...finalRounds, ...reverseFinalRounds, ...loserRounds, ...thirdPlaceRounds];
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const orderRoundsByRoundNumber = (rounds: RoundStageStructureWithMatchesView[]) => {
   return rounds.slice(0).sort((a, b) => {
     if (a.round.number < b.round.number) {
@@ -40,6 +49,9 @@ export const orderRoundsByRoundNumber = (rounds: RoundStageStructureWithMatchesV
   });
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const normalizeRoundType = (roundType: string | null | undefined) => {
   if (!roundType) {
     return null;
@@ -57,6 +69,9 @@ export const normalizeRoundType = (roundType: string | null | undefined) => {
   return 'lower';
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export class Bracket {
   get winnerRounds() {
     return this._roundsWithMatches.filter((r) => isUpperBracketMatch(r));

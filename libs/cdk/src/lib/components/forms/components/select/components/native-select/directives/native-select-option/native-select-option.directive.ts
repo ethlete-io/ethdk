@@ -2,10 +2,16 @@ import { Directive, InjectionToken, Input, TemplateRef, booleanAttribute, input 
 import { BehaviorSubject } from 'rxjs';
 import { NativeSelectOptionValue } from '../../types';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const NATIVE_SELECT_OPTION_TOKEN = new InjectionToken<NativeSelectOptionDirective>(
   'ET_NATIVE_SELECT_OPTION_DIRECTIVE_TOKEN',
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   exportAs: 'etNativeSelectOption',
   providers: [{ provide: NATIVE_SELECT_OPTION_TOKEN, useExisting: NativeSelectOptionDirective }],

@@ -24,7 +24,13 @@ const DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<Ov
   },
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideDialogStrategyDefaults = /* @__PURE__ */ toProvideFn(DIALOG_STRATEGY_DEFAULTS_DEF);
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const injectDialogStrategyDefaults = /* @__PURE__ */ toInjectFn(DIALOG_STRATEGY_DEFAULTS_DEF);
 
 const DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
@@ -51,9 +57,18 @@ const DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   },
 );
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideDialogStrategy = /* @__PURE__ */ toProvideFn(DIALOG_STRATEGY_DEF);
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const injectDialogStrategy = /* @__PURE__ */ toInjectFn(DIALOG_STRATEGY_DEF);
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const dialogOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},
 ): (() => OverlayStrategyBreakpoint[]) => {

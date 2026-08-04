@@ -3,12 +3,21 @@ import { AT_LEAST_ONE_REQUIRED, IS_ARRAY_NOT_EMPTY, IS_EMAIL, MUST_MATCH } from 
 import { Observable } from 'rxjs';
 import { ValidatorErrors } from '../types';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const VALIDATOR_ERROR_SERVICE_TOKEN = new InjectionToken<ValidationErrorsServiceType>('VALIDATOR_ERROR_SERVICE');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type ValidationErrorsServiceType = {
   parse: (errors: ValidatorErrors) => string | Observable<string>;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideValidatorErrorsService = (
   service: new () => ValidationErrorsServiceType = DefaultValidatorErrorsService,
 ) => ({
@@ -16,6 +25,9 @@ export const provideValidatorErrorsService = (
   useClass: service,
 });
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Injectable()
 export class DefaultValidatorErrorsService implements ValidationErrorsServiceType {
   parse(errors: ValidatorErrors): string | Observable<string> {

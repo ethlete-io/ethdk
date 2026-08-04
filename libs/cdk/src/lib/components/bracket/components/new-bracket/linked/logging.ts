@@ -7,6 +7,9 @@ const arrowColor = (str: string) => color(str, 90); // gray
 const labelColor = (str: string) => color(str, 33); // yellow
 const factorColor = (str: string) => color(str, 32); // green
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const logRoundRelations = (bracketData: NewBracket<unknown, unknown>) => {
   // Find max round name length for alignment
   let maxNameLen = 0;

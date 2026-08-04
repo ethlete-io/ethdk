@@ -23,10 +23,16 @@ import { MENU_ITEM_TOKEN, MenuItemDirective } from './menu-item.directive';
 import { MENU_SEARCH_TEMPLATE_TOKEN } from './menu-search-template.directive';
 import { MENU_TRIGGER_TOKEN } from './menu-trigger.directive';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const MENU = new InjectionToken<MenuComponent>('ET_MENU');
 
 let uniqueId = 0;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Component({
   selector: 'et-menu',
   template: `

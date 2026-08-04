@@ -6,8 +6,14 @@ import { OverlayBodyDividerType, OverlayHeaderTemplateDirective } from '../commo
 import { OverlayRouterService } from '../routing';
 import { OverlaySidebarPageComponent } from './overlay-sidebar-page.component';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const SIDEBAR_OVERLAY_CONFIG = new InjectionToken<SidebarOverlayConfig>('SIDEBAR_OVERLAY_CONFIG');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type SidebarOverlayConfig = {
   /**
    * On mobile devices, the sidebar will be shown as a separate page that can be navigated to.
@@ -24,6 +30,9 @@ export type SidebarOverlayConfig = {
   renderSidebarFrom?: Breakpoint | number;
 };
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export class SidebarOverlayService {
   config = inject(SIDEBAR_OVERLAY_CONFIG);
   breakpointObserver = injectBreakpointObserver();
@@ -71,6 +80,9 @@ export class SidebarOverlayService {
   }
 }
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const provideSidebarOverlayConfig = (config: SidebarOverlayConfig): Provider[] => {
   return [
     {

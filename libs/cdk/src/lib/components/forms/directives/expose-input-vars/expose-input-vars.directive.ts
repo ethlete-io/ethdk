@@ -13,6 +13,9 @@ import { Observable, Subject, takeUntil } from 'rxjs';
 import { InputValueUpdateType } from '../../types';
 import { InputDirective } from '../input/input.directive';
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export type ExposeInputVarsContext = {
   shouldDisplayError: boolean;
   autofilled: boolean;
@@ -24,8 +27,14 @@ export type ExposeInputVarsContext = {
 
 type ObservableValueType<T extends Observable<unknown>> = T extends Observable<infer J> ? J : never;
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 export const EXPOSE_INPUT_VARS_TOKEN = new InjectionToken<ExposeInputVarsDirective>('ET_EXPOSE_INPUT_VARS_TOKEN');
 
+/**
+ * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
+ */
 @Directive({
   selector: '[etExposeInputVars]',
 
