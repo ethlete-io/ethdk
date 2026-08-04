@@ -1,21 +1,20 @@
-import { RichTextEditorDomBlockquote } from './rich-text-editor-dom-blockquote';
-import { RichTextEditorDomCodeBlock } from './rich-text-editor-dom-code-block';
 import { HEADING_SELECTOR, RichTextEditorDomCore, HeadingTag, InlineTag } from './rich-text-editor-dom-core';
-import { RichTextEditorDomHeadings } from './rich-text-editor-dom-headings';
+import { RichTextEditorDomFeatures } from './rich-text-editor-dom-features';
 import { RichTextEditorDomLists } from './rich-text-editor-dom-lists';
 
 /**
  * Markdown-as-you-type: block prefixes (`- `, `1. `, `# `, `> `, ```` ``` ````) convert the line,
  * and completed inline delimiter runs (`**bold**`, `` `code` ``, …) convert into their mark. Both
  * respect characters reserved by the token-trigger system.
+ *
+ * A block prefix only converts when the domain it converts into was provided - `# ` stays literal
+ * text in an editor without the heading tool - so every block rule resolves its domain per keypress.
  */
 export const createRichTextEditorAutoformat = (
   core: RichTextEditorDomCore,
   deps: {
     lists: RichTextEditorDomLists;
-    headings: RichTextEditorDomHeadings;
-    blockquote: RichTextEditorDomBlockquote;
-    codeBlock: RichTextEditorDomCodeBlock;
+    features: RichTextEditorDomFeatures;
   },
 ) => {
   const {
@@ -30,9 +29,7 @@ export const createRichTextEditorAutoformat = (
     collectDescendants,
   } = core;
   const { toggleList } = deps.lists;
-  const { toggleHeading } = deps.headings;
-  const { toggleBlockquote } = deps.blockquote;
-  const { toggleCodeBlock } = deps.codeBlock;
+  const { features } = deps;
 
   /**
    * Markdown block autoformat: typing a space right after a line-start markdown prefix converts the
@@ -64,19 +61,21 @@ export const createRichTextEditorAutoformat = (
 
     const prefix = probe.toString();
 
+    const { headings, blockquote, codeBlock } = features;
+
     let action: (() => void) | null = null;
 
     if (/^[-*+]$/.test(prefix) && !isReserved(prefix)) {
       action = () => toggleList('ul');
     } else if (/^\d{1,9}\.$/.test(prefix) && !isReserved(prefix[0] ?? '')) {
       action = () => toggleList('ol');
-    } else if (/^#{1,3}$/.test(prefix) && !isReserved('#')) {
-      action = () => toggleHeading(`h${prefix.length}` as HeadingTag);
-    } else if (prefix === '```') {
-      action = toggleCodeBlock;
-    } else if (prefix === '>' && !isReserved('>') && !closestWithin(range.startContainer, 'blockquote')) {
+    } else if (headings && /^#{1,3}$/.test(prefix) && !isReserved('#')) {
+      action = () => headings.toggleHeading(`h${prefix.length}` as HeadingTag);
+    } else if (codeBlock && prefix === '```') {
+      action = codeBlock.toggleCodeBlock;
+    } else if (blockquote && prefix === '>' && !isReserved('>') && !closestWithin(range.startContainer, 'blockquote')) {
       // inside a quote the same prefix would toggle it back off, so it only starts one
-      action = toggleBlockquote;
+      action = blockquote.toggleBlockquote;
     }
 
     if (!action) return false;

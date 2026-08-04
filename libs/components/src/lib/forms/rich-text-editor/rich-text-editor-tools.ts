@@ -29,14 +29,17 @@ export const RICH_TEXT_EDITOR_TOOLS = {
 } as const;
 
 /**
- * A toolbar tool token. The `align`, `table` and `image` tools are opt-in - they only render when
- * their provider (`provideRichTextEditorAlignmentTool` / `provideRichTextEditorTableTool` /
- * `provideRichTextEditorImageTool`) is present, so their code tree-shakes away otherwise.
- * `(string & {})` keeps the union open for custom tools.
+ * A toolbar tool token. History, the inline marks and the lists are built in; every other tool is
+ * opt-in and only renders when its provider is present, so its code tree-shakes away otherwise -
+ * `provideRichTextEditorHeadingTool` / `…BlockquoteTool` / `…CodeBlockTool` / `…LinkTool` /
+ * `…AlignmentTool` / `…TableTool` / `…ImageTool`. `(string & {})` keeps the union open for custom
+ * tools.
  */
 export type RichTextEditorTool = (typeof RICH_TEXT_EDITOR_TOOLS)[keyof typeof RICH_TEXT_EDITOR_TOOLS] | (string & {});
 
-/** The default toolbar: history, then the block-style menu, inline marks, lists and links. */
+/** The default toolbar: history, then the block-style menu, inline marks, lists, quotes/fences and
+ *  links. The opt-in tokens in it render nothing until their provider is registered, so the bar an
+ *  editor actually shows is this list intersected with what was provided. */
 export const DEFAULT_RICH_TEXT_EDITOR_TOOLS: readonly RichTextEditorTool[] = [
   'undo',
   'redo',
@@ -170,29 +173,6 @@ const richTextEditorToolButtons = (): Partial<Record<RichTextEditorTool, RichTex
     isActive: (e) => e.orderedListActive(),
     run: (e) => e.toggleOrderedList(),
     isDisabled: (e) => e.listToolDisabled(),
-  },
-  blockquote: {
-    icon: 'et-quote',
-    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.blockquote,
-    isActive: (e) => e.blockquoteActive(),
-    run: (e) => e.toggleBlockquote(),
-    isDisabled: (e) => e.blockquoteToolDisabled(),
-  },
-  codeBlock: {
-    icon: 'et-code-block',
-    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.codeBlock,
-    isActive: (e) => e.codeBlockActive(),
-    run: (e) => e.toggleCodeBlock(),
-    isDisabled: (e) => e.codeBlockToolDisabled(),
-  },
-  link: {
-    icon: 'et-link',
-    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.link,
-    // Also pressed while the link editor popover is open, matching the menu-trigger tools.
-    isActive: (e) => e.linkActive() || e.linkEditorOpen(),
-    run: (e) => e.promptForLink(),
-    isDisabled: (e) => e.codeBlockActive(),
-    allowHardcodedColor: true,
   },
 });
 

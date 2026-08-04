@@ -1,6 +1,8 @@
 # Rich text editor
 
-`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (undo/redo, block-style menu, bold, italic, underline, strikethrough, inline code, lists, quotes, code blocks, links) plus a floating toolbar over the active selection, and uses the same field shell as the other [form controls](/components/forms). On touch devices, while editing, the toolbar automatically docks above the on-screen keyboard (the top is left to the platform's selection menu), so formatting stays reachable - tracking the keyboard through scrolling and same-origin iframe embeddings. The editable's font size is floored at 16px there, so iOS Safari doesn't zoom the page on focus.
+`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar plus a floating toolbar over the active selection, and uses the same field shell as the other [form controls](/components/forms). On touch devices, while editing, the toolbar automatically docks above the on-screen keyboard (the top is left to the platform's selection menu), so formatting stays reachable - tracking the keyboard through scrolling and same-origin iframe embeddings. The editable's font size is floored at 16px there, so iOS Safari doesn't zoom the page on focus.
+
+Out of the box the toolbar has undo/redo, the inline marks (bold, italic, underline, strikethrough, inline code) and the two lists. Everything else - the block-style menu, quotes, code blocks, links, Markdown-as-you-type, tables, alignment, images - is a provider you add, so an editor only ships the parts it offers. [Choosing which tools appear](#choosing-which-tools-appear) has the whole set; `provideRichTextEditorDefaultTools()` turns on everything the default toolbar names in one line.
 
 ## Importing
 
@@ -30,10 +32,21 @@ Pasted HTML is normalized into the editor's own schema before it is inserted: th
 
 ## Markdown autoformat while typing
 
-Typing Markdown converts live (disable with `autoformat="false"`):
+Add `provideRichTextEditorAutoformat()` and typing Markdown converts live (disable per instance with
+`autoformat="false"`):
+
+```ts
+import { provideRichTextEditorAutoformat } from '@ethlete/components';
+
+providers: [provideRichTextEditorAutoformat()];
+```
 
 - **Blocks** - a space after a line-start prefix converts the line: `-` / `*` / `+` start a bulleted list, `1.` a numbered list, `#`–`###` a heading of that level, `>` a block quote, ` ``` ` a code block. Only when the prefix is the entire line so far, and never inside list items, table cells or code.
 - **Inline** - typing the closing delimiter converts the run and leaves the caret _outside_ the mark: `**bold**`, `*italic*`, `` `code` ``, `~~strike~~`, `__bold__`, `_italic_` (underscores never fire inside a word, so `snake_case` stays literal).
+
+A block prefix also needs the tool it converts into: `#`–`###` only convert with the heading tool
+registered, `>` with the quote tool, ` ``` ` with the code-block tool. Without them the prefix stays
+literal text. The list and inline rules need nothing beyond this provider.
 
 Autoformat is token-aware: characters registered as [trigger characters](#building-blocks-triggers) are reserved - with a `#` trigger configured, `# ` opens the autocomplete instead of becoming a heading - and all autoformat is suspended while a trigger popup is open.
 
@@ -62,11 +75,54 @@ nothing at all.
 
 ## Choosing which tools appear
 
-The toolbar is data-driven. Pass a `tools` input with an ordered list of tokens to pick and order
-the controls. Tokens: `'undo'`, `'redo'`, `'bold'`, `'italic'`, `'underline'`, `'strike'`, `'code'`
-(inline code), `'bulletedList'`, `'numberedList'`, `'blockquote'`, `'codeBlock'`, `'link'`, plus the
-opt-in `'heading'` (the Normal / Heading 1–3 menu), `'align'`, `'table'` and `'image'` (see below).
-`'divider'` renders a separator. Omit `tools` for the full default toolbar.
+Two things decide what the toolbar shows: **which tools you provide**, and **which tokens you list**.
+A token with no provider renders nothing, which is what keeps an unused tool's code out of the bundle.
+
+Always available, no provider needed:
+
+| Token                                                     | Control          |
+| --------------------------------------------------------- | ---------------- |
+| `'undo'`, `'redo'`                                        | history          |
+| `'bold'`, `'italic'`, `'underline'`, `'strike'`, `'code'` | the inline marks |
+| `'bulletedList'`, `'numberedList'`                        | the two lists    |
+| `'divider'`                                               | a separator      |
+
+Opt-in - add the provider to a component or route:
+
+| Token          | Provider                                | What else it turns on                                                        |
+| -------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| `'heading'`    | `provideRichTextEditorHeadingTool()`    | the Normal / Heading 1–3 menu, Enter at a heading edge, `#`–`###` autoformat |
+| `'blockquote'` | `provideRichTextEditorBlockquoteTool()` | quote nesting, the Enter exit, `>` autoformat                                |
+| `'codeBlock'`  | `provideRichTextEditorCodeBlockTool()`  | the fence caret handling, ` ``` ` autoformat                                 |
+| `'link'`       | `provideRichTextEditorLinkTool()`       | `applyLink` / `removeLink` / `promptForLink`                                 |
+| `'align'`      | `provideRichTextEditorAlignmentTool()`  | block and table-column alignment                                             |
+| `'table'`      | `provideRichTextEditorTableTool()`      | table caret navigation                                                       |
+| `'image'`      | `provideRichTextEditorImageTool({ … })` | paste/drop upload                                                            |
+
+The first four plus [autoformat](#markdown-autoformat-while-typing) are exactly what
+`DEFAULT_RICH_TEXT_EDITOR_TOOLS` names, so one provider registers all of them:
+
+```ts
+import { provideRichTextEditorDefaultTools } from '@ethlete/components';
+
+providers: [provideRichTextEditorDefaultTools()];
+```
+
+That is also the fastest way to get the pre-v6 behaviour back. Reach for the individual providers
+when the editor needs fewer - a comment box wants marks, lists and links, not fences, and skipping
+the rest is worth ~3.5 kB gz.
+
+Upgrading? These tools used to be on for everyone, and an editor missing them looks the same as one
+that never had them, so run the scan-and-report migration to list the editors that need a provider:
+
+```bash
+yarn nx g @ethlete/components:migrate-rich-text-editor-tools
+```
+
+<StoryEmbed id="components-forms-rich-text-editor--minimal" height="380px" />
+
+Pass a `tools` input with an ordered list of tokens to pick and order the controls; omit it for
+`DEFAULT_RICH_TEXT_EDITOR_TOOLS` (which still only renders what you provided).
 
 ```html
 <et-rich-text-editor
@@ -92,9 +148,19 @@ Markdown has no underline syntax).
 
 ## Block quotes and code blocks
 
+Both are opt-in - `provideRichTextEditorBlockquoteTool()` and `provideRichTextEditorCodeBlockTool()`:
+
+```ts
+import { provideRichTextEditorBlockquoteTool, provideRichTextEditorCodeBlockTool } from '@ethlete/components';
+
+providers: [provideRichTextEditorBlockquoteTool(), provideRichTextEditorCodeBlockTool()];
+```
+
 Both round-trip as ordinary GFM - `> ` lines and a ` ``` ` fence - and both are reachable from the
 toolbar (`'blockquote'` / `'codeBlock'`) or by typing their prefix (see
-[autoformat](#markdown-autoformat-while-typing)).
+[autoformat](#markdown-autoformat-while-typing)). A quote or fence a value already **contains** still
+renders without the providers, since Markdown → HTML needs neither; what they add is the tooling to
+create, edit and leave one.
 
 **Quotes.** <kbd>Enter</kbd> adds a line to the quote (the whole quote stays one block, matching the
 Markdown it serializes to); a second <kbd>Enter</kbd> on the now-empty last line leaves it, like
@@ -124,8 +190,17 @@ New-tab links are stored in the Markdown value as raw HTML
 (`<a href="…" target="_blank" rel="noopener noreferrer">…</a>`) since Markdown has no `target`
 syntax; ordinary links stay `[text](url)`.
 
-By default the `'link'` tool asks for a URL with the browser's `prompt()` — on an existing link it
-removes it. That keeps an editor that only needs plain links free of any link UI.
+Links are opt-in in two independent steps: `provideRichTextEditorLinkTool()` gives the editor links at
+all, and `provideRichTextEditorLinkEditor()` decides what the tool opens.
+
+```ts
+import { provideRichTextEditorLinkTool } from '@ethlete/components';
+
+providers: [provideRichTextEditorLinkTool()];
+```
+
+With only the tool, it asks for a URL with the browser's `prompt()` — on an existing link it removes
+it. That keeps an editor that only needs plain links free of any link UI.
 
 Add `provideRichTextEditorLinkEditor()` for the real thing: a popover that sets a link's **text**,
 **URL** and whether it should **open in a new tab**, reachable from both the main toolbar and the
@@ -153,10 +228,10 @@ list the editors that now fall back to the prompt:
 yarn nx g @ethlete/components:migrate-rich-text-editor-link-editor
 ```
 
-## Opt-in tools: the heading menu, tables, alignment and images
+## The heading menu, tables, alignment and images
 
-The heavier tools are opt-in so their code (and UI) tree-shakes away when unused. Add the provider
-and include its token in `tools`:
+These four are the heaviest of the opt-in tools - each brings a menu or an upload flow with it, not
+just a button. Add the provider and include its token in `tools`:
 
 ```ts
 import {
@@ -169,10 +244,10 @@ providers: [provideRichTextEditorHeadingTool(), provideRichTextEditorTableTool()
 ```
 
 `'heading'` is in the **default** toolbar, so `provideRichTextEditorHeadingTool()` is all it takes -
-without it the editor renders no block-style control. It is opt-in because it is the only tool in the
-default set that needs the menu system, which is the single largest graph the editor could pull in
-(~8.5 kB gz). Markdown `#`/`##`/`###` [autoformat](#markdown-autoformat) and the heading-aware Enter
-behaviour work either way; only the toolbar control is gated.
+without it the editor renders no block-style control, Markdown `#`/`##`/`###`
+[autoformat](#markdown-autoformat-while-typing) stays literal text and Enter at a heading edge behaves
+like anywhere else. It is the most expensive of the four default tools, because it is the only one
+that needs the menu system - the single largest graph the editor could pull in (~8.5 kB gz).
 
 ```html
 <et-rich-text-editor [formField]="demoForm.report" [tools]="['heading', 'divider', 'align', 'table']" />
@@ -558,3 +633,8 @@ Public design tokens, overridable in your CSS scope - all colors resolve through
 The trigger/token building blocks throw [`ET25xx`](/components/error-codes#rich-text-editor-et25xx)
 in dev mode (duplicate trigger char/type, invalid token type/id, triggers used outside an editor, or
 `insertToken` called with no token codec installed).
+
+Calling a command whose tool was never provided - `toggleBlockquote()`, `toggleCodeBlock()`,
+`toggleHeading()`, `setHeading()`, `applyLink()`, `removeLink()`, `promptForLink()` - throws `ET2506`
+in dev mode and names the provider to add. In production it is a no-op. The hooks the editor calls
+itself (autoformat, the key handling) never throw; they just skip what is not there.

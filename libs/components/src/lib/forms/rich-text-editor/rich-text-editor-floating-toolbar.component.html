@@ -1,22 +1,23 @@
-@for (tool of inlineTools(); track tool; let first = $first) {
-  @if (tool === TOOLS.LINK && !first) {
+@for (def of inlineTools(); track def.token; let first = $first) {
+  @if (def.token === TOOLS.LINK && !first) {
     <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
   }
 
-  @if (TOOL_BUTTONS[tool]; as def) {
+  <!-- Icon tools only: this bar has no room for a custom control, and every inline tool is a toggle. -->
+  @if (def.icon; as icon) {
     <button
-      [pressed]="def.isActive(editor())"
+      [pressed]="def.isActive?.(editor()) ?? false"
       [disabled]="def.isDisabled?.(editor()) ?? false"
-      [attr.aria-label]="toolLabel(tool, def)"
+      [attr.aria-label]="toolLabel(def)"
       (mousedown)="$event.preventDefault()"
-      (click)="def.run(editor())"
+      (click)="def.run?.(editor())"
       mutedUntilPressed
       et-icon-button
       size="sm"
       type="button"
       tabindex="-1"
     >
-      <i [allowHardcodedColor]="def.allowHardcodedColor ?? false" [etIcon]="def.icon"></i>
+      <i [allowHardcodedColor]="def.allowHardcodedColor ?? false" [etIcon]="icon"></i>
     </button>
   }
 }

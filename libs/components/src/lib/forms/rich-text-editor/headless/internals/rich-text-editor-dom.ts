@@ -1,15 +1,11 @@
 import { DOCUMENT } from '@angular/common';
 import { inject } from '@angular/core';
 import { defineProvider, injectRenderer, toInjectFn, toProvideFn } from '@ethlete/core';
-import { createRichTextEditorAutoformat } from './rich-text-editor-dom-autoformat';
-import { createRichTextEditorBlockquote } from './rich-text-editor-dom-blockquote';
-import { createRichTextEditorCodeBlock } from './rich-text-editor-dom-code-block';
 import { createRichTextEditorDomCore } from './rich-text-editor-dom-core';
-import { createRichTextEditorHeadings } from './rich-text-editor-dom-headings';
+import { RICH_TEXT_EDITOR_DOM_FEATURE, RichTextEditorDomFeatures } from './rich-text-editor-dom-features';
 import { createRichTextEditorDomHistory } from './rich-text-editor-dom-history';
 import { createRichTextEditorInlineMarks } from './rich-text-editor-dom-inline-marks';
 import { createRichTextEditorKeymap } from './rich-text-editor-dom-keymap';
-import { createRichTextEditorLinks } from './rich-text-editor-dom-links';
 import { createRichTextEditorLists } from './rich-text-editor-dom-lists';
 import { createRichTextEditorPaste } from './rich-text-editor-dom-paste';
 
@@ -92,24 +88,35 @@ export const rangeTextBoundingRect = (range: Range): DOMRect => {
 };
 
 /**
- * Composes the per-domain DOM modules into the single per-editor service the directive injects.
- * The split keeps each domain readable and testable on its own; the facade keeps consumption
- * trivial (one injected object, same API as before the split). Genuinely optional domains do NOT
- * live here - table caret navigation, for example, ships with `provideRichTextEditorTableTool`.
+ * Composes the DOM modules into the single per-editor service the directive injects. The domains
+ * every editor has (selection, inline marks, lists, paste, history and the key handling over them)
+ * are built here; the ones an editor only has when it asked for them - headings, links, quotes,
+ * fenced code, markdown autoformat - arrive through {@link RICH_TEXT_EDITOR_DOM_FEATURE} and are
+ * reachable under {@link RichTextEditorDomFeatures}, `null` when their provider is absent. That
+ * indirection is the point: nothing here references those implementations, so they only reach a
+ * bundle that provides them.
  */
 const richTextEditorDomFactory = () => {
   const renderer = injectRenderer();
   const doc = inject(DOCUMENT);
+  const registered = inject(RICH_TEXT_EDITOR_DOM_FEATURE, { optional: true });
 
   const core = createRichTextEditorDomCore(doc, renderer);
   const marks = createRichTextEditorInlineMarks(core);
   const lists = createRichTextEditorLists(core);
-  const headings = createRichTextEditorHeadings(core);
-  const links = createRichTextEditorLinks(core);
-  const blockquote = createRichTextEditorBlockquote(core);
-  const codeBlock = createRichTextEditorCodeBlock(core);
-  const autoformat = createRichTextEditorAutoformat(core, { lists, headings, blockquote, codeBlock });
-  const keymap = createRichTextEditorKeymap(core, { lists, headings, blockquote, codeBlock });
+
+  // Filled below, and handed to the factories as it is: a feature built on other features reads it
+  // when it runs, so the consumer's provider order never matters.
+  const features: RichTextEditorDomFeatures = {};
+  const ctx = { core, lists, features };
+
+  for (const feature of registered ?? []) {
+    // The mapped-type union guarantees create() returns what its own key holds; TS cannot follow
+    // that through the erased key here.
+    (features[feature.key] as unknown) = feature.create(ctx);
+  }
+
+  const keymap = createRichTextEditorKeymap(core, { lists, features });
   const paste = createRichTextEditorPaste(core);
   const history = createRichTextEditorDomHistory(core);
 
@@ -127,26 +134,27 @@ const richTextEditorDomFactory = () => {
     toggleList: lists.toggleList,
     indentListItem: lists.indentListItem,
     outdentListItem: lists.outdentListItem,
-    toggleHeading: headings.toggleHeading,
-    toggleBlockquote: blockquote.toggleBlockquote,
-    repairEmptyQuotes: blockquote.repairEmptyQuotes,
-    indentBlockquote: blockquote.indentBlockquote,
-    outdentBlockquote: blockquote.outdentBlockquote,
-    toggleCodeBlock: codeBlock.toggleCodeBlock,
-    codeBlockArrowStep: codeBlock.codeBlockArrowStep,
-    exitCodeBlock: codeBlock.exitCodeBlock,
-    repairCodeBlock: codeBlock.repairCodeBlock,
-    applyLink: links.applyLink,
-    readActiveLink: links.readActiveLink,
-    removeLink: links.removeLink,
     insertNormalizedHtml: paste.insertNormalizedHtml,
-    applyBlockAutoformat: autoformat.applyBlockAutoformat,
-    applyInlineAutoformat: autoformat.applyInlineAutoformat,
     handleBackspace: keymap.handleBackspace,
     handleEnter: keymap.handleEnter,
     codeExit: keymap.codeExit,
     readSelectionOffsets: history.readSelectionOffsets,
     restoreSelectionOffsets: history.restoreSelectionOffsets,
+
+    /** The block-style domain, from `provideRichTextEditorHeadingTool()`. */
+    headings: features.headings ?? null,
+
+    /** The link domain, from `provideRichTextEditorLinkTool()`. */
+    links: features.links ?? null,
+
+    /** The quote domain, from `provideRichTextEditorBlockquoteTool()`. */
+    blockquote: features.blockquote ?? null,
+
+    /** The fenced-code domain, from `provideRichTextEditorCodeBlockTool()`. */
+    codeBlock: features.codeBlock ?? null,
+
+    /** Markdown-as-you-type, from `provideRichTextEditorAutoformat()`. */
+    autoformat: features.autoformat ?? null,
   };
 };
 

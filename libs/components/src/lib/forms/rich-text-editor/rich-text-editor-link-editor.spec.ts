@@ -4,10 +4,13 @@ import '../../../test-helpers';
 import { RichTextEditorDirective } from './headless';
 import { provideRichTextEditorLinkEditor } from './rich-text-editor-link-editor.provider';
 import { RichTextEditorComponent } from './rich-text-editor.component';
+import { provideRichTextEditorLinkTool } from './tools/rich-text-editor-link.provider';
 
 @Component({
   template: `<et-rich-text-editor />`,
   imports: [RichTextEditorComponent],
+  // The popover is a second opt-in on top of the link tool - what these specs vary is the popover.
+  providers: [provideRichTextEditorLinkTool()],
 })
 class EditorTestHost {}
 

@@ -35,12 +35,7 @@ import {
 import { RichTextEditorDirective, RichTextEditorFloatingToolbarDirective } from './headless';
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_LINK_EDITOR } from './rich-text-editor-link-editor.token';
-import {
-  RICH_TEXT_EDITOR_TOOL,
-  RICH_TEXT_EDITOR_TOOL_BUTTONS,
-  RICH_TEXT_EDITOR_TOOLS,
-  RichTextEditorToolDefinition,
-} from './rich-text-editor-tools';
+import { RICH_TEXT_EDITOR_TOOL, RICH_TEXT_EDITOR_TOOLS, RichTextEditorToolDefinition } from './rich-text-editor-tools';
 
 /** How often the docked toolbar re-checks where the keyboard is, to recover a missed viewport event. */
 const DOCKED_TOOLBAR_POLL_MS = 500;
@@ -136,19 +131,6 @@ export class RichTextEditorComponent {
   protected labels = computed(() => this.dir.resolvedLabels());
 
   private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true }) ?? [];
-
-  /** Every renderable tool by token: the static base buttons plus any opt-in tools provided via DI. */
-  protected toolDefs = computed(() => {
-    const defs = new Map<string, RichTextEditorToolDefinition>();
-
-    for (const [token, button] of Object.entries(RICH_TEXT_EDITOR_TOOL_BUTTONS)) {
-      if (button) defs.set(token, { token, ...button });
-    }
-
-    for (const def of this.registeredTools) defs.set(def.token, def);
-
-    return defs;
-  });
 
   /** Keeps the docked toolbar up briefly after a blur so opening a menu/link editor from it (which
    *  moves focus into an overlay) doesn't collapse the bar mid-interaction. */
@@ -280,9 +262,10 @@ export class RichTextEditorComponent {
     // Outside both this falls through to the tool keydown hooks below (the table tool moves between
     // cells) and only then to the default focus move.
     if (event.key === 'Tab') {
+      const blockquote = this.dir.editorDom.blockquote;
       const handled = event.shiftKey
-        ? this.dir.editorDom.outdentListItem() || this.dir.editorDom.outdentBlockquote()
-        : this.dir.editorDom.indentListItem() || this.dir.editorDom.indentBlockquote();
+        ? this.dir.editorDom.outdentListItem() || blockquote?.outdentBlockquote()
+        : this.dir.editorDom.indentListItem() || blockquote?.indentBlockquote();
 
       if (handled) {
         event.preventDefault();
@@ -294,7 +277,7 @@ export class RichTextEditorComponent {
 
     // Escape inside a code block moves the caret to a paragraph after it - everything typed in
     // there is literal, so there is no other way out with the keyboard alone.
-    if (event.key === 'Escape' && this.dir.codeBlockActive() && this.dir.editorDom.exitCodeBlock()) {
+    if (event.key === 'Escape' && this.dir.codeBlockActive() && this.dir.editorDom.codeBlock?.exitCodeBlock()) {
       event.preventDefault();
       this.dir.syncFromDom({ boundary: true });
 
@@ -307,7 +290,7 @@ export class RichTextEditorComponent {
     if (
       (event.key === 'ArrowDown' || event.key === 'ArrowUp') &&
       this.dir.codeBlockActive() &&
-      this.dir.editorDom.codeBlockArrowStep(event.key)
+      this.dir.editorDom.codeBlock?.codeBlockArrowStep(event.key)
     ) {
       event.preventDefault();
       this.dir.syncFromDom({ boundary: true });

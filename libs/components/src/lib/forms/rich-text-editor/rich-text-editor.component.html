@@ -13,7 +13,7 @@
         <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
       }
       @default {
-        @if (toolDefs().get(tool); as def) {
+        @if (dir.toolDefs.get(tool); as def) {
           @if (def.control; as control) {
             <ng-container [ngComponentOutlet]="control" [ngComponentOutletInputs]="{ editor: dir }" />
           } @else {

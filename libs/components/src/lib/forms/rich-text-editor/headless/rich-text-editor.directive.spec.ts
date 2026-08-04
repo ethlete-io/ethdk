@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { FORM_FIELD_CONTROL_TYPES, FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
+import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
 import { createRichTextEditorTokenCodec } from './internals/rich-text-editor-token';
 import { RichTextEditorDirective } from './rich-text-editor.directive';
 
@@ -20,8 +21,16 @@ class EditorInFormFieldTestHost {}
 @Component({
   template: `<div etRichTextEditor placeholder="standalone"></div>`,
   imports: [RichTextEditorDirective],
+  providers: [provideRichTextEditorDefaultTools()],
 })
 class StandaloneEditorTestHost {}
+
+/** No opt-in DOM domain at all - the floor a marks-and-lists editor ships. */
+@Component({
+  template: `<div etRichTextEditor placeholder="minimal"></div>`,
+  imports: [RichTextEditorDirective],
+})
+class MinimalEditorTestHost {}
 
 describe('RichTextEditorDirective', () => {
   describe('inside form field', () => {
@@ -87,6 +96,38 @@ describe('RichTextEditorDirective', () => {
     it('reports no active heading by default', () => {
       dir.refreshActiveMarks();
       expect(dir.headingLevel()).toBeNull();
+    });
+  });
+
+  describe('without the opt-in DOM domains', () => {
+    let dir: RichTextEditorDirective;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [MinimalEditorTestHost] });
+      const fixture = TestBed.createComponent(MinimalEditorTestHost);
+      fixture.detectChanges();
+      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
+    });
+
+    it('leaves the marks and lists working', () => {
+      expect(() => {
+        dir.toggleBold();
+        dir.toggleUnorderedList();
+        dir.toggleOrderedList();
+      }).not.toThrow();
+    });
+
+    it('names the missing provider when a domain command is called', () => {
+      expect(() => dir.toggleBlockquote()).toThrow(/provideRichTextEditorBlockquoteTool/);
+      expect(() => dir.toggleCodeBlock()).toThrow(/provideRichTextEditorCodeBlockTool/);
+      expect(() => dir.toggleHeading(1)).toThrow(/provideRichTextEditorHeadingTool/);
+      expect(() => dir.applyLink('https://example.com')).toThrow(/provideRichTextEditorLinkTool/);
+      expect(() => dir.removeLink()).toThrow(/provideRichTextEditorLinkTool/);
+    });
+
+    it('silently skips autoformat rather than failing on every keystroke', () => {
+      expect(dir.handleAutoformat(' ')).toBe(false);
+      expect(dir.handleAutoformat('*')).toBe(false);
     });
   });
 

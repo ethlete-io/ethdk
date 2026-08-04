@@ -10,6 +10,11 @@
       "schema": "./migrate-rich-text-editor-link-editor/schema.json",
       "description": "Find rich text editor usage that loses the link editor popover and report where to re-opt-in"
     },
+    "migrate-rich-text-editor-tools": {
+      "factory": "./migrate-rich-text-editor-tools/migration",
+      "schema": "./migrate-rich-text-editor-tools/schema.json",
+      "description": "Find rich text editor usage that loses the heading, quote, code-block and link tools and report where to re-opt-in"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",

@@ -6,7 +6,13 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { injectRichTextEditorLabels, RichTextEditorLabels } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
-import { RICH_TEXT_EDITOR_TOOL, injectRichTextEditorTools, RichTextEditorTool } from '../rich-text-editor-tools';
+import {
+  RICH_TEXT_EDITOR_TOOL,
+  RICH_TEXT_EDITOR_TOOL_BUTTONS,
+  injectRichTextEditorTools,
+  RichTextEditorTool,
+  RichTextEditorToolDefinition,
+} from '../rich-text-editor-tools';
 import { RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import {
   HeadingTag,
@@ -25,6 +31,17 @@ import {
 } from './internals/rich-text-editor-token';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-rich-text-styles.component';
+
+/**
+ * Calling a command whose DOM domain was never provided is a wiring mistake, so it throws - but only
+ * in dev: every construction of this message sits inside an `ngDevMode` branch, which is what keeps
+ * the strings out of a production bundle. Without them the command is a silent no-op.
+ */
+const missingDomFeature = (method: string, provider: string) =>
+  new RuntimeError(
+    RICH_TEXT_EDITOR_ERROR_CODES.DOM_FEATURE_NOT_PROVIDED,
+    `${method} requires ${provider}(). Add it to a component or route's providers so this editor has the DOM operations it drives.`,
+  );
 
 @Directive({
   selector: '[etRichTextEditor]',
@@ -63,7 +80,9 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   /** Markdown autoformat while typing: `- `, `1. ` and `# `–`### ` at a line start convert into
    *  lists/headings, and closing `**bold**`, `*italic*`, `` `code` ``, `~~strike~~`, `__`/`_` runs
-   *  convert into their marks. Registered token-trigger characters never autoformat. */
+   *  convert into their marks. Registered token-trigger characters never autoformat. Switches off
+   *  what `provideRichTextEditorAutoformat()` turned on; without that provider there is nothing to
+   *  switch off. */
   public autoformat = input(true, { transform: booleanAttribute });
 
   /**
@@ -80,6 +99,24 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   /** Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config. */
   public resolvedTools = computed(() => this.tools() ?? this.toolsConfig.tools);
+
+  /**
+   * @internal Every tool that can render, by token: the always-built-in buttons plus whatever was
+   * registered through {@link RICH_TEXT_EDITOR_TOOL}. Both toolbars read this, so a token in
+   * `resolvedTools()` with no entry here renders nothing - which is how an opt-in tool stays absent
+   * until its provider is added.
+   */
+  public toolDefs = ((): ReadonlyMap<string, RichTextEditorToolDefinition> => {
+    const defs = new Map<string, RichTextEditorToolDefinition>();
+
+    for (const [token, button] of Object.entries(RICH_TEXT_EDITOR_TOOL_BUTTONS)) {
+      if (button) defs.set(token, { token, ...button });
+    }
+
+    for (const def of this.registeredTools ?? []) defs.set(def.token, def);
+
+    return defs;
+  })();
 
   /**
    * The strings in effect here: the injected label set with this instance's `labels` applied. Every part
@@ -230,8 +267,8 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     // A native edit can leave the wrapper of a code block or quote behind after its content was
     // deleted whole - only the browser produces those, so this only runs on the native input path.
     if (!opts?.boundary) {
-      this.editorDom.repairCodeBlock();
-      this.editorDom.repairEmptyQuotes();
+      this.editorDom.codeBlock?.repairCodeBlock();
+      this.editorDom.blockquote?.repairEmptyQuotes();
     }
 
     const markdown = htmlToMarkdown(this.serializeCleanHtml(root));
@@ -340,7 +377,10 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
    * its mark. Returns `true` when the character was consumed by a conversion.
    */
   public handleAutoformat(data: string) {
+    const autoformat = this.editorDom.autoformat;
+
     if (
+      !autoformat ||
       !this.autoformat() ||
       this.autoformatSuppressed() ||
       this.disabled() ||
@@ -355,9 +395,9 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     const handled =
       data === ' '
-        ? this.editorDom.applyBlockAutoformat(isReserved)
+        ? autoformat.applyBlockAutoformat(isReserved)
         : data.length === 1 && '*_~`'.includes(data)
-          ? this.editorDom.applyInlineAutoformat(data, isReserved)
+          ? autoformat.applyInlineAutoformat(data, isReserved)
           : false;
 
     if (handled) this.syncFromDom({ boundary: true });
@@ -391,21 +431,49 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.runCommand(() => this.editorDom.toggleList('ol'));
   }
 
-  /** Quotes the selected blocks as `> ` lines, or lifts the caret's quote out one nesting level. */
+  /** Quotes the selected blocks as `> ` lines, or lifts the caret's quote out one nesting level.
+   *  Needs `provideRichTextEditorBlockquoteTool()`. */
   public toggleBlockquote() {
-    this.runCommand(() => this.editorDom.toggleBlockquote());
+    const { blockquote } = this.editorDom;
+
+    if (!blockquote) {
+      if (ngDevMode) throw missingDomFeature('toggleBlockquote', 'provideRichTextEditorBlockquoteTool');
+
+      return;
+    }
+
+    this.runCommand(() => blockquote.toggleBlockquote());
   }
 
   /** Turns the selected blocks into a fenced code block, or a code block back into paragraphs. Only
-   *  the text survives either way - a fence is literal, so it carries no inline markup. */
+   *  the text survives either way - a fence is literal, so it carries no inline markup. Needs
+   *  `provideRichTextEditorCodeBlockTool()`. */
   public toggleCodeBlock() {
-    this.runCommand(() => this.editorDom.toggleCodeBlock());
+    const { codeBlock } = this.editorDom;
+
+    if (!codeBlock) {
+      if (ngDevMode) throw missingDomFeature('toggleCodeBlock', 'provideRichTextEditorCodeBlockTool');
+
+      return;
+    }
+
+    this.runCommand(() => codeBlock.toggleCodeBlock());
   }
 
+  /** Needs `provideRichTextEditorHeadingTool()`. */
   public toggleHeading(level: number) {
-    this.runCommand(() => this.editorDom.toggleHeading(`h${level}` as HeadingTag));
+    const { headings } = this.editorDom;
+
+    if (!headings) {
+      if (ngDevMode) throw missingDomFeature('toggleHeading', 'provideRichTextEditorHeadingTool');
+
+      return;
+    }
+
+    this.runCommand(() => headings.toggleHeading(`h${level}` as HeadingTag));
   }
 
+  /** Needs `provideRichTextEditorHeadingTool()`. */
   public setHeading(level: number | null) {
     const current = this.headingLevel();
 
@@ -417,23 +485,48 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     if (tagLevel === null) return;
 
-    this.runCommand(() => this.editorDom.toggleHeading(`h${tagLevel}` as HeadingTag));
+    this.toggleHeading(tagLevel);
   }
 
   /** Applies (or, with an empty `href`, removes) a link on the current selection. `newTab` sets
-   *  `target="_blank"` + `rel="noopener noreferrer"`; `text` overrides the visible label. */
+   *  `target="_blank"` + `rel="noopener noreferrer"`; `text` overrides the visible label. Needs
+   *  `provideRichTextEditorLinkTool()`. */
   public applyLink(href: string, options: { newTab?: boolean; text?: string | null } = {}) {
+    const { links } = this.editorDom;
+
+    if (!links) {
+      if (ngDevMode) throw missingDomFeature('applyLink', 'provideRichTextEditorLinkTool');
+
+      return;
+    }
+
     const url = href.trim();
 
-    this.runCommand(() => (url ? this.editorDom.applyLink(url, options) : this.editorDom.removeLink()));
+    this.runCommand(() => (url ? links.applyLink(url, options) : links.removeLink()));
   }
 
+  /** Needs `provideRichTextEditorLinkTool()`. */
   public removeLink() {
-    this.runCommand(() => this.editorDom.removeLink());
+    const { links } = this.editorDom;
+
+    if (!links) {
+      if (ngDevMode) throw missingDomFeature('removeLink', 'provideRichTextEditorLinkTool');
+
+      return;
+    }
+
+    this.runCommand(() => links.removeLink());
   }
 
+  /** Needs `provideRichTextEditorLinkTool()`. */
   public promptForLink() {
     if (this.disabled() || this.readonly() || this.codeBlockActive()) return;
+
+    if (!this.editorDom.links) {
+      if (ngDevMode) throw missingDomFeature('promptForLink', 'provideRichTextEditorLinkTool');
+
+      return;
+    }
 
     const open = this.openLinkEditor();
 

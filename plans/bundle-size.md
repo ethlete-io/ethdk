@@ -25,27 +25,17 @@ pipeline, the goldens and the rules for reading the numbers live in
 
 ## Open
 
-1. **Decide whether `@floating-ui/dom` becomes an optional peer.** It is still a hard peer of core,
-   components and cdk. Anchored positioning is opt-in at the _bundle_ level
-   (`registerAnchoredPositionSetup`) and the `--third-party` goldens confirm it: the components floor
-   costs 2,193 B with dependencies bundled, and only an entry that registers anchored positioning
-   pays floating-ui (`overlay-anchored`: 3,628 B → 10,689 B). So a dialog-only app installs a package
-   it never loads, which is the case for optional - but it is central enough that this is a judgment
-   call. `date-fns` and the build tooling are already optional.
-2. **RTE, in value order** (audited 2026-08-01, unchanged since):
-   - **DOM feature modules behind provide fns** - ~1,100 of the always-retained ~2,830 LOC
-     (blockquote / code-block / headings / autoformat / links are droppable for a marks-and-lists
-     editor). Invasive: it narrows the headless directive's method surface. Design carefully.
+1. **RTE, the rest** (audited 2026-08-01, unchanged since):
    - **`provideRichTextEditorFloatingToolbar()`** - ~350 LOC + 82 CSS. Does not free the overlay
      runtime, so the win is smaller than it looks.
    - **Per-feature label defaults** - ~1 kB of the always-loaded 2.2 kB label literal serves the
      opt-in image / table / trigger tools.
-3. **Injection-only CSS candidates** - a byte win needs a breaking opt-in, so do them as on-demand
+2. **Injection-only CSS candidates** - a byte win needs a breaking opt-in, so do them as on-demand
    mounts instead: choice-field card variant (`choice-field.component.css:235-340`, 2 kB, 66 % of the
    sheet), carousel autoplay chrome (`carousel.component.css:165-349`, ~1.8-2.5 kB - autoplay is a
    host directive, so bytes cannot move without breaking), cascader sheet-mode slice
    (`cascader-panel.component.css:666-717` + keyframes, ~1 kB).
-4. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
+3. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
    The barrel is fine (`TableComponent` alone 20.5 kB vs `TABLE_IMPORTS` 21.4 kB); the cost is inside
    `table.component.ts` (32.7 kB min, ~40 % of the entry): sticky-column machinery
    (`:447`, `:515-538`, `:1566`), autosizing (`:523`, `:1629-1664`), grouped headers (`:626-651`),
@@ -54,6 +44,25 @@ pipeline, the goldens and the rules for reading the numbers live in
    described in `table-api.md`.
 
 ## Closed on 2026-08-04
+
+- **RTE DOM feature modules behind provide fns - 3,477 B gz, the largest win left in `components`.**
+  `headings`, `links`, `blockquote`, `codeBlock` and `autoformat` now arrive through a
+  `RICH_TEXT_EDITOR_DOM_FEATURE` multi token keyed by domain; the facade exposes each as
+  `dom.<domain> ?? null` and keymap/autoformat resolve them **per event**, so a consumer's provider
+  order never matters and nothing in the always-loaded path references an implementation.
+  `RICH_TEXT_EDITOR_IMPORTS`: 48,966 B → **45,489 B**. The three toolbar buttons that had to move out
+  of the static `RICH_TEXT_EDITOR_TOOL_BUTTONS` record went into their providers, next to the domain
+  they drive - the shape `provideRichTextEditorHeadingTool` already had.
+  Two things worth knowing before the next split of this kind:
+  - **Opt-in has a price at the top end.** The all-tools entry
+    (`RICH_TEXT_EDITOR_IMPORTS + provideRichTextEditorDefaultTools()`) costs 59,763 B against 58,919 B
+    for the old code plus the heading tool: **+844 B** for the registry, five provider objects and the
+    three relocated tool definitions. Both numbers are goldens now, so neither side can drift silently.
+  - **A dev-only error must be built inside the `ngDevMode` branch, not passed into a helper.** The
+    first version routed every call site through `requireDomFeature(feature, method, provider)`; the two
+    string literals per call survived minification (the `throw` did not) and cost ~70 B gz. Constructing
+    the message inside `if (ngDevMode) throw missingDomFeature(…)` lets esbuild drop the strings with the
+    branch.
 
 - **`socket.io-client` in every query consumer - 13.0 kB gz, the biggest single win of the whole
   effort.** The package ships no `sideEffects: false`, so the FESM's one static `import { io }` was
@@ -81,6 +90,15 @@ from dependency bumps since the last audit, well inside tolerance.
 
 ## Measured as not worth doing - do not re-open
 
+- **`@floating-ui/dom` as an optional peer** (decided 2026-08-04). It stays a hard peer of core,
+  components and cdk. There is nothing to win in bytes - anchored positioning is already opt-in at the
+  bundle level (`registerAnchoredPositionSetup`), and the `--third-party` goldens show only an entry
+  that registers it pays for floating-ui (`overlay-anchored` 3,628 B → 10,689 B against a 2,193 B
+  components floor). The only gain would be install footprint, and tooltip, menu, toggletip and the RTE
+  all reach for it, so "installed but never loaded" means a dialog/drawer-only app and nothing else.
+  Making it optional would turn a very common setup into a two-step install whose failure mode is an
+  unresolved-module build error rather than an install warning. `date-fns` is optional because only the
+  date stack uses it - not a precedent for this one.
 - **`select` 41.2 kB / `cascader` 42.4 kB decomposition.** Nothing is retained that a select does not
   use; the weight is `components/forms` (select + form-field + their headless, 41 %) plus the overlay
   it genuinely needs. The lever is the RTE-style feature split, not the select.

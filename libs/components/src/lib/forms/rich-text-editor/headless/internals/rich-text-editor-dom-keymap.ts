@@ -1,7 +1,5 @@
-import { RichTextEditorDomBlockquote } from './rich-text-editor-dom-blockquote';
-import { RichTextEditorDomCodeBlock } from './rich-text-editor-dom-code-block';
 import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
-import { RichTextEditorDomHeadings } from './rich-text-editor-dom-headings';
+import { RichTextEditorDomFeatures } from './rich-text-editor-dom-features';
 import { RichTextEditorDomLists } from './rich-text-editor-dom-lists';
 
 /**
@@ -9,21 +7,20 @@ import { RichTextEditorDomLists } from './rich-text-editor-dom-lists';
  * Backspace on empty blocks (list exit, merge into a previous list, table-adjacent first line,
  * empty code block), Enter on empty list items / heading edges / the last line of a quote or code
  * block, newlines inside a code block, and arrow keys stepping out of inline code.
+ *
+ * The quote, fenced-code and heading parts only apply where those domains were provided, so every
+ * one of them is read off `features` per event rather than bound up front.
  */
 export const createRichTextEditorKeymap = (
   core: RichTextEditorDomCore,
   deps: {
     lists: RichTextEditorDomLists;
-    headings: RichTextEditorDomHeadings;
-    blockquote: RichTextEditorDomBlockquote;
-    codeBlock: RichTextEditorDomCodeBlock;
+    features: RichTextEditorDomFeatures;
   },
 ) => {
   const { doc, renderer, root, getSelection, closestWithin, collapseInto, isBlockEmpty } = core;
   const { exitListItem, mergeParagraphIntoPreviousList } = deps.lists;
-  const { headingEnter } = deps.headings;
-  const { blockquoteEnter } = deps.blockquote;
-  const { codeBlockEnter, codeBlockBackspace } = deps.codeBlock;
+  const { features } = deps;
 
   const handleBackspace = () => {
     const editable = getSelection();
@@ -32,7 +29,7 @@ export const createRichTextEditorKeymap = (
       return false;
     }
 
-    if (codeBlockBackspace()) {
+    if (features.codeBlock?.codeBlockBackspace()) {
       return true;
     }
 
@@ -89,7 +86,7 @@ export const createRichTextEditorKeymap = (
     const editable = getSelection();
 
     // a code block owns Enter outright - a fence holds newlines, not blocks
-    if (codeBlockEnter()) {
+    if (features.codeBlock?.codeBlockEnter()) {
       return true;
     }
 
@@ -105,7 +102,7 @@ export const createRichTextEditorKeymap = (
       return true;
     }
 
-    return blockquoteEnter() || headingEnter();
+    return (features.blockquote?.blockquoteEnter() || features.headings?.headingEnter()) ?? false;
   };
 
   /**

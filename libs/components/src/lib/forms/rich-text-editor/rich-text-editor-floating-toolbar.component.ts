@@ -15,8 +15,8 @@ import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import {
   RICH_TEXT_EDITOR_INLINE_TOOLS,
-  RICH_TEXT_EDITOR_TOOL_BUTTONS,
   RICH_TEXT_EDITOR_TOOLS,
+  RichTextEditorToolDefinition,
 } from './rich-text-editor-tools';
 
 @Component({
@@ -43,17 +43,20 @@ export class RichTextEditorFloatingToolbarComponent {
   public editor = input.required<RichTextEditorDirective>();
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
-  protected readonly TOOL_BUTTONS = RICH_TEXT_EDITOR_TOOL_BUTTONS;
 
   /** The editor's strings - the same set, since this toolbar is part of that editor. */
   protected labels = computed(() => this.editor().resolvedLabels());
 
-  /** The inline marks from the editor's configured tools - headings/lists stay in the static toolbar. */
-  protected inlineTools = computed(() =>
-    this.editor()
+  /** The inline marks from the editor's configured tools - headings/lists stay in the static toolbar.
+   *  A token whose tool was not provided has no definition and is dropped, same as in that bar. */
+  protected inlineTools = computed(() => {
+    const defs = this.editor().toolDefs;
+
+    return this.editor()
       .resolvedTools()
-      .filter((tool) => RICH_TEXT_EDITOR_INLINE_TOOLS.includes(tool)),
-  );
+      .filter((tool) => RICH_TEXT_EDITOR_INLINE_TOOLS.includes(tool) && defs.has(tool))
+      .map((tool) => defs.get(tool) as RichTextEditorToolDefinition);
+  });
 
   constructor() {
     // Detached overlay pane: the toolbar's surface IS the overlay's own surface, so it paints the
@@ -74,7 +77,7 @@ export class RichTextEditorFloatingToolbarComponent {
   }
 
   /** A tool button's accessible name, from the label set. */
-  protected toolLabel(token: string, tool: { label: string }) {
-    return richTextEditorToolLabel(this.labels(), { token, ...tool });
+  protected toolLabel(tool: RichTextEditorToolDefinition) {
+    return richTextEditorToolLabel(this.labels(), tool);
   }
 }

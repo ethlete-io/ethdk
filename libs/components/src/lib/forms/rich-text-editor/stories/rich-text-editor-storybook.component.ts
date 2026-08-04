@@ -15,7 +15,7 @@ import {
 } from '../../form-field';
 import { provideRichTextEditorLinkEditor } from '../rich-text-editor-link-editor.provider';
 import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
-import { provideRichTextEditorHeadingTool } from '../tools/rich-text-editor-heading.provider';
+import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
 import { provideRichTextEditorTableTool } from '../tools/rich-text-editor-table.provider';
 import { RichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
@@ -44,10 +44,10 @@ import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField, ProvideColorDirective, JsonPipe],
   providers: [
+    provideRichTextEditorDefaultTools(),
     provideRichTextEditorLinkEditor(),
     provideRichTextEditorTableTool(),
     provideRichTextEditorAlignmentTool(),
-    provideRichTextEditorHeadingTool(),
   ],
 })
 export class FormFieldRichTextEditorStorybookComponent {
@@ -89,8 +89,29 @@ export class FormFieldRichTextEditorStorybookComponent {
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField],
-  providers: [provideRichTextEditorHeadingTool()],
+  providers: [provideRichTextEditorDefaultTools()],
 })
 export class FormFieldRichTextEditorPromptLinkStorybookComponent {
+  public demoForm = form(linkedSignal(() => ({ value: '' })));
+}
+
+/** No tool providers at all: history, the inline marks and the two lists, and nothing else - the
+ *  smallest editor the library ships. The heading/quote/code-block/link tokens are still in the
+ *  default toolbar, they just have nothing to render, and with no autoformat provider every markdown
+ *  prefix - `- ` included - stays literal text. */
+@Component({
+  selector: 'et-sb-form-field-rich-text-editor-minimal',
+  template: `
+    <div class="flex max-w-2xl flex-col gap-4 p-8 font-sans" style="--et-rich-text-editor-min-height: 220px">
+      <et-form-field>
+        <et-label>Comment</et-label>
+        <et-rich-text-editor [formField]="demoForm.value" placeholder="Write something…" />
+      </et-form-field>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField],
+})
+export class FormFieldRichTextEditorMinimalStorybookComponent {
   public demoForm = form(linkedSignal(() => ({ value: '' })));
 }

@@ -111,7 +111,7 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
     editor.editorDom.restoreSelection();
 
     const selection = editor.editorDom.getSelection();
-    const info = editor.editorDom.readActiveLink();
+    const info = editor.editorDom.links?.readActiveLink();
 
     if (!selection || !info) return;
 

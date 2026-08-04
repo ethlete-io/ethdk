@@ -287,16 +287,17 @@ All dropzone checks run in dev mode only.
 
 ## Rich text editor (ET25xx)
 
-All rich text editor checks run in dev mode only, and cover the opt-in `etRichTextEditorTriggers` building blocks.
+All rich text editor checks run in dev mode only, and cover the opt-in `etRichTextEditorTriggers` building blocks and the opt-in tool providers.
 
-| Code     | Cause                                                                   | Fix                                                                                                |
-| -------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `ET2500` | Two triggers share the same `char`.                                     | Give each trigger a unique trigger character.                                                      |
-| `ET2501` | Two triggers share the same `type`.                                     | Give each trigger a unique type.                                                                   |
-| `ET2502` | A trigger `type` is malformed.                                          | Match `[a-z][a-z0-9-]*` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.  |
-| `ET2503` | An item `id` is malformed.                                              | Match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown. |
-| `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                                     |
-| `ET2505` | `insertToken`/`insertTokenItem` called with no token codec installed.   | Add `etRichTextEditorTriggers` or `provideRichTextEditorTokenRendering(triggers)`.                 |
+| Code     | Cause                                                                   | Fix                                                                                                                                  |
+| -------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `ET2500` | Two triggers share the same `char`.                                     | Give each trigger a unique trigger character.                                                                                        |
+| `ET2501` | Two triggers share the same `type`.                                     | Give each trigger a unique type.                                                                                                     |
+| `ET2502` | A trigger `type` is malformed.                                          | Match `[a-z][a-z0-9-]*` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.                                    |
+| `ET2503` | An item `id` is malformed.                                              | Match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.                                   |
+| `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                                                                       |
+| `ET2505` | `insertToken`/`insertTokenItem` called with no token codec installed.   | Add `etRichTextEditorTriggers` or `provideRichTextEditorTokenRendering(triggers)`.                                                   |
+| `ET2506` | A command was called whose tool is not provided (the message names it). | Add the named provider - e.g. `provideRichTextEditorLinkTool()` - or `provideRichTextEditorDefaultTools()` for the full default set. |
 
 ## Bracket (ET34xx)
 

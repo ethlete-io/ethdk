@@ -2,6 +2,8 @@ import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { injectRenderer } from '@ethlete/core';
 import '../../../../../test-helpers';
+import { provideRichTextEditorAutoformat } from '../../tools/rich-text-editor-autoformat.provider';
+import { provideRichTextEditorDefaultTools } from '../../tools/rich-text-editor-default-tools.provider';
 import { injectRichTextEditorDom, provideRichTextEditorDom, RichTextEditorDom } from './rich-text-editor-dom';
 
 describe('RichTextEditorDom', () => {
@@ -9,7 +11,9 @@ describe('RichTextEditorDom', () => {
   let doc: Document;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideRichTextEditorDom()] });
+    // Every optional DOM domain is provided here: this spec covers the DOM layer itself, and what
+    // happens without a domain is covered by the directive spec.
+    TestBed.configureTestingModule({ providers: [provideRichTextEditorDom(), provideRichTextEditorDefaultTools()] });
     renderer = TestBed.runInInjectionContext(() => injectRenderer());
     doc = TestBed.inject(DOCUMENT);
   });
@@ -426,7 +430,7 @@ describe('RichTextEditorDom', () => {
       const strong = root.firstChild as Node;
       select(strong.firstChild as Node, 0, strong.firstChild as Node, 5);
 
-      dom.toggleHeading('h2');
+      dom.headings!.toggleHeading('h2');
       expect(root.innerHTML).toBe('<h2><strong>hello</strong></h2>');
 
       // toggleHeading left the selection on the heading's contents (block-level range); a single
@@ -440,7 +444,7 @@ describe('RichTextEditorDom', () => {
       const cellText = root.querySelector('td')?.firstChild as Node;
       select(cellText, 0, cellText, 1);
 
-      dom.toggleHeading('h2');
+      dom.headings!.toggleHeading('h2');
 
       expect(root.innerHTML).toBe('<table><tbody><tr><td>x</td></tr></tbody></table>');
     });
@@ -450,10 +454,10 @@ describe('RichTextEditorDom', () => {
       const text = (root.firstChild as HTMLElement).firstChild as Node;
       select(text, 0, text, 0);
 
-      dom.toggleHeading('h2');
+      dom.headings!.toggleHeading('h2');
       expect(root.innerHTML).toBe('<h2 style="text-align: center;">middle</h2>');
 
-      dom.toggleHeading('h2');
+      dom.headings!.toggleHeading('h2');
       expect(root.innerHTML).toBe('<p style="text-align: center;">middle</p>');
     });
 
@@ -461,7 +465,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>a <strong>b</strong> c</p>');
       selectByTextOffsets(root, 0, 5);
 
-      dom.toggleHeading('h2');
+      dom.headings!.toggleHeading('h2');
       expect(root.innerHTML).toBe('<h2>a <strong>b</strong> c</h2>');
     });
   });
@@ -570,7 +574,7 @@ describe('RichTextEditorDom', () => {
       const [p1, p2] = Array.from(root.children);
       select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
 
-      dom.toggleBlockquote();
+      dom.blockquote!.toggleBlockquote();
 
       expect(root.innerHTML).toBe('<blockquote>one<br>two</blockquote>');
     });
@@ -580,7 +584,7 @@ describe('RichTextEditorDom', () => {
       const quote = root.firstChild as HTMLElement;
       select(quote.firstChild as Node, 0, quote.firstChild as Node, 3);
 
-      dom.toggleBlockquote();
+      dom.blockquote!.toggleBlockquote();
 
       expect(root.innerHTML).toBe('<p>one</p><p>two</p>');
     });
@@ -589,7 +593,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('');
       select(root, 0, root, 0);
 
-      dom.toggleBlockquote();
+      dom.blockquote!.toggleBlockquote();
 
       expect(root.innerHTML).toBe('<blockquote><br></blockquote>');
     });
@@ -599,7 +603,7 @@ describe('RichTextEditorDom', () => {
       const li = root.querySelector('li') as HTMLElement;
       select(li.firstChild as Node, 0, li.firstChild as Node, 3);
 
-      dom.toggleBlockquote();
+      dom.blockquote!.toggleBlockquote();
 
       expect(root.innerHTML).toBe('<ul><li>one</li></ul>');
     });
@@ -609,10 +613,10 @@ describe('RichTextEditorDom', () => {
       const quote = root.firstChild as HTMLElement;
       select(quote.firstChild as Node, 1, quote.firstChild as Node, 1);
 
-      expect(dom.indentBlockquote()).toBe(true);
+      expect(dom.blockquote!.indentBlockquote()).toBe(true);
       expect(root.innerHTML).toBe('<blockquote><blockquote>one</blockquote></blockquote>');
 
-      expect(dom.outdentBlockquote()).toBe(true);
+      expect(dom.blockquote!.outdentBlockquote()).toBe(true);
       expect(root.innerHTML).toBe('<blockquote>one</blockquote>');
     });
 
@@ -621,7 +625,7 @@ describe('RichTextEditorDom', () => {
       const quote = root.firstChild as HTMLElement;
       select(quote.firstChild as Node, 1, quote.firstChild as Node, 1);
 
-      expect(dom.outdentBlockquote()).toBe(true);
+      expect(dom.blockquote!.outdentBlockquote()).toBe(true);
       expect(root.innerHTML).toBe('<p>one</p>');
     });
 
@@ -630,7 +634,7 @@ describe('RichTextEditorDom', () => {
       const inner = root.querySelector('blockquote blockquote') as HTMLElement;
       select(inner.firstChild as Node, 1, inner.firstChild as Node, 1);
 
-      expect(dom.outdentBlockquote()).toBe(true);
+      expect(dom.blockquote!.outdentBlockquote()).toBe(true);
       expect(root.innerHTML).toBe('<blockquote>one<br>two</blockquote>');
     });
 
@@ -672,7 +676,7 @@ describe('RichTextEditorDom', () => {
       const pre = root.firstChild as HTMLElement;
       select(pre, 0, pre, 0);
 
-      expect(dom.repairCodeBlock()).toBe(true);
+      expect(dom.codeBlock!.repairCodeBlock()).toBe(true);
       expect(root.innerHTML).toBe('<p><br></p>');
     });
   });
@@ -683,7 +687,7 @@ describe('RichTextEditorDom', () => {
       const [p1, p2] = Array.from(root.children);
       select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 1);
 
-      dom.toggleCodeBlock();
+      dom.codeBlock!.toggleCodeBlock();
 
       expect(root.innerHTML).toBe('<pre><code>one\ntwo</code></pre>');
     });
@@ -693,7 +697,7 @@ describe('RichTextEditorDom', () => {
       const code = root.querySelector('code') as HTMLElement;
       select(code.firstChild as Node, 0, code.firstChild as Node, 3);
 
-      dom.toggleCodeBlock();
+      dom.codeBlock!.toggleCodeBlock();
 
       expect(root.innerHTML).toBe('<p>one</p><p>two</p>');
     });
@@ -702,7 +706,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('');
       select(root, 0, root, 0);
 
-      dom.toggleCodeBlock();
+      dom.codeBlock!.toggleCodeBlock();
 
       expect(root.innerHTML).toBe('<pre><code>\n</code></pre>');
     });
@@ -744,7 +748,7 @@ describe('RichTextEditorDom', () => {
       const code = root.querySelector('code') as HTMLElement;
       select(code.firstChild as Node, 7, code.firstChild as Node, 7);
 
-      expect(dom.codeBlockArrowStep('ArrowDown')).toBe(true);
+      expect(dom.codeBlock!.codeBlockArrowStep('ArrowDown')).toBe(true);
       expect(root.innerHTML).toBe('<pre><code>one\ntwo</code></pre><p><br></p>');
     });
 
@@ -753,7 +757,7 @@ describe('RichTextEditorDom', () => {
       const code = root.querySelector('code') as HTMLElement;
       select(code.firstChild as Node, 2, code.firstChild as Node, 2);
 
-      expect(dom.codeBlockArrowStep('ArrowUp')).toBe(true);
+      expect(dom.codeBlock!.codeBlockArrowStep('ArrowUp')).toBe(true);
       expect(root.innerHTML).toBe('<p><br></p><pre><code>one\ntwo</code></pre>');
     });
 
@@ -763,10 +767,10 @@ describe('RichTextEditorDom', () => {
 
       // on the first line: nothing below to reach for, and vice versa
       select(code.firstChild as Node, 3, code.firstChild as Node, 3);
-      expect(dom.codeBlockArrowStep('ArrowDown')).toBe(false);
+      expect(dom.codeBlock!.codeBlockArrowStep('ArrowDown')).toBe(false);
 
       select(code.firstChild as Node, 7, code.firstChild as Node, 7);
-      expect(dom.codeBlockArrowStep('ArrowUp')).toBe(false);
+      expect(dom.codeBlock!.codeBlockArrowStep('ArrowUp')).toBe(false);
 
       expect(root.querySelectorAll('p').length).toBe(0);
     });
@@ -776,8 +780,8 @@ describe('RichTextEditorDom', () => {
       const code = root.querySelector('code') as HTMLElement;
       select(code.firstChild as Node, 3, code.firstChild as Node, 3);
 
-      expect(dom.codeBlockArrowStep('ArrowDown')).toBe(false);
-      expect(dom.codeBlockArrowStep('ArrowUp')).toBe(false);
+      expect(dom.codeBlock!.codeBlockArrowStep('ArrowDown')).toBe(false);
+      expect(dom.codeBlock!.codeBlockArrowStep('ArrowUp')).toBe(false);
       expect(root.querySelectorAll('p').length).toBe(2);
     });
 
@@ -795,7 +799,7 @@ describe('RichTextEditorDom', () => {
       const code = root.querySelector('code') as HTMLElement;
       select(code.firstChild as Node, 1, code.firstChild as Node, 1);
 
-      expect(dom.exitCodeBlock()).toBe(true);
+      expect(dom.codeBlock!.exitCodeBlock()).toBe(true);
       expect(root.innerHTML).toBe('<pre><code>one</code></pre><p><br></p>');
     });
 
@@ -815,7 +819,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('hello');
       select(root.firstChild as Node, 0, root.firstChild as Node, 5);
 
-      dom.applyLink('https://example.com');
+      dom.links!.applyLink('https://example.com');
 
       // a link that ends the line gets a trailing space so the caret can continue after it - a
       // no-break one, since a plain space at line end is CSS-collapsed and Chrome drops it from
@@ -829,7 +833,7 @@ describe('RichTextEditorDom', () => {
       // select "two"
       select(text, 4, text, 7);
 
-      dom.applyLink('https://example.com');
+      dom.links!.applyLink('https://example.com');
 
       expect(root.innerHTML).toBe('one <a href="https://example.com">two</a> three');
     });
@@ -840,7 +844,7 @@ describe('RichTextEditorDom', () => {
       // select "hello " - a word selection often includes the trailing space
       select(text, 0, text, 6);
 
-      dom.applyLink('https://example.com');
+      dom.links!.applyLink('https://example.com');
 
       expect(root.innerHTML).toBe('<a href="https://example.com">hello</a> world');
     });
@@ -850,7 +854,7 @@ describe('RichTextEditorDom', () => {
       const text = root.firstChild as Node;
       select(text, 0, text, 6); // "hello " - the link editor trims the label it emits
 
-      dom.applyLink('https://example.com', { text: 'hello' });
+      dom.links!.applyLink('https://example.com', { text: 'hello' });
 
       expect(root.innerHTML).toBe('<a href="https://example.com">hello</a> world');
     });
@@ -860,7 +864,7 @@ describe('RichTextEditorDom', () => {
       const anchor = root.firstChild as Node;
       select(anchor.firstChild as Node, 1, anchor.firstChild as Node, 3);
 
-      dom.applyLink('https://new.com');
+      dom.links!.applyLink('https://new.com');
 
       expect(root.innerHTML).toContain('href="https://new.com"');
     });
@@ -870,7 +874,7 @@ describe('RichTextEditorDom', () => {
       const anchor = root.firstChild as Node;
       select(anchor.firstChild as Node, 0, anchor.firstChild as Node, 5);
 
-      dom.removeLink();
+      dom.links!.removeLink();
 
       expect(root.innerHTML).not.toContain('<a');
       expect(root.textContent).toBe('hello');
@@ -886,7 +890,7 @@ describe('RichTextEditorDom', () => {
 
       select(testText, 0, linkText, (linkText.textContent ?? '').length);
 
-      dom.applyLink('dddddd');
+      dom.links!.applyLink('dddddd');
 
       expect(root.innerHTML).toBe('<a href="dddddd">test link</a>&nbsp;');
     });
@@ -1036,7 +1040,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>-</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<ul><li><br></li></ul>');
     });
 
@@ -1044,7 +1048,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>1.</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<ol><li><br></li></ol>');
     });
 
@@ -1052,7 +1056,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>##</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<h2><br></h2>');
     });
 
@@ -1060,21 +1064,21 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>&gt;</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<blockquote><br></blockquote>');
 
       const quote = root.firstChild as HTMLElement;
       quote.innerHTML = '&gt;';
       caretAtEndOf(quote.firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(false);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(false);
     });
 
     it('converts "``` " into a fenced code block', () => {
       const { root, dom } = setup('<p>```</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<pre><code>\n</code></pre>');
     });
 
@@ -1083,7 +1087,7 @@ describe('RichTextEditorDom', () => {
       const text = (root.firstChild as HTMLElement).firstChild as Node;
       select(text, 1, text, 1); // caret right after the '-'
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<ul><li>hello</li></ul>');
     });
 
@@ -1091,7 +1095,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('-');
       caretAtEndOf(root.firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<ul><li><br></li></ul>');
     });
 
@@ -1099,7 +1103,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('first line<div>-</div>');
       caretAtEndOf((root.querySelector('div') as HTMLElement).firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('first line<ul><li><br></li></ul>');
     });
 
@@ -1107,7 +1111,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>a #</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyBlockAutoformat(noneReserved)).toBe(false);
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(false);
       expect(root.innerHTML).toBe('<p>a #</p>');
     });
 
@@ -1115,18 +1119,18 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>#</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyBlockAutoformat((char) => char === '#')).toBe(false);
+      expect(dom.autoformat!.applyBlockAutoformat((char) => char === '#')).toBe(false);
       expect(root.innerHTML).toBe('<p>#</p>');
     });
 
     it('does not fire inside a list item or table cell', () => {
       const inList = setup('<ul><li>-</li></ul>');
       caretAtEndOf(inList.root.querySelector('li')?.firstChild as Node);
-      expect(inList.dom.applyBlockAutoformat(noneReserved)).toBe(false);
+      expect(inList.dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(false);
 
       const inCell = setup('<table><tbody><tr><td>#</td></tr></tbody></table>');
       caretAtEndOf(inCell.root.querySelector('td')?.firstChild as Node);
-      expect(inCell.dom.applyBlockAutoformat(noneReserved)).toBe(false);
+      expect(inCell.dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(false);
     });
   });
 
@@ -1142,7 +1146,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>see **bold*</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyInlineAutoformat('*', noneReserved)).toBe(true);
+      expect(dom.autoformat!.applyInlineAutoformat('*', noneReserved)).toBe(true);
       expect(root.innerHTML.replace(/\u200b/g, '')).toBe('<p>see <strong>bold</strong></p>');
     });
 
@@ -1151,23 +1155,23 @@ describe('RichTextEditorDom', () => {
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
       // first closing star: `**bold*` - must wait for the second one
-      expect(dom.applyInlineAutoformat('*', noneReserved)).toBe(false);
+      expect(dom.autoformat!.applyInlineAutoformat('*', noneReserved)).toBe(false);
     });
 
     it('converts *italic*, `code` and ~~strike~~', () => {
       const em = setup('<p>an *i</p>');
       caretAtEndOf((em.root.firstChild as HTMLElement).firstChild as Node);
-      expect(em.dom.applyInlineAutoformat('*', noneReserved)).toBe(true);
+      expect(em.dom.autoformat!.applyInlineAutoformat('*', noneReserved)).toBe(true);
       expect(em.root.innerHTML.replace(/\u200b/g, '')).toBe('<p>an <em>i</em></p>');
 
       const code = setup('<p>`x</p>');
       caretAtEndOf((code.root.firstChild as HTMLElement).firstChild as Node);
-      expect(code.dom.applyInlineAutoformat('`', noneReserved)).toBe(true);
+      expect(code.dom.autoformat!.applyInlineAutoformat('`', noneReserved)).toBe(true);
       expect(code.root.innerHTML.replace(/\u200b/g, '')).toBe('<p><code>x</code></p>');
 
       const del = setup('<p>~~s~</p>');
       caretAtEndOf((del.root.firstChild as HTMLElement).firstChild as Node);
-      expect(del.dom.applyInlineAutoformat('~', noneReserved)).toBe(true);
+      expect(del.dom.autoformat!.applyInlineAutoformat('~', noneReserved)).toBe(true);
       expect(del.root.innerHTML.replace(/\u200b/g, '')).toBe('<p><del>s</del></p>');
     });
 
@@ -1175,7 +1179,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>*i</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      dom.applyInlineAutoformat('*', noneReserved);
+      dom.autoformat!.applyInlineAutoformat('*', noneReserved);
 
       const range = doc.getSelection()?.getRangeAt(0);
 
@@ -1188,17 +1192,17 @@ describe('RichTextEditorDom', () => {
       const { dom, root } = setup('<p>snake_case</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      expect(dom.applyInlineAutoformat('_', noneReserved)).toBe(false);
+      expect(dom.autoformat!.applyInlineAutoformat('_', noneReserved)).toBe(false);
     });
 
     it('does not fire for a reserved char or inside code', () => {
       const reserved = setup('<p>*i</p>');
       caretAtEndOf((reserved.root.firstChild as HTMLElement).firstChild as Node);
-      expect(reserved.dom.applyInlineAutoformat('*', (char) => char === '*')).toBe(false);
+      expect(reserved.dom.autoformat!.applyInlineAutoformat('*', (char) => char === '*')).toBe(false);
 
       const inCode = setup('<p><code>a *b</code></p>');
       caretAtEndOf(inCode.root.querySelector('code')?.firstChild as Node);
-      expect(inCode.dom.applyInlineAutoformat('*', noneReserved)).toBe(false);
+      expect(inCode.dom.autoformat!.applyInlineAutoformat('*', noneReserved)).toBe(false);
     });
   });
 
@@ -1255,5 +1259,88 @@ describe('RichTextEditorDom', () => {
       expect(range?.startContainer.textContent).toBe('aXYb');
       expect(range?.startOffset).toBe(3);
     });
+  });
+});
+
+describe('RichTextEditorDom without the block domains', () => {
+  let renderer: NonNullable<ReturnType<typeof injectRenderer>>;
+  let doc: Document;
+
+  beforeEach(() => {
+    // Autoformat on, but no heading / quote / fenced-code domain to convert into.
+    TestBed.configureTestingModule({ providers: [provideRichTextEditorDom(), provideRichTextEditorAutoformat()] });
+    renderer = TestBed.runInInjectionContext(() => injectRenderer());
+    doc = TestBed.inject(DOCUMENT);
+  });
+
+  afterEach(() => {
+    doc.body.innerHTML = '';
+    doc.getSelection()?.removeAllRanges();
+  });
+
+  const setupWithCaretAtEnd = (html: string) => {
+    const root = renderer.createElement('div');
+    root.contentEditable = 'true';
+    root.innerHTML = html;
+    renderer.appendChild(doc.body, root);
+
+    const dom = TestBed.runInInjectionContext(() => injectRichTextEditorDom());
+    dom.root.set(root);
+
+    const node = (root.firstChild as HTMLElement).firstChild as Node;
+    const text = node.textContent ?? '';
+    const range = doc.createRange();
+    range.setStart(node, text.length);
+    range.setEnd(node, text.length);
+    const selection = doc.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    return { root, dom };
+  };
+
+  const noneReserved = () => false;
+
+  it('leaves the domains absent', () => {
+    const { dom } = setupWithCaretAtEnd('<p>x</p>');
+
+    expect(dom.headings).toBeNull();
+    expect(dom.blockquote).toBeNull();
+    expect(dom.codeBlock).toBeNull();
+    expect(dom.links).toBeNull();
+    expect(dom.autoformat).not.toBeNull();
+  });
+
+  it('still converts the list prefixes, which need no opt-in domain', () => {
+    const { root, dom } = setupWithCaretAtEnd('<p>-</p>');
+
+    expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
+    expect(root.innerHTML).toBe('<ul><li><br></li></ul>');
+  });
+
+  it.each([
+    ['##', 'heading'],
+    ['&gt;', 'quote'],
+    ['```', 'fence'],
+  ])('leaves "%s" literal with no %s domain', (prefix) => {
+    const { root, dom } = setupWithCaretAtEnd(`<p>${prefix}</p>`);
+    const before = root.innerHTML;
+
+    expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(false);
+    expect(root.innerHTML).toBe(before);
+  });
+
+  it('still converts inline marks', () => {
+    const { root, dom } = setupWithCaretAtEnd('<p>**bold*</p>');
+
+    expect(dom.autoformat!.applyInlineAutoformat('*', noneReserved)).toBe(true);
+    expect(root.innerHTML).toContain('<strong>bold</strong>');
+  });
+
+  it('does not break Enter or Backspace', () => {
+    const { dom } = setupWithCaretAtEnd('<p>x</p>');
+
+    expect(dom.handleEnter()).toBe(false);
+    expect(dom.handleBackspace()).toBe(false);
   });
 });

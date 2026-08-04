@@ -14,7 +14,7 @@ import { DEFAULT_RICH_TEXT_EDITOR_TOOLS, RichTextEditorTool } from '../rich-text
 import { RICH_TEXT_EDITOR_TRIGGERS_IMPORTS } from '../rich-text-editor-triggers.imports';
 import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
 import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
-import { provideRichTextEditorHeadingTool } from '../tools/rich-text-editor-heading.provider';
+import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
 import { provideRichTextEditorTableTool } from '../tools/rich-text-editor-table.provider';
 
 /** The default tools plus the opt-in alignment + table tools, for the triggers demo. */
@@ -103,7 +103,7 @@ export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
   providers: [
     provideRichTextEditorTableTool(),
     provideRichTextEditorAlignmentTool(),
-    provideRichTextEditorHeadingTool(),
+    provideRichTextEditorDefaultTools(),
   ],
 })
 export class RichTextEditorTriggersStorybookComponent {
@@ -134,7 +134,7 @@ export class RichTextEditorTriggersStorybookComponent {
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField, ProvideColorDirective],
   // render stored {{type:id}} tokens as labelled chips without the interactive picker
-  providers: [provideRichTextEditorTokenRendering(DEMO_TRIGGERS)],
+  providers: [provideRichTextEditorDefaultTools(), provideRichTextEditorTokenRendering(DEMO_TRIGGERS)],
 })
 export class RichTextEditorTokenDisplayStorybookComponent {
   private formModel = linkedSignal(() => ({

@@ -6,6 +6,7 @@ import {
   RichTextEditorImageStorybookComponent,
 } from './rich-text-editor-image-storybook.component';
 import {
+  FormFieldRichTextEditorMinimalStorybookComponent,
   FormFieldRichTextEditorPromptLinkStorybookComponent,
   FormFieldRichTextEditorStorybookComponent,
 } from './rich-text-editor-storybook.component';
@@ -94,4 +95,10 @@ export const ImageUploadFailure: { render: () => { template: string }; decorator
 export const LinkPromptFallback: { render: () => { template: string }; decorators: unknown[] } = {
   render: () => ({ template: `<et-sb-form-field-rich-text-editor-prompt-link />` }),
   decorators: [moduleMetadata({ imports: [FormFieldRichTextEditorPromptLinkStorybookComponent] })],
+};
+
+/** With no tool providers: marks and lists only - the configuration that ships the fewest bytes. */
+export const Minimal: { render: () => { template: string }; decorators: unknown[] } = {
+  render: () => ({ template: `<et-sb-form-field-rich-text-editor-minimal />` }),
+  decorators: [moduleMetadata({ imports: [FormFieldRichTextEditorMinimalStorybookComponent] })],
 };
