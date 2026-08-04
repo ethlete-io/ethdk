@@ -16,4 +16,6 @@ export const TABLE_ERROR_CODES = {
   PARTIAL_EXPORT: 3506,
   /** A CSV export was given both a server-built `file` and options that only apply to a built one. */
   CONFLICTING_EXPORT_OPTIONS: 3507,
+  /** An `expandedRowTemplate` was set on a table without `etTableRowExpansion` to render it. */
+  MISSING_ROW_EXPANSION: 3508,
 } as const;

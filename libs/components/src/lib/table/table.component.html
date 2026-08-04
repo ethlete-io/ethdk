@@ -252,27 +252,10 @@
         }
       </div>
 
-      @if (rowVm.showDetail) {
-        @if (expandedRowTemplate(); as detail) {
-          <div class="et-table-detail-row" role="row">
-            <!-- Animated only for the row the user just toggled — a re-mount from paging/sorting must not
-                 replay the reveal (see bodyRows). -->
-            <div
-              [animate.enter]="rowVm.enterAnimation"
-              [animate.leave]="rowVm.leaveAnimation"
-              class="et-table-detail-cell"
-              role="gridcell"
-            >
-              <!-- Two elements on purpose: the outer one is the clip window the animating track
-                   squeezes to nothing, the inner one carries the padding. See the CSS. -->
-              <div class="et-table-detail-content">
-                <div class="et-table-detail-body">
-                  <ng-container *ngTemplateOutlet="detail; context: { $implicit: rowVm.row }" />
-                </div>
-              </div>
-            </div>
-          </div>
-        }
+      <!-- The detail row of an expanded row, from etTableRowExpansion — the whole row, its chrome and
+           its animation belong to the feature, so a table that never expands carries none of them. -->
+      @if (rowVm.detail; as detail) {
+        <ng-container *ngComponentOutlet="detail.component; inputs: { row: rowVm.row }; injector: detail.injector" />
       }
     } @empty {
       <div class="et-table-message-row" role="row">

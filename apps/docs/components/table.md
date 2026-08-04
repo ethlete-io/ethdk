@@ -29,6 +29,7 @@ the table. A table that doesn't import a feature never pays for its code.
 | Column resize       | `TABLE_RESIZE_IMPORTS`             | `etTableResize`             | the drag primitives                                  |
 | Column reorder      | `TABLE_REORDER_IMPORTS`            | `etTableReorder`            | the drag primitives                                  |
 | Row selection       | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
+| Row expansion       | `TABLE_ROW_EXPANSION_IMPORTS`      | `etTableRowExpansion`       | the detail row's chrome + grow-open animation        |
 | Virtual scroll      | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
 | Cell error tooltip  | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
 | State persistence   | `TABLE_STATE_PERSISTENCE_IMPORTS`  | `etTableStatePersistence`   | nothing (local/session storage)                      |
@@ -56,8 +57,9 @@ can't be applied conditionally):
 Features register themselves with the table, and the serializable state they drive
 (filter values, column widths) lives on the table - so
 [`state()` / `restoreState()`](#table-state) round-trip it whether or not the feature is
-imported. Sorting, row expansion, sticky columns, the footer slot and the empty state are
-part of the base: they cost nothing beyond the table itself.
+imported. State a feature _owns_ - a selection, the expanded rows - travels in the same
+snapshot under `features`, so it round-trips too. Sorting, sticky columns, the footer slot
+and the empty state are part of the base: they cost nothing beyond the table itself.
 
 ## Usage
 
@@ -97,29 +99,27 @@ than resetting them.
 
 ## Inputs
 
-| Input                 | Default      | Description                                                                                                     |
-| --------------------- | ------------ | --------------------------------------------------------------------------------------------------------------- |
-| `data`                | `[]`         | The rows to render.                                                                                             |
-| `columns`             | `{}`         | The column definitions, keyed by column key - see [Columns](#columns).                                          |
-| `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                          |
-| `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`. See [below](#appearance-density).       |
-| `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                           |
-| `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                    |
-| `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                   |
-| `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states). |
-| `loadingRows`         | `5`          | How many placeholder rows to draw while loading with no rows.                                                   |
-| `error`               | `null`       | Anything non-nullish replaces the body with the error state.                                                    |
-| `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                  |
-| `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                |
-| `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                       |
-| `multiSort`           | `false`      | Allow more than one column to be sorted at once.                                                                |
-| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                           |
-| `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                               |
-| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                       |
-| `expandedRowTemplate` | -            | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`.             |
-| `expandableRow`       | all rows     | `(row: T) => boolean` gating which rows can expand.                                                             |
-| `expandedKeys`        | `new Set()`  | Two-way bindable set of expanded row keys (by `rowKey`).                                                        |
-| `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row navigation](#row-navigation).                              |
+| Input                 | Default      | Description                                                                                                       |
+| --------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `data`                | `[]`         | The rows to render.                                                                                               |
+| `columns`             | `{}`         | The column definitions, keyed by column key - see [Columns](#columns).                                            |
+| `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                            |
+| `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`. See [below](#appearance-density).         |
+| `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                             |
+| `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                      |
+| `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                     |
+| `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states).   |
+| `loadingRows`         | `5`          | How many placeholder rows to draw while loading with no rows.                                                     |
+| `error`               | `null`       | Anything non-nullish replaces the body with the error state.                                                      |
+| `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                    |
+| `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                  |
+| `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                         |
+| `multiSort`           | `false`      | Allow more than one column to be sorted at once.                                                                  |
+| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                             |
+| `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                                 |
+| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                         |
+| `expandedRowTemplate` | -            | Detail template for [row expansion](#row-expansion) - needs `etTableRowExpansion`. Context: `{ $implicit: row }`. |
+| `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row navigation](#row-navigation).                                |
 
 ## Appearance & density
 
@@ -607,10 +607,22 @@ features, `state()` and the header keep a single read path.
 
 ## Row expansion
 
-Provide an `expandedRowTemplate` and the table prepends an expander column; each
-row toggles a **lazily-instantiated** full-width detail row. Nest another
-`<et-table>` in the detail template for **sub-tables**. Set `rowKey` so expansion
-state survives data changes; gate rows with `expandableRow`.
+Expansion is **opt-in**: import `TABLE_ROW_EXPANSION_IMPORTS` and put
+`etTableRowExpansion` on the table. It prepends an expander column, and each row toggles a
+**lazily-instantiated** full-width detail row rendered from the table's
+`expandedRowTemplate`. Nest another `<et-table>` in that template for **sub-tables**. Set
+`rowKey` so expansion state survives data changes.
+
+The template stays a **table** input while everything else is a feature option, because
+only the table knows the row type - that is what gives `let-order` below a type instead of
+`any`. Bind the template with no feature and the table says so in dev mode rather than
+silently rendering nothing.
+
+| Option          | Default  | What it does                                                                                            |
+| --------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `expanded`      | internal | `WritableSignal<Set<unknown>>` the expanded row keys are kept in - pass your own to drive or read them. |
+| `expandableRow` | all rows | `(row: T) => boolean` gating which rows can expand.                                                     |
+| `enabled`       | `true`   | Turn the feature off without removing the attribute.                                                    |
 
 The detail row **grows open** - its grid track animates from `0fr` to `1fr` while the
 content fades in, so the rows below glide down with it - and it does so only for the
@@ -619,13 +631,27 @@ row the user just toggled: a detail row that re-mounts because the rows changed
 animation is reduced-motion-aware. Note that an `fr` track re-resolves the table's
 layout every frame, so a very long table on a slow device pays for the effect.
 
-```html
-<et-table [data]="orders()" [columns]="COLUMNS" [rowKey]="orderId" [expandedRowTemplate]="detail" />
-
-<ng-template #detail let-order>
-  <!-- nest another table for a sub-table -->
-  <et-table [data]="order.lines" [columns]="LINE_COLUMNS" />
-</ng-template>
+```ts
+@Component({
+  imports: [TABLE_IMPORTS, TABLE_ROW_EXPANSION_IMPORTS],
+  template: `
+    <et-table
+      [data]="orders()"
+      [columns]="COLUMNS"
+      [rowKey]="orderId"
+      [expandedRowTemplate]="detail"
+      [etTableRowExpansion]="{ expanded: expanded }"
+    >
+      <ng-template #detail let-order>
+        <!-- nest another table for a sub-table -->
+        <et-table [data]="order.lines" [columns]="LINE_COLUMNS" />
+      </ng-template>
+    </et-table>
+  `,
+})
+export class OrdersComponent {
+  protected expanded = signal<Set<unknown>>(new Set());
+}
 ```
 
 A nested table needs no dedicated API - it is an ordinary `<et-table>` with its own
@@ -635,9 +661,14 @@ up, don't rebuild it per read) so the sub-table's derived state doesn't churn.
 
 <StoryEmbed id="components-table--expandable-sub-table" height="460px" />
 
-`expandedKeys` is a two-way `Set` of row keys, so you can drive or persist which
-rows are open. `isExpanded(row)` / `toggleExpanded(row)` are available on the
-table instance.
+The `expanded` signal holds the open row keys, so you can drive or persist which rows are
+open. `isExpanded(row)`, `canExpand(row)` and `toggle(row)` are on the feature - reach it
+with `exportAs`:
+
+```html
+<et-table #expansion="etTableRowExpansion" [etTableRowExpansion]="{}" … />
+<button (click)="expansion.toggle(row)">Toggle</button>
+```
 
 ## Selection
 
@@ -1408,18 +1439,19 @@ protected canEdit = (person: Person, column: string) => person.id !== LOCKED_ID;
 
 `state()` is a serializable, versioned snapshot of the table's configurable
 state - column **order**, **visibility**, **sort**, **filters** and **width** (per
-column), plus **expanded rows**. `restoreState(state)` applies one back. The two
-round-trip losslessly, so it's the basis for persisting and sharing a table setup.
+column), plus whatever the imported **features** own. `restoreState(state)` applies one
+back. The two round-trip losslessly, so it's the basis for persisting and sharing a table
+setup.
 
 ```ts
 const snapshot = table.state();
 // {
-//   v: 1,
+//   v: 3,
 //   columns: [
 //     { key: 'name', hidden: false, sort: 'asc' },
 //     { key: 'role', hidden: true, filterValues: ['Admin'] },
 //   ],
-//   expanded: ['42'], // present only when a rowKey is set
+//   features: { expansion: ['42'] }, // present only when a feature contributed
 // }
 table.restoreState(snapshot);
 ```
@@ -1427,8 +1459,8 @@ table.restoreState(snapshot);
 The per-column shape maps 1:1 onto typical server-side list-view config (`hidden`,
 sort direction, `filterValues`), so bridging to a backend is mechanical. With
 `multiSort`, each sorted column also carries a `sortPriority` so the sort order
-survives the round-trip. Expanded rows serialize by their `rowKey` - set a
-[`rowKey`](#inputs) for expansion to be captured.
+survives the round-trip. Feature-owned keys - a selection, the expanded rows - serialize by
+their `rowKey`, so set a [`rowKey`](#inputs) for them to be captured at all.
 
 ### Persist it to local or session storage
 
@@ -1452,10 +1484,13 @@ Use `createTableStateStorage({ key })` (`load` / `save` / `clear`) to drive it y
 operation swallows its own failure, so a blocked or full store never stops a table from rendering.
 
 **Feature state.** `state()` carries a `features` bag alongside the columns - a selection lives in
-`features.selection`, contributed by `etTableSelection` through a `TableStateSlice`. That is what
-lets feature-owned state round-trip without the base table knowing the feature exists; a slice
-whose feature isn't imported on restore is left alone rather than dropped. The bag is why the
-schema is `v: 2`; `v: 1` states still restore.
+`features.selection` and the expanded rows in `features.expansion`, each contributed by its feature
+through a `TableStateSlice`. That is what lets feature-owned state round-trip without the base table
+knowing the feature exists; a slice whose feature isn't imported on restore is left alone rather than
+dropped. The bag is why the schema went to `v: 2`, and expansion moving into it why it is now `v: 3`.
+Older snapshots still restore: a `v: 1` or `v: 2` state brings back its columns, sort and filters, and
+a `v: 2`'s top-level `expanded` list is ignored (it predates the slice), leaving whatever is open
+alone.
 
 ### Restore a table from a link
 

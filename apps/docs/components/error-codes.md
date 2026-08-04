@@ -330,6 +330,7 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 | `ET3505` | A CSV export named a column key the table doesn't declare.                         | Check the key against the `columns` record, or drop the `columns` option to take the visible ones.                                                            |
 | `ET3506` | A CSV export would write fewer rows than the table's source says exist.            | Pass `rows` (a list or a provider such as `tableCsvRowsFromPages`), `file` for a server-built export, or `partial: true` to write the loaded page on purpose. |
 | `ET3507` | A CSV export was given `file` together with options for building one.              | The server already wrote that file - drop `rows`/`columns`/`header`/`delimiter`/`formulaGuard`/`bom`, or drop `file`.                                         |
+| `ET3508` | An `expandedRowTemplate` is bound, but nothing renders it.                         | Add `etTableRowExpansion` to the table and import `TABLE_ROW_EXPANSION_IMPORTS` - see [Row expansion](/components/table#row-expansion).                       |
 
 `ET3500` is retired: it flagged duplicate column keys, which the keyed
 `TableColumns` record makes impossible.

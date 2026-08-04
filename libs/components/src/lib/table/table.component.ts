@@ -6,7 +6,6 @@ import {
   Component,
   computed,
   contentChild,
-  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -23,16 +22,13 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   injectColorThemes,
-  injectStyleManager,
   ProvideColorDirective,
   RuntimeError,
   signalElementDimensions,
   signalHostElementDimensions,
 } from '@ethlete/core';
-import { Subscription, tap, timer } from 'rxjs';
 import { ARROW_UP_ICON } from '../icon/headless/arrow-up-icon';
 import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
@@ -40,8 +36,6 @@ import { TRIANGLE_EXCLAMATION_ICON } from '../icon/headless/triangle-exclamation
 import { SkeletonItemComponent } from '../skeleton/skeleton-item.component';
 import { reconcileColumnOrder, reconcileColumnWidths, reconcileHiddenColumns } from './headless/table-column-state';
 import { TABLE_ERROR_CODES } from './table-errors';
-import { TableDetailStylesComponent } from './table-detail-styles.component';
-import { TableExpanderCellComponent } from './table-expander-cell.component';
 import {
   TABLE_FEATURE_HOST,
   TableCellErrorMark,
@@ -50,6 +44,7 @@ import {
   TableLeadColumn,
   TableCellEditing,
   TableCellNavigation,
+  TableRowDetail,
   TableRowWindow,
   TableStateSlice,
 } from './headless/table-features';
@@ -143,10 +138,8 @@ type TableBodyRowVm<T> = {
   key: unknown;
   classes: string;
   stripe: boolean;
-  showDetail: boolean;
-  /** Enter/leave animation classes, empty unless this is the row the user just toggled. */
-  enterAnimation: string;
-  leaveAnimation: string;
+  /** The registered detail row to stamp under this row, while it is open. */
+  detail: TableRowDetail | null;
   leads: TableLeadCellVm[];
   cells: TableBodyCellVm<T>[];
 };
@@ -199,9 +192,6 @@ const FILLER_TRACK = 'minmax(0, 1fr)';
  * the grid's default `justify-content: normal`, and `fr` tracks are flexible by definition.
  */
 const isFlexibleTrack = (track: string) => /\bauto\b|[\d.]fr\b/.test(track);
-
-/** Detail-row enter/leave duration (must match the CSS animations) - see `markUserToggled`. */
-const DETAIL_ANIMATION_MS = 200;
 
 /**
  * Least horizontal room (px) the non-pinned columns must keep before sticky columns are suppressed:
@@ -259,10 +249,8 @@ const PLACEHOLDER_WIDTHS = [72, 45, 88, 60, 34, 79];
 })
 export class TableComponent<T> {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
   protected injector = inject(Injector);
   private injectedLabels = injectTableLabels();
-  private styleManager = injectStyleManager();
 
   /** The rows to render. */
   public data = input<readonly T[]>([]);
@@ -378,17 +366,15 @@ export class TableComponent<T> {
   public filterMode = input<'client' | 'server'>();
 
   /**
-   * The detail template rendered as a full-width row when a row is expanded. Setting
-   * it enables row expansion (an expander column is prepended). Context: `{ $implicit: row }`.
-   * Nest another `<et-table>` here for sub-tables.
+   * The detail template rendered as a full-width row when a row is expanded. Context:
+   * `{ $implicit: row }`. Nest another `<et-table>` here for sub-tables.
+   *
+   * It stays a table input rather than an option on {@link TableRowExpansionDirective} because only the
+   * table knows the row type, which is what types the template's `let-row`. **Rendering it needs
+   * `etTableRowExpansion`** - the expander column, the detail row and its animation ship with the
+   * feature, so a table that never expands a row carries none of it.
    */
   public expandedRowTemplate = input<TemplateRef<TableExpandedRowContext<T>>>();
-
-  /** Gate which rows can expand. Defaults to all rows (when a detail template is set). */
-  public expandableRow = input<(row: T) => boolean>();
-
-  /** The set of expanded row keys (by `rowKey`, else row reference). Two-way bindable. */
-  public expandedKeys = model<Set<unknown>>(new Set());
 
   /**
    * Make whole rows respond to clicks: adds a hover/pointer affordance and emits {@link rowClick}
@@ -472,6 +458,12 @@ export class TableComponent<T> {
 
   protected layers = computed(() => this.layerList().filter((layer) => layer.enabled?.() ?? true));
 
+  // A registered detail row (etTableRowExpansion). Null until one registers, which is what keeps the
+  // expander cell, the detail row's chrome and its animation out of a table that never expands.
+  private rowDetailList = signal<TableRowDetail[]>([]);
+
+  private rowDetail = computed(() => this.rowDetailList().find((detail) => detail.enabled?.() ?? true) ?? null);
+
   // Leading utility columns from features (selection), plus the table's own expander column when a
   // detail template is set. One generic loop per row kind renders them all.
   private leadColumnList = signal<TableLeadColumn[]>([]);
@@ -536,13 +528,6 @@ export class TableComponent<T> {
 
   /** The inline offset (px) each edge gradient is pushed in by, so it clears any pinned columns. */
   protected fadeInset = this.pinnedInsets.asReadonly();
-
-  /** Whether row expansion is active (a detail template was provided). */
-  public expandable = computed(() => this.expandedRowTemplate() !== undefined);
-
-  // See markUserToggled / bodyRows: gates the detail row's animation to user-driven toggles.
-  private userToggledKey = signal<unknown>(null);
-  private userToggleReset: Subscription | undefined;
 
   // The declared columns paired with their keys, in declaration order - the form everything else
   // (rendering, features, state) works with. Keys are the record's, so they can't collide.
@@ -669,26 +654,12 @@ export class TableComponent<T> {
     return this.visibleColumns().some((column) => footers.has(column.key));
   });
 
-  /**
-   * The leading utility columns in render order: whatever features registered (selection), then the
-   * table's own expander column when a detail template is set.
-   */
-  public leadColumns = computed<TableLeadColumn[]>(() => {
-    const leads = this.leadColumnList().filter((lead) => lead.enabled?.() ?? true);
-
-    if (this.expandable()) {
-      leads.push({
-        key: 'et-table-expander',
-        width: 'var(--et-table-expander-width, 32px)',
-        // after any feature column, so a select checkbox stays leftmost
-        order: 100,
-        cellClass: 'et-table-expander-cell',
-        bodyComponent: TableExpanderCellComponent,
-      });
-    }
-
-    return leads.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  });
+  /** The leading utility columns in render order - whatever features registered (selection, expansion). */
+  public leadColumns = computed<TableLeadColumn[]>(() =>
+    this.leadColumnList()
+      .filter((lead) => lead.enabled?.() ?? true)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+  );
 
   /**
    * The column tracks, plus whether they are all rigid.
@@ -735,7 +706,7 @@ export class TableComponent<T> {
    */
   protected hasFiller = computed(() => this.columnTracks().fixed);
 
-  /** The serializable, versioned table state - column order, visibility, sort, filters and expanded rows. */
+  /** The serializable, versioned table state - column order, visibility, sort, filters and feature slices. */
   public state = computed<TableState>(() => {
     const sort = this.sort();
     const multiSorted = sort.length > 1;
@@ -762,14 +733,8 @@ export class TableComponent<T> {
       return entry;
     });
 
-    const rowKey = this.rowKey();
-    const expandedKeys = this.expandedKeys();
-
-    // Expanded rows only serialize when a rowKey gives them a stable string identity.
-    const expanded = rowKey && expandedKeys.size ? [...expandedKeys].map(String) : undefined;
-
-    // Whatever the imported features own (a selection). Absent when no feature contributed, so a plain
-    // table's state is exactly what it was before the bag existed.
+    // Whatever the imported features own (a selection, the expanded rows). Absent when no feature
+    // contributed, so a plain table's state is exactly what it was before the bag existed.
     const slices = this.stateSliceList();
     const features: Record<string, unknown> = {};
 
@@ -782,9 +747,8 @@ export class TableComponent<T> {
     const hasFeatures = Object.keys(features).length > 0;
 
     return {
-      v: 2,
+      v: 3,
       columns,
-      ...(expanded ? { expanded } : {}),
       ...(hasFeatures ? { features } : {}),
     };
   });
@@ -900,16 +864,13 @@ export class TableComponent<T> {
     const leads = this.leadCells();
     const cellState = this.cellState();
     const indexOffset = this.rowIndexOffset();
-    const toggledKey = this.userToggledKey();
-    const expandable = this.expandable();
+    const detail = this.rowDetail();
     // At most one cell is ever open, so the edit templates are only looked up once there is one.
     const editing = this.cellEditing()?.cell() ?? null;
     const editTemplates = editing ? this.columnTemplates().cellEdit : null;
 
     return this.renderedRows().map((row, index) => {
       const key = this.rowIdentity(row);
-      // Only the row the user just toggled animates; any other (re)mount appears instantly.
-      const animated = toggledKey === key;
 
       return {
         row,
@@ -920,9 +881,7 @@ export class TableComponent<T> {
           .filter((className): className is string => !!className)
           .join(' '),
         stripe: (indexOffset + index) % 2 === 1,
-        showDetail: expandable && this.canExpand(row) && this.isExpanded(row),
-        enterAnimation: animated ? 'et-table-detail--enter' : '',
-        leaveAnimation: animated ? 'et-table-detail--leave' : '',
+        detail: detail?.isOpen(row) ? detail : null,
         leads,
         cells: columns.map((column) => {
           const value = column.value(row);
@@ -1044,14 +1003,20 @@ export class TableComponent<T> {
       if (height > 0 && height !== untracked(this.measuredRowHeight)) this.measuredRowHeight.set(height);
     });
 
-    // The detail row's CSS is the biggest block the table has and does nothing without expansion, so it
-    // is mounted the first time a table has a detail template rather than shipped in the base sheet.
-    // See TableDetailStylesComponent; the style manager de-duplicates across every table in the app.
-    effect(() => {
-      if (!this.expandable()) return;
+    // A detail template with nothing to render it looks like a broken template rather than a missing
+    // import, so name the mistake. Deferred to an effect because a feature registers from its own
+    // constructor, which runs after the table's - and it asks whether one registered at all rather
+    // than whether it is enabled, so `[etTableRowExpansion]="{ enabled: false }"` stays legal.
+    if (isDevMode()) {
+      effect(() => {
+        if (!this.expandedRowTemplate() || this.rowDetailList().length) return;
 
-      untracked(() => this.styleManager.mount(TableDetailStylesComponent));
-    });
+        throw new RuntimeError(
+          TABLE_ERROR_CODES.MISSING_ROW_EXPANSION,
+          '[et-table] [expandedRowTemplate] needs the row-expansion feature to render it. Add `etTableRowExpansion` to the table and import TABLE_ROW_EXPANSION_IMPORTS.',
+        );
+      });
+    }
 
     // A bound rows source owns the sort/filter state, but everything here - features, `state()`, the
     // header models - reads `sort()` / `filters()`. Mirror the source into them rather than teaching
@@ -1253,6 +1218,19 @@ export class TableComponent<T> {
   }
 
   /**
+   * Called by an opt-in feature to render a full-width row under expanded rows (`etTableRowExpansion`).
+   * Part of the feature contract; consumers never call this.
+   */
+  public registerRowDetail(detail: TableRowDetail) {
+    this.rowDetailList.update((list) => [...list, detail]);
+  }
+
+  /** The `expandedRowTemplate` input, type-erased for the feature contract. */
+  public detailTemplate() {
+    return this.expandedRowTemplate() ?? null;
+  }
+
+  /**
    * Called by an opt-in feature to take over cell focus (`etTableKeyboardNav`). Part of the feature
    * contract; consumers never call this.
    */
@@ -1340,7 +1318,7 @@ export class TableComponent<T> {
     return Math.max(1, Math.floor(viewport / rowHeight) - 1);
   }
 
-  /** Apply a previously captured {@link TableState} - column order, visibility, sort, filters and expanded rows. */
+  /** Apply a previously captured {@link TableState} - column order, visibility, sort, filters and feature slices. */
   public restoreState(next: TableState) {
     this.columnOrder.set(next.columns.map((column) => column.key));
     this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
@@ -1365,8 +1343,6 @@ export class TableComponent<T> {
       .map((column) => ({ key: column.key, values: column.filterValues ?? [] }));
 
     this.filters.set(filters);
-
-    this.expandedKeys.set(new Set(next.expanded ?? []));
 
     // Hand each feature its own slice back. A slice with no matching feature (it wasn't imported here)
     // is left alone rather than dropped, so a round-trip through a table that lacks a feature doesn't
@@ -1483,39 +1459,6 @@ export class TableComponent<T> {
     });
   }
 
-  /** Whether a row is currently expanded. */
-  public isExpanded(row: T) {
-    return this.expandedKeys().has(this.rowIdentity(row));
-  }
-
-  /** Toggle a row's expanded state. */
-  public toggleExpanded(row: T) {
-    const key = this.rowIdentity(row);
-    const next = new Set(this.expandedKeys());
-
-    if (next.has(key)) {
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
-
-    this.markUserToggled(key);
-    this.expandedKeys.set(next);
-  }
-
-  /** The inline-start offset (px) of a lead column, when the leading columns are pinned. */
-  /** Whether a row can expand - expansion is on and the row passes `expandableRow`. */
-  public canExpand(row: T) {
-    return this.expandable() && (this.expandableRow()?.(row) ?? true);
-  }
-
-  /**
-   * The animation class for a detail row's enter/leave, or `''` to mount/unmount it instantly.
-   *
-   * Only the row the user just toggled animates. A detail row also mounts and unmounts when the rows
-   * themselves change - paging away and back, sorting, a query refresh - and animating those replays
-   * an open/close the user never asked for (and pays the layout cost mid page-change).
-   */
   /**
    * Emit {@link rowClick} for a row (click or keyboard), unless the activation came from interactive
    * content inside it. Takes a plain `Event`: Angular types `$event` for the `keydown.enter` /
@@ -1713,19 +1656,6 @@ export class TableComponent<T> {
       offsetStart: suppressed ? null : (offsets.start[column.key] ?? null),
       offsetEnd: suppressed ? null : (offsets.end[column.key] ?? null),
     };
-  }
-
-  // The row key whose expansion the user just toggled, cleared once the animation has run. Compared
-  // by identity in `bodyRows`, so any other (re-)mount of a detail row skips its animation.
-  private markUserToggled(key: unknown) {
-    this.userToggledKey.set(key);
-    this.userToggleReset?.unsubscribe();
-    this.userToggleReset = timer(DETAIL_ANIMATION_MS)
-      .pipe(
-        tap(() => this.userToggledKey.set(null)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
   }
 
   // Walk the event's composed path up to the row element; bail if it passed through anything the

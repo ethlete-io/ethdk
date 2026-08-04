@@ -25,17 +25,22 @@ describe('table state URL adapter', () => {
     expect(deserializeTableState('{not json')).toBeNull();
   });
 
-  it('reads both known versions - v1 predates the feature slices', () => {
+  it('reads every known version - v1 predates the feature slices, v2 the expansion slice', () => {
     expect(deserializeTableState(JSON.stringify({ v: 1, columns: [] }))).toEqual({ v: 1, columns: [] });
-    expect(deserializeTableState(JSON.stringify({ v: 2, columns: [], features: { selection: ['1'] } }))).toEqual({
+    expect(deserializeTableState(JSON.stringify({ v: 2, columns: [], expanded: ['1'] }))).toEqual({
       v: 2,
+      columns: [],
+      expanded: ['1'],
+    });
+    expect(deserializeTableState(JSON.stringify({ v: 3, columns: [], features: { selection: ['1'] } }))).toEqual({
+      v: 3,
       columns: [],
       features: { selection: ['1'] },
     });
   });
 
   it('returns null for an unknown version or missing columns', () => {
-    expect(deserializeTableState(JSON.stringify({ v: 3, columns: [] }))).toBeNull();
+    expect(deserializeTableState(JSON.stringify({ v: 4, columns: [] }))).toBeNull();
     expect(deserializeTableState(JSON.stringify({ v: 1 }))).toBeNull();
     expect(deserializeTableState(JSON.stringify('a string'))).toBeNull();
   });

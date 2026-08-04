@@ -117,7 +117,7 @@ describe('TableStatePersistenceDirective', () => {
     first.detectChanges();
 
     const saved = JSON.parse(storage.getItem('users') ?? 'null') as TableState;
-    expect(saved.v).toBe(2);
+    expect(saved.v).toBe(3);
     expect(saved.columns.find((column) => column.key === 'name')?.sort).toBe('desc');
     expect(saved.columns.find((column) => column.key === 'role')?.hidden).toBe(true);
     // The selection is the feature's own slice, not a column entry.

@@ -214,7 +214,7 @@ describe('TableComponent', () => {
     const { componentInstance: table } = create(columns(true));
 
     expect(table.state()).toEqual({
-      v: 2,
+      v: 3,
       columns: [
         { key: 'name', hidden: false },
         { key: 'role', hidden: true },
@@ -417,7 +417,7 @@ describe('TableComponent', () => {
       fixture.detectChanges();
 
       expect(table.state()).toEqual({
-        v: 2,
+        v: 3,
         columns: [
           { key: 'role', hidden: false },
           { key: 'id', hidden: true },
@@ -490,34 +490,6 @@ describe('TableComponent', () => {
     });
   });
 
-  describe('row expansion', () => {
-    it('toggles a row and tracks it in expandedKeys', () => {
-      const { componentInstance: table } = create(columns(), UNSORTED);
-      const row = UNSORTED[0]!;
-
-      expect(table.isExpanded(row)).toBe(false);
-
-      table.toggleExpanded(row);
-      expect(table.isExpanded(row)).toBe(true);
-      expect(table.expandedKeys().size).toBe(1);
-
-      table.toggleExpanded(row);
-      expect(table.isExpanded(row)).toBe(false);
-    });
-
-    it('keys expansion by rowKey so equal-keyed rows share state', () => {
-      const fixture = create(columns(), UNSORTED);
-      fixture.componentRef.setInput('rowKey', (row: Person) => row.id);
-      fixture.detectChanges();
-      const table = fixture.componentInstance;
-
-      table.toggleExpanded({ id: 1, name: 'Ada', role: 'Admin' });
-
-      expect(table.isExpanded({ id: 1, name: 'renamed', role: 'Viewer' })).toBe(true);
-      expect(table.isExpanded({ id: 2, name: 'Bob', role: 'Editor' })).toBe(false);
-    });
-  });
-
   describe('state export/restore', () => {
     const stateColumns = () =>
       ({
@@ -577,33 +549,6 @@ describe('TableComponent', () => {
 
       table.restoreState(snapshot);
       expect(table.filters()).toEqual([{ key: 'role', values: ['Admin', 'Editor'] }]);
-    });
-
-    it('serializes and round-trips expanded rows when a rowKey is set', () => {
-      const fixture = create(stateColumns(), UNSORTED);
-      fixture.componentRef.setInput('rowKey', (row: Person) => row.id); // numeric key
-      fixture.detectChanges();
-      const table = fixture.componentInstance;
-
-      table.toggleExpanded(UNSORTED[0]!);
-      const snapshot = table.state();
-
-      // serialized as the string form of the numeric rowKey
-      expect(snapshot.expanded).toEqual([String(UNSORTED[0]!.id)]);
-
-      table.expandedKeys.set(new Set());
-      expect(table.isExpanded(UNSORTED[0]!)).toBe(false);
-
-      table.restoreState(snapshot);
-      expect(table.isExpanded(UNSORTED[0]!)).toBe(true);
-    });
-
-    it('omits expanded from state when no rowKey is set', () => {
-      const { componentInstance: table } = create(stateColumns(), UNSORTED);
-
-      table.toggleExpanded(UNSORTED[0]!);
-
-      expect(table.state().expanded).toBeUndefined();
     });
   });
 

@@ -290,17 +290,23 @@ export type TableColumnState = {
 
 /**
  * A serializable snapshot of a table's configurable state - column order, visibility,
- * sort and filters (per column) plus expanded rows. Versioned so persisted states
- * survive schema evolution. Round-trips via `state()` / `restoreState()`.
+ * sort and filters (per column) plus whatever the imported features own. Versioned so
+ * persisted states survive schema evolution. Round-trips via `state()` / `restoreState()`.
  */
 export type TableState = {
-  /** State schema version. `1` predates the `features` bag and still restores. */
-  v: 1 | 2;
+  /**
+   * State schema version. `1` predates the `features` bag and still restores; `2` carried expanded rows
+   * in {@link expanded}, which is now the expansion feature's own slice.
+   */
+  v: 1 | 2 | 3;
   /** Columns in display order, each with its visibility, sort and filter. */
   columns: TableColumnState[];
   /**
-   * Expanded row keys (the string form of each `rowKey`). Present only when row
-   * expansion is used with a `rowKey` - without one, expansion can't be serialized.
+   * Where `v: 2` and earlier kept the expanded row keys. Row expansion is an opt-in feature as of `v: 3`
+   * and carries them in `features.expansion`, so nothing reads this any more: a persisted `2` restores
+   * its columns, sort and filters, and leaves whatever is expanded alone.
+   *
+   * @deprecated Read `features.expansion` instead. Kept so a stored `v: 2` state still has a type.
    */
   expanded?: string[];
   /**

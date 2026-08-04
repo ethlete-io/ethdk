@@ -57,8 +57,7 @@ export type TableCellErrorMark = {
 
 /**
  * A leading utility column: a fixed-width column before the data columns, with a cell in every row
- * kind (group header, header, body, footer). Selection contributes one; row expansion is the table's
- * own built-in one.
+ * kind (group header, header, body, footer). Selection contributes one, row expansion another.
  *
  * The table owns the chrome - track width, sticky offsets, cell classes, ARIA roles - and stamps the
  * registered components into the body/header cells.
@@ -94,6 +93,25 @@ export type TableLayer = {
   /** The injector the layer resolves from - see {@link TableHeaderAdornment.injector}. */
   injector?: Injector;
   /** Whether the layer is live - see {@link TableHeaderAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
+/**
+ * A full-width row a feature renders directly under a body row - the detail row of an expanded row.
+ * The table stamps `component` after every row `isOpen` answers `true` for, so the feature owns what a
+ * detail row is and when it shows while the table keeps owning the grid.
+ *
+ * The stamped component must span every track itself (`grid-column: 1 / -1`), because the table's rows
+ * are `display: contents` and it is placed in the same grid as their cells.
+ */
+export type TableRowDetail = {
+  /** The component to stamp. It must declare a `row` input to receive the row it belongs to. */
+  component: TableLeadCellComponent;
+  /** Whether this row's detail row is currently rendered. */
+  isOpen(row: unknown): boolean;
+  /** The injector it resolves from - see {@link TableHeaderAdornment.injector}. */
+  injector?: Injector;
+  /** Whether detail rows are live - see {@link TableHeaderAdornment.enabled}. */
   enabled?: Signal<boolean>;
 };
 
@@ -158,10 +176,10 @@ export type TableCellEditing = {
 /**
  * A feature's own serializable state, contributed to the table's {@link TableState} under `key`.
  *
- * The base table owns column order/visibility/width, sort, filters and expansion because they must
- * round-trip whether or not a feature is imported. Anything a *feature* owns (a selection) can't live
- * there without the base knowing about the feature - so the feature hands over a slice instead, and
- * `state()` / `restoreState()` carry it as opaque JSON.
+ * The base table owns column order/visibility/width, sort and filters because they must round-trip
+ * whether or not a feature is imported. Anything a *feature* owns (a selection, the expanded rows)
+ * can't live there without the base knowing about the feature - so the feature hands over a slice
+ * instead, and `state()` / `restoreState()` carry it as opaque JSON.
  */
 export type TableStateSlice = {
   /** Stable name of the slice in the serialized state, e.g. `'selection'`. */
@@ -177,9 +195,9 @@ export type TableStateSlice = {
  * (the table never queries for them), which is what keeps the base table free of any reference to a
  * feature's dependencies - a table without `etTableFilters` never pulls in the menu system.
  *
- * Serializable state (column order/visibility/width, sort, filters, expansion) stays owned by the
- * base table so `state()` / `restoreState()` round-trip regardless of which features are imported;
- * features read and write it through this contract.
+ * Serializable state (column order/visibility/width, sort, filters) stays owned by the base table so
+ * `state()` / `restoreState()` round-trip regardless of which features are imported; features read and
+ * write it through this contract, and contribute their own with {@link registerStateSlice}.
  */
 export type TableFeatureHost = {
   /** Add a component to every header cell. Call once, from the feature's constructor. */
@@ -194,6 +212,8 @@ export type TableFeatureHost = {
   registerCellEditing(editing: TableCellEditing): void;
   /** Add a floating layer rendered after the grid (a drag ghost). Call once, from the constructor. */
   registerLayer(layer: TableLayer): void;
+  /** Render a full-width row under expanded rows. Call once, from the feature's constructor. */
+  registerRowDetail(detail: TableRowDetail): void;
   /** Replace the mark drawn in failed cells. Call once, from the feature's constructor. */
   registerCellErrorMark(mark: TableCellErrorMark): void;
   /** Contribute the feature's own serializable state. Call once, from the feature's constructor. */
@@ -212,6 +232,13 @@ export type TableFeatureHost = {
    * without owning a registry of its own.
    */
   columnTemplate(slot: TableTemplateSlot, key: string): TemplateRef<unknown> | null;
+
+  /**
+   * The table's `expandedRowTemplate`, or `null`. It stays a table input rather than a feature option
+   * because only the table knows the row type - which is what gives the template's `let-row` a type
+   * instead of `any` (see `plans/table-api.md`). The expansion feature renders it from here.
+   */
+  detailTemplate(): TemplateRef<unknown> | null;
 
   /** The rows the table would render, after client filtering/sorting. */
   rows(): readonly unknown[];

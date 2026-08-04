@@ -32,8 +32,9 @@ export const deserializeTableState = (raw: string | null | undefined): TableStat
 
   const candidate = parsed as Partial<TableState>;
 
-  // v1 predates the `features` bag; both restore, so an older link or stored setup keeps working.
-  if ((candidate.v !== 1 && candidate.v !== 2) || !Array.isArray(candidate.columns)) return null;
+  // v1 predates the `features` bag and v2 the expansion feature's slice; all three restore, so an older
+  // link or stored setup keeps working - see TableState.
+  if (![1, 2, 3].includes(candidate.v as number) || !Array.isArray(candidate.columns)) return null;
 
   return candidate as TableState;
 };

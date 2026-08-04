@@ -30,6 +30,7 @@ import {
   TABLE_KEYBOARD_NAV_IMPORTS,
   TABLE_REORDER_IMPORTS,
   TABLE_RESIZE_IMPORTS,
+  TABLE_ROW_EXPANSION_IMPORTS,
   TABLE_SELECTION_IMPORTS,
   TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
   TABLE_VIRTUAL_SCROLL_IMPORTS,
@@ -151,7 +152,8 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         [multiSort]="multiSort()"
         [rowInteractive]="rowInteractive()"
         [rowKey]="rowKey"
-        [expandedRowTemplate]="expandable() ? detail : undefined"
+        [expandedRowTemplate]="detail"
+        [etTableRowExpansion]="{ enabled: expandable() }"
         [loading]="loading()"
         [error]="failed() ? 'Request failed with status 500' : null"
         [cellState]="cellStates() || inlineEdit() ? cellStateOf() : undefined"
@@ -334,6 +336,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
     TABLE_COLUMN_MENU_IMPORTS,
     TABLE_RESIZE_IMPORTS,
     TABLE_REORDER_IMPORTS,
+    TABLE_ROW_EXPANSION_IMPORTS,
     TABLE_SELECTION_IMPORTS,
     TABLE_VIRTUAL_SCROLL_IMPORTS,
     TABLE_CELL_ERROR_TOOLTIP_IMPORTS,

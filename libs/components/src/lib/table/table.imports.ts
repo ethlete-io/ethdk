@@ -7,6 +7,7 @@ import { TableFooterDirective } from './headless/table-footer.directive';
 import { TableInlineEditDirective } from './table-inline-edit.directive';
 import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
 import { TableReorderDirective } from './table-reorder.directive';
+import { TableRowExpansionDirective } from './table-row-expansion.directive';
 import { TableResizeDirective } from './table-resize.directive';
 import { TableSelectionDirective } from './table-selection.directive';
 import { TableStatePersistenceDirective } from './headless/table-state-persistence.directive';
@@ -26,6 +27,9 @@ import { TableComponent } from './table.component';
  * `etTableFooterCell` templates, sort headers, sticky columns, the empty state and the footer slot.
  * Deliberately lean - each optional feature ships its own imports array (e.g.
  * {@link TABLE_FILTER_IMPORTS}), so what you don't import stays out of your bundle.
+ *
+ * Row expansion is **not** in here: bind `[expandedRowTemplate]` and add
+ * {@link TABLE_ROW_EXPANSION_IMPORTS}.
  */
 export const TABLE_IMPORTS = [
   TableComponent,
@@ -83,6 +87,13 @@ export const TABLE_REORDER_IMPORTS = [TableReorderDirective] as const;
 
 /** Multi-row selection (`etTableSelection`). Pulls in the checkbox component. */
 export const TABLE_SELECTION_IMPORTS = [TableSelectionDirective] as const;
+
+/**
+ * Row expansion (`etTableRowExpansion`): a leading expander column and a full-width detail row for the
+ * table's `[expandedRowTemplate]`. Carries the detail row's chrome and its grow-open animation, which is
+ * why it is separate - a table that never expands a row pays for none of it.
+ */
+export const TABLE_ROW_EXPANSION_IMPORTS = [TableRowExpansionDirective] as const;
 
 /**
  * Tooltips on failed cells (`etTableCellErrorTooltip`): a `cellState` message is shown on hover/focus
