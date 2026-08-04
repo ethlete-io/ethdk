@@ -3,6 +3,7 @@ import { TableColumnChooserComponent } from './table-column-chooser.component';
 import { TableColumnMenuDirective } from './table-column-menu.directive';
 import { TableCsvExportDirective } from './table-csv-export.directive';
 import { TableFiltersDirective } from './table-filters.directive';
+import { TableGroupHeadersDirective } from './table-group-headers.directive';
 import { TableFooterDirective } from './headless/table-footer.directive';
 import { TableInlineEditDirective } from './table-inline-edit.directive';
 import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
@@ -28,8 +29,8 @@ import { TableComponent } from './table.component';
  * Deliberately lean - each optional feature ships its own imports array (e.g.
  * {@link TABLE_FILTER_IMPORTS}), so what you don't import stays out of your bundle.
  *
- * Row expansion is **not** in here: bind `[expandedRowTemplate]` and add
- * {@link TABLE_ROW_EXPANSION_IMPORTS}.
+ * Row expansion and grouped headers are **not** in here - see
+ * {@link TABLE_ROW_EXPANSION_IMPORTS} and {@link TABLE_GROUP_HEADERS_IMPORTS}.
  */
 export const TABLE_IMPORTS = [
   TableComponent,
@@ -87,6 +88,12 @@ export const TABLE_REORDER_IMPORTS = [TableReorderDirective] as const;
 
 /** Multi-row selection (`etTableSelection`). Pulls in the checkbox component. */
 export const TABLE_SELECTION_IMPORTS = [TableSelectionDirective] as const;
+
+/**
+ * Grouped column headers (`etTableGroupHeaders`): a spanning row above the column headers in which
+ * adjacent columns sharing a `group` read under one label. Carries that row and its chrome.
+ */
+export const TABLE_GROUP_HEADERS_IMPORTS = [TableGroupHeadersDirective] as const;
 
 /**
  * Row expansion (`etTableRowExpansion`): a leading expander column and a full-width detail row for the

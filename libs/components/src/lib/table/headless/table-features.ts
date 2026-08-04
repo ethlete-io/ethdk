@@ -97,6 +97,23 @@ export type TableLayer = {
 };
 
 /**
+ * A row a feature renders above the column headers - the spanning group-header row. The table stamps
+ * `component` as the grid's first child, before its own header row.
+ *
+ * The stamped component must be `display: contents` and render one cell per track itself: the table's
+ * rows are `display: contents` too, so every cell of every row kind is a grid item of the same grid.
+ * {@link TableFeatureHost.leadColumnCount} and {@link TableFeatureHost.hasFillerTrack} are what a row
+ * needs to cover the tracks that are not data columns.
+ */
+export type TableHeaderRow = {
+  component: Type<unknown>;
+  /** The injector it resolves from - see {@link TableHeaderAdornment.injector}. */
+  injector?: Injector;
+  /** Whether the row is live - see {@link TableHeaderAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
+/**
  * A full-width row a feature renders directly under a body row - the detail row of an expanded row.
  * The table stamps `component` after every row `isOpen` answers `true` for, so the feature owns what a
  * detail row is and when it shows while the table keeps owning the grid.
@@ -214,6 +231,8 @@ export type TableFeatureHost = {
   registerLayer(layer: TableLayer): void;
   /** Render a full-width row under expanded rows. Call once, from the feature's constructor. */
   registerRowDetail(detail: TableRowDetail): void;
+  /** Render a row above the column headers. Call once, from the feature's constructor. */
+  registerHeaderRow(row: TableHeaderRow): void;
   /** Replace the mark drawn in failed cells. Call once, from the feature's constructor. */
   registerCellErrorMark(mark: TableCellErrorMark): void;
   /** Contribute the feature's own serializable state. Call once, from the feature's constructor. */
@@ -301,6 +320,19 @@ export type TableFeatureHost = {
 
   /** The visible columns, in render order - what a feature hit-tests or iterates over. */
   visibleColumnsMeta(): TableColumnMeta[];
+
+  /**
+   * How many leading utility columns (selection, expander) come before the data columns. A feature
+   * rendering a whole row needs one cell each to cover their tracks.
+   */
+  leadColumnCount(): number;
+
+  /**
+   * Whether a trailing slack track is in play - it carries an empty cell in every row so the table's
+   * chrome runs to the panel's edge instead of stopping at the last rigid column. A feature rendering a
+   * whole row has to cover that track too.
+   */
+  hasFillerTrack(): boolean;
   /**
    * The rendered header cells of the visible columns, in the same order as `visibleColumnsMeta()`.
    * A feature that must attach behavior to cells the table renders (a reorder drag) works from these.

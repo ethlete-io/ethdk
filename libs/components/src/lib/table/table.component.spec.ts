@@ -552,48 +552,6 @@ describe('TableComponent', () => {
     });
   });
 
-  describe('grouped headers', () => {
-    const groupedColumns = () =>
-      ({
-        a: { header: 'A', value: (p) => p.name, group: 'Season' },
-        b: { header: 'B', value: (p) => p.role, group: 'Season' },
-        c: { header: 'C', value: (p) => p.id },
-      }) satisfies TableColumns<Person>;
-
-    it('reports no groups and one run per column when none declare a group', () => {
-      const { componentInstance: table } = create(columns());
-
-      expect(table.hasGroups()).toBe(false);
-      expect(table.headerGroups()).toEqual([
-        { key: 'name', label: null, span: 1 },
-        { key: 'role', label: null, span: 1 },
-      ]);
-    });
-
-    it('merges adjacent same-group columns into one spanning run', () => {
-      const { componentInstance: table } = create(groupedColumns());
-
-      expect(table.hasGroups()).toBe(true);
-      expect(table.headerGroups()).toEqual([
-        { key: 'a', label: 'Season', span: 2 },
-        { key: 'c', label: null, span: 1 },
-      ]);
-    });
-
-    it('splits a group when reordering breaks its contiguity', () => {
-      const { componentInstance: table } = create(groupedColumns());
-
-      table.moveColumn('c', 1); // a, c, b
-
-      expect(table.visibleColumns().map((col) => col.key)).toEqual(['a', 'c', 'b']);
-      expect(table.headerGroups()).toEqual([
-        { key: 'a', label: 'Season', span: 1 },
-        { key: 'c', label: null, span: 1 },
-        { key: 'b', label: 'Season', span: 1 },
-      ]);
-    });
-  });
-
   describe('appearance & density', () => {
     it('defaults to the enclosed appearance and md density on the host', () => {
       const { nativeElement } = create(columns());

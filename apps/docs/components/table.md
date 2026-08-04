@@ -30,6 +30,7 @@ the table. A table that doesn't import a feature never pays for its code.
 | Column reorder      | `TABLE_REORDER_IMPORTS`            | `etTableReorder`            | the drag primitives                                  |
 | Row selection       | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
 | Row expansion       | `TABLE_ROW_EXPANSION_IMPORTS`      | `etTableRowExpansion`       | the detail row's chrome + grow-open animation        |
+| Grouped headers     | `TABLE_GROUP_HEADERS_IMPORTS`      | `etTableGroupHeaders`       | the spanning header row + its chrome                 |
 | Virtual scroll      | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
 | Cell error tooltip  | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
 | State persistence   | `TABLE_STATE_PERSISTENCE_IMPORTS`  | `etTableStatePersistence`   | nothing (local/session storage)                      |
@@ -152,21 +153,21 @@ wrapping it in a scroller.
 
 Each value of the `TableColumns<T>` record:
 
-| Field           | Default               | Description                                                                                                            |
-| --------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `value`         | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.           |
-| `sortable`      | `false`               | Render a sortable header for this column.                                                                              |
-| `sortValue`     | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.             |
-| `filterable`    | `false`               | Render a filter menu on this column's header.                                                                          |
-| `filterOptions` | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)). |
-| `filterSearch`  | `false`               | Add a search box to the filter menu.                                                                                   |
-| `filterValue`   | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                |
-| `header`        | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                        |
-| `group`         | -                     | Group label; adjacent columns sharing it span a header. See [Grouped headers](#grouped-headers).                       |
-| `sticky`        | -                     | `'start' \| 'end'` - pin the column while scrolling horizontally. See [Sticky columns](#sticky-columns-footer).        |
-| `align`         | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                        |
-| `width`         | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                   |
-| `hidden`        | `false`               | Hide the column initially; toggle later via table state.                                                               |
+| Field           | Default               | Description                                                                                                                    |
+| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `value`         | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.                   |
+| `sortable`      | `false`               | Render a sortable header for this column.                                                                                      |
+| `sortValue`     | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.                     |
+| `filterable`    | `false`               | Render a filter menu on this column's header.                                                                                  |
+| `filterOptions` | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)).         |
+| `filterSearch`  | `false`               | Add a search box to the filter menu.                                                                                           |
+| `filterValue`   | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                        |
+| `header`        | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                                |
+| `group`         | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers). |
+| `sticky`        | -                     | `'start' \| 'end'` - pin the column while scrolling horizontally. See [Sticky columns](#sticky-columns-footer).                |
+| `align`         | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                |
+| `width`         | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                           |
+| `hidden`        | `false`               | Hide the column initially; toggle later via table state.                                                                       |
 
 **Every column has a floor**, `minWidth` (96px by default), and it applies whether the
 column is squeezed by a wider neighbour or dragged there by a
@@ -302,19 +303,29 @@ own handler without also triggering row navigation - no `stopPropagation` needed
 
 ## Grouped headers
 
-Give columns a `group` and adjacent ones sharing it render beneath a single
-spanning label in a second header row. Each sub-column stays a normal
+Grouped headers are **opt-in**: import `TABLE_GROUP_HEADERS_IMPORTS` and put
+`etTableGroupHeaders` on the table. Adjacent columns sharing a `group` then render beneath
+a single spanning label in a second header row. Each sub-column stays a normal
 column - independently [sortable](#sorting), [filterable](#filtering), reorderable.
 Columns without a `group` span both header rows.
 
 ```ts
-protected readonly COLUMNS = {
-  name: { header: 'Name', value: (p) => p.name },
-  gp: { header: 'GP', value: (p) => p.gp, sortable: true, group: 'Season 24/25' },
-  pts: { header: 'PTS', value: (p) => p.pts, sortable: true, group: 'Season 24/25' },
-  ast: { header: 'AST', value: (p) => p.ast, sortable: true, group: 'Season 24/25' },
-} satisfies TableColumns<Player>;
+@Component({
+  imports: [TABLE_IMPORTS, TABLE_GROUP_HEADERS_IMPORTS],
+  template: `<et-table [data]="players()" [columns]="COLUMNS" etTableGroupHeaders />`,
+})
+export class StandingsComponent {
+  protected readonly COLUMNS = {
+    name: { header: 'Name', value: (p) => p.name },
+    gp: { header: 'GP', value: (p) => p.gp, sortable: true, group: 'Season 24/25' },
+    pts: { header: 'PTS', value: (p) => p.pts, sortable: true, group: 'Season 24/25' },
+    ast: { header: 'AST', value: (p) => p.ast, sortable: true, group: 'Season 24/25' },
+  } satisfies TableColumns<Player>;
+}
 ```
+
+Without the feature a `group` simply has no effect - the columns render as one flat header
+row. `enabled: false` turns the row off without removing the attribute.
 
 <StoryEmbed id="components-table--grouped-headers" height="360px" />
 

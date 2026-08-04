@@ -25,6 +25,7 @@ import {
   TABLE_COLUMN_MENU_IMPORTS,
   TABLE_CSV_EXPORT_IMPORTS,
   TABLE_FILTER_IMPORTS,
+  TABLE_GROUP_HEADERS_IMPORTS,
   TABLE_IMPORTS,
   TABLE_INLINE_EDIT_IMPORTS,
   TABLE_KEYBOARD_NAV_IMPORTS,
@@ -154,6 +155,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         [rowKey]="rowKey"
         [expandedRowTemplate]="detail"
         [etTableRowExpansion]="{ enabled: expandable() }"
+        [etTableGroupHeaders]="{ enabled: grouped() }"
         [loading]="loading()"
         [error]="failed() ? 'Request failed with status 500' : null"
         [cellState]="cellStates() || inlineEdit() ? cellStateOf() : undefined"
@@ -332,6 +334,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
   imports: [
     TABLE_IMPORTS,
     TABLE_FILTER_IMPORTS,
+    TABLE_GROUP_HEADERS_IMPORTS,
     TABLE_COLUMN_CHOOSER_IMPORTS,
     TABLE_COLUMN_MENU_IMPORTS,
     TABLE_RESIZE_IMPORTS,

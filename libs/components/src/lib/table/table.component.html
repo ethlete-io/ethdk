@@ -1,29 +1,10 @@
 <!-- Every binding below reads a field off a render model (see the `…Vm` types in the component):
      methods belong in event bindings, not in bindings the framework re-evaluates each pass. -->
 <div [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
-  @if (hasGroups()) {
-    <div class="et-table-group-row" role="row">
-      @for (lead of leadCells(); track lead.key) {
-        <div class="et-table-group-cell" aria-hidden="true"></div>
-      }
-      @for (group of headerGroups(); track group.key) {
-        <div
-          #groupCell
-          [style.grid-column]="'span ' + group.span"
-          [class.et-table-group-cell--labeled]="group.label"
-          [attr.role]="group.label ? 'columnheader' : null"
-          [attr.aria-hidden]="group.label ? null : 'true'"
-          class="et-table-group-cell"
-        >
-          @if (group.label) {
-            <span class="et-table-cell-text">{{ group.label }}</span>
-          }
-        </div>
-      }
-      @if (hasFiller()) {
-        <div class="et-table-group-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
-      }
-    </div>
+  <!-- Rows a feature renders above the column headers (etTableGroupHeaders' spanning group row). Each
+       is display: contents and lays its own cells into these tracks — see registerHeaderRow. -->
+  @for (headerRow of headerRows(); track $index) {
+    <ng-container *ngComponentOutlet="headerRow.component; injector: headerRow.injector" />
   }
 
   <div class="et-table-header-row" role="row">

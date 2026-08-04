@@ -160,9 +160,10 @@
 
   .et-table-header-cell {
     position: sticky;
-    /* Sticks below the spanning group-header row (var is 0 when there are no groups). Overlap it by 1px
-       so a rounded group-row height can't leave a sub-pixel seam that scrolling rows show through — the
-       group cell (higher z-index, opaque, owns the divider) draws over the overlap. */
+    /* Sticks below a group-header row when etTableGroupHeaders sets `--_et-table-group-h` on the host;
+       unset (no feature) the fallback is 0 and the header pins to the top. Overlap it by 1px so a
+       rounded group-row height can't leave a sub-pixel seam that scrolling rows show through — the group
+       cell (higher z-index, opaque, owns the divider) draws over the overlap. */
     inset-block-start: max(0px, calc(var(--_et-table-group-h, 0px) - 1px));
     /* Keeps a feature's controls (filter, column menu) off the label and off each other. It only shows
        on an end-aligned column, where the label's text ends exactly where the round hit area of the
@@ -177,38 +178,6 @@
     border-block-end: 1px solid var(--_et-table-header-border);
   }
 
-  /* Spanning group-header row: layout-transparent like other rows, so its cells span column tracks. */
-  .et-table-group-row {
-    display: contents;
-  }
-
-  .et-table-group-cell {
-    display: flex;
-    align-items: center;
-    min-inline-size: 0;
-    overflow: hidden;
-    padding: 6px var(--et-table-cell-padding-inline);
-    /* Pinned above the sub-header row. */
-    position: sticky;
-    inset-block-start: 0;
-    z-index: 2;
-    /* Opaque band so scrolling rows pass behind it. */
-    background: var(--_et-table-header-bg);
-    /* Full-width divider between the group tier and the column headers — on every cell (labelled or
-       not) so the line runs the whole width, in the same subtle border colour as the rest. */
-    border-block-end: 1px solid var(--_et-table-header-border);
-  }
-
-  /* Only runs with a label read as a group; ungrouped runs just extend the header band upward. */
-  .et-table-group-cell:where(.et-table-group-cell--labeled) {
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--et-surface-color-muted-solid, CanvasText);
-  }
-
   .et-table-cell {
     border-block-end: 1px solid var(--_et-table-row-divider);
   }
@@ -220,8 +189,7 @@
 
   /* Grid skin: vertical rules between cells (dropped on the last column of each row). */
   .et-table-host:where([data-appearance='grid']) .et-table-header-cell,
-  .et-table-host:where([data-appearance='grid']) .et-table-cell,
-  .et-table-host:where([data-appearance='grid']) .et-table-group-cell:where(.et-table-group-cell--labeled) {
+  .et-table-host:where([data-appearance='grid']) .et-table-cell {
     border-inline-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
   }
 

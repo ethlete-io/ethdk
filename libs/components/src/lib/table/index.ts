@@ -10,6 +10,8 @@ export * from './table-errors';
 export * from './table-keyboard-nav.directive';
 export * from './table-expander-cell.component';
 export * from './table-filter-trigger.component';
+export * from './table-group-header-row.component';
+export * from './table-group-headers.directive';
 export * from './table-inline-edit-styles.component';
 export * from './table-inline-edit.directive';
 export * from './table-filters.directive';

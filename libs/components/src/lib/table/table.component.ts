@@ -22,13 +22,7 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import {
-  injectColorThemes,
-  ProvideColorDirective,
-  RuntimeError,
-  signalElementDimensions,
-  signalHostElementDimensions,
-} from '@ethlete/core';
+import { injectColorThemes, ProvideColorDirective, RuntimeError, signalHostElementDimensions } from '@ethlete/core';
 import { ARROW_UP_ICON } from '../icon/headless/arrow-up-icon';
 import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
@@ -44,6 +38,7 @@ import {
   TableLeadColumn,
   TableCellEditing,
   TableCellNavigation,
+  TableHeaderRow,
   TableRowDetail,
   TableRowWindow,
   TableStateSlice,
@@ -66,7 +61,6 @@ import {
   TableErrorContext,
   TableExpandedRowContext,
   TableFilter,
-  TableHeaderGroup,
   TableSort,
   TableSortDirection,
   TableState,
@@ -242,7 +236,6 @@ const PLACEHOLDER_WIDTHS = [72, 45, 88, 60, 34, 79];
     class: 'et-table-host',
     '[attr.data-appearance]': 'appearance()',
     '[attr.data-density]': 'density()',
-    '[style.--_et-table-group-h]': 'groupRowHeight() + "px"',
     '[attr.aria-busy]': 'resolvedLoading() ? "true" : null',
     '(scroll)': 'syncScrollFades()',
   },
@@ -401,9 +394,6 @@ export class TableComponent<T> {
   // measurement, and they're grouped by column to animate a column shift on reorder drop.
   private bodyCells = viewChildren<ElementRef<HTMLElement>>('bodyCell');
 
-  // Group-header cells; the first is measured to offset the sub-header row's sticky position.
-  private groupCells = viewChildren<ElementRef<HTMLElement>>('groupCell');
-
   // The rendered lead-column header cells, in lead-column order - measured so each lead column and
   // the pinned data columns know how far in they start.
   private leadHeaderCells = viewChildren<ElementRef<HTMLElement>>('leadHeaderCell');
@@ -458,6 +448,11 @@ export class TableComponent<T> {
 
   protected layers = computed(() => this.layerList().filter((layer) => layer.enabled?.() ?? true));
 
+  // Rows a feature renders above the column headers (the spanning group-header row).
+  private headerRowList = signal<TableHeaderRow[]>([]);
+
+  protected headerRows = computed(() => this.headerRowList().filter((row) => row.enabled?.() ?? true));
+
   // A registered detail row (etTableRowExpansion). Null until one registers, which is what keeps the
   // expander cell, the detail row's chrome and its animation out of a table that never expands.
   private rowDetailList = signal<TableRowDetail[]>([]);
@@ -496,12 +491,6 @@ export class TableComponent<T> {
   // Inline-start offset for the auto-pinned expander column (it sits after the select column).
   // Recompute sticky-column offsets when the host resizes (column widths change).
   private hostDimensions = signalHostElementDimensions();
-
-  // Rendered height of the spanning group-header row (0 when there are no groups), so the sub-header
-  // row can stick just below it. ResizeObserver-backed, tracking the first group cell.
-  private groupCellDimensions = signalElementDimensions(computed(() => [...this.groupCells()]));
-
-  protected groupRowHeight = computed(() => this.groupCellDimensions()?.offset?.height ?? 0);
 
   // Measured inline offsets for pinned columns (see the effect that fills them).
   private stickyOffsets = signal<StickyOffsets>({ start: {}, end: {} });
@@ -606,31 +595,6 @@ export class TableComponent<T> {
   public visibleColumns = computed(() =>
     this.orderedColumns().filter((column) => !this.hiddenColumns().has(column.key)),
   );
-
-  /** Whether any visible column declares a `group` (drives the spanning group-header row). */
-  public hasGroups = computed(() => this.visibleColumns().some((column) => !!column.group));
-
-  /**
-   * The spanning group-header row as maximal runs of adjacent visible columns sharing a `group`.
-   * Ungrouped columns each form their own single-track run (`label: null`) so the row still covers
-   * every track - dragging a column out of a group simply splits the run.
-   */
-  public headerGroups = computed<TableHeaderGroup[]>(() => {
-    const runs: TableHeaderGroup[] = [];
-
-    for (const column of this.visibleColumns()) {
-      const label = column.group ?? null;
-      const last = runs[runs.length - 1];
-
-      if (last && label !== null && last.label === label) {
-        last.span += 1;
-      } else {
-        runs.push({ key: column.key, label, span: 1 });
-      }
-    }
-
-    return runs;
-  });
 
   /** Whether any visible column is pinned to the inline-start edge (also pins the expander column). */
   public hasStickyStart = computed(
@@ -1223,6 +1187,24 @@ export class TableComponent<T> {
    */
   public registerRowDetail(detail: TableRowDetail) {
     this.rowDetailList.update((list) => [...list, detail]);
+  }
+
+  /**
+   * Called by an opt-in feature to render a row above the column headers (`etTableGroupHeaders`). Part
+   * of the feature contract; consumers never call this.
+   */
+  public registerHeaderRow(row: TableHeaderRow) {
+    this.headerRowList.update((rows) => [...rows, row]);
+  }
+
+  /** How many leading utility columns precede the data columns. Part of the feature contract. */
+  public leadColumnCount() {
+    return this.leadColumns().length;
+  }
+
+  /** Whether a trailing slack track is in play. Part of the feature contract. */
+  public hasFillerTrack() {
+    return this.hasFiller();
   }
 
   /** The `expandedRowTemplate` input, type-erased for the feature contract. */
