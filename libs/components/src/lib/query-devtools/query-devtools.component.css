@@ -896,6 +896,13 @@
     color: var(--_et-qdt-subtle);
   }
 
+  /* Index range of a folded slice - reads as structure, not as a real key. */
+  .et-query-devtools-json-chunk {
+    color: var(--_et-qdt-fg);
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+  }
+
   .et-query-devtools-json-value {
     overflow-wrap: anywhere;
   }
