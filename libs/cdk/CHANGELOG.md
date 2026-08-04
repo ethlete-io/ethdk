@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 5.0.0-next.26
+
+### Minor Changes
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`cf41b4e`](https://github.com/ethlete-io/ethdk/commit/cf41b4e64268eef05bbd69b501e9d08581d09697) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark every public `@ethlete/cdk` export as `@deprecated`, pointing at its `@ethlete/components`
+  successor and the `migrate-from-cdk` generator. Nothing changes at runtime; removal is v6.
+
 ## 5.0.0-next.25
 
 ### Minor Changes
