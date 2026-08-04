@@ -57,7 +57,7 @@ export type RegisteredSurfaceThemeName = EthleteSurfaceThemeNameRegistry extends
   ? N
   : string;
 
-export const createCssSurfaceName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
+export const createCssSurfaceName = (name: string) => name.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
 
 export const resolveSurfaceByElevation = (themes: SurfaceTheme[], type: SurfaceType, elevation: number) =>
   themes.find((t) => t.type === type && t.elevation === elevation) ?? null;

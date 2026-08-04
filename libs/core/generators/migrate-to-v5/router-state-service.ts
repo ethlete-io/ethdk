@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
 

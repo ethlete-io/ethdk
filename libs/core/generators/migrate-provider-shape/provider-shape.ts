@@ -165,7 +165,6 @@ const rewriteSite = (
 type ImportRewrite = { start: number; end: number; text: string };
 
 const rewriteImports = (
-  content: string,
   sourceFile: ts.SourceFile,
   factoriesUsed: Set<string>,
   extractorsUsed: Set<string>,
@@ -269,7 +268,7 @@ export const migrateProviderShapeInFile = (filePath: string, content: string): P
         ),
       ),
     ),
-    ...rewriteImports(content, sourceFile, factoriesUsed, extractorsUsed),
+    ...rewriteImports(sourceFile, factoriesUsed, extractorsUsed),
   ].sort((a, b) => b.start - a.start);
 
   let updated = content;

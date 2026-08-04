@@ -1,4 +1,4 @@
-/* eslint-disable no-var */
+/* eslint-disable no-var, @typescript-eslint/no-non-null-assertion -- kept as upstream */
 
 /**
  * Stolen from klona to avoid adding a dependency

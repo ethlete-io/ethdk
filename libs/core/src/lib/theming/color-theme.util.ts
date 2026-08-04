@@ -74,7 +74,7 @@ export type RegisteredColorThemeName = EthleteColorThemeNameRegistry extends { n
   ? N
   : string;
 
-export const createCssColorThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
+export const createCssColorThemeName = (name: string) => name.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
 
 const COLOR_THEMES_DEF = /* @__PURE__ */ defineStaticProvider<ColorTheme[]>(undefined, {
   name: 'Color Themes',

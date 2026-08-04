@@ -96,6 +96,22 @@ export default [
   },
   // Ethlete styleguide rules — HTML templates
   ethlete.configs.recommendedTemplate,
+  // Generators are Node/nx tooling scripts (run-once schematics over the TS AST), not shipped
+  // library code — non-null assertions on AST nodes / lookup tables are idiomatic there.
+  {
+    files: ['**/generators/**'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
+  // The styleguide block above skips these folders, which would otherwise fall back to the nx
+  // baseline rule and flag the repo-wide `_`-prefix convention for intentionally unused bindings.
+  {
+    files: ['**/generators/**/*.ts', '**/testing/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ethlete.configs.recommendedTs.rules['@typescript-eslint/no-unused-vars'],
+    },
+  },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
   ethlete.configs.recommendedSpec,
 ];

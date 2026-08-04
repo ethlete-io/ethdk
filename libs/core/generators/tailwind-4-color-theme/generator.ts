@@ -1,5 +1,5 @@
 import { Tree, formatFiles, logger, visitNotIgnoredFiles } from '@nx/devkit';
-import { Project, SyntaxKind } from 'ts-morph';
+import { Expression, ObjectLiteralExpression, Project, SourceFile, SyntaxKind } from 'ts-morph';
 
 //#region Types
 
@@ -263,7 +263,7 @@ function extractThemesFromContent(content: string, filePath: string): Theme[] {
   return themes;
 }
 
-function parseThemeObject(obj: any, sourceFile: any): Theme {
+function parseThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile): Theme {
   const properties = obj.getProperties();
 
   const theme: Partial<Theme> = {};
@@ -351,13 +351,16 @@ function validateThemeConfiguration(themes: Theme[]): void {
   }
 
   // Error: Duplicate theme types
-  const typedThemes = themes.filter((t) => t.type);
   const typeMap = new Map<string, string[]>();
 
-  for (const theme of typedThemes) {
-    const existing = typeMap.get(theme.type!) || [];
+  for (const theme of themes) {
+    if (!theme.type) {
+      continue;
+    }
+
+    const existing = typeMap.get(theme.type) || [];
     existing.push(theme.name);
-    typeMap.set(theme.type!, existing);
+    typeMap.set(theme.type, existing);
   }
 
   for (const [type, names] of typeMap) {
@@ -369,7 +372,7 @@ function validateThemeConfiguration(themes: Theme[]): void {
   }
 }
 
-function parseThemeSwatch(obj: any, sourceFile: any): ThemeSwatch {
+function parseThemeSwatch(obj: ObjectLiteralExpression, sourceFile: SourceFile): ThemeSwatch {
   const properties = obj.getProperties();
   const swatch: Partial<ThemeSwatch> = {};
 
@@ -385,11 +388,18 @@ function parseThemeSwatch(obj: any, sourceFile: any): ThemeSwatch {
       continue;
     }
 
-    if (propName === 'color' || propName === 'onColor' || propName === 'inkColor') {
-      const colorMap = parseColorMap(initializer, sourceFile);
-      if (colorMap) {
-        swatch[propName] = colorMap as any;
-      }
+    const colorMap = parseColorMap(initializer, sourceFile);
+
+    if (!colorMap) {
+      continue;
+    }
+
+    if (propName === 'color') {
+      swatch.color = colorMap as ThemeColorMap;
+    } else if (propName === 'onColor') {
+      swatch.onColor = colorMap as OnThemeColorMap;
+    } else if (propName === 'inkColor') {
+      swatch.inkColor = colorMap as ThemeInkColorMap;
     }
   }
 
@@ -400,10 +410,16 @@ function parseThemeSwatch(obj: any, sourceFile: any): ThemeSwatch {
   return swatch as ThemeSwatch;
 }
 
-function parseColorMap(initializer: any, sourceFile: any): ThemeColorMap | OnThemeColorMap | null {
+const COLOR_MAP_KEYS = ['default', 'hover', 'focus', 'active', 'disabled'] as const;
+
+type ColorMapKey = (typeof COLOR_MAP_KEYS)[number];
+
+const isColorMapKey = (name: string): name is ColorMapKey => COLOR_MAP_KEYS.some((key) => key === name);
+
+function parseColorMap(initializer: Expression, sourceFile: SourceFile): ThemeColorMap | OnThemeColorMap | null {
   // Handle spread expressions by resolving references
   if (initializer.isKind(SyntaxKind.ObjectLiteralExpression)) {
-    const colorMap: any = {};
+    const colorMap: Partial<Record<ColorMapKey, ThemeColor>> = {};
 
     const properties = initializer.getProperties();
 
@@ -412,7 +428,7 @@ function parseColorMap(initializer: any, sourceFile: any): ThemeColorMap | OnThe
         const propName = prop.getName();
         const propValue = prop.getInitializer();
 
-        if (propValue?.isKind(SyntaxKind.StringLiteral)) {
+        if (propValue?.isKind(SyntaxKind.StringLiteral) && isColorMapKey(propName)) {
           colorMap[propName] = propValue.getLiteralValue() as ThemeColor;
         }
       } else if (prop.isKind(SyntaxKind.SpreadAssignment)) {
@@ -421,9 +437,7 @@ function parseColorMap(initializer: any, sourceFile: any): ThemeColorMap | OnThe
 
         if (spreadExpr.isKind(SyntaxKind.Identifier)) {
           const referencedName = spreadExpr.getText();
-          const referencedDecl = sourceFile
-            .getVariableDeclarations()
-            .find((decl: any) => decl.getName() === referencedName);
+          const referencedDecl = sourceFile.getVariableDeclarations().find((decl) => decl.getName() === referencedName);
 
           if (referencedDecl) {
             const referencedObj = referencedDecl.getInitializer();
@@ -439,22 +453,23 @@ function parseColorMap(initializer: any, sourceFile: any): ThemeColorMap | OnThe
     }
 
     // Apply fallbacks for required fields
-    if (colorMap.default) {
+    const defaultColor = colorMap.default;
+
+    if (defaultColor) {
       // Check if this is a ThemeColorMap (has hover, active, or disabled explicitly set)
       const isThemeColorMap =
         colorMap.hover !== undefined || colorMap.active !== undefined || colorMap.disabled !== undefined;
 
       if (isThemeColorMap) {
         // For ThemeColorMap - apply fallbacks for all required fields
-        const defaultColor = colorMap.default as ThemeColor;
-        const hoverColor = (colorMap.hover || defaultColor) as ThemeColor;
+        const hoverColor = colorMap.hover || defaultColor;
 
         const result: ThemeColorMap = {
           default: defaultColor,
           hover: hoverColor,
-          focus: colorMap.focus as ThemeColor | undefined,
-          active: (colorMap.active || hoverColor) as ThemeColor,
-          disabled: (colorMap.disabled || defaultColor) as ThemeColor,
+          focus: colorMap.focus,
+          active: colorMap.active || hoverColor,
+          disabled: colorMap.disabled || defaultColor,
         };
         return result;
       }

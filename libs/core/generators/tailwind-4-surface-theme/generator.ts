@@ -1,5 +1,5 @@
 import { Tree, formatFiles, logger, visitNotIgnoredFiles } from '@nx/devkit';
-import { Project, SyntaxKind } from 'ts-morph';
+import { ObjectLiteralExpression, Project, SyntaxKind } from 'ts-morph';
 
 //#region Types
 
@@ -230,11 +230,18 @@ function extractSurfaceThemesFromContent(content: string, filePath: string): Sur
   return themes;
 }
 
-function parseSurfaceThemeObject(obj: any): SurfaceTheme {
+const COLOR_PROPS = ['background', 'color', 'colorMuted', 'colorSubtle', 'border'] as const;
+
+const isColorProp = (name: string): name is (typeof COLOR_PROPS)[number] => COLOR_PROPS.some((p) => p === name);
+
+const INTERACTION_KEYS = ['default', 'hover', 'focus', 'active', 'disabled'] as const;
+
+const isInteractionKey = (name: string): name is (typeof INTERACTION_KEYS)[number] =>
+  INTERACTION_KEYS.some((key) => key === name);
+
+function parseSurfaceThemeObject(obj: ObjectLiteralExpression): SurfaceTheme {
   const properties = obj.getProperties();
   const theme: Partial<SurfaceTheme> = {};
-
-  const STRING_PROPS = ['name', 'background', 'color', 'colorMuted', 'colorSubtle', 'border'] as const;
 
   for (const prop of properties) {
     if (!prop.isKind(SyntaxKind.PropertyAssignment)) {
@@ -263,8 +270,8 @@ function parseSurfaceThemeObject(obj: any): SurfaceTheme {
         if (!iProp.isKind(SyntaxKind.PropertyAssignment)) continue;
         const iPropName = iProp.getName();
         const iInit = iProp.getInitializer();
-        if (iInit?.isKind(SyntaxKind.StringLiteral)) {
-          (interactionColor as any)[iPropName] = iInit.getLiteralValue();
+        if (iInit?.isKind(SyntaxKind.StringLiteral) && isInteractionKey(iPropName)) {
+          interactionColor[iPropName] = iInit.getLiteralValue() as SurfaceThemeColor;
         }
       }
 
@@ -292,8 +299,14 @@ function parseSurfaceThemeObject(obj: any): SurfaceTheme {
       continue;
     }
 
-    if (STRING_PROPS.includes(propName as any) && initializer.isKind(SyntaxKind.StringLiteral)) {
-      (theme as any)[propName] = initializer.getLiteralValue();
+    if (!initializer.isKind(SyntaxKind.StringLiteral)) {
+      continue;
+    }
+
+    if (propName === 'name') {
+      theme.name = initializer.getLiteralValue();
+    } else if (isColorProp(propName)) {
+      theme[propName] = initializer.getLiteralValue() as SurfaceThemeColor;
     }
   }
 
@@ -324,9 +337,11 @@ function applyDefaultSurfaceThemeOverride(themes: SurfaceTheme[], defaultTheme: 
   const target = matches.find((t) => t.type === type);
 
   if (!target) {
-    if (matches.length > 0) {
+    const [firstMatch] = matches;
+
+    if (firstMatch) {
       throw new Error(
-        `Theme "${defaultTheme}" has type '${matches[0]!.type}', but was passed as the default '${type}' theme`,
+        `Theme "${defaultTheme}" has type '${firstMatch.type}', but was passed as the default '${type}' theme`,
       );
     }
 
@@ -429,9 +444,6 @@ function generateSurfaceThemeCss(
  */
 
 `;
-
-  const defaultThemes = themes.filter((t) => t.isDefault);
-  const regularThemes = themes.filter((t) => !t.isDefault);
 
   // Static Tailwind @theme block - one color set per surface theme
   for (const theme of themes) {

@@ -140,7 +140,11 @@ export const createTailwindCssVar = (name: string | undefined) => (name ? `rgb(v
 /**
  * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
  */
-export const createTailwindRgbVar = (val: string | undefined) => (val ? `rgb(${val} / <alpha-value>)` : null);
+export function createTailwindRgbVar(val: string): string;
+export function createTailwindRgbVar(val: string | undefined): string | null;
+export function createTailwindRgbVar(val: string | undefined) {
+  return val ? `rgb(${val} / <alpha-value>)` : null;
+}
 
 /**
  * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
@@ -161,50 +165,49 @@ export const createTailwindColorThemes = (themes: ColorTheme[], prefix = 'et') =
     const key = `${prefix}-${theme.name}`;
 
     twThemes[key] = {
-      DEFAULT: createTailwindRgbVar(theme.primary.color.default)!,
-      hover: createTailwindRgbVar(theme.primary.color.hover)!,
-      focus: createTailwindRgbVar(theme.primary.color.focus) || createTailwindRgbVar(theme.primary.color.hover)!,
-      active: createTailwindRgbVar(theme.primary.color.active)!,
-      disabled: createTailwindRgbVar(theme.primary.color.disabled)!,
+      DEFAULT: createTailwindRgbVar(theme.primary.color.default),
+      hover: createTailwindRgbVar(theme.primary.color.hover),
+      focus: createTailwindRgbVar(theme.primary.color.focus) || createTailwindRgbVar(theme.primary.color.hover),
+      active: createTailwindRgbVar(theme.primary.color.active),
+      disabled: createTailwindRgbVar(theme.primary.color.disabled),
     };
 
     const keyOn = `${prefix}-on-${theme.name}`;
 
     twThemes[keyOn] = {
-      DEFAULT: createTailwindRgbVar(theme.primary.onColor.default)!,
-      hover: createTailwindRgbVar(theme.primary.onColor.hover) || createTailwindRgbVar(theme.primary.onColor.default)!,
+      DEFAULT: createTailwindRgbVar(theme.primary.onColor.default),
+      hover: createTailwindRgbVar(theme.primary.onColor.hover) || createTailwindRgbVar(theme.primary.onColor.default),
       focus:
         createTailwindRgbVar(theme.primary.onColor.focus) ||
         createTailwindRgbVar(theme.primary.onColor.hover) ||
-        createTailwindRgbVar(theme.primary.onColor.default)!,
-      active:
-        createTailwindRgbVar(theme.primary.onColor.active) || createTailwindRgbVar(theme.primary.onColor.default)!,
+        createTailwindRgbVar(theme.primary.onColor.default),
+      active: createTailwindRgbVar(theme.primary.onColor.active) || createTailwindRgbVar(theme.primary.onColor.default),
       disabled:
-        createTailwindRgbVar(theme.primary.onColor.disabled) || createTailwindRgbVar(theme.primary.onColor.default)!,
+        createTailwindRgbVar(theme.primary.onColor.disabled) || createTailwindRgbVar(theme.primary.onColor.default),
     };
 
     const keyInk = `${prefix}-${theme.name}-ink`;
 
     twThemes[keyInk] = {
       DEFAULT:
-        createTailwindRgbVar(theme.primary.inkColor?.default) || createTailwindRgbVar(theme.primary.color.default)!,
+        createTailwindRgbVar(theme.primary.inkColor?.default) || createTailwindRgbVar(theme.primary.color.default),
       hover:
         createTailwindRgbVar(theme.primary.inkColor?.hover) ||
         createTailwindRgbVar(theme.primary.inkColor?.default) ||
-        createTailwindRgbVar(theme.primary.color.default)!,
+        createTailwindRgbVar(theme.primary.color.default),
       focus:
         createTailwindRgbVar(theme.primary.inkColor?.focus) ||
         createTailwindRgbVar(theme.primary.inkColor?.hover) ||
         createTailwindRgbVar(theme.primary.inkColor?.default) ||
-        createTailwindRgbVar(theme.primary.color.default)!,
+        createTailwindRgbVar(theme.primary.color.default),
       active:
         createTailwindRgbVar(theme.primary.inkColor?.active) ||
         createTailwindRgbVar(theme.primary.inkColor?.default) ||
-        createTailwindRgbVar(theme.primary.color.default)!,
+        createTailwindRgbVar(theme.primary.color.default),
       disabled:
         createTailwindRgbVar(theme.primary.inkColor?.disabled) ||
         createTailwindRgbVar(theme.primary.inkColor?.default) ||
-        createTailwindRgbVar(theme.primary.color.default)!,
+        createTailwindRgbVar(theme.primary.color.default),
     };
   }
 

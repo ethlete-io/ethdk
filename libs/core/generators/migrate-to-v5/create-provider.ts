@@ -48,7 +48,6 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
   const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
 
   let cdkImport: ts.ImportDeclaration | undefined;
-  let coreImport: ts.ImportDeclaration | undefined;
   let hasCreateProviderInCdk = false;
 
   // Find relevant imports
@@ -63,8 +62,6 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
             (element) => element.name.text === 'createProvider',
           );
         }
-      } else if (modulePath === '@ethlete/core') {
-        coreImport = statement;
       }
     }
   }

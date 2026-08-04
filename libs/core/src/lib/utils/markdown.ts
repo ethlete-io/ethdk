@@ -156,6 +156,7 @@ const findList = (html: string): { start: number; end: number; ordered: boolean;
 
   if (!open) return null;
 
+  const openTagName = open[1] ?? '';
   const innerStart = open.index + open[0].length;
   const tag = /<(\/?)(?:ul|ol)\b[^>]*>/gi;
   tag.lastIndex = innerStart;
@@ -170,7 +171,7 @@ const findList = (html: string): { start: number; end: number; ordered: boolean;
       return {
         start: open.index,
         end: tag.lastIndex,
-        ordered: open[1]!.toLowerCase() === 'ol',
+        ordered: openTagName.toLowerCase() === 'ol',
         inner: html.slice(innerStart, match.index),
       };
     }
@@ -338,14 +339,16 @@ const buildListHtml = (lines: ParsedListLine[], start: number, baseIndent: numbe
   let items = '';
   let i = start;
 
-  while (i < lines.length && (lines[i]?.indent ?? -1) === baseIndent) {
-    let item = processInline(lines[i]!.text);
+  for (let line = lines[i]; line?.indent === baseIndent; line = lines[i]) {
+    let item = processInline(line.text);
     i++;
 
-    if (i < lines.length && (lines[i]?.indent ?? -1) > baseIndent) {
-      const nested = buildListHtml(lines, i, lines[i]!.indent);
-      item += nested.html;
-      i = nested.next;
+    const nested = lines[i];
+
+    if (nested && nested.indent > baseIndent) {
+      const built = buildListHtml(lines, i, nested.indent);
+      item += built.html;
+      i = built.next;
     }
 
     items += `<li>${item}</li>`;
@@ -444,9 +447,10 @@ export const markdownToHtml = (markdown: string) => {
       // List (unordered/ordered, with indentation-based nesting)
       if (/^([-*+]|\d+\.)\s/.test(trimmed)) {
         const lines = parseListLines(trimmed.split('\n'));
+        const [firstLine] = lines;
 
-        if (lines.length > 0) {
-          return buildListHtml(lines, 0, lines[0]!.indent).html;
+        if (firstLine) {
+          return buildListHtml(lines, 0, firstLine.indent).html;
         }
       }
 

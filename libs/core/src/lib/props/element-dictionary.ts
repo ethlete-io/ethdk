@@ -17,7 +17,13 @@ export const createElementDictionary = () => {
   });
 
   const ids = computed(() => dictionary.ids());
-  const elements = computed(() => ids().map((id) => dictionary.elements()[id]!));
+  const elements = computed(() => {
+    const byId = dictionary.elements();
+
+    return ids()
+      .map((id) => byId[id])
+      .filter((element): element is HTMLElement => !!element);
+  });
 
   const isEmpty = computed(() => dictionary.ids().length === 0);
 

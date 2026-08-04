@@ -75,7 +75,7 @@ export const createSwipeTracker = (startEvent: TouchEvent | MouseEvent): SwipeTr
     // timestamp, which is never earlier, so this always keeps a superset of what it needs.
     const cutoff = now - SWIPE_VELOCITY_WINDOW_MS;
     let dropCount = 0;
-    while (dropCount + 1 < samples.length && samples[dropCount + 1]!.t < cutoff) dropCount++;
+    for (let next = samples[dropCount + 1]; next && next.t < cutoff; next = samples[dropCount + 1]) dropCount++;
     if (dropCount) samples = samples.slice(dropCount);
 
     const positiveMovementX = Math.abs(movementX);
@@ -110,13 +110,16 @@ export const createSwipeTracker = (startEvent: TouchEvent | MouseEvent): SwipeTr
     // carries no momentum no matter how fast it started out.
     if (firstInWindow === -1) return { x: 0, y: 0 };
 
-    const newest = samples[samples.length - 1]!;
+    const newest = samples.at(-1);
 
     // Measure across the window when it holds a span of its own. With a single sample in it - a
     // pointer emitting moves slower than the window - reach back one sample for a baseline instead
     // of reporting nothing.
     const hasSpanInWindow = samples.length - firstInWindow >= 2;
-    const baseline = samples[hasSpanInWindow ? firstInWindow : Math.max(0, firstInWindow - 1)]!;
+    const baseline = samples[hasSpanInWindow ? firstInWindow : Math.max(0, firstInWindow - 1)];
+
+    if (!newest || !baseline) return { x: 0, y: 0 };
+
     const elapsed = newest.t - baseline.t;
 
     if (elapsed <= 0) return { x: 0, y: 0 };
