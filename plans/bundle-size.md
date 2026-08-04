@@ -18,21 +18,21 @@ pipeline, the goldens and the rules for reading the numbers live in
   there is no deprecation cycle. Precedents: `@ethlete/core:migrate-to-v5`,
   `@ethlete/query:migrate-query-client-features`.
 - Measure variant builds with `nx build <lib> --skip-nx-cache`. Nx restored a cached `dist` for a
-  reverted tree twice during the second audit and produced bogus baselines.
+  reverted tree twice during the second audit and produced bogus baselines - and once more on
+  2026-08-04, where a stale cached `query` build made `components` fail to compile against it.
+- **Read a number in `--third-party` mode before concluding a dependency shakes out.** `--external`
+  values every third-party byte at 0.
 
 ## Open
 
-1. **`@contentful/rich-text-types` runtime enums - 2.4 kB gz, S, non-breaking.** `BLOCKS` and
-   `INLINES` are TS enums, value-imported by `rich-text-renderer.util.ts`,
-   `rich-text-node-types.ts` and `rich-text-renderer.component.ts`. Inline the stable CDA string
-   literals (or a local `as const`) and switch to `import type`. Invisible in the `--external`
-   goldens, so it needs a bundled-mode check to prove.
-2. **Decide whether `@floating-ui/dom` becomes an optional peer.** It is still a hard peer of core,
-   components and cdk. Anchored positioning is now opt-in at the _bundle_ level
-   (`registerAnchoredPositionSetup`), so a dialog-only app installs a package it never loads - but
-   it is central enough that optional-peer is debatable. `socket.io-client`, `date-fns` and the
-   build tooling are already optional.
-3. **RTE, in value order** (audited 2026-08-01, unchanged since):
+1. **Decide whether `@floating-ui/dom` becomes an optional peer.** It is still a hard peer of core,
+   components and cdk. Anchored positioning is opt-in at the _bundle_ level
+   (`registerAnchoredPositionSetup`) and the `--third-party` goldens confirm it: the components floor
+   costs 2,193 B with dependencies bundled, and only an entry that registers anchored positioning
+   pays floating-ui (`overlay-anchored`: 3,628 B → 10,689 B). So a dialog-only app installs a package
+   it never loads, which is the case for optional - but it is central enough that this is a judgment
+   call. `date-fns` and the build tooling are already optional.
+2. **RTE, in value order** (audited 2026-08-01, unchanged since):
    - **DOM feature modules behind provide fns** - ~1,100 of the always-retained ~2,830 LOC
      (blockquote / code-block / headings / autoformat / links are droppable for a marks-and-lists
      editor). Invasive: it narrows the headless directive's method surface. Design carefully.
@@ -40,26 +40,44 @@ pipeline, the goldens and the rules for reading the numbers live in
      runtime, so the win is smaller than it looks.
    - **Per-feature label defaults** - ~1 kB of the always-loaded 2.2 kB label literal serves the
      opt-in image / table / trigger tools.
-4. **Injection-only CSS candidates** - a byte win needs a breaking opt-in, so do them as on-demand
+3. **Injection-only CSS candidates** - a byte win needs a breaking opt-in, so do them as on-demand
    mounts instead: choice-field card variant (`choice-field.component.css:235-340`, 2 kB, 66 % of the
    sheet), carousel autoplay chrome (`carousel.component.css:165-349`, ~1.8-2.5 kB - autoplay is a
    host directive, so bytes cannot move without breaking), cascader sheet-mode slice
    (`cascader-panel.component.css:666-717` + keyframes, ~1 kB).
-5. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
+4. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
    The barrel is fine (`TableComponent` alone 20.5 kB vs `TABLE_IMPORTS` 21.4 kB); the cost is inside
    `table.component.ts` (32.7 kB min, ~40 % of the entry): sticky-column machinery
    (`:447`, `:515-538`, `:1566`), autosizing (`:523`, `:1629-1664`), grouped headers (`:626-651`),
    skeleton rows (pins `SkeletonItemComponent`, `:40`, `:246`, `:968`) and unconditional
    expander/detail refs (`:686`, `:1053`). The registered-feature seams to decompose onto are
    described in `table-api.md`.
-6. **Two harness notes worth folding into `tools/treeshake/README.md`.**
-   `decompose.mjs` attributes compiled CSS to the component's `.html`/`.ts` row - so
-   `overlay-container.component.html` "16.9 kB" and `table.component.html` "19.1 kB" are really
-   their stylesheets. And the `--external` goldens hide third-party retention (item 1 above is
-   invisible in them); one bundled-mode golden per lib would cover that surface.
-7. **Loose end from the core overlay split.**
-   `libs/core/src/lib/animations/animated-overlay.directive.docs.mdx` was left behind when
-   `AnimatedOverlayDirective` moved to `libs/cdk`; nothing references it.
+
+## Closed on 2026-08-04
+
+- **`socket.io-client` in every query consumer - 13.0 kB gz, the biggest single win of the whole
+  effort.** The package ships no `sideEffects: false`, so the FESM's one static `import { io }` was
+  unshakeable: `import { transformToString } from '@ethlete/query'` (1.8 kB of our code) dragged
+  41.7 kB min of socket.io + engine.io. It also made the "optional" peer mandatory - a REST-only app
+  that skipped it could not resolve the import at all. `createWebSocketClient` now takes `io` as a
+  required option (structural `WebSocketClientIo` type, so nothing in the lib imports the package,
+  not even for types) and the peer declaration is gone. `query-floor` in `--third-party` mode:
+  13,878 B → 838 B. `@ethlete/query/testing` gained `createWebSocketTestDouble()`, which is what
+  the ws specs now drive instead of opening real sockets.
+- **`@contentful/rich-text-types` runtime enums.** Already covered by the `CF_BLOCKS` / `CF_INLINES`
+  literal maps - every remaining use of the enums is in a type position, so TS elides the import.
+  Verified in `--third-party` mode: `contentful-deps` 6,329 B, _below_ the 6,407 B external-mode
+  number, i.e. zero third-party retention. `import type` is **not** the guard here: lint autofixes
+  that syntax away (`nx lint contentful --fix` rewrites it to a plain import). The golden is the guard.
+- **Bundled-mode measurement** (the gap that hid both items above). `--third-party` externalizes only
+  the framework; `goldens.json` carries one such entry per lib (`core-deps`, `query-deps`,
+  `components-deps`, `contentful-deps`). Both `decompose.mjs`'s CSS attribution and the
+  `--external` blind spot are now written down in `tools/treeshake/README.md`.
+- **The orphan `animated-overlay.directive.docs.mdx`** in `libs/core/src/lib/animations/`, left
+  behind when the directive moved to `libs/cdk`. Deleted.
+
+All golden numbers were re-recorded in the same commit: the pre-existing entries drifted +1 to +8 B
+from dependency bumps since the last audit, well inside tolerance.
 
 ## Measured as not worth doing - do not re-open
 

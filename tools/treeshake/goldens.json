@@ -5,7 +5,10 @@
     "no Angular runtime constant). Regenerate with `nx run treeshake:bundle-goldens:update` and commit",
     "the diff as a deliberate, reviewable change - that is the whole point of the file.",
     "The floors are what an app pays for importing one tiny symbol; the rest is one real entry per",
-    "big domain, so a regression can be attributed instead of just noticed."
+    "big domain, so a regression can be attributed instead of just noticed.",
+    "`thirdParty: true` externalizes only the framework, so date-fns / socket.io-client /",
+    "@contentful/rich-text-types count towards the size. Those entries - one per lib - are the only",
+    "ones that catch a dependency that stopped tree-shaking (e.g. a TS enum imported as a value)."
   ],
   "tolerance": {
     "percent": 2,
@@ -14,43 +17,43 @@
   "entries": {
     "core-floor": {
       "entry": "import { clamp } from '@ethlete/core';\nconsole.log(clamp);",
-      "gzip": 919
+      "gzip": 926
     },
     "query-floor": {
       "entry": "import { transformToString } from '@ethlete/query';\nconsole.log(transformToString);",
-      "gzip": 837
+      "gzip": 838
     },
     "components-floor": {
       "entry": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
-      "gzip": 2464
+      "gzip": 2471
     },
     "bracket-single-elimination": {
       "entry": "import { BracketComponent, singleEliminationBracketLayout } from '@ethlete/components';\nconsole.log(BracketComponent, singleEliminationBracketLayout());",
-      "gzip": 29150
+      "gzip": 29154
     },
     "table": {
       "entry": "import { TABLE_IMPORTS } from '@ethlete/components';\nconsole.log(TABLE_IMPORTS);",
-      "gzip": 20955
+      "gzip": 20953
     },
     "form-field-input": {
       "entry": "import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(FORM_FIELD_IMPORTS, INPUT_IMPORTS);",
-      "gzip": 18519
+      "gzip": 18523
     },
     "select": {
       "entry": "import { SELECT_IMPORTS } from '@ethlete/components';\nconsole.log(SELECT_IMPORTS);",
-      "gzip": 41801
+      "gzip": 41809
     },
     "overlay-dialog": {
       "entry": "import { defineOverlay, dialogOverlayStrategy, OVERLAY_IMPORTS } from '@ethlete/components';\nconsole.log(defineOverlay, dialogOverlayStrategy, OVERLAY_IMPORTS);",
-      "gzip": 19736
+      "gzip": 19741
     },
     "rich-text-editor": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS);",
-      "gzip": 48960
+      "gzip": 48965
     },
     "query-client": {
       "entry": "import { createGetQuery, createQueryClient } from '@ethlete/query';\nconsole.log(createGetQuery, createQueryClient);",
-      "gzip": 9739
+      "gzip": 10160
     },
     "contentful-floor": {
       "entry": "import { isContentfulEntryType } from '@ethlete/contentful';\nconsole.log(isContentfulEntryType);",
@@ -58,11 +61,31 @@
     },
     "contentful-rich-text-renderer": {
       "entry": "import { ContentfulRichTextRendererComponent } from '@ethlete/contentful';\nconsole.log(ContentfulRichTextRendererComponent);",
-      "gzip": 6399
+      "gzip": 6407
     },
     "contentful-image": {
       "entry": "import { ContentfulImageComponent } from '@ethlete/contentful';\nconsole.log(ContentfulImageComponent);",
-      "gzip": 6189
+      "gzip": 6195
+    },
+    "core-deps": {
+      "entry": "import { clamp } from '@ethlete/core';\nconsole.log(clamp);",
+      "gzip": 850,
+      "thirdParty": true
+    },
+    "query-deps": {
+      "entry": "import { createGetQuery, createQueryClient } from '@ethlete/query';\nconsole.log(createGetQuery, createQueryClient);",
+      "gzip": 10074,
+      "thirdParty": true
+    },
+    "components-deps": {
+      "entry": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
+      "gzip": 2193,
+      "thirdParty": true
+    },
+    "contentful-deps": {
+      "entry": "import { ContentfulRichTextRendererComponent } from '@ethlete/contentful';\nconsole.log(ContentfulRichTextRendererComponent);",
+      "gzip": 6329,
+      "thirdParty": true
     }
   }
 }

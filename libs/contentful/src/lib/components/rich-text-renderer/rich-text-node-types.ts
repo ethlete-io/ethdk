@@ -3,6 +3,10 @@ import { BLOCKS, INLINES } from '@contentful/rich-text-types';
 /**
  * The `BLOCKS` node type strings of `@contentful/rich-text-types`, as a plain literal map.
  * Keep the values in sync with the enum - they are part of the Contentful Delivery API.
+ *
+ * These maps exist because `BLOCKS` and `INLINES` are TS enums: reading one in a *value* position
+ * anywhere in this lib emits a runtime import and costs every consumer ~2.4 kB gz. Use the enums for
+ * types only - the `contentful-deps` size golden fails if that slips.
  */
 export const CF_BLOCKS = {
   DOCUMENT: 'document',

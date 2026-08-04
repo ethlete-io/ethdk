@@ -50,6 +50,24 @@ the number is "how much `@ethlete` code lands in the app" without the ~85 kB gz 
 constant. **Deltas between entries are identical in both modes**; external mode is less noisy and
 much faster. Use it for anything comparative.
 
+### `--third-party` mode
+
+`--external` hides third-party retention completely: a dependency that stopped tree-shaking is worth
+0 B in that mode. `--third-party` externalizes only the framework (`@angular/*`, `rxjs`, `tslib`,
+`zone.js`) and bundles everything else, so `date-fns`, `socket.io-client` and
+`@contentful/rich-text-types` count towards the number. Compare an entry in both modes: the
+difference is what the dependencies cost.
+
+Two shapes make a dependency unshakeable, and neither is visible in `--external`:
+
+- **A package without `sideEffects: false`** cannot be dropped at all once a module statically
+  imports it, no matter whether the imported binding is used. `socket.io-client` is the example.
+- **A TS enum imported as a value** emits a runtime object. `@contentful/rich-text-types`' `BLOCKS`
+  and `INLINES` cost ~2.4 kB gz that way, which is why `rich-text-node-types.ts` keeps local literal
+  maps and every import of that package stays `import type`.
+
+`goldens.json` carries one `"thirdParty": true` entry per lib for exactly this surface.
+
 ### Consumer caveat
 
 An app bundled **without** Angular's builder (plain Vite/esbuild/Rollup over the published FESM) does
@@ -174,3 +192,8 @@ failing entry names the file.
 - **An unknown export is a hard esbuild error**, which makes the entries file a decent typo check.
 - `<unmapped>` in `decompose.mjs` output is esbuild's own module glue plus the entry, not library
   code.
+- **`decompose.mjs` attributes a component's compiled CSS to its `.html`/`.ts` row**, because that is
+  where the sourcemap points. So `overlay-container.component.html` at "16.9 kB" and
+  `table.component.html` at "19.1 kB" are really their stylesheets, not their templates.
+- **A number from `--external` says nothing about third-party retention.** Re-measure with
+  `--third-party` before concluding a dependency shakes out.

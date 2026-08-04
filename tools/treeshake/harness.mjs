@@ -189,6 +189,23 @@ export const externalizeNonEthlete = {
   },
 };
 
+/** the framework an app pays for no matter what it imports from us — external in both modes */
+const FRAMEWORK = /^(@angular\/|rxjs(\/|$)|tslib$|zone\.js)/;
+
+/**
+ * Externalize only the framework, so third-party deps (`date-fns`, `@contentful/rich-text-types`,
+ * `socket.io-client`, …) land in the bundle and a retained runtime import of one shows up in the
+ * number. `externalizeNonEthlete` hides that surface completely.
+ */
+export const externalizeFrameworkOnly = {
+  name: 'externalize-framework-only',
+  setup(build) {
+    build.onResolve({ filter: /^[^./]/ }, (args) =>
+      FRAMEWORK.test(args.path) ? { path: args.path, external: true } : undefined,
+    );
+  },
+};
+
 /** the esbuild options every script shares — an application production build, minus the app */
 export const esbuildBase = () => ({
   bundle: true,

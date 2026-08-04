@@ -26,6 +26,7 @@ import {
 } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
 import { concat, concatMap, delay, mergeMap, of, throwError } from 'rxjs';
+import { io } from 'socket.io-client';
 
 export const DEVTOOLS_DEMO_API_URL = 'https://query-devtools-demo.ethlete.local';
 
@@ -319,4 +320,5 @@ export const getGqlPosts = gqlQuery<{ response: { posts: PostView[] } }>(
 export const devtoolsDemoSocket = createWebSocketClient({
   name: 'devtools-demo',
   url: 'wss://query-devtools-demo.invalid',
+  io,
 });

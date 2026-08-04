@@ -10,7 +10,6 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { defineRootProvider, previousSignalValue, ProviderDefinition } from '@ethlete/core';
-import { io } from 'socket.io-client';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { messageMalformed, roomNotJoined } from './web-socket-errors';
 
@@ -21,6 +20,12 @@ export type WebSocketDevtoolsMessage = {
   room: string;
   event: string;
   data: unknown;
+
+  /**
+   * Whether the message arrived from the server or was sent by this client - room joins and leaves
+   * included, which is what makes "the room was never joined" tellable from "the room is quiet".
+   */
+  direction: 'in' | 'out';
 };
 
 /**
@@ -31,11 +36,43 @@ export type WebSocketDevtoolsHandle = {
   connected: Signal<boolean>;
   rooms: Signal<string[]>;
   messages: Signal<WebSocketDevtoolsMessage[]>;
+
+  /**
+   * Sends a message the way the app would, so the panel can provoke a server that only answers a
+   * client that asked. Recorded in {@link messages} like any other outgoing one.
+   */
+  emit: (options: { event: string; data: unknown }) => void;
 };
 
 const MAX_DEVTOOLS_MESSAGES = 100;
 
 export type CreateWebSocketClientTransport = 'polling' | 'websocket' | 'webtransport';
+
+/** The options {@link createWebSocketClient} passes to the socket io factory. */
+export type WebSocketClientIoOptions = {
+  withCredentials: boolean;
+  autoConnect: boolean;
+  transports: CreateWebSocketClientTransport[] | undefined;
+};
+
+/** The slice of a socket io `Socket` this client drives. */
+export type WebSocketClientSocket = {
+  connect: () => void;
+  disconnect: () => void;
+  emit: (event: string, data: unknown) => void;
+  on: (event: 'connect' | 'disconnect', listener: () => void) => void;
+  onAny: (listener: (data: string) => void) => void;
+};
+
+/**
+ * The `io` factory of `socket.io-client`, declared structurally.
+ *
+ * `@ethlete/query` never imports `socket.io-client` itself: the package ships no `sideEffects: false`,
+ * so a single static import of it is unshakeable and would cost *every* consumer ~13 kB gz - a
+ * REST-only app included, which could then not even build without installing the optional peer.
+ * Passing `io` in keeps that cost with the apps that actually open a socket.
+ */
+export type WebSocketClientIo = (url: string, options: WebSocketClientIoOptions) => WebSocketClientSocket;
 
 export type CreateWebSocketClientConfigOptions = {
   /** A unique name for the client */
@@ -43,6 +80,18 @@ export type CreateWebSocketClientConfigOptions = {
 
   /** The URL of the socket io server */
   url: string;
+
+  /**
+   * The `io` factory, imported by the app: `import { io } from 'socket.io-client'`.
+   *
+   * @example
+   * ```ts
+   * import { io } from 'socket.io-client';
+   *
+   * const MATCH_SOCKET = createWebSocketClient({ name: 'match', url: env.wsUrl, io });
+   * ```
+   */
+  io: WebSocketClientIo;
 
   /** A list of transports to try (in order). Engine.io always attempts to connect directly with the first one, provided the feature detection test for it passes. */
   transports?: CreateWebSocketClientTransport[];
@@ -97,7 +146,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 ): WebSocketClientResult<TMessageData> => {
   return defineRootProvider(
     () => {
-      const socket = io(options.url, {
+      const socket = options.io(options.url, {
         withCredentials: true,
         autoConnect: false,
         transports: options.transports,
@@ -115,13 +164,33 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         if (devtoolsEnabled) devtoolsRooms.set([...rooms.keys()]);
       };
 
+      const recordDevtoolsMessage = (message: Omit<WebSocketDevtoolsMessage, 'id' | 'timestamp'>) => {
+        if (!devtoolsEnabled) return;
+
+        devtoolsMessages.update((log) =>
+          [{ ...message, id: devtoolsMessageId++, timestamp: Date.now() }, ...log].slice(0, MAX_DEVTOOLS_MESSAGES),
+        );
+      };
+
+      /** Every outgoing message goes through here, so the devtools log covers both directions. */
+      const emit = (message: { event: string; data: unknown; room?: string }) => {
+        socket.emit(message.event, message.data);
+
+        recordDevtoolsMessage({
+          room: message.room ?? '',
+          event: message.event,
+          data: message.data,
+          direction: 'out',
+        });
+      };
+
       const joinRoom = (room: string | (() => string | null)) => {
         const roomFn = typeof room === 'function' ? room : () => room;
         const pre = previousSignalValue(computed(() => roomFn()));
         const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
 
         const join = (name: string) => {
-          socket.emit('join-room', name);
+          emit({ event: 'join-room', data: name, room: name });
 
           const existingRoom = rooms.get(name);
 
@@ -175,7 +244,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           if (isDevMode()) throw roomNotJoined(room);
         }
 
-        socket.emit('leave-room', room);
+        emit({ event: 'leave-room', data: room, room });
 
         rooms.delete(room);
         syncDevtoolsRooms();
@@ -186,7 +255,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           isConnected.set(true);
 
           for (const room of rooms.keys()) {
-            socket.emit('join-room', room);
+            emit({ event: 'join-room', data: room, room });
           }
         });
         socket.on('disconnect', () => isConnected.set(false));
@@ -197,16 +266,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           try {
             const json = JSON.parse(data) as TMessageData;
 
-            if (devtoolsEnabled) {
-              const message: WebSocketDevtoolsMessage = {
-                id: devtoolsMessageId++,
-                timestamp: Date.now(),
-                room: json.room,
-                event: json.event,
-                data: json.data,
-              };
-              devtoolsMessages.update((log) => [message, ...log].slice(0, MAX_DEVTOOLS_MESSAGES));
-            }
+            recordDevtoolsMessage({ room: json.room, event: json.event, data: json.data, direction: 'in' });
 
             const room = rooms.get(json.room);
 
@@ -237,6 +297,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           connected: isConnected.asReadonly(),
           rooms: devtoolsRooms.asReadonly(),
           messages: devtoolsMessages.asReadonly(),
+          emit,
         };
 
         const unregister = registerQueryDevtoolsEntry({

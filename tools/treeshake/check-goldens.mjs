@@ -8,6 +8,10 @@
  * re-introducing an unshakeable module-scope statement is caught here rather than at the next audit.
  * `--update` rewrites the file: a golden change is then a deliberate, reviewable commit.
  *
+ * An entry with `"thirdParty": true` externalizes only the framework, so non-framework dependencies
+ * (`date-fns`, `@contentful/rich-text-types`, `socket.io-client`) count towards its size. Those are
+ * the only entries that can catch a newly value-imported third-party module.
+ *
  * Usage:
  *   npx nx build core query components
  *   node tools/treeshake/check-goldens.mjs [--update] [--dist <dist/libs>] [--cache <dir>] [--json]
@@ -22,6 +26,7 @@ import {
   defaultDistLibs,
   distFingerprint,
   esbuildBase,
+  externalizeFrameworkOnly,
   externalizeNonEthlete,
   makeArgs,
   processPackages,
@@ -34,7 +39,7 @@ const { arg, flag } = makeArgs();
 const GOLDENS_FILE = join(dirname(fileURLToPath(import.meta.url)), 'goldens.json');
 const distLibs = resolve(arg('dist', defaultDistLibs()));
 
-const measure = async (name, code, aliases, workDir) => {
+const measure = async (name, code, aliases, workDir, withThirdParty) => {
   const entry = join(workDir, `golden-${name}.mjs`);
   await writeFile(entry, code.endsWith('\n') ? code : `${code}\n`, 'utf8');
 
@@ -43,7 +48,7 @@ const measure = async (name, code, aliases, workDir) => {
     entryPoints: [entry],
     minify: true,
     alias: aliases,
-    plugins: [externalizeNonEthlete],
+    plugins: [withThirdParty ? externalizeFrameworkOnly : externalizeNonEthlete],
   });
 
   return gzipSync(Buffer.from(result.outputFiles[0].contents), { level: 9 }).byteLength;
@@ -70,13 +75,21 @@ const main = async () => {
   const rows = [];
 
   for (const [name, golden] of Object.entries(goldens.entries)) {
-    const actual = await measure(name, golden.entry, aliases, workDir);
+    const actual = await measure(name, golden.entry, aliases, workDir, golden.thirdParty === true);
     const expected = golden.gzip;
     const limit = allowance(expected, goldens.tolerance);
     // A brand-new golden (`0`) is recorded, never failed — that is how an entry is added.
     const status = expected === 0 ? 'new' : Math.abs(actual - expected) <= limit ? 'ok' : 'fail';
 
-    rows.push({ name, expected, actual, delta: actual - expected, limit, status });
+    rows.push({
+      name,
+      expected,
+      actual,
+      delta: actual - expected,
+      limit,
+      status,
+      thirdParty: golden.thirdParty === true,
+    });
 
     if (flag('update')) golden.gzip = actual;
   }
@@ -88,14 +101,17 @@ const main = async () => {
   if (flag('json')) {
     console.log(JSON.stringify({ dist: distLibs, updated: flag('update'), rows }, null, 2));
   } else {
-    const width = Math.max(...rows.map((row) => row.name.length), 5);
-    console.log(`\nsize goldens  (ethlete-only, gzip)\n${'entry'.padEnd(width)}   expected     actual      delta`);
+    const label = (row) => (row.thirdParty ? `${row.name} +3p` : row.name);
+    const width = Math.max(...rows.map((row) => label(row).length), 5);
+    console.log(
+      `\nsize goldens  (ethlete-only, gzip; "+3p" also counts non-framework deps)\n${'entry'.padEnd(width)}   expected     actual      delta`,
+    );
 
     for (const row of rows) {
       const mark = row.status === 'ok' ? '✔' : row.status === 'new' ? '+' : '✖';
       const delta = `${row.delta >= 0 ? '+' : ''}${row.delta} B`;
       console.log(
-        `${mark} ${row.name.padEnd(width)} ${String(row.expected).padStart(8)} B ${String(row.actual).padStart(8)} B ${delta.padStart(10)}`,
+        `${mark} ${label(row).padEnd(width)} ${String(row.expected).padStart(8)} B ${String(row.actual).padStart(8)} B ${delta.padStart(10)}`,
       );
     }
   }
