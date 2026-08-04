@@ -21,8 +21,10 @@ published yet, or when you are iterating on it.
   {%skill:sdk-source%} covers resolving it and what to check before trusting it.
 - The checkout has its dependencies installed (`yarn install` in the checkout root - the
   SDK repo is a Yarn 4 workspace).
-- Note which branch it is on. Building `main` when your app runs `-next` prereleases
-  swaps in a completely different API surface.
+- Check which branch it is on before building - unless the user said otherwise, that
+  should be `next`, up to date with `origin/next`. Building `main` when your app runs
+  `-next` prereleases swaps in a completely different API surface, and building a stale
+  `next` rebuilds a bug that is already fixed upstream. Ask before changing its branch.
 
 ## 2. Build the libraries you changed
 

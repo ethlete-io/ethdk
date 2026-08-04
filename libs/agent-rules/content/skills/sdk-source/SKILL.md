@@ -38,15 +38,40 @@ holds the full `.d.ts` surface of exactly the version this repo runs - and to
 {%docsBaseUrl%}. Then tell the user a local checkout would help, and offer the snippet
 above (the file is gitignored, so adding it changes nothing for anyone else).
 
-## 2. Check the checkout matches what is installed
+## 2. Check the branch before you read anything
 
-A checkout sits on whatever branch the developer left it on, so it can be months of
-work ahead of the installed package - or behind it. Compare before you trust it:
+A checkout sits on whatever branch the developer left it on, so the first command you
+run against it is the one that tells you what you are looking at:
 
 ```bash
-grep '"@ethlete/' package.json                          # what this repo runs
+git -C <sdkSourcePath> fetch --quiet          # read-only, safe
+git -C <sdkSourcePath> status -sb             # branch, ahead/behind, dirty files
+```
+
+**Unless the user says otherwise, the expected state is `next`, up to date with
+`origin/next`.** That is the branch the SDK develops on, and the one the `-next`
+prereleases are cut from. Anything else and you are reading a different SDK than the
+one you are about to describe.
+
+When it is not in that state, **say so and ask** - never switch, pull, stash or reset
+it yourself. It is someone's working tree, and the read-only rule below applies:
+
+- **On another branch** - name it and ask whether to read it as-is or whether they want
+  `next`. A feature branch may be exactly what you were sent to look at.
+- **Behind `origin/next`** - report how far. The code you would quote may already be
+  fixed upstream, so read the missing commits before calling anything a bug:
+  `git -C <sdkSourcePath> log --oneline HEAD..origin/next`.
+- **Dirty** - it may contain someone's work in progress. Say so rather than quoting it
+  as SDK behaviour.
+
+## 3. Check the checkout matches what is installed
+
+Even on a clean `next`, the checkout can be months of work ahead of the installed
+package - or behind it:
+
+```bash
+grep '"@ethlete/' package.json                                 # what this repo runs
 grep -m1 '"version"' <sdkSourcePath>/libs/<lib>/package.json   # what the checkout is at
-git -C <sdkSourcePath> status -sb                       # branch, and whether it is dirty
 ```
 
 Rules when they differ:
@@ -55,10 +80,8 @@ Rules when they differ:
   `.d.ts` in `node_modules` is the truth about the API you are calling.
 - Source that is ahead describes an **unreleased** API. Never write consumer code
   against it, and never assume it is available - say what release it needs.
-- A dirty checkout may contain someone's work in progress. Say so rather than quoting
-  it as SDK behaviour.
 
-## 3. Where things live
+## 4. Where things live
 
 Paths are relative to the checkout root:
 
@@ -79,7 +102,7 @@ Inside a component domain: `<name>.component.ts` with its `.css` next to it,
 `index.ts` as the barrel. The lib's public surface is `libs/<lib>/src/index.ts` -
 anything not re-exported from there is internal, whatever it looks like.
 
-## 4. Search it, don't read it whole
+## 5. Search it, don't read it whole
 
 ```bash
 rg -n "etButton" <sdkSourcePath>/libs/components/src --glob '!*.spec.ts'   # a selector
@@ -91,12 +114,14 @@ Specs are the cheapest description of intended behaviour - `<name>.component.spe
 next to a component usually answers "is this supposed to happen?" faster than the
 implementation does.
 
-## 5. The checkout is read-only from here
+## 6. The checkout is read-only from here
 
 It is a different repository with its own branch, lint, docs and changeset workflow.
-Never edit it while working on a task in this repo, and never copy its internals into
-consumer code - a private helper is not a supported API and disappears without a major
-version (the same goes for anything under a `subtle` namespace).
+Never edit it while working on a task in this repo - that covers its git state too, so
+no `checkout`, `pull`, `stash` or `reset` without the user asking for it (`fetch` is
+fine). Never copy its internals into consumer code either - a private helper is not a
+supported API and disappears without a major version (the same goes for anything under
+a `subtle` namespace).
 
 When the fix belongs in the SDK, say so and describe it precisely: file, symbol, and
 the behaviour it should have. If the user wants that fix verified against this app
