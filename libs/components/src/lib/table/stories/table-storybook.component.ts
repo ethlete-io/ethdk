@@ -33,6 +33,7 @@ import {
   TABLE_RESIZE_IMPORTS,
   TABLE_ROW_EXPANSION_IMPORTS,
   TABLE_SELECTION_IMPORTS,
+  TABLE_SKELETON_IMPORTS,
   TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
   TABLE_VIRTUAL_SCROLL_IMPORTS,
 } from '../table.imports';
@@ -171,6 +172,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         [labels]="{ empty: 'No people found' }"
         (cellCommit)="saveCell($event)"
         (rowClick)="lastClicked.set($event)"
+        etTableSkeleton
         etTableFilters
       >
         <!-- Custom cells are ng-templates bound to the column they render, so let-row / let-value are
@@ -341,6 +343,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
     TABLE_REORDER_IMPORTS,
     TABLE_ROW_EXPANSION_IMPORTS,
     TABLE_SELECTION_IMPORTS,
+    TABLE_SKELETON_IMPORTS,
     TABLE_VIRTUAL_SCROLL_IMPORTS,
     TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
     TABLE_CSV_EXPORT_IMPORTS,

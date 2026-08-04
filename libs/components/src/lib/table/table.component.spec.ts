@@ -659,25 +659,20 @@ describe('TableComponent', () => {
       fixture.detectChanges();
     };
 
-    it('draws placeholder rows while loading with no rows, and marks the host busy', () => {
+    it('marks the host busy and leaves the body blank while loading with no rows', () => {
       const fixture = create(columns(), []);
       const host = fixture.nativeElement as HTMLElement;
 
       setStates(fixture, { loading: true });
 
-      // One placeholder row per `loadingRows`, each with a bar in every column and no busy bar.
-      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(5);
-      expect(host.querySelectorAll('.et-table-row--placeholder et-skeleton-item').length).toBe(10);
+      // What a loading body looks like belongs to etTableSkeleton; the base only refuses to show the
+      // empty state, which would read as "no results" mid-request.
       expect(host.getAttribute('aria-busy')).toBe('true');
       expect(host.querySelector('.et-table-busy-bar')).toBeNull();
-      // The empty state must not show underneath them.
       expect(host.querySelector('.et-table-empty-cell')).toBeNull();
-
-      setStates(fixture, { loadingRows: 2 });
-      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(2);
+      expect(host.querySelectorAll('.et-table-row').length).toBe(0);
 
       setStates(fixture, { loading: false });
-      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(0);
       expect(host.getAttribute('aria-busy')).toBeNull();
       expect(host.querySelector('.et-table-empty-cell')).not.toBeNull();
     });
@@ -692,57 +687,6 @@ describe('TableComponent', () => {
       expect(host.querySelector('.et-table-busy-bar')).not.toBeNull();
       expect(host.querySelector('.et-table-row--placeholder')).toBeNull();
       expect(host.getAttribute('aria-busy')).toBe('true');
-    });
-
-    it('lets a column say what its loading placeholder looks like', () => {
-      @Component({
-        template: `
-          <et-table [columns]="cols" [data]="data()" [loading]="true">
-            <ng-template [etTableCellSkeleton]="cols.role" let-index let-width="width">
-              <span class="chip-bone">{{ index }}:{{ width }}</span>
-            </ng-template>
-          </et-table>
-        `,
-        imports: [TABLE_IMPORTS],
-      })
-      class HostComponent {
-        cols = columns();
-        data = signal<Person[]>([]);
-      }
-
-      const fixture = TestBed.createComponent(HostComponent);
-      fixture.detectChanges();
-
-      const host = fixture.nativeElement as HTMLElement;
-      const rows = host.querySelectorAll('.et-table-row--placeholder');
-
-      // The templated column renders the consumer's bone; the other keeps the default one.
-      expect(rows.length).toBe(5);
-      expect(host.querySelectorAll('.chip-bone').length).toBe(5);
-      expect(rows[0]?.querySelectorAll('et-skeleton-item').length).toBe(1);
-      // Context: the row index plus the width the default bone would have used, so a custom one can
-      // stay in the same rhythm.
-      expect(host.querySelector('.chip-bone')?.textContent).toBe('0:45');
-    });
-
-    it('remembers a real row height and gives it to later placeholder rows', () => {
-      const fixture = create(columns());
-      const table = fixture.componentInstance;
-
-      // Row height can only come from a rendered cell - jsdom reports 0, so stand one in.
-      vi.spyOn(table, 'firstBodyCellElement').mockReturnValue({
-        getBoundingClientRect: () => ({ height: 52 }) as DOMRect,
-      } as unknown as HTMLElement);
-      fixture.detectChanges();
-
-      fixture.componentRef.setInput('data', []);
-      fixture.componentRef.setInput('loading', true);
-      fixture.detectChanges();
-
-      const row = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.et-table-row--placeholder');
-
-      // A refetch keeps the table exactly as tall as the data the user was just looking at.
-      expect(row?.style.getPropertyValue('--_et-table-row-h')).toBe('52px');
     });
 
     it('replaces the body with the error state for any non-nullish error, ahead of loading', () => {
@@ -803,10 +747,11 @@ describe('TableComponent', () => {
       const cellAt = (row: number, key: string) =>
         host.querySelectorAll('.et-table-row')[row]?.querySelector(`[data-col-key="${key}"]`);
 
-      // Loading swaps the value for a bar; error keeps the value and adds the mark.
+      // Both states mark the cell; swapping a loading value for a bone needs etTableSkeleton, so here
+      // the value stays put and `data-state` carries the cue on its own.
       expect(cellAt(0, 'name')?.getAttribute('data-state')).toBe('loading');
-      expect(cellAt(0, 'name')?.querySelector('et-skeleton-item')).not.toBeNull();
-      expect(cellAt(0, 'name')?.textContent?.trim()).toBe('');
+      expect(cellAt(0, 'name')?.querySelector('et-skeleton-item')).toBeNull();
+      expect(cellAt(0, 'name')?.textContent?.trim()).toBe('Ada');
 
       expect(cellAt(1, 'role')?.getAttribute('data-state')).toBe('error');
       expect(cellAt(1, 'role')?.querySelector('.et-table-cell-error-icon')).not.toBeNull();
@@ -931,8 +876,8 @@ describe('TableComponent', () => {
       source.loading.set(true);
       fixture.detectChanges();
 
-      // Nothing to show yet → placeholders, and the host is busy without a `loading` binding of its own.
-      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(5);
+      // Nothing to show yet → a blank, busy body, without a `loading` binding of its own.
+      expect(host.querySelectorAll('.et-table-row').length).toBe(0);
       expect(host.getAttribute('aria-busy')).toBe('true');
       // A source has already sorted and filtered server-side.
       expect(table.resolvedSortMode()).toBe('server');
@@ -942,7 +887,7 @@ describe('TableComponent', () => {
       source.loading.set(false);
       fixture.detectChanges();
       expect(table.rows()).toEqual(PEOPLE);
-      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(0);
+      expect(host.querySelectorAll('.et-table-row').length).toBe(PEOPLE.length);
 
       source.error.set('boom');
       fixture.detectChanges();

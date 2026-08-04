@@ -1,6 +1,5 @@
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
-  afterEveryRender,
   afterNextRender,
   booleanAttribute,
   Component,
@@ -14,7 +13,6 @@ import {
   isDevMode,
   linkedSignal,
   model,
-  numberAttribute,
   output,
   signal,
   TemplateRef,
@@ -27,7 +25,6 @@ import { ARROW_UP_ICON } from '../icon/headless/arrow-up-icon';
 import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
 import { TRIANGLE_EXCLAMATION_ICON } from '../icon/headless/triangle-exclamation-icon';
-import { SkeletonItemComponent } from '../skeleton/skeleton-item.component';
 import { reconcileColumnOrder, reconcileColumnWidths, reconcileHiddenColumns } from './headless/table-column-state';
 import { TABLE_ERROR_CODES } from './table-errors';
 import {
@@ -38,6 +35,8 @@ import {
   TableLeadColumn,
   TableCellEditing,
   TableCellNavigation,
+  TableBodyPlaceholder,
+  TableCellPlaceholder,
   TableHeaderRow,
   TableRowDetail,
   TableRowWindow,
@@ -50,7 +49,6 @@ import { injectTableLabels, TableLabels } from './headless/table-labels';
 import { sortRows } from './headless/table-sort';
 import {
   TableCellContext,
-  TableCellSkeletonContext,
   TableCellState,
   TableCellStateValue,
   TableColumnDef,
@@ -144,20 +142,6 @@ type TableFooterCellVm = TableStickyVm & {
   template: TemplateRef<unknown> | null;
 };
 
-/** One loading placeholder row: a bone per column, at a width that doesn't change between passes. */
-type TablePlaceholderRowVm = {
-  key: number;
-  leads: TableLeadCellVm[];
-  cells: {
-    key: string;
-    align: string;
-    width: number;
-    /** The column's own `etTableCellSkeleton`, when it has one. */
-    template: TemplateRef<unknown> | null;
-    context: TableCellSkeletonContext;
-  }[];
-};
-
 /**
  * Default narrowest width (px) a column may end up at, whether dragged there or squeezed there by a
  * wider neighbour. Sized so the header still reads: a cell spends 24px on its own inline padding and
@@ -203,12 +187,6 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringif
 const SCROLL_FADE_EPSILON = 1;
 
 /**
- * Widths (%) a loading placeholder bar cycles through, so a block of them reads as ragged text rather
- * than a bar chart. Cycled by row + column index - see `placeholderGrid`.
- */
-const PLACEHOLDER_WIDTHS = [72, 45, 88, 60, 34, 79];
-
-/**
  * The default table. Renders typed rows and cells from a {@link TableColumns}
  * record on a CSS grid with a sticky header and an empty state. Light by
  * default - sort, filter, expansion, reordering, virtualization and state
@@ -227,7 +205,7 @@ const PLACEHOLDER_WIDTHS = [72, 45, 88, 60, 34, 79];
   templateUrl: './table.component.html',
   styleUrl: './table.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgComponentOutlet, NgTemplateOutlet, IconDirective, ProvideColorDirective, SkeletonItemComponent],
+  imports: [NgComponentOutlet, NgTemplateOutlet, IconDirective, ProvideColorDirective],
   providers: [
     { provide: TABLE_FEATURE_HOST, useExisting: TableComponent },
     provideIcons(ARROW_UP_ICON, TRIANGLE_EXCLAMATION_ICON),
@@ -275,15 +253,13 @@ export class TableComponent<T> {
   public labels = input<Partial<TableLabels> | null>(null);
 
   /**
-   * Whether the rows are being loaded. With nothing to show yet the body renders placeholder rows
-   * ({@link loadingRows}); over rows that are already on screen it keeps them readable and runs a
-   * busy bar under the header instead, so a refetch doesn't blank the table the user is reading.
-   * The host carries `aria-busy` either way. @default false
+   * Whether the rows are being loaded. Over rows that are already on screen it keeps them readable and
+   * runs a busy bar under the header, so a refetch doesn't blank the table the user is reading; with
+   * nothing to show yet the body is left to whatever renders a loading state - `etTableSkeleton` draws
+   * placeholder rows, and without it the body simply stays empty. The host carries `aria-busy` either
+   * way. @default false
    */
   public loading = input(false, { transform: booleanAttribute });
-
-  /** How many placeholder rows to draw while loading with no rows yet. @default 5 */
-  public loadingRows = input(5, { transform: numberAttribute });
 
   /**
    * The load's failure, if any - anything non-nullish counts (an `HttpErrorResponse`, a message, a
@@ -452,6 +428,21 @@ export class TableComponent<T> {
   private headerRowList = signal<TableHeaderRow[]>([]);
 
   protected headerRows = computed(() => this.headerRowList().filter((row) => row.enabled?.() ?? true));
+
+  // What a feature renders in place of the body while loading with no rows yet (etTableSkeleton).
+  private bodyPlaceholderList = signal<TableBodyPlaceholder[]>([]);
+
+  protected bodyPlaceholder = computed(
+    () => this.bodyPlaceholderList().find((placeholder) => placeholder.enabled?.() ?? true) ?? null,
+  );
+
+  // A feature's stand-in for the content of a cell that is loading on its own. Null until one registers,
+  // which is what keeps the skeleton bone out of a table that never shows one.
+  private cellPlaceholderList = signal<TableCellPlaceholder[]>([]);
+
+  protected cellPlaceholder = computed(
+    () => this.cellPlaceholderList().find((placeholder) => placeholder.enabled?.() ?? true) ?? null,
+  );
 
   // A registered detail row (etTableRowExpansion). Null until one registers, which is what keeps the
   // expander cell, the detail row's chrome and its animation out of a table that never expands.
@@ -887,38 +878,6 @@ export class TableComponent<T> {
     }));
   });
 
-  /** The placeholder rows, in the same tracks as real ones so the layout doesn't jump when data lands. */
-  protected placeholderGrid = computed<TablePlaceholderRowVm[]>(() => {
-    const columns = this.visibleColumns();
-    const leads = this.leadCells();
-    const templates = this.columnTemplates().cellSkeleton;
-
-    return Array.from({ length: Math.max(1, this.loadingRows()) }, (_, rowIndex) => ({
-      key: rowIndex,
-      leads,
-      cells: columns.map((column, columnIndex) => {
-        // Cycled, not random: a fresh width per pass would make the block twitch.
-        const width = PLACEHOLDER_WIDTHS[(rowIndex + columnIndex) % PLACEHOLDER_WIDTHS.length] ?? 60;
-
-        return {
-          key: column.key,
-          align: column.align ?? 'start',
-          width,
-          template: templates.get(column.key) ?? null,
-          context: { $implicit: rowIndex, width },
-        };
-      }),
-    }));
-  });
-
-  /**
-   * The height of a real row, remembered from the last time this table had any. Placeholder rows adopt
-   * it, so a refetch or a page change keeps the table exactly as tall as the data the user was just
-   * looking at. `null` until a row has been rendered - the first load has nothing to measure, which is
-   * what `etTableCellSkeleton` is for.
-   */
-  protected measuredRowHeight = signal<number | null>(null);
-
   /** Spacer sizes standing in for the rows a window leaves out, or `null` when every row renders. */
   protected spacers = computed(() => {
     const window = this.rowWindow();
@@ -953,20 +912,6 @@ export class TableComponent<T> {
   public allColumns = computed(() => this.orderedColumns());
 
   constructor() {
-    // Remember how tall a real row is, so placeholder rows can match it on the next load. Measured from
-    // a rendered body cell (the row itself is `display: contents` and has no box of its own) whenever
-    // the rendered rows change - cheap, and the only way to know a row's height when its cells hold
-    // arbitrary content. A table that has never had rows keeps `null` and falls back to a text line.
-    afterEveryRender(() => {
-      const cell = this.firstBodyCellElement();
-
-      if (!cell) return;
-
-      const height = Math.round(cell.getBoundingClientRect().height);
-
-      if (height > 0 && height !== untracked(this.measuredRowHeight)) this.measuredRowHeight.set(height);
-    });
-
     // A detail template with nothing to render it looks like a broken template rather than a missing
     // import, so name the mistake. Deferred to an effect because a feature registers from its own
     // constructor, which runs after the table's - and it asks whether one registered at all rather
@@ -1197,9 +1142,25 @@ export class TableComponent<T> {
     this.headerRowList.update((rows) => [...rows, row]);
   }
 
-  /** How many leading utility columns precede the data columns. Part of the feature contract. */
-  public leadColumnCount() {
-    return this.leadColumns().length;
+  /**
+   * Called by an opt-in feature to render the loading body (`etTableSkeleton`). Part of the feature
+   * contract; consumers never call this.
+   */
+  public registerBodyPlaceholder(placeholder: TableBodyPlaceholder) {
+    this.bodyPlaceholderList.update((list) => [...list, placeholder]);
+  }
+
+  /**
+   * Called by an opt-in feature to fill a cell that is loading on its own (`etTableSkeleton`). Part of
+   * the feature contract; consumers never call this.
+   */
+  public registerCellPlaceholder(placeholder: TableCellPlaceholder) {
+    this.cellPlaceholderList.update((list) => [...list, placeholder]);
+  }
+
+  /** The `cellClass` of each leading utility column, in render order. Part of the feature contract. */
+  public leadCellClasses() {
+    return this.leadColumns().map((lead) => lead.cellClass);
   }
 
   /** Whether a trailing slack track is in play. Part of the feature contract. */
@@ -1292,7 +1253,7 @@ export class TableComponent<T> {
 
   /** How many rows fit the scroll viewport. Part of the feature contract - the PageUp/PageDown step. */
   public rowsPerPage() {
-    const rowHeight = this.measuredRowHeight() ?? this.firstBodyCellElement()?.offsetHeight ?? 0;
+    const rowHeight = this.firstBodyCellElement()?.offsetHeight ?? 0;
     const viewport = this.elementRef.nativeElement.clientHeight;
 
     if (!rowHeight || !viewport) return 1;

@@ -21,22 +21,23 @@ columns, the empty state and the footer slot. Anything that would drag a heavier
 dependency in ships as its own directive - import its array and put the attribute on
 the table. A table that doesn't import a feature never pays for its code.
 
-| Feature             | Import                             | Attribute                   | Brings in                                            |
-| ------------------- | ---------------------------------- | --------------------------- | ---------------------------------------------------- |
-| Filter menus        | `TABLE_FILTER_IMPORTS`             | `etTableFilters`            | the [menu](/components/menu) system                  |
-| Column menu         | `TABLE_COLUMN_MENU_IMPORTS`        | `etTableColumnMenu`         | the [menu](/components/menu) system                  |
-| Column chooser      | `TABLE_COLUMN_CHOOSER_IMPORTS`     | `<et-table-column-chooser>` | the [menu](/components/menu) system                  |
-| Column resize       | `TABLE_RESIZE_IMPORTS`             | `etTableResize`             | the drag primitives                                  |
-| Column reorder      | `TABLE_REORDER_IMPORTS`            | `etTableReorder`            | the drag primitives                                  |
-| Row selection       | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
-| Row expansion       | `TABLE_ROW_EXPANSION_IMPORTS`      | `etTableRowExpansion`       | the detail row's chrome + grow-open animation        |
-| Grouped headers     | `TABLE_GROUP_HEADERS_IMPORTS`      | `etTableGroupHeaders`       | the spanning header row + its chrome                 |
-| Virtual scroll      | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
-| Cell error tooltip  | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
-| State persistence   | `TABLE_STATE_PERSISTENCE_IMPORTS`  | `etTableStatePersistence`   | nothing (local/session storage)                      |
-| CSV export          | `TABLE_CSV_EXPORT_IMPORTS`         | `etTableCsvExport`          | nothing (a pure serializer)                          |
-| Keyboard navigation | `TABLE_KEYBOARD_NAV_IMPORTS`       | `etTableKeyboardNav`        | nothing                                              |
-| Inline cell editing | `TABLE_INLINE_EDIT_IMPORTS`        | `etTableInlineEdit`         | nothing (the editor is your own control)             |
+| Feature              | Import                             | Attribute                   | Brings in                                            |
+| -------------------- | ---------------------------------- | --------------------------- | ---------------------------------------------------- |
+| Filter menus         | `TABLE_FILTER_IMPORTS`             | `etTableFilters`            | the [menu](/components/menu) system                  |
+| Column menu          | `TABLE_COLUMN_MENU_IMPORTS`        | `etTableColumnMenu`         | the [menu](/components/menu) system                  |
+| Column chooser       | `TABLE_COLUMN_CHOOSER_IMPORTS`     | `<et-table-column-chooser>` | the [menu](/components/menu) system                  |
+| Column resize        | `TABLE_RESIZE_IMPORTS`             | `etTableResize`             | the drag primitives                                  |
+| Column reorder       | `TABLE_REORDER_IMPORTS`            | `etTableReorder`            | the drag primitives                                  |
+| Row selection        | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
+| Row expansion        | `TABLE_ROW_EXPANSION_IMPORTS`      | `etTableRowExpansion`       | the detail row's chrome + grow-open animation        |
+| Loading placeholders | `TABLE_SKELETON_IMPORTS`           | `etTableSkeleton`           | the [skeleton](/components/skeleton) component       |
+| Grouped headers      | `TABLE_GROUP_HEADERS_IMPORTS`      | `etTableGroupHeaders`       | the spanning header row + its chrome                 |
+| Virtual scroll       | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
+| Cell error tooltip   | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
+| State persistence    | `TABLE_STATE_PERSISTENCE_IMPORTS`  | `etTableStatePersistence`   | nothing (local/session storage)                      |
+| CSV export           | `TABLE_CSV_EXPORT_IMPORTS`         | `etTableCsvExport`          | nothing (a pure serializer)                          |
+| Keyboard navigation  | `TABLE_KEYBOARD_NAV_IMPORTS`       | `etTableKeyboardNav`        | nothing                                              |
+| Inline cell editing  | `TABLE_INLINE_EDIT_IMPORTS`        | `etTableInlineEdit`         | nothing (the editor is your own control)             |
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTableFilters etTableResize />
@@ -110,7 +111,6 @@ than resetting them.
 | `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                      |
 | `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                     |
 | `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states).   |
-| `loadingRows`         | `5`          | How many placeholder rows to draw while loading with no rows.                                                     |
 | `error`               | `null`       | Anything non-nullish replaces the body with the error state.                                                      |
 | `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                    |
 | `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                  |
@@ -225,12 +225,12 @@ export class UsersComponent {
 
 Three template directives, each matched to its column the same way:
 
-| Directive             | Renders                          | Context                                                                       |
-| --------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
-| `etTableCell`         | the column's body cells          | `let-row` (the row), `let-value="value"`, `let-i="index"`                     |
-| `etTableHeaderCell`   | the column's header cell         | `let-header` - the column's `header` text                                     |
-| `etTableFooterCell`   | the column's footer/summary cell | `let-rows` - every rendered row. See [Sticky footer](#sticky-columns-footer). |
-| `etTableCellSkeleton` | the column's cells while loading | `let-index`, `let-width`. See [Loading](#loading-error-states).               |
+| Directive             | Renders                          | Context                                                                                               |
+| --------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `etTableCell`         | the column's body cells          | `let-row` (the row), `let-value="value"`, `let-i="index"`                                             |
+| `etTableHeaderCell`   | the column's header cell         | `let-header` - the column's `header` text                                                             |
+| `etTableFooterCell`   | the column's footer/summary cell | `let-rows` - every rendered row. See [Sticky footer](#sticky-columns-footer).                         |
+| `etTableCellSkeleton` | the column's cells while loading | `let-index`, `let-width` - ships with `TABLE_SKELETON_IMPORTS`. See [Loading](#loading-error-states). |
 
 A template bound to a column the table doesn't render throws
 [`ET3504`](/components/error-codes#table-et35xx) in dev, so a typo can't silently render
@@ -884,27 +884,37 @@ two bindings and no wrapper:
 <et-table [data]="src.rows()" [columns]="COLUMNS" [loading]="src.loading()" [error]="src.error()" />
 ```
 
-**`loading` renders differently depending on whether there is anything to show.** With no
-rows yet it fills the body with **placeholder rows** - one bar per column, so the layout
-doesn't jump when the data lands; `loadingRows` (default `5`) sets how many. Over rows
+**`loading` renders differently depending on whether there is anything to show.** Over rows
 that are already on screen it leaves them alone and runs an **indeterminate bar under the
-header** instead: that is the state a paged or refetching table is in most of the time,
-and blanking the body there costs the user their place for nothing. Either way the host
-carries `aria-busy`, and the placeholder rows are `aria-hidden`.
+header**: that is the state a paged or refetching table is in most of the time, and blanking
+the body there costs the user their place for nothing. With no rows yet the body is left to
+whatever draws a loading state - `etTableSkeleton` fills it with **placeholder rows**, one bone
+per column, so the layout doesn't jump when the data lands. Either way the host carries
+`aria-busy`, and the placeholder rows are `aria-hidden`.
+
+Placeholders are **opt-in** because they carry the [skeleton](/components/skeleton) component:
+import `TABLE_SKELETON_IMPORTS` and put `etTableSkeleton` on the table. Its `rows` option
+(default `5`) sets how many to draw, and `enabled` turns it off at runtime. Without it a first
+load leaves the body blank rather than showing a misleading empty state - the busy bar and
+`aria-busy` are part of the base either way.
+
+```html
+<et-table [data]="src.rows()" [columns]="COLUMNS" [loading]="src.loading()" etTableSkeleton />
+```
 
 <StoryEmbed id="components-table--loading" height="360px" />
 
 **Matching a row's real height.** Placeholder rows exist to keep the layout still, so they have
 to be as tall as the rows they stand in for. Two things get that right:
 
-- The table **remembers the height of a real row** and hands it to later placeholder rows, so a
+- The feature **remembers the height of a real row** and hands it to later placeholder rows, so a
   refetch or a page change keeps the table exactly as tall as the data the user was just looking at.
 - For the **first** load there is nothing to measure, so a column whose cells are taller than a line
   of text - a chip, an avatar, a button - says what its placeholder looks like with
   `etTableCellSkeleton`:
 
 ```html
-<et-table [data]="rows()" [columns]="COLUMNS" [loading]="loading()">
+<et-table [data]="rows()" [columns]="COLUMNS" [loading]="loading()" etTableSkeleton>
   <ng-template [etTableCell]="COLUMNS.role" let-value>
     <et-chip>{{ value }}</et-chip>
   </ng-template>
@@ -946,8 +956,13 @@ stays on the surface's own color rather than throwing.
 
 A cell can be busy or failed on its own - an inline edit saving, one field rejected by the
 server. `cellState` is called per rendered cell and returns `'loading'`, `'error'`, or
-nothing: `'loading'` swaps that cell's value for a placeholder bar, `'error'` keeps the
-value and marks it. The rest of the row stays live.
+nothing. Both mark the cell with `data-state` for styling; `'error'` also keeps the value and
+draws a mark next to it. The rest of the row stays live.
+
+`'loading'` swaps that cell's value for a bone **when `etTableSkeleton` is on the table** - the
+bone is the [skeleton](/components/skeleton) component, so it ships with that feature rather
+than with every table. Without it the value stays put and `data-state="loading"` carries the cue
+on its own.
 
 ```ts
 protected cellState = (row: User, key: string) =>
@@ -955,7 +970,7 @@ protected cellState = (row: User, key: string) =>
 ```
 
 ```html
-<et-table [data]="users()" [columns]="COLUMNS" [cellState]="cellState" />
+<et-table [data]="users()" [columns]="COLUMNS" [cellState]="cellState" etTableSkeleton />
 ```
 
 Return `{ state: 'error', message }` and the message rides along on the mark - as its `title`

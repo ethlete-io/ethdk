@@ -22,6 +22,8 @@ export * from './table-row-expansion.directive';
 export * from './table-resize-grip.component';
 export * from './table-resize.directive';
 export * from './table-select-cell.component';
+export * from './table-skeleton-rows.component';
+export * from './table-skeleton.directive';
 export * from './table-selection.directive';
 export * from './table-virtual-scroll-styles.component';
 export * from './table-virtual-scroll.directive';

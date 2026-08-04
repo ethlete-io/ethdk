@@ -11,6 +11,7 @@ import { TableReorderDirective } from './table-reorder.directive';
 import { TableRowExpansionDirective } from './table-row-expansion.directive';
 import { TableResizeDirective } from './table-resize.directive';
 import { TableSelectionDirective } from './table-selection.directive';
+import { TableSkeletonDirective } from './table-skeleton.directive';
 import { TableStatePersistenceDirective } from './headless/table-state-persistence.directive';
 import {
   TableCellDirective,
@@ -29,8 +30,9 @@ import { TableComponent } from './table.component';
  * Deliberately lean - each optional feature ships its own imports array (e.g.
  * {@link TABLE_FILTER_IMPORTS}), so what you don't import stays out of your bundle.
  *
- * Row expansion and grouped headers are **not** in here - see
- * {@link TABLE_ROW_EXPANSION_IMPORTS} and {@link TABLE_GROUP_HEADERS_IMPORTS}.
+ * Row expansion, grouped headers and loading placeholders are **not** in here - see
+ * {@link TABLE_ROW_EXPANSION_IMPORTS}, {@link TABLE_GROUP_HEADERS_IMPORTS} and
+ * {@link TABLE_SKELETON_IMPORTS}.
  */
 export const TABLE_IMPORTS = [
   TableComponent,
@@ -38,7 +40,6 @@ export const TABLE_IMPORTS = [
   TableCellDirective,
   TableHeaderCellDirective,
   TableFooterCellDirective,
-  TableCellSkeletonDirective,
 ] as const;
 
 /**
@@ -94,6 +95,13 @@ export const TABLE_SELECTION_IMPORTS = [TableSelectionDirective] as const;
  * adjacent columns sharing a `group` read under one label. Carries that row and its chrome.
  */
 export const TABLE_GROUP_HEADERS_IMPORTS = [TableGroupHeadersDirective] as const;
+
+/**
+ * Loading placeholders (`etTableSkeleton`): a block of skeleton rows while loading with no rows yet, a
+ * bone in a cell that is loading on its own, and the `etTableCellSkeleton` template for saying what a
+ * column's bone looks like. Pulls in the [skeleton](/components/skeleton) component.
+ */
+export const TABLE_SKELETON_IMPORTS = [TableSkeletonDirective, TableCellSkeletonDirective] as const;
 
 /**
  * Row expansion (`etTableRowExpansion`): a leading expander column and a full-width detail row for the

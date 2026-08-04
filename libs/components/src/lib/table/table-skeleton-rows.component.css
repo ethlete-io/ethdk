@@ -1,0 +1,16 @@
+@layer components {
+  /* The placeholder body of a first load, mounted with etTableSkeleton. The bones themselves are
+     `<et-skeleton-item>`s, so a loading table matches every other loading surface in the app - all this
+     adds is the cell chrome around them. */
+  .et-table-skeleton-rows {
+    display: contents;
+  }
+
+  /* A placeholder row is as tall as the row it stands in for: the height measured off a real row when
+     this table has had one (`--_et-table-row-h`, set per row by the template), else a line of text plus
+     the cell's own padding. A column whose cells are taller than text — a chip, an avatar — should also
+     say so with `etTableCellSkeleton`, which is what makes the *first* load match too. */
+  .et-table-row--placeholder .et-table-cell {
+    min-block-size: var(--_et-table-row-h, calc(1.4em + var(--et-table-cell-padding-block) * 2));
+  }
+}

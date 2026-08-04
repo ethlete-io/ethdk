@@ -515,21 +515,10 @@
   }
 
   /* ── Loading ────────────────────────────────────────────────────────────
-     The bones themselves are `<et-skeleton-item>`s, so a loading table matches every other loading
-     surface in the app. All the table adds is the cell chrome around them: a placeholder row has to be
-     exactly as tall as a row of data, or the table resizes when the data lands. `shape="text"` gives the
-     bar a line of text's height, and the cell keeps the same padding and line box as a real one. */
-  /* A placeholder row is as tall as the row it stands in for: the height measured off a real row when
-     this table has had one (`--_et-table-row-h`, set per row by the template), else a line of text plus
-     the cell's own padding. A column whose cells are taller than text — a chip, an avatar — should also
-     say so with `etTableCellSkeleton`, which is what makes the *first* load match too. */
-  .et-table-row--placeholder .et-table-cell {
-    min-block-size: var(--_et-table-row-h, calc(1.4em + var(--et-table-cell-padding-block) * 2));
-  }
-
-  /* A single cell mid-save (see `cellState`): one animated bone in place of the value. */
+     A cell mid-save (see `cellState`) lays its stand-in out as its own flex child, so whatever fills it
+     stretches to the cell's inline size. The stand-in itself comes from a feature - see
+     registerCellPlaceholder - as do the placeholder rows of a first load. */
   .et-table-cell:where([data-state='loading']) {
-    /* The item is the cell's own flex child, so it stretches to the cell's inline size. */
     display: flex;
   }
 
@@ -564,12 +553,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    /* The states still have to be visible without motion: the sheen goes, and the busy bar becomes a
-       static accent rule across the table. */
-    .et-table-placeholder-bar::after {
-      content: none;
-    }
-
+    /* The busy bar still has to be visible without motion, so it becomes a static accent rule across
+       the table. */
     .et-table-busy-bar::after {
       inline-size: 100%;
       animation: none;

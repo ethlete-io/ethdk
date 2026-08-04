@@ -102,7 +102,7 @@ export type TableLayer = {
  *
  * The stamped component must be `display: contents` and render one cell per track itself: the table's
  * rows are `display: contents` too, so every cell of every row kind is a grid item of the same grid.
- * {@link TableFeatureHost.leadColumnCount} and {@link TableFeatureHost.hasFillerTrack} are what a row
+ * {@link TableFeatureHost.leadCellClasses} and {@link TableFeatureHost.hasFillerTrack} are what a row
  * needs to cover the tracks that are not data columns.
  */
 export type TableHeaderRow = {
@@ -110,6 +110,39 @@ export type TableHeaderRow = {
   /** The injector it resolves from - see {@link TableHeaderAdornment.injector}. */
   injector?: Injector;
   /** Whether the row is live - see {@link TableHeaderAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
+/**
+ * What a feature renders in place of the body while the table is loading and has no rows to show yet -
+ * the placeholder rows. The table owns *when* (its `loading` / `error` inputs and row count); the
+ * feature owns what a loading body looks like.
+ *
+ * The stamped component must be `display: contents` and lay its own cells into the table's tracks, the
+ * same way {@link TableHeaderRow} does. Without a registered placeholder the body simply stays empty
+ * while loading - blank rather than a misleading empty state.
+ */
+export type TableBodyPlaceholder = {
+  component: Type<unknown>;
+  /** The injector it resolves from - see {@link TableHeaderAdornment.injector}. */
+  injector?: Injector;
+  /** Whether the placeholder is live - see {@link TableHeaderAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
+/**
+ * A feature's stand-in for the content of one cell that is loading on its own (see the table's
+ * `cellState`). Stamped only into cells actually in that state, so it costs nothing on a healthy table.
+ *
+ * This exists so the skeleton bone can stay out of the base bundle, the same way
+ * {@link TableCellErrorMark} keeps the tooltip out of it. Without one, a loading cell keeps showing its
+ * value and only carries `data-state="loading"` for styling.
+ */
+export type TableCellPlaceholder = {
+  component: Type<unknown>;
+  /** The injector it resolves from - see {@link TableHeaderAdornment.injector}. */
+  injector?: Injector;
+  /** Whether the placeholder is live - see {@link TableHeaderAdornment.enabled}. */
   enabled?: Signal<boolean>;
 };
 
@@ -233,6 +266,10 @@ export type TableFeatureHost = {
   registerRowDetail(detail: TableRowDetail): void;
   /** Render a row above the column headers. Call once, from the feature's constructor. */
   registerHeaderRow(row: TableHeaderRow): void;
+  /** Render the body while the table is loading with no rows yet. Call once, from the constructor. */
+  registerBodyPlaceholder(placeholder: TableBodyPlaceholder): void;
+  /** Replace the content of a cell that is loading on its own. Call once, from the constructor. */
+  registerCellPlaceholder(placeholder: TableCellPlaceholder): void;
   /** Replace the mark drawn in failed cells. Call once, from the feature's constructor. */
   registerCellErrorMark(mark: TableCellErrorMark): void;
   /** Contribute the feature's own serializable state. Call once, from the feature's constructor. */
@@ -322,10 +359,10 @@ export type TableFeatureHost = {
   visibleColumnsMeta(): TableColumnMeta[];
 
   /**
-   * How many leading utility columns (selection, expander) come before the data columns. A feature
-   * rendering a whole row needs one cell each to cover their tracks.
+   * The `cellClass` of each leading utility column (selection, expander), in render order. A feature
+   * rendering a whole row needs one cell each to cover their tracks; the length is how many there are.
    */
-  leadColumnCount(): number;
+  leadCellClasses(): string[];
 
   /**
    * Whether a trailing slack track is in play - it carries an empty cell in every row so the table's

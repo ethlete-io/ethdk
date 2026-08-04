@@ -117,36 +117,11 @@
       </div>
     </div>
   } @else if (showPlaceholderRows()) {
-    <!-- First load with nothing to show yet. Real rows in every track, so the columns don't jump when
-         the data lands, and hidden from assistive tech — the host's `aria-busy` is the announcement. -->
-    @for (placeholder of placeholderGrid(); track placeholder.key) {
-      <div
-        [style.--_et-table-row-h.px]="measuredRowHeight()"
-        class="et-table-row et-table-row--placeholder et-skeleton--animated"
-        role="row"
-        aria-hidden="true"
-      >
-        @for (lead of placeholder.leads; track lead.key) {
-          <div [class]="lead.cellClass" class="et-table-cell" role="gridcell"></div>
-        }
-        @for (cell of placeholder.cells; track cell.key) {
-          <div [attr.data-align]="cell.align" class="et-table-cell" role="gridcell">
-            @if (cell.template; as skeleton) {
-              <!-- The column said what its cells look like while loading — a chip-shaped bone for a chip
-                   column, an avatar for an avatar. See etTableCellSkeleton. -->
-              <ng-container *ngTemplateOutlet="skeleton; context: cell.context" />
-            } @else {
-              <!-- The shared skeleton bone, so a loading table looks like every other loading surface in
-                   the app. `shape="text"` is a line of text's height, which is what keeps a placeholder
-                   row as tall as a row of text. -->
-              <et-skeleton-item [style.inline-size.%]="cell.width" shape="text" />
-            }
-          </div>
-        }
-        @if (hasFiller()) {
-          <div class="et-table-cell et-table-filler-cell" role="presentation"></div>
-        }
-      </div>
+    <!-- First load with nothing to show yet. What a loading body looks like belongs to a feature
+         (etTableSkeleton draws placeholder rows in these tracks); with none the body stays blank rather
+         than showing a misleading empty state — the host's `aria-busy` is the announcement. -->
+    @if (bodyPlaceholder(); as placeholder) {
+      <ng-container *ngComponentOutlet="placeholder.component; injector: placeholder.injector" />
     }
   } @else {
     @for (rowVm of bodyRows(); track rowVm.key) {
@@ -194,10 +169,11 @@
               <!-- The one cell in edit mode: the column's etTableCellEdit template, rendered with the
                    editing feature's own context (the draft field). See registerCellEditing. -->
               <ng-container *ngTemplateOutlet="edit.template; context: edit.context" />
-            } @else if (cell.state === 'loading') {
-              <!-- A cell that is loading on its own (an inline edit saving) shows a placeholder instead of
-                   its value; the row around it stays readable. -->
-              <et-skeleton-item shape="text" />
+            } @else if (cell.state === 'loading' && cellPlaceholder(); as placeholder) {
+              <!-- A cell that is loading on its own (an inline edit saving) shows a feature's placeholder
+                   instead of its value; the row around it stays readable. Without one the value stays put
+                   and `data-state` carries the cue — see registerCellPlaceholder. -->
+              <ng-container *ngComponentOutlet="placeholder.component; injector: placeholder.injector" />
             } @else {
               @if (cell.state === 'error') {
                 @if (cellErrorMark(); as mark) {

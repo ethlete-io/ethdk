@@ -78,5 +78,4 @@ export class TableGroupHeadersDirective {
       enabled: computed(() => this.config().enabled ?? true),
     });
   }
-
 }
