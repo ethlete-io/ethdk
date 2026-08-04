@@ -417,24 +417,12 @@
               }
             </div>
 
-            @if (stackSelectedQuery(); as sel) {
-              <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container: panes }" />
-
-              <aside class="et-query-devtools-drawer">
-                <div class="et-query-devtools-drawer-head">
-                  <span>Query detail</span>
-                  <button
-                    (click)="stackSelectedQueryId.set(null)"
-                    class="et-query-devtools-close"
-                    type="button"
-                    title="Close detail"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
-              </aside>
-            }
+            <ng-container
+              *ngTemplateOutlet="
+                queryDrawerTpl;
+                context: { selected: stackSelectedQuery(), selectedId: stackSelectedQueryId, container: panes }
+              "
+            />
           </div>
         }
 
@@ -529,24 +517,12 @@
               }
             </div>
 
-            @if (sequenceSelectedQuery(); as sel) {
-              <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container: panes }" />
-
-              <aside class="et-query-devtools-drawer">
-                <div class="et-query-devtools-drawer-head">
-                  <span>Query detail</span>
-                  <button
-                    (click)="sequenceSelectedQueryId.set(null)"
-                    class="et-query-devtools-close"
-                    type="button"
-                    title="Close detail"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
-              </aside>
-            }
+            <ng-container
+              *ngTemplateOutlet="
+                queryDrawerTpl;
+                context: { selected: sequenceSelectedQuery(), selectedId: sequenceSelectedQueryId, container: panes }
+              "
+            />
           </div>
         }
 
@@ -694,24 +670,12 @@
               }
             </div>
 
-            @if (formSelectedQuery(); as sel) {
-              <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container: panes }" />
-
-              <aside class="et-query-devtools-drawer">
-                <div class="et-query-devtools-drawer-head">
-                  <span>Query detail</span>
-                  <button
-                    (click)="formSelectedQueryId.set(null)"
-                    class="et-query-devtools-close"
-                    type="button"
-                    title="Close detail"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
-              </aside>
-            }
+            <ng-container
+              *ngTemplateOutlet="
+                queryDrawerTpl;
+                context: { selected: formSelectedQuery(), selectedId: formSelectedQueryId, container: panes }
+              "
+            />
           </div>
         }
 
@@ -1176,24 +1140,12 @@
               }
             </div>
 
-            @if (timelineSelectedQuery(); as sel) {
-              <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container: panes }" />
-
-              <aside class="et-query-devtools-drawer">
-                <div class="et-query-devtools-drawer-head">
-                  <span>Query detail</span>
-                  <button
-                    (click)="timelineSelectedQueryId.set(null)"
-                    class="et-query-devtools-close"
-                    type="button"
-                    title="Close detail"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
-              </aside>
-            }
+            <ng-container
+              *ngTemplateOutlet="
+                queryDrawerTpl;
+                context: { selected: timelineSelectedQuery(), selectedId: timelineSelectedQueryId, container: panes }
+              "
+            />
           </div>
         }
 
@@ -1478,6 +1430,22 @@
         title="Drag to resize, double-click to reset"
         aria-hidden="true"
       ></div>
+    </ng-template>
+
+    <ng-template #queryDrawerTpl let-selected="selected" let-selectedId="selectedId" let-container="container">
+      @if (selected) {
+        <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container }" />
+
+        <aside class="et-query-devtools-drawer">
+          <div class="et-query-devtools-drawer-head">
+            <span>Query detail</span>
+            <button (click)="selectedId.set(null)" class="et-query-devtools-close" type="button" title="Close detail">
+              ✕
+            </button>
+          </div>
+          <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel: selected }" />
+        </aside>
+      }
     </ng-template>
 
     <!-- A route with its path params and query string picked out from the static path. The segments must
