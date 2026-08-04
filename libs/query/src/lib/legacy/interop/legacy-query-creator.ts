@@ -13,17 +13,22 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject } from 'rxjs';
 import {
   AnyNewQuery,
+  AnyQueryCreator,
+  CreateQueryCreatorOptions,
   legacyPrepareWithoutInjectionContext,
   Query,
   QueryArgs,
   QueryCreator,
+  QueryMethod,
   RequestArgs,
   ResponseType,
+  shouldCacheQuery,
 } from '../../http';
 import { EntityStore } from '../entity';
 import { BaseArguments, QueryEntityConfig, V2QueryConfig, V2RouteType, WithHeaders, WithInjector } from '../query';
 import { addQueryContainerHandling, QueryContainerConfig } from '../utils';
 import { createInertQuery } from './inert-query';
+import { legacyPrepareFallbackInjector } from './legacy-prepare-fallback';
 import { LegacyQuery } from './legacy-query';
 
 /**
@@ -37,6 +42,44 @@ const isInjectorUsable = (injector: Injector) => {
   } catch {
     return false;
   }
+};
+
+/**
+ * Angular's NG0203, thrown by `inject()` outside an injection context. Matched on the code rather than
+ * the message: production builds strip the message, and NG0205 ("Injector has already been destroyed")
+ * comes out of the same `inject()` call for a different reason entirely.
+ */
+const isMissingInjectionContextError = (error: unknown) =>
+  typeof error === 'object' && error !== null && Math.abs(Number((error as { code?: unknown }).code)) === 203;
+
+/**
+ * What the creator was built with, for diagnostics - `GET /person`. Lets an unnamed wrapper still point
+ * at an endpoint instead of "a legacy query creator". A route function cannot be described this way, but
+ * those wrappers come from the generator, which always emits a `name`.
+ */
+const describeCreator = (creator: AnyQueryCreator) => {
+  const { method, route } = creator.subtle.creatorInternals;
+
+  if (typeof route !== 'string') return undefined;
+
+  return typeof method === 'string' ? `${method} ${route}` : route;
+};
+
+/**
+ * Mirrors the cacheability decision the query repository makes per request: cacheable HTTP methods and
+ * GraphQL queries, unless the creator opted in or out explicitly. The legacy container helpers branch on
+ * `canBeCached` for their default cleanup, so a wrapper has to answer before the first execution.
+ */
+const canCreatorBeCached = (creator: AnyQueryCreator) => {
+  const { method } = creator.subtle.creatorInternals;
+  const explicit = (creator.subtle.creatorOptions as CreateQueryCreatorOptions | undefined)?.subtle
+    ?.useQueryRepositoryCache;
+
+  if (explicit !== undefined) return explicit;
+  if (method === 'QUERY') return true;
+  if (method === 'MUTATE') return false;
+
+  return typeof method === 'string' && shouldCacheQuery(method as QueryMethod);
 };
 
 /**
@@ -131,31 +174,23 @@ export class LegacyQueryCreator<
     Id,
     Query<TArgs>
   > = (args: LegacyArgumentsOfQueryArgs<TArgs> & WithHeaders & WithLegacyConfig & WithInjector) => {
-    // v2's `prepare()` needed no injection context, so plenty of call sites are plain callbacks.
-    // Angular's raw NG0203 names neither the query nor the call site, which makes those a bisection
-    // exercise - replace it with an error that does.
-    const injector =
-      args?.injector ??
-      (() => {
-        try {
-          return inject(Injector);
-        } catch {
-          throw legacyPrepareWithoutInjectionContext(this.options.name);
-        }
-      })();
+    const injector = args?.injector ?? this.resolveAmbientInjector('prepare');
 
     let headers = new HttpHeaders();
 
     if (args?.headers) {
-      Object.entries(args.headers).forEach(([key, value]) => {
-        if (value) {
-          headers = headers.set(key, value);
-        }
-      });
+      for (const [key, value] of Object.entries<string | undefined>(args.headers)) {
+        // Only an absent value is skipped - an empty string is a header the caller asked to send.
+        if (value === undefined || value === null) continue;
+
+        headers = headers.set(key, value);
+      }
     }
 
     const queryArgs = {
-      ...(args?.body ? { body: args.body } : {}),
+      // Presence, not truthiness: `0`, `''` and `false` are bodies, and dropping them silently sends a
+      // different request than the call site asked for.
+      ...(args?.body !== undefined ? { body: args.body } : {}),
       ...(args?.pathParams ? { pathParams: args.pathParams } : {}),
       ...(args?.queryParams ? { queryParams: args.queryParams } : {}),
       headers,
@@ -168,7 +203,7 @@ export class LegacyQueryCreator<
     if (!isInjectorUsable(injector)) {
       if (isDevMode()) {
         console.warn(
-          `${this.options.name ? `"${this.options.name}"` : 'A legacy query'}.prepare() was called with a destroyed injector, so an inert query was returned. ` +
+          `${this.label ? `"${this.label}"` : 'A legacy query'}.prepare() was called with a destroyed injector, so an inert query was returned. ` +
             `This usually means a callback outlived the component whose injector it captured - guard the call site with DestroyRef.onDestroy, or pass an injector that outlives it.`,
         );
       }
@@ -181,7 +216,7 @@ export class LegacyQueryCreator<
         Data,
         Id,
         Query<TArgs>
-      >(createInertQuery<TArgs>(), queryArgs, this.options.entity, true);
+      >(createInertQuery<TArgs>(), queryArgs, this.options.entity, true, this.canBeCached);
     }
 
     return runInInjectionContext(injector, () => {
@@ -202,15 +237,23 @@ export class LegacyQueryCreator<
           Data,
           Id,
           Query<TArgs>
-        >(newQuery, queryArgs, this.options.entity);
+        >(newQuery, queryArgs, this.options.entity, false, this.canBeCached);
 
         if (args?.config?.destroyOnResponse) {
-          const destroyEffect = effect(() => {
-            if (newQuery.executionState()?.type === 'success' || newQuery.executionState()?.type === 'failure') {
-              legacyQuery.destroy();
-              destroyEffect.destroy();
-            }
-          });
+          // Owned by the query's own injector, not the caller's. Call sites are told to pass an injector
+          // that outlives them, so they hand over a root or environment one - and an effect that only
+          // tears itself down on a terminal state then outlives an aborted or never-executed query for
+          // the lifetime of the app. Tied to the query, it dies with the thing it exists to destroy.
+          effect(
+            () => {
+              const type = newQuery.executionState()?.type;
+
+              if (type === 'success' || type === 'failure') {
+                legacyQuery.destroy();
+              }
+            },
+            { injector: newQuery.subtle.injector },
+          );
         }
 
         return legacyQuery;
@@ -218,22 +261,62 @@ export class LegacyQueryCreator<
     });
   };
   createSubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) => {
+    const injector = config?.injector ?? this.resolveAmbientInjector('createSubject');
     const subject = new BehaviorSubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
 
-    addQueryContainerHandling(subject, () => subject.getValue(), config);
+    addQueryContainerHandling(subject, () => subject.getValue(), { ...config, injector });
 
     return subject;
   };
   createSignal = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) => {
+    const injector = config?.injector ?? this.resolveAmbientInjector('createSignal');
     const _signal = signal<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
 
-    addQueryContainerHandling(toObservable(_signal), () => _signal(), config);
+    addQueryContainerHandling(toObservable(_signal, { injector }), () => _signal(), { ...config, injector });
 
     return _signal;
   };
 
   behaviorSubject = this.createSubject;
   constructor(public options: CreateLegacyQueryCreatorOptions<TArgs, Response, Store, Data, Id>) {}
+
+  /**
+   * Whether the underlying request is cacheable, which is what the legacy container helpers use to decide
+   * their default cleanup. Resolved from the creator, so it answers before the first execution.
+   */
+  get canBeCached() {
+    return canCreatorBeCached(this.options.creator);
+  }
+
+  private get label() {
+    return this.options.name ?? describeCreator(this.options.creator);
+  }
+
+  /**
+   * v2 needed no injection context, so plenty of call sites are plain callbacks. Angular's raw NG0203
+   * names neither the query nor the call site, which makes those a bisection exercise - replace it with
+   * an error that does, and let every other DI failure (NG0205 from an injector mid-teardown, a missing
+   * provider) through untouched.
+   */
+  private resolveAmbientInjector(method: 'prepare' | 'createSubject' | 'createSignal') {
+    try {
+      return inject(Injector);
+    } catch (error) {
+      if (!isMissingInjectionContextError(error)) {
+        throw error;
+      }
+
+      const fallback = legacyPrepareFallbackInjector();
+
+      // A stale stash (the app injector is gone) is no injector at all - handing it over would build a
+      // query that silently never runs.
+      if (fallback && isInjectorUsable(fallback)) {
+        return fallback;
+      }
+
+      throw legacyPrepareWithoutInjectionContext(this.label, method);
+    }
+  }
 }
 
 /**

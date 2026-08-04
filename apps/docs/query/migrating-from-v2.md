@@ -152,8 +152,42 @@ search = (term: string) => legacyFindPeople.prepare({ queryParams: { term }, inj
 
 Two failure modes, both now reported clearly instead of as a bare `NG0203` / `NG0205`:
 
-- **No injector at all** throws an `ET950` error naming the creator.
+- **No injector at all** throws an `ET950` error naming the creator - by its `name`, or by the endpoint it was built from (`GET /person`) when it has none. Only Angular's NG0203 is translated this way; any other DI failure (an injector mid-teardown, a missing provider) surfaces unchanged, because "called outside of an injection context" would send you after the wrong thing.
 - **A destroyed injector** - a captured component injector used by a callback that outlived the component, e.g. a debounced search resolving after navigation - logs a dev-mode warning and returns an **inert query**: it never executes, its signals stay empty, and tearing it down is a no-op. That is deliberate; a search firing during teardown is not a programming error worth crashing over. If you see the warning regularly, guard the call site with `DestroyRef.onDestroy` or capture an injector that outlives it.
+
+`nx g @ethlete/query:migrate-to-query-v3` threads the injector for you, and
+[`ethlete/no-legacy-prepare-without-injector`](/eslint/rules#no-legacy-prepare-without-injector) keeps the
+next callback you write from regressing - both classify by the **innermost** function boundary, so a
+`prepare()` inside a `computed()` at a class field counts as needing one even though the field initializer
+itself has a context.
+
+The container factories take the same escape hatch, in their config rather than their args - `createSubject`,
+`createSignal` and `behaviorSubject` all accept `{ injector }`, and throw the same named `ET950` without one:
+
+```ts
+private injector = inject(Injector);
+
+peopleQuery = legacyFindPeople.createSubject(null, { injector: this.injector });
+```
+
+#### Opting out of the requirement entirely
+
+`provideLegacyPrepareFallback()` lets `prepare()` fall back to the application's root injector instead of
+throwing, for a migration with too many call sites to thread by hand:
+
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [provideLegacyPrepareFallback()],
+});
+```
+
+Two things degrade when the fallback is used, both matching v2: the query's lifetime becomes the
+application's - nothing tears it down when a component dies, so cleanup rests on a query container or
+`config: { destroyOnResponse: true }` - and the devtools lose the host element for "inspect".
+
+It is **browser only** by design. A module-global injector shared across concurrent server-side renders
+would leak one request's data into another, so it refuses to stash anything on the server and `ET950` still
+throws there. Passing `injector` at the call site stays the better answer where you can.
 
 ## Behavior worth knowing before you debug it
 
@@ -161,6 +195,8 @@ Two failure modes, both now reported clearly instead of as a bare `NG0203` / `NG
 - **`withPersistentAuth` calls `tryLogin()` during setup.** The cookie-backed session restore happens on its own; you do not need a `tryLoginViaCookie()` call in an app initializer. A failed restore surfaces as `executionState()` with `type: 'autoLogin'`, `state: 'error'`.
 - **`logout()` clears the queries bound to it.** It drops the tokens, tears down every secure cache entry, and resets the secure queries still holding a response - a component mounted across the logout stops showing the previous user's data without a manual `reset()`.
 - **Responses survive a re-execution but not a failed one.** `response()` is kept while a query re-runs, and cleared if that run fails.
+- **Interop containers follow the request method again.** `createSignal` / `createSubject` default their cleanup (`abortPrevious`, `stopPreviousPolling`, `abortOnDestroy`) to "on for cacheable requests", and an interop query now answers that question from its creator. A superseded `GET` is aborted and stops polling, and a container's teardown destroys the query it holds - so a one-shot query stored in a container does not also need `destroyOnResponse`.
+- **An `entity` config only sees real responses.** `set` runs on success - including a 204, whose body is legitimately `null` - and never on `prepare()` or on a failure that left a previous response in place.
 
 ## The `Any*` types
 

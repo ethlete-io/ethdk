@@ -190,6 +190,14 @@ export class LegacyQuery<
      * @internal
      */
     private _isInert = false,
+
+    /**
+     * Whether the underlying request is cacheable. Resolved by the creator, which is the only place that
+     * knows the method before the first execution.
+     *
+     * @internal
+     */
+    private _canBeCached = false,
   ) {
     if (this._isInert) {
       this.state$ = of(transformExecStateToQueryState(null)) as Observable<V2QueryState<Data>>;
@@ -205,19 +213,24 @@ export class LegacyQuery<
     );
 
     this.storeSyncEffect = effect(() => {
-      const res = this.newQuery.response();
+      // Gated on the execution state, not on the response being non-null: the effect runs once on
+      // creation, and `response()` is null until the first one arrives - `id`/`set` are typed
+      // non-nullable, so an unguarded write feeds `null` through them on every `prepare()`. A plain
+      // null-check would be wrong the other way: a 204 is a success whose body is legitimately null.
+      const execState = this.newQuery.executionState();
 
       untracked(() => {
-        if (this.entity?.set) {
-          const id = this.entity.id({ args: this._arguments, response: res });
+        if (execState?.type !== 'success' || !this.entity?.set) return;
 
-          this.entity.set({
-            args: this._arguments,
-            response: res,
-            id,
-            store: this.entity.store,
-          });
-        }
+        const res = execState.response;
+        const id = this.entity.id({ args: this._arguments, response: res });
+
+        this.entity.set({
+          args: this._arguments,
+          response: res,
+          id,
+          store: this.entity.store,
+        });
       });
     });
 
@@ -271,7 +284,7 @@ export class LegacyQuery<
   }
 
   get canBeCached() {
-    return false;
+    return this._canBeCached;
   }
 
   get _isInMockMode() {

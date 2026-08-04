@@ -51,6 +51,12 @@ export type QueryContainerConfig = {
    * @default true // Only if the query has no other dependents and the request can be cached (GET, OPTIONS, HEAD and GQL_QUERY). Otherwise false.
    */
   stopPreviousPolling?: boolean;
+
+  /**
+   * The injector owning the container. Defaults to the current injection context; pass one to build a
+   * container outside of it - the container's lifecycle then follows that injector.
+   */
+  injector?: Injector;
 };
 
 /**
@@ -72,12 +78,14 @@ export const addQueryContainerHandling = (
   valueFn: () => AnyV2Query | AnyV2Query[] | AnyLegacyQuery | AnyLegacyQuery[] | null | undefined,
   config?: QueryContainerConfig,
 ) => {
-  assertInInjectionContext(addQueryContainerHandling);
+  if (!config?.injector) {
+    assertInInjectionContext(addQueryContainerHandling);
+  }
 
   const { abortPrevious, abortOnDestroy, stopPreviousPolling } = config ?? {};
 
-  const injector = inject(Injector);
-  const destroy$ = createDestroy();
+  const injector = config?.injector ?? inject(Injector);
+  const destroy$ = runInInjectionContext(injector, () => createDestroy());
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tNode = (injector as any)._tNode;
@@ -243,15 +251,18 @@ export function effectComputed<T extends AnyV2Query | AnyLegacyQuery | AnyV2Quer
 
   const lastResult = signal<T>(initialData as T);
 
-  effect(() => {
-    const data = runInInjectionContext(injector, () => computation());
+  effect(
+    () => {
+      const data = runInInjectionContext(injector, () => computation());
 
-    untracked(() => {
-      if (data === lastResult()) return;
+      untracked(() => {
+        if (data === lastResult()) return;
 
-      lastResult.set(data);
-    });
-  });
+        lastResult.set(data);
+      });
+    },
+    { injector },
+  );
 
   return lastResult.asReadonly();
 }
@@ -263,7 +274,7 @@ export function queryComputed<T extends AnyV2Query | AnyLegacyQuery | null>(
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T> {
-  const injector = inject(Injector);
+  const injector = options?.injector ?? inject(Injector);
 
   const c = effectComputed(computation, injector);
   const obs = toObservable(c, options);
@@ -283,7 +294,7 @@ export function queryComputedTillTruthy<T extends AnyV2Query | AnyLegacyQuery | 
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T | null> {
-  const injector = inject(Injector);
+  const injector = options?.injector ?? inject(Injector);
 
   const c = computedTillTruthy(effectComputed(computation, injector));
   const obs = toObservable(c, options);
@@ -300,7 +311,7 @@ export function queryArrayComputed<T extends AnyV2Query[] | AnyLegacyQuery[] | n
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T> {
-  const injector = inject(Injector);
+  const injector = options?.injector ?? inject(Injector);
 
   const c = effectComputed(computation, injector);
   const obs = toObservable(c, options);

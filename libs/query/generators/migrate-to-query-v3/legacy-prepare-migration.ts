@@ -15,9 +15,17 @@ type LegacyCreatorUsage = {
   creatorName: string;
   line: number;
   position: { start: number; end: number };
-  context: 'class-field' | 'constructor' | 'method' | 'queryComputed' | 'function' | 'unknown';
+  context: 'class-field' | 'constructor' | 'method' | 'queryComputed' | 'injection-context' | 'function' | 'unknown';
   hasExistingInjector: boolean;
 };
+
+/** Contexts that already have an injector of their own, so the call site needs no rewrite. */
+const CONTEXTS_WITH_INJECTOR: LegacyCreatorUsage['context'][] = [
+  'queryComputed',
+  'injection-context',
+  'class-field',
+  'constructor',
+];
 
 type ClassWithInjector = {
   filePath: string;
@@ -164,40 +172,112 @@ const findLegacyCreatorNames = (sourceFile: ts.SourceFile) => {
   return names;
 };
 
+/** Helpers that run their callback inside an injection context, so a `prepare()` in one needs nothing. */
+const CONTEXT_PROVIDING_CALLEES = new Set([
+  'runInInjectionContext',
+  'queryComputed',
+  'queryComputedTillTruthy',
+  'queryArrayComputed',
+]);
+
+/**
+ * Array methods, which call back synchronously in the caller's own context. Matched only on a property
+ * access (`items.map(…)`) - the bare-identifier form is an RxJS operator, whose callback runs later.
+ */
+const TRANSPARENT_ARRAY_METHODS = new Set([
+  'map',
+  'flatMap',
+  'filter',
+  'forEach',
+  'find',
+  'findLast',
+  'findIndex',
+  'some',
+  'every',
+  'reduce',
+  'reduceRight',
+  'sort',
+  'flat',
+]);
+
+type FunctionLike = ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression;
+
+const isCallbackFunction = (node: ts.Node): node is FunctionLike =>
+  ts.isArrowFunction(node) || ts.isFunctionExpression(node) || ts.isFunctionDeclaration(node);
+
+/** The call a function literal is being passed to, if it is an argument rather than a value. */
+const getCallbackHost = (node: FunctionLike) => {
+  const parent = node.parent;
+
+  if (!ts.isCallExpression(parent) || !parent.arguments.some((argument) => argument === node)) {
+    return undefined;
+  }
+
+  return parent;
+};
+
+const isContextProvidingCallback = (node: FunctionLike) => {
+  const host = getCallbackHost(node);
+
+  if (!host) {
+    return false;
+  }
+
+  if (ts.isIdentifier(host.expression)) {
+    return CONTEXT_PROVIDING_CALLEES.has(host.expression.text);
+  }
+
+  return ts.isPropertyAccessExpression(host.expression) && host.expression.name.text === 'runInContext';
+};
+
+const isTransparentCallback = (node: FunctionLike) => {
+  const host = getCallbackHost(node);
+
+  return (
+    !!host && ts.isPropertyAccessExpression(host.expression) && TRANSPARENT_ARRAY_METHODS.has(host.expression.name.text)
+  );
+};
+
+/**
+ * Classifies the **innermost** function boundary the call sits behind, not the first structural ancestor.
+ * The difference is the whole point: `effect(() => prepare())` in a constructor and
+ * `computed(() => prepare())` at a class field both run long after the context that created them, so they
+ * need an injector just like a plain method does - reading the constructor or the field as the answer
+ * skipped exactly the call sites that go on to throw ET950.
+ */
 const determineUsageContext = (node: ts.Node): LegacyCreatorUsage['context'] => {
   let current: ts.Node | undefined = node;
 
   while (current) {
-    if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
-      const parent = current.parent;
+    if (isCallbackFunction(current)) {
+      if (isContextProvidingCallback(current)) {
+        const host = getCallbackHost(current);
+        const callee = host && ts.isIdentifier(host.expression) ? host.expression.text : undefined;
 
-      if (
-        ts.isCallExpression(parent) &&
-        ts.isIdentifier(parent.expression) &&
-        parent.expression.text === 'queryComputed'
-      ) {
-        return 'queryComputed';
+        return callee?.startsWith('query') ? 'queryComputed' : 'injection-context';
+      }
+
+      if (!isTransparentCallback(current)) {
+        return isInsideClass(current) ? 'method' : 'function';
       }
     }
 
+    // Reached without crossing a callback: the call really does run while the class is being built, which
+    // is an injection context.
     if (ts.isConstructorDeclaration(current)) {
       return 'constructor';
     }
 
-    if (ts.isMethodDeclaration(current)) {
+    if (
+      ts.isMethodDeclaration(current) ||
+      ts.isGetAccessorDeclaration(current) ||
+      ts.isSetAccessorDeclaration(current)
+    ) {
       return 'method';
     }
 
     if (ts.isPropertyDeclaration(current)) {
       return 'class-field';
-    }
-
-    if (ts.isFunctionDeclaration(current)) {
-      return 'function';
-    }
-
-    if ((ts.isArrowFunction(current) || ts.isFunctionExpression(current)) && !isInsideClass(current)) {
-      return 'function';
     }
 
     current = current.parent;
@@ -275,7 +355,7 @@ const findOrCreateInjectorMembers = (tree: Tree, usages: LegacyCreatorUsage[]) =
   const usagesByFile = new Map<string, LegacyCreatorUsage[]>();
 
   usages.forEach((usage) => {
-    if (['queryComputed', 'class-field', 'constructor'].includes(usage.context)) {
+    if (CONTEXTS_WITH_INJECTOR.includes(usage.context)) {
       return;
     }
 
@@ -511,7 +591,7 @@ const transformPrepareCallsInFile = (
 
         const context = determineUsageContext(node);
 
-        if (['queryComputed', 'constructor', 'class-field'].includes(context)) {
+        if (CONTEXTS_WITH_INJECTOR.includes(context)) {
           ts.forEachChild(node, visit);
           return;
         }
@@ -765,7 +845,11 @@ const transformSinglePrepareCall = (
   nextArgumentProperties.push(`injector: ${injectorReference}`);
 
   const queryVariableName = findQueryVariableNameForPrepareCall(callNode, sourceFile);
-  const addDestroyOnResponse = shouldAddDestroyOnResponse(queryVariableName, pollingInfo);
+  const addDestroyOnResponse = shouldAddDestroyOnResponse(
+    queryVariableName,
+    pollingInfo,
+    isDiscardedPrepareCall(callNode),
+  );
 
   if (existingConfig && ts.isObjectLiteralExpression(existingConfig.initializer)) {
     const configProperties: string[] = [];
@@ -1054,12 +1138,51 @@ const detectPollingInTemplate = (content: string, filePath: string, pollingInfo:
   }
 };
 
+/**
+ * Whether the prepared query is thrown away - `legacyGetUsers.prepare().execute()` as a statement, with
+ * nothing holding on to it. Chained `.poll()` disqualifies it: that query is meant to keep running.
+ */
+const isDiscardedPrepareCall = (callNode: ts.CallExpression) => {
+  let current: ts.Node = callNode;
+
+  while (current.parent) {
+    const parent = current.parent;
+
+    if (ts.isParenthesizedExpression(parent) || ts.isAwaitExpression(parent) || ts.isNonNullExpression(parent)) {
+      current = parent;
+      continue;
+    }
+
+    if (ts.isPropertyAccessExpression(parent) && parent.expression === current) {
+      if (parent.name.text === 'poll') {
+        return false;
+      }
+
+      current = parent;
+      continue;
+    }
+
+    // Only a chained call keeps it discarded; being an *argument* means something else receives the query.
+    if (ts.isCallExpression(parent) && parent.expression === current) {
+      current = parent;
+      continue;
+    }
+
+    return ts.isExpressionStatement(parent);
+  }
+
+  return false;
+};
+
 const shouldAddDestroyOnResponse = (
   queryVariableName: string | undefined,
   pollingInfo: Map<string, QueryPollingInfo>,
+  isDiscarded: boolean,
 ) => {
   if (!queryVariableName) {
-    return false;
+    // A discarded query is the one case where nothing else can clean it up: no variable for a container
+    // to hold, no caller to destroy it. That is exactly what `destroyOnResponse` is for.
+    return isDiscarded;
   }
 
   return !pollingInfo.get(queryVariableName)?.hasPolling;

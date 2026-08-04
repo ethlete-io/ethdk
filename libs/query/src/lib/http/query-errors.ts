@@ -217,15 +217,22 @@ export const circularQueryDependency = () => {
   );
 };
 
-export const legacyPrepareWithoutInjectionContext = (creatorName: string | undefined) => {
+export const legacyPrepareWithoutInjectionContext = (
+  creatorName: string | undefined,
+  method: 'prepare' | 'createSubject' | 'createSignal' = 'prepare',
+) => {
   const label = creatorName ? `"${creatorName}"` : 'A legacy query creator';
+  const example =
+    method === 'prepare'
+      ? `  search = (term: string) => myQuery.prepare({ queryParams: { term }, injector: this.injector });`
+      : `  container = myQuery.${method}(null, { injector: this.injector });`;
 
   return new RuntimeError(
     QueryRuntimeErrorCode.LEGACY_PREPARE_WITHOUT_INJECTION_CONTEXT,
-    `${label}.prepare() was called outside of an injection context. Unlike the v2 client, the legacy interop layer needs an injector to build the underlying query.\n\n` +
+    `${label}.${method}() was called outside of an injection context. Unlike the v2 client, the legacy interop layer needs an injector to build the underlying query.\n\n` +
       `Capture one where a context does exist (field initializer, constructor) and pass it along:\n\n` +
       `  private injector = inject(Injector);\n` +
-      `  search = (term: string) => myQuery.prepare({ queryParams: { term }, injector: this.injector });\n\n` +
+      `${example}\n\n` +
       `Prefer an injector that outlives the call site. A component injector passed from a callback that can still fire after the component is gone leaves prepare() with a destroyed injector, which returns an inert query instead of executing.`,
   );
 };
