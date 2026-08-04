@@ -36,7 +36,9 @@ import {
   TableCellEditing,
   TableCellNavigation,
   TableBodyPlaceholder,
+  TableCellPinning,
   TableCellPlaceholder,
+  TableColumnPinning,
   TableHeaderRow,
   TableRowDetail,
   TableRowWindow,
@@ -65,9 +67,6 @@ import {
   TableTemplateSlot,
 } from './table.types';
 
-/** Horizontal sticky offsets (px) for pinned columns, keyed by column key. */
-type StickyOffsets = { start: Record<string, number>; end: Record<string, number> };
-
 /**
  * The rendered shape of the table, resolved from the signals **before** the template runs.
  *
@@ -77,13 +76,6 @@ type StickyOffsets = { start: Record<string, number>; end: Record<string, number
  * template is a plain projection of it. (Event bindings still call methods - that's the one place a
  * call belongs.)
  */
-type TableStickyVm = {
-  stickyStart: boolean;
-  stickyEnd: boolean;
-  offsetStart: number | null;
-  offsetEnd: number | null;
-};
-
 /** One leading utility cell (selection, expander) - identical chrome in every row kind. */
 type TableLeadCellVm = {
   key: string;
@@ -93,7 +85,7 @@ type TableLeadCellVm = {
   lead: TableLeadColumn;
 };
 
-type TableHeaderCellVm<T> = TableStickyVm & {
+type TableHeaderCellVm<T> = TableCellPinning & {
   key: string;
   column: TableColumnDef<T>;
   align: string;
@@ -104,7 +96,7 @@ type TableHeaderCellVm<T> = TableStickyVm & {
   template: TemplateRef<unknown> | null;
 };
 
-type TableBodyCellVm<T> = TableStickyVm & {
+type TableBodyCellVm<T> = TableCellPinning & {
   key: string;
   align: string;
   state: TableCellState | null;
@@ -136,7 +128,7 @@ type TableBodyRowVm<T> = {
   cells: TableBodyCellVm<T>[];
 };
 
-type TableFooterCellVm = TableStickyVm & {
+type TableFooterCellVm = TableCellPinning & {
   key: string;
   align: string;
   template: TemplateRef<unknown> | null;
@@ -172,12 +164,6 @@ const FILLER_TRACK = 'minmax(0, 1fr)';
 const isFlexibleTrack = (track: string) => /\bauto\b|[\d.]fr\b/.test(track);
 
 /**
- * Least horizontal room (px) the non-pinned columns must keep before sticky columns are suppressed:
- * below this, start+end pinned columns would cover the viewport and scrolling would reveal nothing.
- */
-const MIN_UNPINNED_SPACE = 96;
-
-/**
  * Cheap structural comparison for the small, plain state lists the table mirrors (sort entries, filter
  * values). Enough to stop an equal-but-new array from being written back - see the mirroring effect.
  */
@@ -185,6 +171,13 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringif
 
 /** Sub-pixel slack (px) before a scroll offset counts as "there is content over there". */
 const SCROLL_FADE_EPSILON = 1;
+
+/** What a cell renders as when nothing pins columns - see `registerColumnPinning`. */
+const NO_PIN: TableCellPinning = { stickyStart: false, stickyEnd: false, offsetStart: null, offsetEnd: null };
+
+/** The same for a leading utility cell, and for the scroll fades' inline offsets. */
+const NO_LEAD_PIN = { sticky: false, offset: null };
+const NO_INSET = { start: 0, end: 0 };
 
 /**
  * The default table. Renders typed rows and cells from a {@link TableColumns}
@@ -395,9 +388,6 @@ export class TableComponent<T> {
    */
   public errorColorTheme = injectColorThemes({ optional: true })?.find((theme) => theme.type === 'error');
 
-  // Inline-start offset per lead column key, for when they're pinned alongside a sticky-start column.
-  private leadStickyOffsets = signal<Record<string, number>>({});
-
   // UI contributed by opt-in features (filter menus, resize grips), rendered in every header cell.
   // Features register themselves (see TABLE_FEATURE_HOST) rather than being queried, so the table
   // never references a feature's dependencies - that's what keeps them out of an unused bundle.
@@ -428,6 +418,14 @@ export class TableComponent<T> {
   private headerRowList = signal<TableHeaderRow[]>([]);
 
   protected headerRows = computed(() => this.headerRowList().filter((row) => row.enabled?.() ?? true));
+
+  // How a feature pins columns (etTableStickyColumns). Null until one registers, which is what keeps
+  // the measuring and the edge shadows out of a table that pins nothing.
+  private columnPinningList = signal<TableColumnPinning[]>([]);
+
+  private columnPinning = computed(
+    () => this.columnPinningList().find((pinning) => pinning.enabled?.() ?? true) ?? null,
+  );
 
   // What a feature renders in place of the body while loading with no rows yet (etTableSkeleton).
   private bodyPlaceholderList = signal<TableBodyPlaceholder[]>([]);
@@ -483,20 +481,9 @@ export class TableComponent<T> {
   // Recompute sticky-column offsets when the host resizes (column widths change).
   private hostDimensions = signalHostElementDimensions();
 
-  // Measured inline offsets for pinned columns (see the effect that fills them).
-  private stickyOffsets = signal<StickyOffsets>({ start: {}, end: {} });
-
-  // True when pinning is measured to crowd the non-pinned columns off-screen (see the sticky effect):
-  // sticky positioning is then dropped so every column scrolls normally instead of hiding behind the pins.
-  private stickySuppressed = signal(false);
-
   // Columns whose track is let out to `max-content` for one frame so it can be measured. Empty except
   // during an `autosizeColumns` pass.
   private autosizing = signal<ReadonlySet<string>>(new Set());
-
-  // Total frozen width (px) at each inline edge - the leading utility columns and start pins, and the
-  // end pins. Where the scroll fades sit; see `scrollFades`.
-  private pinnedInsets = signal<{ start: number; end: number }>({ start: 0, end: 0 });
 
   /**
    * Where content is currently scrolled out of view horizontally. Drives the edge gradients: they mark
@@ -507,7 +494,7 @@ export class TableComponent<T> {
   protected scrollFades = signal<{ start: boolean; end: boolean }>({ start: false, end: false });
 
   /** The inline offset (px) each edge gradient is pushed in by, so it clears any pinned columns. */
-  protected fadeInset = this.pinnedInsets.asReadonly();
+  protected fadeInset = computed(() => this.columnPinning()?.insets() ?? NO_INSET);
 
   // The declared columns paired with their keys, in declaration order - the form everything else
   // (rendering, features, state) works with. Keys are the record's, so they can't collide.
@@ -531,7 +518,12 @@ export class TableComponent<T> {
     computation: (columns, previous) =>
       reconcileHiddenColumns(columns, previous && { columns: previous.source, hidden: previous.value }),
   });
-  private columnWidths = linkedSignal<TableColumnDef<T>[], Record<string, number>>({
+  /**
+   * The user's width overrides (px) per column. Public because it is part of the feature contract -
+   * `etTableStickyColumns` re-measures its offsets when a resize changes the tracks without changing the
+   * host's size, which is the one thing no other signal reports.
+   */
+  public columnWidths = linkedSignal<TableColumnDef<T>[], Record<string, number>>({
     source: () => this.columnDefs(),
     computation: (columns, previous) => reconcileColumnWidths(columns, previous?.value),
   });
@@ -587,21 +579,6 @@ export class TableComponent<T> {
     this.orderedColumns().filter((column) => !this.hiddenColumns().has(column.key)),
   );
 
-  /** Whether any visible column is pinned to the inline-start edge (also pins the expander column). */
-  public hasStickyStart = computed(
-    () => !this.stickySuppressed() && this.visibleColumns().some((column) => column.sticky === 'start'),
-  );
-
-  /** Whether any visible column is pinned to the trailing edge. */
-  public hasStickyEnd = computed(
-    () => !this.stickySuppressed() && this.visibleColumns().some((column) => column.sticky === 'end'),
-  );
-
-  /** Whether any visible column is pinned (start or end) - the grid then sizes to its tracks so pinning works. */
-  public hasStickyColumns = computed(
-    () => !this.stickySuppressed() && this.visibleColumns().some((column) => !!column.sticky),
-  );
-
   /** Whether any visible column has a registered footer cell (drives the sticky footer row). */
   public hasFooter = computed(() => {
     const footers = this.columnTemplates().footer;
@@ -641,7 +618,11 @@ export class TableComponent<T> {
     // between it and that edge would only strand it away from the last real column. Nor during a
     // measurement pass: `max-content` isn't flexible, so it would otherwise add - and immediately
     // drop - a filler cell in every row for that one frame.
-    const fixed = tracks.length > 0 && !measuring.size && !tracks.some(isFlexibleTrack) && !this.hasStickyEnd();
+    const fixed =
+      tracks.length > 0 &&
+      !measuring.size &&
+      !tracks.some(isFlexibleTrack) &&
+      !(this.columnPinning()?.hasStickyEnd() ?? false);
 
     // Leading utility columns come first, in registration order (see `leadColumns`). Their widths are
     // px, not rem: they must fit their control (a 24px button / 16px checkbox plus the cell's 4px
@@ -768,21 +749,18 @@ export class TableComponent<T> {
 
   /** The leading utility cells, with the pinning every row kind applies to them. */
   protected leadCells = computed<TableLeadCellVm[]>(() => {
-    const pinned = this.hasStickyStart();
-    const offsets = this.leadStickyOffsets();
+    const pinning = this.columnPinning();
 
     return this.leadColumns().map((lead) => ({
       key: lead.key,
       cellClass: lead.cellClass,
-      sticky: pinned,
-      offset: pinned ? (offsets[lead.key] ?? 0) : null,
+      ...(pinning?.leadPinning(lead.key) ?? NO_LEAD_PIN),
       lead,
     }));
   });
 
   protected headerCellVms = computed<TableHeaderCellVm<T>[]>(() => {
-    const offsets = this.stickyOffsets();
-    const suppressed = this.stickySuppressed();
+    const pinning = this.columnPinning();
     const templates = this.columnTemplates().header;
     const labels = this.resolvedLabels();
 
@@ -792,7 +770,7 @@ export class TableComponent<T> {
       const next = direction === null ? 'asc' : direction === 'asc' ? 'desc' : null;
 
       return {
-        ...this.stickyVmOf(column, { offsets, suppressed }),
+        ...(pinning?.cellPinning(column.key) ?? NO_PIN),
         key: column.key,
         column,
         align: column.align ?? 'start',
@@ -812,8 +790,7 @@ export class TableComponent<T> {
   });
 
   protected bodyRows = computed<TableBodyRowVm<T>[]>(() => {
-    const offsets = this.stickyOffsets();
-    const suppressed = this.stickySuppressed();
+    const pinning = this.columnPinning();
     const templates = this.columnTemplates().cell;
     const columns = this.visibleColumns();
     const leads = this.leadCells();
@@ -850,7 +827,7 @@ export class TableComponent<T> {
               : null;
 
           return {
-            ...this.stickyVmOf(column, { offsets, suppressed }),
+            ...(pinning?.cellPinning(column.key) ?? NO_PIN),
             key: column.key,
             align: column.align ?? 'start',
             state,
@@ -866,12 +843,11 @@ export class TableComponent<T> {
   });
 
   protected footerCells = computed<TableFooterCellVm[]>(() => {
-    const offsets = this.stickyOffsets();
-    const suppressed = this.stickySuppressed();
+    const pinning = this.columnPinning();
     const templates = this.columnTemplates().footer;
 
     return this.visibleColumns().map((column) => ({
-      ...this.stickyVmOf(column, { offsets, suppressed }),
+      ...(pinning?.cellPinning(column.key) ?? NO_PIN),
       key: column.key,
       align: column.align ?? 'start',
       template: templates.get(column.key) ?? null,
@@ -943,91 +919,6 @@ export class TableComponent<T> {
         if (sort && !sameJson(sort, this.sort())) this.sort.set([...sort]);
         if (filters && !sameJson(filters, this.filters())) this.filters.set([...filters]);
       });
-    });
-
-    // Measure pinned columns' inline offsets from header-cell widths (re-runs on resize and
-    // structural change). Sticky-start columns stack from the left edge (clearing the expander),
-    // sticky-end columns stack from the right - pin from the edges, so widths sum cleanly.
-    effect(() => {
-      this.hostDimensions();
-      // Re-measure when a column is resized (widths change but the host doesn't), so pinned
-      // columns keep their offsets in sync with the new track widths.
-      this.columnWidths();
-
-      const columns = this.visibleColumns();
-      const cells = this.headerCells();
-
-      // `signalElementDimensions` observes one element; sticky offsets need the widths of *every*
-      // header cell summed in order, re-read whenever the host resizes or a column width changes -
-      // both of which this effect already tracks above.
-      // eslint-disable-next-line ethlete/prefer-element-dimensions
-      const width = (index: number) => cells[index]?.nativeElement.getBoundingClientRect().width ?? 0;
-
-      const start: Record<string, number> = {};
-
-      // Leading utility columns stack from the edge, each starting after the ones before it.
-      const leadCells = this.leadHeaderCells();
-      const leadOffsets: Record<string, number> = {};
-      let leadWidth = 0;
-
-      this.leadColumns().forEach((lead, index) => {
-        leadOffsets[lead.key] = leadWidth;
-        // Same as above: a running sum over all lead cells, not one observable element.
-        // eslint-disable-next-line ethlete/prefer-element-dimensions
-        leadWidth += leadCells[index]?.nativeElement.getBoundingClientRect().width ?? 0;
-      });
-
-      this.leadStickyOffsets.set(leadOffsets);
-
-      let left = leadWidth;
-      let pinnedStartWidth = 0;
-      let pinnedEndWidth = 0;
-      let hasStartPin = false;
-
-      for (let index = 0; index < columns.length; index++) {
-        const column = columns[index];
-
-        if (column?.sticky === 'start') {
-          start[column.key] = left;
-          pinnedStartWidth += width(index);
-          hasStartPin = true;
-        }
-
-        left += width(index);
-      }
-
-      const end: Record<string, number> = {};
-      let right = 0;
-
-      for (let index = columns.length - 1; index >= 0; index--) {
-        const column = columns[index];
-
-        if (column?.sticky === 'end') {
-          end[column.key] = right;
-          pinnedEndWidth += width(index);
-        }
-
-        right += width(index);
-      }
-
-      this.stickyOffsets.set({ start, end });
-
-      // Suppress pinning when the columns that would stay put (pins, plus the leading utility columns
-      // when a start pin makes them sticky too) leave the scrollable columns too little room to ever
-      // surface. Track widths don't change when we unpin, so this can't oscillate.
-      // The host's own width is already tracked reactively above, so read it from there.
-      const containerWidth = this.hostDimensions()?.client?.width ?? 0;
-      const pinnedWidth = pinnedStartWidth + pinnedEndWidth + (hasStartPin ? leadWidth : 0);
-      const hasUnpinned = columns.some((column) => !column?.sticky);
-      const suppressed = hasUnpinned && containerWidth > 0 && containerWidth - pinnedWidth < MIN_UNPINNED_SPACE;
-
-      this.stickySuppressed.set(suppressed);
-
-      this.pinnedInsets.set(
-        suppressed
-          ? { start: 0, end: 0 }
-          : { start: hasStartPin ? leadWidth + pinnedStartWidth : 0, end: pinnedEndWidth },
-      );
     });
 
     // The fades depend on the live scroll offset, which no signal tracks - recheck on scroll, and
@@ -1158,9 +1049,22 @@ export class TableComponent<T> {
     this.cellPlaceholderList.update((list) => [...list, placeholder]);
   }
 
-  /** The `cellClass` of each leading utility column, in render order. Part of the feature contract. */
-  public leadCellClasses() {
-    return this.leadColumns().map((lead) => lead.cellClass);
+  /**
+   * Called by an opt-in feature to pin columns to the inline edges (`etTableStickyColumns`). Part of the
+   * feature contract; consumers never call this.
+   */
+  public registerColumnPinning(pinning: TableColumnPinning) {
+    this.columnPinningList.update((list) => [...list, pinning]);
+  }
+
+  /** The rendered header cells of the leading utility columns. Part of the feature contract. */
+  public leadHeaderCellElements() {
+    return this.leadHeaderCells().map((ref) => ref.nativeElement);
+  }
+
+  /** The leading utility columns, in render order. Part of the feature contract. */
+  public leadColumnsMeta() {
+    return this.leadColumns().map((lead) => ({ key: lead.key, cellClass: lead.cellClass }));
   }
 
   /** Whether a trailing slack track is in play. Part of the feature contract. */
@@ -1450,9 +1354,9 @@ export class TableComponent<T> {
 
   /** A column's effective pinning, or `null` when unpinned/suppressed. Part of the feature contract. */
   public effectiveStickyOf(key: string): 'start' | 'end' | null {
-    const column = this.columnsByKey().get(key);
+    const pinning = this.columnPinning()?.cellPinning(key);
 
-    return column ? this.effectiveSticky(column) : null;
+    return pinning?.stickyStart ? 'start' : pinning?.stickyEnd ? 'end' : null;
   }
 
   /**
@@ -1558,11 +1462,6 @@ export class TableComponent<T> {
     });
   }
 
-  /** A column's effective pinning, or `null` when it isn't pinned or pinning is suppressed (see {@link stickySuppressed}). */
-  public effectiveSticky(column: TableColumnDef<T>): 'start' | 'end' | null {
-    return this.stickySuppressed() ? null : (column.sticky ?? null);
-  }
-
   /**
    * The one place sort state is written. A bound {@link rowsSource} owns it - it resets the page and
    * refetches - and its own value syncs back into `sort` (see the constructor), so everything else can
@@ -1583,23 +1482,6 @@ export class TableComponent<T> {
   // ── Render models ───────────────────────────────────────────────────────
   // See the `…Vm` types above: everything the template binds is resolved here, so a binding is a field
   // read rather than a call the framework has to repeat on every change-detection pass.
-
-  /** A column's pinning and offsets, shared by its header, body and footer cells. */
-  private stickyVmOf(
-    column: TableColumnDef<T>,
-    pinning: { offsets: StickyOffsets; suppressed: boolean },
-  ): TableStickyVm {
-    const { offsets, suppressed } = pinning;
-
-    const sticky = suppressed ? null : (column.sticky ?? null);
-
-    return {
-      stickyStart: sticky === 'start',
-      stickyEnd: sticky === 'end',
-      offsetStart: suppressed ? null : (offsets.start[column.key] ?? null),
-      offsetEnd: suppressed ? null : (offsets.end[column.key] ?? null),
-    };
-  }
 
   // Walk the event's composed path up to the row element; bail if it passed through anything the
   // user meant to click instead of the row (a control, a menu trigger, or a utility cell). Uses

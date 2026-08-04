@@ -200,8 +200,13 @@
 
   /* ── Sticky columns ─────────────────────────────────────────────────────
      Pinned cells stay put during horizontal scroll. The inline offset comes from a per-cell
-     style binding (measured header widths); the edge shadow marks the pinned boundary — inner
-     pinned cells' shadows are covered by the next opaque pinned cell, so only the edge shows. */
+     style binding, fed by the widths `etTableStickyColumns` measures; the edge shadow marks the pinned
+     boundary — inner pinned cells' shadows are covered by the next opaque pinned cell, so only the edge
+     shows. Without the feature nothing ever carries these classes, so the rules simply never match.
+
+     These stay in the base sheet rather than travelling with the feature: routing them through a
+     styles-only component costs a table that *does* pin 955 B gz of style-manager machinery, against the
+     113 B they cost every table by staying here. */
   .et-table-sticky-start,
   .et-table-sticky-end {
     position: sticky;

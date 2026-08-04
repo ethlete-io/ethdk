@@ -16,8 +16,8 @@ import { TABLE_IMPORTS, TableColumns } from '@ethlete/components';
 
 ## Opt-in features
 
-`TABLE_IMPORTS` is deliberately lean: typed rows and cells, sort headers, sticky
-columns, the empty state and the footer slot. Anything that would drag a heavier
+`TABLE_IMPORTS` is deliberately lean: typed rows and cells, sort headers, the empty state
+and the footer slot. Anything that would drag a heavier
 dependency in ships as its own directive - import its array and put the attribute on
 the table. A table that doesn't import a feature never pays for its code.
 
@@ -31,6 +31,7 @@ the table. A table that doesn't import a feature never pays for its code.
 | Row selection        | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
 | Row expansion        | `TABLE_ROW_EXPANSION_IMPORTS`      | `etTableRowExpansion`       | the detail row's chrome + grow-open animation        |
 | Loading placeholders | `TABLE_SKELETON_IMPORTS`           | `etTableSkeleton`           | the [skeleton](/components/skeleton) component       |
+| Sticky columns       | `TABLE_STICKY_COLUMNS_IMPORTS`     | `etTableStickyColumns`      | the offset measuring (nothing else)                  |
 | Grouped headers      | `TABLE_GROUP_HEADERS_IMPORTS`      | `etTableGroupHeaders`       | the spanning header row + its chrome                 |
 | Virtual scroll       | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
 | Cell error tooltip   | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
@@ -60,8 +61,8 @@ Features register themselves with the table, and the serializable state they dri
 (filter values, column widths) lives on the table - so
 [`state()` / `restoreState()`](#table-state) round-trip it whether or not the feature is
 imported. State a feature _owns_ - a selection, the expanded rows - travels in the same
-snapshot under `features`, so it round-trips too. Sorting, sticky columns, the footer slot
-and the empty state are part of the base: they cost nothing beyond the table itself.
+snapshot under `features`, so it round-trips too. Sorting, the footer slot and the empty state
+are part of the base: they cost nothing beyond the table itself.
 
 ## Usage
 
@@ -153,21 +154,21 @@ wrapping it in a scroller.
 
 Each value of the `TableColumns<T>` record:
 
-| Field           | Default               | Description                                                                                                                    |
-| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `value`         | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.                   |
-| `sortable`      | `false`               | Render a sortable header for this column.                                                                                      |
-| `sortValue`     | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.                     |
-| `filterable`    | `false`               | Render a filter menu on this column's header.                                                                                  |
-| `filterOptions` | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)).         |
-| `filterSearch`  | `false`               | Add a search box to the filter menu.                                                                                           |
-| `filterValue`   | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                        |
-| `header`        | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                                |
-| `group`         | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers). |
-| `sticky`        | -                     | `'start' \| 'end'` - pin the column while scrolling horizontally. See [Sticky columns](#sticky-columns-footer).                |
-| `align`         | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                |
-| `width`         | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                           |
-| `hidden`        | `false`               | Hide the column initially; toggle later via table state.                                                                       |
+| Field           | Default               | Description                                                                                                                     |
+| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `value`         | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.                    |
+| `sortable`      | `false`               | Render a sortable header for this column.                                                                                       |
+| `sortValue`     | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.                      |
+| `filterable`    | `false`               | Render a filter menu on this column's header.                                                                                   |
+| `filterOptions` | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)).          |
+| `filterSearch`  | `false`               | Add a search box to the filter menu.                                                                                            |
+| `filterValue`   | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                         |
+| `header`        | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                                 |
+| `group`         | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers).  |
+| `sticky`        | -                     | `'start' \| 'end'` - pin the column while scrolling, with `etTableStickyColumns`. See [Sticky columns](#sticky-columns-footer). |
+| `align`         | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                 |
+| `width`         | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                            |
+| `hidden`        | `false`               | Hide the column initially; toggle later via table state.                                                                        |
 
 **Every column has a floor**, `minWidth` (96px by default), and it applies whether the
 column is squeezed by a wider neighbour or dragged there by a
@@ -749,10 +750,16 @@ scrolls:
 
 ## Sticky columns & footer
 
-Pin columns to an edge with `sticky: 'start' | 'end'` - they stay put while the
-table scrolls horizontally. Pin from the edges (leading columns to `'start'`,
-trailing to `'end'`); give pinned columns explicit widths so the table has
-something to scroll.
+Pinning is **opt-in**: import `TABLE_STICKY_COLUMNS_IMPORTS` and put `etTableStickyColumns`
+on the table. Columns then pin to an edge with `sticky: 'start' | 'end'` and stay put while
+the table scrolls horizontally. Pin from the edges (leading columns to `'start'`, trailing to
+`'end'`); give pinned columns explicit widths so the table has something to scroll.
+
+The offsets are **measured**, not declared - each pinned column stacks after the ones before
+it - so the feature re-measures the header cells whenever the table or a column is resized.
+That is why it is a feature rather than part of the base: a table that pins nothing runs none
+of that on resize. Without it a `sticky` column simply renders unpinned, and `enabled: false`
+turns pinning off at runtime.
 
 On a viewport too narrow for the pinned columns to leave room - where they would
 otherwise cover the whole width and horizontal scrolling would reveal nothing -
@@ -767,11 +774,17 @@ the viewport's edge on top of the pin. Size it with `--et-table-scroll-fade-size
 (`28px`).
 
 ```ts
-protected readonly COLUMNS = {
-  name: { header: 'Name', value: (user) => user.name, width: '220px', sticky: 'start' },
-  email: { header: 'Email', value: (user) => user.email, width: '280px' },
-  actions: { header: '', value: (user) => user, width: '96px', sticky: 'end' },
-} satisfies TableColumns<User>;
+@Component({
+  imports: [TABLE_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS],
+  template: `<et-table [data]="users()" [columns]="COLUMNS" etTableStickyColumns />`,
+})
+export class UsersComponent {
+  protected readonly COLUMNS = {
+    name: { header: 'Name', value: (user) => user.name, width: '220px', sticky: 'start' },
+    email: { header: 'Email', value: (user) => user.email, width: '280px' },
+    actions: { header: '', value: (user) => user, width: '96px', sticky: 'end' },
+  } satisfies TableColumns<User>;
+}
 ```
 
 An `etTableFooterCell` template adds a **summary row pinned to the bottom** of the

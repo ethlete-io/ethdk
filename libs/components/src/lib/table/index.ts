@@ -22,6 +22,7 @@ export * from './table-row-expansion.directive';
 export * from './table-resize-grip.component';
 export * from './table-resize.directive';
 export * from './table-select-cell.component';
+export * from './table-sticky-columns.directive';
 export * from './table-skeleton-rows.component';
 export * from './table-skeleton.directive';
 export * from './table-selection.directive';

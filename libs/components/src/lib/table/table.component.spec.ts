@@ -581,19 +581,23 @@ describe('TableComponent', () => {
   });
 
   describe('sticky columns & footer', () => {
-    it('hasStickyStart reflects a start-pinned column; end offsets are null when unpinned', () => {
+    it('pins nothing without the feature, whatever a column declares', () => {
       const cols = {
         name: { value: (p) => p.name, sticky: 'start' },
         role: { value: (p) => p.role },
       } satisfies TableColumns<Person>;
-      const fixture = create(cols);
-      const host = fixture.nativeElement as HTMLElement;
-      const roleHeader = host.querySelector<HTMLElement>('[data-col-key="role"]');
+      const host = create(cols).nativeElement as HTMLElement;
 
-      expect(fixture.componentInstance.hasStickyStart()).toBe(true);
-      // An unpinned column carries neither pin class nor an inline offset.
-      expect(roleHeader?.classList.contains('et-table-sticky-end')).toBe(false);
-      expect(roleHeader?.style.insetInlineEnd).toBe('');
+      // `sticky` is inert until etTableStickyColumns supplies the pinning - no class, no inline offset,
+      // on the declared column or any other.
+      for (const key of ['name', 'role']) {
+        const header = host.querySelector<HTMLElement>(`[data-col-key="${key}"]`);
+
+        expect(header?.classList.contains('et-table-sticky-start')).toBe(false);
+        expect(header?.classList.contains('et-table-sticky-end')).toBe(false);
+        expect(header?.style.insetInlineStart).toBe('');
+        expect(header?.style.insetInlineEnd).toBe('');
+      }
     });
 
     it('hasFooter reflects a registered etTableFooterCell, and renders it', () => {

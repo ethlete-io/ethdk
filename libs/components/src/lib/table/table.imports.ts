@@ -12,6 +12,7 @@ import { TableRowExpansionDirective } from './table-row-expansion.directive';
 import { TableResizeDirective } from './table-resize.directive';
 import { TableSelectionDirective } from './table-selection.directive';
 import { TableSkeletonDirective } from './table-skeleton.directive';
+import { TableStickyColumnsDirective } from './table-sticky-columns.directive';
 import { TableStatePersistenceDirective } from './headless/table-state-persistence.directive';
 import {
   TableCellDirective,
@@ -26,13 +27,13 @@ import { TableComponent } from './table.component';
 
 /**
  * The base table: typed rows and cells, the `etTableCell` / `etTableHeaderCell` /
- * `etTableFooterCell` templates, sort headers, sticky columns, the empty state and the footer slot.
+ * `etTableFooterCell` templates, sort headers, the empty state and the footer slot.
  * Deliberately lean - each optional feature ships its own imports array (e.g.
  * {@link TABLE_FILTER_IMPORTS}), so what you don't import stays out of your bundle.
  *
- * Row expansion, grouped headers and loading placeholders are **not** in here - see
- * {@link TABLE_ROW_EXPANSION_IMPORTS}, {@link TABLE_GROUP_HEADERS_IMPORTS} and
- * {@link TABLE_SKELETON_IMPORTS}.
+ * Row expansion, grouped headers, loading placeholders and sticky columns are **not** in here - see
+ * {@link TABLE_ROW_EXPANSION_IMPORTS}, {@link TABLE_GROUP_HEADERS_IMPORTS},
+ * {@link TABLE_SKELETON_IMPORTS} and {@link TABLE_STICKY_COLUMNS_IMPORTS}.
  */
 export const TABLE_IMPORTS = [
   TableComponent,
@@ -95,6 +96,13 @@ export const TABLE_SELECTION_IMPORTS = [TableSelectionDirective] as const;
  * adjacent columns sharing a `group` read under one label. Carries that row and its chrome.
  */
 export const TABLE_GROUP_HEADERS_IMPORTS = [TableGroupHeadersDirective] as const;
+
+/**
+ * Sticky columns (`etTableStickyColumns`): a column declaring `sticky: 'start' | 'end'` stays put while
+ * the table scrolls horizontally. Carries the measuring of the pinned offsets and the pinned cells'
+ * chrome, which is why it is separate - a table that pins nothing measures nothing.
+ */
+export const TABLE_STICKY_COLUMNS_IMPORTS = [TableStickyColumnsDirective] as const;
 
 /**
  * Loading placeholders (`etTableSkeleton`): a block of skeleton rows while loading with no rows yet, a

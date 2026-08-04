@@ -53,7 +53,7 @@ export class TableGroupHeaderRowComponent {
   /** Rendered height of the row, for the header row's sticky offset. */
   public blockSize = computed(() => this.groupCellDimensions()?.offset?.height ?? 0);
 
-  protected leads = computed(() => this.table.leadCellClasses());
+  protected leads = computed(() => this.table.leadColumnsMeta());
 
   constructor() {
     this.feature.rowHeight.set(this.blockSize);

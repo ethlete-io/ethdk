@@ -41,8 +41,8 @@ type SkeletonRowVm = {
         role="row"
         aria-hidden="true"
       >
-        @for (lead of table.leadCellClasses(); track $index) {
-          <div [class]="lead" class="et-table-cell" role="gridcell"></div>
+        @for (lead of table.leadColumnsMeta(); track lead.key) {
+          <div [class]="lead.cellClass" class="et-table-cell" role="gridcell"></div>
         }
         @for (cell of row.cells; track cell.key) {
           <div [attr.data-align]="cell.align" class="et-table-cell" role="gridcell">

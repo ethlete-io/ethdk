@@ -96,13 +96,45 @@ export type TableLayer = {
   enabled?: Signal<boolean>;
 };
 
+/** A column's horizontal pinning, as the table's header, body and footer cells render it. */
+export type TableCellPinning = {
+  stickyStart: boolean;
+  stickyEnd: boolean;
+  /** Inline-start offset (px) a start-pinned cell sits at, or `null` when it isn't one. */
+  offsetStart: number | null;
+  /** Inline-end offset (px) an end-pinned cell sits at, or `null` when it isn't one. */
+  offsetEnd: number | null;
+};
+
+/**
+ * How a feature pins columns to the table's inline edges (`etTableStickyColumns`).
+ *
+ * The table keeps *rendering* the pinning - the classes and inline offsets sit on the cells it draws, and
+ * a feature cannot contribute an attribute to those. What moves out is everything behind them: measuring
+ * the header cells, stacking the offsets from each edge, and deciding when pinning would crowd the
+ * scrollable columns off-screen. A table with no feature registered asks for none of it and runs no
+ * measurement on resize.
+ */
+export type TableColumnPinning = {
+  /** How a data column is pinned. Called once per rendered cell kind, from a `computed`. */
+  cellPinning(key: string): TableCellPinning;
+  /** Whether the leading utility columns are pinned along with a start-pinned column, and how far in. */
+  leadPinning(key: string): { sticky: boolean; offset: number | null };
+  /** Total frozen width (px) at each inline edge - where the scroll fades sit. */
+  insets(): { start: number; end: number };
+  /** Whether any visible column is pinned to the trailing edge, which already owns that edge. */
+  hasStickyEnd(): boolean;
+  /** Whether pinning is live - see {@link TableHeaderAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
 /**
  * A row a feature renders above the column headers - the spanning group-header row. The table stamps
  * `component` as the grid's first child, before its own header row.
  *
  * The stamped component must be `display: contents` and render one cell per track itself: the table's
  * rows are `display: contents` too, so every cell of every row kind is a grid item of the same grid.
- * {@link TableFeatureHost.leadCellClasses} and {@link TableFeatureHost.hasFillerTrack} are what a row
+ * {@link TableFeatureHost.leadColumnsMeta} and {@link TableFeatureHost.hasFillerTrack} are what a row
  * needs to cover the tracks that are not data columns.
  */
 export type TableHeaderRow = {
@@ -270,6 +302,8 @@ export type TableFeatureHost = {
   registerBodyPlaceholder(placeholder: TableBodyPlaceholder): void;
   /** Replace the content of a cell that is loading on its own. Call once, from the constructor. */
   registerCellPlaceholder(placeholder: TableCellPlaceholder): void;
+  /** Pin columns to the table's inline edges. Call once, from the feature's constructor. */
+  registerColumnPinning(pinning: TableColumnPinning): void;
   /** Replace the mark drawn in failed cells. Call once, from the feature's constructor. */
   registerCellErrorMark(mark: TableCellErrorMark): void;
   /** Contribute the feature's own serializable state. Call once, from the feature's constructor. */
@@ -359,10 +393,11 @@ export type TableFeatureHost = {
   visibleColumnsMeta(): TableColumnMeta[];
 
   /**
-   * The `cellClass` of each leading utility column (selection, expander), in render order. A feature
-   * rendering a whole row needs one cell each to cover their tracks; the length is how many there are.
+   * The leading utility columns (selection, expander) in render order, as much of each as a feature needs:
+   * a whole-row feature draws one cell per entry with its `cellClass`, and a pinning feature keys their
+   * offsets by `key`.
    */
-  leadCellClasses(): string[];
+  leadColumnsMeta(): { key: string; cellClass: string }[];
 
   /**
    * Whether a trailing slack track is in play - it carries an empty cell in every row so the table's
@@ -377,7 +412,22 @@ export type TableFeatureHost = {
   headerCellElements(): HTMLElement[];
   /** The rendered body cells of one column, e.g. to animate a column into its new position. */
   bodyCellElementsFor(key: string): HTMLElement[];
-  /** A column's effective pinning - `null` when unpinned or when pinning is currently suppressed. */
+
+  /**
+   * The rendered header cells of the leading utility columns, in {@link leadColumnsMeta} order. A feature
+   * stacking offsets from the inline-start edge has to measure them before the first data column.
+   */
+  leadHeaderCellElements(): HTMLElement[];
+
+  /**
+   * The user's column width overrides (px), keyed by column key. Reading it in a `computed` or `effect`
+   * is how a feature re-measures when a resize changes the tracks without changing the host's size.
+   */
+  columnWidths(): Readonly<Record<string, number>>;
+  /**
+   * A column's effective pinning - `null` when unpinned, when pinning is currently suppressed, or when
+   * nothing pins columns at all. What `etTableReorder` asks to leave pinned columns out of a drag.
+   */
   effectiveStickyOf(key: string): 'start' | 'end' | null;
   /** Move a column next to another one in the full column order (hidden columns stay put). */
   moveColumnNextTo(key: string, target: { overKey: string; before: boolean }): void;
