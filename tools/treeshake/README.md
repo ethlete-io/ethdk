@@ -54,7 +54,7 @@ much faster. Use it for anything comparative.
 
 An app bundled **without** Angular's builder (plain Vite/esbuild/Rollup over the published FESM) does
 not get passes 1–2 and therefore gets **no tree-shaking at all** from these packages - it ships the
-whole library regardless of what these numbers say. (Recorded in `plans/table-tree-shaking.md`.) If
+whole library regardless of what these numbers say. If
 that ever needs supporting, the fix is to run the same two passes as part of this repo's own publish
 pipeline rather than leaving them to the consumer.
 
