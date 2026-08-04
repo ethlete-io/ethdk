@@ -1179,6 +1179,11 @@ export class QueryDevtoolsComponent {
     return `${isEstimated ? '≈' : ''}${this.formatBytes(bytes)}`;
   }
 
+  /** A transfer rate, given in bytes per second the way `HttpRequestLoadingProgressState.speed` reports it. */
+  protected formatSpeed(bytesPerSecond: number) {
+    return `${this.formatBytes(Math.round(bytesPerSecond))}/s`;
+  }
+
   protected formatDuration(ms: number | null) {
     if (ms === null) return '—';
 

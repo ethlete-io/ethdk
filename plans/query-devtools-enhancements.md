@@ -24,15 +24,6 @@ surface, and anything already there is not worth rebuilding.
 | **Sockets tab depth**         | Filter messages by event/room, and an emit box for test messages. `WebSocketDevtoolsHandle` (`libs/query/src/lib/ws/web-socket-client.ts:30`) records received messages only - outgoing traffic is not captured.        |
 | **Dock right / pop out**      | Bottom dock only (`applyResize` assumes it, `query-devtools.component.ts:1250`). The right edge is better on a wide screen; a `window.open` pop-out is better on two monitors.                                          |
 
-## Known bug, found in passing
-
-`HttpRequestLoadingProgressState.speed` is wrong by a factor of 1000.
-`updateLoadingState` (`http-request.ts`) computes bytes/ms into a local and then
-assigns `progress.speed = speed * 1000`, while the JSDoc claims bytes/**ms**.
-`remainingTime` is correct - it uses the local. The devtools progress readout omits
-speed for this reason, so fixing the unit means deciding which one the field is and
-updating both the JSDoc and the panel.
-
 ## Considered and skipped
 
 - **Error grouping / 401-storm detection.** With an errors-only filter on the event

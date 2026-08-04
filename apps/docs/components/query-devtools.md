@@ -254,7 +254,7 @@ that execution is the current one - so a request that only succeeded on its four
 does not read as a clean one. The next execution starts over at one.
 
 **A request that reports transfer progress** gets a bar plus
-`38% · 120.0 kB of 320.0 kB · 2.40s left`. Angular only emits progress events for a
+`38% · 120.0 kB of 320.0 kB · 50.0 kB/s · 2.40s left`. Angular only emits progress events for a
 request that asked for them, so this needs `reportProgress: true` on the query
 creator:
 
@@ -262,8 +262,8 @@ creator:
 export const getExport = getQuery<GetExportArgs>('/export', { reportProgress: true });
 ```
 
-Without it there is no progress to show, and the readout stays absent. The remaining
-time only appears once the transfer has run long enough to be estimated.
+Without it there is no progress to show, and the readout stays absent. The speed and the
+remaining time only appear once the transfer has run long enough to be estimated.
 
 Attempt counts are recorded per run, so they also show up where runs are listed: a
 `⟳ N` marker in the **History** table and on the **Timeline** bar. That is what says a

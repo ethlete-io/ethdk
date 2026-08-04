@@ -175,7 +175,8 @@ describe('createHttpRequest', () => {
           total: 100,
           loaded: i,
           percentage: i,
-          speed: 10 * 1000,
+          // 10 bytes per 1000ms tick
+          speed: 10,
           remainingTime: (10 - i / 10) * 1000,
         });
       }

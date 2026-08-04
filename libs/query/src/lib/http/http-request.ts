@@ -98,7 +98,7 @@ export type HttpRequestLoadingProgressState = {
   /** The percentage of the transfer that is completed */
   percentage: number;
 
-  /** The speed of the transfer in bytes per millisecond */
+  /** The speed of the transfer in bytes per second */
   speed: number | null;
 
   /** The estimated remaining time in milliseconds */
@@ -518,10 +518,10 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     // We only want to calculate speed and remaining time after 2 seconds of the execution
     // This is to avoid showing incorrect speed and remaining time when the request is very fast
     if (elapsedTimeSinceLastExecute > SPEED_BUFFER_TIME_IN_MS) {
-      const speed = (loadedAmount / elapsedTimeSinceLastEvent) * 1000;
+      const bytesPerSecond = (loadedAmount / elapsedTimeSinceLastEvent) * 1000;
 
-      progress.speed = speed * 1000;
-      progress.remainingTime = Math.round((event.total - event.loaded) / speed) * 1000;
+      progress.speed = bytesPerSecond;
+      progress.remainingTime = Math.round((event.total - event.loaded) / bytesPerSecond) * 1000;
     }
 
     lastLoadEventTime.set(currentTime);

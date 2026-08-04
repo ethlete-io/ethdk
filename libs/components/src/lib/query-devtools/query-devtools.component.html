@@ -1344,6 +1344,9 @@
             <span class="et-query-devtools-live-note">
               {{ formatPercent(progress.percentage) }} · {{ formatBytes(progress.loaded) }} of
               {{ formatBytes(progress.total) }}
+              @if (progress.speed !== null) {
+                · {{ formatSpeed(progress.speed) }}
+              }
               @if (progress.remainingTime !== null) {
                 · {{ formatDuration(progress.remainingTime) }} left
               }
