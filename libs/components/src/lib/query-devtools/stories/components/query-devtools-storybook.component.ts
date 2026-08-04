@@ -4,8 +4,11 @@ import {
   createPagedQueryStack,
   createQueryStack,
   ethletePaginationAdapter,
+  QueryErrorResponse,
   querySequence,
   withArgs,
+  withErrorHandling,
+  withPolling,
 } from '@ethlete/query';
 import { QUERY_DEVTOOLS_IMPORTS } from '../../query-devtools.imports';
 import {
@@ -17,6 +20,7 @@ import {
   getGqlPosts,
   getPost,
   getPosts,
+  getProfile,
   getServerTime,
 } from '../query-devtools-demo.utils';
 
@@ -40,8 +44,11 @@ const injectDemoSocket = toInjectFn(devtoolsDemoSocket);
   encapsulation: ViewEncapsulation.None,
 })
 export class QdServerTimeCardComponent {
-  protected readonly serverTime = getServerTime();
+  protected readonly serverTime = getServerTime(withPolling({ interval: 10_000 }));
 }
+
+/** Declared rather than inline so the devtools can show the handler's name. */
+const reportPostError = (error: QueryErrorResponse) => console.warn('post failed', error.raw.status);
 
 /** A GET query with a dynamic route + args. */
 @Component({
@@ -66,6 +73,7 @@ export class QdPostCardComponent {
 
   protected readonly post = getPost(
     withArgs(() => ({ pathParams: { postId: this.postId() }, queryParams: this.shouldFail() ? { fail: true } : {} })),
+    withErrorHandling({ handler: reportPostError }),
   );
 
   protected nextPost() {
@@ -133,6 +141,24 @@ export class QdPagedCardComponent {
   protected next() {
     if (this.paged.canFetchNextPage()) this.paged.fetchNextPage();
   }
+}
+
+/** A deliberately huge response - the value explorer folds it into collapsed slices. */
+@Component({
+  selector: 'et-sb-qd-large',
+  template: `
+    <h4>Large response</h4>
+    @if (large.loading()) {
+      <p>loading…</p>
+    } @else {
+      <p>{{ large.response()?.items?.length ?? 0 }} items</p>
+    }
+    <button (click)="large.execute()" type="button">Refetch</button>
+  `,
+  encapsulation: ViewEncapsulation.None,
+})
+export class QdLargeResponseCardComponent {
+  protected readonly large = getPosts(withArgs(() => ({ queryParams: { page: 1, limit: 1200 } })));
 }
 
 /** A dependent-query sequence (waterfall). */
@@ -216,6 +242,26 @@ export class QdAuthCardComponent {
   }
 }
 
+/** A secure query - it only runs once the auth card has logged in. */
+@Component({
+  selector: 'et-sb-qd-profile',
+  template: `
+    <h4>Profile (secure)</h4>
+    @if (profile.loading()) {
+      <p>loading…</p>
+    } @else if (profile.error(); as error) {
+      <p class="et-sb-devtools-error">error {{ error.raw.status }}</p>
+    } @else {
+      <p>{{ profile.response()?.name ?? 'login first' }}</p>
+    }
+    <button (click)="profile.execute()" type="button">Load</button>
+  `,
+  encapsulation: ViewEncapsulation.None,
+})
+export class QdProfileCardComponent {
+  protected readonly profile = getProfile({ onlyManualExecution: true });
+}
+
 @Component({
   selector: 'et-sb-query-devtools',
   template: `
@@ -232,8 +278,10 @@ export class QdAuthCardComponent {
         <et-sb-qd-post class="et-sb-devtools-card"></et-sb-qd-post>
         <et-sb-qd-posts-stack class="et-sb-devtools-card"></et-sb-qd-posts-stack>
         <et-sb-qd-paged class="et-sb-devtools-card"></et-sb-qd-paged>
+        <et-sb-qd-large class="et-sb-devtools-card"></et-sb-qd-large>
         <et-sb-qd-checkout class="et-sb-devtools-card"></et-sb-qd-checkout>
         <et-sb-qd-auth class="et-sb-devtools-card"></et-sb-qd-auth>
+        <et-sb-qd-profile class="et-sb-devtools-card"></et-sb-qd-profile>
         <et-sb-qd-gql class="et-sb-devtools-card"></et-sb-qd-gql>
         <et-sb-qd-ws class="et-sb-devtools-card"></et-sb-qd-ws>
       </div>
@@ -248,8 +296,10 @@ export class QdAuthCardComponent {
     QdPostCardComponent,
     QdPostsStackCardComponent,
     QdPagedCardComponent,
+    QdLargeResponseCardComponent,
     QdCheckoutCardComponent,
     QdAuthCardComponent,
+    QdProfileCardComponent,
     QdGqlCardComponent,
     QdWsCardComponent,
   ],

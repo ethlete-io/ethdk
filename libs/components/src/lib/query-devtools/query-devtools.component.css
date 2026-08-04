@@ -116,6 +116,10 @@
 
   .et-query-devtools-inspect-btn {
     appearance: none;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     border: 1px solid var(--_et-qdt-border);
     border-radius: 0.4rem;
     background: transparent;
@@ -123,16 +127,82 @@
     cursor: pointer;
     padding: 0.4rem 0.8rem;
     font: inherit;
+    transition:
+      color 120ms ease,
+      background-color 120ms ease,
+      border-color 120ms ease;
   }
 
   .et-query-devtools-inspect-btn:hover {
     color: var(--_et-qdt-fg);
+    background: color-mix(in srgb, var(--_et-qdt-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
   }
 
-  .et-query-devtools-inspect-btn--active {
+  .et-query-devtools-inspect-btn:focus-visible {
+    outline: 2px solid var(--_et-qdt-accent);
+    outline-offset: 2px;
+  }
+
+  .et-query-devtools-inspect-icon {
+    inline-size: 1.4rem;
+    block-size: 1.4rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.25;
+    stroke-linecap: round;
+  }
+
+  .et-query-devtools-inspect-icon-dot {
+    fill: currentColor;
+    stroke: none;
+  }
+
+  /* Armed inspect mode: the pointer is out in the app, not on the panel, so the button has to stay
+     noticeable in peripheral vision — hence the breathing ring around it and inside the crosshair. */
+  .et-query-devtools-inspect-btn--active,
+  .et-query-devtools-inspect-btn--active:hover {
     color: #09090b;
     background: var(--_et-qdt-accent);
     border-color: var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-inspect-btn--active::after {
+    content: '';
+    position: absolute;
+    inset: -0.3rem;
+    border: 1px solid var(--_et-qdt-accent);
+    border-radius: 0.6rem;
+    pointer-events: none;
+    animation: et-query-devtools-inspect-pulse 1.4s ease-in-out infinite;
+  }
+
+  .et-query-devtools-inspect-btn--active .et-query-devtools-inspect-icon-ring {
+    animation: et-query-devtools-inspect-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes et-query-devtools-inspect-pulse {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-query-devtools-inspect-btn {
+      transition: none;
+    }
+
+    .et-query-devtools-inspect-btn--active::after,
+    .et-query-devtools-inspect-btn--active .et-query-devtools-inspect-icon-ring {
+      animation: none;
+      opacity: 1;
+    }
   }
 
   .et-query-devtools-close {
@@ -176,6 +246,13 @@
     font-size: 1.1rem;
     line-height: 1.2;
     white-space: nowrap;
+  }
+
+  /* Same key cap on an accent-filled control, where the panel-chrome tokens have no contrast. */
+  .et-query-devtools-kbd--inverse {
+    background: rgb(0 0 0 / 0.15);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25);
+    color: inherit;
   }
 
   .et-query-devtools-inspect-box {
@@ -390,11 +467,14 @@
     color: var(--_et-qdt-subtle);
   }
 
+  /* Every row is one line tall, badge or no badge: the reserved content box is taller than both the
+     route text and a capped chip, so a query going stale can't make its row jump. */
   .et-query-devtools-row {
     display: flex;
     align-items: center;
     gap: 0.8rem;
     inline-size: 100%;
+    min-block-size: 3.6rem;
     text-align: start;
     appearance: none;
     border: none;
@@ -404,6 +484,11 @@
     padding: 0.8rem;
     cursor: pointer;
     font: inherit;
+  }
+
+  .et-query-devtools-row > .et-query-devtools-chip {
+    padding-block: 0.1rem;
+    line-height: 1.2;
   }
 
   .et-query-devtools-row:hover {
@@ -427,6 +512,16 @@
     white-space: nowrap;
     flex: 1 1 auto;
     min-inline-size: 0;
+  }
+
+  /* What differs between two rows of the same endpoint is its params, so those are picked out of the
+     static path: path params in the accent, the query string dimmed behind them. */
+  .et-query-devtools-route-param {
+    color: var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-route-query {
+    color: var(--_et-qdt-muted);
   }
 
   .et-query-devtools-status {
@@ -481,6 +576,18 @@
     background: var(--_et-qdt-hover);
   }
 
+  .et-query-devtools-btn:disabled {
+    color: var(--_et-qdt-subtle);
+    cursor: default;
+    background: transparent;
+  }
+
+  /* Trailing edge of the toolbar, whatever its leading content (client picker or inspection chip) is. */
+  .et-query-devtools-toolbar-btn {
+    margin-inline-start: auto;
+    flex: 0 0 auto;
+  }
+
   .et-query-devtools-meta {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -503,6 +610,54 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--_et-qdt-muted);
+  }
+
+  /* Counters read as figures rather than as another label/value pair, so they get tiles that wrap into
+     as many columns as the panel width allows. */
+  .et-query-devtools-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0.6rem;
+    margin: 0 0 1rem;
+  }
+
+  .et-query-devtools-stat {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 3%, transparent);
+  }
+
+  .et-query-devtools-stat dt {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--_et-qdt-muted);
+  }
+
+  .et-query-devtools-stat dd {
+    margin: 0;
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .et-query-devtools-stat-value--sm {
+    font-size: 1.2rem;
+  }
+
+  .et-query-devtools-stat-sub {
+    display: block;
+    font-size: 1rem;
+    color: var(--_et-qdt-subtle);
+  }
+
+  /* Sits at the trailing edge of a row, where it can be scanned down the list as a column of figures. */
+  .et-query-devtools-traffic {
+    margin-inline-start: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--_et-qdt-subtle);
   }
 
   .et-query-devtools-json {
@@ -565,6 +720,58 @@
     flex-wrap: wrap;
     gap: 0.4rem;
     margin-block-end: 0.8rem;
+  }
+
+  /* One grid for the whole list (rows are `display: contents`), so every feature's options start in
+     the same column however long the feature names are. */
+  .et-query-devtools-features {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem 0.8rem;
+    margin: 0 0 0.8rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Inside the meta table the row gap already separates it from the next row. */
+  .et-query-devtools-meta .et-query-devtools-features {
+    margin-block-end: 0;
+  }
+
+  .et-query-devtools-feature {
+    display: contents;
+  }
+
+  .et-query-devtools-feature > .et-query-devtools-chip {
+    justify-self: start;
+  }
+
+  .et-query-devtools-feature-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .et-query-devtools-feature-detail {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-feature-label {
+    color: var(--_et-qdt-muted);
+  }
+
+  .et-query-devtools-feature-value {
+    color: var(--_et-qdt-fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
   }
 
   .et-query-devtools-chip {
@@ -926,19 +1133,32 @@
     border-radius: 0.2rem;
   }
 
+  /* Sits inline, directly after the value / container preview it copies. A bare glyph would be a ~12px
+     click target, so the button is a 2.2rem square pulled back in by negative margins — the hit area
+     grows without the tree rows getting taller. */
   .et-query-devtools-json-copy {
     appearance: none;
-    /* Sits inline, directly after the value / container preview it copies. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
     flex: 0 0 auto;
+    inline-size: 2.2rem;
+    block-size: 2.2rem;
+    margin-block: -0.4rem;
     border: none;
+    border-radius: 0.3rem;
     background: transparent;
     color: var(--_et-qdt-subtle);
     cursor: pointer;
     opacity: 0;
     font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
   }
 
   .et-query-devtools-json-copy:hover:not(.et-query-devtools-json-copy--copied) {
+    background: var(--_et-qdt-active);
     color: var(--_et-qdt-fg);
   }
 

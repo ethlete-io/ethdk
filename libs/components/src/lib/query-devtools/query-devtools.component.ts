@@ -1,7 +1,17 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
-import { Component, computed, effect, ElementRef, inject, signal, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  ViewEncapsulation,
+  WritableSignal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { injectRenderer } from '@ethlete/core';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
@@ -12,6 +22,10 @@ import {
   QueryClient,
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
+  QueryDevtoolsFeature,
+  QueryDevtoolsStats,
+  QueryDevtoolsStatsHandle,
+  sumQueryDevtoolsStats,
   QueryKeyLockState,
   QueryRepository,
   QueryRepositoryCacheEntry,
@@ -20,7 +34,8 @@ import {
   QuerySequenceStatus,
   WebSocketDevtoolsHandle,
 } from '@ethlete/query';
-import { EMPTY, filter, fromEvent, interval, map, merge, switchMap, tap } from 'rxjs';
+import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, tap, timer } from 'rxjs';
+import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component';
@@ -32,6 +47,34 @@ type AnyQuery = Query<any>;
 type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' | 'events';
 
 type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
+
+/**
+ * A chunk of a route as rendered: literal path text, a path param (`name` is the param it fills in) or
+ * the query string of the request that ran. The kind becomes the segment's class.
+ */
+type RouteSegment = { text: string; kind: 'static' | 'param' | 'query'; name?: string };
+
+/** A query reachable from a stack or sequence card, rendered as a row that opens the detail drawer. */
+type QueryLink = {
+  id: string;
+  query: AnyQuery;
+  method: string;
+  segments: RouteSegment[];
+  clientBaseUrl: string;
+  stats?: QueryDevtoolsStatsHandle;
+};
+
+/**
+ * Query stats plus the numbers the panel derives from them rather than storing: an execution that never
+ * reached the network was answered from the cache, and the averages come from the running totals.
+ */
+type QueryActivity = {
+  stats: QueryDevtoolsStats;
+  cacheServed: number;
+  avgDurationMs: number | null;
+  avgResponseBytes: number | null;
+  hasActivity: boolean;
+};
 
 type EventLogItem = {
   id: number;
@@ -58,6 +101,11 @@ type PersistedState = {
   jsonExpanded?: string[];
   jsonCollapsed?: string[];
 };
+
+/** How long a copy button stays ticked after a successful write. */
+const COPIED_RESET_MS = 1200;
+
+const noop = () => undefined;
 
 const STORAGE_KEY = 'ethlete:query:devtools:v4';
 const MAX_EVENTS = 100;
@@ -98,6 +146,30 @@ const slimForReport = (value: unknown, depth = 0): unknown => {
   }
 
   return value;
+};
+
+/** How long an exported Insomnia collection reuses a refresh response whose token lifetime is unknown. */
+const DEFAULT_TOKEN_MAX_AGE_S = 300;
+
+/** Upper bound for the same, so a token that claims a year of life still gets refreshed hourly. */
+const MAX_TOKEN_MAX_AGE_S = 3600;
+
+/**
+ * The JSONPath of a string value inside a response, or `null`. Used to locate the access token in an
+ * auth response whose shape only the provider's `extractTokens` knows.
+ */
+const findValuePath = (value: string, node: { value: unknown; path: string; depth: number }): string | null => {
+  if (node.value === value) return node.path;
+  if (node.depth > 5 || !node.value || typeof node.value !== 'object') return null;
+
+  for (const [key, entry] of Object.entries(node.value)) {
+    const path = Array.isArray(node.value) ? `${node.path}[${key}]` : `${node.path}.${key}`;
+    const found = findValuePath(value, { value: entry, path, depth: node.depth + 1 });
+
+    if (found) return found;
+  }
+
+  return null;
 };
 
 /** Best-effort decode of a JWT payload for the auth tab. Returns `null` for anything non-decodable. */
@@ -143,6 +215,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
 })
 export class QueryDevtoolsComponent {
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
+  private renderer = injectRenderer();
   protected document = inject(DOCUMENT);
 
   private eventIdCounter = 0;
@@ -193,10 +266,20 @@ export class QueryDevtoolsComponent {
   protected editorMode = signal<'none' | 'response' | 'args'>('none');
   protected responseDraft = signal('');
   protected argsDraft = signal('');
+
+  /**
+   * The text the currently open editor was seeded with. The textareas bind `value` to this and not to
+   * the live draft: a `value` binding fed by the draft is written back on every keystroke, and writing
+   * a textarea's `value` puts the caret at the end.
+   */
+  protected editorSeed = '';
   protected editError = signal<string | null>(null);
 
-  /** Transient "Copied!" feedback for the copy-report action. */
+  /** Transient "Copied!" feedback for the copy-report, copy-as-Insomnia and copy-document actions. */
   protected copiedReport = signal(false);
+  protected copiedInsomnia = signal(false);
+  protected copiedGql = signal(false);
+  private copiedReset$ = new Subject<void>();
 
   /** 1-second tick driving the cache freshness countdowns. */
   private clock = toSignal(interval(1000), { initialValue: 0 });
@@ -311,6 +394,19 @@ export class QueryDevtoolsComponent {
       this.jsonCollapsedPaths.set(collapsed);
     };
 
+    // Each copy restarts the countdown; switchMap drops the pending reset of the previous one.
+    this.copiedReset$
+      .pipe(
+        switchMap(() => timer(COPIED_RESET_MS)),
+        tap(() => {
+          this.copiedReport.set(false);
+          this.copiedInsomnia.set(false);
+          this.copiedGql.set(false);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     // Merge every live repository's event stream into the rolling log, re-subscribing as the set of
     // repositories changes. Composed with RxJS (not a subscribe-in-effect) per the styleguide.
     toObservable(this.repositories)
@@ -359,6 +455,7 @@ export class QueryDevtoolsComponent {
       this.editorMode.set('none');
       this.editError.set(null);
       this.copiedReport.set(false);
+      this.copiedInsomnia.set(false);
 
       if (key !== this.lastSelectionKey) {
         this.lastSelectionKey = key;
@@ -450,8 +547,51 @@ export class QueryDevtoolsComponent {
 
   protected inspectLabel(entries: QueryDevtoolsEntry[]) {
     const first = entries[0];
-    if (entries.length === 1 && first) return `${first.meta.method ?? ''} ${first.meta.route ?? ''}`.trim();
+    if (entries.length === 1 && first) {
+      return `${first.meta.method ?? ''} ${this.queryRoute(first, first.handle as AnyQuery)}`.trim();
+    }
     return `${entries.length} queries`;
+  }
+
+  /**
+   * A query's route, split so the template can tell its static path from its path params (each carrying
+   * the value the query used, or `:<name>` while it has none yet) and from the query string of the
+   * request that ran - which is what tells two requests to the same endpoint apart.
+   */
+  protected routeSegments(entry: QueryDevtoolsEntry | undefined, query: AnyQuery): RouteSegment[] {
+    const parts = entry?.meta.routeParts;
+    const search = query.subtle.request()?.url.split('?')[1];
+    const querySegment: RouteSegment[] = search ? [{ text: `?${search}`, kind: 'query' }] : [];
+
+    if (!parts?.length) {
+      return entry?.meta.route ? [{ text: entry.meta.route, kind: 'static' }, ...querySegment] : [];
+    }
+
+    const pathParams = this.queryArgs(query)?.['pathParams'] as Record<string, unknown> | undefined;
+
+    const pathSegments = parts.map(({ text, param }): RouteSegment => {
+      if (!param) return { text, kind: 'static' };
+
+      const value = pathParams?.[param];
+
+      return { text: value === undefined || value === null ? `:${param}` : String(value), kind: 'param', name: param };
+    });
+
+    return [...pathSegments, ...querySegment];
+  }
+
+  /** The full URL of the request a query last made, or `null` while it has not executed. */
+  protected requestUrl(query: AnyQuery) {
+    return query.subtle.request()?.url ?? null;
+  }
+
+  /**
+   * The args of a query. A query executed imperatively (`execute({ args })`, a sequence step, an auth
+   * query) never writes them to its own `args` signal - only the `withArgs` feature does - so the args
+   * its current request was built from stand in.
+   */
+  protected queryArgs(query: AnyQuery) {
+    return query.args() ?? query.subtle.request()?.args ?? null;
   }
 
   protected queryStatus(query: AnyQuery): QueryStatus {
@@ -468,6 +608,49 @@ export class QueryDevtoolsComponent {
     } catch {
       return false;
     }
+  }
+
+  protected queryActivity(entry: QueryDevtoolsEntry): QueryActivity {
+    return this.activityOf([entry.stats]);
+  }
+
+  protected linkActivity(link: QueryLink): QueryActivity {
+    return this.activityOf([link.stats]);
+  }
+
+  protected stackActivity(stack: AnyQueryStack | AnyPagedQueryStack): QueryActivity {
+    return this.activityOf(this.queriesForStack(stack).map((link) => link.stats));
+  }
+
+  protected sequenceActivity(sequence: QuerySequence<unknown[]>): QueryActivity {
+    return this.activityOf(this.queriesForSequence(sequence).map((link) => link.stats));
+  }
+
+  /** Clears an entry's counters, so the next interaction can be measured on its own. */
+  protected resetStats(entry: QueryDevtoolsEntry) {
+    entry.stats?.reset();
+  }
+
+  /** A byte count the way a network panel spells one out. */
+  protected formatBytes(bytes: number) {
+    if (bytes < 1000) return `${bytes} B`;
+    if (bytes < 1_000_000) return `${(bytes / 1000).toFixed(1)} kB`;
+
+    return `${(bytes / 1_000_000).toFixed(2)} MB`;
+  }
+
+  /**
+   * A transferred size, marked `≈` when any part of it was measured from a decoded body instead of read
+   * from a `content-length` header - such a size ignores transport compression.
+   */
+  protected formatTransferred(bytes: number, isEstimated: boolean) {
+    return `${isEstimated ? '≈' : ''}${this.formatBytes(bytes)}`;
+  }
+
+  protected formatDuration(ms: number | null) {
+    if (ms === null) return '—';
+
+    return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
   }
 
   protected executeQuery(query: AnyQuery, allowCache: boolean) {
@@ -487,11 +670,19 @@ export class QueryDevtoolsComponent {
     const error = query.error();
     const httpStatus = error ? error.raw.status : this.responseStatus(query);
     const method = entry.meta.method ?? '';
-    const route = entry.meta.route || '-';
-    const client = entry.meta.clientBaseUrl ?? entry.meta.clientName ?? '';
+
+    // The URL actually requested already contains the base URL and the resolved params, so the client
+    // is only spelled out separately when the query has not run and only its `:param` template is known.
+    const requestUrl = this.requestUrl(query);
+    const route = requestUrl ?? entry.meta.route ?? '-';
+    const client = requestUrl ? '' : (entry.meta.clientBaseUrl ?? entry.meta.clientName ?? '');
     const statusLine = `status: ${this.queryStatus(query)}${httpStatus !== null ? ` (${httpStatus})` : ''} · ${this.formatTime(query.lastTimeExecutedAt())}`;
+    const features = entry.meta.features?.length
+      ? `features: ${entry.meta.features.map((feature) => this.featureSummary(feature)).join(' | ')}`
+      : null;
+    const activity = this.activitySummary(this.queryActivity(entry));
     const gqlDoc = entry.meta.gqlQuery ? this.gqlDocument(entry.meta.gqlQuery) : null;
-    const args = query.args();
+    const args = this.queryArgs(query);
     const argsLabel = gqlDoc ? 'Variables' : 'Args';
     const argsJson = args !== null && args !== undefined ? JSON.stringify(args, null, 2) : null;
     const bodyLabel = error ? `Error (${error.raw.status})` : 'Response';
@@ -502,6 +693,8 @@ export class QueryDevtoolsComponent {
       : JSON.stringify(slimForReport(query.response()), null, 2);
 
     const textParts = [`${method} ${route}${client ? ` - ${client}` : ''}`, statusLine];
+    if (activity) textParts.push(activity);
+    if (features) textParts.push(features);
     if (gqlDoc) textParts.push('', 'GraphQL document', gqlDoc);
     if (argsJson) textParts.push('', argsLabel, argsJson);
     textParts.push('', bodyLabel, bodyContent);
@@ -512,24 +705,80 @@ export class QueryDevtoolsComponent {
       `<b>${esc(method)}</b> <code>${esc(route)}</code>${client ? ` - <code>${esc(client)}</code>` : ''}`,
       esc(statusLine),
     ];
+    if (activity) htmlParts.push(esc(activity));
+    if (features) htmlParts.push(esc(features));
     if (gqlDoc) htmlParts.push('<b>GraphQL document</b>', `<pre><code>${esc(gqlDoc)}</code></pre>`);
     if (argsJson) htmlParts.push(`<b>${argsLabel}</b>`, `<pre><code>${esc(argsJson)}</code></pre>`);
     htmlParts.push(`<b>${esc(bodyLabel)}</b>`, `<pre><code>${esc(bodyContent)}</code></pre>`);
     const html = htmlParts.join('<br>');
 
-    this.writeToClipboard(html, text);
+    this.writeToClipboard({ html, text }, this.copiedReport);
+  }
+
+  // --- Insomnia export ---
+
+  /** Copies one query as an Insomnia collection, for `Import > From Clipboard`. */
+  protected copyInsomniaRequest(entry: QueryDevtoolsEntry, query: AnyQuery) {
+    const requests = [this.insomniaRequest(entry, query)];
+    const json = JSON.stringify(
+      buildInsomniaExport({
+        name: `${entry.meta.clientName ?? 'query'} · ${this.queryRoute(entry, query) || 'request'}`,
+        requests,
+        tokenRefreshes: this.insomniaTokenRefreshes(requests),
+        now: Date.now(),
+      }),
+      null,
+      2,
+    );
+
+    this.writeToClipboard({ text: json }, this.copiedInsomnia);
+  }
+
+  /** Copies the GraphQL document as displayed — dedented, so it pastes straight into a playground. */
+  protected copyGqlDocument(doc: string) {
+    this.writeToClipboard({ text: this.gqlDocument(doc) }, this.copiedGql);
+  }
+
+  /**
+   * Downloads every query currently listed (so the client filter and the inspection filter both apply)
+   * as one Insomnia collection, filed into a folder per query client.
+   */
+  protected downloadInsomniaCollection() {
+    const items = this.filteredQueries();
+    if (!items.length) return;
+
+    const client = this.selectedClientName();
+    const requests = items.map(({ entry, query }) => this.insomniaRequest(entry, query));
+    const json = JSON.stringify(
+      buildInsomniaExport({
+        name: `${client ?? 'ethlete'} queries`,
+        requests,
+        tokenRefreshes: this.insomniaTokenRefreshes(requests),
+        now: Date.now(),
+      }),
+      null,
+      2,
+    );
+
+    this.downloadFile(`insomnia-${client ?? 'ethlete'}-queries.json`, json);
   }
 
   // --- JIT editing ---
 
   protected openResponseEditor(query: AnyQuery) {
-    this.responseDraft.set(JSON.stringify(query.response() ?? null, null, 2));
+    const draft = JSON.stringify(query.response() ?? null, null, 2);
+
+    this.editorSeed = draft;
+    this.responseDraft.set(draft);
     this.editError.set(null);
     this.editorMode.set('response');
   }
 
   protected openArgsEditor(query: AnyQuery) {
-    this.argsDraft.set(JSON.stringify(query.args() ?? {}, null, 2));
+    const draft = JSON.stringify(this.queryArgs(query) ?? {}, null, 2);
+
+    this.editorSeed = draft;
+    this.argsDraft.set(draft);
     this.editError.set(null);
     this.editorMode.set('args');
   }
@@ -707,9 +956,7 @@ export class QueryDevtoolsComponent {
     return decodeJwtPayload(auth.accessToken());
   }
 
-  protected queriesForStack(
-    stack: AnyQueryStack | AnyPagedQueryStack,
-  ): { id: string; query: AnyQuery; method: string; route: string; clientName: string; clientBaseUrl: string }[] {
+  protected queriesForStack(stack: AnyQueryStack | AnyPagedQueryStack): QueryLink[] {
     const inner = stack.queries();
     const queryEntries = this.queryEntries();
 
@@ -719,9 +966,9 @@ export class QueryDevtoolsComponent {
         id: entry?.id ?? '',
         query: query as AnyQuery,
         method: entry?.meta.method ?? '',
-        route: entry?.meta.route ?? '',
-        clientName: entry?.meta.clientName ?? '',
+        segments: this.routeSegments(entry, query as AnyQuery),
         clientBaseUrl: entry?.meta.clientBaseUrl ?? '',
+        stats: entry?.stats,
       };
     });
   }
@@ -729,11 +976,7 @@ export class QueryDevtoolsComponent {
   /** Identifying info for a stack, derived from its (uniform) inner queries. */
   protected stackIdentity(stack: AnyQueryStack | AnyPagedQueryStack) {
     const first = this.queriesForStack(stack)[0];
-    return { method: first?.method ?? '', route: first?.route ?? '', baseUrl: first?.clientBaseUrl ?? '' };
-  }
-
-  protected authFeatures(auth: AnyBearerAuthProvider): string[] {
-    return Object.keys(auth.features ?? {});
+    return { method: first?.method ?? '', segments: first?.segments ?? [], baseUrl: first?.clientBaseUrl ?? '' };
   }
 
   protected authQueryKeys(auth: AnyBearerAuthProvider): string[] {
@@ -755,9 +998,7 @@ export class QueryDevtoolsComponent {
     return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
   }
 
-  protected queriesForSequence(
-    sequence: QuerySequence<unknown[]>,
-  ): { id: string; query: AnyQuery; method: string; route: string }[] {
+  protected queriesForSequence(sequence: QuerySequence<unknown[]>): QueryLink[] {
     const queryEntries = this.queryEntries();
 
     return sequence.queries.map((query) => {
@@ -766,7 +1007,9 @@ export class QueryDevtoolsComponent {
         id: entry?.id ?? '',
         query: query as AnyQuery,
         method: entry?.meta.method ?? '',
-        route: entry?.meta.route ?? '',
+        segments: this.routeSegments(entry, query as AnyQuery),
+        clientBaseUrl: entry?.meta.clientBaseUrl ?? '',
+        stats: entry?.stats,
       };
     });
   }
@@ -808,6 +1051,20 @@ export class QueryDevtoolsComponent {
       .toLowerCase();
   }
 
+  /** A feature and its options on one line, for a report or a chip's tooltip. */
+  public featureSummary(feature: QueryDevtoolsFeature) {
+    const details = feature.details.map((detail) => `${detail.label} ${detail.value}`);
+
+    return [this.featureLabel(feature.type), ...details].join(' · ');
+  }
+
+  /** The features of the client behind a cache tab card, or `null` for a client without any. */
+  protected clientFeatures(client: QueryClient | null | undefined) {
+    const features = client?.subtle.devtoolsFeatures ?? [];
+
+    return features.length ? features : null;
+  }
+
   protected formatTime(timestamp: number | null) {
     if (!timestamp) return '-';
     return new Date(timestamp).toLocaleTimeString(undefined, { hour12: false });
@@ -817,6 +1074,173 @@ export class QueryDevtoolsComponent {
     if (event.type === 'unbind-all-secure') return 'logout';
 
     return event.type === 'request-error' ? `error ${event.status}` : 'success';
+  }
+
+  /** The activity of one entry, or the total of a group of them (a stack's queries, a whole tab). */
+  private activityOf(handles: readonly (QueryDevtoolsStatsHandle | undefined)[]): QueryActivity {
+    const stats = sumQueryDevtoolsStats(handles);
+
+    return {
+      stats,
+      cacheServed: Math.max(0, stats.executions - stats.requests),
+      avgDurationMs: stats.responses ? Math.round(stats.totalDurationMs / stats.responses) : null,
+      avgResponseBytes: stats.responses ? Math.round(stats.receivedBytes / stats.responses) : null,
+      hasActivity: stats.executions > 0,
+    };
+  }
+
+  /** An activity summary on one line, for a report. `null` for a query that has not run. */
+  private activitySummary(activity: QueryActivity) {
+    if (!activity.hasActivity) return null;
+
+    const { stats } = activity;
+    const parts = [
+      `${stats.executions} execution${stats.executions === 1 ? '' : 's'}`,
+      `${stats.requests} request${stats.requests === 1 ? '' : 's'}`,
+      `↓ ${this.formatTransferred(stats.receivedBytes, stats.hasEstimatedBytes)}`,
+    ];
+
+    if (stats.sentBytes) parts.push(`↑ ${this.formatTransferred(stats.sentBytes, stats.hasEstimatedBytes)}`);
+    if (stats.errors) parts.push(`${stats.errors} failed`);
+    if (activity.avgDurationMs !== null) parts.push(`avg ${this.formatDuration(activity.avgDurationMs)}`);
+
+    return `activity: ${parts.join(' · ')}`;
+  }
+
+  /** {@link routeSegments} as a plain string, for the places that cannot render markup. */
+  private queryRoute(entry: QueryDevtoolsEntry | undefined, query: AnyQuery) {
+    return this.routeSegments(entry, query)
+      .map((segment) => segment.text)
+      .join('');
+  }
+
+  /**
+   * Describes a query the way a replay outside the app needs it: the URL, headers and body of the
+   * request it last made, or - for a query that has not run - what its current args would send.
+   */
+  private insomniaRequest(entry: QueryDevtoolsEntry, query: AnyQuery): InsomniaRequestInput {
+    const request = query.subtle.request();
+    const args = this.queryArgs(query) as { body?: unknown; headers?: unknown } | null;
+    const route = this.queryRoute(entry, query);
+
+    return {
+      // A GraphQL query has no HTTP method of its own until it runs; its transport is POST unless the
+      // creator says otherwise, which is only knowable from the request.
+      method: request?.method ?? (entry.meta.gqlQuery ? 'POST' : (entry.meta.method ?? 'GET')),
+      url: request?.url ?? `${entry.meta.clientBaseUrl ?? ''}${route}`,
+      // Query params are part of the name so that several requests to the same endpoint (the pages of a
+      // stack, a search) stay tellable apart in Insomnia's sidebar.
+      name: `${entry.meta.method ?? ''} ${request ? this.requestPath(request.url) : route || query.id() || 'request'}`.trim(),
+      headers: this.insomniaHeaders(request, args),
+      body: args?.body ?? null,
+      gqlQuery: entry.meta.gqlQuery ? this.gqlDocument(entry.meta.gqlQuery) : null,
+      group: entry.meta.clientName ?? null,
+      secureBy: entry.meta.isSecure ? (entry.meta.authProviderName ?? null) : null,
+    };
+  }
+
+  /**
+   * The token refreshes the given requests authenticate with - one per auth provider they name, and
+   * only for a provider that is logged in, since a refresh request without a refresh token has
+   * nothing to send.
+   */
+  private insomniaTokenRefreshes(requests: InsomniaRequestInput[]) {
+    const names = new Set(
+      requests.map((request) => request.secureBy).filter((name): name is string => typeof name === 'string'),
+    );
+
+    return Array.from(names)
+      .map((name) => this.insomniaTokenRefresh(name))
+      .filter((refresh): refresh is InsomniaTokenRefreshInput => refresh !== null);
+  }
+
+  private insomniaTokenRefresh(providerName: string): InsomniaTokenRefreshInput | null {
+    const entry = this.authEntries().find((candidate) => candidate.meta.name === providerName);
+    const refresh = entry?.meta.authQueries?.find((authQuery) => authQuery.kind === 'token-refresh');
+
+    if (!entry || !refresh) return null;
+
+    const provider = entry.handle as AnyBearerAuthProvider;
+    const refreshToken = provider.refreshToken();
+
+    if (!refreshToken) return null;
+
+    return {
+      id: providerName,
+      name: `${refresh.method} ${refresh.route} (token refresh)`,
+      method: refresh.method,
+      url: `${entry.meta.clientBaseUrl ?? ''}${refresh.route}`,
+      headers: [],
+      body: refresh.buildArgs?.(refreshToken).body ?? null,
+      group: entry.meta.clientName ?? null,
+      accessTokenPath: this.accessTokenPath(provider),
+      maxAgeSeconds: this.accessTokenMaxAge(provider),
+    };
+  }
+
+  /**
+   * Where the access token sits in the refresh response. A provider's `extractTokens` can pull it out
+   * of any shape, so the path is recovered by finding the live token in the last auth response - with
+   * the default extractor's `$.accessToken` as the fallback.
+   */
+  private accessTokenPath(provider: AnyBearerAuthProvider) {
+    const token = provider.accessToken();
+    const response = provider.latestExecutedQuery()?.snapshot.response();
+
+    const path = token && response ? findValuePath(token, { value: response, path: '$', depth: 0 }) : null;
+
+    return path ?? '$.accessToken';
+  }
+
+  /**
+   * How long Insomnia may reuse a stored refresh response: the access token's own lifetime with a
+   * margin, so the chain refreshes shortly before the token it hands out would expire. Capped at an
+   * hour - a long-lived (or bogus) `exp` should still hand out a token minted this session.
+   */
+  private accessTokenMaxAge(provider: AnyBearerAuthProvider) {
+    const payload = decodeJwtPayload(provider.accessToken());
+    const exp = payload?.['exp'];
+    const iat = payload?.['iat'];
+
+    if (typeof exp !== 'number') return DEFAULT_TOKEN_MAX_AGE_S;
+
+    const lifetime = exp - (typeof iat === 'number' ? iat : Math.floor(Date.now() / 1000));
+
+    if (lifetime <= 0) return DEFAULT_TOKEN_MAX_AGE_S;
+
+    return Math.min(MAX_TOKEN_MAX_AGE_S, Math.max(60, Math.round(lifetime * 0.9)));
+  }
+
+  /**
+   * The headers a replay needs, including the ones the query client adds. Header providers can throw
+   * (a secure query's needs an access token), in which case the request is exported without them.
+   */
+  private insomniaHeaders(
+    request: { subtle: { resolveHeaders: () => HttpHeaders | undefined } } | null | undefined,
+    args: { headers?: unknown } | null,
+  ) {
+    try {
+      const headers = request
+        ? request.subtle.resolveHeaders()
+        : typeof args?.headers === 'function'
+          ? (args.headers as () => HttpHeaders)()
+          : (args?.headers as HttpHeaders | undefined);
+
+      return (headers?.keys() ?? []).map((name) => ({ name, value: headers?.getAll(name)?.join(', ') ?? '' }));
+    } catch {
+      return [];
+    }
+  }
+
+  private downloadFile(fileName: string, content: string) {
+    const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
+    const anchor = this.renderer.createElement('a');
+
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+
+    URL.revokeObjectURL(url);
   }
 
   private stepKey(entryId: string, index: number) {
@@ -882,33 +1306,32 @@ export class QueryDevtoolsComponent {
     return `${this.selectedQueryId()}|${this.stackSelectedQueryId()}|${this.sequenceSelectedQueryId()}`;
   }
 
-  private writeToClipboard(html: string, text: string) {
+  /** Writes to the clipboard and ticks `copied` on success. `html` is omitted for plain-text payloads. */
+  private writeToClipboard(payload: { text: string; html?: string }, copied: WritableSignal<boolean>) {
     const clipboard = navigator.clipboard;
+    const { text, html } = payload;
     if (!clipboard) return;
 
+    const flag = () => {
+      copied.set(true);
+      this.copiedReset$.next();
+    };
+
     // Prefer rich HTML (Slack keeps the formatting on paste); fall back to plain text.
-    if ('write' in clipboard && typeof ClipboardItem !== 'undefined') {
+    if (html !== undefined && 'write' in clipboard && typeof ClipboardItem !== 'undefined') {
       const item = new ClipboardItem({
         'text/html': new Blob([html], { type: 'text/html' }),
         'text/plain': new Blob([text], { type: 'text/plain' }),
       });
       clipboard
         .write([item])
-        .then(() => this.copiedReport.set(true))
-        .catch(() =>
-          clipboard
-            .writeText(text)
-            .then(() => this.copiedReport.set(true))
-            .catch(() => undefined),
-        );
+        .then(flag)
+        .catch(() => clipboard.writeText(text).then(flag).catch(noop));
 
       return;
     }
 
-    clipboard
-      .writeText(text)
-      .then(() => this.copiedReport.set(true))
-      .catch(() => undefined);
+    clipboard.writeText(text).then(flag).catch(noop);
   }
 
   private responseStatus(query: AnyQuery): number | null {

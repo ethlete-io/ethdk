@@ -6,11 +6,16 @@ import {
   createGqlQueryViaPost,
   createPostQuery,
   createQueryClient,
+  createSecureGetQuery,
   createWebSocketClient,
   gql,
   withAuthenticationQuery,
+  withBearerAuthMultiTabSync,
+  withEthleteApiErrors,
+  withMultiTabSync,
   withPersistentAuth,
   withRefreshQuery,
+  withTokenExpirationWarning,
 } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
 import { delay, mergeMap, of, throwError } from 'rxjs';
@@ -115,6 +120,8 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
     return respond({ token: fakeJwt(), refresh_token: 'demo-refresh-token' });
   }
 
+  if (path === '/me') return respond({ id: 'user-1', name: 'Demo User' });
+
   if (path === '/orders') return respond({ id: 'order-1' });
   if (path === '/payments') return respond({ id: 'payment-1' });
   if (path === '/orders/confirm') return respond({ confirmed: true });
@@ -135,6 +142,7 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
 export const devtoolsDemoClient = createQueryClient({
   name: 'devtools-demo',
   baseUrl: DEVTOOLS_DEMO_API_URL,
+  features: [withMultiTabSync({ dedupePolling: false }), withEthleteApiErrors()],
 });
 
 const getQuery = createGetQuery(devtoolsDemoClient);
@@ -177,8 +185,15 @@ export const devtoolsDemoAuthProvider = createBearerAuthProvider({
         buildArgs: (token) => ({ body: { refresh_token: token } }),
       },
     }),
+    withTokenExpirationWarning({ warningThreshold: 60_000 }),
+    withBearerAuthMultiTabSync(),
   ],
 });
+
+export type GetProfileArgs = { response: { id: string; name: string } };
+
+/** A secure query, so the Insomnia export has something to chain to the provider's token refresh. */
+export const getProfile = createSecureGetQuery(devtoolsDemoClient, devtoolsDemoAuthProvider)<GetProfileArgs>('/me');
 
 export type CreateOrderArgs = { body: { item: string }; response: { id: string } };
 export type CreatePaymentArgs = { body: { orderId: string }; response: { id: string } };

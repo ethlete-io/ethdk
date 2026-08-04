@@ -29,12 +29,29 @@
       <div class="et-query-devtools-header-actions">
         <button
           [class.et-query-devtools-inspect-btn--active]="inspectActive()"
+          [attr.aria-pressed]="inspectActive()"
           (click)="toggleInspect()"
           class="et-query-devtools-inspect-btn"
           type="button"
           title="Inspect: hover the UI to find its query"
         >
-          ⌖ Inspect
+          <svg
+            class="et-query-devtools-inspect-icon"
+            viewBox="0 0 16 16"
+            width="14"
+            height="14"
+            fill="none"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <circle class="et-query-devtools-inspect-icon-ring" cx="8" cy="8" r="4.25" />
+            <circle class="et-query-devtools-inspect-icon-dot" cx="8" cy="8" r="1.15" />
+            <path d="M8 0.9v2.1M8 13v2.1M0.9 8h2.1M13 8h2.1" />
+          </svg>
+          {{ inspectActive() ? 'Inspecting' : 'Inspect' }}
+          @if (inspectActive()) {
+            <kbd class="et-query-devtools-kbd et-query-devtools-kbd--inverse">Esc</kbd>
+          }
         </button>
         <button
           (click)="toggleOpen()"
@@ -88,6 +105,15 @@
                   </label>
                   <span class="et-query-devtools-count">{{ filteredQueries().length }}</span>
                 }
+                <button
+                  [disabled]="!filteredQueries().length"
+                  (click)="downloadInsomniaCollection()"
+                  class="et-query-devtools-btn et-query-devtools-toolbar-btn"
+                  type="button"
+                  title="Download the listed queries as an Insomnia collection, with the auth provider's token refresh"
+                >
+                  ⤓ Insomnia
+                </button>
               </div>
 
               @for (item of filteredQueries(); track item.entry.id) {
@@ -103,7 +129,14 @@
                     class="et-query-devtools-status"
                   ></span>
                   <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
-                  <span class="et-query-devtools-route">{{ item.entry.meta.route || '—' }}</span>
+                  <span class="et-query-devtools-route">
+                    <ng-container
+                      *ngTemplateOutlet="
+                        routeTpl;
+                        context: { segments: routeSegments(item.entry, item.query), fallback: '—' }
+                      "
+                    />
+                  </span>
                   @if (isStale(item.query)) {
                     <span class="et-query-devtools-chip et-query-devtools-chip--muted">stale</span>
                   }
@@ -148,15 +181,15 @@
                     @let pagedId = stackIdentity(paged);
                     <div class="et-query-devtools-card-title">
                       <span class="et-query-devtools-method">{{ pagedId.method }}</span>
-                      <span class="et-query-devtools-route">{{ pagedId.route }}</span>
+                      <span class="et-query-devtools-route">
+                        <ng-container
+                          *ngTemplateOutlet="routeTpl; context: { segments: pagedId.segments, fallback: '—' }"
+                        />
+                      </span>
                     </div>
                     <div class="et-query-devtools-card-sub et-query-devtools-mono">{{ pagedId.baseUrl }}</div>
-                    @if (entry.meta.featureTypes?.length) {
-                      <div class="et-query-devtools-chips">
-                        @for (feature of entry.meta.featureTypes; track feature) {
-                          <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
-                        }
-                      </div>
+                    @if (entry.meta.features?.length) {
+                      <ng-container *ngTemplateOutlet="featuresTpl; context: { features: entry.meta.features }" />
                     }
 
                     <dl class="et-query-devtools-meta">
@@ -168,6 +201,7 @@
                       <dd>{{ paged.isFirstPageLoaded() }}</dd>
                       <dt>Last page loaded</dt>
                       <dd>{{ paged.isLastPageLoaded() }}</dd>
+                      <ng-container *ngTemplateOutlet="activityRowTpl; context: { activity: stackActivity(paged) }" />
                     </dl>
                     <ng-container *ngTemplateOutlet="innerQueriesTpl; context: { links: queriesForStack(paged) }" />
                   </div>
@@ -187,15 +221,15 @@
                     @let stackId = stackIdentity(stack);
                     <div class="et-query-devtools-card-title">
                       <span class="et-query-devtools-method">{{ stackId.method }}</span>
-                      <span class="et-query-devtools-route">{{ stackId.route }}</span>
+                      <span class="et-query-devtools-route">
+                        <ng-container
+                          *ngTemplateOutlet="routeTpl; context: { segments: stackId.segments, fallback: '—' }"
+                        />
+                      </span>
                     </div>
                     <div class="et-query-devtools-card-sub et-query-devtools-mono">{{ stackId.baseUrl }}</div>
-                    @if (entry.meta.featureTypes?.length) {
-                      <div class="et-query-devtools-chips">
-                        @for (feature of entry.meta.featureTypes; track feature) {
-                          <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
-                        }
-                      </div>
+                    @if (entry.meta.features?.length) {
+                      <ng-container *ngTemplateOutlet="featuresTpl; context: { features: entry.meta.features }" />
                     }
 
                     <dl class="et-query-devtools-meta">
@@ -205,6 +239,7 @@
                       <dd>{{ stack.loadingProgress().loaded }} / {{ stack.loadingProgress().total }}</dd>
                       <dt>Errors</dt>
                       <dd>{{ stack.errors().length }}</dd>
+                      <ng-container *ngTemplateOutlet="activityRowTpl; context: { activity: stackActivity(stack) }" />
                     </dl>
                     <ng-container *ngTemplateOutlet="innerQueriesTpl; context: { links: queriesForStack(stack) }" />
                   </div>
@@ -249,6 +284,12 @@
                       >
                     </div>
 
+                    <dl class="et-query-devtools-meta">
+                      <ng-container
+                        *ngTemplateOutlet="activityRowTpl; context: { activity: sequenceActivity(sequence) }"
+                      />
+                    </dl>
+
                     <ol class="et-query-devtools-step-list">
                       @for (link of queriesForSequence(sequence); track $index; let i = $index) {
                         <li [attr.data-status]="sequenceStepStatus(sequence, i)" class="et-query-devtools-step-item">
@@ -265,7 +306,14 @@
                                 class="et-query-devtools-status"
                               ></span>
                               <span class="et-query-devtools-method">{{ i + 1 }}. {{ link.method }}</span>
-                              <span class="et-query-devtools-route">{{ link.route || 'step ' + (i + 1) }}</span>
+                              <span class="et-query-devtools-route">
+                                <ng-container
+                                  *ngTemplateOutlet="
+                                    routeTpl;
+                                    context: { segments: link.segments, fallback: 'step ' + (i + 1) }
+                                  "
+                                />
+                              </span>
                             </button>
                             <button
                               [attr.aria-expanded]="isStepExpanded(entry.id, i)"
@@ -371,14 +419,10 @@
                       </div>
                     </dd>
                   }
-                  @if (authFeatures(auth).length) {
+                  @if (entry.meta.features?.length) {
                     <dt>Features</dt>
                     <dd>
-                      <div class="et-query-devtools-chips">
-                        @for (feature of authFeatures(auth); track feature) {
-                          <span class="et-query-devtools-chip">{{ feature }}</span>
-                        }
-                      </div>
+                      <ng-container *ngTemplateOutlet="featuresTpl; context: { features: entry.meta.features }" />
                     </dd>
                   }
                 </dl>
@@ -467,6 +511,9 @@
                     </button>
                   }
                 </div>
+                @if (clientFeatures(client.client); as features) {
+                  <ng-container *ngTemplateOutlet="featuresTpl; context: { features }" />
+                }
                 <table class="et-query-devtools-table">
                   <thead>
                     <tr>
@@ -566,6 +613,59 @@
       }
     </div>
 
+    <!-- A route with its path params and query string picked out from the static path. The segments must
+         stay element-only: a text node between them would render as a space inside the route. -->
+    <ng-template #routeTpl let-segments="segments" let-fallback="fallback">
+      @for (segment of segments; track $index) {
+        <span [class]="'et-query-devtools-route-' + segment.kind" [attr.title]="segment.name">{{ segment.text }}</span>
+      } @empty {
+        {{ fallback }}
+      }
+    </ng-template>
+
+    <!-- Reusable dt/dd pair for a card's `et-query-devtools-meta` list: what its queries ran and moved. -->
+    <ng-template #activityRowTpl let-activity="activity">
+      <dt>Traffic</dt>
+      <dd>
+        @if (activity.hasActivity) {
+          {{ activity.stats.requests }} request{{ activity.stats.requests === 1 ? '' : 's' }} · ↓
+          {{ formatTransferred(activity.stats.receivedBytes, activity.stats.hasEstimatedBytes) }}
+          @if (activity.stats.sentBytes) {
+            · ↑ {{ formatTransferred(activity.stats.sentBytes, activity.stats.hasEstimatedBytes) }}
+          }
+          @if (activity.cacheServed) {
+            · {{ activity.cacheServed }} from cache
+          }
+          @if (activity.stats.errors) {
+            · {{ activity.stats.errors }} failed
+          }
+        } @else {
+          —
+        }
+      </dd>
+    </ng-template>
+
+    <!-- Reusable feature list: the feature's name, followed by the options it was configured with. -->
+    <ng-template #featuresTpl let-features="features">
+      <ul class="et-query-devtools-features">
+        @for (feature of features; track feature.type) {
+          <li class="et-query-devtools-feature">
+            <span class="et-query-devtools-chip">{{ featureLabel(feature.type) }}</span>
+            <!-- Always rendered: the list is one grid, so a feature without options still needs its cell
+                 for the next row's chip to stay in the same column. -->
+            <span class="et-query-devtools-feature-details">
+              @for (detail of feature.details; track detail.label) {
+                <span class="et-query-devtools-feature-detail">
+                  <span class="et-query-devtools-feature-label">{{ detail.label }}</span>
+                  <span class="et-query-devtools-feature-value">{{ detail.value }}</span>
+                </span>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    </ng-template>
+
     <!-- Reusable inner-query list (stacks) — clicking opens the split-view drawer, not a tab switch. -->
     <ng-template #innerQueriesTpl let-links="links">
       <div class="et-query-devtools-inner-queries">
@@ -579,7 +679,20 @@
           >
             <span [attr.data-status]="queryStatus(link.query)" class="et-query-devtools-status"></span>
             <span class="et-query-devtools-method">{{ link.method }}</span>
-            <span class="et-query-devtools-route">{{ link.route || link.query.id() || 'query ' + ($index + 1) }}</span>
+            <span class="et-query-devtools-route">
+              <ng-container
+                *ngTemplateOutlet="
+                  routeTpl;
+                  context: { segments: link.segments, fallback: link.query.id() || 'query ' + ($index + 1) }
+                "
+              />
+            </span>
+            @let linkStats = linkActivity(link);
+            @if (linkStats.hasActivity) {
+              <span class="et-query-devtools-traffic">
+                {{ formatTransferred(linkStats.stats.receivedBytes, linkStats.stats.hasEstimatedBytes) }}
+              </span>
+            }
           </button>
         }
       </div>
@@ -589,7 +702,11 @@
     <ng-template #queryDetailTpl let-sel="sel">
       <div class="et-query-devtools-detail-head">
         <span class="et-query-devtools-method">{{ sel.entry.meta.method }}</span>
-        <span class="et-query-devtools-route">{{ sel.entry.meta.route || '—' }}</span>
+        <span class="et-query-devtools-route">
+          <ng-container
+            *ngTemplateOutlet="routeTpl; context: { segments: routeSegments(sel.entry, sel.query), fallback: '—' }"
+          />
+        </span>
       </div>
 
       <div class="et-query-devtools-actions">
@@ -599,6 +716,14 @@
         <button (click)="resetQuery(sel.query)" class="et-query-devtools-btn" type="button">Reset</button>
         <button (click)="copyReport(sel.entry, sel.query)" class="et-query-devtools-btn" type="button">
           {{ copiedReport() ? '✓ Copied' : 'Copy report' }}
+        </button>
+        <button
+          (click)="copyInsomniaRequest(sel.entry, sel.query)"
+          class="et-query-devtools-btn"
+          type="button"
+          title="Copy as an Insomnia collection (Import → From Clipboard). Includes the request headers, and the token refresh for a secure query."
+        >
+          {{ copiedInsomnia() ? '✓ Copied' : 'Insomnia' }}
         </button>
         <span class="et-query-devtools-actions-label">Edit</span>
         <button (click)="openResponseEditor(sel.query)" class="et-query-devtools-btn" type="button">Response</button>
@@ -616,7 +741,7 @@
             <h4 class="et-query-devtools-section">Edit response → setResponse()</h4>
             <textarea
               #respArea
-              [value]="responseDraft()"
+              [value]="editorSeed"
               (input)="responseDraft.set(respArea.value)"
               class="et-query-devtools-textarea"
               spellcheck="false"
@@ -629,7 +754,7 @@
             <h4 class="et-query-devtools-section">Replay with edited args → execute()</h4>
             <textarea
               #argsArea
-              [value]="argsDraft()"
+              [value]="editorSeed"
               (input)="argsDraft.set(argsArea.value)"
               class="et-query-devtools-textarea"
               spellcheck="false"
@@ -648,6 +773,10 @@
       <dl class="et-query-devtools-meta">
         <dt>Base URL</dt>
         <dd class="et-query-devtools-mono">{{ sel.entry.meta.clientBaseUrl || sel.entry.meta.clientName || '—' }}</dd>
+        <dt>Route</dt>
+        <dd class="et-query-devtools-mono">{{ sel.entry.meta.route || '—' }}</dd>
+        <dt>Request URL</dt>
+        <dd class="et-query-devtools-mono">{{ requestUrl(sel.query) || '—' }}</dd>
         <dt>Status</dt>
         <dd>{{ queryStatus(sel.query) }}</dd>
         <dt>Cache key</dt>
@@ -656,20 +785,90 @@
         <dd>{{ formatTime(sel.query.lastTimeExecutedAt()) }}</dd>
         <dt>Triggered by</dt>
         <dd>{{ sel.query.triggeredBy() || 'user' }}</dd>
-        @if (sel.entry.meta.featureTypes?.length) {
+        @if (sel.entry.meta.features?.length) {
           <dt>Features</dt>
           <dd>
-            <div class="et-query-devtools-chips">
-              @for (feature of sel.entry.meta.featureTypes; track feature) {
-                <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
-              }
-            </div>
+            <ng-container *ngTemplateOutlet="featuresTpl; context: { features: sel.entry.meta.features }" />
           </dd>
         }
       </dl>
 
+      @let activity = queryActivity(sel.entry);
+      <div class="et-query-devtools-section-row">
+        <h4 class="et-query-devtools-section">Activity</h4>
+        <button
+          [disabled]="!activity.hasActivity"
+          (click)="resetStats(sel.entry)"
+          class="et-query-devtools-btn"
+          type="button"
+          title="Clear the counters, so the next interaction can be measured on its own"
+        >
+          ⟲ Reset
+        </button>
+      </div>
+
+      <dl class="et-query-devtools-stats">
+        <div class="et-query-devtools-stat" title="Every time the query ran, cache hits included">
+          <dt>Refreshes</dt>
+          <dd>{{ activity.stats.executions }}</dd>
+          @if (activity.cacheServed) {
+            <span class="et-query-devtools-stat-sub">{{ activity.cacheServed }} without a request</span>
+          }
+        </div>
+        <div class="et-query-devtools-stat" title="Executions that started a request, and how they ended">
+          <dt>Requests</dt>
+          <dd>{{ activity.stats.requests }}</dd>
+          <span class="et-query-devtools-stat-sub">
+            {{ activity.stats.responses }} ok
+            @if (activity.stats.errors) {
+              · {{ activity.stats.errors }} failed
+            }
+          </span>
+        </div>
+        <div
+          class="et-query-devtools-stat"
+          title="Total response payload received. Sizes without a content-length header are measured from the decoded body, so they ignore compression."
+        >
+          <dt>Received</dt>
+          <dd>{{ formatTransferred(activity.stats.receivedBytes, activity.stats.hasEstimatedBytes) }}</dd>
+          @if (activity.avgResponseBytes !== null) {
+            <span class="et-query-devtools-stat-sub">{{ formatBytes(activity.avgResponseBytes) }} per response</span>
+          }
+        </div>
+        @if (activity.stats.sentBytes) {
+          <div class="et-query-devtools-stat" title="Total request body sent (headers not counted)">
+            <dt>Sent</dt>
+            <dd>{{ formatTransferred(activity.stats.sentBytes, activity.stats.hasEstimatedBytes) }}</dd>
+          </div>
+        }
+        <div class="et-query-devtools-stat" title="Measured from the execution that preceded each response">
+          <dt>Duration</dt>
+          <dd>{{ formatDuration(activity.stats.lastDurationMs) }}</dd>
+          @if (activity.avgDurationMs !== null) {
+            <span class="et-query-devtools-stat-sub">{{ formatDuration(activity.avgDurationMs) }} on average</span>
+          }
+        </div>
+        <div class="et-query-devtools-stat">
+          <dt>Last response</dt>
+          <dd class="et-query-devtools-stat-value--sm">{{ formatTime(activity.stats.lastResponseAt) }}</dd>
+          @if (activity.stats.firstExecutedAt !== null) {
+            <span class="et-query-devtools-stat-sub">first ran {{ formatTime(activity.stats.firstExecutedAt) }}</span>
+          }
+        </div>
+      </dl>
+
       @if (sel.entry.meta.gqlQuery; as gqlQuery) {
-        <h5 class="et-query-devtools-section">GraphQL document</h5>
+        <div class="et-query-devtools-section-row">
+          <h5 class="et-query-devtools-section">GraphQL document</h5>
+          <button
+            (click)="copyGqlDocument(gqlQuery)"
+            class="et-query-devtools-btn"
+            type="button"
+            title="Copy the GraphQL document"
+          >
+            {{ copiedGql() ? '✓ Copied' : '⧉ Copy' }}
+          </button>
+        </div>
         <pre class="et-query-devtools-code">{{ gqlDocument(gqlQuery) }}</pre>
       }
 
@@ -687,7 +886,7 @@
 
       <h5 class="et-query-devtools-section">Args</h5>
       <et-query-devtools-json
-        [value]="sel.query.args()"
+        [value]="queryArgs(sel.query)"
         [search]="jsonSearchTerm()"
         [expandedPaths]="jsonExpandedPaths()"
         [collapsedPaths]="jsonCollapsedPaths()"

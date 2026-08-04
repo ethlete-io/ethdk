@@ -62,15 +62,165 @@ character the keyboard reports.
 
 ## Tabs
 
-| Tab           | Shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Queries**   | Every registered query, filterable by client. Method badge, route (path params rendered as `:param`), live status, feature chips and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time and `triggeredBy`, with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions.                                                                                                                                                |
-| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction. Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                    |
-| **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                   |
-| **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState` and the latest auth query snapshot.                                                                                                                                                                                                                                                                                                              |
-| **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                           |
-| **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button. |
-| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                                                                                                                                                                             |
+| Tab           | Shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Queries**   | Every registered query, filterable by client. Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with) and [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions.                                                                       |
+| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                     |
+| **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                               |
+| **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button, and [the client's own features with their configuration](#features-show-what-they-were-configured-with). |
+| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+## Routes show the params that were used
+
+A route built from a function:
+
+```ts
+const getPost = getQuery<GetPostArgs>((p) => `/post/${p.postId}`);
+```
+
+is listed with its path params **filled in from the args the query used**, each one
+picked out in the accent colour, with the query string dimmed behind the path:
+
+```
+GET /post/12
+GET /posts?page=2&limit=5
+```
+
+So several rows hitting the same endpoint stay tellable apart. Hovering a
+highlighted segment names the param it fills in (`postId`). A query that has no
+args yet shows `:postId` instead - and the param names are real: they are recorded
+from the route function itself, not a generic `:param` placeholder.
+
+The selected query's meta table keeps both forms: **Route** is the template
+(`/post/:postId`, what you grep the codebase for) and **Request URL** is the full
+URL of the request it last made, query string included.
+
+Args follow the same rule. A query that receives its args through
+[`withArgs`](/query/features#withargs) holds them on `args()`, but one executed imperatively
+(`execute({ args })`, a [sequence](/query/dependent-queries) step, an auth query)
+does not - for those the args of its current request are shown, so the panel no
+longer reads `null` for a query that plainly sent something.
+
+## Features show what they were configured with
+
+Every feature is listed by name **and by the options it was created with**, so a
+polling interval or a cookie name is readable without going back to the source:
+
+```
+polling             interval 10s   execute initially no
+error handling      handler reportPostError
+```
+
+Defaults are resolved rather than left blank - an omitted
+`withPolling({ executeInitially })` reads `no`, and a
+[`withQueryPersistence()`](/query/persistence) with no config spells out the
+`version 1` / `max age 24h` / `max entries 50` it actually runs with. The lists
+appear wherever features do: the selected query's meta table, stack cards, the auth
+provider cards and the Cache tab's per-client header (for client features like
+[multi-tab sync](/query/multi-tab) and [persistence](/query/persistence)).
+**Copy report** includes the same line, so a shared report says the query polls.
+
+Handlers are named where naming them costs nothing: a feature that takes a
+function shows it only when it was passed as a declared function
+(`withErrorHandling({ handler: reportPostError })`). An inline lambda has no name
+worth printing and is left out.
+
+A custom feature can describe itself the same way - `devtools` is only ever called
+while the panel is building an entry, so it costs nothing when
+`provideQueryDevtools()` is absent:
+
+```ts
+const withRetryBanner = <TArgs extends QueryArgs>(options: { after: number }) =>
+  createQueryFeature<TArgs>({
+    type: 'WITH_RETRY_BANNER',
+    devtools: () => [{ label: 'after', value: `${options.after} attempts` }],
+    fn: (context) => {
+      /* … */
+    },
+  });
+```
+
+## Activity: how often a query ran and what it cost
+
+Every query keeps a running count of what it has done since it was created, shown as
+the **Activity** tiles in its detail view:
+
+| Tile              | Reads                                                                                                                                                                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Refreshes**     | Every `execute()` - manual, [polling](/query/features#withpolling), args change, `refreshQueriesInUse()`. The sub-line says how many of those were answered **without a request** (a fresh cache entry, or an identical request already in flight). |
+| **Requests**      | The executions that did start a request, and how they ended (`N ok`, `N failed`).                                                                                                                                                                   |
+| **Received**      | The total response payload, plus the average per response.                                                                                                                                                                                          |
+| **Sent**          | The total request body sent. Only shown for a query that sends one.                                                                                                                                                                                 |
+| **Duration**      | The last response's wall-clock time (from the execution that triggered it, so retries and queueing count), plus the average.                                                                                                                        |
+| **Last response** | When the last response arrived, and when the query first ran.                                                                                                                                                                                       |
+
+The query list itself stays free of figures - it is for finding a query, not for
+reading its numbers. Stack, paged-stack and sequence cards do get a **Traffic** row
+that adds up the queries they own, which is the quickest way to see what a paged
+stack cost over its pages, and each inner-query row shows its own size.
+**Copy report** includes the same summary on one line.
+
+**Reset** clears an entry's counters, so a single interaction can be measured on its
+own: reset, click through the flow, read the numbers.
+
+Sizes prefixed with `≈` were measured by serializing the decoded body, because the
+response carried no `content-length` header - the real transfer was probably smaller,
+since it ignores compression. Sizes without the marker come from the header.
+
+::: tip
+Counting happens per query, so two queries sharing one in-flight request each count
+the response they received. That makes each row honest about what it got, but means
+the totals can exceed what the network tab reports for a shared request.
+:::
+
+## Export to Insomnia
+
+Two buttons hand a request to [Insomnia](https://insomnia.rest) so it can be
+replayed, tweaked and shared outside the app:
+
+- **Insomnia** in the selected query's action row copies a one-request collection
+  to the clipboard - import it with `Import > From Clipboard`.
+- **⤓ Insomnia** in the Queries toolbar downloads everything currently listed (the
+  client and inspect filters apply) as one collection, with a folder per query
+  client.
+
+Both export what the query actually sent: the resolved URL, the JSON body, and the
+headers as the request resolved them - the query client's headers with the
+per-request ones merged on top. A GraphQL query is exported as an Insomnia GraphQL
+request holding its document and variables.
+
+Queries that have not run yet still export, from their current args and the route
+template - Insomnia reads a leftover `:postId` as one of its own path params.
+
+### Secure queries get a self-refreshing token
+
+A [secure query](/query/auth) is not exported with the access token the app happened
+to hold - that token is stale within the hour, and the collection with it. Instead
+the export carries the auth provider's **token refresh** as a request of its own,
+and every secure request reads its bearer token out of that request's response:
+
+```
+Authorization: Bearer {% response 'body', 'req_refresh_0', '$.accessToken', 'when-expired', 3600 %}
+```
+
+That is Insomnia's own response-chaining tag, and `when-expired` is what makes it
+self-maintaining: once the stored refresh response is older than the max age,
+sending any secure request re-sends the refresh first, then uses the fresh token.
+The max age comes from the access token's own lifetime (90% of it, capped at an
+hour), so the collection refreshes about as often as the app does.
+
+The JSON path is found by locating the live access token in the last auth response,
+so a provider with a custom `extractTokens` (`$.data.token`, …) chains correctly
+too. Multiple auth providers each get their own refresh request, and a request is
+chained to the one it authenticates with.
+
+What the export still holds literally is the **refresh token** in that request's
+body - the one the app had at export time. It is what makes the chain start, so the
+file is as sensitive as that token, and an API that rotates refresh tokens will
+eventually invalidate it: re-export when the refresh starts failing. A provider that
+is not logged in exports no refresh request at all.
 
 ## Beyond a read-only view
 
@@ -82,7 +232,11 @@ components are bound to, which the browser Network tab can't do:
   clipboard, including arrays and objects: a container copies its whole subtree as
   formatted JSON, a leaf copies the bare value (a string without the display
   quotes, so an id or url pastes straight into a search box). The button ticks
-  green to confirm.
+  green to confirm. A container with more than 100 entries is folded into
+  collapsed slices of 100 (`0 … 99`, `100 … 199`, …) instead of being rendered in
+  full, so a 5000-item list opens instantly; each slice expands on click and
+  copies just the entries it covers. While the filter is active, only slices that
+  actually contain a match unfold.
 - **JIT editing** - edit a query's response and apply it via `setResponse()` (the
   UI re-renders instantly - great for optimistic / edge-case testing), or replay
   the query with edited args.
@@ -93,7 +247,12 @@ components are bound to, which the browser Network tab can't do:
 - **Inspect** - toggle inspect mode, then hover the live UI to highlight the query
   a component created; click to jump straight to its detail. The Queries list then
   shows an **Inspected element** banner with the number of matches, and **Clear**
-  restores the full list.
+  restores the full list. While the mode is armed the button stays lit and pulsing
+  (the pointer is out in the app, not on the panel) and shows the **Esc** key that
+  cancels it.
+- **Copy the GraphQL document** - a GraphQL query's detail renders its document
+  dedented, with a **⧉ Copy** button next to the heading, so it pastes straight
+  into a GraphQL playground.
 
 ## Persistence
 
