@@ -117,6 +117,13 @@ export type TokenRefreshQueryBuilder<TKey extends string, TArgs extends QueryArg
   key: TKey;
   config: TokenRefreshQueryConfig<TArgs>;
   setup?: (context: BearerAuthProviderQueryContext) => void;
+
+  /**
+   * The args a refresh sends for a given refresh token, so the devtools can describe the request
+   * without running it.
+   * @internal
+   */
+  buildArgs: (refreshToken: string) => RequestArgs<QueryArgs>;
 };
 
 export type AnyQueryBuilder =
@@ -172,6 +179,8 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     return { retry: true, delay };
   };
 
+  const buildArgs = (refreshToken: string) => ({ body: { token: refreshToken } }) as RequestArgs<QueryArgs>;
+
   const setup = (context: BearerAuthProviderQueryContext) => {
     const expiresInPropertyName = config.expiresInPropertyName ?? 'exp';
     const minRefreshInterval = config.minRefreshInterval ?? 30000; // 30 seconds default
@@ -190,9 +199,8 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       if (timeSinceLastRefresh < minRefreshInterval) return;
 
       lastRefreshTime = now;
-      const refreshArgs = { body: { token: currentRefreshToken } } as RequestArgs<QueryArgs>;
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      context.queries[key]!.execute(refreshArgs, {
+      context.queries[key]!.execute(buildArgs(currentRefreshToken), {
         triggeredBy: triggeredInternally ? 'token-refresh' : undefined,
       });
     };
@@ -294,5 +302,6 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       queryCreator: config.queryCreator.clone({ retryFn: refreshRetryFn, subtle: { useQueryRepositoryCache: true } }),
     },
     setup,
+    buildArgs,
   };
 };

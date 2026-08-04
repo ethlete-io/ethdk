@@ -11,6 +11,11 @@ import {
 } from '@angular/core';
 import { defineRootProvider, injectUnsavedChangesCoordinator, isObject, ProviderDefinition } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
+import {
+  DescribableFeature,
+  describeQueryDevtoolsFeatures,
+  QueryDevtoolsFeatureDescriber,
+} from '../devtools/query-devtools-features';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import {
   AnyCreateQueryClientResult,
@@ -85,6 +90,9 @@ export type BearerAuthFeatureType = (typeof BearerAuthFeatureType)[keyof typeof 
 export type BearerAuthFeature<TBuilders extends readonly AnyQueryBuilder[], TBearerData> = {
   type: BearerAuthFeatureType;
   setup: (context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown;
+
+  /** How the feature was configured, for the devtools. Only called while devtools are enabled. */
+  devtools?: QueryDevtoolsFeatureDescriber;
 };
 
 /**
@@ -444,14 +452,18 @@ const setupFeatures = <
 ) => {
   const features: Record<string, unknown> = {};
 
+  /** The features as applied, in order - what the devtools describe. */
+  const applied: DescribableFeature[] = [];
+
   if (!featureBuilders?.length) {
-    return features;
+    return { features, applied };
   }
 
   const featureTypes = new Set<BearerAuthFeatureType>();
 
   for (const featureSetup of featureBuilders) {
-    const feature = featureSetup(context) as BearerAuthFeature<TBuilders, TBearerData> & { instance: unknown };
+    const feature = featureSetup(context) as BearerAuthFeature<TBuilders, TBearerData> &
+      DescribableFeature & { instance: unknown };
 
     if (featureTypes.has(feature.type)) {
       throw authProviderFeatureUsedMultipleTimes(feature.type);
@@ -464,10 +476,29 @@ const setupFeatures = <
       .map((word, index) => (index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)))
       .join('');
     features[featureName] = feature.instance;
+    applied.push({ type: feature.type, devtools: feature.devtools });
   }
 
-  return features;
+  return { features, applied };
 };
+
+/**
+ * Describes the provider's queries for the devtools from what their creators were built with, so a
+ * refresh request can be exported before the refresh query has ever run.
+ */
+const describeAuthQueries = (builders: readonly AnyQueryBuilder[]) =>
+  builders.map((builder) => {
+    const internals = builder.config.queryCreator.subtle.creatorInternals as { route?: unknown; method?: string };
+    const isRefresh = builder._type === 'tokenRefreshQuery';
+
+    return {
+      key: builder.key,
+      kind: (isRefresh ? 'token-refresh' : 'auth') as 'auth' | 'token-refresh',
+      method: internals.method ?? 'POST',
+      route: internals.route,
+      buildArgs: isRefresh ? builder.buildArgs : undefined,
+    };
+  });
 
 const alwaysLeader = () => true;
 
@@ -588,7 +619,7 @@ const createBearerAuthProviderImpl = <
     executionState,
   };
 
-  const features = setupFeatures(config.features, featureSetupContext);
+  const { features, applied: appliedFeatures } = setupFeatures(config.features, featureSetupContext);
 
   const provider = {
     queries,
@@ -610,11 +641,13 @@ const createBearerAuthProviderImpl = <
       kind: 'auth-provider',
       handle: provider,
       clientRef: config.queryClientRef,
+      authQueries: describeAuthQueries(config.queries),
       meta: {
         name: config.name,
         clientBaseUrl: queryClient.baseUrl,
         repository: queryClient.repository,
         client: queryClient,
+        features: describeQueryDevtoolsFeatures(appliedFeatures),
       },
     });
 

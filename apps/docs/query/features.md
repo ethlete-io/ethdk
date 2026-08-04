@@ -122,13 +122,16 @@ The `isPageOutOfRangeError` predicate is exported too, so you can reuse it insid
 ```ts
 import { createQueryFeature, nestedEffect, QueryArgs } from '@ethlete/query';
 
-const withLogging = <TArgs extends QueryArgs>() =>
+const withLogging = <TArgs extends QueryArgs>(options: { prefix: string }) =>
   createQueryFeature<TArgs>({
     type: 'withLogging',
+    devtools: () => [{ label: 'prefix', value: options.prefix }],
     fn: ({ state, execute, deps, flags }) => {
-      nestedEffect(() => console.log('args changed', state.args()));
+      nestedEffect(() => console.log(options.prefix, state.args()));
     },
   });
 ```
 
 The feature `fn` runs once during query creation and receives the query's internals: its `state` (args, response, error, loading signals), the internal `execute` function, DI `deps` and the resolved feature `flags`. Use `nestedEffect()` (also exported) instead of `effect()` when reacting to signals inside a feature - it creates the effect outside the current reactive context so the feature setup itself never becomes a dependency.
+
+The optional `devtools` describer is what the [devtools panel](/components/query-devtools#features-show-what-they-were-configured-with) lists under the feature's name. It is only called while an entry is being built, so a feature keeps costing nothing without `provideQueryDevtools()`.

@@ -3,6 +3,11 @@ import { CreateEffectOptions, effect, Signal, untracked, WritableSignal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { filter } from 'rxjs';
+import {
+  formatQueryDevtoolsDuration,
+  QueryDevtoolsFeatureDescriber,
+  queryDevtoolsFnDetail,
+} from '../devtools/query-devtools-features';
 import { HttpErrorEvent, RequestHttpEvent } from './http-request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryDependencies } from './query-dependencies';
@@ -78,11 +83,15 @@ export type QueryFeatureFn<TArgs extends QueryArgs> = (context: QueryFeatureCont
 export type QueryFeature<TArgs extends QueryArgs> = {
   type: QueryFeatureType;
   fn: (context: QueryFeatureContext<TArgs>) => void;
+
+  /** How the feature was configured, for the devtools. Only called while devtools are enabled. */
+  devtools?: QueryDevtoolsFeatureDescriber;
 };
 
 export const createQueryFeature = <TArgs extends QueryArgs>(config: {
   type: QueryFeatureType;
   fn: QueryFeatureFn<TArgs>;
+  devtools?: QueryDevtoolsFeatureDescriber;
 }) => {
   return config as QueryFeature<TArgs>;
 };
@@ -164,6 +173,10 @@ export type WithPollingFeatureOptions = {
 export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeatureOptions) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_POLLING,
+    devtools: () => [
+      { label: 'interval', value: formatQueryDevtoolsDuration(options.interval) },
+      { label: 'execute initially', value: options.executeInitially ? 'yes' : 'no' },
+    ],
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
         throw withPollingUsedOnUnsupportedHttpMethod(context.flags.method);
@@ -255,6 +268,7 @@ export type WithLoggingFeatureOptions<TArgs extends QueryArgs> = {
 export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeatureOptions<TArgs>) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_LOGGING,
+    devtools: () => queryDevtoolsFnDetail(options.logFn, 'logFn'),
     fn: (context) => {
       context.state.events$.pipe(takeUntilDestroyed(context.deps.destroyRef)).subscribe((event) => {
         options.logFn(event);
@@ -272,6 +286,7 @@ export type WithErrorHandlingFeatureOptions = {
 export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHandlingFeatureOptions) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_ERROR_HANDLING,
+    devtools: () => queryDevtoolsFnDetail(options.handler, 'handler'),
     fn: (context) => {
       context.state.events$
         .pipe(
@@ -294,6 +309,7 @@ export type WithSuccessHandlingFeatureOptions<TArgs extends QueryArgs> = {
 export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSuccessHandlingFeatureOptions<TArgs>) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_SUCCESS_HANDLING,
+    devtools: () => queryDevtoolsFnDetail(options.handler, 'handler'),
     fn: (context) => {
       context.state.events$
         .pipe(
@@ -323,6 +339,10 @@ export type WithAutoRefreshFeatureOptions = {
 export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefreshFeatureOptions) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_AUTO_REFRESH,
+    devtools: () => [
+      { label: 'signals', value: String(options.onSignalChanges.length) },
+      ...(options.ignoreOnlyManualExecution ? [{ label: 'ignores manual only', value: 'yes' }] : []),
+    ],
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
         throw withAutoRefreshUsedOnUnsupportedHttpMethod(context.flags.method);
@@ -392,6 +412,7 @@ export type WithResponseUpdateFeatureOptions<TArgs extends QueryArgs> = {
 export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithResponseUpdateFeatureOptions<TArgs>) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_RESPONSE_UPDATE,
+    devtools: () => queryDevtoolsFnDetail(options.updater, 'updater'),
     fn: (context) => {
       nestedEffect(
         () => {
@@ -477,6 +498,11 @@ export const withPageResetOnError = <TArgs extends QueryArgs>(options: WithPageR
 
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_PAGE_RESET_ON_ERROR,
+    devtools: () => [
+      { label: 'resets', value: options.reset ? 'custom callback' : 'page signal' },
+      ...(options.reset ? [] : [{ label: 'reset to', value: String(options.resetTo ?? 1) }]),
+      { label: 'when', value: options.when ? 'custom' : 'page out of range' },
+    ],
     fn: (context) => {
       context.state.events$
         .pipe(

@@ -1,6 +1,7 @@
 import { Signal, computed } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { combineLatest, interval, map } from 'rxjs';
+import { formatQueryDevtoolsDuration } from '../../devtools/query-devtools-features';
 import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type TokenExpirationWarningConfig = {
@@ -79,6 +80,10 @@ export const withTokenExpirationWarning = <TBuilders extends readonly AnyQueryBu
     return {
       type: BearerAuthFeatureType.TOKEN_EXPIRATION_WARNING,
       instance,
+      devtools: () => [
+        { label: 'warn before', value: formatQueryDevtoolsDuration(warningThreshold) },
+        { label: 'check every', value: formatQueryDevtoolsDuration(checkInterval) },
+      ],
     };
   };
 };

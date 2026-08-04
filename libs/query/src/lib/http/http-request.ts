@@ -141,6 +141,16 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
    * the query devtools to show which entries are showing data from a previous session.
    */
   lastPersistedResponseAt: Signal<number | null>;
+
+  /**
+   * The headers this request sends, resolved the way an execution resolves them: the client's headers
+   * with the per-request ones merged on top. Read by the query devtools to export a request that can be
+   * replayed outside the app.
+   *
+   * Throws whatever a header provider function throws - a secure query's provider, for one, requires an
+   * access token to be available.
+   */
+  resolveHeaders: () => HttpHeaders | undefined;
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
@@ -149,6 +159,13 @@ export type HttpRequest<TArgs extends QueryArgs> = {
 
   /** The full URL of the request (base + path + query params). */
   url: string;
+
+  /**
+   * The args this request was built from - the resolved path params, query params, body and headers
+   * behind {@link HttpRequest.url}. Read by the query devtools to show what a query actually sent,
+   * which a query executed imperatively (`execute({ args })`) does not keep on its own `args` signal.
+   */
+  args: RequestArgs<TArgs> | null;
 
   /**
    * Executes the request.
@@ -429,6 +446,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const httpRequest: HttpRequest<TArgs> = {
     method: options.method,
     url: options.fullPath,
+    args: args ?? null,
     execute,
     destroy,
     loading: loading.asReadonly(),
@@ -443,6 +461,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       lastExternalResponseAt: lastExternalResponseAt.asReadonly(),
       applyPersistedResponse,
       lastPersistedResponseAt: lastPersistedResponseAt.asReadonly(),
+      resolveHeaders,
     },
   };
 

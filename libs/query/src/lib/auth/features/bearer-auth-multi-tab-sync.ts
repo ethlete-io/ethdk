@@ -79,6 +79,15 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
   const setup = (_context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => ({
     type: BearerAuthFeatureType.MULTI_TAB_SYNC,
     instance,
+    devtools: () => [
+      { label: 'channel', value: config.channelName ?? 'ethlete-auth-sync' },
+      { label: 'tokens', value: config.syncTokens === false ? 'tab local' : 'synced' },
+      { label: 'logout', value: config.syncLogout === false ? 'tab local' : 'synced' },
+      {
+        label: 'leader election',
+        value: config.leaderElection === false ? 'every tab refreshes' : 'one tab refreshes',
+      },
+    ],
   });
 
   // The elected leader gates the auth queries' automatic refresh, which is wired up before the

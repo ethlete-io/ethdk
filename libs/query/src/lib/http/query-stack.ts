@@ -10,6 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { describeQueryDevtoolsFeatures } from '../devtools/query-devtools-features';
 import {
   consumeSuppressQueryStackDevtools,
   isQueryDevtoolsEnabled,
@@ -432,7 +433,7 @@ export const createQueryStack = <
       kind: 'query-stack',
       handle: stack,
       meta: {
-        featureTypes: features.map((f) => f.type),
+        features: describeQueryDevtoolsFeatures(features),
       },
     });
 

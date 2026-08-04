@@ -1,11 +1,18 @@
 import { Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
 import { Observable, Subject, Subscription } from 'rxjs';
+import { QueryDevtoolsStatsRecorder } from '../devtools/query-devtools-stats';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
 import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
 
 export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
   transformResponse?: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
+
+  /**
+   * The devtools stats recorder to feed from this state's executions, or nothing when the devtools are
+   * not installed.
+   */
+  devtoolsStats?: QueryDevtoolsStatsRecorder | null;
 };
 
 export type QueryStateSubtle<TArgs extends QueryArgs> = {
@@ -25,6 +32,9 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
    * default source returns `null`.
    */
   setArgsSource: (source: () => RequestArgs<TArgs> | null) => void;
+
+  /** @see SetupQueryStateOptions.devtoolsStats */
+  devtoolsStats: QueryDevtoolsStatsRecorder | null;
 };
 
 export type QueryState<TArgs extends QueryArgs> = {
@@ -161,6 +171,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
       rawResponse,
       bindRequestEvents,
       setArgsSource,
+      devtoolsStats: options.devtoolsStats ?? null,
     },
   };
 

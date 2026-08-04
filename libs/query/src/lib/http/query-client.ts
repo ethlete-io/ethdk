@@ -2,10 +2,13 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { defineRootProvider, ProviderDefinition } from '@ethlete/core';
+import { describeQueryDevtoolsFeatures, QueryDevtoolsFeature } from '../devtools/query-devtools-features';
+import { isQueryDevtoolsEnabled } from '../devtools/query-devtools-hook';
 import { BuildQueryStringConfig } from './internal/request-route';
 import { createQueryInvalidationFilter, QueryInvalidationOptions, resolveInvalidationUrl } from './query-invalidation';
 import { QueryPersistenceEngine } from './persistence/query-persistence-engine';
 import {
+  QueryClientFeature,
   QueryClientFeatureFn,
   QueryClientFeatureType,
   QueryClientPersistenceFeature,
@@ -136,6 +139,12 @@ export type QueryClientSubtle = {
    * feature (or runs on the server).
    */
   persistence: QueryPersistenceEngine | null;
+
+  /**
+   * The client's features and the options each was configured with, for the devtools panel. Empty
+   * unless `provideQueryDevtools()` is used.
+   */
+  devtoolsFeatures: QueryDevtoolsFeature[];
 };
 
 export type QueryClient = {
@@ -235,6 +244,7 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
 
       let sync: QuerySyncEngine | null = null;
       let persistenceEngine: QueryPersistenceEngine | null = null;
+      const appliedFeatures: QueryClientFeature[] = [];
 
       if (options.features?.length) {
         const seen = new Set<QueryClientFeatureType>();
@@ -244,6 +254,7 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
 
           if (seen.has(feature.type)) throw queryClientFeatureUsedMultipleTimes(feature.type);
           seen.add(feature.type);
+          appliedFeatures.push(feature);
 
           if (feature.type === QueryClientFeatureType.MULTI_TAB_SYNC) {
             sync = (feature as QueryClientMultiTabSyncFeature).instance;
@@ -268,7 +279,11 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
         },
         clearPersistedQueries: () => persistenceEngine?.clear() ?? Promise.resolve(),
         whenPersistenceReady: persistenceEngine?.whenReady ?? Promise.resolve(),
-        subtle: { sync, persistence: persistenceEngine },
+        subtle: {
+          sync,
+          persistence: persistenceEngine,
+          devtoolsFeatures: isQueryDevtoolsEnabled() ? describeQueryDevtoolsFeatures(appliedFeatures) : [],
+        },
       };
 
       return client;

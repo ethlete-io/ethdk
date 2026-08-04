@@ -44,5 +44,10 @@ export const createBaseQueryCreator = <TArgs extends QueryArgs, TOptions, TInter
     });
   };
 
+  queryCreator.subtle = {
+    creatorInternals: config.internals as Record<string, unknown>,
+    creatorOptions: config.options as Record<string, unknown> | undefined,
+  };
+
   return queryCreator;
 };

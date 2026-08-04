@@ -175,6 +175,18 @@ export type QueryCreator<TArgs extends QueryArgs> = {
    * ```
    */
   clone: (additionalOptions: Partial<BaseQueryCreatorOptions<TArgs>>) => QueryCreator<TArgs>;
+
+  /**
+   * What the creator was built with - `route`, `method` and the client for an HTTP creator, the
+   * GraphQL document for a GraphQL one.
+   *
+   * Advanced: for tooling that has to describe a query (the devtools' Insomnia export builds an auth
+   * provider's token-refresh request from it) without instantiating one.
+   */
+  subtle: {
+    creatorInternals: Record<string, unknown>;
+    creatorOptions: Record<string, unknown> | undefined;
+  };
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,5 +1,6 @@
 import { DestroyRef, DOCUMENT, effect, inject, Signal, signal } from '@angular/core';
 import { filter, fromEvent, interval, merge, switchMap, throttleTime, timer } from 'rxjs';
+import { formatQueryDevtoolsDuration } from '../../devtools/query-devtools-features';
 import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type InactivityLogoutConfig = {
@@ -128,6 +129,11 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
     return {
       type: BearerAuthFeatureType.INACTIVITY_LOGOUT,
       instance,
+      devtools: () => [
+        { label: 'timeout', value: formatQueryDevtoolsDuration(inactivityTimeout) },
+        { label: 'activity events', value: activityEvents.join(', ') },
+        ...(config.customActivityCheck ? [{ label: 'custom activity check', value: 'yes' }] : []),
+      ],
     };
   };
 };

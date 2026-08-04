@@ -111,9 +111,15 @@ export type TrackingFeature<TBuilders extends readonly AnyQueryBuilder[]> = {
 export const withTracking = <TBuilders extends readonly AnyQueryBuilder[]>(config?: TrackingConfig<TBuilders>) => {
   return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
     const instance = createTrackingFeature<TBuilders>(context, config);
+    const handledEvents = Object.keys(config?.on ?? {});
+
     return {
       type: BearerAuthFeatureType.TRACKING,
       instance,
+      devtools: () => [
+        { label: 'internal events', value: config?.trackInternalEvents === false ? 'ignored' : 'tracked' },
+        ...(handledEvents.length ? [{ label: 'handlers', value: handledEvents.join(', ') }] : []),
+      ],
     };
   };
 };

@@ -1,4 +1,9 @@
 import { DestroyRef } from '@angular/core';
+import {
+  formatQueryDevtoolsDuration,
+  QueryDevtoolsFeatureDescriber,
+  queryDevtoolsFnDetail,
+} from '../devtools/query-devtools-features';
 import { htmlQueryErrorParser, symfonyQueryErrorParser } from './query-error-parsers';
 import { registerQueryErrorParser, setDefaultQueryRetryFn } from './query-error-parsing';
 import { shouldRetryRequest } from './query-retry-utils';
@@ -40,11 +45,17 @@ export type QueryClientFeatureContext = {
 export type QueryClientMultiTabSyncFeature = {
   type: typeof QueryClientFeatureType.MULTI_TAB_SYNC;
   instance: QuerySyncEngine | null;
+
+  /** How the feature was configured, for the devtools. Only called while devtools are enabled. */
+  devtools?: QueryDevtoolsFeatureDescriber;
 };
 
 export type QueryClientPersistenceFeature = {
   type: typeof QueryClientFeatureType.PERSISTENCE;
   instance: QueryPersistenceEngine | null;
+
+  /** How the feature was configured, for the devtools. Only called while devtools are enabled. */
+  devtools?: QueryDevtoolsFeatureDescriber;
 };
 
 /**
@@ -65,6 +76,13 @@ export type QueryClientFeature =
   QueryClientMultiTabSyncFeature | QueryClientPersistenceFeature | QueryClientErrorPipelineFeature;
 
 export type QueryClientFeatureFn = (context: QueryClientFeatureContext) => QueryClientFeature;
+
+const describeRefreshOnMutation = (config: QueryMultiTabSyncConfig['refreshOnMutation']) => {
+  if (config === false) return 'no';
+  if (config === true || config === undefined) return 'every query in use';
+
+  return 'filtered';
+};
 
 /**
  * Coordinates a query client with its own instances in the user's **other tabs**, over a
@@ -111,7 +129,16 @@ export const withMultiTabSync =
 
     destroyRef.onDestroy(sync.destroy);
 
-    return { type: QueryClientFeatureType.MULTI_TAB_SYNC, instance: sync };
+    return {
+      type: QueryClientFeatureType.MULTI_TAB_SYNC,
+      instance: sync,
+      devtools: () => [
+        { label: 'channel', value: channelName },
+        { label: 'share responses', value: syncConfig.syncResponses === false ? 'no' : 'yes' },
+        { label: 'dedupe polling', value: syncConfig.dedupePolling === false ? 'no' : 'yes' },
+        { label: 'refresh on mutation', value: describeRefreshOnMutation(syncConfig.refreshOnMutation) },
+      ],
+    };
   };
 
 /**
@@ -173,7 +200,19 @@ export const withQueryPersistence =
       engine.destroy();
     });
 
-    return { type: QueryClientFeatureType.PERSISTENCE, instance: engine };
+    return {
+      type: QueryClientFeatureType.PERSISTENCE,
+      instance: engine,
+      devtools: () => [
+        { label: 'store', value: persistenceConfig.storageName ?? `et-query-persistence-${clientName}` },
+        { label: 'version', value: String(persistenceConfig.version ?? 1) },
+        { label: 'max age', value: formatQueryDevtoolsDuration(persistenceConfig.maxAge ?? 86_400_000) },
+        { label: 'max entries', value: String(persistenceConfig.maxEntries ?? 50) },
+        { label: 'write delay', value: formatQueryDevtoolsDuration(persistenceConfig.writeDelay ?? 1000) },
+        ...(persistenceConfig.adapter ? [{ label: 'adapter', value: 'custom' }] : []),
+        ...queryDevtoolsFnDetail(persistenceConfig.filter, 'filter'),
+      ],
+    };
   };
 
 /**

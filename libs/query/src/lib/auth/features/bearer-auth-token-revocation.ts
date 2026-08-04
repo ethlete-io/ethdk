@@ -124,6 +124,10 @@ export const withTokenRevocation = <
     return {
       type: BearerAuthFeatureType.TOKEN_REVOCATION,
       instance,
+      devtools: () => [
+        { label: 'query', value: config.queryKey },
+        { label: 'on logout', value: revokeOnLogout ? 'yes' : 'no' },
+      ],
     };
   };
 };

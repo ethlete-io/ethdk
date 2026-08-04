@@ -52,7 +52,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   const { executeOptions, args, executeState, options: runQueryOptions, isSecure } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
-  const { key, request } = deps.client.repository.request({
+  const { key, request, executed } = deps.client.repository.request({
     route: creatorInternals.route,
     method: creatorInternals.method,
     args,
@@ -71,6 +71,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   state.lastTriggeredBy.set(runQueryOptions?.triggeredBy ?? null);
   state.subtle.request.set(request);
   state.subtle.bindRequestEvents(request);
+  state.subtle.devtoolsStats?.recordExecution({ didRequest: executed, body: args?.body });
 };
 
 export const circularQueryDependencyChecker = () => {

@@ -118,6 +118,13 @@ export type QueryRepositoryItem<TArgs extends QueryArgs> = {
 
   /** The request object */
   request: HttpRequest<TArgs>;
+
+  /**
+   * Whether this call started a network request. `false` when a fresh cache entry answered it, or when
+   * an identical request was already in flight - the consumer is bound to that request either way and
+   * still gets its response.
+   */
+  executed: boolean;
 };
 
 /**
@@ -434,11 +441,12 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
           keepUnusedFor,
         });
 
-        if (!runQueryOptions?.allowCache || cacheEntry.request.isStale()) {
-          cacheEntry.request.execute({ allowCache: runQueryOptions?.allowCache });
-        }
+        const executed =
+          !runQueryOptions?.allowCache || cacheEntry.request.isStale()
+            ? cacheEntry.request.execute({ allowCache: runQueryOptions?.allowCache })
+            : false;
 
-        return { key: cacheKey, request: cacheEntry.request as HttpRequest<TArgs> };
+        return { key: cacheKey, request: cacheEntry.request as HttpRequest<TArgs>, executed };
       }
     }
 
@@ -453,7 +461,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       retryFn: options.retryFn ?? config.retryFn,
     });
 
-    request.execute();
+    const executed = request.execute();
 
     bind({
       key: trackingKey,
@@ -471,7 +479,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     // not filled itself.
     eventsSubject.next({ type: 'entry-created', key: trackingKey, isCached: shouldCache, isPersistEnabled });
 
-    return { key: trackingKey, request };
+    return { key: trackingKey, request, executed };
   };
 
   /** Tears an entry down for good, whether it currently has consumers or not. */

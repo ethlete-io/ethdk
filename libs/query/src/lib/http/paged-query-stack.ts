@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, DestroyRef, effect, inject, isDevMode, Signal, signal, untracked } from '@angular/core';
+import { describeQueryDevtoolsFeatures } from '../devtools/query-devtools-features';
 import {
   isQueryDevtoolsEnabled,
   registerQueryDevtoolsEntry,
@@ -554,7 +555,7 @@ export const createPagedQueryStack = <
       kind: 'paged-query-stack',
       handle: pagedQuery,
       meta: {
-        featureTypes: features?.map((f) => f.type),
+        features: describeQueryDevtoolsFeatures(features),
       },
     });
 

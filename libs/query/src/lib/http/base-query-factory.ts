@@ -1,5 +1,8 @@
+import { HttpEventType } from '@angular/common/http';
 import { runInInjectionContext } from '@angular/core';
+import { describeQueryDevtoolsFeatures } from '../devtools/query-devtools-features';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
+import { createQueryDevtoolsStats } from '../devtools/query-devtools-stats';
 import { CreateGqlQueryOptions } from '../gql/gql-query';
 import { isCreateGqlQueryOptions } from './internal/gql-options-guard';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
@@ -193,8 +196,11 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
   });
 
   return runInInjectionContext(deps.injector, () => {
+    const devtoolsStats = isQueryDevtoolsEnabled() ? createQueryDevtoolsStats() : null;
+
     const state = setupQueryState<TArgs>({
       transformResponse: options.creator?.transformResponse,
+      devtoolsStats,
     });
     const flags = getQueryFeatureUsage(options as unknown as Parameters<typeof getQueryFeatureUsage>[0]);
 
@@ -219,19 +225,33 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
 
     const query = createQueryObject({ state, execute, deps });
 
-    if (isQueryDevtoolsEnabled()) {
+    // Only ever non-null while the devtools are installed, so this whole block - the entry and the
+    // per-response payload measuring behind it - is dead code in an app without them.
+    if (devtoolsStats) {
+      const statsSubscription = state.events$.subscribe((event) => {
+        if (event.type === 'error') {
+          devtoolsStats.recordError();
+        } else if (event.type === HttpEventType.Response) {
+          devtoolsStats.recordResponse({ headers: event.headers, body: event.body });
+        }
+      });
+
+      deps.destroyRef.onDestroy(() => statsSubscription.unsubscribe());
+
       const unregister = registerQueryDevtoolsEntry({
         kind: 'query',
         handle: query,
         clientRef: client,
+        stats: devtoolsStats,
         route:
           (options.creatorInternals as { route?: unknown }).route ??
           (options.creator as { route?: unknown } | undefined)?.route ??
           null,
+        authProviderRef: (options.creatorInternals as { authProvider?: { token?: unknown } }).authProvider,
         meta: {
           clientBaseUrl: deps.client.baseUrl,
           method: flags.method,
-          featureTypes: options.features.map((f) => f.type),
+          features: describeQueryDevtoolsFeatures(options.features),
           queryConfig: options.queryConfig,
           creator: options.creator,
           repository: deps.client.repository,

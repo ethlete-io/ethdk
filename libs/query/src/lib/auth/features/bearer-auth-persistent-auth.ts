@@ -100,6 +100,16 @@ export const withPersistentAuth = <
     return {
       type: BearerAuthFeatureType.PERSISTENT_AUTH,
       instance,
+      devtools: () => [
+        { label: 'cookie', value: config.cookie?.name ?? 'etAuth' },
+        { label: 'remembered for', value: `${config.cookie?.expiresInDays ?? 30}d` },
+        { label: 'same site', value: config.cookie?.sameSite ?? 'lax' },
+        { label: 'remember me default', value: config.defaultRememberMe ? 'yes' : 'no' },
+        { label: 'auto login', value: config.autoLogin.queryKey },
+        ...(config.autoLogin.excludeRoutes?.length
+          ? [{ label: 'excluded routes', value: config.autoLogin.excludeRoutes.join(', ') }]
+          : []),
+      ],
     };
   };
 };

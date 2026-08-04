@@ -1,6 +1,11 @@
 import { EnvironmentProviders, isDevMode, makeEnvironmentProviders, Signal, signal } from '@angular/core';
 import { AnyCreateQueryClientResult } from '../http/query-client';
-import { QueryDevtoolsEntry, QueryDevtoolsRegistration, setQueryDevtoolsRegistrar } from './query-devtools-hook';
+import {
+  QueryDevtoolsEntry,
+  QueryDevtoolsRegistration,
+  QueryDevtoolsRoutePart,
+  setQueryDevtoolsRegistrar,
+} from './query-devtools-hook';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
 
@@ -25,23 +30,54 @@ const descriptorOf = (entry: Pick<QueryDevtoolsEntry, 'kind' | 'meta'>) => {
 };
 
 /**
- * Stringifies a query creator route. Function routes are invoked with an empty args object and any
- * resulting `undefined` path segments are rendered as `:param`, matching the legacy devtools.
+ * Wraps a path param name where a route function interpolated it. A NUL cannot occur in a route, so
+ * a marked-up route stays unambiguously parseable.
+ */
+const PARAM_MARKER = '\u0000';
+
+/**
+ * Stands in for the path params object a route function expects, recording every param it reads as
+ * `\0<name>\0` in the returned route. A route that transforms what it reads (`p.id.slice(2)`) still
+ * yields a usable route - the recorded name is transformed along with it.
+ */
+const paramRecorder = () =>
+  new Proxy(
+    {},
+    {
+      get: (_, prop) => (typeof prop === 'string' ? `${PARAM_MARKER}${prop}${PARAM_MARKER}` : undefined),
+    },
+  );
+
+/** Splits a recorded route into its literal chunks and the path params interleaved between them. */
+const parseRecordedRoute = (recorded: string): QueryDevtoolsRoutePart[] =>
+  recorded
+    .split(PARAM_MARKER)
+    // Markers are balanced, so every odd chunk is a param name and every even one is literal text.
+    .map((text, index): QueryDevtoolsRoutePart => ({ text, param: index % 2 === 1 ? text : null }))
+    .filter((part) => part.text !== '');
+
+/**
+ * Parses a query creator route into its literal and path-param parts, so the devtools can show which
+ * segments of a route are dynamic and fill them in with the values a query actually used.
  * @internal
  */
-export const stringifyQueryRoute = (route: unknown) => {
-  if (route === undefined || route === null) return '';
+export const parseQueryRoute = (route: unknown): QueryDevtoolsRoutePart[] => {
+  if (route === undefined || route === null) return [];
 
   try {
     if (typeof route === 'function') {
-      return (route as (args: unknown) => string)({}).replace(/undefined/g, ':param');
+      return parseRecordedRoute((route as (args: unknown) => string)(paramRecorder()));
     }
 
-    return String(route);
+    return [{ text: String(route), param: null }];
   } catch {
-    return typeof route === 'function' ? '(dynamic route)' : String(route);
+    return [{ text: typeof route === 'function' ? '(dynamic route)' : String(route), param: null }];
   }
 };
+
+/** Renders parsed route parts as a template, e.g. `/team/:teamId/players`. */
+export const stringifyQueryRouteParts = (parts: QueryDevtoolsRoutePart[]) =>
+  parts.map((part) => (part.param ? `:${part.param}` : part.text)).join('');
 
 /**
  * Extracts the human readable client name from a query client tuple. The client's DI token is named
@@ -56,14 +92,41 @@ export const getQueryClientName = (client: AnyCreateQueryClientResult) => {
 };
 
 /**
+ * The provider name behind a bearer auth provider definition, recovered from its DI token the way
+ * {@link getQueryClientName} recovers a client's.
+ * @internal
+ */
+export const getBearerAuthProviderName = (ref: { token?: unknown }) => {
+  const desc = String(ref.token ?? '');
+
+  return desc.replace('InjectionToken ', '').replace('BearerAuthProvider_', '') || 'unknown';
+};
+
+/**
  * Ids are derived deterministically from a stable descriptor + a per-descriptor sequence number, so
  * they survive a page reload (letting the UI restore the selected entry) instead of being random.
  */
 const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) => {
   const meta = { ...registration.meta };
 
-  if (registration.route !== undefined) meta.route = stringifyQueryRoute(registration.route);
+  if (registration.route !== undefined) {
+    meta.routeParts = parseQueryRoute(registration.route);
+    meta.route = stringifyQueryRouteParts(meta.routeParts);
+  }
+
   if (registration.clientRef) meta.clientName = getQueryClientName(registration.clientRef);
+
+  if (registration.authProviderRef) {
+    meta.isSecure = true;
+    meta.authProviderName = getBearerAuthProviderName(registration.authProviderRef);
+  }
+
+  if (registration.authQueries) {
+    meta.authQueries = registration.authQueries.map((authQuery) => ({
+      ...authQuery,
+      route: stringifyQueryRouteParts(parseQueryRoute(authQuery.route)),
+    }));
+  }
 
   let id = registration.id;
 
@@ -80,6 +143,7 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
     handle: registration.handle,
     meta,
     createdAt: Date.now(),
+    stats: registration.stats,
   };
 
   entries.update((list) => [...list, fullEntry]);
