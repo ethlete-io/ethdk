@@ -1,10 +1,10 @@
-# Table API: the seams, and what is still open
+# Table API: the seams, and the decisions behind them
 
 The 2026-07-27 RFC that reshaped the table API is implemented - columns are a keyed record, cell
 templates are content-child directives with an inferred context, and every feature is a directive on
 `<et-table>` rather than a child element. The consumer-facing API is documented in
 `apps/docs/components/table.md`; this file keeps only the decisions a future edit could
-accidentally undo, and the questions nobody has answered yet.
+accidentally undo, plus how to re-measure what the seams cost.
 
 ## The seams
 
@@ -73,17 +73,20 @@ Two properties are easy to break and were deliberate:
   model both or split the mental model in half. The reserved values are documented on
   `TableHeaderAdornment.order` and `TableLeadColumn.order` so a consumer registering their own is not
   guessing.
+- **Group labels are plain strings, with no `etTableGroupHeader` template.** It is not the seventh
+  column-template slot it looks like: the six that exist all register through
+  `registerColumnTemplate({ slot, column })`, where binding a column is what gives the template's
+  `let-row` a type. A group run (`TableHeaderGroup`) has no row context at all, so there is no witness
+  to bind and the directive would need its own mechanism - and it would hang off
+  `etTableGroupHeaders`, not the table, since the row is seam E. Purely additive whenever someone asks.
 
-## Open questions
+## Sizing
 
-- **Does the `group` header row need the same treatment?** Group labels are plain strings today. An
-  `etTableGroupHeader` template directive would round out the seam, but nothing has asked for it. (The
-  row itself is now a feature - seam E - so the template would be its option, not the table's.)
-- **Sizing.** Per-feature deltas (2026-07-27): resize +0.5 kB, virtual scroll +0.7 kB, reorder
-  +1.4 kB, selection +2.8 kB, filters +9.8 kB, all five +14.9 kB gz. Filters grew ~1 kB and reorder
-  ~0.2 kB when their templates became components - the price of features having no view of their own.
-  Absolute numbers from that run are not comparable to a fresh one; re-measure both sides together
-  with `tools/treeshake`. The base is 17,102 B gz as of 2026-08-04, and the four features carved out of
-  it that day are goldens on both sides. The 2026-08-04 slices banked 2,026 B (expansion), 440 B
-  (grouped headers), 999 B (loading placeholders) and 386 B (sticky columns); what a seam itself costs,
-  and why sticky came in at a third of its prediction, are in `tools/treeshake/README.md`.
+Per-feature deltas (2026-07-27): resize +0.5 kB, virtual scroll +0.7 kB, reorder +1.4 kB, selection
++2.8 kB, filters +9.8 kB, all five +14.9 kB gz. Filters grew ~1 kB and reorder ~0.2 kB when their
+templates became components - the price of features having no view of their own. Absolute numbers from
+that run are not comparable to a fresh one; re-measure both sides together with `tools/treeshake`. The
+base is 17,102 B gz as of 2026-08-04, and the four features carved out of it that day are goldens on
+both sides. The 2026-08-04 slices banked 2,026 B (expansion), 440 B (grouped headers), 999 B (loading
+placeholders) and 386 B (sticky columns); what a seam itself costs, and why sticky came in at a third
+of its prediction, are in `tools/treeshake/README.md`.
