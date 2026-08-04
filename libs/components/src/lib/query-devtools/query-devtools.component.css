@@ -81,6 +81,54 @@
     flex: 0 0 auto;
   }
 
+  /* Armed faults are the one state where the panel is making the app misbehave, so the notice sits outside
+     the tab strip and stays on every tab: a red badge on the Faults tab is invisible from the nine other
+     tabs, which are exactly where the injected failure gets read as a real one. */
+  .et-query-devtools-armed-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex: 0 0 auto;
+    padding: 0.6rem 0.8rem;
+    background: color-mix(in srgb, var(--_et-qdt-error) 14%, transparent);
+    border-block-end: 1px solid color-mix(in srgb, var(--_et-qdt-error) 45%, transparent);
+    color: var(--_et-qdt-error);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-armed-text {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  /* Pulsing, because an armed client is a state you have to be able to notice without reading. */
+  .et-query-devtools-armed-dot {
+    flex: 0 0 auto;
+    inline-size: 0.8rem;
+    block-size: 0.8rem;
+    border-radius: 50%;
+    background: var(--_et-qdt-error);
+    animation: et-query-devtools-armed-pulse 1.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-query-devtools-armed-dot {
+      animation: none;
+    }
+  }
+
+  @keyframes et-query-devtools-armed-pulse {
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  .et-query-devtools-armed-bar .et-query-devtools-btn {
+    flex: 0 0 auto;
+    border-color: color-mix(in srgb, var(--_et-qdt-error) 55%, transparent);
+    color: var(--_et-qdt-error);
+  }
+
   .et-query-devtools-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -416,6 +464,25 @@
   .et-query-devtools-split .et-query-devtools-scroll {
     flex: 1 1 auto;
     min-inline-size: 0;
+  }
+
+  /* A tab whose *content* pins a header of its own - the timeline's axis, a table's `thead` - cannot also
+     keep its toolbar sticky inside the same scroller: two boxes stuck at the same offset draw over each
+     other. Such a tab lifts the toolbar out of the scroller into a pane instead, which also removes the
+     second half of the problem - sticky offsets resolve against the scrollport's padding edge, so block
+     padding on the scroller leaves a strip above the pinned header that rows scroll visibly through. */
+  .et-query-devtools-pane {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    block-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 0;
+    overflow: hidden;
+  }
+
+  .et-query-devtools-pane > .et-query-devtools-scroll {
+    padding-block: 0 1rem;
   }
 
   .et-query-devtools-drawer {
@@ -856,6 +923,15 @@
     color: var(--_et-qdt-muted);
   }
 
+  /* The retry marker's `⟳` has no glyph in the panel's monospace stack, so it comes from a symbol fallback
+     whose glyph fills the em box - next to a monospace digit it renders half again as tall. Scaling it back
+     and letting the chip's flex gap set the spacing (rather than a literal space from that same fallback,
+     which is far too wide) is what makes `⟳ 4` read as one token instead of two mismatched ones. */
+  .et-query-devtools-retry-glyph {
+    font-size: 0.7em;
+    line-height: 1;
+  }
+
   .et-query-devtools-chip--loading {
     color: var(--_et-qdt-loading);
     border-color: color-mix(in srgb, var(--_et-qdt-loading) 50%, transparent);
@@ -869,6 +945,25 @@
   .et-query-devtools-chip--success {
     color: var(--_et-qdt-success);
     border-color: color-mix(in srgb, var(--_et-qdt-success) 50%, transparent);
+  }
+
+  /* A chip that opens what it names. Kept at chip weight rather than button weight - it sits in lists of
+     plain chips, and reading as a control there would drown the row it belongs to. */
+  button.et-query-devtools-chip--button {
+    appearance: none;
+    cursor: pointer;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  button.et-query-devtools-chip--button:hover {
+    border-color: var(--_et-qdt-accent);
+    color: var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-caret {
+    display: inline-block;
+    width: 1.2rem;
+    color: var(--_et-qdt-muted);
   }
 
   /* A chip that is also a filter toggle. Accent means "this filter is on" - the match count next to the
@@ -1351,11 +1446,14 @@
   /* One grid for the whole timeline, every row a `subgrid` of it. A grid per row would size its label
      column to its own label, and bars in differently-sized tracks are not comparable - which is the one
      thing a waterfall exists to make them. */
+  /* Duration, size and flags each get a track of their own rather than sharing one right-aligned cell -
+     otherwise a row's numbers shift sideways by whatever follows them, and a column of durations that
+     don't line up is unreadable however tabular the figures are. */
   .et-query-devtools-timeline {
     display: grid;
-    grid-template-columns: minmax(10rem, 26rem) minmax(14rem, 1fr) minmax(8rem, max-content);
-    gap: 0.2rem 0.8rem;
-    padding-inline: 0.4rem;
+    grid-template-columns: minmax(10rem, 26rem) minmax(14rem, 1fr) max-content max-content max-content;
+    gap: 0.1rem 0.8rem;
+    padding-inline: 0.4rem 1rem;
   }
 
   .et-query-devtools-timeline-axis,
@@ -1465,23 +1563,52 @@
     background: var(--_et-qdt-loading);
   }
 
-  /* An abandoned run has no real end, so it is drawn as an outline rather than a solid duration. */
+  /* An abandoned run has no real end, so it is drawn hollow rather than as a solid duration. The outline is
+     solid, not dashed: most aborted bars are only a few pixels wide, and a dash pattern that short renders
+     as a handful of stray dots rather than as a border. */
   .et-query-devtools-timeline-bar[data-status='aborted'] {
-    background: color-mix(in srgb, var(--_et-qdt-subtle) 35%, transparent);
-    outline: 1px dashed var(--_et-qdt-subtle);
+    min-inline-size: 0.5rem;
+    background: color-mix(in srgb, var(--_et-qdt-subtle) 20%, transparent);
+    outline: 1px solid color-mix(in srgb, var(--_et-qdt-subtle) 70%, transparent);
     outline-offset: -1px;
   }
 
   /* Right-aligned with tabular figures so the durations and sizes read as columns down the list. */
-  .et-query-devtools-timeline-meta {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.4rem;
+  .et-query-devtools-timeline-duration,
+  .et-query-devtools-timeline-size {
+    text-align: end;
     color: var(--_et-qdt-muted);
     font-size: 1.1rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+
+  /* The duration is the number the eye scans for, so it keeps the foreground while the size stays quiet. */
+  .et-query-devtools-timeline-duration {
+    color: var(--_et-qdt-fg);
+  }
+
+  /* Left-aligned, unlike the numbers: a flag is a label, and a column of labels that all start at the same
+     x reads as one column. Right-aligning them would also press them against the panel edge. */
+  .et-query-devtools-timeline-flags {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+  }
+
+  /* Chip weight is tuned for a card head, where a chip is one of a handful of labels. One per row of a
+     waterfall reads as noise at that size, so here they shrink to annotation weight: a square tag rather
+     than a pill, and no border - the tint is mixed from `currentcolor`, so each flag's own semantic colour
+     carries it and nothing outlines the text it is meant to sit behind. */
+  .et-query-devtools-timeline-flags .et-query-devtools-chip {
+    padding: 0 0.4rem;
+    border-color: transparent;
+    border-radius: 0.3rem;
+    background: color-mix(in srgb, currentcolor 12%, transparent);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
   }
 
   /* Sub-tabs inside the query detail. Underlined rather than boxed, so they read as a section switch

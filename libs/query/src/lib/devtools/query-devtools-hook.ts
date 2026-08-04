@@ -2,6 +2,7 @@ import { AnyCreateQueryClientResult, QueryClient } from '../http/query-client';
 import { CreateQueryCreatorOptions, QueryConfig } from '../http/query-creator';
 import { QueryRepository } from '../http/query-repository';
 import { QueryDevtoolsFeature } from './query-devtools-features';
+import { QueryDevtoolsFormLinksHandle, QueryDevtoolsFormLinksRecorder } from './query-devtools-form-links';
 import { QueryDevtoolsStatsHandle, QueryDevtoolsStatsRecorder } from './query-devtools-stats';
 
 /**
@@ -9,7 +10,7 @@ import { QueryDevtoolsStatsHandle, QueryDevtoolsStatsRecorder } from './query-de
  * by `<et-query-devtools>` - not a general-purpose query API.
  */
 export type QueryDevtoolsEntryKind =
-  'query' | 'query-stack' | 'paged-query-stack' | 'query-sequence' | 'auth-provider' | 'ws-client';
+  'query' | 'query-stack' | 'paged-query-stack' | 'query-sequence' | 'auth-provider' | 'ws-client' | 'query-form';
 
 /**
  * One chunk of a parsed query route: either literal text (`param: null`) or a path param, whose name
@@ -119,6 +120,9 @@ export type QueryDevtoolsEntry = {
    * queries; stacks, sequences and auth providers aggregate the stats of the queries they own instead.
    */
   stats?: QueryDevtoolsStatsHandle;
+
+  /** The query forms this entry's args read, for queries created with a `withArgs` feature. */
+  formLinks?: QueryDevtoolsFormLinksHandle;
 };
 
 /**
@@ -149,6 +153,9 @@ export type QueryDevtoolsRegistration = {
 
   /** @see QueryDevtoolsEntry.stats */
   stats?: QueryDevtoolsStatsHandle;
+
+  /** @see QueryDevtoolsEntry.formLinks */
+  formLinks?: QueryDevtoolsFormLinksHandle;
 };
 
 /** The registry {@link provideQueryDevtools} installs. */
@@ -201,6 +208,55 @@ export const setQueryDevtoolsStatsFactory = (fn: () => QueryDevtoolsStatsRecorde
  * @internal
  */
 export const createQueryDevtoolsStatsRecorder = (): QueryDevtoolsStatsRecorder | null => statsFactory?.() ?? null;
+
+let formLinksFactory: (() => QueryDevtoolsFormLinksRecorder) | null = null;
+
+/**
+ * Installs the form-links recorder factory. Called by `provideQueryDevtools()`; nothing else may call it.
+ * @internal
+ */
+export const setQueryDevtoolsFormLinksFactory = (fn: () => QueryDevtoolsFormLinksRecorder) => {
+  formLinksFactory = fn;
+};
+
+/**
+ * A form-links recorder for one query, or `null` unless {@link provideQueryDevtools} has been called.
+ * Reached only from the provider for the same reason {@link createQueryDevtoolsStatsRecorder} is.
+ * @internal
+ */
+export const createQueryDevtoolsFormLinksRecorder = (): QueryDevtoolsFormLinksRecorder | null =>
+  formLinksFactory?.() ?? null;
+
+/** The ids of the query forms read by the args build currently running, or `null` outside of one. */
+let formLinkSink: Set<string> | null = null;
+
+/**
+ * Runs `build` and reports which query forms it read. Nested builds are supported - the outer one
+ * resumes collecting once the inner one is done.
+ * @internal
+ */
+export const collectQueryFormLinks = <T>(build: () => T): { value: T; ids: string[] } => {
+  const outer = formLinkSink;
+  const sink = new Set<string>();
+
+  formLinkSink = sink;
+
+  try {
+    return { value: build(), ids: [...sink] };
+  } finally {
+    formLinkSink = outer;
+  }
+};
+
+/**
+ * Records that a query form's committed value was read. The form calls this from its `value` signal, so
+ * a read that happens while a query builds its args is what links the two - no naming convention, and
+ * nothing to keep in sync when the args change.
+ * @internal
+ */
+export const noteQueryFormRead = (id: string) => {
+  formLinkSink?.add(id);
+};
 
 /** The request an upcoming attempt belongs to, for the fault resolver to match against. */
 export type QueryDevtoolsFaultTarget = {

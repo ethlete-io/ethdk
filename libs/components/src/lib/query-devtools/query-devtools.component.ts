@@ -30,11 +30,13 @@ import {
   QueryDevtoolsEntry,
   queryDevtoolsFaults,
   QueryDevtoolsFeature,
+  QueryDevtoolsFormHandle,
   QueryDevtoolsRun,
   QueryDevtoolsStats,
   QueryDevtoolsStatsHandle,
   sumQueryDevtoolsStats,
   QueryKeyLockState,
+  QueryRefreshCause,
   QueryRepository,
   QueryRepositoryCacheEntry,
   QueryRepositoryEvent,
@@ -54,7 +56,8 @@ import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = Query<any>;
 
-type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events' | 'faults';
+type DevtoolsTab =
+  'queries' | 'stacks' | 'sequences' | 'forms' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events' | 'faults';
 
 /**
  * The sections of the query detail drawer. The head and its actions stay pinned above them - the detail
@@ -151,6 +154,17 @@ type Timeline = {
   hidden: number;
 };
 
+/**
+ * One request a refresh re-executed, as an event row lists it. A cache key is shared by every query
+ * bound to it, so the row carries all of their ids - one to open, and the rest so each of those queries
+ * can still find the refresh under "Refetched by". Empty for a request no registered query holds.
+ */
+type RefreshedRequest = {
+  queryIds: string[];
+  method: string;
+  path: string;
+};
+
 type EventLogItem = {
   id: number;
   timestamp: number;
@@ -168,6 +182,12 @@ type EventLogItem = {
    * here rather than at click time so the log holds an id instead of a reference to the request itself.
    */
   queryId: string | null;
+
+  /** What asked for a refresh, for a `queries-refreshed` row. `null` for every other type. */
+  cause: QueryRefreshCause | null;
+
+  /** The requests that refresh re-executed - the fan-out the panel could not show before. */
+  refreshed: RefreshedRequest[] | null;
 };
 
 type PersistedState = {
@@ -177,6 +197,7 @@ type PersistedState = {
   detailTab?: DetailTab;
   selectedClientName?: string | null;
   selectedQueryId?: string | null;
+  selectedFormId?: string | null;
   inspectFilterIds?: string[] | null;
   queryFilter?: string;
   queryFacets?: QueryListFacet[];
@@ -311,12 +332,13 @@ export class QueryDevtoolsComponent {
   private eventIdCounter = 0;
   private lastSelectionKey = '';
 
-  private readonly persisted = readPersistedState();
+  public readonly persisted = readPersistedState();
 
   protected readonly tabs = [
     { id: 'queries', label: 'Queries' },
     { id: 'stacks', label: 'Stacks' },
     { id: 'sequences', label: 'Sequences' },
+    { id: 'forms', label: 'Forms' },
     { id: 'auth', label: 'Auth' },
     { id: 'ws', label: 'Sockets' },
     { id: 'cache', label: 'Cache' },
@@ -351,9 +373,15 @@ export class QueryDevtoolsComponent {
   protected selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
   protected selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
 
-  // Independent per-drawer selection so the Stacks / Sequences drawers don't share the Queries tab's.
+  /** The form whose detail the Forms tab has expanded. */
+  protected selectedFormId = signal<string | null>(this.persisted.selectedFormId ?? null);
+
+  // Independent per-drawer selection so no drawer shares the Queries tab's selection - or another
+  // drawer's: opening a query from the Timeline must not also change what the Forms drawer shows.
   protected stackSelectedQueryId = signal<string | null>(null);
   protected sequenceSelectedQueryId = signal<string | null>(null);
+  protected formSelectedQueryId = signal<string | null>(null);
+  protected timelineSelectedQueryId = signal<string | null>(null);
 
   /** Free-text narrowing of the Queries list. Every whitespace-separated term has to match. */
   protected queryFilter = signal(this.persisted.queryFilter ?? '');
@@ -417,6 +445,8 @@ export class QueryDevtoolsComponent {
 
   protected sequenceEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-sequence'));
 
+  protected formEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-form'));
+
   protected authEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'auth-provider'));
 
   protected wsEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'ws-client'));
@@ -460,6 +490,20 @@ export class QueryDevtoolsComponent {
         return { name, baseUrl, fault, armed: isQueryDevtoolsFaultArmed(fault) };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  /**
+   * The names of the clients currently carrying a fault, or `null` when none do - so a template can `@if`
+   * on it. Armed faults are the one state where the panel is lying to the app on purpose, and a badge on a
+   * tab that isn't open cannot say that: whichever tab you are reading, a red response has to be
+   * attributable to the injection rather than to the API.
+   */
+  protected armedFaultClients = computed(() => {
+    const armed = this.faultClients()
+      .filter((client) => client.armed)
+      .map((client) => client.name);
+
+    return armed.length ? armed : null;
   });
 
   /**
@@ -648,6 +692,7 @@ export class QueryDevtoolsComponent {
         count: sequences.length,
         errors: sequences.filter((entry) => (this.asSequence(entry)?.failedAt() ?? null) !== null).length,
       },
+      forms: { count: this.formEntries().length, errors: 0 },
       auth: { count: this.authEntries().length, errors: 0 },
       ws: { count: this.wsEntries().length, errors: 0 },
       cache: { count: this.cacheEntryCount(), errors: 0 },
@@ -665,6 +710,8 @@ export class QueryDevtoolsComponent {
   protected selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
   protected stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
   protected sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
+  protected formSelectedQuery = computed(() => this.findQuery(this.formSelectedQueryId()));
+  protected timelineSelectedQuery = computed(() => this.findQuery(this.timelineSelectedQueryId()));
 
   protected cacheView = computed(() =>
     this.repositories().map(({ repository, name, baseUrl, client }) => {
@@ -763,6 +810,7 @@ export class QueryDevtoolsComponent {
         detailTab: this.detailTab(),
         selectedClientName: this.selectedClientName(),
         selectedQueryId: this.selectedQueryId(),
+        selectedFormId: this.selectedFormId(),
         inspectFilterIds: this.inspectFilterIds(),
         queryFilter: this.queryFilter(),
         queryFacets: [...this.queryFacets()],
@@ -1087,22 +1135,22 @@ export class QueryDevtoolsComponent {
     return null;
   }
 
-  /** Opens the picked run's query in the Queries tab - the timeline is a way in, not a dead end. */
+  /** Opens a query in the Queries tab - the Events tab is a way in, not a dead end. */
+  protected selectQuery(id: string) {
+    this.activeTab.set('queries');
+    this.selectedQueryId.set(id);
+  }
+
   protected selectTimelineRow(row: TimelineRow) {
-    this.activeTab.set('queries');
-    this.selectedQueryId.set(row.entryId);
+    this.timelineSelectedQueryId.set(row.entryId);
   }
 
-  /** The same way out of the Events tab, for a row whose query is still registered. */
   protected selectEventRow(item: EventLogItem) {
-    if (!item.queryId) return;
-
-    this.activeTab.set('queries');
-    this.selectedQueryId.set(item.queryId);
+    if (item.queryId) this.selectQuery(item.queryId);
   }
 
-  /** A diffed value on one line. Rendering the full tree per path would bury the paths themselves. */
-  protected diffValue(value: unknown) {
+  /** A value on one line, for a diff row or a form field. The full tree would bury the row it sits in. */
+  protected inlineValue(value: unknown) {
     if (typeof value === 'string') return value.length > 80 ? `"${value.slice(0, 80)}…"` : `"${value}"`;
     if (value === undefined) return 'undefined';
 
@@ -1441,6 +1489,59 @@ export class QueryDevtoolsComponent {
     return entry.handle as WebSocketDevtoolsHandle;
   }
 
+  protected asForm(entry: QueryDevtoolsEntry): QueryDevtoolsFormHandle {
+    return entry.handle as QueryDevtoolsFormHandle;
+  }
+
+  /**
+   * The queries a form feeds, discovered from the reads its `value()` recorded while their args were
+   * built - so a form that nothing consumes yet reads as exactly that.
+   */
+  protected queriesDrivenByForm(entry: QueryDevtoolsEntry): QueryLink[] {
+    return this.queryEntries()
+      .filter((candidate) => candidate.formLinks?.ids().includes(entry.id))
+      .map((candidate) => this.queryLinkFor(candidate));
+  }
+
+  /** The reverse: the forms whose value a query's args read. */
+  protected formsDrivingQuery(entry: QueryDevtoolsEntry): QueryDevtoolsEntry[] {
+    const ids = entry.formLinks?.ids() ?? [];
+
+    return this.formEntries().filter((form) => ids.includes(form.id));
+  }
+
+  protected selectForm(id: string) {
+    this.activeTab.set('forms');
+    this.selectedFormId.set(id);
+  }
+
+  /**
+   * The refreshes that re-executed a query, newest first - the answer to "why did this refetch?". Read
+   * off the event log, so it goes back exactly as far as the log does.
+   */
+  protected refreshesFor(entryId: string) {
+    return this.eventLog()
+      .filter((item) => item.cause && item.refreshed?.some((refreshed) => refreshed.queryIds.includes(entryId)))
+      .map((item) => ({
+        id: item.id,
+        timestamp: item.timestamp,
+        label: this.causeLabel(item.cause as QueryRefreshCause),
+      }));
+  }
+
+  /** What asked for a refresh, on one line. */
+  protected causeLabel(cause: QueryRefreshCause) {
+    const scope = cause.url ? this.requestPath(cause.url) : 'everything in use';
+    const what =
+      cause.type === 'invalidation'
+        ? `invalidated ${scope}`
+        : cause.type === 'mutation'
+          ? `mutation on ${scope}`
+          : `refreshed ${scope}`;
+
+    return cause.otherTab ? `${what} · another tab` : what;
+  }
+
   /** Derives the per-step status of a sequence step from its live progress signals. */
   protected sequenceStepStatus(sequence: QuerySequence<unknown[]>, index: number): QuerySequenceStatus {
     const failedAt = sequence.failedAt();
@@ -1464,17 +1565,12 @@ export class QueryDevtoolsComponent {
     const inner = stack.queries();
     const queryEntries = this.queryEntries();
 
-    return inner.map((query) => {
-      const entry = queryEntries.find((e) => e.handle === query);
-      return {
-        id: entry?.id ?? '',
-        query: query as AnyQuery,
-        method: entry?.meta.method ?? '',
-        segments: this.routeSegments(entry, query as AnyQuery),
-        clientBaseUrl: entry?.meta.clientBaseUrl ?? '',
-        stats: entry?.stats,
-      };
-    });
+    return inner.map((query) =>
+      this.queryLinkFor(
+        queryEntries.find((e) => e.handle === query),
+        query as AnyQuery,
+      ),
+    );
   }
 
   /** Identifying info for a stack, derived from its (uniform) inner queries. */
@@ -1505,17 +1601,12 @@ export class QueryDevtoolsComponent {
   protected queriesForSequence(sequence: QuerySequence<unknown[]>): QueryLink[] {
     const queryEntries = this.queryEntries();
 
-    return sequence.queries.map((query) => {
-      const entry = queryEntries.find((e) => e.handle === query);
-      return {
-        id: entry?.id ?? '',
-        query: query as AnyQuery,
-        method: entry?.meta.method ?? '',
-        segments: this.routeSegments(entry, query as AnyQuery),
-        clientBaseUrl: entry?.meta.clientBaseUrl ?? '',
-        stats: entry?.stats,
-      };
-    });
+    return sequence.queries.map((query) =>
+      this.queryLinkFor(
+        queryEntries.find((e) => e.handle === query),
+        query as AnyQuery,
+      ),
+    );
   }
 
   /** The snapshot of a sequence step, once it has run (holds the args in and the response/error out). */
@@ -1576,8 +1667,21 @@ export class QueryDevtoolsComponent {
 
   protected eventTypeLabel(event: EventLogItem) {
     if (event.type === 'unbind-all-secure') return 'logout';
+    if (event.type === 'queries-refreshed') return `refetch ×${event.refreshed?.length ?? 0}`;
 
     return event.type === 'request-error' ? `error ${event.status}` : 'success';
+  }
+
+  /** A registered query as a row that opens the detail drawer. */
+  private queryLinkFor(entry: QueryDevtoolsEntry | undefined, query = entry?.handle as AnyQuery): QueryLink {
+    return {
+      id: entry?.id ?? '',
+      query,
+      method: entry?.meta.method ?? '',
+      segments: this.routeSegments(entry, query),
+      clientBaseUrl: entry?.meta.clientBaseUrl ?? '',
+      stats: entry?.stats,
+    };
   }
 
   /** The activity of one entry, or the total of a group of them (a stack's queries, a whole tab). */
@@ -1834,7 +1938,13 @@ export class QueryDevtoolsComponent {
   }
 
   private selectionKey() {
-    return `${this.selectedQueryId()}|${this.stackSelectedQueryId()}|${this.sequenceSelectedQueryId()}`;
+    return [
+      this.selectedQueryId(),
+      this.stackSelectedQueryId(),
+      this.sequenceSelectedQueryId(),
+      this.formSelectedQueryId(),
+      this.timelineSelectedQueryId(),
+    ].join('|');
   }
 
   /** Writes to the clipboard and ticks `copied` on success. `html` is omitted for plain-text payloads. */
@@ -1881,25 +1991,63 @@ export class QueryDevtoolsComponent {
     // so a row for it would only ever duplicate the next one.
     if (event.type === 'entry-created') return;
 
-    const base = { id: this.eventIdCounter++, timestamp: Date.now(), client, type: event.type };
+    const base = {
+      id: this.eventIdCounter++,
+      timestamp: Date.now(),
+      client,
+      type: event.type,
+      cause: null,
+      refreshed: null,
+    };
 
     // A logout drops every secure entry at once - worth a row of its own, since the requests that
     // disappear from the cache view are otherwise unexplained.
-    const item: EventLogItem =
-      event.type === 'unbind-all-secure'
-        ? { ...base, method: null, url: null, isSecure: true, status: null, queryId: null }
-        : {
-            ...base,
-            method: event.request.method,
-            url: event.request.url,
-            isSecure: event.isSecure,
-            status: event.type === 'request-error' ? event.error.status : null,
-            // A request is shared by every query on the same cache key, so the first owner is as good
-            // as any - they all show the same response.
-            queryId:
-              this.queryEntries().find((e) => (e.handle as AnyQuery).subtle.request() === event.request)?.id ?? null,
-          };
+    if (event.type === 'unbind-all-secure') {
+      this.pushEventItem({ ...base, method: null, url: null, isSecure: true, status: null, queryId: null });
 
+      return;
+    }
+
+    // An invalidation is one row for the whole fan-out: the six queries it re-executed are listed on it
+    // rather than blurring into the six request rows that follow.
+    if (event.type === 'queries-refreshed') {
+      this.pushEventItem({
+        ...base,
+        method: null,
+        url: null,
+        isSecure: false,
+        status: null,
+        queryId: null,
+        cause: event.cause,
+        refreshed: event.requests.map((request) => this.refreshedRequestOf(request)),
+      });
+
+      return;
+    }
+
+    this.pushEventItem({
+      ...base,
+      method: event.request.method,
+      url: event.request.url,
+      isSecure: event.isSecure,
+      status: event.type === 'request-error' ? event.error.status : null,
+      // A request is shared by every query on the same cache key, so the first owner is as good
+      // as any - they all show the same response.
+      queryId: this.queryEntries().find((e) => (e.handle as AnyQuery).subtle.request() === event.request)?.id ?? null,
+    });
+  }
+
+  private refreshedRequestOf(request: { method: string; url: string }): RefreshedRequest {
+    return {
+      queryIds: this.queryEntries()
+        .filter((e) => (e.handle as AnyQuery).subtle.request() === request)
+        .map((owner) => owner.id),
+      method: request.method,
+      path: this.requestPath(request.url),
+    };
+  }
+
+  private pushEventItem(item: EventLogItem) {
     this.eventLog.update((log) => [item, ...log].slice(0, MAX_EVENTS));
   }
 }

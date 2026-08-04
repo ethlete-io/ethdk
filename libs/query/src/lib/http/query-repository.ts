@@ -12,6 +12,25 @@ import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyPara
 import { RunQueryExecuteOptions } from './query-execute-utils';
 import { ShouldRetryRequestFn } from './query-retry-utils';
 
+/**
+ * Why a batch of in-use entries was refreshed. The answer to "why did this refetch?", which the query
+ * devtools spell out per query - the entries themselves only ever see a forced execution.
+ */
+export type QueryRefreshCause = {
+  /**
+   * - `refresh` - {@link QueryClient.refreshQueriesInUse}, which narrows nothing.
+   * - `invalidation` - {@link QueryClient.invalidateQueries}.
+   * - `mutation` - the multi-tab sync engine reacting to a mutation another tab made.
+   */
+  type: 'refresh' | 'invalidation' | 'mutation';
+
+  /** The URL the refresh was narrowed to (an invalidation's scope, a mutation's URL), or `null`. */
+  url: string | null;
+
+  /** Whether another tab asked for it rather than this one. */
+  otherTab: boolean;
+};
+
 export type QueryRepositoryEvent =
   | {
       type: 'request-error';
@@ -63,6 +82,19 @@ export type QueryRepositoryEvent =
 
       /** @see QueryRepositoryEvent.isPersistEnabled */
       isPersistEnabled: boolean;
+    }
+  | {
+      /**
+       * A batch of in-use entries was re-executed at once. Emitted for every
+       * {@link QueryRepository.refreshInUse} call, including one that matched nothing - "the
+       * invalidation ran and hit no query" is an answer too.
+       */
+      type: 'queries-refreshed';
+
+      cause: QueryRefreshCause;
+
+      /** The requests that were re-executed, in cache order. */
+      requests: HttpRequest<QueryArgs>[];
     }
   | {
       /**
@@ -224,11 +256,12 @@ export type QueryRepository = {
    * in-flight requests. Entries kept only for their `keepUnusedFor` window are skipped - nobody is
    * looking at them, and they revalidate on their own when a consumer binds again.
    *
-   * Pass a filter to narrow it down to a subset of those entries.
+   * Pass a filter to narrow it down to a subset of those entries, and a cause to describe what asked
+   * for it - which is what the devtools report as the reason a query refetched.
    *
    * @see QueryClient.refreshQueriesInUse
    */
-  refreshInUse: (filter?: QueryRepositoryRefreshFilterFn) => void;
+  refreshInUse: (filter?: QueryRepositoryRefreshFilterFn, cause?: QueryRefreshCause) => void;
 
   /**
    * Writes a response that another tab received onto the matching cache entry, so the same query
@@ -557,7 +590,9 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     eventsSubject.next({ type: 'unbind-all-secure' });
   };
 
-  const refreshInUse = (filter?: QueryRepositoryRefreshFilterFn) => {
+  const refreshInUse = (filter?: QueryRepositoryRefreshFilterFn, cause?: QueryRefreshCause) => {
+    const refreshed: HttpRequest<QueryArgs>[] = [];
+
     for (const cacheEntry of cache.values()) {
       if (cacheEntry.consumers.size === 0) continue;
 
@@ -568,8 +603,15 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
       if (filter && !filter(cacheEntry.request)) continue;
 
+      refreshed.push(cacheEntry.request);
       cacheEntry.request.execute({ force: true });
     }
+
+    eventsSubject.next({
+      type: 'queries-refreshed',
+      cause: cause ?? { type: 'refresh', url: null, otherTab: false },
+      requests: refreshed,
+    });
   };
 
   const applyExternalResponse = (options: ApplyExternalResponseOptions) => {

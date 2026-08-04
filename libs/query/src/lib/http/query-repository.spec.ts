@@ -512,6 +512,42 @@ describe('createQueryRepository - keepUnusedFor (unused entry retention)', () =>
 
       expect(httpTesting.match(() => true).map((req) => req.request.url)).toEqual(['https://example.com/teams']);
     });
+
+    it('reports which entries it refreshed, and why', () => {
+      const repo = createRepo();
+      const events: QueryRepositoryEvent[] = [];
+
+      repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/players' });
+      repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/teams' });
+      flushAll();
+
+      repo.events$.subscribe((event) => events.push(event));
+      repo.refreshInUse((request) => request.url.endsWith('/teams'), {
+        type: 'invalidation',
+        url: 'https://example.com/teams',
+        otherTab: true,
+      });
+
+      expect(events).toEqual([
+        expect.objectContaining({
+          type: 'queries-refreshed',
+          cause: { type: 'invalidation', url: 'https://example.com/teams', otherTab: true },
+          requests: [expect.objectContaining({ url: 'https://example.com/teams' })],
+        }),
+      ]);
+    });
+
+    it('reports an unnarrowed refresh as one, and an invalidation that hit nothing as empty', () => {
+      const repo = createRepo();
+      const events: QueryRepositoryEvent[] = [];
+
+      repo.events$.subscribe((event) => events.push(event));
+      repo.refreshInUse();
+
+      expect(events).toEqual([
+        { type: 'queries-refreshed', cause: { type: 'refresh', url: null, otherTab: false }, requests: [] },
+      ]);
+    });
   });
 
   describe('applyExternalResponse', () => {

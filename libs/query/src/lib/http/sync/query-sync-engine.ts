@@ -89,7 +89,11 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
     // An invalidation is something the other tab's app code asked for explicitly, so unlike the
     // mutation heuristic it is not something `refreshOnMutation: false` opts out of.
     if (message.type === 'invalidate') {
-      repository.refreshInUse(createQueryInvalidationFilter({ url: message.url }));
+      repository.refreshInUse(createQueryInvalidationFilter({ url: message.url }), {
+        type: 'invalidation',
+        url: message.url,
+        otherTab: true,
+      });
 
       return;
     }
@@ -98,7 +102,11 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
 
     const mutation = { method: message.method, url: message.url };
 
-    repository.refreshInUse(mutationFilter ? (request) => mutationFilter(mutation, request) : undefined);
+    repository.refreshInUse(mutationFilter ? (request) => mutationFilter(mutation, request) : undefined, {
+      type: 'mutation',
+      url: message.url,
+      otherTab: true,
+    });
   };
 
   const postInvalidation = (url: string | null) => transport.post({ type: 'invalidate', url });

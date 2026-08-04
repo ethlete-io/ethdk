@@ -5,10 +5,12 @@ import {
   QueryDevtoolsRegistration,
   QueryDevtoolsRoutePart,
   setQueryDevtoolsFaultResolver,
+  setQueryDevtoolsFormLinksFactory,
   setQueryDevtoolsRegistrar,
   setQueryDevtoolsStatsFactory,
 } from './query-devtools-hook';
 import { resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
+import { createQueryDevtoolsFormLinks } from './query-devtools-form-links';
 import { createQueryDevtoolsStats } from './query-devtools-stats';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
@@ -29,6 +31,7 @@ const descriptorOf = (entry: Pick<QueryDevtoolsEntry, 'kind' | 'meta'>) => {
   if (kind === 'query') return `query|${meta.clientName ?? ''}|${meta.method ?? ''}|${meta.route ?? ''}`;
   if (kind === 'auth-provider') return `auth-provider|${meta.name ?? ''}`;
   if (kind === 'ws-client') return `ws-client|${meta.name ?? ''}`;
+  if (kind === 'query-form') return `query-form|${meta.name ?? ''}`;
 
   return kind;
 };
@@ -148,6 +151,7 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
     meta,
     createdAt: Date.now(),
     stats: registration.stats,
+    formLinks: registration.formLinks,
   };
 
   entries.update((list) => [...list, fullEntry]);
@@ -173,6 +177,7 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
 export const provideQueryDevtools = (): EnvironmentProviders => {
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
+  setQueryDevtoolsFormLinksFactory(createQueryDevtoolsFormLinks);
   setQueryDevtoolsFaultResolver(resolveQueryDevtoolsFaultForAttempt);
 
   if (!isDevMode()) {

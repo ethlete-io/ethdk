@@ -1,6 +1,7 @@
 import { HttpEventType } from '@angular/common/http';
 import { Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
 import { Observable, Subject, Subscription } from 'rxjs';
+import { QueryDevtoolsFormLinksRecorder } from '../devtools/query-devtools-form-links';
 import { QueryDevtoolsStatsRecorder } from '../devtools/query-devtools-stats';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
 import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
@@ -14,6 +15,12 @@ export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
    * not installed.
    */
   devtoolsStats?: QueryDevtoolsStatsRecorder | null;
+
+  /**
+   * The recorder that notes which query forms the args source reads, or nothing when the devtools are
+   * not installed.
+   */
+  devtoolsFormLinks?: QueryDevtoolsFormLinksRecorder | null;
 };
 
 export type QueryStateSubtle<TArgs extends QueryArgs> = {
@@ -36,6 +43,9 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
 
   /** @see SetupQueryStateOptions.devtoolsStats */
   devtoolsStats: QueryDevtoolsStatsRecorder | null;
+
+  /** @see SetupQueryStateOptions.devtoolsFormLinks */
+  devtoolsFormLinks: QueryDevtoolsFormLinksRecorder | null;
 };
 
 export type QueryState<TArgs extends QueryArgs> = {
@@ -176,6 +186,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
       bindRequestEvents,
       setArgsSource,
       devtoolsStats: options.devtoolsStats ?? null,
+      devtoolsFormLinks: options.devtoolsFormLinks ?? null,
     },
   };
 

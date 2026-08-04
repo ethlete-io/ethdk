@@ -113,7 +113,7 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
       // auto-refresh) always sees the latest value with no pending-effect window. Sentinels are
       // resolved here: CLEAR -> null, `null` ("don't change") -> keep the previous value.
       let previous: RequestArgs<TArgs> | null = null;
-      context.state.subtle.setArgsSource(() => {
+      const resolve = () => {
         const value = args();
 
         if (value === CLEAR_QUERY_ARGS) {
@@ -126,7 +126,14 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
 
         previous = value;
         return value;
-      });
+      };
+
+      // Only ever non-null while the devtools are installed. Wrapping the source (rather than reading
+      // `state.args` from the outside) is what puts the tracking window around the *evaluation* of the
+      // args - a cached read of the computed runs nothing and would record no form at all.
+      const formLinks = context.state.subtle.devtoolsFormLinks;
+
+      context.state.subtle.setArgsSource(formLinks ? () => formLinks.track(resolve) : resolve);
 
       // Trigger (auto-)execution whenever the resolved args change.
       nestedEffect(

@@ -13,6 +13,8 @@ import {
 import { FieldTree, form } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ET_PROPERTY_REMOVED, clone, equal, injectQueryParamChanges } from '@ethlete/core';
+import { QueryDevtoolsFormField, QueryDevtoolsFormHandle } from '../devtools/query-devtools-form';
+import { isQueryDevtoolsEnabled, noteQueryFormRead, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { transformToBoolean, transformToNumber } from '../query-form/query-form.utils';
 import {
   QueryFieldDef,
@@ -142,6 +144,27 @@ export type CreateQueryFormConfig<TFields extends QueryFormFields> = {
    * A function is evaluated every time a key is built.
    */
   readonly queryParamPrefix?: string | (() => string);
+
+  /**
+   * What the form is called in the devtools Forms tab. Defaults to the
+   * `queryParamPrefix` where it is a plain string, and to `form` otherwise.
+   * Ignored unless `provideQueryDevtools()` is installed.
+   */
+  readonly name?: string;
+};
+
+/**
+ * Per-name sequence behind the devtools id of a form, mirroring the registry's own scheme so the
+ * panel can restore the selected form after a reload.
+ */
+const devtoolsIdCounters = /* @__PURE__ */ new Map<string, number>();
+
+const nextQueryFormDevtoolsId = (name: string) => {
+  const seq = devtoolsIdCounters.get(name) ?? 0;
+
+  devtoolsIdCounters.set(name, seq + 1);
+
+  return `query-form|${name}#${seq}`;
 };
 
 /**
@@ -180,6 +203,7 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
 
   private observeOptions: QueryFormSignalsObserveOptions | undefined;
   private pendingTimer: ReturnType<typeof setTimeout> | null = null;
+  private commitPending = signal(false);
   private skipNextResets = false;
 
   /**
@@ -219,7 +243,19 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
     this.committed = signal(clone(initial) as QueryFormModel<TFields>);
     this.fields = form(this.model);
 
-    this.value = this.committed.asReadonly();
+    const devtoolsName = config.name ?? (typeof this.prefix === 'string' ? this.prefix : 'form');
+    const devtoolsId = isQueryDevtoolsEnabled() ? nextQueryFormDevtoolsId(devtoolsName) : null;
+
+    // Reading `value` is how a query's args pick the form up, so the devtools learn which query a form
+    // drives by noting the read - see `QueryDevtoolsFormLinksHandle`.
+    this.value = devtoolsId
+      ? computed(() => {
+          noteQueryFormRead(devtoolsId);
+
+          return this.committed();
+        })
+      : this.committed.asReadonly();
+
     this.previousValue = this.previous.asReadonly();
     this.changes = computed(() => ({ previousValue: this.previous(), currentValue: this.committed() }));
     this.activeFilterCount = computed(() => computeFilterCount(this._fields, this.committed() as Dict, this.defaults));
@@ -242,7 +278,20 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
       });
     });
 
-    inject(DestroyRef).onDestroy(() => this.cleanup());
+    const destroyRef = inject(DestroyRef);
+
+    destroyRef.onDestroy(() => this.cleanup());
+
+    if (devtoolsId) {
+      destroyRef.onDestroy(
+        registerQueryDevtoolsEntry({
+          id: devtoolsId,
+          kind: 'query-form',
+          handle: this.devtoolsHandle(),
+          meta: { name: devtoolsName },
+        }),
+      );
+    }
   }
 
   public observe(options?: QueryFormSignalsObserveOptions): this {
@@ -317,6 +366,49 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
     return createBranch(this._fields, clone(this.committed()), this.injector);
   }
 
+  /**
+   * The live view `<et-query-devtools>` renders. Only built while the devtools are installed - it walks
+   * every field on every change, which an app without them should not pay for.
+   */
+  private devtoolsHandle(): QueryDevtoolsFormHandle {
+    const fields = computed(() => {
+      const committed = this.committed() as Dict;
+      const live = this.model() as Dict;
+
+      return Object.entries(this._fields).map(([key, def]): QueryDevtoolsFormField => {
+        const value = committed[key];
+
+        return {
+          key,
+          paramKey: this.paramKey(key),
+          value,
+          liveValue: live[key],
+          defaultValue: this.defaults[key],
+          isDefault: equal(value, this.defaults[key]),
+          queryParam: this.queryParamFor(key, def, value),
+          debounceMs: def.debounce ?? null,
+          isResetBy: def.isResetBy ?? [],
+          countsAsFilter: !IGNORED_FILTER_COUNT_FIELDS.includes(key) && !def.skipInFilterCount,
+        };
+      });
+    });
+
+    return {
+      fields,
+      // Not `this.value` - reading that from the panel would link the form to whichever query happens
+      // to be building its args at the time.
+      value: computed(() => this.committed() as Dict),
+      previousValue: computed(() => (this.previous() as Dict | null) ?? null),
+      defaultValue: this.defaults,
+      activeFilterCount: this.activeFilterCount,
+      isAtDefaults: computed(() => equal(this.committed(), this.defaults)),
+      isCommitPending: this.commitPending.asReadonly(),
+      isObserving: this.observing.asReadonly(),
+      resetField: (key) => this.resetFieldToDefault(key as keyof QueryFormModel<TFields>),
+      resetAll: () => this.resetAllFieldsToDefault(),
+    };
+  }
+
   private onLiveChange(live: Dict) {
     if (!this.observing()) return;
     if (equal(live, this.committed())) return;
@@ -329,6 +421,7 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
     if (debounceMs === null) {
       this.flush();
     } else {
+      this.commitPending.set(true);
       this.pendingTimer = setTimeout(() => {
         this.pendingTimer = null;
         this.flush();
@@ -455,24 +548,23 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
     return autoCoerce(raw, resolveDefault(def));
   }
 
+  /** What a field puts in the URL for a given value, or `undefined` when it writes nothing. */
+  private queryParamFor(key: string, def: QueryFieldDef<unknown>, value: unknown) {
+    const isDefault = equal(value, this.defaults[key]);
+    const writeToUrl = def.appendToUrl !== false;
+    const writeDefault = def.appendDefaultValueToUrl === true;
+
+    if (!writeToUrl || (isDefault && !writeDefault)) return undefined;
+    if (def.valueToQueryParam) return def.valueToQueryParam(value);
+
+    return value === null ? ET_NULL_VALUE : value;
+  }
+
   private writeToUrl(value: Dict) {
     const queryParams: Dict = {};
 
     for (const [key, def] of Object.entries(this._fields)) {
-      const paramKey = this.paramKey(key);
-      const fieldValue = value[key];
-
-      const isDefault = equal(fieldValue, this.defaults[key]);
-      const writeToUrl = def.appendToUrl !== false;
-      const writeDefault = def.appendDefaultValueToUrl === true;
-
-      if (!writeToUrl || (isDefault && !writeDefault)) {
-        queryParams[paramKey] = undefined;
-      } else if (def.valueToQueryParam) {
-        queryParams[paramKey] = def.valueToQueryParam(fieldValue);
-      } else {
-        queryParams[paramKey] = fieldValue === null ? ET_NULL_VALUE : fieldValue;
-      }
+      queryParams[this.paramKey(key)] = this.queryParamFor(key, def, value[key]);
     }
 
     queueMicrotask(() => {
@@ -497,6 +589,8 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
       clearTimeout(this.pendingTimer);
       this.pendingTimer = null;
     }
+
+    this.commitPending.set(false);
   }
 
   private cleanup() {

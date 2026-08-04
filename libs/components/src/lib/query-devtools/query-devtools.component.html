@@ -78,6 +78,27 @@
       </div>
     </header>
 
+    @if (armedFaultClients(); as armed) {
+      <div class="et-query-devtools-armed-bar" role="status">
+        <span class="et-query-devtools-armed-dot" aria-hidden="true"></span>
+        <span class="et-query-devtools-armed-text">
+          <strong>Faults armed</strong> on
+          <span class="et-query-devtools-mono">{{ armed.join(', ') }}</span>
+          — every failure and delay you see from
+          {{ armed.length === 1 ? 'this client' : 'these clients' }} is injected, not the API.
+        </span>
+        <button
+          [disabled]="activeTab() === 'faults'"
+          (click)="activeTab.set('faults')"
+          class="et-query-devtools-btn"
+          type="button"
+        >
+          Review
+        </button>
+        <button (click)="CLEAR_FAULTS()" class="et-query-devtools-btn" type="button">Disarm all</button>
+      </div>
+    }
+
     <div class="et-query-devtools-body">
       @switch (activeTab()) {
         <!-- QUERIES -->
@@ -202,7 +223,8 @@
                       class="et-query-devtools-chip et-query-devtools-chip--loading"
                       title="Waiting out a retry backoff before attempt {{ retry.attempt }}"
                     >
-                      ⟳ {{ retry.attempt }}
+                      <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+                      {{ retry.attempt }}
                     </span>
                   }
                   @if (isStale(item.query)) {
@@ -452,6 +474,169 @@
           </div>
         }
 
+        <!-- FORMS -->
+        @case ('forms') {
+          <div class="et-query-devtools-split">
+            <div class="et-query-devtools-scroll">
+              @for (entry of formEntries(); track entry.id) {
+                @let form = asForm(entry);
+                @let expanded = selectedFormId() === entry.id;
+                <div class="et-query-devtools-card">
+                  <div class="et-query-devtools-card-head">
+                    <button
+                      [attr.aria-expanded]="expanded"
+                      (click)="selectedFormId.set(expanded ? null : entry.id)"
+                      class="et-query-devtools-row-link"
+                      type="button"
+                    >
+                      <span class="et-query-devtools-caret">{{ expanded ? '▾' : '▸' }}</span>
+                      <strong>{{ entry.meta.name || 'query form' }}</strong>
+                    </button>
+                    @if (form.activeFilterCount(); as count) {
+                      <span class="et-query-devtools-chip">{{ count }} active</span>
+                    } @else {
+                      <span class="et-query-devtools-chip et-query-devtools-chip--muted">at defaults</span>
+                    }
+                    @if (form.isCommitPending()) {
+                      <span class="et-query-devtools-chip et-query-devtools-chip--loading">debouncing</span>
+                    }
+                    @if (!form.isObserving()) {
+                      <span
+                        class="et-query-devtools-chip et-query-devtools-chip--muted"
+                        title="observe() has not been called, so nothing syncs with the URL"
+                      >
+                        not observing
+                      </span>
+                    }
+                    <button
+                      [disabled]="form.isAtDefaults()"
+                      (click)="form.resetAll()"
+                      class="et-query-devtools-btn"
+                      type="button"
+                    >
+                      ⟲ Reset all
+                    </button>
+                  </div>
+
+                  @let driven = queriesDrivenByForm(entry);
+                  <dl class="et-query-devtools-meta">
+                    <dt>Drives</dt>
+                    <dd>
+                      @if (driven.length) {
+                        <ng-container *ngTemplateOutlet="formDrivesTpl; context: { links: driven }" />
+                      } @else {
+                        <span class="et-query-devtools-hint">
+                          No query has read this form's value yet. A query picks it up the first time its
+                          <code>withArgs</code> reads <code>value()</code>.
+                        </span>
+                      }
+                    </dd>
+                  </dl>
+
+                  @if (expanded) {
+                    <table class="et-query-devtools-table">
+                      <thead>
+                        <tr>
+                          <th>Field</th>
+                          <th>Value</th>
+                          <th>Default</th>
+                          <th>URL param</th>
+                          <th>Rules</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (field of form.fields(); track field.key) {
+                          <tr [attr.data-status]="field.isDefault ? null : 'success'">
+                            <td class="et-query-devtools-mono">{{ field.key }}</td>
+                            <td class="et-query-devtools-mono">
+                              {{ inlineValue(field.value) }}
+                              <!-- The live value only differs while a debounce is pending, which is exactly
+                                 when "the input says X but the query asked for Y" needs explaining. -->
+                              @if (field.liveValue !== field.value) {
+                                <span class="et-query-devtools-stat-sub"
+                                  >typing {{ inlineValue(field.liveValue) }}</span
+                                >
+                              }
+                            </td>
+                            <td class="et-query-devtools-mono">{{ inlineValue(field.defaultValue) }}</td>
+                            <td class="et-query-devtools-mono">
+                              @if (field.queryParam === undefined) {
+                                <span class="et-query-devtools-hint">—</span>
+                              } @else {
+                                {{ field.paramKey }}={{ inlineValue(field.queryParam) }}
+                              }
+                            </td>
+                            <td>
+                              <div class="et-query-devtools-chips">
+                                @if (field.debounceMs !== null) {
+                                  <span class="et-query-devtools-chip et-query-devtools-chip--muted">
+                                    {{ field.debounceMs }}ms
+                                  </span>
+                                }
+                                @if (field.isResetBy.length) {
+                                  <span
+                                    class="et-query-devtools-chip et-query-devtools-chip--muted"
+                                    title="Reset to its default whenever one of these changes"
+                                  >
+                                    reset by {{ field.isResetBy.join(', ') }}
+                                  </span>
+                                }
+                                @if (!field.countsAsFilter) {
+                                  <span
+                                    class="et-query-devtools-chip et-query-devtools-chip--muted"
+                                    title="Not counted by activeFilterCount"
+                                  >
+                                    not a filter
+                                  </span>
+                                }
+                              </div>
+                            </td>
+                            <td>
+                              <button
+                                [disabled]="field.isDefault"
+                                (click)="form.resetField(field.key)"
+                                class="et-query-devtools-btn"
+                                type="button"
+                              >
+                                ⟲
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+
+                    <h4 class="et-query-devtools-section">Committed value</h4>
+                    <et-query-devtools-json [value]="form.value()" />
+                  }
+                </div>
+              } @empty {
+                <p class="et-query-devtools-empty">
+                  No query forms registered. A form created with <code>createQueryForm()</code> registers itself.
+                </p>
+              }
+            </div>
+
+            @if (formSelectedQuery(); as sel) {
+              <aside class="et-query-devtools-drawer">
+                <div class="et-query-devtools-drawer-head">
+                  <span>Query detail</span>
+                  <button
+                    (click)="formSelectedQueryId.set(null)"
+                    class="et-query-devtools-close"
+                    type="button"
+                    title="Close detail"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
+              </aside>
+            }
+          </div>
+        }
+
         <!-- AUTH -->
         @case ('auth') {
           <div class="et-query-devtools-scroll">
@@ -642,186 +827,254 @@
         <!-- TIMELINE -->
         @case ('timeline') {
           @let tl = timeline();
-          <div class="et-query-devtools-scroll">
-            <div class="et-query-devtools-toolbar">
-              <div class="et-query-devtools-toolbar-row">
-                @if (inspectFilterIds(); as ids) {
-                  <span class="et-query-devtools-filter-chip">
-                    <span class="et-query-devtools-filter-icon" aria-hidden="true">⌖</span>
-                    Inspected element
-                    <span class="et-query-devtools-filter-count">{{ ids.length }}</span>
-                  </span>
-                } @else {
-                  <label class="et-query-devtools-field">
-                    <span>Client</span>
-                    <select
-                      #timelineClientSelect
-                      [value]="selectedClientName() ?? ''"
-                      (change)="selectClient(timelineClientSelect.value || null)"
-                      class="et-query-devtools-select"
-                    >
-                      <option value="">All clients</option>
-                      @for (name of clientNames(); track name) {
-                        <option [value]="name">{{ name }}</option>
-                      }
-                    </select>
-                  </label>
-                }
-                <span class="et-query-devtools-count">
-                  {{ tl.rows.length }} run{{ tl.rows.length === 1 ? '' : 's' }}
-                  @if (tl.hidden) {
-                    · {{ tl.hidden }} older not shown
+          <div class="et-query-devtools-split">
+            <div class="et-query-devtools-pane">
+              <div class="et-query-devtools-toolbar">
+                <div class="et-query-devtools-toolbar-row">
+                  @if (inspectFilterIds(); as ids) {
+                    <span class="et-query-devtools-filter-chip">
+                      <span class="et-query-devtools-filter-icon" aria-hidden="true">⌖</span>
+                      Inspected element
+                      <span class="et-query-devtools-filter-count">{{ ids.length }}</span>
+                    </span>
+                  } @else {
+                    <label class="et-query-devtools-field">
+                      <span>Client</span>
+                      <select
+                        #timelineClientSelect
+                        [value]="selectedClientName() ?? ''"
+                        (change)="selectClient(timelineClientSelect.value || null)"
+                        class="et-query-devtools-select"
+                      >
+                        <option value="">All clients</option>
+                        @for (name of clientNames(); track name) {
+                          <option [value]="name">{{ name }}</option>
+                        }
+                      </select>
+                    </label>
                   }
-                  @if (tl.rows.length) {
-                    · over {{ formatDuration(tl.windowMs) }} from {{ formatTime(tl.startedAt) }}
-                  }
-                </span>
-                <button
-                  [disabled]="!tl.rows.length"
-                  (click)="resetTimeline()"
-                  class="et-query-devtools-btn et-query-devtools-toolbar-btn"
-                  type="button"
-                  title="Clear the run history and the counters of every listed query"
-                >
-                  ⟲ Reset
-                </button>
-              </div>
-            </div>
-
-            @if (tl.rows.length) {
-              <div class="et-query-devtools-timeline">
-                <div class="et-query-devtools-timeline-axis">
-                  <span class="et-query-devtools-timeline-ticks">
-                    @for (tick of timelineTicks(); track tick.pct) {
-                      <span [style.left.%]="tick.pct" class="et-query-devtools-timeline-tick">{{ tick.label }}</span>
+                  <span class="et-query-devtools-count">
+                    {{ tl.rows.length }} run{{ tl.rows.length === 1 ? '' : 's' }}
+                    @if (tl.hidden) {
+                      · {{ tl.hidden }} older not shown
+                    }
+                    @if (tl.rows.length) {
+                      · over {{ formatDuration(tl.windowMs) }} from {{ formatTime(tl.startedAt) }}
                     }
                   </span>
-                </div>
-
-                @for (row of tl.rows; track row.key) {
                   <button
-                    [class.et-query-devtools-timeline-row--active]="selectedQueryId() === row.entryId"
-                    (click)="selectTimelineRow(row)"
-                    class="et-query-devtools-timeline-row"
+                    [disabled]="!tl.rows.length"
+                    (click)="resetTimeline()"
+                    class="et-query-devtools-btn et-query-devtools-toolbar-btn"
                     type="button"
-                    title="{{ row.method }} {{ row.path }} · run {{ row.run.index }} · {{ row.run.status }}"
+                    title="Clear the run history and the counters of every listed query"
                   >
-                    <span class="et-query-devtools-timeline-label">
-                      <span class="et-query-devtools-method">{{ row.method }}</span>
-                      <span class="et-query-devtools-url">{{ row.path }}</span>
-                    </span>
-                    <span class="et-query-devtools-timeline-track">
-                      <span
-                        [attr.data-status]="runStatus(row.run)"
-                        [style.left.%]="row.leftPct"
-                        [style.width.%]="row.widthPct"
-                        class="et-query-devtools-timeline-bar"
-                      ></span>
-                    </span>
-                    <span class="et-query-devtools-timeline-meta">
-                      @if (row.durationMs === null) {
-                        in flight
-                      } @else {
-                        {{ formatDuration(row.durationMs) }}
-                      }
-                      @if (row.run.receivedBytes) {
-                        · {{ formatBytes(row.run.receivedBytes) }}
-                      }
-                      @if (row.run.attempts > 1) {
-                        <span
-                          class="et-query-devtools-chip et-query-devtools-chip--loading"
-                          title="Took {{
-                            row.run.attempts
-                          }} attempts - so this bar is mostly retry backoff, not one slow round trip"
-                        >
-                          ⟳ {{ row.run.attempts }}
-                        </span>
-                      }
-                      @if (!row.run.didRequest) {
-                        <span
-                          class="et-query-devtools-chip et-query-devtools-chip--muted"
-                          title="Arrived without a request of this query's own - a poll, another consumer of the same cache entry, or another tab"
-                        >
-                          shared
-                        </span>
-                      }
-                      @if (row.run.status === 'aborted') {
-                        <span
-                          class="et-query-devtools-chip et-query-devtools-chip--muted"
-                          title="The query requested again before this run's response arrived"
-                        >
-                          aborted
-                        </span>
-                      }
-                    </span>
+                    ⟲ Reset
                   </button>
-                }
+                </div>
               </div>
-            } @else {
-              <p class="et-query-devtools-empty">
-                No requests recorded yet. Every request a listed query makes shows up here as a bar.
-              </p>
+
+              @if (tl.rows.length) {
+                <div class="et-query-devtools-scroll">
+                  <div class="et-query-devtools-timeline">
+                    <div class="et-query-devtools-timeline-axis">
+                      <span class="et-query-devtools-timeline-ticks">
+                        @for (tick of timelineTicks(); track tick.pct) {
+                          <span [style.left.%]="tick.pct" class="et-query-devtools-timeline-tick">{{
+                            tick.label
+                          }}</span>
+                        }
+                      </span>
+                    </div>
+
+                    @for (row of tl.rows; track row.key) {
+                      <button
+                        [class.et-query-devtools-timeline-row--active]="timelineSelectedQueryId() === row.entryId"
+                        (click)="selectTimelineRow(row)"
+                        class="et-query-devtools-timeline-row"
+                        type="button"
+                        title="{{ row.method }} {{ row.path }} · run {{ row.run.index }} · {{ row.run.status }}"
+                      >
+                        <span class="et-query-devtools-timeline-label">
+                          <span class="et-query-devtools-method">{{ row.method }}</span>
+                          <span class="et-query-devtools-url">{{ row.path }}</span>
+                        </span>
+                        <span class="et-query-devtools-timeline-track">
+                          <span
+                            [attr.data-status]="runStatus(row.run)"
+                            [style.left.%]="row.leftPct"
+                            [style.width.%]="row.widthPct"
+                            class="et-query-devtools-timeline-bar"
+                          ></span>
+                        </span>
+                        <span class="et-query-devtools-timeline-duration">
+                          @if (row.durationMs === null) {
+                            in flight
+                          } @else {
+                            {{ formatDuration(row.durationMs) }}
+                          }
+                        </span>
+                        <span class="et-query-devtools-timeline-size">
+                          @if (row.run.receivedBytes) {
+                            {{ formatBytes(row.run.receivedBytes) }}
+                          }
+                        </span>
+                        <span class="et-query-devtools-timeline-flags">
+                          @if (row.run.attempts > 1) {
+                            <span
+                              class="et-query-devtools-chip et-query-devtools-chip--loading"
+                              title="Took {{
+                                row.run.attempts
+                              }} attempts - so this bar is mostly retry backoff, not one slow round trip"
+                            >
+                              <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+                              {{ row.run.attempts }}
+                            </span>
+                          }
+                          @if (!row.run.didRequest) {
+                            <span
+                              class="et-query-devtools-chip et-query-devtools-chip--muted"
+                              title="Arrived without a request of this query's own - a poll, another consumer of the same cache entry, or another tab"
+                            >
+                              shared
+                            </span>
+                          }
+                          @if (row.run.status === 'aborted') {
+                            <span
+                              class="et-query-devtools-chip et-query-devtools-chip--muted"
+                              title="The query requested again before this run's response arrived"
+                            >
+                              aborted
+                            </span>
+                          }
+                        </span>
+                      </button>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <p class="et-query-devtools-empty">
+                  No requests recorded yet. Every request a listed query makes shows up here as a bar.
+                </p>
+              }
+            </div>
+
+            @if (timelineSelectedQuery(); as sel) {
+              <aside class="et-query-devtools-drawer">
+                <div class="et-query-devtools-drawer-head">
+                  <span>Query detail</span>
+                  <button
+                    (click)="timelineSelectedQueryId.set(null)"
+                    class="et-query-devtools-close"
+                    type="button"
+                    title="Close detail"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
+              </aside>
             }
           </div>
         }
 
         <!-- EVENTS -->
         @case ('events') {
-          <div class="et-query-devtools-scroll">
+          <div class="et-query-devtools-pane">
             <div class="et-query-devtools-toolbar">
               <span class="et-query-devtools-count">{{ eventLog().length }} events</span>
               <button (click)="clearEvents()" class="et-query-devtools-btn" type="button">Clear</button>
             </div>
-            <table class="et-query-devtools-table">
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Base URL</th>
-                  <th>Type</th>
-                  <th>Request</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (event of eventLog(); track event.id) {
-                  <tr [attr.data-status]="event.type === 'request-error' ? 'error' : 'success'">
-                    <td>{{ formatTime(event.timestamp) }}</td>
-                    <td class="et-query-devtools-mono">{{ event.client }}</td>
-                    <td>
-                      {{ eventTypeLabel(event) }}
-                      @if (event.isSecure) {
-                        <span class="et-query-devtools-chip et-query-devtools-chip--muted">secure</span>
-                      }
-                    </td>
-                    @if (event.url; as url) {
+            <div class="et-query-devtools-scroll">
+              <table class="et-query-devtools-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Base URL</th>
+                    <th>Type</th>
+                    <th>Request</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (event of eventLog(); track event.id) {
+                    <tr
+                      [attr.data-status]="
+                        event.type === 'request-error' ? 'error' : event.type === 'queries-refreshed' ? null : 'success'
+                      "
+                    >
+                      <td>{{ formatTime(event.timestamp) }}</td>
+                      <td class="et-query-devtools-mono">{{ event.client }}</td>
                       <td>
-                        @if (event.queryId) {
-                          <button
-                            (click)="selectEventRow(event)"
-                            class="et-query-devtools-row-link"
-                            type="button"
-                            title="Open {{ event.method }} {{ url }}"
-                          >
-                            <span class="et-query-devtools-method">{{ event.method }}</span>
-                            <span class="et-query-devtools-url">{{ requestPath(url) }}</span>
-                          </button>
-                        } @else {
-                          <span [title]="event.method + ' ' + url">
-                            <span class="et-query-devtools-method">{{ event.method }}</span>
-                            <span class="et-query-devtools-url">{{ requestPath(url) }}</span>
-                          </span>
+                        {{ eventTypeLabel(event) }}
+                        @if (event.isSecure) {
+                          <span class="et-query-devtools-chip et-query-devtools-chip--muted">secure</span>
                         }
                       </td>
-                    } @else {
-                      <td class="et-query-devtools-url">all secure entries dropped</td>
-                    }
-                  </tr>
-                } @empty {
-                  <tr>
-                    <td class="et-query-devtools-empty" colspan="4">No events captured yet.</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+                      @if (event.cause; as cause) {
+                        <td>
+                          <span class="et-query-devtools-url">{{ causeLabel(cause) }}</span>
+                          @if (event.refreshed?.length) {
+                            <div class="et-query-devtools-chips">
+                              @for (refreshed of event.refreshed; track $index) {
+                                @if (refreshed.queryIds[0]; as queryId) {
+                                  <button
+                                    (click)="selectQuery(queryId)"
+                                    class="et-query-devtools-chip et-query-devtools-chip--button"
+                                    type="button"
+                                    title="Open {{ refreshed.method }} {{ refreshed.path }}"
+                                  >
+                                    {{ refreshed.method }} {{ refreshed.path }}
+                                    <!-- One request, several queries on the same cache key. Spelling the count
+                                       out beats repeating an identical row per consumer. -->
+                                    @if (refreshed.queryIds.length > 1) {
+                                      <small>×{{ refreshed.queryIds.length }}</small>
+                                    }
+                                  </button>
+                                } @else {
+                                  <span
+                                    class="et-query-devtools-chip et-query-devtools-chip--muted"
+                                    title="No registered query holds this cache entry any more"
+                                  >
+                                    {{ refreshed.method }} {{ refreshed.path }}
+                                  </span>
+                                }
+                              }
+                            </div>
+                          } @else {
+                            <span class="et-query-devtools-hint">matched no query in use</span>
+                          }
+                        </td>
+                      } @else if (event.url; as url) {
+                        <td>
+                          @if (event.queryId) {
+                            <button
+                              (click)="selectEventRow(event)"
+                              class="et-query-devtools-row-link"
+                              type="button"
+                              title="Open {{ event.method }} {{ url }}"
+                            >
+                              <span class="et-query-devtools-method">{{ event.method }}</span>
+                              <span class="et-query-devtools-url">{{ requestPath(url) }}</span>
+                            </button>
+                          } @else {
+                            <span [title]="event.method + ' ' + url">
+                              <span class="et-query-devtools-method">{{ event.method }}</span>
+                              <span class="et-query-devtools-url">{{ requestPath(url) }}</span>
+                            </span>
+                          }
+                        </td>
+                      } @else {
+                        <td class="et-query-devtools-url">all secure entries dropped</td>
+                      }
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td class="et-query-devtools-empty" colspan="4">No events captured yet.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           </div>
         }
 
@@ -831,16 +1084,9 @@
             <div class="et-query-devtools-toolbar">
               <p class="et-query-devtools-hint">
                 Faults are injected into the request pipeline, so retries, error handling features and the cache see
-                them exactly as they would see a real one. Nothing survives a reload.
+                them exactly as they would see a real one. Unlike the rest of the panel, what you arm here is not
+                persisted - a page reload disarms every client.
               </p>
-              <button
-                [disabled]="!tabBadges()['faults'].errors"
-                (click)="CLEAR_FAULTS()"
-                class="et-query-devtools-btn"
-                type="button"
-              >
-                Disarm all
-              </button>
             </div>
 
             @for (client of faultClients(); track client.name) {
@@ -1027,7 +1273,30 @@
       </div>
     </ng-template>
 
-    <!-- Reusable query detail — used by the Queries tab and the stacks split-view drawer. -->
+    <!-- The queries a form feeds — clicking one opens the split-view drawer, not a tab switch. -->
+    <ng-template #formDrivesTpl let-links="links">
+      <div class="et-query-devtools-inner-queries">
+        @for (link of links; track link.id) {
+          <button
+            [class.et-query-devtools-inner-row--active]="formSelectedQueryId() === link.id"
+            [disabled]="!link.id"
+            (click)="formSelectedQueryId.set(link.id)"
+            class="et-query-devtools-inner-row"
+            type="button"
+          >
+            <span [attr.data-status]="queryStatus(link.query)" class="et-query-devtools-status"></span>
+            <span class="et-query-devtools-method">{{ link.method }}</span>
+            <span class="et-query-devtools-route">
+              <ng-container
+                *ngTemplateOutlet="routeTpl; context: { segments: link.segments, fallback: link.query.id() || 'query' }"
+              />
+            </span>
+          </button>
+        }
+      </div>
+    </ng-template>
+
+    <!-- Reusable query detail — used by the Queries tab and by every split-view drawer. -->
     <ng-template #queryDetailTpl let-sel="sel">
       <div class="et-query-devtools-detail-head">
         <span class="et-query-devtools-method">{{ sel.entry.meta.method }}</span>
@@ -1045,7 +1314,8 @@
               class="et-query-devtools-chip et-query-devtools-chip--loading"
               title="The retry policy is backing off before it tries again. A query stuck loading with this chip is waiting, not slow."
             >
-              ⟳ attempt {{ retry.attempt }} in {{ formatCountdown(live.retryInMs) }}
+              <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+              attempt {{ retry.attempt }} in {{ formatCountdown(live.retryInMs) }}
             </span>
             <span class="et-query-devtools-live-note">
               {{ retryCause(retry.status) }} · backing off {{ formatDuration(retry.delayMs) }}
@@ -1055,7 +1325,8 @@
               class="et-query-devtools-chip et-query-devtools-chip--loading"
               title="How many HTTP attempts the last execution took - the retry policy fired for the rest"
             >
-              ⟳ {{ live.attempts }} attempts
+              <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+              {{ live.attempts }} attempts
             </span>
           }
 
@@ -1185,6 +1456,44 @@
             <dd>{{ formatTime(sel.query.lastTimeExecutedAt()) }}</dd>
             <dt>Triggered by</dt>
             <dd>{{ sel.query.triggeredBy() || 'user' }}</dd>
+            @let refreshes = refreshesFor(sel.entry.id);
+            @if (refreshes.length) {
+              <dt
+                title="Invalidations and mutation refreshes that re-executed this query, as far back as the event log goes"
+              >
+                Refetched by
+              </dt>
+              <dd>
+                <div class="et-query-devtools-chips">
+                  @for (refresh of refreshes.slice(0, 5); track refresh.id) {
+                    <span class="et-query-devtools-chip et-query-devtools-chip--muted">
+                      {{ formatTime(refresh.timestamp) }} · {{ refresh.label }}
+                    </span>
+                  }
+                  @if (refreshes.length > 5) {
+                    <span class="et-query-devtools-hint">+{{ refreshes.length - 5 }} earlier</span>
+                  }
+                </div>
+              </dd>
+            }
+            @let drivers = formsDrivingQuery(sel.entry);
+            @if (drivers.length) {
+              <dt>Args from</dt>
+              <dd>
+                <div class="et-query-devtools-chips">
+                  @for (driver of drivers; track driver.id) {
+                    <button
+                      (click)="selectForm(driver.id)"
+                      class="et-query-devtools-chip et-query-devtools-chip--button"
+                      type="button"
+                      title="Open the query form in the Forms tab"
+                    >
+                      {{ driver.meta.name }}
+                    </button>
+                  }
+                </div>
+              </dd>
+            }
             @if (sel.entry.meta.features?.length) {
               <dt>Features</dt>
               <dd>
@@ -1311,7 +1620,8 @@
                             run.attempts
                           }} attempts - the duration next to it covers every one of them, backoff included"
                         >
-                          ⟳ {{ run.attempts }}
+                          <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+                          {{ run.attempts }}
                         </span>
                       }
                       @if (!run.didRequest) {
@@ -1386,10 +1696,10 @@
                       <tr [attr.data-kind]="change.kind">
                         <td class="et-query-devtools-mono">{{ change.path }}</td>
                         <td class="et-query-devtools-mono et-query-devtools-diff-before">
-                          {{ change.kind === 'added' ? '—' : diffValue(change.before) }}
+                          {{ change.kind === 'added' ? '—' : inlineValue(change.before) }}
                         </td>
                         <td class="et-query-devtools-mono et-query-devtools-diff-after">
-                          {{ change.kind === 'removed' ? '—' : diffValue(change.after) }}
+                          {{ change.kind === 'removed' ? '—' : inlineValue(change.after) }}
                         </td>
                       </tr>
                     }

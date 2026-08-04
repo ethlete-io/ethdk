@@ -167,6 +167,10 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
     return respond(body);
   }
 
+  if (path === '/posts' && req.method === 'POST') {
+    return respond({ id: 99, title: 'Freshly created post' } satisfies PostView);
+  }
+
   if (path === '/posts') {
     const currentPage = Number(url.searchParams.get('page') ?? 1);
     const itemsPerPage = Number(url.searchParams.get('limit') ?? 5);
@@ -227,7 +231,10 @@ const getQuery = createGetQuery(devtoolsDemoClient);
 const postQuery = createPostQuery(devtoolsDemoClient);
 
 export type GetServerTimeArgs = { response: ServerTimeView; queryParams?: { fail?: boolean } };
-export type GetPostsArgs = { response: Paginated<PostView>; queryParams?: { page?: number; limit?: number } };
+export type GetPostsArgs = {
+  response: Paginated<PostView>;
+  queryParams?: { page?: number; limit?: number; query?: string };
+};
 export type GetPostArgs = { response: PostView; pathParams: { postId: number } };
 
 export type GetFlakyArgs = { response: FlakyView };
@@ -283,6 +290,11 @@ export const getProfile = createSecureGetQuery(devtoolsDemoClient, devtoolsDemoA
 export type CreateOrderArgs = { body: { item: string }; response: { id: string } };
 export type CreatePaymentArgs = { body: { orderId: string }; response: { id: string } };
 export type ConfirmOrderArgs = { body: { orderId: string; paymentId: string }; response: { confirmed: boolean } };
+
+export type CreatePostArgs = { body: { title: string }; response: PostView };
+
+/** A mutation whose whole point is the invalidation that follows it - the Events tab's fan-out row. */
+export const createPost = postQuery<CreatePostArgs>('/posts');
 
 export const createOrder = postQuery<CreateOrderArgs>('/orders');
 export const createPayment = postQuery<CreatePaymentArgs>('/payments');

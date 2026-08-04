@@ -67,11 +67,12 @@ character the keyboard reports.
 | **Queries**   | Every registered query, [filterable by client, endpoint and live state](#finding-a-query-in-a-long-list). Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the [detail view](#the-detail-view-overview-history-data) shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with), [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost) and [every run it made](#run-history-and-response-diffs), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions. |
 | **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                                                                                                           |
 | **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Forms**     | Every [`createQueryForm`](/query/query-forms) on screen: [its fields, what they put in the URL and the query it drives](#forms-what-a-filter-is-actually-sending). A driven query opens in a split-view drawer (like Stacks), so the form stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button, and [the client's own features with their configuration](#features-show-what-they-were-configured-with).                                                                                       |
-| **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps. Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## Finding a query in a long list
@@ -220,17 +221,17 @@ the totals can exceed what the network tab reports for a shared request.
 A query's detail holds more than fits one column, so it is split into three
 sub-tabs under the pinned head and action rows:
 
-| Sub-tab      | Holds                                                                                                                                                                     |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Overview** | Base URL, route, request URL, status, cache key, last-executed time, `triggeredBy`, features, and the [Activity tiles](#activity-how-often-a-query-ran-and-what-it-cost). |
-| **History**  | [Every run the query made, and the response diff](#run-history-and-response-diffs). Carries the run count as a badge.                                                     |
-| **Data**     | The [value explorer](#beyond-a-read-only-view) (args, response or error) and the GraphQL document, if any.                                                                |
+| Sub-tab      | Holds                                                                                                                                                                                                                                               |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Overview** | Base URL, route, request URL, status, cache key, last-executed time, `triggeredBy`, [what refetched it and which form feeds its args](#why-did-this-refetch), features, and the [Activity tiles](#activity-how-often-a-query-ran-and-what-it-cost). |
+| **History**  | [Every run the query made, and the response diff](#run-history-and-response-diffs). Carries the run count as a badge.                                                                                                                               |
+| **Data**     | The [value explorer](#beyond-a-read-only-view) (args, response or error) and the GraphQL document, if any.                                                                                                                                          |
 
 The **Run** / **Edit** / **Force** actions stay above the sub-tabs, so nothing you
 act on is ever behind a tab. A failing query marks the **Data** sub-tab with a red
 badge, because that is where the error body lives - a failure never hides behind a
 tab that isn't open. Which sub-tab is open is [persisted](#persistence) and shared
-by the Queries tab and the Stacks / Sequences drawers.
+by the Queries tab and every split-view drawer.
 
 ## Retries and progress: what a loading query is actually doing
 
@@ -305,10 +306,15 @@ it - which is what makes `fail next 2` behave like a server that comes back. Wat
 climb is the read-out that the injection is real and not a frozen state.
 
 ::: warning
-An armed client is drawn with a red border and the **Faults** tab carries a red badge, because
-every misbehaving request in the app is coming from it. Nothing survives a page reload - a
-persisted "fail everything" that outlived the session that armed it would be a trap. Use
-**Disarm** on one client or **Disarm all** to clear it sooner.
+While anything is armed the panel carries a red bar under the tab strip, naming the clients and
+offering **Review** and **Disarm all** - on every tab, not just Faults. A badge on a tab you are
+not reading cannot be seen, and the nine other tabs are exactly where an injected 503 gets read as
+a real one. The armed client's own card is drawn with a red border, and **Disarm** on it clears
+that one client.
+
+Faults are the one part of the panel that is **not** [persisted](#persistence): they live in
+memory, so a page reload disarms every client. A persisted "fail everything" that outlived the
+session that armed it would be a trap.
 :::
 
 Faults are keyed by client **name**, the same identity the client picker uses - so two clients
@@ -327,10 +333,12 @@ concurrency is visible as concurrency:
 The client picker and the **Inspect** filter scope the timeline exactly as they scope
 the Queries list, and every row is labelled with the URL **that run** went to - not
 the URL the query holds now - so a query whose args changed between runs stays
-readable. Clicking a bar opens that query in the Queries tab.
+readable. Clicking a bar opens that query in a split-view drawer, so the waterfall it came
+from stays next to it - and every bar belonging to the same query stays marked while it
+is open.
 
 Bars are coloured by outcome: green for a response, red for a failure, yellow while
-in flight (the bar grows with the clock), and a dashed grey outline for an **aborted**
+in flight (the bar grows with the clock), and a hollow grey outline for an **aborted**
 run - one whose query started another request before the response arrived, so the
 response it was waiting for can no longer reach it. Three markers are worth knowing:
 
@@ -345,6 +353,11 @@ response it was waiting for can no longer reach it. Three markers are worth know
 - An execution answered from a **fresh cache entry** produces no bar at all. The
   timeline is about requests; cache hits are counted by the Activity tiles' _without
   a request_ sub-line instead.
+
+To the right of the bars, duration, received size and the markers each get a column of
+their own rather than sharing one line, so the durations down the list stay comparable
+by eye - which is the point of a waterfall, and something a run of text that shifts
+sideways per row cannot do.
 
 The axis is labelled with offsets from the first run, and the toolbar states the
 window (`13 runs · over 3.98s from 13:37:03`). **Reset** clears the run history and
@@ -383,6 +396,89 @@ runs of each query - a polling query would otherwise hold on to every response i
 received. `provideQueryDevtools()` is what allocates any of it; an app without it pays
 nothing.
 :::
+
+## Forms: what a filter is actually sending
+
+A [query form](/query/query-forms) sits between the controls on screen and the args a
+query sends, and when a list comes back empty the question is which of those two ends
+is wrong. The **Forms** tab answers it: every `createQueryForm()` on screen is listed
+with the query it drives, and expanding one shows every field.
+
+| Column        | Holds                                                                                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Field**     | The field name, as declared in `fields`.                                                                                                                     |
+| **Value**     | The committed value - what the query args are built from. While a debounce is pending it is followed by `typing …` with the live value of the bound control. |
+| **Default**   | What the field falls back to, and what `⟲` resets it to.                                                                                                     |
+| **URL param** | `<paramKey>=<value>` with the form's `queryParamPrefix` applied, or `—` for a field that writes nothing (at its default, or `appendToUrl: false`).           |
+| **Rules**     | The debounce, the `isResetBy` siblings, and whether the field counts towards `activeFilterCount`.                                                            |
+
+The card header carries the active filter count (or **at defaults**), a **debouncing**
+chip while a commit is pending, and a **not observing** chip for a form whose
+`observe()` was never called - a form that silently does not sync with the URL looks
+exactly like one that does until the tab says so. `⟲` per row and **Reset all** write
+to the real form, so you can clear a filter from the panel without hunting for the
+control.
+
+### Which query a form drives
+
+**Drives** lists the queries the form feeds. It is not matched by name: a form's
+`value()` records the read, so a query is listed once its
+[`withArgs`](/query/features#withargs) has read it. Clicking one opens its
+[detail](#the-detail-view-overview-history-data) in a split-view drawer rather than
+switching tabs - the point of the pairing is to read the form's committed value and the
+args the query actually sent side by side.
+
+```ts
+qf = createQueryForm({ name: 'posts', fields: { search: searchQueryField() } }).observe();
+
+// This read is what puts `getPosts` under the form's "Drives", and the form under
+// the query's "Args from".
+posts = getPosts(withArgs(() => ({ queryParams: { query: this.qf.value().search } })));
+```
+
+The query's own detail names the form back, under **Args from** on the Overview
+sub-tab. The link is discovered from `withArgs`, so a form read somewhere else - a
+[query stack's](/query/stacks#query-stacks) `args`, or a `branch()` - is not picked up, and a form a
+conditional branch stops reading keeps its link until the query is recreated.
+
+::: tip Name your forms
+`name` is what the tab calls the form. Without it the form falls back to its
+`queryParamPrefix`, or to `form` when it has neither - which is fine for one form and
+unreadable for four.
+:::
+
+The legacy reactive-forms `QueryForm` is **not** instrumented; only
+[`createQueryForm`](/query/query-forms) registers itself.
+
+## Why did this refetch?
+
+`triggeredBy()` tells you a query re-ran, not what re-ran it. An
+[invalidation](/query/caching#invalidating-after-a-change) fans out to every
+matching entry in use, and from inside any one of those queries that fan-out is
+invisible - it just refetches.
+
+The **Events** tab logs the invalidation itself, as one row rather than N request rows:
+
+```
+15:04:22   https://api.example.com   refetch ×3   invalidated /players
+                                                  GET /players?page=1 ×4
+                                                  GET /players/12
+                                                  GET /players?page=2 ×2
+```
+
+- The **Type** cell counts the requests that were re-executed. `refetch ×0` with
+  `matched no query in use` is an answer too - the invalidation ran and hit nothing,
+  usually a URL scope that does not line up with the routes.
+- Each chip is one cache entry, clickable to open its query. `×4` means four registered
+  queries share that cache key, so all four refetched off the one request.
+- The cause reads `invalidated <url>` for `invalidateQueries()`, `refreshed everything
+in use` for `refreshQueriesInUse()`, and `mutation on <url>` for the
+  [multi-tab](/query/multi-tab) refresh another tab's mutation caused. Anything another
+  tab asked for is marked `· another tab`.
+
+From the other end, a query's Overview sub-tab gains a **Refetched by** row listing the
+refreshes that hit it, newest first. It reads off the event log, so it goes back exactly
+as far as the log does (100 events, and **Clear** empties it).
 
 ## Export to Insomnia
 

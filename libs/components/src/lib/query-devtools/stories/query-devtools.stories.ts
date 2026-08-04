@@ -1,4 +1,5 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRouter, withHashLocation } from '@angular/router';
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { provideQueryDevtools } from '@ethlete/query';
 import { QueryDevtoolsStorybookComponent } from './components/query-devtools-storybook.component';
@@ -9,7 +10,12 @@ export default {
   component: QueryDevtoolsStorybookComponent,
   decorators: [
     applicationConfig({
-      providers: [provideHttpClient(withInterceptors([queryDevtoolsDemoInterceptor])), provideQueryDevtools()],
+      providers: [
+        provideHttpClient(withInterceptors([queryDevtoolsDemoInterceptor])),
+        // The query-form card syncs its fields to the URL, which needs a router.
+        provideRouter([{ path: '**', children: [] }], withHashLocation()),
+        provideQueryDevtools(),
+      ],
     }),
     moduleMetadata({ imports: [QueryDevtoolsStorybookComponent] }),
   ],

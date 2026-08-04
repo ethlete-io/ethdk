@@ -271,7 +271,11 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
         invalidateQueries: (invalidation) => {
           const url = invalidation?.url ? resolveInvalidationUrl(options.baseUrl, invalidation.url) : null;
 
-          repository.refreshInUse(createQueryInvalidationFilter({ url, filter: invalidation?.filter }));
+          repository.refreshInUse(createQueryInvalidationFilter({ url, filter: invalidation?.filter }), {
+            type: 'invalidation',
+            url,
+            otherTab: false,
+          });
 
           // The resolved URL is what travels: the other tabs are the same client, so they would
           // resolve it identically, and a message that needs no interpretation cannot drift.

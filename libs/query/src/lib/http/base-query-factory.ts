@@ -1,7 +1,11 @@
 import { HttpEventType } from '@angular/common/http';
 import { effect, runInInjectionContext } from '@angular/core';
 import { describeQueryDevtoolsFeatures } from '../devtools/query-devtools-features';
-import { createQueryDevtoolsStatsRecorder, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
+import {
+  createQueryDevtoolsFormLinksRecorder,
+  createQueryDevtoolsStatsRecorder,
+  registerQueryDevtoolsEntry,
+} from '../devtools/query-devtools-hook';
 import { CreateGqlQueryOptions } from '../gql/gql-query';
 import { isCreateGqlQueryOptions } from './internal/gql-options-guard';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
@@ -196,10 +200,12 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
 
   return runInInjectionContext(deps.injector, () => {
     const devtoolsStats = createQueryDevtoolsStatsRecorder();
+    const devtoolsFormLinks = createQueryDevtoolsFormLinksRecorder();
 
     const state = setupQueryState<TArgs>({
       transformResponse: options.creator?.transformResponse,
       devtoolsStats,
+      devtoolsFormLinks,
     });
     const flags = getQueryFeatureUsage(options as unknown as Parameters<typeof getQueryFeatureUsage>[0]);
 
@@ -251,6 +257,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
         handle: query,
         clientRef: client,
         stats: devtoolsStats,
+        formLinks: devtoolsFormLinks ?? undefined,
         route:
           (options.creatorInternals as { route?: unknown }).route ??
           (options.creator as { route?: unknown } | undefined)?.route ??

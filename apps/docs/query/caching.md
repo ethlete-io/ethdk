@@ -91,6 +91,8 @@ Entries sitting out their `keepUnusedFor` window are deliberately left alone. Th
 
 A `filter` is a function, so it cannot cross a `BroadcastChannel`: the other tabs narrow by `url` alone and invalidate a superset. Pair it with `otherTabs: false` when the two must agree.
 
+Which queries an invalidation actually hit is the one thing the queries themselves cannot report - from inside any of them it is just a refetch. The [query devtools](/components/query-devtools#why-did-this-refetch) log each invalidation as one Events row listing every cache entry it re-executed, and name it back on each query's Overview under **Refetched by**.
+
 ## See it live
 
 In the demo, the mocked backend sends `cache-control: max-age=20` (a 10s freshness window after halving). `requestNumber` only increments when the server is actually hit - `execute (allowCache)` within the window serves the cache:

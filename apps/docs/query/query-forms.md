@@ -20,7 +20,7 @@ There are two implementations:
 import { Component } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import { InputDirective } from '@ethlete/components';
-import { createQueryForm, searchQueryField, sortQueryField, queryField } from '@ethlete/query';
+import { createQueryForm, searchQueryField, sortQueryField, queryField, withArgs } from '@ethlete/query';
 
 @Component({
   imports: [FormField, InputDirective],
@@ -35,13 +35,13 @@ export class UsersComponent {
     },
   }).observe();
 
-  users = getUsers({
-    args: () => {
+  users = getUsers(
+    withArgs(() => {
       const { search, sort, page } = this.qf.value();
 
       return { queryParams: { query: search, sortBy: sort?.active, sortOrder: sort?.direction, page } };
-    },
-  });
+    }),
+  );
 }
 ```
 
@@ -130,6 +130,22 @@ Serialization rules:
 createQueryForm({ fields: { page: queryField<number>({ defaultValue: 1 }) }, queryParamPrefix: 'users' });
 // → ?users-page=2
 ```
+
+## Seeing a form in the devtools
+
+With [`provideQueryDevtools()`](/components/query-devtools) installed, every form
+registers itself in the panel's **Forms** tab: its fields, their committed and live
+values, what each writes to the URL, and the query it drives - the last one discovered
+from the `qf.value()` read inside `withArgs`, not from a naming convention.
+
+`name` is what the tab calls the form. It defaults to a string `queryParamPrefix`, and
+to `form` without one, so a route with several forms is worth naming:
+
+```ts
+createQueryForm({ name: 'users', queryParamPrefix: 'users', fields: { … } });
+```
+
+Outside of devtools `name` does nothing - it is never read at runtime.
 
 ## Reset the page on an out-of-range error
 
