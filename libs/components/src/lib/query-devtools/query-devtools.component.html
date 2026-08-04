@@ -1,18 +1,26 @@
 @if (open()) {
   <section
+    #panel
     [class.et-query-devtools-panel--resizing]="resizing()"
-    [style.height.px]="panelHeight()"
+    [attr.data-dock]="poppedOut() ? 'popout' : dock()"
+    [style.block-size.px]="panelBlockSize()"
+    [style.inline-size.px]="panelInlineSize()"
+    [style.--_et-qdt-list-width.px]="listWidth()"
+    [style.--_et-qdt-drawer-width.px]="drawerWidth()"
     class="et-query-devtools-panel"
   >
-    <div
-      (pointerdown)="startResize($event)"
-      class="et-query-devtools-resize"
-      title="Drag to resize"
-      aria-hidden="true"
-    ></div>
+    <!-- A pop-out is sized by its window, so there is no edge to drag. -->
+    @if (!poppedOut()) {
+      <div
+        (pointerdown)="startResize($event)"
+        class="et-query-devtools-resize"
+        title="Drag to resize"
+        aria-hidden="true"
+      ></div>
+    }
     <header class="et-query-devtools-header">
       <nav class="et-query-devtools-tabs" role="tablist">
-        @for (tab of tabs; track tab.id) {
+        @for (tab of visibleTabs(); track tab.id) {
           @let badge = tabBadges()[tab.id];
           <button
             [class.et-query-devtools-tab--active]="activeTab() === tab.id"
@@ -35,6 +43,33 @@
               </span>
             }
           </button>
+        }
+
+        @if (overflowTabs().length; as overflowCount) {
+          <div #tabMenu class="et-query-devtools-tab-menu">
+            <button
+              [class.et-query-devtools-tab-more--open]="tabMenuOpen()"
+              [attr.aria-expanded]="tabMenuOpen()"
+              (click)="toggleTabMenu()"
+              class="et-query-devtools-tab et-query-devtools-tab-more"
+              type="button"
+              aria-haspopup="true"
+              title="{{ overflowCount }} tabs with nothing in them"
+            >
+              More
+              <span class="et-query-devtools-tab-more-caret" aria-hidden="true">▾</span>
+            </button>
+
+            @if (tabMenuOpen()) {
+              <div class="et-query-devtools-tab-menu-list">
+                @for (tab of overflowTabs(); track tab.id) {
+                  <button (click)="selectTab(tab.id)" class="et-query-devtools-tab-menu-item" type="button">
+                    {{ tab.label }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
         }
       </nav>
 
@@ -66,14 +101,47 @@
           }
         </button>
         <button
+          (click)="downloadSession()"
+          class="et-query-devtools-btn"
+          type="button"
+          title="Download every registered entry, the event log, the cache totals and anything armed as one JSON file - the attachment for a bug report"
+        >
+          ⤓ Session
+        </button>
+        @if (!poppedOut()) {
+          <button
+            (click)="toggleDock()"
+            class="et-query-devtools-btn"
+            type="button"
+            title="{{ dock() === 'bottom' ? 'Dock to the right edge' : 'Dock to the bottom edge' }}"
+          >
+            <span aria-hidden="true">{{ dock() === 'bottom' ? '◨' : '⬓' }}</span>
+            {{ dock() === 'bottom' ? 'Right' : 'Bottom' }}
+          </button>
+          <button
+            (click)="popOut()"
+            class="et-query-devtools-btn"
+            type="button"
+            title="Move the panel into a window of its own - the same live panel, on your other screen"
+          >
+            <span aria-hidden="true">⧉</span>
+            Pop out
+          </button>
+        }
+        <button
           (click)="toggleOpen()"
           class="et-query-devtools-close-panel"
           type="button"
-          title="Close devtools ({{ shortcut }})"
+          title="{{ poppedOut() ? 'Bring the panel back into the app window' : 'Close devtools (' + shortcut + ')' }}"
         >
-          <span aria-hidden="true">✕</span>
-          Close
-          <kbd class="et-query-devtools-kbd">{{ shortcut }}</kbd>
+          @if (poppedOut()) {
+            <span aria-hidden="true">⧈</span>
+            Dock back
+          } @else {
+            <span aria-hidden="true">✕</span>
+            Close
+            <kbd class="et-query-devtools-kbd">{{ shortcut }}</kbd>
+          }
         </button>
       </div>
     </header>
@@ -103,7 +171,7 @@
       @switch (activeTab()) {
         <!-- QUERIES -->
         @case ('queries') {
-          <div class="et-query-devtools-master-detail">
+          <div #panes class="et-query-devtools-master-detail">
             <div class="et-query-devtools-list">
               <div [class.et-query-devtools-toolbar--filtered]="!!inspectFilterIds()" class="et-query-devtools-toolbar">
                 <div class="et-query-devtools-toolbar-row">
@@ -248,6 +316,8 @@
               }
             </div>
 
+            <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'list', container: panes }" />
+
             <div class="et-query-devtools-detail">
               @if (selectedQuery(); as sel) {
                 <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
@@ -260,7 +330,7 @@
 
         <!-- STACKS -->
         @case ('stacks') {
-          <div class="et-query-devtools-split">
+          <div #panes class="et-query-devtools-split">
             <div class="et-query-devtools-scroll">
               @for (entry of stackEntries(); track entry.id) {
                 @if (entry.kind === 'paged-query-stack') {
@@ -346,6 +416,8 @@
             </div>
 
             @if (stackSelectedQuery(); as sel) {
+              <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container: panes }" />
+
               <aside class="et-query-devtools-drawer">
                 <div class="et-query-devtools-drawer-head">
                   <span>Query detail</span>
@@ -366,7 +438,7 @@
 
         <!-- SEQUENCES -->
         @case ('sequences') {
-          <div class="et-query-devtools-split">
+          <div #panes class="et-query-devtools-split">
             <div class="et-query-devtools-scroll">
               @for (entry of sequenceEntries(); track entry.id) {
                 @let sequence = asSequence(entry);
@@ -456,6 +528,8 @@
             </div>
 
             @if (sequenceSelectedQuery(); as sel) {
+              <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container: panes }" />
+
               <aside class="et-query-devtools-drawer">
                 <div class="et-query-devtools-drawer-head">
                   <span>Query detail</span>
@@ -476,7 +550,7 @@
 
         <!-- FORMS -->
         @case ('forms') {
-          <div class="et-query-devtools-split">
+          <div #panes class="et-query-devtools-split">
             <div class="et-query-devtools-scroll">
               @for (entry of formEntries(); track entry.id) {
                 @let form = asForm(entry);
@@ -619,6 +693,8 @@
             </div>
 
             @if (formSelectedQuery(); as sel) {
+              <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container: panes }" />
+
               <aside class="et-query-devtools-drawer">
                 <div class="et-query-devtools-drawer-head">
                   <span>Query detail</span>
@@ -705,6 +781,33 @@
         <!-- SOCKETS -->
         @case ('ws') {
           <div class="et-query-devtools-scroll">
+            @if (wsEntries().length) {
+              <div class="et-query-devtools-toolbar">
+                <div class="et-query-devtools-toolbar-row">
+                  <input
+                    #socketFilterInput
+                    [value]="socketFilter()"
+                    (input)="socketFilter.set(socketFilterInput.value)"
+                    class="et-query-devtools-search"
+                    type="search"
+                    placeholder="filter event / room / direction…"
+                    aria-label="Filter socket messages"
+                  />
+                  @if (socketFilter()) {
+                    <button
+                      (click)="socketFilter.set('')"
+                      class="et-query-devtools-filter-clear"
+                      type="button"
+                      title="Clear the message filter"
+                      aria-label="Clear the message filter"
+                    >
+                      <span aria-hidden="true">✕</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
             @for (entry of wsEntries(); track entry.id) {
               @let ws = asWs(entry);
               <div class="et-query-devtools-card">
@@ -735,18 +838,72 @@
                   </dd>
                 </dl>
 
-                <h5 class="et-query-devtools-section">Messages ({{ ws.messages().length }})</h5>
-                @for (message of ws.messages(); track message.id) {
-                  <div class="et-query-devtools-ws-message">
+                <div class="et-query-devtools-section-row">
+                  <h5 class="et-query-devtools-section">Emit</h5>
+                  <span class="et-query-devtools-hint">
+                    Sends as the app would, so a server that only answers a client that asked can be provoked from here.
+                  </span>
+                </div>
+                <div class="et-query-devtools-emit">
+                  <input
+                    #emitEvent
+                    class="et-query-devtools-input"
+                    type="text"
+                    placeholder="event"
+                    aria-label="Event to emit"
+                  />
+                  <input
+                    #emitData
+                    class="et-query-devtools-input"
+                    type="text"
+                    placeholder="JSON payload (optional)"
+                    aria-label="Payload to emit"
+                  />
+                  <button
+                    (click)="emitSocketMessage({ entry, event: emitEvent.value, data: emitData.value })"
+                    class="et-query-devtools-btn"
+                    type="button"
+                  >
+                    ↑ Send
+                  </button>
+                </div>
+                @if (socketEmitErrorFor(entry.id); as emitError) {
+                  <p class="et-query-devtools-editor-error">{{ emitError }}</p>
+                }
+
+                @let messages = socketMessages(ws);
+                <div class="et-query-devtools-section-row">
+                  <h5 class="et-query-devtools-section">Messages</h5>
+                  <span class="et-query-devtools-count">
+                    @if (socketFilter()) {
+                      {{ messages.length }} of {{ ws.messages().length }}
+                    } @else {
+                      {{ messages.length }}
+                    }
+                  </span>
+                </div>
+                @for (message of messages; track message.id) {
+                  <div [attr.data-direction]="message.direction" class="et-query-devtools-ws-message">
                     <div class="et-query-devtools-card-head">
                       <span class="et-query-devtools-count">{{ formatTime(message.timestamp) }}</span>
-                      <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ message.room }}</span>
+                      <span class="et-query-devtools-ws-direction">{{ socketDirectionLabel(message) }}</span>
+                      @if (message.room) {
+                        <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ message.room }}</span>
+                      }
                       <span class="et-query-devtools-method">{{ message.event }}</span>
                     </div>
-                    <et-query-devtools-json [value]="message.data" />
+                    @if (message.data !== undefined) {
+                      <et-query-devtools-json [value]="message.data" />
+                    }
                   </div>
                 } @empty {
-                  <p class="et-query-devtools-empty">No messages received yet.</p>
+                  @if (ws.messages().length) {
+                    <p class="et-query-devtools-empty">
+                      No message matches the filter · {{ ws.messages().length }} in the log.
+                    </p>
+                  } @else {
+                    <p class="et-query-devtools-empty">Nothing sent or received yet.</p>
+                  }
                 }
               </div>
             } @empty {
@@ -762,13 +919,38 @@
               <div class="et-query-devtools-card">
                 <div class="et-query-devtools-card-head">
                   <strong class="et-query-devtools-mono">{{ client.baseUrl || client.name }}</strong>
-                  <span class="et-query-devtools-count">{{ client.entries.length }} entries</span>
+                  <span class="et-query-devtools-count">{{ client.rows.length }} entries</span>
+                  @if (client.rows.length) {
+                    <span
+                      class="et-query-devtools-count"
+                      title="The measured size of every cached response. Sizes are read from the decoded bodies, so they ignore transport compression."
+                    >
+                      {{ formatTransferred(client.bytes, client.isEstimatedBytes) }}
+                    </span>
+                  }
+                  @if (client.unused) {
+                    <span
+                      class="et-query-devtools-chip et-query-devtools-chip--muted"
+                      title="Entries with no consumer left. They are waiting out their keepUnusedFor window, not leaking."
+                    >
+                      {{ client.unused }} collectible
+                    </span>
+                  }
                   @if (client.client?.subtle?.persistence) {
                     <span class="et-query-devtools-count">{{ persistedCount(client.client!) }} on disk</span>
                     <button (click)="clearPersistedQueries(client.client!)" class="et-query-devtools-btn" type="button">
                       Clear disk
                     </button>
                   }
+                  <button
+                    [disabled]="!client.rows.length"
+                    (click)="evictAllCacheEntries(client.repository)"
+                    class="et-query-devtools-btn"
+                    type="button"
+                    title="Drop every entry of this client, consumers included - the cold-start check without a reload"
+                  >
+                    Evict all
+                  </button>
                 </div>
                 @if (clientFeatures(client.client); as features) {
                   <ng-container *ngTemplateOutlet="featuresTpl; context: { features }" />
@@ -778,6 +960,7 @@
                     <tr>
                       <th>Request</th>
                       <th>Consumers</th>
+                      <th>Size</th>
                       <th>Secure</th>
                       <th>Freshness</th>
                       <th>Sync</th>
@@ -786,18 +969,43 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (cacheEntry of client.entries; track cacheEntry.key) {
+                    @for (row of client.rows; track row.entry.key) {
+                      @let cacheEntry = row.entry;
+                      @let expanded = isCacheValueExpanded(client.name, cacheEntry.key);
                       <tr>
                         <td [title]="cacheEntry.request.method + ' ' + cacheEntry.request.url">
                           <span class="et-query-devtools-method">{{ cacheEntry.request.method }}</span>
                           <span class="et-query-devtools-url">{{ requestPath(cacheEntry.request.url) }}</span>
                         </td>
-                        <td>{{ cacheEntry.consumerCount }}</td>
+                        <td>
+                          {{ cacheEntry.consumerCount }}
+                          <!-- An entry nothing holds any more is the one row worth explaining: it looks
+                               like a leak and is in fact a keepUnusedFor window running out. -->
+                          @if (cacheEntry.isUnused) {
+                            <span
+                              class="et-query-devtools-chip et-query-devtools-chip--muted"
+                              title="No consumer left - kept for its keepUnusedFor window, then collected"
+                            >
+                              collectible
+                            </span>
+                          }
+                        </td>
+                        <td>{{ row.bytes ? formatTransferred(row.bytes, row.isEstimatedBytes) : '—' }}</td>
                         <td>{{ cacheEntry.isSecure ? 'yes' : 'no' }}</td>
                         <td>{{ cacheFreshness(cacheEntry) }}</td>
                         <td>{{ cacheSync(cacheEntry, client.pollStates) }}</td>
                         <td>{{ cachePersistence(cacheEntry) }}</td>
                         <td class="et-query-devtools-cell-actions">
+                          <button
+                            [class.et-query-devtools-btn--active]="expanded"
+                            [attr.aria-expanded]="expanded"
+                            (click)="toggleCacheValue(client.name, cacheEntry.key)"
+                            class="et-query-devtools-btn"
+                            type="button"
+                            title="Show the response held under this key"
+                          >
+                            Value
+                          </button>
                           <button (click)="refetchCacheEntry(cacheEntry)" class="et-query-devtools-btn" type="button">
                             Refetch
                           </button>
@@ -810,9 +1018,16 @@
                           </button>
                         </td>
                       </tr>
+                      @if (expanded) {
+                        <tr>
+                          <td class="et-query-devtools-cell-value" colspan="8">
+                            <et-query-devtools-json [value]="cacheEntry.request.response()" />
+                          </td>
+                        </tr>
+                      }
                     } @empty {
                       <tr>
-                        <td class="et-query-devtools-empty" colspan="7">Cache empty.</td>
+                        <td class="et-query-devtools-empty" colspan="8">Cache empty.</td>
                       </tr>
                     }
                   </tbody>
@@ -827,7 +1042,7 @@
         <!-- TIMELINE -->
         @case ('timeline') {
           @let tl = timeline();
-          <div class="et-query-devtools-split">
+          <div #panes class="et-query-devtools-split">
             <div class="et-query-devtools-pane">
               <div class="et-query-devtools-toolbar">
                 <div class="et-query-devtools-toolbar-row">
@@ -960,6 +1175,8 @@
             </div>
 
             @if (timelineSelectedQuery(); as sel) {
+              <ng-container *ngTemplateOutlet="paneResizeTpl; context: { pane: 'drawer', container: panes }" />
+
               <aside class="et-query-devtools-drawer">
                 <div class="et-query-devtools-drawer-head">
                   <span>Query detail</span>
@@ -982,8 +1199,61 @@
         @case ('events') {
           <div class="et-query-devtools-pane">
             <div class="et-query-devtools-toolbar">
-              <span class="et-query-devtools-count">{{ eventLog().length }} events</span>
-              <button (click)="clearEvents()" class="et-query-devtools-btn" type="button">Clear</button>
+              <div class="et-query-devtools-toolbar-row">
+                @if (eventClients().length > 1) {
+                  <label class="et-query-devtools-field">
+                    <span>Client</span>
+                    <select
+                      #eventClientSelect
+                      [value]="eventClient() ?? ''"
+                      (change)="eventClient.set(eventClientSelect.value || null)"
+                      class="et-query-devtools-select"
+                    >
+                      <option value="">All clients</option>
+                      @for (name of eventClients(); track name) {
+                        <option [value]="name">{{ name }}</option>
+                      }
+                    </select>
+                  </label>
+                }
+                @let errorsOnly = eventErrorsOnly();
+                <button
+                  [class.et-query-devtools-facet--active]="errorsOnly"
+                  [attr.aria-pressed]="errorsOnly"
+                  (click)="toggleEventErrorsOnly()"
+                  class="et-query-devtools-chip et-query-devtools-facet"
+                  type="button"
+                  title="Show only the requests that failed"
+                >
+                  Errors only
+                  <span class="et-query-devtools-facet-count">{{ tabBadges().events.errors }}</span>
+                </button>
+                <span class="et-query-devtools-count">
+                  @if (isEventLogNarrowed()) {
+                    {{ filteredEvents().length }} of {{ eventLog().length }} events
+                  } @else {
+                    {{ eventLog().length }} events
+                  }
+                </span>
+                @if (isEventLogNarrowed()) {
+                  <button
+                    (click)="clearEventFilters()"
+                    class="et-query-devtools-filter-clear"
+                    type="button"
+                    title="Clear the client scope and the errors-only toggle"
+                    aria-label="Clear filters"
+                  >
+                    <span aria-hidden="true">✕</span>
+                  </button>
+                }
+                <button
+                  (click)="clearEvents()"
+                  class="et-query-devtools-btn et-query-devtools-toolbar-btn"
+                  type="button"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
             <div class="et-query-devtools-scroll">
               <table class="et-query-devtools-table">
@@ -993,10 +1263,12 @@
                     <th>Base URL</th>
                     <th>Type</th>
                     <th>Request</th>
+                    <th>Duration</th>
+                    <th>Size</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (event of eventLog(); track event.id) {
+                  @for (event of filteredEvents(); track event.id) {
                     <tr
                       [attr.data-status]="
                         event.type === 'request-error' ? 'error' : event.type === 'queries-refreshed' ? null : 'success'
@@ -1066,10 +1338,18 @@
                       } @else {
                         <td class="et-query-devtools-url">all secure entries dropped</td>
                       }
+                      <td>{{ formatDuration(event.durationMs) }}</td>
+                      <td>{{ event.bytes === null ? '—' : formatTransferred(event.bytes, event.isEstimatedBytes) }}</td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td class="et-query-devtools-empty" colspan="4">No events captured yet.</td>
+                      @if (eventLog().length) {
+                        <td class="et-query-devtools-empty" colspan="6">
+                          No event matches the filter · {{ eventLog().length }} in the log.
+                        </td>
+                      } @else {
+                        <td class="et-query-devtools-empty" colspan="6">No events captured yet.</td>
+                      }
                     </tr>
                   }
                 </tbody>
@@ -1187,6 +1467,16 @@
         }
       }
     </div>
+
+    <ng-template #paneResizeTpl let-pane="pane" let-container="container">
+      <div
+        (pointerdown)="startPaneResize($event, { pane, container })"
+        (dblclick)="resetPaneWidth(pane)"
+        class="et-query-devtools-pane-resize"
+        title="Drag to resize, double-click to reset"
+        aria-hidden="true"
+      ></div>
+    </ng-template>
 
     <!-- A route with its path params and query string picked out from the static path. The segments must
          stay element-only: a text node between them would render as a space inside the route. -->
@@ -1362,6 +1652,14 @@
         <button (click)="resetQuery(sel.query)" class="et-query-devtools-btn" type="button">Reset</button>
         <button (click)="copyReport(sel.entry, sel.query)" class="et-query-devtools-btn" type="button">
           {{ copiedReport() ? '✓ Copied' : 'Copy report' }}
+        </button>
+        <button
+          (click)="copyCurlRequest(sel.entry, sel.query)"
+          class="et-query-devtools-btn"
+          type="button"
+          title="Copy as a curl command - the URL, the headers as the request resolved them, and the body"
+        >
+          {{ copiedCurl() ? '✓ Copied' : 'cURL' }}
         </button>
         <button
           (click)="copyInsomniaRequest(sel.entry, sel.query)"

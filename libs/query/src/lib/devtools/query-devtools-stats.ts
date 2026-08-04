@@ -231,7 +231,9 @@ const trimRetainedResponses = (runs: QueryDevtoolsRun[]) => {
 /**
  * The size of a payload in bytes, and whether that size is the one that went over the wire. Only a
  * `content-length` header is exact; everything else is measured by serializing the body.
- * @internal
+ *
+ * Part of the devtools contract - the panel measures the cache and the event log with it. **Not part of
+ * the general public contract.**
  */
 export const measureQueryDevtoolsPayload = (payload: QueryDevtoolsPayload): { bytes: number; isExact: boolean } => {
   const contentLength = Number(payload.headers?.get('content-length'));

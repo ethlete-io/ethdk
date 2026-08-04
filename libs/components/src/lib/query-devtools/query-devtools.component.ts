@@ -3,10 +3,13 @@ import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
+  NgZone,
   signal,
+  viewChild,
   ViewEncapsulation,
   WritableSignal,
 } from '@angular/core';
@@ -23,6 +26,7 @@ import {
   HttpRequestLoadingProgressState,
   HttpRequestRetryState,
   isQueryDevtoolsFaultArmed,
+  measureQueryDevtoolsPayload,
   Query,
   QUERY_DEVTOOLS_FAULT_STATUSES,
   QueryClient,
@@ -44,11 +48,21 @@ import {
   QuerySequenceStatus,
   setQueryDevtoolsFault,
   WebSocketDevtoolsHandle,
+  WebSocketDevtoolsMessage,
 } from '@ethlete/query';
-import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, tap, timer } from 'rxjs';
+import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, take, tap, timer } from 'rxjs';
+import { buildCurlCommand } from './query-devtools-curl';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
+import {
+  buildQueryDevtoolsSessionExport,
+  SessionExportClient,
+  SessionExportEntry,
+  SessionExportEvent,
+  SessionExportFault,
+  slimForReport,
+} from './query-devtools-session';
 import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component';
 
@@ -64,6 +78,21 @@ type DevtoolsTab =
  * holds more than fits a column, and everything below the actions is reading material.
  */
 type DetailTab = 'overview' | 'history' | 'data';
+
+/** Which edge the panel is attached to. A pop-out is not one of these - it is a window, not an edge. */
+type DevtoolsDock = 'bottom' | 'right';
+
+/**
+ * Which pane of a two-pane tab a divider drag sizes: the Queries tab's list, or the drawer every
+ * split view opens a query in.
+ */
+type PaneTarget = 'list' | 'drawer';
+
+/** A drag in progress: either the panel's docked edge, or the divider between a two-pane tab's panes. */
+type ResizeDrag = {
+  /** The document the pointer moves in - a popped-out panel lives in a window of its own. */
+  doc: Document;
+} & ({ kind: 'panel' } | { kind: 'pane'; pane: PaneTarget; container: HTMLElement });
 
 type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -188,11 +217,33 @@ type EventLogItem = {
 
   /** The requests that refresh re-executed - the fan-out the panel could not show before. */
   refreshed: RefreshedRequest[] | null;
+
+  /**
+   * How long the request took and how big its response was, read off the request as the event fired.
+   * Both `null` for an event that is not one request settling, and the size also for a failure - an
+   * error body is not a payload worth a column.
+   */
+  durationMs: number | null;
+  bytes: number | null;
+
+  /** @see QueryDevtoolsStats.hasEstimatedBytes */
+  isEstimatedBytes: boolean;
+};
+
+/** One cache entry as the Cache tab lists it: the repository's own snapshot plus its measured size. */
+type CacheRow = {
+  entry: QueryRepositoryCacheEntry;
+  bytes: number;
+  isEstimatedBytes: boolean;
 };
 
 type PersistedState = {
   open?: boolean;
   height?: number;
+  width?: number;
+  listWidth?: number | null;
+  drawerWidth?: number | null;
+  dock?: DevtoolsDock;
   activeTab?: DevtoolsTab;
   detailTab?: DetailTab;
   selectedClientName?: string | null;
@@ -201,6 +252,9 @@ type PersistedState = {
   inspectFilterIds?: string[] | null;
   queryFilter?: string;
   queryFacets?: QueryListFacet[];
+  eventClient?: string | null;
+  eventErrorsOnly?: boolean;
+  socketFilter?: string;
   jsonSearch?: string;
   expandedSteps?: string[];
   jsonExpanded?: string[];
@@ -216,6 +270,28 @@ const STORAGE_KEY = 'ethlete:query:devtools:v4';
 const MAX_EVENTS = 100;
 const DEFAULT_HEIGHT = 360;
 const MIN_HEIGHT = 200;
+const DEFAULT_WIDTH = 560;
+const MIN_WIDTH = 360;
+
+/** The floor a dragged pane divider leaves on both sides of itself. */
+const MIN_PANE_WIDTH = 220;
+
+/** The window a pop-out opens at. Wide enough for the master/detail split the bottom dock gets. */
+const POPOUT_FEATURES = 'popup=yes,width=1200,height=800';
+
+/**
+ * The document a pop-out is opened on. The doctype and the title have to be part of it rather than set
+ * afterwards - see {@link QueryDevtoolsComponent.popOut}. Everything the panel needs beyond this (the
+ * app's stylesheets, its theme) is copied in once the window has loaded.
+ */
+const POPOUT_DOCUMENT = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Query devtools</title>
+  </head>
+  <body style="margin: 0"></body>
+</html>`;
 
 /** How many bars the timeline draws. Past this the newest are kept and the rest are counted instead. */
 const MAX_TIMELINE_ROWS = 200;
@@ -230,33 +306,6 @@ const readPersistedState = (): PersistedState => {
   } catch {
     return {};
   }
-};
-
-/**
- * Slims a value for a shareable report: long strings are truncated and long arrays keep only the
- * first couple of entries, replacing the repetitive tail with a `… (N more)` marker, so a big
- * response collapses to a representative sample.
- */
-const slimForReport = (value: unknown, depth = 0): unknown => {
-  if (typeof value === 'string') return value.length > 200 ? `${value.slice(0, 200)}…` : value;
-  if (depth > 6) return '…';
-
-  if (Array.isArray(value)) {
-    if (value.length > 3) {
-      return [...value.slice(0, 2).map((v) => slimForReport(v, depth + 1)), `… (${value.length - 2} more)`];
-    }
-
-    return value.map((v) => slimForReport(v, depth + 1));
-  }
-
-  if (value && typeof value === 'object') {
-    const out: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value)) out[key] = slimForReport(val, depth + 1);
-
-    return out;
-  }
-
-  return value;
 };
 
 /** How long an exported Insomnia collection reuses a refresh response whose token lifetime is unknown. */
@@ -322,12 +371,21 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   imports: [NgTemplateOutlet, QueryDevtoolsJsonComponent, QueryDevtoolsToggleComponent],
   host: {
     class: 'et-query-devtools-host',
+    '[attr.data-dock]': 'dock()',
   },
 })
 export class QueryDevtoolsComponent {
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   private renderer = injectRenderer();
+  private zone = inject(NgZone);
+  private destroyRef = inject(DestroyRef);
   protected document = inject(DOCUMENT);
+
+  /** The panel itself, so a pop-out can move it into another window's document. */
+  private panelEl = viewChild<ElementRef<HTMLElement>>('panel');
+
+  /** The overflow tab menu, to tell a click inside it from one that should dismiss it. */
+  private tabMenuEl = viewChild<ElementRef<HTMLElement>>('tabMenu');
 
   private eventIdCounter = 0;
   private lastSelectionKey = '';
@@ -347,6 +405,12 @@ export class QueryDevtoolsComponent {
     { id: 'faults', label: 'Faults' },
   ] satisfies { id: DevtoolsTab; label: string }[];
 
+  /**
+   * Tabs the bar keeps whether they hold anything or not: the one the panel opens on, and the one that
+   * arms faults - which has entries to arm rather than to count.
+   */
+  private readonly PINNED_TABS: readonly DevtoolsTab[] = ['queries', 'faults'];
+
   protected readonly detailTabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'history', label: 'History' },
@@ -364,9 +428,38 @@ export class QueryDevtoolsComponent {
   protected readonly shortcut = queryDevtoolsShortcutLabel();
 
   protected open = signal(this.persisted.open ?? false);
-  protected panelHeight = signal(this.persisted.height ?? DEFAULT_HEIGHT);
-  protected resizing = signal(false);
+  private panelHeight = signal(this.persisted.height ?? DEFAULT_HEIGHT);
+  private panelWidth = signal(this.persisted.width ?? DEFAULT_WIDTH);
   protected activeTab = signal<DevtoolsTab>(this.persisted.activeTab ?? 'queries');
+
+  /**
+   * The dragged widths of the two-pane tabs, in px. `null` keeps the stylesheet's proportional default,
+   * which is also what a double-click on a divider restores.
+   */
+  protected listWidth = signal<number | null>(this.persisted.listWidth ?? null);
+  protected drawerWidth = signal<number | null>(this.persisted.drawerWidth ?? null);
+
+  public drag = signal<ResizeDrag | null>(null);
+  protected resizing = computed(() => !!this.drag());
+
+  /** Which edge the panel is docked to. */
+  protected dock = signal<DevtoolsDock>(this.persisted.dock ?? 'bottom');
+
+  /**
+   * Whether the panel currently lives in a window of its own. Deliberately not persisted: a reload
+   * cannot re-adopt a window the previous document opened, so it always starts docked.
+   */
+  protected poppedOut = signal(false);
+
+  private popup: Window | null = null;
+
+  // Only the axis the dock edge controls is bound; the other is the stylesheet's, and a pop-out fills
+  // its window on both.
+  protected panelBlockSize = computed(() =>
+    !this.poppedOut() && this.dock() === 'bottom' ? this.panelHeight() : null,
+  );
+
+  protected panelInlineSize = computed(() => (!this.poppedOut() && this.dock() === 'right' ? this.panelWidth() : null));
 
   /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */
   protected detailTab = signal<DetailTab>(this.persisted.detailTab ?? 'overview');
@@ -390,6 +483,21 @@ export class QueryDevtoolsComponent {
   public queryFacets = signal<ReadonlySet<QueryListFacet>>(new Set(this.persisted.queryFacets ?? []));
 
   protected eventLog = signal<EventLogItem[]>([]);
+
+  /** The client (by base URL) the event log is scoped to, or `null` for all of them. */
+  protected eventClient = signal<string | null>(this.persisted.eventClient ?? null);
+
+  /** Whether the event log is narrowed to failures - the rows a bug report is about. */
+  protected eventErrorsOnly = signal(this.persisted.eventErrorsOnly ?? false);
+
+  /** Free-text narrowing of every socket's message log. Matches the event, the room and the direction. */
+  protected socketFilter = signal(this.persisted.socketFilter ?? '');
+
+  /** The cache entry whose response is expanded, as `<client>|<key>`, or `null` while none is. */
+  private expandedCacheKey = signal<string | null>(null);
+
+  /** The socket whose emit box last failed, so the message shows on that card and no other. */
+  private socketEmitError = signal<{ entryId: string; message: string } | null>(null);
 
   /** Keys (`<entryId>:<stepIndex>`) of the sequence steps whose in/out detail is expanded. */
   private expandedSteps = signal<ReadonlySet<string>>(new Set(this.persisted.expandedSteps ?? []));
@@ -421,9 +529,10 @@ export class QueryDevtoolsComponent {
   protected editorSeed = '';
   protected editError = signal<string | null>(null);
 
-  /** Transient "Copied!" feedback for the copy-report, copy-as-Insomnia and copy-document actions. */
+  /** Transient "Copied!" feedback for the copy-report, copy-as-Insomnia / cURL and copy-document actions. */
   protected copiedReport = signal(false);
   protected copiedInsomnia = signal(false);
+  protected copiedCurl = signal(false);
   protected copiedGql = signal(false);
   private copiedReset$ = new Subject<void>();
 
@@ -707,27 +816,77 @@ export class QueryDevtoolsComponent {
     };
   });
 
+  /**
+   * The tabs the bar shows: the pinned ones, the one that is open, and every tab that currently holds
+   * something.
+   */
+  protected visibleTabs = computed(() => this.tabs.filter((tab) => this.isTabPrimary(tab.id)));
+
+  /** The empty tabs, which the bar offers behind "More" instead. */
+  protected overflowTabs = computed(() => this.tabs.filter((tab) => !this.isTabPrimary(tab.id)));
+
+  protected tabMenuOpen = signal(false);
+
   protected selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
   protected stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
   protected sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
   protected formSelectedQuery = computed(() => this.findQuery(this.formSelectedQueryId()));
   protected timelineSelectedQuery = computed(() => this.findQuery(this.timelineSelectedQueryId()));
 
-  protected cacheView = computed(() =>
-    this.repositories().map(({ repository, name, baseUrl, client }) => {
+  /**
+   * The cache per client, with every entry's size measured. Reading each response inside the computed is
+   * what keeps the totals current: a cache mutation bumps `cacheVersion`, but a response landing in an
+   * entry that is already there does not.
+   */
+  protected cacheView = computed(() => {
+    return this.repositories().map(({ repository, name, baseUrl, client }) => {
       // Read the version signal so this recomputes on every cache mutation.
       repository.subtle.cacheVersion();
+
+      const rows = repository.subtle.cacheEntries().map((entry): CacheRow => {
+        const measured = measureQueryDevtoolsPayload({ body: entry.request.response() });
+
+        return { entry, bytes: measured.bytes, isEstimatedBytes: !measured.isExact && measured.bytes > 0 };
+      });
 
       return {
         name,
         baseUrl,
         repository,
-        entries: repository.subtle.cacheEntries(),
+        rows,
+        bytes: rows.reduce((total, row) => total + row.bytes, 0),
+        isEstimatedBytes: rows.some((row) => row.isEstimatedBytes),
+        unused: rows.filter((row) => row.entry.isUnused).length,
         pollStates: client?.subtle.sync?.lockManager.keyStates() ?? {},
         client,
       };
-    }),
-  );
+    });
+  });
+
+  /**
+   * The event rows the log shows: the client picker and the errors-only toggle applied. Kept apart from
+   * {@link eventLog} so "Refetched by" and the session export keep reading the whole log.
+   */
+  protected filteredEvents = computed(() => {
+    const client = this.eventClient();
+    const errorsOnly = this.eventErrorsOnly();
+    const events = this.eventLog();
+
+    if (!client && !errorsOnly) return events;
+
+    return events.filter(
+      (event) => (!client || event.client === client) && (!errorsOnly || event.type === 'request-error'),
+    );
+  });
+
+  /** The clients the event log has rows from, as its picker offers them. */
+  protected eventClients = computed(() => {
+    const names = new Set(this.repositories().map(({ name, baseUrl }) => baseUrl || name));
+
+    return Array.from(names).sort();
+  });
+
+  protected isEventLogNarrowed = computed(() => !!this.eventClient() || this.eventErrorsOnly());
 
   /** Map of a component's host element to the query entries it created (for the inspect tool). */
   private elementQueryMap = computed(() => {
@@ -780,6 +939,7 @@ export class QueryDevtoolsComponent {
         tap(() => {
           this.copiedReport.set(false);
           this.copiedInsomnia.set(false);
+          this.copiedCurl.set(false);
           this.copiedGql.set(false);
         }),
         takeUntilDestroyed(),
@@ -806,6 +966,10 @@ export class QueryDevtoolsComponent {
       const state: PersistedState = {
         open: this.open(),
         height: this.panelHeight(),
+        width: this.panelWidth(),
+        listWidth: this.listWidth(),
+        drawerWidth: this.drawerWidth(),
+        dock: this.dock(),
         activeTab: this.activeTab(),
         detailTab: this.detailTab(),
         selectedClientName: this.selectedClientName(),
@@ -814,6 +978,9 @@ export class QueryDevtoolsComponent {
         inspectFilterIds: this.inspectFilterIds(),
         queryFilter: this.queryFilter(),
         queryFacets: [...this.queryFacets()],
+        eventClient: this.eventClient(),
+        eventErrorsOnly: this.eventErrorsOnly(),
+        socketFilter: this.socketFilter(),
         jsonSearch: this.jsonSearch(),
         expandedSteps: [...this.expandedSteps()],
         jsonExpanded: [...this.jsonExpandedPaths()],
@@ -839,6 +1006,7 @@ export class QueryDevtoolsComponent {
       this.editError.set(null);
       this.copiedReport.set(false);
       this.copiedInsomnia.set(false);
+      this.copiedCurl.set(false);
       this.diffRunIndex.set(null);
 
       if (key !== this.lastSelectionKey) {
@@ -846,6 +1014,9 @@ export class QueryDevtoolsComponent {
         this.jsonSearch.set('');
       }
     });
+
+    // A pop-out holds the panel element; leaving its window open would leave a dead panel on screen.
+    this.destroyRef.onDestroy(() => this.closePopup());
 
     const doc = this.document;
 
@@ -857,23 +1028,51 @@ export class QueryDevtoolsComponent {
         filter((e) => (e.ctrlKey || e.metaKey) && e.altKey && (e.code === 'KeyQ' || e.key.toLowerCase() === 'q')),
         tap((e) => {
           e.preventDefault();
-          this.open.update((v) => !v);
+          this.toggleOpen();
         }),
         takeUntilDestroyed(),
       )
       .subscribe();
 
-    // Drag-to-resize: while a resize is in progress, track pointer movement on the document.
-    toObservable(this.resizing)
+    // Drag-to-resize: while a resize is in progress, track pointer movement on the document. A pointer
+    // released outside the window never reports its `pointerup`, so a move that arrives with no button
+    // held ends the drag instead of resizing - otherwise the panel would keep following the pointer.
+    toObservable(this.drag)
       .pipe(
         switchMap((active) =>
           active
             ? merge(
-                fromEvent<PointerEvent>(doc, 'pointermove').pipe(tap((e) => this.applyResize(e))),
-                fromEvent<PointerEvent>(doc, 'pointerup').pipe(tap(() => this.resizing.set(false))),
+                fromEvent<PointerEvent>(active.doc, 'pointermove').pipe(
+                  tap((e) => (e.buttons === 0 ? this.drag.set(null) : this.applyResize(active, e))),
+                ),
+                merge(
+                  fromEvent<PointerEvent>(active.doc, 'pointerup'),
+                  fromEvent<PointerEvent>(active.doc, 'pointercancel'),
+                ).pipe(tap(() => this.drag.set(null))),
               )
             : EMPTY,
         ),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    // The overflow tab menu is a plain element rather than an overlay, so nothing dismisses it on its
+    // own. Listened for on the panel's own document, which a pop-out replaces with the pop-up's.
+    toObservable(this.tabMenuOpen)
+      .pipe(
+        switchMap((open) => {
+          if (!open) return EMPTY;
+
+          const menuDoc = this.panelEl()?.nativeElement.ownerDocument ?? doc;
+
+          return merge(
+            fromEvent<PointerEvent>(menuDoc, 'pointerdown', { capture: true }).pipe(
+              filter((e) => !this.tabMenuEl()?.nativeElement.contains(e.target as Node)),
+            ),
+            fromEvent<KeyboardEvent>(menuDoc, 'keydown').pipe(filter((e) => e.key === 'Escape')),
+          );
+        }),
+        tap(() => this.tabMenuOpen.set(false)),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -903,12 +1102,83 @@ export class QueryDevtoolsComponent {
       .subscribe();
   }
 
+  /**
+   * Closing while popped out docks back instead: the panel a pop-out shows is the very element the
+   * `@if` below would destroy, so it has to come home before it can be closed.
+   */
   protected toggleOpen() {
+    if (this.poppedOut()) {
+      this.dockBack();
+
+      return;
+    }
+
     this.open.update((v) => !v);
+  }
+
+  protected toggleDock() {
+    this.dock.update((current) => (current === 'bottom' ? 'right' : 'bottom'));
+  }
+
+  protected toggleTabMenu() {
+    this.tabMenuOpen.update((v) => !v);
+  }
+
+  protected selectTab(tab: DevtoolsTab) {
+    this.activeTab.set(tab);
+    this.tabMenuOpen.set(false);
+  }
+
+  /**
+   * Moves the panel into a window of its own - the same element, adopted by the pop-up's document, so
+   * every signal binding in it keeps updating from the app it is inspecting.
+   *
+   * The panel's styles are global `<style>` tags in the host document, and the theming tokens it reads
+   * hang off the root element, so both are copied over; without them the pop-out renders unstyled.
+   */
+  protected popOut() {
+    const panel = this.panelEl()?.nativeElement;
+
+    if (!panel || this.poppedOut()) return;
+
+    // Navigated to rather than written into: a pop-up left on `about:blank` keeps its URL as the window
+    // title whatever `document.title` says, and a document written into one is quirks-mode - where a
+    // table ignores the font size it inherits, so the Cache and Events tables come out half again as
+    // large as the panel around them. The blob carries the doctype and the title with it instead.
+    const url = URL.createObjectURL(new Blob([POPOUT_DOCUMENT], { type: 'text/html' }));
+    const popup = this.document.defaultView?.open(url, 'et-query-devtools', POPOUT_FEATURES);
+
+    if (!popup) {
+      URL.revokeObjectURL(url);
+
+      return;
+    }
+
+    // That navigation replaces the pop-up's document, so the panel may only be moved once the new one is
+    // there - a panel appended to the initial empty document would be dropped on load.
+    fromEvent(popup, 'load')
+      .pipe(
+        take(1),
+        tap(() => {
+          URL.revokeObjectURL(url);
+          this.zone.run(() => this.mountPopOut(popup, panel));
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected clearEvents() {
     this.eventLog.set([]);
+  }
+
+  protected toggleEventErrorsOnly() {
+    this.eventErrorsOnly.update((v) => !v);
+  }
+
+  protected clearEventFilters() {
+    this.eventClient.set(null);
+    this.eventErrorsOnly.set(false);
   }
 
   protected selectClient(name: string | null) {
@@ -940,7 +1210,17 @@ export class QueryDevtoolsComponent {
 
   protected startResize(event: PointerEvent) {
     event.preventDefault();
-    this.resizing.set(true);
+    this.drag.set({ kind: 'panel', doc: this.document });
+  }
+
+  protected startPaneResize(event: PointerEvent, target: { pane: PaneTarget; container: HTMLElement }) {
+    event.preventDefault();
+    this.drag.set({ kind: 'pane', ...target, doc: target.container.ownerDocument });
+  }
+
+  /** Hands a pane back to the stylesheet's proportional default. */
+  protected resetPaneWidth(pane: PaneTarget) {
+    this.paneWidth(pane).set(null);
   }
 
   protected inspectLabel(entries: QueryDevtoolsEntry[]) {
@@ -1256,7 +1536,7 @@ export class QueryDevtoolsComponent {
 
   /** Copies one query as an Insomnia collection, for `Import > From Clipboard`. */
   protected copyInsomniaRequest(entry: QueryDevtoolsEntry, query: AnyQuery) {
-    const requests = [this.insomniaRequest(entry, query)];
+    const requests = [this.exportedRequest(entry, query)];
     const json = JSON.stringify(
       buildInsomniaExport({
         name: `${entry.meta.clientName ?? 'query'} · ${this.queryRoute(entry, query) || 'request'}`,
@@ -1269,6 +1549,14 @@ export class QueryDevtoolsComponent {
     );
 
     this.writeToClipboard({ text: json }, this.copiedInsomnia);
+  }
+
+  /**
+   * Copies one query as a `curl` command - what goes into a terminal, a ticket or a chat message, where
+   * an Insomnia collection is too heavy to be read at all.
+   */
+  protected copyCurlRequest(entry: QueryDevtoolsEntry, query: AnyQuery) {
+    this.writeToClipboard({ text: buildCurlCommand(this.exportedRequest(entry, query)) }, this.copiedCurl);
   }
 
   /** Copies the GraphQL document as displayed — dedented, so it pastes straight into a playground. */
@@ -1285,7 +1573,7 @@ export class QueryDevtoolsComponent {
     if (!items.length) return;
 
     const client = this.selectedClientName();
-    const requests = items.map(({ entry, query }) => this.insomniaRequest(entry, query));
+    const requests = items.map(({ entry, query }) => this.exportedRequest(entry, query));
     const json = JSON.stringify(
       buildInsomniaExport({
         name: `${client ?? 'ethlete'} queries`,
@@ -1298,6 +1586,34 @@ export class QueryDevtoolsComponent {
     );
 
     this.downloadFile(`insomnia-${client ?? 'ethlete'}-queries.json`, json);
+  }
+
+  // --- Session export ---
+
+  /**
+   * Downloads the whole panel as one JSON file: every registered entry with what it ran and what it
+   * holds, the event log, the cache totals and anything armed in the Faults tab. Unlike **Copy report**
+   * this is not scoped to one query - it is the attachment for a bug report about a screen.
+   *
+   * Deliberately unfiltered: a report is read by someone who was not there, and a dump that silently
+   * left out the client you were not looking at is worse than no dump.
+   */
+  protected downloadSession() {
+    const now = Date.now();
+    const json = JSON.stringify(
+      buildQueryDevtoolsSessionExport({
+        now,
+        location: this.document.location?.href ?? '',
+        clients: this.sessionClients(),
+        entries: this.sessionEntries(),
+        events: this.sessionEvents(),
+        faults: this.sessionFaults(),
+      }),
+      null,
+      2,
+    );
+
+    this.downloadFile(`query-devtools-session-${now}.json`, json);
   }
 
   // --- JIT editing ---
@@ -1409,6 +1725,28 @@ export class QueryDevtoolsComponent {
     repository.subtle.evict(key);
   }
 
+  /**
+   * Drops every entry of one client, consumers included - the cold-start check that does not need a
+   * reload. A query still bound to an evicted entry requests again on its next execution.
+   */
+  protected evictAllCacheEntries(repository: QueryRepository) {
+    for (const entry of repository.subtle.cacheEntries()) repository.subtle.evict(entry.key);
+  }
+
+  /**
+   * Expands the response held under a cache key, which is the only way to read an entry no live query is
+   * bound to any more - the Queries tab has nothing to select for it.
+   */
+  protected toggleCacheValue(clientName: string, key: string) {
+    const id = `${clientName}|${key}`;
+
+    this.expandedCacheKey.update((current) => (current === id ? null : id));
+  }
+
+  protected isCacheValueExpanded(clientName: string, key: string) {
+    return this.expandedCacheKey() === `${clientName}|${key}`;
+  }
+
   protected cacheFreshness(entry: QueryRepositoryCacheEntry) {
     this.clock();
     if (entry.request.loading()) return 'refreshing…';
@@ -1492,6 +1830,58 @@ export class QueryDevtoolsComponent {
 
   protected asWs(entry: QueryDevtoolsEntry): WebSocketDevtoolsHandle {
     return entry.handle as WebSocketDevtoolsHandle;
+  }
+
+  /**
+   * A socket's messages, narrowed by the filter box. Every whitespace-separated term has to match the
+   * event, the room or the direction, so `out join` finds the room joins the client sent.
+   */
+  protected socketMessages(ws: WebSocketDevtoolsHandle) {
+    const messages = ws.messages();
+    const terms = this.socketFilter().trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+    if (!terms.length) return messages;
+
+    return messages.filter((message) => {
+      const haystack = `${message.direction} ${message.event} ${message.room}`.toLowerCase();
+
+      return terms.every((term) => haystack.includes(term));
+    });
+  }
+
+  /** How the message log labels a direction: what the client sent, versus what the server pushed. */
+  protected socketDirectionLabel(message: WebSocketDevtoolsMessage) {
+    return message.direction === 'out' ? '↑ sent' : '↓ received';
+  }
+
+  /**
+   * Sends a message as the app would, so a server that only answers a client that asked can be provoked
+   * from the panel. An empty payload sends nothing rather than `""` - a plain event is a valid message.
+   */
+  protected emitSocketMessage(options: { entry: QueryDevtoolsEntry; event: string; data: string }) {
+    const { entry, event, data } = options;
+    const name = event.trim();
+
+    if (!name) {
+      this.socketEmitError.set({ entryId: entry.id, message: 'An event name is required.' });
+
+      return;
+    }
+
+    const payload = data.trim();
+
+    try {
+      this.asWs(entry).emit({ event: name, data: payload ? JSON.parse(payload) : undefined });
+      this.socketEmitError.set(null);
+    } catch {
+      this.socketEmitError.set({ entryId: entry.id, message: 'Invalid JSON' });
+    }
+  }
+
+  protected socketEmitErrorFor(entryId: string) {
+    const error = this.socketEmitError();
+
+    return error?.entryId === entryId ? error.message : null;
   }
 
   protected asForm(entry: QueryDevtoolsEntry): QueryDevtoolsFormHandle {
@@ -1677,6 +2067,97 @@ export class QueryDevtoolsComponent {
     return event.type === 'request-error' ? `error ${event.status}` : 'success';
   }
 
+  private isTabPrimary(tab: DevtoolsTab) {
+    const badge = this.tabBadges()[tab];
+
+    return this.PINNED_TABS.includes(tab) || this.activeTab() === tab || !!badge.count || !!badge.errors;
+  }
+
+  /** Moves the panel into a pop-up whose document has finished loading. @see popOut */
+  private mountPopOut(popup: Window, panel: HTMLElement) {
+    const doc = popup.document;
+    const renderer = this.renderer;
+
+    renderer.setAttribute(doc.documentElement, 'class', this.document.documentElement.className);
+    renderer.setAttribute(doc.documentElement, 'style', this.document.documentElement.getAttribute('style') ?? '');
+    renderer.setAttribute(doc.body, 'class', this.document.body.className);
+
+    // Inserted before the stylesheets it applies to: a blob document's own base URL is the blob, so a
+    // copied `<link href="styles.css">` - and every relative `url()` inside a copied `<style>` - would
+    // resolve against nothing and silently fail to load.
+    const base = renderer.createElement('base');
+
+    renderer.setAttribute(base, 'href', this.document.baseURI);
+    renderer.appendChild(doc.head, base);
+
+    for (const node of Array.from(this.document.head.children)) {
+      if (!this.isStyleNode(node)) continue;
+
+      renderer.appendChild(doc.head, doc.importNode(node, true));
+    }
+
+    // The panel's chrome tokens (`--_et-qdt-*`) are declared on the host element and inherited from it,
+    // so a panel appended straight to the pop-up's body would lose every background, border and chip
+    // fill that resolves one. It gets a host of its own instead.
+    const shell = renderer.createElement('div');
+
+    renderer.setAttribute(shell, 'class', 'et-query-devtools-host');
+    renderer.setAttribute(shell, 'data-dock', 'popout');
+
+    renderer.setCssProperties(shell, this.chromeTokens());
+    renderer.appendChild(doc.body, shell);
+    renderer.appendChild(shell, panel);
+
+    // The pop-up is a realm of its own, so zone.js never patched its listeners - without the explicit
+    // `run` the dock-back would write its signals outside Angular and nothing would re-render.
+    fromEvent(popup, 'pagehide')
+      .pipe(
+        tap(() => this.zone.run(() => this.dockBack())),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    this.popup = popup;
+    this.poppedOut.set(true);
+  }
+
+  /**
+   * The panel's chrome tokens as the app currently resolves them, so a pop-out keeps the surface it was
+   * docked in. Its own CSS resolves them from the host app's theme, and that theme is set on an ancestor
+   * the pop-out does not have - inherited afresh over there, the panel would take the document's theme
+   * (usually the light one) rather than the one it was just being read against.
+   *
+   * Empty on a browser that does not enumerate custom properties, which leaves the tokens to be
+   * inherited as before.
+   */
+  private chromeTokens() {
+    const styles = this.document.defaultView?.getComputedStyle(this.hostEl.nativeElement);
+    const tokens: Record<string, string> = {};
+
+    for (const property of Array.from(styles ?? [])) {
+      if (property.startsWith('--_et-qdt-')) tokens[property] = styles?.getPropertyValue(property) ?? '';
+    }
+
+    return tokens;
+  }
+
+  /** Whether a `<head>` child carries CSS the pop-out needs a copy of. */
+  private isStyleNode(node: Element) {
+    if (node.tagName === 'STYLE') return true;
+
+    return node.tagName === 'LINK' && (node.getAttribute('rel') ?? '').includes('stylesheet');
+  }
+
+  /** Brings the panel back into the host element and closes the window it was living in. */
+  private dockBack() {
+    const panel = this.panelEl()?.nativeElement;
+
+    if (panel) this.renderer.appendChild(this.hostEl.nativeElement, panel);
+
+    this.poppedOut.set(false);
+    this.closePopup();
+  }
+
   /** A registered query as a row that opens the detail drawer. */
   private queryLinkFor(entry: QueryDevtoolsEntry | undefined, query = entry?.handle as AnyQuery): QueryLink {
     return {
@@ -1758,7 +2239,7 @@ export class QueryDevtoolsComponent {
    * Describes a query the way a replay outside the app needs it: the URL, headers and body of the
    * request it last made, or - for a query that has not run - what its current args would send.
    */
-  private insomniaRequest(entry: QueryDevtoolsEntry, query: AnyQuery): InsomniaRequestInput {
+  private exportedRequest(entry: QueryDevtoolsEntry, query: AnyQuery): InsomniaRequestInput {
     const request = query.subtle.request();
     const args = this.queryArgs(query) as { body?: unknown; headers?: unknown } | null;
     const route = this.queryRoute(entry, query);
@@ -1872,6 +2353,168 @@ export class QueryDevtoolsComponent {
     }
   }
 
+  private sessionClients(): SessionExportClient[] {
+    return this.cacheView().map((client) => ({
+      name: client.name,
+      baseUrl: client.baseUrl,
+      cacheEntries: client.rows.length,
+      unusedCacheEntries: client.unused,
+      cacheBytes: client.bytes,
+      persistedEntries: client.client?.subtle.persistence ? this.persistedCount(client.client) : null,
+      features: (client.client?.subtle.devtoolsFeatures ?? []).map((feature) => this.featureSummary(feature)),
+    }));
+  }
+
+  /** Every registered entry, described by whatever its kind carries. */
+  private sessionEntries(): SessionExportEntry[] {
+    return queryDevtoolsEntries().map((entry) => {
+      const base: SessionExportEntry = {
+        id: entry.id,
+        kind: entry.kind,
+        name: entry.meta.name ?? null,
+        client: entry.meta.clientBaseUrl ?? entry.meta.clientName ?? null,
+        features: entry.meta.features?.map((feature) => this.featureSummary(feature)) ?? [],
+      };
+
+      if (entry.kind === 'query') return { ...base, ...this.sessionQuery(entry) };
+      if (entry.kind === 'query-stack' || entry.kind === 'paged-query-stack') {
+        const stack = entry.kind === 'paged-query-stack' ? this.asPagedStack(entry) : this.asStack(entry);
+
+        return { ...base, activity: this.sessionActivity(this.stackActivity(stack)) };
+      }
+      if (entry.kind === 'query-sequence') return { ...base, detail: this.sessionSequence(entry) };
+      if (entry.kind === 'query-form') return { ...base, detail: this.sessionForm(entry) };
+      if (entry.kind === 'auth-provider') return { ...base, detail: this.sessionAuth(entry) };
+      if (entry.kind === 'ws-client') return { ...base, detail: this.sessionSocket(entry) };
+
+      return base;
+    });
+  }
+
+  private sessionQuery(entry: QueryDevtoolsEntry): Partial<SessionExportEntry> {
+    const query = entry.handle as AnyQuery;
+    const error = query.error();
+
+    return {
+      method: entry.meta.method ?? null,
+      route: entry.meta.route ?? null,
+      url: this.requestUrl(query),
+      status: this.queryStatus(query),
+      activity: this.sessionActivity(this.queryActivity(entry)),
+      runs: (entry.stats?.runs() ?? []).map((run) => ({
+        index: run.index,
+        startedAt: new Date(run.startedAt).toISOString(),
+        durationMs: run.endedAt === null ? null : run.endedAt - run.startedAt,
+        status: run.status,
+        attempts: run.attempts,
+        didRequest: run.didRequest,
+        receivedBytes: run.receivedBytes,
+        url: run.url,
+      })),
+      args: this.queryArgs(query),
+      response: query.response() ?? null,
+      error: error ? { status: error.raw.status, body: error.isList ? error.errors : error.error } : null,
+    };
+  }
+
+  private sessionActivity(activity: QueryActivity): Record<string, unknown> {
+    return { ...activity.stats, cacheServed: activity.cacheServed, avgDurationMs: activity.avgDurationMs };
+  }
+
+  private sessionSequence(entry: QueryDevtoolsEntry): Record<string, unknown> {
+    const sequence = this.asSequence(entry);
+
+    return {
+      status: sequence.status(),
+      currentStep: sequence.currentStep(),
+      total: sequence.total,
+      failedAt: sequence.failedAt(),
+      steps: this.queriesForSequence(sequence).map((link, index) => ({
+        method: link.method,
+        route: link.segments.map((segment) => segment.text).join(''),
+        status: this.sequenceStepStatus(sequence, index),
+        args: sequence.stepArgs()[index] ?? null,
+        response: this.stepSnapshot(sequence, index)?.response() ?? null,
+      })),
+    };
+  }
+
+  private sessionForm(entry: QueryDevtoolsEntry): Record<string, unknown> {
+    const form = this.asForm(entry);
+
+    return {
+      activeFilterCount: form.activeFilterCount(),
+      isAtDefaults: form.isAtDefaults(),
+      isObserving: form.isObserving(),
+      isCommitPending: form.isCommitPending(),
+      value: form.value(),
+      fields: form.fields().map((field) => ({
+        key: field.key,
+        value: field.value,
+        defaultValue: field.defaultValue,
+        paramKey: field.paramKey,
+        queryParam: field.queryParam ?? null,
+        isDefault: field.isDefault,
+      })),
+      drives: this.queriesDrivenByForm(entry).map((link) => link.id),
+    };
+  }
+
+  /**
+   * An auth provider without its tokens. A session report is a file that gets attached to a ticket, and
+   * the access token is the one thing in the panel that must never travel with it - which is why only
+   * its presence and its remaining lifetime are exported.
+   */
+  private sessionAuth(entry: QueryDevtoolsEntry): Record<string, unknown> {
+    const auth = this.asAuth(entry);
+
+    return {
+      isAuthenticated: auth.isAuthenticated(),
+      hasAccessToken: !!auth.accessToken(),
+      hasRefreshToken: !!auth.refreshToken(),
+      expiresIn: this.authTokenExpiry(auth),
+      queries: this.authQueryKeys(auth),
+    };
+  }
+
+  private sessionSocket(entry: QueryDevtoolsEntry): Record<string, unknown> {
+    const ws = this.asWs(entry);
+
+    return {
+      url: entry.meta.url ?? null,
+      connected: ws.connected(),
+      rooms: ws.rooms(),
+      messages: ws.messages().map((message) => ({
+        timestamp: new Date(message.timestamp).toISOString(),
+        direction: message.direction,
+        room: message.room,
+        event: message.event,
+        data: message.data,
+      })),
+    };
+  }
+
+  private sessionEvents(): SessionExportEvent[] {
+    return this.eventLog().map((event) => ({
+      timestamp: new Date(event.timestamp).toISOString(),
+      client: event.client,
+      type: event.type,
+      method: event.method,
+      url: event.url,
+      status: event.status,
+      durationMs: event.durationMs,
+      bytes: event.bytes,
+      cause: event.cause ? this.causeLabel(event.cause) : null,
+      refreshed: event.refreshed?.map((refreshed) => `${refreshed.method} ${refreshed.path}`) ?? null,
+    }));
+  }
+
+  private sessionFaults(): SessionExportFault[] {
+    return this.faultClients()
+      .filter((client) => client.armed)
+      .map((client) => ({ client: client.name, ...client.fault }));
+  }
+
   private downloadFile(fileName: string, content: string) {
     const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
     const anchor = this.renderer.createElement('a');
@@ -1887,12 +2530,47 @@ export class QueryDevtoolsComponent {
     return `${entryId}:${index}`;
   }
 
-  private applyResize(event: PointerEvent) {
-    // The panel is docked to the bottom, so its height is the distance from the pointer to the viewport bottom.
-    const viewport = this.document.documentElement.clientHeight;
-    const next = viewport - event.clientY;
-    const max = Math.round(viewport * 0.9);
-    this.panelHeight.set(Math.min(Math.max(next, MIN_HEIGHT), max));
+  private paneWidth(pane: PaneTarget) {
+    return pane === 'list' ? this.listWidth : this.drawerWidth;
+  }
+
+  /** The panel's size is the distance from the pointer to the edge it is docked to. */
+  private applyResize(drag: ResizeDrag, event: PointerEvent) {
+    if (drag.kind === 'pane') {
+      this.applyPaneResize(drag, event);
+
+      return;
+    }
+
+    const root = this.document.documentElement;
+
+    if (this.dock() === 'right') {
+      const viewport = root.clientWidth;
+
+      this.panelWidth.set(clamp(viewport - event.clientX, MIN_WIDTH, Math.round(viewport * 0.9)));
+
+      return;
+    }
+
+    const viewport = root.clientHeight;
+
+    this.panelHeight.set(clamp(viewport - event.clientY, MIN_HEIGHT, Math.round(viewport * 0.9)));
+  }
+
+  /** A pane's width is the distance from the pointer to the container edge that pane sits against. */
+  private applyPaneResize(drag: Extract<ResizeDrag, { kind: 'pane' }>, event: PointerEvent) {
+    const rect = drag.container.getBoundingClientRect();
+    const width = drag.pane === 'list' ? event.clientX - rect.left : rect.right - event.clientX;
+    const max = Math.max(MIN_PANE_WIDTH, Math.round(rect.width) - MIN_PANE_WIDTH);
+
+    this.paneWidth(drag.pane).set(clamp(Math.round(width), MIN_PANE_WIDTH, max));
+  }
+
+  private closePopup() {
+    const popup = this.popup;
+
+    this.popup = null;
+    popup?.close();
   }
 
   private updateInspectHover(event: MouseEvent) {
@@ -2003,6 +2681,9 @@ export class QueryDevtoolsComponent {
       type: event.type,
       cause: null,
       refreshed: null,
+      durationMs: null,
+      bytes: null,
+      isEstimatedBytes: false,
     };
 
     // A logout drops every secure entry at once - worth a row of its own, since the requests that
@@ -2030,16 +2711,34 @@ export class QueryDevtoolsComponent {
       return;
     }
 
+    // Both are read off the request as the event fires, which is the only moment they describe this
+    // event: the next execution of the same request overwrites them.
+    const measured = event.type === 'request-success' ? this.measureResponse(event.request) : null;
+
     this.pushEventItem({
       ...base,
       method: event.request.method,
       url: event.request.url,
       isSecure: event.isSecure,
       status: event.type === 'request-error' ? event.error.status : null,
+      durationMs: event.request.subtle.lastDurationMs(),
+      bytes: measured?.bytes ?? null,
+      isEstimatedBytes: !!measured && !measured.isExact,
       // A request is shared by every query on the same cache key, so the first owner is as good
       // as any - they all show the same response.
       queryId: this.queryEntries().find((e) => (e.handle as AnyQuery).subtle.request() === event.request)?.id ?? null,
     });
+  }
+
+  /**
+   * The size of a settled request's response, taken from its `content-length` when the response carried
+   * one and measured from the decoded body otherwise.
+   */
+  private measureResponse(request: { currentEvent: () => unknown; response: () => unknown }) {
+    const event = request.currentEvent();
+    const headers = event && typeof event === 'object' && 'headers' in event ? (event.headers as HttpHeaders) : null;
+
+    return measureQueryDevtoolsPayload({ headers, body: request.response() });
   }
 
   private refreshedRequestOf(request: { method: string; url: string }): RefreshedRequest {

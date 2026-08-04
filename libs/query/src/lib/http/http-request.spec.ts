@@ -455,6 +455,53 @@ describe('createHttpRequest', () => {
     });
   });
 
+  describe('last duration', () => {
+    it('should report nothing until an execution has settled', () => {
+      expect(req.subtle.lastDurationMs()).toBeNull();
+
+      req.execute();
+
+      expect(req.subtle.lastDurationMs()).toBeNull();
+    });
+
+    it('should measure from the execution that started it', () => {
+      req.execute();
+      vi.advanceTimersByTime(250);
+      request().flush(responseBody);
+
+      expect(req.subtle.lastDurationMs()).toBe(250);
+    });
+
+    it('should cover every attempt and the backoff between them', () => {
+      req.execute();
+      requestAndError501();
+      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(120);
+      request().flush(responseBody);
+
+      expect(req.subtle.lastDurationMs()).toBe(2120);
+    });
+
+    it('should also measure a failure', () => {
+      req.execute();
+      vi.advanceTimersByTime(80);
+      request().flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(req.subtle.lastDurationMs()).toBe(80);
+    });
+
+    it('should leave the last duration alone for a response adopted from elsewhere', () => {
+      req.execute();
+      vi.advanceTimersByTime(60);
+      request().flush(responseBody);
+      vi.advanceTimersByTime(5000);
+
+      req.subtle.applyExternalResponse({ body: responseBody2, expiresAt: null });
+
+      expect(req.subtle.lastDurationMs()).toBe(60);
+    });
+  });
+
   it('should correctly update its state when requested multiple times', () => {
     expectAllNull();
 

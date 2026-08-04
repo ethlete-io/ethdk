@@ -191,6 +191,14 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
 
   /** The retry currently being waited out, or `null` when none is. @see HttpRequestRetryState */
   retryState: Signal<HttpRequestRetryState | null>;
+
+  /**
+   * How long the last settled execution took, measured from the `execute()` that started it - so it
+   * covers every attempt and the backoff between them, not just the last round trip. `null` until one
+   * has settled, and untouched by a response adopted from another tab or from disk, neither of which
+   * this request spent any time on.
+   */
+  lastDurationMs: Signal<number | null>;
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
@@ -282,6 +290,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const expiresIn = signal<number | null>(null);
   const attempts = signal(1);
   const retryState = signal<HttpRequestRetryState | null>(null);
+  const lastDurationMs = signal<number | null>(null);
 
   // NOTE: This must be a plain function, not a `computed`. The freshness check compares against
   // `Date.now()`, which is not reactive, so a memoized computed would only ever recompute when
@@ -451,6 +460,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
         {
           loading.set(null);
           response.set(event.body);
+          lastDurationMs.set(Date.now() - lastExecuteTime());
 
           const expiresInSeconds = options.cacheAdapter
             ? options.cacheAdapter(event.headers)
@@ -485,6 +495,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
     error.set(errorRes);
     loading.set(null);
+    lastDurationMs.set(Date.now() - lastExecuteTime());
 
     const errorEvent: HttpErrorEvent = { type: 'error', error: errorRes };
     currentEvent.set(errorEvent);
@@ -576,6 +587,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       resolveHeaders,
       attempts: attempts.asReadonly(),
       retryState: retryState.asReadonly(),
+      lastDurationMs: lastDurationMs.asReadonly(),
     },
   };
 

@@ -50,9 +50,10 @@ omitting the provider in production builds is safe.
 
 Open the panel with the floating **Query** button (bottom-right) or the
 <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> shortcut, then use
-the demo controls to drive real fixtures through every tab. Drag the panel's top
-edge to resize it. (The floating button is rendered in its own Shadow DOM so
-host-app CSS can't affect it.)
+the demo controls to drive real fixtures through every tab. Drag the panel's edge
+to resize it, or [dock it to the right / pop it out](#where-the-panel-sits).
+(The floating button is rendered in its own Shadow DOM so host-app CSS can't
+affect it.)
 
 Both the floating button and the panel's **Close** button print the shortcut for
 the current platform (`⌘⌥Q` on Apple, `Ctrl+Alt+Q` elsewhere), so it's
@@ -60,20 +61,52 @@ discoverable without reading this page. The shortcut is matched on the physical
 key, which keeps it working on layouts where holding <kbd>Alt</kbd> rewrites the
 character the keyboard reports.
 
+## Where the panel sits
+
+A bottom dock is right for a waterfall and wrong for a wide screen, and on two
+monitors neither is right. The header carries both alternatives:
+
+- **◨ Right** docks the panel to the right edge, sized by dragging its inner edge
+  instead of its top one. At that width the master/detail and split views stack
+  vertically rather than sitting side by side, so neither pane is squeezed below
+  what it needs. **⬓ Bottom** puts it back.
+- **⧉ Pop out** moves the panel into a window of its own - the _same_ live panel,
+  not a second one, so every signal in it keeps updating from the app you are
+  inspecting, and **Inspect** still highlights components in the app window.
+  **⧈ Dock back** (or closing the window) brings it home.
+
+Inside the panel, **the divider between two panes is draggable** on every tab that
+has two: the Queries list against its detail, and the split views (Stacks,
+Sequences, Forms, Timeline) against the drawer a query opens in. Grab the gap
+between them and drag; double-click it to hand the pane back to its default
+proportion. A right dock stacks the panes on top of each other instead, so there
+the panel's own edge is the only thing to drag.
+
+Which edge you picked, the size of each and the pane widths are
+[persisted](#persistence). Being popped out is not: a reload cannot re-adopt the window the previous document
+opened, so the panel always comes back docked.
+
+::: tip
+A pop-out is the app's own panel relocated, which is what makes it live - but it
+also means it borrows the app's stylesheets and the surface theme the panel was
+docked in, and it cannot outlive the tab that opened it. Reloading the app closes
+it. Pop-up blockers apply: if the window is refused, the panel stays docked.
+:::
+
 ## Tabs
 
-| Tab           | Shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Queries**   | Every registered query, [filterable by client, endpoint and live state](#finding-a-query-in-a-long-list). Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the [detail view](#the-detail-view-overview-history-data) shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with), [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost) and [every run it made](#run-history-and-response-diffs), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions. |
-| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                                                                                                           |
-| **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| **Forms**     | Every [`createQueryForm`](/query/query-forms) on screen: [its fields, what they put in the URL and the query it drives](#forms-what-a-filter-is-actually-sending). A driven query opens in a split-view drawer (like Stacks), so the form stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button, and [the client's own features with their configuration](#features-show-what-they-were-configured-with).                                                                                       |
-| **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                            |
-| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Tab           | Shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Queries**   | Every registered query, [filterable by client, endpoint and live state](#finding-a-query-in-a-long-list). Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the [detail view](#the-detail-view-overview-history-data) shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with), [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost) and [every run it made](#run-history-and-response-diffs), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions.         |
+| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Forms**     | Every [`createQueryForm`](/query/query-forms) on screen: [its fields, what they put in the URL and the query it drives](#forms-what-a-filter-is-actually-sending). A driven query opens in a split-view drawer (like Stacks), so the form stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of [everything sent and received](#sockets-both-directions-and-an-emit-box), with a filter box and an emit box for test messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Cache**     | Per-client repository entries: cache key, consumer count, [measured size](#cache-what-is-actually-in-it), secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Value** / **Refetch** / **Evict** actions. The card header adds the cache's total size, how many entries are collectible, how many responses the client has on disk (with **Clear disk**), **Evict all**, and [the client's own features](#features-show-what-they-were-configured-with). |
+| **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with [timestamps, duration and response size](#events-what-each-request-cost), narrowable by client and to failures only, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                          |
+| **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 ## Finding a query in a long list
 
@@ -111,6 +144,16 @@ many of them are failing - queries in an error state, stacks with an error, fail
 sequence steps, `request-error` rows in the event log. A query that fails in a tab
 you are not looking at is visible from the tab strip, which is what turns the
 panel from something you check into something that tells you.
+
+### Empty tabs fold into "More"
+
+Ten tabs is a lot of strip for an app that uses neither sockets nor sequences, and
+in a right dock it wraps to a second line. A tab with nothing behind it - no
+entries and nothing failing - is offered under **More** instead, and moves back
+into the strip the moment it holds something, badge and all. **Queries** and
+**Faults** always stay: one is where the panel opens, the other has entries to arm
+rather than to count. So does whichever tab is open, so the tab you are reading
+never folds away under you.
 
 ## Routes show the params that were used
 
@@ -480,6 +523,130 @@ From the other end, a query's Overview sub-tab gains a **Refetched by** row list
 refreshes that hit it, newest first. It reads off the event log, so it goes back exactly
 as far as the log does (100 events, and **Clear** empties it).
 
+## Events: what each request cost
+
+Every request row carries its **Duration** and the **Size** of the response it
+received, so the log answers "which of these was slow, and which was big?" without
+opening a query:
+
+```
+17:04:22   https://api.example.com   success   GET /posts?page=2      601ms   ≈228 B
+17:04:22   https://api.example.com   success   GET /posts?limit=1200  602ms   ≈37.5 kB
+17:04:23   https://api.example.com   error 503 GET /flaky            4.21s    —
+```
+
+The duration is measured from the `execute()` that started the request, so a row that
+took four attempts reads the wall clock of all of them, backoff included - the same
+figure the [Activity tiles](#activity-how-often-a-query-ran-and-what-it-cost) report.
+A failure has no payload worth a column and reads `—`; sizes prefixed with `≈` were
+measured from the decoded body rather than a `content-length` header.
+
+Two controls narrow the log, which is what makes a hundred rows readable:
+
+- **The client picker** scopes it to one base URL. It only appears once more than one
+  client has logged something - a picker with a single option is noise.
+- **Errors only** keeps the `request-error` rows, carrying the same count as the tab's
+  red badge. It is the fastest way to answer "did anything fail while I did that?".
+
+The count reads `3 of 87 events` while either is active. Both narrow the _view_ only:
+a query's **Refetched by** row and the [session export](#attaching-a-whole-session-to-a-bug-report)
+keep reading the whole log.
+
+## Cache: what is actually in it
+
+The Cache tab could refetch and evict an entry without ever saying what was in it,
+which made an entry no live query holds unreadable. Four additions close that:
+
+- **Value** expands the response held under a key, in the same
+  [value explorer](#beyond-a-read-only-view) the detail view uses. This is the only
+  way to read an entry whose query is gone - the component that created it unmounted,
+  but the cache is keeping the response for its `keepUnusedFor` window.
+- **Size** per entry, and the total in the card header. Both are measured from the
+  decoded bodies (so `≈`, and compression is ignored), which is enough to spot the one
+  endpoint holding 4 MB of list data.
+- **collectible** marks an entry with no consumer left. It is not a leak: it is waiting
+  out its `keepUnusedFor` window to be reused by a consumer that comes back, and the
+  header counts how many are in that state.
+- **Evict all** drops every entry of one client, consumers included - the cold-start
+  check without a reload. Queries still bound to an evicted entry request again on
+  their next execution.
+
+## Sockets: both directions, and an emit box
+
+`WebSocketDevtoolsHandle` used to record received messages only, which made "the room
+was never joined" look exactly like "the room is quiet". The log now covers **both
+directions**: every room join and leave the client sends, marked `↑ sent` with an accent
+edge, next to the `↓ received` messages.
+
+The **Emit** box sends a message the way the app would - an event name and an optional
+JSON payload - so a server that only answers a client that asked can be provoked from
+the panel. The payload must be valid JSON (`{"id":7}`, `"ping"`, `42`); an empty one
+sends a plain event.
+
+The filter box matches an event, a room or a direction across every socket, and terms
+are whitespace-separated and all have to match - so `out join` lists exactly the room
+joins this client sent.
+
+::: tip
+Outgoing capture costs nothing without `provideQueryDevtools()`: the socket client
+checks once whether devtools are installed and every recording call is a no-op.
+:::
+
+## Copy as cURL
+
+**cURL** in the selected query's action row copies the request as a shell command -
+what goes into a terminal, a ticket or a chat message, where an Insomnia collection is
+too heavy to be read at all:
+
+```bash
+curl 'https://api.example.com/posts?page=2' \
+  -X POST \
+  -H 'Authorization: Bearer …' \
+  -H 'Content-Type: application/json' \
+  --data-raw '{"title":"hi"}'
+```
+
+It describes the same request the [Insomnia export](#export-to-insomnia) does: the URL
+the query actually requested, the headers as the request resolved them (the client's
+merged with the per-request ones) and the JSON body. `GET` is left implicit because it
+is curl's default, and a GraphQL query is sent as `{ query, variables }` the way the
+transport does.
+
+The command is quoted for a POSIX shell, so a body containing quotes stays one argument,
+and `--data-raw` is used rather than `-d` - the latter strips newlines, which would
+mangle a GraphQL document. Headers the panel could not resolve are left out rather than
+guessed: a secure query whose provider has no access token exports without its
+`Authorization`, and the token is the one thing worth pasting by hand.
+
+## Attaching a whole session to a bug report
+
+**Copy report** describes one query. A bug report is usually about a screen, and the
+question a day later is which of its twenty queries misbehaved. **⤓ Session** in the
+header downloads the whole panel as one JSON file:
+
+| Key       | Holds                                                                                                                                                                                         |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clients` | Each query client: base URL, cache entry count, how many are collectible, the total cached size, how many responses are on disk, and its features with their configuration.                   |
+| `entries` | Every registered entry by kind - a query with its status, activity, run history, args, response and error; a stack's traffic; a sequence's steps; a form's fields; a socket's message log.    |
+| `events`  | The whole event log (never the filtered view), each row with its duration, size, and the invalidation fan-out it caused.                                                                      |
+| `faults`  | Anything [armed](#faults-making-requests-actually-misbehave) at the time. A capture taken while the panel was lying to the app has to say so, or the report sends someone chasing a fake 503. |
+
+Bodies are slimmed the way **Copy report** slims them - long strings truncated, long
+arrays sampled down to `… (N more)` - so the file stays small enough to attach and a
+4 MB response does not become the report. It also records the URL the session was
+captured on, so a report says which environment it came from.
+
+::: warning
+Access and refresh tokens are **never** exported. An auth provider is described by
+whether it holds each token and how long the access token has left, because a file that
+travels to a ticket must not carry a bearer token. The Insomnia export is the deliberate
+exception - it carries a refresh token because that is what makes its chain work, and
+[it says so](#secure-queries-get-a-self-refreshing-token).
+
+The rest is your app's data: args and responses go into the file as they are, slimmed
+but not redacted. Read it before you attach it.
+:::
+
 ## Export to Insomnia
 
 Two buttons hand a request to [Insomnia](https://insomnia.rest) so it can be
@@ -550,8 +717,10 @@ components are bound to, which the browser Network tab can't do:
   writes the query's signals directly; to exercise the pipeline behind them -
   retries, error handling features, the cache - arm a
   [fault](#faults-making-requests-actually-misbehave) instead.
-- **Cache actions** - refetch or evict individual cache entries and watch the
-  freshness countdown.
+- **Cache actions** - [read, refetch or evict](#cache-what-is-actually-in-it) a
+  cache entry, evict a whole client, and watch the freshness countdown.
+- **Emit a socket message** - [send a test message](#sockets-both-directions-and-an-emit-box)
+  as the app would, and see it in the log next to what came back.
 - **Inspect** - toggle inspect mode, then hover the live UI to highlight the query
   a component created; click to jump straight to its detail. The Queries list then
   shows an **Inspected element** banner with the number of matches, and **Clear**
@@ -564,9 +733,12 @@ components are bound to, which the browser Network tab can't do:
 
 ## Persistence
 
-The view state - open/closed, panel height, active tab, the query detail's
+The view state - open/closed, [dock edge, the size of each and the pane widths](#where-the-panel-sits),
+active tab, the query detail's
 [sub-tab](#the-detail-view-overview-history-data), selected client, selected
-query, inspect filter, the query filter term and status chips, value-explorer
+query, inspect filter, the query filter term and status chips, the
+[event log's](#events-what-each-request-cost) client scope and errors-only toggle,
+the [socket message filter](#sockets-both-directions-and-an-emit-box), value-explorer
 search and expanded tree paths - is
 persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives a
 page reload within the tab session without leaking devtools state across sessions.
@@ -575,13 +747,16 @@ which in turn assumes queries are created in the same order.)
 
 [Armed faults](#faults-making-requests-actually-misbehave) are deliberately **not**
 part of that: they change how the app behaves, not how the panel looks, and a reload
-disarms them.
+disarms them. Neither is [being popped out](#where-the-panel-sits), which a reload
+cannot restore.
 
 ## Accessibility
 
 The devtools panel is a development tool, not part of your product UI. The tab
-strip uses `role="tablist"` / `role="tab"` with `aria-selected`; controls are
-native `<button>` and `<select>` elements. It is not intended to ship in
+strip uses `role="tablist"` / `role="tab"` with `aria-selected`, and its
+[**More** control](#empty-tabs-fold-into-more) is an `aria-haspopup` button whose
+items are plain buttons; the rest of the controls are native `<button>` and
+`<select>` elements. It is not intended to ship in
 production builds.
 
 ## Theming

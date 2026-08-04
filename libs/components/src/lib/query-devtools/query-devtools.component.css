@@ -42,6 +42,72 @@
     box-shadow: 0 -0.4rem 2rem rgb(0 0 0 / 0.35);
   }
 
+  /* Docked to the right edge: the host spans the full block axis and the panel takes its inline size
+     from the drag instead. */
+  .et-query-devtools-host:where([data-dock='right']) {
+    inset-block: 0;
+    inset-inline-start: auto;
+  }
+
+  .et-query-devtools-panel:where([data-dock='right']) {
+    inline-size: auto;
+    block-size: 100%;
+    max-block-size: none;
+    max-inline-size: 90vw;
+    border-block-start: 0;
+    border-inline-start: 1px solid var(--_et-qdt-border);
+    box-shadow: -0.4rem 0 2rem rgb(0 0 0 / 0.35);
+  }
+
+  /* Popped out: the pop-up window is the frame, so the panel drops the chrome that made it an overlay.
+     Its host wrapper exists only to hand down the `--_et-qdt-*` tokens the panel resolves. */
+  .et-query-devtools-host:where([data-dock='popout']) {
+    position: static;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .et-query-devtools-panel:where([data-dock='popout']) {
+    block-size: 100%;
+    max-block-size: none;
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* A right dock is a column, not a page: neither pane of a side-by-side view fits next to the other at
+     that width, so both stack and the tab strip gets a line of its own. */
+  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-header {
+    flex-wrap: wrap;
+  }
+
+  .et-query-devtools-panel:where([data-dock='right']) :is(.et-query-devtools-master-detail, .et-query-devtools-split) {
+    flex-direction: column;
+  }
+
+  .et-query-devtools-panel:where([data-dock='right'])
+    :is(
+      .et-query-devtools-list,
+      .et-query-devtools-detail,
+      .et-query-devtools-drawer,
+      .et-query-devtools-split .et-query-devtools-scroll
+    ) {
+    flex: 1 1 50%;
+    min-inline-size: 0;
+    min-block-size: 0;
+    max-inline-size: none;
+    border-inline-start: 0;
+    border-inline-end: 0;
+  }
+
+  .et-query-devtools-panel:where([data-dock='right']) :is(.et-query-devtools-detail, .et-query-devtools-drawer) {
+    border-block-start: 1px solid var(--_et-qdt-border);
+  }
+
+  /* Stacked panes share a horizontal edge, which the panel's own height already governs. */
+  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-pane-resize {
+    display: none;
+  }
+
   .et-query-devtools-panel--resizing {
     user-select: none;
   }
@@ -55,6 +121,14 @@
     z-index: 1;
   }
 
+  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-resize {
+    inset-inline: 0 auto;
+    inset-block: 0;
+    inline-size: 0.6rem;
+    block-size: auto;
+    cursor: ew-resize;
+  }
+
   .et-query-devtools-resize::after {
     content: '';
     position: absolute;
@@ -65,6 +139,15 @@
     block-size: 0.2rem;
     border-radius: 999px;
     background: var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-resize::after {
+    inset-inline: 0.2rem auto;
+    inset-block: 50% auto;
+    inline-size: 0.2rem;
+    block-size: 4rem;
+    margin-inline-start: 0;
+    margin-block-start: -2rem;
   }
 
   .et-query-devtools-resize:hover::after {
@@ -168,6 +251,53 @@
 
   .et-query-devtools-tab-badge--error {
     background: color-mix(in srgb, var(--_et-qdt-error) 25%, transparent);
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-tab-menu {
+    position: relative;
+    display: flex;
+  }
+
+  .et-query-devtools-tab-more-caret {
+    margin-inline-start: 0.4rem;
+  }
+
+  .et-query-devtools-tab-more--open {
+    color: var(--_et-qdt-fg);
+    background: var(--_et-qdt-hover);
+  }
+
+  /* Overlaps the tab content below it, so it needs to outrank the sticky toolbars a tab pins there. */
+  .et-query-devtools-tab-menu-list {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-start: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 14rem;
+    padding: 0.4rem;
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    background: var(--_et-qdt-bg);
+    box-shadow: 0 0.4rem 2rem rgb(0 0 0 / 0.35);
+  }
+
+  .et-query-devtools-tab-menu-item {
+    appearance: none;
+    border: none;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--_et-qdt-muted);
+    padding: 0.6rem 0.8rem;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .et-query-devtools-tab-menu-item:hover {
+    background: var(--_et-qdt-hover);
     color: var(--_et-qdt-fg);
   }
 
@@ -359,10 +489,12 @@
     min-block-size: 0;
   }
 
+  /* A dragged width is set on all three properties at once, so it wins outright; unset, the pane keeps
+     its proportional default between the bounds that keep it readable at any panel width. */
   .et-query-devtools-list {
-    flex: 0 0 34%;
-    min-inline-size: 22rem;
-    max-inline-size: 40rem;
+    flex: 0 0 var(--_et-qdt-list-width, 34%);
+    min-inline-size: var(--_et-qdt-list-width, 22rem);
+    max-inline-size: var(--_et-qdt-list-width, 40rem);
     overflow-y: auto;
     border-inline-end: 1px solid var(--_et-qdt-border);
   }
@@ -486,12 +618,27 @@
   }
 
   .et-query-devtools-drawer {
-    flex: 0 0 42%;
-    min-inline-size: 26rem;
-    max-inline-size: 48rem;
+    flex: 0 0 var(--_et-qdt-drawer-width, 42%);
+    min-inline-size: var(--_et-qdt-drawer-width, 26rem);
+    max-inline-size: var(--_et-qdt-drawer-width, 48rem);
     overflow-y: auto;
     padding: 0 1rem 1rem;
     border-inline-start: 1px solid var(--_et-qdt-border);
+  }
+
+  /* The divider between a two-pane tab's panes. A flex item of its own rather than an overlay on the
+     pane edge: both panes scroll, and a strip drawn over one would sit on top of its scrollbar. */
+  .et-query-devtools-pane-resize {
+    flex: 0 0 0.5rem;
+    align-self: stretch;
+    cursor: ew-resize;
+    background: transparent;
+    transition: background 0.12s ease;
+  }
+
+  .et-query-devtools-pane-resize:hover,
+  .et-query-devtools-pane-resize:active {
+    background: var(--_et-qdt-accent);
   }
 
   .et-query-devtools-drawer-head {
@@ -531,8 +678,9 @@
   }
 
   /* The list column is a third of the panel, so a filter box sharing its line with the status chips would
-     leave neither enough room. Claiming the full line puts the chips underneath at any panel width. */
-  .et-query-devtools-toolbar-row .et-query-devtools-search {
+     leave neither enough room. Claiming the full line puts the chips underneath at any panel width. A
+     filter box in a full-width toolbar (the Sockets tab's) keeps its own size instead. */
+  .et-query-devtools-list .et-query-devtools-toolbar-row .et-query-devtools-search {
     flex: 1 1 100%;
   }
 
@@ -833,6 +981,41 @@
     border-radius: 0.4rem;
     padding: 0.6rem;
     margin-block-end: 0.4rem;
+  }
+
+  /* An outgoing message is marked on the edge it starts from, so a log of both directions can be read
+     down the margin without reading the labels. */
+  .et-query-devtools-ws-message:where([data-direction='out']) {
+    border-inline-start: 2px solid color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
+  }
+
+  .et-query-devtools-ws-direction {
+    color: var(--_et-qdt-muted);
+    white-space: nowrap;
+  }
+
+  .et-query-devtools-ws-message:where([data-direction='out']) .et-query-devtools-ws-direction {
+    color: var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-emit {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-block: 0.4rem;
+  }
+
+  /* The event name is the short field; the payload takes whatever is left. */
+  .et-query-devtools-emit .et-query-devtools-input {
+    flex: 0 0 14rem;
+  }
+
+  .et-query-devtools-emit .et-query-devtools-input + .et-query-devtools-input {
+    flex: 1 1 auto;
+  }
+
+  .et-query-devtools-emit .et-query-devtools-btn {
+    flex: 0 0 auto;
   }
 
   /* Truncate long request URLs (e.g. GraphQL transported via query params) with the full value on hover. */
@@ -1189,6 +1372,13 @@
     display: flex;
     gap: 0.4rem;
     white-space: nowrap;
+  }
+
+  /* An expanded cache value is a row of its own under the entry it belongs to, indented so the table
+     still reads as rows of entries. */
+  .et-query-devtools-cell-value {
+    padding-inline-start: 1.6rem;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 3%, transparent);
   }
 
   .et-query-devtools-section-row {

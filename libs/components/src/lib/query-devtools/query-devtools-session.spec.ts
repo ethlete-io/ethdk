@@ -1,0 +1,96 @@
+import { buildQueryDevtoolsSessionExport, BuildSessionExportOptions, slimForReport } from './query-devtools-session';
+
+const NOW = 1_700_000_000_000;
+
+const build = (overrides: Partial<BuildSessionExportOptions> = {}) =>
+  buildQueryDevtoolsSessionExport({
+    now: NOW,
+    location: 'https://app.example.com/posts',
+    clients: [],
+    entries: [],
+    events: [],
+    faults: [],
+    ...overrides,
+  });
+
+describe('slimForReport', () => {
+  it('should truncate a long string', () => {
+    const slimmed = slimForReport('a'.repeat(500)) as string;
+
+    expect(slimmed).toHaveLength(201);
+    expect(slimmed.endsWith('…')).toBe(true);
+  });
+
+  it('should keep a short array whole and sample a long one', () => {
+    expect(slimForReport([1, 2, 3])).toEqual([1, 2, 3]);
+    expect(slimForReport([1, 2, 3, 4, 5])).toEqual([1, 2, '… (3 more)']);
+  });
+
+  it('should stop descending past the depth limit', () => {
+    const deep = { a: { b: { c: { d: { e: { f: { g: { h: 1 } } } } } } } };
+
+    expect(slimForReport(deep)).toEqual({ a: { b: { c: { d: { e: { f: { g: '…' } } } } } } });
+  });
+
+  it('should survive a circular reference', () => {
+    const circular: Record<string, unknown> = { name: 'root' };
+    circular['self'] = circular;
+
+    expect(() => JSON.stringify(slimForReport(circular))).not.toThrow();
+  });
+});
+
+describe('buildQueryDevtoolsSessionExport', () => {
+  it('should stamp the envelope and count what it holds', () => {
+    const result = build({
+      clients: [
+        {
+          name: 'api',
+          baseUrl: 'https://api.example.com',
+          cacheEntries: 3,
+          unusedCacheEntries: 1,
+          cacheBytes: 2048,
+          persistedEntries: null,
+          features: ['multi tab sync'],
+        },
+      ],
+      entries: [{ id: 'query|api|GET|/posts#0', kind: 'query' }],
+      events: [{ timestamp: new Date(NOW).toISOString(), client: 'api', type: 'request-success' }],
+      faults: [{ client: 'api', latencyMs: 500, failNext: 0, failRate: 0, status: 500 }],
+    });
+
+    expect(result._type).toBe('ethlete.query:devtools-session');
+    expect(result.exportedAt).toBe(new Date(NOW).toISOString());
+    expect(result.location).toBe('https://app.example.com/posts');
+    expect(result.counts).toEqual({ clients: 1, entries: 1, events: 1, armedFaults: 1 });
+  });
+
+  it('should slim the values an entry carries', () => {
+    const [entry] = build({
+      entries: [
+        {
+          id: 'q',
+          kind: 'query',
+          args: { queryParams: { search: 'x'.repeat(400) } },
+          response: { items: [1, 2, 3, 4, 5, 6] },
+        },
+      ],
+    }).entries;
+
+    expect((entry?.args as { queryParams: { search: string } }).queryParams.search).toHaveLength(201);
+    expect((entry?.response as { items: unknown[] }).items).toEqual([1, 2, '… (4 more)']);
+  });
+
+  it('should leave a value field absent rather than writing null for a kind that has none', () => {
+    const [entry] = build({ entries: [{ id: 'ws', kind: 'ws-client', name: 'live' }] }).entries;
+
+    expect(entry).not.toHaveProperty('args');
+    expect(entry).not.toHaveProperty('response');
+  });
+
+  it('should serialize to JSON', () => {
+    const result = build({ entries: [{ id: 'q', kind: 'query', response: { ok: true } }] });
+
+    expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+  });
+});
