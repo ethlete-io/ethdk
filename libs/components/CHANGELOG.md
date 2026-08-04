@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.0.0-next.35
+
+### Minor Changes
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`156659d`](https://github.com/ethlete-io/ethdk/commit/156659de868ff8a66f9b0b6acbb59c637979500d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: count what every query cost - how often it refreshed, how many refreshes reached
+  the network, and how much payload they moved - as activity tiles per query plus totals per client.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`ebc94d4`](https://github.com/ethlete-io/ethdk/commit/ebc94d456176f350a02a29d8b23c1c6fbb573cd5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: an Events row's request cell is now a button that opens the query it came from.
+
+- [`6c6213b`](https://github.com/ethlete-io/ethdk/commit/6c6213b48f8e5c5ccf0fcb526dd50884e768fb82) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: the Timeline and Forms tabs open a query in a split-view drawer, the timeline's right-hand columns align, and an armed fault is called out on every tab.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`ebc94d4`](https://github.com/ethlete-io/ethdk/commit/ebc94d456176f350a02a29d8b23c1c6fbb573cd5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a new **Faults** tab arms real request failures per query client - latency before
+  every attempt, fail-the-next-N, fail-N%, and the response status - resolved per attempt inside the
+  pipeline, so the retry policy re-rolls it.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`156659d`](https://github.com/ethlete-io/ethdk/commit/156659de868ff8a66f9b0b6acbb59c637979500d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: list every query, auth and client feature with the options it was configured with,
+  not just its name.
+
+- [`6c6213b`](https://github.com/ethlete-io/ethdk/commit/6c6213b48f8e5c5ccf0fcb526dd50884e768fb82) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: add a **Forms** tab covering `createQueryForm` - its fields, URL params and the query it drives - and log each invalidation with every query it refetched.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`9f5f9ec`](https://github.com/ethlete-io/ethdk/commit/9f5f9ecc64a0290f753b9979e2667fbe3de238a0) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the Insomnia export now includes the auth provider's token refresh, and secure
+  requests read their bearer token out of its response instead of shipping one that goes stale.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`19ef607`](https://github.com/ethlete-io/ethdk/commit/19ef607750afbf57b3d390300fb1bc2600c58459) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: narrow the Queries list with a filter box matching method, resolved route and path,
+  plus **Failing** / **Loading** / **Stale** / **Idle** chips. Every tab now carries its entry count
+  and a badge for failing entries.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`156659d`](https://github.com/ethlete-io/ethdk/commit/156659de868ff8a66f9b0b6acbb59c637979500d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: list queries with their path params filled in from args (`/post/12` instead of
+  `/post/:param`), and export requests as an Insomnia v4 collection.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`8b665a3`](https://github.com/ethlete-io/ethdk/commit/8b665a39bccf09e51fac34c6d05b9b9d2793d4e5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Surface retries and transfer progress in the query devtools: `request.subtle.attempts()` and
+  `request.subtle.retryState()` report what a retry policy is doing, and the panel shows backoff
+  countdowns, attempt counts and a progress bar for `reportProgress` requests.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`37a74ae`](https://github.com/ethlete-io/ethdk/commit/37a74aec9c149a00f493894a75499c7e86d83cf7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Record what a query did per run: its last 25 runs land on the devtools stats handle, feeding a new
+  **Timeline** tab that draws every request on one axis and a **History** section that diffs responses.
+
+### Patch Changes
+
+- [`89b72c5`](https://github.com/ethlete-io/ethdk/commit/89b72c5c67b6eb7f7efec05f711e54ec5dd8601b) Thanks [@TomTomB](https://github.com/TomTomB)! - `et-input` accepts a nullable bound field - binding one (e.g. the query form's search field) used to throw once the label floated.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`156659d`](https://github.com/ethlete-io/ethdk/commit/156659de868ff8a66f9b0b6acbb59c637979500d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: inspect mode now shows that it is armed and how to cancel it, and GraphQL documents
+  get a copy button. Also fixes a query row that jumped when it went stale.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`8d3471c`](https://github.com/ethlete-io/ethdk/commit/8d3471ca2153e1585d3cdad1c0c8c7b8f5ed220a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the value explorer folds containers over 100 entries into collapsed slices, so a
+  5000-item response opens with 50 rows instead of 5000.
+
 ## 1.0.0-next.34
 
 ### Minor Changes

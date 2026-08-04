@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.18
+
+### Minor Changes
+
+- [`6a7e76b`](https://github.com/ethlete-io/ethdk/commit/6a7e76b3535412ac3eefdabc1aecb98c2f26552f) Thanks [@TomTomB](https://github.com/TomTomB)! - New rule `no-legacy-prepare-without-injector`: a legacy query `prepare()` called from a deferred callback
+  must pass an `injector`, with a fixer that adds the member and threads it.
+
 ## 1.0.0-next.17
 
 ### Minor Changes

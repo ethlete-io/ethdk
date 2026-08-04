@@ -1,5 +1,50 @@
 # @ethlete/query
 
+## 6.0.0-next.24
+
+### Minor Changes
+
+- [`41354e7`](https://github.com/ethlete-io/ethdk/commit/41354e7c64ad713caa2393e6a3df592a410b53be) Thanks [@TomTomB](https://github.com/TomTomB)! - Legacy interop: containers accept `{ injector }` like `prepare()` does and default their cleanup by
+  request method again, and `provideLegacyPrepareFallback()` lets `prepare()` use the root injector instead
+  of throwing ET950 (browser only).
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`cf41b4e`](https://github.com/ethlete-io/ethdk/commit/cf41b4e64268eef05bbd69b501e9d08581d09697) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark every legacy (v2) query export as `@deprecated`, including the `createLegacyQueryCreator`
+  interop, and add `nx g @ethlete/query:deprecate-legacy-queries` to tag wrappers already in source.
+  Removal is v7.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`156659d`](https://github.com/ethlete-io/ethdk/commit/156659de868ff8a66f9b0b6acbb59c637979500d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: count what every query cost - how often it refreshed, how many refreshes reached
+  the network, and how much payload they moved - as activity tiles per query plus totals per client.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`ebc94d4`](https://github.com/ethlete-io/ethdk/commit/ebc94d456176f350a02a29d8b23c1c6fbb573cd5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a new **Faults** tab arms real request failures per query client - latency before
+  every attempt, fail-the-next-N, fail-N%, and the response status - resolved per attempt inside the
+  pipeline, so the retry policy re-rolls it.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`156659d`](https://github.com/ethlete-io/ethdk/commit/156659de868ff8a66f9b0b6acbb59c637979500d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: list every query, auth and client feature with the options it was configured with,
+  not just its name.
+
+- [`6c6213b`](https://github.com/ethlete-io/ethdk/commit/6c6213b48f8e5c5ccf0fcb526dd50884e768fb82) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: add a **Forms** tab covering `createQueryForm` - its fields, URL params and the query it drives - and log each invalidation with every query it refetched.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`9f5f9ec`](https://github.com/ethlete-io/ethdk/commit/9f5f9ecc64a0290f753b9979e2667fbe3de238a0) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the Insomnia export now includes the auth provider's token refresh, and secure
+  requests read their bearer token out of its response instead of shipping one that goes stale.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`156659d`](https://github.com/ethlete-io/ethdk/commit/156659de868ff8a66f9b0b6acbb59c637979500d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: list queries with their path params filled in from args (`/post/12` instead of
+  `/post/:param`), and export requests as an Insomnia v4 collection.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`8b665a3`](https://github.com/ethlete-io/ethdk/commit/8b665a39bccf09e51fac34c6d05b9b9d2793d4e5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Surface retries and transfer progress in the query devtools: `request.subtle.attempts()` and
+  `request.subtle.retryState()` report what a retry policy is doing, and the panel shows backoff
+  countdowns, attempt counts and a progress bar for `reportProgress` requests.
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`37a74ae`](https://github.com/ethlete-io/ethdk/commit/37a74aec9c149a00f493894a75499c7e86d83cf7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Record what a query did per run: its last 25 runs land on the devtools stats handle, feeding a new
+  **Timeline** tab that draws every request on one axis and a **History** section that diffs responses.
+
+### Patch Changes
+
+- [`41354e7`](https://github.com/ethlete-io/ethdk/commit/41354e7c64ad713caa2393e6a3df592a410b53be) Thanks [@TomTomB](https://github.com/TomTomB)! - Legacy interop fixes: `destroyOnResponse` no longer strands its watcher on an aborted query, an `entity`
+  config no longer syncs a `null` response on `prepare()`, and a falsy `body` is sent instead of dropped.
+
+- [`41354e7`](https://github.com/ethlete-io/ethdk/commit/41354e7c64ad713caa2393e6a3df592a410b53be) Thanks [@TomTomB](https://github.com/TomTomB)! - `migrate-to-query-v3` now threads an injector into `prepare()` calls inside callbacks (`computed`,
+  `effect`, RxJS operators) and adds `destroyOnResponse` when the prepared query is discarded.
+
 ## 6.0.0-next.23
 
 ### Major Changes

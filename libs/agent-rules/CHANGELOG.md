@@ -1,5 +1,16 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.2
+
+### Minor Changes
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`a311f80`](https://github.com/ethlete-io/ethdk/commit/a311f80455bc9cc9a925fe8f72ac945a1b057315) Thanks [@github-actions](https://github.com/apps/github-actions)! - New `sdk-source` and `sdk-local-build` skills let an agent read the SDK's own sources and test an unreleased build via `file:`, from the checkout named by the local config's new `sdkSourcePath`.
+
+### Patch Changes
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`9627646`](https://github.com/ethlete-io/ethdk/commit/96276462e1c2ecde5394b8b1eafcebbb9f56a973) Thanks [@github-actions](https://github.com/apps/github-actions)! - Styleguide: changeset notes are now capped at one to two sentences, with mechanism and API inventories
+  explicitly sent to the docs instead.
+
 ## 0.1.0-next.1
 
 ### Minor Changes

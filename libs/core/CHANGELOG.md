@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 5.0.0-next.38
+
+### Minor Changes
+
+- [#3043](https://github.com/ethlete-io/ethdk/pull/3043) [`eeb8db3`](https://github.com/ethlete-io/ethdk/commit/eeb8db366907058d9f8357ab84582580dc5ab7d9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a browser notification API: `injectNotifications()` exposes a reactive `permission` signal,
+  `request()`, `show(config)` returning a `NotificationRef`, and `closeAll()` - over both the
+  `Notification` constructor and the service-worker path, SSR-safe.
+
 ## 5.0.0-next.37
 
 ### Major Changes
