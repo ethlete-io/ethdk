@@ -29,6 +29,14 @@ export default defineConfig(() => ({
         ) {
           return false;
         }
+
+        // jsdom's CSS parser drops the component stylesheets whole (`@layer`,
+        // nesting, `color-mix`), so every component host keeps the UA default
+        // `display: inline` and signalElementDimensions' dev-mode warning fires
+        // for hosts that are `display: grid` in a browser.
+        if (log.includes('Inline elements cannot be observed for dimensions')) {
+          return false;
+        }
       }
 
       return true;
