@@ -99,7 +99,7 @@
         class="et-select-virtual-options"
         role="none"
       >
-        @for (item of select.virtualizedItems(); track item) {
+        @for (item of select.virtualizedItems(); track item.value()) {
           <et-select-virtual-option [item]="item" />
         }
       </div>
