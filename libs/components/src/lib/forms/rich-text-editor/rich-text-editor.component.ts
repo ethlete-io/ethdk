@@ -32,7 +32,8 @@ import {
   UNDERLINE_ICON,
   UNDO_ICON,
 } from '../../icon';
-import { RichTextEditorDirective, RichTextEditorFloatingToolbarDirective } from './headless';
+import { RichTextEditorDirective } from './headless';
+import { RICH_TEXT_EDITOR_FLOATING_TOOLBAR } from './rich-text-editor-floating-toolbar.token';
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_LINK_EDITOR } from './rich-text-editor-link-editor.token';
 import { RICH_TEXT_EDITOR_TOOL, RICH_TEXT_EDITOR_TOOLS, RichTextEditorToolDefinition } from './rich-text-editor-tools';
@@ -96,7 +97,6 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
       ],
       outputs: ['valueChange', 'touchedChange'],
     },
-    RichTextEditorFloatingToolbarDirective,
   ],
   host: {
     class: 'et-rich-text-editor',
@@ -122,6 +122,9 @@ export class RichTextEditorComponent {
   /** Present only when `provideRichTextEditorLinkEditor()` is in scope; otherwise the link tool
    *  falls back to `window.prompt` and the popover never ships. */
   private linkEditorSetup = inject(RICH_TEXT_EDITOR_LINK_EDITOR, { optional: true });
+  /** Present only when `provideRichTextEditorFloatingToolbar()` is in scope; otherwise the editor
+   *  shows its static toolbar only and the overlay runtime never ships. */
+  private floatingToolbarSetup = inject(RICH_TEXT_EDITOR_FLOATING_TOOLBAR, { optional: true });
   protected editable = viewChild.required<ElementRef<HTMLElement>>('editable');
   protected toolbar = viewChild.required<ElementRef<HTMLElement>>('toolbar');
 
@@ -145,6 +148,7 @@ export class RichTextEditorComponent {
 
   constructor() {
     this.linkEditorSetup?.(this.dir, this.host.nativeElement);
+    this.floatingToolbarSetup?.(this.dir);
 
     this.trackKeyboardInset();
     this.trackEditingActive();

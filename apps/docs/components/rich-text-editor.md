@@ -1,8 +1,8 @@
 # Rich text editor
 
-`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar plus a floating toolbar over the active selection, and uses the same field shell as the other [form controls](/components/forms). On touch devices, while editing, the toolbar automatically docks above the on-screen keyboard (the top is left to the platform's selection menu), so formatting stays reachable - tracking the keyboard through scrolling and same-origin iframe embeddings. The editable's font size is floored at 16px there, so iOS Safari doesn't zoom the page on focus.
+`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (and, opt-in, [one that follows the selection](#the-selection-toolbar)), and uses the same field shell as the other [form controls](/components/forms). On touch devices, while editing, the toolbar automatically docks above the on-screen keyboard (the top is left to the platform's selection menu), so formatting stays reachable - tracking the keyboard through scrolling and same-origin iframe embeddings. The editable's font size is floored at 16px there, so iOS Safari doesn't zoom the page on focus.
 
-Out of the box the toolbar has undo/redo, the inline marks (bold, italic, underline, strikethrough, inline code) and the two lists. Everything else - the block-style menu, quotes, code blocks, links, Markdown-as-you-type, tables, alignment, images - is a provider you add, so an editor only ships the parts it offers. [Choosing which tools appear](#choosing-which-tools-appear) has the whole set; `provideRichTextEditorDefaultTools()` turns on everything the default toolbar names in one line.
+Out of the box the toolbar has undo/redo, the inline marks (bold, italic, underline, strikethrough, inline code) and the two lists. Everything else - the block-style menu, quotes, code blocks, links, Markdown-as-you-type, tables, alignment, images, the selection toolbar - is a provider you add, so an editor only ships the parts it offers. [Choosing which tools appear](#choosing-which-tools-appear) has the whole set; `provideRichTextEditorDefaultTools()` turns on everything the default toolbar names in one line.
 
 ## Importing
 
@@ -132,10 +132,7 @@ Pass a `tools` input with an ordered list of tokens to pick and order the contro
 ```
 
 To set the default for many editors at once, provide `provideRichTextEditorTools(...)` (a
-per-instance `tools` input still wins). The selection (floating) toolbar automatically shows the
-inline subset of the configured tools. It is a **pointer-device enhancement** - on touch devices it
-is suppressed (the platform's own selection menu occupies that space), and the always-visible static
-toolbar is used instead.
+per-instance `tools` input still wins).
 
 ```ts
 import { provideRichTextEditorTools } from '@ethlete/components';
@@ -145,6 +142,35 @@ providers: [provideRichTextEditorTools(['heading', 'divider', 'bold', 'italic', 
 
 Underline and inline code round-trip through the Markdown value (underline as native `<u>`, since
 Markdown has no underline syntax).
+
+## The selection toolbar
+
+Selecting text can float a second toolbar above the selection, with the inline subset of the
+configured tools (bold, italic, underline, strikethrough, inline code and - with the link tool - link).
+It is opt-in:
+
+```ts
+import { provideRichTextEditorFloatingToolbar } from '@ethlete/components';
+
+providers: [provideRichTextEditorFloatingToolbar()];
+```
+
+It is a **pointer-device enhancement**: on touch devices it is suppressed (the platform's own
+selection menu occupies that space) and the always-visible static toolbar is used instead. So it never
+offers an action the static toolbar doesn't, and leaving it out costs an editor no functionality.
+
+Leaving it out is also the single largest byte saving in the editor - ~15 kB gz, and ~22 kB with
+`@floating-ui/dom` counted, because this is the only part of a default editor that needs the overlay
+runtime and anchored positioning at all.
+
+On a headless `[etRichTextEditor]`, apply `[etRichTextEditorFloatingToolbar]` instead of providing it.
+
+Upgrading from a version where it was always mounted? Run the scan-and-report migration to list the
+editors that lose it:
+
+```bash
+yarn nx g @ethlete/components:migrate-rich-text-editor-floating-toolbar
+```
 
 ## Block quotes and code blocks
 
@@ -203,8 +229,9 @@ With only the tool, it asks for a URL with the browser's `prompt()` — on an ex
 it. That keeps an editor that only needs plain links free of any link UI.
 
 Add `provideRichTextEditorLinkEditor()` for the real thing: a popover that sets a link's **text**,
-**URL** and whether it should **open in a new tab**, reachable from both the main toolbar and the
-selection (floating) toolbar, pre-filled from the link under the caret when editing one, and
+**URL** and whether it should **open in a new tab**, reachable from the main toolbar and from the
+[selection toolbar](#the-selection-toolbar) where that is enabled, pre-filled from the link under the
+caret when editing one, and
 responsive — an arrow'd popover anchored to the selection on wider screens, a top sheet (pinned above
 the on-screen keyboard) on small/touch ones.
 
@@ -587,8 +614,8 @@ do for [text fields](/components/forms#validation-accessibility). Toolbar button
 pressed state - buttons that open a menu or popover (block style, alignment, table, link) also show
 it while their popover is open (announced via `aria-expanded`, not `aria-pressed`, for the menu
 triggers). Undo and redo are actions rather than toggles, so they never report a pressed state; they
-are `disabled` when there is nothing to take back or replay. The floating toolbar is a pointer-only enhancement and never removes an action that
-isn't also reachable from the always-visible static toolbar.
+are `disabled` when there is nothing to take back or replay. The [selection toolbar](#the-selection-toolbar) is a pointer-only enhancement and never
+removes an action that isn't also reachable from the always-visible static toolbar.
 
 An embedded image carries the **alt text** from its popover - empty means decorative, which is the
 right answer often enough to be the default. While one uploads, its placeholder is a `role="img"`

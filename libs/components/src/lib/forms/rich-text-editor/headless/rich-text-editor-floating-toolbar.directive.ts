@@ -19,114 +19,81 @@ import { RichTextEditorFloatingToolbarComponent } from '../rich-text-editor-floa
 import { rangeTextBoundingRect } from './internals/rich-text-editor-dom';
 import { RichTextEditorDirective } from './rich-text-editor.directive';
 
-@Directive({
-  selector: '[etRichTextEditorFloatingToolbar]',
-})
-export class RichTextEditorFloatingToolbarDirective {
-  private editor = inject(RichTextEditorDirective);
-  private document = inject(DOCUMENT);
-  private renderer = injectRenderer();
-  private overlayManager = injectOverlayManager();
-  private destroyRef = inject(DestroyRef);
+/**
+ * Registers the toolbar that follows the selection on `editor`. Must run in an injection context tied
+ * to the editor's lifetime - `provideRichTextEditorFloatingToolbar()` and
+ * `[etRichTextEditorFloatingToolbar]` are the two ways in.
+ *
+ * @internal
+ */
+export const setupRichTextEditorFloatingToolbar = (editor: RichTextEditorDirective) => {
+  const document = inject(DOCUMENT);
+  const renderer = injectRenderer();
+  const overlayManager = injectOverlayManager();
+  const destroyRef = inject(DestroyRef);
   /** On touch devices the platform shows its own selection menu (Copy/Paste/…) over the selection,
    *  which this toolbar would fight and hide behind; the always-visible static toolbar covers
    *  formatting there instead, so the floating toolbar is a pointer-device-only enhancement. */
-  private hasTouchInput = injectHasTouchInput();
+  const hasTouchInput = injectHasTouchInput();
 
-  private overlayId = createComponentId('et-rte-floating-toolbar');
-  private overlayRef = signal<OverlayRef<RichTextEditorFloatingToolbarComponent, unknown> | null>(null);
+  const overlayId = createComponentId('et-rte-floating-toolbar');
+  const overlayRef = signal<OverlayRef<RichTextEditorFloatingToolbarComponent, unknown> | null>(null);
 
-  private activeRange: Range | null = null;
-  private pointerSelectingInContent = false;
+  let activeRange: Range | null = null;
+  let pointerSelectingInContent = false;
 
-  constructor() {
-    // close if the input modality flips to touch while the toolbar is open
-    effect(() => {
-      if (this.hasTouchInput()) this.hide();
-    });
-
-    effect((onCleanup) => {
-      const root = this.editor.editorDom.root();
-
-      if (!root) return;
-
-      const listeners = [
-        this.renderer.listen(root, 'pointerdown', () => (this.pointerSelectingInContent = true)),
-        this.renderer.listen(root, 'keyup', () => this.evaluate()),
-        this.renderer.listen(root, 'blur', () => this.hide()),
-        this.renderer.listen(this.document, 'pointerup', () => this.finishContentPointerSelection()),
-        this.renderer.listen(this.document, 'selectionchange', () => this.reposition()),
-      ];
-
-      onCleanup(() => listeners.forEach((off) => off()));
-    });
-
-    this.destroyRef.onDestroy(() => this.hide());
-  }
-
-  private selectableRange(): Range | null {
-    if (this.hasTouchInput()) return null;
-
-    const range = this.editor.editorDom.getSelection()?.range ?? null;
-    const usable =
-      !!range && !range.collapsed && this.editor.focused() && !this.editor.disabled() && !this.editor.readonly();
-
-    return usable ? range : null;
-  }
-
-  private finishContentPointerSelection() {
-    if (!this.pointerSelectingInContent) return;
-
-    this.pointerSelectingInContent = false;
-    this.evaluate();
-  }
-
-  /** Selection settled (key/pointer): open the toolbar or move it to the new range. */
-  private evaluate() {
-    const range = this.selectableRange();
-
-    if (!range) {
-      this.hide();
-
-      return;
-    }
-
-    this.activeRange = range.cloneRange();
-    this.openOrReposition();
-  }
-
-  /** Selection changed while open: follow it, or close if it is no longer usable. */
-  private reposition() {
-    const ref = this.overlayRef();
+  const hide = () => {
+    const ref = overlayRef();
 
     if (!ref) return;
 
-    const range = this.selectableRange();
+    overlayRef.set(null);
+    ref.close();
+  };
 
-    if (!range) {
-      this.hide();
+  const selectableRange = (): Range | null => {
+    if (hasTouchInput()) return null;
 
-      return;
-    }
+    const range = editor.editorDom.getSelection()?.range ?? null;
+    const usable = !!range && !range.collapsed && editor.focused() && !editor.disabled() && !editor.readonly();
 
-    this.activeRange = range.cloneRange();
-    ref.updatePositionStrategy(this.buildAnchoredPosition());
-  }
+    return usable ? range : null;
+  };
 
-  private openOrReposition() {
-    const existing = this.overlayRef();
+  const buildAnchoredPosition = (): OverlayRuntimeAnchoredPosition => {
+    const referenceElement: VirtualElement = {
+      getBoundingClientRect: () => (activeRange ? rangeTextBoundingRect(activeRange) : new DOMRect()),
+      contextElement: editor.editorDom.root() ?? undefined,
+    };
+
+    enableAnchoredOverlayPositionExtras();
+
+    return anchoredOverlayPosition({
+      referenceElement,
+      placement: 'top',
+      fallbackPlacements: ['bottom'],
+      offset: 8,
+      // stay within the editor's content area so a selection near the top flips the toolbar below
+      // the caret instead of covering the static toolbar above it
+      boundary: editor.editorDom.root() ?? undefined,
+      autoCloseIfReferenceHidden: true,
+    });
+  };
+
+  const openOrReposition = () => {
+    const existing = overlayRef();
 
     if (existing) {
-      existing.updatePositionStrategy(this.buildAnchoredPosition());
+      existing.updatePositionStrategy(buildAnchoredPosition());
 
       return;
     }
 
     const strategy: OverlayStrategy = {
-      id: this.overlayId,
+      id: overlayId,
       config: {
         containerClass: ['et-overlay--anchored', 'et-rte-floating-toolbar-overlay'],
-        positionStrategy: () => this.buildAnchoredPosition(),
+        positionStrategy: () => buildAnchoredPosition(),
       },
     };
 
@@ -141,17 +108,17 @@ export class RichTextEditorFloatingToolbarDirective {
       closeOnEscape: false,
       // dismissal is driven by the selection itself (collapse / blur), not by outside pointers
       closeOnOutsidePointer: false,
-      origin: this.editor.editorDom.root() ?? undefined,
-      bindings: [inputBinding('editor', () => this.editor)],
+      origin: editor.editorDom.root() ?? undefined,
+      bindings: [inputBinding('editor', () => editor)],
       strategies,
     };
 
-    const ref = this.overlayManager.open<RichTextEditorFloatingToolbarComponent>(
+    const ref = overlayManager.open<RichTextEditorFloatingToolbarComponent>(
       RichTextEditorFloatingToolbarComponent,
       config,
     );
 
-    this.overlayRef.set(ref);
+    overlayRef.set(ref);
 
     // the overlay can close itself (e.g. the selection scrolled out of view) - drop the stale ref
     // so the next usable selection opens a fresh one
@@ -159,40 +126,86 @@ export class RichTextEditorFloatingToolbarDirective {
       .afterClosed()
       .pipe(
         take(1),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(destroyRef),
         tap(() => {
-          if (this.overlayRef() === ref) this.overlayRef.set(null);
+          if (overlayRef() === ref) overlayRef.set(null);
         }),
       )
       .subscribe();
-  }
+  };
 
-  private buildAnchoredPosition(): OverlayRuntimeAnchoredPosition {
-    const referenceElement: VirtualElement = {
-      getBoundingClientRect: () => (this.activeRange ? rangeTextBoundingRect(this.activeRange) : new DOMRect()),
-      contextElement: this.editor.editorDom.root() ?? undefined,
-    };
+  /** Selection settled (key/pointer): open the toolbar or move it to the new range. */
+  const evaluate = () => {
+    const range = selectableRange();
 
-    enableAnchoredOverlayPositionExtras();
+    if (!range) {
+      hide();
 
-    return anchoredOverlayPosition({
-      referenceElement,
-      placement: 'top',
-      fallbackPlacements: ['bottom'],
-      offset: 8,
-      // stay within the editor's content area so a selection near the top flips the toolbar below
-      // the caret instead of covering the static toolbar above it
-      boundary: this.editor.editorDom.root() ?? undefined,
-      autoCloseIfReferenceHidden: true,
-    });
-  }
+      return;
+    }
 
-  private hide() {
-    const ref = this.overlayRef();
+    activeRange = range.cloneRange();
+    openOrReposition();
+  };
+
+  /** Selection changed while open: follow it, or close if it is no longer usable. */
+  const reposition = () => {
+    const ref = overlayRef();
 
     if (!ref) return;
 
-    this.overlayRef.set(null);
-    ref.close();
+    const range = selectableRange();
+
+    if (!range) {
+      hide();
+
+      return;
+    }
+
+    activeRange = range.cloneRange();
+    ref.updatePositionStrategy(buildAnchoredPosition());
+  };
+
+  const finishContentPointerSelection = () => {
+    if (!pointerSelectingInContent) return;
+
+    pointerSelectingInContent = false;
+    evaluate();
+  };
+
+  // close if the input modality flips to touch while the toolbar is open
+  effect(() => {
+    if (hasTouchInput()) hide();
+  });
+
+  effect((onCleanup) => {
+    const root = editor.editorDom.root();
+
+    if (!root) return;
+
+    const listeners = [
+      renderer.listen(root, 'pointerdown', () => (pointerSelectingInContent = true)),
+      renderer.listen(root, 'keyup', () => evaluate()),
+      renderer.listen(root, 'blur', () => hide()),
+      renderer.listen(document, 'pointerup', () => finishContentPointerSelection()),
+      renderer.listen(document, 'selectionchange', () => reposition()),
+    ];
+
+    onCleanup(() => listeners.forEach((off) => off()));
+  });
+
+  destroyRef.onDestroy(() => hide());
+};
+
+/**
+ * Adds the selection toolbar to a headless `[etRichTextEditor]`. The default `et-rich-text-editor`
+ * takes the same wiring through `provideRichTextEditorFloatingToolbar()`.
+ */
+@Directive({
+  selector: '[etRichTextEditorFloatingToolbar]',
+})
+export class RichTextEditorFloatingToolbarDirective {
+  constructor() {
+    setupRichTextEditorFloatingToolbar(inject(RichTextEditorDirective));
   }
 }

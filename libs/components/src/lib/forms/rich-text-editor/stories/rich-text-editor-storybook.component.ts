@@ -13,6 +13,7 @@ import {
   FormFieldLabelMode,
   FormFieldSize,
 } from '../../form-field';
+import { provideRichTextEditorFloatingToolbar } from '../rich-text-editor-floating-toolbar.provider';
 import { provideRichTextEditorLinkEditor } from '../rich-text-editor-link-editor.provider';
 import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
 import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
@@ -46,6 +47,7 @@ import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
   providers: [
     provideRichTextEditorDefaultTools(),
     provideRichTextEditorLinkEditor(),
+    provideRichTextEditorFloatingToolbar(),
     provideRichTextEditorTableTool(),
     provideRichTextEditorAlignmentTool(),
   ],

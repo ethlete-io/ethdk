@@ -1,5 +1,7 @@
 export * from './headless';
 export * from './rich-text-editor-floating-toolbar.component';
+export * from './rich-text-editor-floating-toolbar.provider';
+export * from './rich-text-editor-floating-toolbar.token';
 export * from './rich-text-editor-image-editor.component';
 export * from './rich-text-editor-labels';
 export * from './rich-text-editor-link-editor.component';

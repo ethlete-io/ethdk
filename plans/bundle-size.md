@@ -25,17 +25,12 @@ pipeline, the goldens and the rules for reading the numbers live in
 
 ## Open
 
-1. **RTE, the rest** (audited 2026-08-01, unchanged since):
-   - **`provideRichTextEditorFloatingToolbar()`** - ~350 LOC + 82 CSS. Does not free the overlay
-     runtime, so the win is smaller than it looks.
-   - **Per-feature label defaults** - ~1 kB of the always-loaded 2.2 kB label literal serves the
-     opt-in image / table / trigger tools.
-2. **Injection-only CSS candidates** - a byte win needs a breaking opt-in, so do them as on-demand
+1. **Injection-only CSS candidates** - a byte win needs a breaking opt-in, so do them as on-demand
    mounts instead: choice-field card variant (`choice-field.component.css:235-340`, 2 kB, 66 % of the
    sheet), carousel autoplay chrome (`carousel.component.css:165-349`, ~1.8-2.5 kB - autoplay is a
    host directive, so bytes cannot move without breaking), cascader sheet-mode slice
    (`cascader-panel.component.css:666-717` + keyframes, ~1 kB).
-3. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
+2. **Table monolith decomposition - 3-5 kB gz for a plain table, L, only as a deliberate project.**
    The barrel is fine (`TableComponent` alone 20.5 kB vs `TABLE_IMPORTS` 21.4 kB); the cost is inside
    `table.component.ts` (32.7 kB min, ~40 % of the entry): sticky-column machinery
    (`:447`, `:515-538`, `:1566`), autosizing (`:523`, `:1629-1664`), grouped headers (`:626-651`),
@@ -44,6 +39,22 @@ pipeline, the goldens and the rules for reading the numbers live in
    described in `table-api.md`.
 
 ## Closed on 2026-08-04
+
+- **RTE selection toolbar behind `provideRichTextEditorFloatingToolbar()` - 14,925 B gz, and 22,062 B
+  in `--third-party` mode. The largest single win in `components`, and the 2026-08-01 audit sized it
+  at "~350 LOC + 82 CSS, does not free the overlay runtime" - which was wrong.** The floating toolbar
+  was a `hostDirective` of `RichTextEditorComponent`, so every editor pinned `injectOverlayManager`,
+  `OverlayRef`, the strategy machinery and `anchoredOverlayPosition` - and it was the **only** thing in
+  a default editor that needed any of it (the heading menu, link editor and table tool that also use
+  overlays are all opt-in already). `RICH_TEXT_EDITOR_IMPORTS`: 45,489 B → **30,564 B**; with
+  `@floating-ui/dom` bundled, 52,334 B → **30,272 B**, i.e. a plain editor no longer reaches that
+  package at all (its third-party number now sits _below_ its external-mode one, the same
+  zero-retention signal as `contentful-deps`).
+  Unlike the DOM feature split, **this one is free at the top end**: the wiring moved to the
+  `RICH_TEXT_EDITOR_LINK_EDITOR` shape already in this component - an optional token holding a
+  `setup(editor)` function, with the `@Directive` kept for the headless path - so there is no registry
+  to pay for. Opting back in lands at 45,433 B, 56 B _under_ the old baseline, and the full-tools entry
+  at 59,733 B against 59,763 B. All three are goldens.
 
 - **RTE DOM feature modules behind provide fns - 3,477 B gz, the largest win left in `components`.**
   `headings`, `links`, `blockquote`, `codeBlock` and `autoformat` now arrive through a
@@ -90,6 +101,15 @@ from dependency bumps since the last audit, well inside tolerance.
 
 ## Measured as not worth doing - do not re-open
 
+- **Per-feature RTE label defaults - 526 B gz, measured 2026-08-04** (the 2026-08-01 audit guessed
+  ~1 kB). Trimming `DEFAULT_RICH_TEXT_EDITOR_LABELS` to the ten keys an always-loaded editor reads
+  (`toolbar` + the nine built-in tool buttons) takes the base entry 30,531 B → 30,005 B. Getting there
+  needs the defaults to arrive per feature - a multi token the opt-in providers contribute to, merged
+  under the consumer's own override, since `defineLabels` takes one literal and `provide<Domain>Labels`
+  is a plain `useValue` that would otherwise replace a feature's defaults instead of layering on them.
+  That is a new layering mechanism in `core`, a split of a documented public constant, and a second way
+  to localize one domain, for half a kilobyte. The whole literal is pinned by design: the always-loaded
+  `RICH_TEXT_EDITOR_TOOL_BUTTONS` reads nine keys off it.
 - **`@floating-ui/dom` as an optional peer** (decided 2026-08-04). It stays a hard peer of core,
   components and cdk. There is nothing to win in bytes - anchored positioning is already opt-in at the
   bundle level (`registerAnchoredPositionSetup`), and the `--third-party` goldens show only an entry
