@@ -585,6 +585,39 @@
     margin-block-end: 0.8rem;
   }
 
+  .et-query-devtools-live {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-block-end: 0.8rem;
+  }
+
+  .et-query-devtools-live-note {
+    color: var(--_et-qdt-muted);
+    font-size: 1.15rem;
+  }
+
+  .et-query-devtools-progress {
+    display: block;
+    flex: 1 1 12rem;
+    /* A bar with no intrinsic width would collapse to its content, and its content is another bar. */
+    min-inline-size: 8rem;
+    /* Capped so the readout next to it stays next to it rather than at the far edge of a wide panel. */
+    max-inline-size: 24rem;
+    block-size: 0.5rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-progress-bar {
+    display: block;
+    block-size: 100%;
+    border-radius: inherit;
+    background: var(--_et-qdt-accent);
+  }
+
   .et-query-devtools-actions {
     display: flex;
     flex-wrap: wrap;

@@ -12,11 +12,14 @@ import {
 } from '@ethlete/query';
 import { QUERY_DEVTOOLS_IMPORTS } from '../../query-devtools.imports';
 import {
+  armFlakyEndpoint,
   confirmOrder,
   createOrder,
   createPayment,
   devtoolsDemoAuthProvider,
   devtoolsDemoSocket,
+  getDownload,
+  getFlaky,
   getGqlPosts,
   getPost,
   getPosts,
@@ -85,6 +88,56 @@ export class QdPostCardComponent {
     this.shouldFail.set(true);
     this.postId.update((id) => id + 1);
   }
+}
+
+/** A query the API fails a few times before answering - the retry policy is what makes it succeed. */
+@Component({
+  selector: 'et-sb-qd-flaky',
+  template: `
+    <h4>Flaky endpoint</h4>
+    @if (flaky.loading()) {
+      <p>loading…</p>
+    } @else if (flaky.error(); as error) {
+      <p class="et-sb-devtools-error">error {{ error.raw.status }}</p>
+    } @else {
+      <p>{{ flaky.response() ? 'answered' : 'idle' }}</p>
+    }
+    <button (click)="retryTwice()" type="button">Fail twice, then succeed</button>
+    <button (click)="failHard()" type="button">Fail past the retry limit</button>
+  `,
+  encapsulation: ViewEncapsulation.None,
+})
+export class QdFlakyCardComponent {
+  protected readonly flaky = getFlaky({ onlyManualExecution: true });
+
+  protected retryTwice() {
+    armFlakyEndpoint(2);
+    this.flaky.execute();
+  }
+
+  /** The default policy gives up after three retries, so this one ends as a failure with four attempts. */
+  protected failHard() {
+    armFlakyEndpoint(10);
+    this.flaky.execute();
+  }
+}
+
+/** A query asking for progress events, so the panel has a transfer to draw a bar for. */
+@Component({
+  selector: 'et-sb-qd-download',
+  template: `
+    <h4>Download (progress)</h4>
+    @if (download.loading()?.progress; as progress) {
+      <p>{{ progress.percentage.toFixed(0) }}%</p>
+    } @else {
+      <p>{{ download.response()?.bytes ?? 0 }} bytes</p>
+    }
+    <button (click)="download.execute()" type="button">Download</button>
+  `,
+  encapsulation: ViewEncapsulation.None,
+})
+export class QdDownloadCardComponent {
+  protected readonly download = getDownload({ onlyManualExecution: true });
 }
 
 /** A multi-query stack. */
@@ -276,6 +329,8 @@ export class QdProfileCardComponent {
       <div class="et-sb-devtools-grid">
         <et-sb-qd-server-time class="et-sb-devtools-card"></et-sb-qd-server-time>
         <et-sb-qd-post class="et-sb-devtools-card"></et-sb-qd-post>
+        <et-sb-qd-flaky class="et-sb-devtools-card"></et-sb-qd-flaky>
+        <et-sb-qd-download class="et-sb-devtools-card"></et-sb-qd-download>
         <et-sb-qd-posts-stack class="et-sb-devtools-card"></et-sb-qd-posts-stack>
         <et-sb-qd-paged class="et-sb-devtools-card"></et-sb-qd-paged>
         <et-sb-qd-large class="et-sb-devtools-card"></et-sb-qd-large>
@@ -294,6 +349,8 @@ export class QdProfileCardComponent {
     QUERY_DEVTOOLS_IMPORTS,
     QdServerTimeCardComponent,
     QdPostCardComponent,
+    QdFlakyCardComponent,
+    QdDownloadCardComponent,
     QdPostsStackCardComponent,
     QdPagedCardComponent,
     QdLargeResponseCardComponent,

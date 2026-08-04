@@ -36,15 +36,18 @@ into Overview / History / Data sub-tabs at the same time. Documented under
 [Timeline](../apps/docs/components/query-devtools.md) and
 [Run history and response diffs](../apps/docs/components/query-devtools.md).
 
-### 3. Retry and progress are invisible
+### 3. Retry and progress are invisible - shipped
 
-`libs/query/src/lib/http/query-retry-utils.ts` exists; nothing in the panel
-mentions attempts. `latestHttpEvent` is read only for its `status`
-(`query-devtools.component.ts:1337`), so upload/download progress is dropped.
-
-A query stuck `loading` for 8s because it is on attempt 3 behind a 4s backoff
-looks identical to a slow request. Surface the attempt count and a backoff
-countdown on the detail head, and a progress bar for requests that report one.
+Shipped 2026-08-04: `HttpRequestSubtle.attempts` / `.retryState` on the request,
+an `attempts` count per `QueryDevtoolsRun` and a `retries` total on the stats,
+recorded off the request (which is shared per cache key) rather than handed into
+it. The detail head reads `⟳ attempt 3 in 2s · after 503 · backing off 3.00s`
+during a backoff and `⟳ 4 attempts` after it settles; the Queries list, the
+History table and the Timeline bars carry a `⟳ N` marker, Activity gained a
+**Retries** tile, and a request with `reportProgress: true` draws a progress bar.
+Demo fixtures: the `/flaky` and `/download` cards in the devtools story.
+Documented under
+[Retries and progress](../apps/docs/components/query-devtools.md).
 
 ### 4. Fault injection, not frozen states
 
@@ -99,6 +102,6 @@ question, which the panel currently cannot answer.
 
 ## Suggested order
 
-1 and 2 are shipped. Next is 3 (retry / progress visibility, which the run
-history now has a natural home for - an attempt count per run). 5 is the largest
-single coverage win if breadth matters more than depth.
+1, 2 and 3 are shipped. Next is 4 (fault injection - the panel can now _show_ a
+retry, but still cannot _cause_ one outside a flaky API). 5 is the largest single
+coverage win if breadth matters more than depth.

@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention -- mock API mirrors an external snake_case token contract */
-import { HttpErrorResponse, HttpHeaders, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
+import {
+  HttpDownloadProgressEvent,
+  HttpErrorResponse,
+  HttpEventType,
+  HttpHeaders,
+  HttpInterceptorFn,
+  HttpResponse,
+} from '@angular/common/http';
 import {
   createBearerAuthProvider,
   createGetQuery,
@@ -18,7 +25,7 @@ import {
   withTokenExpirationWarning,
 } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
-import { delay, mergeMap, of, throwError } from 'rxjs';
+import { concat, concatMap, delay, mergeMap, of, throwError } from 'rxjs';
 
 export const DEVTOOLS_DEMO_API_URL = 'https://query-devtools-demo.ethlete.local';
 
@@ -34,7 +41,28 @@ export type ServerTimeView = {
   serverTime: string;
 };
 
+export type FlakyView = {
+  ok: boolean;
+};
+
+export type DownloadView = {
+  bytes: number;
+};
+
 let requestNumber = 0;
+
+/** How many more `/flaky` requests answer 503, so the client's retry policy has something to retry. */
+let flakyFailuresLeft = 0;
+
+/** Makes the next `n` requests to `/flaky` fail with a retryable 503. */
+export const armFlakyEndpoint = (n: number) => {
+  flakyFailuresLeft = n;
+};
+
+/** How many chunks a `/download` response is streamed in, and how far apart. */
+const DOWNLOAD_CHUNKS = 8;
+const DOWNLOAD_CHUNK_MS = 220;
+const DOWNLOAD_CHUNK_BYTES = 40_000;
 
 const base64Url = (value: object) =>
   btoa(JSON.stringify(value)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -82,6 +110,56 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
     ).pipe(delay(LATENCY_MS));
 
   const path = url.pathname;
+
+  // A 503 is retryable under the client's `withEthleteApiErrors()` policy, so an armed `/flaky` shows the
+  // devtools an attempt count and a backoff countdown rather than a plain failure.
+  if (path === '/flaky' && flakyFailuresLeft > 0) {
+    flakyFailuresLeft--;
+
+    return of(null).pipe(
+      delay(LATENCY_MS),
+      mergeMap(() =>
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 503,
+              statusText: 'Service Unavailable',
+              url: req.url,
+              error: { message: 'Temporarily unavailable (on purpose)' },
+            }),
+        ),
+      ),
+    );
+  }
+
+  // Streamed in chunks so `reportProgress` has real progress events to report. Angular only emits them
+  // for a request that asked for them, which the `/download` creator does.
+  if (path === '/download') {
+    const total = DOWNLOAD_CHUNKS * DOWNLOAD_CHUNK_BYTES;
+    const chunks = Array.from({ length: DOWNLOAD_CHUNKS }, (_, index) => {
+      const event: HttpDownloadProgressEvent = {
+        type: HttpEventType.DownloadProgress,
+        loaded: (index + 1) * DOWNLOAD_CHUNK_BYTES,
+        total,
+      };
+
+      return event;
+    });
+
+    return concat(
+      of(...chunks).pipe(concatMap((event) => of(event).pipe(delay(DOWNLOAD_CHUNK_MS)))),
+      of(
+        new HttpResponse({
+          status: 200,
+          url: req.url,
+          body: { bytes: total },
+          headers: new HttpHeaders({ 'content-length': String(total) }),
+        }),
+      ),
+    );
+  }
+
+  if (path === '/flaky') return respond({ ok: true } satisfies FlakyView);
 
   if (path === '/server-time') {
     const body: ServerTimeView = { requestNumber: ++requestNumber, serverTime: new Date().toLocaleTimeString() };
@@ -152,7 +230,14 @@ export type GetServerTimeArgs = { response: ServerTimeView; queryParams?: { fail
 export type GetPostsArgs = { response: Paginated<PostView>; queryParams?: { page?: number; limit?: number } };
 export type GetPostArgs = { response: PostView; pathParams: { postId: number } };
 
+export type GetFlakyArgs = { response: FlakyView };
+export type GetDownloadArgs = { response: DownloadView };
+
 export const getServerTime = getQuery<GetServerTimeArgs>('/server-time');
+export const getFlaky = getQuery<GetFlakyArgs>('/flaky');
+
+/** The one demo query asking for progress events - without `reportProgress` there is no progress to show. */
+export const getDownload = getQuery<GetDownloadArgs>('/download', { reportProgress: true });
 export const getPosts = getQuery<GetPostsArgs>('/posts');
 export const getPost = getQuery<GetPostArgs>((p) => `/post/${p.postId}`);
 

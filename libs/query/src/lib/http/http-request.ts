@@ -1,4 +1,11 @@
-import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpProgressEvent } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  HttpEvent,
+  HttpEventType,
+  HttpHeaders,
+  HttpProgressEvent,
+} from '@angular/common/http';
 import { ErrorHandler, Signal, signal } from '@angular/core';
 import { Observable, Subject, Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from './internal/request-route';
@@ -95,6 +102,25 @@ export type HttpRequestLoadingProgressState = {
 };
 
 /**
+ * A retry the request has scheduled and is waiting out. Present only during the backoff itself - the
+ * attempt that follows clears it - which is what lets a slow request be told apart from one that is
+ * sitting out a delay.
+ */
+export type HttpRequestRetryState = {
+  /** The attempt the backoff leads up to, 1-based: the first retry is attempt 2. */
+  attempt: number;
+
+  /** The delay the retry policy asked for, in ms. */
+  delayMs: number;
+
+  /** When the attempt starts, as a timestamp. */
+  startsAt: number;
+
+  /** The status of the response that caused the retry, or 0 when the request never reached the server. */
+  status: number;
+};
+
+/**
  * Advanced request internals. **Not part of the general public contract** - do not build
  * application logic on top of these.
  */
@@ -151,6 +177,16 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
    * access token to be available.
    */
   resolveHeaders: () => HttpHeaders | undefined;
+
+  /**
+   * How many HTTP attempts the current execution has made, counting from 1. Anything above that is the
+   * retry policy having fired. Reset by the next execution, so it keeps reading `3` after a request
+   * that took three attempts to succeed.
+   */
+  attempts: Signal<number>;
+
+  /** The retry currently being waited out, or `null` when none is. @see HttpRequestRetryState */
+  retryState: Signal<HttpRequestRetryState | null>;
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
@@ -240,6 +276,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const lastLoadEventAmount = signal(0);
   const lastExecuteTime = signal(0);
   const expiresIn = signal<number | null>(null);
+  const attempts = signal(1);
+  const retryState = signal<HttpRequestRetryState | null>(null);
 
   // NOTE: This must be a plain function, not a `computed`. The freshness check compares against
   // `Date.now()`, which is not reactive, so a memoized computed would only ever recompute when
@@ -290,7 +328,22 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
               return throwError(() => error);
             }
 
-            return timer(retryResult.delay);
+            // rxjs counts retries from 1, so the attempt this delay leads up to is one further along.
+            const attempt = retryCount + 1;
+
+            retryState.set({
+              attempt,
+              delayMs: retryResult.delay,
+              startsAt: Date.now() + retryResult.delay,
+              status: error instanceof HttpErrorResponse ? error.status : 0,
+            });
+
+            return timer(retryResult.delay).pipe(
+              tap(() => {
+                retryState.set(null);
+                attempts.set(attempt);
+              }),
+            );
           },
         }),
         catchError((e) => {
@@ -318,6 +371,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     });
     error.set(null);
     expiresIn.set(null);
+    attempts.set(1);
+    retryState.set(null);
 
     const stream = createStream();
 
@@ -335,6 +390,9 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     const wasActive = !currentStreamSubscription.closed;
 
     currentStreamSubscription.unsubscribe();
+    // A request destroyed mid-backoff never runs the attempt it was waiting for, so leaving the state
+    // set would keep a "retrying in …" readout counting down for a request that is gone.
+    retryState.set(null);
     event$.complete();
 
     return wasActive;
@@ -462,6 +520,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       applyPersistedResponse,
       lastPersistedResponseAt: lastPersistedResponseAt.asReadonly(),
       resolveHeaders,
+      attempts: attempts.asReadonly(),
+      retryState: retryState.asReadonly(),
     },
   };
 

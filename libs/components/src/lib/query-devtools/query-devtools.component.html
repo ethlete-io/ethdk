@@ -195,6 +195,16 @@
                       "
                     />
                   </span>
+                  <!-- A retry is the one thing a loading dot actively misrepresents: it reads as a request
+                       on its way when nothing is in flight at all. -->
+                  @if (requestProgress(item.query)?.retry; as retry) {
+                    <span
+                      class="et-query-devtools-chip et-query-devtools-chip--loading"
+                      title="Waiting out a retry backoff before attempt {{ retry.attempt }}"
+                    >
+                      ⟳ {{ retry.attempt }}
+                    </span>
+                  }
                   @if (isStale(item.query)) {
                     <span class="et-query-devtools-chip et-query-devtools-chip--muted">stale</span>
                   }
@@ -717,6 +727,16 @@
                       @if (row.run.receivedBytes) {
                         · {{ formatBytes(row.run.receivedBytes) }}
                       }
+                      @if (row.run.attempts > 1) {
+                        <span
+                          class="et-query-devtools-chip et-query-devtools-chip--loading"
+                          title="Took {{
+                            row.run.attempts
+                          }} attempts - so this bar is mostly retry backoff, not one slow round trip"
+                        >
+                          ⟳ {{ row.run.attempts }}
+                        </span>
+                      }
                       @if (!row.run.didRequest) {
                         <span
                           class="et-query-devtools-chip et-query-devtools-chip--muted"
@@ -889,6 +909,49 @@
         </span>
       </div>
 
+      @if (requestProgress(sel.query); as live) {
+        <div class="et-query-devtools-live">
+          @if (live.retry; as retry) {
+            <span
+              class="et-query-devtools-chip et-query-devtools-chip--loading"
+              title="The retry policy is backing off before it tries again. A query stuck loading with this chip is waiting, not slow."
+            >
+              ⟳ attempt {{ retry.attempt }} in {{ formatCountdown(live.retryInMs) }}
+            </span>
+            <span class="et-query-devtools-live-note">
+              {{ retryCause(retry.status) }} · backing off {{ formatDuration(retry.delayMs) }}
+            </span>
+          } @else if (live.attempts > 1) {
+            <span
+              class="et-query-devtools-chip et-query-devtools-chip--loading"
+              title="How many HTTP attempts the last execution took - the retry policy fired for the rest"
+            >
+              ⟳ {{ live.attempts }} attempts
+            </span>
+          }
+
+          @if (live.progress; as progress) {
+            <span
+              [attr.aria-valuenow]="progress.percentage"
+              class="et-query-devtools-progress"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Transfer progress"
+            >
+              <span [style.inline-size.%]="progress.percentage" class="et-query-devtools-progress-bar"></span>
+            </span>
+            <span class="et-query-devtools-live-note">
+              {{ formatPercent(progress.percentage) }} · {{ formatBytes(progress.loaded) }} of
+              {{ formatBytes(progress.total) }}
+              @if (progress.remainingTime !== null) {
+                · {{ formatDuration(progress.remainingTime) }} left
+              }
+            </span>
+          }
+        </div>
+      }
+
       <div class="et-query-devtools-actions">
         <span class="et-query-devtools-actions-label">Run</span>
         <button (click)="executeQuery(sel.query, false)" class="et-query-devtools-btn" type="button">Execute</button>
@@ -1051,6 +1114,15 @@
                 <dd>{{ formatTransferred(activity.stats.sentBytes, activity.stats.hasEstimatedBytes) }}</dd>
               </div>
             }
+            @if (activity.stats.retries) {
+              <div
+                class="et-query-devtools-stat"
+                title="Attempts the retry policy added on top of the first one. Which run they belong to is under History."
+              >
+                <dt>Retries</dt>
+                <dd>{{ activity.stats.retries }}</dd>
+              </div>
+            }
             <div class="et-query-devtools-stat" title="Measured from the execution that preceded each response">
               <dt>Duration</dt>
               <dd>{{ formatDuration(activity.stats.lastDurationMs) }}</dd>
@@ -1103,6 +1175,16 @@
                         class="et-query-devtools-status"
                       ></span>
                       #{{ run.index }}
+                      @if (run.attempts > 1) {
+                        <span
+                          class="et-query-devtools-chip et-query-devtools-chip--loading"
+                          title="Took {{
+                            run.attempts
+                          }} attempts - the duration next to it covers every one of them, backoff included"
+                        >
+                          ⟳ {{ run.attempts }}
+                        </span>
+                      }
                       @if (!run.didRequest) {
                         <span
                           class="et-query-devtools-chip et-query-devtools-chip--muted"

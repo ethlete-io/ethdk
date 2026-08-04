@@ -191,6 +191,7 @@ the **Activity** tiles in its detail view:
 | **Requests**      | The executions that did start a request, and how they ended (`N ok`, `N failed`).                                                                                                                                                                   |
 | **Received**      | The total response payload, plus the average per response.                                                                                                                                                                                          |
 | **Sent**          | The total request body sent. Only shown for a query that sends one.                                                                                                                                                                                 |
+| **Retries**       | Attempts the [retry policy](/query/errors#retries) added on top of the first one. Only shown once something has been retried; which run they belong to is under **History**.                                                                        |
 | **Duration**      | The last response's wall-clock time (from the execution that triggered it, so retries and queueing count), plus the average.                                                                                                                        |
 | **Last response** | When the last response arrived, and when the query first ran.                                                                                                                                                                                       |
 
@@ -230,6 +231,47 @@ badge, because that is where the error body lives - a failure never hides behind
 tab that isn't open. Which sub-tab is open is [persisted](#persistence) and shared
 by the Queries tab and the Stacks / Sequences drawers.
 
+## Retries and progress: what a loading query is actually doing
+
+A query that has been `loading` for eight seconds because it is on its third attempt
+behind a four-second backoff looks exactly like a slow request: one yellow dot. The
+detail head fills that in, right above the action rows, whenever there is something to
+say - and stays out of the way when there isn't.
+
+**While a retry is being waited out** it reads
+`⟳ attempt 3 in 2s · after 503 · backing off 3.00s`: which attempt the delay leads up
+to, how long is left on it, the status that caused it (`after a connection failure`
+when the request never reached the server) and the backoff the
+[policy](/query/errors#retries) asked for. Nothing is in flight during
+that window, which is the thing a loading dot actively misrepresents - so the Queries
+list marks the row with a `⟳ 3` chip too, and you can spot it without opening
+anything.
+
+**Once the request settles**, the head keeps stating `⟳ 4 attempts` for as long as
+that execution is the current one - so a request that only succeeded on its fourth try
+does not read as a clean one. The next execution starts over at one.
+
+**A request that reports transfer progress** gets a bar plus
+`38% · 120.0 kB of 320.0 kB · 2.40s left`. Angular only emits progress events for a
+request that asked for them, so this needs `reportProgress: true` on the query
+creator:
+
+```ts
+export const getExport = getQuery<GetExportArgs>('/export', { reportProgress: true });
+```
+
+Without it there is no progress to show, and the readout stays absent. The remaining
+time only appears once the transfer has run long enough to be estimated.
+
+Attempt counts are recorded per run, so they also show up where runs are listed: a
+`⟳ N` marker in the **History** table and on the **Timeline** bar. That is what says a
+7-second bar is mostly retry backoff rather than one slow round trip.
+
+::: tip
+The retry count comes off the request, which is shared by every query hitting the same
+cache key - so two queries joined onto one retried request both report its attempts.
+:::
+
 ## Timeline: what overlapped with what
 
 The Activity tiles say a query ran 40 times. They cannot say it ran 40 times in two
@@ -248,7 +290,11 @@ readable. Clicking a bar opens that query in the Queries tab.
 Bars are coloured by outcome: green for a response, red for a failure, yellow while
 in flight (the bar grows with the clock), and a dashed grey outline for an **aborted**
 run - one whose query started another request before the response arrived, so the
-response it was waiting for can no longer reach it. Two markers are worth knowing:
+response it was waiting for can no longer reach it. Three markers are worth knowing:
+
+- A **`⟳ N`** run took N attempts, so most of its bar is
+  [retry backoff](#retries-and-progress-what-a-loading-query-is-actually-doing) rather
+  than one slow round trip.
 
 - A **`shared`** run is an instant, because the query received a response without
   making a request of its own: a [poll](/query/features#withpolling), another consumer
@@ -268,7 +314,10 @@ than it draws, the toolbar says how many older runs it left out.
 
 The **History** sub-tab of a query's detail lists its runs newest first - run number,
 start time, duration, received size and outcome. It answers "did this actually
-re-request, or was that a cache hit?" without reading a rolling event log.
+re-request, or was that a cache hit?" without reading a rolling event log. A run that
+took more than one attempt carries a
+[`⟳ N` marker](#retries-and-progress-what-a-loading-query-is-actually-doing), because
+its duration covers every attempt and the backoff between them.
 
 The newest **5** runs also keep their response body, which is what makes the
 **Diff** button work: it compares a run's response against the newest older run that

@@ -21,6 +21,12 @@ export type QueryDevtoolsStats = {
   /** How many requests failed. */
   errors: number;
 
+  /**
+   * How many attempts the retry policy added on top of the first one. A request that succeeded on its
+   * third attempt counts two.
+   */
+  retries: number;
+
   /** The total size of every response body received. */
   receivedBytes: number;
 
@@ -55,6 +61,7 @@ const EMPTY_STATS: QueryDevtoolsStats = {
   requests: 0,
   responses: 0,
   errors: 0,
+  retries: 0,
   receivedBytes: 0,
   sentBytes: 0,
   hasEstimatedBytes: false,
@@ -108,6 +115,12 @@ export type QueryDevtoolsRun = {
    */
   url: string | null;
 
+  /**
+   * How many HTTP attempts this run took - 1 unless the retry policy fired, and 0 for a run that made no
+   * request of its own. Which is what tells a slow response apart from one that was retried into place.
+   */
+  attempts: number;
+
   /** The size of the request body this run sent. */
   sentBytes: number;
 
@@ -152,6 +165,12 @@ export type QueryDevtoolsStatsRecorder = QueryDevtoolsStatsHandle & {
   recordResponse: (payload: QueryDevtoolsPayload) => void;
 
   recordError: () => void;
+
+  /**
+   * Raises the attempt count of the run in flight. Idempotent per attempt, so a caller driven off a
+   * signal may report the same attempt more than once without inflating {@link QueryDevtoolsStats.retries}.
+   */
+  recordRetry: (options: { attempt: number }) => void;
 };
 
 const textEncoder = typeof TextEncoder === 'function' ? /* @__PURE__ */ new TextEncoder() : null;
@@ -263,7 +282,10 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
     const pending = lastPendingRunIndex(current);
 
     if (pending === -1) {
-      appendRun({ ...end, startedAt: end.endedAt, didRequest: false, url: lastUrl, sentBytes: 0 }, current);
+      appendRun(
+        { ...end, startedAt: end.endedAt, didRequest: false, url: lastUrl, sentBytes: 0, attempts: 0 },
+        current,
+      );
 
       return;
     }
@@ -298,6 +320,7 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
         status: 'pending',
         didRequest: true,
         url: lastUrl,
+        attempts: 1,
         sentBytes: sent?.bytes ?? 0,
         receivedBytes: 0,
         response: null,
@@ -337,6 +360,19 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
     endRun({ endedAt: Date.now(), status: 'error', receivedBytes: 0, response: null, hasResponse: false });
   };
 
+  const recordRetry: QueryDevtoolsStatsRecorder['recordRetry'] = ({ attempt }) => {
+    const current = runs();
+    const pending = lastPendingRunIndex(current);
+    const run = current[pending];
+
+    // Nothing in flight means the retry belongs to a request this query is not the one waiting on, and an
+    // attempt already accounted for is the caller reporting the same one twice.
+    if (!run || attempt <= run.attempts) return;
+
+    stats.update((state) => ({ ...state, retries: state.retries + (attempt - run.attempts) }));
+    runs.set(current.map((entry, index) => (index === pending ? { ...entry, attempts: attempt } : entry)));
+  };
+
   const reset = () => {
     lastExecutionAt = null;
     lastUrl = null;
@@ -345,7 +381,15 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
     runs.set([]);
   };
 
-  return { current: stats.asReadonly(), runs: runs.asReadonly(), reset, recordExecution, recordResponse, recordError };
+  return {
+    current: stats.asReadonly(),
+    runs: runs.asReadonly(),
+    reset,
+    recordExecution,
+    recordResponse,
+    recordError,
+    recordRetry,
+  };
 };
 
 /**
@@ -366,6 +410,7 @@ export const sumQueryDevtoolsStats = (
     total.requests += stats.requests;
     total.responses += stats.responses;
     total.errors += stats.errors;
+    total.retries += stats.retries;
     total.receivedBytes += stats.receivedBytes;
     total.sentBytes += stats.sentBytes;
     total.totalDurationMs += stats.totalDurationMs;

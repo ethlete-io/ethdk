@@ -18,6 +18,8 @@ import {
   AnyQuerySnapshot,
   AnyQueryStack,
   createQueryErrorResponse,
+  HttpRequestLoadingProgressState,
+  HttpRequestRetryState,
   Query,
   QueryClient,
   queryDevtoolsEntries,
@@ -88,6 +90,23 @@ type QueryActivity = {
   avgDurationMs: number | null;
   avgResponseBytes: number | null;
   hasActivity: boolean;
+};
+
+/**
+ * What a query's request is doing beyond `loading`: which attempt it is on, the backoff it is waiting
+ * out, and how much of the payload has moved. Without it a request retried three times behind a 4s
+ * backoff and a plain slow one are the same yellow dot.
+ */
+type RequestProgress = {
+  /** @see HttpRequestSubtle.attempts */
+  attempts: number;
+
+  retry: HttpRequestRetryState | null;
+
+  /** How much of the pending backoff is left, or `null` when none is pending. */
+  retryInMs: number | null;
+
+  progress: HttpRequestLoadingProgressState | null;
 };
 
 /**
@@ -898,6 +917,44 @@ export class QueryDevtoolsComponent {
     }
   }
 
+  /**
+   * What a query's current request is doing beyond being loading, or `null` when there is nothing beyond
+   * the status dot to say - so the readout only takes up room while it carries something.
+   */
+  protected requestProgress(query: AnyQuery): RequestProgress | null {
+    const request = query.subtle.request();
+
+    if (!request) return null;
+
+    const retry = request.subtle.retryState();
+    const attempts = request.subtle.attempts();
+    // The request's own loading state, not the query's: a forced loading state carries no progress, and
+    // reading the query's would report the forced one as a transfer that never started.
+    const progress = request.loading()?.progress ?? null;
+
+    if (!retry && !progress && attempts < 2) return null;
+
+    // The countdown is a `Date.now()` comparison, so the clock is what makes it tick down - the same trap
+    // `isStale` documents.
+    this.clock();
+
+    return { attempts, retry, retryInMs: retry ? Math.max(0, retry.startsAt - Date.now()) : null, progress };
+  }
+
+  /** Why a retry was scheduled, as the panel spells it out. A status of 0 never reached the server. */
+  protected retryCause(status: number) {
+    return status ? `after ${status}` : 'after a connection failure';
+  }
+
+  protected formatPercent(percentage: number) {
+    return `${Math.round(percentage)}%`;
+  }
+
+  /** A countdown in whole seconds, spelled out the way the cache freshness column does. */
+  protected formatCountdown(ms: number | null) {
+    return ms === null ? '—' : `${Math.ceil(ms / 1000)}s`;
+  }
+
   protected queryActivity(entry: QueryDevtoolsEntry): QueryActivity {
     return this.activityOf([entry.stats]);
   }
@@ -1470,6 +1527,7 @@ export class QueryDevtoolsComponent {
 
     if (stats.sentBytes) parts.push(`↑ ${this.formatTransferred(stats.sentBytes, stats.hasEstimatedBytes)}`);
     if (stats.errors) parts.push(`${stats.errors} failed`);
+    if (stats.retries) parts.push(`${stats.retries} retr${stats.retries === 1 ? 'y' : 'ies'}`);
     if (activity.avgDurationMs !== null) parts.push(`avg ${this.formatDuration(activity.avgDurationMs)}`);
 
     return `activity: ${parts.join(' · ')}`;

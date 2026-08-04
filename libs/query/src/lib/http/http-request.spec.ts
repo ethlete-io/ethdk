@@ -312,6 +312,93 @@ describe('createHttpRequest', () => {
     testingController.verify();
   });
 
+  describe('retry state', () => {
+    it('should report the first attempt while nothing has been retried', () => {
+      req.execute();
+
+      expect(req.subtle.attempts()).toBe(1);
+      expect(req.subtle.retryState()).toBeNull();
+
+      request().flush(responseBody);
+
+      expect(req.subtle.attempts()).toBe(1);
+    });
+
+    it('should describe the retry it is waiting out, and clear it once the attempt runs', () => {
+      req.execute();
+      requestAndError501();
+
+      const scheduled = req.subtle.retryState();
+
+      expect(scheduled?.attempt).toBe(2);
+      expect(scheduled?.delayMs).toBe(2000);
+      expect(scheduled?.startsAt).toBe(Date.now() + 2000);
+      expect(scheduled?.status).toBe(error501.status);
+      // The attempt has not started yet, so counting it would claim a request that is not in flight.
+      expect(req.subtle.attempts()).toBe(1);
+
+      vi.advanceTimersByTime(2000);
+
+      expect(req.subtle.retryState()).toBeNull();
+      expect(req.subtle.attempts()).toBe(2);
+
+      request().flush(responseBody);
+
+      // Kept after the response, so a run that took two attempts still reads as one.
+      expect(req.subtle.attempts()).toBe(2);
+    });
+
+    it('should count every attempt up to the one the policy gives up on', () => {
+      req.execute();
+
+      requestAndError501();
+      vi.advanceTimersByTime(2000);
+      requestAndError501();
+      vi.advanceTimersByTime(3000);
+      requestAndError501();
+      vi.advanceTimersByTime(4000);
+
+      expect(req.subtle.attempts()).toBe(4);
+
+      try {
+        requestAndError501();
+        vi.advanceTimersByTime(5000);
+      } catch {
+        // noop
+      }
+
+      expect500();
+      expect(req.subtle.attempts()).toBe(4);
+      expect(req.subtle.retryState()).toBeNull();
+    });
+
+    it('should start the next execution back at its first attempt', () => {
+      req.execute();
+      requestAndError501();
+      vi.advanceTimersByTime(2000);
+
+      expect(req.subtle.attempts()).toBe(2);
+
+      request().flush(responseBody);
+      req.execute({ force: true });
+
+      expect(req.subtle.attempts()).toBe(1);
+
+      request().flush(responseBody);
+    });
+
+    it('should drop a scheduled retry when the request is destroyed mid-backoff', () => {
+      req.execute();
+      requestAndError501();
+
+      expect(req.subtle.retryState()).not.toBeNull();
+
+      req.destroy();
+
+      expect(req.subtle.retryState()).toBeNull();
+    });
+  });
+
   it('should correctly update its state when requested multiple times', () => {
     expectAllNull();
 

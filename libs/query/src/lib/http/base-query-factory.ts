@@ -1,5 +1,5 @@
 import { HttpEventType } from '@angular/common/http';
-import { runInInjectionContext } from '@angular/core';
+import { effect, runInInjectionContext } from '@angular/core';
 import { describeQueryDevtoolsFeatures } from '../devtools/query-devtools-features';
 import { createQueryDevtoolsStatsRecorder, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { CreateGqlQueryOptions } from '../gql/gql-query';
@@ -236,6 +236,15 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
       });
 
       deps.destroyRef.onDestroy(() => statsSubscription.unsubscribe());
+
+      // A retry happens inside the request, which is shared by every query hitting the same cache key -
+      // so the recorder reads it off the request instead of being handed down into one. `recordRetry` is
+      // idempotent per attempt, which is what makes reading a signal a safe way to count them.
+      effect(() => {
+        const retry = state.subtle.request()?.subtle.retryState();
+
+        if (retry) devtoolsStats.recordRetry({ attempt: retry.attempt });
+      });
 
       const unregister = registerQueryDevtoolsEntry({
         kind: 'query',

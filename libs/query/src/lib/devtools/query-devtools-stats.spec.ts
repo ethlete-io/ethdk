@@ -148,6 +148,7 @@ describe('query devtools stats', () => {
         requests: 0,
         responses: 0,
         errors: 0,
+        retries: 0,
         receivedBytes: 0,
         sentBytes: 0,
         hasEstimatedBytes: false,
@@ -336,6 +337,93 @@ describe('query devtools stats', () => {
       expect(recorder.runs()[0]?.url).toBe('/posts?page=1');
     });
 
+    it('should open a run on its first attempt', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+
+      expect(recorder.runs()[0]?.attempts).toBe(1);
+      expect(recorder.current().retries).toBe(0);
+    });
+
+    it('should raise the attempts of the run in flight on a retry', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordRetry({ attempt: 2 });
+      recorder.recordRetry({ attempt: 3 });
+      recorder.recordResponse({ body: null });
+
+      expect(recorder.runs()[0]?.attempts).toBe(3);
+      expect(recorder.runs()[0]?.status).toBe('success');
+      expect(recorder.current().retries).toBe(2);
+    });
+
+    it('should ignore an attempt it already counted', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordRetry({ attempt: 2 });
+      recorder.recordRetry({ attempt: 2 });
+
+      expect(recorder.runs()[0]?.attempts).toBe(2);
+      expect(recorder.current().retries).toBe(1);
+    });
+
+    it('should count every attempt a skipped report jumped over', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordRetry({ attempt: 4 });
+
+      expect(recorder.runs()[0]?.attempts).toBe(4);
+      expect(recorder.current().retries).toBe(3);
+    });
+
+    it('should ignore a retry while no run of its own is in flight', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordRetry({ attempt: 2 });
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordResponse({ body: null });
+      recorder.recordRetry({ attempt: 2 });
+
+      expect(recorder.runs()[0]?.attempts).toBe(1);
+      expect(recorder.current().retries).toBe(0);
+    });
+
+    it('should attribute a retry to the newest run, leaving an aborted one alone', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordRetry({ attempt: 2 });
+
+      const [first, second] = recorder.runs();
+
+      expect(first?.attempts).toBe(1);
+      expect(second?.attempts).toBe(2);
+    });
+
+    it('should record no attempt for a run it did not request', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: false });
+      recorder.recordResponse({ body: null });
+
+      expect(recorder.runs()[0]?.attempts).toBe(0);
+    });
+
+    it('should clear the retry count on reset', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordRetry({ attempt: 2 });
+      recorder.reset();
+
+      expect(recorder.current().retries).toBe(0);
+    });
+
     it('should clear the runs and restart the numbering on reset', () => {
       const recorder = createQueryDevtoolsStats();
 
@@ -367,6 +455,7 @@ describe('query devtools stats', () => {
 
       const second = createQueryDevtoolsStats();
       second.recordExecution({ didRequest: true });
+      second.recordRetry({ attempt: 2 });
       second.recordExecution({ didRequest: false });
       second.recordResponse({ body: { a: 1 } });
 
@@ -375,6 +464,7 @@ describe('query devtools stats', () => {
       expect(total.executions).toBe(3);
       expect(total.requests).toBe(2);
       expect(total.responses).toBe(2);
+      expect(total.retries).toBe(1);
       expect(total.receivedBytes).toBe(10 + JSON.stringify({ a: 1 }).length);
       expect(total.hasEstimatedBytes).toBe(true);
     });
