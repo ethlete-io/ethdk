@@ -29,6 +29,7 @@ import { signalElementDimensions, injectCurrentBreakpoint, provideSurfaceThemesW
 
 - [Providers](/core/providers) - breakpoint observer, locale, focus-visible tracker, renderer, style manager, boundary element and user consent.
 - [SEO](/core/seo) - signal-based head management: title composition, meta/Open Graph/Twitter tags, links and JSON-LD structured data.
+- [Notifications](/core/notifications) - system notifications behind one service: a reactive permission signal and a `show()` that spans both the page and service-worker delivery paths.
 
 ## Foundation
 

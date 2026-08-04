@@ -192,6 +192,7 @@ export default defineConfig({
           items: [
             { text: 'Providers', link: '/core/providers' },
             { text: 'SEO', link: '/core/seo' },
+            { text: 'Notifications', link: '/core/notifications' },
           ],
         },
         {
