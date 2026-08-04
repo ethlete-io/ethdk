@@ -79,6 +79,14 @@ One important difference in forms: the CDK controls integrate with **classic rea
 
 These document the CDK API as it stands. Each one names its `@ethlete/components` (or `@ethlete/core`) successor and the renames to expect up front, so a page works both as reference for an app still on the CDK and as a migration starting point.
 
+### Floating & overlays
+
+- [Overlays](/cdk/overlays) - dialogs, sheets and anchored popovers on one runtime: strategies, breakpoint transformations, the content shell, in-overlay routing and the sidebar layout.
+- [Menu](/cdk/menu) - popup menu with roving focus, groups, checkbox/radio items and an optional search field.
+- [Tooltip](/cdk/tooltip) - hover/focus label, announced via `aria-describedby`.
+- [Toggletip](/cdk/toggletip) - click-triggered popover that can hold interactive content.
+- [Filter overlay](/cdk/filter-overlay) - filter-sheet scaffold: edits a form copy and previews the result count before submitting.
+
 ### Data & collections
 
 - [Table & sort](/cdk/table) - declarative Material-style table with column/row definition directives, a busy overlay and sortable headers.
@@ -90,6 +98,13 @@ These document the CDK API as it stands. Each one names its `@ethlete/components
 
 - [Forms](/cdk/forms) - reactive-forms controls: select, combobox, radio, segmented button, slider and typed inputs (date, time, number, …).
 
+### Elements
+
+- [Button](/cdk/button) - behavior layer for `<button>` and `<a>`: disabled handling, `type` safety and a toggle state.
+- [Icons](/cdk/icons) - inline-SVG icons registered per injector with `provideIcons()`.
+- [Tabs](/cdk/tabs) - inline tabs that swap projected content, and router-driven nav tabs.
+- [Progress spinner](/cdk/progress-spinner) - circular indicator with determinate and indeterminate modes.
+
 ### Layout & media
 
 - [Accordion](/cdk/accordion) - animated expandable panels with optional exclusive-open grouping.
@@ -97,6 +112,7 @@ These document the CDK API as it stands. Each one names its `@ethlete/components
 - [Carousel](/cdk/carousel) - slide/fade carousel with autoplay, nav directives and a headless core.
 - [Masonry](/cdk/masonry) - column-packing layout for variable-height items.
 - [Picture](/cdk/picture) - responsive `<picture>` with sources, captions and priority loading.
+- [Scrollable](/cdk/scrollable) - scroll container with masks, buttons, dot navigation, drag-scrolling and snapping.
 - [Skeleton](/cdk/skeleton) - loading placeholders with screen-reader announcements.
 - [Bracket](/cdk/bracket) - tournament brackets: single/double elimination and Swiss.
 

@@ -69,6 +69,16 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Floating & overlays',
+          items: [
+            { text: 'Overlays', link: '/cdk/overlays' },
+            { text: 'Menu', link: '/cdk/menu' },
+            { text: 'Tooltip', link: '/cdk/tooltip' },
+            { text: 'Toggletip', link: '/cdk/toggletip' },
+            { text: 'Filter overlay', link: '/cdk/filter-overlay' },
+          ],
+        },
+        {
           text: 'Data & collections',
           items: [
             { text: 'Table & sort', link: '/cdk/table' },
@@ -82,6 +92,15 @@ export default defineConfig({
           items: [{ text: 'Forms', link: '/cdk/forms' }],
         },
         {
+          text: 'Elements',
+          items: [
+            { text: 'Button', link: '/cdk/button' },
+            { text: 'Icons', link: '/cdk/icons' },
+            { text: 'Tabs', link: '/cdk/tabs' },
+            { text: 'Progress spinner', link: '/cdk/progress-spinner' },
+          ],
+        },
+        {
           text: 'Layout & media',
           items: [
             { text: 'Accordion', link: '/cdk/accordion' },
@@ -89,6 +108,7 @@ export default defineConfig({
             { text: 'Carousel', link: '/cdk/carousel' },
             { text: 'Masonry', link: '/cdk/masonry' },
             { text: 'Picture', link: '/cdk/picture' },
+            { text: 'Scrollable', link: '/cdk/scrollable' },
             { text: 'Skeleton', link: '/cdk/skeleton' },
             { text: 'Bracket', link: '/cdk/bracket' },
           ],
