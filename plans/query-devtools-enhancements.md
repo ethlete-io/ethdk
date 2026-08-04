@@ -49,16 +49,18 @@ Demo fixtures: the `/flaky` and `/download` cards in the devtools story.
 Documented under
 [Retries and progress](../apps/docs/components/query-devtools.md).
 
-### 4. Fault injection, not frozen states
+### 4. Fault injection, not frozen states — shipped
 
-`forceLoading` / `forceError` (`query-devtools.component.ts:813-838`) set signals
-directly. That exercises the template but bypasses the pipeline - retries, error
-handling features, cache behaviour. Add per-client:
-
-- inject N ms of latency into every response,
-- fail the next request / fail N% of requests.
-
-That is what catches a missing skeleton or a retry that never fires.
+Shipped 2026-08-04: a **Faults** tab arming, per query client, N ms of latency
+before every attempt, fail-the-next-N-attempts, fail-N%-of-attempts and the
+status an injected failure carries. The fault is resolved inside `createStream()`
+ahead of `retry` (`http-request.ts`, behind a module global installed by
+`provideQueryDevtools()`) and per **attempt** rather than per execution, so the
+retry policy re-rolls it and `fail next 2` lets the third attempt through. Store
+in `query-devtools-faults.ts`; nothing persists across a reload. The status
+picker states whether the default policy retries what was armed, since a `500` is
+not retried. Documented under
+[Faults](../apps/docs/components/query-devtools.md).
 
 ## Subsystems with no instrumentation at all
 
@@ -86,12 +88,21 @@ question, which the panel currently cannot answer.
 | Item                          | Notes                                                                                                                                                                                                                   |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Copy as cURL**              | `insomniaRequest()` (`query-devtools.component.ts:1121`) already resolves method, URL, headers and body. curl is what goes in a terminal or a ticket; Insomnia import is heavy for that.                                |
-| **Clickable event rows**      | Selecting the owning query. The Events tab is a dead end today - no tab links to another.                                                                                                                               |
+| **Clickable event rows**      | ~~Selecting the owning query.~~ **Shipped 2026-08-04**: the request cell is a button opening the query the request belonged to, resolved at push time so the log holds an id rather than the request.                   |
 | **Duration + size in Events** | `EventLogItem` (`query-devtools.component.ts:79`) carries neither. Plus a client filter and an errors-only toggle.                                                                                                      |
 | **Whole-session export**      | `copyReport` is per query. One JSON dump of every entry, its activity and the event log is what you attach to a bug report.                                                                                             |
 | **Cache tab depth**           | Total cached bytes per client, evict-all, and inspecting a cached entry's value - today you can only Refetch/Evict, so an entry with no live query is opaque. Mark `consumerCount: 0` entries as about to be collected. |
 | **Sockets tab depth**         | Filter messages by event/room, and an emit box for test messages. `WebSocketDevtoolsHandle` (`libs/query/src/lib/ws/web-socket-client.ts:30`) records received messages only - outgoing traffic is not captured.        |
 | **Dock right / pop out**      | Bottom dock only (`applyResize` assumes it, `query-devtools.component.ts:1250`). The right edge is better on a wide screen; a `window.open` pop-out is better on two monitors.                                          |
+
+## Known bug, found in passing
+
+`HttpRequestLoadingProgressState.speed` is wrong by a factor of 1000.
+`updateLoadingState` (`http-request.ts`) computes bytes/ms into a local and then
+assigns `progress.speed = speed * 1000`, while the JSDoc claims bytes/**ms**.
+`remainingTime` is correct - it uses the local. The devtools progress readout omits
+speed for this reason, so fixing the unit means deciding which one the field is and
+updating both the JSDoc and the panel.
 
 ## Considered and skipped
 
@@ -102,6 +113,6 @@ question, which the panel currently cannot answer.
 
 ## Suggested order
 
-1, 2 and 3 are shipped. Next is 4 (fault injection - the panel can now _show_ a
-retry, but still cannot _cause_ one outside a flaky API). 5 is the largest single
-coverage win if breadth matters more than depth.
+1, 2, 3 and 4 are shipped. Next is 5 (query forms), the largest single coverage
+win, or 6 (invalidation fan-out) for the "why did this refetch?" question. The
+cheap wins table is untouched.

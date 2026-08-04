@@ -4,9 +4,11 @@ import {
   QueryDevtoolsEntry,
   QueryDevtoolsRegistration,
   QueryDevtoolsRoutePart,
+  setQueryDevtoolsFaultResolver,
   setQueryDevtoolsRegistrar,
   setQueryDevtoolsStatsFactory,
 } from './query-devtools-hook';
+import { resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
 import { createQueryDevtoolsStats } from './query-devtools-stats';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
@@ -171,6 +173,7 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
 export const provideQueryDevtools = (): EnvironmentProviders => {
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
+  setQueryDevtoolsFaultResolver(resolveQueryDevtoolsFaultForAttempt);
 
   if (!isDevMode()) {
     console.warn(

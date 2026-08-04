@@ -7,7 +7,8 @@ import {
   HttpProgressEvent,
 } from '@angular/common/http';
 import { ErrorHandler, Signal, signal } from '@angular/core';
-import { Observable, Subject, Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
+import { Observable, Subject, Subscription, catchError, defer, retry, switchMap, tap, throwError, timer } from 'rxjs';
+import { isQueryDevtoolsFaultInjectionEnabled, resolveQueryDevtoolsFault } from '../devtools/query-devtools-hook';
 import { buildTimestampFromSeconds } from './internal/request-route';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { extractExpiresInSeconds } from './query-cache-utils';
@@ -54,6 +55,9 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
 
   /** The client options of the request */
   clientOptions?: CreateQueryCreatorOptions;
+
+  /** Display name of the owning query client. Scopes devtools fault injection, which is armed per client. */
+  clientName?: string;
 
   /**
    * Headers configured on the query client, applied to every request it makes. Per-request
@@ -303,55 +307,97 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     return argHeaders.keys().reduce((merged, key) => merged.set(key, argHeaders.getAll(key) ?? []), clientHeaders);
   };
 
+  const send = (headers: HttpHeaders | undefined) =>
+    dependencies.httpClient.request(options.method, options.fullPath, {
+      observe: 'events' as const,
+      body: args?.body,
+      reportProgress: clientOptions?.reportProgress,
+      withCredentials: clientOptions?.withCredentials,
+      transferCache: clientOptions?.transferCache,
+      responseType: clientOptions?.responseType || 'json',
+      headers,
+    });
+
+  /**
+   * Wraps the request in the fault the devtools have armed for this client, if any.
+   *
+   * Inside a `defer` so a fault is resolved per subscription rather than per execution - which is what
+   * makes `retry` re-roll it, so an armed "fail the next two attempts" lets the third one through like a
+   * flaky server would. Injected latency delays the attempt rather than its response, so the loading
+   * state genuinely lasts that long and a retry waits it out too.
+   *
+   * A faulted attempt always goes through `timer`, even at zero latency: no real request can fail in the
+   * same tick it was started in, and settling synchronously inside `execute()` would let an injected
+   * failure land before the caller has finished wiring the request up.
+   */
+  const sendWithFaults = (headers: HttpHeaders | undefined) =>
+    defer(() => {
+      const fault = resolveQueryDevtoolsFault({
+        clientName: options.clientName ?? '',
+        method: options.method,
+        url: options.fullPath,
+      });
+
+      if (!fault) return send(headers);
+
+      const { status } = fault;
+
+      const attempt$ =
+        status === null
+          ? send(headers)
+          : throwError(
+              () =>
+                new HttpErrorResponse({
+                  status,
+                  statusText: 'Injected by the query devtools',
+                  url: options.fullPath,
+                  error: { message: `Injected ${status} (query devtools)` },
+                }),
+            );
+
+      return timer(fault.latencyMs).pipe(switchMap(() => attempt$));
+    });
+
   const createStream = () => {
     const headers = resolveHeaders();
+    const source$ = isQueryDevtoolsFaultInjectionEnabled() ? sendWithFaults(headers) : send(headers);
 
-    return dependencies.httpClient
-      .request(options.method, options.fullPath, {
-        observe: 'events',
-        body: args?.body,
-        reportProgress: clientOptions?.reportProgress,
-        withCredentials: clientOptions?.withCredentials,
-        transferCache: clientOptions?.transferCache,
-        responseType: clientOptions?.responseType || 'json',
-        headers,
-      })
-      .pipe(
-        tap((event) => updateState(event)),
-        retry({
-          delay: (error, retryCount) => {
-            const retryOptions: ShouldRetryRequestOptions = { error, retryCount };
+    return source$.pipe(
+      tap((event) => updateState(event)),
+      retry({
+        delay: (error, retryCount) => {
+          const retryOptions: ShouldRetryRequestOptions = { error, retryCount };
 
-            const retryResult = options.retryFn?.(retryOptions) || runDefaultQueryRetry(retryOptions);
+          const retryResult = options.retryFn?.(retryOptions) || runDefaultQueryRetry(retryOptions);
 
-            if (!retryResult.retry) {
-              return throwError(() => error);
-            }
+          if (!retryResult.retry) {
+            return throwError(() => error);
+          }
 
-            // rxjs counts retries from 1, so the attempt this delay leads up to is one further along.
-            const attempt = retryCount + 1;
+          // rxjs counts retries from 1, so the attempt this delay leads up to is one further along.
+          const attempt = retryCount + 1;
 
-            retryState.set({
-              attempt,
-              delayMs: retryResult.delay,
-              startsAt: Date.now() + retryResult.delay,
-              status: error instanceof HttpErrorResponse ? error.status : 0,
-            });
+          retryState.set({
+            attempt,
+            delayMs: retryResult.delay,
+            startsAt: Date.now() + retryResult.delay,
+            status: error instanceof HttpErrorResponse ? error.status : 0,
+          });
 
-            return timer(retryResult.delay).pipe(
-              tap(() => {
-                retryState.set(null);
-                attempts.set(attempt);
-              }),
-            );
-          },
-        }),
-        catchError((e) => {
-          updateErrorState(e);
+          return timer(retryResult.delay).pipe(
+            tap(() => {
+              retryState.set(null);
+              attempts.set(attempt);
+            }),
+          );
+        },
+      }),
+      catchError((e) => {
+        updateErrorState(e);
 
-          return throwError(() => e);
-        }),
-      );
+        return throwError(() => e);
+      }),
+    );
   };
 
   const execute = (options?: { allowCache?: boolean; force?: boolean }) => {

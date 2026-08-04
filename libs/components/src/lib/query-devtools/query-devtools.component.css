@@ -1114,6 +1114,80 @@
     font: inherit;
   }
 
+  /* An in-table affordance for opening the row's query: it has to read as clickable without turning the
+     row into a button, which a table cell cannot contain. */
+  .et-query-devtools-row-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    appearance: none;
+    border: 0;
+    background: none;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .et-query-devtools-row-link:hover .et-query-devtools-url,
+  .et-query-devtools-row-link:focus-visible .et-query-devtools-url {
+    color: var(--_et-qdt-accent);
+    text-decoration: underline;
+  }
+
+  /* --- Fault injection --- */
+
+  .et-query-devtools-hint {
+    flex: 1 1 24rem;
+    color: var(--_et-qdt-muted);
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  /* An armed client is the one card that must be findable at a glance from across the panel, since every
+     misbehaving request in the app is coming from it. */
+  .et-query-devtools-card--armed {
+    border-color: color-mix(in srgb, var(--_et-qdt-error) 55%, transparent);
+    background: color-mix(in srgb, var(--_et-qdt-error) 6%, transparent);
+  }
+
+  .et-query-devtools-faults {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: 0.8rem 1.6rem;
+  }
+
+  /* The fault fields stack their label, control and unit hint, unlike the inline `field` elsewhere. */
+  .et-query-devtools-faults .et-query-devtools-field {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    align-items: baseline;
+    row-gap: 0.2rem;
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-faults .et-query-devtools-field small {
+    grid-column: 2;
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-input {
+    inline-size: 100%;
+    background: var(--_et-qdt-bg);
+    color: var(--_et-qdt-fg);
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    font: inherit;
+  }
+
+  .et-query-devtools-input--number {
+    inline-size: 8rem;
+    font-variant-numeric: tabular-nums;
+  }
+
   /* --- JIT editor --- */
 
   .et-query-devtools-editor {
@@ -1418,6 +1492,14 @@
     gap: 0.2rem;
     border-block-end: 1px solid var(--_et-qdt-border);
     margin-block: 0.8rem;
+  }
+
+  /* A section row separates itself from whatever precedes it with a rule of its own. Directly under the
+     subtabs there is nothing to separate from - the nav already closes with one - so the two rules would
+     sit a few pixels apart and read as a doubled border. */
+  .et-query-devtools-subtabs + .et-query-devtools-section-row {
+    padding-block-start: 0;
+    border-block-start: 0;
   }
 
   .et-query-devtools-subtab {

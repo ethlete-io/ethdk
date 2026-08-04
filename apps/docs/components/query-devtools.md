@@ -71,7 +71,8 @@ character the keyboard reports.
 | **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button, and [the client's own features with their configuration](#features-show-what-they-were-configured-with).                                                                                       |
 | **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps. Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## Finding a query in a long list
 
@@ -272,6 +273,47 @@ The retry count comes off the request, which is shared by every query hitting th
 cache key - so two queries joined onto one retried request both report its attempts.
 :::
 
+## Faults: making requests actually misbehave
+
+Reading a retry is one half; causing one is the other. [Force states](#beyond-a-read-only-view)
+write a query's signals directly, which exercises the template but bypasses the pipeline -
+no retry fires, no error handling feature runs, the cache never sees a failure. The
+**Faults** tab arms the request itself instead, so everything downstream reacts the way it
+would to a real fault.
+
+Faults are armed **per query client** and every control is independent:
+
+| Control       | What it does                                                                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Latency**   | Waits N ms before every attempt starts, so the query genuinely stays `loading` that long. This is what a missing skeleton shows up under.      |
+| **Fail next** | Fails the next N attempts, counting down as they are spent - `2` fails two attempts and lets the third through, like a server recovering.      |
+| **Fail rate** | Fails a percentage of attempts, rolled per attempt. `100` fails everything; anything between soak-tests a screen against intermittent failure. |
+| **Status**    | The status an injected failure responds with, and whether the [default retry policy](/query/errors#retries) retries it.                        |
+
+The status matters more than it looks. The default policy retries `0`, `408`, `425`, `429`
+and `≥ 501` - but **not** `500`, which is treated as unrecoverable. Arm a `500` and you are
+testing the error path; arm a `503` and you are testing the retry path. The picker says
+which of the two you picked.
+
+A faulted attempt never reaches the network, so this works offline and against a
+production API you would rather not hammer. Latency and failure compose: 600 ms of
+latency plus `fail next 2` reproduces a slow, flaky endpoint without touching the server.
+
+Because the fault is resolved per **attempt** rather than per execution, a retry re-rolls
+it - which is what makes `fail next 2` behave like a server that comes back. Watching the
+`⟳ N` markers from [Retries](#retries-and-progress-what-a-loading-query-is-actually-doing)
+climb is the read-out that the injection is real and not a frozen state.
+
+::: warning
+An armed client is drawn with a red border and the **Faults** tab carries a red badge, because
+every misbehaving request in the app is coming from it. Nothing survives a page reload - a
+persisted "fail everything" that outlived the session that armed it would be a trap. Use
+**Disarm** on one client or **Disarm all** to clear it sooner.
+:::
+
+Faults are keyed by client **name**, the same identity the client picker uses - so two clients
+sharing a name are armed together.
+
 ## Timeline: what overlapped with what
 
 The Activity tiles say a query ran 40 times. They cannot say it ran 40 times in two
@@ -408,7 +450,10 @@ components are bound to, which the browser Network tab can't do:
   UI re-renders instantly - great for optimistic / edge-case testing), or replay
   the query with edited args.
 - **Force states** - force a query into loading / error / empty to exercise
-  skeletons, spinners and error / empty UIs on demand (`Clear` restores it).
+  skeletons, spinners and error / empty UIs on demand (`Clear` restores it). This
+  writes the query's signals directly; to exercise the pipeline behind them -
+  retries, error handling features, the cache - arm a
+  [fault](#faults-making-requests-actually-misbehave) instead.
 - **Cache actions** - refetch or evict individual cache entries and watch the
   freshness countdown.
 - **Inspect** - toggle inspect mode, then hover the live UI to highlight the query
@@ -431,6 +476,10 @@ persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives 
 page reload within the tab session without leaking devtools state across sessions.
 (Restoring the selected query relies on registry ids being stable across reloads,
 which in turn assumes queries are created in the same order.)
+
+[Armed faults](#faults-making-requests-actually-misbehave) are deliberately **not**
+part of that: they change how the app behaves, not how the panel looks, and a reload
+disarms them.
 
 ## Accessibility
 

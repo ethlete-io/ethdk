@@ -202,6 +202,51 @@ export const setQueryDevtoolsStatsFactory = (fn: () => QueryDevtoolsStatsRecorde
  */
 export const createQueryDevtoolsStatsRecorder = (): QueryDevtoolsStatsRecorder | null => statsFactory?.() ?? null;
 
+/** The request an upcoming attempt belongs to, for the fault resolver to match against. */
+export type QueryDevtoolsFaultTarget = {
+  /** Display name of the owning query client. Faults are armed per client. */
+  clientName: string;
+
+  method: string;
+  url: string;
+};
+
+/** What the devtools want done with one upcoming attempt. */
+export type QueryDevtoolsResolvedFault = {
+  /** Extra latency in ms to wait out before the attempt starts. */
+  latencyMs: number;
+
+  /** The status to fail the attempt with instead of sending it, or `null` to let it through. */
+  status: number | null;
+};
+
+let faultResolver: ((target: QueryDevtoolsFaultTarget) => QueryDevtoolsResolvedFault | null) | null = null;
+
+/**
+ * Installs the fault resolver. Called by `provideQueryDevtools()`; nothing else may call it.
+ * @internal
+ */
+export const setQueryDevtoolsFaultResolver = (
+  fn: (target: QueryDevtoolsFaultTarget) => QueryDevtoolsResolvedFault | null,
+) => {
+  faultResolver = fn;
+};
+
+/**
+ * Whether fault injection can do anything at all. Checked before building the wrapper that resolves a
+ * fault per attempt, so a request in an app without devtools keeps the pipeline it always had.
+ * @internal
+ */
+export const isQueryDevtoolsFaultInjectionEnabled = () => faultResolver !== null;
+
+/**
+ * Resolves the fault to apply to one upcoming attempt, or `null` when nothing is armed. Consumes a
+ * `failNext` budget, so call it exactly once per attempt.
+ * @internal
+ */
+export const resolveQueryDevtoolsFault = (target: QueryDevtoolsFaultTarget): QueryDevtoolsResolvedFault | null =>
+  faultResolver?.(target) ?? null;
+
 let suppressStackRegistration = false;
 
 /**

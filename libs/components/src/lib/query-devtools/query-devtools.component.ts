@@ -11,19 +11,24 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { injectRenderer } from '@ethlete/core';
+import { clamp, injectRenderer } from '@ethlete/core';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
   AnyQuerySnapshot,
   AnyQueryStack,
+  clearQueryDevtoolsFaults,
   createQueryErrorResponse,
+  EMPTY_QUERY_DEVTOOLS_FAULT,
   HttpRequestLoadingProgressState,
   HttpRequestRetryState,
+  isQueryDevtoolsFaultArmed,
   Query,
+  QUERY_DEVTOOLS_FAULT_STATUSES,
   QueryClient,
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
+  queryDevtoolsFaults,
   QueryDevtoolsFeature,
   QueryDevtoolsRun,
   QueryDevtoolsStats,
@@ -35,6 +40,7 @@ import {
   QueryRepositoryEvent,
   QuerySequence,
   QuerySequenceStatus,
+  setQueryDevtoolsFault,
   WebSocketDevtoolsHandle,
 } from '@ethlete/query';
 import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, tap, timer } from 'rxjs';
@@ -48,7 +54,7 @@ import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = Query<any>;
 
-type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events';
+type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events' | 'faults';
 
 /**
  * The sections of the query detail drawer. The head and its actions stay pinned above them - the detail
@@ -61,8 +67,14 @@ type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 /** A live-state facet the Queries list can be narrowed to. */
 type QueryListFacet = 'error' | 'loading' | 'stale' | 'idle';
 
-/** What a tab holds, as its badge reports it: how many entries, and how many of them are failing. */
-type TabBadge = { count: number; errors: number };
+/**
+ * What a tab holds, as its badge reports it: how many entries, and how many of them are failing.
+ * `errorNoun` renames what the red badge counts for a tab where it is not a failure.
+ */
+type TabBadge = { count: number; errors: number; errorNoun?: string };
+
+/** The fault fields the panel arms from a number input, as opposed to the status it picks from a list. */
+type NumericFaultField = 'latencyMs' | 'failNext' | 'failRate';
 
 /**
  * A chunk of a route as rendered: literal path text, a path param (`name` is the param it fills in) or
@@ -150,6 +162,12 @@ type EventLogItem = {
   url: string | null;
   isSecure: boolean;
   status: number | null;
+
+  /**
+   * The registered query the request belonged to when the event fired, so the row can open it. Resolved
+   * here rather than at click time so the log holds an id instead of a reference to the request itself.
+   */
+  queryId: string | null;
 };
 
 type PersistedState = {
@@ -304,6 +322,7 @@ export class QueryDevtoolsComponent {
     { id: 'cache', label: 'Cache' },
     { id: 'timeline', label: 'Timeline' },
     { id: 'events', label: 'Events' },
+    { id: 'faults', label: 'Faults' },
   ] satisfies { id: DevtoolsTab; label: string }[];
 
   protected readonly detailTabs = [
@@ -425,6 +444,22 @@ export class QueryDevtoolsComponent {
       }
     }
     return Array.from(map, ([repository, info]) => ({ repository, ...info }));
+  });
+
+  /**
+   * Every client the Faults tab can arm, with the fault it currently carries. Clients with nothing armed
+   * read as {@link EMPTY_QUERY_DEVTOOLS_FAULT} so the inputs always have a value to show.
+   */
+  protected faultClients = computed(() => {
+    const faults = queryDevtoolsFaults();
+
+    return this.repositories()
+      .map(({ name, baseUrl }) => {
+        const fault = faults[name] ?? EMPTY_QUERY_DEVTOOLS_FAULT;
+
+        return { name, baseUrl, fault, armed: isQueryDevtoolsFaultArmed(fault) };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
   });
 
   /**
@@ -621,6 +656,9 @@ export class QueryDevtoolsComponent {
         count: events.length,
         errors: events.filter((event) => event.type === 'request-error').length,
       },
+      // Armed faults are reported as errors rather than as a plain count: the badge is the one reminder
+      // that the app is misbehaving on purpose, and it has to be impossible to read as "all good".
+      faults: { count: 0, errors: Object.keys(queryDevtoolsFaults()).length, errorNoun: 'armed' },
     };
   });
 
@@ -656,6 +694,19 @@ export class QueryDevtoolsComponent {
     }
     return map;
   });
+
+  // --- Fault injection ---
+
+  protected readonly FAULT_STATUSES = QUERY_DEVTOOLS_FAULT_STATUSES;
+
+  protected readonly CLEAR_FAULTS = clearQueryDevtoolsFaults;
+
+  /** The ceiling each numeric fault field is clamped to. */
+  private readonly FAULT_LIMITS: Record<NumericFaultField, number> = {
+    latencyMs: 60_000,
+    failNext: 99,
+    failRate: 100,
+  };
 
   constructor() {
     // Assigned here (not as an arrow property) so `this` is bound for the value-explorer callback.
@@ -1042,6 +1093,14 @@ export class QueryDevtoolsComponent {
     this.selectedQueryId.set(row.entryId);
   }
 
+  /** The same way out of the Events tab, for a row whose query is still registered. */
+  protected selectEventRow(item: EventLogItem) {
+    if (!item.queryId) return;
+
+    this.activeTab.set('queries');
+    this.selectedQueryId.set(item.queryId);
+  }
+
   /** A diffed value on one line. Rendering the full tree per path would bury the paths themselves. */
   protected diffValue(value: unknown) {
     if (typeof value === 'string') return value.length > 80 ? `"${value.slice(0, 80)}…"` : `"${value}"`;
@@ -1265,6 +1324,26 @@ export class QueryDevtoolsComponent {
   protected clearForced(query: AnyQuery) {
     query.subtle.setLoading(null);
     query.subtle.setError(null);
+  }
+
+  /**
+   * Arms one numeric field of a client's fault from an input's raw value. Clamped here rather than left
+   * to the input's `min`/`max`, which a typed-in (or pasted) value ignores.
+   */
+  protected armFaultValue(options: { clientName: string; field: NumericFaultField; value: string }) {
+    const { clientName, field, value } = options;
+    const parsed = clamp(Math.trunc(Number(value) || 0), 0, this.FAULT_LIMITS[field]);
+
+    setQueryDevtoolsFault({ clientName, patch: { [field]: parsed } });
+  }
+
+  protected armFaultStatus(options: { clientName: string; value: string }) {
+    setQueryDevtoolsFault({ clientName: options.clientName, patch: { status: Number(options.value) } });
+  }
+
+  /** Whether the default retry policy retries the status a client is armed to fail with. */
+  protected isFaultStatusRetryable(status: number) {
+    return QUERY_DEVTOOLS_FAULT_STATUSES.find((entry) => entry.status === status)?.retryable ?? false;
   }
 
   // --- Cache actions ---
@@ -1808,13 +1887,17 @@ export class QueryDevtoolsComponent {
     // disappear from the cache view are otherwise unexplained.
     const item: EventLogItem =
       event.type === 'unbind-all-secure'
-        ? { ...base, method: null, url: null, isSecure: true, status: null }
+        ? { ...base, method: null, url: null, isSecure: true, status: null, queryId: null }
         : {
             ...base,
             method: event.request.method,
             url: event.request.url,
             isSecure: event.isSecure,
             status: event.type === 'request-error' ? event.error.status : null,
+            // A request is shared by every query on the same cache key, so the first owner is as good
+            // as any - they all show the same response.
+            queryId:
+              this.queryEntries().find((e) => (e.handle as AnyQuery).subtle.request() === event.request)?.id ?? null,
           };
 
     this.eventLog.update((log) => [item, ...log].slice(0, MAX_EVENTS));

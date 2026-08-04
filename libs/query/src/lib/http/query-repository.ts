@@ -456,6 +456,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       method: options.method,
       dependencies: config.dependencies,
       clientOptions: creatorOptions,
+      clientName: config.name,
       clientHeaders: config.headers,
       cacheAdapter: config.cacheAdapter,
       retryFn: options.retryFn ?? config.retryFn,
