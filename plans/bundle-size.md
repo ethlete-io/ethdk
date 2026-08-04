@@ -25,34 +25,45 @@ pipeline, the goldens and the rules for reading the numbers live in
 
 ## Open
 
-1. **Table monolith decomposition - 4,967 B gz for a plain table, measured 2026-08-04. L, only as a
-   deliberate project.** The barrel is fine (`TableComponent` alone 15.7 kB vs `TABLE_IMPORTS` 21.0 kB);
-   the cost is inside `table.component.ts`. Each slice was cut out of a pristine tree, rebuilt and
-   measured against the `table` golden (20,953 B) - `--external`, so these are pure `@ethlete` bytes:
-
-   | slice                                        | cut → entry | cost      | notes                                                                       |
-   | -------------------------------------------- | ----------- | --------- | --------------------------------------------------------------------------- |
-   | expander column + detail rows                | 18,644 B    | **2,309** | frees `TableExpanderCellComponent` + `TableDetailStylesComponent` + its CSS |
-   | placeholder rows (and the loading-cell bone) | 19,823 B    | **1,130** | frees `SkeletonItemComponent`; both bones must go or it stays pinned        |
-   | sticky columns                               | 19,906 B    | **1,047** | the measuring effect, `stickyVmOf`, the `hasSticky*` computeds, the CSS     |
-   | grouped headers                              | 20,399 B    | **554**   | `hasGroups`/`headerGroups`, the group row, `signalElementDimensions`        |
-   | autosizing                                   | 20,762 B    | **191**   | not worth a feature of its own - let it ride with resize if anything        |
-   | **all five at once**                         | 15,986 B    | **4,967** | 24 % of the entry; the individual cuts sum to 5,231, so ~264 B is shared    |
-
-   The top three are 90 % of the win. Two things the numbers do not show, both found while cutting:
-   - **The per-cell sticky bindings are the awkward part.** `[class.et-table-sticky-*]` /
-     `[style.inset-inline-*]` sit on header, body, footer _and_ lead cells in the base template, and a
-     registered feature cannot contribute an attribute to a cell the table renders. The 1,047 B assumes
-     they go too, so sticky needs either a new "cell decorator" seam or it only banks part of that.
-   - **Expansion can move without breaking the row typing.** Keep `expandedRowTemplate` /
-     `expandableRow` / `expandedKeys` as table inputs (which is what `table-api.md` says they must be -
-     a content-child directive cannot infer `T` with no column to bind), and move only the _rendering_:
-     the expander lead column already fits seam A, and the detail row needs a new row-slot seam next to
-     `registerLayer`. The feature reads the template off the host contract and renders it itself.
-
-   The registered-feature seams to decompose onto are described in `table-api.md`.
+Nothing. Both remaining items closed on 2026-08-04 - see below.
 
 ## Closed on 2026-08-04
+
+- **Table decomposition - 3,851 B gz off a plain table, 18 % of the entry.** Four slices, one commit
+  each, each with its own golden on both sides:
+
+  | slice                                    | `TABLE_IMPORTS` after | banked    | with the feature back on  |
+  | ---------------------------------------- | --------------------- | --------- | ------------------------- |
+  | row expansion → `etTableRowExpansion`    | 18,927 B              | **2,026** | 19,289 B (+362 over base) |
+  | grouped headers → `etTableGroupHeaders`  | 18,487 B              | **440**   | 17,834 B                  |
+  | loading placeholders → `etTableSkeleton` | 17,488 B              | **999**   | 18,346 B                  |
+  | sticky columns → `etTableStickyColumns`  | 17,102 B              | **386**   | 17,732 B                  |
+  | **total**                                | **17,102 B**          | **3,851** | -                         |
+
+  Autosizing (191 B) was left in the base - not worth a feature, and only reachable through the column
+  menu anyway. What the up-front stub measurement got wrong, and why:
+  - **A seam costs 10-30 % of its slice.** Every predicted number came in low once the registry, the
+    row-VM field, the outlet and the dev-mode error were paid for: 2,309 → 2,026, 554 → 440,
+    1,130 → 999. Budget for that before promising a number.
+  - **Sticky was the outlier: 1,047 predicted, 386 banked.** The per-cell `[class.et-table-sticky-*]` /
+    `[style.inset-inline-*]` bindings sit on header, body, footer and lead cells in the base template,
+    and no seam lets a feature contribute an attribute to a cell the table draws. Only the machinery
+    moved (the measuring effect, the offset stacking, the suppression rule); the bindings read a
+    registered `TableColumnPinning` or a constant. Cutting them too measures a further ~360 B and needs
+    a per-cell decorator lookup - more machinery than it saves, and a method call back inside a per-cell
+    binding, which this component is explicitly built to avoid.
+  - **A styles-only component is the wrong home for a feature's CSS unless the feature already uses the
+    style manager.** Routing the 48 lines of sticky CSS through one measured **955 B gz worse** for a
+    table that does pin, against the **113 B** they cost every table by staying in the base sheet. The
+    same trap as the slider dedupe below, now with a number: read it before reaching for
+    `injectStyleManager().mount(...)`.
+  - **`animate.leave` is only awaited on the element that is removed.** Moving the detail row into a
+    stamped component surfaced a latent bug - the old markup had `animate.leave` on a child of the row
+    the `@if` removed, so the close animation had never run. It is a host binding now.
+
+  Five new seams carry it, alongside the original four - all of them written up in `table-api.md`:
+  `registerHeaderRow`, `registerRowDetail`, `registerBodyPlaceholder`, `registerCellPlaceholder` and
+  `registerColumnPinning`.
 
 - **RTE selection toolbar behind `provideRichTextEditorFloatingToolbar()` - 14,925 B gz, and 22,062 B
   in `--third-party` mode. The largest single win in `components`, and the 2026-08-01 audit sized it
