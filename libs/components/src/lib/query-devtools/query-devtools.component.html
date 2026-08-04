@@ -163,12 +163,12 @@
                   @if (isQueryListNarrowed()) {
                     <button
                       (click)="clearQueryFilters()"
-                      class="et-query-devtools-filter-clear et-query-devtools-toolbar-btn"
+                      class="et-query-devtools-filter-clear"
                       type="button"
                       title="Clear the search term and the status chips"
+                      aria-label="Clear filters"
                     >
                       <span aria-hidden="true">✕</span>
-                      Clear filters
                     </button>
                   }
                 </div>

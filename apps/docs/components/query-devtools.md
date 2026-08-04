@@ -83,11 +83,16 @@ that stack:
   full request URL and client name. Terms are whitespace-separated and **all** have
   to match, so `get post` finds `GET /post/12` without the `POST` mutations that
   `post` alone also matches.
-- **The status chips** - **Failing**, **Loading**, **Stale** - each carry the
-  number of queries they would leave. Picking several _widens_ the result
-  (failing **or** stale), the way a network panel's type chips do, and a chip with
-  no matches is disabled. The counts are computed before the chips are applied, so
-  a chip always states what picking it yields.
+- **The status chips** - **Failing**, **Loading**, **Stale**, **Idle** (never
+  executed) - each carry the number of queries they would leave. Picking several
+  _widens_ the result (failing **or** stale), the way a network panel's type chips
+  do, and a chip with no matches is disabled. The counts are computed before the
+  chips are applied, so a chip always states what picking it yields.
+
+  A query whose request is in flight counts as **Loading** and not as **Stale**:
+  it is already refreshing, so the freshness of what it is replacing is not the
+  useful fact about it. That is the same precedence the Cache tab's freshness
+  column uses when it reads `refreshing…`.
 
 The count next to the picker reads `12 of 87` while anything is narrowing the
 list, and **Clear filters** drops the term and the chips while keeping the client

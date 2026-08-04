@@ -49,7 +49,7 @@ type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' 
 type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 
 /** A live-state facet the Queries list can be narrowed to. */
-type QueryListFacet = 'error' | 'loading' | 'stale';
+type QueryListFacet = 'error' | 'loading' | 'stale' | 'idle';
 
 /** What a tab holds, as its badge reports it: how many entries, and how many of them are failing. */
 type TabBadge = { count: number; errors: number };
@@ -246,6 +246,7 @@ export class QueryDevtoolsComponent {
     { id: 'error', label: 'Failing' },
     { id: 'loading', label: 'Loading' },
     { id: 'stale', label: 'Stale' },
+    { id: 'idle', label: 'Idle' },
   ] satisfies { id: QueryListFacet; label: string }[];
 
   protected readonly shortcut = queryDevtoolsShortcutLabel();
@@ -382,13 +383,18 @@ export class QueryDevtoolsComponent {
    * chip always states what picking it yields rather than what the current selection happens to show.
    */
   protected facetCounts = computed(() => {
-    const counts: Record<QueryListFacet, number> = { error: 0, loading: 0, stale: 0 };
+    // Staleness is a `Date.now()` comparison and deliberately not reactive, so the clock is what makes
+    // the counts age with it - without it a chip would keep the number it happened to be built with.
+    this.clock();
+
+    const counts: Record<QueryListFacet, number> = { error: 0, loading: 0, stale: 0, idle: 0 };
 
     for (const { query } of this.searchedQueries()) {
       const status = this.queryStatus(query);
 
       if (status === 'error') counts.error++;
       if (status === 'loading') counts.loading++;
+      if (status === 'idle') counts.idle++;
       if (this.isStale(query)) counts.stale++;
     }
 
@@ -400,6 +406,9 @@ export class QueryDevtoolsComponent {
     const items = this.searchedQueries();
 
     if (!facets.size) return items;
+
+    // Same reason as in `facetCounts`: a list narrowed to stale queries has to re-evaluate as they age.
+    if (facets.has('stale')) this.clock();
 
     return items.filter(({ query }) => this.matchesFacets(query, facets));
   });
@@ -730,9 +739,17 @@ export class QueryDevtoolsComponent {
     return 'success';
   }
 
+  /**
+   * A request in flight is already refreshing, so reporting it as stale on top of `loading` is noise -
+   * the same precedence the cache tab's freshness column applies.
+   */
   protected isStale(query: AnyQuery) {
     try {
-      return query.subtle.request()?.isStale() ?? false;
+      const request = query.subtle.request();
+
+      if (!request || request.loading()) return false;
+
+      return request.isStale();
     } catch {
       return false;
     }
@@ -1242,16 +1259,21 @@ export class QueryDevtoolsComponent {
     return (
       (facets.has('error') && status === 'error') ||
       (facets.has('loading') && status === 'loading') ||
+      (facets.has('idle') && status === 'idle') ||
       (facets.has('stale') && this.isStale(query))
     );
   }
 
   /**
-   * What the search box matches against: everything the row shows, plus the resolved request URL and the
-   * client name - so a term can name an endpoint, a param value, a query string or a client.
+   * What the search box matches against: what the row shows, plus the path of the request that ran for a
+   * query whose template differs from it.
+   *
+   * Deliberately not the origin or the client name - both repeat across most entries, so a short term
+   * ("p") would match nearly everything through the host name. Scoping to a client is the picker's job.
    */
   private queryHaystack(entry: QueryDevtoolsEntry, query: AnyQuery) {
-    const parts = [entry.meta.method, this.queryRoute(entry, query), this.requestUrl(query), entry.meta.clientName];
+    const url = this.requestUrl(query);
+    const parts = [entry.meta.method, this.queryRoute(entry, query), url ? this.requestPath(url) : null];
 
     return parts.join(' ').toLowerCase();
   }
