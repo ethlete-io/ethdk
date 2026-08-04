@@ -152,25 +152,54 @@ considering a component change done.
 
 ## Comments: write for the next reader of this file, not for the reviewer of your change
 
-A comment earns its place by telling someone **using or editing this code** something the
-code cannot. Explaining _why the change was made_ is not that — it belongs in the commit
+**The default is no comment.** Code that needs a sentence to be understood usually needs a
+better name, a smaller function, or a type instead — reach for those first. A comment earns
+its place only by telling someone **using or editing this code** something the code genuinely
+cannot say. Explaining _why you made the change_ is never that: it belongs in the commit
 message, the changeset, or the docs.
 
-Do **not** leave behind:
+### The test, applied to every comment you write
 
+1. Would a competent reader who never sees your diff be **surprised** without it?
+2. Could a future edit **break something** that this sentence is the only warning about?
+
+Keep it only if 1 and 2 are both yes. When you are unsure, delete it — a missing comment
+costs a minute of reading, a stale or wrong one misleads for years.
+
+### Never leave behind
+
+- **Restating the code.** `// increment the counter` above `counter++`; `/** The size of the
+button. */` on a `size` input.
+- **Section headers and dividers.** `// --- Inputs ---`, `// Helpers`, `// Public API`. The
+  file's structure is already visible; these only rot as things move.
 - **Rationale for a mechanical choice.** `Record<Size, X>` with literal keys, a `@__PURE__`
-  annotation, a factory instead of a literal, a helper moved to another file — the type,
-  the annotation and the import already say what happens.
-- **Migration narration.** "moved here from X", "used to be a tuple", "so Y no longer pulls Z".
-  Git knows. A reader six months from now does not care.
+  annotation, a factory instead of a literal, a helper moved to another file — the type, the
+  annotation and the import already say what happens.
+- **Migration narration.** "moved here from X", "used to be a tuple", "so Y no longer pulls Z",
+  "renamed for clarity". Git knows. A reader six months from now does not care.
 - **The same explanation repeated per call site.** If a pattern needs explaining, explain it
   once where the pattern is defined (the helper's JSDoc, the lint rule's message, the guide)
   and let every use site stay silent.
-- **Restating the code.** `// increment the counter` above `counter++`.
+- **Commented-out code.** Delete it.
+- **`TODO`/`FIXME` with no issue link.** Either fix it now or leave nothing.
+- **Meta and hedging.** "note that", "for clarity", "just in case", "this is cleaner", "we
+  could also…". None of it survives contact with the next reader.
 
-Do keep: non-obvious behaviour and ordering constraints, a real invariant a future edit could
-break, a workaround with the reason it exists, and public API JSDoc (what it does and how to
-use it — not why it is shaped that way).
+### Worth keeping
+
+- A **non-obvious ordering or timing constraint** a reasonable edit would break — say what
+  breaks, not that it matters.
+- A **real invariant** the types cannot express.
+- A **workaround**, with its concrete cause (browser bug, upstream issue, framework
+  limitation) and a link where one exists, so the next reader can tell when it may go.
+- **Public API JSDoc**: what it does and how to use it. Not why it is shaped that way, not its
+  history, not its name and type spelled out in prose.
+
+### Before you call the change done
+
+Re-read every comment your diff adds and delete the ones that fail the test. Then check the
+comments you did not touch: one that describes behaviour you just changed is worse than none,
+so fix it or remove it.
 
 When you catch yourself writing "because", check whether the sentence is aimed at the reviewer
 of your diff. If it is, cut it.
