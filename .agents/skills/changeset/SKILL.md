@@ -5,6 +5,11 @@ description: Create a changeset for a change to any @ethlete/* package (release 
 
 # Add a changeset
 
+> **The note is one sentence. Two at most. Never a third.**
+> Under 40 words, no paragraphs, no "how it works", no API inventory. If it is
+> longer than the frontmatter above it, you have written the wrong thing - delete
+> it and write the TL;DR. This holds no matter how much work the change took.
+
 This repo releases with [changesets](https://github.com/changesets/changesets).
 A changeset is a small markdown file in `.changeset/` that declares which
 packages changed, at what semver level, and a human-readable note that becomes
@@ -64,11 +69,7 @@ line, then the note:
 '@ethlete/components': patch
 ---
 
-Overlay routing: one-sentence summary of what changed and why it matters to a
-consumer. Add bullet points for multi-part changes:
-
-- First notable change, phrased from the consumer's point of view.
-- Second change.
+Overlay routing: one-sentence summary of what a consumer now gets.
 ```
 
 Multiple packages:
@@ -84,32 +85,43 @@ Summary of the cross-package change.
 
 ## Writing the note
 
-### The length bar is hard, not aspirational
+### The shape: one sentence
 
-**A changeset note is a TL;DR: at most ~60 words, and never more than 4 lines of
-prose.** Count them before you save. This limit does not scale with how much work
-went in - a change that took a day and touched twenty files still gets one
-sentence. Big features get *shorter* notes than you think, because the reader only
-needs the entry point, not the tour.
+**One sentence. Two at most. Under 40 words. No second paragraph, ever.**
 
-If your note is longer than the frontmatter, you have written the wrong thing.
-Delete it and write the one sentence a consumer needs to decide whether this
-release affects them. Depth belongs in `apps/docs` (see the **`docs`** skill) -
-the changelog links readers there by existing, not by duplicating it.
+This is not a summary of your work - it is the line a consumer skims to decide
+whether this release affects them. It does not scale with effort: a change that
+took a day and touched thirty files still gets one sentence. Big features get
+*shorter* notes than small fixes, because the reader only needs the entry point.
 
-Cut on sight, no matter how interesting it was to work out:
+Depth belongs in `apps/docs` (see the **`docs`** skill). The changelog serves
+readers by being short enough to read, not by duplicating the guide.
+
+**Bullets are the exception, not the format.** Use them only when two or three
+genuinely unrelated things shipped under one package bump - one short line each,
+never a paragraph each. Three bullets is the ceiling; more means it should have
+been several changesets. If you can join them with "and", write one sentence.
+
+### Cut on sight
+
+No matter how interesting it was to work out:
 
 | Never in a changeset | Where it goes instead |
 | --- | --- |
 | Why the bug happened, or what the first attempt was | the PR / commit body |
-| How it works (mechanism, algorithm, CSS technique) | the guide in `apps/docs` |
+| How it works (mechanism, algorithm, CSS technique, what reads what) | the guide in `apps/docs` |
+| An inventory of every new input, token, option, attribute or export | the guide's options table |
+| Internal API churn (renamed private helper, changed `subtle` shape) | nowhere |
 | "Verified in Storybook", test counts, file paths | nowhere |
-| A list of every input, token and attribute added | the guide's options table |
 | Before/after comparisons, migration prose for unreleased API | nowhere |
+| Caveats and warnings you want the reader to know | the guide |
+
+The tell: any sentence starting with "The", "Each", "Routes", "Options" that
+*explains* rather than *announces* is guide prose. Delete it.
 
 ### Bad vs good
 
-Same change, both accurate - only one belongs in a changelog:
+Same changes, all accurate - only the short ones belong in a changelog.
 
 ```markdown
 <!-- BAD: explains the mechanism, lists every surface, reads like a guide -->
@@ -127,18 +139,40 @@ Carousel: add scroll-driven slide transitions - `transition="dim"` / `"wipe"`, w
 to pick what fills them.
 ```
 
+```markdown
+<!-- BAD: opens with the TL;DR, then can't stop - four more paragraphs of mechanism,
+     API inventory and caveats that all belong in the guide -->
+Query devtools: show the path params a query actually used, and export requests to Insomnia.
+
+Routes built from a function are now listed with their params filled in from the query's args
+(`/post/12` instead of `/post/:param`), each param highlighted and the request's query string
+dimmed behind the path, so several rows hitting the same endpoint are tellable apart.
+Placeholders carry the real param name because the registry records it off the route function…
+New **Insomnia** actions copy the selected query… `Authorization` included, so treat the export
+as sensitive. `HttpRequest` gains `args` and `subtle.resolveHeaders()`. The internal
+`stringifyQueryRoute()` is replaced by `parseQueryRoute()` + `stringifyQueryRouteParts()`.
+```
+
+```markdown
+<!-- GOOD: the first line was already the whole changeset -->
+Query devtools: show the path params a query actually used, and export requests to Insomnia.
+```
+
 ### The rest
 
 - Write for the changelog reader (a consumer of the library), not for reviewers
   of this PR. Say what the behaviour/API now does, not "fixed a bug in X".
 - Lead with the area, e.g. `Overlay:`, `Grid:`, `Menu:`, when it helps scanning.
 - Reference public API in backticks (`overlayRef.updatePositionStrategy(...)`).
-- One sentence for simple changes. Add bullets only when several genuinely
-  distinct things shipped - one line each, not a paragraph each. More than 4
-  bullets means it should have been several changesets, or a shorter summary.
 - A fix may name the symptom in a clause ("…it used to scroll out from under a
   paused drag") - that tells a reader whether they hit it. It may not explain the
   cause.
+
+### Before you save
+
+Re-read the note and count. More than two sentences, or more than three bullets,
+means delete and rewrite - not trim. Then check every remaining clause answers
+"what do I now get?" rather than "how does it work?".
 
 ## Editing and consolidating unreleased changesets
 
@@ -166,10 +200,9 @@ changelog:
   fewer, coherent changelog lines beat a fragmented list. Keep genuinely distinct
   fixes as separate files.
 - **Keep them concise.** Hold every unreleased note to the same hard bar as a
-  fresh one (see **Writing the note**): ~60 words, 4 lines of prose, 4 bullets.
-  An unreleased entry that has grown as a feature landed in stages is the most
-  common place this slips - when you extend one, re-read the whole note and cut it
-  back to a TL;DR rather than appending another paragraph.
+  fresh one: one to two sentences, under 40 words. An entry that grew as a feature
+  landed in stages is where this slips most - when you extend one, rewrite the
+  whole note as a single sentence covering the feature. Never append a paragraph.
 - After merging/trimming, re-run the diff above (and `npx changeset status`) to
   confirm the frontmatter still parses and the set is what you expect.
 

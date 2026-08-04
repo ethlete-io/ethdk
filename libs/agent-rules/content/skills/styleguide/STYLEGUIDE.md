@@ -463,7 +463,7 @@ settings-form/
 - **Do not** create a changeset for irrelevant changes (e.g., formatting, comments, internal refactoring).
 - **Do not** create a changeset for fixes to features that have not yet been released.
 - **Do not** include multiple changes in a single changeset. Each changeset should contain only one change.
-- **Always** start a changeset with at least one sentence describing the change. Optional follow-up markdown can be added after the initial sentence.
+- **A changeset note is a TL;DR: one sentence, two at most, under 40 words.** Never a second paragraph, no matter how much work the change took. It is the line a consumer skims to decide whether the release affects them - not a summary of your work. Mechanism, API inventories, caveats and rationale belong in the docs or the commit body, never here.
 - Create changesets for dependency updates if they are relevant to the project (e.g., major version updates).
 - Write changesets in the imperative mood. For example:
   - Add button component
