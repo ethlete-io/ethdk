@@ -103,9 +103,24 @@
     border-block-start: 1px solid var(--_et-qdt-border);
   }
 
-  /* Stacked panes share a horizontal edge, which the panel's own height already governs. */
+  /* Stacked, the same pair is sized along the block axis instead - a dragged height replaces the
+     `flex: 1 1 50%` above the way a dragged width replaces the side-by-side default. The parent has to
+     be in the selector: the `:is()` rule above takes its specificity from its two-class arm, so a
+     panel-plus-pane selector would lose to it. */
+  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-master-detail > .et-query-devtools-list {
+    flex: 0 1 var(--_et-qdt-list-height, 50%);
+    min-block-size: var(--_et-qdt-list-height, 0);
+    max-block-size: var(--_et-qdt-list-height, none);
+  }
+
+  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-split > .et-query-devtools-drawer {
+    flex: 0 1 var(--_et-qdt-drawer-height, 50%);
+    min-block-size: var(--_et-qdt-drawer-height, 0);
+    max-block-size: var(--_et-qdt-drawer-height, none);
+  }
+
   .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-pane-resize {
-    display: none;
+    cursor: ns-resize;
   }
 
   .et-query-devtools-panel--resizing {

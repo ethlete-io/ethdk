@@ -7,6 +7,8 @@
     [style.inline-size.px]="panelInlineSize()"
     [style.--_et-qdt-list-width.px]="listWidth()"
     [style.--_et-qdt-drawer-width.px]="drawerWidth()"
+    [style.--_et-qdt-list-height.px]="listHeight()"
+    [style.--_et-qdt-drawer-height.px]="drawerHeight()"
     class="et-query-devtools-panel"
   >
     <!-- A pop-out is sized by its window, so there is no edge to drag. -->
@@ -1471,7 +1473,7 @@
     <ng-template #paneResizeTpl let-pane="pane" let-container="container">
       <div
         (pointerdown)="startPaneResize($event, { pane, container })"
-        (dblclick)="resetPaneWidth(pane)"
+        (dblclick)="resetPaneSize(pane)"
         class="et-query-devtools-pane-resize"
         title="Drag to resize, double-click to reset"
         aria-hidden="true"

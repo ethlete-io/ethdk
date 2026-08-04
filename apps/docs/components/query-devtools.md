@@ -79,10 +79,11 @@ Inside the panel, **the divider between two panes is draggable** on every tab th
 has two: the Queries list against its detail, and the split views (Stacks,
 Sequences, Forms, Timeline) against the drawer a query opens in. Grab the gap
 between them and drag; double-click it to hand the pane back to its default
-proportion. A right dock stacks the panes on top of each other instead, so there
-the panel's own edge is the only thing to drag.
+proportion. A right dock stacks the panes, so there the same divider turns
+horizontal and sizes them along the other axis - each axis keeps its own size, so
+switching docks never carries a width over as a height.
 
-Which edge you picked, the size of each and the pane widths are
+Which edge you picked, the size of each and the pane sizes are
 [persisted](#persistence). Being popped out is not: a reload cannot re-adopt the window the previous document
 opened, so the panel always comes back docked.
 
@@ -733,7 +734,7 @@ components are bound to, which the browser Network tab can't do:
 
 ## Persistence
 
-The view state - open/closed, [dock edge, the size of each and the pane widths](#where-the-panel-sits),
+The view state - open/closed, [dock edge, the size of each and the pane sizes](#where-the-panel-sits),
 active tab, the query detail's
 [sub-tab](#the-detail-view-overview-history-data), selected client, selected
 query, inspect filter, the query filter term and status chips, the

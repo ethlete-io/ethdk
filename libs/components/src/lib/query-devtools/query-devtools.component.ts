@@ -88,11 +88,14 @@ type DevtoolsDock = 'bottom' | 'right';
  */
 type PaneTarget = 'list' | 'drawer';
 
+/** The axis a two-pane tab splits along: the panes sit side by side, or stack in a side dock. */
+type PaneAxis = 'inline' | 'block';
+
 /** A drag in progress: either the panel's docked edge, or the divider between a two-pane tab's panes. */
 type ResizeDrag = {
   /** The document the pointer moves in - a popped-out panel lives in a window of its own. */
   doc: Document;
-} & ({ kind: 'panel' } | { kind: 'pane'; pane: PaneTarget; container: HTMLElement });
+} & ({ kind: 'panel' } | { kind: 'pane'; pane: PaneTarget; axis: PaneAxis; container: HTMLElement });
 
 type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -243,6 +246,8 @@ type PersistedState = {
   width?: number;
   listWidth?: number | null;
   drawerWidth?: number | null;
+  listHeight?: number | null;
+  drawerHeight?: number | null;
   dock?: DevtoolsDock;
   activeTab?: DevtoolsTab;
   detailTab?: DetailTab;
@@ -273,8 +278,9 @@ const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 560;
 const MIN_WIDTH = 360;
 
-/** The floor a dragged pane divider leaves on both sides of itself. */
+/** The floors a dragged pane divider leaves on both sides of itself, per axis. */
 const MIN_PANE_WIDTH = 220;
+const MIN_PANE_HEIGHT = 120;
 
 /** The window a pop-out opens at. Wide enough for the master/detail split the bottom dock gets. */
 const POPOUT_FEATURES = 'popup=yes,width=1200,height=800';
@@ -433,13 +439,16 @@ export class QueryDevtoolsComponent {
   protected activeTab = signal<DevtoolsTab>(this.persisted.activeTab ?? 'queries');
 
   /**
-   * The dragged widths of the two-pane tabs, in px. `null` keeps the stylesheet's proportional default,
-   * which is also what a double-click on a divider restores.
+   * The dragged sizes of the two-pane tabs, in px, one pair per axis - a side dock stacks the panes, so
+   * the same divider sizes them along the block axis there and a dock switch has to keep both. `null`
+   * keeps the stylesheet's proportional default, which is also what a double-click on a divider restores.
    */
   protected listWidth = signal<number | null>(this.persisted.listWidth ?? null);
   protected drawerWidth = signal<number | null>(this.persisted.drawerWidth ?? null);
+  protected listHeight = signal<number | null>(this.persisted.listHeight ?? null);
+  protected drawerHeight = signal<number | null>(this.persisted.drawerHeight ?? null);
 
-  public drag = signal<ResizeDrag | null>(null);
+  protected drag = signal<ResizeDrag | null>(null);
   protected resizing = computed(() => !!this.drag());
 
   /** Which edge the panel is docked to. */
@@ -450,6 +459,9 @@ export class QueryDevtoolsComponent {
    * cannot re-adopt a window the previous document opened, so it always starts docked.
    */
   protected poppedOut = signal(false);
+
+  /** Which axis the two-pane tabs split along, which the stylesheet keys off the dock the same way. */
+  private paneAxis = computed<PaneAxis>(() => (!this.poppedOut() && this.dock() === 'right' ? 'block' : 'inline'));
 
   private popup: Window | null = null;
 
@@ -969,6 +981,8 @@ export class QueryDevtoolsComponent {
         width: this.panelWidth(),
         listWidth: this.listWidth(),
         drawerWidth: this.drawerWidth(),
+        listHeight: this.listHeight(),
+        drawerHeight: this.drawerHeight(),
         dock: this.dock(),
         activeTab: this.activeTab(),
         detailTab: this.detailTab(),
@@ -1215,12 +1229,12 @@ export class QueryDevtoolsComponent {
 
   protected startPaneResize(event: PointerEvent, target: { pane: PaneTarget; container: HTMLElement }) {
     event.preventDefault();
-    this.drag.set({ kind: 'pane', ...target, doc: target.container.ownerDocument });
+    this.drag.set({ kind: 'pane', ...target, axis: this.paneAxis(), doc: target.container.ownerDocument });
   }
 
-  /** Hands a pane back to the stylesheet's proportional default. */
-  protected resetPaneWidth(pane: PaneTarget) {
-    this.paneWidth(pane).set(null);
+  /** Hands a pane back to the stylesheet's proportional default, on the axis it is being sized along. */
+  protected resetPaneSize(pane: PaneTarget) {
+    this.paneSize(pane, this.paneAxis()).set(null);
   }
 
   protected inspectLabel(entries: QueryDevtoolsEntry[]) {
@@ -2530,7 +2544,9 @@ export class QueryDevtoolsComponent {
     return `${entryId}:${index}`;
   }
 
-  private paneWidth(pane: PaneTarget) {
+  private paneSize(pane: PaneTarget, axis: PaneAxis) {
+    if (axis === 'block') return pane === 'list' ? this.listHeight : this.drawerHeight;
+
     return pane === 'list' ? this.listWidth : this.drawerWidth;
   }
 
@@ -2557,13 +2573,24 @@ export class QueryDevtoolsComponent {
     this.panelHeight.set(clamp(viewport - event.clientY, MIN_HEIGHT, Math.round(viewport * 0.9)));
   }
 
-  /** A pane's width is the distance from the pointer to the container edge that pane sits against. */
+  /** A pane's size is the distance from the pointer to the container edge that pane sits against. */
   private applyPaneResize(drag: Extract<ResizeDrag, { kind: 'pane' }>, event: PointerEvent) {
     const rect = drag.container.getBoundingClientRect();
-    const width = drag.pane === 'list' ? event.clientX - rect.left : rect.right - event.clientX;
+    const leading = drag.pane === 'list';
+
+    if (drag.axis === 'block') {
+      const height = leading ? event.clientY - rect.top : rect.bottom - event.clientY;
+      const max = Math.max(MIN_PANE_HEIGHT, Math.round(rect.height) - MIN_PANE_HEIGHT);
+
+      this.paneSize(drag.pane, 'block').set(clamp(Math.round(height), MIN_PANE_HEIGHT, max));
+
+      return;
+    }
+
+    const width = leading ? event.clientX - rect.left : rect.right - event.clientX;
     const max = Math.max(MIN_PANE_WIDTH, Math.round(rect.width) - MIN_PANE_WIDTH);
 
-    this.paneWidth(drag.pane).set(clamp(Math.round(width), MIN_PANE_WIDTH, max));
+    this.paneSize(drag.pane, 'inline').set(clamp(Math.round(width), MIN_PANE_WIDTH, max));
   }
 
   private closePopup() {
