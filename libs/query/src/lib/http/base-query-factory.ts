@@ -1,8 +1,7 @@
 import { HttpEventType } from '@angular/common/http';
 import { runInInjectionContext } from '@angular/core';
 import { describeQueryDevtoolsFeatures } from '../devtools/query-devtools-features';
-import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
-import { createQueryDevtoolsStats } from '../devtools/query-devtools-stats';
+import { createQueryDevtoolsStatsRecorder, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { CreateGqlQueryOptions } from '../gql/gql-query';
 import { isCreateGqlQueryOptions } from './internal/gql-options-guard';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
@@ -196,7 +195,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
   });
 
   return runInInjectionContext(deps.injector, () => {
-    const devtoolsStats = isQueryDevtoolsEnabled() ? createQueryDevtoolsStats() : null;
+    const devtoolsStats = createQueryDevtoolsStatsRecorder();
 
     const state = setupQueryState<TArgs>({
       transformResponse: options.creator?.transformResponse,

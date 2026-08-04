@@ -5,7 +5,9 @@ import {
   QueryDevtoolsRegistration,
   QueryDevtoolsRoutePart,
   setQueryDevtoolsRegistrar,
+  setQueryDevtoolsStatsFactory,
 } from './query-devtools-hook';
+import { createQueryDevtoolsStats } from './query-devtools-stats';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
 
@@ -168,6 +170,7 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
  */
 export const provideQueryDevtools = (): EnvironmentProviders => {
   setQueryDevtoolsRegistrar(registerEntry);
+  setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
 
   if (!isDevMode()) {
     console.warn(

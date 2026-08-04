@@ -2,7 +2,7 @@ import { AnyCreateQueryClientResult, QueryClient } from '../http/query-client';
 import { CreateQueryCreatorOptions, QueryConfig } from '../http/query-creator';
 import { QueryRepository } from '../http/query-repository';
 import { QueryDevtoolsFeature } from './query-devtools-features';
-import { QueryDevtoolsStatsHandle } from './query-devtools-stats';
+import { QueryDevtoolsStatsHandle, QueryDevtoolsStatsRecorder } from './query-devtools-stats';
 
 /**
  * The kind of object a {@link QueryDevtoolsEntry} describes. Part of the devtools contract consumed
@@ -180,6 +180,27 @@ export const isQueryDevtoolsEnabled = () => registrar !== null;
  */
 export const registerQueryDevtoolsEntry = (entry: QueryDevtoolsRegistration): (() => void) =>
   registrar?.(entry) ?? noop;
+
+let statsFactory: (() => QueryDevtoolsStatsRecorder) | null = null;
+
+/**
+ * Installs the stats recorder factory. Called by `provideQueryDevtools()`; nothing else may call it.
+ * @internal
+ */
+export const setQueryDevtoolsStatsFactory = (fn: () => QueryDevtoolsStatsRecorder) => {
+  statsFactory = fn;
+};
+
+/**
+ * A stats recorder for one entry, or `null` unless {@link provideQueryDevtools} has been called.
+ *
+ * Instrumentation sites must go through this instead of importing `createQueryDevtoolsStats`: a static
+ * import pins the whole stats module (~1.4 kB) into every bundle that touches a query, and a runtime
+ * `isQueryDevtoolsEnabled()` guard at the call site does not undo that. Reached only from the provider,
+ * it is dead code in an app without devtools.
+ * @internal
+ */
+export const createQueryDevtoolsStatsRecorder = (): QueryDevtoolsStatsRecorder | null => statsFactory?.() ?? null;
 
 let suppressStackRegistration = false;
 
