@@ -410,6 +410,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
     lastExecuteTime.set(Date.now());
     lastLoadEventTime.set(lastExecuteTime());
+    lastLoadEventAmount.set(0);
 
     loading.set({
       executeTime: lastExecuteTime(),
@@ -515,17 +516,24 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     const elapsedTimeSinceLastExecute = currentTime - lastExecuteTime();
     const loadedAmount = event.loaded - lastLoadEventAmount();
 
+    // An event in the same millisecond as the last one, or one that carries no new bytes, has no rate
+    // to report - dividing by either zero yields Infinity or NaN. Such an event also keeps the
+    // baseline where it is, so the next one measures across the wider window instead of restarting.
+    const isMeasurable = elapsedTimeSinceLastEvent > 0 && loadedAmount > 0;
+
     // We only want to calculate speed and remaining time after 2 seconds of the execution
     // This is to avoid showing incorrect speed and remaining time when the request is very fast
-    if (elapsedTimeSinceLastExecute > SPEED_BUFFER_TIME_IN_MS) {
+    if (isMeasurable && elapsedTimeSinceLastExecute > SPEED_BUFFER_TIME_IN_MS) {
       const bytesPerSecond = (loadedAmount / elapsedTimeSinceLastEvent) * 1000;
 
       progress.speed = bytesPerSecond;
       progress.remainingTime = Math.round((event.total - event.loaded) / bytesPerSecond) * 1000;
     }
 
-    lastLoadEventTime.set(currentTime);
-    lastLoadEventAmount.set(event.loaded);
+    if (isMeasurable) {
+      lastLoadEventTime.set(currentTime);
+      lastLoadEventAmount.set(event.loaded);
+    }
 
     loading.set(state);
   };

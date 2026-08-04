@@ -191,6 +191,61 @@ describe('createHttpRequest', () => {
     testingController.verify();
   });
 
+  it('should not report a speed for progress events that carry no new bytes or arrive in the same millisecond', () => {
+    req.execute();
+
+    const testReq = request();
+
+    vi.advanceTimersByTime(SPEED_BUFFER_TIME_IN_MS + 1000);
+
+    // A stalled transfer: same byte count as the last event, so there is no rate to derive.
+    testReq.event({ type: HttpEventType.DownloadProgress, loaded: 0, total: 100 });
+
+    expect(req.loading()?.progress).toEqual({ total: 100, loaded: 0, percentage: 0, speed: null, remainingTime: null });
+
+    testReq.event({ type: HttpEventType.DownloadProgress, loaded: 50, total: 100 });
+
+    // Measured across the full 3s since execute, because the stalled event left the baseline alone.
+    expect(req.loading()?.progress).toMatchObject({ speed: 50 / 3, remainingTime: 3000 });
+
+    // A second event within the same millisecond: no elapsed time to divide by.
+    testReq.event({ type: HttpEventType.DownloadProgress, loaded: 60, total: 100 });
+
+    expect(req.loading()?.progress).toMatchObject({ loaded: 60, speed: null, remainingTime: null });
+
+    testReq.flush(responseBody);
+
+    expectResponse();
+
+    testingController.verify();
+  });
+
+  it('should measure the speed of a re-execution from that execution alone', () => {
+    req.execute();
+
+    const firstReq = request();
+
+    vi.advanceTimersByTime(SPEED_BUFFER_TIME_IN_MS + 1000);
+    firstReq.event({ type: HttpEventType.DownloadProgress, loaded: 1000, total: 1000 });
+    firstReq.flush(responseBody);
+
+    req.execute();
+
+    const secondReq = request();
+
+    vi.advanceTimersByTime(SPEED_BUFFER_TIME_IN_MS + 1000);
+    secondReq.event({ type: HttpEventType.DownloadProgress, loaded: 300, total: 1000 });
+
+    // 300 bytes over 3s - not 300 minus the 1000 bytes the previous execution transferred.
+    expect(req.loading()?.progress).toMatchObject({ speed: 100, remainingTime: 7000 });
+
+    secondReq.flush(responseBody);
+
+    expectResponse();
+
+    testingController.verify();
+  });
+
   it('should correctly update its state when progress events are involved but we do not have infos about the total file size', () => {
     expectAllNull();
 
