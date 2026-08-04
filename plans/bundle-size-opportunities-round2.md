@@ -10,30 +10,45 @@ cannot fix). All gz numbers are `tools/treeshake` `--external` mode unless noted
 Nothing here re-opens the items that plan measured as not worth doing (select/cascader
 decomposition, bracket splits, FORM_FIELD barrel, overlay strategy registration).
 
+**Status: eleven of the thirteen top picks shipped the same afternoon this was written**
+(2026-08-01, 13:14–13:58), one was implemented and then reverted on measurement (E1), and
+the two that remain are small. The per-finding sections keep the measurements and the
+ruled-out notes, each now marked with what happened. What is genuinely left:
+
+- **C2** - `@contentful/rich-text-types` runtime enums, 2.4 kB, S, non-breaking.
+- **A3** - decide whether `@floating-ui/dom` becomes an optional peer now that B1 has landed.
+- Deliberate-project or low-value leftovers: **D5** (table monolith decomposition), **D6**
+  (RTE items, tracked in `tree-shaking-opportunities.md`), **E3** (injection-only CSS slices),
+  **G** (two harness notes worth folding into `tools/treeshake/README.md`).
+
 ## Top picks by value/effort
 
-| #   | Finding                                                    | Save (gz)                          | Effort | Breaking  |
-| --- | ---------------------------------------------------------- | ---------------------------------- | ------ | --------- |
-| 1   | floating-ui out of the dialog path (core overlay runtime)  | ~7.1 kB per app that never anchors | M      | no        |
-| 2   | Dependency footprint: optional peers + build-tooling peers | install-time DX                    | S      | no        |
-| 3   | Contentful config fallback drags all embedded components   | 6.2–6.7 kB                         | S–M    | partly    |
-| 4   | `STREAM_IMPORTS` platform + PiP split                      | ~5.2 kB                            | S      | soft      |
-| 5   | Scrollable pins buttons/drag/snap → taxes tabs/carousel    | 4–6 kB × 4 domains                 | M      | yes       |
-| 6   | `GridDebugComponent` in `GRID_IMPORTS`                     | 2.5 kB                             | S      | trivially |
-| 7   | slider/range-slider CSS dedupe                             | ~2.4 kB                            | S      | no        |
-| 8   | `@contentful/rich-text-types` runtime enums                | 2.4 kB (hidden by goldens)         | S      | no        |
-| 9   | Breadcrumb collapse pulls overlay runtime                  | 6–8 kB (narrow audience)           | M      | yes       |
-| 10  | Overlay strategy CSS follows the strategy provider         | 1.2–1.6 kB                         | M      | no        |
-| 11  | Query error-parsing pipeline behind `withX()` features     | ~1.4 kB (12 % of qc entry)         | M      | yes       |
-| 12  | Bearer-auth multi-tab sync opt-in                          | ~1.1 kB                            | M      | yes       |
-| 13  | `RuntimeError` clone → dev-only                            | ~0.4 kB off every package floor    | S      | no        |
+| #   | Finding                                                    | Save (gz)                          | Effort | Breaking  | Status                         |
+| --- | ---------------------------------------------------------- | ---------------------------------- | ------ | --------- | ------------------------------ |
+| 1   | floating-ui out of the dialog path (core overlay runtime)  | ~7.1 kB per app that never anchors | M      | no        | shipped `6c9d38d7e`            |
+| 2   | Dependency footprint: optional peers + build-tooling peers | install-time DX                    | S      | no        | shipped `353777bb5` (A3 open)  |
+| 3   | Contentful config fallback drags all embedded components   | 6.2–6.7 kB                         | S–M    | partly    | shipped `9c71ed3c7`            |
+| 4   | `STREAM_IMPORTS` platform + PiP split                      | ~5.2 kB                            | S      | soft      | shipped `beec05f70`            |
+| 5   | Scrollable pins buttons/drag/snap → taxes tabs/carousel    | 4–6 kB × 4 domains                 | M      | yes       | shipped `2c0d3c9f7`            |
+| 6   | `GridDebugComponent` in `GRID_IMPORTS`                     | 2.5 kB                             | S      | trivially | shipped `beec05f70`            |
+| 7   | slider/range-slider CSS dedupe                             | ~2.4 kB                            | S      | no        | **reverted** - gz says no (E1) |
+| 8   | `@contentful/rich-text-types` runtime enums                | 2.4 kB (hidden by goldens)         | S      | no        | **open**                       |
+| 9   | Breadcrumb collapse pulls overlay runtime                  | 6–8 kB (narrow audience)           | M      | yes       | shipped `beec05f70`            |
+| 10  | Overlay strategy CSS follows the strategy provider         | 1.2–1.6 kB                         | M      | no        | shipped `2c0d3c9f7`            |
+| 11  | Query error-parsing pipeline behind `withX()` features     | ~1.4 kB (12 % of qc entry)         | M      | yes       | shipped `53fcc97ef`            |
+| 12  | Bearer-auth multi-tab sync opt-in                          | ~1.1 kB                            | M      | yes       | shipped `53fcc97ef`            |
+| 13  | `RuntimeError` clone → dev-only                            | ~0.4 kB off every package floor    | S      | no        | shipped                        |
 
 ---
 
 ## A. Install-time dependency footprint (user-raised; tree-shaking can't fix this)
 
 Declared peers force consumers to `yarn install` packages they never use. Verified against each
-lib's `package.json`:
+lib's `package.json`.
+
+**Shipped `353777bb5`** for 1, 2 and 4: `socket.io-client` (query), `date-fns` (components) and the
+build tooling (`vite`, `typescript`, `ts-morph`, `@nx/devkit`, `@analogjs/*`) are all
+`peerDependenciesMeta: optional` across core/query/components/cdk now. **3 is the open decision.**
 
 1. **`socket.io-client`** — hard peer of `@ethlete/query`, value-imported in exactly one file
    (`libs/query/src/lib/ws/web-socket-client.ts:13`). Already bundle-shakeable; make it
@@ -55,6 +70,13 @@ lib's `package.json`:
 After any change here: `yarn install`, commit the lockfile, re-lint the libs (dependency-checks).
 
 ## B. libs/core
+
+**All three shipped `6c9d38d7e`**: anchored positioning installs its own setup through
+`registerAnchoredPositionSetup`, `@angular/cdk` is gone from `libs/core/src`, and
+`AnimatedOverlayDirective` moved to
+`libs/cdk/src/lib/components/overlay/directives/animated-overlay/`. One loose end from that move:
+`libs/core/src/lib/animations/animated-overlay.directive.docs.mdx` was left behind in core and
+nothing references it.
 
 1. **Overlay runtime statically pulls all of `@floating-ui/dom` — ~7.1 kB gz, M, non-breaking.**
    `libs/core/src/lib/overlay/overlay-position.ts:1` imports 9 floating-ui symbols top-level;
@@ -83,6 +105,11 @@ After any change here: `yarn install`, commit the lockfile, re-lint the libs (de
 
 ## C. libs/contentful
 
+**1, 3 and 4 shipped `9c71ed3c7`** (embedded components are provider-driven, the error-code record
+is a literal, and `MARK_TAILWIND_MAP` is gone in favour of semantic mark tags). **2 is open** -
+`BLOCKS`/`INLINES` are still value-imported in `rich-text-renderer.util.ts`,
+`rich-text-node-types.ts` and `rich-text-renderer.component.ts`.
+
 1. **Config fallback drags all five embedded components — 6.2–6.7 kB gz.**
    `utils/contentful-config.ts:1-5` statically references Audio/File/Image/Video/Link components,
    and is used as an inline fallback by `contentful-link.component.ts:36` (which only reads
@@ -105,6 +132,11 @@ After any change here: `yarn install`, commit the lockfile, re-lint the libs (de
    those utilities. Leftover from the `useTailwindClasses` drop (`ddadbdb26`).
 
 ## D. libs/components — TypeScript
+
+**1, 3 and 4 shipped `beec05f70`** (`STREAM_<PLATFORM>_IMPORTS` / `STREAM_PIP_IMPORTS`,
+`GRID_DEBUG_IMPORTS`, `BREADCRUMB_COLLAPSE_IMPORTS`); **2 shipped `2c0d3c9f7`** (scrollable chrome
+is opt-in). **5 and 6 are open** - 5 only as a deliberate project, 6 tracked in
+`tree-shaking-opportunities.md`.
 
 1. **`STREAM_IMPORTS` bundles 8 video platforms + the whole PiP subsystem — −5.2 kB gz, S,
    soft-breaking.** `stream/stream.imports.ts:39`. Measured: full barrel 36.3 kB → YouTube-only
@@ -149,6 +181,9 @@ After any change here: `yarn install`, commit the lockfile, re-lint the libs (de
 
 ## E. libs/components — CSS
 
+**2 shipped `2c0d3c9f7`** (strategy styles mount on demand); **1 was reverted** on measurement;
+**3 is open** and low-value.
+
 1. **slider/range-slider CSS dedupe — implemented, measured, REVERTED (2026-08-01).** The ~2.4 kB
    estimate was raw bytes; gzip already collapses the two near-identical sheets (adding
    `RangeSliderComponent` to a slider-only bundle costs only 1,316 B gz total), and routing the
@@ -172,6 +207,11 @@ After any change here: `yarn install`, commit the lockfile, re-lint the libs (de
    ever regresses; core/cdk CSS already in the right shape.
 
 ## F. libs/query (current gen)
+
+**All four shipped**: 1 and 2 as `53fcc97ef` (error parsing, retry and bearer multi-tab sync behind
+`withX()` features), 3 in core (`RuntimeError` logs the payload directly, no `clone`), 4 as
+`03b6aec1a` (`createQueryDevtoolsStats` is installed by `provideQueryDevtools` through the devtools
+hook). Baselines below therefore predate all four.
 
 Verified baselines (gz, `--external`): floor 872 B; `createQueryClient + createGetQuery` (qc)
 11,442 B; qc + paged stack 13,656 B; secure entry (`createSecureGetQuery +

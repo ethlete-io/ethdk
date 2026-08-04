@@ -2,7 +2,8 @@
 
 Research done 2026-07-23 (source-verified scans of `libs/components` +
 `libs/core`). Written alongside the `plans/cdk-port/` set (all shipped and since
-deleted; only `cdk-deprecation-roadmap.md` survives) - nothing here overlapped
+deleted, along with the cdk deprecation roadmap it fed - every cdk export now
+carries an `@deprecated` tag naming its successor) - nothing here overlapped
 those plans. Unprioritized backlog; pick items into real plans as needed.
 
 > A second research pass (2026-07-30) covering gaps _inside_ existing
