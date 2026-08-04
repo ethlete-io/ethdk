@@ -1,0 +1,130 @@
+@layer components {
+  .et-query-devtools-json-node,
+  .et-query-devtools-json-children {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .et-query-devtools-json-children {
+    padding-inline-start: 1.4rem;
+    border-inline-start: 1px solid var(--_et-qdt-border);
+    margin-inline-start: 0.4rem;
+  }
+
+  .et-query-devtools-json-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.1rem 0;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+
+  .et-query-devtools-json-toggle {
+    appearance: none;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    min-inline-size: 0;
+    border: none;
+    background: transparent;
+    color: var(--_et-qdt-fg);
+    cursor: pointer;
+    text-align: start;
+    font: inherit;
+    padding: 0.1rem 0;
+  }
+
+  /* The whole container row highlights, not just the toggle — the copy button shares the row now. */
+  .et-query-devtools-json-node > .et-query-devtools-json-row:hover {
+    background: var(--_et-qdt-hover);
+  }
+
+  .et-query-devtools-json-caret {
+    color: var(--_et-qdt-subtle);
+    inline-size: 1rem;
+    flex: 0 0 auto;
+  }
+
+  .et-query-devtools-json-key {
+    color: var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-json-colon {
+    color: var(--_et-qdt-subtle);
+  }
+
+  .et-query-devtools-json-preview {
+    color: var(--_et-qdt-subtle);
+  }
+
+  /* Index range of a folded slice - reads as structure, not as a real key. */
+  .et-query-devtools-json-chunk {
+    color: var(--_et-qdt-fg);
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .et-query-devtools-json-value {
+    overflow-wrap: anywhere;
+  }
+
+  .et-query-devtools-json-leaf[data-kind='string'] .et-query-devtools-json-value {
+    color: var(--_et-qdt-success);
+  }
+
+  .et-query-devtools-json-leaf[data-kind='number'] .et-query-devtools-json-value,
+  .et-query-devtools-json-leaf[data-kind='boolean'] .et-query-devtools-json-value {
+    color: var(--_et-qdt-loading);
+  }
+
+  .et-query-devtools-json-leaf[data-kind='null'] .et-query-devtools-json-value,
+  .et-query-devtools-json-leaf[data-kind='undefined'] .et-query-devtools-json-value {
+    color: var(--_et-qdt-subtle);
+  }
+
+  .et-query-devtools-json-hit {
+    background: color-mix(in srgb, var(--_et-qdt-loading) 40%, transparent);
+    border-radius: 0.2rem;
+  }
+
+  /* Sits inline, directly after the value / container preview it copies. A bare glyph would be a ~12px
+     click target, so the button is a 2.2rem square pulled back in by negative margins — the hit area
+     grows without the tree rows getting taller. */
+  .et-query-devtools-json-copy {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    flex: 0 0 auto;
+    inline-size: 2.2rem;
+    block-size: 2.2rem;
+    margin-block: -0.4rem;
+    border: none;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--_et-qdt-subtle);
+    cursor: pointer;
+    opacity: 0;
+    font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  .et-query-devtools-json-copy:hover:not(.et-query-devtools-json-copy--copied) {
+    background: var(--_et-qdt-active);
+    color: var(--_et-qdt-fg);
+  }
+
+  /* Kept visible while ticked, so the confirmation survives the pointer leaving the row. */
+  .et-query-devtools-json-row:hover .et-query-devtools-json-copy,
+  .et-query-devtools-json-copy:focus-visible,
+  .et-query-devtools-json-copy--copied {
+    opacity: 1;
+  }
+
+  .et-query-devtools-json-copy--copied {
+    color: var(--_et-qdt-success);
+  }
+}

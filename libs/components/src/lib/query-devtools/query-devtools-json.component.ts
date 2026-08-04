@@ -1,6 +1,8 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, computed, input, linkedSignal, numberAttribute, signal, ViewEncapsulation } from '@angular/core';
+import { injectStyleManager } from '@ethlete/core';
 import { Subject, switchMap, tap, timer } from 'rxjs';
+import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 
 type JsonKind = 'string' | 'number' | 'boolean' | 'null' | 'undefined' | 'array' | 'object';
 
@@ -253,6 +255,8 @@ export class QueryDevtoolsJsonComponent {
   });
 
   constructor() {
+    injectStyleManager().mount(QueryDevtoolsJsonStylesComponent);
+
     // Each copy restarts the tick countdown; switchMap drops the pending reset of the previous one.
     this.copiedReset$
       .pipe(

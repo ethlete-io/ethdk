@@ -1,0 +1,171 @@
+@layer components {
+  /* Timeline: one row per run, every bar positioned against the same window - so two requests that
+     overlapped read as overlapping bars, which a list of wall-clock times cannot show. */
+  /* One grid for the whole timeline, every row a `subgrid` of it. A grid per row would size its label
+     column to its own label, and bars in differently-sized tracks are not comparable - which is the one
+     thing a waterfall exists to make them. */
+  /* Duration, size and flags each get a track of their own rather than sharing one right-aligned cell -
+     otherwise a row's numbers shift sideways by whatever follows them, and a column of durations that
+     don't line up is unreadable however tabular the figures are. */
+  .et-query-devtools-timeline {
+    display: grid;
+    grid-template-columns: minmax(10rem, 26rem) minmax(14rem, 1fr) max-content max-content max-content;
+    gap: 0.1rem 0.8rem;
+    padding-inline: 0.4rem 1rem;
+  }
+
+  .et-query-devtools-timeline-axis,
+  .et-query-devtools-timeline-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+  }
+
+  .et-query-devtools-timeline-axis {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    background: var(--_et-qdt-bg);
+    border-block-end: 1px solid var(--_et-qdt-border);
+    padding-block-end: 0.4rem;
+    margin-block-end: 0.4rem;
+  }
+
+  .et-query-devtools-timeline-ticks {
+    grid-column: 2;
+    position: relative;
+    block-size: 1.5rem;
+  }
+
+  .et-query-devtools-timeline-tick {
+    position: absolute;
+    inset-block-start: 0;
+    transform: translateX(-50%);
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+    white-space: nowrap;
+  }
+
+  /* The outermost labels would hang off the axis if they were centred on their gridline like the rest. */
+  .et-query-devtools-timeline-tick:first-child {
+    transform: none;
+  }
+
+  .et-query-devtools-timeline-tick:last-child {
+    transform: translateX(-100%);
+  }
+
+  /* No inline padding: on a `subgrid` item padding shifts its column tracks, which would break the very
+     alignment the shared grid exists for. The container's padding stands in for it. */
+  .et-query-devtools-timeline-row {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    padding: 0.15rem 0;
+    cursor: pointer;
+  }
+
+  .et-query-devtools-timeline-row:hover {
+    background: var(--_et-qdt-hover);
+  }
+
+  .et-query-devtools-timeline-row--active {
+    background: var(--_et-qdt-active);
+  }
+
+  .et-query-devtools-timeline-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    min-inline-size: 0;
+    overflow: hidden;
+  }
+
+  .et-query-devtools-timeline-label .et-query-devtools-url {
+    max-inline-size: none;
+    margin-inline-start: 0;
+  }
+
+  /* The gridlines are the track's own background rather than an element per line - one row per run times
+     one span per tick is a lot of DOM for four hairlines. Kept in step with `TIMELINE_TICKS`. */
+  .et-query-devtools-timeline-track {
+    position: relative;
+    block-size: 1.8rem;
+    border-radius: 0.2rem;
+    overflow: hidden;
+    background-color: color-mix(in srgb, var(--_et-qdt-interaction) 4%, transparent);
+    background-image: repeating-linear-gradient(to right, var(--_et-qdt-border) 0 1px, transparent 1px 25%);
+  }
+
+  .et-query-devtools-timeline-bar {
+    position: absolute;
+    inset-block: 0.4rem;
+    min-inline-size: 0.2rem;
+    border-radius: 0.2rem;
+    background: var(--_et-qdt-subtle);
+  }
+
+  .et-query-devtools-timeline-bar[data-status='success'] {
+    background: var(--_et-qdt-success);
+  }
+
+  .et-query-devtools-timeline-bar[data-status='error'] {
+    background: var(--_et-qdt-error);
+  }
+
+  .et-query-devtools-timeline-bar[data-status='loading'] {
+    background: var(--_et-qdt-loading);
+  }
+
+  /* An abandoned run has no real end, so it is drawn hollow rather than as a solid duration. The outline is
+     solid, not dashed: most aborted bars are only a few pixels wide, and a dash pattern that short renders
+     as a handful of stray dots rather than as a border. */
+  .et-query-devtools-timeline-bar[data-status='aborted'] {
+    min-inline-size: 0.5rem;
+    background: color-mix(in srgb, var(--_et-qdt-subtle) 20%, transparent);
+    outline: 1px solid color-mix(in srgb, var(--_et-qdt-subtle) 70%, transparent);
+    outline-offset: -1px;
+  }
+
+  /* Right-aligned with tabular figures so the durations and sizes read as columns down the list. */
+  .et-query-devtools-timeline-duration,
+  .et-query-devtools-timeline-size {
+    text-align: end;
+    color: var(--_et-qdt-muted);
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* The duration is the number the eye scans for, so it keeps the foreground while the size stays quiet. */
+  .et-query-devtools-timeline-duration {
+    color: var(--_et-qdt-fg);
+  }
+
+  /* Left-aligned, unlike the numbers: a flag is a label, and a column of labels that all start at the same
+     x reads as one column. Right-aligning them would also press them against the panel edge. */
+  .et-query-devtools-timeline-flags {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+  }
+
+  /* Chip weight is tuned for a card head, where a chip is one of a handful of labels. One per row of a
+     waterfall reads as noise at that size, so here they shrink to annotation weight: a square tag rather
+     than a pill, and no border - the tint is mixed from `currentcolor`, so each flag's own semantic colour
+     carries it and nothing outlines the text it is meant to sit behind. */
+  .et-query-devtools-timeline-flags .et-query-devtools-chip {
+    padding: 0 0.4rem;
+    border-color: transparent;
+    border-radius: 0.3rem;
+    background: color-mix(in srgb, currentcolor 12%, transparent);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+  }
+}

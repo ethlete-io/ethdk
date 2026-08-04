@@ -14,7 +14,7 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { clamp, injectRenderer } from '@ethlete/core';
+import { clamp, injectRenderer, injectStyleManager } from '@ethlete/core';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
@@ -55,6 +55,7 @@ import { buildCurlCommand } from './query-devtools-curl';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
+import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import {
   buildQueryDevtoolsSessionExport,
   SessionExportClient,
@@ -64,6 +65,7 @@ import {
   slimForReport,
 } from './query-devtools-session';
 import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
+import { QueryDevtoolsTimelineStylesComponent } from './query-devtools-timeline-styles.component';
 import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component';
 
 // The registry stores queries type-erased; the panel reads them structurally.
@@ -299,6 +301,13 @@ const POPOUT_DOCUMENT = `<!doctype html>
   <body style="margin: 0"></body>
 </html>`;
 
+/**
+ * Every stylesheet the panel injects after it is created rather than with itself. A pop-out copies the
+ * host document's styles once, on load, so all of them have to be in the document by then - whatever the
+ * user has opened so far.
+ */
+const DEFERRED_STYLES = [QueryDevtoolsJsonStylesComponent, QueryDevtoolsTimelineStylesComponent];
+
 /** How many bars the timeline draws. Past this the newest are kept and the rest are counted instead. */
 const MAX_TIMELINE_ROWS = 200;
 
@@ -383,6 +392,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
 export class QueryDevtoolsComponent {
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   private renderer = injectRenderer();
+  private styleManager = injectStyleManager();
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);
   protected document = inject(DOCUMENT);
@@ -1027,6 +1037,11 @@ export class QueryDevtoolsComponent {
         this.lastSelectionKey = key;
         this.jsonSearch.set('');
       }
+    });
+
+    // The waterfall's grid lays out nothing else in the panel, so its rules arrive with the tab.
+    effect(() => {
+      if (this.activeTab() === 'timeline') this.styleManager.mount(QueryDevtoolsTimelineStylesComponent);
     });
 
     // A pop-out holds the panel element; leaving its window open would leave a dead panel on screen.
@@ -2103,6 +2118,8 @@ export class QueryDevtoolsComponent {
 
     renderer.setAttribute(base, 'href', this.document.baseURI);
     renderer.appendChild(doc.head, base);
+
+    for (const styles of DEFERRED_STYLES) this.styleManager.mount(styles);
 
     for (const node of Array.from(this.document.head.children)) {
       if (!this.isStyleNode(node)) continue;
