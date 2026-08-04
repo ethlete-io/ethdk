@@ -24,7 +24,7 @@ export class QueryErrorComponent {
   protected readonly canBeRetried = computed(() => this.errorList()?.canBeRetried ?? false);
   protected readonly isList = computed(() => this.errorList()?.isList ?? false);
 
-  protected trackByFn: TrackByFunction<QueryErrorItem> = (index, item) => item.message;
+  protected trackByFn: TrackByFunction<QueryErrorItem> = (_index, item) => item.message;
 
   protected retry() {
     extractQuery(this.host.query())?.execute({ skipCache: true });

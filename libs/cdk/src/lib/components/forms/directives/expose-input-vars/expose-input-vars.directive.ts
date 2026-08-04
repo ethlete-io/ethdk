@@ -74,7 +74,7 @@ export class ExposeInputVarsDirective {
     this._viewContainerRef.createEmbeddedView(this._templateRef, this._viewContext);
   }
 
-  static ngTemplateContextGuard(dir: ExposeInputVarsDirective, ctx: unknown): ctx is ExposeInputVarsContext {
+  static ngTemplateContextGuard(_dir: ExposeInputVarsDirective, _ctx: unknown): _ctx is ExposeInputVarsContext {
     return true;
   }
 

@@ -90,7 +90,6 @@ export class StorybookComboboxComponent {
   filterInternal = true;
 
   set _formValue(value: unknown) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.fg.setValue(value as any);
   }
 

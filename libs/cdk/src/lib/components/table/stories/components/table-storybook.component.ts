@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AsyncPipe } from '@angular/common';
 import { Component, Input, ViewEncapsulation, viewChild } from '@angular/core';
 import { clone } from '@ethlete/core';

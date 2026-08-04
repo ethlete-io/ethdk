@@ -5,14 +5,14 @@ import { linePath } from './line';
 import { BracketPosition } from './math';
 import { path, PathOptions } from './path';
 
-export type DrawManDimensions = {
+export type DrawManDimensions<TRoundData, TMatchData> = {
   columnWidth: number;
   matchHeight: number;
   roundHeaderHeight: number;
   columnGap: number;
   upperLowerGap: number;
   rowGap: number;
-  bracketGrid: ComputedBracketGrid<any, any>;
+  bracketGrid: ComputedBracketGrid<TRoundData, TMatchData>;
   path: Omit<PathOptions, 'className'>;
   curve: Omit<CurveOptions, 'path' | 'inverted'>;
 
@@ -33,7 +33,7 @@ const makePos = (dimensions: Dimensions): BracketPosition => ({
   },
 });
 
-export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions) => {
+export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TRoundData, TMatchData>) => {
   const svgParts: string[] = [];
 
   const continueElement = dimensions.bracketGrid.columns

@@ -89,7 +89,6 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
       const resolved = resolveSurfaceByElevation(this.surfaceThemes, parentType, elevation);
 
       if (resolved) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setInputSignal(this.surfaceProvider.surface as any, resolved.name);
       }
 

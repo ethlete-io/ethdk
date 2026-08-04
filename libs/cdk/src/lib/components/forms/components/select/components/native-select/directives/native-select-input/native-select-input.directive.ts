@@ -1,5 +1,5 @@
 import { Directive, inject, InjectionToken, OnInit, TrackByFunction, contentChildren } from '@angular/core';
-import { createDestroy, TypedQueryList } from '@ethlete/core';
+import { createDestroy } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../../../directives/input';
 import { NativeSelectOptionValue } from '../../types';
@@ -42,7 +42,7 @@ export class NativeSelectInputDirective implements OnInit {
       .subscribe();
   }
 
-  _trackByFn: TrackByFunction<NativeSelectOptionDirective> = (index, option) => option.key() ?? option.value;
+  _trackByFn: TrackByFunction<NativeSelectOptionDirective> = (_index, option) => option.key() ?? option.value;
 
   _onInputInteraction(event: Event) {
     event.stopPropagation();

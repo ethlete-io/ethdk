@@ -18,7 +18,6 @@ import {
 export type SelectionModelTypes = string | number | Record<string, unknown> | unknown;
 export type SelectionModelPropertyPath = string;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SelectionModelOptionValueFn<T extends SelectionModelTypes = any> = (option: T) => unknown;
 
 /**
@@ -33,7 +32,6 @@ export type SelectionModelOptionValueFn<T extends SelectionModelTypes = any> = (
  * (option) => option.id // option.id
  * (option) => option.user.name // option.user.name
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SelectionModelBinding<T extends SelectionModelTypes = any> =
   SelectionModelPropertyPath | SelectionModelOptionValueFn<T>;
 

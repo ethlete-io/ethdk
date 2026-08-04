@@ -628,7 +628,7 @@ export class ComboboxDirective implements OnInit {
     return this._selectionModel.isDisabled$(option);
   }
 
-  trackByOptionKeyFn: TrackByFunction<unknown> = (index, item) => this._selectionModel.getKey(item);
+  trackByOptionKeyFn: TrackByFunction<unknown> = (_index, item) => this._selectionModel.getKey(item);
 
   //#endregion
 

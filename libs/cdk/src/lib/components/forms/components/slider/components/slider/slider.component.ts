@@ -38,10 +38,14 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
 
 const getTouchIdForSlider = (event: TouchEvent, slider: HTMLElement) => {
   for (let i = 0; i < event.touches.length; i++) {
-    const target = event.touches[i]!.target as HTMLElement;
+    const touch = event.touches.item(i);
+
+    if (!touch) continue;
+
+    const target = touch.target as HTMLElement;
 
     if (slider === target || slider.contains(target)) {
-      return event.touches[i]!.identifier;
+      return touch.identifier;
     }
   }
 
@@ -50,8 +54,10 @@ const getTouchIdForSlider = (event: TouchEvent, slider: HTMLElement) => {
 
 const findMatchingTouch = (touches: TouchList, id: number) => {
   for (let i = 0; i < touches.length; i++) {
-    if (touches[i]!.identifier === id) {
-      return touches[i];
+    const touch = touches.item(i);
+
+    if (touch?.identifier === id) {
+      return touch;
     }
   }
 
@@ -182,9 +188,9 @@ export class SliderComponent implements OnInit {
 
   private readonly _roundToDecimal$ = this._step$.pipe(
     map((step) => {
-      const stepString = step.toString();
+      const [, decimals] = step.toString().split('.');
 
-      return stepString.includes('.') ? stepString.split('.')[1]!.length : 0;
+      return decimals?.length ?? 0;
     }),
   );
 

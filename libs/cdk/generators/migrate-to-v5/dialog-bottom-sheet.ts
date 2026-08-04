@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Tree, getProjects, logger, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
 

@@ -209,7 +209,6 @@ const handleFinalRound = <TRoundData, TMatchData>(params: {
     previousUpperRound,
     nextUpperRound,
     lowerRounds,
-    currentUpperRoundIndex,
     firstUpperRound,
     firstLowerRound,
     lastLowerRound,

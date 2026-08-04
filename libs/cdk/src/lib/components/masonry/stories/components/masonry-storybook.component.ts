@@ -86,7 +86,7 @@ export class StorybookMasonryComponent {
 
   repeat = new Array(25).fill(0).map(() => ({ id: Math.random() }));
 
-  trackByFn(index: number, item: { id: number }) {
+  trackByFn(_index: number, item: { id: number }) {
     return item.id;
   }
 }

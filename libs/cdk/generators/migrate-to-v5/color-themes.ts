@@ -184,8 +184,6 @@ export default async function migrateColorThemes(tree: Tree) {
       imports.forEach((imp) => {
         // Extract the actual import name (without 'type' keyword and alias)
         // Handle patterns like: "type Theme as EthleteTheme", "Theme", "type Theme"
-        const typeKeywordMatch = imp.match(/^type\s+/);
-        const hasTypeKeyword = !!typeKeywordMatch;
         const withoutType = imp.replace(/^type\s+/, '').trim();
         const importName = withoutType.split(/\s+as\s+/)[0]?.trim() || withoutType;
 

@@ -480,7 +480,6 @@ describe('migrate-to-v5 -> *etLet', () => {
       expect(result).not.toContain('[disabled3]');
 
       // Verify all attribute values reference the correct renamed variables
-      const lines = result!.split('\n');
       const disabled2Section = result!.substring(result!.indexOf('@let disabled2'), result!.indexOf('@let disabled3'));
       expect(disabled2Section).toContain('[class.pointer-events-none]="disabled2"');
       expect(disabled2Section).toContain('[attr.inert]="disabled2 || null"');

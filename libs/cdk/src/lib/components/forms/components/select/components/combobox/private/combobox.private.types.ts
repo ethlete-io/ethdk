@@ -31,7 +31,6 @@ export type TemplateRefWithOption = TemplateRef<{
 }>;
 
 export type ComponentWithOption = ComponentType<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   option: any;
 }>;
 
@@ -40,6 +39,5 @@ export type TemplateRefWithError = TemplateRef<{
 }>;
 
 export type ComponentWithError = ComponentType<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   error: any;
 }>;

@@ -882,7 +882,6 @@ export class MyClass {
       const overlayDataIndex = lines.findIndex((l) => l.includes('overlayData'));
       const statusQueryIndex = lines.findIndex((l) => l.includes('statusQuery'));
       const statusResponseIndex = lines.findIndex((l) => l.includes('statusResponse'));
-      const formIndex = lines.findIndex((l) => l.includes('form ='));
 
       // Check that there's an empty line after overlayData (before statusQuery)
       expect(lines[overlayDataIndex + 1]).toBe('');

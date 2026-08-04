@@ -29,7 +29,6 @@ const ET_MENU_SYMBOLS = new Set([
 export default async function migrateCdkMenu(tree: Tree) {
   console.log('\n🔄 Migrating from CDK menu to et menu');
 
-  const files = tree.children('.');
   const warnings: Map<string, string[]> = new Map();
 
   function walkFiles(path: string) {
@@ -75,7 +74,6 @@ export default async function migrateCdkMenu(tree: Tree) {
 
     // Process imports and build replacement
     let hasMenuSymbols = false;
-    let hasMenuImports = false;
     const importedSymbols = new Set<string>();
 
     imports.forEach((match) => {
@@ -89,9 +87,6 @@ export default async function migrateCdkMenu(tree: Tree) {
         importedSymbols.add(symbol);
         if (CDK_MENU_SYMBOLS.includes(symbol)) {
           hasMenuSymbols = true;
-        }
-        if (symbol === 'MenuImports') {
-          hasMenuImports = true;
         }
       });
     });
@@ -153,7 +148,7 @@ export default async function migrateCdkMenu(tree: Tree) {
     });
 
     // Replace imports
-    content = content.replace(importRegex, (match, importList) => {
+    content = content.replace(importRegex, (_match, importList) => {
       const symbols = importList
         .split(',')
         .map((s: string) => s.trim())
@@ -261,7 +256,7 @@ export default async function migrateCdkMenu(tree: Tree) {
     // 4. Replace cdkMenuItemCheckbox with et-menu-checkbox-item
     if (content.includes('cdkMenuItemCheckbox')) {
       const checkboxRegex = /<(\w+)([^>]*?)\bcdkMenuItemCheckbox\b([^>]*)>([\s\S]*?)<\/\1>/g;
-      content = content.replace(checkboxRegex, (match, tagName, beforeAttrs, afterAttrs, inner) => {
+      content = content.replace(checkboxRegex, (_match, _tagName, beforeAttrs, afterAttrs, inner) => {
         const allAttrs = (beforeAttrs + afterAttrs)
           .replace(/\s+cdkMenuItemCheckbox\s+/, ' ')
           .replace(/\bcdkMenuItemCheckbox\b/, '')
@@ -274,7 +269,7 @@ export default async function migrateCdkMenu(tree: Tree) {
     // 5. Replace cdkMenuItemRadio with et-menu-radio-item and add warning
     if (content.includes('cdkMenuItemRadio')) {
       const radioRegex = /<(\w+)([^>]*?)\bcdkMenuItemRadio\b([^>]*)>([\s\S]*?)<\/\1>/g;
-      content = content.replace(radioRegex, (match, tagName, beforeAttrs, afterAttrs, inner) => {
+      content = content.replace(radioRegex, (_match, _tagName, beforeAttrs, afterAttrs, inner) => {
         const allAttrs = (beforeAttrs + afterAttrs)
           .replace(/\s+cdkMenuItemRadio\s+/, ' ')
           .replace(/\bcdkMenuItemRadio\b/, '')

@@ -238,7 +238,6 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
     };
 
     const getQueryParamInput = () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (currentOverlayRef?.componentInstance as any)?.[OVERLAY_QUERY_PARAM_INPUT_NAME] as
         ModelSignal<TQueryParam> | InputSignal<TQueryParam> | undefined;
     };

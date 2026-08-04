@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Meta, StoryFn } from '@storybook/angular';
 import CustomMDXDocumentation from './bracket.docs.mdx';
 import { StorybookBracketComponent } from './components';

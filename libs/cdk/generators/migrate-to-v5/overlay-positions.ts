@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
 import { formatFiles, getProjects, logger, Tree, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
 
@@ -241,7 +239,7 @@ function processFile(filePath: string, content: string) {
               code: transformedBody,
               usesMergeConfigs,
               strategiesUsed,
-            } = transformBuilderBodyForDefaults(bodyCode, builderParamName, sourceFile);
+            } = transformBuilderBodyForDefaults(bodyCode, builderParamName);
 
             if (usesMergeConfigs) {
               importsToAdd.add('mergeOverlayBreakpointConfigs');
@@ -586,7 +584,7 @@ function transformNodeTextForDefaults(
   });
 
   // Now handle mergeConfigs - do this AFTER replacing DEFAULTS
-  Object.entries(STRATEGY_INJECT_MAP).forEach(([strategyName, injectFn]) => {
+  Object.entries(STRATEGY_INJECT_MAP).forEach(([_strategyName, injectFn]) => {
     const varName = getStrategyVariableName(injectFn);
 
     // Pattern: overlayService.positions.mergeConfigs(dialogStrategy.build(), ...args)
@@ -747,17 +745,6 @@ function updateImportsInContent(content: string, importsToAdd: Set<string>, impo
 }
 
 // Type guards
-function isInjectOverlayServiceCall(node: ts.Node): boolean {
-  return (
-    ts.isCallExpression(node) &&
-    ts.isIdentifier(node.expression) &&
-    node.expression.text === 'inject' &&
-    node.arguments.length === 1 &&
-    ts.isIdentifier(node.arguments[0]!) &&
-    node.arguments[0].text === 'OverlayService'
-  );
-}
-
 function isPositionMethodCall(node: ts.Node): boolean {
   return (
     ts.isCallExpression(node) &&
@@ -773,44 +760,6 @@ function isOverlayBreakpointConfigEntryType(node: ts.Node): boolean {
     ts.isIdentifier(node.typeName) &&
     node.typeName.text === 'OverlayBreakpointConfigEntry'
   );
-}
-
-// Helper functions
-function checkIfOverlayRelated(node: ts.Node): boolean {
-  // First check: Are we inside createOverlayHandler call?
-  if (isInsideOverlayHandlerCall(node)) {
-    return true;
-  }
-
-  // Check for overlay-related patterns that need migration using AST
-  let isOverlayRelated = false;
-
-  function visit(n: ts.Node) {
-    if (isOverlayRelated) return;
-
-    if (isPositionMethodCall(n)) {
-      isOverlayRelated = true;
-      return;
-    }
-
-    if (isDefaultsUsage(n)) {
-      isOverlayRelated = true;
-      return;
-    }
-
-    if (ts.isCallExpression(n)) {
-      const callText = n.getText();
-      if (callText.includes('getConfig') || callText.includes('getPositions') || callText.includes('getStrategies')) {
-        isOverlayRelated = true;
-        return;
-      }
-    }
-
-    ts.forEachChild(n, visit);
-  }
-
-  visit(node);
-  return isOverlayRelated;
 }
 
 function isDefaultsUsage(node: ts.Node): boolean {
@@ -943,7 +892,6 @@ function isInsideOverlayHandlerCall(node: ts.Node): boolean {
 function transformBuilderBodyForDefaults(
   bodyCode: string,
   builderParamName: string,
-  sourceFile: ts.SourceFile,
 ): { code: string; usesMergeConfigs: boolean; strategiesUsed: Set<string> } {
   let code = bodyCode;
   let usesMergeConfigs = false;
@@ -969,7 +917,7 @@ function transformBuilderBodyForDefaults(
   });
 
   // Replace builder.mergeConfigs(Xstrategy.build(), ...args) with Xstrategy.build(mergeOverlayBreakpointConfigs(...args))
-  Object.entries(STRATEGY_INJECT_MAP).forEach(([strategyName, injectFn]) => {
+  Object.entries(STRATEGY_INJECT_MAP).forEach(([_strategyName, injectFn]) => {
     const varName = getStrategyVariableName(injectFn);
 
     // Pattern: builder.mergeConfigs(dialogStrategy.build(), {...})

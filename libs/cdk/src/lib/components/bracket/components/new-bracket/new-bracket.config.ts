@@ -17,7 +17,6 @@ export type BracketSwissColors = Partial<Record<BracketSwissGroupColorType, stri
 /**
  * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type BracketSwissConfig<TRoundData = any, TMatchData = any> = {
   roundHeaderComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
@@ -30,7 +29,6 @@ export type BracketSwissConfig<TRoundData = any, TMatchData = any> = {
  *
  * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NewBracketConfig<TRoundData = any, TMatchData = any> = {
   columnWidth?: number;
   matchHeight?: number;

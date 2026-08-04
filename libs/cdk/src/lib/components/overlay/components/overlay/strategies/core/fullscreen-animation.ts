@@ -423,8 +423,10 @@ export const startFullscreenEnterAnimation = <T, R>(
     throw new Error('Origin element is required for full animation');
   }
 
-  const transforms = calculateViewportTransforms(state.originElement);
-  const cloneComponentRef = createOriginClone(state.originElement, deps);
+  const originElement = state.originElement;
+
+  const transforms = calculateViewportTransforms(originElement);
+  const cloneComponentRef = createOriginClone(originElement, deps);
   const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
 
   applyCloneElementStyles(renderer, cloneEl, transforms.rect, transforms);
@@ -444,7 +446,7 @@ export const startFullscreenEnterAnimation = <T, R>(
   if (skipAnimation) {
     cloneComponentRef.instance.animatedLifecycle.forceEnteredState();
     containerInstance.animatedLifecycle.forceEnteredState();
-    hideOriginElement(renderer, state.originElement);
+    hideOriginElement(renderer, originElement);
     mutableState.isOriginHidden = true;
   } else {
     const sub = containerInstance.isContentAttached$
@@ -462,7 +464,7 @@ export const startFullscreenEnterAnimation = <T, R>(
 
           cloneComponentRef.instance.animatedLifecycle.enter();
           containerInstance.animatedLifecycle.enter();
-          hideOriginElement(renderer, state.originElement!);
+          hideOriginElement(renderer, originElement);
           mutableState.isOriginHidden = true;
         });
       });

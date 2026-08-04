@@ -8,7 +8,6 @@ import { BracketPosition } from './math';
 import { PathOptions } from './path';
 
 export type DrawSwissManDimensions = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   bracketGrid: ComputedBracketGrid<any, any>;
   path: Omit<PathOptions, 'className' | 'stroke'>;
 

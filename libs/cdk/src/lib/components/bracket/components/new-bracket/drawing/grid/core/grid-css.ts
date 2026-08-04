@@ -60,26 +60,6 @@ export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColum
     return total + Math.max(...masterColumn.sections.map((section) => section.subColumns.length));
   }, 0);
 
-  // Find all unique sections across all master columns to determine rows
-  const allSections: Array<{
-    elements: ReadonlyArray<BracketElement<any, any>>;
-    sectionIndex: number;
-    masterColumnIndex: number;
-  }> = [];
-
-  grid.forEach((masterColumn, masterColumnIndex) => {
-    masterColumn.sections.forEach((section, sectionIndex) => {
-      // For each section, we need to process all its subcolumns
-      section.subColumns.forEach((subColumn) => {
-        allSections.push({
-          elements: subColumn.elements,
-          sectionIndex,
-          masterColumnIndex,
-        });
-      });
-    });
-  });
-
   // Group sections by their index to create rows
   const sectionsByIndex = new Map<
     number,
@@ -95,12 +75,11 @@ export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColum
     const maxSubColumns = Math.max(...masterColumn.sections.map((section) => section.subColumns.length));
 
     masterColumn.sections.forEach((section, sectionIndex) => {
-      if (!sectionsByIndex.has(sectionIndex)) {
-        sectionsByIndex.set(sectionIndex, []);
-      }
+      const sectionColumns = sectionsByIndex.get(sectionIndex) ?? [];
+      sectionsByIndex.set(sectionIndex, sectionColumns);
 
       section.subColumns.forEach((subColumn, subColumnIndex) => {
-        sectionsByIndex.get(sectionIndex)!.push({
+        sectionColumns.push({
           elements: subColumn.elements,
           columnIndex: globalColumnIndex + subColumnIndex,
           masterColumnIndex,
@@ -116,7 +95,7 @@ export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColum
   const rowHeights: string[] = [];
 
   // Process each section (which becomes a row group)
-  for (const [sectionIndex, sectionColumns] of sectionsByIndex.entries()) {
+  for (const sectionColumns of sectionsByIndex.values()) {
     // Find max rows needed for this section
     const maxRowsInSection = Math.max(
       ...sectionColumns.map((col) => col.elements.reduce((total, element) => total + element.parts.length, 0)),

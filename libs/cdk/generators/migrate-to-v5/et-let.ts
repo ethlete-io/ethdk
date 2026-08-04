@@ -410,7 +410,7 @@ export function migrateEtLet(tree: Tree) {
         if (variable !== originalVariable) {
           // Pattern 1: Attribute values - match the full pattern [attr]="value"
           // and only replace the variable in the value part, never in attribute names
-          innerContent = innerContent.replace(/\[([^\]]+)\]="([^"]*)"/g, (match, attrName, attrValue) => {
+          innerContent = innerContent.replace(/\[([^\]]+)\]="([^"]*)"/g, (_match, attrName, attrValue) => {
             // Don't rename the attribute name, only references in the value
             const pattern = new RegExp(`\\b${originalVariable}\\b`, 'g');
             const newValue = attrValue.replace(pattern, variable);
@@ -418,7 +418,7 @@ export function migrateEtLet(tree: Tree) {
           });
 
           // Pattern 2: Event bindings like (click)="method(variable)"
-          innerContent = innerContent.replace(/\(([^)]+)\)="([^"]*)"/g, (match, eventName, eventHandler) => {
+          innerContent = innerContent.replace(/\(([^)]+)\)="([^"]*)"/g, (_match, eventName, eventHandler) => {
             const pattern = new RegExp(`\\b${originalVariable}\\b`, 'g');
             const newHandler = eventHandler.replace(pattern, variable);
             return `(${eventName})="${newHandler}"`;
