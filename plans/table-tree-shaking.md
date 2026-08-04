@@ -6,7 +6,7 @@ shippable phases, each one green (tests + stories) on its own.
 **Kept after completion**, unlike the other shipped plans: open plans point here
 for the measurement harness in §5 and the feature-splitting conventions -
 `tree-shaking-research-static.md`, `tree-shaking-opportunities.md` and
-`enhancements/09-table-export-inline-edit.md`. Retire it with those, not before.
+`bundle-size-opportunities-round2.md`. Retire it with those, not before.
 
 > **Superseded in part by [`table-api-rfc.md`](./table-api-rfc.md) (2026-07-27).** The
 > three seams and the tree-shaking model below still hold, but features are no longer

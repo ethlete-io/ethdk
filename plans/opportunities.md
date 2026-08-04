@@ -7,8 +7,9 @@ those plans. Unprioritized backlog; pick items into real plans as needed.
 
 > A second research pass (2026-07-30) covering gaps _inside_ existing
 > components - touch/gesture, RTL/i18n/a11y consistency, per-domain feature
-> gaps - lives in `plans/enhancements/` (findings in `00-research-findings.md`,
-> ten implementation plans alongside).
+> gaps - lives in `components-research-findings.md`. Its twelve implementation
+> plans have all shipped; that file keeps the evidence, the unplanned backlog and
+> what the work deferred.
 
 ## New components (none exist today; verified)
 
@@ -91,7 +92,7 @@ exists.
 - **`core/seo.directive.ts` - remove.** Already `@deprecated`, and the only real
   SSR crash risk left in `core`: bare `document` access at lines 98–154, no
   `DOCUMENT` injection, no guard. Deliberately **not** fixed in place
-  (`plans/enhancements/02-consistency-fixes.md` §5) - patching a directive that
+  (`components-research-findings.md` §1) - patching a directive that
   is scheduled for deletion is wasted work. The other `core` global-access
   stragglers (`scrolling/scrollable.ts`, `animations/animation-utils.ts`) were
   guarded instead, since they stay.
