@@ -57,15 +57,25 @@ Two properties are easy to break and were deliberate:
   move onto `etTableRowExpansion` with `expanded` and `expandableRow`: only the table knows `T`, and
   that is what types the template's `let-row`. The feature reads it back through
   `TableFeatureHost.detailTemplate()`.
+- **No carrier component for lead cells.** Seam A stamps one component per lead cell per row,
+  unbounded without `etTableVirtualScroll`, and the carrier fallback (one instance per table, cells as
+  templates) would trade the seam away to fix the wrong thing. Measured 2026-08-04 at 2,000 rows with
+  no virtualization: 933 ms plain, 1,200 ms with expansion's expander (+267), 1,709 ms with selection's
+  checkbox (+776), 2,038 ms with both (+1,105) - additive and linear, and select-all is linear too
+  (0.23 ms/row, 451 ms at 2,000). Both features stamp the same 2,000 instances yet differ 2.9×, so the
+  cost tracks what the cell _renders_ - a checkbox component at 8 DOM nodes a row - and not the outlet,
+  which is the only part a carrier would remove. Past ~1,000 rows the answer is `etTableVirtualScroll`,
+  not a different seam.
+- **Adornments and lead columns are sequenced by a number, not a named slot.** The scale absorbed a
+  fourth registration without a redesign: the column menu took 5, between filters (0) and resize (10),
+  a position no `'leading' | 'trailing'` vocabulary can express. `order` also sequences two independent
+  seams (header adornments _and_ lead columns: selection 0, expansion 100), so slots would have to
+  model both or split the mental model in half. The reserved values are documented on
+  `TableHeaderAdornment.order` and `TableLeadColumn.order` so a consumer registering their own is not
+  guessing.
 
 ## Open questions
 
-- **Per-cell component instances.** Seam A stamps one component per lead cell per row, and the
-  table's own expander cell is one too. Bounded by the virtual window when it is on, unbounded when
-  it is not. Never measured on a 2,000-row selection table; a carrier-component fallback (one
-  instance per table, cells as templates) exists if it ever regresses.
-- **Header adornment ordering.** The `order` numbers (filters 0, resize 10) survive from the
-  template era; a named slot (`'trailing'`) may read better now that the chrome is components.
 - **Does the `group` header row need the same treatment?** Group labels are plain strings today. An
   `etTableGroupHeader` template directive would round out the seam, but nothing has asked for it. (The
   row itself is now a feature - seam E - so the template would be its option, not the table's.)

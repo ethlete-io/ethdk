@@ -25,7 +25,13 @@ export type TableHeaderAdornment = {
    * is what the table's built-in cells use.
    */
   injector?: Injector;
-  /** Render order within the header cell - lower renders first. @default 0 */
+  /**
+   * Render order within the header cell - lower renders first. The built-in features take `0`
+   * (`etTableFilters`), `5` (`etTableColumnMenu`) and `10` (`etTableResize`); pick a number relative
+   * to those to place your own adornment among them.
+   *
+   * @default 0
+   */
   order?: number;
   /**
    * Whether this contribution is live. A feature registers once, in its constructor, and gates itself
@@ -67,7 +73,13 @@ export type TableLeadColumn = {
   key: string;
   /** The column's `grid-template-columns` track (e.g. `'var(--et-table-select-width, 32px)'`). */
   width: string;
-  /** Lower renders closer to the inline-start edge. @default 0 */
+  /**
+   * Lower renders closer to the inline-start edge. The built-in features take `0`
+   * (`etTableSelection`) and `100` (`etTableRowExpansion`); pick a number relative to those to place
+   * your own column among them.
+   *
+   * @default 0
+   */
   order?: number;
   /** Extra class put on every cell of this column, for the feature's own styling. */
   cellClass: string;
