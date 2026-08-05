@@ -217,3 +217,23 @@ export const buildSchedulerTimeGrid = <TExtra>(
 
   return { days: dayColumns, allDay, allDayRowCount: rowCount };
 };
+
+/**
+ * Which hour the time grid's scrollable body should open scrolled to, so day/week view never
+ * starts on an empty screen scrolled to midnight: the current hour (with an hour of lead-in) when
+ * today is one of the visible days, else the earliest timed appointment's hour (same lead-in),
+ * else a business-hours default.
+ */
+export const computeInitialScrollHour = <TExtra>(grid: SchedulerTimeGrid<TExtra>, now: Date) => {
+  if (grid.days.some((day) => day.today)) {
+    return Math.max(0, now.getHours() - 1);
+  }
+
+  const offsets = grid.days.flatMap((day) => day.blocks.map((block) => block.offset));
+
+  if (offsets.length === 0) {
+    return 8;
+  }
+
+  return Math.max(0, Math.floor((Math.min(...offsets) / 100) * 24) - 1);
+};

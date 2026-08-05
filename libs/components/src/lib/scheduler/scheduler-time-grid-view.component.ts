@@ -1,5 +1,5 @@
 import { NgComponentOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
+import { afterNextRender, Component, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
 import { ProvideColorDirective, injectStyleManager } from '@ethlete/core';
 import { format, setHours, startOfDay } from 'date-fns';
 import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerTimeGridDirective } from './headless';
@@ -29,6 +29,8 @@ export class SchedulerTimeGridViewComponent {
   protected grid = inject(SchedulerTimeGridDirective);
 
   private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
+  protected timeGridBody = viewChild<ElementRef<HTMLElement>>('timeGridBody');
+  private firstHourRow = viewChild<ElementRef<HTMLElement>>('hourRow');
 
   protected hours = computed(() => {
     const locale = this.scheduler?.effectiveLocale();
@@ -42,6 +44,19 @@ export class SchedulerTimeGridViewComponent {
 
   constructor() {
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
+
+    // Once per mount, not reactively - re-scrolling on every `focusedDate` change would yank a
+    // user's own scroll position back every time they step to the next day/week.
+    afterNextRender(() => {
+      const body = this.timeGridBody()?.nativeElement;
+      const hourRow = this.firstHourRow()?.nativeElement;
+
+      if (!body || !hourRow) {
+        return;
+      }
+
+      body.scrollTop = this.grid.initialScrollHour() * hourRow.offsetHeight;
+    });
   }
 
   /** UI contributed by badge features (title, time range, …) - see `registerBadgeAdornment`. */

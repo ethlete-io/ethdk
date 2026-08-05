@@ -5,6 +5,7 @@ import {
   SchedulerMonthDirective,
   SchedulerTimeGridDirective,
 } from './headless';
+import { SchedulerActionAddAppointmentDirective } from './scheduler-action-add-appointment.directive';
 import { SchedulerActionAddSubAppointmentDirective } from './scheduler-action-add-sub-appointment.directive';
 import { SchedulerActionDeleteDirective } from './scheduler-action-delete.directive';
 import { SchedulerAgendaViewComponent } from './scheduler-agenda-view.component';
@@ -46,4 +47,5 @@ export const SCHEDULER_IMPORTS = [
   SchedulerEditColorDirective,
   SchedulerActionAddSubAppointmentDirective,
   SchedulerActionDeleteDirective,
+  SchedulerActionAddAppointmentDirective,
 ] as const;

@@ -23,6 +23,8 @@ export type SchedulerLabels = {
   day: string;
   /** The agenda view's name, as shown in the view switch. */
   agenda: string;
+  /** Built-in "Add appointment" toolbar action label. */
+  addAppointment: string;
   /** Fallback heading for the edit surface while the open appointment has no title yet. */
   untitledAppointment: string;
   /** Accessible label for the edit surface's ancestor breadcrumb. */
@@ -64,6 +66,7 @@ export const DEFAULT_SCHEDULER_LABELS: SchedulerLabels = {
   week: 'Week',
   day: 'Day',
   agenda: 'Agenda',
+  addAppointment: 'Add appointment',
   untitledAppointment: 'Untitled appointment',
   ancestors: 'Ancestor chain',
   subAppointments: 'Sub-appointments',

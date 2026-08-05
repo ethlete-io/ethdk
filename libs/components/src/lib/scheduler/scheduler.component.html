@@ -10,6 +10,15 @@
     {{ todayLabel() }}
   </button>
 
+  @for (action of toolbarActions(); track $index) {
+    <button (click)="action.run()" class="et-scheduler-toolbar-action" et-button size="sm" type="button">
+      @if (action.icon) {
+        <i [etIcon]="action.icon" aria-hidden="true"></i>
+      }
+      {{ action.label() }}
+    </button>
+  }
+
   <div class="et-scheduler-nav-buttons">
     <button
       [attr.aria-label]="previousLabel()"
@@ -38,7 +47,13 @@
 
   <div class="et-scheduler-header-spacer"></div>
 
-  <et-segmented-button-group [value]="headless.view()" (valueChange)="setView($event)" size="sm" variant="tabs">
+  <et-segmented-button-group
+    [value]="headless.view()"
+    (valueChange)="setView($event)"
+    class="et-scheduler-view-switch"
+    size="sm"
+    variant="tabs"
+  >
     <et-label class="et-scheduler-view-switch-label">{{ switchViewLabel() }}</et-label>
 
     <et-segmented-button value="month">{{ monthViewLabel() }}</et-segmented-button>

@@ -43,10 +43,10 @@
   </div>
 }
 
-<div class="et-scheduler-time-grid-row et-scheduler-time-grid-body">
+<div #timeGridBody class="et-scheduler-time-grid-row et-scheduler-time-grid-body">
   <div class="et-scheduler-time-grid-gutter" role="presentation">
     @for (hour of hours(); track hour.hour) {
-      <div class="et-scheduler-time-grid-hour-row">
+      <div #hourRow class="et-scheduler-time-grid-hour-row">
         <span class="et-scheduler-time-grid-hour-label">{{ hour.label }}</span>
       </div>
     }

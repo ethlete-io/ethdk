@@ -33,6 +33,25 @@ export type SchedulerBadgeAdornment = {
   enabled?: Signal<boolean>;
 };
 
+/** One entry in the scheduler's own toolbar - e.g. "Add appointment". */
+export type SchedulerToolbarAction = {
+  /** A signal so the built-ins stay correct if the app's labels/locale change at runtime. */
+  label: Signal<string>;
+  /** A registered icon name (see `IconDirective`), shown before the label. */
+  icon?: string;
+  /** Runs the action - called with the scheduler's own feature host still in scope. */
+  run: () => void;
+  /**
+   * Render order - lower renders first. The built-in "Add appointment" takes `0`; pick a number
+   * relative to that to place your own action among the built-ins.
+   *
+   * @default 0
+   */
+  order?: number;
+  /** Whether this action is live. Omitted means always on - see {@link SchedulerBadgeAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
 /**
  * What an opt-in scheduler feature can reach on its host `<et-scheduler>`. Features **register**
  * themselves here (the scheduler never queries for them) - modeled on the table's
@@ -53,6 +72,18 @@ export type SchedulerFeatureHost = {
   registerBadgeAdornment(adornment: SchedulerBadgeAdornment): void;
   /** The registered badge adornments, enabled ones only, in render order - what every view renders per badge. */
   badgeAdornments(): readonly SchedulerBadgeAdornment[];
+  /** Add an entry to the scheduler's own toolbar. Call once, from the feature's constructor. */
+  registerToolbarAction(action: SchedulerToolbarAction): void;
+  /** The registered toolbar actions, enabled ones only, in render order. */
+  toolbarActions(): readonly SchedulerToolbarAction[];
+  /**
+   * Synthesizes a brand-new, blank top-level appointment and opens the default edit surface for
+   * it - only meaningful with that default surface, the same caveat the scheduler's own
+   * click-to-edit behavior already has. Exposed on the host (rather than a feature injecting
+   * `SchedulerComponent` directly) so a built-in toolbar action can call it without a static
+   * import cycle back to the component that bundles it.
+   */
+  addAppointment(): void;
 };
 
 export const SCHEDULER_FEATURE_HOST = new InjectionToken<SchedulerFeatureHost>('SCHEDULER_FEATURE_HOST');

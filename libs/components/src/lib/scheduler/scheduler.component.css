@@ -1,5 +1,7 @@
 @layer components {
   .et-scheduler {
+    container-type: inline-size;
+    container-name: et-scheduler;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -7,8 +9,26 @@
 
   .et-scheduler-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+  }
+
+  /* Mobile-first: the view switch always gets its own full-width row below the nav row, and the
+     spacer that would otherwise push it to the end of a single row is dropped. A wide-enough
+     container restores the single-row layout the switch was designed for. */
+  .et-scheduler-view-switch {
+    flex-basis: 100%;
+  }
+
+  @container et-scheduler (min-inline-size: 480px) {
+    .et-scheduler-header-spacer {
+      display: block;
+    }
+
+    .et-scheduler-view-switch {
+      flex-basis: auto;
+    }
   }
 
   .et-scheduler-nav-buttons {
@@ -25,12 +45,18 @@
   }
 
   .et-scheduler-header-label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
     font-size: 15px;
     font-weight: 600;
     color: var(--et-surface-color-solid);
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .et-scheduler-header-spacer {
+    display: none;
     flex: 1;
   }
 

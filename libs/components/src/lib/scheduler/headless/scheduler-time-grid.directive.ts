@@ -2,7 +2,7 @@ import { Directive, afterNextRender, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { eachDayOfInterval } from 'date-fns';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
-import { buildSchedulerTimeGrid } from './internals/scheduler-time-grid';
+import { buildSchedulerTimeGrid, computeInitialScrollHour } from './internals/scheduler-time-grid';
 import { SchedulerDirective } from './scheduler.directive';
 
 export type {
@@ -49,6 +49,14 @@ export class SchedulerTimeGridDirective {
 
   /** How many stacking rows {@link allDay} needs - sizes the all-day lane's reserved space. */
   public allDayRowCount = computed(() => this.grid().allDayRowCount);
+
+  /**
+   * Which hour the body's scrollable region should open scrolled to - the current hour when today
+   * is visible, else the earliest appointment's hour, else a business-hours default. See
+   * `SchedulerTimeGridViewComponent`, which reads this once on mount rather than reactively, so
+   * navigating days/weeks afterwards never yanks the user's own scroll position back.
+   */
+  public initialScrollHour = computed(() => computeInitialScrollHour(this.grid(), new Date()));
 
   constructor() {
     if (ngDevMode) {

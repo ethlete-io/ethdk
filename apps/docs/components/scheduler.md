@@ -61,12 +61,28 @@ On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 | `selectedAppointmentId` | `AppointmentId \| null` | The selected appointment's id.               |
 | `focusedDate`           | `Date`                  | The date the visible period is derived from. |
 
-| Output               | Payload                    | Fires when                                                                                  |
-| -------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
-| `appointmentSave`    | `Appointment`              | The default [edit surface](#edit-surface) saves an edit or a new sub-appointment.           |
-| `appointmentsDelete` | `readonly AppointmentId[]` | The edit surface's "Delete (with descendants)" action removes an appointment and its chain. |
+| Output               | Payload                    | Fires when                                                                                                      |
+| -------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `appointmentSave`    | `Appointment`              | The default [edit surface](#edit-surface) saves an edit, a new sub-appointment, or a new top-level appointment. |
+| `appointmentsDelete` | `readonly AppointmentId[]` | The edit surface's "Delete (with descendants)" action removes an appointment and its chain.                     |
 
 The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself. `appointments` is one-way: the scheduler never mutates it, so applying `appointmentSave`/`appointmentsDelete` back onto your own signal is on you - see the [edit surface](#edit-surface) section.
+
+## Toolbar
+
+Today, prev/next, the period label, and the view switch, all in `<et-scheduler>`'s own header. Below a ~480px container width (a CSS container query on the scheduler itself, not a page-level media query, so it responds to how much room `<et-scheduler>` actually has) the view switch drops onto its own row below the nav controls; the period label always truncates with an ellipsis rather than pushing other controls off-screen.
+
+Toolbar actions are the same self-registering-feature mechanism as everything else - `registerToolbarAction({ label, icon?, run, order, enabled })` on [`SCHEDULER_FEATURE_HOST`](#feature-host). One is built in:
+
+| Directive                         | Does                                                                                                                                                                      | Default order |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `etSchedulerActionAddAppointment` | Opens the [edit surface](#edit-surface) for a brand-new, blank, top-level appointment - anchored to `focusedDate`, defaulting to the next hour if that's today, else 9am. | `0`           |
+
+```html
+<et-scheduler [etSchedulerActionAddAppointment]="{ enabled: false }" [appointments]="appointments" />
+```
+
+Like the edit surface's own "Add sub-appointment"/"Delete" actions, this depends on the default edit surface (it's what the dialog it opens is) - a bare `[etScheduler]` composition needs its own "new appointment" affordance, the same caveat [clicking a badge](#month-view) already has.
 
 ## Month view
 
@@ -85,6 +101,8 @@ Clicking a badge (in the grid or the overflow popover) sets `selectedAppointment
 ## Time grid: week & day view
 
 An hour axis with one column per day - a single column for the day view, seven for the week view. Both are the **same** `<et-scheduler-time-grid-view>`; only the visible range differs, driven by `view`. All-day appointments render as one bar spanning the visible days they cover in a strip above the hour grid - a 3-day appointment draws once, not once per day - stacked into rows when two spans overlap; timed appointments are laid out at their actual position and duration.
+
+The 24-hour body is bounded and internally scrollable (`--et-scheduler-time-grid-body-max-height`, default `600px`) rather than growing the page - the day header and all-day strip above it always stay in view. On mount it scrolls itself to a relevant hour: the current time (with an hour of lead-in) when today is one of the visible days, else the earliest appointment's hour, else 9am - so opening day/week view never starts on an empty screen scrolled to midnight. It scrolls once, on mount, not on every `focusedDate` change - stepping to the next day/week never yanks your own scroll position back.
 
 <StoryEmbed id="components-scheduler--week" height="640px" />
 
@@ -211,7 +229,7 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ### Feature host
 
-`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, and `registerBadgeAdornment()` / `badgeAdornments()` - see [badge composability](#badge-composability). It's modeled on the [table](/components/table)'s feature host. The [edit surface](#edit-surface) has its own, separately-scoped host - see [edit-surface feature host](#edit-surface-feature-host).
+`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, `registerBadgeAdornment()` / `badgeAdornments()` (see [badge composability](#badge-composability)), and `registerToolbarAction()` / `toolbarActions()` (see [toolbar](#toolbar)). It's modeled on the [table](/components/table)'s feature host. `addAppointment()` opens the default edit surface for a brand-new appointment - the same "only meaningful with that default surface" caveat as `etSchedulerActionAddAppointment`, exposed here so the built-in toolbar action can call it without importing `SchedulerComponent` directly. The [edit surface](#edit-surface) has its own, separately-scoped host - see [edit-surface feature host](#edit-surface-feature-host).
 
 ## Accessibility
 

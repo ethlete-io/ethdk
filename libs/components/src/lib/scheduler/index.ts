@@ -2,6 +2,7 @@ export * from './scheduler-errors';
 export * from './scheduler-labels';
 export * from './scheduler.types';
 export * from './scheduler.imports';
+export * from './scheduler-action-add-appointment.directive';
 export * from './scheduler-action-add-sub-appointment.directive';
 export * from './scheduler-action-delete.directive';
 export * from './scheduler-badge-chain-count.component';

@@ -1,6 +1,6 @@
 import { Appointment } from '../../scheduler.types';
 import { buildAppointmentTree } from './scheduler-tree';
-import { buildSchedulerTimeGrid } from './scheduler-time-grid';
+import { buildSchedulerTimeGrid, computeInitialScrollHour } from './scheduler-time-grid';
 
 const appointment = (
   id: string,
@@ -162,5 +162,32 @@ describe('buildSchedulerTimeGrid', () => {
       expect(allDayOf('b')(grid)?.row).toBe(1);
       expect(grid.allDayRowCount).toBe(2);
     });
+  });
+});
+
+describe('computeInitialScrollHour', () => {
+  it('scrolls to an hour of lead-in before the current time when today is visible', () => {
+    const grid = buildGrid([]);
+
+    expect(computeInitialScrollHour(grid, new Date(2026, 6, 15, 14, 30))).toBe(13);
+  });
+
+  it('clamps to 0 rather than going negative near midnight', () => {
+    const grid = buildGrid([]);
+
+    expect(computeInitialScrollHour(grid, new Date(2026, 6, 15, 0, 15))).toBe(0);
+  });
+
+  it('falls back to an hour before the earliest appointment when today is not visible', () => {
+    const otherDay = new Date(2026, 6, 20);
+    const grid = buildGrid([appointment('a', new Date(2026, 6, 20, 10), new Date(2026, 6, 20, 11))], [otherDay]);
+
+    expect(computeInitialScrollHour(grid, new Date(2026, 6, 15, 14, 30))).toBe(9);
+  });
+
+  it('defaults to 8 when today is not visible and there are no appointments', () => {
+    const grid = buildGrid([], [new Date(2026, 6, 20)]);
+
+    expect(computeInitialScrollHour(grid, new Date(2026, 6, 15, 14, 30))).toBe(8);
   });
 });

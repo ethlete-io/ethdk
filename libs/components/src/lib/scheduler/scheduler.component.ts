@@ -10,12 +10,20 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { format, isSameMonth, isSameYear } from 'date-fns';
+import { randomId } from '@ethlete/core';
+import { addHours, format, isSameDay, isSameMonth, isSameYear, setHours, setMinutes, startOfDay } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
-import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
+import { CHEVRON_ICON, IconDirective, PLUS_ICON, provideIcons } from '../icon';
 import { createOverlayOpener } from '../overlay';
-import { SCHEDULER_FEATURE_HOST, SchedulerBadgeAdornment, SchedulerDirective, SchedulerFeatureHost } from './headless';
+import {
+  SCHEDULER_FEATURE_HOST,
+  SchedulerBadgeAdornment,
+  SchedulerDirective,
+  SchedulerFeatureHost,
+  SchedulerToolbarAction,
+} from './headless';
+import { SchedulerActionAddAppointmentDirective } from './scheduler-action-add-appointment.directive';
 import { SchedulerAgendaViewComponent } from './scheduler-agenda-view.component';
 import { SchedulerBadgeChainCountDirective } from './scheduler-badge-chain-count.directive';
 import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.directive';
@@ -42,7 +50,10 @@ import { Appointment, AppointmentId, SchedulerView } from './scheduler.types';
     SchedulerMonthViewComponent,
     SchedulerTimeGridViewComponent,
   ],
-  providers: [provideIcons(CHEVRON_ICON), { provide: SCHEDULER_FEATURE_HOST, useExisting: SchedulerComponent }],
+  providers: [
+    provideIcons(CHEVRON_ICON, PLUS_ICON),
+    { provide: SCHEDULER_FEATURE_HOST, useExisting: SchedulerComponent },
+  ],
   hostDirectives: [
     {
       directive: SchedulerDirective,
@@ -57,6 +68,7 @@ import { Appointment, AppointmentId, SchedulerView } from './scheduler.types';
     { directive: SchedulerBadgeTimeRangeDirective, inputs: ['etSchedulerBadgeTimeRange'] },
     { directive: SchedulerBadgeLocationDirective, inputs: ['etSchedulerBadgeLocation'] },
     { directive: SchedulerBadgeChainCountDirective, inputs: ['etSchedulerBadgeChainCount'] },
+    { directive: SchedulerActionAddAppointmentDirective, inputs: ['etSchedulerActionAddAppointment'] },
   ],
   host: {
     class: 'et-scheduler',
@@ -125,6 +137,16 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   );
 
+  // UI contributed by toolbar features (just "Add appointment" today) - rendered in the header
+  // alongside the built-in nav controls. Same registration story as the badge adornments above.
+  private toolbarActionList = signal<SchedulerToolbarAction[]>([]);
+
+  public toolbarActions = computed(() =>
+    this.toolbarActionList()
+      .filter((action) => action.enabled?.() ?? true)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+  );
+
   /**
    * Opens `<et-scheduler-edit-surface>` for the selected appointment - covers the zero-config
    * case (no feature directives applied) per the plan. Its result bubbles as `appointmentSave` /
@@ -151,20 +173,28 @@ export class SchedulerComponent implements SchedulerFeatureHost {
         return;
       }
 
-      untracked(() =>
-        this.editSurfaceOpener.open({
-          bindings: [
-            inputBinding('appointment', () => appointment),
-            inputBinding('appointments', () => this.headless.appointments()),
-          ],
-        }),
-      );
+      untracked(() => this.openEditSurface(appointment));
     });
   }
 
   /** Bound to the view-switch's `(valueChange)` - safe to cast since every `<et-segmented-button>` below carries a `SchedulerView` literal. */
   public setView(value: unknown) {
     this.headless.view.set(value as SchedulerView);
+  }
+
+  /**
+   * Synthesizes a brand-new, blank top-level appointment - anchored to `focusedDate` so it lands
+   * in whatever period is currently in view, defaulting to the next hour if that's today, else a
+   * business-hours 9am - and opens the edit surface for it. Run by the built-in
+   * `etSchedulerActionAddAppointment` toolbar action; call directly to trigger the same flow from
+   * your own UI (`<et-scheduler #s>` then `s.addAppointment()`).
+   */
+  public addAppointment() {
+    const day = startOfDay(this.headless.focusedDate());
+    const hour = isSameDay(day, new Date()) ? Math.min(23, new Date().getHours() + 1) : 9;
+    const start = setMinutes(setHours(day, hour), 0);
+
+    this.openEditSurface({ id: randomId(), parentId: null, title: '', start, end: addHours(start, 1) });
   }
 
   /** The scheduler's own element. Part of the feature contract (a feature is a directive on it). */
@@ -189,5 +219,19 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   /** Part of the feature contract - see `SchedulerFeatureHost`. */
   public registerBadgeAdornment(adornment: SchedulerBadgeAdornment) {
     this.badgeAdornmentList.update((list) => [...list, adornment]);
+  }
+
+  /** Part of the feature contract - see `SchedulerFeatureHost`. */
+  public registerToolbarAction(action: SchedulerToolbarAction) {
+    this.toolbarActionList.update((list) => [...list, action]);
+  }
+
+  private openEditSurface(appointment: Appointment) {
+    this.editSurfaceOpener.open({
+      bindings: [
+        inputBinding('appointment', () => appointment),
+        inputBinding('appointments', () => this.headless.appointments()),
+      ],
+    });
   }
 }

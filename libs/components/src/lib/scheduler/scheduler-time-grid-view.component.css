@@ -17,6 +17,12 @@
     initial-value: 24px;
   }
 
+  @property --et-scheduler-time-grid-body-max-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 600px;
+  }
+
   .et-scheduler-time-grid-view {
     display: flex;
     flex-direction: column;
@@ -24,6 +30,14 @@
 
   .et-scheduler-time-grid-row {
     display: flex;
+  }
+
+  /* Bounded and internally scrollable so the day header and all-day strip above it (both plain
+     flow siblings, not sticky) stay fully visible instead of scrolling away with 24 hours of
+     mostly-empty grid. `SchedulerTimeGridViewComponent` scrolls this to a relevant hour on mount. */
+  .et-scheduler-time-grid-body {
+    overflow-y: auto;
+    max-block-size: var(--et-scheduler-time-grid-body-max-height);
   }
 
   .et-scheduler-time-grid-gutter {
