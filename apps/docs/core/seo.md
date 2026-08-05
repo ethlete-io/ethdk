@@ -118,6 +118,62 @@ All title and meta content runs through the configured transformers and re-appli
 
 `transformer(text, locale)` is deliberately a different mechanism from the UI library's [label tokens](/components/localization): the strings here are **yours** (route titles, meta content), so there is no default wording to override - each one is handed to your translator instead. Label tokens exist for the opposite case, where the SDK wrote the string.
 
-::: warning Deprecated: `SeoDirective`
-The old Observable-based `SeoDirective` (and its `SeoConfig` types) is deprecated and not SSR-safe. Use the binding functions above instead.
-:::
+## Migrating from `SeoDirective`
+
+The Observable-based `SeoDirective` and its `SeoConfig` types were **removed in v5**. It wrote to
+`document` directly (so it never worked under SSR) and it kept one config object per component,
+which is why a child route could only override a parent by re-declaring the whole thing. The
+bindings above replace it one key at a time - each one composes and cleans up on its own.
+
+Drop `SeoDirective` from `hostDirectives` / `imports` and replace the `updateConfig({ … })` call
+with the binding per key. Values that were Observables become signals (`toSignal()` at the edge, or
+a `computed`):
+
+```ts
+// before
+@Component({ hostDirectives: [SeoDirective] })
+export class ArticleComponent {
+  private seo = inject(SeoDirective);
+
+  constructor() {
+    this.seo.updateConfig({
+      title: this.article$.pipe(map((a) => a.title)),
+      description: 'A brief description',
+      canonical: 'https://example.com/article',
+      og: { image: 'https://example.com/image.jpg' },
+    });
+  }
+}
+
+// after
+@Component({})
+export class ArticleComponent {
+  private article = toSignal(this.article$);
+
+  constructor() {
+    applyHeadTitleBinding(computed(() => this.article()?.title ?? ''));
+    applyDescriptionBinding('A brief description');
+    applyCanonicalBinding('https://example.com/article');
+    applyOpenGraphBindings({ images: ['https://example.com/image.jpg'] });
+  }
+}
+```
+
+| `SeoConfig` key              | Replacement                                                   |
+| ---------------------------- | ------------------------------------------------------------- |
+| `title`                      | [`applyHeadTitleBinding`](#title)                             |
+| `description`                | `applyDescriptionBinding`                                     |
+| `keywords`                   | `applyKeywordsBinding`                                        |
+| `robots`                     | `applyRobotsBinding` (takes a directive object, not a string) |
+| `icon`                       | `applyLinkBinding({ rel: 'icon', href })`                     |
+| `themeColor` / `colorScheme` | `applyMetaBinding({ name: 'theme-color' \| 'color-scheme' })` |
+| `canonical`                  | `applyCanonicalBinding`                                       |
+| `alternate`                  | `applyAlternateBinding` / `applyAlternateLanguagesBindings`   |
+| `og`                         | `applyOpenGraphBindings`                                      |
+| `twitter`                    | `applyTwitterCardBindings`                                    |
+| `facebook`                   | `applyOpenGraphBindings` (Facebook reads Open Graph)          |
+| any other key                | `applyMetaBinding({ name, content })`                         |
+
+A child component no longer re-declares its parent's config to override one key: title parts compose
+through the [title store](#title), and duplicate meta and link tags are deduplicated by selector as
+described above.

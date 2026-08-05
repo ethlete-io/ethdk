@@ -77,17 +77,16 @@ otp-input, `container-type` in stream/pip.
 Nothing else tracks this, so it lives here until a real changelog/migration doc
 exists.
 
-- **`core/seo.directive.ts` - remove.** Already `@deprecated`, and the only real
-  SSR crash risk left in `core`: bare `document` access at lines 98–154, no
-  `DOCUMENT` injection, no guard. Deliberately **not** fixed in place - patching
-  a directive that is scheduled for deletion is wasted work. The other `core`
-  global-access stragglers (`scrolling/scrollable.ts`, `animations/animation-utils.ts`)
-  were guarded instead, since they stay.
+- `core/seo.directive.ts` - **done** (2026-08-05). Deleted along with
+  `seo.directive.types.ts`; the SEO guide gained a per-`SeoConfig`-key migration
+  table. The other `core` global-access stragglers (`scrolling/scrollable.ts`,
+  `animations/animation-utils.ts`) were guarded instead, since they stay.
+  **`@ethlete/core` consumers still on the directive must migrate** - 15 view
+  components in `fut-frontend` (`libs/domain/voting-public/campaigns`) use it.
 
-## Tech debt notes (codebase is very clean - 2 TODOs total)
+## Tech debt notes (codebase is very clean - 0 TODOs left)
 
-- `bracket/index.ts:1` - narrow the public surface: `./core` and `./linked` still
-  re-export internal engine builders next to the public data types. The TODO waited
-  on the default cards, which have since shipped, so it is actionable now. (The
-  bracket docs' own TODOs are gone.)
+- `bracket/index.ts` - **done** (2026-08-05). `./core` and `./linked` are now
+  explicit named re-exports of the data types, enums, relations and swiss group
+  types; the engine builders stay internal to the lib.
 - Docs coverage: complete - every public domain has a docs page.
