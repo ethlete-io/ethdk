@@ -171,7 +171,7 @@
         inset: 0;
         inline-size: 100%;
         block-size: 100%;
-        object-fit: cover;
+        object-fit: contain;
         transition: opacity var(--et-dropzone-transition-duration) ease;
       }
 
@@ -238,7 +238,7 @@
         .et-dropzone-preview-image {
           inline-size: 100%;
           block-size: 100%;
-          object-fit: cover;
+          object-fit: contain;
         }
 
         .et-dropzone-file-icon {
