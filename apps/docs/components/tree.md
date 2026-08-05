@@ -90,6 +90,8 @@ Selections are independent per node - a branch is not implied by its children, a
 
 Activating a branch selects **and** expands it (a folder click is both), so `selectionMode="none"` is the way to get expansion-only rows.
 
+The two modes look different on purpose. `single` fills the one selected row with the accent and tints its label to match; `multiple` keeps the label in normal text color, fills far more faintly, and marks each selected row with a check at its trailing edge - so a run of adjacent selections stays readable instead of merging into one accent block.
+
 <StoryEmbed id="components-tree--multi-select" height="520px" />
 
 ## Lazy loading, and what happens when it fails
@@ -161,7 +163,7 @@ Public design tokens: `--et-tree-indent` (default `18px`), `--et-tree-node-paddi
 
 Indentation is padding on the flat row rather than nested boxes, which is what keeps the hover and selection tints spanning the full width at every depth - so `--et-tree-indent` is the one token to reach for when rows feel cramped or too far out.
 
-Colors resolve from the app-registered surface and color themes: rows take their text from `--et-surface-color-solid`, their hover and active tints from `--et-surface-interaction-solid`, and the selected state from `--et-theme-color-primary-solid` and `--et-theme-color-ink-solid`. A selected row that is hovered deepens its accent instead of falling back to the neutral tint. Failed-branch text uses `--et-tree-error-color`, which falls back to muted body text - point it at your error theme's ink color if you want a red one, since the tree deliberately does not require an app to register a `type: 'error'` theme just to render. See [theming](/core/theming).
+Colors resolve from the app-registered surface and color themes: rows take their text from `--et-surface-color-solid`, their hover and active tints from `--et-surface-interaction-solid`, and the selected state from `--et-theme-color-primary-solid` and `--et-theme-color-ink-solid` (in `multiple` mode only the check and the faint fill use the accent - the label keeps `--et-surface-color-solid`). A selected row that is hovered deepens its accent instead of falling back to the neutral tint. Failed-branch text uses `--et-tree-error-color`, which falls back to muted body text - point it at your error theme's ink color if you want a red one, since the tree deliberately does not require an app to register a `type: 'error'` theme just to render. See [theming](/core/theming).
 
 ## Error codes
 

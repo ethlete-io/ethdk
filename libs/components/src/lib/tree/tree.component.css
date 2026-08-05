@@ -168,6 +168,42 @@
     }
   }
 
+  /* Must stay after `.et-tree-node`: the base selected rule and this one both weigh a single class
+     plus an attribute, so source order is what lets multi select win. Multi select stacks selected
+     rows into one slab, so it states the selection with a mark and keeps the fill and the label
+     untinted; single select only ever fills one row, where the stronger tint reads fine. */
+  .et-tree:where([aria-multiselectable]) .et-tree-node {
+    &::after {
+      content: '';
+      flex: none;
+      inline-size: 4px;
+      block-size: 8px;
+      margin-inline: 3px;
+      border: solid var(--et-theme-color-primary-solid, currentColor);
+      border-width: 0 2px 2px 0;
+      rotate: 45deg;
+      opacity: 0;
+      transition: opacity var(--et-tree-duration) ease;
+    }
+
+    &:where([data-selected]) {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 8%, transparent);
+      color: inherit;
+
+      &::after {
+        opacity: 1;
+      }
+
+      &:hover {
+        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 14%, transparent);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 20%, transparent);
+      }
+    }
+  }
+
   .et-tree-status {
     color: var(--et-surface-color-muted-solid, GrayText);
 
@@ -184,6 +220,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .et-tree-node,
+    .et-tree-node::after,
     .et-tree-node .et-tree-node-chevron {
       transition: none;
     }
