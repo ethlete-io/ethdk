@@ -620,3 +620,70 @@ today mutually exclusive; a custom `set` op is what joins them.
   preset each.** `fillStrings()` always arms `'short'`, `fillNumbers()`
   always `'zero'`. Once presets randomize, the natural shape is "fill every
   string with «preset»" as a submenu rather than three fixed verbs.
+
+## Tree: multi select selection stacks into a slab
+
+`tree.component.css` already anticipated this - the multi-select block
+(`.et-tree:where([aria-multiselectable]) .et-tree-node`) exists purely to
+weaken the single-select treatment, with a comment saying so ("Multi select
+stacks selected rows into one slab, so it states the selection with a mark
+and keeps the fill and the label untinted"): the accent fill drops from 16%
+to 8% and the `--et-theme-color-ink-solid` label recolor is reverted to
+`inherit`. It didn't go far enough. Rows are flat flex boxes with no margin
+between them, so consecutive selected rows paint one continuous
+`--et-theme-color-primary-solid` band - the per-row `--et-tree-node-radius`
+only rounds the outer corners of each row and is invisible mid-run. Select
+five siblings and you get a solid colored block, not five marked rows.
+
+The SDK's own list-style multi-select controls both resolve this by not
+filling at all:
+
+- `select-option.component.css` states selection **only** through the
+  `.et-select-option-check` icon (opacity 0 → 1, colored
+  `--et-theme-color-primary-solid`); its backgrounds are reserved
+  exclusively for hover / `:active` / keyboard-active. A selected option has
+  no fill in single or multiple mode.
+- `cascader-panel.component.css` does the same in multi mode with a leading
+  `.et-cascader-check` square (a real checkbox shape, also driven by
+  `data-indeterminate`), and lets `[data-selected]` change only ink color and
+  `font-weight: 500`.
+
+Tree already has the mark half of that - the `::after` CSS-drawn checkmark
+on the multi-select block - but it's a **trailing** 4x8px pseudo-element
+rather than a leading check in a reserved slot, so it doesn't read as the
+primary selection signal the way cascader's leading square does. The likely
+fix is dropping the selected fill entirely in multi-select mode (keep fill
+for hover/active only, matching select-option) and promoting the mark:
+leading, checkbox-shaped, in a slot that's reserved whether or not the row
+is selected, so labels don't shift. Single select can keep its current fill -
+one filled row was never the problem.
+
+## Tree: disabled rows still take hover/active tint when multi selectable
+
+`.et-tree-node:where([aria-disabled])` resets `&:hover, &:active { background:
+transparent }`, which works in single select: that rule and the selected
+hover it has to beat both weigh one class plus one pseudo-class, and the
+disabled block is later in the file. It loses in multi select, where the
+same hover lives under a descendant selector -
+`.et-tree:where([aria-multiselectable]) .et-tree-node:where([data-selected]):hover`
+is two classes plus a pseudo-class, outweighing the disabled reset
+regardless of order. So a selected row in a disabled multi-select tree still
+lights up on hover and darkens on press while every interaction is refused
+(`TreeDirective.select`/`expand`/`focus` all early-return on `disabled()`).
+Both the tree-wide `disabled` input and a per-node `node.disabled` produce
+the same `aria-disabled` host attribute (`tree-node.directive.ts`), so this
+hits both.
+
+Two ways out, and the second is probably the real one:
+
+- Raise the reset's weight to match (scope it under the same
+  `.et-tree:where([aria-multiselectable])` prefix, or bind it to
+  `[data-disabled]` at equal depth).
+- Follow the precedent instead: `select-option` and `cascader-panel` both
+  give disabled rows `opacity: 0.4` (plus `cursor`), which mutes the fill,
+  the label and the mark in one rule and doesn't need a reset per
+  interaction state. Tree currently only recolors the label to
+  `--et-surface-color-muted-solid` and leaves the selected accent fill at
+  full strength - so a disabled tree with selections looks essentially
+  identical to an enabled one. Adopting the opacity approach fixes the
+  missing disabled affordance and the specificity leak together.
