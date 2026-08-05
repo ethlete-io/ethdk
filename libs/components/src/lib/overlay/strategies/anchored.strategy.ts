@@ -23,6 +23,13 @@ export type AnchoredOverlayStrategyOptions = {
   viewportPadding?: Padding | null;
   shift?: boolean | OverlayRuntimeShiftOptions;
   autoResize?: boolean;
+  /**
+   * Minimum space (px) the placement's own side must offer before the pane moves to the opposite one.
+   * Keeps a scrollable pane below its field with a shorter list rather than flipping it above, and -
+   * unlike `fallbackPlacements` - is never re-decided by the pane's content changing while it is
+   * open. Requires `autoResize`; replaces `fallbackPlacements`.
+   */
+  minAvailableSpace?: number;
   autoHide?: boolean;
   autoCloseIfReferenceHidden?: boolean;
   mirrorWidth?: boolean;
@@ -49,6 +56,7 @@ export type AnchoredPositionOptions = Pick<
   | 'viewportPadding'
   | 'shift'
   | 'autoResize'
+  | 'minAvailableSpace'
   | 'autoHide'
   | 'autoCloseIfReferenceHidden'
   | 'mirrorWidth'
@@ -70,6 +78,7 @@ export const buildAnchoredRuntimePositionStrategy =
           viewportPadding: options.viewportPadding,
           shift: options.shift,
           autoResize: options.autoResize,
+          minAvailableSpace: options.minAvailableSpace,
           autoHide: options.autoHide,
           autoCloseIfReferenceHidden: options.autoCloseIfReferenceHidden,
           mirrorWidth: options.mirrorWidth,

@@ -265,6 +265,10 @@ Also available: `transformingFullScreenDialogToDialogOverlayStrategy` and `trans
 
 Anchored strategies position relative to `config.origin` using floating-ui (`placement`, `fallbackPlacements`, `offset`, `shift`, `autoHide`, …). With `arrow: true` (the `anchoredDialogOverlayStrategy` default) the pane renders an arrow pointing at the origin. The arrow takes its background and border from the [surface theme](/core/theming) so it reads as part of the panel - overridable via `--et-overlay-arrow-background` / `--et-overlay-arrow-border` - and is the same arrow used by menus, tooltips and toggletips. Half of it hangs off the pane, so its two bordered sides end exactly where the pane's own border line resumes and the two read as one outline.
 
+**`minAvailableSpace`** changes _when_ the pane switches sides. By default that is floating-ui's `flip`: as soon as the pane's content does not fit below the origin, it goes above. For a pane that scrolls - a listbox, a menu - the better trade is usually the opposite, and that is what `minAvailableSpace` expresses: keep the pane below while at least that many pixels are left there (`autoResize` shrinks it into them), switch sides only below the minimum, and take the roomier side when neither reaches it. It replaces `flip` (so `fallbackPlacements` no longer applies) and forces `shift`'s cross axis off, since a pane that shrinks into its side must not slide over the origin instead.
+
+The reason to prefer it over `fallbackPlacements` for such a pane is stability: it measures the space around the origin, never the pane, so **an open pane cannot jump sides when its content changes**. `flip` compares the pane's current height against the space below it while `autoResize` derives that height from the placement `flip` just picked - a filtered list or an animated resize then flips the pane back and forth mid-animation. `et-select` and `et-cascader` both use it with a `160px` minimum.
+
 `arrowPadding` (default `16` for `anchoredDialogOverlayStrategy`, `12` for a bare anchored strategy) is how close the arrow's base may get to the pane's corners. Keep it above the pane's corner radius: on aligned placements (`'bottom-end'`, `'left-start'`, …) and on panes shifted off center near a viewport edge, the arrow slides all the way to that limit, and a smaller value lets its base ride into the rounded corner.
 
 ## Color theme context
@@ -301,24 +305,25 @@ When an anchor/trigger exists (and mode is non-modal) the surface opens anchored
 
 `[etOverlay]` mirrors most of the imperative config as inputs:
 
-| Input                                        | Default       | Notes                                                |
-| -------------------------------------------- | ------------- | ---------------------------------------------------- |
-| `mode`                                       | `'non-modal'` | `'modal'` adds backdrop + focus trap semantics       |
-| `role`                                       | -             | Overrides the mode-derived ARIA role                 |
-| `disabled`                                   | `false`       | Ignores open requests while set                      |
-| `disableClose`                               | `false`       | Forces `closeOnEscape` / `closeOnOutsidePointer` off |
-| `closeOnEscape` / `closeOnOutsidePointer`    | `true`        |                                                      |
-| `hasBackdrop`                                | -             | Follows `mode` when unset                            |
-| `autoFocus` / `restoreFocus`                 | - / `true`    | Initial focus target; restore focus on close         |
-| `hostClass` / `backdropClass` / `panelClass` | -             | Extra classes per overlay element                    |
-| `placement`                                  | `'bottom'`    | floating-ui placement (anchored mode)                |
-| `fallbackPlacements`                         | -             | Tried when `placement` doesn't fit                   |
-| `offset` / `viewportPadding`                 | `8` / `8`     | Distance from anchor / viewport edges                |
-| `shift`                                      | `true`        | Slide along the axis to stay in the viewport         |
-| `autoResize`                                 | `false`       | Constrain size to the available space                |
-| `autoHide`                                   | `false`       | Hide when the anchor leaves the viewport             |
-| `autoCloseIfReferenceHidden`                 | `false`       | Close instead of just hiding                         |
-| `mirrorWidth`                                | `false`       | Match the anchor's width (select-style panels)       |
+| Input                                        | Default       | Notes                                                               |
+| -------------------------------------------- | ------------- | ------------------------------------------------------------------- |
+| `mode`                                       | `'non-modal'` | `'modal'` adds backdrop + focus trap semantics                      |
+| `role`                                       | -             | Overrides the mode-derived ARIA role                                |
+| `disabled`                                   | `false`       | Ignores open requests while set                                     |
+| `disableClose`                               | `false`       | Forces `closeOnEscape` / `closeOnOutsidePointer` off                |
+| `closeOnEscape` / `closeOnOutsidePointer`    | `true`        |                                                                     |
+| `hasBackdrop`                                | -             | Follows `mode` when unset                                           |
+| `autoFocus` / `restoreFocus`                 | - / `true`    | Initial focus target; restore focus on close                        |
+| `hostClass` / `backdropClass` / `panelClass` | -             | Extra classes per overlay element                                   |
+| `placement`                                  | `'bottom'`    | floating-ui placement (anchored mode)                               |
+| `fallbackPlacements`                         | -             | Tried when `placement` doesn't fit                                  |
+| `offset` / `viewportPadding`                 | `8` / `8`     | Distance from anchor / viewport edges                               |
+| `shift`                                      | `true`        | Slide along the axis to stay in the viewport                        |
+| `autoResize`                                 | `false`       | Constrain size to the available space                               |
+| `minAvailableSpace`                          | -             | Shrink into the current side above this many px instead of flipping |
+| `autoHide`                                   | `false`       | Hide when the anchor leaves the viewport                            |
+| `autoCloseIfReferenceHidden`                 | `false`       | Close instead of just hiding                                        |
+| `mirrorWidth`                                | `false`       | Match the anchor's width (select-style panels)                      |
 
 ## Routing inside overlays
 

@@ -1,5 +1,15 @@
 import { isDevMode } from '@angular/core';
-import { autoUpdate, computePosition, flip, limitShift, offset, shift } from '@floating-ui/dom';
+import {
+  autoUpdate,
+  computePosition,
+  flip,
+  limitShift,
+  Middleware,
+  offset,
+  Padding,
+  Placement,
+  shift,
+} from '@floating-ui/dom';
 import { AngularRenderer } from '../providers';
 import { isHTMLElement } from './overlay-focus';
 import { registerAnchoredPositionSetup } from './overlay-position';
@@ -40,6 +50,79 @@ const requireMiddlewareExtras = (feature: string) => {
   return middlewareExtras;
 };
 
+type AnchoredSide = 'top' | 'bottom' | 'left' | 'right';
+
+const OPPOSITE_SIDE: Record<AnchoredSide, AnchoredSide> = {
+  top: 'bottom',
+  bottom: 'top',
+  left: 'right',
+  right: 'left',
+};
+
+const PREFERRED_SIDE_NAME = 'etPreferredSide';
+
+type PreferredSideData = { availableSpace?: Partial<Record<AnchoredSide, number>> };
+
+const getAnchoredSide = (placement: Placement) => placement.split('-')[0] as AnchoredSide;
+
+const toOppositeSidePlacement = (placement: Placement) => {
+  const [side, alignment] = placement.split('-') as [AnchoredSide, string | undefined];
+  const opposite = OPPOSITE_SIDE[side];
+
+  return (alignment ? `${opposite}-${alignment}` : opposite) as Placement;
+};
+
+/**
+ * The `flip` replacement behind `minAvailableSpace` - see that option. Every decision here has to
+ * stay derived from the space around the reference alone: the moment the pane's own size enters it,
+ * `size`'s cap feeds back into the next placement and an open pane starts flipping on its own.
+ */
+const preferredSide = (options: {
+  minAvailableSpace: number;
+  padding: Padding;
+  boundary: Element | Element[] | undefined;
+}): Middleware => ({
+  name: PREFERRED_SIDE_NAME,
+  options,
+  async fn(state) {
+    const { placement, initialPlacement, rects, middlewareData } = state;
+    const side = getAnchoredSide(placement);
+    // via the platform, like every built-in middleware - importing `detectOverflow` from
+    // `@floating-ui/dom` instead pulls a second copy of it into the bundle
+    const overflow = await state.platform.detectOverflow(state, {
+      padding: options.padding,
+      boundary: options.boundary,
+    });
+    const isYAxis = side === 'top' || side === 'bottom';
+    // the pane's own size cancels out of `size - overflow[side]`: what remains is the distance from
+    // its anchored edge to the boundary - the same number the `size` middleware caps the pane to
+    const available = (isYAxis ? rects.floating.height : rects.floating.width) - overflow[side];
+    const availableSpace: Partial<Record<AnchoredSide, number>> = {
+      ...(middlewareData[PREFERRED_SIDE_NAME] as PreferredSideData | undefined)?.availableSpace,
+      [side]: available,
+    };
+
+    if (available >= options.minAvailableSpace) {
+      return {};
+    }
+
+    const oppositeAvailable = availableSpace[OPPOSITE_SIDE[side]];
+
+    if (oppositeAvailable === undefined) {
+      return { data: { availableSpace }, reset: { placement: toOppositeSidePlacement(placement) } };
+    }
+
+    // ties go to the placement's own side, which also terminates the reset loop after at most one
+    // measurement per side
+    const keepSide =
+      side === getAnchoredSide(initialPlacement) ? available >= oppositeAvailable : available > oppositeAvailable;
+
+    return keepSide
+      ? { data: { availableSpace } }
+      : { data: { availableSpace }, reset: { placement: toOppositeSidePlacement(placement) } };
+  },
+});
+
 export const createAnchoredPositionCleanup = (
   strategy: OverlayRuntimeAnchoredPosition,
   paneElement: HTMLElement,
@@ -49,6 +132,12 @@ export const createAnchoredPositionCleanup = (
   // mirrorWidth needs a real element to measure; virtual references fall back to max-content
   const mirrorWidthElement =
     strategy.mirrorWidth && isHTMLElement(strategy.referenceElement) ? strategy.referenceElement : null;
+
+  if (strategy.minAvailableSpace !== undefined && !strategy.autoResize && isDevMode()) {
+    console.error(
+      'An anchored overlay sets `minAvailableSpace` without `autoResize`, so it is kept on a side it does not fit on with nothing capping it to the space there. Enable `autoResize` or drop `minAvailableSpace`.',
+    );
+  }
 
   renderer.setStyle(paneElement, {
     position: 'absolute',
@@ -63,17 +152,30 @@ export const createAnchoredPositionCleanup = (
 
     middleware.push(offset(strategy.offset ?? 8));
     middleware.push(
-      flip({
-        fallbackPlacements: strategy.fallbackPlacements ?? undefined,
-        fallbackAxisSideDirection: 'start',
-        boundary: strategy.boundary,
-      }),
+      strategy.minAvailableSpace === undefined
+        ? flip({
+            fallbackPlacements: strategy.fallbackPlacements ?? undefined,
+            fallbackAxisSideDirection: 'start',
+            boundary: strategy.boundary,
+          })
+        : preferredSide({
+            minAvailableSpace: strategy.minAvailableSpace,
+            // must stay the padding `size` measures with: the threshold is then compared against the
+            // very height the pane ends up capped to
+            padding: strategy.viewportPadding ?? 8,
+            boundary: strategy.boundary,
+          }),
     );
 
     if (strategy.shift !== false) {
       middleware.push(
         shift({
-          crossAxis: typeof strategy.shift === 'object' ? (strategy.shift.crossAxis ?? false) : false,
+          // floating-ui's cross axis points at the reference, so shifting on it slides the pane over
+          // the reference instead of letting it shrink - and `size` then reports the whole boundary
+          // as available height rather than the space on the pane's side
+          crossAxis:
+            strategy.minAvailableSpace === undefined &&
+            (typeof strategy.shift === 'object' ? (strategy.shift.crossAxis ?? false) : false),
           limiter: limitShift(),
           padding: strategy.viewportPadding ?? 8,
           boundary: strategy.boundary,

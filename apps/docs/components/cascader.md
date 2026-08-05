@@ -230,11 +230,11 @@ With a [flat search](#flat-search) active, the panel reports itself as a `role="
 
 Panel chrome uses the [surface theme](/core/theming); the selected chain and branch chevrons use the color theme's ink (`--et-theme-color-ink-solid`), and the error state resolves the app's `type: 'error'` theme. Public design tokens:
 
-| Token                                | Default | Purpose                         |
-| ------------------------------------ | ------- | ------------------------------- |
-| `--et-cascader-column-inline-size`   | `220px` | Width of one Miller column      |
-| `--et-cascader-panel-max-block-size` | `320px` | Max height of the panel/columns |
-| `--et-cascader-node-height`          | `36px`  | Min height of a node row        |
+| Token                                | Default | Purpose                                                                                                                                   |
+| ------------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-cascader-column-inline-size`   | `220px` | Width of one Miller column                                                                                                                |
+| `--et-cascader-panel-max-block-size` | `320px` | Max height of the panel/columns; capped further by the space next to the field ([as with the select](/components/select#panel-placement)) |
+| `--et-cascader-node-height`          | `36px`  | Min height of a node row                                                                                                                  |
 
 ## Scope
 

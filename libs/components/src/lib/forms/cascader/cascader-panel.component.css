@@ -76,6 +76,12 @@
   .et-cascader-panel {
     display: block;
     box-sizing: border-box;
+    /* an anchored pane does not clip, so dropping the pane's own cap here lets columns taller than
+       the room next to the field hang out of the pane and past the viewport edge */
+    --_et-cascader-panel-max-block-size: min(
+      var(--et-cascader-panel-max-block-size),
+      var(--et-overlay-max-height, 100vh)
+    );
     border-radius: 10px;
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     background: var(--et-surface-background-solid, rgb(32 32 32));
@@ -288,7 +294,7 @@
 
     .et-cascader-columns {
       display: flex;
-      max-block-size: var(--et-cascader-panel-max-block-size);
+      max-block-size: var(--_et-cascader-panel-max-block-size);
 
       /* the carousel viewport: exactly the windowed columns wide. `clip`, not `hidden` —
          a focused node's scrollIntoView must never desync the track transform below with
@@ -396,7 +402,7 @@
       /* fixed width — with content-derived sizing, every keystroke would resize the panel
          horizontally (the widest visible result keeps changing) */
       inline-size: min(320px, calc(100vw - 24px));
-      max-block-size: var(--et-cascader-panel-max-block-size);
+      max-block-size: var(--_et-cascader-panel-max-block-size);
       overflow-y: auto;
       overflow-x: clip;
       overscroll-behavior: contain;
@@ -415,7 +421,7 @@
       display: block;
       flex: none;
       inline-size: var(--et-cascader-column-inline-size);
-      max-block-size: var(--et-cascader-panel-max-block-size);
+      max-block-size: var(--_et-cascader-panel-max-block-size);
       overflow-y: auto;
       /* clip the X axis so the slide-in transform never spawns a horizontal scrollbar
          (overflow-y: auto would otherwise compute overflow-x to auto) */

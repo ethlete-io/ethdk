@@ -291,6 +291,14 @@ Notes:
 - For unbounded/server-side datasets, the [async options](#async-options) pattern (`filterMode="external"` + `hasMoreItems`/`loadMore`) remains the right tool - `options` composes with it, since you control the array you bind.
 - Headless: mark your scroll container with `[etSelectViewport]`, render `select.virtualizedItems()` with `[etSelectVirtualOption]="item"` rows, and apply `select.virtualWindow.paddingTop()/paddingBottom()` as block paddings around them. Without a registered viewport, every visible option renders (no windowing). `SelectItem.element()` is `null` while a data-driven option is outside the rendered window.
 
+## Panel placement
+
+The panel opens **below the field and stays there**, shrinking to the space it has (`--et-select-panel-max-height`, default `40vh`, is an upper bound - never a floor). It only moves above the field when less than `160px` are left below it, and if neither side has that much, the roomier one wins.
+
+That is a deliberate trade against floating-ui's usual flip: a shorter scrollable list under the field beats a full-height one above it, and - because the decision reads only the space around the field, never the panel's own height - **a panel already open never jumps sides**. Filtering, async options arriving or the animated block-size that follows them all resize the panel in place. A panel above the field cannot avoid moving: it grows away from the field, so its top edge travels with every content change - one more reason to prefer below.
+
+The threshold lives on the anchored overlay strategy as [`minAvailableSpace`](/components/overlays#anchored-overlays-and-the-arrow), which the [cascader](/components/cascader) panel uses the same way.
+
 ## Keyboard interaction
 
 Focus stays on the trigger the whole time; options receive _virtual_ focus, exposed via `aria-activedescendant`.
@@ -318,17 +326,17 @@ Clicking anywhere on the form field's control frame - not just the trigger - ope
 
 The trigger inherits the form field's chrome (border, focus ring, sizes, label modes - including floating labels). Colors come from the app-registered [surface/color theme systems](/core/theming); the panel re-applies the trigger location's theme context inside the overlay and elevates the surface one step. Public design tokens:
 
-| Token                               | Default | Purpose                          |
-| ----------------------------------- | ------- | -------------------------------- |
-| `--et-select-arrow-size`            | `16px`  | Trigger chevron size             |
-| `--et-select-panel-max-height`      | `40vh`  | Panel max height (scrolls)       |
-| `--et-select-panel-padding`         | `6px`   | Panel inner padding              |
-| `--et-select-option-height`         | `36px`  | Option row min height            |
-| `--et-select-option-padding-inline` | `10px`  | Option horizontal padding        |
-| `--et-select-option-gap`            | `8px`   | Gap between check icon and label |
-| `--et-select-option-border-radius`  | `6px`   | Option row corner radius         |
-| `--et-select-option-font-size`      | `14px`  | Option font size                 |
-| `--et-select-option-check-size`     | `16px`  | Selected check icon size         |
+| Token                               | Default | Purpose                                                                   |
+| ----------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `--et-select-arrow-size`            | `16px`  | Trigger chevron size                                                      |
+| `--et-select-panel-max-height`      | `40vh`  | Panel max height (scrolls); capped further by the space next to the field |
+| `--et-select-panel-padding`         | `6px`   | Panel inner padding                                                       |
+| `--et-select-option-height`         | `36px`  | Option row min height                                                     |
+| `--et-select-option-padding-inline` | `10px`  | Option horizontal padding                                                 |
+| `--et-select-option-gap`            | `8px`   | Gap between check icon and label                                          |
+| `--et-select-option-border-radius`  | `6px`   | Option row corner radius                                                  |
+| `--et-select-option-font-size`      | `14px`  | Option font size                                                          |
+| `--et-select-option-check-size`     | `16px`  | Selected check icon size                                                  |
 
 ## Error codes
 

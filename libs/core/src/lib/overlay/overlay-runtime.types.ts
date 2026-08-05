@@ -42,6 +42,22 @@ export type OverlayRuntimeAnchoredPosition = {
   arrowPadding?: Padding | null;
   viewportPadding?: Padding | null;
   autoResize?: boolean;
+  /**
+   * Keeps the pane on its placement's own side while that side offers at least this much space (px
+   * along the placement's main axis), instead of flipping as soon as the pane's content would
+   * overflow. Below the minimum the pane moves to the opposite side, and when neither side reaches
+   * it the roomier one wins. Requires `autoResize` - the pane has to shrink into what it gets.
+   *
+   * Prefer this over `fallbackPlacements` for a pane whose content is scrollable (a listbox, a
+   * menu): a shorter list under the field beats a full-height one above it, and the decision reads
+   * only the space around the reference, never the pane's own size. `flip` compares that size
+   * against the space it has while `autoResize` derives it from the placement `flip` picked, so a
+   * pane whose height changes while open - a filtered list, an animated resize - flips back and
+   * forth mid-animation. Replaces `flip`, so `fallbackPlacements` no longer applies, and forces
+   * `shift`'s cross axis off - a pane that shrinks into its side must not slide over the reference
+   * element instead.
+   */
+  minAvailableSpace?: number;
   shift?: boolean | OverlayRuntimeShiftOptions;
   autoHide?: boolean;
   autoCloseIfReferenceHidden?: boolean;

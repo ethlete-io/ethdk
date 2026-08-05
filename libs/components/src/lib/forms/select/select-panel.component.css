@@ -68,7 +68,9 @@
     display: grid;
     grid-template-rows: minmax(0, 1fr);
     box-sizing: border-box;
-    max-block-size: var(--et-select-panel-max-height);
+    /* an anchored pane does not clip, so dropping the pane's own cap here lets a panel taller than
+       the room next to the field hang out of the pane and past the viewport edge */
+    max-block-size: min(var(--et-select-panel-max-height), var(--et-overlay-max-height, 100vh));
     /* the host paints the chrome and clips; scrolling lives on the inner scroller — a
        scroller's own background is dragged along by macOS rubber-band overscroll (it is
        painted into the scrolling contents layer), which would expose the page behind the

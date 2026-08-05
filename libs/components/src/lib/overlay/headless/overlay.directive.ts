@@ -59,6 +59,7 @@ export class OverlayDirective {
   public offset = input<OffsetOptions | null>(8);
   public viewportPadding = input<Padding | null>(8);
   public autoResize = input(false, { transform: booleanAttribute });
+  public minAvailableSpace = input<number | undefined>(undefined);
   public shift = input(true, { transform: booleanAttribute });
   public autoHide = input(false, { transform: booleanAttribute });
   public autoCloseIfReferenceHidden = input(false, { transform: booleanAttribute });
@@ -212,6 +213,7 @@ export class OverlayDirective {
             offset: this.offset(),
             viewportPadding: this.viewportPadding(),
             autoResize: this.autoResize(),
+            minAvailableSpace: this.minAvailableSpace(),
             shift: this.shift(),
             autoHide: this.autoHide(),
             autoCloseIfReferenceHidden: this.autoCloseIfReferenceHidden(),
