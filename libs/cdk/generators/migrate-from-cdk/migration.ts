@@ -1,4 +1,5 @@
 import { formatFiles, Tree } from '@nx/devkit';
+import { posix } from 'node:path';
 import { ImportRewrite, readCdkImportedSymbols, renameReferences, rewriteCdkImports } from './imports.js';
 import { isSinceSatisfied, readInstalledVersion } from './installed-version.js';
 import { JUDGMENT_KINDS, loadMigrationMap, MECHANICAL_KINDS, MigrationEntry, MigrationMap } from './migration-map.js';
@@ -16,6 +17,7 @@ import {
   findInlineStyleSpans,
   findInlineTemplateSpans,
   lineOfIndex,
+  readTemplateUrl,
   rewriteStyleSheet,
   rewriteTemplate,
   transformInlineSpans,
@@ -31,6 +33,9 @@ const TARGET_PACKAGES = ['@ethlete/components', '@ethlete/core'] as const;
  * left for the report.
  */
 const SPINNER_SYMBOL = 'ProgressSpinnerComponent';
+
+/** `reshape`, so never in `rewrites` - a cdk import for it never moves on its own. */
+const PICTURE_SYMBOL = 'PictureComponent';
 
 type MigrateFromCdkSchema = MigrationScopeOptions & {
   skipFormat?: boolean;
@@ -106,16 +111,59 @@ const scanFile = (
   }
 };
 
-const rewriteFile = (filePath: string, content: string, rewrites: Map<string, ImportRewrite>) => {
-  if (isTemplate(filePath)) return rewriteTemplate(content);
+/**
+ * The template file a `.ts` file's own markup ends up in - `templateUrl`'s target, or the file itself
+ * when the template is inline.
+ */
+const templateFileFor = (filePath: string, content: string) => {
+  const templateUrl = readTemplateUrl(content, filePath);
+
+  return templateUrl ? posix.normalize(posix.join(posix.dirname(filePath), templateUrl)) : filePath;
+};
+
+/**
+ * Whether each template file's `<et-picture>` markup is safe to rewrite - only once the `.ts` file that
+ * owns it no longer imports cdk's `PictureComponent`. That row is a `reshape`, so the generator never
+ * moves it on its own; a template still bound to cdk's component must keep cdk's attribute names, or the
+ * rewrite produces a binding (`(imgLoad)`) the actually-bound component doesn't have.
+ */
+const collectPictureImportStatus = (tree: Tree, files: readonly string[]) => {
+  const movedByTemplateFile = new Map<string, boolean>();
+
+  for (const filePath of files) {
+    if (!isTypeScript(filePath)) continue;
+
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content) continue;
+
+    const stillOnCdk = readCdkImportedSymbols(content, filePath).some(({ name }) => name === PICTURE_SYMBOL);
+
+    movedByTemplateFile.set(templateFileFor(filePath, content), !stillOnCdk);
+  }
+
+  return movedByTemplateFile;
+};
+
+const rewriteFile = (
+  filePath: string,
+  content: string,
+  rewrites: Map<string, ImportRewrite>,
+  pictureImportMovedByFile: Map<string, boolean>,
+) => {
+  if (isTemplate(filePath)) {
+    return rewriteTemplate(content, { pictureImportMoved: pictureImportMovedByFile.get(filePath) });
+  }
+
   if (isStyleSheet(filePath)) return rewriteStyleSheet(content);
 
   const { content: withImports, renames } = rewriteCdkImports(content, filePath, rewrites);
   const withReferences = renameReferences(withImports, filePath, renames);
+  const pictureImportMoved = pictureImportMovedByFile.get(filePath);
   const withTemplates = transformInlineSpans(
     withReferences,
     findInlineTemplateSpans(withReferences, filePath),
-    rewriteTemplate,
+    (template) => rewriteTemplate(template, { pictureImportMoved }),
   );
 
   return transformInlineSpans(withTemplates, findInlineStyleSpans(withTemplates, filePath), rewriteStyleSheet);
@@ -154,6 +202,7 @@ export default async function migrateFromCdk(tree: Tree, schema: MigrateFromCdkS
     scanFile(report, filePath, content, map, isAvailable);
   }
 
+  const pictureImportMovedByFile = collectPictureImportStatus(tree, files);
   let rewrittenFiles = 0;
 
   for (const filePath of files) {
@@ -161,7 +210,7 @@ export default async function migrateFromCdk(tree: Tree, schema: MigrateFromCdkS
 
     if (!content) continue;
 
-    const next = rewriteFile(filePath, content, rewrites);
+    const next = rewriteFile(filePath, content, rewrites, pictureImportMovedByFile);
 
     if (next !== content) {
       tree.write(filePath, next);

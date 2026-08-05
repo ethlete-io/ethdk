@@ -109,6 +109,24 @@ export type Control = InputDirective;`,
       expect(content).toContain(`import { InputDirective } from '@ethlete/cdk';`);
       expect(content).toContain(`import { injectRouterNavigationState } from '@ethlete/core';`);
     });
+
+    it('reuses an existing aliased import instead of duplicating the specifier', async () => {
+      tree.write(
+        'src/app/app.config.ts',
+        `import { provideOverlay } from '@ethlete/cdk';
+import { provideOverlay as provideComponentsOverlay } from '@ethlete/components';
+
+export const providers = [provideOverlay(), provideComponentsOverlay()];`,
+      );
+
+      await run();
+
+      const content = tree.read('src/app/app.config.ts', 'utf-8')!;
+
+      expect(content).toContain(`import { provideOverlay as provideComponentsOverlay } from '@ethlete/components';`);
+      expect(content).not.toContain('@ethlete/cdk');
+      expect(content).toContain('export const providers = [provideComponentsOverlay(), provideComponentsOverlay()];');
+    });
   });
 
   describe('templates', () => {
@@ -167,6 +185,48 @@ export class HeroComponent {}`,
 
       expect(content).toContain('<et-picture priority (imgLoad)="onLoad()" alt="" />');
       expect(content).toContain('<b etTooltipAriaDescription="x"></b>');
+    });
+
+    it('leaves <et-picture> attributes alone while its import still points at cdk', async () => {
+      tree.write(
+        'src/app/hero.component.ts',
+        `import { Component } from '@angular/core';
+import { PictureComponent } from '@ethlete/cdk';
+
+@Component({
+  imports: [PictureComponent],
+  template: '<et-picture hasPriority (imgLoaded)="onLoad()" alt="" />',
+})
+export class HeroComponent {}`,
+      );
+
+      await run();
+
+      const content = tree.read('src/app/hero.component.ts', 'utf-8')!;
+
+      expect(content).toContain('<et-picture hasPriority (imgLoaded)="onLoad()" alt="" />');
+      expect(content).toContain(`import { PictureComponent } from '@ethlete/cdk';`);
+    });
+
+    it('gates an external template’s <et-picture> rewrite on its component’s own PictureComponent import', async () => {
+      tree.write(
+        'src/app/gallery.component.ts',
+        `import { Component } from '@angular/core';
+import { PictureComponent } from '@ethlete/cdk';
+
+@Component({
+  imports: [PictureComponent],
+  templateUrl: './gallery.component.html',
+})
+export class GalleryComponent {}`,
+      );
+      tree.write('src/app/gallery.component.html', '<et-picture hasPriority (imgLoaded)="onLoad()" alt="" />');
+
+      await run();
+
+      expect(tree.read('src/app/gallery.component.html', 'utf-8')).toBe(
+        '<et-picture hasPriority (imgLoaded)="onLoad()" alt="" />',
+      );
     });
   });
 
@@ -242,6 +302,28 @@ export class HeroComponent {}`,
       expect(report).toContain('replaced-by: becomes `FormFieldControl` in `@ethlete/components`');
       expect(report).toContain('reshape: stays `PictureComponent` in `@ethlete/components`');
       expect(report).toContain('https://ethlete-sdk-docs.web.app/components/picture');
+    });
+
+    it('flags TableImports and TabImports as needing a manual decision instead of renaming them', async () => {
+      tree.write(
+        'src/app/table.ts',
+        `import { TableImports, TabImports } from '@ethlete/cdk';
+
+export const imports = [TableImports, TabImports];`,
+      );
+
+      await run();
+
+      const content = tree.read('src/app/table.ts', 'utf-8')!;
+
+      expect(content).toContain(`import { TableImports, TabImports } from '@ethlete/cdk';`);
+
+      const report = tree.read(MIGRATE_FROM_CDK_REPORT_PATH, 'utf-8')!;
+
+      expect(report).toContain('### `TableImports`');
+      expect(report).toContain('### `TabImports`');
+      expect(report).toContain('rename+reshape: becomes `TABLE_IMPORTS` in `@ethlete/components`');
+      expect(report).toContain('rename+reshape: becomes `TAB_IMPORTS` in `@ethlete/components`');
     });
 
     it('flags themed spinner styling', async () => {

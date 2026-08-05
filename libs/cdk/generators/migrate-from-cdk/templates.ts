@@ -45,6 +45,33 @@ export const findInlineTemplateSpans = (content: string, filePath: string) =>
 
 export const findInlineStyleSpans = (content: string, filePath: string) => inlineSpansFor(content, filePath, 'styles');
 
+/** A `@Component`'s `templateUrl`, so an external template file can be traced back to the class that owns it. */
+export const readTemplateUrl = (content: string, filePath: string) => {
+  const sourceFile = createSourceFile(content, filePath);
+  let templateUrl: string | null = null;
+
+  const visit = (node: ts.Node) => {
+    if (templateUrl) return;
+
+    if (
+      ts.isPropertyAssignment(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === 'templateUrl' &&
+      ts.isStringLiteralLike(node.initializer)
+    ) {
+      templateUrl = node.initializer.text;
+
+      return;
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return templateUrl;
+};
+
 export const transformInlineSpans = (
   content: string,
   spans: readonly InlineSpan[],
@@ -111,12 +138,22 @@ const rewriteTooltipAttributes = (template: string) =>
     .replace(/(\s)\[tooltipAriaDescription\]/g, '$1[etTooltipAriaDescription]')
     .replace(/(\s)tooltipAriaDescription(?=[\s=/>])/g, '$1etTooltipAriaDescription');
 
-export const rewriteTemplate = (template: string) => {
-  const withSpinnerTags = rewriteSpinnerTags(template);
+export type RewriteTemplateOptions = {
+  /**
+   * `<et-picture>`'s attributes only rename once its import has actually moved to
+   * `@ethlete/components` - `PictureComponent` is a `reshape` row the generator never rewrites
+   * mechanically, so a template still bound to cdk's component must keep cdk's attribute names.
+   */
+  pictureImportMoved?: boolean;
+};
 
-  return rewriteTooltipAttributes(
-    rewritePictureAttributes(rewriteSpinnerAttributes(rewriteSkeletonItems(withSpinnerTags))),
-  );
+export const rewriteTemplate = (template: string, options: RewriteTemplateOptions = {}) => {
+  const withSpinnerTags = rewriteSpinnerTags(template);
+  const withSkeletonAndSpinner = rewriteSpinnerAttributes(rewriteSkeletonItems(withSpinnerTags));
+  const withPicture =
+    options.pictureImportMoved === false ? withSkeletonAndSpinner : rewritePictureAttributes(withSkeletonAndSpinner);
+
+  return rewriteTooltipAttributes(withPicture);
 };
 
 export const LEGACY_SPINNER_COLOR_VARIABLE = '--et-progress-spinner-color';

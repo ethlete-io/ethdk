@@ -96,7 +96,9 @@ export const rewriteCdkImports = (
   }
 
   const mergeTargets = new Map<string, ts.NamedImports>();
-  const importedNames = new Map<string, Set<string>>();
+
+  /** Non-cdk module → (exported name → local binding already in scope for it, aliased or not). */
+  const existingBindings = new Map<string, Map<string, string>>();
 
   for (const declaration of declarations) {
     const module = moduleOf(declaration);
@@ -104,10 +106,17 @@ export const rewriteCdkImports = (
 
     if (!named) continue;
 
-    const names = importedNames.get(module) ?? new Set<string>();
+    if (module !== CDK_PACKAGE) {
+      const bindings = existingBindings.get(module) ?? new Map<string, string>();
 
-    named.elements.forEach((element) => names.add(element.name.text));
-    importedNames.set(module, names);
+      named.elements.forEach((element) => {
+        const exportedName = (element.propertyName ?? element.name).text;
+
+        if (!bindings.has(exportedName)) bindings.set(exportedName, element.name.text);
+      });
+
+      existingBindings.set(module, bindings);
+    }
 
     if (module !== CDK_PACKAGE && !declaration.importClause?.isTypeOnly && !mergeTargets.has(module)) {
       mergeTargets.set(module, named);
@@ -140,6 +149,14 @@ export const rewriteCdkImports = (
       changed = true;
       moved.push(importedName);
 
+      const existingLocalName = existingBindings.get(rewrite.package)?.get(rewrite.to);
+
+      if (existingLocalName) {
+        if (existingLocalName !== localName) renames.set(localName, existingLocalName);
+
+        continue;
+      }
+
       const typePrefix = declaration.importClause?.isTypeOnly || element.isTypeOnly ? 'type ' : '';
       const isAliased = !!element.propertyName;
       const specifier = isAliased ? `${typePrefix}${rewrite.to} as ${localName}` : `${typePrefix}${rewrite.to}`;
@@ -149,12 +166,16 @@ export const rewriteCdkImports = (
         renames.set(localName, rewrite.to);
       }
 
-      const alreadyImported = importedNames.get(rewrite.package)?.has(finalLocalName);
       const pending = additions.get(rewrite.package) ?? [];
 
-      if (!alreadyImported && !pending.includes(specifier)) {
+      if (!pending.includes(specifier)) {
         additions.set(rewrite.package, [...pending, specifier]);
       }
+
+      const bindings = existingBindings.get(rewrite.package) ?? new Map<string, string>();
+
+      bindings.set(rewrite.to, finalLocalName);
+      existingBindings.set(rewrite.package, bindings);
     }
 
     if (changed) {

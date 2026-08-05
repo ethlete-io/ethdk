@@ -2805,8 +2805,8 @@
   },
   "TabImports": {
     "docs": "/components/tabs",
-    "kind": "rename",
-    "note": "NAV_TAB_IMPORTS for the router nav tabs",
+    "kind": "rename+reshape",
+    "note": "et-inline-tabs/et-inline-tab become et-tab-group/et-tab (NAV_TAB_IMPORTS for the router nav tabs); [selectedIndex]/(selectedIndexChange) is now the two-way [(selectedIndex)] model, and renderButtons/renderMasks/renderScrollbars have no equivalent",
     "package": "@ethlete/components",
     "to": "TAB_IMPORTS"
   },
@@ -2852,7 +2852,8 @@
   },
   "TableImports": {
     "docs": "/components/table",
-    "kind": "rename",
+    "kind": "rename+reshape",
+    "note": "bundles TableComponent plus the [data]/[columns] cell and footer directives, not the *Def structural-directive kit (etColumnDef/etCellDef/etHeaderCellDef/etRowDef/etHeaderRowDef) - a template still using those compiles to nothing",
     "package": "@ethlete/components",
     "to": "TABLE_IMPORTS"
   },
