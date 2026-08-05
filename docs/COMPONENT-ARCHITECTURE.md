@@ -181,11 +181,21 @@ To avoid collisions, each component domain owns a fixed numeric range:
 | 3100 – 3199 | Slider                          |
 | 3200 – 3299 | Masked input                    |
 | 3300 – 3399 | Cascader                        |
+| 3400 – 3499 | Bracket                         |
+| 3500 – 3599 | Table                           |
+| 3600 – 3699 | Accordion                       |
+| 3700 – 3799 | Breadcrumb                      |
+| 3800 – 3899 | Carousel                        |
+| 4300 – 4399 | Match                           |
+| 4400 – 4499 | Standings                       |
+| 4500 – 4599 | Scheduler                       |
 
-Add new domains by claiming the next free hundred block (next free: **3400**
+Add new domains by claiming the next free hundred block (next free: **4600**
 onward). The 1100 block was pre-allocated for a standalone combobox that never
 shipped - the unified select covers it and owns 1000 – 1099 - so the chip domain
-reclaimed it.
+reclaimed it. **3900 – 4299** is an unclaimed gap - it's free, but new domains
+should take the next block after the highest one in use rather than backfilling
+it, so the table stays append-only and easy to scan.
 
 ### Message format
 

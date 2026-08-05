@@ -21,6 +21,7 @@ export * from './lib/match';
 export * from './lib/picture';
 export * from './lib/query-devtools';
 export * from './lib/query-error';
+export * from './lib/scheduler';
 export * from './lib/scrollable';
 export * from './lib/skeleton';
 export * from './lib/standings';
