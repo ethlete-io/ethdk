@@ -1,5 +1,59 @@
 # Changelog
 
+## 1.0.0-next.37
+
+### Minor Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`ab09f53`](https://github.com/ethlete-io/ethdk/commit/ab09f53cc5cc5ceb9cf6f40d2be4136402fd04c5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-avatar` - a user/entity image with an initials or icon fallback - and `et-avatar-group` for overlapping stacks.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`ccb363d`](https://github.com/ethlete-io/ethdk/commit/ccb363dc9acd7e69fe88710976ade68f59805b26) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-badge`, a small non-interactive pill for a status word or a count, with `filled` / `tonal` / `outline` variants and color-theme support.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`78b385a`](https://github.com/ethlete-io/ethdk/commit/78b385a32206e324ef42a4d4664379bf49880a44) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-banner`, a static, dismissible page/section message with semantic info/success/warning/error coloring.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`2f52660`](https://github.com/ethlete-io/ethdk/commit/2f526609b087314f9b2128b70837b27a57a385c2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-card`, a generic content container with `elevated` / `outlined` / `filled` variants and surface-theme support.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`bd910e7`](https://github.com/ethlete-io/ethdk/commit/bd910e7bcf7c17e5fd050a2b640ea082bc8defdc) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `etCopyButton`, a clipboard-copy directive with icon-swap feedback you compose onto any button.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`abaac73`](https://github.com/ethlete-io/ethdk/commit/abaac73230e1e19c92840265a2cbc399233a622c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-description-list`, styling a native `<dl>` into grid-paired term/detail rows.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`be7b602`](https://github.com/ethlete-io/ethdk/commit/be7b602ce2c478255ba953ff87db5d60497248f8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-empty-state` - an icon/heading/description/action placeholder for a section or page with nothing to show.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`317a8c4`](https://github.com/ethlete-io/ethdk/commit/317a8c46664388e72d4e332f6e57a64e0951aa9d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-progress-steps` / `et-progress-step`, a wizard step indicator numbered and connected purely in CSS.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`8a9ccc7`](https://github.com/ethlete-io/ethdk/commit/8a9ccc7810936f925ac1d5b974f63606c8e6e742) Thanks [@github-actions](https://github.com/apps/github-actions)! - Dropzone: `createDropzoneUpload()` / `createV2DropzoneUpload()` accept an optional `delete` config that fires a request when an already-uploaded or existing entry is removed, with new `deleteSucceed` / `deleteFail` outputs.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`c38c726`](https://github.com/ethlete-io/ethdk/commit/c38c726b9fd3a2b8f06b248a969d85a5fe2fcc39) Thanks [@github-actions](https://github.com/apps/github-actions)! - Icon button and FAB: per-size dimensions are now public `--et-icon-button-*` / `--et-fab-*` custom properties, so a consumer can rescale them without overriding `width`/`height` or private variables.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`b2ac74b`](https://github.com/ethlete-io/ethdk/commit/b2ac74b0fad22ba656d7b2028d19dd25f06e57d8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: add a per-value override menu to the response explorer - edit, duplicate, or resize a value so it keeps reapplying on every future fetch - plus a "tampered" badge for overrides and armed faults.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`300079e`](https://github.com/ethlete-io/ethdk/commit/300079e48648c77e0e0e9fbfc575d5c065309197) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: appointment badges are now built from composable adornments (title, time range, color dot, location, sub-appointment count) - disable any one with its own `etSchedulerBadge*` config on `<et-scheduler>`. `Appointment` gains an optional `location` field.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`39b259e`](https://github.com/ethlete-io/ethdk/commit/39b259e654ca394635e7cd3078fb0a2ec5484edd) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `<et-scheduler>`, a composable appointment calendar with month, week, day and agenda views, multi-day all-day appointments that span the days they cover, and appointments that nest into sub-appointment chains via `parentId`.
+
+### Patch Changes
+
+- [`4957a0a`](https://github.com/ethlete-io/ethdk/commit/4957a0ac4e5b7bfff9b9215d22c6e009f7b3cfa0) Thanks [@TomTomB](https://github.com/TomTomB)! - Bracket: fix a padded section's stored height being short by its own top padding.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`c2aa8d8`](https://github.com/ethlete-io/ethdk/commit/c2aa8d83eacf8983b1b01b2993d5395b7029fc83) Thanks [@github-actions](https://github.com/apps/github-actions)! - Date range input: a `schema.start`/`schema.end` validation error now reaches the field's error area, instead of only turning the frame invalid with no message.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`a7a47e3`](https://github.com/ethlete-io/ethdk/commit/a7a47e38b7bfa35d39f9b121fccda470b26c6bea) Thanks [@github-actions](https://github.com/apps/github-actions)! - Dropzone: preview images no longer crop to fill the box, so non-square uploads like logos aren't cut off.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`1fb193c`](https://github.com/ethlete-io/ethdk/commit/1fb193c0e494357cbfb8a6a6428643b114c177f8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay dialogs, sheets and full-screen dialogs now skip their enter/leave motion under `prefers-reduced-motion`, matching tooltip/menu/toggletip. Fixes the animation lifecycle getting stuck under reduced motion, which could leave focus and `overlayRef.afterOpened()` never firing.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`8a4f849`](https://github.com/ethlete-io/ethdk/commit/8a4f849d38ded09adebf5728d8876efa61dd22ed) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: split the monolithic panel into a component per tab, with no behavior change.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`68db0b8`](https://github.com/ethlete-io/ethdk/commit/68db0b8ad57cf8f8bf77d06fa6f9e2ba23c1215d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Structural `RuntimeError`s (e.g. "must be placed inside X") now log the offending host element via `console.error`, so you can click straight to it in devtools instead of guessing from the message alone.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`f2c5f47`](https://github.com/ethlete-io/ethdk/commit/f2c5f474185efe300cccf0a7b5c724ee39b499a6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: align the time-grid appointment dot to the title's first line instead of overlapping it, drop the redundant dot on month-view pills, and hide the all-day row when nothing is in it.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`f2f000e`](https://github.com/ethlete-io/ethdk/commit/f2f000efb1b0ef4ec6b748a3fe909df3b481faa2) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-select`: `etSelectOptionTemplate` keeps extra option fields typed when you also bind its `[options]` to the same array passed to `[options]` on the select.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`cbd6424`](https://github.com/ethlete-io/ethdk/commit/cbd6424900753a2bb2f6f7a49ece53c7b31c4a8b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Select: track the windowed data-driven option rows by value instead of by identity, so a virtual
+  scroll that replaces the whole rendered window no longer logs Angular's NG0956 track-expression
+  warning in dev mode.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`087060c`](https://github.com/ethlete-io/ethdk/commit/087060ce8868ed541b2543aabec3670debfb8162) Thanks [@github-actions](https://github.com/apps/github-actions)! - Slider, rating and table row-selection now meet the ≥44px touch-target guideline on their interactive hit areas, up from 28px/24px/32px.
+
 ## 1.0.0-next.36
 
 ### Major Changes

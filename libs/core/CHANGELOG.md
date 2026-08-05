@@ -1,5 +1,20 @@
 # @ethlete/core
 
+## 5.0.0-next.40
+
+### Minor Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`e660b34`](https://github.com/ethlete-io/ethdk/commit/e660b34d6b791296733824b6ae2bf48ab7a1c5b6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectDefaultColorTheme()`, resolving the `ColorTheme` marked `isDefault: true` for components with no themed ancestor to inherit from.
+
+### Patch Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`26909f9`](https://github.com/ethlete-io/ethdk/commit/26909f9bce86f379e900e588b733719414ea7add) Thanks [@github-actions](https://github.com/apps/github-actions)! - The deprecated `createTailwindRgbVar` now returns `string` instead of `string | null` when called with
+  a defined value.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`1fb193c`](https://github.com/ethlete-io/ethdk/commit/1fb193c0e494357cbfb8a6a6428643b114c177f8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay dialogs, sheets and full-screen dialogs now skip their enter/leave motion under `prefers-reduced-motion`, matching tooltip/menu/toggletip. Fixes the animation lifecycle getting stuck under reduced motion, which could leave focus and `overlayRef.afterOpened()` never firing.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`019edcc`](https://github.com/ethlete-io/ethdk/commit/019edcc95e372166ec6332a9fb99758de50af178) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: raise the shared overlay root's z-index above the query devtools panel, so a menu/tooltip/dialog opened from inside the devtools (e.g. its response override menu) is no longer rendered behind the panel.
+
 ## 5.0.0-next.39
 
 ### Patch Changes

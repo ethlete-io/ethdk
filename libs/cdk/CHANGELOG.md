@@ -1,5 +1,14 @@
 # @ethlete/cdk
 
+## 5.0.0-next.27
+
+### Patch Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`f5c1fcc`](https://github.com/ethlete-io/ethdk/commit/f5c1fccf51fbeda86a3bb6d23d2bf4348ebb3c93) Thanks [@github-actions](https://github.com/apps/github-actions)! - Internal cleanup only - replaces index-access non-null assertions and drops dead bindings; no behavior
+  or API change.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`23fd039`](https://github.com/ethlete-io/ethdk/commit/23fd0394d265e3c006cc96ff9143eca1d21e8a53) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `migrate-from-cdk`: stop duplicating import specifiers, rewriting `<et-picture>` attributes on templates still bound to cdk's component, and mechanically renaming `TableImports`/`TabImports` onto an unrelated API.
+
 ## 5.0.0-next.26
 
 ### Minor Changes
