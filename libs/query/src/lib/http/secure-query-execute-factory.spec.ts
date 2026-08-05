@@ -30,6 +30,7 @@ describe('createSecureExecuteFactory', () => {
       accessToken: signal('test-token'),
       refreshToken: signal('refresh-token'),
       latestExecutedQuery: mockLatestExecutedQuery,
+      executionState: signal(null),
       afterTokenRefresh$: new Subject<void>(),
     } as unknown as AnyBearerAuthProvider;
 
@@ -485,6 +486,84 @@ describe('createSecureExecuteFactory', () => {
       } finally {
         rxjsConfig.onUnhandledError = originalOnUnhandledError;
       }
+    });
+  });
+
+  /**
+   * Regression coverage for `setTokens()` (SSO/OIDC callbacks, native shells): it seeds tokens
+   * without ever running a query, so `latestExecutedQuery` stays `null` forever on that path.
+   * Gating solely on `latestExecutedQuery` left every secure query waiting indefinitely.
+   */
+  describe('Token seed (setTokens())', () => {
+    it('executes immediately when executionState is already a successful token seed', () => {
+      const executionState = signal<{ type: string; state: string } | null>({
+        type: 'tokenSeed',
+        state: 'success',
+      });
+      (mockAuthProvider.executionState as unknown as ReturnType<typeof signal>) = executionState;
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({});
+      });
+
+      expect(transformSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('wakes a query that is waiting on no auth query at all once executionState becomes a token seed', () => {
+      const executionState = signal<{ type: string; state: string } | null>(null);
+      (mockAuthProvider.executionState as unknown as ReturnType<typeof signal>) = executionState;
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({});
+      });
+
+      TestBed.tick();
+      expect(transformSpy).not.toHaveBeenCalled();
+
+      // The SSO/OIDC redirect resolves and seeds tokens outside the query registry.
+      executionState.set({ type: 'tokenSeed', state: 'success' });
+      TestBed.tick();
+
+      expect(transformSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not treat a stale logout state as a token seed', () => {
+      const executionState = signal<{ type: string; state: string } | null>({
+        type: 'logout',
+        state: 'success',
+      });
+      (mockAuthProvider.executionState as unknown as ReturnType<typeof signal>) = executionState;
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({});
+      });
+      TestBed.tick();
+
+      expect(transformSpy).not.toHaveBeenCalled();
     });
   });
 });

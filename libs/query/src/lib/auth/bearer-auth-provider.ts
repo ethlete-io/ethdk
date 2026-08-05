@@ -290,10 +290,10 @@ export type BearerAuthProvider<
    * arrives with both tokens in the URL, a token handed over by a native shell, a test harness.
    *
    * Behaves like a successful auth query: the tokens are applied, `bearerData` / `isAuthenticated`
-   * update, `executionState` becomes `{ type: 'tokenSeed', state: 'success' }`, `afterTokenRefresh$`
-   * emits so waiting secure queries run, and (unless disabled) other tabs are synced. Without it the
-   * only way in is to execute the refresh query with the refresh token and throw the access token
-   * away.
+   * update, `executionState` becomes `{ type: 'tokenSeed', state: 'success' }` (secure queries treat
+   * this the same as a resolved auth query and run normally), and (unless disabled) other tabs are
+   * synced. Without it the only way in is to execute the refresh query with the refresh token and
+   * throw the access token away.
    *
    * Does **not** persist anything by itself - `withPersistentAuth` picks the tokens up through the
    * same signals it watches for query-issued ones.

@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { filter, of, Subscription, switchMap, take, tap } from 'rxjs';
+import { filter, merge, of, Subscription, switchMap, take, tap } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
@@ -158,6 +158,15 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
       )
       .subscribe();
 
+    // `setTokens()` seeds an auth session from outside the query registry (an SSO/OIDC callback, a
+    // native shell) - no query ever runs for `latestExecutedQuery` to report, so a successful token
+    // seed is treated as an auth query that already resolved.
+    if (options.authProvider.executionState()?.type === 'tokenSeed') {
+      authAndExecWhenTokenReady(execArgsWithDefaults);
+
+      return;
+    }
+
     const latestQuery = options.authProvider.latestExecutedQuery();
     const authQuery = latestQuery?.snapshot;
 
@@ -168,28 +177,39 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     if (!authQuery || authQuery.loading() || isAuthQueryFreshlyExecuted) {
       options.state.loading.set({ executeTime: Date.now(), progress: null });
 
-      authQuerySubscription = toObservable(options.authProvider.latestExecutedQuery, {
+      const latestExecutedQuery$ = toObservable(options.authProvider.latestExecutedQuery, {
         injector: options.deps.injector,
-      })
-        .pipe(
-          switchMap((latestQuery) => {
-            if (!latestQuery) return of(null);
-            const query = latestQuery.snapshot;
+      }).pipe(
+        switchMap((latestQuery) => {
+          if (!latestQuery) return of(null);
+          const query = latestQuery.snapshot;
 
-            return toObservable(query.isAlive, { injector: options.deps.injector }).pipe(
-              tap((isAlive) => {
-                if (isAlive) return;
+          return toObservable(query.isAlive, { injector: options.deps.injector }).pipe(
+            tap((isAlive) => {
+              if (isAlive) return;
 
-                if (query.error()) {
-                  error(query);
-                } else if (query.response()) {
-                  authAndExecWhenTokenReady(execArgsWithDefaults);
-                }
-              }),
-            );
-          }),
-        )
-        .subscribe();
+              if (query.error()) {
+                error(query);
+              } else if (query.response()) {
+                authAndExecWhenTokenReady(execArgsWithDefaults);
+              }
+            }),
+          );
+        }),
+      );
+
+      // A `setTokens()` call that lands while this is already waiting (e.g. the SSO redirect
+      // resolves after this secure query mounted) never touches `latestExecutedQuery` either -
+      // wake up on `executionState` becoming a token seed too.
+      const tokenSeed$ = toObservable(options.authProvider.executionState, {
+        injector: options.deps.injector,
+      }).pipe(
+        filter((state) => state?.type === 'tokenSeed'),
+        take(1),
+        tap(() => authAndExecWhenTokenReady(execArgsWithDefaults)),
+      );
+
+      authQuerySubscription = merge(latestExecutedQuery$, tokenSeed$).subscribe();
     } else if (authQuery.response()) {
       authAndExecWhenTokenReady(execArgsWithDefaults);
     } else if (authQuery.error()) {
