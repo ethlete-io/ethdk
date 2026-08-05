@@ -1,0 +1,403 @@
+# Existing components: improvement backlog
+
+Shower-thought pass over Storybook/mobile UX, written down 2026-08-05 and
+checked against source in `libs/components/src/lib/{scheduler,accordion,
+avatar,badge,button,copy-button,description-list,filter-overlay,forms}`,
+`libs/core/src/lib/{theming,utils/swipe.ts}` and `libs/query/src/lib/
+{paged-query-stack.ts,legacy/infinite-query}`. Unprioritized backlog, same
+spirit as `opportunities.md` - pick items into real plans as needed. To be
+continued; this pass didn't reach every domain.
+
+## Scheduler
+
+The header (`scheduler.component.html`) is one flat row today - today-button,
+toolbar actions (including add-appointment), prev/next, label, spacer,
+`et-segmented-button-group` view switcher - all siblings, not split into
+mobile-specific stacked bars. A page-filling multi-sectional mobile layout
+means actually separating these concerns (nav vs. view-switch vs. actions)
+into distinct sections instead of one row that presumably wraps at narrow
+widths.
+
+- **Add-appointment as a FAB.** Today it's a plain toolbar button
+  (`scheduler-action-add-appointment.directive.ts`). The `floating-action`
+  domain (`floating-action.directive.ts`) already exists and is unused by
+  scheduler - swap to it below a breakpoint, keep the toolbar button on
+  desktop.
+- **Today button as an icon button.** Currently `size="sm" variant="outline"`
+  text button. A descriptive icon-only form at narrow widths is a styling
+  change, no behavior change (`headless.goToToday()` stays as-is).
+- **Connector lines for linked appointments in agenda.** The only
+  relationship indicator today is `scheduler-badge-chain-count.component.ts`
+  (a chevron + descendant count on the parent's badge); no line renders
+  between parent and children. `scheduler-agenda-view.component.html`
+  already flattens the tree with a `depth`/`data-nested` per node, so a
+  connector can be drawn off data that already exists - no new tree-walking.
+- **Full-screen edit on mobile, anchored on desktop.** `scheduler-edit-
+  surface.component.ts` hardcodes one `dialogOverlayStrategy` with no
+  breakpoint branching. `overlay/strategies/presets.ts` already ships this
+  exact shape - `transformingFullScreenDialogToDialogOverlayStrategy` and
+  `...ToRightSheetOverlayStrategy`, built from `full-screen.strategy.ts` +
+  `dialog.strategy.ts`/`right-sheet.strategy.ts` via `OverlayStrategyBreakpoint[]`.
+  There's no fullscreen→anchored preset yet (`anchored.strategy.ts` exists
+  but isn't in a preset) - add one or build the breakpoint array inline.
+- **Add-new stays a plain dialog.** Already true - `addAppointment()` opens
+  the same `SCHEDULER_EDIT_SURFACE_OVERLAY` as edit. Once edit gets the
+  responsive split above, add-new needs pinning to its own overlay
+  definition (plain `dialogOverlayStrategy`) so it doesn't inherit edit's
+  new mobile/desktop branching.
+- **Start/end as a date-time range picker.** `scheduler-edit-time-
+  range.component.ts` pairs two independent `et-date-time-input` controls.
+  The SDK's `DateRangeInputComponent` is date-only; no combined date-time-
+  range control exists. This is new `forms/date-time/` surface, not a
+  scheduler-only change.
+- **Color as a predefined palette.** `scheduler-edit-color.component.ts` is
+  deliberately free-text today (its own doc comment: theme names are
+  app-registered, the SDK has no fixed set to offer). A palette needs a new
+  DI token scheduler can read, parallel to `injectColorThemes`/
+  `provideColorThemesWithTailwind4` for color theming, so apps opt into a
+  picker - keep free text as the fallback when nothing is provided.
+- **Richer sub-appointment list.** `scheduler-edit-surface.component.html`'s
+  children list is bare `<button>`s with just a title. Carrying start time
+  and the existing chain-count badge is additive; don't turn it into a
+  second full appointment card.
+- **Swipe navigation on mobile.** `libs/core/src/lib/utils/swipe.ts`'s
+  `SwipeTracker` already exists (used by `drag-handle`) but scheduler
+  doesn't import it - wiring it to `headless.goToPrevious()`/`goToNext()`
+  needs no new gesture primitive.
+- **Infinite-scrolling agenda.** The agenda directive takes a plain array,
+  no paging concept. `libs/query`'s `paged-query-stack.ts` and the legacy
+  `infinite-query` module both exist, neither wired to scheduler. This
+  should land as a documented consumer pattern against `paged-query-stack`
+  - paging state belongs to whatever query backs the appointment list, not
+  inside scheduler itself.
+
+## Accordion
+
+`.et-accordion-trigger:hover` swaps `background` via `color-mix(in srgb,
+var(--et-surface-interaction-solid) 7%, transparent)` across the full
+`inline-size: 100%` row - that's the edge-to-edge tint. A border/label-color
+transition instead (or alongside) has direct precedent: `button.component
+.css` transitions `border-color` through a `--_et-button-border-color`
+custom property per variant, and `checkbox.component.css` does the same.
+Accordion already imports the tokens involved (`--et-surface-border-solid`,
+`--et-surface-interaction-solid`), so shrinking the tint to a narrower
+element plus a border/label transition needs no new theming plumbing.
+
+## Avatar
+
+`AvatarComponent` (`src`, `name`, `size`, `shape`, `color` via
+`ProvideColorDirective`) is component-only today - no `headless/` split,
+unlike tooltip/toggletip/accordion. Directive usage on an arbitrary host
+(`routerLink`, `button`) means extracting an `AvatarDirective` the way those
+domains do, so hover/focus apply to whatever it's attached to.
+
+`AvatarGroupComponent` is a no-logic `<ng-content />` wrapper - overlap and
+ring come entirely from CSS (`--et-avatar-group-overlap`, `--et-avatar-
+group-ring-width`); stacking threshold and "+N" overflow are left to the
+consumer (its own JSDoc example is "just project `<et-avatar>+5</et-avatar>`
+yourself"). No other "+N" counter pattern exists anywhere in the SDK to
+copy, so a `maxVisible` input plus a built-in overflow avatar is new
+surface. Neither avatar nor avatar-group has any `:hover` today - keep it
+that way for the plain preview-stack case (all avatars shown, no
+interaction), and only add hover once directive-usable avatars need it.
+
+## Badge
+
+One dimension today, `variant` (`filled`/`tonal`/`outline`) plus `color` -
+no `size` input. "Icon support" is currently just `<ng-content />`; nothing
+stops projecting an `et-icon` now, but there's no dedicated slot/input
+making sizing a documented contract. Tooltip/toggletip integration needs no
+new plumbing on badge's side - both already attach as directives on the
+trigger (`[etTooltip]`, `[etToggletip]`), so `<et-badge etTooltip="...">`
+composes today. The real gap is `size` and an icon slot on badge itself.
+
+## Buttons
+
+Button's CSS has no `data-color`/`data-theme` switch - color always comes
+from whatever `--et-theme-color-*` is in scope via `ProvideColorDirective`.
+Separately, `mutedUntilPressed` (`button.directive.ts`, host attr
+`data-muted-until-pressed`) already repoints button's color source from
+theme color to `--et-surface-interaction-solid` per variant
+(`button.component.css`, the `[data-muted-until-pressed]` block) - functionally the "surface, not theme,
+colored button" look, just gated behind the muted-until-pressed state
+rather than selectable on its own. `libs/core`'s `surface-interactive-
+styles.component.css` already defines the full interactive set
+(`--et-surface-interaction{,-hover,-focus,-active,-disabled,-rgb,-solid}`)
+a real surface color theme would consume, but nothing today promotes a
+surface's interactive set into a registered `ColorTheme` - that contract
+(`color-theme.util.ts` + the Tailwind generator) is separate machinery from
+surface theming. Deciding whether "surface" becomes a generated `ColorTheme`
+entry or a third theming axis needs a real design pass given the contrast
+risk already flagged - not a quick CSS addition.
+
+Copy button (`copy-button.directive.ts`) is already a bare directive with
+no `.css` of its own - its doc comment says to compose it with `et-icon-
+button`/`et-text-button`, and its stories already do exactly that. If it
+looks messy, that's the demo/story, not the directive reimplementing button
+styles. Moving its story from the standalone `Components/Copy button` entry
+into `Components/Button/*` is a pure story-organization move (see Storybook
+structure below), no component change.
+
+## Form field
+
+Busy state and a suffix already have a defined precedence, not a collision:
+`form-field.component.html` appends the busy spinner (`et-spinner`, driven
+by `isBusy = busy() || formFieldDir.isPending()`) *after* whatever's
+projected into `[etInputSuffix]`, inside the same `.et-form-field-affix`
+flex box - a comment on it is explicit: "After the consumer's own suffix,
+never instead of it - a pending async validator must not displace a clear
+button or a reveal toggle." So icon and spinner sit side by side and the
+affix widens; they don't overlap.
+
+The worse case - date/time pickers with a clear (X) button, a picker-toggle
+button, a suffix icon, and a busy spinner all at once - isn't actually
+governed by that rule today, because the clear and picker-toggle buttons on
+select/date/time controls don't use `[etInputSuffix]` at all. Each control
+renders them as plain sibling buttons in its own flex template (e.g.
+`date-input.component.html`: clear button immediately before the
+`etDatePickerTrigger` button), positioned to *look* like a suffix without
+being one. So the extreme case has three independent mechanisms sharing the
+same visual real estate - form-field's real suffix slot, each control's
+hand-rolled clear+trigger buttons, and form-field's busy spinner appended
+after the real slot - rather than one governed stack. Making "the suffix
+should be the picker toggle button already" true means moving clear and
+picker-trigger into `[etInputSuffix]` projection on date-input/date-time-
+input/date-range-input/time-input, so form-field's existing append-after
+rule covers the whole stack instead of being bypassed by four controls that
+render outside it.
+
+## Over limit is a validator in a trench coat
+
+`CounterComponent.isOverLimit` (`counter.component.ts:70-79`) recomputes
+`current() > max` itself from the raw value and a numeric limit, and never
+reads `errors()`/`effectiveErrors()` from the control's own maxLength
+validator. That validator already exists and already fires correctly -
+`controlMaxLength()` (`form-field.directive.ts:80`) reads the signal-forms
+schema's `maxLength()` binding, deliberately kept off the native `maxlength`
+attribute (`form-field.tokens.ts:75-81`) precisely so the validator still
+runs on overflow instead of the browser silently truncating input. Two
+independent length checks exist for the same limit today. Fix is
+`CounterComponent` deriving `isOverLimit` from the control's validation
+error state instead of re-comparing lengths itself.
+
+## Description list
+
+`DescriptionListComponent` is an empty class - zero inputs, one visual
+style, tunable only through five `@property` CSS custom properties (row/
+column gap, term min-width, term/detail font size). Any enhanced style
+(bordered, striped, inline) is new surface; there's no `variant` input to
+extend.
+
+## Filter overlay story
+
+The default story (`filter-overlay-storybook.component.ts`) already
+composes real components - `et-button`, `et-chip`, a floating-action
+trigger, a three-page routed overlay (main/region/division) - it isn't a
+bare unstyled form. It leans on inline Tailwind utility classes and one
+inline `style` attribute for a hard-coded team list, plus ten lorem-ipsum
+filler paragraphs, and stands toggle-buttons in for real form fields (per
+its own comment). If it looks silly, that's demo dressing fixable inside
+the story file alone, not the filter-overlay component.
+
+## Color input
+
+`ColorInputComponent`/`ColorInputDirective` (`forms/color-input/`) already
+exists as a custom control - swatch, text value, and a native `<input
+type="color">` synced underneath, with `readonly`/`disabled`/`mixed`
+handling. A custom picker replaces that native input while keeping the same
+directive/value contract. Validators are the actual gap: no hex/RGB/hex-6-
+only/contrast validator exists anywhere in `libs/forms` or `libs/core`
+today (`value: string | null` only claims `#rrggbb` in a doc comment) -
+correctness currently depends entirely on the native picker's output, which
+won't hold once free-text entry or a custom picker is in play. A contrast
+validator against another control's value needs a cross-field read - check
+how (if at all) that's wired elsewhere in `libs/forms` before designing it.
+
+## Grid: reordering doesn't finish on touchend
+
+Drag lifecycle is pointer-events-only end to end - `GridDragDirective`
+hosts core's `DragHandleDirective`, whose gesture stream
+(`drag-gesture.ts`) is built entirely from `fromEvent` on `pointerdown`/
+`pointermove`/`pointerup`/`pointercancel`. There are no `touchstart`/
+`touchmove`/`touchend` listeners anywhere in `grid/` or `drag-handle/` -
+`touch-action: none` is set on the drag handle specifically so touch
+pointer events aren't hijacked for native scrolling (its own comment:
+"Without this the browser claims touch pointermoves for scrolling and
+fires pointercancel, so a touch drag never gets past the commit
+threshold"). `setPointerCapture` is called once past the commit threshold;
+`releasePointerCapture` is never called anywhere in core or grid, relying
+on the browser's implicit release on `pointerup`/`pointercancel`. The only
+two exits from a captured drag - `settleDrag()`/`cancelDrag()` - are both
+gated exclusively on that same `pointerup`/`pointercancel` merged stream.
+
+So "stays in touch-move state" means some touch sequence reaches
+`pointermove` but its terminating `pointerup` (or `pointercancel`) never
+reaches the `document`-level listener that `end$` subscribes to. Source
+alone can't say which - the fix has to start with reproducing on real touch
+hardware and instrumenting whether `pointercancel` fires (handled, but
+maybe not routing back to `cancelDrag`) versus neither event firing at all
+(e.g. capture never released, or a synthetic mouse sequence intervening
+after the touch sequence). There's no dedicated `.css` file in `grid/` and
+no explicit state-machine type to inspect further - drag state is implicit
+in a closure `committed` flag plus a nullable `origin`/`dragState` signal.
+
+## Progress steps
+
+Today: `ProgressStepComponent` has exactly one input, `state`
+(`PROGRESS_STEP_STATES`: `complete`/`current`/`upcoming` only). Label is
+plain projected content, the step number comes from CSS `counter()`, not an
+input. Layout is hardcoded horizontal (`display:flex` row, connector drawn
+as a horizontal `::after` bar sized off the gap) - no `vertical` input
+exists. Every step renders as plain `<span>`s - no `routerLink`, `<a>`, or
+`<button>` anywhere in the template, so nothing is interactive today, and
+neither `.css` file has any `:hover` rule. Stories are a single `Default`
+story with one hardcoded 4-step example.
+
+Expanding this, roughly in order of how disruptive each is:
+
+- **Success/warning/error states** - additive: `ProgressStepState` grows
+  from 3 values to include them, parallel to the semantic set banner
+  already has (`BANNER_TYPES.SUCCESS/WARNING/ERROR`) rather than inventing
+  new color language.
+- **Vertical orientation** - not a CSS flip: the horizontal connector is
+  purpose-built (`inline-size` bar sized to the gap), so vertical needs its
+  own connector geometry (a `block-size` bar), not a rotation of the
+  existing one.
+- **Steps as links/hover states** - new markup: steps are `<span>`-only
+  today, so a linked step means conditionally swapping the step's root
+  element (`<span>`/`<a>`/`<button>`) based on whether a link/click input is
+  set, the same polymorphic-root pattern other SDK components already use,
+  plus adding the `:hover` rules that don't exist yet.
+- **Detailed sub-steps** - the least defined ask; needs a decision on
+  whether it's a projected slot per step or a fixed description input, and
+  whether it's meaningful outside the vertical orientation at all.
+
+## Query devtools: broken on mobile
+
+Layout is a fixed-position overlay (`.et-query-devtools-host { position:
+fixed; inset-inline: 0; inset-block-end: 0; }`) built as a two-pane master-
+detail split with hardcoded minimums: list pane `min-inline-size: 22rem`
+(352px), drawer pane `min-inline-size: 26rem` (416px)
+(`query-devtools.component.css`) - roughly 768px of minimum width before
+any content, wider than most phone viewports on its own. Grep for `@media`
+in this domain returns exactly two hits, both `prefers-reduced-motion` -
+there is no width-based breakpoint anywhere in query-devtools today. The
+only alternate layout is `[data-dock='right']`, a user-chosen dock
+position that already stacks list/detail vertically instead of side by
+side - it just isn't reachable except by manual choice. The cheapest fix
+for "at least not completely broken" is reusing that same stacked layout
+under a `@media (max-width: ...)` query instead of only under the manual
+right-dock attribute, before any deeper redesign of the ~10-tab header
+strip for mobile.
+
+## Query error: rebuild on banner
+
+`query-error.component` builds its own colored card from scratch -
+`.et-query-error-card` uses `background: color-mix(in srgb, var(--et-
+theme-color-primary-solid, currentColor) 8%, transparent)` with a matching
+border - which is the *identical* formula banner already uses for its own
+surface. Both independently implement an icon slot, a heading, a
+description/message, and an action row. Banner already carries the
+semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
+- so rebuilding query-error on banner is mostly composition: project the
+icon into `[etIcon]`, the retry button into `[etBannerAction]`, set
+`type="error"`. Two things banner doesn't have yet and query-error would
+still need to layer on top: the violation-list rendering (a `<ul>` of
+messages vs. banner's single description paragraph) and the retry-button-
+only-if-`canRetry` conditional.
+
+## Standings story causes a mobile horizontal scrollbar
+
+Not a standings component bug - `standings.component.css` already uses
+container queries (`container-type: inline-size`) to progressively drop the
+form column below 720px and the remaining detail columns below 560px,
+collapsing to position/team/points at the narrowest; the story's own doc
+comment confirms this is deliberate. The scrollbar comes from the story
+wrapper: `standings-storybook.component.ts` renders `<et-standings>` inside
+`<div [style.inline-size.px]="width()">` with a fixed pixel width
+(Storybook control, default 760, range 280-900). On a real mobile viewport
+narrower than that default, the fixed-width div - not `100%` or `min(760px,
+100%)` - forces the page to scroll horizontally to show the whole box, even
+though standings itself would happily collapse columns if given the actual
+(narrower) container width it's sitting in. Fix is confined to the story:
+default the width control to something that shrinks with viewport, or wrap
+it in `min(760px, 100%)`.
+
+## Charts - new domain, uncharted
+
+Nothing chart-shaped exists today: a repo-wide grep for chart/sankey/d3/
+recharts/chart.js/visx turns up only false positives (grid's storybook
+placeholder tiles named `DummyChartComponent`, a code comment using "a
+chart" as an example of expensive content, a `skeleton.md` doc line) - no
+component, directive, drawing logic, or dependency (`package.json` has no
+d3/visx/recharts/chart.js/highcharts/plotly anywhere in the workspace).
+This is genuinely new surface, not an extraction like most of the rest of
+this backlog - the goal per the ask is basics (bar/pie/sankey/etc.), not a
+D3 replacement.
+
+What already exists to build on:
+
+- **Sizing.** `libs/core/src/lib/signals/element-dimensions.ts`
+  (`signalElementDimensions`/`signalHostElementDimensions`, `ResizeObserver`-
+  backed) is the reusable primitive for a chart's container-relative SVG
+  viewBox - but it's adopted inconsistently today (`masonry` uses it,
+  `carousel` deliberately avoids a per-item `ResizeObserver` as too costly,
+  `standings` uses neither), so there's no single blessed pattern to copy
+  wholesale.
+- **SVG rendering has two existing precedents, and they disagree.** Icon
+  (`icon.directive.ts`) and bracket (`bracket.component.html`) both render
+  via sanitized `[innerHTML]` of a raw/generated SVG string rather than an
+  Angular template with real per-element bindings; bracket computes its
+  connector geometry as path-data strings (`bracket/drawing/line.ts`:
+  `linePath`/`verticalPath`/`gutterPath` → `M x y L x2 y2`) fed into that
+  string. A chart library needs real per-datum elements with real Angular
+  bindings (for hover/tooltip/animation on individual bars or slices as
+  data changes), which the bracket/icon `[innerHTML]` approach doesn't
+  give you - worth deciding explicitly to diverge from that precedent
+  rather than copying it, since charts re-render on data change far more
+  than a bracket does.
+- **Categorical color palette doesn't exist yet.** `injectColorThemes()`
+  (`color-theme.util.ts`) returns `ColorTheme[]`, but every consumer
+  (`injectColorThemeByType`, `injectDefaultColorTheme`) only `.find()`s a
+  single theme by `type`/`isDefault` - nothing today iterates the registry
+  as an ordered N-colors palette, and semantic accent themes (brand/danger/
+  etc.) aren't guaranteed to number enough distinct hues for an 8-12
+  category series anyway. A chart palette is likely its own small provided-
+  config concept (closer to the "predefined palette via provided config"
+  idea already flagged for scheduler's appointment color) rather than a
+  reuse of color theming.
+- **Tooltip-on-datapoint is untested territory.** `[etTooltip]`
+  (`tooltip.directive.ts`) injects `ElementRef<HTMLElement>` explicitly -
+  attaching it to an SVG `<rect>`/`<path>` compiles (directives apply to any
+  host tag) but the HTMLElement-typed internals are asserted, not verified,
+  against an `SVGElement` host. Needs a check (or an SVG-safe variant)
+  before "hover a bar to see its value" is a supported pattern.
+- **Loading state has a pattern to follow.** `skeleton`
+  (`SkeletonComponent`/`Item`/`Text`) is already composed by `table` via its
+  own `etTableSkeleton` directive pair while data loads, swapped for real
+  rows once ready - a chart-loading skeleton (e.g. bars of random heights)
+  should follow that same compose-while-loading shape, though the skeleton
+  content itself (a fake bar/pie shape) would be new, not reused.
+- **Animation is the open question.** `animatable.directive.ts`/`animated-
+  lifecycle.directive.ts` are class-driven CSS-transition directives typed
+  to `HTMLElement`, animating only DOM layout/opacity-style properties via
+  CSS classes - there is no existing mechanism for animating raw SVG
+  attributes (`r`, `d`, `points`), which is what bars growing or pie slices
+  sweeping in actually need. Simple enter/exit (fade/scale a whole bar) can
+  probably reuse the existing directive pair; arc/path morphing (a pie
+  slice's `d` changing value) cannot, and needs its own mechanism designed
+  from scratch before pie/sankey are on the table - bar charts alone could
+  ship without solving this.
+
+## Storybook structure
+
+Every story sits under a flat `Components/<Name>` (or `Components/<Domain>/
+<Name>`) - nothing groups categories like Forms/Overlays/Data-display as
+siblings above `Components`, which is the likely source of the "big dump"
+feeling. Two concrete instances found this pass: `Components/Copy button`
+is a top-level sibling of `Components/Button/*` instead of living under it,
+and `Components/Forms/Form field/Counter` is the only story in the SDK
+nested three levels under a `Form field` category with no other children -
+it reads as its own subsystem when it's one piece of the form-field
+wrapper. Both are one-line `title:` fixes. Whether `Components/*` should
+gain real top-level categories at all is a bigger, separate call.
