@@ -92,6 +92,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Button](/components/button) - surface, text, icon, FAB and window-control buttons with loading and pressed states.
 - [Calendar](/components/calendar) - inline month calendar with single and range selection, min/max bounds and full keyboard grid navigation.
 - [Chip](/components/chip) - compact pill for a value, tag or filter with an optional remove button.
+- [Empty state](/components/empty-state) - icon/title/description/action placeholder for a section with nothing to show.
 - [Icon](/components/icon) - tree-shakeable inline-SVG icons via `provideIcons()` and `[etIcon]`.
 - [Loaders](/components/loader) - spinner, progress bar and brand loader.
 - [Time picker](/components/time-picker) - inline column-list time picker with a format-derived layout (12/24h, seconds) and per-column keyboard selection.

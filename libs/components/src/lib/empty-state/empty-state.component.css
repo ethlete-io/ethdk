@@ -1,0 +1,73 @@
+@layer components {
+  @property --et-empty-state-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 32px;
+  }
+
+  @property --et-empty-state-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-empty-state-icon-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 32px;
+  }
+
+  @property --et-empty-state-max-inline-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 320px;
+  }
+
+  @property --et-empty-state-title-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-empty-state-description-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  .et-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    gap: var(--et-empty-state-gap);
+    padding: var(--et-empty-state-padding);
+    max-inline-size: var(--et-empty-state-max-inline-size);
+    margin-inline: auto;
+    text-align: center;
+    color: var(--et-surface-color-solid, currentColor);
+
+    > .et-icon {
+      flex-shrink: 0;
+      width: var(--et-empty-state-icon-size);
+      height: var(--et-empty-state-icon-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    > [etEmptyStateAction] {
+      margin-block-start: var(--et-empty-state-gap);
+    }
+  }
+
+  .et-empty-state-title {
+    margin: 0;
+    font-size: var(--et-empty-state-title-font-size);
+    font-weight: 600;
+  }
+
+  .et-empty-state-description {
+    margin: 0;
+    font-size: var(--et-empty-state-description-font-size);
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+}

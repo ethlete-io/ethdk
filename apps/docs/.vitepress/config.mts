@@ -226,6 +226,7 @@ export default defineConfig({
             { text: 'Button', link: '/components/button' },
             { text: 'Calendar', link: '/components/calendar' },
             { text: 'Chip', link: '/components/chip' },
+            { text: 'Empty state', link: '/components/empty-state' },
             { text: 'Icon', link: '/components/icon' },
             { text: 'Loaders', link: '/components/loader' },
             { text: 'Skeleton', link: '/components/skeleton' },
