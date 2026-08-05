@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.27
+
+### Patch Changes
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`291e8a9`](https://github.com/ethlete-io/ethdk/commit/291e8a9c6ecb9c51c191b4ed6e40d41465ff4cfa) Thanks [@github-actions](https://github.com/apps/github-actions)! - Secure queries executed after `setTokens()` (SSO/OIDC callbacks, native shells) no longer wait forever - they now also proceed once `executionState` reports a successful token seed.
+
 ## 6.0.0-next.26
 
 ### Minor Changes
