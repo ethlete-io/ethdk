@@ -1,5 +1,16 @@
 # @ethlete/core
 
+## 5.0.0-next.41
+
+### Major Changes
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`263dae8`](https://github.com/ethlete-io/ethdk/commit/263dae89d864db2a05541f373a2a1b7d2e75c42f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove the deprecated, SSR-unsafe `SeoDirective` and its `SeoConfig` types - use the `apply*Binding` functions instead (the SEO guide has a per-key migration table).
+
+### Minor Changes
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`5b94adc`](https://github.com/ethlete-io/ethdk/commit/5b94adc97abb32555fb462fad71cbe27fc733a4a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Select and cascader panels now stay below the field with a shorter list instead of flipping
+  above it or sliding over it, via the new anchored-overlay `minAvailableSpace` option.
+
 ## 5.0.0-next.40
 
 ### Minor Changes

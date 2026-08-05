@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.0.0-next.38
+
+### Major Changes
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`6daa97a`](https://github.com/ethlete-io/ethdk/commit/6daa97a94f5cd762aa815ef85cc9c72a2a8d0694) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: the public surface is now the data types and enums only - the internal engine builders (`createBracket`, relation and base map generators) are no longer exported.
+
+### Minor Changes
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`5b94adc`](https://github.com/ethlete-io/ethdk/commit/5b94adc97abb32555fb462fad71cbe27fc733a4a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Select and cascader panels now stay below the field with a shorter list instead of flipping
+  above it or sliding over it, via the new anchored-overlay `minAvailableSpace` option.
+
+- [`9448256`](https://github.com/ethlete-io/ethdk/commit/9448256314db8240a0d86d957e58cf4333ff3123) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-divider`, a horizontal or vertical rule between groups of content, and lay the rich text editor's selection toolbar out as the row it always declared.
+
+- [`2ce2411`](https://github.com/ethlete-io/ethdk/commit/2ce24117ec7e344de5bde08dec22ec1db17b1831) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-toolbar` / `[etToolbar]`: a bar of controls sharing one tab stop, navigated with the arrow keys per the ARIA toolbar pattern. The rich text editor's toolbar now uses it.
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`c91868e`](https://github.com/ethlete-io/ethdk/commit/c91868e248a91a7bde59f5938acdc12e5108da8c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Root menus now stay below their trigger with a shorter scrollable list instead of flipping
+  above it, and no longer overflow the viewport when they do not fit.
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`50fc4c2`](https://github.com/ethlete-io/ethdk/commit/50fc4c262b281578640f24a3cc6e29c3f1620d4f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: clicking an appointment now opens `<et-scheduler-edit-surface>`, a composable edit dialog (title, time range, location, description, color, add/delete sub-appointment) - see `appointmentSave`/`appointmentsDelete` on `<et-scheduler>`.
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`f7bde9f`](https://github.com/ethlete-io/ethdk/commit/f7bde9fe5e8f762bda125c161a11491536e0b1f9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: the toolbar and time grid are now mobile-friendly, and a built-in toolbar action (`etSchedulerActionAddAppointment`) creates new top-level appointments.
+
+### Patch Changes
+
+- [#3046](https://github.com/ethlete-io/ethdk/pull/3046) [`1230b98`](https://github.com/ethlete-io/ethdk/commit/1230b98f783ca4aa878abcdc7567e18060cc4758) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: the edit surface truncates a long title instead of pushing its header actions out of
+  view, and its footer buttons align to the right.
+
 ## 1.0.0-next.37
 
 ### Minor Changes
