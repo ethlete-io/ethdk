@@ -26,7 +26,7 @@ import {
   isFileAccepted,
 } from './dropzone-entry';
 import { DROPZONE_ERROR_CODES } from './dropzone-errors';
-import { AnyDropzoneUploadConfig } from './dropzone-upload';
+import { AnyDropzoneUploadConfig, DropzoneUploadError } from './dropzone-upload';
 import {
   DROPZONE_FILE_CONSTRAINTS,
   DROPZONE_FILE_REJECTION_REASONS,
@@ -93,6 +93,16 @@ export class DropzoneDirective<TValue = unknown>
 
   /** Emits when the upload of an entry failed. */
   public uploadFail = output<DropzoneEntry<TValue>>();
+
+  /**
+   * Emits when the delete request for a removed entry's persisted value succeeded. Only fires for
+   * entries removed while the upload config has a `delete` option and the entry was already
+   * persisted (a successful upload or an existing value).
+   */
+  public deleteSucceed = output<TValue>();
+
+  /** Emits when that delete request failed. The entry is already gone from `entries()` by then. */
+  public deleteFail = output<{ value: TValue; error: DropzoneUploadError }>();
 
   private internalEntries = signal<DropzoneEntry<TValue>[]>([]);
   private internalLastRejections = signal<DropzoneFileRejection[]>([]);
@@ -246,6 +256,7 @@ export class DropzoneDirective<TValue = unknown>
     }
 
     const wasInControl = isValueInControl(entry);
+    const persistedValue = wasInControl ? entry.value() : null;
 
     this.internalEntries.update((entries) => entries.filter((item) => item !== entry));
     this.setRejections([]);
@@ -254,6 +265,10 @@ export class DropzoneDirective<TValue = unknown>
 
     if (wasInControl) {
       this.syncValue();
+
+      if (persistedValue !== null) {
+        this.executeDelete(persistedValue);
+      }
     }
   }
 
@@ -380,6 +395,22 @@ export class DropzoneDirective<TValue = unknown>
     this.entryWatchers.get(entry.id)?.destroy();
     this.entryWatchers.delete(entry.id);
     disposeDropzoneEntry(entry);
+  }
+
+  private executeDelete(value: TValue) {
+    const execute = this.upload().executeDelete;
+
+    if (!execute) {
+      return;
+    }
+
+    execute({ value, injector: this.injector }).then((error) => {
+      if (error) {
+        this.deleteFail.emit({ value, error });
+      } else {
+        this.deleteSucceed.emit(value);
+      }
+    });
   }
 
   private syncValue() {

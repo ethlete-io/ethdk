@@ -159,6 +159,54 @@ describe('createV2DropzoneUpload', () => {
     });
   });
 
+  describe('delete (genuine V2QueryClient creator)', () => {
+    let injector: Injector;
+
+    const createConfig = (options: { mock: QueryMockConfig<{ ok: boolean }> }) => {
+      const client = new V2QueryClient({ baseRoute: 'https://api.test.com' });
+      const uploadMedia = client.post({
+        route: '/upload',
+        types: { args: def<{ body: FormData }>(), response: def<UploadResponse>() },
+      });
+      const deleteMedia = client.delete({
+        route: (pathParams: { id: string }): `/${string}` => `/media/${pathParams.id}`,
+        types: { args: def<{ pathParams: { id: string } }>(), response: def<{ ok: boolean }>() },
+      });
+
+      return createV2DropzoneUpload({
+        queryCreator: uploadMedia,
+        selectValue: (media) => media.uuid,
+        delete: {
+          queryCreator: deleteMedia,
+          createArgs: (value: string) => ({ pathParams: { id: value }, mock: options.mock }),
+        },
+      });
+    };
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({});
+      injector = TestBed.inject(EnvironmentInjector);
+    });
+
+    it('resolves null once the delete request succeeds', async () => {
+      const upload = createConfig({ mock: { delay: 0, response: { ok: true } } });
+
+      const settled = upload.executeDelete!({ value: 'uuid-1', injector });
+      await flush();
+
+      await expect(settled).resolves.toBeNull();
+    });
+
+    it('resolves the request error once the delete request fails', async () => {
+      const upload = createConfig({ mock: { delay: 0, error: mockError } });
+
+      const settled = upload.executeDelete!({ value: 'uuid-1', injector });
+      await flush();
+
+      await expect(settled).resolves.toEqual(mockError);
+    });
+  });
+
   describe('legacy interop creator', () => {
     let setup: QueryTestSetup;
     let injector: Injector;

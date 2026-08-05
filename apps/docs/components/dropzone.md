@@ -77,6 +77,7 @@ The `upload` input takes a config object; create it with the `createDropzoneUplo
 | `selectValue`     | yes      | Maps the upload response to the control value, e.g. `(media) => media.uuid`.                                                                                         |
 | `createArgs`      | no       | Builds the request args for a file. Default: `FormData` with the file appended under the field name `file`. Override to rename the field or add extra fields/params. |
 | `resolveExisting` | no       | Maps a value already present in the control (edit forms) to display info (`name`, `previewUrl`, `size`). Required as soon as the control can start with a value.     |
+| `delete`          | no       | Runs a request when an already-persisted entry is removed - see [Deleting on remove](#deleting-on-remove).                                                           |
 
 `resolveExisting` runs in a reactive context - it may read signals, so asynchronously loaded display data (e.g. an id → media map filled by another query) updates the entry as it arrives.
 
@@ -100,6 +101,29 @@ protected upload = createV2DropzoneUpload({
 <StoryEmbed id="components-forms-dropzone--legacy-v-2-query" height="560px" />
 
 The entry's `error()` then holds a `RequestError` (rather than the new query's `QueryErrorResponse`); the failure message and `uploadErrorMessage` handle both shapes. Prefer a genuine `V2QueryClient` creator over a `createLegacyQueryCreator` interop wrapper here - the interop query has a known teardown limitation that a native v2 creator avoids.
+
+## Deleting on remove
+
+Pass a `delete` config to clean up the file server-side when a user removes an entry, instead of only dropping it from the control value:
+
+```ts
+protected upload = createDropzoneUpload<UploadMediaArgs, string>({
+  queryCreator: uploadMedia,
+  selectValue: (media) => media.uuid,
+  delete: {
+    queryCreator: createDeleteQuery(client)<{ response: void; pathParams: { id: string } }>('/media/:id'),
+    createArgs: (id) => ({ pathParams: { id } }),
+  },
+});
+```
+
+`createArgs` builds the request args from the entry's control value, the same way the top-level `createArgs` builds them from a `File`. It only runs for an entry that was actually persisted - a successful upload or an existing value (edit forms). Removing an entry that's still uploading just cancels the in-flight request; nothing was persisted yet, so no delete request is made.
+
+The entry disappears from the UI immediately; the delete request runs in the background afterwards. Its outcome surfaces through two more directive outputs: `deleteSucceed` (emits the deleted value) and `deleteFail` (emits `{ value, error }`, with the same `DropzoneUploadError` union as `uploadFail`). By the time either fires, the entry is already gone from `entries()`.
+
+Without a `delete` config, removing an entry only updates the control locally, same as before.
+
+`createV2DropzoneUpload` takes the same `delete` shape, with a legacy `queryCreator` in place of the new one.
 
 ## Options
 
@@ -155,7 +179,7 @@ Per-file progress requires `reportProgress: true` on the query creator **and** t
 
 ## Headless usage
 
-All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)` and `clear()`, rendering from the `entries()` signal (each entry exposes `name`, `size`, `previewUrl`, `status`, `progress`, `error` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed` and `hasValue`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire.
+All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)` and `clear()`, rendering from the `entries()` signal (each entry exposes `name`, `size`, `previewUrl`, `status`, `progress`, `error` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed` and `hasValue`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
 
 ## Accessibility
 

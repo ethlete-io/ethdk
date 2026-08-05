@@ -1,9 +1,12 @@
 import { computed, Injector, runInInjectionContext, signal, Signal, untracked } from '@angular/core';
+import { filter, firstValueFrom, Observable, of, take } from 'rxjs';
 import {
   AnyLegacyQuery,
   AnyLegacyQueryCreator,
   AnyV2Query,
   AnyV2QueryCreator,
+  executeUntilSettled,
+  extractQuery,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
@@ -15,6 +18,7 @@ import {
   RequestArgs,
   RequestError,
   ResponseType,
+  V2QueryState,
 } from '@ethlete/query';
 
 /**
@@ -76,10 +80,16 @@ export type DropzoneUploadHandleOptions = {
   injector: Injector;
 };
 
+/** @internal Options passed to a config's `executeDelete`. */
+export type DropzoneDeleteOptions<TValue> = {
+  value: TValue;
+  injector: Injector;
+};
+
 /**
  * The resolved upload config the dropzone directive consumes. Both `createDropzoneUpload` (new
  * query) and `createV2DropzoneUpload` (legacy v2) produce this shape - the query flavor lives
- * entirely inside `createUploadHandle`.
+ * entirely inside `createUploadHandle` / `executeDelete`.
  */
 export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
   /**
@@ -100,12 +110,38 @@ export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
 
   /** @internal Creates a per-file upload handle. Set by `createDropzoneUpload` / `createV2DropzoneUpload`. */
   createUploadHandle: (options: DropzoneUploadHandleOptions) => DropzoneUploadHandle<TValue>;
+
+  /**
+   * @internal Fires the delete request for an already-persisted value being removed. Unset when
+   * the upload config was created without a `delete` option. Resolves with the request error, or
+   * `null` on success.
+   */
+  executeDelete?: (options: DropzoneDeleteOptions<TValue>) => Promise<DropzoneUploadError | null>;
 };
 
 export type AnyDropzoneUploadConfig<TValue = unknown> = ResolvedDropzoneUploadConfig<TValue>;
 
+/**
+ * The authoring config for a delete request run when an already-persisted entry (a successful
+ * upload or an existing value) is removed - e.g. a `DELETE` route that cleans up the uploaded
+ * file server-side. Nest it under `DropzoneUploadConfig.delete` / `V2DropzoneUploadConfig.delete`.
+ * Removing a still-uploading entry only cancels its upload; nothing was persisted yet, so no
+ * delete request is made.
+ */
+export type DropzoneDeleteConfig<TArgs extends QueryArgs, TValue> = {
+  /** The query creator used to delete one value (e.g. a `DELETE /media/:id` route). */
+  queryCreator: QueryCreator<TArgs>;
+
+  /** Builds the request args to delete one value, e.g. `(id) => ({ pathParams: { id } })`. */
+  createArgs: (value: TValue) => RequestArgs<TArgs>;
+};
+
 /** The authoring config for `createDropzoneUpload` (new `@ethlete/query` API). */
-export type DropzoneUploadConfig<TArgs extends QueryArgs = QueryArgs, TValue = unknown> = {
+export type DropzoneUploadConfig<
+  TArgs extends QueryArgs = QueryArgs,
+  TValue = unknown,
+  TDeleteArgs extends QueryArgs = QueryArgs,
+> = {
   /**
    * The query creator used to upload a single file (e.g. a POST multipart route).
    *
@@ -139,6 +175,12 @@ export type DropzoneUploadConfig<TArgs extends QueryArgs = QueryArgs, TValue = u
    * Required as soon as the form control can start with a non-empty value.
    */
   resolveExisting?: (value: TValue) => DropzoneExistingFileInfo;
+
+  /**
+   * Run when an already-persisted entry (a successful upload or an existing value) is removed.
+   * Absent: removing an entry only updates the control locally, with no server-side cleanup.
+   */
+  delete?: DropzoneDeleteConfig<TDeleteArgs, TValue>;
 };
 
 /** The args accepted by a legacy v2 creator's `prepare()` - includes `mock`/`config` extras. */
@@ -146,11 +188,24 @@ export type V2DropzonePrepareArgsOf<TCreator extends AnyV2QueryCreator | AnyLega
   TCreator['prepare']
 >[0];
 
+/** The legacy `V2QueryClient` counterpart of `DropzoneDeleteConfig` - see there for behavior. */
+export type V2DropzoneDeleteConfig<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TValue> = {
+  /** The legacy query creator used to delete one value (from `V2QueryClient`'s `delete`). */
+  queryCreator: TCreator;
+
+  /** Builds the `prepare()` args to delete one value, e.g. `(id) => ({ pathParams: { id } })`. */
+  createArgs: (value: TValue) => V2DropzonePrepareArgsOf<TCreator>;
+};
+
 /**
  * The authoring config for `createV2DropzoneUpload` - the legacy `V2QueryClient` counterpart of
  * `DropzoneUploadConfig`, for apps that haven't migrated to the new `@ethlete/query` API yet.
  */
-export type V2DropzoneUploadConfig<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TValue> = {
+export type V2DropzoneUploadConfig<
+  TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
+  TValue,
+  TDeleteCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator = TCreator,
+> = {
   /**
    * The legacy query creator used to upload a single file (from `V2QueryClient`'s `post`/`put`,
    * or a `createLegacyQueryCreator` interop wrapper). A fresh query is prepared and executed per
@@ -185,6 +240,12 @@ export type V2DropzoneUploadConfig<TCreator extends AnyV2QueryCreator | AnyLegac
    * Required as soon as the form control can start with a non-empty value.
    */
   resolveExisting?: (value: TValue) => DropzoneExistingFileInfo;
+
+  /**
+   * Run when an already-persisted entry (a successful upload or an existing value) is removed.
+   * Absent: removing an entry only updates the control locally, with no server-side cleanup.
+   */
+  delete?: V2DropzoneDeleteConfig<TDeleteCreator, TValue>;
 };
 
 const firstNewQueryErrorMessage = (error: QueryErrorResponse): string | null => {
@@ -344,14 +405,62 @@ const createV2QueryUploadHandle = <TCreator extends AnyV2QueryCreator | AnyLegac
     };
   });
 
+const createNewQueryDeleteExecutor = <TArgs extends QueryArgs, TValue>(config: {
+  queryCreator: QueryCreator<TArgs>;
+  createArgs: (value: TValue) => RequestArgs<TArgs>;
+}) => {
+  const { queryCreator, createArgs } = config;
+
+  return (options: DropzoneDeleteOptions<TValue>): Promise<DropzoneUploadError | null> => {
+    const { value, injector } = options;
+
+    const query = queryCreator({ injector, silenceMissingWithArgsFeatureError: true });
+    const args = createArgs(value);
+
+    return executeUntilSettled(query, { args })
+      .then((snapshot) => snapshot.error())
+      .finally(() => query.subtle.destroy());
+  };
+};
+
+const createV2QueryDeleteExecutor = <TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TValue>(config: {
+  queryCreator: TCreator;
+  createArgs: (value: TValue) => V2DropzonePrepareArgsOf<TCreator>;
+}) => {
+  const { queryCreator, createArgs } = config;
+
+  return (options: DropzoneDeleteOptions<TValue>): Promise<DropzoneUploadError | null> =>
+    runInInjectionContext(options.injector, () => {
+      const { value, injector } = options;
+      const args = createArgs(value);
+
+      // Legacy interop creators call `inject(Injector)` inside `prepare()`, so run in context.
+      const query = runInInjectionContext(
+        injector,
+        // `skipCache: true` forces the delete to run - deletes are uncacheable, and the legacy
+        // interop query rejects the default `allowCache: true` on an uncacheable request (ET301).
+        () => queryCreator.prepare(args).execute({ skipCache: true }) as AnyV2Query | AnyLegacyQuery,
+      );
+
+      const state$: Observable<V2QueryState | null> = extractQuery(query)?.state$ ?? of(null);
+
+      return firstValueFrom(
+        state$.pipe(
+          filter((state) => isQueryStateSuccess(state) || isQueryStateFailure(state)),
+          take(1),
+        ),
+      ).then((state) => (isQueryStateFailure(state) ? state.error : null));
+    });
+};
+
 /**
  * Builds a dropzone upload config from a **new `@ethlete/query`** query creator. Pass the result
  * to the dropzone's `upload` input.
  *
  * For apps still on the legacy `V2QueryClient`, use {@link createV2DropzoneUpload} instead.
  */
-export const createDropzoneUpload = <TArgs extends QueryArgs, TValue>(
-  config: DropzoneUploadConfig<TArgs, TValue>,
+export const createDropzoneUpload = <TArgs extends QueryArgs, TValue, TDeleteArgs extends QueryArgs = QueryArgs>(
+  config: DropzoneUploadConfig<TArgs, TValue, TDeleteArgs>,
 ): AnyDropzoneUploadConfig<TValue> => ({
   selectValue: config.selectValue as (response: unknown) => TValue,
   resolveExisting: config.resolveExisting,
@@ -362,6 +471,9 @@ export const createDropzoneUpload = <TArgs extends QueryArgs, TValue>(
       createArgs: config.createArgs,
       selectValue: config.selectValue,
     }),
+  executeDelete: config.delete
+    ? createNewQueryDeleteExecutor({ queryCreator: config.delete.queryCreator, createArgs: config.delete.createArgs })
+    : undefined,
 });
 
 /**
@@ -377,8 +489,12 @@ export const createDropzoneUpload = <TArgs extends QueryArgs, TValue>(
  * });
  * ```
  */
-export const createV2DropzoneUpload = <TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TValue>(
-  config: V2DropzoneUploadConfig<TCreator, TValue>,
+export const createV2DropzoneUpload = <
+  TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
+  TValue,
+  TDeleteCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator = TCreator,
+>(
+  config: V2DropzoneUploadConfig<TCreator, TValue, TDeleteCreator>,
 ): AnyDropzoneUploadConfig<TValue> => ({
   selectValue: config.selectValue as (response: unknown) => TValue,
   resolveExisting: config.resolveExisting,
@@ -389,4 +505,7 @@ export const createV2DropzoneUpload = <TCreator extends AnyV2QueryCreator | AnyL
       createArgs: config.createArgs,
       selectValue: config.selectValue,
     }),
+  executeDelete: config.delete
+    ? createV2QueryDeleteExecutor({ queryCreator: config.delete.queryCreator, createArgs: config.delete.createArgs })
+    : undefined,
 });

@@ -11,8 +11,10 @@ import { DropzoneDirective } from './dropzone.directive';
 
 type UploadResponse = { uuid: string };
 type UploadArgs = { response: UploadResponse; body: FormData };
+type DeleteArgs = { response: void; pathParams: { id: string } };
 
 const UPLOAD_URL = 'https://api.test.com/upload';
+const deleteUrl = (id: string) => `https://api.test.com/media/${id}`;
 
 const createFile = (name = 'photo.png', type = 'image/png', size = 4) =>
   new File([new Uint8Array(size)], name, { type });
@@ -37,6 +39,8 @@ const createDragEvent = (type: string, files: File[] = []) => {
       (filesReject)="rejections.push($event)"
       (uploadSucceed)="succeeded.push($event)"
       (uploadFail)="failed.push($event)"
+      (deleteSucceed)="deleteSucceeded.push($event)"
+      (deleteFail)="deleteFailed.push($event)"
       etDropzone
     ></div>
   `,
@@ -51,6 +55,8 @@ class DropzoneTestHost {
   rejections: DropzoneFileRejection[][] = [];
   succeeded: DropzoneEntry<string>[] = [];
   failed: DropzoneEntry<string>[] = [];
+  deleteSucceeded: string[] = [];
+  deleteFailed: { value: string; error: unknown }[] = [];
 }
 
 @Component({
@@ -92,8 +98,8 @@ class DropzoneSchemaTestHost {
   rejections: DropzoneFileRejection[][] = [];
 }
 
-const createUploadConfig = (setup: QueryTestSetup, options?: { withResolver?: boolean }) =>
-  createDropzoneUpload<UploadArgs, string>({
+const createUploadConfig = (setup: QueryTestSetup, options?: { withResolver?: boolean; withDelete?: boolean }) =>
+  createDropzoneUpload<UploadArgs, string, DeleteArgs>({
     queryCreator: setup.createPost<UploadArgs>('/upload'),
     selectValue: (response) => response.uuid,
     ...(options?.withResolver === false
@@ -105,6 +111,14 @@ const createUploadConfig = (setup: QueryTestSetup, options?: { withResolver?: bo
             size: 1234,
           }),
         }),
+    ...(options?.withDelete
+      ? {
+          delete: {
+            queryCreator: setup.createDelete<DeleteArgs>((pathParams) => `/media/${pathParams.id}`),
+            createArgs: (value: string) => ({ pathParams: { id: value } }),
+          },
+        }
+      : {}),
   });
 
 describe('DropzoneDirective', () => {
@@ -441,6 +455,101 @@ describe('DropzoneDirective', () => {
 
       expect(req.cancelled).toBe(true);
       expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('delete on remove', () => {
+    let fixture: ComponentFixture<DropzoneTestHost>;
+    let host: DropzoneTestHost;
+
+    const dropzone = () =>
+      fixture.debugElement.children[0]!.injector.get(DropzoneDirective) as DropzoneDirective<string>;
+
+    // effects (the settlement signal `executeUntilSettled` awaits) only flush on a CD tick, and the
+    // resulting promise chain still needs a real microtask turn to run its `.then()`s.
+    const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve));
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [DropzoneTestHost] });
+      setup = setupQueryTest();
+      fixture = TestBed.createComponent(DropzoneTestHost);
+      host = fixture.componentInstance;
+      host.upload.set(createUploadConfig(setup, { withDelete: true }));
+      fixture.detectChanges();
+    });
+
+    afterEach(() => {
+      fixture.destroy();
+      setup.httpTesting.verify();
+    });
+
+    it('should fire the delete request when a successfully uploaded entry is removed', async () => {
+      dropzone().selectFiles([createFile()]);
+      fixture.detectChanges();
+      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      fixture.detectChanges();
+
+      dropzone().removeEntry(dropzone().entries()[0]!.id);
+      fixture.detectChanges();
+
+      const deleteReq = setup.httpTesting.expectOne(deleteUrl('uuid-1'));
+      expect(deleteReq.request.method).toBe('DELETE');
+      deleteReq.flush(null);
+
+      fixture.detectChanges();
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      expect(host.deleteSucceeded).toEqual(['uuid-1']);
+      expect(host.deleteFailed).toEqual([]);
+    });
+
+    it('should fire the delete request when an existing entry is removed', async () => {
+      host.value.set('e1');
+      fixture.detectChanges();
+
+      dropzone().removeEntry(dropzone().entries()[0]!.id);
+      fixture.detectChanges();
+
+      setup.httpTesting.expectOne(deleteUrl('e1')).flush(null);
+
+      fixture.detectChanges();
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      expect(host.deleteSucceeded).toEqual(['e1']);
+    });
+
+    it('should emit deleteFail (and not remove the value a second time) when the delete request fails', async () => {
+      host.value.set('e1');
+      fixture.detectChanges();
+
+      dropzone().removeEntry(dropzone().entries()[0]!.id);
+      fixture.detectChanges();
+
+      setup.httpTesting.expectOne(deleteUrl('e1')).flush('nope', { status: 500, statusText: 'Server Error' });
+
+      fixture.detectChanges();
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      expect(host.deleteSucceeded).toEqual([]);
+      expect(host.deleteFailed.length).toBe(1);
+      expect(host.deleteFailed[0]!.value).toBe('e1');
+      expect(dropzone().entries().length).toBe(0);
+    });
+
+    it('should not fire a delete request for a still-uploading entry (nothing persisted yet)', () => {
+      dropzone().selectFiles([createFile()]);
+      fixture.detectChanges();
+
+      const req = setup.httpTesting.expectOne(UPLOAD_URL);
+
+      dropzone().removeEntry(dropzone().entries()[0]!.id);
+      fixture.detectChanges();
+
+      expect(req.cancelled).toBe(true);
+      // `afterEach`'s `httpTesting.verify()` would fail if a DELETE request had also been queued.
     });
   });
 

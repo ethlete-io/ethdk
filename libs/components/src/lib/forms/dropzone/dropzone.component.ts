@@ -55,7 +55,15 @@ import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
     {
       directive: DropzoneDirective,
       inputs: ['value', 'touched', 'disabled', 'invalid', 'errors', 'required', 'name', 'upload', 'multiple'],
-      outputs: ['valueChange', 'touchedChange', 'filesReject', 'uploadSucceed', 'uploadFail'],
+      outputs: [
+        'valueChange',
+        'touchedChange',
+        'filesReject',
+        'uploadSucceed',
+        'uploadFail',
+        'deleteSucceed',
+        'deleteFail',
+      ],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],
