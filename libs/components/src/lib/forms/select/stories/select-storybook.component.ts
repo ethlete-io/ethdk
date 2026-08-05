@@ -345,7 +345,7 @@ const LAST_NAMES = ['Adler', 'Berg', 'Castro', 'Diaz', 'Egede', 'Fuchs', 'Grau',
         <et-label>Assignee</et-label>
         <et-select [formField]="demoForm.value" [options]="USERS" placeholder="Pick a user">
           <input etSelectSearch placeholder="Search 1000 users" />
-          <ng-template etSelectOptionTemplate let-user>
+          <ng-template [options]="USERS" etSelectOptionTemplate let-user>
             <span class="flex items-center gap-2 py-1">
               <span class="flex size-6 flex-none items-center justify-center rounded-full bg-white/10 text-[10px]">
                 {{ user.initials }}

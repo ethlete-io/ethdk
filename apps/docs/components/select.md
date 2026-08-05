@@ -274,11 +274,11 @@ For big client-side lists, pass the options as data instead of projecting `et-se
 items: SelectOptionData[] = hugeList.map((entry) => ({ value: entry.id, label: entry.name }));
 ```
 
-Each entry is `{ value, label, disabled? }` (`SelectOptionData`); values must be unique. Extra fields on an entry are kept and handed to the row template. Rows render as the plain `label` by default - project an `ng-template[etSelectOptionTemplate]` to customize them, with the source entry as context (see the `OptionTemplate` story):
+Each entry is `{ value, label, disabled? }` (`SelectOptionData`); values must be unique. Extra fields on an entry are kept and handed to the row template. Rows render as the plain `label` by default - project an `ng-template[etSelectOptionTemplate]` to customize them, with the source entry as context (see the `OptionTemplate` story). `let-user`'s type widens to the base `SelectOptionData` unless the template's own `[options]` is also bound to the same array, which carries `users`'s element type - extra fields included - into the context:
 
 ```html
 <et-select [formField]="form.assignee" [options]="users">
-  <ng-template etSelectOptionTemplate let-user>
+  <ng-template [options]="users" etSelectOptionTemplate let-user>
     <span class="user-row">{{ user.label }} - {{ user.email }}</span>
   </ng-template>
 </et-select>

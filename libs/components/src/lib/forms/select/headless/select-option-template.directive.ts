@@ -1,13 +1,13 @@
-import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { Directive, TemplateRef, afterNextRender, inject, input } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { registerSingleton } from '../../form-field/headless';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
 import { SelectItem, SelectOptionData } from './select.tokens';
 
-export type SelectOptionTemplateContext = {
+export type SelectOptionTemplateContext<TOption extends SelectOptionData = SelectOptionData> = {
   /** The option's source entry from the `options` input - extra fields included. */
-  $implicit: SelectOptionData;
+  $implicit: TOption;
   item: SelectItem;
 };
 
@@ -16,19 +16,29 @@ export type SelectOptionTemplateContext = {
  * present, `et-select` renders this template as each option's label content instead of the
  * plain label text. Only applies to data-driven rows - projected `et-select-option`s carry
  * their own content.
+ *
+ * `let-option`'s type widens to the base `SelectOptionData` unless this directive's own
+ * `[options]` is also bound to the same array passed to the select's `[options]` - e.g.
+ * `<ng-template etSelectOptionTemplate [options]="managers()" let-option>` - which carries the
+ * array's element type into the template context, extra fields included.
  */
 @Directive({
   selector: 'ng-template[etSelectOptionTemplate]',
   exportAs: 'etSelectOptionTemplate',
 })
-export class SelectOptionTemplateDirective {
+export class SelectOptionTemplateDirective<TOption extends SelectOptionData = SelectOptionData> {
   private readonly hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
-  public templateRef = inject<TemplateRef<SelectOptionTemplateContext>>(TemplateRef);
+  public templateRef = inject<TemplateRef<SelectOptionTemplateContext<TOption>>>(TemplateRef);
+
+  /** Type witness only, to type `let-option` - bind the same array passed to the select's `[options]`. Never read. */
+  public options = input<readonly TOption[] | undefined>(undefined);
 
   constructor() {
-    registerSingleton(this.select?.registeredOptionTemplate, this);
+    // erases TOption - the registry only needs the base shape (`registeredOptionTemplate` is
+    // unparameterized), while `this` here is generic-invariant because of the `options` input
+    registerSingleton(this.select?.registeredOptionTemplate, this as unknown as SelectOptionTemplateDirective);
 
     if (ngDevMode) {
       afterNextRender(() => {
@@ -45,10 +55,10 @@ export class SelectOptionTemplateDirective {
 
   // static on purpose (the lint ban excepts it): Angular's template type checker requires
   // the context guard to be static - it types the `let-` bindings of the host ng-template
-  public static ngTemplateContextGuard(
-    _directive: SelectOptionTemplateDirective,
+  public static ngTemplateContextGuard<TOption extends SelectOptionData>(
+    _directive: SelectOptionTemplateDirective<TOption>,
     _context: unknown,
-  ): _context is SelectOptionTemplateContext {
+  ): _context is SelectOptionTemplateContext<TOption> {
     return true;
   }
 }

@@ -30,7 +30,7 @@ import { USERS } from './select-nested-elevation-storybook.data';
         <et-label>Assignee</et-label>
         <et-select [formField]="demoForm.value" [options]="USERS" placeholder="Pick a user">
           <input etSelectSearch placeholder="Search users" />
-          <ng-template etSelectOptionTemplate let-user>
+          <ng-template [options]="USERS" etSelectOptionTemplate let-user>
             <span class="flex min-w-0 items-center gap-2">
               <span
                 #avatar
