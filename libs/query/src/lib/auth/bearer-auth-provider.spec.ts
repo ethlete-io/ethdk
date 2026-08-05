@@ -394,6 +394,58 @@ describe('createBearerAuthProvider', () => {
         httpTesting.verify();
       });
     });
+
+    it('should report a success executionState, like a completed auth query', () => {
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        expect(provider.executionState()).toBeNull();
+
+        provider.setTokens('external-access', 'external-refresh');
+
+        expect(provider.executionState()).toEqual({ type: 'tokenSeed', state: 'success' });
+      });
+    });
+
+    it('should not override the more specific executionState of a query-driven login', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.queries.login.execute({ body: { username: 'test' } });
+        const req = httpTesting.expectOne('https://api.example.com/auth/login');
+        req.flush({ token: 'access-123', refresh_token: 'refresh-456' });
+        TestBed.tick();
+
+        expect(provider.executionState()).toEqual({
+          type: 'login',
+          state: 'success',
+          response: { token: 'access-123', refresh_token: 'refresh-456' },
+        });
+      });
+    });
   });
 
   describe('logout', () => {

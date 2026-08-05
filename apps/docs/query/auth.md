@@ -75,7 +75,7 @@ It also **abandons every unsaved-changes guard** (`injectUnsavedChangesCoordinat
 
 ## Execution state
 
-`executionState()` is the single place to watch what the provider is doing. Its `type` is either one of your query keys or one of the four internal operations, and `state` moves `loading → success | error`:
+`executionState()` is the single place to watch what the provider is doing. Its `type` is either one of your query keys or one of the internal operations, and `state` moves `loading → success | error`:
 
 | `type`           | Raised by                                                          |
 | ---------------- | ------------------------------------------------------------------ |
@@ -84,12 +84,13 @@ It also **abandons every unsaved-changes guard** (`injectUnsavedChangesCoordinat
 | `'tokenRefresh'` | Either refresh trigger - proactive timer or reactive `401`.        |
 | `'logout'`       | `logout()`. Always `state: 'success'`.                             |
 | `'revocation'`   | [`withTokenRevocation`](#features).                                |
+| `'tokenSeed'`    | `setTokens(...)`. Always `state: 'success'`.                       |
 
 This is what replaces watching a v2 query collection. A failed session restore, for instance, is `{ type: 'autoLogin', state: 'error', error }` - the signal to send the user to the login screen rather than to show a broken app.
 
 ## External tokens
 
-`setTokens(access, refresh)` applies a token pair the provider did not fetch itself - an SSO/OIDC callback that arrives with both tokens in the URL, a token handed over by a native shell, a test harness:
+`setTokens(access, refresh)` applies a token pair the provider did not fetch itself - an SSO/OIDC callback that arrives with both tokens in the URL, a token handed over by a native shell, a test harness. It behaves like a successful auth query: `executionState()` becomes `{ type: 'tokenSeed', state: 'success' }`, so login-redirect logic built on `executionState` works the same for this path as for a query-driven login.
 
 ```ts
 const { accessToken, refreshToken } = parseCallbackFragment(location.hash);

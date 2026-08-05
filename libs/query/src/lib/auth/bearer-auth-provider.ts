@@ -70,11 +70,17 @@ export type BearerAuthExecutionStateLogout = {
   state: 'success';
 };
 
+export type BearerAuthExecutionStateTokenSeed = {
+  type: 'tokenSeed';
+  state: 'success';
+};
+
 export type BearerAuthExecutionState<TType extends string = string> =
   | BearerAuthExecutionStateLoading<TType>
   | BearerAuthExecutionStateSuccess<TType>
   | BearerAuthExecutionStateError<TType>
-  | BearerAuthExecutionStateLogout;
+  | BearerAuthExecutionStateLogout
+  | BearerAuthExecutionStateTokenSeed;
 
 export const BearerAuthFeatureType = {
   PERSISTENT_AUTH: 'PERSISTENT_AUTH',
@@ -276,17 +282,18 @@ export type BearerAuthProvider<
    * Tracks the latest auth operation (login, autoLogin, tokenRefresh, logout, revocation) with its state and payload.
    */
   executionState: Signal<BearerAuthExecutionState<
-    ExtractQueryKey<TBuilders[number]> | 'autoLogin' | 'tokenRefresh' | 'logout' | 'revocation'
+    ExtractQueryKey<TBuilders[number]> | 'autoLogin' | 'tokenRefresh' | 'logout' | 'revocation' | 'tokenSeed'
   > | null>;
 
   /**
    * Seeds the provider with tokens that were issued outside of it - an SSO/OIDC callback that
    * arrives with both tokens in the URL, a token handed over by a native shell, a test harness.
    *
-   * Behaves exactly like a successful auth query: the tokens are applied, `bearerData` /
-   * `isAuthenticated` update, `afterTokenRefresh$` emits so waiting secure queries run, and (unless
-   * disabled) other tabs are synced. Without it the only way in is to execute the refresh query with
-   * the refresh token and throw the access token away.
+   * Behaves like a successful auth query: the tokens are applied, `bearerData` / `isAuthenticated`
+   * update, `executionState` becomes `{ type: 'tokenSeed', state: 'success' }`, `afterTokenRefresh$`
+   * emits so waiting secure queries run, and (unless disabled) other tabs are synced. Without it the
+   * only way in is to execute the refresh query with the refresh token and throw the access token
+   * away.
    *
    * Does **not** persist anything by itself - `withPersistentAuth` picks the tokens up through the
    * same signals it watches for query-issued ones.
@@ -362,7 +369,7 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
   injector: Injector,
   latestExecutedQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>,
   latestNonInternalQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>,
-  setTokens: (access: string, refresh: string) => void,
+  applyTokens: (access: string, refresh: string) => void,
   executionState: WritableSignal<BearerAuthExecutionState | null>,
 ) => {
   const queries = {} as QueryRegistry<TBuilders>;
@@ -385,7 +392,7 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       if (response && !loading && !error) {
         try {
           const tokens = extractTokens(response);
-          setTokens(tokens.accessToken, tokens.refreshToken);
+          applyTokens(tokens.accessToken, tokens.refreshToken);
         } catch (extractError) {
           if (isDevMode()) {
             console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
@@ -558,10 +565,18 @@ const createBearerAuthProviderImpl = <
   const latestNonInternalQuery = signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
   const executionState = signal<BearerAuthExecutionState | null>(null);
 
-  const setTokens = (access: string, refresh: string) => {
+  const applyTokens = (access: string, refresh: string) => {
     accessToken.set(access);
     refreshToken.set(refresh);
     afterTokenRefresh$.next();
+  };
+
+  // Public entry point only - a query-driven login already reports its own, more specific
+  // executionState (e.g. `{ type: 'login', state: 'success' }`) via setupBearerQueryRegistry's
+  // execute(), so that internal path calls applyTokens directly to avoid stomping it with this.
+  const setTokens = (access: string, refresh: string) => {
+    applyTokens(access, refresh);
+    executionState.set({ type: 'tokenSeed', state: 'success' });
   };
 
   const { queries } = setupBearerQueryRegistry(
@@ -569,7 +584,7 @@ const createBearerAuthProviderImpl = <
     injector,
     latestExecutedQuery,
     latestNonInternalQuery,
-    setTokens,
+    applyTokens,
     executionState,
   );
 
