@@ -426,3 +426,12 @@ Checked in dev mode only, after the first render.
 | `ET4500` | An opt-in scheduler feature is used outside an `<et-scheduler>`.                                                | Move the feature inside the scheduler root. |
 | `ET4501` | A view layout directive (e.g. `[etSchedulerMonth]`) is placed outside an `[etScheduler]`.                       | Move it inside the scheduler root.          |
 | `ET4502` | An edit-surface feature (an edit field or appointment action) is used outside an `<et-scheduler-edit-surface>`. | Move it inside the edit surface root.       |
+
+## Tree (ET46xx)
+
+Checked in dev mode only, after the first render.
+
+| Code     | Cause                                                                      | Fix                                                  |
+| -------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `ET4600` | An `[etTree]` was rendered without a `[dataSource]`.                       | Bind an object with a `loadChildren(parent)` method. |
+| `ET4601` | A tree part (`etTreeNode`, `etTreeNodeDef`) is used outside an `[etTree]`. | Move it inside the tree root (e.g. `<et-tree>`).     |

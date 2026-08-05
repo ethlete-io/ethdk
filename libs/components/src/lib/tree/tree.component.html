@@ -1,0 +1,44 @@
+@for (entry of rows(); track entry.row.node) {
+  <div [row]="entry.row" [style.--_et-tree-node-depth]="entry.row.level - 1" class="et-tree-node" etTreeNode>
+    <et-tree-marker [marker]="entry.marker" />
+
+    <span class="et-tree-node-label">
+      @if (tree.nodeTemplate(); as nodeTemplate) {
+        <ng-container [ngTemplateOutlet]="nodeTemplate.templateRef" [ngTemplateOutletContext]="entry.context" />
+      } @else {
+        {{ entry.row.node.label }}
+      }
+    </span>
+
+    @if (entry.row.childrenError; as error) {
+      <span class="et-tree-node-error">{{ error }} · {{ retryLabel() }}</span>
+    }
+  </div>
+}
+
+<!-- The status lines are `treeitem`s rather than plain text: everything inside a `role="tree"` has to be
+     one. The error line is also the retry control - selecting it reloads, the same way activating a
+     branch whose children failed does. -->
+@if (tree.rootStatus() === 'loading') {
+  <div class="et-tree-status" aria-disabled="true" aria-level="1" aria-selected="false" role="treeitem">
+    <et-tree-marker marker="spinner" />
+    {{ loadingLabel() }}
+  </div>
+} @else if (tree.rootError(); as error) {
+  <div
+    (click)="tree.retry(null)"
+    (keydown.enter)="tree.retry(null)"
+    class="et-tree-status et-tree-status--error"
+    aria-level="1"
+    aria-selected="false"
+    role="treeitem"
+    tabindex="0"
+  >
+    <et-tree-marker marker="warning" />
+    {{ error }} · {{ retryLabel() }}
+  </div>
+} @else if (!rows().length) {
+  <div class="et-tree-status" aria-disabled="true" aria-level="1" aria-selected="false" role="treeitem">
+    {{ emptyLabel() }}
+  </div>
+}

@@ -1,0 +1,191 @@
+@layer components {
+  /* How far each level is pushed in. Rows are rendered flat, so the indent is padding on the row
+     rather than nested boxes — which is also what keeps the hover tint full width at every depth. */
+  @property --et-tree-indent {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 18px;
+  }
+
+  @property --et-tree-node-padding-block {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 5px;
+  }
+
+  @property --et-tree-node-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-tree-node-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-tree-node-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-tree-marker-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-tree-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 150ms;
+  }
+
+  /* The row's depth, set per row by the template — a count, turned into the indent by the row's padding. */
+  @property --_et-tree-node-depth {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+  }
+
+  .et-tree {
+    display: block;
+    color: var(--et-surface-color-solid, CanvasText);
+  }
+
+  .et-tree-node,
+  .et-tree-status {
+    display: flex;
+    align-items: center;
+    gap: var(--et-tree-node-gap);
+    padding-block: var(--et-tree-node-padding-block);
+    padding-inline: calc(var(--et-tree-node-padding-inline) + var(--_et-tree-node-depth) * var(--et-tree-indent))
+      var(--et-tree-node-padding-inline);
+    border-radius: var(--et-tree-node-radius);
+    box-sizing: border-box;
+  }
+
+  /* Present on leaves too, and on the status lines, so every label starts at the same offset. */
+  .et-tree-node-marker {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--et-tree-marker-size);
+    block-size: var(--et-tree-marker-size);
+    color: var(--et-surface-color-muted-solid, GrayText);
+
+    .et-tree-node-chevron {
+      inline-size: 100%;
+      block-size: 100%;
+      /* the icon points up natively — a quarter turn points it at the branch it opens */
+      rotate: 90deg;
+      transition: rotate var(--et-tree-duration) cubic-bezier(0.25, 0, 0.1, 1);
+    }
+  }
+
+  .et-tree-node {
+    cursor: pointer;
+    user-select: none;
+    /* The tint is the only animated property — a row never moves on hover. */
+    transition: background-color var(--et-tree-duration) ease;
+
+    .et-tree-node-label {
+      flex: 1;
+      min-inline-size: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .et-tree-node-error {
+      flex: none;
+      color: var(--et-tree-error-color, var(--et-surface-color-muted-solid, GrayText));
+      font-size: 0.875em;
+    }
+
+    &:where([data-expanded]) .et-tree-node-chevron {
+      rotate: 180deg;
+    }
+
+    /* The chevron is directional, so it turns the other way when the tree reads right-to-left. The
+       indent needs no such rule — it is logical padding. */
+    &:dir(rtl) {
+      .et-tree-node-chevron {
+        rotate: -90deg;
+      }
+
+      &:where([data-expanded]) .et-tree-node-chevron {
+        rotate: 180deg;
+      }
+    }
+
+    &:where([data-error]) .et-tree-node-marker {
+      color: var(--et-tree-error-color, var(--et-surface-color-muted-solid, GrayText));
+    }
+
+    /* Interaction states stay bare (no `:where()`) so they outrank the base rule and the config
+       modifiers, per the styling notes in CLAUDE.md. A row tint is lighter than a button's: it spans
+       the full width, where the same percentage reads much heavier. */
+    &:hover {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
+    }
+
+    &:active {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 14%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: -2px;
+    }
+
+    /* After the bare interaction states on purpose: at equal specificity these win, so hovering a
+       selected row deepens its accent instead of replacing it with the neutral tint. */
+    &:where([data-selected]) {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 16%, transparent);
+      color: var(--et-theme-color-ink-solid, inherit);
+
+      &:hover {
+        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 24%, transparent);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 32%, transparent);
+      }
+    }
+
+    &:where([aria-disabled]) {
+      color: var(--et-surface-color-muted-solid, GrayText);
+      cursor: default;
+
+      &:hover,
+      &:active {
+        background: transparent;
+      }
+    }
+  }
+
+  .et-tree-status {
+    color: var(--et-surface-color-muted-solid, GrayText);
+
+    &:where(.et-tree-status--error) {
+      color: var(--et-tree-error-color, var(--et-surface-color-muted-solid, GrayText));
+      cursor: pointer;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: -2px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-tree-node,
+    .et-tree-node .et-tree-node-chevron {
+      transition: none;
+    }
+  }
+}

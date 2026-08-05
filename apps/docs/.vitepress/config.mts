@@ -271,6 +271,7 @@ export default defineConfig({
             { text: 'Table', link: '/components/table' },
             { text: 'Tabs', link: '/components/tabs' },
             { text: 'Toolbar', link: '/components/toolbar' },
+            { text: 'Tree', link: '/components/tree' },
           ],
         },
         {

@@ -132,6 +132,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Table](/components/table) - type-safe, light-by-default data table on CSS grid with a sticky header and empty state.
 - [Tabs](/components/tabs) - content tabs and router-driven nav tabs.
 - [Toolbar](/components/toolbar) - bar of related controls sharing one tab stop, navigated with the arrow keys.
+- [Tree](/components/tree) - ARIA tree over a lazily loaded hierarchy: per-branch loading, flat rendering, one tab stop.
 
 ### Feedback & media
 

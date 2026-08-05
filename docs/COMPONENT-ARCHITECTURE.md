@@ -189,8 +189,9 @@ To avoid collisions, each component domain owns a fixed numeric range:
 | 4300 – 4399 | Match                           |
 | 4400 – 4499 | Standings                       |
 | 4500 – 4599 | Scheduler                       |
+| 4600 – 4699 | Tree                            |
 
-Add new domains by claiming the next free hundred block (next free: **4600**
+Add new domains by claiming the next free hundred block (next free: **4700**
 onward). The 1100 block was pre-allocated for a standalone combobox that never
 shipped - the unified select covers it and owns 1000 – 1099 - so the chip domain
 reclaimed it. **3900 – 4299** is an unclaimed gap - it's free, but new domains

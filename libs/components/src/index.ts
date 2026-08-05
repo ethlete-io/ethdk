@@ -41,3 +41,4 @@ export * from './lib/time-picker';
 export * from './lib/toggletip';
 export * from './lib/toolbar';
 export * from './lib/tooltip';
+export * from './lib/tree';

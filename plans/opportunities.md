@@ -14,8 +14,14 @@ those plans. Unprioritized backlog; pick items into real plans as needed.
 
 ## New components
 
-Medium: **Tree view** (cascader's internal `cascader-tree.ts` is not exposed
-generically).
+**Tree view** - **done** (2026-08-05). Shipped as `et-tree` + headless `[etTree]`
+(per-branch lazy loading via `TreeDataSource`, flat `visibleRows()` rendering with
+explicit `aria-level`/`posinset`/`setsize`, roving tab stop, expand/collapse keys,
+type-ahead, `*`, three selection modes, per-branch retry). The item's premise was
+wrong: `cascader-tree.ts` was already public from the cascader's headless barrel, and
+it is only a data-source contract - no expand state, no focus model, no rendering. The
+tree defines its own structurally identical `TreeDataSource`, so one source object
+drives both without coupling the domains.
 
 **Toolbar** - **done** (2026-08-05). Shipped as `et-toolbar` + headless
 `[etToolbar]` (roving tab stop, arrow/Home/End, RTL-aware, orientation); the RTE's
