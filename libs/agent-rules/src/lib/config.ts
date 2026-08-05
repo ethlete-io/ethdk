@@ -52,11 +52,15 @@ const readRawConfig = (root: string) => {
  * so nothing here may change what gets emitted:
  *
  * - `disableHooks: true` silences every generated hook, `["context-warning"]` just the named ones.
+ * - `disableAutoHandoffSave: true` keeps the context-warning hook's normal tiered messages (including
+ *   in auto mode), but at the critical tier in auto mode it falls back to just recommending
+ *   `/handoff` instead of writing the handoff file automatically.
  * - `sdkSourcePath` points at a local `ethlete-sdk` checkout, which the SDK source and local-build
  *   skills read when they need the SDK's own sources instead of the published package.
  */
 export type LocalConfig = {
   disableHooks?: boolean | string[];
+  disableAutoHandoffSave?: boolean;
   sdkSourcePath?: string;
 };
 
@@ -65,7 +69,7 @@ export type LocalConfigState =
   | { exists: true; valid: false }
   | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[] };
 
-const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'sdkSourcePath'];
+const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'disableAutoHandoffSave', 'sdkSourcePath'];
 
 export const readLocalConfig = (root: string): LocalConfigState => {
   const path = join(root, LOCAL_CONFIG_FILE_NAME);

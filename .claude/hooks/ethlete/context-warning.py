@@ -25,6 +25,9 @@ if the context shrinks again (e.g. after /compact).
 
 Can be disabled per machine via a gitignored ethlete-agents.config.local.json
 at the repo root: {"disableHooks": true} or {"disableHooks": ["context-warning"]}.
+To keep the tiered warnings but drop just the auto-mode auto-save escalation,
+use {"disableAutoHandoffSave": true} instead - the critical tier then falls
+back to recommending /handoff, same as non-auto mode.
 
 Fail-safe: any error exits 0 with no output — the hook must never block a prompt.
 """
@@ -63,17 +66,28 @@ CONTEXT_WINDOWS = (
 DEFAULT_WINDOW = 200_000
 
 
-def disabled_locally():
-    """True when the local config disables this hook (or all hooks) on this machine."""
+def load_local_config():
+    """Parsed ethlete-agents.config.local.json at the repo root, or {} if missing/unreadable."""
     root = os.environ.get("CLAUDE_PROJECT_DIR")
     if not root:
-        return False
+        return {}
     try:
         with open(os.path.join(root, LOCAL_CONFIG_FILE), encoding="utf-8") as f:
-            disabled = json.load(f).get("disableHooks")
+            config = json.load(f)
     except (OSError, ValueError, AttributeError):
-        return False
+        return {}
+    return config if isinstance(config, dict) else {}
+
+
+def disabled_locally(config):
+    """True when the local config disables this hook (or all hooks) on this machine."""
+    disabled = config.get("disableHooks")
     return disabled is True or (isinstance(disabled, list) and HOOK_NAME in disabled)
+
+
+def auto_handoff_save_disabled(config):
+    """True when the local config opts out of the auto-mode critical-tier auto-save."""
+    return config.get("disableAutoHandoffSave") is True
 
 
 def window_for(model):
@@ -192,12 +206,13 @@ def messages(tier, tokens, budget, priced, auto_mode):
 
 
 def main():
-    if disabled_locally():
+    local_config = load_local_config()
+    if disabled_locally(local_config):
         return
     data = json.load(sys.stdin)
     transcript_path = data.get("transcript_path")
     session_id = data.get("session_id", "unknown")
-    auto_mode = data.get("permission_mode") == "auto"
+    auto_mode = data.get("permission_mode") == "auto" and not auto_handoff_save_disabled(local_config)
     if not transcript_path or not os.path.isfile(transcript_path):
         return
 

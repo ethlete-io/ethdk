@@ -91,7 +91,7 @@ const collectLocalConfigWarnings = (root: string) => {
 
   if (local.unknownKeys.length > 0) {
     warnings.push(
-      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports "disableHooks" and "sdkSourcePath"; it never changes what sync writes.`,
+      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports "disableHooks", "disableAutoHandoffSave" and "sdkSourcePath"; it never changes what sync writes.`,
     );
   }
 
@@ -113,6 +113,12 @@ const collectLocalConfigWarnings = (root: string) => {
         `${LOCAL_CONFIG_FILE_NAME} disables unknown hook(s): ${unknown.join(', ')}. Known hooks: ${Object.keys(CLAUDE_HOOKS).join(', ')}.`,
       );
     }
+  }
+
+  const disableAutoHandoffSave = local.config.disableAutoHandoffSave;
+
+  if (disableAutoHandoffSave !== undefined && typeof disableAutoHandoffSave !== 'boolean') {
+    warnings.push(`${LOCAL_CONFIG_FILE_NAME} has an invalid "disableAutoHandoffSave" value — use true or false.`);
   }
 
   return warnings;
