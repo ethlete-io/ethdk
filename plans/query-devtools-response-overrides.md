@@ -65,7 +65,23 @@ date/datetime pattern regardless of key name. Presets: now, +1 day, -1 day, far 
 far past (epoch), and a deliberately invalid string - the last one exists because "the API sent a
 date my code can't parse" is a real bug class worth being able to reproduce on demand.
 
-## Phase 0 - split the monolith before adding to it (M)
+## Phase 0 - split the monolith before adding to it (M) - done
+
+Shipped as ten commits on `next` (one per tab plus the host-token/drawer scaffolding). The shell
+(`query-devtools.component.ts`/`.html`) is now panel chrome + a `@switch` over
+`<et-query-devtools-{queries,stacks,sequences,forms,auth,ws,cache,timeline,events,faults}-tab>`, each
+its own `.ts`/`.html`; the template dropped from 2066 to ~240 lines. Cross-tab and persisted state
+(selection ids, filters, the JIT editor, pane sizing, …) stays on the shell, exposed to every tab via
+`QueryDevtoolsHost` (`query-devtools-host.ts`) - a structural type + `QUERY_DEVTOOLS_HOST` token +
+`injectQueryDevtoolsHost()`, `useExisting`-provided by the shell, same shape as table's
+`TableFeatureHost`. One deviation from the plan as written: the detail drawer
+(`query-devtools-detail.component.ts`) is one component with an internal `@switch` over
+overview/history/data, not three separate sub-tab components - splitting further added no real
+laziness (a user already has the query open when switching those) so it wasn't worth the extra files.
+CSS was left as one shared stylesheet on the shell; almost every class is reused across tabs, so there
+was no clean per-tab slice worth moving. Verified per tab in Storybook headlessly, including the
+cross-tab invariants (shared `detailTab`, the Faults-armed banner). No docs update - purely internal,
+no public API change.
 
 `query-devtools.component.ts` is 2801 lines and its template another 2066
 (`libs/components/src/lib/query-devtools/query-devtools.component.ts` /
