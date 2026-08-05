@@ -1,0 +1,181 @@
+import {
+  AnyPagedQueryStack,
+  AnyQueryStack,
+  HttpRequestLoadingProgressState,
+  HttpRequestRetryState,
+  Query,
+  QueryClient,
+  QueryDevtoolsRun,
+  QueryDevtoolsStats,
+  QueryDevtoolsStatsHandle,
+  QueryRefreshCause,
+  QueryRepository,
+  QueryRepositoryCacheEntry,
+} from '@ethlete/query';
+
+// The registry stores queries type-erased; the panel reads them structurally.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyQuery = Query<any>;
+
+export type DevtoolsTab =
+  'queries' | 'stacks' | 'sequences' | 'forms' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events' | 'faults';
+
+/**
+ * The sections of the query detail drawer. The head and its actions stay pinned above them - the detail
+ * holds more than fits a column, and everything below the actions is reading material.
+ */
+export type DetailTab = 'overview' | 'history' | 'data';
+
+/**
+ * Which pane of a two-pane tab a divider drag sizes: the Queries tab's list, or the drawer every
+ * split view opens a query in.
+ */
+export type PaneTarget = 'list' | 'drawer';
+
+/** The axis a two-pane tab splits along: the panes sit side by side, or stack in a side dock. */
+export type PaneAxis = 'inline' | 'block';
+
+export type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
+
+/** A live-state facet the Queries list can be narrowed to. */
+export type QueryListFacet = 'error' | 'loading' | 'stale' | 'idle';
+
+/** The fault fields the panel arms from a number input, as opposed to the status it picks from a list. */
+export type NumericFaultField = 'latencyMs' | 'failNext' | 'failRate';
+
+/**
+ * A chunk of a route as rendered: literal path text, a path param (`name` is the param it fills in) or
+ * the query string of the request that ran. The kind becomes the segment's class.
+ */
+export type RouteSegment = { text: string; kind: 'static' | 'param' | 'query'; name?: string };
+
+/** A query reachable from a stack or sequence card, rendered as a row that opens the detail drawer. */
+export type QueryLink = {
+  id: string;
+  query: AnyQuery;
+  method: string;
+  segments: RouteSegment[];
+  clientBaseUrl: string;
+  stats?: QueryDevtoolsStatsHandle;
+};
+
+/**
+ * Query stats plus the numbers the panel derives from them rather than storing: an execution that never
+ * reached the network was answered from the cache, and the averages come from the running totals.
+ */
+export type QueryActivity = {
+  stats: QueryDevtoolsStats;
+  cacheServed: number;
+  avgDurationMs: number | null;
+  avgResponseBytes: number | null;
+  hasActivity: boolean;
+};
+
+/**
+ * What a query's request is doing beyond `loading`: which attempt it is on, the backoff it is waiting
+ * out, and how much of the payload has moved. Without it a request retried three times behind a 4s
+ * backoff and a plain slow one are the same yellow dot.
+ */
+export type RequestProgress = {
+  /** @see HttpRequestSubtle.attempts */
+  attempts: number;
+
+  retry: HttpRequestRetryState | null;
+
+  /** How much of the pending backoff is left, or `null` when none is pending. */
+  retryInMs: number | null;
+
+  progress: HttpRequestLoadingProgressState | null;
+};
+
+/**
+ * One run of one query, placed on the timeline's shared axis. `leftPct` / `widthPct` are percentages of
+ * the window every row is laid out against, which is what makes overlapping runs visible as overlap.
+ */
+export type TimelineRow = {
+  key: string;
+  entryId: string;
+  method: string;
+  path: string;
+  run: QueryDevtoolsRun;
+  leftPct: number;
+  widthPct: number;
+
+  /** How long the run took, or `null` while it is still in flight. */
+  durationMs: number | null;
+};
+
+export type Timeline = {
+  rows: TimelineRow[];
+
+  /** The start of the window the rows are laid out against. */
+  startedAt: number;
+
+  /** How long that window is - the axis every bar is a fraction of. */
+  windowMs: number;
+
+  /** How many older runs the view left out, so a capped timeline does not read as a complete one. */
+  hidden: number;
+};
+
+/**
+ * One request a refresh re-executed, as an event row lists it. A cache key is shared by every query
+ * bound to it, so the row carries all of their ids - one to open, and the rest so each of those queries
+ * can still find the refresh under "Refetched by". Empty for a request no registered query holds.
+ */
+export type RefreshedRequest = {
+  queryIds: string[];
+  method: string;
+  path: string;
+};
+
+export type EventLogItem = {
+  id: number;
+  timestamp: number;
+  client: string;
+  type: 'entry-created' | 'request-success' | 'request-error' | 'unbind-all-secure' | 'queries-refreshed';
+
+  /** `null` for events that are not about a single request, e.g. the logout-wide secure unbind. */
+  method: string | null;
+  url: string | null;
+  isSecure: boolean;
+  status: number | null;
+
+  /**
+   * The registered query the request belonged to when the event fired, so the row can open it. Resolved
+   * here rather than at click time so the log holds an id instead of a reference to the request itself.
+   */
+  queryId: string | null;
+
+  /** What asked for a refresh, for a `queries-refreshed` row. `null` for every other type. */
+  cause: QueryRefreshCause | null;
+
+  /** The requests that refresh re-executed - the fan-out the panel could not show before. */
+  refreshed: RefreshedRequest[] | null;
+
+  /**
+   * How long the request took and how big its response was, read off the request as the event fired.
+   * Both `null` for an event that is not one request settling, and the size also for a failure - an
+   * error body is not a payload worth a column.
+   */
+  durationMs: number | null;
+  bytes: number | null;
+
+  /** @see QueryDevtoolsStats.hasEstimatedBytes */
+  isEstimatedBytes: boolean;
+};
+
+/** One cache entry as the Cache tab lists it: the repository's own snapshot plus its measured size. */
+export type CacheRow = {
+  entry: QueryRepositoryCacheEntry;
+  bytes: number;
+  isEstimatedBytes: boolean;
+};
+
+/** A repository the panel found, together with the client name/base URL it was registered under. */
+export type RepositoryInfo = { repository: QueryRepository; name: string; baseUrl: string; client: QueryClient | null };
+
+/** What each tab holds, as its badge reports it: how many entries, and how many of them are failing. */
+export type TabBadge = { count: number; errors: number; errorNoun?: string };
+
+export type { AnyPagedQueryStack, AnyQueryStack };
