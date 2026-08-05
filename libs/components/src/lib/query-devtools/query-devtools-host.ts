@@ -11,6 +11,7 @@ import {
   QuerySequence,
   QuerySequenceStatus,
   WebSocketDevtoolsHandle,
+  WebSocketDevtoolsMessage,
 } from '@ethlete/query';
 import { QueryDevtoolsDiff } from './query-devtools-diff';
 import {
@@ -206,6 +207,14 @@ export type QueryDevtoolsHost = {
 
   /** The form whose detail the Forms tab has expanded - persisted. */
   selectedFormId: WritableSignal<string | null>;
+
+  /** Free-text narrowing of every socket's message log - persisted. */
+  socketFilter: WritableSignal<string>;
+  socketMessages(ws: WebSocketDevtoolsHandle): WebSocketDevtoolsMessage[];
+  socketDirectionLabel(message: WebSocketDevtoolsMessage): string;
+  emitSocketMessage(options: { entry: QueryDevtoolsEntry; event: string; data: string }): void;
+  /** The message an emit box last failed with, if this is the socket it failed on. */
+  socketEmitErrorFor(entryId: string): string | null;
   timelineSelectedQueryId: WritableSignal<string | null>;
   timelineSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
 

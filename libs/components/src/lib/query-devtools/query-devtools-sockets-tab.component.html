@@ -1,0 +1,122 @@
+<div class="et-query-devtools-scroll">
+  @if (host.wsEntries().length) {
+    <div class="et-query-devtools-toolbar">
+      <div class="et-query-devtools-toolbar-row">
+        <input
+          #socketFilterInput
+          [value]="host.socketFilter()"
+          (input)="host.socketFilter.set(socketFilterInput.value)"
+          class="et-query-devtools-search"
+          type="search"
+          placeholder="filter event / room / direction…"
+          aria-label="Filter socket messages"
+        />
+        @if (host.socketFilter()) {
+          <button
+            (click)="host.socketFilter.set('')"
+            class="et-query-devtools-filter-clear"
+            type="button"
+            title="Clear the message filter"
+            aria-label="Clear the message filter"
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  @for (entry of host.wsEntries(); track entry.id) {
+    @let ws = host.asWs(entry);
+    <div class="et-query-devtools-card">
+      <div class="et-query-devtools-card-head">
+        <strong>{{ entry.meta.name || 'socket' }}</strong>
+        <span
+          [class.et-query-devtools-chip--success]="ws.connected()"
+          [class.et-query-devtools-chip--muted]="!ws.connected()"
+          class="et-query-devtools-chip"
+        >
+          {{ ws.connected() ? 'connected' : 'disconnected' }}
+        </span>
+      </div>
+      <dl class="et-query-devtools-meta">
+        <dt>URL</dt>
+        <dd class="et-query-devtools-mono">{{ entry.meta.url }}</dd>
+        <dt>Rooms</dt>
+        <dd>
+          @if (ws.rooms().length) {
+            <div class="et-query-devtools-chips">
+              @for (room of ws.rooms(); track room) {
+                <span class="et-query-devtools-chip">{{ room }}</span>
+              }
+            </div>
+          } @else {
+            none
+          }
+        </dd>
+      </dl>
+
+      <div class="et-query-devtools-section-row">
+        <h5 class="et-query-devtools-section">Emit</h5>
+        <span class="et-query-devtools-hint">
+          Sends as the app would, so a server that only answers a client that asked can be provoked from here.
+        </span>
+      </div>
+      <div class="et-query-devtools-emit">
+        <input #emitEvent class="et-query-devtools-input" type="text" placeholder="event" aria-label="Event to emit" />
+        <input
+          #emitData
+          class="et-query-devtools-input"
+          type="text"
+          placeholder="JSON payload (optional)"
+          aria-label="Payload to emit"
+        />
+        <button
+          (click)="host.emitSocketMessage({ entry, event: emitEvent.value, data: emitData.value })"
+          class="et-query-devtools-btn"
+          type="button"
+        >
+          ↑ Send
+        </button>
+      </div>
+      @if (host.socketEmitErrorFor(entry.id); as emitError) {
+        <p class="et-query-devtools-editor-error">{{ emitError }}</p>
+      }
+
+      @let messages = host.socketMessages(ws);
+      <div class="et-query-devtools-section-row">
+        <h5 class="et-query-devtools-section">Messages</h5>
+        <span class="et-query-devtools-count">
+          @if (host.socketFilter()) {
+            {{ messages.length }} of {{ ws.messages().length }}
+          } @else {
+            {{ messages.length }}
+          }
+        </span>
+      </div>
+      @for (message of messages; track message.id) {
+        <div [attr.data-direction]="message.direction" class="et-query-devtools-ws-message">
+          <div class="et-query-devtools-card-head">
+            <span class="et-query-devtools-count">{{ host.formatTime(message.timestamp) }}</span>
+            <span class="et-query-devtools-ws-direction">{{ host.socketDirectionLabel(message) }}</span>
+            @if (message.room) {
+              <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ message.room }}</span>
+            }
+            <span class="et-query-devtools-method">{{ message.event }}</span>
+          </div>
+          @if (message.data !== undefined) {
+            <et-query-devtools-json [value]="message.data" />
+          }
+        </div>
+      } @empty {
+        @if (ws.messages().length) {
+          <p class="et-query-devtools-empty">No message matches the filter · {{ ws.messages().length }} in the log.</p>
+        } @else {
+          <p class="et-query-devtools-empty">Nothing sent or received yet.</p>
+        }
+      }
+    </div>
+  } @empty {
+    <p class="et-query-devtools-empty">No web socket clients registered.</p>
+  }
+</div>

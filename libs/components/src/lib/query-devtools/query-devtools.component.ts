@@ -61,6 +61,7 @@ import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.c
 import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import { QueryDevtoolsSequencesTabComponent } from './query-devtools-sequences-tab.component';
+import { QueryDevtoolsSocketsTabComponent } from './query-devtools-sockets-tab.component';
 import { QueryDevtoolsStacksTabComponent } from './query-devtools-stacks-tab.component';
 import {
   buildQueryDevtoolsSessionExport,
@@ -255,6 +256,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsQueriesTabComponent,
     QueryDevtoolsRouteComponent,
     QueryDevtoolsSequencesTabComponent,
+    QueryDevtoolsSocketsTabComponent,
     QueryDevtoolsStacksTabComponent,
     QueryDevtoolsToggleComponent,
   ],
@@ -374,7 +376,7 @@ export class QueryDevtoolsComponent {
   protected eventErrorsOnly = signal(this.persisted.eventErrorsOnly ?? false);
 
   /** Free-text narrowing of every socket's message log. Matches the event, the room and the direction. */
-  protected socketFilter = signal(this.persisted.socketFilter ?? '');
+  public socketFilter = signal(this.persisted.socketFilter ?? '');
 
   /** The cache entry whose response is expanded, as `<client>|<key>`, or `null` while none is. */
   private expandedCacheKey = signal<string | null>(null);
@@ -441,7 +443,7 @@ export class QueryDevtoolsComponent {
 
   public authEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'auth-provider'));
 
-  protected wsEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'ws-client'));
+  public wsEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'ws-client'));
 
   /** Unique client names present across queries and auth providers, for the Queries-tab picker. */
   protected clientNames = computed(() => {
@@ -1665,7 +1667,7 @@ export class QueryDevtoolsComponent {
     return entry.handle as AnyBearerAuthProvider;
   }
 
-  protected asWs(entry: QueryDevtoolsEntry): WebSocketDevtoolsHandle {
+  public asWs(entry: QueryDevtoolsEntry): WebSocketDevtoolsHandle {
     return entry.handle as WebSocketDevtoolsHandle;
   }
 
@@ -1673,7 +1675,7 @@ export class QueryDevtoolsComponent {
    * A socket's messages, narrowed by the filter box. Every whitespace-separated term has to match the
    * event, the room or the direction, so `out join` finds the room joins the client sent.
    */
-  protected socketMessages(ws: WebSocketDevtoolsHandle) {
+  public socketMessages(ws: WebSocketDevtoolsHandle) {
     const messages = ws.messages();
     const terms = this.socketFilter().trim().toLowerCase().split(/\s+/).filter(Boolean);
 
@@ -1687,7 +1689,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** How the message log labels a direction: what the client sent, versus what the server pushed. */
-  protected socketDirectionLabel(message: WebSocketDevtoolsMessage) {
+  public socketDirectionLabel(message: WebSocketDevtoolsMessage) {
     return message.direction === 'out' ? '↑ sent' : '↓ received';
   }
 
@@ -1695,7 +1697,7 @@ export class QueryDevtoolsComponent {
    * Sends a message as the app would, so a server that only answers a client that asked can be provoked
    * from the panel. An empty payload sends nothing rather than `""` - a plain event is a valid message.
    */
-  protected emitSocketMessage(options: { entry: QueryDevtoolsEntry; event: string; data: string }) {
+  public emitSocketMessage(options: { entry: QueryDevtoolsEntry; event: string; data: string }) {
     const { entry, event, data } = options;
     const name = event.trim();
 
@@ -1715,7 +1717,7 @@ export class QueryDevtoolsComponent {
     }
   }
 
-  protected socketEmitErrorFor(entryId: string) {
+  public socketEmitErrorFor(entryId: string) {
     const error = this.socketEmitError();
 
     return error?.entryId === entryId ? error.message : null;
