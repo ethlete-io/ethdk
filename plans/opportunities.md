@@ -8,38 +8,25 @@ those plans. Unprioritized backlog; pick items into real plans as needed.
 
 > A second research pass (2026-07-30) covering gaps _inside_ existing
 > components - touch/gesture, RTL/i18n/a11y consistency, per-domain feature
-> gaps - lives in `components-research-findings.md`. Its twelve implementation
-> plans have all shipped; that file keeps the evidence, the unplanned backlog and
-> what the work deferred.
+> gaps - lived in `components-research-findings.md`. All twelve implementation
+> plans it produced have shipped, including the last touch-target fixes, so the
+> file itself is gone too.
 
-## New components (none exist today; verified)
-
-High value (table-stakes for app teams):
-
-| Candidate                 | Notes                                                                                                                                                      |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Banner / inline alert** | `notification` is transient toast/snackbar only; no static dismissible page/section message (info/warning/error/success). Semantic colors via theme types. |
-| **Avatar (+ group)**      | User/entity representation for shells, member lists, comments.                                                                                             |
-| **Card**                  | Generic content container; every dashboard team reaches for it.                                                                                            |
-| **Badge**                 | Non-interactive status/count indicator - `chip` (interactive/removable) currently does double duty.                                                        |
-| **Empty state**           | Icon/title/description/action slot. Grid + cascader hand-roll "no results" today; table/pagination plans will need it too - build once.                    |
+## New components
 
 Medium: **Divider** (tabs/RTE/split-button/sidebar each reinvent it - cheap
-extraction), **Description list** (`dl/dt/dd` detail views; note naming clash
-with form-field's `et-description`), **Copy-to-clipboard button**
-(`copyToClipboard()` already in core; query-devtools hand-rolls the
-icon-swap-feedback pattern twice), **Toolbar** (generalize - RTE already
-implements the full ARIA toolbar pattern, grid has `et-grid-item-toolbar`),
-**Stepper/progress-steps** (wizard indicator; ties to the parked form-wizard
-idea; distinct from the number-input stepper), **Tree view** (cascader's
+extraction), **Toolbar** (generalize - RTE already implements the full ARIA
+toolbar pattern, grid has `et-grid-item-toolbar`), **Tree view** (cascader's
 internal `cascader-tree.ts` is not exposed generically).
 
 Low / opportunistic: stat tile, timeline, kbd, command palette (leans on
 existing overlay+menu so cheaper than it looks, but scope-creep risk),
-back-to-top (covered by `10-filter.md` Layer 1's generic floating trigger).
+back-to-top (covered by `floating-action`'s generic floating trigger).
 
 Already covered - don't rebuild: date-range picker, segmented control,
-loaders, popover-as-API (overlay), rating/switch.
+loaders, popover-as-API (overlay), rating/switch, banner/inline alert, avatar
+(+ group), card, badge, empty state, description list, copy-to-clipboard
+button (`copy-button`), stepper/progress-steps.
 
 ## Platform modernization - team decisions recorded 2026-07-23
 
@@ -92,11 +79,10 @@ exists.
 
 - **`core/seo.directive.ts` - remove.** Already `@deprecated`, and the only real
   SSR crash risk left in `core`: bare `document` access at lines 98–154, no
-  `DOCUMENT` injection, no guard. Deliberately **not** fixed in place
-  (`components-research-findings.md` §1) - patching a directive that
-  is scheduled for deletion is wasted work. The other `core` global-access
-  stragglers (`scrolling/scrollable.ts`, `animations/animation-utils.ts`) were
-  guarded instead, since they stay.
+  `DOCUMENT` injection, no guard. Deliberately **not** fixed in place - patching
+  a directive that is scheduled for deletion is wasted work. The other `core`
+  global-access stragglers (`scrolling/scrollable.ts`, `animations/animation-utils.ts`)
+  were guarded instead, since they stay.
 
 ## Tech debt notes (codebase is very clean - 2 TODOs total)
 
