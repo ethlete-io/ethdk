@@ -66,7 +66,10 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         right: '0',
         bottom: '0',
         pointerEvents: 'none',
-        zIndex: '1000',
+        // Above the query devtools panel's own near-int32-max z-index (it must outrank an arbitrary
+        // host app), so an overlay opened from inside the devtools - e.g. its override menu - isn't
+        // rendered behind the panel that triggered it.
+        zIndex: '2147483003',
       });
       renderer.appendChild(document.body, rootElement);
 
