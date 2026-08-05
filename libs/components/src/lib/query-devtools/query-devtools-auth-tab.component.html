@@ -1,0 +1,61 @@
+<div class="et-query-devtools-scroll">
+  @for (entry of host.authEntries(); track entry.id) {
+    @let auth = host.asAuth(entry);
+    <div class="et-query-devtools-card">
+      <div class="et-query-devtools-card-head">
+        <strong>{{ entry.meta.name || 'auth provider' }}</strong>
+        <span
+          [class.et-query-devtools-chip--success]="auth.isAuthenticated()"
+          [class.et-query-devtools-chip--muted]="!auth.isAuthenticated()"
+          class="et-query-devtools-chip"
+        >
+          {{ auth.isAuthenticated() ? 'authenticated' : 'anonymous' }}
+        </span>
+      </div>
+      <dl class="et-query-devtools-meta">
+        <dt>Base URL</dt>
+        <dd class="et-query-devtools-mono">{{ entry.meta.clientBaseUrl || entry.meta.clientName || '—' }}</dd>
+        <dt>Access token</dt>
+        <dd>{{ auth.accessToken() ? 'present' : 'none' }}</dd>
+        <dt>Refresh token</dt>
+        <dd>{{ auth.refreshToken() ? 'present' : 'none' }}</dd>
+        @if (host.authTokenExpiry(auth); as expiry) {
+          <dt>Token expires in</dt>
+          <dd>{{ expiry }}</dd>
+        }
+        @if (auth.executionState(); as state) {
+          <dt>Execution state</dt>
+          <dd>{{ state.type }} · {{ state.state }}</dd>
+        }
+        @if (host.authQueryKeys(auth).length) {
+          <dt>Queries</dt>
+          <dd>
+            <div class="et-query-devtools-chips">
+              @for (key of host.authQueryKeys(auth); track key) {
+                <span class="et-query-devtools-chip">{{ key }}</span>
+              }
+            </div>
+          </dd>
+        }
+        @if (entry.meta.features?.length) {
+          <dt>Features</dt>
+          <dd>
+            <et-query-devtools-features [features]="entry.meta.features ?? []" />
+          </dd>
+        }
+      </dl>
+
+      @if (host.authTokenPayload(auth); as payload) {
+        <h4 class="et-query-devtools-section">Access token payload</h4>
+        <et-query-devtools-json [value]="payload" />
+      }
+
+      @if (auth.latestNonInternalQuery(); as latest) {
+        <h4 class="et-query-devtools-section">Latest auth query · {{ latest.key }}</h4>
+        <et-query-devtools-json [value]="latest.snapshot.response()" />
+      }
+    </div>
+  } @empty {
+    <p class="et-query-devtools-empty">No auth providers registered.</p>
+  }
+</div>

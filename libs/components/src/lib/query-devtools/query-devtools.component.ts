@@ -47,6 +47,7 @@ import {
   WebSocketDevtoolsMessage,
 } from '@ethlete/query';
 import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, take, tap, timer } from 'rxjs';
+import { QueryDevtoolsAuthTabComponent } from './query-devtools-auth-tab.component';
 import { buildCurlCommand } from './query-devtools-curl';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
@@ -245,6 +246,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   encapsulation: ViewEncapsulation.None,
   imports: [
     NgTemplateOutlet,
+    QueryDevtoolsAuthTabComponent,
     QueryDevtoolsDetailComponent,
     QueryDevtoolsDrawerComponent,
     QueryDevtoolsFeaturesComponent,
@@ -437,7 +439,7 @@ export class QueryDevtoolsComponent {
 
   public formEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-form'));
 
-  protected authEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'auth-provider'));
+  public authEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'auth-provider'));
 
   protected wsEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'ws-client'));
 
@@ -1659,7 +1661,7 @@ export class QueryDevtoolsComponent {
     return (entry.handle as { current: QuerySequence<unknown[]> }).current;
   }
 
-  protected asAuth(entry: QueryDevtoolsEntry): AnyBearerAuthProvider {
+  public asAuth(entry: QueryDevtoolsEntry): AnyBearerAuthProvider {
     return entry.handle as AnyBearerAuthProvider;
   }
 
@@ -1787,7 +1789,7 @@ export class QueryDevtoolsComponent {
     return 'idle';
   }
 
-  protected authTokenPayload(auth: AnyBearerAuthProvider): Record<string, unknown> | null {
+  public authTokenPayload(auth: AnyBearerAuthProvider): Record<string, unknown> | null {
     return decodeJwtPayload(auth.accessToken());
   }
 
@@ -1803,12 +1805,12 @@ export class QueryDevtoolsComponent {
     );
   }
 
-  protected authQueryKeys(auth: AnyBearerAuthProvider): string[] {
+  public authQueryKeys(auth: AnyBearerAuthProvider): string[] {
     return Object.keys(auth.queries ?? {});
   }
 
   /** Countdown to the access-token's `exp` (the point a refresh becomes due), or `null` if unknown. */
-  protected authTokenExpiry(auth: AnyBearerAuthProvider): string | null {
+  public authTokenExpiry(auth: AnyBearerAuthProvider): string | null {
     this.clock();
     const payload = decodeJwtPayload(auth.accessToken());
     const exp = typeof payload?.['exp'] === 'number' ? payload['exp'] : null;

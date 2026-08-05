@@ -77,6 +77,11 @@ export type QueryDevtoolsHost = {
   asWs(entry: QueryDevtoolsEntry): WebSocketDevtoolsHandle;
   asForm(entry: QueryDevtoolsEntry): QueryDevtoolsFormHandle;
 
+  authTokenPayload(auth: AnyBearerAuthProvider): Record<string, unknown> | null;
+  authQueryKeys(auth: AnyBearerAuthProvider): string[];
+  /** Countdown to the access-token's `exp` (the point a refresh becomes due), or `null` if unknown. */
+  authTokenExpiry(auth: AnyBearerAuthProvider): string | null;
+
   queryStatus(query: AnyQuery): 'idle' | 'loading' | 'success' | 'error';
   isStale(query: AnyQuery): boolean;
   requestProgress(query: AnyQuery): RequestProgress | null;
