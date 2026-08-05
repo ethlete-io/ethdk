@@ -11,31 +11,33 @@
   </div>
 </div>
 
-<div class="et-scheduler-time-grid-row et-scheduler-time-grid-all-day" role="row">
-  <div class="et-scheduler-time-grid-gutter"></div>
+@if (grid.allDayRowCount() > 0) {
+  <div class="et-scheduler-time-grid-row et-scheduler-time-grid-all-day" role="row">
+    <div class="et-scheduler-time-grid-gutter"></div>
 
-  <div
-    [style.--_et-scheduler-time-grid-all-day-row-count]="grid.allDayRowCount()"
-    class="et-scheduler-time-grid-all-day-lane"
-    role="gridcell"
-  >
-    @for (entry of grid.allDay(); track entry.node.appointment.id) {
-      <button
-        [style.--_et-scheduler-time-grid-all-day-offset]="entry.inlineOffset"
-        [style.--_et-scheduler-time-grid-all-day-size]="entry.inlineSize"
-        [style.--_et-scheduler-time-grid-all-day-row]="entry.row"
-        [attr.data-selected]="isSelected(entry.node.appointment) ? '' : null"
-        [attr.title]="entry.node.appointment.title"
-        [etProvideColor]="entry.node.appointment.colorToken ?? null"
-        (click)="select(entry.node.appointment)"
-        class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry"
-        type="button"
-      >
-        <span class="et-scheduler-appointment-title">{{ entry.node.appointment.title }}</span>
-      </button>
-    }
+    <div
+      [style.--_et-scheduler-time-grid-all-day-row-count]="grid.allDayRowCount()"
+      class="et-scheduler-time-grid-all-day-lane"
+      role="gridcell"
+    >
+      @for (entry of grid.allDay(); track entry.node.appointment.id) {
+        <button
+          [style.--_et-scheduler-time-grid-all-day-offset]="entry.inlineOffset"
+          [style.--_et-scheduler-time-grid-all-day-size]="entry.inlineSize"
+          [style.--_et-scheduler-time-grid-all-day-row]="entry.row"
+          [attr.data-selected]="isSelected(entry.node.appointment) ? '' : null"
+          [attr.title]="entry.node.appointment.title"
+          [etProvideColor]="entry.node.appointment.colorToken ?? null"
+          (click)="select(entry.node.appointment)"
+          class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry"
+          type="button"
+        >
+          <span class="et-scheduler-appointment-title">{{ entry.node.appointment.title }}</span>
+        </button>
+      }
+    </div>
   </div>
-</div>
+}
 
 <div class="et-scheduler-time-grid-row et-scheduler-time-grid-body">
   <div class="et-scheduler-time-grid-gutter" role="presentation">

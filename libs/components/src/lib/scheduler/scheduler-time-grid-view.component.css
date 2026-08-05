@@ -139,6 +139,9 @@
     block-size: calc(var(--_et-scheduler-time-grid-block-span, 0) * 1%);
     inline-size: calc(var(--_et-scheduler-time-grid-block-inline-size, 100) * 1% - 2px);
     min-block-size: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
     overflow: hidden;
     padding: 2px 6px;
     padding-inline-start: calc(min(var(--_et-scheduler-time-grid-block-depth, 0), 4) * 6px + 6px);
@@ -153,19 +156,16 @@
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 
+    /* Aligned to the first text line's cap-height rather than centered on the row, since a
+       long appointment's row can stretch far past this dot's own size. */
     &::before {
-      position: absolute;
-      inset-block-start: 3px;
-      inset-inline-start: 3px;
+      flex-shrink: 0;
+      margin-block-start: 4px;
       inline-size: 6px;
       block-size: 6px;
       border-radius: 999px;
       background: var(--et-theme-color-primary-solid);
       content: '';
-    }
-
-    &:where([data-nested])::before {
-      inset-inline-start: calc(min(var(--_et-scheduler-time-grid-block-depth, 0), 4) * 6px + 3px);
     }
 
     @media (hover: hover) {
@@ -190,8 +190,9 @@
   }
 
   .et-scheduler-time-grid-block-title {
-    display: block;
     overflow: hidden;
+    min-inline-size: 0;
+    flex: 1;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

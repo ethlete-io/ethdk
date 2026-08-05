@@ -28,6 +28,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+    border-inline-start: 1px solid var(--et-surface-border-solid);
     border-block-start: 1px solid var(--et-surface-border-solid);
   }
 
@@ -79,6 +80,17 @@
     min-block-size: 0;
     gap: 2px;
     overflow: hidden;
+  }
+
+  /* The pill background already carries the appointment color here, so the dot is
+     redundant and the gap it reserves is worth more as title width in a narrow cell. */
+  .et-scheduler-month-view-cell-appointments .et-scheduler-appointment {
+    gap: 0;
+    padding: 2px 4px;
+
+    &::before {
+      display: none;
+    }
   }
 
   .et-scheduler-month-view-overflow-trigger {

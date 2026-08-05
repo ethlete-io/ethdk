@@ -73,7 +73,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
 @Component({
   selector: 'et-sb-scheduler',
   template: `
-    <div class="max-w-4xl p-8 font-sans">
+    <div class="p-8 font-sans">
       <et-scheduler [(view)]="view" [(selectedAppointmentId)]="selectedAppointmentId" [appointments]="appointments()" />
 
       <p class="mt-4 text-sm opacity-60">Selected: {{ selectedTitle() ?? 'none' }}</p>
