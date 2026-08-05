@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 6.0.0-next.28
+
+### Minor Changes
+
+- [#3047](https://github.com/ethlete-io/ethdk/pull/3047) [`e266740`](https://github.com/ethlete-io/ethdk/commit/e266740c41f1eae06e2ddf16fae6cda29c6ed5a6) Thanks [@github-actions](https://github.com/apps/github-actions)! - The prerelease's `createQueryForm()` is now `defineQueryForm()` and returns a plain object rather than a class instance (`CreateQueryFormConfig` → `DefineQueryFormConfig`).
+
+### Patch Changes
+
+- [`53cd2a5`](https://github.com/ethlete-io/ethdk/commit/53cd2a5d0a618c298bd9f631ea4dea32f6f9f590) Thanks [@TomTomB](https://github.com/TomTomB)! - Secure queries that outlive a logout now run again once the user logs back in, instead of staying idle for the rest of the page load.
+
 ## 6.0.0-next.27
 
 ### Patch Changes
