@@ -329,28 +329,52 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
             this.addClass(toClass);
           }
         }),
-        switchMap(() => this.animatable.animationEnd$),
-        filter(() => this.state$.value === expectedState),
-        switchMap((e) => {
-          if (!e.cancelled && e.transitionId === transitionId) {
+        switchMap(() => this.animatable.isAnimating$),
+        take(1),
+        switchMap((isAnimating) => {
+          if (isAnimating) return of(true);
+
+          // Nothing started yet on the first check - give a transition with a delay one more
+          // frame before concluding none is coming (mirrors handleInterruptedTransition).
+          return fromNextFrame().pipe(
+            switchMap(() => this.animatable.isAnimating$),
+            take(1),
+          );
+        }),
+        switchMap((isAnimating) => {
+          if (!isAnimating) {
+            // No transition ever started - e.g. `prefers-reduced-motion` collapsed every
+            // transition-duration to 0, which per spec never fires transitionrun/transitionend.
+            // Waiting on animationEnd$ here would hang forever, so treat it as settled.
+            this.debugLog(`${transitionId}: completes via fallback (no transition started)`);
+
             return of(true);
           }
 
-          // The batch ended cancelled or under a different id - e.g. the browser cancelled and
-          // restarted a running transition mid-flight (an anchored overlay whose ancestor pane got
-          // destroyed) or a foreign transition on the same element finished. If nothing is
-          // animating anymore the expected end event can never arrive, so treat the transition as
-          // settled instead of waiting forever (mirrors the fallback in handleInterruptedTransition).
-          return this.animatable.isAnimating$.pipe(
-            take(1),
-            tap((stillAnimating) => {
-              if (!stillAnimating) {
-                this.debugLog(
-                  `${transitionId}: completes via fallback (batch id "${e.transitionId ?? 'none'}", cancelled ${e.cancelled})`,
-                );
+          return this.animatable.animationEnd$.pipe(
+            filter(() => this.state$.value === expectedState),
+            switchMap((e) => {
+              if (!e.cancelled && e.transitionId === transitionId) {
+                return of(true);
               }
+
+              // The batch ended cancelled or under a different id - e.g. the browser cancelled and
+              // restarted a running transition mid-flight (an anchored overlay whose ancestor pane got
+              // destroyed) or a foreign transition on the same element finished. If nothing is
+              // animating anymore the expected end event can never arrive, so treat the transition as
+              // settled instead of waiting forever (mirrors the fallback in handleInterruptedTransition).
+              return this.animatable.isAnimating$.pipe(
+                take(1),
+                tap((stillAnimating) => {
+                  if (!stillAnimating) {
+                    this.debugLog(
+                      `${transitionId}: completes via fallback (batch id "${e.transitionId ?? 'none'}", cancelled ${e.cancelled})`,
+                    );
+                  }
+                }),
+                map((stillAnimating) => !stillAnimating),
+              );
             }),
-            map((stillAnimating) => !stillAnimating),
           );
         }),
         filter((settled) => settled && this.state$.value === expectedState),

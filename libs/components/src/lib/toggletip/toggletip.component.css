@@ -186,9 +186,12 @@
 
   @media (prefers-reduced-motion: reduce) {
     .et-overlay.et-with-default-animation.et-overlay--toggletip {
-      &.et-animation-enter-active,
+      &.et-animation-enter-active {
+        transition: opacity 200ms ease;
+      }
+
       &.et-animation-leave-active {
-        transition-duration: 0ms;
+        transition: opacity 140ms ease;
       }
     }
 

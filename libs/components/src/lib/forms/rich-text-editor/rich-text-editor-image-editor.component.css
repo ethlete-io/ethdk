@@ -91,9 +91,12 @@
       --_et-rte-image-editor-nudge-x: 0px;
       --_et-rte-image-editor-nudge-y: 0px;
 
-      &.et-animation-enter-active,
+      &.et-animation-enter-active {
+        transition: opacity 200ms ease;
+      }
+
       &.et-animation-leave-active {
-        transition-duration: 0ms;
+        transition: opacity 140ms ease;
       }
     }
   }

@@ -113,4 +113,23 @@
       box-shadow: calc(50px * var(--_et-overlay-sheet-slide-sign)) 0 0 0 var(--_et-overlay-overshoot-fill);
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation {
+      &.et-overlay--bottom-sheet,
+      &.et-overlay--top-sheet,
+      &.et-overlay--left-sheet,
+      &.et-overlay--right-sheet {
+        &.et-animation-enter-active,
+        &.et-animation-leave-active {
+          transition-duration: 0ms;
+        }
+
+        &.et-animation-enter-from,
+        &.et-animation-leave-to {
+          transform: none !important;
+        }
+      }
+    }
+  }
 }

@@ -80,9 +80,8 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .et-menu-item-check,
       .et-menu-item-check::before {
-        transition-duration: 0ms;
+        transition: opacity 120ms ease;
       }
     }
   }

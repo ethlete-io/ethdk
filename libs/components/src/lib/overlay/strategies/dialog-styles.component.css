@@ -30,4 +30,21 @@
       }
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-overlay--dialog {
+      &.et-animation-enter-active {
+        transition: opacity 300ms var(--ease-out-5);
+      }
+
+      &.et-animation-leave-active {
+        transition: opacity 150ms var(--ease-out-5);
+      }
+
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: none !important;
+      }
+    }
+  }
 }

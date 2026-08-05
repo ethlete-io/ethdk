@@ -49,5 +49,15 @@
         scale(var(--leave-to-scale-x, 1), var(--leave-to-scale-y, 1));
       opacity: 1;
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      &.et-animation-enter-active {
+        transition: opacity 100ms linear;
+      }
+
+      &.et-animation-leave-active {
+        transition: opacity 125ms 175ms linear;
+      }
+    }
   }
 }

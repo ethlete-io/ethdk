@@ -363,6 +363,7 @@ Inside the overlay:
 - **Name/description**: set `ariaLabel`, `ariaLabelledBy` or `ariaDescribedBy` in the config - or just use `[et-overlay-title]`, which auto-wires the overlay's `aria-labelledby` to the title element when nothing else names it.
 - **Focus**: `autoFocus` targets `'container' | 'first-heading' | 'first-tabbable'`, a CSS selector, or `false`; `restoreFocus` (default `true`) returns focus to the opener on close. With the overlay router, each navigation re-applies initial focus to the new page (default `'first-tabbable'`), and `[etOverlayRouterLink]` sets `aria-current="page"` on the active link.
 - **Dismissal & scroll**: `closeOnEscape` and `closeOnOutsidePointer` default to `true` (`disableClose` forces both off), and body scroll is locked while any _modal_ overlay is open - non-modal overlays (tooltips, popovers) never lock the page.
+- **Reduced motion**: every built-in strategy's enter/leave animation is skipped under `prefers-reduced-motion` - the overlay still opens and closes, just without the transition.
 
 ## Error codes
 

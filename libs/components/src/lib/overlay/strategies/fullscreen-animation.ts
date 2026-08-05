@@ -1,5 +1,12 @@
 import { ApplicationRef, ComponentRef, EnvironmentInjector, createComponent } from '@angular/core';
-import { AngularRenderer, RuntimeError, animationDebugLog, forceReflow, nextFrame } from '@ethlete/core';
+import {
+  AngularRenderer,
+  RuntimeError,
+  animationDebugLog,
+  forceReflow,
+  matchesReducedMotion,
+  nextFrame,
+} from '@ethlete/core';
 import { filter, take, tap, timer } from 'rxjs';
 import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { getOriginCoordinatesAndDimensions } from './overlay-origin';
@@ -154,6 +161,7 @@ const shouldUseReducedAnimation = (options: {
 }) => {
   const viewportWidth = options.document.documentElement.clientWidth;
 
+  if (matchesReducedMotion(options.document.documentElement)) return true;
   if (viewportWidth >= REDUCED_ANIMATION_THRESHOLD_WIDTH) return true;
   if (!options.originElement) return true;
   if (!options.applyTransformOrigin) return true;

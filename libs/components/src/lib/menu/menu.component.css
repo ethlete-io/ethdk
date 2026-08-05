@@ -305,9 +305,12 @@
 
   @media (prefers-reduced-motion: reduce) {
     .et-overlay.et-with-default-animation.et-overlay--menu {
-      &.et-animation-enter-active,
+      &.et-animation-enter-active {
+        transition: opacity 140ms ease;
+      }
+
       &.et-animation-leave-active {
-        transition-duration: 0ms;
+        transition: opacity 100ms ease;
       }
     }
 

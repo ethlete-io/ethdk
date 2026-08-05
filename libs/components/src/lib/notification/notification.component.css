@@ -251,7 +251,7 @@
 
       &.et-animation-enter-active,
       &.et-animation-leave-active {
-        transition-duration: 0ms;
+        transition: opacity 200ms ease;
       }
 
       &.et-animation-leave-to {

@@ -59,12 +59,26 @@ the range-input error gap is fixed - both below.)
   growth is safe; for checkbox/radio the target is in practice the whole
   `et-choice-field` label row, and the bare 20 px box only matters for label-less uses
   (table select-all), where a 44 px overlay would reach into adjacent rows.
-- **Overlay enter/leave reduced-motion gating** (from the reduced-motion consistency audit). `overlay-container.component.css`
-  has no `prefers-reduced-motion` block (unlike `notification.component.css:208`), and
-  `overlay/strategies/fullscreen-animation.ts` (733 lines of JS transform math) is
-  ungated too. Notification, accordion, calendar and carousel all gate correctly, so this is the
-  same half-right shape the rest of that audit found and fixed - but 7 strategies × enter/leave
-  plus the fullscreen JS path is a meaningfully bigger change and wants its own plan.
+- ~~Overlay enter/leave reduced-motion gating~~ - closed 2026-08-05. All 7 strategies
+  (dialog, anchored-dialog, the 4 sheets, full-screen-dialog) plus the origin-clone now gate
+  their positional/scale motion under `prefers-reduced-motion`, matching the tooltip/menu/toggletip
+  pattern; `fullscreen-animation.ts`'s `shouldUseReducedAnimation` also treats the media query
+  as a reason to skip the origin-clone DOM entirely. The gate keeps each overlay's opacity fade
+  running at its normal duration and only zeroes the transform/border-radius transition -
+  reduced motion means no _motion_, not no transition at all - which meant correcting the same
+  "kill everything including the fade" mistake in the pre-existing tooltip/menu/toggletip gating
+  and five more panels that share the anchored-overlay animation idiom (select, date-picker,
+  cascader, the three rich-text-editor popovers) plus notification and the menu checkmark icon.
+  Along the way, found and fixed a real bug in `AnimatedLifecycleDirective.handleNormalTransition`
+  (`@ethlete/core`): a 0ms `transition-duration` never fires `transitionrun`/`transitionend` per
+  spec, so the existing tooltip/menu/toggletip gating was leaving the animation lifecycle stuck in
+  `entering`/`leaving` forever under reduced motion - `overlayRef.afterOpened()` never resolved and
+  initial focus never applied. Fixed with the same "no transition running → settle immediately"
+  fallback `handleInterruptedTransition` already had. Verified via headless Playwright (menu,
+  dialog, anchored dialog, full-screen dialog, all 4 sheets) that the lifecycle now reaches
+  `entered`/`left` under both `reduce` and `no-preference`, that the dialog's opacity still fades
+  smoothly over its full ~300ms under `reduce` while its transform snaps instantly, and that real
+  (non-reduced) transitions still run their full duration.
 - ~~Rendering a foreign time zone~~ - closed 2026-08-05, won't do. The contract shipped as docs:
   every `Date` is local wall-clock and `valueFormat="yyyy-MM-dd"` is the fix for calendar dates.
   Zoned arithmetic through calendar + time picker + all four inputs, a new dependency, and different

@@ -44,9 +44,12 @@
 
   @media (prefers-reduced-motion: reduce) {
     .et-overlay.et-with-default-animation.et-rte-token-popup-overlay {
-      &.et-animation-enter-active,
+      &.et-animation-enter-active {
+        transition: opacity 140ms ease;
+      }
+
       &.et-animation-leave-active {
-        transition-duration: 0ms;
+        transition: opacity 100ms ease;
       }
     }
 
@@ -109,12 +112,6 @@
 
     .et-rte-token-popup-progress--visible {
       opacity: 1;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .et-rte-token-popup-progress {
-        transition-duration: 0ms;
-      }
     }
 
     .et-rte-token-popup-error {

@@ -151,7 +151,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       &.et-rich-text-editor--touch .et-rte-toolbar {
-        transition-duration: 0ms;
+        transition: opacity 160ms var(--ease-out-5, ease);
       }
     }
 
