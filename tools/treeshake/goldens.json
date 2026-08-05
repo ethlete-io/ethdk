@@ -17,7 +17,7 @@
   "entries": {
     "core-floor": {
       "entry": "import { clamp } from '@ethlete/core';\nconsole.log(clamp);",
-      "gzip": 927
+      "gzip": 926
     },
     "query-floor": {
       "entry": "import { transformToString } from '@ethlete/query';\nconsole.log(transformToString);",
@@ -65,19 +65,19 @@
     },
     "rich-text-editor": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS);",
-      "gzip": 30702
+      "gzip": 31203
     },
     "rich-text-editor-floating-toolbar": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorFloatingToolbar } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorFloatingToolbar());",
-      "gzip": 46038
+      "gzip": 46528
     },
     "rich-text-editor-full-tools": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorDefaultTools } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS, provideRichTextEditorDefaultTools());",
-      "gzip": 58593
+      "gzip": 59133
     },
     "query-client": {
       "entry": "import { createGetQuery, createQueryClient } from '@ethlete/query';\nconsole.log(createGetQuery, createQueryClient);",
-      "gzip": 10344
+      "gzip": 10343
     },
     "contentful-floor": {
       "entry": "import { isContentfulEntryType } from '@ethlete/contentful';\nconsole.log(isContentfulEntryType);",
@@ -98,7 +98,7 @@
     },
     "query-deps": {
       "entry": "import { createGetQuery, createQueryClient } from '@ethlete/query';\nconsole.log(createGetQuery, createQueryClient);",
-      "gzip": 10264,
+      "gzip": 10263,
       "thirdParty": true
     },
     "components-deps": {
