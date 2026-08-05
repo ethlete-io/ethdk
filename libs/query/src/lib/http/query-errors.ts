@@ -51,6 +51,10 @@ export const QueryRuntimeErrorCode = {
 
   // Legacy interop
   LEGACY_PREPARE_WITHOUT_INJECTION_CONTEXT: 950,
+  LEGACY_QUERY_STATE_ALREADY_HAS_KEY: 951,
+  LEGACY_QUERY_STATE_DOES_NOT_CONTAIN_KEY: 952,
+  LEGACY_QUERY_STATE_CANNOT_TRANSFORM: 953,
+  LEGACY_INVALID_BODY: 954,
 } as const;
 
 export type QueryRuntimeErrorCode = (typeof QueryRuntimeErrorCode)[keyof typeof QueryRuntimeErrorCode];
