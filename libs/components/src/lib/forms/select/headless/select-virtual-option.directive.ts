@@ -64,6 +64,7 @@ export class SelectVirtualOptionDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.VIRTUAL_OPTION_OUTSIDE_SELECT,
             '[SelectVirtualOptionDirective] etSelectVirtualOption must be placed inside an [etSelect] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

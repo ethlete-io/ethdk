@@ -147,6 +147,7 @@ export class MasonryItemDirective {
             MASONRY_ERROR_CODES.PART_OUTSIDE_MASONRY,
             '[MasonryItemDirective] etMasonryItem must be placed inside an [etMasonry] element, which is what ' +
               'measures and positions it.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

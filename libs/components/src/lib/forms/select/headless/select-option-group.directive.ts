@@ -1,5 +1,5 @@
 import { Directive, afterNextRender, computed, inject, input, signal } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
 
@@ -26,6 +26,8 @@ export type SelectOptionGroupItem = {
   },
 })
 export class SelectOptionGroupDirective {
+  private readonly hostElement = injectHostElement();
+
   private select = inject(SelectDirective, { optional: true });
 
   /** The group's accessible name - also the default header text in `et-select-option-group`. */
@@ -53,6 +55,7 @@ export class SelectOptionGroupDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.OPTION_GROUP_OUTSIDE_SELECT,
             '[SelectOptionGroupDirective] etSelectOptionGroup must be placed inside an [etSelect] element.',
+            { element: this.hostElement },
           );
         }
       });

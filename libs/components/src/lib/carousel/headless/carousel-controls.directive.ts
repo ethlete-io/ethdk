@@ -1,5 +1,5 @@
 import { DestroyRef, Directive, afterNextRender, computed, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CAROUSEL_AUTOPLAY_TOKEN, CAROUSEL_TOKEN } from './carousel.tokens';
 
@@ -8,12 +8,15 @@ const selectorOf = (directiveName: string) => `et${directiveName.replace('Direct
 
 const assertInsideCarousel = (hasCarousel: boolean, directiveName: string) => {
   if (ngDevMode) {
+    const element = injectHostElement();
+
     afterNextRender(() => {
       if (!hasCarousel) {
         throw new RuntimeError(
           CAROUSEL_ERROR_CODES.PART_OUTSIDE_CAROUSEL,
           `[${directiveName}] ${selectorOf(directiveName)} must be placed inside an [etCarousel] element ` +
             '(e.g. <et-carousel>).',
+          { element },
         );
       }
     });

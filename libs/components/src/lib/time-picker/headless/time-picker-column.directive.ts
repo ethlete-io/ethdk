@@ -45,6 +45,7 @@ export class TimePickerColumnDirective {
           throw new RuntimeError(
             TIME_PICKER_ERROR_CODES.COLUMN_OUTSIDE_TIME_PICKER,
             'An [etTimePickerColumn] must be placed inside an [etTimePicker].',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

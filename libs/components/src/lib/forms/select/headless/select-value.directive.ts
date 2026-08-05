@@ -1,6 +1,6 @@
 import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
 import { registerSingleton } from '../../form-field/headless';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectSelectedEntry } from './select.tokens';
 import { SelectDirective } from './select.directive';
@@ -25,6 +25,8 @@ export type SelectValueContext = {
   exportAs: 'etSelectValue',
 })
 export class SelectValueDirective {
+  private readonly hostElement = injectHostElement();
+
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectValueContext>>(TemplateRef);
 
@@ -37,6 +39,7 @@ export class SelectValueDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.VALUE_OUTSIDE_SELECT,
             '[SelectValueDirective] etSelectValue must be placed inside an [etSelect] element.',
+            { element: this.hostElement },
           );
         }
       });

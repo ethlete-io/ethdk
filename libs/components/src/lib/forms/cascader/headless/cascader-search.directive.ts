@@ -45,6 +45,7 @@ export class CascaderSearchDirective {
           throw new RuntimeError(
             CASCADER_ERROR_CODES.SEARCH_OUTSIDE_CASCADER,
             '[CascaderSearchDirective] etCascaderSearch must be rendered inside the surface of an [etCascader] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

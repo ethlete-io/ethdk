@@ -1,5 +1,5 @@
 import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { ACCORDION_ERROR_CODES } from '../accordion-errors';
 import { ACCORDION_TOKEN } from './accordion.tokens';
 import { registerPart } from './internals/register-part';
@@ -7,7 +7,15 @@ import { registerPart } from './internals/register-part';
 /** `'AccordionLabelDirective'` → the `etAccordionLabel` selector it is applied with. */
 const selectorOf = (directiveName: string) => `et${directiveName.replace('Directive', '')}`;
 
-const assertInsideAccordion = (accordion: unknown, directiveName: string) => {
+const assertInsideAccordion = ({
+  accordion,
+  directiveName,
+  element,
+}: {
+  accordion: unknown;
+  directiveName: string;
+  element: Comment;
+}) => {
   if (ngDevMode) {
     afterNextRender(() => {
       if (!accordion) {
@@ -15,6 +23,7 @@ const assertInsideAccordion = (accordion: unknown, directiveName: string) => {
           ACCORDION_ERROR_CODES.PART_OUTSIDE_ACCORDION,
           `[${directiveName}] ${selectorOf(directiveName)} must be placed inside an [etAccordion] element ` +
             '(e.g. <et-accordion>).',
+          { element },
         );
       }
     });
@@ -40,11 +49,16 @@ const assertInsideAccordion = (accordion: unknown, directiveName: string) => {
 export class AccordionLabelDirective {
   private accordion = inject(ACCORDION_TOKEN, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
+  private readonly hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerPart(this.accordion?.labelTemplate, this);
 
-    assertInsideAccordion(this.accordion, 'AccordionLabelDirective');
+    assertInsideAccordion({
+      accordion: this.accordion,
+      directiveName: 'AccordionLabelDirective',
+      element: this.hostElement,
+    });
   }
 }
 
@@ -59,11 +73,16 @@ export class AccordionLabelDirective {
 export class AccordionHintDirective {
   private accordion = inject(ACCORDION_TOKEN, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
+  private readonly hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerPart(this.accordion?.hintTemplate, this);
 
-    assertInsideAccordion(this.accordion, 'AccordionHintDirective');
+    assertInsideAccordion({
+      accordion: this.accordion,
+      directiveName: 'AccordionHintDirective',
+      element: this.hostElement,
+    });
   }
 }
 
@@ -90,10 +109,15 @@ export class AccordionHintDirective {
 export class AccordionContentDirective {
   private accordion = inject(ACCORDION_TOKEN, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
+  private readonly hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerPart(this.accordion?.contentTemplate, this);
 
-    assertInsideAccordion(this.accordion, 'AccordionContentDirective');
+    assertInsideAccordion({
+      accordion: this.accordion,
+      directiveName: 'AccordionContentDirective',
+      element: this.hostElement,
+    });
   }
 }

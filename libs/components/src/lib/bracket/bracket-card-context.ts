@@ -1,5 +1,5 @@
 import { afterNextRender, computed, inject, InjectionToken, Signal } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { MatchCardSize, NormalizedMatch } from '../match';
 import { BRACKET_ERROR_CODES } from './bracket-errors';
 import { BracketMatch } from './linked';
@@ -61,6 +61,7 @@ export const createNormalizedBracketMatch = <TRoundData, TMatchData>(
   bracketMatch: Signal<BracketMatch<TRoundData, TMatchData>>,
 ) => {
   const context = inject(BRACKET_CARD_CONTEXT, { optional: true });
+  const hostElement = injectHostElement();
 
   const normalizer = computed(() => context?.resolvedMatchNormalizer() ?? null);
 
@@ -73,6 +74,7 @@ export const createNormalizedBracketMatch = <TRoundData, TMatchData>(
         "[BracketComponent] The bracket's default match cards need a matchNormalizer to know how to read your " +
           'match data. Add one to provideBracketConfig({ matchNormalizer: (match) => … }) or bind ' +
           '[matchNormalizer] on <et-bracket> - or supply your own matchComponent / finalMatchComponent instead.',
+        { element: hostElement },
       );
     });
   }

@@ -134,6 +134,7 @@ export class TabGroupDirective {
           throw new RuntimeError(
             TAB_ERROR_CODES.MISSING_TAB_PANEL,
             '[TabGroupDirective] The tab group has tab triggers but no [etTabPanel] was registered. Add a panel per tab.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

@@ -1,5 +1,5 @@
 import { DestroyRef, Directive, afterNextRender, computed, inject, input } from '@angular/core';
-import { RuntimeError, createComponentId } from '@ethlete/core';
+import { RuntimeError, createComponentId, injectHostElement } from '@ethlete/core';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderDirective } from './cascader.directive';
 import { injectCascaderLabels } from '../cascader-labels';
@@ -19,6 +19,7 @@ export class CascaderColumnDirective {
 
   public cascader = inject(CascaderDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
+  private readonly hostElement = injectHostElement();
 
   /** The column's zero-based level - column 0 shows the root. */
   public columnIndex = input.required<number>({ alias: 'etCascaderColumn' });
@@ -43,6 +44,7 @@ export class CascaderColumnDirective {
           throw new RuntimeError(
             CASCADER_ERROR_CODES.COLUMN_OUTSIDE_CASCADER,
             '[CascaderColumnDirective] etCascaderColumn must be rendered inside an [etCascader] element.',
+            { element: this.hostElement },
           );
         }
       });

@@ -1,6 +1,6 @@
 import { DestroyRef, Directive, OnInit, afterNextRender, inject, input } from '@angular/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectOptionsFromQuery } from '../select-options-from-query';
@@ -30,6 +30,8 @@ import { SelectDirective } from './select.directive';
   exportAs: 'etSelectOptions',
 })
 export class SelectOptionsDirective implements OnInit {
+  private readonly hostElement = injectHostElement();
+
   private select = inject(SelectDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
 
@@ -63,6 +65,7 @@ export class SelectOptionsDirective implements OnInit {
           throw new RuntimeError(
             SELECT_ERROR_CODES.OPTIONS_OUTSIDE_SELECT,
             '[SelectOptionsDirective] etSelectOptions must be placed on an [etSelect] / et-select element.',
+            { element: this.hostElement },
           );
         }
       });

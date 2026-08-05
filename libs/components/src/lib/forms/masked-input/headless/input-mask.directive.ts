@@ -8,7 +8,7 @@ import {
   input,
   untracked,
 } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { MASKED_INPUT_ERROR_CODES } from '../masked-input-errors';
 import { INPUT_MASK_HOST } from './input-mask-host';
 import { MASK_VALUE_MODES, MaskSpec, MaskValueMode } from './input-mask.types';
@@ -32,6 +32,7 @@ import { compilePatternMask } from './internals/pattern-mask';
 })
 export class InputMaskDirective {
   private host = inject(INPUT_MASK_HOST, { optional: true });
+  private readonly hostElement = injectHostElement();
 
   /**
    * The mask: a pattern string (`0` digit, `9` optional digit, `a` letter, `*`
@@ -110,6 +111,7 @@ export class InputMaskDirective {
           throw new RuntimeError(
             MASKED_INPUT_ERROR_CODES.MASK_OUTSIDE_INPUT,
             'An [etInputMask] must be placed on an input control element (et-input / input[etInput]) or one that provides INPUT_MASK_HOST.',
+            { element: this.hostElement },
           );
         }
       });

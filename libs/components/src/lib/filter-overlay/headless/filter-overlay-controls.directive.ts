@@ -1,5 +1,5 @@
 import { Directive, afterNextRender, computed, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FILTER_OVERLAY_ERROR_CODES } from '../filter-overlay-errors';
 import { FILTER_OVERLAY_TOKEN } from '../filter-overlay';
 
@@ -7,12 +7,15 @@ import { FILTER_OVERLAY_TOKEN } from '../filter-overlay';
 const assertInsideFilterOverlay = (hasOverlay: boolean, directiveName: string) => {
   if (!ngDevMode) return;
 
+  const element = injectHostElement();
+
   afterNextRender(() => {
     if (!hasOverlay) {
       throw new RuntimeError(
         FILTER_OVERLAY_ERROR_CODES.MISSING_FILTER_OVERLAY,
         `[${directiveName}] No filter overlay was found. Add provideFilterOverlay({ … }) to the providers of the ` +
           'overlay component this control lives in.',
+        { element },
       );
     }
   });

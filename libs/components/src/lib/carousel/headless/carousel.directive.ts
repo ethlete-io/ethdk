@@ -9,7 +9,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { RuntimeError, injectPrefersReducedMotion, injectStyleManager } from '@ethlete/core';
+import { RuntimeError, injectHostElement, injectPrefersReducedMotion, injectStyleManager } from '@ethlete/core';
 import { ScrollableDirective, ScrollableItemSize } from '../../scrollable';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CarouselLabels, injectCarouselLabels } from '../carousel-labels';
@@ -102,6 +102,7 @@ export class CarouselDirective {
   private injectedLabels = injectCarouselLabels();
   private prefersReducedMotion = injectPrefersReducedMotion();
   private styleManager = injectStyleManager();
+  private readonly hostElement = injectHostElement();
 
   // Three ways the carousel finds its track, because where you put `etCarousel` decides what else can see
   // it: slides and controls resolve the carousel from an *ancestor*, so wrapping the scrollable is usually
@@ -400,6 +401,7 @@ export class CarouselDirective {
             CAROUSEL_ERROR_CODES.MISSING_SCROLLABLE,
             '[CarouselDirective] etCarousel needs a scrollable to move: put it on an [etScrollable] element ' +
               '(e.g. <et-scrollable etCarousel etScrollableSnap itemSize="full">), or use <et-carousel>.',
+            { element: this.hostElement },
           );
         }
       });
@@ -423,6 +425,7 @@ export class CarouselDirective {
             CAROUSEL_ERROR_CODES.MISSING_ITEMS,
             '[CarouselDirective] This carousel has children but none of them is a slide, so it can neither ' +
               'label them nor tell which one is current. Add the etCarouselItem directive to each slide.',
+            { element: this.hostElement },
           );
         }
       });

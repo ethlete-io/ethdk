@@ -106,6 +106,7 @@ export class GridItemDirective {
           throw new RuntimeError(
             GRID_ERROR_CODES.MISSING_GRID,
             '[GridItemDirective] etGridItem must be placed inside an [etGrid] element (e.g. et-grid).',
+            { element: this.hostElement.nativeElement },
           );
         }
       });

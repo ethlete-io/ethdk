@@ -1,7 +1,7 @@
 import { DestroyRef, Directive, afterNextRender, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLinkActive } from '@angular/router';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { TabBarTriggerDirective } from '../../headless/tab-bar-trigger.directive';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
@@ -16,6 +16,7 @@ export class NavTabLinkDirective {
   private navTabs = inject(NAV_TABS_TOKEN, { optional: true });
   private tabBar = inject(TabBarDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
+  private readonly hostElement = injectHostElement();
 
   public trigger = inject(TabBarTriggerDirective);
 
@@ -45,6 +46,7 @@ export class NavTabLinkDirective {
           throw new RuntimeError(
             TAB_ERROR_CODES.MISSING_NAV_TABS,
             '[NavTabLinkDirective] a[et-nav-tab-link] must be placed inside an et-nav-tabs element.',
+            { element: this.hostElement },
           );
         }
       });

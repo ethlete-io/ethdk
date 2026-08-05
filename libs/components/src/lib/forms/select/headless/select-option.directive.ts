@@ -168,6 +168,7 @@ export class SelectOptionDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.OPTION_OUTSIDE_SELECT,
             '[SelectOptionDirective] etSelectOption must be placed inside an [etSelect] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

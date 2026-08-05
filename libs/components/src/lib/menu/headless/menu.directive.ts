@@ -20,6 +20,7 @@ import {
   RuntimeError,
   anchoredOverlayPosition,
   enableAnchoredOverlayPositionExtras,
+  injectHostElement,
   nextFrame,
   randomId,
 } from '@ethlete/core';
@@ -58,6 +59,7 @@ export class MenuDirective {
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private overlayManager = injectOverlayManager();
+  private readonly hostElement = injectHostElement();
 
   public parent = inject(MenuDirective, { optional: true, skipSelf: true });
 
@@ -178,6 +180,7 @@ export class MenuDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.MISSING_MENU_SURFACE,
             '[MenuDirective] Menu surface not found. Add <ng-template etMenuSurface> inside the [etMenu] element.',
+            { element: this.hostElement },
           );
         }
       });

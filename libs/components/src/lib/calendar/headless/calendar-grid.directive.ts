@@ -35,6 +35,7 @@ export class CalendarGridDirective {
           throw new RuntimeError(
             CALENDAR_ERROR_CODES.GRID_OUTSIDE_CALENDAR,
             'An [etCalendarGrid] must be placed inside an [etCalendar].',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

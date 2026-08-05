@@ -45,6 +45,7 @@ export class MenuPanelDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.PANEL_OUTSIDE_MENU,
             '[MenuPanelDirective] etMenuPanel must be rendered inside the surface of an [etMenu] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

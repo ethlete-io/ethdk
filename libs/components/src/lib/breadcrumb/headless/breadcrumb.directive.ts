@@ -206,6 +206,7 @@ export class BreadcrumbDirective {
             BREADCRUMB_ERROR_CODES.MISSING_ITEMS,
             '[BreadcrumbDirective] This breadcrumb has no crumbs. Declare an <ng-template etBreadcrumbItemTemplate> ' +
               'per crumb inside it, or bind a composed trail via [crumbs] (which is what et-breadcrumb-outlet does).',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

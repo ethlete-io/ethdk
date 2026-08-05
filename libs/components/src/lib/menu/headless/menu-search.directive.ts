@@ -63,6 +63,7 @@ export class MenuSearchDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.SEARCH_OUTSIDE_MENU,
             '[MenuSearchDirective] etMenuSearch must be rendered inside the surface of an [etMenu] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

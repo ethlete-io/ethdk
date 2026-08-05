@@ -31,6 +31,7 @@ export class OverlaySurfaceDirective {
           throw new RuntimeError(
             OVERLAY_ERROR_CODES.SURFACE_OUTSIDE_OVERLAY,
             '[OverlaySurfaceDirective] etOverlaySurface must be placed inside an [etOverlay] element.',
+            { element: this.templateRef.elementRef.nativeElement },
           );
         }
       });

@@ -39,6 +39,7 @@ export class TagInputFieldDirective {
           throw new RuntimeError(
             TAG_INPUT_ERROR_CODES.FIELD_OUTSIDE_TAG_INPUT,
             '[TagInputFieldDirective] etTagInputField must be placed inside an [etTagInput] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

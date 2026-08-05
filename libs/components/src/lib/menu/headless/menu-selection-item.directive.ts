@@ -96,6 +96,7 @@ export class MenuSelectionItemDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.ITEM_OUTSIDE_MENU,
             '[MenuSelectionItemDirective] etMenuSelectionItem must be combined with etMenuItem on the same element.',
+            { element: this.elementRef.nativeElement },
           );
         }
 
@@ -103,6 +104,7 @@ export class MenuSelectionItemDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.SELECTION_ITEM_MISSING_VALUE,
             '[MenuSelectionItemDirective] Selection items inside a selection group require a value. Add a [value] input.',
+            { element: this.elementRef.nativeElement },
           );
         }
 
@@ -110,6 +112,7 @@ export class MenuSelectionItemDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.RADIO_ITEM_OUTSIDE_GROUP,
             '[MenuSelectionItemDirective] Radio items require a surrounding selection group. Wrap them in an et-menu-radio-group.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

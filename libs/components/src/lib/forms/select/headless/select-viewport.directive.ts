@@ -27,6 +27,7 @@ export class SelectViewportDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.VIEWPORT_OUTSIDE_SELECT,
             '[SelectViewportDirective] etSelectViewport must be rendered inside the surface of an [etSelect] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

@@ -1,5 +1,5 @@
 import { DestroyRef, Directive, afterNextRender, booleanAttribute, inject, input, signal } from '@angular/core';
-import { RuntimeError, injectTemplateRef } from '@ethlete/core';
+import { RuntimeError, injectHostElement, injectTemplateRef } from '@ethlete/core';
 import { BREADCRUMB_ERROR_CODES } from '../breadcrumb-errors';
 import { BREADCRUMB_SEGMENT_TOKEN, BREADCRUMB_TOKEN } from './breadcrumb.tokens';
 
@@ -8,12 +8,15 @@ const selectorOf = (directiveName: string) => `et${directiveName.replace('Direct
 
 const assertInsideBreadcrumb = (hasHost: boolean, directiveName: string) => {
   if (ngDevMode) {
+    const element = injectHostElement<Comment>();
+
     afterNextRender(() => {
       if (!hasHost) {
         throw new RuntimeError(
           BREADCRUMB_ERROR_CODES.PART_OUTSIDE_BREADCRUMB,
           `[${directiveName}] ${selectorOf(directiveName)} must be placed inside an [etBreadcrumb] element ` +
             '(e.g. <et-breadcrumb>) or an <ng-template etBreadcrumbSegment>.',
+          { element },
         );
       }
     });

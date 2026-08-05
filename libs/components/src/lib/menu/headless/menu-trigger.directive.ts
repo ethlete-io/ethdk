@@ -44,6 +44,7 @@ export class MenuTriggerDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.TRIGGER_OUTSIDE_MENU,
             '[MenuTriggerDirective] etMenuTrigger must be placed inside an [etMenu] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

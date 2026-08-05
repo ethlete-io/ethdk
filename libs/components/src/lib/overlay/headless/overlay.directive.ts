@@ -13,7 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { take, tap } from 'rxjs';
 import { OverlayConfig, OverlayAutoFocusTarget, OverlayMode, OverlayRole } from '../overlay-config';
@@ -37,6 +37,7 @@ import { OverlayTriggerDirective } from './overlay-trigger.directive';
 export class OverlayDirective {
   private destroyRef = inject(DestroyRef);
   private overlayManager = injectOverlayManager();
+  private readonly hostElement = injectHostElement();
 
   public mode = input<OverlayMode>('non-modal');
   // eslint-disable-next-line ethlete/no-native-html-input-name -- deliberately sets the overlay's ARIA role
@@ -121,6 +122,7 @@ export class OverlayDirective {
           throw new RuntimeError(
             OVERLAY_ERROR_CODES.MISSING_OVERLAY_SURFACE,
             '[OverlayDirective] Overlay surface not found. Add <ng-template etOverlaySurface> inside the [etOverlay] element.',
+            { element: this.hostElement },
           );
         }
       });

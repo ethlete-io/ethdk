@@ -56,6 +56,7 @@ export class CascaderTriggerDirective {
           throw new RuntimeError(
             CASCADER_ERROR_CODES.TRIGGER_OUTSIDE_CASCADER,
             '[CascaderTriggerDirective] etCascaderTrigger must be placed inside an [etCascader] element.',
+            { element },
           );
         }
       });

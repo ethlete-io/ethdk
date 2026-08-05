@@ -92,6 +92,7 @@ export class NotificationSwipeToDismissDirective {
           throw new RuntimeError(
             NOTIFICATION_ERROR_CODES.SWIPE_OUTSIDE_NOTIFICATION,
             '[EtNotificationSwipeToDismissDirective] etNotificationSwipeToDismiss must be placed inside an [etNotification] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

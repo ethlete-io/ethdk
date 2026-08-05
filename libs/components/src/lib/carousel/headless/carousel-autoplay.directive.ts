@@ -12,6 +12,7 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   RuntimeError,
+  injectHostElement,
   injectIsDocumentVisible,
   injectPrefersReducedMotion,
   injectStyleManager,
@@ -61,6 +62,7 @@ export class CarouselAutoplayDirective {
   private prefersReducedMotion = injectPrefersReducedMotion();
   private isDocumentVisible = injectIsDocumentVisible();
   private styleManager = injectStyleManager();
+  private readonly hostElement = injectHostElement();
 
   /**
    * Turn autoplay off without removing the directive - the same escape hatch `etScrollableSnap` has. A
@@ -216,6 +218,7 @@ export class CarouselAutoplayDirective {
           throw new RuntimeError(
             CAROUSEL_ERROR_CODES.PART_OUTSIDE_CAROUSEL,
             '[CarouselAutoplayDirective] etCarouselAutoplay must be placed on the same element as [etCarousel].',
+            { element: this.hostElement },
           );
         }
 
@@ -224,6 +227,7 @@ export class CarouselAutoplayDirective {
             CAROUSEL_ERROR_CODES.AUTOPLAY_WITHOUT_PAUSE_CONTROL,
             '[CarouselAutoplayDirective] A carousel that advances on its own needs a control to stop it (WCAG 2.2.2). ' +
               'Add a button with the etCarouselPlayToggle directive, or use <et-carousel>, which renders one.',
+            { element: this.hostElement },
           );
         }
       });

@@ -48,6 +48,7 @@ export class MenuContextTriggerDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.CONTEXT_TRIGGER_OUTSIDE_MENU,
             '[MenuContextTriggerDirective] etMenuContextTrigger must be placed inside an [etMenu] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
 
@@ -55,6 +56,7 @@ export class MenuContextTriggerDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.CONTEXT_TRIGGER_ON_SUBMENU,
             '[MenuContextTriggerDirective] etMenuContextTrigger can only open root menus. Move it to the outermost [etMenu] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

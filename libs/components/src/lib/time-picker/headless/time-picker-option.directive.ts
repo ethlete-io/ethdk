@@ -39,6 +39,7 @@ export class TimePickerOptionDirective {
           throw new RuntimeError(
             TIME_PICKER_ERROR_CODES.OPTION_OUTSIDE_COLUMN,
             'An [etTimePickerOption] must be placed inside an [etTimePickerColumn].',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

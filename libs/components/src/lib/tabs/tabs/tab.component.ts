@@ -9,7 +9,7 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { TAB_ERROR_CODES } from '../tab-errors';
 import { TAB_GROUP_TOKEN } from './headless/tab-group.tokens';
 import { TabLabelDirective } from './tab-label.directive';
@@ -30,6 +30,7 @@ import { TabLabelDirective } from './tab-label.directive';
 })
 export class TabComponent {
   private tabGroup = inject(TAB_GROUP_TOKEN, { optional: true });
+  private readonly hostElement = injectHostElement();
 
   public label = input('');
   public icon = input<string | null>(null);
@@ -48,6 +49,7 @@ export class TabComponent {
           throw new RuntimeError(
             TAB_ERROR_CODES.MISSING_TAB_GROUP,
             '[TabComponent] <et-tab> must be placed inside an <et-tab-group> element.',
+            { element: this.hostElement },
           );
         }
       });

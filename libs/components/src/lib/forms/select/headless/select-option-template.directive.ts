@@ -1,5 +1,5 @@
 import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { registerSingleton } from '../../form-field/headless';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
@@ -22,6 +22,8 @@ export type SelectOptionTemplateContext = {
   exportAs: 'etSelectOptionTemplate',
 })
 export class SelectOptionTemplateDirective {
+  private readonly hostElement = injectHostElement();
+
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectOptionTemplateContext>>(TemplateRef);
 
@@ -34,6 +36,7 @@ export class SelectOptionTemplateDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.OPTION_TEMPLATE_OUTSIDE_SELECT,
             '[SelectOptionTemplateDirective] etSelectOptionTemplate must be placed inside an [etSelect] element.',
+            { element: this.hostElement },
           );
         }
       });

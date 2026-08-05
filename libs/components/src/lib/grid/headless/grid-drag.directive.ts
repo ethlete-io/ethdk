@@ -64,6 +64,7 @@ export class GridDragDirective {
           throw new RuntimeError(
             GRID_ERROR_CODES.MISSING_GRID_ITEM,
             '[GridDragDirective] etGridDrag must be placed on or inside an [etGridItem] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

@@ -83,6 +83,7 @@ export class SelectTriggerDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.TRIGGER_OUTSIDE_SELECT,
             '[SelectTriggerDirective] etSelectTrigger must be placed inside an [etSelect] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

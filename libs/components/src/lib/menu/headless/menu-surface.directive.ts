@@ -1,5 +1,5 @@
 import { DestroyRef, Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { MENU_ERROR_CODES } from '../menu-errors';
 import { MenuDirective } from './menu.directive';
 
@@ -17,6 +17,7 @@ export class MenuSurfaceDirective {
   private menu = inject(MenuDirective, { optional: true });
   public templateRef = inject<TemplateRef<MenuSurfaceContext>>(TemplateRef);
   private destroyRef = inject(DestroyRef);
+  private readonly hostElement = injectHostElement();
 
   constructor() {
     this.menu?.registeredSurface.set(this);
@@ -31,6 +32,7 @@ export class MenuSurfaceDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.SURFACE_OUTSIDE_MENU,
             '[MenuSurfaceDirective] etMenuSurface must be placed inside an [etMenu] element.',
+            { element: this.hostElement },
           );
         }
       });

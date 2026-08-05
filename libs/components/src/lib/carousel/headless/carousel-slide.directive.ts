@@ -1,5 +1,5 @@
 import { DestroyRef, Directive, Signal, TemplateRef, inject, input } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CAROUSEL_TOKEN } from './carousel.tokens';
 
@@ -47,6 +47,7 @@ export type CarouselSlideContext<T> = {
 })
 export class CarouselSlideDirective<T> {
   private carousel = inject(CAROUSEL_TOKEN, { optional: true });
+  private readonly hostElement = injectHostElement<Comment>();
 
   /** @internal The template itself, stamped by whoever renders the slides. */
   public templateRef = inject<TemplateRef<CarouselSlideContext<T>>>(TemplateRef);
@@ -74,6 +75,7 @@ export class CarouselSlideDirective<T> {
         throw new RuntimeError(
           CAROUSEL_ERROR_CODES.PART_OUTSIDE_CAROUSEL,
           '[CarouselSlideDirective] etCarouselSlide must be used on an <ng-template> inside an <et-carousel>.',
+          { element: this.hostElement },
         );
       }
 

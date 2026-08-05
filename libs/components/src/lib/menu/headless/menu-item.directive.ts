@@ -108,6 +108,7 @@ export class MenuItemDirective {
           throw new RuntimeError(
             MENU_ERROR_CODES.ITEM_OUTSIDE_MENU,
             '[MenuItemDirective] etMenuItem must be rendered inside the surface of an [etMenu] element. When combined with etMenuTrigger, the [etMenu] element must be nested inside a parent menu.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

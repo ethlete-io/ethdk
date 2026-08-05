@@ -1,5 +1,5 @@
 import { afterNextRender, computed, Directive, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { MATCH_ERROR_CODES } from '../match-errors';
 import { MATCH_CARD_TOKEN } from './match-card.tokens';
 
@@ -8,12 +8,19 @@ import { MATCH_CARD_TOKEN } from './match-card.tokens';
  * than a degraded card. Checked after render, since the parent registers during construction.
  */
 const assertInsideMatchCard = (card: unknown, selector: string) => {
-  if (card) return;
+  if (!ngDevMode) return;
 
-  throw new RuntimeError(
-    MATCH_ERROR_CODES.PART_OUTSIDE_MATCH_CARD,
-    `[${selector}] ${selector} must be placed inside an [etMatchCard] element (e.g. <et-match-card>).`,
-  );
+  const element = injectHostElement();
+
+  afterNextRender(() => {
+    if (card) return;
+
+    throw new RuntimeError(
+      MATCH_ERROR_CODES.PART_OUTSIDE_MATCH_CARD,
+      `[${selector}] ${selector} must be placed inside an [etMatchCard] element (e.g. <et-match-card>).`,
+      { element },
+    );
+  });
 };
 
 /**
@@ -36,9 +43,7 @@ export class MatchCardScoreDirective {
   private card = inject(MATCH_CARD_TOKEN, { optional: true });
 
   constructor() {
-    if (ngDevMode) {
-      afterNextRender(() => assertInsideMatchCard(this.card, 'etMatchCardScore'));
-    }
+    assertInsideMatchCard(this.card, 'etMatchCardScore');
   }
 }
 
@@ -58,9 +63,7 @@ export class MatchCardMetaDirective {
   private card = inject(MATCH_CARD_TOKEN, { optional: true });
 
   constructor() {
-    if (ngDevMode) {
-      afterNextRender(() => assertInsideMatchCard(this.card, 'etMatchCardMeta'));
-    }
+    assertInsideMatchCard(this.card, 'etMatchCardMeta');
   }
 }
 
@@ -83,8 +86,6 @@ export class MatchCardGameScoresDirective {
   protected ariaLabel = computed(() => this.card?.resolvedLabels().gameScores ?? null);
 
   constructor() {
-    if (ngDevMode) {
-      afterNextRender(() => assertInsideMatchCard(this.card, 'etMatchCardGameScores'));
-    }
+    assertInsideMatchCard(this.card, 'etMatchCardGameScores');
   }
 }

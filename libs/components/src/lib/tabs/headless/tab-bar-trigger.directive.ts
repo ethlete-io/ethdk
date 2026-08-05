@@ -101,6 +101,7 @@ export class TabBarTriggerDirective {
           throw new RuntimeError(
             TAB_ERROR_CODES.MISSING_TAB_BAR,
             '[TabBarTriggerDirective] etTabBarTrigger must be placed inside a tab bar (et-tab-group, et-nav-tabs, or an [etTabBar] element).',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

@@ -15,7 +15,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import {
   createExistingDropzoneEntry,
@@ -69,6 +69,7 @@ export class DropzoneDirective<TValue = unknown>
   private signalFormField = inject(FORM_FIELD, { optional: true });
   private destroyRef = inject(DestroyRef);
   private injector = inject(Injector);
+  private readonly hostElement = injectHostElement();
 
   public value = model<TValue | TValue[] | null>(null);
   public touched = model(false);
@@ -163,6 +164,7 @@ export class DropzoneDirective<TValue = unknown>
             DROPZONE_ERROR_CODES.INVALID_UPLOAD_CONFIG,
             '[DropzoneDirective] The "upload" input must be a config created via createDropzoneUpload({ queryCreator, selectValue, ... }) ' +
               'or createV2DropzoneUpload({ queryCreator, selectValue, ... }).',
+            { element: this.hostElement },
           );
         }
       });
@@ -410,6 +412,7 @@ export class DropzoneDirective<TValue = unknown>
           DROPZONE_ERROR_CODES.VALUE_MODE_MISMATCH,
           '[DropzoneDirective] The form control value is an array but the dropzone is in single mode. ' +
             'Set the "multiple" input to true or write a single value.',
+          { element: this.hostElement },
         );
       }
 
@@ -420,6 +423,7 @@ export class DropzoneDirective<TValue = unknown>
           DROPZONE_ERROR_CODES.VALUE_MODE_MISMATCH,
           '[DropzoneDirective] The form control value is not an array but the dropzone is in multiple mode. ' +
             'Write an array of values or remove the "multiple" input.',
+          { element: this.hostElement },
         );
       }
 
@@ -446,6 +450,7 @@ export class DropzoneDirective<TValue = unknown>
           DROPZONE_ERROR_CODES.MISSING_EXISTING_RESOLVER,
           '[DropzoneDirective] The form control was initialized with a value but the upload config has no "resolveExisting" function. ' +
             'Add one to createDropzoneUpload() so existing values can be displayed.',
+          { element: this.hostElement },
         );
       }
 

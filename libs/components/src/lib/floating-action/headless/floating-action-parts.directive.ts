@@ -1,5 +1,5 @@
 import { Directive, ElementRef, afterNextRender, inject } from '@angular/core';
-import { RuntimeError, signalHostElementIntersection } from '@ethlete/core';
+import { injectHostElement, RuntimeError, signalHostElementIntersection } from '@ethlete/core';
 import { FLOATING_ACTION_ERROR_CODES } from '../floating-action-errors';
 import { FLOATING_ACTION_TOKEN } from './floating-action.tokens';
 
@@ -7,12 +7,15 @@ import { FLOATING_ACTION_TOKEN } from './floating-action.tokens';
 const assertInsideFloatingAction = (floatingAction: unknown, directiveName: string) => {
   if (!ngDevMode) return;
 
+  const element = injectHostElement();
+
   afterNextRender(() => {
     if (!floatingAction) {
       throw new RuntimeError(
         FLOATING_ACTION_ERROR_CODES.PART_OUTSIDE_FLOATING_ACTION,
         `[${directiveName}] This directive must be placed inside an [etFloatingAction] element, which is what ` +
           'coordinates it.',
+        { element },
       );
     }
   });

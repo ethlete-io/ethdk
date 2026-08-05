@@ -1,5 +1,5 @@
 import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { QUERY_ERROR_ERROR_CODES } from '../query-error-errors';
 import { QueryErrorView } from '../query-error.types';
 import { QUERY_ERROR_TOKEN } from './query-error.tokens';
@@ -14,12 +14,15 @@ export type QueryErrorSlotContext = {
 const assertInsideQueryError = (queryError: unknown, directiveName: string) => {
   if (!ngDevMode) return;
 
+  const element = injectHostElement();
+
   afterNextRender(() => {
     if (!queryError) {
       throw new RuntimeError(
         QUERY_ERROR_ERROR_CODES.PART_OUTSIDE_QUERY_ERROR,
         `[${directiveName}] This template must be placed inside an [etQueryError] element ` +
           '(e.g. <et-query-error>), which is what renders it.',
+        { element },
       );
     }
   });

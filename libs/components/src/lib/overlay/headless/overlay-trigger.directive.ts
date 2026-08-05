@@ -30,6 +30,7 @@ export class OverlayTriggerDirective {
           throw new RuntimeError(
             OVERLAY_ERROR_CODES.TRIGGER_OUTSIDE_OVERLAY,
             '[OverlayTriggerDirective] etOverlayTrigger must be placed inside an [etOverlay] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

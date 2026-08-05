@@ -38,6 +38,7 @@ export class ChipRemoveDirective {
           throw new RuntimeError(
             CHIP_ERROR_CODES.REMOVE_OUTSIDE_CHIP,
             '[ChipRemoveDirective] etChipRemove must be placed inside an [etChip] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

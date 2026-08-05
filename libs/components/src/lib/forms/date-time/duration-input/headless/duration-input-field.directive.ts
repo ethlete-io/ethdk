@@ -57,6 +57,7 @@ export class DurationInputFieldDirective {
           throw new RuntimeError(
             DURATION_INPUT_ERROR_CODES.FIELD_OUTSIDE_DURATION_INPUT,
             '[DurationInputFieldDirective] etDurationInputField must be placed inside an [etDurationInput] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

@@ -117,6 +117,7 @@ export class CarouselItemDirective {
           throw new RuntimeError(
             CAROUSEL_ERROR_CODES.PART_OUTSIDE_CAROUSEL,
             '[CarouselItemDirective] etCarouselItem must be placed inside an [etCarousel] element (e.g. <et-carousel>).',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

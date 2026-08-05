@@ -10,7 +10,7 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import { RuntimeError, createCanAnimateSignal } from '@ethlete/core';
+import { RuntimeError, createCanAnimateSignal, injectHostElement } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../button';
 import { FocusRingDirective } from '../focus-ring';
 import { CHEVRON_ICON, IconDirective, PAUSE_ICON, PLAY_ICON, provideIcons } from '../icon';
@@ -111,6 +111,7 @@ export class CarouselComponent {
   /** @internal Read from the template; also handy for a consumer reaching in with `viewChild`. */
   public carousel = inject(CarouselDirective);
   private autoplayDirective = inject(CarouselAutoplayDirective);
+  private readonly hostElement = injectHostElement();
 
   /**
    * How much of the track one slide takes: `'full'` (the default) is one slide per view; `'half'`,
@@ -214,6 +215,7 @@ export class CarouselComponent {
             CAROUSEL_ERROR_CODES.MISSING_SLIDE_TEMPLATE,
             '[CarouselComponent] <et-carousel> renders its slides from data and a template, and was given ' +
               'neither. Add one: <ng-template [etCarouselSlide]="slides()" let-slide>…</ng-template>.',
+            { element: this.hostElement },
           );
         }
       });

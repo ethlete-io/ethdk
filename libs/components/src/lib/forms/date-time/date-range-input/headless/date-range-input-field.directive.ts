@@ -142,6 +142,7 @@ export class DateRangeInputFieldDirective implements InputMaskHost {
           throw new RuntimeError(
             DATE_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_RANGE_INPUT,
             '[DateRangeInputFieldDirective] etDateRangeInputField must be placed inside an [etDateRangeInput] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

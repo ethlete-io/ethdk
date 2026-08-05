@@ -19,7 +19,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { RuntimeError, createComponentId, nextFrame } from '@ethlete/core';
+import { RuntimeError, createComponentId, injectHostElement, nextFrame } from '@ethlete/core';
 import { EMPTY, fromEvent, switchMap, tap } from 'rxjs';
 import { sortByDomOrder } from '../../../internals/dom-order';
 import { createTypeahead } from '../../../internals/typeahead';
@@ -89,6 +89,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
+  private readonly hostElement = injectHostElement();
 
   public value = model<unknown | unknown[] | null>(null);
   /** View state for a field whose source values disagree. The raw form value stays untouched. */
@@ -675,6 +676,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
           throw new RuntimeError(
             SELECT_ERROR_CODES.MISSING_TRIGGER,
             '[SelectDirective] Select trigger not found. Add an element with etSelectTrigger inside the [etSelect] element.',
+            { element: this.hostElement },
           );
         }
 
@@ -682,6 +684,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
           throw new RuntimeError(
             SELECT_ERROR_CODES.MISSING_SURFACE,
             '[SelectDirective] Select surface not found. Add <ng-template etSelectSurface> inside the [etSelect] element.',
+            { element: this.hostElement },
           );
         }
       });

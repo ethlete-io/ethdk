@@ -1,5 +1,5 @@
 import { Directive, afterNextRender, computed, inject, input, numberAttribute } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
 import { buildSchedulerMonthGrid } from './internals/scheduler-month';
 import { SchedulerDirective } from './scheduler.directive';
@@ -17,6 +17,8 @@ export type { SchedulerMonthDayCell } from './internals/scheduler-month';
   exportAs: 'etSchedulerMonth',
 })
 export class SchedulerMonthDirective {
+  private readonly hostElement = injectHostElement();
+
   private scheduler = inject(SchedulerDirective, { optional: true });
 
   /** How many appointments a day cell shows before the rest collapse into an overflow count. */
@@ -46,6 +48,7 @@ export class SchedulerMonthDirective {
           throw new RuntimeError(
             SCHEDULER_ERROR_CODES.VIEW_OUTSIDE_SCHEDULER,
             '[etSchedulerMonth] must be placed inside an [etScheduler].',
+            { element: this.hostElement },
           );
         }
       });

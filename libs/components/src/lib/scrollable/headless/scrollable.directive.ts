@@ -13,6 +13,7 @@ import {
 import {
   RuntimeError,
   ScrollObserverDirective,
+  injectHostElement,
   ScrollToElementOptions,
   getElementScrollCoordinates,
   getScrollContainerTarget,
@@ -63,6 +64,8 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
   },
 })
 export class ScrollableDirective {
+  private readonly hostElement = injectHostElement();
+
   // --- Inputs ---
 
   public itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>() });
@@ -251,6 +254,7 @@ export class ScrollableDirective {
             SCROLLABLE_ERROR_CODES.MISSING_SCROLL_CONTAINER,
             '[ScrollableDirective] No scroll container registered. ' +
               'Use registerScrollContainer() from the Tier 3 template or provide a scroll container element.',
+            { element: this.hostElement },
           );
         }
       });

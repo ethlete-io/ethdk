@@ -41,6 +41,7 @@ export class AccordionTriggerDirective {
           throw new RuntimeError(
             ACCORDION_ERROR_CODES.PART_OUTSIDE_ACCORDION,
             '[AccordionTriggerDirective] etAccordionTrigger must be placed inside an [etAccordion] element (e.g. <et-accordion>).',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

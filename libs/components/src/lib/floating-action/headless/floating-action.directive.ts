@@ -113,6 +113,7 @@ export class FloatingActionDirective {
             FLOATING_ACTION_ERROR_CODES.MISSING_ANCHOR,
             '[FloatingActionDirective] No [etFloatingActionAnchor] was found, so there is nothing to tell when ' +
               'the trigger has scrolled away. Wrap the trigger in an anchor element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

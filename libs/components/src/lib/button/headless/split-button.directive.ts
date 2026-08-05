@@ -1,5 +1,5 @@
 import { Directive, afterNextRender, signal } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { SplitButtonActionDirective } from './split-button-action.directive';
 import { SPLIT_BUTTON_ERROR_CODES } from './split-button-errors';
 import { SplitButtonTriggerDirective } from './split-button-trigger.directive';
@@ -12,6 +12,8 @@ import { SplitButtonTriggerDirective } from './split-button-trigger.directive';
   },
 })
 export class SplitButtonDirective {
+  private readonly hostElement = injectHostElement();
+
   public registeredAction = signal<SplitButtonActionDirective | null>(null);
   public registeredTrigger = signal<SplitButtonTriggerDirective | null>(null);
 
@@ -23,6 +25,7 @@ export class SplitButtonDirective {
             SPLIT_BUTTON_ERROR_CODES.MISSING_ACTION,
             '[SplitButtonDirective] A required [etSplitButtonAction] element was not found. ' +
               'Add a button with the etSplitButtonAction directive.',
+            { element: this.hostElement },
           );
         }
 
@@ -31,6 +34,7 @@ export class SplitButtonDirective {
             SPLIT_BUTTON_ERROR_CODES.MISSING_TRIGGER,
             '[SplitButtonDirective] A required [etSplitButtonTrigger] element was not found. ' +
               'Add a button with the etSplitButtonTrigger directive.',
+            { element: this.hostElement },
           );
         }
       });

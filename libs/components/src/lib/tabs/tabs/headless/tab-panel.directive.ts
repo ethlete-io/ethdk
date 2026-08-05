@@ -1,5 +1,5 @@
 import { DestroyRef, Directive, afterNextRender, computed, inject, input } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { TAB_ERROR_CODES } from '../../tab-errors';
 import { TAB_GROUP_TOKEN, TAB_PANEL_TOKEN } from './tab-group.tokens';
 
@@ -18,6 +18,7 @@ let nextPanelId = 0;
 })
 export class TabPanelDirective {
   private tabGroup = inject(TAB_GROUP_TOKEN, { optional: true });
+  private readonly hostElement = injectHostElement();
 
   public triggerId = input<string | null>(null);
   public readonly ID = `et-tab-panel-${nextPanelId++}`;
@@ -69,6 +70,7 @@ export class TabPanelDirective {
           throw new RuntimeError(
             TAB_ERROR_CODES.MISSING_TAB_GROUP,
             '[TabPanelDirective] etTabPanel must be placed inside an [etTabGroup] element (e.g. et-tab-group).',
+            { element: this.hostElement },
           );
         }
       });

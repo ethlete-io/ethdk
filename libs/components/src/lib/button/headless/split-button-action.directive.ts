@@ -1,5 +1,5 @@
 import { DestroyRef, Directive, afterNextRender, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { SPLIT_BUTTON_ERROR_CODES } from './split-button-errors';
 import { SplitButtonDirective } from './split-button.directive';
 
@@ -13,6 +13,7 @@ import { SplitButtonDirective } from './split-button.directive';
 export class SplitButtonActionDirective {
   private splitButton = inject(SplitButtonDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
+  private readonly hostElement = injectHostElement();
 
   constructor() {
     this.splitButton?.registeredAction.set(this);
@@ -27,6 +28,7 @@ export class SplitButtonActionDirective {
           throw new RuntimeError(
             SPLIT_BUTTON_ERROR_CODES.ACTION_OUTSIDE_SPLIT_BUTTON,
             '[SplitButtonActionDirective] etSplitButtonAction must be placed inside an [etSplitButton] element.',
+            { element: this.hostElement },
           );
         }
       });

@@ -53,6 +53,7 @@ export class ToggletipTriggerDirective {
           throw new RuntimeError(
             TOGGLETIP_ERROR_CODES.TRIGGER_REQUIRES_BUTTON,
             '[ToggletipTriggerDirective] etToggletipTrigger must be used on an element that also has a button directive such as [et-button].',
+            { element: this.elementRef.nativeElement },
           );
         }
 
@@ -60,6 +61,7 @@ export class ToggletipTriggerDirective {
           throw new RuntimeError(
             TOGGLETIP_ERROR_CODES.TRIGGER_REQUIRES_TOGGLETIP,
             '[ToggletipTriggerDirective] etToggletipTrigger must be used on the same element as [etToggletip].',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

@@ -11,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import {
@@ -49,6 +49,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
+  private readonly hostElement = injectHostElement();
 
   public value = model<RangeSliderValue>([0, 100]);
   /** View state for a field whose source values disagree. The raw form value stays untouched. */
@@ -151,6 +152,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
           throw new RuntimeError(
             SLIDER_ERROR_CODES.THUMB_COUNT_MISMATCH,
             `[RangeSliderDirective] Expected exactly two [etSliderThumb] elements but found ${this.thumbs().length}. Place a start and an end thumb inside the range slider.`,
+            { element: this.hostElement },
           );
         }
       });

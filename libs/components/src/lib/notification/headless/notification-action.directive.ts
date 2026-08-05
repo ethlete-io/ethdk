@@ -1,5 +1,5 @@
 import { Directive, afterNextRender, computed, inject, input } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { NOTIFICATION_ACTION_SLOTS, NotificationActionSlot } from '../notification-config';
 import { NOTIFICATION_ERROR_CODES } from '../notification-errors';
 import { NotificationDirective } from './notification.directive';
@@ -19,6 +19,7 @@ const toActionSlot = (value: NotificationActionSlot | ''): NotificationActionSlo
 })
 export class NotificationActionDirective {
   private notification = inject(NotificationDirective, { optional: true });
+  private readonly hostElement = injectHostElement();
 
   /** Which action this element runs - `etNotificationAction="secondary"` for the quieter one. */
   public actionSlot = input(NOTIFICATION_ACTION_SLOTS.PRIMARY, {
@@ -41,6 +42,7 @@ export class NotificationActionDirective {
           throw new RuntimeError(
             NOTIFICATION_ERROR_CODES.ACTION_OUTSIDE_NOTIFICATION,
             '[EtNotificationActionDirective] etNotificationAction must be placed inside an [etNotification] element.',
+            { element: this.hostElement },
           );
         }
       });

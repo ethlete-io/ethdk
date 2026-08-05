@@ -1,5 +1,5 @@
 import { Directive, afterNextRender, computed, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
 import { TAB_ERROR_CODES } from '../../tab-errors';
 import { injectNavTabsRegistry } from './nav-tabs-registry';
@@ -17,6 +17,7 @@ let nextOutletId = 0;
 export class NavTabsOutletDirective {
   private nearestTabBar = inject(TabBarDirective, { optional: true });
   private registry = injectNavTabsRegistry();
+  private readonly hostElement = injectHostElement();
 
   public readonly ID = `et-nav-tabs-outlet-${nextOutletId++}`;
 
@@ -31,6 +32,7 @@ export class NavTabsOutletDirective {
           throw new RuntimeError(
             TAB_ERROR_CODES.MISSING_NAV_TABS,
             '[NavTabsOutletDirective] et-nav-tabs-outlet requires an et-nav-tabs element on the page.',
+            { element: this.hostElement },
           );
         }
       });

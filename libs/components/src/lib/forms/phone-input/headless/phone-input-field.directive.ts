@@ -59,6 +59,7 @@ export class PhoneInputFieldDirective {
           throw new RuntimeError(
             PHONE_INPUT_ERROR_CODES.FIELD_OUTSIDE_PHONE_INPUT,
             '[PhoneInputFieldDirective] etPhoneInputField must be placed inside an [etPhoneInput] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

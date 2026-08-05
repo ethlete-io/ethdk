@@ -25,6 +25,7 @@ export class OverlayAnchorDirective {
           throw new RuntimeError(
             OVERLAY_ERROR_CODES.ANCHOR_OUTSIDE_OVERLAY,
             '[OverlayAnchorDirective] etOverlayAnchor must be placed inside an [etOverlay] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

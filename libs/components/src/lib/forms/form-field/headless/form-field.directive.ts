@@ -1,5 +1,5 @@
 import { afterNextRender, computed, Directive, effect, signal } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_ERROR_CODES } from './form-field-errors';
 import {
   CounterComponentBase,
@@ -18,6 +18,8 @@ let uniqueIdCounter = 0;
   providers: [{ provide: FORM_FIELD_TOKEN, useExisting: FormFieldDirective }],
 })
 export class FormFieldDirective implements FormFieldDirectiveBase {
+  private readonly hostElement = injectHostElement();
+
   /** @internal */
   public registeredControl = signal<FormFieldControl | null>(null);
 
@@ -146,6 +148,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
           throw new RuntimeError(
             FORM_FIELD_ERROR_CODES.MISSING_CONTROL,
             '[FormFieldDirective] No form control found. Add <et-input> or <et-checkbox> inside <et-form-field>.',
+            { element: this.hostElement },
           );
         }
 
@@ -155,6 +158,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
             '[FormFieldDirective] The control has no accessible name. Project an <et-label> into the ' +
               '<et-form-field>, or set aria-label / aria-labelledby on the control. A placeholder is not ' +
               'an accessible name.',
+            { element: this.hostElement },
           );
         }
       });

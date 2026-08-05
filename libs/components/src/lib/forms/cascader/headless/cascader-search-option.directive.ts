@@ -63,6 +63,7 @@ export class CascaderSearchOptionDirective<T = unknown> {
           throw new RuntimeError(
             CASCADER_ERROR_CODES.SEARCH_OPTION_OUTSIDE_CASCADER,
             '[CascaderSearchOptionDirective] etCascaderSearchOption must be rendered inside an [etCascader] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

@@ -58,6 +58,7 @@ export class CalendarCellDirective {
           throw new RuntimeError(
             CALENDAR_ERROR_CODES.CELL_OUTSIDE_CALENDAR,
             'An [etCalendarCell] must be placed inside an [etCalendar].',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

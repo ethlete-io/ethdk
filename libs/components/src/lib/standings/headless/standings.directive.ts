@@ -1,5 +1,5 @@
 import { afterNextRender, booleanAttribute, computed, Directive, input } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { injectStandingsLabels, StandingsLabels } from '../standings-labels';
 import { STANDINGS_ERROR_CODES } from '../standings-errors';
 import { NormalizedStandingRow, StandingsZone } from '../standings.types';
@@ -28,6 +28,8 @@ export type StandingsRenderRow = {
   },
 })
 export class StandingsDirective {
+  private readonly hostElement = injectHostElement();
+
   private injectedLabels = injectStandingsLabels();
 
   /** The rows, in the order they should appear - this never re-sorts them. */
@@ -89,6 +91,7 @@ export class StandingsDirective {
             `[StandingsDirective] The zones "${zone.label}" (${zone.from}-${zone.to}) and "${overlapping.label}" ` +
               `(${overlapping.from}-${overlapping.to}) both cover a position, so a row would be in both. ` +
               'Give every zone its own range.',
+            { element: this.hostElement },
           );
         }
       });

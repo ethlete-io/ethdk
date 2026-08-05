@@ -43,6 +43,7 @@ export class PhoneInputFlagDirective {
           throw new RuntimeError(
             PHONE_INPUT_ERROR_CODES.FLAG_TEMPLATE_OUTSIDE_PHONE_INPUT,
             '[PhoneInputFlagDirective] etPhoneInputFlag must be placed inside an [etPhoneInput] element.',
+            { element: this.templateRef.elementRef.nativeElement },
           );
         }
       });

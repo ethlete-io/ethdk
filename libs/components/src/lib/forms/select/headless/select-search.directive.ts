@@ -124,6 +124,7 @@ export class SelectSearchDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.SEARCH_OUTSIDE_SELECT,
             '[SelectSearchDirective] etSelectSearch must be placed inside an [etSelect] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

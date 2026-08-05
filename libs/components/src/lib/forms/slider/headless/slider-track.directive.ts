@@ -48,6 +48,7 @@ export class SliderTrackDirective {
           throw new RuntimeError(
             SLIDER_ERROR_CODES.TRACK_OUTSIDE_SLIDER,
             'An [etSliderTrack] must be placed inside an [etSlider] or [etRangeSlider].',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

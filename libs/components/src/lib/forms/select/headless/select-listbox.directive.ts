@@ -43,6 +43,7 @@ export class SelectListboxDirective {
           throw new RuntimeError(
             SELECT_ERROR_CODES.LISTBOX_OUTSIDE_SELECT,
             '[SelectListboxDirective] etSelectListbox must be rendered inside the surface of an [etSelect] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

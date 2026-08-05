@@ -17,7 +17,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { RuntimeError, nextFrame } from '@ethlete/core';
+import { RuntimeError, injectHostElement, nextFrame } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, fromEvent, merge, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../../internals/typeahead';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
@@ -79,6 +79,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private bottomSheetStrategy = injectBottomSheetStrategy();
+  private readonly hostElement = injectHostElement();
 
   /** The committed value: `T | null` in single mode, `T[]` with `multiple`. */
   public value = model<T | T[] | null>(null);
@@ -610,6 +611,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
           throw new RuntimeError(
             CASCADER_ERROR_CODES.MISSING_TRIGGER,
             '[CascaderDirective] Cascader trigger not found. Add an element with etCascaderTrigger inside the [etCascader] element.',
+            { element: this.hostElement },
           );
         }
 
@@ -617,6 +619,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
           throw new RuntimeError(
             CASCADER_ERROR_CODES.MISSING_SURFACE,
             '[CascaderDirective] Cascader surface not found. Add <ng-template etCascaderSurface> inside the [etCascader] element.',
+            { element: this.hostElement },
           );
         }
       });
@@ -1230,6 +1233,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
         throw new RuntimeError(
           CASCADER_ERROR_CODES.MISSING_DATA_SOURCE,
           '[CascaderDirective] A [dataSource] is required to open the cascader.',
+          { element: this.hostElement },
         );
       }
 

@@ -32,6 +32,7 @@ export class DateInputFieldDirective extends DatePickerInputFieldDirective {
           throw new RuntimeError(
             DATE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_INPUT,
             '[DateInputFieldDirective] etDateInputField must be placed inside an [etDateInput] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

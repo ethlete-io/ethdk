@@ -554,6 +554,7 @@ export class TableComponent<T> {
           throw new RuntimeError(
             TABLE_ERROR_CODES.UNKNOWN_TEMPLATE_COLUMN,
             `[et-table] A column template is bound to a column this table does not render. Bind it to a column of the same \`columns\` record (e.g. [etTableCell]="COLUMNS.role").`,
+            { element: this.elementRef.nativeElement },
           );
         }
 
@@ -899,6 +900,7 @@ export class TableComponent<T> {
         throw new RuntimeError(
           TABLE_ERROR_CODES.MISSING_ROW_EXPANSION,
           '[et-table] [expandedRowTemplate] needs the row-expansion feature to render it. Add `etTableRowExpansion` to the table and import TABLE_ROW_EXPANSION_IMPORTS.',
+          { element: this.elementRef.nativeElement },
         );
       });
     }
@@ -1003,6 +1005,7 @@ export class TableComponent<T> {
       throw new RuntimeError(
         TABLE_ERROR_CODES.DUPLICATE_ROW_WINDOW,
         '[et-table] Two features tried to window the rows. Use only one row-windowing feature per table.',
+        { element: this.elementRef.nativeElement },
       );
     }
 

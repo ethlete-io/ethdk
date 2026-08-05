@@ -72,6 +72,7 @@ export class SliderThumbDirective implements SliderThumbBase {
           throw new RuntimeError(
             SLIDER_ERROR_CODES.THUMB_OUTSIDE_SLIDER,
             'An [etSliderThumb] must be placed inside an [etSlider] or [etRangeSlider].',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

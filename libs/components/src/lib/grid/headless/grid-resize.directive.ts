@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { afterNextRender, computed, DestroyRef, Directive, effect, inject, signal, untracked } from '@angular/core';
-import { ResizeEdge, ResizeMoveEvent, RuntimeError } from '@ethlete/core';
+import { injectHostElement, ResizeEdge, ResizeMoveEvent, RuntimeError } from '@ethlete/core';
 import { filter, fromEvent, merge, Subscription, tap } from 'rxjs';
 import { GRID_ERROR_CODES } from '../grid-errors';
 import { GridItemDirective } from './grid-item.directive';
@@ -27,6 +27,7 @@ export class GridResizeDirective {
   private gridItem = inject(GridItemDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
+  private readonly hostElement = injectHostElement();
 
   public isResizing = signal(false);
   public resizeEdges = computed((): ResizeEdge[] => ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']);
@@ -53,6 +54,7 @@ export class GridResizeDirective {
           throw new RuntimeError(
             GRID_ERROR_CODES.MISSING_GRID_ITEM,
             '[GridResizeDirective] etGridResize must be placed on or inside an [etGridItem] element.',
+            { element: this.hostElement },
           );
         }
       });

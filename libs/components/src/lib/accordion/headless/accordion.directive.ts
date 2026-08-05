@@ -126,6 +126,7 @@ export class AccordionDirective {
             ACCORDION_ERROR_CODES.MISSING_TRIGGER,
             '[AccordionDirective] No [etAccordionTrigger] was found inside this accordion, so nothing can expand it. ' +
               'Add an element (ideally a <button> inside a heading) with the etAccordionTrigger directive.',
+            { element: this.elementRef.nativeElement },
           );
         }
 
@@ -137,6 +138,7 @@ export class AccordionDirective {
             ACCORDION_ERROR_CODES.MISSING_PANEL,
             '[AccordionDirective] This accordion is open but no [etAccordionPanel] was found inside it, so there is ' +
               'nothing to expand. Add an element with the etAccordionPanel directive.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

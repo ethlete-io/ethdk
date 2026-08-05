@@ -93,6 +93,7 @@ export class CascaderNodeDirective<T = unknown> {
           throw new RuntimeError(
             CASCADER_ERROR_CODES.NODE_OUTSIDE_COLUMN,
             '[CascaderNodeDirective] etCascaderNode must be rendered inside an [etCascader] element.',
+            { element: this.elementRef.nativeElement },
           );
         }
       });

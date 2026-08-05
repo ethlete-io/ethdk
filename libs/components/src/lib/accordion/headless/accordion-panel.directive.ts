@@ -1,5 +1,5 @@
 import { Directive, afterNextRender, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { ACCORDION_ERROR_CODES } from '../accordion-errors';
 import { ACCORDION_TOKEN } from './accordion.tokens';
 
@@ -25,6 +25,7 @@ import { ACCORDION_TOKEN } from './accordion.tokens';
 })
 export class AccordionPanelDirective {
   protected accordion = inject(ACCORDION_TOKEN, { optional: true });
+  private readonly hostElement = injectHostElement();
 
   constructor() {
     this.accordion?.registerPanel(this);
@@ -35,6 +36,7 @@ export class AccordionPanelDirective {
           throw new RuntimeError(
             ACCORDION_ERROR_CODES.PART_OUTSIDE_ACCORDION,
             '[AccordionPanelDirective] etAccordionPanel must be placed inside an [etAccordion] element (e.g. <et-accordion>).',
+            { element: this.hostElement },
           );
         }
       });
