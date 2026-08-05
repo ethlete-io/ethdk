@@ -8,7 +8,7 @@ what does not exist yet, this one covered gaps **inside** what does.
 
 Everything the pass judged worth doing became one of twelve implementation plans, and all twelve
 shipped between 2026-07-30 and 2026-07-31 - the audit findings and the plans went with them. What
-survives here is only what is still actionable: the items deliberately never planned, the four the
+survives here is only what is still actionable: the items deliberately never planned, what the
 shipped work deferred, and the strengths not worth re-auditing.
 
 ## 1. Recorded but NOT planned (backlog; revisit on demand)
@@ -45,8 +45,10 @@ current surface.
 
 ## 2. Deferred by the shipped work
 
-Four items the plans reached and deliberately left. Each is small enough to fold
-into the next relevant pass rather than plan on its own.
+Two items the plans reached and deliberately left open. Each is small enough to fold
+into the next relevant pass rather than plan on its own. (Two others in this original
+four-item list have since closed: a foreign-time-zone renderer was decided against, and
+the range-input error gap is fixed - both below.)
 
 - **≥ 44 px touch-target audit** (from the touch/gesture audit). Every candidate either changes
   layout or steals neighbouring taps, so it needs measuring on a device
@@ -63,15 +65,19 @@ into the next relevant pass rather than plan on its own.
   ungated too. Notification, accordion, calendar and carousel all gate correctly, so this is the
   same half-right shape the rest of that audit found and fixed - but 7 strategies × enter/leave
   plus the fullscreen JS path is a meaningfully bigger change and wants its own plan.
-- **Rendering a foreign time zone** (from the date & time gap list). The contract shipped as
-  docs: every `Date` is local wall-clock and `valueFormat="yyyy-MM-dd"` is the fix for
-  calendar dates. Rendering a zone other than the browser's was ruled out of scope -
-  zoned arithmetic through calendar + time picker + all four inputs, a new dependency,
-  different value semantics. **Open decision** if it is ever wanted.
-- **Range per-field errors don't reach the field's single error area** (from the date & time gap
-  list). Never resolved either way: the plan asked whether the shell's error resolver can merge
-  child-field errors for the range input, and no finding was recorded, so it stands as
-  documented-as-is.
+- ~~Rendering a foreign time zone~~ - closed 2026-08-05, won't do. The contract shipped as docs:
+  every `Date` is local wall-clock and `valueFormat="yyyy-MM-dd"` is the fix for calendar dates.
+  Zoned arithmetic through calendar + time picker + all four inputs, a new dependency, and different
+  value semantics is a real cost for a need nothing has surfaced - decided not worth carrying as an
+  open question.
+- ~~Range per-field errors don't reach the field's single error area~~ - resolved 2026-08-05.
+  `DateRangeInputDirective` now presents a merged view to the form field: `errors` stays the
+  `FormValueControl` input signal forms writes the range field's _own_ errors into (required, since
+  that binding only ever targets a property literally named `errors`), but what the form field
+  reads is a separate object whose `errors` prefers `inject(FORM_FIELD).state().errorSummary()`
+  (own + descendants) and falls back to the plain `errors` input outside a schema-bound context. Not
+  needed for phone/OTP input - neither has a per-side schema-error use case today; revisit the same
+  pattern there only if one comes up.
 
 ## 3. Verified strengths (don't re-audit)
 

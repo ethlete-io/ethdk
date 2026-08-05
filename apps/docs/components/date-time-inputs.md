@@ -175,10 +175,8 @@ its own mask host, so the guide only shows on the focused side. In the picker,
 the first click starts the range and a completed range closes it; a partial pick
 keeps it open. See the `Masked` story.
 
-**Validation:** signal forms attaches child-path errors (e.g.
-`required(s.range.start)`) to the sub-fields - they flip the control's invalid
-state, but their messages don't reach the field's single error area. Validate on
-the range path for messages you want displayed:
+**Validation:** child-path errors (e.g. `required(s.range.start)`) show in the
+field's single error area alongside errors on the range path itself:
 
 ```ts
 validate(s.range, ({ value }) => {

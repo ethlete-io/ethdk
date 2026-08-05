@@ -1,6 +1,8 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormField, form, required } from '@angular/forms/signals';
 import '../../../../../test-helpers';
+import { FormFieldDirective, LabelDirective } from '../../../form-field/headless';
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
@@ -336,6 +338,41 @@ describe('DateRangeInputDirective', () => {
       expect(host.value().start).toBeNull();
       expect(rangeInput.startParseError()).toBe(true);
     });
+  });
+});
+
+@Component({
+  template: `
+    <div etFormField>
+      <et-label>Range</et-label>
+      <div [formField]="rangeForm.range" valueFormat="yyyy-MM-dd" etDateRangeInput>
+        <input class="start" etDateRangeInputField side="start" />
+        <input class="end" etDateRangeInputField side="end" />
+      </div>
+    </div>
+  `,
+  imports: [FormField, FormFieldDirective, LabelDirective, DateRangeInputDirective, DateRangeInputFieldDirective],
+})
+class RangeSubfieldErrorTestHost {
+  model = signal<{ range: DateRangeValue }>({ range: { start: null, end: null } });
+  rangeForm = form(this.model, (schema) => {
+    required(schema.range.start);
+  });
+}
+
+describe('DateRangeInputDirective descendant (subfield) errors', () => {
+  it('surfaces a `schema.start.required()` error in the form field error area, not just the range field itself', () => {
+    TestBed.configureTestingModule({ imports: [RangeSubfieldErrorTestHost] });
+    const fixture = TestBed.createComponent(RangeSubfieldErrorTestHost);
+    fixture.detectChanges();
+
+    const formField = fixture.debugElement.children[0]!.injector.get(FormFieldDirective);
+    const rangeInput = fixture.debugElement.children[0]!.children[1]!.injector.get(DateRangeInputDirective);
+
+    // the range field itself carries no own error - `required` targets the `start` subfield
+    expect(rangeInput.errors()).toEqual([]);
+    // the form field's single error area still shows it, via the field's error summary
+    expect(formField.errors().length).toBeGreaterThan(0);
   });
 });
 

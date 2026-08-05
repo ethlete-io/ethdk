@@ -11,7 +11,7 @@ import {
   model,
   signal,
 } from '@angular/core';
-import { FormValueControl, ValidationError } from '@angular/forms/signals';
+import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
 import { Locale, startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../../form-field/headless';
 import { injectDateFormat, injectDateLocale } from '../../date-time-formats';
@@ -68,6 +68,8 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
+  /** Only present under a signal-forms `[field]` binding - unset in manual `[value]`/`[errors]` use. */
+  private ngFormField = inject(FORM_FIELD, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private defaultValueFormat = injectDateFormat();
@@ -225,6 +227,32 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     this.mask() ? maskPatternFromDisplayFormat(this.effectiveDisplayFormat()) : null,
   );
 
+  /**
+   * `errors` is the `FormValueControl` input signal-forms writes the range field's *own* errors
+   * into (e.g. a whole-range `customError`) - it never carries a descendant's, because a `Field`
+   * directive only ever binds a control's own errors, not its children's (`schema.start.required()`
+   * lands on the `start` subfield, not here). What the form field renders is a separate view that
+   * prefers the bound field's `errorSummary` (own + descendants) and falls back to `errors` for
+   * manual, schema-less use.
+   */
+  private formFieldControlView: FormFieldControl = {
+    touched: this.touched,
+    invalid: this.invalid,
+    errors: computed(() => this.ngFormField?.state().errorSummary() ?? this.errors()),
+    name: this.name,
+    required: this.required,
+    disabled: this.disabled,
+    readonly: this.readonly,
+    describedBy: this.describedBy,
+    controlType: this.controlType,
+    focused: this.focused,
+    expanded: this.expanded,
+    hasValue: this.hasValue,
+    parseError: this.parseError,
+    resolvedParseErrorMessage: this.resolvedParseErrorMessage,
+    activate: () => this.activate(),
+  };
+
   private overlay = createDatePickerOverlay({
     interactive: this.interactive,
     pickerOpen: this.pickerOpen,
@@ -244,8 +272,8 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   constructor() {
     mountTextFieldShellStyles();
 
-    this.formField?.registerControl(this);
-    this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+    this.formField?.registerControl(this.formFieldControlView);
+    this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this.formFieldControlView));
 
     if (ngDevMode) {
       // a refused format silently behaving like `mask: false` would be a head-scratcher
