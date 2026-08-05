@@ -56,6 +56,7 @@ import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
+import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import {
   buildQueryDevtoolsSessionExport,
@@ -245,6 +246,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsDrawerComponent,
     QueryDevtoolsFeaturesComponent,
     QueryDevtoolsJsonComponent,
+    QueryDevtoolsQueriesTabComponent,
     QueryDevtoolsRouteComponent,
     QueryDevtoolsToggleComponent,
   ],
@@ -292,14 +294,6 @@ export class QueryDevtoolsComponent {
    */
   private readonly PINNED_TABS: readonly DevtoolsTab[] = ['queries', 'faults'];
 
-  /** The status chips above the Queries list, in the order a problem is usually looked for. */
-  protected readonly facets = [
-    { id: 'error', label: 'Failing' },
-    { id: 'loading', label: 'Loading' },
-    { id: 'stale', label: 'Stale' },
-    { id: 'idle', label: 'Idle' },
-  ] satisfies { id: QueryListFacet; label: string }[];
-
   protected readonly shortcut = queryDevtoolsShortcutLabel();
 
   protected open = signal(this.persisted.open ?? false);
@@ -345,7 +339,7 @@ export class QueryDevtoolsComponent {
   /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */
   public detailTab = signal<DetailTab>(this.persisted.detailTab ?? 'overview');
   protected selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
-  protected selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
+  public selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
 
   /** The form whose detail the Forms tab has expanded. */
   protected selectedFormId = signal<string | null>(this.persisted.selectedFormId ?? null);
@@ -358,7 +352,7 @@ export class QueryDevtoolsComponent {
   protected timelineSelectedQueryId = signal<string | null>(null);
 
   /** Free-text narrowing of the Queries list. Every whitespace-separated term has to match. */
-  protected queryFilter = signal(this.persisted.queryFilter ?? '');
+  public queryFilter = signal(this.persisted.queryFilter ?? '');
 
   /** The status facets the Queries list is narrowed to. Empty means no status narrowing. */
   public queryFacets = signal<ReadonlySet<QueryListFacet>>(new Set(this.persisted.queryFacets ?? []));
@@ -511,60 +505,6 @@ export class QueryDevtoolsComponent {
     return client ? entries.filter((e) => e.meta.clientName === client) : entries;
   });
 
-  private searchedQueries = computed(() => {
-    const items = this.scopedQueries().map((entry) => ({ entry, query: entry.handle as AnyQuery }));
-    const terms = this.queryFilter().trim().toLowerCase().split(/\s+/).filter(Boolean);
-
-    if (!terms.length) return items;
-
-    return items.filter((item) => {
-      const haystack = this.queryHaystack(item.entry, item.query);
-
-      return terms.every((term) => haystack.includes(term));
-    });
-  });
-
-  /**
-   * How many queries each status chip would leave. Counted before the active chips are applied, so a
-   * chip always states what picking it yields rather than what the current selection happens to show.
-   */
-  protected facetCounts = computed(() => {
-    // Staleness is a `Date.now()` comparison and deliberately not reactive, so the clock is what makes
-    // the counts age with it - without it a chip would keep the number it happened to be built with.
-    this.clock();
-
-    const counts: Record<QueryListFacet, number> = { error: 0, loading: 0, stale: 0, idle: 0 };
-
-    for (const { query } of this.searchedQueries()) {
-      const status = this.queryStatus(query);
-
-      if (status === 'error') counts.error++;
-      if (status === 'loading') counts.loading++;
-      if (status === 'idle') counts.idle++;
-      if (this.isStale(query)) counts.stale++;
-    }
-
-    return counts;
-  });
-
-  protected filteredQueries = computed(() => {
-    const facets = this.queryFacets();
-    const items = this.searchedQueries();
-
-    if (!facets.size) return items;
-
-    // Same reason as in `facetCounts`: a list narrowed to stale queries has to re-evaluate as they age.
-    if (facets.has('stale')) this.clock();
-
-    return items.filter(({ query }) => this.matchesFacets(query, facets));
-  });
-
-  /** How many queries are in scope, which is what the list would show unfiltered. */
-  protected scopedQueryCount = computed(() => this.scopedQueries().length);
-
-  /** Whether the search box or a status chip is narrowing the list beyond its scope. */
-  protected isQueryListNarrowed = computed(() => !!this.queryFilter().trim() || this.queryFacets().size > 0);
-
   /**
    * Every run the scoped queries have recorded, oldest first. The client picker and the inspection
    * filter narrow the timeline the same way they narrow the Queries list.
@@ -708,7 +648,7 @@ export class QueryDevtoolsComponent {
 
   protected tabMenuOpen = signal(false);
 
-  protected selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
+  public selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
   protected stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
   protected sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
   protected formSelectedQuery = computed(() => this.findQuery(this.formSelectedQueryId()));
@@ -1074,11 +1014,11 @@ export class QueryDevtoolsComponent {
     this.inspectFilterIds.set(null);
   }
 
-  protected clearInspectFilter() {
+  public clearInspectFilter() {
     this.inspectFilterIds.set(null);
   }
 
-  protected toggleFacet(facet: QueryListFacet) {
+  public toggleFacet(facet: QueryListFacet) {
     const next = new Set(this.queryFacets());
 
     if (!next.delete(facet)) next.add(facet);
@@ -1087,7 +1027,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** Drops the search term and the status chips, keeping the client / inspection scope. */
-  protected clearQueryFilters() {
+  public clearQueryFilters() {
     this.queryFilter.set('');
     this.queryFacets.set(new Set());
   }
@@ -1101,13 +1041,13 @@ export class QueryDevtoolsComponent {
     this.drag.set({ kind: 'panel', doc: this.document });
   }
 
-  protected startPaneResize(event: PointerEvent, target: { pane: PaneTarget; container: HTMLElement }) {
+  public startPaneResize(event: PointerEvent, target: { pane: PaneTarget; container: HTMLElement }) {
     event.preventDefault();
     this.drag.set({ kind: 'pane', ...target, axis: this.paneAxis(), doc: target.container.ownerDocument });
   }
 
   /** Hands a pane back to the stylesheet's proportional default, on the axis it is being sized along. */
-  protected resetPaneSize(pane: PaneTarget) {
+  public resetPaneSize(pane: PaneTarget) {
     this.paneSize(pane, this.paneAxis()).set(null);
   }
 
@@ -1124,7 +1064,7 @@ export class QueryDevtoolsComponent {
    * the value the query used, or `:<name>` while it has none yet) and from the query string of the
    * request that ran - which is what tells two requests to the same endpoint apart.
    */
-  protected routeSegments(entry: QueryDevtoolsEntry | undefined, query: AnyQuery): RouteSegment[] {
+  public routeSegments(entry: QueryDevtoolsEntry | undefined, query: AnyQuery): RouteSegment[] {
     const parts = entry?.meta.routeParts;
     const search = query.subtle.request()?.url.split('?')[1];
     const querySegment: RouteSegment[] = search ? [{ text: `?${search}`, kind: 'query' }] : [];
@@ -1172,7 +1112,7 @@ export class QueryDevtoolsComponent {
    * A request in flight is already refreshing, so reporting it as stale on top of `loading` is noise -
    * the same precedence the cache tab's freshness column applies.
    */
-  protected isStale(query: AnyQuery) {
+  public isStale(query: AnyQuery) {
     try {
       const request = query.subtle.request();
 
@@ -1188,7 +1128,7 @@ export class QueryDevtoolsComponent {
    * What a query's current request is doing beyond being loading, or `null` when there is nothing beyond
    * the status dot to say - so the readout only takes up room while it carries something.
    */
-  protected requestProgress(query: AnyQuery): RequestProgress | null {
+  public requestProgress(query: AnyQuery): RequestProgress | null {
     const request = query.subtle.request();
 
     if (!request) return null;
@@ -1453,18 +1393,16 @@ export class QueryDevtoolsComponent {
   }
 
   /**
-   * Downloads every query currently listed (so the client filter and the inspection filter both apply)
-   * as one Insomnia collection, filed into a folder per query client.
+   * Downloads the given queries (already scoped/filtered by the caller) as one Insomnia collection,
+   * filed into a folder per query client.
    */
-  protected downloadInsomniaCollection() {
-    const items = this.filteredQueries();
+  public downloadInsomniaCollection(items: { entry: QueryDevtoolsEntry; query: AnyQuery }[], clientLabel: string | null) {
     if (!items.length) return;
 
-    const client = this.selectedClientName();
     const requests = items.map(({ entry, query }) => this.exportedRequest(entry, query));
     const json = JSON.stringify(
       buildInsomniaExport({
-        name: `${client ?? 'ethlete'} queries`,
+        name: `${clientLabel ?? 'ethlete'} queries`,
         requests,
         tokenRefreshes: this.insomniaTokenRefreshes(requests),
         now: Date.now(),
@@ -1473,7 +1411,7 @@ export class QueryDevtoolsComponent {
       2,
     );
 
-    this.downloadFile(`insomnia-${client ?? 'ethlete'}-queries.json`, json);
+    this.downloadFile(`insomnia-${clientLabel ?? 'ethlete'}-queries.json`, json);
   }
 
   // --- Session export ---
@@ -2090,32 +2028,6 @@ export class QueryDevtoolsComponent {
     if (activity.avgDurationMs !== null) parts.push(`avg ${this.formatDuration(activity.avgDurationMs)}`);
 
     return `activity: ${parts.join(' · ')}`;
-  }
-
-  /** A query matches the chips if it is in any of the picked states - chips widen, they don't intersect. */
-  private matchesFacets(query: AnyQuery, facets: ReadonlySet<QueryListFacet>) {
-    const status = this.queryStatus(query);
-
-    return (
-      (facets.has('error') && status === 'error') ||
-      (facets.has('loading') && status === 'loading') ||
-      (facets.has('idle') && status === 'idle') ||
-      (facets.has('stale') && this.isStale(query))
-    );
-  }
-
-  /**
-   * What the search box matches against: what the row shows, plus the path of the request that ran for a
-   * query whose template differs from it.
-   *
-   * Deliberately not the origin or the client name - both repeat across most entries, so a short term
-   * ("p") would match nearly everything through the host name. Scoping to a client is the picker's job.
-   */
-  private queryHaystack(entry: QueryDevtoolsEntry, query: AnyQuery) {
-    const url = this.requestUrl(query);
-    const parts = [entry.meta.method, this.queryRoute(entry, query), url ? this.requestPath(url) : null];
-
-    return parts.join(' ').toLowerCase();
   }
 
   /** {@link routeSegments} as a plain string, for the places that cannot render markup. */

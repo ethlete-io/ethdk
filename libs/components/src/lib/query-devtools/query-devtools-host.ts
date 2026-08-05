@@ -19,6 +19,7 @@ import {
   PaneTarget,
   QueryActivity,
   QueryLink,
+  QueryListFacet,
   RepositoryInfo,
   RequestProgress,
   RouteSegment,
@@ -50,6 +51,16 @@ export type QueryDevtoolsHost = {
   authEntries: Signal<QueryDevtoolsEntry[]>;
   wsEntries: Signal<QueryDevtoolsEntry[]>;
   repositories: Signal<RepositoryInfo[]>;
+
+  /** Unique client names present across queries and auth providers, for the Queries/Timeline pickers. */
+  clientNames: Signal<string[]>;
+
+  /**
+   * The queries in scope before the Queries tab's own search box and status chips narrow them further:
+   * either the picked client's, or exactly the inspected element's. Also what the Timeline tab scopes
+   * its runs to, which is why this lives here rather than on the Queries tab alone.
+   */
+  scopedQueries: Signal<QueryDevtoolsEntry[]>;
 
   /** 1-second tick driving every countdown/freshness readout across tabs. */
   clock: Signal<number>;
@@ -138,6 +149,29 @@ export type QueryDevtoolsHost = {
   jsonExpandedPaths: Signal<ReadonlySet<string>>;
   jsonCollapsedPaths: Signal<ReadonlySet<string>>;
   toggleJsonPath(path: string, expand: boolean): void;
+
+  // --- Queries tab state (persisted, so it has to survive the tab being switched away from) ---
+
+  selectedClientName: WritableSignal<string | null>;
+  selectedQueryId: WritableSignal<string | null>;
+  selectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
+  queryFilter: WritableSignal<string>;
+  queryFacets: WritableSignal<ReadonlySet<QueryListFacet>>;
+
+  /** When set (via inspect), the Queries list is filtered to exactly these entry ids. */
+  inspectFilterIds: WritableSignal<string[] | null>;
+
+  selectClient(name: string | null): void;
+  clearInspectFilter(): void;
+  toggleFacet(facet: QueryListFacet): void;
+  /** Drops the search term and the status chips, keeping the client / inspection scope. */
+  clearQueryFilters(): void;
+
+  /**
+   * Downloads the given queries (already scoped/filtered by the caller) as one Insomnia collection,
+   * filed into a folder per query client.
+   */
+  downloadInsomniaCollection(items: { entry: QueryDevtoolsEntry; query: AnyQuery }[], clientLabel: string | null): void;
 
   // --- Two-pane tab sizing (the divider between a tab's list and its drawer) ---
 
