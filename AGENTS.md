@@ -131,6 +131,9 @@ the generated block at the end of this file (from `@ethlete/agent-rules`). For t
 judgment calls lint can't enforce (signals vs RxJS, templates, lifecycle/DI
 patterns), see the **`styleguide`** skill.
 
+To run what CI runs before pushing - format, changesets, lint, test, build, bundle-size
+goldens, Storybook build - use the **`ci-check`** skill (`.agents/skills/ci-check/`).
+
 ## Agent rules & skills for other repos
 
 `libs/agent-rules` publishes `@ethlete/agent-rules`: the portable slice of this repo's
