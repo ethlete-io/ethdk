@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.42
+
+### Minor Changes
+
+- [#3047](https://github.com/ethlete-io/ethdk/pull/3047) [`309dc57`](https://github.com/ethlete-io/ethdk/commit/309dc576d296efe39d9ff85030102c10db834b9b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scroll restoration: mark a "back to the overview" link with `etRestoreScroll` (or `routerRestoreScroll()` in the navigation state) and it restores that page's last offset instead of scrolling to top.
+
 ## 5.0.0-next.41
 
 ### Major Changes

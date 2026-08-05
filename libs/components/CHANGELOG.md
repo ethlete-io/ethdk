@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-next.39
+
+### Minor Changes
+
+- [#3047](https://github.com/ethlete-io/ethdk/pull/3047) [`2c547b3`](https://github.com/ethlete-io/ethdk/commit/2c547b310423174e7d7a413dd2507efe873e8cff) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a `component` generator that scaffolds a domain following the three-tier architecture: `nx g @ethlete/components:component <name>`.
+
+- [#3047](https://github.com/ethlete-io/ethdk/pull/3047) [`167cc7f`](https://github.com/ethlete-io/ethdk/commit/167cc7f26f06b3580858bb5c1d40bea5abc95973) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the tree domain: `et-tree` and headless `[etTree]` render a hierarchy as an ARIA tree, loading each branch through a `TreeDataSource` the first time it expands.
+
 ## 1.0.0-next.38
 
 ### Major Changes
