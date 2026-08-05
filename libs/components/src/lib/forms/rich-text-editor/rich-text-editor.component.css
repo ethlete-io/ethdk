@@ -155,12 +155,10 @@
       }
     }
 
-    .et-rte-toolbar-divider {
-      inline-size: 1px;
-      align-self: stretch;
-      margin-block: 4px;
-      margin-inline: 2px;
-      background: color-mix(in srgb, currentColor 12%, transparent);
+    .et-rte-toolbar .et-divider {
+      --et-divider-color: color-mix(in srgb, currentColor 12%, transparent);
+      --et-divider-spacing: 2px;
+      --et-divider-inset: 4px;
     }
 
     .et-rte-content {

@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, untracked, ViewEncapsulation } from '@angular/core';
 import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/core';
 import { IconButtonComponent } from '../../button/icon-button.component';
+import { DividerComponent } from '../../divider';
 import {
   BOLD_ICON,
   CODE_ICON,
@@ -24,7 +25,7 @@ import {
   templateUrl: './rich-text-editor-floating-toolbar.component.html',
   styleUrl: './rich-text-editor-floating-toolbar.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [IconButtonComponent, IconDirective],
+  imports: [DividerComponent, IconButtonComponent, IconDirective],
   providers: [provideIcons(BOLD_ICON, ITALIC_ICON, UNDERLINE_ICON, STRIKETHROUGH_ICON, CODE_ICON, LINK_ICON)],
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {

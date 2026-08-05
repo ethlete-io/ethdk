@@ -10,7 +10,7 @@
   @for (tool of dir.resolvedTools(); track $index) {
     @switch (tool) {
       @case (TOOLS.DIVIDER) {
-        <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
+        <et-divider orientation="vertical" decorative />
       }
       @default {
         @if (dir.toolDefs.get(tool); as def) {

@@ -1,6 +1,6 @@
 @for (def of inlineTools(); track def.token; let first = $first) {
   @if (def.token === TOOLS.LINK && !first) {
-    <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
+    <et-divider orientation="vertical" decorative />
   }
 
   <!-- Icon tools only: this bar has no room for a custom control, and every inline tool is a toggle. -->

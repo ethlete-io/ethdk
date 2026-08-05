@@ -11,6 +11,7 @@ export * from './lib/carousel';
 export * from './lib/chip';
 export * from './lib/copy-button';
 export * from './lib/description-list';
+export * from './lib/divider';
 export * from './lib/empty-state';
 export * from './lib/filter-overlay';
 export * from './lib/floating-action';

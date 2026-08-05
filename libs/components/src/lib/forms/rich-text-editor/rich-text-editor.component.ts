@@ -16,6 +16,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
 import { EMPTY, fromEvent, interval, merge, switchMap, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
+import { DividerComponent } from '../../divider';
 import {
   BOLD_ICON,
   CODE_BLOCK_ICON,
@@ -61,7 +62,7 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
   templateUrl: './rich-text-editor.component.html',
   styleUrl: './rich-text-editor.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...BUTTON_IMPORTS, IconDirective, NgComponentOutlet],
+  imports: [...BUTTON_IMPORTS, DividerComponent, IconDirective, NgComponentOutlet],
   providers: [
     provideIcons(
       BOLD_ICON,

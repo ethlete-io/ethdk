@@ -4,6 +4,13 @@
     background: transparent;
     box-shadow: none;
     border-radius: 10px;
+
+    /* Anchored panes force their projected content to `display: block`
+       (`overlay-container.component.css`), which outweighs the class-only rule below - the toolbar
+       has to out-specify it to lay its tools out as a row at all. */
+    > .et-rte-floating-toolbar {
+      display: flex;
+    }
   }
 
   /* open / close: fade + a small slide toward the selection (same treatment as the token popup).
@@ -74,12 +81,10 @@
 
     --et-icon-button-border-radius: var(--et-rich-text-editor-button-radius, 4px);
 
-    .et-rte-toolbar-divider {
-      inline-size: 1px;
-      align-self: stretch;
-      margin-block: 4px;
-      margin-inline: 2px;
-      background: color-mix(in srgb, currentColor 20%, transparent);
+    .et-divider {
+      --et-divider-color: color-mix(in srgb, currentColor 20%, transparent);
+      --et-divider-spacing: 2px;
+      --et-divider-inset: 4px;
     }
   }
 }
