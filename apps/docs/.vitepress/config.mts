@@ -253,6 +253,7 @@ export default defineConfig({
             { text: 'Bracket', link: '/components/bracket' },
             { text: 'Bracket rounds list', link: '/components/bracket-rounds-list' },
             { text: 'Breadcrumb', link: '/components/breadcrumb' },
+            { text: 'Card', link: '/components/card' },
             { text: 'Carousel', link: '/components/carousel' },
             { text: 'Grid', link: '/components/grid' },
             { text: 'Masonry', link: '/components/masonry' },

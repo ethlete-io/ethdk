@@ -1,0 +1,39 @@
+@layer components {
+  @property --et-card-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-card-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-card-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  .et-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-card-gap);
+    padding: var(--et-card-padding);
+    border-radius: var(--et-card-border-radius);
+    box-sizing: border-box;
+    background: var(--et-surface-background-solid, Canvas);
+    color: var(--et-surface-color-solid, currentColor);
+    border: 1px solid transparent;
+
+    &:where([data-variant='outlined']) {
+      border-color: var(--et-surface-border-solid, currentColor);
+    }
+
+    &:where([data-variant='elevated']) {
+      box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+    }
+  }
+}

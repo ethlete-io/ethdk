@@ -114,6 +114,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Bracket](/components/bracket) - tournament bracket renderer for single/double-elimination and swiss stages, with SVG connectors, journey highlighting and pluggable match/header cards.
 - [Bracket rounds list](/components/bracket-rounds-list) - the same tournament as a vertical round-by-round list, plus the helpers that decide when to swap to it.
 - [Breadcrumb](/components/breadcrumb) - template-authored trail with an overflow popover, loading crumbs and a routed-page outlet.
+- [Card](/components/card) - generic content container with elevated, outlined and filled variants.
 - [Carousel](/components/carousel) - scroll-snapping slide track with multi-item views, autoplay and scroll-driven transitions.
 - [Grid](/components/grid) - drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
 - [Masonry](/components/masonry) - column-balancing layout for variable-height cards, with continuous measurement and stable columns.

@@ -4,6 +4,7 @@ export * from './lib/bracket';
 export * from './lib/breadcrumb';
 export * from './lib/button';
 export * from './lib/calendar';
+export * from './lib/card';
 export * from './lib/carousel';
 export * from './lib/chip';
 export * from './lib/filter-overlay';
