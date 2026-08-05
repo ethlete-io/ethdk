@@ -81,11 +81,14 @@ otp-input, `container-type` in stream/pip.
 
 ## DX / tooling
 
-- **Component scaffolding generator** (`@ethlete/components`): only an
-  `icons` generator exists. The three-tier architecture (folder layout,
-  headless+default split, stories, `@layer components` CSS, error codes,
-  self-registration) is mechanical - a `component`/`directive` generator
-  would pay for itself quickly.
+- **Component scaffolding generator** - **done** (2026-08-05). Shipped as
+  `nx g @ethlete/components:component <name>` (`--tier=both|component|headless`,
+  `--errors`, plus opt-outs for spec/stories/docs). It writes the domain folder,
+  the `@layer components` stylesheet, the imports barrel, a passing spec and a
+  story, then wires the lib barrel, the docs page + sidebar entry and - with
+  `--errors` - claims the next free block in the code range table. Self-registration
+  was left out of the scaffold: it only applies to sub-directives, which a fresh
+  domain doesn't have yet.
 - **Test harnesses**: `forms/testing/` has exactly one utility (the
   `mixed-state-contract`). No CDK-`ComponentHarness`-style drivers - every
   spec talks to the DOM directly. Worth considering as more controls land;

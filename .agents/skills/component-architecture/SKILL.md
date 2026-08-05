@@ -16,6 +16,19 @@ detail, examples, and rationale.
 > `libs/components`** (`libs/components/src/lib/<domain>/`). The patterns below
 > apply identically there. Tier 1 primitives still live in `libs/core`.
 
+## Start with the generator
+
+A new domain is scaffolded, not hand-assembled:
+
+```bash
+nx g @ethlete/components:component stat-tile   # --tier=component|headless, --errors, --dry-run
+```
+
+It lays out the folder, the headless + default split, the `@layer components` stylesheet, the
+imports barrel, a spec and a story, then wires the lib barrel, the docs page + sidebar entry and
+(with `--errors`) the code range table in `docs/COMPONENT-ARCHITECTURE.md`. Everything it writes is
+a placeholder you replace - it buys the wiring, not the design.
+
 ## The three-tier model
 
 1. **Tier 1 - Primitives (`libs/core`).** Pure behavior, zero domain awareness

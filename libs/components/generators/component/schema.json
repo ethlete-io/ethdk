@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "et-component",
+  "title": "Ethlete Component Generator",
+  "description": "Scaffolds a component domain that follows the three-tier architecture: folder layout, headless + default split, imports barrel, styles, spec, stories, docs page and barrel/sidebar wiring.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Domain name in kebab-case, e.g. 'stat-tile'.",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "What is the domain called (kebab-case)?"
+    },
+    "tier": {
+      "type": "string",
+      "description": "Which tiers to scaffold: 'both' is a headless directive plus the default component applying it, 'component' a presentational component only, 'headless' a behavior directive only.",
+      "enum": ["both", "component", "headless"],
+      "default": "both",
+      "x-prompt": {
+        "message": "Which tiers does the domain need?",
+        "type": "list",
+        "items": [
+          { "value": "both", "label": "Headless directive + default component" },
+          { "value": "component", "label": "Default component only" },
+          { "value": "headless", "label": "Headless directive only" }
+        ]
+      }
+    },
+    "project": {
+      "type": "string",
+      "description": "Nx project to scaffold into. The domain lands in its '<sourceRoot>/lib/<name>'.",
+      "default": "components"
+    },
+    "errors": {
+      "type": "boolean",
+      "description": "Add a '<name>-errors.ts' with the next free 100-code block.",
+      "default": false
+    },
+    "spec": {
+      "type": "boolean",
+      "description": "Add a spec file.",
+      "default": true
+    },
+    "stories": {
+      "type": "boolean",
+      "description": "Add a Storybook story and its demo component.",
+      "default": true
+    },
+    "docs": {
+      "type": "boolean",
+      "description": "Add a VitePress guide page and its sidebar entry.",
+      "default": true
+    },
+    "docsGroup": {
+      "type": "string",
+      "description": "Sidebar group the guide page is listed under.",
+      "default": "Layout & structure"
+    },
+    "docsRoot": {
+      "type": "string",
+      "description": "Path to the VitePress site (relative to workspace root).",
+      "default": "apps/docs"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after generation.",
+      "default": false
+    }
+  },
+  "required": ["name"]
+}

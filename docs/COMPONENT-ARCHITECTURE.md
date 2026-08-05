@@ -459,6 +459,22 @@ Use a component-directive (over a plain `@Directive`) when the piece of Tier 2 n
 
 ## Folder Structure
 
+### Scaffolding a new domain
+
+The mechanical part of everything below is a generator:
+
+```bash
+nx g @ethlete/components:component stat-tile          # headless directive + default component
+nx g @ethlete/components:component stat-tile --tier=component   # presentational only
+nx g @ethlete/components:component stat-tile --tier=headless    # behavior only
+nx g @ethlete/components:component stat-tile --errors           # + a claimed error code block
+```
+
+It writes the folder layout, the `@layer components` stylesheet, the imports barrel, a spec, a
+Storybook story and a guide page, then wires up the lib barrel, the docs sidebar and - with
+`--errors` - the code range table above, claiming the next free block. What it cannot write is the
+part that matters: the JSDoc, the behavior and the docs prose, all left as placeholders.
+
 Complex components are split across subfolders inside their domain directory. The folder name reflects the architectural tier of its contents.
 
 ```

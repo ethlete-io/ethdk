@@ -1,5 +1,10 @@
 {
   "generators": {
+    "component": {
+      "factory": "./component/generator",
+      "schema": "./component/schema.json",
+      "description": "Scaffold a component domain following the three-tier architecture (folder layout, headless + default split, styles, spec, stories, docs page, barrel wiring)"
+    },
     "migrate-query-error-labels": {
       "factory": "./migrate-query-error-labels/migration",
       "schema": "./migrate-query-error-labels/schema.json",
