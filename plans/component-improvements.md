@@ -34,12 +34,15 @@ widths.
   connector can be drawn off data that already exists - no new tree-walking.
 - **Full-screen edit on mobile, anchored on desktop.** `scheduler-edit-
   surface.component.ts` hardcodes one `dialogOverlayStrategy` with no
-  breakpoint branching. `overlay/strategies/presets.ts` already ships this
-  exact shape - `transformingFullScreenDialogToDialogOverlayStrategy` and
-  `...ToRightSheetOverlayStrategy`, built from `full-screen.strategy.ts` +
-  `dialog.strategy.ts`/`right-sheet.strategy.ts` via `OverlayStrategyBreakpoint[]`.
-  There's no fullscreen→anchored preset yet (`anchored.strategy.ts` exists
-  but isn't in a preset) - add one or build the breakpoint array inline.
+  breakpoint branching. `overlay/strategies/presets.ts` ships a packaged
+  `transformingFullScreenDialogToDialogOverlayStrategy`/`...ToRightSheetOverlayStrategy`,
+  but the SDK's own already-responsive controls don't actually use those
+  presets - `cascader.directive.ts` and `date-picker-overlay.ts` both hand-
+  compose `[{ strategy: bottomSheetStrategy.build(...) }, { breakpoint:
+  'md', strategy: anchoredOverlayStrategy(...)... }]` directly. That hand-
+  composed shape is the real precedent to copy for a fullscreen→anchored
+  split (no packaged preset covers anchored today - see "Overlay
+  responsiveness" below for the full picture across the SDK).
 - **Add-new stays a plain dialog.** Already true - `addAppointment()` opens
   the same `SCHEDULER_EDIT_SURFACE_OVERLAY` as edit. Once edit gets the
   responsive split above, add-new needs pinning to its own overlay
@@ -166,6 +169,14 @@ input/date-range-input/time-input, so form-field's existing append-after
 rule covers the whole stack instead of being bypassed by four controls that
 render outside it.
 
+The same bypass isn't limited to the date/time family: `phone-input.component
+.html`'s clear button and `input/password-input.component.html`'s reveal
+button are both plain siblings too, with zero `[etInputSuffix]` usage in
+either file - so the fix scope is six controls (date-input, date-time-
+input, date-range-input, time-input, phone-input, password-input), not
+four. `masked-input` has no template of its own to compare (it's a bare
+directive applied to an existing input, per `headless/input-mask.directive.ts`).
+
 ## Over limit is a validator in a trench coat
 
 `CounterComponent.isOverLimit` (`counter.component.ts:70-79`) recomputes
@@ -179,6 +190,20 @@ runs on overflow instead of the browser silently truncating input. Two
 independent length checks exist for the same limit today. Fix is
 `CounterComponent` deriving `isOverLimit` from the control's validation
 error state instead of re-comparing lengths itself.
+
+Checked whether this is a pattern or a one-off: it's a one-off. `otp-input`
+and `phone-input` both derive their error display from the control's real
+`invalid()`/`errors()` inputs, not a self-recomputed check - phone-input
+does carry an unused `isPlausible` length-window sanity check
+(`phone-input.directive.ts`, doc comment: "not real validation"), but it's
+dead code only referenced from its own spec, not wired into
+`shouldDisplayError` or the template. `tag-input.directive.ts` goes further
+and explicitly documents the distinction it draws: its `maxLength` input is
+"display only: the tag input does not refuse tags past it, so the
+validator is still the thing that reports the violation," while a separate
+`maxTags` input deliberately blocks `add()` as its own interaction rule,
+not a stand-in for validation. Counter is the outlier to fix, not a
+symptom of a wider habit.
 
 ## Description list
 
@@ -322,6 +347,84 @@ though standings itself would happily collapse columns if given the actual
 (narrower) container width it's sitting in. Fix is confined to the story:
 default the width control to something that shrinks with viewport, or wrap
 it in `min(760px, 100%)`.
+
+## Overlay responsiveness: scheduler's gap is systemic
+
+Checked every overlay-anchored dropdown-style control for the same
+"one strategy, no breakpoint" gap flagged on scheduler's edit dialog. Three
+already solve it, and none of them use the packaged `transforming*`
+presets in `overlay/strategies/presets.ts` - they hand-compose a breakpoint
+array directly: `cascader.directive.ts` and `date-picker-overlay.ts` both
+build `[{ strategy: bottomSheetStrategy.build({ hasBackdrop: true, ... }) },
+{ breakpoint: 'md', strategy: anchoredOverlayStrategy(...) }]`, and
+`rich-text-editor-link-editor.directive.ts` does the equivalent with a top
+sheet instead of a bottom sheet (comment: "on phones (< md) an anchored
+popover would be cramped against the on-screen keyboard"). Three don't:
+`menu.directive.ts`, `rich-text-editor-floating-toolbar.directive.ts`, and
+`rich-text-editor-triggers.directive.ts` all build one raw anchored
+strategy with no breakpoint at all - the same shape as scheduler's gap.
+`select.directive.ts` is anchored-only too, but that one is a documented,
+deliberate choice ("a select is a single-column listbox that reads fine
+anchored to the field on mobile"), not an oversight.
+
+`anchored.strategy.ts` itself explains why this is inconsistent rather than
+missing: it already does real viewport-awareness for *collision avoidance*
+(`fallbackPlacements`, `shift`, `viewportPadding`, `autoResize`, `autoHide`)
+but has no concept of swapping to a different UI shape at a breakpoint -
+that only happens where a caller composes multiple strategies itself, which
+three controls do and three don't. Fixing menu and the two RTE overlays
+means copying cascader's/the date-picker's exact composition pattern, which
+is also the fix for scheduler's edit dialog above - one pattern, four
+call sites.
+
+## Duplicated pointer-drag logic: slider, rating, carousel
+
+`libs/core`'s `dragGestureFrom` (`drag-handle/drag-gesture.ts`) already
+models exactly this problem - pointerdown/move/up plus capture, exposed as
+`start`/`move`/`end`/`tapped` events - and `grid` plus the stream domain's
+PIP window chrome (`pip-title-bar.directive.ts`,
+`pip-collapse-overlay.directive.ts`, via `DragHandleDirective`) both reuse
+it correctly. Two other controls that need the same "track pointer delta
+from a start point" behavior don't: `slider-track.directive.ts` and
+`rating.component.ts` each hand-roll their own
+`pointerdown`/`pointermove`/`pointerup` handling, their own
+`setPointerCapture` call, and their own boolean `dragging` flag - nearly
+identical in shape to each other and to what `dragGestureFrom` already
+provides. Carousel adds a third, more distinct reimplementation:
+`cursor-drag-scroll.ts` (behind `ScrollableDragDirective`, opt-in for
+mouse-drag-to-scroll) hand-rolls its own `mousedown`/`mousemove`/`mouseup`
+pipeline with its own deadzone concept - carousel's touch path needs no
+gesture code at all, since touch scrolling there is native CSS scroll-snap.
+Consolidating slider and rating onto `dragGestureFrom` first is the
+cleaner win since they're near-identical today; carousel's deadzone/
+threshold semantics differ enough that it may not fold in as cleanly.
+
+## Notification/toast doesn't adapt to mobile width
+
+`notification-stack.component.css` docks a fixed `--et-notification-min-
+width: 300px` / `-max-width: 420px` card to a corner via `position: fixed`
++ `data-position` (`bottom-end`, `top-start`, etc.), stacking multiple
+toasts as plain flex children in document order. Grep for `@media` in the
+whole notification domain returns only `(hover: hover)` and
+`(prefers-reduced-motion: reduce)` - no width-based breakpoint anywhere. On
+a phone that's a small floating card in a corner rather than the common
+full-width mobile toast pattern; same shape of gap as the overlay
+controls above and scheduler's header, just nobody's added a breakpoint
+here yet.
+
+## Already covered - don't rebuild
+
+Two components already have solid mobile/narrow-viewport treatments worth
+using as reference patterns for the gaps above, not touching themselves:
+**Table** scrolls wide content inside its own `.et-table-host { overflow:
+auto }` grid instead of blowing out the page, with an edge scroll-fade
+(`.et-table-scroll-fades`) hinting there's more to scroll - no
+`@media`/`container-type` needed because the scroll container handles it.
+**Pagination** (`paginate.ts` + `pagination.component.ts`) already
+JS-measures its own rendered width and collapses through shrinking
+`siblingCount`/`boundaryCount` down to a `COMPACT_MAX_WIDTH = 480px`
+previous/next-plus-"page X of Y" mode - more thorough than a plain
+ellipsis truncation.
 
 ## Charts - new domain, uncharted
 
