@@ -121,6 +121,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Description list](/components/description-list) - styles a native `<dl>` for term/detail rows, grid-paired without wrapper markup.
 - [Divider](/components/divider) - horizontal or vertical rule between groups of content, with a decorative mode.
 - [Grid](/components/grid) - drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
+- [Kbd](/components/kbd) - renders a keyboard shortcut as keycaps, with the current platform's glyphs.
 - [Masonry](/components/masonry) - column-balancing layout for variable-height cards, with continuous measurement and stable columns.
 - [Match](/components/match) - container-adaptive match card and participant primitive, fed by a normalized view-model any backend can map into.
 - [Pagination](/components/pagination) - page-number paginator with ellipsis, jump controls and a headless tier.
@@ -131,6 +132,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Scrollable](/components/scrollable) - scroll containers with buttons, masks, snap and drag scrolling.
 - [Table](/components/table) - type-safe, light-by-default data table on CSS grid with a sticky header and empty state.
 - [Tabs](/components/tabs) - content tabs and router-driven nav tabs.
+- [Timeline](/components/timeline) - vertical rail of chronological events, with per-item markers and an unbroken connecting line.
 - [Toolbar](/components/toolbar) - bar of related controls sharing one tab stop, navigated with the arrow keys.
 - [Tree](/components/tree) - ARIA tree over a lazily loaded hierarchy: per-branch loading, flat rendering, one tab stop.
 

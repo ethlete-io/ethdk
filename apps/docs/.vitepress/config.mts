@@ -272,6 +272,7 @@ export default defineConfig({
             { text: 'Sport UI recipes', link: '/components/sport-recipes' },
             { text: 'Table', link: '/components/table' },
             { text: 'Tabs', link: '/components/tabs' },
+            { text: 'Timeline', link: '/components/timeline' },
             { text: 'Toolbar', link: '/components/toolbar' },
             { text: 'Tree', link: '/components/tree' },
           ],

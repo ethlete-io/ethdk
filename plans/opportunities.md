@@ -48,7 +48,20 @@ are deliberately isolated - the toggle is `ShadowDom` on purpose and the panel p
 its own `--_et-qdt-*` chrome, not surface theming. What did consolidate is the Apple
 detection both hand-rolled: `queryDevtoolsShortcutLabel()` now calls `detectKbdPlatform()`.
 
-Low / opportunistic: stat tile, timeline, command palette (leans on
+**Timeline** - **done** (2026-08-06). Shipped as `et-timeline` + `et-timeline-item`: a
+`role="list"` rail of events, each with a `[etTimelineTime]` slot, an optional
+`[etTimelineMarker]` replacing the default dot, and a `color` input that scopes a color
+theme to that item (the badge pattern). Deliberately vertical only - a horizontal
+connected row is what `et-progress-steps` already is, and shipping both shapes would have
+made the two components look interchangeable when their semantics aren't. No state enum
+either, for the same reason: `complete`/`current`/`upcoming` belongs to a process, not to
+a history. The one thing the naive layout got wrong is worth remembering: drawing the
+connector below each marker segments the rail, because the marker box pads the dot. Each
+item's line instead spans from its own marker's center to the item's bottom, with the
+markers painting over it - the gap lives on the content, not the item, so the line runs
+through it.
+
+Low / opportunistic: stat tile, command palette (leans on
 existing overlay+menu so cheaper than it looks, but scope-creep risk),
 back-to-top (covered by `floating-action`'s generic floating trigger).
 

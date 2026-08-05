@@ -1,0 +1,115 @@
+@layer components {
+  /* All inherited: they are documented as settable once on `et-timeline`, and only the item ever
+     reads them. Flipping any of them to `inherits: false` silently drops that override. */
+  @property --et-timeline-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-timeline-rail-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-timeline-marker-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 20px;
+  }
+
+  @property --et-timeline-dot-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-timeline-line-thickness {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  @property --et-timeline-time-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  .et-timeline-item {
+    display: flex;
+    gap: var(--et-timeline-rail-gap);
+
+    .et-timeline-item-rail {
+      position: relative;
+      display: flex;
+      flex: none;
+      justify-content: center;
+      inline-size: var(--et-timeline-marker-size);
+
+      /* One line per item, spanning from this marker's center down through the gap to the next
+         item's marker - the markers paint over it, which is what makes the rail read as unbroken.
+         Both this and the marker must stay positioned, or the marker no longer wins on paint order. */
+      &::before {
+        content: '';
+        position: absolute;
+        inset-block: calc(var(--et-timeline-marker-size) / 2) 0;
+        inline-size: var(--et-timeline-line-thickness);
+        background: var(--et-timeline-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
+      }
+    }
+
+    .et-timeline-item-marker {
+      position: relative;
+      display: flex;
+      flex: none;
+      align-self: start;
+      align-items: center;
+      justify-content: center;
+      inline-size: var(--et-timeline-marker-size);
+      block-size: var(--et-timeline-marker-size);
+      border-radius: 50%;
+      background: var(--et-surface-background-solid, Canvas);
+      color: var(--et-timeline-marker-color, var(--et-theme-color-primary-solid, currentColor));
+      font-size: calc(var(--et-timeline-marker-size) * 0.7);
+      line-height: 1;
+
+      /* Nothing projected into the marker slot - the marker becomes the dot itself, inset so its
+         center still lands on `--et-timeline-marker-size / 2` where the line starts. */
+      &:empty {
+        inline-size: var(--et-timeline-dot-size);
+        block-size: var(--et-timeline-dot-size);
+        margin-block-start: calc((var(--et-timeline-marker-size) - var(--et-timeline-dot-size)) / 2);
+        background: currentColor;
+      }
+
+      .et-icon {
+        inline-size: 1em;
+        block-size: 1em;
+      }
+    }
+
+    .et-timeline-item-content {
+      flex: 1;
+      min-inline-size: 0;
+      /* The gap lives on the content, not the item: the rail stretches over the item's full height,
+         so paying for the gap inside it is what lets the line run unbroken into the next marker. */
+      padding-block-end: var(--et-timeline-gap);
+    }
+
+    [etTimelineTime] {
+      display: block;
+      font-size: var(--et-timeline-time-font-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+  }
+
+  .et-timeline-item:last-child .et-timeline-item-rail::before {
+    display: none;
+  }
+
+  .et-timeline-item:last-child .et-timeline-item-content {
+    padding-block-end: 0;
+  }
+}

@@ -39,6 +39,7 @@ export * from './lib/stream';
 export * from './lib/table';
 export * from './lib/tabs';
 export * from './lib/time-picker';
+export * from './lib/timeline';
 export * from './lib/toggletip';
 export * from './lib/toolbar';
 export * from './lib/tooltip';
