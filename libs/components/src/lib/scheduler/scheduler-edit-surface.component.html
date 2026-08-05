@@ -1,0 +1,78 @@
+<div etOverlayHeader>
+  <h2 etOverlayTitle>{{ headerLabel() }}</h2>
+
+  @if (appointmentActions().length > 0) {
+    <div class="et-scheduler-edit-surface-actions" etMenu>
+      <button [attr.aria-label]="moreActionsLabel()" et-icon-button etMenuTrigger size="sm" type="button">
+        <i etIcon="et-ellipsis-vertical"></i>
+      </button>
+
+      <ng-template etMenuSurface>
+        <et-menu>
+          @for (action of appointmentActions(); track $index) {
+            <button
+              [variant]="action.destructive ? 'destructive' : 'default'"
+              (click)="action.run()"
+              et-menu-item
+              type="button"
+            >
+              @if (action.icon) {
+                <i [etIcon]="action.icon" aria-hidden="true"></i>
+              }
+              {{ action.label() }}
+            </button>
+          }
+        </et-menu>
+      </ng-template>
+    </div>
+  }
+</div>
+
+<et-overlay-body>
+  @if (surface.ancestors().length > 0) {
+    <nav [attr.aria-label]="ancestorsLabel()" class="et-scheduler-edit-surface-breadcrumb">
+      @for (ancestor of surface.ancestors(); track ancestor.id) {
+        <button
+          (click)="surface.navigateTo(ancestor.id)"
+          class="et-scheduler-edit-surface-breadcrumb-item"
+          type="button"
+        >
+          {{ ancestor.title || untitledLabel() }}
+        </button>
+        <span class="et-scheduler-edit-surface-breadcrumb-separator" aria-hidden="true">/</span>
+      }
+      <span class="et-scheduler-edit-surface-breadcrumb-current" aria-current="page">{{ headerLabel() }}</span>
+    </nav>
+  }
+
+  <div class="et-scheduler-edit-surface-fields">
+    @for (field of editFields(); track $index) {
+      <ng-container *ngComponentOutlet="field.component; inputs: { draft: surface.draft }; injector: field.injector" />
+    }
+  </div>
+
+  @if (surface.children().length > 0) {
+    <div class="et-scheduler-edit-surface-children">
+      <h3 class="et-scheduler-edit-surface-children-heading">{{ subAppointmentsLabel() }}</h3>
+
+      <ul class="et-scheduler-edit-surface-children-list">
+        @for (child of surface.children(); track child.appointment.id) {
+          <li>
+            <button
+              (click)="surface.navigateTo(child.appointment.id)"
+              class="et-scheduler-edit-surface-children-item"
+              type="button"
+            >
+              {{ child.appointment.title || untitledLabel() }}
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</et-overlay-body>
+
+<div etOverlayFooter>
+  <button et-button etOverlayClose type="button" variant="outline">{{ cancelLabel() }}</button>
+  <button [disabled]="!canSave()" (click)="save()" et-button type="button">{{ saveLabel() }}</button>
+</div>

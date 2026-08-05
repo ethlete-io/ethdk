@@ -48,3 +48,27 @@ export const flattenAppointmentTree = <TExtra>(
 /** Every descendant a node has, at any depth - what the chain-count badge adornment shows. */
 export const countDescendants = (node: Pick<AppointmentTreeNode, 'children'>): number =>
   node.children.reduce((count, child) => count + 1 + countDescendants(child), 0);
+
+/** Finds the tree node for an appointment id, searching every chain at any depth. */
+export const findAppointmentNode = <TExtra>(
+  nodes: readonly AppointmentTreeNode<TExtra>[],
+  id: AppointmentId,
+): AppointmentTreeNode<TExtra> | null => {
+  for (const node of nodes) {
+    if (node.appointment.id === id) {
+      return node;
+    }
+
+    const found = findAppointmentNode(node.children, id);
+
+    if (found) {
+      return found;
+    }
+  }
+
+  return null;
+};
+
+/** Every descendant id a node has, at any depth - what "delete (with descendants)" removes in one pass. */
+export const collectDescendantIds = (node: Pick<AppointmentTreeNode, 'children'>): AppointmentId[] =>
+  node.children.flatMap((child) => [child.appointment.id, ...collectDescendantIds(child)]);

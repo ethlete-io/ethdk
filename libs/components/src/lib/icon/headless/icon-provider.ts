@@ -138,6 +138,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-strikethrough',
   'et-table',
   'et-times',
+  'et-trash',
   'et-triangle-exclamation',
   'et-trophy',
   'et-underline',

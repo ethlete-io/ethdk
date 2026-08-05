@@ -23,6 +23,34 @@ export type SchedulerLabels = {
   day: string;
   /** The agenda view's name, as shown in the view switch. */
   agenda: string;
+  /** Fallback heading for the edit surface while the open appointment has no title yet. */
+  untitledAppointment: string;
+  /** Accessible label for the edit surface's ancestor breadcrumb. */
+  ancestors: string;
+  /** Heading above the current appointment's children list in the edit surface. */
+  subAppointments: string;
+  /** Accessible label for the edit surface's action menu trigger. */
+  moreActions: string;
+  /** The edit surface's save button. */
+  save: string;
+  /** The edit surface's cancel button. */
+  cancel: string;
+  /** Built-in "Add sub-appointment" action label. */
+  addSubAppointment: string;
+  /** Built-in "Delete (with descendants)" action label. */
+  deleteWithDescendants: string;
+  /** Label for the built-in title edit field. */
+  titleField: string;
+  /** Label for the built-in start-time edit field. */
+  startField: string;
+  /** Label for the built-in end-time edit field. */
+  endField: string;
+  /** Label for the built-in location edit field. */
+  locationField: string;
+  /** Label for the built-in description edit field. */
+  descriptionField: string;
+  /** Label for the built-in color edit field. */
+  colorField: string;
 };
 
 /** The built-in English labels. */
@@ -36,6 +64,20 @@ export const DEFAULT_SCHEDULER_LABELS: SchedulerLabels = {
   week: 'Week',
   day: 'Day',
   agenda: 'Agenda',
+  untitledAppointment: 'Untitled appointment',
+  ancestors: 'Ancestor chain',
+  subAppointments: 'Sub-appointments',
+  moreActions: 'More actions',
+  save: 'Save',
+  cancel: 'Cancel',
+  addSubAppointment: 'Add sub-appointment',
+  deleteWithDescendants: 'Delete (with descendants)',
+  titleField: 'Title',
+  startField: 'Starts',
+  endField: 'Ends',
+  locationField: 'Location',
+  descriptionField: 'Description',
+  colorField: 'Color',
 };
 
 const SCHEDULER_LABELS_DEF = /* @__PURE__ */ defineLabels<SchedulerLabels>(

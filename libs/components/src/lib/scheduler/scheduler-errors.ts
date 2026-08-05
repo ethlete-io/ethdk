@@ -4,4 +4,6 @@ export const SCHEDULER_ERROR_CODES = {
   FEATURE_OUTSIDE_SCHEDULER: 4500,
   /** A view layout directive (e.g. `[etSchedulerMonth]`) was placed outside an `[etScheduler]`. */
   VIEW_OUTSIDE_SCHEDULER: 4501,
+  /** An edit-surface feature (e.g. an edit field or appointment action) was used outside an `<et-scheduler-edit-surface>`. */
+  EDIT_SURFACE_FEATURE_OUTSIDE_SURFACE: 4502,
 } as const;

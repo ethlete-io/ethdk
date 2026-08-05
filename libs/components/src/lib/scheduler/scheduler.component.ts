@@ -1,8 +1,20 @@
-import { Component, ElementRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  inputBinding,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { format, isSameMonth, isSameYear } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
 import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
+import { createOverlayOpener } from '../overlay';
 import { SCHEDULER_FEATURE_HOST, SchedulerBadgeAdornment, SchedulerDirective, SchedulerFeatureHost } from './headless';
 import { SchedulerAgendaViewComponent } from './scheduler-agenda-view.component';
 import { SchedulerBadgeChainCountDirective } from './scheduler-badge-chain-count.directive';
@@ -10,10 +22,11 @@ import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.dir
 import { SchedulerBadgeLocationDirective } from './scheduler-badge-location.directive';
 import { SchedulerBadgeTimeRangeDirective } from './scheduler-badge-time-range.directive';
 import { SchedulerBadgeTitleDirective } from './scheduler-badge-title.directive';
+import { SCHEDULER_EDIT_SURFACE_OVERLAY } from './scheduler-edit-surface.component';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
 import { SchedulerTimeGridViewComponent } from './scheduler-time-grid-view.component';
-import { Appointment, SchedulerView } from './scheduler.types';
+import { Appointment, AppointmentId, SchedulerView } from './scheduler.types';
 
 @Component({
   selector: 'et-scheduler',
@@ -60,6 +73,12 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  /** Emits the edited or newly-added appointment once the default edit surface saves. */
+  public appointmentSave = output<Appointment>();
+
+  /** Emits every id to remove once the default edit surface deletes a chain. */
+  public appointmentsDelete = output<readonly AppointmentId[]>();
+
   public previousLabel = computed(() => this.labels().previous);
   public nextLabel = computed(() => this.labels().next);
   public todayLabel = computed(() => this.labels().today);
@@ -105,6 +124,43 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       .filter((adornment) => adornment.enabled?.() ?? true)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   );
+
+  /**
+   * Opens `<et-scheduler-edit-surface>` for the selected appointment - covers the zero-config
+   * case (no feature directives applied) per the plan. Its result bubbles as `appointmentSave` /
+   * `appointmentsDelete`, and closing always clears `selectedAppointmentId` back to `null` so
+   * clicking the same appointment again reopens a fresh surface.
+   */
+  private editSurfaceOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
+    afterClosed: (result) => {
+      if (result?.kind === 'save') {
+        this.appointmentSave.emit(result.appointment);
+      } else if (result?.kind === 'delete') {
+        this.appointmentsDelete.emit(result.ids);
+      }
+
+      this.headless.selectedAppointmentId.set(null);
+    },
+  });
+
+  constructor() {
+    effect(() => {
+      const appointment = this.headless.selectedAppointment();
+
+      if (!appointment) {
+        return;
+      }
+
+      untracked(() =>
+        this.editSurfaceOpener.open({
+          bindings: [
+            inputBinding('appointment', () => appointment),
+            inputBinding('appointments', () => this.headless.appointments()),
+          ],
+        }),
+      );
+    });
+  }
 
   /** Bound to the view-switch's `(valueChange)` - safe to cast since every `<et-segmented-button>` below carries a `SchedulerView` literal. */
   public setView(value: unknown) {

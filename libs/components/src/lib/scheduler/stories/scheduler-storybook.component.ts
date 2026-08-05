@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
 import { addDays, addHours, startOfWeek } from 'date-fns';
-import { Appointment, SchedulerView } from '../scheduler.types';
+import { Appointment, AppointmentId, SchedulerView } from '../scheduler.types';
 import { SCHEDULER_IMPORTS } from '../scheduler.imports';
 
 const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -88,6 +88,8 @@ const DEMO_APPOINTMENTS: Appointment[] = [
         [(selectedAppointmentId)]="selectedAppointmentId"
         [appointments]="appointments()"
         [etSchedulerBadgeLocation]="{ enabled: showLocationBadge() }"
+        (appointmentSave)="saveAppointment($event)"
+        (appointmentsDelete)="deleteAppointments($event)"
       />
 
       <p class="mt-4 text-sm opacity-60">Selected: {{ selectedTitle() ?? 'none' }}</p>
@@ -106,4 +108,18 @@ export class SchedulerStorybookComponent {
   protected selectedTitle = computed(
     () => this.appointments().find((appointment) => appointment.id === this.selectedAppointmentId())?.title ?? null,
   );
+
+  protected saveAppointment(appointment: Appointment) {
+    this.appointments.update((appointments) => {
+      const exists = appointments.some((candidate) => candidate.id === appointment.id);
+
+      return exists
+        ? appointments.map((candidate) => (candidate.id === appointment.id ? appointment : candidate))
+        : [...appointments, appointment];
+    });
+  }
+
+  protected deleteAppointments(ids: readonly AppointmentId[]) {
+    this.appointments.update((appointments) => appointments.filter((appointment) => !ids.includes(appointment.id)));
+  }
 }

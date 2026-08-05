@@ -1,5 +1,11 @@
 import { Appointment } from '../../scheduler.types';
-import { buildAppointmentTree, countDescendants, flattenAppointmentTree } from './scheduler-tree';
+import {
+  buildAppointmentTree,
+  collectDescendantIds,
+  countDescendants,
+  findAppointmentNode,
+  flattenAppointmentTree,
+} from './scheduler-tree';
 
 const appointment = (id: string, parentId: string | null): Appointment => ({
   id,
@@ -81,5 +87,44 @@ describe('countDescendants', () => {
     const tree = buildAppointmentTree([appointment('a', null)]);
 
     expect(countDescendants(tree[0]!)).toBe(0);
+  });
+});
+
+describe('findAppointmentNode', () => {
+  it('finds a top-level node', () => {
+    const tree = buildAppointmentTree([appointment('a', null), appointment('b', null)]);
+
+    expect(findAppointmentNode(tree, 'b')?.appointment.id).toBe('b');
+  });
+
+  it('finds a node nested at any depth', () => {
+    const tree = buildAppointmentTree([appointment('a', null), appointment('a1', 'a'), appointment('a1a', 'a1')]);
+
+    expect(findAppointmentNode(tree, 'a1a')?.appointment.id).toBe('a1a');
+  });
+
+  it('returns null for an id not in the tree', () => {
+    const tree = buildAppointmentTree([appointment('a', null)]);
+
+    expect(findAppointmentNode(tree, 'missing')).toBeNull();
+  });
+});
+
+describe('collectDescendantIds', () => {
+  it('collects every descendant id at any depth, not just direct children', () => {
+    const tree = buildAppointmentTree([
+      appointment('a', null),
+      appointment('a1', 'a'),
+      appointment('a2', 'a'),
+      appointment('a1a', 'a1'),
+    ]);
+
+    expect(collectDescendantIds(tree[0]!)).toEqual(['a1', 'a1a', 'a2']);
+  });
+
+  it('is empty for a leaf', () => {
+    const tree = buildAppointmentTree([appointment('a', null)]);
+
+    expect(collectDescendantIds(tree[0]!)).toEqual([]);
   });
 });

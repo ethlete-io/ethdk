@@ -421,7 +421,8 @@ Checked in dev mode only, after the first render.
 
 Checked in dev mode only, after the first render.
 
-| Code     | Cause                                                                                     | Fix                                         |
-| -------- | ----------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `ET4500` | An opt-in scheduler feature is used outside an `<et-scheduler>`.                          | Move the feature inside the scheduler root. |
-| `ET4501` | A view layout directive (e.g. `[etSchedulerMonth]`) is placed outside an `[etScheduler]`. | Move it inside the scheduler root.          |
+| Code     | Cause                                                                                                           | Fix                                         |
+| -------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `ET4500` | An opt-in scheduler feature is used outside an `<et-scheduler>`.                                                | Move the feature inside the scheduler root. |
+| `ET4501` | A view layout directive (e.g. `[etSchedulerMonth]`) is placed outside an `[etScheduler]`.                       | Move it inside the scheduler root.          |
+| `ET4502` | An edit-surface feature (an edit field or appointment action) is used outside an `<et-scheduler-edit-surface>`. | Move it inside the edit surface root.       |

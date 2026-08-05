@@ -1,0 +1,68 @@
+@layer components {
+  .et-scheduler-edit-surface-actions {
+    margin-inline-start: auto;
+  }
+
+  .et-scheduler-edit-surface-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-block-end: 16px;
+    font-size: 13px;
+    color: var(--et-surface-color-muted-solid);
+  }
+
+  .et-scheduler-edit-surface-breadcrumb-item {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .et-scheduler-edit-surface-breadcrumb-current {
+    color: var(--et-surface-color-solid);
+    font-weight: 600;
+  }
+
+  .et-scheduler-edit-surface-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .et-scheduler-edit-time-range {
+    display: flex;
+    gap: 12px;
+  }
+
+  .et-scheduler-edit-time-range-field {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .et-scheduler-edit-surface-children {
+    margin-block-start: 20px;
+  }
+
+  .et-scheduler-edit-surface-children-heading {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--et-surface-color-muted-solid);
+  }
+
+  .et-scheduler-edit-surface-children-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-scheduler-edit-surface-children-item {
+    color: var(--et-theme-color-ink-solid, var(--et-surface-color-solid));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}

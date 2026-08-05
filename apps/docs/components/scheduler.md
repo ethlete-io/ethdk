@@ -30,6 +30,7 @@ type Appointment<TExtra = unknown> = {
   allDay?: boolean;
   colorToken?: string;
   location?: string;
+  description?: string;
   extra?: TExtra;
 };
 ```
@@ -37,7 +38,8 @@ type Appointment<TExtra = unknown> = {
 - `parentId` links an appointment under another, to any depth - a dangling reference (the parent was filtered out) falls back to top-level rather than being dropped.
 - `colorToken` resolves through the [color theming](/core/theming) system - it's read as `[etProvideColor]` on the appointment's badge, so pass whatever theme name your app registered (`'brand'`, `'danger'`, …), never a literal color.
 - `location` shows in the badge via the built-in `etSchedulerBadgeLocation` adornment when set - see [badge composability](#badge-composability).
-- `extra` is the open extension point for a custom edit surface (planned) to read and write, so adding a field never widens `Appointment` itself.
+- `description` is edited by the built-in `etSchedulerEditDescription` field - see [edit surface](#edit-surface).
+- `extra` is the open extension point for a custom edit field to read and write, so adding one never widens `Appointment` itself.
 - An appointment renders on **every day it spans**, not just the day it starts - a 3-day `allDay` appointment shows a badge on all three month-view day cells, and one bar spanning all three columns in the time grid's all-day strip.
 
 ## Options
@@ -59,7 +61,12 @@ On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 | `selectedAppointmentId` | `AppointmentId \| null` | The selected appointment's id.               |
 | `focusedDate`           | `Date`                  | The date the visible period is derived from. |
 
-The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself.
+| Output               | Payload                    | Fires when                                                                                  |
+| -------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
+| `appointmentSave`    | `Appointment`              | The default [edit surface](#edit-surface) saves an edit or a new sub-appointment.           |
+| `appointmentsDelete` | `readonly AppointmentId[]` | The edit surface's "Delete (with descendants)" action removes an appointment and its chain. |
+
+The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself. `appointments` is one-way: the scheduler never mutates it, so applying `appointmentSave`/`appointmentsDelete` back onto your own signal is on you - see the [edit surface](#edit-surface) section.
 
 ## Month view
 
@@ -73,7 +80,7 @@ A day cell per day of the padded month, leading/trailing days from adjacent mont
 | ------------------- | -------- | ------- | ---------------------------------------------------------------- |
 | `maxVisiblePerCell` | `number` | `3`     | How many appointments a day cell shows before the rest overflow. |
 
-Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI, so it only renders correctly inside `<et-scheduler>` or your own `[etScheduler]` element.
+Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`, which `<et-scheduler>` reacts to by opening the [edit surface](#edit-surface) - see that section for what a bare `[etScheduler]` composition needs to do instead. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI, so it only renders correctly inside `<et-scheduler>` or your own `[etScheduler]` element.
 
 ## Time grid: week & day view
 
@@ -102,6 +109,61 @@ A flat list, grouped by day: each day of the visible range that has at least one
 ```
 
 It takes no inputs of its own - like the other views, it reads its host `[etScheduler]` via DI. The agenda shares its visible range with the week view (the same 7-day window), so switching between them keeps the same days on screen. Clicking a badge sets `selectedAppointmentId`, same as the other views.
+
+## Edit surface {#edit-surface}
+
+Clicking any appointment badge or block opens `<et-scheduler-edit-surface>` - a dialog, built on the [overlay](/components/overlays) system, that `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when the dialog does. This is the zero-config path: a plain `<et-scheduler>` with no feature directives applied already gets a full edit experience.
+
+```html
+<et-scheduler
+  [appointments]="appointments"
+  (appointmentSave)="onSave($event)"
+  (appointmentsDelete)="onDelete($event)"
+/>
+```
+
+The scheduler never mutates `appointments` itself - `appointmentSave` emits the edited (or newly-added) `Appointment` for you to merge back into your own array, and `appointmentsDelete` emits every id to remove (the appointment plus, for "Delete (with descendants)", its whole sub-appointment chain) for you to filter out. See the [live demo](#live-demo)'s story source for the merge/filter logic.
+
+Like the badge, the surface is built from self-registering feature directives bundled onto `<et-scheduler-edit-surface>` by default - not a set of boolean inputs. Disable one by binding its own config input:
+
+```html
+<et-scheduler-edit-surface [etSchedulerEditDescription]="{ enabled: false }" />
+```
+
+### Fields
+
+| Directive                    | Edits         | Control                                                   | Default order |
+| ---------------------------- | ------------- | --------------------------------------------------------- | ------------- |
+| `etSchedulerEditTitle`       | `title`       | [`et-input`](/components/text-inputs#text-field)          | `0`           |
+| `etSchedulerEditTimeRange`   | `start`/`end` | Two [`et-date-time-input`](/components/date-time-inputs)s | `10`          |
+| `etSchedulerEditLocation`    | `location`    | `et-input`                                                | `20`          |
+| `etSchedulerEditDescription` | `description` | [`et-textarea`](/components/text-inputs#textarea)         | `30`          |
+| `etSchedulerEditColor`       | `colorToken`  | `et-input` (plain text - see below)                       | `40`          |
+
+The title field is required - the Save button disables while it's blank. The time-range field is invalid while `end` is before `start`. Both gate the surface's save button; a custom field can do the same by including a `valid: Signal<boolean>` in its registration.
+
+The color field is a plain text box for `colorToken`, not a swatch picker: theme names are [app-registered](/core/theming), so the SDK has no fixed palette to offer as choices. An app that wants a swatch picker can write its own `etSchedulerEditColor` replacement against a known list of its own theme names.
+
+Add your own field the same way: a directive that injects `SCHEDULER_EDIT_SURFACE_HOST` (via `injectSchedulerEditSurfaceHost()`) and calls `registerEditField({ component, order, enabled, valid })` from its constructor. `component` must declare a `draft: InputSignal<WritableSignal<Appointment>>` input - call `draft()` for the shared writable signal, then read (`draft()()`) or write (`draft().update(a => ({ ...a, ... }))`) the appointment being edited. Custom fields typically write into `extra`.
+
+### Actions
+
+The header's "⋮" menu lists registered appointment actions - also self-registering directives, bundled by default:
+
+| Directive                            | Does                                                                                                                | Default order |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `etSchedulerActionAddSubAppointment` | Navigates the surface (in place, no new dialog) to a blank child of the current appointment, `parentId` pre-filled. | `0`           |
+| `etSchedulerActionDelete`            | Emits `appointmentsDelete` for the current appointment and every descendant, then closes.                           | `100`         |
+
+Add your own with `registerAppointmentAction({ label, icon?, run, order, enabled, destructive? })` - `destructive: true` renders it with the [error theme](/core/theming) (`et-menu-item`'s destructive variant).
+
+### Navigation: breadcrumb and children
+
+The surface shows an ancestor breadcrumb (when the current appointment has a parent) and a children list (when it has any) - clicking either **navigates the same dialog instance** to that appointment rather than opening a new one. Navigating discards any unsaved edits to the appointment navigated away from, the same "edit a copy" tradeoff the [filter overlay](/components/filter-overlay) makes: the draft resets from the newly-shown appointment's real data every time.
+
+### Edit-surface feature host
+
+`SCHEDULER_EDIT_SURFACE_HOST` (injected via `injectSchedulerEditSurfaceHost()`) is the surface-scoped counterpart to the scheduler's own feature host: `appointment()` (the pre-edit snapshot of whichever appointment is currently shown), `appointmentTree()` (every appointment, for breadcrumb/children/descendant lookups), the surface's own `element`, and `registerEditField()` / `editFields()` plus `registerAppointmentAction()` / `appointmentActions()`. It's separate from `SCHEDULER_FEATURE_HOST` because the two hosts expose genuinely different data - one appointment being edited versus every visible one.
 
 ## Sub-appointment chains
 
@@ -149,7 +211,7 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ### Feature host
 
-`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, and `registerBadgeAdornment()` / `badgeAdornments()` - see [badge composability](#badge-composability). It's modeled on the [table](/components/table)'s feature host, and grows further registration points (edit-surface fields, appointment actions) as those features land.
+`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, and `registerBadgeAdornment()` / `badgeAdornments()` - see [badge composability](#badge-composability). It's modeled on the [table](/components/table)'s feature host. The [edit surface](#edit-surface) has its own, separately-scoped host - see [edit-surface feature host](#edit-surface-feature-host).
 
 ## Accessibility
 
