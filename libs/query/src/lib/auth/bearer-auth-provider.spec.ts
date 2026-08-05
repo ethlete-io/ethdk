@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { createUnsavedChangesTracker, getCookie, getDomain, injectRoute } from '@ethlete/core';
-import { createPostQuery, createQueryClient, QueryClientRef } from '../http';
+import { createPostQuery, createQueryClient, createSecureGetQuery, QueryClientRef } from '../http';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery, withRefreshQuery } from './bearer-auth-query-builders';
 import { withBearerAuthMultiTabSync, withPersistentAuth } from './features';
@@ -521,6 +521,55 @@ describe('createBearerAuthProvider', () => {
 
         expect(provider.isAuthenticated()).toBe(false);
       });
+    });
+
+    it('should re-run a secure query that outlived the logout once the user logs back in', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const authProvider = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      const getUserMe = createSecureGetQuery(queryClientRef, authProvider)<{ response: { uuid: string } }>('/user/me');
+
+      const { provider, userQuery } = TestBed.runInInjectionContext(() => ({
+        provider: authProvider.inject(),
+        userQuery: getUserMe(),
+      }));
+
+      const signIn = (token: string) => {
+        provider.queries.login.execute({ body: { username: 'test' } });
+        TestBed.tick();
+        httpTesting.expectOne('https://api.example.com/auth/login').flush({ token, refresh_token: `${token}-refresh` });
+        TestBed.tick();
+      };
+
+      signIn('access-1');
+      httpTesting.expectOne('https://api.example.com/user/me').flush({ uuid: 'user-1' });
+      TestBed.tick();
+      expect(userQuery.response()).toEqual({ uuid: 'user-1' });
+
+      provider.logout();
+      TestBed.tick();
+      expect(userQuery.response()).toBeNull();
+
+      signIn('access-2');
+
+      httpTesting.expectOne('https://api.example.com/user/me').flush({ uuid: 'user-2' });
+      TestBed.tick();
+
+      expect(userQuery.response()).toEqual({ uuid: 'user-2' });
     });
 
     it('should abandon unsaved-changes guards so their dialogs and tab locks are released', async () => {

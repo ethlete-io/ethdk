@@ -15,6 +15,12 @@ export type SecureExecuteFactoryOptions<TArgs extends QueryArgs> = {
   authProvider: AnyBearerAuthProvider;
   deps: QueryDependencies;
   state: QueryState<TArgs>;
+  /**
+   * Whether the query runs itself rather than only on an explicit `execute()` - the same condition
+   * `maybeExecute` and the `withArgs` feature use. Only those are re-run once a new session starts;
+   * re-firing a mutation on the next login would repeat it behind the user's back.
+   */
+  autoExecutes: boolean;
   transformAuthAndExec: (
     executeArgs: QueryExecuteArgs<TArgs> | undefined,
     tokens: { accessToken: string },
@@ -32,6 +38,10 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   let authQuerySubscription = Subscription.EMPTY;
   let tokenRefreshSubscription = Subscription.EMPTY;
   let tokenWaitSubscription = Subscription.EMPTY;
+  let sessionRestartSubscription = Subscription.EMPTY;
+
+  let hasExecuted = false;
+  let lastExecuteArgs: QueryExecuteArgs<TArgs> | undefined;
 
   const reset = () => {
     authQuerySubscription.unsubscribe();
@@ -40,6 +50,8 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     tokenRefreshSubscription = Subscription.EMPTY;
     tokenWaitSubscription.unsubscribe();
     tokenWaitSubscription = Subscription.EMPTY;
+    sessionRestartSubscription.unsubscribe();
+    sessionRestartSubscription = Subscription.EMPTY;
     resetExecuteState({
       executeState,
       executeOptions: { deps: options.deps, state: options.state },
@@ -49,12 +61,35 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   // A logout tears down the secure entries in the repository, but the query object holding one keeps
   // its own `response`/`error` signals - so without this a component still mounted after logout goes
   // on rendering the previous user's data until something calls `reset()` by hand.
+  //
+  // Resetting alone leaves it idle for good though: a self-executing query runs once, at creation,
+  // and nothing runs it again - so anything still mounted across a logout has to be re-armed for
+  // the next session. That re-arm waits on the token instead of re-running here: `logout()` clears
+  // `latestExecutedQuery` and `executionState` only *after* emitting this event, so everything read
+  // synchronously still describes the session that just ended.
   options.deps.client.repository.events$
     .pipe(
       filter((event) => event.type === 'unbind-all-secure'),
       takeUntilDestroyed(options.deps.destroyRef),
     )
-    .subscribe(() => reset());
+    .subscribe(() => {
+      const shouldRestart = hasExecuted && options.autoExecutes;
+      const restartArgs = lastExecuteArgs;
+
+      reset();
+
+      if (!shouldRestart) return;
+
+      sessionRestartSubscription = toObservable(options.authProvider.accessToken, {
+        injector: options.deps.injector,
+      })
+        .pipe(
+          filter(Boolean),
+          take(1),
+          tap(() => exec(restartArgs)),
+        )
+        .subscribe();
+    });
 
   const error = (query: AnyQuerySnapshot) => {
     const state = options.state;
@@ -140,12 +175,17 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
       options: executeArgs?.options,
     };
 
+    hasExecuted = true;
+    lastExecuteArgs = execArgsWithDefaults;
+
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
     tokenRefreshSubscription.unsubscribe();
     tokenRefreshSubscription = Subscription.EMPTY;
     tokenWaitSubscription.unsubscribe();
     tokenWaitSubscription = Subscription.EMPTY;
+    sessionRestartSubscription.unsubscribe();
+    sessionRestartSubscription = Subscription.EMPTY;
 
     tokenRefreshSubscription = options.authProvider.afterTokenRefresh$
       .pipe(

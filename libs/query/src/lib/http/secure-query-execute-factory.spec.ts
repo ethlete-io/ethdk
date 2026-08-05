@@ -56,6 +56,7 @@ describe('createSecureExecuteFactory', () => {
   it('should create an execute function', () => {
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -68,6 +69,7 @@ describe('createSecureExecuteFactory', () => {
   it('should have reset method', () => {
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider as AnyBearerAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -80,6 +82,7 @@ describe('createSecureExecuteFactory', () => {
   it('should have currentRepositoryKey property', () => {
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider as AnyBearerAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -94,6 +97,7 @@ describe('createSecureExecuteFactory', () => {
 
     createSecureExecuteFactory({
       authProvider: mockAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -121,6 +125,7 @@ describe('createSecureExecuteFactory', () => {
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider as AnyBearerAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: transformSpy,
@@ -150,6 +155,7 @@ describe('createSecureExecuteFactory', () => {
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider as AnyBearerAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: transformSpy,
@@ -183,6 +189,7 @@ describe('createSecureExecuteFactory', () => {
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: transformSpy,
@@ -217,6 +224,7 @@ describe('createSecureExecuteFactory', () => {
 
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider as AnyBearerAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -245,6 +253,7 @@ describe('createSecureExecuteFactory', () => {
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider as AnyBearerAuthProvider,
+      autoExecutes: true,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: transformSpy,
@@ -273,6 +282,7 @@ describe('createSecureExecuteFactory', () => {
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
         authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        autoExecutes: true,
         deps: mockDeps,
         state: mockState,
         transformAuthAndExec: transformSpy,
@@ -308,6 +318,7 @@ describe('createSecureExecuteFactory', () => {
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
         authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        autoExecutes: true,
         deps: mockDeps,
         state: mockState,
         transformAuthAndExec: transformSpy,
@@ -343,6 +354,7 @@ describe('createSecureExecuteFactory', () => {
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
         authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        autoExecutes: true,
         deps: mockDeps,
         state: mockState,
         transformAuthAndExec: transformSpy,
@@ -383,6 +395,7 @@ describe('createSecureExecuteFactory', () => {
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
         authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        autoExecutes: true,
         deps: mockDeps,
         state: mockState,
         transformAuthAndExec: transformSpy,
@@ -445,6 +458,7 @@ describe('createSecureExecuteFactory', () => {
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
         authProvider: mockAuthProvider,
+        autoExecutes: true,
         deps: mockDeps,
         state: mockState,
         transformAuthAndExec: transformSpy,
@@ -505,6 +519,7 @@ describe('createSecureExecuteFactory', () => {
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
         authProvider: mockAuthProvider,
+        autoExecutes: true,
         deps: mockDeps,
         state: mockState,
         transformAuthAndExec: transformSpy,
@@ -524,6 +539,7 @@ describe('createSecureExecuteFactory', () => {
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
         authProvider: mockAuthProvider,
+        autoExecutes: true,
         deps: mockDeps,
         state: mockState,
         transformAuthAndExec: transformSpy,
@@ -553,6 +569,7 @@ describe('createSecureExecuteFactory', () => {
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
         authProvider: mockAuthProvider,
+        autoExecutes: true,
         deps: mockDeps,
         state: mockState,
         transformAuthAndExec: transformSpy,
@@ -561,6 +578,110 @@ describe('createSecureExecuteFactory', () => {
       TestBed.runInInjectionContext(() => {
         exec({});
       });
+      TestBed.tick();
+
+      expect(transformSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Regression coverage for a logout that does not end the page load: it unbinds every secure entry
+   * in the repository, but a self-executing query only ever runs once, at creation - so without a
+   * restart anything still mounted across it (an app shell's `/user/me`) stays idle for good, even
+   * after the user logs back in.
+   */
+  describe('Session restart after a logout', () => {
+    const signIn = () => {
+      mockLatestExecutedQuery.set({
+        key: 'test',
+        snapshot: {
+          response: () => ({}),
+          error: () => null,
+          loading: () => false,
+          lastTimeExecutedAt: () => Date.now(),
+          isAlive: signal(false),
+        } as unknown as AnyQuerySnapshot,
+      });
+    };
+
+    const logout = (accessToken: WritableSignal<string | null>) => {
+      accessToken.set(null);
+      mockRepositoryEvents$.next({ type: 'unbind-all-secure' });
+      mockLatestExecutedQuery.set(null);
+    };
+
+    beforeEach(() => signIn());
+
+    it('re-runs a self-executing query once the next session starts', () => {
+      const accessToken = mockAuthProvider.accessToken as WritableSignal<string | null>;
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider,
+        autoExecutes: true,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({});
+      });
+      expect(transformSpy).toHaveBeenCalledTimes(1);
+
+      logout(accessToken);
+      TestBed.tick();
+      expect(transformSpy).toHaveBeenCalledTimes(1);
+
+      signIn();
+      accessToken.set('next-session-token');
+      TestBed.tick();
+
+      expect(transformSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('leaves a manually executed query alone', () => {
+      const accessToken = mockAuthProvider.accessToken as WritableSignal<string | null>;
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider,
+        autoExecutes: false,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({});
+      });
+      expect(transformSpy).toHaveBeenCalledTimes(1);
+
+      logout(accessToken);
+      TestBed.tick();
+
+      signIn();
+      accessToken.set('next-session-token');
+      TestBed.tick();
+
+      expect(transformSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves a query that never ran alone', () => {
+      const accessToken = mockAuthProvider.accessToken as WritableSignal<string | null>;
+      const transformSpy = vi.fn();
+
+      createSecureExecuteFactory({
+        authProvider: mockAuthProvider,
+        autoExecutes: true,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      logout(accessToken);
+      TestBed.tick();
+
+      signIn();
+      accessToken.set('next-session-token');
       TestBed.tick();
 
       expect(transformSpy).not.toHaveBeenCalled();

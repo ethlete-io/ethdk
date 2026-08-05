@@ -7,6 +7,7 @@ import {
   QueryState,
   RequestArgs,
   RouteType,
+  shouldAutoExecuteGqlQuery,
 } from '../http';
 import { createSecureExecuteFactory } from '../http/secure-query-execute-factory';
 import { GqlQueryArgs } from './gql-query';
@@ -31,6 +32,9 @@ export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     authProvider,
     deps: executeOptions.deps,
     state: executeOptions.state,
+    autoExecutes:
+      shouldAutoExecuteGqlQuery(executeOptions.creatorInternals.method) &&
+      !executeOptions.queryConfig.onlyManualExecution,
     transformAuthAndExec: (executeArgs, _tokens, headers, executeState) => {
       const { args, options: runOptions } = executeArgs ?? {};
 
