@@ -338,6 +338,42 @@ Tokens this button consumes:
 
 ---
 
+## CSS custom properties (override API)
+
+These tokens adjust appearance without touching internals. The generic `--et-button-*` tokens (font-weight, line-height, shadow, cursor, disabled opacity, border-width) apply here too — see the Surface Button spec.
+
+> **Note:** all four are set **per size** by the component, in a `:where([data-size='…'])` block on the button itself. So the override has to land on the button element (one class in the selector is enough to win), not on an ancestor — and it applies to all sizes unless you scope it with a size selector too.
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Default</td>
+    <td>Controls</td>
+  </tr>
+  <tr>
+    <td>`--et-fab-size`</td>
+    <td>39 px</td>
+    <td>Collapsed diameter — the host height and the icon slot's square</td>
+  </tr>
+  <tr>
+    <td>`--et-fab-icon-size`</td>
+    <td>20 px</td>
+    <td>Icon width/height</td>
+  </tr>
+  <tr>
+    <td>`--et-fab-label-font-size`</td>
+    <td>13 px</td>
+    <td>Label size while expanded</td>
+  </tr>
+  <tr>
+    <td>`--et-fab-contents-gap`</td>
+    <td>8 px</td>
+    <td>Gap between icon and label while expanded</td>
+  </tr>
+</table>
+
+---
+
 ## Focus ring
 
 Rendered by `FocusRingDirective` — a separate visual layer outside the button's own box model. Shown only on keyboard focus (`:focus-visible`).

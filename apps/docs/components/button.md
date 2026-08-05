@@ -97,7 +97,31 @@ One thing that stays your job: icon-only buttons have no text content, so always
 
 ## Design specs & tokens
 
-Base override tokens: `--et-button-border-radius`, `--et-button-border-width`, `--et-button-font-size`, `--et-button-font-weight`, `--et-button-gap`, `--et-button-line-height`, `--et-button-padding`, `--et-button-opacity-disabled`, `--et-button-cursor`. The split button adds `--et-split-button-divider-color`.
+Base override tokens, shared by every flavor: `--et-button-border-radius`, `--et-button-border-width`, `--et-button-font-size`, `--et-button-font-weight`, `--et-button-gap`, `--et-button-line-height`, `--et-button-padding`, `--et-button-opacity-disabled`, `--et-button-cursor`.
+
+The two icon-shaped flavors size themselves from their own tokens instead of `padding`: the icon button takes `--et-icon-button-size` (diameter), `--et-icon-button-icon-size` and `--et-icon-button-border-radius`; the FAB takes `--et-fab-size` (collapsed diameter), `--et-fab-icon-size`, `--et-fab-label-font-size` and `--et-fab-contents-gap`. The split button adds `--et-split-button-divider-color`.
+
+Most of them are set **per size** by the component (`--et-button-padding`, the two icon-button sizes, all four FAB sizes, …), in a `:where([data-size='…'])` block on the button itself. Two consequences:
+
+- The override has to land **on the button element**, not on an ancestor - the element's own per-size declaration beats anything inherited. A single class in the selector is enough to win: `.my-toolbar .et-icon-button { … }`.
+- An override that isn't scoped by size applies to **every** size. Repeat it per `[data-size='…']` to keep a scale.
+
+```css
+/* one tighter scale for a whole toolbar */
+.my-toolbar .et-icon-button {
+  --et-icon-button-border-radius: 0.8rem;
+
+  &[data-size='sm'] {
+    --et-icon-button-size: 2.4rem;
+    --et-icon-button-icon-size: 1.4rem;
+  }
+
+  &[data-size='md'] {
+    --et-icon-button-size: 3.2rem;
+    --et-icon-button-icon-size: 1.6rem;
+  }
+}
+```
 
 Full per-flavor design specs (anatomy, exact paddings per size, pressed-state variant maps, the complete CSS custom property override API) live in Storybook's docs pages: [Surface](https://next-ethlete-sdk.web.app/?path=/docs/components-button-surface--docs), [Text](https://next-ethlete-sdk.web.app/?path=/docs/components-button-text--docs), [Icon](https://next-ethlete-sdk.web.app/?path=/docs/components-button-icon--docs), [FAB](https://next-ethlete-sdk.web.app/?path=/docs/components-button-fab--docs), [Window Control](https://next-ethlete-sdk.web.app/?path=/docs/components-button-window-control--docs), [Split](https://next-ethlete-sdk.web.app/?path=/docs/components-button-split--docs).
 

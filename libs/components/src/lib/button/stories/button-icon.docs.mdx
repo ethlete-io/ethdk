@@ -11,11 +11,11 @@ Square icon-only button. Default variant is `transparent` (unlike the Surface Bu
 ## Anatomy
 
 ```
-[ icon ]                      ← always 1em × 1em
+[ icon ]                      ← sized per `size`
 [ loader overlay ]            ← absolute, fades in during loading state
 ```
 
-- **Icon slot** — `[etIcon]` attribute selector; always `1em × 1em` (relative to font-size)
+- **Icon slot** — `[etIcon]` attribute selector; sized per `size` (see Sizes)
 - **Loader** — absolutely positioned spinner that replaces the icon visually
 
 ---
@@ -273,6 +273,41 @@ Tokens this button consumes:
   <tr>
     <td>`--et-theme-color-ink-solid`</td>
     <td>Icon and border color for non-filled variants</td>
+  </tr>
+</table>
+
+---
+
+## CSS custom properties (override API)
+
+These tokens adjust appearance without touching internals. The generic `--et-button-*` tokens (font-weight, cursor, disabled opacity, border-width) apply here too — see the Surface Button spec.
+
+> **Note:** the diameter and icon size are set **per size** by the component, in a `:where([data-size='…'])` block on the button itself. So the override has to land on the button element (one class in the selector is enough to win), not on an ancestor — and it applies to all sizes unless you scope it with a size selector too. `--et-icon-button-border-radius` is the exception: the component never declares it, so an ancestor context can set it.
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Default</td>
+    <td>Size-overridden</td>
+    <td>Controls</td>
+  </tr>
+  <tr>
+    <td>`--et-icon-button-size`</td>
+    <td>39 px</td>
+    <td>Yes</td>
+    <td>Diameter (width = height)</td>
+  </tr>
+  <tr>
+    <td>`--et-icon-button-icon-size`</td>
+    <td>20 px</td>
+    <td>Yes</td>
+    <td>Icon width/height</td>
+  </tr>
+  <tr>
+    <td>`--et-icon-button-border-radius`</td>
+    <td>9999px</td>
+    <td>No</td>
+    <td>Corner rounding — set on an ancestor (e.g. a toolbar) to square off the button</td>
   </tr>
 </table>
 
