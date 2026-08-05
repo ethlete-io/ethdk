@@ -153,6 +153,9 @@ differ per developer, without touching any committed file:
 - **`disableHooks`** - `true` disables every generated hook; an array
   (`["context-warning"]`) just the named ones. The hook scripts read the file at
   runtime, so toggling takes effect on the next prompt - no `sync` needed.
+- **`disableAutoHandoffSave`** - keeps the `context-warning` hook's tiered warnings but
+  drops the auto-mode escalation: at the critical tier it recommends `/handoff` instead
+  of saving the handoff file itself.
 - **`sdkSourcePath`** - a local `ethlete-sdk` checkout. The `sdk-source` and
   `sdk-local-build` skills read it when the agent needs the SDK's own sources, or has to
   build the SDK and install it here through a `file:` dependency. A relative path is

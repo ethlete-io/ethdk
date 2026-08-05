@@ -135,23 +135,32 @@ and ~170k tokens - before the expensive range - rather than at 70% of the raw wi
 On 200k-window models the same fractions apply to the window itself, where the concern
 is the imminent auto-compact rather than pricing.
 
-### Disabling hooks per machine
+Hooks can be turned off per machine - see the local config below.
 
-A gitignored `ethlete-agents.config.local.json` at the repo root turns generated hooks
-off for one developer without touching any committed file:
+## Per-machine local config
+
+A gitignored `ethlete-agents.config.local.json` at the repo root holds the values that
+differ per developer, without touching any committed file:
 
 ```json
 {
-  "disableHooks": true
+  "disableHooks": true,
+  "sdkSourcePath": "/absolute/path/to/ethlete-sdk"
 }
 ```
 
-`true` disables every generated hook; an array (`["context-warning"]`) just the named
-ones. The hook scripts read the file at runtime, so toggling takes effect on the next
-prompt - no `sync` needed - and the generated files stay identical on every machine and
-in CI. That is also why the local file supports nothing else: sync output must never
-depend on it, and `sync`/`check` warn when it contains other keys. Add the filename to
-your repo's `.gitignore`.
+| Option                   | What it does                                                                                                                                                                                                                                                     |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                                                                                                      |
+| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends `/handoff` instead of saving the handoff file itself.                                                                                  |
+| `sdkSourcePath`          | Path to a local `ethlete-sdk` checkout, read by the `sdk-source` and `sdk-local-build` skills when the agent needs the SDK's own sources, or has to build the SDK and install it here through a `file:` dependency. A relative path resolves from the repo root. |
+
+Everything in this file is read at runtime - by the generated hook scripts and by the
+agent while following a skill - never by `sync`: the generated files stay identical on
+every machine and in CI, which is what lets `check` diff them. That is also why the file
+takes nothing beyond these keys - `sync`/`check` warn about unknown keys, and about an
+`sdkSourcePath` that is missing or is not an SDK checkout. Add the filename to your
+repo's `.gitignore`.
 
 ## Authoring content
 
