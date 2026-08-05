@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.39
+
+### Patch Changes
+
+- [`74850e3`](https://github.com/ethlete-io/ethdk/commit/74850e3a62339565c13bdeb89c4334993eefd2b3) Thanks [@TomTomB](https://github.com/TomTomB)! - The provider-definition doc comments no longer spell the pure annotation out verbatim, so Rollup stops warning about (and stripping) an annotation it cannot attach to a call while bundling `@ethlete/core`.
+
 ## 5.0.0-next.38
 
 ### Minor Changes

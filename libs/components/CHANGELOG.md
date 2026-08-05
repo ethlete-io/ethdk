@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.0.0-next.36
+
+### Major Changes
+
+- [`9bb5c45`](https://github.com/ethlete-io/ethdk/commit/9bb5c45e2c046361346ad98c333911bc88014853) Thanks [@TomTomB](https://github.com/TomTomB)! - The rich text editor's heading, quote, code-block, link and autoformat behaviour is now opt-in - add
+  `provideRichTextEditorDefaultTools()` to keep the previous toolbar. Saves 3.5 kB gz without it.
+
+- [`4ecdca9`](https://github.com/ethlete-io/ethdk/commit/4ecdca98bc55635346e887a3ff3910cd5695dd7d) Thanks [@TomTomB](https://github.com/TomTomB)! - The rich text editor's selection toolbar is now opt-in - add `provideRichTextEditorFloatingToolbar()`
+  to keep it. Saves 15 kB gz without it, the whole overlay runtime.
+
+- [`c6abde8`](https://github.com/ethlete-io/ethdk/commit/c6abde82663554e0430ab0433f43077cd81b39ee) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: grouped column headers are now the opt-in `etTableGroupHeaders` (`TABLE_GROUP_HEADERS_IMPORTS`), taking 440 B gz off a plain table. A column's `group` has no effect without it, and `hasGroups()` / `headerGroups()` move from the table onto the feature.
+
+- [`6ca8d50`](https://github.com/ethlete-io/ethdk/commit/6ca8d50322b4f8df546fd27ddc08b7c84c168d4c) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: row expansion is now the opt-in `etTableRowExpansion` (`TABLE_ROW_EXPANSION_IMPORTS`), taking 2,026 B gz off a plain table. `expandableRow` and `expandedKeys` move onto the feature, and expanded rows serialize under `state().features.expansion` (`v: 3`).
+
+- [`7f5568d`](https://github.com/ethlete-io/ethdk/commit/7f5568dea20329c1da2c9cd7e91192ad53e65eab) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: loading placeholders are now the opt-in `etTableSkeleton` (`TABLE_SKELETON_IMPORTS`), taking 999 B gz off a plain table. `loadingRows` becomes its `rows` option and `etTableCellSkeleton` moves into its imports array.
+
+- [`5abbc0f`](https://github.com/ethlete-io/ethdk/commit/5abbc0f470066e98fa21c3df9aab5f8a74e5cefc) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: sticky columns are now the opt-in `etTableStickyColumns` (`TABLE_STICKY_COLUMNS_IMPORTS`), taking 386 B gz off a plain table and its measuring off every resize. A column's `sticky` renders unpinned without it.
+
+### Minor Changes
+
+- [`fb32936`](https://github.com/ethlete-io/ethdk/commit/fb32936caa749895fc77348a6213d0d3ab6bd056) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: copy a query as cURL, download the whole session as JSON, dock the panel right or pop it into its own window, and read duration/size in Events plus sizes, values and evict-all in Cache.
+
+- [`fb32936`](https://github.com/ethlete-io/ethdk/commit/fb32936caa749895fc77348a6213d0d3ab6bd056) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: the divider between a tab's two panes is now draggable on both axes, and empty tabs fold into a "More" menu.
+
+### Patch Changes
+
+- [`2d63cd3`](https://github.com/ethlete-io/ethdk/commit/2d63cd390a03f36eec59b7862728ed9f952a7596) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: the value explorer's and the Timeline's styles now load with those views, so the panel's stylesheet fits Angular's default `anyComponentStyle` budget again.
+
+- [`a50a6a0`](https://github.com/ethlete-io/ethdk/commit/a50a6a01e722746cf74fe6181d2da301912528ab) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `HttpRequestLoadingProgressState.speed`, which reported 1000x the actual rate (and
+  `Infinity` on a stalled or re-executed request), and show it in the query devtools.
+
 ## 1.0.0-next.35
 
 ### Minor Changes
