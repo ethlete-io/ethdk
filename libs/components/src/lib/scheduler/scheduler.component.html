@@ -35,8 +35,28 @@
   </div>
 
   <span class="et-scheduler-header-label">{{ headerLabel() }}</span>
+
+  <div class="et-scheduler-header-spacer"></div>
+
+  <et-segmented-button-group [value]="headless.view()" (valueChange)="setView($event)" size="sm" variant="tabs">
+    <et-label class="et-scheduler-view-switch-label">{{ switchViewLabel() }}</et-label>
+
+    <et-segmented-button value="month">{{ monthViewLabel() }}</et-segmented-button>
+    <et-segmented-button value="week">{{ weekViewLabel() }}</et-segmented-button>
+    <et-segmented-button value="day">{{ dayViewLabel() }}</et-segmented-button>
+  </et-segmented-button-group>
 </div>
 
 <div class="et-scheduler-body">
-  <et-scheduler-month-view />
+  @switch (headless.view()) {
+    @case ('week') {
+      <et-scheduler-time-grid-view />
+    }
+    @case ('day') {
+      <et-scheduler-time-grid-view />
+    }
+    @default {
+      <et-scheduler-month-view />
+    }
+  }
 </div>

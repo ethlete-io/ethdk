@@ -13,6 +13,14 @@ export type SchedulerLabels = {
   today: string;
   /** The "+N more" overflow affordance in a day cell with more appointments than it can show. */
   moreAppointments: (count: number) => string;
+  /** Accessible label for the view-switch control (month/week/day). */
+  switchView: string;
+  /** The month view's name, as shown in the view switch. */
+  month: string;
+  /** The week view's name, as shown in the view switch. */
+  week: string;
+  /** The day view's name, as shown in the view switch. */
+  day: string;
 };
 
 /** The built-in English labels. */
@@ -21,6 +29,10 @@ export const DEFAULT_SCHEDULER_LABELS: SchedulerLabels = {
   next: 'Next',
   today: 'Today',
   moreAppointments: (count) => `+${count} more`,
+  switchView: 'Switch view',
+  month: 'Month',
+  week: 'Week',
+  day: 'Day',
 };
 
 const SCHEDULER_LABELS_DEF = /* @__PURE__ */ defineLabels<SchedulerLabels>(

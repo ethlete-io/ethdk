@@ -1,10 +1,10 @@
-import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
-import { addDays, addHours, startOfDay } from 'date-fns';
-import { Appointment } from '../scheduler.types';
+import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
+import { addDays, addHours, startOfWeek } from 'date-fns';
+import { Appointment, SchedulerView } from '../scheduler.types';
 import { SCHEDULER_IMPORTS } from '../scheduler.imports';
 
-const today = startOfDay(new Date());
-const at = (dayOffset: number, hour: number) => addHours(addDays(today, dayOffset), hour);
+const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+const at = (dayOffset: number, hour: number) => addHours(addDays(weekStart, dayOffset), hour);
 
 const DEMO_APPOINTMENTS: Appointment[] = [
   {
@@ -59,6 +59,14 @@ const DEMO_APPOINTMENTS: Appointment[] = [
     colorToken: 'success',
   },
   { id: 'call-4', parentId: null, title: 'Sprint planning', start: at(5, 14), end: at(5, 15.5), colorToken: 'warning' },
+  {
+    id: 'call-6',
+    parentId: null,
+    title: 'Design sync',
+    start: at(5, 14.5),
+    end: at(5, 15),
+    colorToken: 'brand',
+  },
   { id: 'call-5', parentId: null, title: 'Retro', start: at(5, 16), end: at(5, 17), colorToken: 'danger' },
 ];
 
@@ -66,7 +74,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
   selector: 'et-sb-scheduler',
   template: `
     <div class="max-w-4xl p-8 font-sans">
-      <et-scheduler [(selectedAppointmentId)]="selectedAppointmentId" [appointments]="appointments()" />
+      <et-scheduler [(view)]="view" [(selectedAppointmentId)]="selectedAppointmentId" [appointments]="appointments()" />
 
       <p class="mt-4 text-sm opacity-60">Selected: {{ selectedTitle() ?? 'none' }}</p>
     </div>
@@ -75,6 +83,8 @@ const DEMO_APPOINTMENTS: Appointment[] = [
   imports: [...SCHEDULER_IMPORTS],
 })
 export class SchedulerStorybookComponent {
+  public initialView = input<SchedulerView>('month');
+  protected view = linkedSignal(() => this.initialView());
   protected appointments = signal(DEMO_APPOINTMENTS);
   protected selectedAppointmentId = signal<string | null>(null);
 

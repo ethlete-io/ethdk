@@ -1,0 +1,72 @@
+<div class="et-scheduler-time-grid-row et-scheduler-time-grid-header" role="row">
+  <div class="et-scheduler-time-grid-gutter"></div>
+
+  <div class="et-scheduler-time-grid-days">
+    @for (day of grid.days(); track day.date.getTime()) {
+      <div [attr.data-today]="day.today ? '' : null" class="et-scheduler-time-grid-header-day" role="columnheader">
+        <span class="et-scheduler-time-grid-header-weekday">{{ weekdayLabel(day.date) }}</span>
+        <span class="et-scheduler-time-grid-header-date">{{ day.date.getDate() }}</span>
+      </div>
+    }
+  </div>
+</div>
+
+<div class="et-scheduler-time-grid-row et-scheduler-time-grid-all-day" role="row">
+  <div class="et-scheduler-time-grid-gutter"></div>
+
+  <div class="et-scheduler-time-grid-days">
+    @for (day of grid.days(); track day.date.getTime()) {
+      <div class="et-scheduler-time-grid-all-day-cell" role="gridcell">
+        @for (node of day.allDay; track node.appointment.id) {
+          <button
+            [attr.data-selected]="isSelected(node.appointment) ? '' : null"
+            [etProvideColor]="node.appointment.colorToken ?? null"
+            (click)="select(node.appointment)"
+            class="et-scheduler-appointment"
+            type="button"
+          >
+            {{ node.appointment.title }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<div class="et-scheduler-time-grid-row et-scheduler-time-grid-body">
+  <div class="et-scheduler-time-grid-gutter" role="presentation">
+    @for (hour of hours(); track hour.hour) {
+      <div class="et-scheduler-time-grid-hour-row">
+        <span class="et-scheduler-time-grid-hour-label">{{ hour.label }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="et-scheduler-time-grid-days">
+    @for (day of grid.days(); track day.date.getTime()) {
+      <div [attr.data-today]="day.today ? '' : null" class="et-scheduler-time-grid-day" role="gridcell">
+        @for (hour of hours(); track hour.hour) {
+          <div class="et-scheduler-time-grid-hour-row" role="presentation"></div>
+        }
+
+        @for (block of day.blocks; track block.node.appointment.id) {
+          <button
+            [style.--_et-scheduler-time-grid-block-offset]="block.offset"
+            [style.--_et-scheduler-time-grid-block-span]="block.span"
+            [style.--_et-scheduler-time-grid-block-inline-offset]="block.inlineOffset"
+            [style.--_et-scheduler-time-grid-block-inline-size]="block.inlineSize"
+            [style.--_et-scheduler-time-grid-block-depth]="block.node.depth"
+            [attr.data-selected]="isSelected(block.node.appointment) ? '' : null"
+            [attr.data-nested]="block.node.depth > 0 ? '' : null"
+            [etProvideColor]="block.node.appointment.colorToken ?? null"
+            (click)="select(block.node.appointment)"
+            class="et-scheduler-time-grid-block"
+            type="button"
+          >
+            <span class="et-scheduler-time-grid-block-title">{{ block.node.appointment.title }}</span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>

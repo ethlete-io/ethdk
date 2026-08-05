@@ -1,7 +1,8 @@
 import { Component, ViewEncapsulation, inject } from '@angular/core';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ProvideColorDirective, injectStyleManager } from '@ethlete/core';
 import { MENU_IMPORTS } from '../menu';
 import { SchedulerDirective, SchedulerMonthDirective } from './headless';
+import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
 
@@ -21,6 +22,10 @@ export class SchedulerMonthViewComponent {
   protected scheduler = inject(SchedulerDirective, { optional: true });
   protected month = inject(SchedulerMonthDirective);
   protected labels = injectSchedulerLabels();
+
+  constructor() {
+    injectStyleManager().mount(SchedulerAppointmentStylesComponent);
+  }
 
   protected weekdays() {
     return this.scheduler?.weekdays() ?? [];

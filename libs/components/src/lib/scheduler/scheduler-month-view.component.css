@@ -81,56 +81,6 @@
     overflow: hidden;
   }
 
-  .et-scheduler-appointment {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    overflow: hidden;
-    padding: 2px 6px;
-    border: none;
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid) 14%, transparent);
-    color: var(--et-theme-color-ink-solid);
-    font: inherit;
-    font-size: 12px;
-    text-align: start;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-
-    /* the color dot: the badge's own background is a tint, this is the theme's full-strength accent */
-    &::before {
-      flex-shrink: 0;
-      inline-size: 6px;
-      block-size: 6px;
-      border-radius: 999px;
-      background: var(--et-theme-color-primary-solid);
-      content: '';
-    }
-
-    @media (hover: hover) {
-      &:hover {
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid) 22%, transparent);
-      }
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--et-theme-color-primary-solid);
-      outline-offset: 1px;
-    }
-
-    &:where([data-selected]) {
-      background: var(--et-theme-color-primary-solid);
-      color: var(--et-theme-color-on-primary);
-
-      &::before {
-        background: var(--et-theme-color-on-primary);
-      }
-    }
-  }
-
   .et-scheduler-month-view-overflow-trigger {
     padding: 2px 6px;
     border: none;

@@ -10,3 +10,7 @@ export default {
 type Story = StoryObj<SchedulerStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Week: Story = { args: { initialView: 'week' } };
+
+export const Day: Story = { args: { initialView: 'day' } };
