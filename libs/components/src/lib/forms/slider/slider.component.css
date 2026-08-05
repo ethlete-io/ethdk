@@ -84,7 +84,7 @@
       position: relative;
       display: flex;
       align-items: center;
-      block-size: max(28px, var(--et-slider-thumb-size));
+      block-size: max(44px, var(--et-slider-thumb-size));
       /* thumbs overhang the rail by half their size at the extremes — keep them inside the box */
       margin-inline: calc(var(--et-slider-thumb-size) / 2);
       cursor: pointer;
@@ -302,7 +302,7 @@
       .et-slider-interaction {
         flex-direction: column;
         align-items: center;
-        inline-size: max(28px, var(--et-slider-thumb-size));
+        inline-size: max(44px, var(--et-slider-thumb-size));
         block-size: var(--et-slider-vertical-size);
         margin-inline: 0;
         /* thumbs overhang the rail by half their size at the extremes — keep them inside the box */

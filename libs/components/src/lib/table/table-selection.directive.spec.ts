@@ -125,6 +125,6 @@ describe('TableSelectionDirective', () => {
     const fixture = create();
     const grid = (fixture.nativeElement as HTMLElement).querySelector('.et-table') as HTMLElement;
 
-    expect(grid.style.gridTemplateColumns.startsWith('var(--et-table-select-width, 32px)')).toBe(true);
+    expect(grid.style.gridTemplateColumns.startsWith('var(--et-table-select-width, 44px)')).toBe(true);
   });
 });

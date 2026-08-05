@@ -11,12 +11,18 @@
      down so it sits in scale with the table text rather than the 20px form default. */
   .et-table-select-cell {
     justify-content: center;
-    padding-inline: 4px;
+    padding: 0 4px;
     --et-checkbox-size: 16px;
 
-    /* Keep the control at its own size, never shrunk by the track. */
+    /* `et-checkbox`'s own click handler lives on its host, not on this cell - stretching the host to
+       the cell's full box (rather than sizing it to the 16px visual box) is what makes the whole
+       column tappable, matching --et-table-select-width. The visual box stays centered and 16px;
+       dropping the block padding here lets `align-self: stretch` reach the full (grid-stretched)
+       row height instead of just the padded-down content box. */
     et-checkbox {
-      flex: none;
+      flex: 1;
+      justify-content: center;
+      align-self: stretch;
     }
   }
 

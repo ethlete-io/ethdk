@@ -67,6 +67,9 @@
       position: relative;
       display: grid;
       inline-size: fit-content;
+      /* icons sit edge-to-edge in a row, so only block-direction padding can grow the tap target
+         without one star stealing its neighbour's taps */
+      padding-block: max(0px, calc((44px - var(--et-rating-icon-size)) / 2));
       cursor: pointer;
       /* vertical page scrolling stays native; horizontal swipes rate */
       touch-action: pan-y;

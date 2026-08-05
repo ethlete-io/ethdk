@@ -1637,9 +1637,11 @@ surface scope - header/body text from `--et-surface-color-*-solid`, separators
 from `--et-surface-border-solid`, and the row hover tint from
 `--et-surface-interaction-solid`. Cell padding is tunable via the
 `--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom
-properties, and the leading utility columns via `--et-table-expander-width` /
-`--et-table-select-width` (both `32px`, sized to their control - the expander button
-and the checkbox keep their own size even if you set these narrower).
+properties, and the leading utility columns via `--et-table-expander-width`
+(`32px`) / `--et-table-select-width` (`44px`, matching the ≥44px touch-target
+guideline the bare label-less checkbox otherwise falls short of) - both sized to
+their control, so the expander button and the checkbox keep their own size even
+if you set these narrower.
 
 All of the table's metrics are px, not `rem`, so they don't shift with the host app's
 root font size.

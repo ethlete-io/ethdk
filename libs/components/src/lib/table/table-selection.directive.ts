@@ -85,7 +85,7 @@ export class TableSelectionDirective<T> {
   constructor() {
     this.table.registerLeadColumn({
       key: 'et-table-selection',
-      width: 'var(--et-table-select-width, 32px)',
+      width: 'var(--et-table-select-width, 44px)',
       // leftmost: before the expander (order 100) and any other feature column
       order: 0,
       cellClass: 'et-table-select-cell',
