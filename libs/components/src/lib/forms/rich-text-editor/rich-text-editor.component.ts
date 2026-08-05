@@ -1,6 +1,5 @@
 import { DOCUMENT, NgComponentOutlet } from '@angular/common';
 import {
-  afterEveryRender,
   afterNextRender,
   Component,
   computed,
@@ -17,6 +16,7 @@ import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
 import { EMPTY, fromEvent, interval, merge, switchMap, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import { DividerComponent } from '../../divider';
+import { ToolbarDirective } from '../../toolbar';
 import {
   BOLD_ICON,
   CODE_BLOCK_ICON,
@@ -62,7 +62,7 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
   templateUrl: './rich-text-editor.component.html',
   styleUrl: './rich-text-editor.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...BUTTON_IMPORTS, DividerComponent, IconDirective, NgComponentOutlet],
+  imports: [...BUTTON_IMPORTS, DividerComponent, IconDirective, NgComponentOutlet, ToolbarDirective],
   providers: [
     provideIcons(
       BOLD_ICON,
@@ -127,7 +127,6 @@ export class RichTextEditorComponent {
    *  shows its static toolbar only and the overlay runtime never ships. */
   private floatingToolbarSetup = inject(RICH_TEXT_EDITOR_FLOATING_TOOLBAR, { optional: true });
   protected editable = viewChild.required<ElementRef<HTMLElement>>('editable');
-  protected toolbar = viewChild.required<ElementRef<HTMLElement>>('toolbar');
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
 
@@ -144,18 +143,12 @@ export class RichTextEditorComponent {
   /** Dock the toolbar above the keyboard only on touch while editing. */
   protected dockedToolbar = computed(() => this.hasTouchInput() && this.editingActive());
 
-  /** The toolbar button currently holding the single roving tab stop (ARIA toolbar pattern). */
-  private toolbarTabStop: HTMLButtonElement | null = null;
-
   constructor() {
     this.linkEditorSetup?.(this.dir, this.host.nativeElement);
     this.floatingToolbarSetup?.(this.dir);
 
     this.trackKeyboardInset();
     this.trackEditingActive();
-
-    // keep the roving tab stop valid as tools are added/removed or become disabled
-    afterEveryRender(() => this.updateToolbarTabStops());
 
     afterNextRender(() => {
       this.dir.editorDom.root.set(this.editable().nativeElement ?? null);
@@ -190,55 +183,6 @@ export class RichTextEditorComponent {
 
   protected syncValueFromDom() {
     this.dir.syncFromDom();
-  }
-
-  /**
-   * The toolbar is a single tab stop (ARIA toolbar pattern): Tab enters on one button, the arrow
-   * keys move focus between the buttons, and the next Tab leaves the toolbar. Menu surfaces render
-   * into an overlay, so every `button` inside the toolbar element is a toolbar control - including
-   * the custom tool controls (`ngComponentOutlet`), which template bindings couldn't reach.
-   */
-  protected handleToolbarKeydown(event: KeyboardEvent) {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
-      return;
-    }
-
-    const buttons = this.toolbarButtons().filter((button) => !button.disabled);
-
-    if (!buttons.length) return;
-
-    const currentIndex = buttons.indexOf(this.document.activeElement as HTMLButtonElement);
-    let next: HTMLButtonElement | undefined;
-
-    switch (event.key) {
-      case 'ArrowLeft':
-        next = buttons[currentIndex <= 0 ? buttons.length - 1 : currentIndex - 1];
-        break;
-      case 'ArrowRight':
-        next = buttons[(currentIndex + 1) % buttons.length];
-        break;
-      case 'Home':
-        next = buttons[0];
-        break;
-      case 'End':
-        next = buttons[buttons.length - 1];
-        break;
-    }
-
-    if (!next) return;
-
-    event.preventDefault();
-    next.focus();
-  }
-
-  /** The last focused button keeps the tab stop, so Shift+Tab back re-enters where the user left. */
-  protected handleToolbarFocusIn(event: FocusEvent) {
-    const target = event.target;
-
-    if (!(target instanceof HTMLButtonElement) || target.disabled) return;
-
-    this.toolbarTabStop = target;
-    this.updateToolbarTabStops();
   }
 
   protected interceptEditorKeydown(event: KeyboardEvent) {
@@ -438,28 +382,6 @@ export class RichTextEditorComponent {
           event.preventDefault();
         }
         break;
-    }
-  }
-
-  private toolbarButtons() {
-    // eslint-disable-next-line ethlete/no-dom-query -- custom tool controls (ngComponentOutlet) own their button templates, so no directive token could reach them
-    return Array.from(this.toolbar().nativeElement.querySelectorAll<HTMLButtonElement>('button'));
-  }
-
-  private updateToolbarTabStops() {
-    const buttons = this.toolbarButtons();
-    const enabled = buttons.filter((button) => !button.disabled);
-
-    if (!this.toolbarTabStop || !enabled.includes(this.toolbarTabStop)) {
-      this.toolbarTabStop = enabled[0] ?? null;
-    }
-
-    for (const button of buttons) {
-      const tabIndex = button === this.toolbarTabStop ? 0 : -1;
-
-      // written imperatively (not a binding) since custom tool controls own their button templates;
-      // only touch the DOM when the value changed so the per-render pass stays free
-      if (button.tabIndex !== tabIndex) button.tabIndex = tabIndex;
     }
   }
 

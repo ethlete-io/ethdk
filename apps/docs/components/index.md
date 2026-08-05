@@ -131,6 +131,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Scrollable](/components/scrollable) - scroll containers with buttons, masks, snap and drag scrolling.
 - [Table](/components/table) - type-safe, light-by-default data table on CSS grid with a sticky header and empty state.
 - [Tabs](/components/tabs) - content tabs and router-driven nav tabs.
+- [Toolbar](/components/toolbar) - bar of related controls sharing one tab stop, navigated with the arrow keys.
 
 ### Feedback & media
 

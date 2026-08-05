@@ -1,0 +1,40 @@
+@layer components {
+  @property --et-toolbar-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 4px;
+  }
+
+  @property --et-toolbar-padding {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 4px;
+  }
+
+  @property --et-toolbar-border-radius {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 8px;
+  }
+
+  @property --et-toolbar-background {
+    syntax: '<color>';
+    inherits: false;
+    initial-value: transparent;
+  }
+
+  .et-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--et-toolbar-gap);
+    padding: var(--et-toolbar-padding);
+    border-radius: var(--et-toolbar-border-radius);
+    background: var(--et-toolbar-background);
+    box-sizing: border-box;
+
+    &:where([aria-orientation='vertical']) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}

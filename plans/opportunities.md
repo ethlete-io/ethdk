@@ -14,10 +14,23 @@ those plans. Unprioritized backlog; pick items into real plans as needed.
 
 ## New components
 
-Medium: **Divider** (tabs/RTE/split-button/sidebar each reinvent it - cheap
-extraction), **Toolbar** (generalize - RTE already implements the full ARIA
-toolbar pattern, grid has `et-grid-item-toolbar`), **Tree view** (cascader's
-internal `cascader-tree.ts` is not exposed generically).
+Medium: **Tree view** (cascader's internal `cascader-tree.ts` is not exposed
+generically).
+
+**Toolbar** - **done** (2026-08-05). Shipped as `et-toolbar` + headless
+`[etToolbar]` (roving tab stop, arrow/Home/End, RTL-aware, orientation); the RTE's
+static toolbar dropped ~78 lines to adopt it. `et-grid-item-toolbar` was left alone:
+it is a visual wrapper with no `role="toolbar"` and no keyboard model, so converting
+it would change grid behaviour. The RTE's floating toolbar is `role="toolbar"` but
+every button is `tabindex="-1"` by design (it must never take focus from the
+selection), so it needs no roving focus either.
+
+**Divider** - **done** (2026-08-05). Shipped as `et-divider` (orientation +
+`decorative`, spacing/inset/thickness tokens); the RTE's two ad-hoc
+`et-rte-toolbar-divider` spans now use it. The item's premise was wrong: the other
+sites it named (tabs, split-button, select-option-group, select-panel,
+overlay-container) are borders on structural elements, not separators, and were
+left alone.
 
 Low / opportunistic: stat tile, timeline, kbd, command palette (leans on
 existing overlay+menu so cheaper than it looks, but scope-creep risk),

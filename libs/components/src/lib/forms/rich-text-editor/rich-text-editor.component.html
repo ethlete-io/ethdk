@@ -1,12 +1,4 @@
-<!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -- ARIA toolbar pattern: the container only relays keys/focus for its roving tab stop; the buttons inside are the focusable controls -->
-<div
-  #toolbar
-  [attr.aria-label]="labels().toolbar"
-  (keydown)="handleToolbarKeydown($event)"
-  (focusin)="handleToolbarFocusIn($event)"
-  class="et-rte-toolbar"
-  role="toolbar"
->
+<div [attr.aria-label]="labels().toolbar" class="et-rte-toolbar" etToolbar>
   @for (tool of dir.resolvedTools(); track $index) {
     @switch (tool) {
       @case (TOOLS.DIVIDER) {
