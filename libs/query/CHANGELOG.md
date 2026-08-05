@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 6.0.0-next.26
+
+### Minor Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`b2ac74b`](https://github.com/ethlete-io/ethdk/commit/b2ac74b0fad22ba656d7b2028d19dd25f06e57d8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: add a persistent, path-addressed response-override registry that replays edits (value presets, array/pagination duplication, resets) against a query's response on every fetch.
+
+### Patch Changes
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`5c676cf`](https://github.com/ethlete-io/ethdk/commit/5c676cf29dbe18d5ca81e8a5c45144a4ec93d712) Thanks [@github-actions](https://github.com/apps/github-actions)! - `BearerAuthProvider.setTokens()` now sets `executionState` to `{ type: 'tokenSeed', state: 'success' }`, so SSO/OIDC callback and native-shell logins work with the same `executionState`-driven redirect logic as a query-driven login.
+
+- [#3045](https://github.com/ethlete-io/ethdk/pull/3045) [`321da6a`](https://github.com/ethlete-io/ethdk/commit/321da6a9d1b97dc34204011d1372fe1c7bfadb3d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Internal: route-building and legacy query-state errors now throw `RuntimeError` (from `@ethlete/core`) instead of the ad hoc `QueryError` class, which is removed.
+
 ## 6.0.0-next.25
 
 ### Major Changes
