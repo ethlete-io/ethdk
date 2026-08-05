@@ -1,5 +1,5 @@
-<div etOverlayHeader>
-  <h2 etOverlayTitle>{{ headerLabel() }}</h2>
+<div class="et-scheduler-edit-surface-header" etOverlayHeader>
+  <h2 class="et-scheduler-edit-surface-title" etOverlayTitle>{{ headerLabel() }}</h2>
 
   @if (appointmentActions().length > 0) {
     <div class="et-scheduler-edit-surface-actions" etMenu>
@@ -72,7 +72,7 @@
   }
 </et-overlay-body>
 
-<div etOverlayFooter>
+<div class="et-scheduler-edit-surface-footer" etOverlayFooter>
   <button et-button etOverlayClose type="button" variant="outline">{{ cancelLabel() }}</button>
   <button [disabled]="!canSave()" (click)="save()" et-button type="button">{{ saveLabel() }}</button>
 </div>
