@@ -75,8 +75,6 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
         for (const subColumn of subColumns) {
           subColumn.dimensions.width = subColumnWidth;
           subColumn.dimensions.left = currentSubColumnLeft;
-
-          // TODO: The problem is here somewhere
           subColumn.dimensions.top = section.dimensions.top + sectionPaddingTop;
 
           let totalSubColumnHeight = 0;
@@ -111,7 +109,7 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
           currentSubColumnLeft += subColumnWidth;
         }
 
-        section.dimensions.height = maxSectionHeight + sectionPadding.bottom;
+        section.dimensions.height = sectionPaddingTop + maxSectionHeight + sectionPadding.bottom;
 
         runningTop += maxSectionHeight + sectionPadding.bottom;
       }

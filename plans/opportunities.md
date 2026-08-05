@@ -98,11 +98,8 @@ exists.
   stragglers (`scrolling/scrollable.ts`, `animations/animation-utils.ts`) were
   guarded instead, since they stay.
 
-## Tech debt notes (codebase is very clean - 3 TODOs total)
+## Tech debt notes (codebase is very clean - 2 TODOs total)
 
-- `bracket/drawing/grid/core/bracket-grid.ts:86` - "The problem is here
-  somewhere" above a layout offset calc: the only unresolved-bug marker in
-  the lib; worth a focused look.
 - `bracket/index.ts:1` - narrow the public surface: `./core` and `./linked` still
   re-export internal engine builders next to the public data types. The TODO waited
   on the default cards, which have since shipped, so it is actionable now. (The
