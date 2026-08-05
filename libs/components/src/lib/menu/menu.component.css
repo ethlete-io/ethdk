@@ -102,9 +102,13 @@
     --_et-menu-muted-color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
     --_et-menu-separator-color: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
 
-    display: block;
+    display: flex;
+    flex-direction: column;
     min-inline-size: var(--et-menu-min-width);
     max-inline-size: min(320px, calc(100vw - 24px));
+    /* an anchored pane does not clip, so dropping the pane's own cap here lets a menu taller than
+       the room next to the trigger hang out of the pane and past the viewport edge */
+    max-block-size: min(var(--et-menu-max-height), var(--et-overlay-max-height, 100vh));
     border-radius: var(--_et-menu-radius);
     border: 1px solid var(--_et-menu-border);
     background: var(--_et-menu-background);
@@ -118,9 +122,16 @@
      so content outside the animated size stays hidden */
     &.et-menu--resizing {
       overflow: clip;
+
+      /* the scroller is sized by the host, so the animated host size shrinks it below its content
+         mid-animation - without this it flashes a scrollbar on every resize */
+      .et-menu-body {
+        overflow: clip;
+      }
     }
 
     .et-menu-header {
+      flex: none;
       padding: var(--et-menu-padding-block) var(--et-menu-padding-inline) 0;
 
       contain: inline-size;
@@ -178,7 +189,8 @@
     }
 
     .et-menu-body {
-      max-block-size: var(--et-menu-max-height, var(--et-overlay-max-height));
+      flex: 1;
+      min-block-size: 0;
       padding: var(--et-menu-padding-block) var(--et-menu-padding-inline);
       overflow-y: auto;
       overscroll-behavior: contain;

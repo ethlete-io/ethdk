@@ -29,10 +29,10 @@ export class MenuComponent {
   protected menu = inject(MenuDirective, { optional: true });
   protected errorColorTheme = injectErrorTheme();
 
-  // observed instead of the host: the host's used size is overridden by the resize animation
-  // itself, so observing it directly would feed the animation back into the observer
+  // both must stay content-sized: the host's used size is overridden by the resize animation and
+  // the scroller is sized by the host, so observing either would feed the animation back in
   private headerElement = viewChild<ElementRef<HTMLElement>>('menuHeader');
-  private bodyElement = viewChild<ElementRef<HTMLElement>>('menuBody');
+  private bodyContentElement = viewChild<ElementRef<HTMLElement>>('menuBodyContent');
 
   protected search = computed(() => this.menu?.registeredSearch() ?? null);
   protected searchLoading = computed(() => this.search()?.loading() ?? false);
@@ -61,7 +61,7 @@ export class MenuComponent {
     // animate the menu's block size when its content changes while open
     // (e.g. search filtering items away or the search error line appearing)
     injectAnimatedBlockSize({
-      observe: [this.headerElement, this.bodyElement],
+      observe: [this.headerElement, this.bodyContentElement],
       resizingClass: RESIZE_ANIMATION_CLASS,
     });
   }

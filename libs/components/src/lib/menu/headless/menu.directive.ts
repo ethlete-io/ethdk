@@ -48,6 +48,8 @@ export type MenuOpenSource = 'click' | 'hover' | 'keyboard' | 'api';
 
 export type MenuAnchorPoint = { x: number; y: number };
 
+const MENU_MIN_AVAILABLE_SPACE = 160;
+
 @Directive({
   selector: '[etMenu]',
   exportAs: 'etMenu',
@@ -770,6 +772,7 @@ export class MenuDirective {
     const positionOptions = {
       placement: this.resolvedPlacement(),
       fallbackPlacements: this.resolvedFallbackPlacements(),
+      minAvailableSpace: this.resolvedMinAvailableSpace(),
       offset: this.resolvedOffset(),
       arrowPadding: this.arrowPadding(),
       viewportPadding: this.viewportPadding(),
@@ -845,6 +848,21 @@ export class MenuDirective {
     }
 
     return ['left-start', 'right-end', 'left-end'];
+  }
+
+  /**
+   * `minAvailableSpace` replaces `flip` outright, so it may only kick in where no consumer has
+   * expressed a placement preference of their own. It is also vertical-only: a submenu opens on the
+   * x axis, where shrinking to the space beside the parent means a narrower - not a shorter - panel.
+   */
+  private resolvedMinAvailableSpace(): number | undefined {
+    if (this.fallbackPlacements() || this.anchorPoint() || !this.isRoot) {
+      return undefined;
+    }
+
+    const side = this.resolvedPlacement().split('-')[0];
+
+    return side === 'top' || side === 'bottom' ? MENU_MIN_AVAILABLE_SPACE : undefined;
   }
 
   private resolvedArrow() {

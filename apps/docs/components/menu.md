@@ -137,7 +137,7 @@ Inputs on `[etMenu]`:
 | Input                | Default        | Notes                                                                                                                                  |
 | -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `placement`          | `'auto'`       | Resolves to `bottom-start` for root menus, `right-start` for submenus/context menus                                                    |
-| `fallbackPlacements` | -              | floating-ui fallbacks                                                                                                                  |
+| `fallbackPlacements` | -              | floating-ui fallbacks. Setting it opts the menu out of the placement behavior below                                                    |
 | `offset`             | `'auto'`       | Resolves to `10` with the arrow, smaller without                                                                                       |
 | `viewportPadding`    | `8`            | Clearance against the viewport edge                                                                                                    |
 | `arrow`              | `true`         | Floating arrow pointing at the trigger (root, trigger-anchored menus only); `arrowPadding` (default `14`) keeps it off rounded corners |
@@ -146,6 +146,12 @@ Inputs on `[etMenu]`:
 | `autoFocus`          | `true`         | Focus the panel/first item on open                                                                                                     |
 | `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                              |
 | `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                      |
+
+### Panel placement
+
+A root menu opens **below its trigger and stays there**, shrinking to the space it has (`--et-menu-max-height`, default `40vh`, is an upper bound - never a floor). It only moves above the trigger when less than `160px` are left below it, and if neither side has that much, the roomier one wins. Because the decision reads only the space around the trigger, never the panel's own height, **an open menu never jumps sides** - filtering a search list, an async result arriving, or the animated block-size that follows them all resize it in place.
+
+This applies to root menus opening on the vertical axis. Submenus and context menus keep floating-ui's `flip`: they open on the x axis, where the equivalent shrink would make the panel narrower rather than shorter. Setting `fallbackPlacements` yourself also restores `flip`, since the two are alternatives - the [`minAvailableSpace`](/components/overlays#anchored-overlays-and-the-arrow) middleware replaces it rather than running alongside it.
 
 ### Keyboard
 
@@ -171,7 +177,7 @@ Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics ar
 
 ## Theming
 
-Public tokens (defaults in parentheses): `--et-menu-min-width` (`180px`), `--et-menu-max-height` (`40vh`), `--et-menu-padding-block` / `-inline` (`6px`), `--et-menu-item-height` (`36px`), `--et-menu-item-padding-inline` (`10px`), `--et-menu-item-gap` (`10px`), `--et-menu-item-border-radius` (`6px`), `--et-menu-item-font-size` (`14px`), `--et-menu-item-icon-size` (`16px`), `--et-menu-separator-margin-block` (`6px`), `--et-menu-group-label-font-size` (`12px`), `--et-menu-search-height` (`36px`). Colors come from the [surface/color theme systems](/core/theming).
+Public tokens (defaults in parentheses): `--et-menu-min-width` (`180px`), `--et-menu-max-height` (`40vh`, caps the whole panel - header included - and is itself capped by the space next to the trigger, see [Panel placement](#panel-placement)), `--et-menu-padding-block` / `-inline` (`6px`), `--et-menu-item-height` (`36px`), `--et-menu-item-padding-inline` (`10px`), `--et-menu-item-gap` (`10px`), `--et-menu-item-border-radius` (`6px`), `--et-menu-item-font-size` (`14px`), `--et-menu-item-icon-size` (`16px`), `--et-menu-separator-margin-block` (`6px`), `--et-menu-group-label-font-size` (`12px`), `--et-menu-search-height` (`36px`). Colors come from the [surface/color theme systems](/core/theming).
 
 ## Error codes
 
