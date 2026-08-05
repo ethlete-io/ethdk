@@ -1,4 +1,5 @@
 export * from './lib/accordion';
+export * from './lib/badge';
 export * from './lib/bracket';
 export * from './lib/breadcrumb';
 export * from './lib/button';

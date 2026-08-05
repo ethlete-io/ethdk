@@ -221,6 +221,7 @@ export default defineConfig({
         {
           text: 'Elements',
           items: [
+            { text: 'Badge', link: '/components/badge' },
             { text: 'Button', link: '/components/button' },
             { text: 'Calendar', link: '/components/calendar' },
             { text: 'Chip', link: '/components/chip' },
