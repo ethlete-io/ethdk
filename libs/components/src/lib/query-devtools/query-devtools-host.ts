@@ -10,6 +10,7 @@ import {
   QuerySequence,
   WebSocketDevtoolsHandle,
 } from '@ethlete/query';
+import { QueryDevtoolsDiff } from './query-devtools-diff';
 import {
   AnyQuery,
   DetailTab,
@@ -112,7 +113,9 @@ export type QueryDevtoolsHost = {
 
   diffRunIndex: Signal<number | null>;
   toggleRunDiff(run: QueryDevtoolsRun): void;
-  responseDiff(entry: QueryDevtoolsEntry): { before: QueryDevtoolsRun; after: QueryDevtoolsRun; diff: unknown } | null;
+  responseDiff(
+    entry: QueryDevtoolsEntry,
+  ): { before: QueryDevtoolsRun; after: QueryDevtoolsRun; diff: QueryDevtoolsDiff } | null;
   canDiffRun(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun): boolean;
   queryRuns(entry: QueryDevtoolsEntry): QueryDevtoolsRun[];
   runStatus(run: QueryDevtoolsRun): string;

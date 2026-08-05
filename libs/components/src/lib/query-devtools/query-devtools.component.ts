@@ -48,11 +48,15 @@ import {
 } from '@ethlete/query';
 import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, take, tap, timer } from 'rxjs';
 import { buildCurlCommand } from './query-devtools-curl';
+import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
+import { QueryDevtoolsDrawerComponent } from './query-devtools-drawer.component';
+import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
+import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import {
   buildQueryDevtoolsSessionExport,
   SessionExportClient,
@@ -235,7 +239,15 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   templateUrl: './query-devtools.component.html',
   styleUrl: './query-devtools.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, QueryDevtoolsJsonComponent, QueryDevtoolsToggleComponent],
+  imports: [
+    NgTemplateOutlet,
+    QueryDevtoolsDetailComponent,
+    QueryDevtoolsDrawerComponent,
+    QueryDevtoolsFeaturesComponent,
+    QueryDevtoolsJsonComponent,
+    QueryDevtoolsRouteComponent,
+    QueryDevtoolsToggleComponent,
+  ],
   providers: [{ provide: QUERY_DEVTOOLS_HOST, useExisting: QueryDevtoolsComponent }],
   host: {
     class: 'et-query-devtools-host',
@@ -248,7 +260,7 @@ export class QueryDevtoolsComponent {
   private styleManager = injectStyleManager();
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);
-  protected document = inject(DOCUMENT);
+  private document = inject(DOCUMENT);
 
   /** The panel itself, so a pop-out can move it into another window's document. */
   private panelEl = viewChild<ElementRef<HTMLElement>>('panel');
@@ -279,12 +291,6 @@ export class QueryDevtoolsComponent {
    * arms faults - which has entries to arm rather than to count.
    */
   private readonly PINNED_TABS: readonly DevtoolsTab[] = ['queries', 'faults'];
-
-  protected readonly detailTabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'history', label: 'History' },
-    { id: 'data', label: 'Data' },
-  ] satisfies { id: DetailTab; label: string }[];
 
   /** The status chips above the Queries list, in the order a problem is usually looked for. */
   protected readonly facets = [
@@ -337,7 +343,7 @@ export class QueryDevtoolsComponent {
   protected panelInlineSize = computed(() => (!this.poppedOut() && this.dock() === 'right' ? this.panelWidth() : null));
 
   /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */
-  protected detailTab = signal<DetailTab>(this.persisted.detailTab ?? 'overview');
+  public detailTab = signal<DetailTab>(this.persisted.detailTab ?? 'overview');
   protected selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
   protected selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
 
@@ -378,37 +384,37 @@ export class QueryDevtoolsComponent {
   private expandedSteps = signal<ReadonlySet<string>>(new Set(this.persisted.expandedSteps ?? []));
 
   /** Shared value-explorer search term. */
-  protected jsonSearch = signal(this.persisted.jsonSearch ?? '');
-  protected jsonSearchTerm = computed(() => this.jsonSearch().trim().toLowerCase());
+  public jsonSearch = signal(this.persisted.jsonSearch ?? '');
+  public jsonSearchTerm = computed(() => this.jsonSearch().trim().toLowerCase());
 
   /** Path-keyed value-explorer expansion overrides (persisted so open trees survive a reload). */
-  protected jsonExpandedPaths = signal<ReadonlySet<string>>(new Set(this.persisted.jsonExpanded ?? []));
-  protected jsonCollapsedPaths = signal<ReadonlySet<string>>(new Set(this.persisted.jsonCollapsed ?? []));
+  public jsonExpandedPaths = signal<ReadonlySet<string>>(new Set(this.persisted.jsonExpanded ?? []));
+  public jsonCollapsedPaths = signal<ReadonlySet<string>>(new Set(this.persisted.jsonCollapsed ?? []));
 
   /** Bound callback passed into the value explorer to persist per-path expansion. Assigned in the constructor. */
-  protected toggleJsonPath: (path: string, expand: boolean) => void;
+  public toggleJsonPath: (path: string, expand: boolean) => void;
 
   /** The run whose response the diff is comparing, by run index, or `null` while no diff is open. */
-  protected diffRunIndex = signal<number | null>(null);
+  public diffRunIndex = signal<number | null>(null);
 
   /** JIT editor state (response / args editing on the selected query). */
-  protected editorMode = signal<'none' | 'response' | 'args'>('none');
-  protected responseDraft = signal('');
-  protected argsDraft = signal('');
+  public editorMode = signal<'none' | 'response' | 'args'>('none');
+  public responseDraft = signal('');
+  public argsDraft = signal('');
 
   /**
    * The text the currently open editor was seeded with. The textareas bind `value` to this and not to
    * the live draft: a `value` binding fed by the draft is written back on every keystroke, and writing
    * a textarea's `value` puts the caret at the end.
    */
-  protected editorSeed = '';
-  protected editError = signal<string | null>(null);
+  public editorSeed = '';
+  public editError = signal<string | null>(null);
 
   /** Transient "Copied!" feedback for the copy-report, copy-as-Insomnia / cURL and copy-document actions. */
-  protected copiedReport = signal(false);
-  protected copiedInsomnia = signal(false);
-  protected copiedCurl = signal(false);
-  protected copiedGql = signal(false);
+  public copiedReport = signal(false);
+  public copiedInsomnia = signal(false);
+  public copiedCurl = signal(false);
+  public copiedGql = signal(false);
   private copiedReset$ = new Subject<void>();
 
   /** 1-second tick driving the cache freshness countdowns. */
@@ -1141,7 +1147,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** The full URL of the request a query last made, or `null` while it has not executed. */
-  protected requestUrl(query: AnyQuery) {
+  public requestUrl(query: AnyQuery) {
     return query.subtle.request()?.url ?? null;
   }
 
@@ -1150,7 +1156,7 @@ export class QueryDevtoolsComponent {
    * query) never writes them to its own `args` signal - only the `withArgs` feature does - so the args
    * its current request was built from stand in.
    */
-  protected queryArgs(query: AnyQuery) {
+  public queryArgs(query: AnyQuery) {
     return query.args() ?? query.subtle.request()?.args ?? null;
   }
 
@@ -1203,20 +1209,20 @@ export class QueryDevtoolsComponent {
   }
 
   /** Why a retry was scheduled, as the panel spells it out. A status of 0 never reached the server. */
-  protected retryCause(status: number) {
+  public retryCause(status: number) {
     return status ? `after ${status}` : 'after a connection failure';
   }
 
-  protected formatPercent(percentage: number) {
+  public formatPercent(percentage: number) {
     return `${Math.round(percentage)}%`;
   }
 
   /** A countdown in whole seconds, spelled out the way the cache freshness column does. */
-  protected formatCountdown(ms: number | null) {
+  public formatCountdown(ms: number | null) {
     return ms === null ? '—' : `${Math.ceil(ms / 1000)}s`;
   }
 
-  protected queryActivity(entry: QueryDevtoolsEntry): QueryActivity {
+  public queryActivity(entry: QueryDevtoolsEntry): QueryActivity {
     return this.activityOf([entry.stats]);
   }
 
@@ -1233,7 +1239,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** Clears an entry's counters and run history, so the next interaction can be measured on its own. */
-  protected resetStats(entry: QueryDevtoolsEntry) {
+  public resetStats(entry: QueryDevtoolsEntry) {
     entry.stats?.reset();
     this.diffRunIndex.set(null);
   }
@@ -1246,7 +1252,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** A query's runs, newest first - the order a history is read in. */
-  protected queryRuns(entry: QueryDevtoolsEntry): QueryDevtoolsRun[] {
+  public queryRuns(entry: QueryDevtoolsEntry): QueryDevtoolsRun[] {
     return [...(entry.stats?.runs() ?? [])].reverse();
   }
 
@@ -1259,13 +1265,13 @@ export class QueryDevtoolsComponent {
   }
 
   /** Whether a run can be diffed: it still holds its body, and so does an older run of the same query. */
-  protected canDiffRun(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun) {
+  public canDiffRun(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun) {
     if (!run.hasResponse) return false;
 
     return (entry.stats?.runs() ?? []).some((other) => other.hasResponse && other.index < run.index);
   }
 
-  protected toggleRunDiff(run: QueryDevtoolsRun) {
+  public toggleRunDiff(run: QueryDevtoolsRun) {
     this.diffRunIndex.update((current) => (current === run.index ? null : run.index));
   }
 
@@ -1275,7 +1281,7 @@ export class QueryDevtoolsComponent {
    *
    * `null` unless a run is picked, so a closed diff costs nothing to walk.
    */
-  protected responseDiff(entry: QueryDevtoolsEntry) {
+  public responseDiff(entry: QueryDevtoolsEntry) {
     const picked = this.diffRunIndex();
 
     if (picked === null) return null;
@@ -1342,7 +1348,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** A transfer rate, given in bytes per second the way `HttpRequestLoadingProgressState.speed` reports it. */
-  protected formatSpeed(bytesPerSecond: number) {
+  public formatSpeed(bytesPerSecond: number) {
     return `${this.formatBytes(Math.round(bytesPerSecond))}/s`;
   }
 
@@ -1352,11 +1358,11 @@ export class QueryDevtoolsComponent {
     return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
   }
 
-  protected executeQuery(query: AnyQuery, allowCache: boolean) {
+  public executeQuery(query: AnyQuery, allowCache: boolean) {
     query.execute(allowCache ? { options: { allowCache: true } } : undefined);
   }
 
-  protected resetQuery(query: AnyQuery) {
+  public resetQuery(query: AnyQuery) {
     query.reset();
   }
 
@@ -1365,7 +1371,7 @@ export class QueryDevtoolsComponent {
    * Writes both rich `text/html` (Slack applies formatting on paste - it does not parse markdown) and
    * a plain-text fallback.
    */
-  protected copyReport(entry: QueryDevtoolsEntry, query: AnyQuery) {
+  public copyReport(entry: QueryDevtoolsEntry, query: AnyQuery) {
     const error = query.error();
     const httpStatus = error ? error.raw.status : this.responseStatus(query);
     const method = entry.meta.method ?? '';
@@ -1417,7 +1423,7 @@ export class QueryDevtoolsComponent {
   // --- Insomnia export ---
 
   /** Copies one query as an Insomnia collection, for `Import > From Clipboard`. */
-  protected copyInsomniaRequest(entry: QueryDevtoolsEntry, query: AnyQuery) {
+  public copyInsomniaRequest(entry: QueryDevtoolsEntry, query: AnyQuery) {
     const requests = [this.exportedRequest(entry, query)];
     const json = JSON.stringify(
       buildInsomniaExport({
@@ -1437,12 +1443,12 @@ export class QueryDevtoolsComponent {
    * Copies one query as a `curl` command - what goes into a terminal, a ticket or a chat message, where
    * an Insomnia collection is too heavy to be read at all.
    */
-  protected copyCurlRequest(entry: QueryDevtoolsEntry, query: AnyQuery) {
+  public copyCurlRequest(entry: QueryDevtoolsEntry, query: AnyQuery) {
     this.writeToClipboard({ text: buildCurlCommand(this.exportedRequest(entry, query)) }, this.copiedCurl);
   }
 
   /** Copies the GraphQL document as displayed — dedented, so it pastes straight into a playground. */
-  protected copyGqlDocument(doc: string) {
+  public copyGqlDocument(doc: string) {
     this.writeToClipboard({ text: this.gqlDocument(doc) }, this.copiedGql);
   }
 
@@ -1500,7 +1506,7 @@ export class QueryDevtoolsComponent {
 
   // --- JIT editing ---
 
-  protected openResponseEditor(query: AnyQuery) {
+  public openResponseEditor(query: AnyQuery) {
     const draft = JSON.stringify(query.response() ?? null, null, 2);
 
     this.editorSeed = draft;
@@ -1509,7 +1515,7 @@ export class QueryDevtoolsComponent {
     this.editorMode.set('response');
   }
 
-  protected openArgsEditor(query: AnyQuery) {
+  public openArgsEditor(query: AnyQuery) {
     const draft = JSON.stringify(this.queryArgs(query) ?? {}, null, 2);
 
     this.editorSeed = draft;
@@ -1518,7 +1524,7 @@ export class QueryDevtoolsComponent {
     this.editorMode.set('args');
   }
 
-  protected applyResponse(query: AnyQuery) {
+  public applyResponse(query: AnyQuery) {
     try {
       query.subtle.setResponse(JSON.parse(this.responseDraft()));
       this.editorMode.set('none');
@@ -1528,7 +1534,7 @@ export class QueryDevtoolsComponent {
     }
   }
 
-  protected applyArgs(query: AnyQuery) {
+  public applyArgs(query: AnyQuery) {
     try {
       query.execute({ args: JSON.parse(this.argsDraft()) });
       this.editorMode.set('none');
@@ -1538,20 +1544,20 @@ export class QueryDevtoolsComponent {
     }
   }
 
-  protected cancelEditor() {
+  public cancelEditor() {
     this.editorMode.set('none');
     this.editError.set(null);
   }
 
   // --- Force states ---
 
-  protected forceLoading(query: AnyQuery) {
+  public forceLoading(query: AnyQuery) {
     // `executionState` prioritises loading > error > response, so clear the others to switch cleanly.
     query.subtle.setError(null);
     query.subtle.setLoading({ executeTime: Date.now(), progress: null });
   }
 
-  protected forceError(query: AnyQuery) {
+  public forceError(query: AnyQuery) {
     query.subtle.setLoading(null);
     // A real failed execution also drops the response, so mirror that for consumers bound to it.
     query.subtle.setResponse(null);
@@ -1566,13 +1572,13 @@ export class QueryDevtoolsComponent {
     );
   }
 
-  protected forceEmpty(query: AnyQuery) {
+  public forceEmpty(query: AnyQuery) {
     query.subtle.setLoading(null);
     query.subtle.setError(null);
     query.subtle.setResponse(null);
   }
 
-  protected clearForced(query: AnyQuery) {
+  public clearForced(query: AnyQuery) {
     query.subtle.setLoading(null);
     query.subtle.setError(null);
   }
@@ -1781,13 +1787,13 @@ export class QueryDevtoolsComponent {
   }
 
   /** The reverse: the forms whose value a query's args read. */
-  protected formsDrivingQuery(entry: QueryDevtoolsEntry): QueryDevtoolsEntry[] {
+  public formsDrivingQuery(entry: QueryDevtoolsEntry): QueryDevtoolsEntry[] {
     const ids = entry.formLinks?.ids() ?? [];
 
     return this.formEntries().filter((form) => ids.includes(form.id));
   }
 
-  protected selectForm(id: string) {
+  public selectForm(id: string) {
     this.activeTab.set('forms');
     this.selectedFormId.set(id);
   }
@@ -1796,7 +1802,7 @@ export class QueryDevtoolsComponent {
    * The refreshes that re-executed a query, newest first - the answer to "why did this refetch?". Read
    * off the event log, so it goes back exactly as far as the log does.
    */
-  protected refreshesFor(entryId: string) {
+  public refreshesFor(entryId: string) {
     return this.eventLog()
       .filter((item) => item.cause && item.refreshed?.some((refreshed) => refreshed.queryIds.includes(entryId)))
       .map((item) => ({
@@ -1907,7 +1913,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** Dedents a GraphQL document (template-literal indentation) for readable display. */
-  protected gqlDocument(doc: string) {
+  public gqlDocument(doc: string) {
     const lines = doc.replace(/\t/g, '  ').split('\n');
     while (lines.length && !lines[0]?.trim()) lines.shift();
     while (lines.length && !lines[lines.length - 1]?.trim()) lines.pop();
@@ -1916,7 +1922,7 @@ export class QueryDevtoolsComponent {
     return lines.map((l) => l.slice(min)).join('\n');
   }
 
-  protected featureLabel(type: string) {
+  public featureLabel(type: string) {
     return type
       .replace(/^WITH_/, '')
       .replace(/_/g, ' ')

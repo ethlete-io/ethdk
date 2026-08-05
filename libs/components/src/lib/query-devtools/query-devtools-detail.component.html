@@ -1,0 +1,483 @@
+@let s = sel();
+
+<div class="et-query-devtools-detail-head">
+  <span class="et-query-devtools-method">{{ s.entry.meta.method }}</span>
+  <span class="et-query-devtools-route">
+    <et-query-devtools-route [segments]="host.routeSegments(s.entry, s.query)" />
+  </span>
+</div>
+
+@if (host.requestProgress(s.query); as live) {
+  <div class="et-query-devtools-live">
+    @if (live.retry; as retry) {
+      <span
+        class="et-query-devtools-chip et-query-devtools-chip--loading"
+        title="The retry policy is backing off before it tries again. A query stuck loading with this chip is waiting, not slow."
+      >
+        <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+        attempt {{ retry.attempt }} in {{ host.formatCountdown(live.retryInMs) }}
+      </span>
+      <span class="et-query-devtools-live-note">
+        {{ host.retryCause(retry.status) }} · backing off {{ host.formatDuration(retry.delayMs) }}
+      </span>
+    } @else if (live.attempts > 1) {
+      <span
+        class="et-query-devtools-chip et-query-devtools-chip--loading"
+        title="How many HTTP attempts the last execution took - the retry policy fired for the rest"
+      >
+        <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+        {{ live.attempts }} attempts
+      </span>
+    }
+
+    @if (live.progress; as progress) {
+      <span
+        [attr.aria-valuenow]="progress.percentage"
+        class="et-query-devtools-progress"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-label="Transfer progress"
+      >
+        <span [style.inline-size.%]="progress.percentage" class="et-query-devtools-progress-bar"></span>
+      </span>
+      <span class="et-query-devtools-live-note">
+        {{ host.formatPercent(progress.percentage) }} · {{ host.formatBytes(progress.loaded) }} of
+        {{ host.formatBytes(progress.total) }}
+        @if (progress.speed !== null) {
+          · {{ host.formatSpeed(progress.speed) }}
+        }
+        @if (progress.remainingTime !== null) {
+          · {{ host.formatDuration(progress.remainingTime) }} left
+        }
+      </span>
+    }
+  </div>
+}
+
+<div class="et-query-devtools-actions">
+  <span class="et-query-devtools-actions-label">Run</span>
+  <button (click)="host.executeQuery(s.query, false)" class="et-query-devtools-btn" type="button">Execute</button>
+  <button (click)="host.executeQuery(s.query, true)" class="et-query-devtools-btn" type="button">Cached</button>
+  <button (click)="host.resetQuery(s.query)" class="et-query-devtools-btn" type="button">Reset</button>
+  <button (click)="host.copyReport(s.entry, s.query)" class="et-query-devtools-btn" type="button">
+    {{ host.copiedReport() ? '✓ Copied' : 'Copy report' }}
+  </button>
+  <button
+    (click)="host.copyCurlRequest(s.entry, s.query)"
+    class="et-query-devtools-btn"
+    type="button"
+    title="Copy as a curl command - the URL, the headers as the request resolved them, and the body"
+  >
+    {{ host.copiedCurl() ? '✓ Copied' : 'cURL' }}
+  </button>
+  <button
+    (click)="host.copyInsomniaRequest(s.entry, s.query)"
+    class="et-query-devtools-btn"
+    type="button"
+    title="Copy as an Insomnia collection (Import → From Clipboard). Includes the request headers, and the token refresh for a secure query."
+  >
+    {{ host.copiedInsomnia() ? '✓ Copied' : 'Insomnia' }}
+  </button>
+  <span class="et-query-devtools-actions-label">Edit</span>
+  <button (click)="host.openResponseEditor(s.query)" class="et-query-devtools-btn" type="button">Response</button>
+  <button (click)="host.openArgsEditor(s.query)" class="et-query-devtools-btn" type="button">Replay args</button>
+  <span class="et-query-devtools-actions-label">Force</span>
+  <button (click)="host.forceLoading(s.query)" class="et-query-devtools-btn" type="button">Loading</button>
+  <button (click)="host.forceError(s.query)" class="et-query-devtools-btn" type="button">Error</button>
+  <button (click)="host.forceEmpty(s.query)" class="et-query-devtools-btn" type="button">Empty</button>
+  <button (click)="host.clearForced(s.query)" class="et-query-devtools-btn" type="button">Clear</button>
+</div>
+
+@if (host.editorMode() !== 'none') {
+  <div class="et-query-devtools-editor">
+    @if (host.editorMode() === 'response') {
+      <h4 class="et-query-devtools-section">Edit response → setResponse()</h4>
+      <textarea
+        #respArea
+        [value]="host.editorSeed"
+        (input)="host.responseDraft.set(respArea.value)"
+        class="et-query-devtools-textarea"
+        spellcheck="false"
+      ></textarea>
+      <div class="et-query-devtools-actions">
+        <button (click)="host.applyResponse(s.query)" class="et-query-devtools-btn" type="button">Apply</button>
+        <button (click)="host.cancelEditor()" class="et-query-devtools-btn" type="button">Cancel</button>
+      </div>
+    } @else {
+      <h4 class="et-query-devtools-section">Replay with edited args → execute()</h4>
+      <textarea
+        #argsArea
+        [value]="host.editorSeed"
+        (input)="host.argsDraft.set(argsArea.value)"
+        class="et-query-devtools-textarea"
+        spellcheck="false"
+      ></textarea>
+      <div class="et-query-devtools-actions">
+        <button (click)="host.applyArgs(s.query)" class="et-query-devtools-btn" type="button">Execute</button>
+        <button (click)="host.cancelEditor()" class="et-query-devtools-btn" type="button">Cancel</button>
+      </div>
+    }
+    @if (host.editError(); as err) {
+      <p class="et-query-devtools-editor-error">{{ err }}</p>
+    }
+  </div>
+}
+
+@let detailRuns = host.queryRuns(s.entry);
+<nav class="et-query-devtools-subtabs" role="tablist">
+  @for (tab of detailTabs; track tab.id) {
+    <button
+      [class.et-query-devtools-subtab--active]="host.detailTab() === tab.id"
+      [attr.aria-selected]="host.detailTab() === tab.id"
+      (click)="host.detailTab.set(tab.id)"
+      class="et-query-devtools-subtab"
+      type="button"
+      role="tab"
+    >
+      {{ tab.label }}
+      @if (tab.id === 'history' && detailRuns.length) {
+        <span class="et-query-devtools-tab-badge">{{ detailRuns.length }}</span>
+      }
+      <!-- The error body lives under Data, so the tab has to say so - a failure must not hide
+           behind a tab that is not open. -->
+      @if (tab.id === 'data' && s.query.error()) {
+        <span class="et-query-devtools-tab-badge et-query-devtools-tab-badge--error">!</span>
+      }
+    </button>
+  }
+</nav>
+
+@switch (host.detailTab()) {
+  @case ('overview') {
+    <dl class="et-query-devtools-meta">
+      <dt>Base URL</dt>
+      <dd class="et-query-devtools-mono">
+        {{ s.entry.meta.clientBaseUrl || s.entry.meta.clientName || '—' }}
+      </dd>
+      <dt>Route</dt>
+      <dd class="et-query-devtools-mono">{{ s.entry.meta.route || '—' }}</dd>
+      <dt>Request URL</dt>
+      <dd class="et-query-devtools-mono">{{ host.requestUrl(s.query) || '—' }}</dd>
+      <dt>Status</dt>
+      <dd>{{ host.queryStatus(s.query) }}</dd>
+      <dt>Cache key</dt>
+      <dd class="et-query-devtools-mono">{{ s.query.id() || '—' }}</dd>
+      <dt>Last executed</dt>
+      <dd>{{ host.formatTime(s.query.lastTimeExecutedAt()) }}</dd>
+      <dt>Triggered by</dt>
+      <dd>{{ s.query.triggeredBy() || 'user' }}</dd>
+      @let refreshes = host.refreshesFor(s.entry.id);
+      @if (refreshes.length) {
+        <dt title="Invalidations and mutation refreshes that re-executed this query, as far back as the event log goes">
+          Refetched by
+        </dt>
+        <dd>
+          <div class="et-query-devtools-chips">
+            @for (refresh of refreshes.slice(0, 5); track refresh.id) {
+              <span class="et-query-devtools-chip et-query-devtools-chip--muted">
+                {{ host.formatTime(refresh.timestamp) }} · {{ refresh.label }}
+              </span>
+            }
+            @if (refreshes.length > 5) {
+              <span class="et-query-devtools-hint">+{{ refreshes.length - 5 }} earlier</span>
+            }
+          </div>
+        </dd>
+      }
+      @let drivers = host.formsDrivingQuery(s.entry);
+      @if (drivers.length) {
+        <dt>Args from</dt>
+        <dd>
+          <div class="et-query-devtools-chips">
+            @for (driver of drivers; track driver.id) {
+              <button
+                (click)="host.selectForm(driver.id)"
+                class="et-query-devtools-chip et-query-devtools-chip--button"
+                type="button"
+                title="Open the query form in the Forms tab"
+              >
+                {{ driver.meta.name }}
+              </button>
+            }
+          </div>
+        </dd>
+      }
+      @if (s.entry.meta.features?.length) {
+        <dt>Features</dt>
+        <dd>
+          <et-query-devtools-features [features]="s.entry.meta.features ?? []" />
+        </dd>
+      }
+    </dl>
+
+    @let activity = host.queryActivity(s.entry);
+    <div class="et-query-devtools-section-row">
+      <h4 class="et-query-devtools-section">Activity</h4>
+      <button
+        [disabled]="!activity.hasActivity"
+        (click)="host.resetStats(s.entry)"
+        class="et-query-devtools-btn"
+        type="button"
+        title="Clear the counters and the run history, so the next interaction can be measured on its own"
+      >
+        ⟲ Reset
+      </button>
+    </div>
+
+    <dl class="et-query-devtools-stats">
+      <div class="et-query-devtools-stat" title="Every time the query ran, cache hits included">
+        <dt>Refreshes</dt>
+        <dd>{{ activity.stats.executions }}</dd>
+        @if (activity.cacheServed) {
+          <span class="et-query-devtools-stat-sub">{{ activity.cacheServed }} without a request</span>
+        }
+      </div>
+      <div class="et-query-devtools-stat" title="Executions that started a request, and how they ended">
+        <dt>Requests</dt>
+        <dd>{{ activity.stats.requests }}</dd>
+        <span class="et-query-devtools-stat-sub">
+          {{ activity.stats.responses }} ok
+          @if (activity.stats.errors) {
+            · {{ activity.stats.errors }} failed
+          }
+        </span>
+      </div>
+      <div
+        class="et-query-devtools-stat"
+        title="Total response payload received. Sizes without a content-length header are measured from the decoded body, so they ignore compression."
+      >
+        <dt>Received</dt>
+        <dd>{{ host.formatTransferred(activity.stats.receivedBytes, activity.stats.hasEstimatedBytes) }}</dd>
+        @if (activity.avgResponseBytes !== null) {
+          <span class="et-query-devtools-stat-sub">{{ host.formatBytes(activity.avgResponseBytes) }} per response</span>
+        }
+      </div>
+      @if (activity.stats.sentBytes) {
+        <div class="et-query-devtools-stat" title="Total request body sent (headers not counted)">
+          <dt>Sent</dt>
+          <dd>{{ host.formatTransferred(activity.stats.sentBytes, activity.stats.hasEstimatedBytes) }}</dd>
+        </div>
+      }
+      @if (activity.stats.retries) {
+        <div
+          class="et-query-devtools-stat"
+          title="Attempts the retry policy added on top of the first one. Which run they belong to is under History."
+        >
+          <dt>Retries</dt>
+          <dd>{{ activity.stats.retries }}</dd>
+        </div>
+      }
+      <div class="et-query-devtools-stat" title="Measured from the execution that preceded each response">
+        <dt>Duration</dt>
+        <dd>{{ host.formatDuration(activity.stats.lastDurationMs) }}</dd>
+        @if (activity.avgDurationMs !== null) {
+          <span class="et-query-devtools-stat-sub">{{ host.formatDuration(activity.avgDurationMs) }} on average</span>
+        }
+      </div>
+      <div class="et-query-devtools-stat">
+        <dt>Last response</dt>
+        <dd class="et-query-devtools-stat-value--sm">{{ host.formatTime(activity.stats.lastResponseAt) }}</dd>
+        @if (activity.stats.firstExecutedAt !== null) {
+          <span class="et-query-devtools-stat-sub"
+            >first ran {{ host.formatTime(activity.stats.firstExecutedAt) }}</span
+          >
+        }
+      </div>
+    </dl>
+  }
+  @case ('history') {
+    <div class="et-query-devtools-section-row">
+      <h4 class="et-query-devtools-section">Runs</h4>
+      <button
+        [disabled]="!detailRuns.length"
+        (click)="host.resetStats(s.entry)"
+        class="et-query-devtools-btn"
+        type="button"
+        title="Clear the run history and the counters, so the next interaction can be measured on its own"
+      >
+        ⟲ Reset
+      </button>
+    </div>
+    @if (detailRuns.length) {
+      <table class="et-query-devtools-table">
+        <thead>
+          <tr>
+            <th>Run</th>
+            <th>Started</th>
+            <th>Duration</th>
+            <th>Received</th>
+            <th>Diff</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (run of detailRuns; track run.index) {
+            <tr [attr.data-status]="run.status === 'error' ? 'error' : null">
+              <td class="et-query-devtools-run-cell">
+                <span
+                  [attr.data-status]="host.runStatus(run)"
+                  [title]="run.status"
+                  class="et-query-devtools-status"
+                ></span>
+                #{{ run.index }}
+                @if (run.attempts > 1) {
+                  <span
+                    class="et-query-devtools-chip et-query-devtools-chip--loading"
+                    title="Took {{
+                      run.attempts
+                    }} attempts - the duration next to it covers every one of them, backoff included"
+                  >
+                    <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+                    {{ run.attempts }}
+                  </span>
+                }
+                @if (!run.didRequest) {
+                  <span
+                    class="et-query-devtools-chip et-query-devtools-chip--muted"
+                    title="Arrived without a request of this query's own - a poll, another consumer of the same cache entry, or another tab"
+                  >
+                    shared
+                  </span>
+                }
+              </td>
+              <td>{{ host.formatTime(run.startedAt) }}</td>
+              <td>
+                @if (run.endedAt === null) {
+                  in flight
+                } @else {
+                  {{ host.formatDuration(run.endedAt - run.startedAt) }}
+                }
+              </td>
+              <td>{{ run.receivedBytes ? host.formatBytes(run.receivedBytes) : '—' }}</td>
+              <td class="et-query-devtools-cell-actions">
+                @if (host.canDiffRun(s.entry, run)) {
+                  <button
+                    [class.et-query-devtools-btn--active]="host.diffRunIndex() === run.index"
+                    (click)="host.toggleRunDiff(run)"
+                    class="et-query-devtools-btn"
+                    type="button"
+                    title="Compare this response against the previous one still held"
+                  >
+                    Diff
+                  </button>
+                } @else if (run.hasResponse) {
+                  <span class="et-query-devtools-count">nothing earlier to diff</span>
+                } @else if (run.status === 'success') {
+                  <span class="et-query-devtools-count">body no longer held</span>
+                } @else {
+                  <span class="et-query-devtools-count">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (host.responseDiff(s.entry); as comparison) {
+        <div class="et-query-devtools-section-row">
+          <h5 class="et-query-devtools-section">
+            Response diff · run #{{ comparison.before.index }} → #{{ comparison.after.index }}
+          </h5>
+          <span class="et-query-devtools-count">
+            @if (comparison.diff.entries.length) {
+              {{ comparison.diff.entries.length }} path{{ comparison.diff.entries.length === 1 ? '' : 's' }}
+              @if (comparison.diff.truncated) {
+                (capped)
+              }
+            } @else {
+              identical
+            }
+          </span>
+        </div>
+        @if (comparison.diff.entries.length) {
+          <table class="et-query-devtools-table et-query-devtools-diff">
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th>Before</th>
+                <th>After</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (change of comparison.diff.entries; track change.path) {
+                <tr [attr.data-kind]="change.kind">
+                  <td class="et-query-devtools-mono">{{ change.path }}</td>
+                  <td class="et-query-devtools-mono et-query-devtools-diff-before">
+                    {{ change.kind === 'added' ? '—' : host.inlineValue(change.before) }}
+                  </td>
+                  <td class="et-query-devtools-mono et-query-devtools-diff-after">
+                    {{ change.kind === 'removed' ? '—' : host.inlineValue(change.after) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="et-query-devtools-empty">The two responses are identical.</p>
+        }
+      }
+    } @else {
+      <p class="et-query-devtools-empty">No runs recorded yet.</p>
+    }
+  }
+  @case ('data') {
+    @if (s.entry.meta.gqlQuery; as gqlQuery) {
+      <div class="et-query-devtools-section-row">
+        <h5 class="et-query-devtools-section">GraphQL document</h5>
+        <button
+          (click)="host.copyGqlDocument(gqlQuery)"
+          class="et-query-devtools-btn"
+          type="button"
+          title="Copy the GraphQL document"
+        >
+          {{ host.copiedGql() ? '✓ Copied' : '⧉ Copy' }}
+        </button>
+      </div>
+      <pre class="et-query-devtools-code">{{ host.gqlDocument(gqlQuery) }}</pre>
+    }
+
+    <div class="et-query-devtools-section-row">
+      <h4 class="et-query-devtools-section">Value explorer</h4>
+      <input
+        #jsonSearchInput
+        [value]="host.jsonSearch()"
+        (input)="host.jsonSearch.set(jsonSearchInput.value)"
+        class="et-query-devtools-search"
+        type="search"
+        placeholder="filter keys / values…"
+      />
+    </div>
+
+    <h5 class="et-query-devtools-section">Args</h5>
+    <et-query-devtools-json
+      [value]="host.queryArgs(s.query)"
+      [search]="host.jsonSearchTerm()"
+      [expandedPaths]="host.jsonExpandedPaths()"
+      [collapsedPaths]="host.jsonCollapsedPaths()"
+      [toggleFn]="host.toggleJsonPath"
+      path="args"
+    />
+
+    @if (s.query.error(); as error) {
+      <h5 class="et-query-devtools-section">Error ({{ error.raw.status }})</h5>
+      <et-query-devtools-json
+        [value]="error.isList ? error.errors : error.error"
+        [search]="host.jsonSearchTerm()"
+        [expandedPaths]="host.jsonExpandedPaths()"
+        [collapsedPaths]="host.jsonCollapsedPaths()"
+        [toggleFn]="host.toggleJsonPath"
+        path="error"
+      />
+    } @else {
+      <h5 class="et-query-devtools-section">Response</h5>
+      <et-query-devtools-json
+        [value]="s.query.response()"
+        [search]="host.jsonSearchTerm()"
+        [expandedPaths]="host.jsonExpandedPaths()"
+        [collapsedPaths]="host.jsonCollapsedPaths()"
+        [toggleFn]="host.toggleJsonPath"
+        path="response"
+      />
+    }
+  }
+}
