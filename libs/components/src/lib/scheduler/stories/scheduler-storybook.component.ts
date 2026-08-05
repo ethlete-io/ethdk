@@ -22,6 +22,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
     start: at(2, 10),
     end: at(2, 16),
     colorToken: 'success',
+    location: 'Main conference room',
   },
   {
     id: 'launch-project-design',
@@ -48,7 +49,15 @@ const DEMO_APPOINTMENTS: Appointment[] = [
     allDay: true,
     colorToken: 'warning',
   },
-  { id: 'call-1', parentId: null, title: 'Client call: Acme', start: at(5, 9), end: at(5, 10), colorToken: 'danger' },
+  {
+    id: 'call-1',
+    parentId: null,
+    title: 'Client call: Acme',
+    start: at(5, 9),
+    end: at(5, 10),
+    colorToken: 'danger',
+    location: 'Zoom',
+  },
   { id: 'call-2', parentId: null, title: 'Client call: Globex', start: at(5, 11), end: at(5, 12), colorToken: 'brand' },
   {
     id: 'call-3',
@@ -74,7 +83,12 @@ const DEMO_APPOINTMENTS: Appointment[] = [
   selector: 'et-sb-scheduler',
   template: `
     <div class="p-8 font-sans">
-      <et-scheduler [(view)]="view" [(selectedAppointmentId)]="selectedAppointmentId" [appointments]="appointments()" />
+      <et-scheduler
+        [(view)]="view"
+        [(selectedAppointmentId)]="selectedAppointmentId"
+        [appointments]="appointments()"
+        [etSchedulerBadgeLocation]="{ enabled: showLocationBadge() }"
+      />
 
       <p class="mt-4 text-sm opacity-60">Selected: {{ selectedTitle() ?? 'none' }}</p>
     </div>
@@ -84,6 +98,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
 })
 export class SchedulerStorybookComponent {
   public initialView = input<SchedulerView>('month');
+  public showLocationBadge = input(true);
   protected view = linkedSignal(() => this.initialView());
   protected appointments = signal(DEMO_APPOINTMENTS);
   protected selectedAppointmentId = signal<string | null>(null);

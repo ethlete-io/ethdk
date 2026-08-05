@@ -41,6 +41,9 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    /* Grid items default to a content-based automatic minimum size, which would otherwise let an
+       unshrinkable badge (e.g. the time-range adornment) widen this cell's whole grid column. */
+    min-inline-size: 0;
     padding: 4px;
     overflow: hidden;
     border-inline-end: 1px solid var(--et-surface-border-solid);
@@ -78,17 +81,20 @@
     display: flex;
     flex-direction: column;
     min-block-size: 0;
+    min-inline-size: 0;
     gap: 2px;
     overflow: hidden;
   }
 
-  /* The pill background already carries the appointment color here, so the dot is
-     redundant and the gap it reserves is worth more as title width in a narrow cell. */
+  /* The pill background already carries the appointment color here, so the dot is redundant; the
+     location is left out too, since its text is unbounded and this badge is one line. */
   .et-scheduler-month-view-cell-appointments .et-scheduler-appointment {
-    gap: 0;
+    gap: 4px;
+    min-inline-size: 0;
     padding: 2px 4px;
 
-    &::before {
+    .et-scheduler-appointment-dot,
+    .et-scheduler-appointment-location {
       display: none;
     }
   }

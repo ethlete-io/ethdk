@@ -28,7 +28,11 @@
                 class="et-scheduler-appointment"
                 type="button"
               >
-                <span class="et-scheduler-appointment-title">{{ node.appointment.title }}</span>
+                @for (adornment of badgeAdornments(); track $index) {
+                  <ng-container
+                    *ngComponentOutlet="adornment.component; inputs: { node }; injector: adornment.injector"
+                  />
+                }
               </button>
             }
 

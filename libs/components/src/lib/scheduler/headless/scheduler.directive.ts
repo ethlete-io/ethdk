@@ -13,9 +13,10 @@ import {
 } from 'date-fns';
 import { injectDateLocale } from '../../forms/date-time/date-time-formats';
 import { Appointment, AppointmentId, SchedulerView, SchedulerVisibleRange } from '../scheduler.types';
-import { buildAppointmentTree } from './internals/scheduler-tree';
+import { buildAppointmentTree, countDescendants } from './internals/scheduler-tree';
 
 export type { AppointmentTreeNode } from './internals/scheduler-tree';
+export { countDescendants };
 
 /** 0 = Sunday … 6 = Saturday. */
 export type SchedulerWeekStartsOn = 0 | 1 | 2 | 3 | 4 | 5 | 6;

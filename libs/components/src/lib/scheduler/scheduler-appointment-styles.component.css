@@ -15,24 +15,6 @@
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 
-    /* the color dot: the badge's own background is a tint, this is the theme's full-strength accent */
-    &::before {
-      flex-shrink: 0;
-      inline-size: 6px;
-      block-size: 6px;
-      border-radius: 999px;
-      background: var(--et-theme-color-primary-solid);
-      content: '';
-    }
-
-    .et-scheduler-appointment-title {
-      overflow: hidden;
-      min-inline-size: 0;
-      flex: 1;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
     @media (hover: hover) {
       &:hover {
         background: color-mix(in srgb, var(--et-theme-color-primary-solid) 22%, transparent);
@@ -47,10 +29,76 @@
     &:where([data-selected]) {
       background: var(--et-theme-color-primary-solid);
       color: var(--et-theme-color-on-primary);
-
-      &::before {
-        background: var(--et-theme-color-on-primary);
-      }
     }
+  }
+
+  /* Shared by every badge/block-shaped button a view renders, so the title adornment's own class
+     lays out the same way whether it's stamped into `.et-scheduler-appointment` (month, agenda,
+     all-day) or `.et-scheduler-time-grid-block` (the time grid). */
+  .et-scheduler-appointment-title {
+    overflow: hidden;
+    min-inline-size: 0;
+    flex: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The theme's full-strength accent, against the badge's own tinted background - shared by every
+     view that mounts this stylesheet (see `registerBadgeAdornment`'s color-dot adornment). */
+  .et-scheduler-appointment-dot {
+    flex-shrink: 0;
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: 999px;
+    background: var(--et-theme-color-primary-solid);
+  }
+
+  :where(.et-scheduler-appointment, .et-scheduler-time-grid-block):where([data-selected])
+    .et-scheduler-appointment-dot {
+    background: var(--et-theme-color-on-primary);
+  }
+
+  .et-scheduler-appointment-time-range {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    opacity: 0.75;
+  }
+
+  .et-scheduler-appointment-location {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 3px;
+    max-inline-size: 40%;
+    opacity: 0.75;
+  }
+
+  .et-scheduler-appointment-location-icon {
+    flex-shrink: 0;
+    inline-size: 10px;
+    block-size: 10px;
+  }
+
+  .et-scheduler-appointment-location-text {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-scheduler-appointment-chain-count {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 2px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+
+  .et-scheduler-appointment-chain-count-icon {
+    inline-size: 8px;
+    block-size: 8px;
+    transform: rotate(90deg);
   }
 }

@@ -1,7 +1,8 @@
+import { NgComponentOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { ProvideColorDirective, injectStyleManager } from '@ethlete/core';
 import { format, setHours, startOfDay } from 'date-fns';
-import { SchedulerDirective, SchedulerTimeGridDirective } from './headless';
+import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerTimeGridDirective } from './headless';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
 import { Appointment } from './scheduler.types';
 
@@ -17,7 +18,7 @@ const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
   templateUrl: './scheduler-time-grid-view.component.html',
   styleUrl: './scheduler-time-grid-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective],
+  imports: [ProvideColorDirective, NgComponentOutlet],
   hostDirectives: [SchedulerTimeGridDirective],
   host: {
     class: 'et-scheduler-time-grid-view',
@@ -26,6 +27,8 @@ const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 export class SchedulerTimeGridViewComponent {
   protected scheduler = inject(SchedulerDirective, { optional: true });
   protected grid = inject(SchedulerTimeGridDirective);
+
+  private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
 
   protected hours = computed(() => {
     const locale = this.scheduler?.effectiveLocale();
@@ -39,6 +42,11 @@ export class SchedulerTimeGridViewComponent {
 
   constructor() {
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
+  }
+
+  /** UI contributed by badge features (title, time range, …) - see `registerBadgeAdornment`. */
+  protected badgeAdornments() {
+    return this.featureHost?.badgeAdornments() ?? [];
   }
 
   protected weekdayLabel(date: Date) {

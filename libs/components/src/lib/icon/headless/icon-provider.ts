@@ -123,6 +123,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-link',
   'et-list-bulleted',
   'et-list-numbered',
+  'et-location',
   'et-lock',
   'et-minus',
   'et-paragraph',

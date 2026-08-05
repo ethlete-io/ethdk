@@ -44,3 +44,7 @@ export const buildAppointmentTree = <TExtra>(
 export const flattenAppointmentTree = <TExtra>(
   nodes: readonly AppointmentTreeNode<TExtra>[],
 ): AppointmentTreeNode<TExtra>[] => nodes.flatMap((node) => [node, ...flattenAppointmentTree(node.children)]);
+
+/** Every descendant a node has, at any depth - what the chain-count badge adornment shows. */
+export const countDescendants = (node: Pick<AppointmentTreeNode, 'children'>): number =>
+  node.children.reduce((count, child) => count + 1 + countDescendants(child), 0);

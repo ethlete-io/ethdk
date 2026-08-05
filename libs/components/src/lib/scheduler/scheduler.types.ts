@@ -16,6 +16,8 @@ export type Appointment<TExtra = unknown> = {
   allDay?: boolean;
   /** Resolves via the color-theming system - see `theming`. Never a literal color. */
   colorToken?: string;
+  /** Shown by the built-in location badge adornment (`etSchedulerBadgeLocation`) when set. */
+  location?: string;
   extra?: TExtra;
 };
 

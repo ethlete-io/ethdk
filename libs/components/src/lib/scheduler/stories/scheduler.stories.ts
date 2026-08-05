@@ -16,3 +16,5 @@ export const Week: Story = { args: { initialView: 'week' } };
 export const Day: Story = { args: { initialView: 'day' } };
 
 export const Agenda: Story = { args: { initialView: 'agenda' } };
+
+export const WithoutLocationBadge: Story = { args: { initialView: 'agenda', showLocationBadge: false } };

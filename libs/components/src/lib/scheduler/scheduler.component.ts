@@ -1,10 +1,15 @@
-import { Component, ElementRef, ViewEncapsulation, computed, inject } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
 import { format, isSameMonth, isSameYear } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
 import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
-import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerFeatureHost } from './headless';
+import { SCHEDULER_FEATURE_HOST, SchedulerBadgeAdornment, SchedulerDirective, SchedulerFeatureHost } from './headless';
 import { SchedulerAgendaViewComponent } from './scheduler-agenda-view.component';
+import { SchedulerBadgeChainCountDirective } from './scheduler-badge-chain-count.directive';
+import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.directive';
+import { SchedulerBadgeLocationDirective } from './scheduler-badge-location.directive';
+import { SchedulerBadgeTimeRangeDirective } from './scheduler-badge-time-range.directive';
+import { SchedulerBadgeTitleDirective } from './scheduler-badge-title.directive';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
 import { SchedulerTimeGridViewComponent } from './scheduler-time-grid-view.component';
@@ -31,6 +36,14 @@ import { Appointment, SchedulerView } from './scheduler.types';
       inputs: ['appointments', 'view', 'focusedDate', 'selectedAppointmentId', 'locale', 'firstDayOfWeek'],
       outputs: ['viewChange', 'focusedDateChange', 'selectedAppointmentIdChange'],
     },
+    // The built-in badge adornments, bundled by default so `<et-scheduler>` renders a full badge
+    // zero-config - each forwards its own config input, so e.g. `[etSchedulerBadgeLocation]="{
+    // enabled: false }"` disables just that one piece without dropping to headless composition.
+    { directive: SchedulerBadgeColorDotDirective, inputs: ['etSchedulerBadgeColorDot'] },
+    { directive: SchedulerBadgeTitleDirective, inputs: ['etSchedulerBadgeTitle'] },
+    { directive: SchedulerBadgeTimeRangeDirective, inputs: ['etSchedulerBadgeTimeRange'] },
+    { directive: SchedulerBadgeLocationDirective, inputs: ['etSchedulerBadgeLocation'] },
+    { directive: SchedulerBadgeChainCountDirective, inputs: ['etSchedulerBadgeChainCount'] },
   ],
   host: {
     class: 'et-scheduler',
@@ -82,6 +95,17 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     return format(this.headless.focusedDate(), 'LLLL yyyy', options);
   });
 
+  // UI contributed by badge features (title, time range, location, …), rendered in every
+  // appointment badge/block by every view. Features register themselves (see
+  // SCHEDULER_FEATURE_HOST) rather than being queried - the built-ins above are features too.
+  private badgeAdornmentList = signal<SchedulerBadgeAdornment[]>([]);
+
+  public badgeAdornments = computed(() =>
+    this.badgeAdornmentList()
+      .filter((adornment) => adornment.enabled?.() ?? true)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+  );
+
   /** Bound to the view-switch's `(valueChange)` - safe to cast since every `<et-segmented-button>` below carries a `SchedulerView` literal. */
   public setView(value: unknown) {
     this.headless.view.set(value as SchedulerView);
@@ -104,5 +128,10 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   public appointments(): readonly Appointment[] {
     return this.headless.visibleAppointments();
+  }
+
+  /** Part of the feature contract - see `SchedulerFeatureHost`. */
+  public registerBadgeAdornment(adornment: SchedulerBadgeAdornment) {
+    this.badgeAdornmentList.update((list) => [...list, adornment]);
   }
 }

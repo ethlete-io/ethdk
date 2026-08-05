@@ -32,7 +32,11 @@
           class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry"
           type="button"
         >
-          <span class="et-scheduler-appointment-title">{{ entry.node.appointment.title }}</span>
+          @for (adornment of badgeAdornments(); track $index) {
+            <ng-container
+              *ngComponentOutlet="adornment.component; inputs: { node: entry.node }; injector: adornment.injector"
+            />
+          }
         </button>
       }
     </div>
@@ -70,7 +74,11 @@
             class="et-scheduler-time-grid-block"
             type="button"
           >
-            <span class="et-scheduler-time-grid-block-title">{{ block.node.appointment.title }}</span>
+            @for (adornment of badgeAdornments(); track $index) {
+              <ng-container
+                *ngComponentOutlet="adornment.component; inputs: { node: block.node }; injector: adornment.injector"
+              />
+            }
           </button>
         }
       </div>

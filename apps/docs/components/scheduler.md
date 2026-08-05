@@ -29,12 +29,14 @@ type Appointment<TExtra = unknown> = {
   end: Date;
   allDay?: boolean;
   colorToken?: string;
+  location?: string;
   extra?: TExtra;
 };
 ```
 
 - `parentId` links an appointment under another, to any depth - a dangling reference (the parent was filtered out) falls back to top-level rather than being dropped.
 - `colorToken` resolves through the [color theming](/core/theming) system - it's read as `[etProvideColor]` on the appointment's badge, so pass whatever theme name your app registered (`'brand'`, `'danger'`, …), never a literal color.
+- `location` shows in the badge via the built-in `etSchedulerBadgeLocation` adornment when set - see [badge composability](#badge-composability).
 - `extra` is the open extension point for a custom edit surface (planned) to read and write, so adding a field never widens `Appointment` itself.
 - An appointment renders on **every day it spans**, not just the day it starts - a 3-day `allDay` appointment shows a badge on all three month-view day cells, and one bar spanning all three columns in the time grid's all-day strip.
 
@@ -105,6 +107,26 @@ It takes no inputs of its own - like the other views, it reads its host `[etSche
 
 An appointment's `parentId` is the whole nesting model - no `level`, no depth limit. The headless tier builds the tree once (`appointmentTree()`) and every consumer of it - month, time grid, and agenda - walks it depth-first, so a chain renders in the same order everywhere. A chain stays in depth order even when its root falls outside the visible range or day - a child never gets promoted to the top level just because its parent isn't shown. The month view carries a child's `depth` on its badge for a future indent/collapse affordance; the time grid uses it for the inline inset described above, and the agenda view for its indentation.
 
+## Badge composability {#badge-composability}
+
+Every appointment badge/block, in every view, is built from the same five pieces, each a self-registering feature directive - not a `showLocation: boolean` input on `<et-scheduler>`. `<et-scheduler>` bundles all five by default, so a zero-config scheduler already renders the full badge; disable one by binding its own config input on `<et-scheduler>` itself:
+
+```html
+<et-scheduler [etSchedulerBadgeLocation]="{ enabled: false }" [appointments]="appointments" />
+```
+
+| Directive                    | Renders                                                            | Default order |
+| ---------------------------- | ------------------------------------------------------------------ | ------------- |
+| `etSchedulerBadgeColorDot`   | The small dot in the appointment's own color.                      | `-10`         |
+| `etSchedulerBadgeTitle`      | The appointment's title.                                           | `0`           |
+| `etSchedulerBadgeTimeRange`  | The appointment's `start`–`end` time; hidden for an `allDay` one.  | `10`          |
+| `etSchedulerBadgeLocation`   | A pin icon and `location`; hidden when unset.                      | `20`          |
+| `etSchedulerBadgeChainCount` | A chevron and the total descendant count; hidden with no children. | `30`          |
+
+Each takes the same `{ enabled?: boolean }` config, bound on `<et-scheduler>` under its own selector. The month view hides the color dot and the location piece in its compact one-line badge (a per-view CSS choice, not a config flag) - both still render in the time grid and the agenda view.
+
+Adding your own piece is the same mechanism: write a directive that injects `SCHEDULER_FEATURE_HOST` (via `injectSchedulerFeatureHost()`) and calls `registerBadgeAdornment({ component, order, enabled })` from its constructor, where `component` declares a `node: InputSignal<AppointmentTreeNode>` input - the tree node the badge renders, giving it the appointment plus its depth and children.
+
 ## Headless usage {#headless-usage}
 
 `[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs):
@@ -127,7 +149,7 @@ An appointment's `parentId` is the whole nesting model - no `level`, no depth li
 
 ### Feature host
 
-`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, and the scheduler's own `element`. It's modeled on the [table](/components/table)'s feature host, and grows registration points (badge adornments, edit-surface fields) as those features land - there are none yet.
+`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, and `registerBadgeAdornment()` / `badgeAdornments()` - see [badge composability](#badge-composability). It's modeled on the [table](/components/table)'s feature host, and grows further registration points (edit-surface fields, appointment actions) as those features land.
 
 ## Accessibility
 

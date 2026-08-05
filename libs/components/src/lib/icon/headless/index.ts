@@ -32,6 +32,7 @@ export * from './italic-icon';
 export * from './link-icon';
 export * from './list-bulleted-icon';
 export * from './list-numbered-icon';
+export * from './location-icon';
 export * from './lock-icon';
 export * from './minus-icon';
 export * from './paragraph-icon';

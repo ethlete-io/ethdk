@@ -158,14 +158,8 @@
 
     /* Aligned to the first text line's cap-height rather than centered on the row, since a
        long appointment's row can stretch far past this dot's own size. */
-    &::before {
-      flex-shrink: 0;
+    .et-scheduler-appointment-dot {
       margin-block-start: 4px;
-      inline-size: 6px;
-      block-size: 6px;
-      border-radius: 999px;
-      background: var(--et-theme-color-primary-solid);
-      content: '';
     }
 
     @media (hover: hover) {
@@ -182,18 +176,6 @@
     &:where([data-selected]) {
       background: var(--et-theme-color-primary-solid);
       color: var(--et-theme-color-on-primary);
-
-      &::before {
-        background: var(--et-theme-color-on-primary);
-      }
     }
-  }
-
-  .et-scheduler-time-grid-block-title {
-    overflow: hidden;
-    min-inline-size: 0;
-    flex: 1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }

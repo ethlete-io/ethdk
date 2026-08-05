@@ -1,5 +1,5 @@
 import { Appointment } from '../../scheduler.types';
-import { buildAppointmentTree, flattenAppointmentTree } from './scheduler-tree';
+import { buildAppointmentTree, countDescendants, flattenAppointmentTree } from './scheduler-tree';
 
 const appointment = (id: string, parentId: string | null): Appointment => ({
   id,
@@ -62,5 +62,24 @@ describe('flattenAppointmentTree', () => {
     ]);
 
     expect(flattenAppointmentTree(tree).map((node) => node.appointment.id)).toEqual(['a', 'a1', 'a1a', 'a2', 'b']);
+  });
+});
+
+describe('countDescendants', () => {
+  it('counts every descendant at any depth, not just direct children', () => {
+    const tree = buildAppointmentTree([
+      appointment('a', null),
+      appointment('a1', 'a'),
+      appointment('a2', 'a'),
+      appointment('a1a', 'a1'),
+    ]);
+
+    expect(countDescendants(tree[0]!)).toBe(3);
+  });
+
+  it('is 0 for a leaf', () => {
+    const tree = buildAppointmentTree([appointment('a', null)]);
+
+    expect(countDescendants(tree[0]!)).toBe(0);
   });
 });
