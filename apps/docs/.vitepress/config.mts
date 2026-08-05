@@ -261,6 +261,7 @@ export default defineConfig({
             { text: 'Description list', link: '/components/description-list' },
             { text: 'Divider', link: '/components/divider' },
             { text: 'Grid', link: '/components/grid' },
+            { text: 'Kbd', link: '/components/kbd' },
             { text: 'Masonry', link: '/components/masonry' },
             { text: 'Match', link: '/components/match' },
             { text: 'Pagination', link: '/components/pagination' },

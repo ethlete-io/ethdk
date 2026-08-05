@@ -38,7 +38,17 @@ sites it named (tabs, split-button, select-option-group, select-panel,
 overlay-container) are borders on structural elements, not separators, and were
 left alone.
 
-Low / opportunistic: stat tile, timeline, kbd, command palette (leans on
+**Kbd** - **done** (2026-08-06). Shipped as `et-kbd`: `keys="mod+shift+k"` renders one
+`<kbd>` cap per key with the current platform's glyphs (`⌘ ⇧ K` on Apple, `Ctrl Shift K`
+elsewhere), aliases for the spellings apps already use, and `KBD_PLATFORM` / a `platform`
+input to pin it. The premise held, but neither existing shortcut site became an adopter:
+`et-menu-item-shortcut` is a trailing _slot_ (also carrying the `›` submenu chevron), not a
+keycap, so a kbd composes inside it rather than replacing it; and the query devtools' caps
+are deliberately isolated - the toggle is `ShadowDom` on purpose and the panel paints from
+its own `--_et-qdt-*` chrome, not surface theming. What did consolidate is the Apple
+detection both hand-rolled: `queryDevtoolsShortcutLabel()` now calls `detectKbdPlatform()`.
+
+Low / opportunistic: stat tile, timeline, command palette (leans on
 existing overlay+menu so cheaper than it looks, but scope-creep risk),
 back-to-top (covered by `floating-action`'s generic floating trigger).
 

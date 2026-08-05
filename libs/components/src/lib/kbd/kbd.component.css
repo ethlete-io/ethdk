@@ -1,0 +1,77 @@
+@layer components {
+  @property --et-kbd-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 3px;
+  }
+
+  @property --et-kbd-key-min-inline-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 18px;
+  }
+
+  @property --et-kbd-key-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 5px;
+  }
+
+  @property --et-kbd-key-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-kbd-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 11px;
+  }
+
+  @property --et-kbd-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 500;
+  }
+
+  .et-kbd {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--et-kbd-gap);
+    vertical-align: middle;
+  }
+
+  /* The spelled-out chord, kept out of sight but not out of the accessibility tree - a screen reader
+     reading "⌘" announces the glyph's Unicode name, not "Command". There is no shared
+     visually-hidden class in this library, so the clip trick lives here. */
+  .et-kbd-ally-text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .et-kbd-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-inline-size: var(--et-kbd-key-min-inline-size);
+    padding-inline: var(--et-kbd-key-padding-inline);
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border-radius: var(--et-kbd-key-border-radius);
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 8%, transparent);
+    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    font: inherit;
+    font-size: var(--et-kbd-font-size);
+    font-weight: var(--et-kbd-font-weight);
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+}
