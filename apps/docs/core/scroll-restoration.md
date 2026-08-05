@@ -82,6 +82,30 @@ holdScrollRestoration(() => query.isLoading());
 The registration lives for the lifetime of the injection context. Multiple holds are allowed -
 restoration waits while any of them reads `true`, up to `maxTimeout`.
 
+### Returning through a link instead of the back button
+
+A "back to the overview" link is a forward navigation, so by default it lands at the top of the
+overview - the offset the user left it at is still recorded, just not reached. Mark the link and it
+restores that offset the same way the back button does:
+
+```html
+<a routerLink="/teams" etRestoreScroll>Teams</a>
+```
+
+```ts
+// or, navigating programmatically
+router.navigate(['/teams'], { state: routerRestoreScroll() });
+```
+
+The mark applies to that one navigation and is not written into the history entry it creates. The
+offset used is the one from the **most recent** visit to that page in this session; a page the session
+has no offset for - a first visit, or anything after a reload - scrolls to top as usual.
+
+A link that names no query params matches whatever query state the page was last in, because a crumb
+pointing at an overview does not know which filter or saved view the user left it under. State them
+and the match becomes exact, so `/teams?season=2024` never restores the offset of
+`/teams?season=2023`.
+
 ### What cancels a pending restoration
 
 Restoration is abandoned if the user takes over scrolling before it commits. That is detected from
@@ -94,8 +118,8 @@ land while the user is dragging. Starting a new navigation also supersedes a pen
 - **Offsets are held in memory only.** They are keyed by the router's per-navigation id and capped at
   200 entries; nothing is written to `sessionStorage`. Restoration therefore covers back/forward
   within a session, but not a full page reload or a restored tab - those scroll to top.
-- Restoration only applies to `popstate` navigations that have a stored offset. Clicking a link is a
-  new history entry, so it still scrolls to top.
+- Restoration applies to `popstate` navigations that have a stored offset, and to navigations marked
+  with `etRestoreScroll` / `routerRestoreScroll()`. Any other link click scrolls to top.
 - A stored offset wins over both `queryParamTriggerList` and fragment scrolling - the user may have
   scrolled away from the anchor before leaving.
 - `routerDisableScrollTop({ asReturnRoute: true })` was a workaround for the absence of restoration.

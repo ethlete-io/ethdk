@@ -8,6 +8,7 @@ import {
   SetupScrollRestorationConfig,
   holdScrollRestoration,
   routerDisableScrollTop,
+  routerRestoreScroll,
   setupScrollRestoration,
 } from './scroll-restoration';
 
@@ -60,6 +61,11 @@ const setup = async (config: SetupScrollRestorationConfig, routes: Routes = ROUT
 /** Lets queued macrotasks + animation frames run. Restoration needs a few of both. */
 const settle = async (ms = 60) => {
   await new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+/** Navigates the way a "back to the overview" link does: forwards, but marked as a return. */
+const navigateAsReturn = async (url: string) => {
+  await TestBed.inject(Router).navigateByUrl(url, { state: routerRestoreScroll() });
 };
 
 /** Drives the mocked history backwards and resolves once the resulting navigation finished. */
@@ -249,6 +255,112 @@ describe('setupScrollRestoration - restore on history navigation', () => {
 
     await goBack();
     await settle();
+
+    expect(scroller.scrollTop).toBe(0);
+  });
+});
+
+describe('setupScrollRestoration - restore on a marked navigation', () => {
+  it('restores the offset the target page was left at', async () => {
+    const scroller = createScrollElement();
+    const harness = await setup({ scrollElement: () => scroller.el, restore: { enabled: true, timeout: 500 } });
+
+    await harness.navigateByUrl('/list', ListPage);
+    scroller.setContentHeight(4000);
+    scroller.scrollTop = 1200;
+
+    await harness.navigateByUrl('/detail', DetailPage);
+    scroller.setContentHeight(600);
+    expect(scroller.scrollTop).toBe(0);
+
+    await navigateAsReturn('/list');
+    scroller.setContentHeight(4000);
+    await settle();
+
+    expect(scroller.scrollTop).toBe(1200);
+  });
+
+  it('matches any query state of the target when the link carries no query params', async () => {
+    const scroller = createScrollElement();
+    const harness = await setup({ scrollElement: () => scroller.el, restore: { enabled: true, timeout: 500 } });
+
+    await harness.navigateByUrl('/list?viewUuid=saved', ListPage);
+    scroller.setContentHeight(4000);
+    scroller.scrollTop = 900;
+
+    await harness.navigateByUrl('/detail', DetailPage);
+    scroller.setContentHeight(600);
+
+    await navigateAsReturn('/list');
+    scroller.setContentHeight(4000);
+    await settle();
+
+    expect(scroller.scrollTop).toBe(900);
+  });
+
+  it('requires the query params to match when the link states them', async () => {
+    const scroller = createScrollElement();
+    const harness = await setup({ scrollElement: () => scroller.el, restore: { enabled: true, timeout: 50 } });
+
+    await harness.navigateByUrl('/list?viewUuid=saved', ListPage);
+    scroller.setContentHeight(4000);
+    scroller.scrollTop = 900;
+
+    await harness.navigateByUrl('/detail', DetailPage);
+    scroller.scrollTop = 0;
+
+    await navigateAsReturn('/list?viewUuid=other');
+    scroller.setContentHeight(4000);
+    await settle(200);
+
+    expect(scroller.scrollTop).toBe(0);
+  });
+
+  it('scrolls to top when the session has no offset for the target', async () => {
+    const scroller = createScrollElement();
+    const harness = await setup({ scrollElement: () => scroller.el, restore: { enabled: true, timeout: 50 } });
+
+    await harness.navigateByUrl('/detail', DetailPage);
+    scroller.setContentHeight(4000);
+    scroller.scrollTop = 700;
+
+    await navigateAsReturn('/list');
+    await settle(200);
+
+    expect(scroller.scrollTop).toBe(0);
+  });
+
+  it('marks only the navigation it was passed to', async () => {
+    const scroller = createScrollElement();
+    const harness = await setup({ scrollElement: () => scroller.el, restore: { enabled: true, timeout: 50 } });
+
+    await harness.navigateByUrl('/list', ListPage);
+    scroller.setContentHeight(4000);
+    scroller.scrollTop = 1200;
+
+    await harness.navigateByUrl('/detail', DetailPage);
+    await navigateAsReturn('/list');
+    await settle();
+
+    await harness.navigateByUrl('/detail', DetailPage);
+    await harness.navigateByUrl('/list', ListPage);
+    scroller.setContentHeight(4000);
+    await settle(200);
+
+    expect(scroller.scrollTop).toBe(0);
+  });
+
+  it('ignores the mark while restore is disabled', async () => {
+    const scroller = createScrollElement();
+    const harness = await setup({ scrollElement: () => scroller.el });
+
+    await harness.navigateByUrl('/list', ListPage);
+    scroller.setContentHeight(4000);
+    scroller.scrollTop = 1200;
+
+    await harness.navigateByUrl('/detail', DetailPage);
+    await navigateAsReturn('/list');
+    await settle(200);
 
     expect(scroller.scrollTop).toBe(0);
   });

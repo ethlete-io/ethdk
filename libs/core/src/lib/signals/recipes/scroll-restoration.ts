@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { afterNextRender, DestroyRef, DOCUMENT, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, NavigationSkipped, NavigationStart, Router } from '@angular/router';
+import { NavigationEnd, NavigationSkipped, NavigationStart, Params, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { defineRootProvider, toInjectFn } from '../../utils';
 import { createRoute, createRouterState } from '../router';
@@ -110,6 +110,22 @@ export const routerDisableScrollTop = (config: RouterDisableScrollTopConfig = {}
   };
 };
 
+export const ET_RESTORE_SCROLL = /* @__PURE__ */ Symbol('ET_RESTORE_SCROLL');
+
+/**
+ * Marks a navigation as a return to a page the user has already seen, so it restores that page's last
+ * scroll offset instead of scrolling to top - what a "back to the overview" link means, as opposed to
+ * a link that opens the overview fresh. Spread into `NavigationExtras.state`; for a `routerLink`, use
+ * {@link RestoreScrollDirective} instead.
+ *
+ * Needs `restore.enabled` on {@link setupScrollRestoration}, and only ever restores an offset the
+ * session actually recorded - the first visit to a page has none, so it scrolls to top as usual.
+ *
+ * @example
+ * router.navigate(['/teams'], { state: routerRestoreScroll() });
+ */
+export const routerRestoreScroll = () => ({ [ET_RESTORE_SCROLL]: true });
+
 const SCROLL_RESTORATION_HOLDS_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const holds = new Set<() => boolean>();
@@ -165,6 +181,20 @@ const DEFAULT_RESTORE_MAX_TIMEOUT = 10_000;
 /** Events that mean the user took over scrolling, so a pending restoration must be abandoned. */
 const INTERACTION_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
 
+/** What a visited history entry left behind: where it was scrolled to, and which page that was. */
+type StoredPosition = {
+  top: number;
+  route: string;
+  search: string;
+};
+
+/** Key order is navigation order, not declaration order, so two spellings of one URL compare equal. */
+const serializeQueryParams = (queryParams: Params) =>
+  Object.keys(queryParams)
+    .sort()
+    .map((key) => `${key}=${queryParams[key]}`)
+    .join('&');
+
 export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}) => {
   if (!isPlatformBrowser(inject(PLATFORM_ID))) {
     return;
@@ -192,14 +222,15 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     history.scrollRestoration = 'manual';
   }
 
-  /** Saved offsets keyed by the router's per-history-entry `navigationId`. */
-  const positions = new Map<number, number>();
+  /** Saved offsets keyed by the router's per-history-entry `navigationId`, in least-recent-first order. */
+  const positions = new Map<number, StoredPosition>();
 
   // Mirrors Angular's own `RouterScroller`: the offset of the currently displayed page belongs to
   // the navigation that produced it, and a popstate reports the id of the entry it moves to.
   let lastNavigationId = 0;
   let restoredNavigationId = 0;
   let isPopstate = false;
+  let wantsRestore = false;
 
   let prev = { state: createRouterState(router), route: createRoute(router) };
 
@@ -292,13 +323,40 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     };
   };
 
+  /**
+   * The offset the most recently left entry for this page had. A target without query params means
+   * "that page", whichever query state it was last in - the crumb linking to an overview does not
+   * know, and should not have to reproduce, the filter the user left it under.
+   */
+  const findLastVisitedOffset = (route: string, search: string) => {
+    const entries = [...positions.values()];
+
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const entry = entries[i];
+
+      if (!entry || entry.route !== route) continue;
+      if (search && entry.search !== search) continue;
+
+      return entry.top;
+    }
+
+    return undefined;
+  };
+
   const onNavigationStart = (event: NavigationStart) => {
     // A new navigation supersedes a restoration that has not committed yet.
     cancelPendingRestore();
 
     if (!restoreEnabled) return;
 
-    positions.set(lastNavigationId, resolveScrollElement().scrollTop);
+    // Re-inserted rather than overwritten so map order stays least-recently-left first, which is both
+    // what `findLastVisitedOffset` walks backwards and what the cap below evicts from.
+    positions.delete(lastNavigationId);
+    positions.set(lastNavigationId, {
+      top: resolveScrollElement().scrollTop,
+      route: prev.route,
+      search: serializeQueryParams(prev.state.queryParams),
+    });
 
     if (positions.size > MAX_STORED_POSITIONS) {
       const oldest = positions.keys().next();
@@ -308,6 +366,13 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
     isPopstate = event.navigationTrigger === 'popstate';
     restoredNavigationId = event.restoredState?.navigationId ?? 0;
+
+    // Read off the navigation rather than `history.state`: a symbol key does not survive being
+    // structured-cloned into the history entry, which is what keeps the mark from outliving this
+    // navigation and re-firing when the user later pops back to the entry it created.
+    const navigationState = router.getCurrentNavigation()?.extras.state as Record<symbol, unknown> | undefined;
+
+    wantsRestore = !isPopstate && navigationState?.[ET_RESTORE_SCROLL] === true;
   };
 
   const onNavigationEnd = (event: NavigationEnd | NavigationSkipped) => {
@@ -319,6 +384,10 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     const didFragmentChange = prevState.fragment !== currState.fragment;
 
     prev = curr;
+
+    const wasMarkedAsReturn = wantsRestore;
+
+    wantsRestore = false;
 
     if (event instanceof NavigationEnd) {
       lastNavigationId = event.id;
@@ -333,6 +402,16 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
       // The saved offset wins over both scroll to top and fragment scrolling: the user may well have
       // scrolled away from the anchor before leaving the page.
+      if (target !== undefined) {
+        scheduleRestore(target.top);
+
+        return;
+      }
+    }
+
+    if (restoreEnabled && wasMarkedAsReturn) {
+      const target = findLastVisitedOffset(curr.route, serializeQueryParams(currState.queryParams));
+
       if (target !== undefined) {
         scheduleRestore(target);
 
