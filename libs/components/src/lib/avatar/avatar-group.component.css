@@ -1,0 +1,25 @@
+@layer components {
+  @property --et-avatar-group-overlap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-avatar-group-ring-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  .et-avatar-group {
+    display: inline-flex;
+
+    .et-avatar {
+      box-shadow: 0 0 0 var(--et-avatar-group-ring-width) var(--et-surface-background-solid, Canvas);
+
+      &:not(:first-child) {
+        margin-inline-start: calc(-1 * var(--et-avatar-group-overlap));
+      }
+    }
+  }
+}
