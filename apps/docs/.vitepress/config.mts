@@ -281,6 +281,7 @@ export default defineConfig({
         {
           text: 'Utilities',
           items: [
+            { text: 'Copy button', link: '/components/copy-button' },
             { text: 'Filter overlay', link: '/components/filter-overlay' },
             { text: 'Floating action', link: '/components/floating-action' },
             { text: 'Focus Ring', link: '/components/focus-ring' },
