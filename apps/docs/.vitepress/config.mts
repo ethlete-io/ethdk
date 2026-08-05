@@ -257,6 +257,7 @@ export default defineConfig({
             { text: 'Masonry', link: '/components/masonry' },
             { text: 'Match', link: '/components/match' },
             { text: 'Pagination', link: '/components/pagination' },
+            { text: 'Scheduler', link: '/components/scheduler' },
             { text: 'Scrollable', link: '/components/scrollable' },
             { text: 'Standings', link: '/components/standings' },
             { text: 'Sport UI recipes', link: '/components/sport-recipes' },

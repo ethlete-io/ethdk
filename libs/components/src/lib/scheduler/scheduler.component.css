@@ -1,0 +1,38 @@
+@layer components {
+  .et-scheduler {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .et-scheduler-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .et-scheduler-nav-buttons {
+    display: flex;
+    gap: 2px;
+  }
+
+  .et-scheduler-nav-button--previous .et-icon {
+    rotate: -90deg;
+  }
+
+  .et-scheduler-nav-button--next .et-icon {
+    rotate: 90deg;
+  }
+
+  .et-scheduler-header-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--et-surface-color-solid);
+  }
+
+  .et-scheduler-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+}

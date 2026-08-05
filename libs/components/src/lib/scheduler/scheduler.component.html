@@ -1,0 +1,42 @@
+<div class="et-scheduler-header">
+  <button
+    (click)="headless.goToToday()"
+    class="et-scheduler-today-button"
+    et-button
+    size="sm"
+    variant="outline"
+    type="button"
+  >
+    {{ todayLabel() }}
+  </button>
+
+  <div class="et-scheduler-nav-buttons">
+    <button
+      [attr.aria-label]="previousLabel()"
+      (click)="headless.previous()"
+      class="et-scheduler-nav-button et-scheduler-nav-button--previous"
+      et-icon-button
+      size="sm"
+      type="button"
+    >
+      <i etIcon="et-chevron"></i>
+    </button>
+
+    <button
+      [attr.aria-label]="nextLabel()"
+      (click)="headless.next()"
+      class="et-scheduler-nav-button et-scheduler-nav-button--next"
+      et-icon-button
+      size="sm"
+      type="button"
+    >
+      <i etIcon="et-chevron"></i>
+    </button>
+  </div>
+
+  <span class="et-scheduler-header-label">{{ headerLabel() }}</span>
+</div>
+
+<div class="et-scheduler-body">
+  <et-scheduler-month-view />
+</div>

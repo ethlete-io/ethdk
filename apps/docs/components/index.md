@@ -118,6 +118,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Masonry](/components/masonry) - column-balancing layout for variable-height cards, with continuous measurement and stable columns.
 - [Match](/components/match) - container-adaptive match card and participant primitive, fed by a normalized view-model any backend can map into.
 - [Pagination](/components/pagination) - page-number paginator with ellipsis, jump controls and a headless tier.
+- [Scheduler](/components/scheduler) - composable appointment calendar with a month grid, per-day overflow and arbitrarily deep sub-appointment chains.
 - [Standings](/components/standings) - league and group table with position zones, a legend that can't drift from them, and column-dropping density.
 - [Sport UI recipes](/components/sport-recipes) - copy-paste compositions the library deliberately doesn't ship as components: the today's-matches rail, competition/team/player cards.
 - [Scrollable](/components/scrollable) - scroll containers with buttons, masks, snap and drag scrolling.

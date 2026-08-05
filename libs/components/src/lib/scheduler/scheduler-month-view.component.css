@@ -1,0 +1,159 @@
+@layer components {
+  @property --et-scheduler-month-view-cell-min-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 96px;
+  }
+
+  .et-scheduler-month-view {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .et-scheduler-month-view-weekdays,
+  .et-scheduler-month-view-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .et-scheduler-month-view-weekday {
+    padding-block: 6px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--et-surface-color-muted-solid);
+  }
+
+  .et-scheduler-month-view-weeks {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    border-block-start: 1px solid var(--et-surface-border-solid);
+  }
+
+  .et-scheduler-month-view-week {
+    flex: 1;
+    min-block-size: var(--et-scheduler-month-view-cell-min-size);
+  }
+
+  .et-scheduler-month-view-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+    overflow: hidden;
+    border-inline-end: 1px solid var(--et-surface-border-solid);
+    border-block-end: 1px solid var(--et-surface-border-solid);
+
+    &:where([data-outside-month]) {
+      color: var(--et-surface-color-subtle-solid);
+
+      .et-scheduler-month-view-cell-date {
+        color: var(--et-surface-color-subtle-solid);
+      }
+    }
+  }
+
+  .et-scheduler-month-view-cell-date {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    inline-size: 22px;
+    block-size: 22px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--et-surface-color-solid);
+  }
+
+  .et-scheduler-month-view-cell:where([data-today]) .et-scheduler-month-view-cell-date {
+    background: var(--et-theme-color-primary-solid);
+    color: var(--et-theme-color-on-primary);
+    font-weight: 600;
+  }
+
+  .et-scheduler-month-view-cell-appointments {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 0;
+    gap: 2px;
+    overflow: hidden;
+  }
+
+  .et-scheduler-appointment {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    padding: 2px 6px;
+    border: none;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid) 14%, transparent);
+    color: var(--et-theme-color-ink-solid);
+    font: inherit;
+    font-size: 12px;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+
+    /* the color dot: the badge's own background is a tint, this is the theme's full-strength accent */
+    &::before {
+      flex-shrink: 0;
+      inline-size: 6px;
+      block-size: 6px;
+      border-radius: 999px;
+      background: var(--et-theme-color-primary-solid);
+      content: '';
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        background: color-mix(in srgb, var(--et-theme-color-primary-solid) 22%, transparent);
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--et-theme-color-primary-solid);
+      outline-offset: 1px;
+    }
+
+    &:where([data-selected]) {
+      background: var(--et-theme-color-primary-solid);
+      color: var(--et-theme-color-on-primary);
+
+      &::before {
+        background: var(--et-theme-color-on-primary);
+      }
+    }
+  }
+
+  .et-scheduler-month-view-overflow-trigger {
+    padding: 2px 6px;
+    border: none;
+    background: transparent;
+    color: var(--et-surface-color-muted-solid);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: start;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--et-surface-color-solid);
+      }
+    }
+
+    &:focus-visible {
+      border-radius: 4px;
+      outline: 2px solid var(--et-theme-color-primary-solid);
+      outline-offset: 1px;
+    }
+  }
+}

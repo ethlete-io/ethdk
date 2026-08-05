@@ -6,6 +6,7 @@ import {
   endOfDay,
   endOfMonth,
   endOfWeek,
+  format,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -18,6 +19,12 @@ export type { AppointmentTreeNode } from './internals/scheduler-tree';
 
 /** 0 = Sunday … 6 = Saturday. */
 export type SchedulerWeekStartsOn = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+/** A localized weekday name, in both its short (`Mon`) and long (`Monday`) form. */
+export type SchedulerWeekday = {
+  short: string;
+  long: string;
+};
 
 /**
  * Headless scheduler state: the active view, the focused date, the visible date range each view
@@ -83,6 +90,26 @@ export class SchedulerDirective<TExtra = unknown> {
 
   /** {@link appointments}, arranged into sub-appointment chains - see `buildAppointmentTree`. */
   public appointmentTree = computed(() => buildAppointmentTree(this.appointments()));
+
+  /** The seven weekday names, starting from {@link effectiveFirstDayOfWeek} - for grid/agenda headers. */
+  public weekdays = computed<SchedulerWeekday[]>(() => {
+    const locale = this.effectiveLocale();
+    const options = locale ? { locale } : undefined;
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: this.effectiveFirstDayOfWeek() });
+
+    return Array.from({ length: 7 }, (_, dayIndex) => {
+      const day = addDays(weekStart, dayIndex);
+
+      return { short: format(day, 'EEEEEE', options), long: format(day, 'EEEE', options) };
+    });
+  });
+
+  /** {@link appointments} that overlap {@link visibleRange} at all - not yet bucketed per view. */
+  public visibleAppointments = computed(() => {
+    const { start, end } = this.visibleRange();
+
+    return this.appointments().filter((appointment) => appointment.start <= end && appointment.end >= start);
+  });
 
   /** The selected appointment itself, or `null` - resolved from {@link selectedAppointmentId}. */
   public selectedAppointment = computed(
