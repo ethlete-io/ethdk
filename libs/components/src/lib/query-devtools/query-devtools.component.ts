@@ -25,7 +25,6 @@ import {
   EMPTY_QUERY_DEVTOOLS_FAULT,
   isQueryDevtoolsFaultArmed,
   measureQueryDevtoolsPayload,
-  QUERY_DEVTOOLS_FAULT_STATUSES,
   QueryClient,
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
@@ -42,7 +41,6 @@ import {
   QueryRepositoryEvent,
   QuerySequence,
   QuerySequenceStatus,
-  setQueryDevtoolsFault,
   WebSocketDevtoolsHandle,
   WebSocketDevtoolsMessage,
 } from '@ethlete/query';
@@ -54,6 +52,7 @@ import { QueryDevtoolsEventsTabComponent } from './query-devtools-events-tab.com
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
 import { QueryDevtoolsDrawerComponent } from './query-devtools-drawer.component';
+import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
@@ -83,7 +82,6 @@ import {
   DetailTab,
   DevtoolsTab,
   EventLogItem,
-  NumericFaultField,
   PaneAxis,
   PaneTarget,
   QueryActivity,
@@ -247,6 +245,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsDetailComponent,
     QueryDevtoolsDrawerComponent,
     QueryDevtoolsEventsTabComponent,
+    QueryDevtoolsFaultsTabComponent,
     QueryDevtoolsFeaturesComponent,
     QueryDevtoolsFormsTabComponent,
     QueryDevtoolsJsonComponent,
@@ -472,7 +471,7 @@ export class QueryDevtoolsComponent {
    * Every client the Faults tab can arm, with the fault it currently carries. Clients with nothing armed
    * read as {@link EMPTY_QUERY_DEVTOOLS_FAULT} so the inputs always have a value to show.
    */
-  protected faultClients = computed(() => {
+  public faultClients = computed(() => {
     const faults = queryDevtoolsFaults();
 
     return this.repositories()
@@ -638,18 +637,8 @@ export class QueryDevtoolsComponent {
     return map;
   });
 
-  // --- Fault injection ---
-
-  protected readonly FAULT_STATUSES = QUERY_DEVTOOLS_FAULT_STATUSES;
-
+  /** Disarms every client's fault - the shell's "Faults armed" banner offers this above every tab. */
   protected readonly CLEAR_FAULTS = clearQueryDevtoolsFaults;
-
-  /** The ceiling each numeric fault field is clamped to. */
-  private readonly FAULT_LIMITS: Record<NumericFaultField, number> = {
-    latencyMs: 60_000,
-    failNext: 99,
-    failRate: 100,
-  };
 
   constructor() {
     // Assigned here (not as an arrow property) so `this` is bound for the value-explorer callback.
@@ -1405,26 +1394,6 @@ export class QueryDevtoolsComponent {
   public clearForced(query: AnyQuery) {
     query.subtle.setLoading(null);
     query.subtle.setError(null);
-  }
-
-  /**
-   * Arms one numeric field of a client's fault from an input's raw value. Clamped here rather than left
-   * to the input's `min`/`max`, which a typed-in (or pasted) value ignores.
-   */
-  protected armFaultValue(options: { clientName: string; field: NumericFaultField; value: string }) {
-    const { clientName, field, value } = options;
-    const parsed = clamp(Math.trunc(Number(value) || 0), 0, this.FAULT_LIMITS[field]);
-
-    setQueryDevtoolsFault({ clientName, patch: { [field]: parsed } });
-  }
-
-  protected armFaultStatus(options: { clientName: string; value: string }) {
-    setQueryDevtoolsFault({ clientName: options.clientName, patch: { status: Number(options.value) } });
-  }
-
-  /** Whether the default retry policy retries the status a client is armed to fail with. */
-  protected isFaultStatusRetryable(status: number) {
-    return QUERY_DEVTOOLS_FAULT_STATUSES.find((entry) => entry.status === status)?.retryable ?? false;
   }
 
   // --- Cache actions ---

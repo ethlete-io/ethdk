@@ -6,6 +6,7 @@ import {
   AnyQueryStack,
   QueryClient,
   QueryDevtoolsEntry,
+  QueryDevtoolsFault,
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
   QueryDevtoolsRun,
@@ -88,6 +89,12 @@ export type QueryDevtoolsHost = {
 
   /** What each tab holds - also drives the tab bar's own badges, so it lives here rather than per-tab. */
   tabBadges: Signal<Record<DevtoolsTab, TabBadge>>;
+
+  /**
+   * Every client the Faults tab can arm, with the fault it currently carries. Also feeds the
+   * cross-tab "Faults armed" banner and the session export, so it lives here rather than on the tab.
+   */
+  faultClients: Signal<{ name: string; baseUrl: string; fault: QueryDevtoolsFault; armed: boolean }[]>;
 
   /**
    * The queries in scope before the Queries tab's own search box and status chips narrow them further:
