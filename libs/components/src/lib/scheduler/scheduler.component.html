@@ -44,6 +44,7 @@
     <et-segmented-button value="month">{{ monthViewLabel() }}</et-segmented-button>
     <et-segmented-button value="week">{{ weekViewLabel() }}</et-segmented-button>
     <et-segmented-button value="day">{{ dayViewLabel() }}</et-segmented-button>
+    <et-segmented-button value="agenda">{{ agendaViewLabel() }}</et-segmented-button>
   </et-segmented-button-group>
 </div>
 
@@ -54,6 +55,9 @@
     }
     @case ('day') {
       <et-scheduler-time-grid-view />
+    }
+    @case ('agenda') {
+      <et-scheduler-agenda-view />
     }
     @default {
       <et-scheduler-month-view />

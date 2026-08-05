@@ -4,6 +4,7 @@ import { BUTTON_IMPORTS } from '../button';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
 import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
 import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerFeatureHost } from './headless';
+import { SchedulerAgendaViewComponent } from './scheduler-agenda-view.component';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
 import { SchedulerTimeGridViewComponent } from './scheduler-time-grid-view.component';
@@ -19,6 +20,7 @@ import { Appointment, SchedulerView } from './scheduler.types';
     ...SEGMENTED_BUTTON_IMPORTS,
     LabelDirective,
     IconDirective,
+    SchedulerAgendaViewComponent,
     SchedulerMonthViewComponent,
     SchedulerTimeGridViewComponent,
   ],
@@ -52,6 +54,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   public monthViewLabel = computed(() => this.labels().month);
   public weekViewLabel = computed(() => this.labels().week);
   public dayViewLabel = computed(() => this.labels().day);
+  public agendaViewLabel = computed(() => this.labels().agenda);
 
   public headerLabel = computed(() => {
     const locale = this.headless.effectiveLocale();

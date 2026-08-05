@@ -1,0 +1,60 @@
+@layer components {
+  .et-scheduler-agenda-view {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  .et-scheduler-agenda-view-day {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .et-scheduler-agenda-view-day-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-block-end: 4px;
+    border-block-end: 1px solid var(--et-surface-border-solid);
+  }
+
+  .et-scheduler-agenda-view-day-weekday {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--et-surface-color-muted-solid);
+  }
+
+  .et-scheduler-agenda-view-day-date {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 22px;
+    block-size: 22px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--et-surface-color-solid);
+  }
+
+  .et-scheduler-agenda-view-day-header:where([data-today]) .et-scheduler-agenda-view-day-date {
+    background: var(--et-theme-color-primary-solid);
+    color: var(--et-theme-color-on-primary);
+    font-weight: 600;
+  }
+
+  .et-scheduler-agenda-view-day-appointments {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .et-scheduler-agenda-view-appointment {
+    padding-inline-start: calc(min(var(--_et-scheduler-agenda-view-depth, 0), 4) * 14px);
+  }
+
+  .et-scheduler-agenda-view-appointment .et-scheduler-appointment {
+    inline-size: 100%;
+  }
+}

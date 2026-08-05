@@ -1,6 +1,6 @@
 # Scheduler
 
-`et-scheduler` is a composable appointment calendar, Google-Calendar-shaped: a month grid, a week/day hour-axis time grid, and an agenda view (planned) all sharing one headless engine. Appointments can nest into arbitrarily deep "sub-appointment" chains (a project's Jira-esque sub-tasks), each with its own start/end. Import `SCHEDULER_IMPORTS`.
+`et-scheduler` is a composable appointment calendar, Google-Calendar-shaped: a month grid, a week/day hour-axis time grid, and an agenda list, all sharing one headless engine. Appointments can nest into arbitrarily deep "sub-appointment" chains (a project's Jira-esque sub-tasks), each with its own start/end. Import `SCHEDULER_IMPORTS`.
 
 ```ts
 import { SCHEDULER_IMPORTS } from '@ethlete/components';
@@ -45,7 +45,7 @@ On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 | Input                   | Type                        | Default             | Description                                                                                            |
 | ----------------------- | --------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
 | `appointments`          | `readonly Appointment[]`    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.                   |
-| `view`                  | `SchedulerView`             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'` (agenda has no view component yet). |
+| `view`                  | `SchedulerView`             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                                    |
 | `focusedDate`           | `Date`                      | today               | The date the visible period is derived from.                                                           |
 | `selectedAppointmentId` | `AppointmentId \| null`     | `null`              | The currently selected appointment.                                                                    |
 | `locale`                | `Locale \| null` (date-fns) | `DATE_LOCALE` token | Weekday names and the header label. Falls back to date-fns' built-in en-US.                            |
@@ -57,7 +57,7 @@ On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 | `selectedAppointmentId` | `AppointmentId \| null` | The selected appointment's id.               |
 | `focusedDate`           | `Date`                  | The date the visible period is derived from. |
 
-The toolbar's Month/Week/Day control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself.
+The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself.
 
 ## Month view
 
@@ -89,9 +89,21 @@ It takes no inputs of its own - like the month view, it reads its host `[etSched
 
 Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view.
 
+## Agenda view
+
+A flat list, grouped by day: each day of the visible range that has at least one appointment gets a section, with its appointments as full-width badges in chain order (depth-first, indented per level). A day with nothing on it is skipped entirely rather than rendering an empty section.
+
+<StoryEmbed id="components-scheduler--agenda" height="640px" />
+
+```html
+<et-scheduler-agenda-view />
+```
+
+It takes no inputs of its own - like the other views, it reads its host `[etScheduler]` via DI. The agenda shares its visible range with the week view (the same 7-day window), so switching between them keeps the same days on screen. Clicking a badge sets `selectedAppointmentId`, same as the other views.
+
 ## Sub-appointment chains
 
-An appointment's `parentId` is the whole nesting model - no `level`, no depth limit. The headless tier builds the tree once (`appointmentTree()`) and every consumer of it - month, time grid, and the planned agenda - walks it depth-first, so a chain renders in the same order everywhere. The month view carries a child's `depth` on its badge for a future indent/collapse affordance; the time grid already uses it today for the inline inset described above.
+An appointment's `parentId` is the whole nesting model - no `level`, no depth limit. The headless tier builds the tree once (`appointmentTree()`) and every consumer of it - month, time grid, and agenda - walks it depth-first, so a chain renders in the same order everywhere. A chain stays in depth order even when its root falls outside the visible range or day - a child never gets promoted to the top level just because its parent isn't shown. The month view carries a child's `depth` on its badge for a future indent/collapse affordance; the time grid uses it for the inline inset described above, and the agenda view for its indentation.
 
 ## Headless usage {#headless-usage}
 
@@ -119,10 +131,10 @@ An appointment's `parentId` is the whole nesting model - no `level`, no depth li
 
 ## Accessibility
 
-- Weekday/day headers are `columnheader`s named by the full weekday (`aria-label` in the month view); day cells are `gridcell`s in both views.
+- Weekday/day headers are `columnheader`s named by the full weekday (`aria-label` in the month view); day cells are `gridcell`s in both grid views. The agenda view is a flat list, not a grid, so its day headers carry no grid role.
 - Every appointment badge/block and the "+N more" trigger are real `<button>`s, reachable by Tab; the overflow popover is an `et-menu` and inherits its full [keyboard model](/components/menu#accessibility).
-- Neither grid implements the ARIA grid roving-tabindex pattern the [calendar](/components/calendar#accessibility) uses yet - each badge/block is independently tabbable.
-- The Month/Week/Day toolbar control is a real [`et-segmented-button-group`](/components/choice-inputs#selection-lists): a `radiogroup` of `radio`s, arrow-key navigable, with a projected (visually hidden) `<et-label>` supplying its accessible name.
+- Neither grid implements the ARIA grid roving-tabindex pattern the [calendar](/components/calendar#accessibility) uses yet - each badge/block is independently tabbable, same as the agenda's badges.
+- The Month/Week/Day/Agenda toolbar control is a real [`et-segmented-button-group`](/components/choice-inputs#selection-lists): a `radiogroup` of `radio`s, arrow-key navigable, with a projected (visually hidden) `<et-label>` supplying its accessible name.
 
 ## Theming
 

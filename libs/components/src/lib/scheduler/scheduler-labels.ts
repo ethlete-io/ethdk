@@ -21,6 +21,8 @@ export type SchedulerLabels = {
   week: string;
   /** The day view's name, as shown in the view switch. */
   day: string;
+  /** The agenda view's name, as shown in the view switch. */
+  agenda: string;
 };
 
 /** The built-in English labels. */
@@ -33,6 +35,7 @@ export const DEFAULT_SCHEDULER_LABELS: SchedulerLabels = {
   month: 'Month',
   week: 'Week',
   day: 'Day',
+  agenda: 'Agenda',
 };
 
 const SCHEDULER_LABELS_DEF = /* @__PURE__ */ defineLabels<SchedulerLabels>(

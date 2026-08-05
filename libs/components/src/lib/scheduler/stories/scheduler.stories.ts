@@ -14,3 +14,5 @@ export const Default: Story = {};
 export const Week: Story = { args: { initialView: 'week' } };
 
 export const Day: Story = { args: { initialView: 'day' } };
+
+export const Agenda: Story = { args: { initialView: 'agenda' } };
