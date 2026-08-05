@@ -1,6 +1,6 @@
 ---
 name: rxjs-signals
-description: How to choose between signals and RxJS, and use each correctly - synchronous state vs asynchronous work, unsubscribing, and avoiding RxJS inside effects/computeds. Read when adding reactive state, wiring up an observable, or deciding whether something should be a signal or a stream. Part of the Ethlete styleguide (judgment beyond what lint enforces).
+description: How to choose between signals and RxJS, and use each correctly - synchronous state vs asynchronous work, unsubscribing, and avoiding RxJS inside effects/computeds. Read when adding reactive state, wiring up an observable, or deciding whether something should be a signal or a stream.
 kind: skill
 scope: both
 requires: ['@ethlete/core']

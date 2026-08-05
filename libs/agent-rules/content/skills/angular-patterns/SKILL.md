@@ -1,6 +1,6 @@
 ---
 name: angular-patterns
-description: How to build Angular pieces the Ethlete way - templates, lifecycle, and when to reach for a component/directive/service/pipe vs a plain function. Read when writing or restructuring a component, directive, service, or pipe, wiring up lifecycle, or binding values in a template. Part of the Ethlete styleguide (judgment beyond what lint enforces).
+description: How to build Angular pieces the Ethlete way - templates, lifecycle, and when to reach for a component/directive/service/pipe vs a plain function. Read when writing or restructuring a component, directive, service, or pipe, wiring up lifecycle, or binding values in a template.
 kind: skill
 scope: both
 requires: ['@ethlete/core']
