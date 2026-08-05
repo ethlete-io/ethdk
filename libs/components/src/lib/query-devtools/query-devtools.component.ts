@@ -429,6 +429,8 @@ export class QueryDevtoolsComponent {
 
   private queryEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query'));
 
+  protected panelTampered = computed(() => this.queryEntries().some((entry) => this.isTampered(entry)));
+
   public stackEntries = computed(() =>
     queryDevtoolsEntries().filter((e) => e.kind === 'query-stack' || e.kind === 'paged-query-stack'),
   );
@@ -1008,6 +1010,16 @@ export class QueryDevtoolsComponent {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Whether an entry is showing something other than what the server actually sent - an armed response
+   * override, or a devtools fault that decided its last completed run. Deliberately not "a fault is
+   * armed nearby": an armed-but-idle fault (a `failRate` under 100, say) mostly lets requests through
+   * untouched, so that would over-claim for the vast majority of queries on that client.
+   */
+  public isTampered(entry: QueryDevtoolsEntry) {
+    return (entry.overrides?.list().length ?? 0) > 0 || (entry.stats?.current().lastResponseWasFaulted ?? false);
   }
 
   /**
@@ -2057,6 +2069,7 @@ export class QueryDevtoolsComponent {
       args: this.queryArgs(query),
       response: query.response() ?? null,
       error: error ? { status: error.raw.status, body: error.isList ? error.errors : error.error } : null,
+      overrides: (entry.overrides?.list() ?? []).map((override) => ({ id: override.id, op: override.op })),
     };
   }
 

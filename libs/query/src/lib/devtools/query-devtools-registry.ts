@@ -6,11 +6,13 @@ import {
   QueryDevtoolsRoutePart,
   setQueryDevtoolsFaultResolver,
   setQueryDevtoolsFormLinksFactory,
+  setQueryDevtoolsOverridesFactory,
   setQueryDevtoolsRegistrar,
   setQueryDevtoolsStatsFactory,
 } from './query-devtools-hook';
 import { resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
 import { createQueryDevtoolsFormLinks } from './query-devtools-form-links';
+import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
 import { createQueryDevtoolsStats } from './query-devtools-stats';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
@@ -152,6 +154,7 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
     createdAt: Date.now(),
     stats: registration.stats,
     formLinks: registration.formLinks,
+    overrides: registration.overrides,
   };
 
   entries.update((list) => [...list, fullEntry]);
@@ -178,6 +181,7 @@ export const provideQueryDevtools = (): EnvironmentProviders => {
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
   setQueryDevtoolsFormLinksFactory(createQueryDevtoolsFormLinks);
+  setQueryDevtoolsOverridesFactory(createQueryDevtoolsOverrides);
   setQueryDevtoolsFaultResolver(resolveQueryDevtoolsFaultForAttempt);
 
   if (!isDevMode()) {

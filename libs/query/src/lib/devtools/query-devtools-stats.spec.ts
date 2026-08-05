@@ -134,6 +134,31 @@ describe('query devtools stats', () => {
       expect(recorder.current().responses).toBe(0);
     });
 
+    it('should flag the last response as faulted only when the error that produced it was', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordError({ faulted: true });
+
+      expect(recorder.current().lastResponseWasFaulted).toBe(true);
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordError();
+
+      expect(recorder.current().lastResponseWasFaulted).toBe(false);
+    });
+
+    it('should clear a faulted flag once a real response arrives', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordError({ faulted: true });
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordResponse({ body: { ok: true } });
+
+      expect(recorder.current().lastResponseWasFaulted).toBe(false);
+    });
+
     it('should clear every counter on reset', () => {
       const recorder = createQueryDevtoolsStats();
 
@@ -156,6 +181,7 @@ describe('query devtools stats', () => {
         lastResponseAt: null,
         lastDurationMs: null,
         totalDurationMs: 0,
+        lastResponseWasFaulted: false,
       });
     });
 

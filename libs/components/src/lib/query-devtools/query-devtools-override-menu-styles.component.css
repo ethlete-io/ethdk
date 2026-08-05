@@ -1,0 +1,43 @@
+@layer components {
+  et-query-devtools-override-menu {
+    display: contents;
+  }
+
+  .et-query-devtools-override-menu {
+    display: contents;
+  }
+
+  /* Same 2.2rem hit-area trick as the row's copy button (`query-devtools-json-styles.component.css`) -
+     pulled back in by negative margins so the tree rows don't grow taller. */
+  .et-query-devtools-override-trigger {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    flex: 0 0 auto;
+    inline-size: 2.2rem;
+    block-size: 2.2rem;
+    margin-block: -0.4rem;
+    border: none;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--_et-qdt-subtle, currentColor);
+    cursor: pointer;
+    opacity: 0;
+    font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  .et-query-devtools-override-trigger:hover {
+    background: var(--_et-qdt-active);
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-json-row:hover .et-query-devtools-override-trigger,
+  .et-query-devtools-override-trigger:focus-visible,
+  .et-query-devtools-override-trigger[data-menu-open] {
+    opacity: 1;
+  }
+}

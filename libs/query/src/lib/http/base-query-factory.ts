@@ -3,6 +3,7 @@ import { effect, runInInjectionContext } from '@angular/core';
 import { describeQueryDevtoolsFeatures } from '../devtools/query-devtools-features';
 import {
   createQueryDevtoolsFormLinksRecorder,
+  createQueryDevtoolsOverridesRecorder,
   createQueryDevtoolsStatsRecorder,
   registerQueryDevtoolsEntry,
 } from '../devtools/query-devtools-hook';
@@ -201,11 +202,13 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
   return runInInjectionContext(deps.injector, () => {
     const devtoolsStats = createQueryDevtoolsStatsRecorder();
     const devtoolsFormLinks = createQueryDevtoolsFormLinksRecorder();
+    const devtoolsOverrides = createQueryDevtoolsOverridesRecorder();
 
     const state = setupQueryState<TArgs>({
       transformResponse: options.creator?.transformResponse,
       devtoolsStats,
       devtoolsFormLinks,
+      devtoolsOverrides,
     });
     const flags = getQueryFeatureUsage(options as unknown as Parameters<typeof getQueryFeatureUsage>[0]);
 
@@ -235,7 +238,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
     if (devtoolsStats) {
       const statsSubscription = state.events$.subscribe((event) => {
         if (event.type === 'error') {
-          devtoolsStats.recordError();
+          devtoolsStats.recordError({ faulted: event.faulted });
         } else if (event.type === HttpEventType.Response) {
           devtoolsStats.recordResponse({ headers: event.headers, body: event.body });
         }
@@ -258,6 +261,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
         clientRef: client,
         stats: devtoolsStats,
         formLinks: devtoolsFormLinks ?? undefined,
+        overrides: devtoolsOverrides ?? undefined,
         route:
           (options.creatorInternals as { route?: unknown }).route ??
           (options.creator as { route?: unknown } | undefined)?.route ??

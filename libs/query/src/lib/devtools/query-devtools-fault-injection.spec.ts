@@ -5,7 +5,8 @@ import { createQuery } from '../http/query';
 import { withDefaultRetry } from '../http/query-client-features';
 import { createQueryClient, QueryClientRef } from '../http/query-client';
 import { clearQueryDevtoolsFaults, setQueryDevtoolsFault } from './query-devtools-faults';
-import { provideQueryDevtools } from './query-devtools-registry';
+import { QueryDevtoolsStats } from './query-devtools-stats';
+import { queryDevtoolsEntries, provideQueryDevtools } from './query-devtools-registry';
 
 /** The default retry policy's backoff for the first retry: `clamp(1000 + 1000 * 1, 1000, 5000)`. */
 const FIRST_BACKOFF_MS = 2000;
@@ -121,5 +122,57 @@ describe('query devtools fault injection', () => {
     makeQuery();
 
     httpTesting.expectOne('https://api.example.com/test').flush({ hello: 'world' });
+  });
+
+  describe('lastResponseWasFaulted', () => {
+    const statsOf = (query: unknown): QueryDevtoolsStats => {
+      const entry = queryDevtoolsEntries().find((e) => e.handle === query);
+
+      if (!entry?.stats) throw new Error('the query was not registered with stats');
+
+      return entry.stats.current();
+    };
+
+    it('should flag the run tampered when a non-retryable fault is the final outcome', () => {
+      setQueryDevtoolsFault({ clientName: 'fault-test', patch: { failNext: 1, status: 400 } });
+
+      const query = makeQuery();
+      vi.advanceTimersByTime(0);
+
+      expect(query.error()?.code).toBe(400);
+      expect(statsOf(query).lastResponseWasFaulted).toBe(true);
+    });
+
+    it('should not flag a real server error as tampered', () => {
+      const query = makeQuery();
+
+      httpTesting.expectOne('https://api.example.com/test').flush(null, { status: 500, statusText: 'Server Error' });
+
+      expect(statsOf(query).lastResponseWasFaulted).toBe(false);
+    });
+
+    it('should clear the flag once a later execution reaches a real response', () => {
+      setQueryDevtoolsFault({ clientName: 'fault-test', patch: { failNext: 1, status: 400 } });
+
+      const query = makeQuery();
+      vi.advanceTimersByTime(0);
+
+      expect(statsOf(query).lastResponseWasFaulted).toBe(true);
+
+      clearQueryDevtoolsFaults();
+      query.execute();
+      httpTesting.expectOne('https://api.example.com/test').flush({ hello: 'world' });
+
+      expect(query.response()).toEqual({ hello: 'world' });
+      expect(statsOf(query).lastResponseWasFaulted).toBe(false);
+    });
+
+    it('should not flag anything for a client with nothing armed', () => {
+      const query = makeQuery();
+
+      httpTesting.expectOne('https://api.example.com/test').flush({ hello: 'world' });
+
+      expect(statsOf(query).lastResponseWasFaulted).toBe(false);
+    });
   });
 });

@@ -54,6 +54,14 @@ export type QueryDevtoolsStats = {
 
   /** The sum of every response's duration, which together with {@link responses} gives the average. */
   totalDurationMs: number;
+
+  /**
+   * Whether the query's last completed run ended in a devtools fault rather than a real server
+   * response or failure - the fact the panel's tamper indicator badges on. Cleared by the next real
+   * response; a run that exhausts its retries on a real error also clears it, since nothing about that
+   * outcome was altered by the devtools.
+   */
+  lastResponseWasFaulted: boolean;
 };
 
 const EMPTY_STATS: QueryDevtoolsStats = {
@@ -69,6 +77,7 @@ const EMPTY_STATS: QueryDevtoolsStats = {
   lastResponseAt: null,
   lastDurationMs: null,
   totalDurationMs: 0,
+  lastResponseWasFaulted: false,
 };
 
 /** A payload whose transferred size is to be measured, plus the headers it came with (if any). */
@@ -164,7 +173,7 @@ export type QueryDevtoolsStatsRecorder = QueryDevtoolsStatsHandle & {
 
   recordResponse: (payload: QueryDevtoolsPayload) => void;
 
-  recordError: () => void;
+  recordError: (options?: { faulted?: boolean }) => void;
 
   /**
    * Raises the attempt count of the run in flight. Idempotent per attempt, so a caller driven off a
@@ -345,6 +354,7 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
       lastResponseAt: now,
       lastDurationMs: duration,
       totalDurationMs: current.totalDurationMs + (duration ?? 0),
+      lastResponseWasFaulted: false,
     }));
 
     endRun({
@@ -356,8 +366,12 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
     });
   };
 
-  const recordError = () => {
-    stats.update((current) => ({ ...current, errors: current.errors + 1 }));
+  const recordError: QueryDevtoolsStatsRecorder['recordError'] = (options) => {
+    stats.update((current) => ({
+      ...current,
+      errors: current.errors + 1,
+      lastResponseWasFaulted: options?.faulted ?? false,
+    }));
 
     endRun({ endedAt: Date.now(), status: 'error', receivedBytes: 0, response: null, hasResponse: false });
   };

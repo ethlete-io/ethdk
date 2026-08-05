@@ -269,6 +269,12 @@ export type HttpRequest<TArgs extends QueryArgs> = {
 export type HttpErrorEvent = {
   type: 'error';
   error: QueryErrorResponse;
+
+  /**
+   * Whether this error is a devtools fault the panel armed, rather than a real server failure - the
+   * fact `lastResponseWasFaulted` (`query-devtools-stats.ts`) is built from.
+   */
+  faulted?: boolean;
 };
 
 export type RequestHttpEvent<TArgs extends QueryArgs> = HttpEvent<ResponseType<TArgs>> | HttpErrorEvent;
@@ -291,6 +297,10 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const attempts = signal(1);
   const retryState = signal<HttpRequestRetryState | null>(null);
   const lastDurationMs = signal<number | null>(null);
+
+  // Set at the top of every `sendWithFaults` attempt (including unfaulted ones), so it always reflects
+  // whichever attempt most recently settled - not just the first one, or a stale earlier attempt's fault.
+  let lastAttemptFaulted = false;
 
   // NOTE: This must be a plain function, not a `computed`. The freshness check compares against
   // `Date.now()`, which is not reactive, so a memoized computed would only ever recompute when
@@ -346,6 +356,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
         method: options.method,
         url: options.fullPath,
       });
+
+      lastAttemptFaulted = !!fault && fault.status !== null;
 
       if (!fault) return send(headers);
 
@@ -497,7 +509,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     loading.set(null);
     lastDurationMs.set(Date.now() - lastExecuteTime());
 
-    const errorEvent: HttpErrorEvent = { type: 'error', error: errorRes };
+    const errorEvent: HttpErrorEvent = { type: 'error', error: errorRes, faulted: lastAttemptFaulted };
     currentEvent.set(errorEvent);
     event$.next(errorEvent);
 

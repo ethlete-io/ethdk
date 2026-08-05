@@ -62,7 +62,33 @@ describe('buildQueryDevtoolsSessionExport', () => {
     expect(result._type).toBe('ethlete.query:devtools-session');
     expect(result.exportedAt).toBe(new Date(NOW).toISOString());
     expect(result.location).toBe('https://app.example.com/posts');
-    expect(result.counts).toEqual({ clients: 1, entries: 1, events: 1, armedFaults: 1 });
+    expect(result.counts).toEqual({ clients: 1, entries: 1, events: 1, armedFaults: 1, armedOverrides: 0 });
+  });
+
+  it('should count and slim armed overrides across every entry', () => {
+    const result = build({
+      entries: [
+        {
+          id: 'q1',
+          kind: 'query',
+          overrides: [
+            { id: 'o1', op: { type: 'set', path: ['title'], value: 'x'.repeat(400) } },
+            { id: 'o2', op: { type: 'booleanFlip', path: ['active'] } },
+          ],
+        },
+        { id: 'q2', kind: 'query', overrides: [{ id: 'o3', op: { type: 'reset', path: ['name'] } }] },
+      ],
+    });
+
+    expect(result.counts.armedOverrides).toBe(3);
+    const [first] = result.entries;
+    expect(first?.overrides?.[0]?.op['value']).toHaveLength(201);
+  });
+
+  it('should keep an empty overrides array as-is, like it does for runs/features', () => {
+    const [entry] = build({ entries: [{ id: 'q', kind: 'query', overrides: [] }] }).entries;
+
+    expect(entry?.overrides).toEqual([]);
   });
 
   it('should slim the values an entry carries', () => {

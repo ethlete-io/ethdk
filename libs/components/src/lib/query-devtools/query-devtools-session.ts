@@ -82,6 +82,12 @@ export type SessionExportEntry = {
 
   /** Whatever else the kind carries: a stack's pages, a form's fields, a socket's rooms. */
   detail?: Record<string, unknown> | null;
+
+  /**
+   * The response overrides armed on this query, for a query entry - a report captured while one was
+   * live has to say so, the same reason armed faults are included.
+   */
+  overrides?: { id: string; op: Record<string, unknown> }[];
 };
 
 export type SessionExportEvent = {
@@ -123,29 +129,32 @@ export type QueryDevtoolsSessionExport = {
   _type: 'ethlete.query:devtools-session';
   exportedAt: string;
   location: string;
-  counts: { clients: number; entries: number; events: number; armedFaults: number };
+  counts: { clients: number; entries: number; events: number; armedFaults: number; armedOverrides: number };
   clients: SessionExportClient[];
   entries: SessionExportEntry[];
   events: SessionExportEvent[];
   faults: SessionExportFault[];
 };
 
-/** Slims the three free-form value fields of an entry, leaving the rest as it was collected. */
+/** Slims the free-form value fields of an entry, leaving the rest as it was collected. */
 const slimEntry = (entry: SessionExportEntry): SessionExportEntry => ({
   ...entry,
   ...('args' in entry ? { args: slimForReport(entry.args) } : {}),
   ...('response' in entry ? { response: slimForReport(entry.response) } : {}),
   ...('error' in entry ? { error: slimForReport(entry.error) } : {}),
   ...(entry.detail ? { detail: slimForReport(entry.detail) as Record<string, unknown> } : {}),
+  ...(entry.overrides?.length ? { overrides: slimForReport(entry.overrides) as SessionExportEntry['overrides'] } : {}),
 });
 
 /**
  * Builds the whole-session report: every registered entry with what it ran and what it holds, the event
- * log, the cache totals per client and anything armed in the Faults tab.
+ * log, the cache totals per client and anything armed in the Faults tab or as a response override.
  *
  * Bodies are slimmed rather than dumped in full - the point is a file small enough to attach to a bug
- * report, and a 4 MB response says nothing a representative sample does not. Armed faults are included
- * because a report captured while the panel was lying to the app has to say so.
+ * report, and a 4 MB response says nothing a representative sample does not. Armed faults and overrides
+ * are included because a report captured while the panel was lying to the app has to say so. Neither
+ * survives past the current page - this is a snapshot for a bug report, not something the panel can
+ * later import to restore a session.
  */
 export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptions): QueryDevtoolsSessionExport => ({
   _type: 'ethlete.query:devtools-session',
@@ -156,6 +165,7 @@ export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptio
     entries: options.entries.length,
     events: options.events.length,
     armedFaults: options.faults.length,
+    armedOverrides: options.entries.reduce((sum, entry) => sum + (entry.overrides?.length ?? 0), 0),
   },
   clients: options.clients,
   entries: options.entries.map(slimEntry),

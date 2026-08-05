@@ -3,6 +3,7 @@ import { CreateQueryCreatorOptions, QueryConfig } from '../http/query-creator';
 import { QueryRepository } from '../http/query-repository';
 import { QueryDevtoolsFeature } from './query-devtools-features';
 import { QueryDevtoolsFormLinksHandle, QueryDevtoolsFormLinksRecorder } from './query-devtools-form-links';
+import { QueryDevtoolsOverridesRecorder } from './query-devtools-overrides';
 import { QueryDevtoolsStatsHandle, QueryDevtoolsStatsRecorder } from './query-devtools-stats';
 
 /**
@@ -123,6 +124,13 @@ export type QueryDevtoolsEntry = {
 
   /** The query forms this entry's args read, for queries created with a `withArgs` feature. */
   formLinks?: QueryDevtoolsFormLinksHandle;
+
+  /**
+   * The response overrides armed on this entry, for queries. Unlike {@link stats}/{@link formLinks} -
+   * whose write side is internal instrumentation the panel only ever reads - the panel itself is what
+   * arms an override, so this exposes the full recorder rather than a read-only handle.
+   */
+  overrides?: QueryDevtoolsOverridesRecorder;
 };
 
 /**
@@ -156,6 +164,9 @@ export type QueryDevtoolsRegistration = {
 
   /** @see QueryDevtoolsEntry.formLinks */
   formLinks?: QueryDevtoolsFormLinksHandle;
+
+  /** @see QueryDevtoolsEntry.overrides */
+  overrides?: QueryDevtoolsOverridesRecorder;
 };
 
 /** The registry {@link provideQueryDevtools} installs. */
@@ -226,6 +237,24 @@ export const setQueryDevtoolsFormLinksFactory = (fn: () => QueryDevtoolsFormLink
  */
 export const createQueryDevtoolsFormLinksRecorder = (): QueryDevtoolsFormLinksRecorder | null =>
   formLinksFactory?.() ?? null;
+
+let overridesFactory: (() => QueryDevtoolsOverridesRecorder) | null = null;
+
+/**
+ * Installs the overrides recorder factory. Called by `provideQueryDevtools()`; nothing else may call it.
+ * @internal
+ */
+export const setQueryDevtoolsOverridesFactory = (fn: () => QueryDevtoolsOverridesRecorder) => {
+  overridesFactory = fn;
+};
+
+/**
+ * An overrides recorder for one query, or `null` unless {@link provideQueryDevtools} has been called.
+ * Reached only from the provider for the same reason {@link createQueryDevtoolsStatsRecorder} is.
+ * @internal
+ */
+export const createQueryDevtoolsOverridesRecorder = (): QueryDevtoolsOverridesRecorder | null =>
+  overridesFactory?.() ?? null;
 
 /** The ids of the query forms read by the args build currently running, or `null` outside of one. */
 let formLinkSink: Set<string> | null = null;

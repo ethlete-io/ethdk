@@ -123,6 +123,8 @@ export type QueryDevtoolsHost = {
 
   queryStatus(query: AnyQuery): 'idle' | 'loading' | 'success' | 'error';
   isStale(query: AnyQuery): boolean;
+  /** Whether an entry is showing an armed response override or a devtools-faulted outcome. */
+  isTampered(entry: QueryDevtoolsEntry): boolean;
   requestProgress(query: AnyQuery): RequestProgress | null;
   retryCause(status: number): string;
   requestUrl(query: AnyQuery): string | null;

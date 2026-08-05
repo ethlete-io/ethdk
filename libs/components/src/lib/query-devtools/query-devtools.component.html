@@ -226,7 +226,7 @@
 }
 
 @if (!open()) {
-  <et-query-devtools-toggle (openChange)="toggleOpen()" />
+  <et-query-devtools-toggle [tampered]="panelTampered()" (openChange)="toggleOpen()" />
 }
 
 @if (inspectActive() && inspectHover(); as hover) {

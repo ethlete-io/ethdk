@@ -2,6 +2,7 @@ import { HttpEventType } from '@angular/common/http';
 import { Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
 import { Observable, Subject, Subscription } from 'rxjs';
 import { QueryDevtoolsFormLinksRecorder } from '../devtools/query-devtools-form-links';
+import { QueryDevtoolsOverridesRecorder } from '../devtools/query-devtools-overrides';
 import { QueryDevtoolsStatsRecorder } from '../devtools/query-devtools-stats';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
 import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
@@ -21,6 +22,12 @@ export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
    * not installed.
    */
   devtoolsFormLinks?: QueryDevtoolsFormLinksRecorder | null;
+
+  /**
+   * The recorder of response overrides armed on this query, or nothing when the devtools are not
+   * installed. Replayed against every response that settles into {@link QueryState.rawResponse}.
+   */
+  devtoolsOverrides?: QueryDevtoolsOverridesRecorder | null;
 };
 
 export type QueryStateSubtle<TArgs extends QueryArgs> = {
@@ -103,7 +110,10 @@ export type QueryExecutionState<TArgs extends QueryArgs> =
 export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions<TArgs>) => {
   const request = signal<HttpRequest<TArgs> | null>(null);
 
-  const rawResponse = linkedSignal(() => request()?.response() ?? null);
+  const rawResponse = linkedSignal(() => {
+    const raw = request()?.response() ?? null;
+    return options.devtoolsOverrides ? (options.devtoolsOverrides.apply(raw) as typeof raw) : raw;
+  });
   const response = computed(() => {
     const raw = rawResponse();
     if (raw === null) return null;

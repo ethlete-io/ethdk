@@ -5,6 +5,14 @@
   <span class="et-query-devtools-route">
     <et-query-devtools-route [segments]="host.routeSegments(s.entry, s.query)" />
   </span>
+  @if (host.isTampered(s.entry)) {
+    <span
+      class="et-query-devtools-chip et-query-devtools-chip--error"
+      title="Showing an armed response override or a devtools-injected failure, not what the server actually sent"
+    >
+      tampered
+    </span>
+  }
 </div>
 
 @if (host.requestProgress(s.query); as live) {
@@ -469,13 +477,21 @@
         path="error"
       />
     } @else {
-      <h5 class="et-query-devtools-section">Response</h5>
+      <div class="et-query-devtools-section-row">
+        <h5 class="et-query-devtools-section">Response</h5>
+        @if (s.entry.overrides?.list()?.length) {
+          <button (click)="s.entry.overrides?.clearAll()" class="et-query-devtools-btn" type="button">
+            Reset all overrides ({{ s.entry.overrides?.list()?.length }})
+          </button>
+        }
+      </div>
       <et-query-devtools-json
         [value]="s.query.response()"
         [search]="host.jsonSearchTerm()"
         [expandedPaths]="host.jsonExpandedPaths()"
         [collapsedPaths]="host.jsonCollapsedPaths()"
         [toggleFn]="host.toggleJsonPath"
+        [overrides]="s.entry.overrides ?? null"
         path="response"
       />
     }

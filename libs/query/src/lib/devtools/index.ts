@@ -3,5 +3,6 @@ export * from './query-devtools-features';
 export * from './query-devtools-form';
 export * from './query-devtools-form-links';
 export * from './query-devtools-hook';
+export * from './query-devtools-overrides';
 export * from './query-devtools-registry';
 export * from './query-devtools-stats';

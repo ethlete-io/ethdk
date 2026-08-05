@@ -1,10 +1,13 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Component, computed, input, linkedSignal, numberAttribute, signal, ViewEncapsulation } from '@angular/core';
 import { injectStyleManager } from '@ethlete/core';
+import { JsonPath, QueryDevtoolsOverridesRecorder } from '@ethlete/query';
 import { Subject, switchMap, tap, timer } from 'rxjs';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
+import { QueryDevtoolsOverrideMenuComponent } from './query-devtools-override-menu.component';
 
-type JsonKind = 'string' | 'number' | 'boolean' | 'null' | 'undefined' | 'array' | 'object';
+/** A JSON value's kind as the value explorer (and its per-node override menu) categorizes it. */
+export type JsonKind = 'string' | 'number' | 'boolean' | 'null' | 'undefined' | 'array' | 'object';
 
 type JsonEntry = { k: string; v: unknown };
 
@@ -20,7 +23,7 @@ const COPIED_RESET_MS = 1200;
  */
 const CHUNK_SIZE = 100;
 
-const kindOf = (value: unknown): JsonKind => {
+export const kindOf = (value: unknown): JsonKind => {
   if (value === null) return 'null';
   if (value === undefined) return 'undefined';
   if (Array.isArray(value)) return 'array';
@@ -81,6 +84,14 @@ const chunkSizeFor = (count: number) => {
           >
             {{ copied() ? '✓' : '⧉' }}
           </button>
+          @if (overrides(); as overrides) {
+            <et-query-devtools-override-menu
+              [value]="value()"
+              [path]="jsonPath()"
+              [parentKind]="parentKind()"
+              [overrides]="overrides"
+            />
+          }
         </div>
 
         @if (effectiveExpanded()) {
@@ -91,6 +102,9 @@ const chunkSizeFor = (count: number) => {
                 [chunk]="childChunk"
                 [depth]="depth()"
                 [path]="path()"
+                [jsonPath]="jsonPath()"
+                [parentKind]="parentKind()"
+                [overrides]="overrides()"
                 [search]="search()"
                 [expandedPaths]="expandedPaths()"
                 [collapsedPaths]="collapsedPaths()"
@@ -103,6 +117,9 @@ const chunkSizeFor = (count: number) => {
                 [nodeKey]="entry.k"
                 [depth]="depth() + 1"
                 [path]="childPath(entry.k)"
+                [jsonPath]="childJsonPath(entry.k)"
+                [parentKind]="kind()"
+                [overrides]="overrides()"
                 [search]="search()"
                 [expandedPaths]="expandedPaths()"
                 [collapsedPaths]="collapsedPaths()"
@@ -131,11 +148,19 @@ const chunkSizeFor = (count: number) => {
         >
           {{ copied() ? '✓' : '⧉' }}
         </button>
+        @if (overrides(); as overrides) {
+          <et-query-devtools-override-menu
+            [value]="value()"
+            [path]="jsonPath()"
+            [parentKind]="parentKind()"
+            [overrides]="overrides"
+          />
+        }
       </div>
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [QueryDevtoolsJsonComponent],
+  imports: [QueryDevtoolsJsonComponent, QueryDevtoolsOverrideMenuComponent],
 })
 export class QueryDevtoolsJsonComponent {
   public value = input<unknown>();
@@ -158,6 +183,13 @@ export class QueryDevtoolsJsonComponent {
   public collapsedPaths = input<ReadonlySet<string> | null>(null);
   /** When provided, expansion is externally persisted via this callback instead of local state. */
   public toggleFn = input<((path: string, expand: boolean) => void) | null>(null);
+
+  /** Same node as {@link path}, but as the array-of-steps an override op targets rather than a display key. */
+  public jsonPath = input<JsonPath>([]);
+  /** The kind of the container holding this node, so its override menu can offer "duplicate this item". */
+  public parentKind = input<JsonKind | null>(null);
+  /** When provided, every node renders an override menu that arms/clears ops through it. */
+  public overrides = input<QueryDevtoolsOverridesRecorder | null>(null);
 
   protected kind = computed(() => kindOf(this.value()));
   protected isContainer = computed(() => this.kind() === 'array' || this.kind() === 'object');
@@ -270,6 +302,11 @@ export class QueryDevtoolsJsonComponent {
   protected childPath(key: string) {
     const path = this.path();
     return path ? `${path}.${key}` : key;
+  }
+
+  protected childJsonPath(key: string): JsonPath {
+    const step: string | number = this.kind() === 'array' ? Number(key) : key;
+    return [...this.jsonPath(), step];
   }
 
   protected toggle() {

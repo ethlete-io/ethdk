@@ -120,6 +120,14 @@
         @if (host.isStale(item.query)) {
           <span class="et-query-devtools-chip et-query-devtools-chip--muted">stale</span>
         }
+        @if (host.isTampered(item.entry)) {
+          <span
+            class="et-query-devtools-chip et-query-devtools-chip--error"
+            title="Showing an armed response override or a devtools-injected failure, not what the server actually sent"
+          >
+            tampered
+          </span>
+        }
       </button>
     } @empty {
       <!-- An empty scope is a different problem from a filter that matches nothing, and only the

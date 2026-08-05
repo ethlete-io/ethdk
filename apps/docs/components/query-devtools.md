@@ -361,8 +361,58 @@ memory, so a page reload disarms every client. A persisted "fail everything" tha
 session that armed it would be a trap.
 :::
 
+A query whose last completed run actually came back faulted also carries the same
+[**tampered** badge](#the-tampered-badge) that response overrides do.
+
 Faults are keyed by client **name**, the same identity the client picker uses - so two clients
 sharing a name are armed together.
+
+## Response overrides: editing a value that survives a refetch
+
+The value explorer's copy button (`⧉`) has a neighbour: a pencil (`✎`) that opens a menu of
+edits for that exact value. Unlike [JIT editing](#beyond-a-read-only-view), which freezes
+one raw-JSON snapshot until the next fetch overwrites it, an override is a rule - it is
+replayed against whatever the query's response actually is on every future execution, so it
+survives a refetch, an invalidation, or a poll tick. Arm it once on a `title` field and every
+subsequent response still shows the override, even though the server keeps sending something
+else.
+
+What the menu offers depends on the kind of value under the cursor:
+
+| Value                                                                                               | Actions                                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| String                                                                                              | Short text, long text, a Unicode/RTL sample - or, if the key/value look date-shaped, now / +1 day / -1 day / far future / far past / an invalid date string. |
+| Number                                                                                              | Zero, negative, huge.                                                                                                                                        |
+| Boolean                                                                                             | Flip.                                                                                                                                                        |
+| Array                                                                                               | Duplicate the whole array (ids/unique fields on the copies are regenerated - see below).                                                                     |
+| An object that is itself an array element                                                           | Duplicate this item.                                                                                                                                         |
+| An object shaped like a paginated response (an `items` array plus recognized total/page/limit keys) | Shrink the page by one item, extend it by one.                                                                                                               |
+| Any object or array                                                                                 | Fill recursively - blank every string, zero every number, or flip every boolean under that subtree in one action.                                            |
+| Every value                                                                                         | Reset - clears whatever is armed at that exact path.                                                                                                         |
+
+**Duplicating never clones an id.** Whether from "duplicate this item", "duplicate array",
+or a pagination extend, the copy gets a fresh value for any field that looks like an
+identity - a key named `id`, `uuid`, `key`, or ending in `Id`, or any key whose value is
+already unique across the array's siblings. A numeric id is bumped past the array's current
+maximum; a string id gets a `-copy-N` suffix. Without this, a duplicated row would share its
+id with the original and break `track` bindings and any detail lookup by id - the exact
+failure "duplicate" exists to avoid.
+
+A query's **Data** tab shows a **Reset all overrides (N)** button next to the Response
+heading once anything is armed, for clearing every rule on that query at once.
+
+### The tampered badge
+
+An overridden response and a faulted one both mean the same thing: what is rendering is not
+what the server actually sent. A **tampered** badge says so wherever that query shows up - the
+Queries list row, the query's detail header, and a small red dot on the floating toggle
+button, which is what makes it visible with the panel closed. The dot lights up for _any_
+query across the whole panel, not just the one you have open.
+
+The badge is deliberately narrower than "a fault is armed on this client": an armed
+`fail rate` under 100 lets most attempts through untouched, so badging every query on that
+client would over-claim. It lights up only once a query's _own_ last completed run actually
+came back faulted, or it has at least one override armed.
 
 ## Timeline: what overlapped with what
 
@@ -625,12 +675,12 @@ guessed: a secure query whose provider has no access token exports without its
 question a day later is which of its twenty queries misbehaved. **⤓ Session** in the
 header downloads the whole panel as one JSON file:
 
-| Key       | Holds                                                                                                                                                                                         |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `clients` | Each query client: base URL, cache entry count, how many are collectible, the total cached size, how many responses are on disk, and its features with their configuration.                   |
-| `entries` | Every registered entry by kind - a query with its status, activity, run history, args, response and error; a stack's traffic; a sequence's steps; a form's fields; a socket's message log.    |
-| `events`  | The whole event log (never the filtered view), each row with its duration, size, and the invalidation fan-out it caused.                                                                      |
-| `faults`  | Anything [armed](#faults-making-requests-actually-misbehave) at the time. A capture taken while the panel was lying to the app has to say so, or the report sends someone chasing a fake 503. |
+| Key       | Holds                                                                                                                                                                                                                                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `clients` | Each query client: base URL, cache entry count, how many are collectible, the total cached size, how many responses are on disk, and its features with their configuration.                                                                                                          |
+| `entries` | Every registered entry by kind - a query with its status, activity, run history, args, response, error and any [overrides](#response-overrides-editing-a-value-that-survives-a-refetch) armed on it; a stack's traffic; a sequence's steps; a form's fields; a socket's message log. |
+| `events`  | The whole event log (never the filtered view), each row with its duration, size, and the invalidation fan-out it caused.                                                                                                                                                             |
+| `faults`  | Anything [armed](#faults-making-requests-actually-misbehave) at the time. A capture taken while the panel was lying to the app has to say so, or the report sends someone chasing a fake 503.                                                                                        |
 
 Bodies are slimmed the way **Copy report** slims them - long strings truncated, long
 arrays sampled down to `… (N more)` - so the file stays small enough to attach and a
@@ -710,9 +760,15 @@ components are bound to, which the browser Network tab can't do:
   full, so a 5000-item list opens instantly; each slice expands on click and
   copies just the entries it covers. While the filter is active, only slices that
   actually contain a match unfold.
-- **JIT editing** - edit a query's response and apply it via `setResponse()` (the
-  UI re-renders instantly - great for optimistic / edge-case testing), or replay
-  the query with edited args.
+- **JIT editing** - a quick one-off: paste raw JSON over a query's response and
+  apply it via `setResponse()` (the UI re-renders instantly), or replay the query
+  with edited args. It does not survive the next fetch - for an edit that should
+  keep applying every time the query reruns, arm a
+  [response override](#response-overrides-editing-a-value-that-survives-a-refetch)
+  instead.
+- **Response overrides** - a per-value menu in the value explorer that edits a
+  path inside a response and keeps reapplying that edit on every future fetch -
+  [see below](#response-overrides-editing-a-value-that-survives-a-refetch).
 - **Force states** - force a query into loading / error / empty to exercise
   skeletons, spinners and error / empty UIs on demand (`Clear` restores it). This
   writes the query's signals directly; to exercise the pipeline behind them -
@@ -746,10 +802,11 @@ page reload within the tab session without leaking devtools state across session
 (Restoring the selected query relies on registry ids being stable across reloads,
 which in turn assumes queries are created in the same order.)
 
-[Armed faults](#faults-making-requests-actually-misbehave) are deliberately **not**
-part of that: they change how the app behaves, not how the panel looks, and a reload
-disarms them. Neither is [being popped out](#where-the-panel-sits), which a reload
-cannot restore.
+[Armed faults](#faults-making-requests-actually-misbehave) and
+[response overrides](#response-overrides-editing-a-value-that-survives-a-refetch) are
+deliberately **not** part of that: they change how the app behaves, not how the panel
+looks, and a reload clears both. Neither is [being popped out](#where-the-panel-sits),
+which a reload cannot restore.
 
 ## Accessibility
 

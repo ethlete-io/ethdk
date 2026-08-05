@@ -1,0 +1,75 @@
+<div class="et-query-devtools-override-menu" etMenu>
+  <button
+    class="et-query-devtools-override-trigger"
+    aria-label="Override this value"
+    title="Override this value"
+    etMenuTrigger
+    type="button"
+  >
+    ✎
+  </button>
+
+  <ng-template etMenuSurface>
+    <et-menu>
+      @switch (kind()) {
+        @case ('string') {
+          @if (isDate()) {
+            <button (activate)="applyDatePreset('now')" et-menu-item type="button">Now</button>
+            <button (activate)="applyDatePreset('plusDay')" et-menu-item type="button">+1 day</button>
+            <button (activate)="applyDatePreset('minusDay')" et-menu-item type="button">-1 day</button>
+            <button (activate)="applyDatePreset('farFuture')" et-menu-item type="button">Far future</button>
+            <button (activate)="applyDatePreset('farPast')" et-menu-item type="button">Far past</button>
+            <button (activate)="applyDatePreset('invalid')" et-menu-item type="button">Invalid date</button>
+          } @else {
+            <button (activate)="applyStringPreset('short')" et-menu-item type="button">Short text</button>
+            <button (activate)="applyStringPreset('long')" et-menu-item type="button">Long text</button>
+            <button (activate)="applyStringPreset('unicode')" et-menu-item type="button">Unicode / RTL sample</button>
+          }
+        }
+        @case ('number') {
+          <button (activate)="applyNumberPreset('zero')" et-menu-item type="button">Zero</button>
+          <button (activate)="applyNumberPreset('negative')" et-menu-item type="button">Negative</button>
+          <button (activate)="applyNumberPreset('huge')" et-menu-item type="button">Huge</button>
+        }
+        @case ('boolean') {
+          <button (activate)="flipBoolean()" et-menu-item type="button">Flip</button>
+        }
+        @case ('array') {
+          <button (activate)="duplicateArray()" et-menu-item type="button">Duplicate array</button>
+        }
+      }
+
+      @if (isArrayElement()) {
+        <button (activate)="duplicateThisItem()" et-menu-item type="button">Duplicate this item</button>
+      }
+
+      @if (paginationShape()) {
+        <button (activate)="resizePagination('shrink')" et-menu-item type="button">Shrink page by 1</button>
+        <button (activate)="resizePagination('extend')" et-menu-item type="button">Extend page by 1</button>
+      }
+
+      @if (isContainer()) {
+        <et-menu-separator />
+
+        <div etMenu>
+          <button et-menu-item etMenuTrigger type="button">
+            Fill recursively
+            <et-menu-item-shortcut>›</et-menu-item-shortcut>
+          </button>
+
+          <ng-template etMenuSurface>
+            <et-menu>
+              <button (activate)="fillStrings()" et-menu-item type="button">Blank every string</button>
+              <button (activate)="fillNumbers()" et-menu-item type="button">Zero every number</button>
+              <button (activate)="fillBooleans()" et-menu-item type="button">Flip every boolean</button>
+            </et-menu>
+          </ng-template>
+        </div>
+      }
+
+      <et-menu-separator />
+
+      <button (activate)="reset()" et-menu-item variant="destructive" type="button">Reset</button>
+    </et-menu>
+  </ng-template>
+</div>

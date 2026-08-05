@@ -1,4 +1,4 @@
-import { Component, output, ViewEncapsulation } from '@angular/core';
+import { Component, input, output, ViewEncapsulation } from '@angular/core';
 import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 
 /**
@@ -18,6 +18,9 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
       </svg>
       <span class="label">Query</span>
       <kbd>{{ shortcut }}</kbd>
+      @if (tampered()) {
+        <span class="tamper-dot" title="A query is showing an armed override or a devtools fault"></span>
+      }
     </button>
   `,
   // Shadow DOM is intentional: this always-visible floating button must be fully isolated from the
@@ -113,9 +116,23 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
       /* The Apple glyphs need no separator; the "Ctrl+Alt+Q" spelling is wider, hence the nowrap. */
       white-space: nowrap;
     }
+
+    /* Visible with the panel closed, which is the point - a query being tampered with is a fact about
+       the running app, not just about whatever the panel happens to have open. */
+    .tamper-dot {
+      position: absolute;
+      inset-block-start: -3px;
+      inset-inline-end: -3px;
+      inline-size: 10px;
+      block-size: 10px;
+      border-radius: 50%;
+      background: #f87171;
+      box-shadow: 0 0 0 2px #1f1f23;
+    }
   `,
 })
 export class QueryDevtoolsToggleComponent {
+  public tampered = input(false);
   public openChange = output<void>();
 
   protected shortcut = queryDevtoolsShortcutLabel();
