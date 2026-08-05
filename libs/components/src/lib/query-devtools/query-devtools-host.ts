@@ -169,7 +169,7 @@ export type QueryDevtoolsHost = {
   forceEmpty(query: AnyQuery): void;
   clearForced(query: AnyQuery): void;
 
-  diffRunIndex: Signal<number | null>;
+  diffRunIndex: WritableSignal<number | null>;
   toggleRunDiff(run: QueryDevtoolsRun): void;
   responseDiff(
     entry: QueryDevtoolsEntry,

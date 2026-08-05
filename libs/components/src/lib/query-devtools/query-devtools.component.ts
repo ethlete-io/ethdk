@@ -64,6 +64,7 @@ import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import { QueryDevtoolsSequencesTabComponent } from './query-devtools-sequences-tab.component';
 import { QueryDevtoolsSocketsTabComponent } from './query-devtools-sockets-tab.component';
 import { QueryDevtoolsStacksTabComponent } from './query-devtools-stacks-tab.component';
+import { QueryDevtoolsTimelineTabComponent } from './query-devtools-timeline-tab.component';
 import {
   buildQueryDevtoolsSessionExport,
   SessionExportClient,
@@ -92,8 +93,6 @@ import {
   RequestProgress,
   RouteSegment,
   TabBadge,
-  Timeline,
-  TimelineRow,
 } from './query-devtools-types';
 
 /** Which edge the panel is attached to. A pop-out is not one of these - it is a window, not an edge. */
@@ -170,12 +169,6 @@ const POPOUT_DOCUMENT = `<!doctype html>
  * user has opened so far.
  */
 const DEFERRED_STYLES = [QueryDevtoolsJsonStylesComponent, QueryDevtoolsTimelineStylesComponent];
-
-/** How many bars the timeline draws. Past this the newest are kept and the rest are counted instead. */
-const MAX_TIMELINE_ROWS = 200;
-
-/** Where the timeline's axis labels sit, as fractions of the window. */
-const TIMELINE_TICKS = [0, 0.25, 0.5, 0.75, 1];
 
 const readPersistedState = (): PersistedState => {
   try {
@@ -260,6 +253,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsSequencesTabComponent,
     QueryDevtoolsSocketsTabComponent,
     QueryDevtoolsStacksTabComponent,
+    QueryDevtoolsTimelineTabComponent,
     QueryDevtoolsToggleComponent,
   ],
   providers: [{ provide: QUERY_DEVTOOLS_HOST, useExisting: QueryDevtoolsComponent }],
@@ -350,7 +344,7 @@ export class QueryDevtoolsComponent {
 
   /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */
   public detailTab = signal<DetailTab>(this.persisted.detailTab ?? 'overview');
-  protected selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
+  public selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
   public selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
 
   /** The form whose detail the Forms tab has expanded. */
@@ -361,7 +355,7 @@ export class QueryDevtoolsComponent {
   public stackSelectedQueryId = signal<string | null>(null);
   public sequenceSelectedQueryId = signal<string | null>(null);
   public formSelectedQueryId = signal<string | null>(null);
-  protected timelineSelectedQueryId = signal<string | null>(null);
+  public timelineSelectedQueryId = signal<string | null>(null);
 
   /** Free-text narrowing of the Queries list. Every whitespace-separated term has to match. */
   public queryFilter = signal(this.persisted.queryFilter ?? '');
@@ -431,7 +425,7 @@ export class QueryDevtoolsComponent {
   protected inspectHover = signal<{ rect: DOMRect; entries: QueryDevtoolsEntry[] } | null>(null);
 
   /** When set (via inspect), the Queries list is filtered to exactly these entry ids. */
-  protected inspectFilterIds = signal<string[] | null>(this.persisted.inspectFilterIds ?? null);
+  public inspectFilterIds = signal<string[] | null>(this.persisted.inspectFilterIds ?? null);
 
   private queryEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query'));
 
@@ -448,7 +442,7 @@ export class QueryDevtoolsComponent {
   public wsEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'ws-client'));
 
   /** Unique client names present across queries and auth providers, for the Queries-tab picker. */
-  protected clientNames = computed(() => {
+  public clientNames = computed(() => {
     const names = new Set<string>();
     for (const entry of queryDevtoolsEntries()) {
       if (entry.meta.clientName) names.add(entry.meta.clientName);
@@ -506,7 +500,7 @@ export class QueryDevtoolsComponent {
    * The queries the list is scoped to before the search box and the status chips narrow them further:
    * either the picked client's, or exactly the inspected element's.
    */
-  private scopedQueries = computed(() => {
+  public scopedQueries = computed(() => {
     const entries = this.queryEntries();
     const inspectIds = this.inspectFilterIds();
 
@@ -515,73 +509,6 @@ export class QueryDevtoolsComponent {
     const client = this.selectedClientName();
 
     return client ? entries.filter((e) => e.meta.clientName === client) : entries;
-  });
-
-  /**
-   * Every run the scoped queries have recorded, oldest first. The client picker and the inspection
-   * filter narrow the timeline the same way they narrow the Queries list.
-   */
-  private scopedRuns = computed(() => {
-    const collected: { entry: QueryDevtoolsEntry; run: QueryDevtoolsRun }[] = [];
-
-    for (const entry of this.scopedQueries()) {
-      for (const run of entry.stats?.runs() ?? []) collected.push({ entry, run });
-    }
-
-    return collected.sort((a, b) => a.run.startedAt - b.run.startedAt);
-  });
-
-  /**
-   * Every scoped run laid out on one axis, so a stampede reads as overlapping bars and a chain as a
-   * staircase - which is what the Events tab's flat list of wall-clock times cannot show.
-   */
-  protected timeline = computed<Timeline>(() => {
-    const collected = this.scopedRuns();
-    const hidden = Math.max(0, collected.length - MAX_TIMELINE_ROWS);
-    const shown = hidden ? collected.slice(hidden) : collected;
-    const first = shown[0];
-
-    if (!first) return { rows: [], startedAt: 0, windowMs: 0, hidden: 0 };
-
-    // A run in flight has no end yet, so the window has to grow with the clock - otherwise its bar would
-    // freeze at the width it happened to be built with, the same trap `isStale` documents.
-    if (shown.some(({ run }) => run.endedAt === null)) this.clock();
-
-    const now = Date.now();
-    const startedAt = first.run.startedAt;
-    const endedAt = shown.reduce((latest, { run }) => Math.max(latest, run.endedAt ?? now), startedAt);
-    const windowMs = Math.max(1, endedAt - startedAt);
-
-    const rows = shown.map(({ entry, run }): TimelineRow => {
-      const url = run.url ?? this.requestUrl(entry.handle as AnyQuery);
-
-      return {
-        key: `${entry.id}:${run.index}`,
-        entryId: entry.id,
-        method: entry.meta.method ?? '',
-        path: url ? this.requestPath(url) : (entry.meta.route ?? ''),
-        run,
-        leftPct: ((run.startedAt - startedAt) / windowMs) * 100,
-        // An instant run - a cache entry filled by a poll or by another consumer - still needs a sliver
-        // of width to be visible at all.
-        widthPct: Math.max(0.4, (((run.endedAt ?? now) - run.startedAt) / windowMs) * 100),
-        durationMs: run.endedAt === null ? null : run.endedAt - run.startedAt,
-      };
-    });
-
-    return { rows, startedAt, windowMs, hidden };
-  });
-
-  /** Axis labels for the timeline, as offsets from the window's start. */
-  protected timelineTicks = computed(() => {
-    const { windowMs, rows } = this.timeline();
-
-    if (!rows.length) return [];
-
-    return TIMELINE_TICKS.map((fraction) => ({
-      pct: fraction * 100,
-      label: this.formatDuration(Math.round(windowMs * fraction)),
-    }));
   });
 
   /** How many runs every query has recorded, for the Timeline tab's badge. */
@@ -664,7 +591,7 @@ export class QueryDevtoolsComponent {
   public stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
   public sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
   public formSelectedQuery = computed(() => this.findQuery(this.formSelectedQueryId()));
-  protected timelineSelectedQuery = computed(() => this.findQuery(this.timelineSelectedQueryId()));
+  public timelineSelectedQuery = computed(() => this.findQuery(this.timelineSelectedQueryId()));
 
   /**
    * The cache per client, with every entry's size measured. Reading each response inside the computed is
@@ -850,11 +777,6 @@ export class QueryDevtoolsComponent {
       }
     });
 
-    // The waterfall's grid lays out nothing else in the panel, so its rules arrive with the tab.
-    effect(() => {
-      if (this.activeTab() === 'timeline') this.styleManager.mount(QueryDevtoolsTimelineStylesComponent);
-    });
-
     // A pop-out holds the panel element; leaving its window open would leave a dead panel on screen.
     this.destroyRef.onDestroy(() => this.closePopup());
 
@@ -1021,7 +943,7 @@ export class QueryDevtoolsComponent {
     this.eventErrorsOnly.set(false);
   }
 
-  protected selectClient(name: string | null) {
+  public selectClient(name: string | null) {
     this.selectedClientName.set(name);
     this.inspectFilterIds.set(null);
   }
@@ -1196,13 +1118,6 @@ export class QueryDevtoolsComponent {
     this.diffRunIndex.set(null);
   }
 
-  /** The same, for every query the timeline covers. */
-  protected resetTimeline() {
-    for (const entry of this.scopedQueries()) entry.stats?.reset();
-
-    this.diffRunIndex.set(null);
-  }
-
   /** A query's runs, newest first - the order a history is read in. */
   public queryRuns(entry: QueryDevtoolsEntry): QueryDevtoolsRun[] {
     return [...(entry.stats?.runs() ?? [])].reverse();
@@ -1212,7 +1127,7 @@ export class QueryDevtoolsComponent {
    * What a run's status dot and timeline bar colour by. `pending` reuses the panel's loading colour;
    * `aborted` matches no rule and so falls back to the neutral one.
    */
-  protected runStatus(run: QueryDevtoolsRun) {
+  public runStatus(run: QueryDevtoolsRun) {
     return run.status === 'pending' ? 'loading' : run.status;
   }
 
@@ -1261,10 +1176,6 @@ export class QueryDevtoolsComponent {
     this.selectedQueryId.set(id);
   }
 
-  protected selectTimelineRow(row: TimelineRow) {
-    this.timelineSelectedQueryId.set(row.entryId);
-  }
-
   protected selectEventRow(item: EventLogItem) {
     if (item.queryId) this.selectQuery(item.queryId);
   }
@@ -1284,7 +1195,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** A byte count the way a network panel spells one out. */
-  protected formatBytes(bytes: number) {
+  public formatBytes(bytes: number) {
     if (bytes < 1000) return `${bytes} B`;
     if (bytes < 1_000_000) return `${(bytes / 1000).toFixed(1)} kB`;
 
