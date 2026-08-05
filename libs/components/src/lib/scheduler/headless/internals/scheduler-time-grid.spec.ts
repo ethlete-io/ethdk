@@ -22,28 +22,31 @@ const buildGrid = (appointments: Appointment[], days: Date[] = [day]) =>
   buildSchedulerTimeGrid({ days, tree: buildAppointmentTree(appointments), today: day });
 
 const blocksOf = (id: string) => (grid: ReturnType<typeof buildGrid>) =>
-  grid[0]?.blocks.find((block) => block.node.appointment.id === id);
+  grid.days[0]?.blocks.find((block) => block.node.appointment.id === id);
+
+const allDayOf = (id: string) => (grid: ReturnType<typeof buildGrid>) =>
+  grid.allDay.find((entry) => entry.node.appointment.id === id);
 
 describe('buildSchedulerTimeGrid', () => {
   it('produces one day column per input day', () => {
     const grid = buildGrid([], [day, new Date(2026, 6, 16)]);
 
-    expect(grid).toHaveLength(2);
-    expect(grid[0]?.date).toEqual(day);
-    expect(grid[1]?.date).toEqual(new Date(2026, 6, 16));
+    expect(grid.days).toHaveLength(2);
+    expect(grid.days[0]?.date).toEqual(day);
+    expect(grid.days[1]?.date).toEqual(new Date(2026, 6, 16));
   });
 
   it('flags today', () => {
     const grid = buildGrid([]);
 
-    expect(grid[0]?.today).toBe(true);
+    expect(grid.days[0]?.today).toBe(true);
   });
 
-  it('routes an all-day appointment to the strip, not the blocks', () => {
+  it('routes an all-day appointment to the all-day entries, not the blocks', () => {
     const grid = buildGrid([appointment('a', new Date(2026, 6, 15, 0), new Date(2026, 6, 15, 23), { allDay: true })]);
 
-    expect(grid[0]?.allDay.map((node) => node.appointment.id)).toEqual(['a']);
-    expect(grid[0]?.blocks).toEqual([]);
+    expect(grid.allDay.map((entry) => entry.node.appointment.id)).toEqual(['a']);
+    expect(grid.days[0]?.blocks).toEqual([]);
   });
 
   it('positions a timed appointment as a percentage of the day', () => {
@@ -61,7 +64,7 @@ describe('buildSchedulerTimeGrid', () => {
     );
 
     const first = blocksOf('a')(grid);
-    const second = grid[1]?.blocks.find((block) => block.node.appointment.id === 'a');
+    const second = grid.days[1]?.blocks.find((block) => block.node.appointment.id === 'a');
 
     expect(first?.offset).toBeCloseTo(75, 5);
     expect(first?.span).toBeCloseTo(25, 5);
@@ -111,5 +114,53 @@ describe('buildSchedulerTimeGrid', () => {
     expect(blocksOf('child')(grid)?.node.depth).toBe(1);
     expect(blocksOf('parent')(grid)).toMatchObject({ column: 0, columnCount: 1 });
     expect(blocksOf('child')(grid)).toMatchObject({ column: 0, columnCount: 1 });
+  });
+
+  describe('all-day entries', () => {
+    const days = [day, new Date(2026, 6, 16), new Date(2026, 6, 17), new Date(2026, 6, 18)];
+
+    it('spans a multi-day appointment across every day it covers as one entry', () => {
+      const grid = buildGrid(
+        [appointment('a', new Date(2026, 6, 16, 0), new Date(2026, 6, 17, 23), { allDay: true })],
+        days,
+      );
+
+      expect(grid.allDay).toHaveLength(1);
+      expect(allDayOf('a')(grid)).toMatchObject({ inlineOffset: 25, inlineSize: 50 });
+    });
+
+    it('clips a span outside the visible range to the first/last visible day', () => {
+      const grid = buildGrid([appointment('a', new Date(2026, 6, 14), new Date(2026, 6, 19), { allDay: true })], days);
+
+      expect(allDayOf('a')(grid)).toMatchObject({ inlineOffset: 0, inlineSize: 100 });
+    });
+
+    it('gives non-overlapping all-day entries the same row', () => {
+      const grid = buildGrid(
+        [
+          appointment('a', new Date(2026, 6, 15), new Date(2026, 6, 15), { allDay: true }),
+          appointment('b', new Date(2026, 6, 16), new Date(2026, 6, 16), { allDay: true }),
+        ],
+        days,
+      );
+
+      expect(allDayOf('a')(grid)?.row).toBe(0);
+      expect(allDayOf('b')(grid)?.row).toBe(0);
+      expect(grid.allDayRowCount).toBe(1);
+    });
+
+    it('stacks overlapping all-day entries into separate rows', () => {
+      const grid = buildGrid(
+        [
+          appointment('a', new Date(2026, 6, 15), new Date(2026, 6, 17), { allDay: true }),
+          appointment('b', new Date(2026, 6, 16), new Date(2026, 6, 18), { allDay: true }),
+        ],
+        days,
+      );
+
+      expect(allDayOf('a')(grid)?.row).toBe(0);
+      expect(allDayOf('b')(grid)?.row).toBe(1);
+      expect(grid.allDayRowCount).toBe(2);
+    });
   });
 });

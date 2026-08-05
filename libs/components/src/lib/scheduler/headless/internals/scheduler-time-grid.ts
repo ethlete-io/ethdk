@@ -1,5 +1,5 @@
 import { endOfDay, isSameDay, startOfDay } from 'date-fns';
-import { Appointment } from '../../scheduler.types';
+import { Appointment, AppointmentId } from '../../scheduler.types';
 import { AppointmentTreeNode, flattenAppointmentTree } from './scheduler-tree';
 
 /** One timed appointment positioned on a time-grid day column. */
@@ -19,12 +19,30 @@ export type SchedulerTimeGridBlock<TExtra = unknown> = {
   inlineSize: number;
 };
 
-/** One day column of a time grid: its all-day strip entries and its positioned timed blocks. */
+/** One day column of a time grid: its positioned timed blocks. All-day appointments live in {@link SchedulerTimeGrid.allDay} instead, spanning the days they cover. */
 export type SchedulerTimeGridDay<TExtra = unknown> = {
   date: Date;
   today: boolean;
-  allDay: AppointmentTreeNode<TExtra>[];
   blocks: SchedulerTimeGridBlock<TExtra>[];
+};
+
+/** One all-day appointment positioned across the time grid's day columns. */
+export type SchedulerTimeGridAllDayEntry<TExtra = unknown> = {
+  node: AppointmentTreeNode<TExtra>;
+  /** Percent (0-100) of the visible range's width the entry starts at - `inset-inline-start`. */
+  inlineOffset: number;
+  /** Percent (0-100] of the visible range's width the entry spans - `inline-size`. */
+  inlineSize: number;
+  /** 0-based stacking row among all-day entries whose day spans overlap. */
+  row: number;
+};
+
+/** The full time grid: one column per visible day, plus the all-day entries spanning across them. */
+export type SchedulerTimeGrid<TExtra = unknown> = {
+  days: SchedulerTimeGridDay<TExtra>[];
+  allDay: SchedulerTimeGridAllDayEntry<TExtra>[];
+  /** How many stacking rows the all-day lane needs - callers size its reserved space from this. */
+  allDayRowCount: number;
 };
 
 export type SchedulerTimeGridOptions<TExtra> = {
@@ -103,27 +121,55 @@ const packColumns = <TExtra>(
   return blocks;
 };
 
+type DaySpan<TExtra> = { node: AppointmentTreeNode<TExtra>; startIndex: number; endIndex: number };
+
 /**
- * Lays out a time grid's day columns: all-day appointments in chain order for the strip, and
- * timed appointments packed into overlap-free columns ({@link packColumns}) with `offset`/`span`
- * as percentages of the day, so the component exposes them as unitless CSS custom properties and
- * resolves them with `calc(var(...) * 1%)` against a CSS-controlled hour height - no pixel math
- * here, same as the slider's thumb-position percent. An appointment spanning midnight is clipped
- * to each day it touches, same as the month grid's "every day it spans" rule.
+ * Assigns each all-day entry the first stacking row whose last occupant ends before it starts -
+ * the day-axis equivalent of {@link packColumns}'s column assignment, so entries whose day ranges
+ * overlap stack into separate rows instead of drawing on top of each other.
+ */
+const packAllDayRows = <TExtra>(
+  spans: readonly DaySpan<TExtra>[],
+): { rowByAppointmentId: Map<AppointmentId, number>; rowCount: number } => {
+  const sorted = [...spans].sort((a, b) => a.startIndex - b.startIndex || a.endIndex - b.endIndex);
+  const rowEnds: number[] = [];
+  const rowByAppointmentId = new Map<AppointmentId, number>();
+
+  for (const span of sorted) {
+    const existingRow = rowEnds.findIndex((end) => end < span.startIndex);
+    const row = existingRow === -1 ? rowEnds.length : existingRow;
+
+    rowEnds[row] = span.endIndex;
+    rowByAppointmentId.set(span.node.appointment.id, row);
+  }
+
+  return { rowByAppointmentId, rowCount: rowEnds.length };
+};
+
+/**
+ * Lays out a time grid: timed appointments packed into overlap-free columns per day
+ * ({@link packColumns}) with `offset`/`span` as percentages of the day, and all-day appointments
+ * as entries spanning the visible days they cover, stacked into rows ({@link packAllDayRows}).
+ * Every percentage is exposed as a unitless CSS custom property and resolved with
+ * `calc(var(...) * 1%)` against a CSS-controlled size - no pixel math here, same as the slider's
+ * thumb-position percent. A timed appointment spanning midnight is clipped to each day it
+ * touches; an all-day appointment outside the visible range is clipped to its first/last visible
+ * day, same as the month grid's "every day it spans" rule.
  */
 export const buildSchedulerTimeGrid = <TExtra>(
   options: SchedulerTimeGridOptions<TExtra>,
-): SchedulerTimeGridDay<TExtra>[] => {
+): SchedulerTimeGrid<TExtra> => {
   const { days, tree, today } = options;
   const flattened = flattenAppointmentTree(tree);
 
-  return days.map((date) => {
+  const allDaySpans: DaySpan<TExtra>[] = [];
+
+  const dayColumns = days.map((date, index) => {
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
     const dayStartMs = dayStart.getTime();
     const dayMs = dayEnd.getTime() - dayStartMs;
 
-    const allDay: AppointmentTreeNode<TExtra>[] = [];
     const timed: ClippedEntry<TExtra>[] = [];
 
     for (const node of flattened) {
@@ -134,7 +180,14 @@ export const buildSchedulerTimeGrid = <TExtra>(
       }
 
       if (appointment.allDay) {
-        allDay.push(node);
+        const span = allDaySpans.find((entry) => entry.node.appointment.id === appointment.id);
+
+        if (span) {
+          span.endIndex = index;
+        } else {
+          allDaySpans.push({ node, startIndex: index, endIndex: index });
+        }
+
         continue;
       }
 
@@ -148,8 +201,19 @@ export const buildSchedulerTimeGrid = <TExtra>(
     return {
       date,
       today: isSameDay(date, today),
-      allDay,
       blocks: packColumns(timed, { startMs: dayStartMs, ms: dayMs }),
     };
   });
+
+  const { rowByAppointmentId, rowCount } = packAllDayRows(allDaySpans);
+  const inlineSize = days.length === 0 ? 0 : 100 / days.length;
+
+  const allDay = allDaySpans.map((span) => ({
+    node: span.node,
+    inlineOffset: span.startIndex * inlineSize,
+    inlineSize: (span.endIndex - span.startIndex + 1) * inlineSize,
+    row: rowByAppointmentId.get(span.node.appointment.id) ?? 0,
+  }));
+
+  return { days: dayColumns, allDay, allDayRowCount: rowCount };
 };

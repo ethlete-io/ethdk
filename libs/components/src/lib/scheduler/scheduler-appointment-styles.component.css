@@ -3,7 +3,6 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    overflow: hidden;
     padding: 2px 6px;
     border: none;
     border-radius: 4px;
@@ -12,8 +11,6 @@
     font: inherit;
     font-size: 12px;
     text-align: start;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
@@ -26,6 +23,14 @@
       border-radius: 999px;
       background: var(--et-theme-color-primary-solid);
       content: '';
+    }
+
+    .et-scheduler-appointment-title {
+      overflow: hidden;
+      min-inline-size: 0;
+      flex: 1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     @media (hover: hover) {

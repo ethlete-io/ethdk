@@ -11,6 +11,12 @@
     initial-value: 56px;
   }
 
+  @property --et-scheduler-time-grid-all-day-row-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+
   .et-scheduler-time-grid-view {
     display: flex;
     flex-direction: column;
@@ -73,11 +79,22 @@
     border-block-end: 1px solid var(--et-surface-border-solid);
   }
 
-  .et-scheduler-time-grid-all-day-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding-inline: 4px;
+  .et-scheduler-time-grid-all-day-lane {
+    position: relative;
+    flex: 1;
+    min-block-size: calc(
+      var(--_et-scheduler-time-grid-all-day-row-count, 0) * var(--et-scheduler-time-grid-all-day-row-size)
+    );
+  }
+
+  .et-scheduler-time-grid-all-day-entry {
+    position: absolute;
+    inset-block-start: calc(
+      var(--_et-scheduler-time-grid-all-day-row, 0) * var(--et-scheduler-time-grid-all-day-row-size)
+    );
+    inset-inline-start: calc(var(--_et-scheduler-time-grid-all-day-offset, 0) * 1%);
+    inline-size: calc(var(--_et-scheduler-time-grid-all-day-size, 100) * 1% - 4px);
+    block-size: calc(var(--et-scheduler-time-grid-all-day-row-size) - 2px);
   }
 
   .et-scheduler-time-grid-hour-row {
@@ -109,6 +126,10 @@
   .et-scheduler-time-grid-day {
     position: relative;
     border-inline-end: 1px solid var(--et-surface-border-solid);
+
+    &:where([data-today]) {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 6%, transparent);
+    }
   }
 
   .et-scheduler-time-grid-block {

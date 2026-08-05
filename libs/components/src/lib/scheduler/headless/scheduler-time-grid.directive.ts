@@ -5,7 +5,11 @@ import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
 import { buildSchedulerTimeGrid } from './internals/scheduler-time-grid';
 import { SchedulerDirective } from './scheduler.directive';
 
-export type { SchedulerTimeGridBlock, SchedulerTimeGridDay } from './internals/scheduler-time-grid';
+export type {
+  SchedulerTimeGridAllDayEntry,
+  SchedulerTimeGridBlock,
+  SchedulerTimeGridDay,
+} from './internals/scheduler-time-grid';
 
 /**
  * Lays the host `[etScheduler]`'s appointments onto an hour-axis time grid: one day column per day
@@ -23,12 +27,11 @@ export class SchedulerTimeGridDirective {
 
   private scheduler = inject(SchedulerDirective, { optional: true });
 
-  /** One day column per day of the visible range, laid out by `buildSchedulerTimeGrid`. */
-  public days = computed(() => {
+  private grid = computed(() => {
     const scheduler = this.scheduler;
 
     if (!scheduler) {
-      return [];
+      return { days: [], allDay: [], allDayRowCount: 0 };
     }
 
     return buildSchedulerTimeGrid({
@@ -37,6 +40,15 @@ export class SchedulerTimeGridDirective {
       today: new Date(),
     });
   });
+
+  /** One day column per day of the visible range. */
+  public days = computed(() => this.grid().days);
+
+  /** All-day appointments, each spanning the visible days it covers and stacked to avoid overlap. */
+  public allDay = computed(() => this.grid().allDay);
+
+  /** How many stacking rows {@link allDay} needs - sizes the all-day lane's reserved space. */
+  public allDayRowCount = computed(() => this.grid().allDayRowCount);
 
   constructor() {
     if (ngDevMode) {

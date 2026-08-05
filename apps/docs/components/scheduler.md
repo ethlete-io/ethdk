@@ -36,20 +36,20 @@ type Appointment<TExtra = unknown> = {
 - `parentId` links an appointment under another, to any depth - a dangling reference (the parent was filtered out) falls back to top-level rather than being dropped.
 - `colorToken` resolves through the [color theming](/core/theming) system - it's read as `[etProvideColor]` on the appointment's badge, so pass whatever theme name your app registered (`'brand'`, `'danger'`, …), never a literal color.
 - `extra` is the open extension point for a custom edit surface (planned) to read and write, so adding a field never widens `Appointment` itself.
-- An appointment renders on **every day it spans**, not just the day it starts - a 3-day `allDay` appointment shows a badge on all three day cells.
+- An appointment renders on **every day it spans**, not just the day it starts - a 3-day `allDay` appointment shows a badge on all three month-view day cells, and one bar spanning all three columns in the time grid's all-day strip.
 
 ## Options
 
 On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 
-| Input                   | Type                        | Default             | Description                                                                                            |
-| ----------------------- | --------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
-| `appointments`          | `readonly Appointment[]`    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.                   |
-| `view`                  | `SchedulerView`             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                                    |
-| `focusedDate`           | `Date`                      | today               | The date the visible period is derived from.                                                           |
-| `selectedAppointmentId` | `AppointmentId \| null`     | `null`              | The currently selected appointment.                                                                    |
-| `locale`                | `Locale \| null` (date-fns) | `DATE_LOCALE` token | Weekday names and the header label. Falls back to date-fns' built-in en-US.                            |
-| `firstDayOfWeek`        | `0–6`                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                                 |
+| Input                   | Type                        | Default             | Description                                                                          |
+| ----------------------- | --------------------------- | ------------------- | ------------------------------------------------------------------------------------ |
+| `appointments`          | `readonly Appointment[]`    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range. |
+| `view`                  | `SchedulerView`             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                  |
+| `focusedDate`           | `Date`                      | today               | The date the visible period is derived from.                                         |
+| `selectedAppointmentId` | `AppointmentId \| null`     | `null`              | The currently selected appointment.                                                  |
+| `locale`                | `Locale \| null` (date-fns) | `DATE_LOCALE` token | Weekday names and the header label. Falls back to date-fns' built-in en-US.          |
+| `firstDayOfWeek`        | `0–6`                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.               |
 
 | Model                   | Type                    | Description                                  |
 | ----------------------- | ----------------------- | -------------------------------------------- |
@@ -75,7 +75,7 @@ Clicking a badge (in the grid or the overflow popover) sets `selectedAppointment
 
 ## Time grid: week & day view
 
-An hour axis with one column per day - a single column for the day view, seven for the week view. Both are the **same** `<et-scheduler-time-grid-view>`; only the visible range differs, driven by `view`. All-day appointments render in a strip above the hour grid; timed appointments are laid out at their actual position and duration.
+An hour axis with one column per day - a single column for the day view, seven for the week view. Both are the **same** `<et-scheduler-time-grid-view>`; only the visible range differs, driven by `view`. All-day appointments render as one bar spanning the visible days they cover in a strip above the hour grid - a 3-day appointment draws once, not once per day - stacked into rows when two spans overlap; timed appointments are laid out at their actual position and duration.
 
 <StoryEmbed id="components-scheduler--week" height="640px" />
 
@@ -107,7 +107,7 @@ An appointment's `parentId` is the whole nesting model - no `level`, no depth li
 
 ## Headless usage {#headless-usage}
 
-`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its `allDay` nodes and its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in):
+`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs):
 
 ```html
 <div #scheduler="etScheduler" [appointments]="appointments" etScheduler>
@@ -140,11 +140,12 @@ An appointment's `parentId` is the whole nesting model - no `level`, no depth li
 
 Badge and selection colors come from the nearest [color theme](/core/theming) via each appointment's `colorToken`; chrome (header, weekday labels, cell/hour borders) uses surface tokens. Public design tokens:
 
-| Token                                     | Default | Purpose                                           |
-| ----------------------------------------- | ------- | ------------------------------------------------- |
-| `--et-scheduler-month-view-cell-min-size` | `96px`  | Minimum block size of one month-view day cell.    |
-| `--et-scheduler-time-grid-hour-size`      | `48px`  | Block size of one hour row in the time grid.      |
-| `--et-scheduler-time-grid-gutter-size`    | `56px`  | Inline size of the time grid's hour-label gutter. |
+| Token                                       | Default | Purpose                                              |
+| ------------------------------------------- | ------- | ---------------------------------------------------- |
+| `--et-scheduler-month-view-cell-min-size`   | `96px`  | Minimum block size of one month-view day cell.       |
+| `--et-scheduler-time-grid-hour-size`        | `48px`  | Block size of one hour row in the time grid.         |
+| `--et-scheduler-time-grid-gutter-size`      | `56px`  | Inline size of the time grid's hour-label gutter.    |
+| `--et-scheduler-time-grid-all-day-row-size` | `24px`  | Block size of one stacking row in the all-day strip. |
 
 ## Error codes
 
