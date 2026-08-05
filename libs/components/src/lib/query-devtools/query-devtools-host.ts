@@ -2,12 +2,14 @@ import { inject, InjectionToken, Signal, WritableSignal } from '@angular/core';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
+  AnyQuerySnapshot,
   AnyQueryStack,
   QueryDevtoolsEntry,
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
   QueryDevtoolsRun,
   QuerySequence,
+  QuerySequenceStatus,
   WebSocketDevtoolsHandle,
 } from '@ethlete/query';
 import { QueryDevtoolsDiff } from './query-devtools-diff';
@@ -85,6 +87,20 @@ export type QueryDevtoolsHost = {
   routeSegments(entry: QueryDevtoolsEntry | undefined, query: AnyQuery): RouteSegment[];
   queryActivity(entry: QueryDevtoolsEntry): QueryActivity;
   linkActivity(link: QueryLink): QueryActivity;
+  stackActivity(stack: AnyQueryStack | AnyPagedQueryStack): QueryActivity;
+  sequenceActivity(sequence: QuerySequence<unknown[]>): QueryActivity;
+  queriesForStack(stack: AnyQueryStack | AnyPagedQueryStack): QueryLink[];
+  queriesForSequence(sequence: QuerySequence<unknown[]>): QueryLink[];
+  /**
+   * The queries a form feeds, discovered from the reads its `value()` recorded while their args were
+   * built - so a form that nothing consumes yet reads as exactly that.
+   */
+  queriesDrivenByForm(entry: QueryDevtoolsEntry): QueryLink[];
+  sequenceStepStatus(sequence: QuerySequence<unknown[]>, index: number): QuerySequenceStatus;
+  stepSnapshot(sequence: QuerySequence<unknown[]>, index: number): AnyQuerySnapshot | null;
+  /** Whether a sequence step's in/out detail (`<entryId>:<stepIndex>`) is expanded - persisted. */
+  isStepExpanded(entryId: string, index: number): boolean;
+  toggleStep(entryId: string, index: number): void;
   resetStats(entry: QueryDevtoolsEntry): void;
   executeQuery(query: AnyQuery, allowCache: boolean): void;
   resetQuery(query: AnyQuery): void;
@@ -172,6 +188,21 @@ export type QueryDevtoolsHost = {
    * filed into a folder per query client.
    */
   downloadInsomniaCollection(items: { entry: QueryDevtoolsEntry; query: AnyQuery }[], clientLabel: string | null): void;
+
+  // --- Per-tab drawer selections (deliberately not shared with each other, but each has to survive its
+  // own tab being switched away from, so - like the Queries tab's selection above - they live here) ---
+
+  stackSelectedQueryId: WritableSignal<string | null>;
+  stackSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
+  sequenceSelectedQueryId: WritableSignal<string | null>;
+  sequenceSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
+  formSelectedQueryId: WritableSignal<string | null>;
+  formSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
+
+  /** The form whose detail the Forms tab has expanded - persisted. */
+  selectedFormId: WritableSignal<string | null>;
+  timelineSelectedQueryId: WritableSignal<string | null>;
+  timelineSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
 
   // --- Two-pane tab sizing (the divider between a tab's list and its drawer) ---
 

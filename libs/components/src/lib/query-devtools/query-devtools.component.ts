@@ -52,12 +52,15 @@ import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component'
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
 import { QueryDevtoolsDrawerComponent } from './query-devtools-drawer.component';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
+import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
+import { QueryDevtoolsSequencesTabComponent } from './query-devtools-sequences-tab.component';
+import { QueryDevtoolsStacksTabComponent } from './query-devtools-stacks-tab.component';
 import {
   buildQueryDevtoolsSessionExport,
   SessionExportClient,
@@ -245,9 +248,12 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsDetailComponent,
     QueryDevtoolsDrawerComponent,
     QueryDevtoolsFeaturesComponent,
+    QueryDevtoolsFormsTabComponent,
     QueryDevtoolsJsonComponent,
     QueryDevtoolsQueriesTabComponent,
     QueryDevtoolsRouteComponent,
+    QueryDevtoolsSequencesTabComponent,
+    QueryDevtoolsStacksTabComponent,
     QueryDevtoolsToggleComponent,
   ],
   providers: [{ provide: QUERY_DEVTOOLS_HOST, useExisting: QueryDevtoolsComponent }],
@@ -342,13 +348,13 @@ export class QueryDevtoolsComponent {
   public selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
 
   /** The form whose detail the Forms tab has expanded. */
-  protected selectedFormId = signal<string | null>(this.persisted.selectedFormId ?? null);
+  public selectedFormId = signal<string | null>(this.persisted.selectedFormId ?? null);
 
   // Independent per-drawer selection so no drawer shares the Queries tab's selection - or another
   // drawer's: opening a query from the Timeline must not also change what the Forms drawer shows.
-  protected stackSelectedQueryId = signal<string | null>(null);
-  protected sequenceSelectedQueryId = signal<string | null>(null);
-  protected formSelectedQueryId = signal<string | null>(null);
+  public stackSelectedQueryId = signal<string | null>(null);
+  public sequenceSelectedQueryId = signal<string | null>(null);
+  public formSelectedQueryId = signal<string | null>(null);
   protected timelineSelectedQueryId = signal<string | null>(null);
 
   /** Free-text narrowing of the Queries list. Every whitespace-separated term has to match. */
@@ -423,13 +429,13 @@ export class QueryDevtoolsComponent {
 
   private queryEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query'));
 
-  protected stackEntries = computed(() =>
+  public stackEntries = computed(() =>
     queryDevtoolsEntries().filter((e) => e.kind === 'query-stack' || e.kind === 'paged-query-stack'),
   );
 
-  protected sequenceEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-sequence'));
+  public sequenceEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-sequence'));
 
-  protected formEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-form'));
+  public formEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-form'));
 
   protected authEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'auth-provider'));
 
@@ -649,9 +655,9 @@ export class QueryDevtoolsComponent {
   protected tabMenuOpen = signal(false);
 
   public selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
-  protected stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
-  protected sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
-  protected formSelectedQuery = computed(() => this.findQuery(this.formSelectedQueryId()));
+  public stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
+  public sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
+  public formSelectedQuery = computed(() => this.findQuery(this.formSelectedQueryId()));
   protected timelineSelectedQuery = computed(() => this.findQuery(this.timelineSelectedQueryId()));
 
   /**
@@ -1100,7 +1106,7 @@ export class QueryDevtoolsComponent {
     return query.args() ?? query.subtle.request()?.args ?? null;
   }
 
-  protected queryStatus(query: AnyQuery): QueryStatus {
+  public queryStatus(query: AnyQuery): QueryStatus {
     const state = query.executionState();
     if (!state) return 'idle';
     if (state.type === 'loading') return 'loading';
@@ -1166,15 +1172,15 @@ export class QueryDevtoolsComponent {
     return this.activityOf([entry.stats]);
   }
 
-  protected linkActivity(link: QueryLink): QueryActivity {
+  public linkActivity(link: QueryLink): QueryActivity {
     return this.activityOf([link.stats]);
   }
 
-  protected stackActivity(stack: AnyQueryStack | AnyPagedQueryStack): QueryActivity {
+  public stackActivity(stack: AnyQueryStack | AnyPagedQueryStack): QueryActivity {
     return this.activityOf(this.queriesForStack(stack).map((link) => link.stats));
   }
 
-  protected sequenceActivity(sequence: QuerySequence<unknown[]>): QueryActivity {
+  public sequenceActivity(sequence: QuerySequence<unknown[]>): QueryActivity {
     return this.activityOf(this.queriesForSequence(sequence).map((link) => link.stats));
   }
 
@@ -1258,7 +1264,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** A value on one line, for a diff row or a form field. The full tree would bury the row it sits in. */
-  protected inlineValue(value: unknown) {
+  public inlineValue(value: unknown) {
     if (typeof value === 'string') return value.length > 80 ? `"${value.slice(0, 80)}…"` : `"${value}"`;
     if (value === undefined) return 'undefined';
 
@@ -1396,7 +1402,10 @@ export class QueryDevtoolsComponent {
    * Downloads the given queries (already scoped/filtered by the caller) as one Insomnia collection,
    * filed into a folder per query client.
    */
-  public downloadInsomniaCollection(items: { entry: QueryDevtoolsEntry; query: AnyQuery }[], clientLabel: string | null) {
+  public downloadInsomniaCollection(
+    items: { entry: QueryDevtoolsEntry; query: AnyQuery }[],
+    clientLabel: string | null,
+  ) {
     if (!items.length) return;
 
     const requests = items.map(({ entry, query }) => this.exportedRequest(entry, query));
@@ -1638,15 +1647,15 @@ export class QueryDevtoolsComponent {
 
   // --- Typed template accessors (entry.handle is `unknown`) ---
 
-  protected asStack(entry: QueryDevtoolsEntry): AnyQueryStack {
+  public asStack(entry: QueryDevtoolsEntry): AnyQueryStack {
     return entry.handle as AnyQueryStack;
   }
 
-  protected asPagedStack(entry: QueryDevtoolsEntry): AnyPagedQueryStack {
+  public asPagedStack(entry: QueryDevtoolsEntry): AnyPagedQueryStack {
     return entry.handle as AnyPagedQueryStack;
   }
 
-  protected asSequence(entry: QueryDevtoolsEntry): QuerySequence<unknown[]> {
+  public asSequence(entry: QueryDevtoolsEntry): QuerySequence<unknown[]> {
     return (entry.handle as { current: QuerySequence<unknown[]> }).current;
   }
 
@@ -1710,7 +1719,7 @@ export class QueryDevtoolsComponent {
     return error?.entryId === entryId ? error.message : null;
   }
 
-  protected asForm(entry: QueryDevtoolsEntry): QueryDevtoolsFormHandle {
+  public asForm(entry: QueryDevtoolsEntry): QueryDevtoolsFormHandle {
     return entry.handle as QueryDevtoolsFormHandle;
   }
 
@@ -1718,7 +1727,7 @@ export class QueryDevtoolsComponent {
    * The queries a form feeds, discovered from the reads its `value()` recorded while their args were
    * built - so a form that nothing consumes yet reads as exactly that.
    */
-  protected queriesDrivenByForm(entry: QueryDevtoolsEntry): QueryLink[] {
+  public queriesDrivenByForm(entry: QueryDevtoolsEntry): QueryLink[] {
     return this.queryEntries()
       .filter((candidate) => candidate.formLinks?.ids().includes(entry.id))
       .map((candidate) => this.queryLinkFor(candidate));
@@ -1764,7 +1773,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** Derives the per-step status of a sequence step from its live progress signals. */
-  protected sequenceStepStatus(sequence: QuerySequence<unknown[]>, index: number): QuerySequenceStatus {
+  public sequenceStepStatus(sequence: QuerySequence<unknown[]>, index: number): QuerySequenceStatus {
     const failedAt = sequence.failedAt();
     if (failedAt !== null && index === failedAt) return 'error';
 
@@ -1782,7 +1791,7 @@ export class QueryDevtoolsComponent {
     return decodeJwtPayload(auth.accessToken());
   }
 
-  protected queriesForStack(stack: AnyQueryStack | AnyPagedQueryStack): QueryLink[] {
+  public queriesForStack(stack: AnyQueryStack | AnyPagedQueryStack): QueryLink[] {
     const inner = stack.queries();
     const queryEntries = this.queryEntries();
 
@@ -1792,12 +1801,6 @@ export class QueryDevtoolsComponent {
         query as AnyQuery,
       ),
     );
-  }
-
-  /** Identifying info for a stack, derived from its (uniform) inner queries. */
-  protected stackIdentity(stack: AnyQueryStack | AnyPagedQueryStack) {
-    const first = this.queriesForStack(stack)[0];
-    return { method: first?.method ?? '', segments: first?.segments ?? [], baseUrl: first?.clientBaseUrl ?? '' };
   }
 
   protected authQueryKeys(auth: AnyBearerAuthProvider): string[] {
@@ -1819,7 +1822,7 @@ export class QueryDevtoolsComponent {
     return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
   }
 
-  protected queriesForSequence(sequence: QuerySequence<unknown[]>): QueryLink[] {
+  public queriesForSequence(sequence: QuerySequence<unknown[]>): QueryLink[] {
     const queryEntries = this.queryEntries();
 
     return sequence.queries.map((query) =>
@@ -1831,15 +1834,15 @@ export class QueryDevtoolsComponent {
   }
 
   /** The snapshot of a sequence step, once it has run (holds the args in and the response/error out). */
-  protected stepSnapshot(sequence: QuerySequence<unknown[]>, index: number): AnyQuerySnapshot | null {
+  public stepSnapshot(sequence: QuerySequence<unknown[]>, index: number): AnyQuerySnapshot | null {
     return sequence.snapshots()[index] ?? null;
   }
 
-  protected isStepExpanded(entryId: string, index: number) {
+  public isStepExpanded(entryId: string, index: number) {
     return this.expandedSteps().has(this.stepKey(entryId, index));
   }
 
-  protected toggleStep(entryId: string, index: number) {
+  public toggleStep(entryId: string, index: number) {
     const key = this.stepKey(entryId, index);
     const next = new Set(this.expandedSteps());
     if (next.has(key)) {

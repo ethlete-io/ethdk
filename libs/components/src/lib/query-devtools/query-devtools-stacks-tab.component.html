@@ -1,0 +1,136 @@
+<div #panes class="et-query-devtools-split">
+  <div class="et-query-devtools-scroll">
+    @for (entry of host.stackEntries(); track entry.id) {
+      @if (entry.kind === 'paged-query-stack') {
+        @let paged = host.asPagedStack(entry);
+        <div class="et-query-devtools-card">
+          <div class="et-query-devtools-card-head">
+            <span class="et-query-devtools-chip">paged stack</span>
+            <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ paged.direction() }}</span>
+            @if (paged.loading()) {
+              <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
+            }
+          </div>
+
+          @let pagedId = stackIdentity(paged);
+          <div class="et-query-devtools-card-title">
+            <span class="et-query-devtools-method">{{ pagedId.method }}</span>
+            <span class="et-query-devtools-route">
+              <et-query-devtools-route [segments]="pagedId.segments" />
+            </span>
+          </div>
+          <div class="et-query-devtools-card-sub et-query-devtools-mono">{{ pagedId.baseUrl }}</div>
+          @if (entry.meta.features?.length) {
+            <et-query-devtools-features [features]="entry.meta.features ?? []" />
+          }
+
+          <dl class="et-query-devtools-meta">
+            <dt>Pages loaded</dt>
+            <dd>{{ paged.queries().length }}</dd>
+            <dt>Items</dt>
+            <dd>{{ paged.items().length }}</dd>
+            <dt>First page loaded</dt>
+            <dd>{{ paged.isFirstPageLoaded() }}</dd>
+            <dt>Last page loaded</dt>
+            <dd>{{ paged.isLastPageLoaded() }}</dd>
+            <ng-container *ngTemplateOutlet="activityRow; context: { activity: host.stackActivity(paged) }" />
+          </dl>
+          <ng-container *ngTemplateOutlet="innerQueries; context: { links: host.queriesForStack(paged) }" />
+        </div>
+      } @else {
+        @let stack = host.asStack(entry);
+        <div class="et-query-devtools-card">
+          <div class="et-query-devtools-card-head">
+            <span class="et-query-devtools-chip">stack</span>
+            @if (stack.anyLoading()) {
+              <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
+            }
+            @if (stack.anyError()) {
+              <span class="et-query-devtools-chip et-query-devtools-chip--error">error</span>
+            }
+          </div>
+
+          @let stackId = stackIdentity(stack);
+          <div class="et-query-devtools-card-title">
+            <span class="et-query-devtools-method">{{ stackId.method }}</span>
+            <span class="et-query-devtools-route">
+              <et-query-devtools-route [segments]="stackId.segments" />
+            </span>
+          </div>
+          <div class="et-query-devtools-card-sub et-query-devtools-mono">{{ stackId.baseUrl }}</div>
+          @if (entry.meta.features?.length) {
+            <et-query-devtools-features [features]="entry.meta.features ?? []" />
+          }
+
+          <dl class="et-query-devtools-meta">
+            <dt>Queries</dt>
+            <dd>{{ stack.queries().length }}</dd>
+            <dt>Loading</dt>
+            <dd>{{ stack.loadingProgress().loaded }} / {{ stack.loadingProgress().total }}</dd>
+            <dt>Errors</dt>
+            <dd>{{ stack.errors().length }}</dd>
+            <ng-container *ngTemplateOutlet="activityRow; context: { activity: host.stackActivity(stack) }" />
+          </dl>
+          <ng-container *ngTemplateOutlet="innerQueries; context: { links: host.queriesForStack(stack) }" />
+        </div>
+      }
+    } @empty {
+      <p class="et-query-devtools-empty">No stacks registered.</p>
+    }
+  </div>
+
+  <et-query-devtools-drawer
+    [sel]="host.stackSelectedQuery()"
+    [container]="panes"
+    (dismiss)="host.stackSelectedQueryId.set(null)"
+  />
+</div>
+
+<!-- Reusable dt/dd pair for a card's `et-query-devtools-meta` list: what its queries ran and moved. -->
+<ng-template #activityRow let-activity="activity">
+  <dt>Traffic</dt>
+  <dd>
+    @if (activity.hasActivity) {
+      {{ activity.stats.requests }} request{{ activity.stats.requests === 1 ? '' : 's' }} · ↓
+      {{ host.formatTransferred(activity.stats.receivedBytes, activity.stats.hasEstimatedBytes) }}
+      @if (activity.stats.sentBytes) {
+        · ↑ {{ host.formatTransferred(activity.stats.sentBytes, activity.stats.hasEstimatedBytes) }}
+      }
+      @if (activity.cacheServed) {
+        · {{ activity.cacheServed }} from cache
+      }
+      @if (activity.stats.errors) {
+        · {{ activity.stats.errors }} failed
+      }
+    } @else {
+      —
+    }
+  </dd>
+</ng-template>
+
+<!-- Reusable inner-query list — clicking opens the split-view drawer, not a tab switch. -->
+<ng-template #innerQueries let-links="links">
+  <div class="et-query-devtools-inner-queries">
+    @for (link of links; track $index) {
+      <button
+        [class.et-query-devtools-inner-row--active]="host.stackSelectedQueryId() === link.id"
+        [disabled]="!link.id"
+        (click)="host.stackSelectedQueryId.set(link.id)"
+        class="et-query-devtools-inner-row"
+        type="button"
+      >
+        <span [attr.data-status]="host.queryStatus(link.query)" class="et-query-devtools-status"></span>
+        <span class="et-query-devtools-method">{{ link.method }}</span>
+        <span class="et-query-devtools-route">
+          <et-query-devtools-route [segments]="link.segments" [fallback]="link.query.id() || 'query ' + ($index + 1)" />
+        </span>
+        @let linkStats = host.linkActivity(link);
+        @if (linkStats.hasActivity) {
+          <span class="et-query-devtools-traffic">
+            {{ host.formatTransferred(linkStats.stats.receivedBytes, linkStats.stats.hasEstimatedBytes) }}
+          </span>
+        }
+      </button>
+    }
+  </div>
+</ng-template>

@@ -1,0 +1,162 @@
+<div #panes class="et-query-devtools-split">
+  <div class="et-query-devtools-scroll">
+    @for (entry of host.formEntries(); track entry.id) {
+      @let form = host.asForm(entry);
+      @let expanded = host.selectedFormId() === entry.id;
+      <div class="et-query-devtools-card">
+        <div class="et-query-devtools-card-head">
+          <button
+            [attr.aria-expanded]="expanded"
+            (click)="host.selectedFormId.set(expanded ? null : entry.id)"
+            class="et-query-devtools-row-link"
+            type="button"
+          >
+            <span class="et-query-devtools-caret">{{ expanded ? '▾' : '▸' }}</span>
+            <strong>{{ entry.meta.name || 'query form' }}</strong>
+          </button>
+          @if (form.activeFilterCount(); as count) {
+            <span class="et-query-devtools-chip">{{ count }} active</span>
+          } @else {
+            <span class="et-query-devtools-chip et-query-devtools-chip--muted">at defaults</span>
+          }
+          @if (form.isCommitPending()) {
+            <span class="et-query-devtools-chip et-query-devtools-chip--loading">debouncing</span>
+          }
+          @if (!form.isObserving()) {
+            <span
+              class="et-query-devtools-chip et-query-devtools-chip--muted"
+              title="observe() has not been called, so nothing syncs with the URL"
+            >
+              not observing
+            </span>
+          }
+          <button
+            [disabled]="form.isAtDefaults()"
+            (click)="form.resetAll()"
+            class="et-query-devtools-btn"
+            type="button"
+          >
+            ⟲ Reset all
+          </button>
+        </div>
+
+        @let driven = host.queriesDrivenByForm(entry);
+        <dl class="et-query-devtools-meta">
+          <dt>Drives</dt>
+          <dd>
+            @if (driven.length) {
+              <div class="et-query-devtools-inner-queries">
+                @for (link of driven; track link.id) {
+                  <button
+                    [class.et-query-devtools-inner-row--active]="host.formSelectedQueryId() === link.id"
+                    [disabled]="!link.id"
+                    (click)="host.formSelectedQueryId.set(link.id)"
+                    class="et-query-devtools-inner-row"
+                    type="button"
+                  >
+                    <span [attr.data-status]="host.queryStatus(link.query)" class="et-query-devtools-status"></span>
+                    <span class="et-query-devtools-method">{{ link.method }}</span>
+                    <span class="et-query-devtools-route">
+                      <et-query-devtools-route [segments]="link.segments" [fallback]="link.query.id() || 'query'" />
+                    </span>
+                  </button>
+                }
+              </div>
+            } @else {
+              <span class="et-query-devtools-hint">
+                No query has read this form's value yet. A query picks it up the first time its
+                <code>withArgs</code> reads <code>value()</code>.
+              </span>
+            }
+          </dd>
+        </dl>
+
+        @if (expanded) {
+          <table class="et-query-devtools-table">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Value</th>
+                <th>Default</th>
+                <th>URL param</th>
+                <th>Rules</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (field of form.fields(); track field.key) {
+                <tr [attr.data-status]="field.isDefault ? null : 'success'">
+                  <td class="et-query-devtools-mono">{{ field.key }}</td>
+                  <td class="et-query-devtools-mono">
+                    {{ host.inlineValue(field.value) }}
+                    <!-- The live value only differs while a debounce is pending, which is exactly
+                       when "the input says X but the query asked for Y" needs explaining. -->
+                    @if (field.liveValue !== field.value) {
+                      <span class="et-query-devtools-stat-sub">typing {{ host.inlineValue(field.liveValue) }}</span>
+                    }
+                  </td>
+                  <td class="et-query-devtools-mono">{{ host.inlineValue(field.defaultValue) }}</td>
+                  <td class="et-query-devtools-mono">
+                    @if (field.queryParam === undefined) {
+                      <span class="et-query-devtools-hint">—</span>
+                    } @else {
+                      {{ field.paramKey }}={{ host.inlineValue(field.queryParam) }}
+                    }
+                  </td>
+                  <td>
+                    <div class="et-query-devtools-chips">
+                      @if (field.debounceMs !== null) {
+                        <span class="et-query-devtools-chip et-query-devtools-chip--muted">
+                          {{ field.debounceMs }}ms
+                        </span>
+                      }
+                      @if (field.isResetBy.length) {
+                        <span
+                          class="et-query-devtools-chip et-query-devtools-chip--muted"
+                          title="Reset to its default whenever one of these changes"
+                        >
+                          reset by {{ field.isResetBy.join(', ') }}
+                        </span>
+                      }
+                      @if (!field.countsAsFilter) {
+                        <span
+                          class="et-query-devtools-chip et-query-devtools-chip--muted"
+                          title="Not counted by activeFilterCount"
+                        >
+                          not a filter
+                        </span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      [disabled]="field.isDefault"
+                      (click)="form.resetField(field.key)"
+                      class="et-query-devtools-btn"
+                      type="button"
+                    >
+                      ⟲
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <h4 class="et-query-devtools-section">Committed value</h4>
+          <et-query-devtools-json [value]="form.value()" />
+        }
+      </div>
+    } @empty {
+      <p class="et-query-devtools-empty">
+        No query forms registered. A form created with <code>createQueryForm()</code> registers itself.
+      </p>
+    }
+  </div>
+
+  <et-query-devtools-drawer
+    [sel]="host.formSelectedQuery()"
+    [container]="panes"
+    (dismiss)="host.formSelectedQueryId.set(null)"
+  />
+</div>
