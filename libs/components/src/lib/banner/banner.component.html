@@ -1,0 +1,27 @@
+<ng-content select="[etIcon]" />
+
+<div class="et-banner-content">
+  @if (heading(); as heading) {
+    <p class="et-banner-heading">{{ heading }}</p>
+  }
+
+  @if (description(); as description) {
+    <p class="et-banner-description">{{ description }}</p>
+  }
+
+  <ng-content select="[etBannerAction]" />
+</div>
+
+@if (dismissible()) {
+  <!-- No [color]: the host's color scope is the one all of this projects into, and the button inherits it. -->
+  <button
+    [attr.aria-label]="resolvedLabels().dismiss"
+    (click)="dismiss.emit()"
+    class="et-banner-dismiss-btn"
+    et-icon-button
+    size="xs"
+    type="button"
+  >
+    <i etIcon="et-times"></i>
+  </button>
+}

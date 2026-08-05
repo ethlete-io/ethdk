@@ -1,6 +1,7 @@
 export * from './lib/accordion';
 export * from './lib/avatar';
 export * from './lib/badge';
+export * from './lib/banner';
 export * from './lib/bracket';
 export * from './lib/breadcrumb';
 export * from './lib/button';

@@ -1,0 +1,92 @@
+@layer components {
+  @property --et-banner-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 12px;
+  }
+
+  @property --et-banner-padding {
+    syntax: '*';
+    inherits: false;
+    initial-value: 16px;
+  }
+
+  @property --et-banner-border-radius {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 12px;
+  }
+
+  @property --et-banner-icon-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 20px;
+  }
+
+  @property --et-banner-heading-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 14px;
+  }
+
+  @property --et-banner-heading-weight {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 600;
+  }
+
+  @property --et-banner-description-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 14px;
+  }
+
+  .et-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--et-banner-gap);
+    padding: var(--et-banner-padding);
+    border-radius: var(--et-banner-border-radius);
+    /* The tint is whatever type/color resolved onto this host's color scope, so the banner reads as its
+       type without a hardcoded color - including a neutral `currentColor` tint for `info` with nothing forced. */
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 24%, transparent);
+
+    > .et-icon {
+      flex-shrink: 0;
+      inline-size: var(--et-banner-icon-size);
+      block-size: var(--et-banner-icon-size);
+      color: var(--et-theme-color-ink-solid, currentColor);
+    }
+
+    .et-banner-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-inline-size: 0;
+    }
+
+    .et-banner-heading {
+      margin: 0;
+      font-size: var(--et-banner-heading-size);
+      font-weight: var(--et-banner-heading-weight);
+      color: var(--et-surface-color-solid, currentColor);
+    }
+
+    .et-banner-description {
+      margin: 0;
+      font-size: var(--et-banner-description-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    > [etBannerAction] {
+      margin-block-start: 4px;
+    }
+
+    .et-banner-dismiss-btn {
+      flex-shrink: 0;
+    }
+  }
+}

@@ -272,6 +272,7 @@ export default defineConfig({
         {
           text: 'Feedback & media',
           items: [
+            { text: 'Banner', link: '/components/banner' },
             { text: 'Notification', link: '/components/notification' },
             { text: 'Picture', link: '/components/picture' },
             { text: 'Stream', link: '/components/stream' },

@@ -131,6 +131,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ### Feedback & media
 
+- [Banner](/components/banner) - static, dismissible page/section message with semantic info/success/warning/error coloring.
 - [Picture](/components/picture) - responsive `<picture>` with art direction, format negotiation, priority hints and placeholder/error slots.
 - [Notification](/components/notification) - toast system with live-updating refs, actions and per-status durations.
 - [Stream](/components/stream) - embedded players for eight platforms with consent gating and picture-in-picture.
