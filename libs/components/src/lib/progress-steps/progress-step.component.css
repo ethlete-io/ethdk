@@ -52,6 +52,10 @@
       background: var(--et-surface-background-solid, Canvas);
       color: var(--et-surface-color-muted-solid, currentColor);
       font-size: calc(var(--et-progress-step-marker-size) * 0.5);
+      /* Without this the number's line box inherits the page's line-height (~1.5), and flex
+         centers that whole box rather than the glyph inside it - the digit then sits visibly
+         above center, since a line box's extra leading isn't split evenly around the glyph. */
+      line-height: 1;
 
       /* The icon's own SVG is `width/height: 100%` (fills its box) with no intrinsic size of its
          own, so left unset it stretches to whatever the flex layout gives it - explicitly sizing
