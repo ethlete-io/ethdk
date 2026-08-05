@@ -118,6 +118,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Breadcrumb](/components/breadcrumb) - template-authored trail with an overflow popover, loading crumbs and a routed-page outlet.
 - [Card](/components/card) - generic content container with elevated, outlined and filled variants.
 - [Carousel](/components/carousel) - scroll-snapping slide track with multi-item views, autoplay and scroll-driven transitions.
+- [Description list](/components/description-list) - styles a native `<dl>` for term/detail rows, grid-paired without wrapper markup.
 - [Grid](/components/grid) - drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
 - [Masonry](/components/masonry) - column-balancing layout for variable-height cards, with continuous measurement and stable columns.
 - [Match](/components/match) - container-adaptive match card and participant primitive, fed by a normalized view-model any backend can map into.

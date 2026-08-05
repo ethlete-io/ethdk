@@ -257,6 +257,7 @@ export default defineConfig({
             { text: 'Breadcrumb', link: '/components/breadcrumb' },
             { text: 'Card', link: '/components/card' },
             { text: 'Carousel', link: '/components/carousel' },
+            { text: 'Description list', link: '/components/description-list' },
             { text: 'Grid', link: '/components/grid' },
             { text: 'Masonry', link: '/components/masonry' },
             { text: 'Match', link: '/components/match' },

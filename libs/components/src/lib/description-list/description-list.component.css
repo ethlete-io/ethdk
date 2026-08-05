@@ -1,0 +1,50 @@
+@layer components {
+  @property --et-description-list-row-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 8px;
+  }
+
+  @property --et-description-list-column-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 16px;
+  }
+
+  @property --et-description-list-term-min-width {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 120px;
+  }
+
+  @property --et-description-list-term-font-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 14px;
+  }
+
+  @property --et-description-list-detail-font-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 14px;
+  }
+
+  .et-description-list {
+    display: grid;
+    grid-template-columns: minmax(var(--et-description-list-term-min-width), max-content) 1fr;
+    row-gap: var(--et-description-list-row-gap);
+    column-gap: var(--et-description-list-column-gap);
+    margin: 0;
+
+    dt {
+      font-size: var(--et-description-list-term-font-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    dd {
+      margin: 0;
+      font-size: var(--et-description-list-detail-font-size);
+      color: var(--et-surface-color-solid, currentColor);
+    }
+  }
+}
