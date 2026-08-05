@@ -50,6 +50,7 @@ import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, tak
 import { QueryDevtoolsAuthTabComponent } from './query-devtools-auth-tab.component';
 import { QueryDevtoolsCacheTabComponent } from './query-devtools-cache-tab.component';
 import { buildCurlCommand } from './query-devtools-curl';
+import { QueryDevtoolsEventsTabComponent } from './query-devtools-events-tab.component';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
 import { QueryDevtoolsDrawerComponent } from './query-devtools-drawer.component';
@@ -245,6 +246,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsCacheTabComponent,
     QueryDevtoolsDetailComponent,
     QueryDevtoolsDrawerComponent,
+    QueryDevtoolsEventsTabComponent,
     QueryDevtoolsFeaturesComponent,
     QueryDevtoolsFormsTabComponent,
     QueryDevtoolsJsonComponent,
@@ -363,13 +365,13 @@ export class QueryDevtoolsComponent {
   /** The status facets the Queries list is narrowed to. Empty means no status narrowing. */
   public queryFacets = signal<ReadonlySet<QueryListFacet>>(new Set(this.persisted.queryFacets ?? []));
 
-  protected eventLog = signal<EventLogItem[]>([]);
+  public eventLog = signal<EventLogItem[]>([]);
 
   /** The client (by base URL) the event log is scoped to, or `null` for all of them. */
-  protected eventClient = signal<string | null>(this.persisted.eventClient ?? null);
+  public eventClient = signal<string | null>(this.persisted.eventClient ?? null);
 
   /** Whether the event log is narrowed to failures - the rows a bug report is about. */
-  protected eventErrorsOnly = signal(this.persisted.eventErrorsOnly ?? false);
+  public eventErrorsOnly = signal(this.persisted.eventErrorsOnly ?? false);
 
   /** Free-text narrowing of every socket's message log. Matches the event, the room and the direction. */
   public socketFilter = signal(this.persisted.socketFilter ?? '');
@@ -622,31 +624,6 @@ export class QueryDevtoolsComponent {
       };
     });
   });
-
-  /**
-   * The event rows the log shows: the client picker and the errors-only toggle applied. Kept apart from
-   * {@link eventLog} so "Refetched by" and the session export keep reading the whole log.
-   */
-  protected filteredEvents = computed(() => {
-    const client = this.eventClient();
-    const errorsOnly = this.eventErrorsOnly();
-    const events = this.eventLog();
-
-    if (!client && !errorsOnly) return events;
-
-    return events.filter(
-      (event) => (!client || event.client === client) && (!errorsOnly || event.type === 'request-error'),
-    );
-  });
-
-  /** The clients the event log has rows from, as its picker offers them. */
-  protected eventClients = computed(() => {
-    const names = new Set(this.repositories().map(({ name, baseUrl }) => baseUrl || name));
-
-    return Array.from(names).sort();
-  });
-
-  protected isEventLogNarrowed = computed(() => !!this.eventClient() || this.eventErrorsOnly());
 
   /** Map of a component's host element to the query entries it created (for the inspect tool). */
   private elementQueryMap = computed(() => {
@@ -930,19 +907,6 @@ export class QueryDevtoolsComponent {
       .subscribe();
   }
 
-  protected clearEvents() {
-    this.eventLog.set([]);
-  }
-
-  protected toggleEventErrorsOnly() {
-    this.eventErrorsOnly.update((v) => !v);
-  }
-
-  protected clearEventFilters() {
-    this.eventClient.set(null);
-    this.eventErrorsOnly.set(false);
-  }
-
   public selectClient(name: string | null) {
     this.selectedClientName.set(name);
     this.inspectFilterIds.set(null);
@@ -1171,13 +1135,9 @@ export class QueryDevtoolsComponent {
   }
 
   /** Opens a query in the Queries tab - the Events tab is a way in, not a dead end. */
-  protected selectQuery(id: string) {
+  public selectQuery(id: string) {
     this.activeTab.set('queries');
     this.selectedQueryId.set(id);
-  }
-
-  protected selectEventRow(item: EventLogItem) {
-    if (item.queryId) this.selectQuery(item.queryId);
   }
 
   /** A value on one line, for a diff row or a form field. The full tree would bury the row it sits in. */
@@ -1206,7 +1166,7 @@ export class QueryDevtoolsComponent {
    * A transferred size, marked `≈` when any part of it was measured from a decoded body instead of read
    * from a `content-length` header - such a size ignores transport compression.
    */
-  protected formatTransferred(bytes: number, isEstimated: boolean) {
+  public formatTransferred(bytes: number, isEstimated: boolean) {
     return `${isEstimated ? '≈' : ''}${this.formatBytes(bytes)}`;
   }
 
@@ -1215,7 +1175,7 @@ export class QueryDevtoolsComponent {
     return `${this.formatBytes(Math.round(bytesPerSecond))}/s`;
   }
 
-  protected formatDuration(ms: number | null) {
+  public formatDuration(ms: number | null) {
     if (ms === null) return '—';
 
     return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
@@ -1553,7 +1513,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** The path + query of a request URL (origin stripped), for readable cache/event identifiers. */
-  protected requestPath(url: string) {
+  public requestPath(url: string) {
     try {
       const parsed = new URL(url);
       return parsed.pathname + parsed.search;
@@ -1677,7 +1637,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** What asked for a refresh, on one line. */
-  protected causeLabel(cause: QueryRefreshCause) {
+  public causeLabel(cause: QueryRefreshCause) {
     const scope = cause.url ? this.requestPath(cause.url) : 'everything in use';
     const what =
       cause.type === 'invalidation'
@@ -1801,16 +1761,9 @@ export class QueryDevtoolsComponent {
     return features.length ? features : null;
   }
 
-  protected formatTime(timestamp: number | null) {
+  public formatTime(timestamp: number | null) {
     if (!timestamp) return '-';
     return new Date(timestamp).toLocaleTimeString(undefined, { hour12: false });
-  }
-
-  protected eventTypeLabel(event: EventLogItem) {
-    if (event.type === 'unbind-all-secure') return 'logout';
-    if (event.type === 'queries-refreshed') return `refetch ×${event.refreshed?.length ?? 0}`;
-
-    return event.type === 'request-error' ? `error ${event.status}` : 'success';
   }
 
   private isTabPrimary(tab: DevtoolsTab) {

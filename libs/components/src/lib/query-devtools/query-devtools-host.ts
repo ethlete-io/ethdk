@@ -9,6 +9,7 @@ import {
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
   QueryDevtoolsRun,
+  QueryRefreshCause,
   QueryRepository,
   QueryRepositoryCacheEntry,
   QuerySequence,
@@ -22,6 +23,7 @@ import {
   CacheView,
   DetailTab,
   DevtoolsTab,
+  EventLogItem,
   PaneAxis,
   PaneTarget,
   QueryActivity,
@@ -30,6 +32,7 @@ import {
   RepositoryInfo,
   RequestProgress,
   RouteSegment,
+  TabBadge,
 } from './query-devtools-types';
 
 /**
@@ -82,6 +85,9 @@ export type QueryDevtoolsHost = {
 
   /** Unique client names present across queries and auth providers, for the Queries/Timeline pickers. */
   clientNames: Signal<string[]>;
+
+  /** What each tab holds - also drives the tab bar's own badges, so it lives here rather than per-tab. */
+  tabBadges: Signal<Record<DevtoolsTab, TabBadge>>;
 
   /**
    * The queries in scope before the Queries tab's own search box and status chips narrow them further:
@@ -188,6 +194,8 @@ export type QueryDevtoolsHost = {
   copyGqlDocument(doc: string): void;
 
   refreshesFor(entryId: string): { id: number; timestamp: number; label: string }[];
+  /** What asked for a refresh, on one line - shared by the drawer's "Refetched by" and the Events tab. */
+  causeLabel(cause: QueryRefreshCause): string;
   formsDrivingQuery(entry: QueryDevtoolsEntry): QueryDevtoolsEntry[];
 
   /** Shared value-explorer search term, read (and set) from every drawer's Data sub-tab. */
@@ -232,6 +240,13 @@ export type QueryDevtoolsHost = {
 
   /** The form whose detail the Forms tab has expanded - persisted. */
   selectedFormId: WritableSignal<string | null>;
+
+  /** The rolling event log - persisted only in the sense that it survives a tab switch, not a reload. */
+  eventLog: WritableSignal<EventLogItem[]>;
+  /** The client (by base URL) the event log is scoped to, or `null` for all of them - persisted. */
+  eventClient: WritableSignal<string | null>;
+  /** Whether the event log is narrowed to failures - persisted. */
+  eventErrorsOnly: WritableSignal<boolean>;
 
   /** Free-text narrowing of every socket's message log - persisted. */
   socketFilter: WritableSignal<string>;
