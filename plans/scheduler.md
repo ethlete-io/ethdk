@@ -17,7 +17,7 @@ are shaped so neither requires a breaking change to retrofit.
 
 `libs/components/src/lib/scheduler/` (public export `@ethlete/components`, e.g.
 `<et-scheduler>`). Not `calendar` - that domain already exists
-(`libs/components/src/lib/calendar/`) and is the month-grid *date-picker* widget used inside
+(`libs/components/src/lib/calendar/`) and is the month-grid _date-picker_ widget used inside
 `date-input`/`date-range-input`. Different domain, no shared code; the scheduler's own month
 view solves a different problem (rendering appointments per cell, not picking a single date)
 and gets its own bucketing logic.

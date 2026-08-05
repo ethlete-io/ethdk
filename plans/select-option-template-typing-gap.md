@@ -13,21 +13,21 @@ own "Large option lists" example does the same: `let-user`, then `user.email`).
 the base `SelectOptionData<unknown>` regardless of what's actually bound. `option.email` (or any
 field beyond `value`/`label`) is a compile error (`TS2339`), even though the docs example
 implies it "just works." The values are genuinely there at runtime (the docs are right that
-"extra fields ... are kept and handed to the row template") - only the *type* is lost.
+"extra fields ... are kept and handed to the row template") - only the _type_ is lost.
 
 **Workaround used**: skip `[options]` + `etSelectOptionTemplate` for these sites and project
 `<et-select-option>` manually via `@for` instead (typed off the real array), e.g.:
 
 ```html
-<et-select [formField]="form.managerUuid" filterMode="external" (queryChange)="search($event)">
+<et-select [formField]="form.managerUuid" (queryChange)="search($event)" filterMode="external">
   <input etSelectSearch />
   @for (option of managers(); track option.value) {
-    <et-select-option [value]="option.value" [label]="option.label">
-      <span class="grid gap-0.5">
-        <span>{{ option.label }}</span>
-        @if (option.email) { <span class="text-fut-surface-muted">{{ option.email }}</span> }
-      </span>
-    </et-select-option>
+  <et-select-option [value]="option.value" [label]="option.label">
+    <span class="grid gap-0.5">
+      <span>{{ option.label }}</span>
+      @if (option.email) { <span class="text-fut-surface-muted">{{ option.email }}</span> }
+    </span>
+  </et-select-option>
   }
 </et-select>
 ```

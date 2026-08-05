@@ -7,8 +7,7 @@ import { BADGE_IMPORTS } from '@ethlete/components';
 ```
 
 ```html
-<et-badge color="success">Active</et-badge>
-<et-badge variant="outline">Beta</et-badge>
+<et-badge color="success">Active</et-badge> <et-badge variant="outline">Beta</et-badge>
 ```
 
 ## Live demo
