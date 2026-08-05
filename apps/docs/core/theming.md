@@ -125,6 +125,8 @@ export class ViolationHintComponent {
 
 `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` return the registered `ColorTheme` with the matching `type` - and throw if the app hasn't registered one, so components can rely on them.
 
+`injectDefaultColorTheme()` returns the registered `ColorTheme` with `isDefault: true` the same way - useful for a shared component with no themed ancestor to inherit from (a page-level `et-spinner`, say), where "the app's default accent" is the right fallback. It throws if no theme is marked `isDefault: true`.
+
 ## Legacy runtime theming
 
 `provideColorThemes(themes)` (without the `WithTailwind4` suffix) is the previous, Tailwind-v3-era system: it injects `<style>` tags at runtime instead of generating CSS at build time. It - along with its helpers (`createThemeStyle`, `createTailwindColorThemes`, …) - is **deprecated** with intent to remove in v6. New apps should use the generator-based setup above.

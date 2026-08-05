@@ -127,3 +127,33 @@ const injectColorThemeByType = (type: ColorThemeType) => {
 export const injectErrorTheme = () => injectColorThemeByType('error');
 export const injectWarningTheme = () => injectColorThemeByType('warning');
 export const injectSuccessTheme = () => injectColorThemeByType('success');
+
+export const injectDefaultColorTheme = () => {
+  const themes = injectColorThemes();
+
+  if (!themes) {
+    throw new Error(
+      `[injectDefaultColorTheme] No color themes provided. Call provideColorThemesWithTailwind4() in your app config.`,
+    );
+  }
+
+  const theme = themes.find((t) => t.isDefault);
+
+  if (!theme) {
+    throw new Error(
+      `[injectDefaultColorTheme] No color theme with isDefault: true found. Mark one theme as the default in provideColorThemesWithTailwind4().`,
+    );
+  }
+
+  if (isDevMode()) {
+    const duplicates = themes.filter((t) => t.isDefault);
+
+    if (duplicates.length > 1) {
+      console.error(
+        `[injectDefaultColorTheme] Multiple themes with isDefault: true found: ${duplicates.map((t) => t.name).join(', ')}. Only the first one will be used.`,
+      );
+    }
+  }
+
+  return theme;
+};
