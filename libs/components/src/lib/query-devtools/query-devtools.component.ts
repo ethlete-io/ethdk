@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import {
   Component,
   computed,
@@ -239,7 +239,6 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   styleUrl: './query-devtools.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
-    NgTemplateOutlet,
     QueryDevtoolsAuthTabComponent,
     QueryDevtoolsCacheTabComponent,
     QueryDevtoolsDetailComponent,
