@@ -46,7 +46,7 @@ Details worth knowing:
 - Retention is **browser only** - on the server entries are always released immediately, so an SSR request never pins response bodies.
 - Logging out clears retained authenticated entries along with the live ones.
 - This is a **memory** window, unrelated to how long a response may live on disk ([`maxAge`](/query/persistence#three-windows-three-different-jobs)). An entry released here can still be hydrated from the store the next time the query mounts cold.
-- This pairs with [`setupScrollRestoration`](/core/signal-utils#restoring-the-offset-on-back-forward): a list that renders its rows on the first frame back reaches its full height immediately, so the saved scroll offset is restored without waiting out a refetch.
+- This pairs with [`setupScrollRestoration`](/core/scroll-restoration#restoring-the-offset-on-back-forward): a list that renders its rows on the first frame back reaches its full height immediately, so the saved scroll offset is restored without waiting out a refetch.
 
 ## Freshness
 

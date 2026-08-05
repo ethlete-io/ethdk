@@ -183,6 +183,7 @@ export default defineConfig({
           text: 'Interaction',
           items: [
             { text: 'Scrolling', link: '/core/scrolling' },
+            { text: 'Scroll restoration', link: '/core/scroll-restoration' },
             { text: 'Drag & resize', link: '/core/drag-resize' },
             { text: 'Directives & pipes', link: '/core/directives-pipes' },
           ],

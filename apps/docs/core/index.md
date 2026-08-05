@@ -11,7 +11,7 @@ import { signalElementDimensions, injectCurrentBreakpoint, provideSurfaceThemesW
 ## Signals
 
 - [Element signals](/core/element-signals) - element dimensions, intersection, mutations, scroll state and children as signals, plus signal-driven class/attribute/style bindings. **Start here.**
-- [Signal utilities](/core/signal-utils) - media-query and router signals, breakpoint-aware inputs, `controlValueSignal`, animated numbers, signal plumbing (`syncSignal`, `previousSignalValue`, …) and recipes like cursor drag scroll and scroll restoration.
+- [Signal utilities](/core/signal-utils) - media-query and router signals, breakpoint-aware inputs, `controlValueSignal`, animated numbers, signal plumbing (`syncSignal`, `previousSignalValue`, …) and recipes like cursor drag scroll.
 
 ## Theming & motion
 
@@ -22,6 +22,7 @@ import { signalElementDimensions, injectCurrentBreakpoint, provideSurfaceThemesW
 ## Interaction
 
 - [Scrolling](/core/scrolling) - pure scroll-geometry primitives: `scrollToElement`, visibility checks and snap-target math.
+- [Scroll restoration](/core/scroll-restoration) - app-wide navigation scrolling: scroll-to-top, fragment scrolling and opt-in offset restoration on back/forward.
 - [Drag & resize](/core/drag-resize) - the drag-handle directive and resize-handles component that power grid and PIP interactions.
 - [Directives & pipes](/core/directives-pipes) - click-outside, `*etRepeat`, the scroll observer, markdown/MIME pipes and the match-normalization pipes.
 
