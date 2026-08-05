@@ -52,6 +52,15 @@
       background: var(--et-surface-background-solid, Canvas);
       color: var(--et-surface-color-muted-solid, currentColor);
       font-size: calc(var(--et-progress-step-marker-size) * 0.5);
+
+      /* The icon's own SVG is `width/height: 100%` (fills its box) with no intrinsic size of its
+         own, so left unset it stretches to whatever the flex layout gives it - explicitly sizing
+         it to `1em` is what keeps it square and proportioned to the marker, same as
+         `.et-button-icon .et-icon` in button.component.css. */
+      .et-icon {
+        inline-size: 1em;
+        block-size: 1em;
+      }
     }
 
     &[data-state='current'] .et-progress-step-marker {
