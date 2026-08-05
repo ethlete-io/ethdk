@@ -33,13 +33,13 @@ widths.
   already flattens the tree with a `depth`/`data-nested` per node, so a
   connector can be drawn off data that already exists - no new tree-walking.
 - **Full-screen edit on mobile, anchored on desktop.** `scheduler-edit-
-  surface.component.ts` hardcodes one `dialogOverlayStrategy` with no
+surface.component.ts` hardcodes one `dialogOverlayStrategy` with no
   breakpoint branching. `overlay/strategies/presets.ts` ships a packaged
   `transformingFullScreenDialogToDialogOverlayStrategy`/`...ToRightSheetOverlayStrategy`,
   but the SDK's own already-responsive controls don't actually use those
   presets - `cascader.directive.ts` and `date-picker-overlay.ts` both hand-
   compose `[{ strategy: bottomSheetStrategy.build(...) }, { breakpoint:
-  'md', strategy: anchoredOverlayStrategy(...)... }]` directly. That hand-
+'md', strategy: anchoredOverlayStrategy(...)... }]` directly. That hand-
   composed shape is the real precedent to copy for a fullscreen→anchored
   split (no packaged preset covers anchored today - see "Overlay
   responsiveness" below for the full picture across the SDK).
@@ -49,7 +49,7 @@ widths.
   definition (plain `dialogOverlayStrategy`) so it doesn't inherit edit's
   new mobile/desktop branching.
 - **Start/end as a date-time range picker.** `scheduler-edit-time-
-  range.component.ts` pairs two independent `et-date-time-input` controls.
+range.component.ts` pairs two independent `et-date-time-input` controls.
   The SDK's `DateRangeInputComponent` is date-only; no combined date-time-
   range control exists. This is new `forms/date-time/` surface, not a
   scheduler-only change.
@@ -72,7 +72,7 @@ widths.
   `infinite-query` module both exist, neither wired to scheduler. This
   should land as a documented consumer pattern against `paged-query-stack`
   - paging state belongs to whatever query backs the appointment list, not
-  inside scheduler itself.
+    inside scheduler itself.
 
 ## Accordion
 
@@ -145,7 +145,7 @@ structure below), no component change.
 
 Busy state and a suffix already have a defined precedence, not a collision:
 `form-field.component.html` appends the busy spinner (`et-spinner`, driven
-by `isBusy = busy() || formFieldDir.isPending()`) *after* whatever's
+by `isBusy = busy() || formFieldDir.isPending()`) _after_ whatever's
 projected into `[etInputSuffix]`, inside the same `.et-form-field-affix`
 flex box - a comment on it is explicit: "After the consumer's own suffix,
 never instead of it - a pending async validator must not displace a clear
@@ -158,7 +158,7 @@ governed by that rule today, because the clear and picker-toggle buttons on
 select/date/time controls don't use `[etInputSuffix]` at all. Each control
 renders them as plain sibling buttons in its own flex template (e.g.
 `date-input.component.html`: clear button immediately before the
-`etDatePickerTrigger` button), positioned to *look* like a suffix without
+`etDatePickerTrigger` button), positioned to _look_ like a suffix without
 being one. So the extreme case has three independent mechanisms sharing the
 same visual real estate - form-field's real suffix slot, each control's
 hand-rolled clear+trigger buttons, and form-field's busy spinner appended
@@ -320,16 +320,17 @@ strip for mobile.
 `query-error.component` builds its own colored card from scratch -
 `.et-query-error-card` uses `background: color-mix(in srgb, var(--et-
 theme-color-primary-solid, currentColor) 8%, transparent)` with a matching
-border - which is the *identical* formula banner already uses for its own
+border - which is the _identical_ formula banner already uses for its own
 surface. Both independently implement an icon slot, a heading, a
 description/message, and an action row. Banner already carries the
 semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
+
 - so rebuilding query-error on banner is mostly composition: project the
-icon into `[etIcon]`, the retry button into `[etBannerAction]`, set
-`type="error"`. Two things banner doesn't have yet and query-error would
-still need to layer on top: the violation-list rendering (a `<ul>` of
-messages vs. banner's single description paragraph) and the retry-button-
-only-if-`canRetry` conditional.
+  icon into `[etIcon]`, the retry button into `[etBannerAction]`, set
+  `type="error"`. Two things banner doesn't have yet and query-error would
+  still need to layer on top: the violation-list rendering (a `<ul>` of
+  messages vs. banner's single description paragraph) and the retry-button-
+  only-if-`canRetry` conditional.
 
 ## Standings story causes a mobile horizontal scrollbar
 
@@ -368,7 +369,7 @@ deliberate choice ("a select is a single-column listbox that reads fine
 anchored to the field on mobile"), not an oversight.
 
 `anchored.strategy.ts` itself explains why this is inconsistent rather than
-missing: it already does real viewport-awareness for *collision avoidance*
+missing: it already does real viewport-awareness for _collision avoidance_
 (`fallbackPlacements`, `shift`, `viewportPadding`, `autoResize`, `autoHide`)
 but has no concept of swapping to a different UI shape at a breakpoint -
 that only happens where a caller composes multiple strategies itself, which
@@ -403,14 +404,15 @@ threshold semantics differ enough that it may not fold in as cleanly.
 
 `notification-stack.component.css` docks a fixed `--et-notification-min-
 width: 300px` / `-max-width: 420px` card to a corner via `position: fixed`
-+ `data-position` (`bottom-end`, `top-start`, etc.), stacking multiple
-toasts as plain flex children in document order. Grep for `@media` in the
-whole notification domain returns only `(hover: hover)` and
-`(prefers-reduced-motion: reduce)` - no width-based breakpoint anywhere. On
-a phone that's a small floating card in a corner rather than the common
-full-width mobile toast pattern; same shape of gap as the overlay
-controls above and scheduler's header, just nobody's added a breakpoint
-here yet.
+
+- `data-position` (`bottom-end`, `top-start`, etc.), stacking multiple
+  toasts as plain flex children in document order. Grep for `@media` in the
+  whole notification domain returns only `(hover: hover)` and
+  `(prefers-reduced-motion: reduce)` - no width-based breakpoint anywhere. On
+  a phone that's a small floating card in a corner rather than the common
+  full-width mobile toast pattern; same shape of gap as the overlay
+  controls above and scheduler's header, just nobody's added a breakpoint
+  here yet.
 
 ## Already covered - don't rebuild
 
@@ -482,7 +484,7 @@ What already exists to build on:
   should follow that same compose-while-loading shape, though the skeleton
   content itself (a fake bar/pie shape) would be new, not reused.
 - **Animation is the open question.** `animatable.directive.ts`/`animated-
-  lifecycle.directive.ts` are class-driven CSS-transition directives typed
+lifecycle.directive.ts` are class-driven CSS-transition directives typed
   to `HTMLElement`, animating only DOM layout/opacity-style properties via
   CSS classes - there is no existing mechanism for animating raw SVG
   attributes (`r`, `d`, `points`), which is what bars growing or pie slices
