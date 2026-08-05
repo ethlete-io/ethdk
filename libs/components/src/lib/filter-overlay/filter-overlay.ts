@@ -188,7 +188,7 @@ export const provideFilterOverlay = <TFields extends QueryFormFields>(
  * The filter overlay provided above this component, typed to your filters' **value** shape:
  *
  * ```ts
- * const createTeamFilters = () => createQueryForm({ fields: TEAM_FILTER_FIELDS });
+ * const createTeamFilters = () => defineQueryForm({ fields: TEAM_FILTER_FIELDS });
  * type TeamFilterValue = FilterOverlayValueOf<ReturnType<typeof createTeamFilters>>;
  *
  * protected filters = injectFilterOverlay<TeamFilterValue>();

@@ -3,7 +3,7 @@ import { FormField } from '@angular/forms/signals';
 import { AutoSurfaceDirective, ProvideColorDirective, toInjectFn } from '@ethlete/core';
 import {
   createPagedQueryStack,
-  createQueryForm,
+  defineQueryForm,
   createQueryStack,
   ethletePaginationAdapter,
   queryField,
@@ -366,7 +366,7 @@ export class QdPagedCardComponent {
   imports: [CARD_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, CHOICE_FIELD_IMPORTS, CHECKBOX_IMPORTS, FormField],
 })
 export class QdFilterFormCardComponent {
-  protected readonly qf = createQueryForm({
+  protected readonly qf = defineQueryForm({
     name: 'posts',
     queryParamPrefix: 'posts',
     fields: {

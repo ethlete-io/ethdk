@@ -101,7 +101,7 @@ it. Pop-up blockers apply: if the window is refused, the panel stays docked.
 | **Queries**   | Every registered query, [filterable by client, endpoint and live state](#finding-a-query-in-a-long-list). Method badge, [resolved route](#routes-show-the-params-that-were-used), live status and a stale marker; the [detail view](#the-detail-view-overview-history-data) shows args, response/error, cache key (`id()`), last-executed time, `triggeredBy`, [the features it was created with](#features-show-what-they-were-configured-with), [how often it ran and what it transferred](#activity-how-often-a-query-ran-and-what-it-cost) and [every run it made](#run-history-and-response-diffs), with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions.         |
 | **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **Forms**     | Every [`createQueryForm`](/query/query-forms) on screen: [its fields, what they put in the URL and the query it drives](#forms-what-a-filter-is-actually-sending). A driven query opens in a split-view drawer (like Stacks), so the form stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Forms**     | Every [`defineQueryForm`](/query/query-forms) on screen: [its fields, what they put in the URL and the query it drives](#forms-what-a-filter-is-actually-sending). A driven query opens in a split-view drawer (like Stacks), so the form stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of [everything sent and received](#sockets-both-directions-and-an-emit-box), with a filter box and an emit box for test messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Cache**     | Per-client repository entries: cache key, consumer count, [measured size](#cache-what-is-actually-in-it), secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Value** / **Refetch** / **Evict** actions. The card header adds the cache's total size, how many entries are collectible, how many responses the client has on disk (with **Clear disk**), **Evict all**, and [the client's own features](#features-show-what-they-were-configured-with). |
@@ -495,7 +495,7 @@ nothing.
 
 A [query form](/query/query-forms) sits between the controls on screen and the args a
 query sends, and when a list comes back empty the question is which of those two ends
-is wrong. The **Forms** tab answers it: every `createQueryForm()` on screen is listed
+is wrong. The **Forms** tab answers it: every `defineQueryForm()` on screen is listed
 with the query it drives, and expanding one shows every field.
 
 | Column        | Holds                                                                                                                                                        |
@@ -523,7 +523,7 @@ switching tabs - the point of the pairing is to read the form's committed value 
 args the query actually sent side by side.
 
 ```ts
-qf = createQueryForm({ name: 'posts', fields: { search: searchQueryField() } }).observe();
+qf = defineQueryForm({ name: 'posts', fields: { search: searchQueryField() } }).observe();
 
 // This read is what puts `getPosts` under the form's "Drives", and the form under
 // the query's "Args from".
@@ -542,7 +542,7 @@ unreadable for four.
 :::
 
 The legacy reactive-forms `QueryForm` is **not** instrumented; only
-[`createQueryForm`](/query/query-forms) registers itself.
+[`defineQueryForm`](/query/query-forms) registers itself.
 
 ## Why did this refetch?
 

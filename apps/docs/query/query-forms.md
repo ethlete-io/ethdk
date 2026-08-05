@@ -7,7 +7,7 @@ URL and survives reload, share and back/forward.
 
 There are two implementations:
 
-- **`createQueryForm`** - the signals-first form (recommended for new code).
+- **`defineQueryForm`** - the signals-first form (recommended for new code).
   Built on [Angular signal forms](https://angular.dev/guide/forms/signals), so
   fields bind to `@ethlete/components` controls with `[formField]` and everything
   is a signal.
@@ -20,14 +20,14 @@ There are two implementations:
 import { Component } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import { InputDirective } from '@ethlete/components';
-import { createQueryForm, searchQueryField, sortQueryField, queryField, withArgs } from '@ethlete/query';
+import { defineQueryForm, searchQueryField, sortQueryField, queryField, withArgs } from '@ethlete/query';
 
 @Component({
   imports: [FormField, InputDirective],
   template: `<input [formField]="qf.fields.search" etInput placeholder="Search" />`,
 })
 export class UsersComponent {
-  qf = createQueryForm({
+  qf = defineQueryForm({
     fields: {
       search: searchQueryField(),
       sort: sortQueryField(),
@@ -127,7 +127,7 @@ Serialization rules:
   share a route:
 
 ```ts
-createQueryForm({ fields: { page: queryField<number>({ defaultValue: 1 }) }, queryParamPrefix: 'users' });
+defineQueryForm({ fields: { page: queryField<number>({ defaultValue: 1 }) }, queryParamPrefix: 'users' });
 // → ?users-page=2
 ```
 
@@ -142,7 +142,7 @@ from the `qf.value()` read inside `withArgs`, not from a naming convention.
 to `form` without one, so a route with several forms is worth naming:
 
 ```ts
-createQueryForm({ name: 'users', queryParamPrefix: 'users', fields: { … } });
+defineQueryForm({ name: 'users', queryParamPrefix: 'users', fields: { … } });
 ```
 
 Outside of devtools `name` does nothing - it is never read at runtime.
@@ -187,16 +187,16 @@ The branch exposes `fields`, `value`, `activeFilterCount`, `setValue`,
 The original `QueryForm` class (with `QueryField`, `SearchQueryField`,
 `SortQueryField`, … and a reactive-forms `FormGroup`) is unchanged and still
 exported. It works with both query clients but grew up alongside the
-[legacy client](/query/legacy). Prefer `createQueryForm` for new code - it binds
+[legacy client](/query/legacy). Prefer `defineQueryForm` for new code - it binds
 to `@ethlete/components` controls directly and is signals-native throughout.
 
-::: warning Superseded by `createQueryForm`
+::: warning Superseded by `defineQueryForm`
 The class remains for apps on classic reactive forms; everything else should use
 the signals-first form documented above. The concepts map one to one:
 
 | Legacy                                                                                                                                                                  | Current                                                                                                  |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `new QueryForm({ … })`                                                                                                                                                  | [`createQueryForm({ fields })`](#quickstart)                                                             |
+| `new QueryForm({ … })`                                                                                                                                                  | [`defineQueryForm({ fields })`](#quickstart)                                                             |
 | `QueryField`, `SearchQueryField`, `SortQueryField`, `StringArrayQueryField`, `NumberArrayQueryField`, `BooleanArrayQueryField`, `DateQueryField`, `DateArrayQueryField` | the lowercase [field creators](#field-creators) of the same names (`queryField`, `searchQueryField`, …)  |
 | `form` (a `FormGroup`) + `controls`, bound with `[formControl]`                                                                                                         | `fields`, bound with `[formField]` - any signal-forms control, including every `@ethlete/components` one |
 | `changes$` / `currentValue$` / `previousValue$` / `activeFilterCount$`                                                                                                  | the `changes`, `value`, `previousValue` and `activeFilterCount` signals                                  |

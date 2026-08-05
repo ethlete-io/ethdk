@@ -10,7 +10,7 @@ Import `FILTER_OVERLAY_IMPORTS` for the controls; `provideFilterOverlay` goes in
 export class TeamsPageComponent {
   private overlayManager = injectOverlayManager();
 
-  protected filters = createQueryForm({ fields: TEAM_FILTER_FIELDS }).observe();
+  protected filters = defineQueryForm({ fields: TEAM_FILTER_FIELDS }).observe();
 
   protected openFilters() {
     this.overlayManager.open(TeamFiltersOverlayComponent, {
@@ -193,7 +193,7 @@ use `isPristine()` for that, which is what `etFilterOverlayReset` does.
 `TValue` is the filters' **value** shape, not the field map:
 
 ```ts
-const createTeamFilters = () => createQueryForm({ fields: TEAM_FILTER_FIELDS });
+const createTeamFilters = () => defineQueryForm({ fields: TEAM_FILTER_FIELDS });
 type TeamFilterValue = FilterOverlayValueOf<ReturnType<typeof createTeamFilters>>;
 ```
 

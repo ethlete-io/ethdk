@@ -53,7 +53,7 @@ describe('query form devtools instrumentation', () => {
   const makeForm = (mod: Mod, injector: Injector, name: string) =>
     runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({
+        .defineQueryForm({
           name,
           fields: {
             search: mod.searchQueryField(),
@@ -89,7 +89,7 @@ describe('query form devtools instrumentation', () => {
     const { mod, injector } = await setup();
 
     runInInjectionContext(injector, () =>
-      mod.createQueryForm({ name: 'teams', queryParamPrefix: 'teams', fields: { page: mod.queryField<number>({}) } }),
+      mod.defineQueryForm({ name: 'teams', queryParamPrefix: 'teams', fields: { page: mod.queryField<number>({}) } }),
     );
 
     expect(handleOf(mod, 'teams').handle.fields()[0]?.paramKey).toBe('teams-page');

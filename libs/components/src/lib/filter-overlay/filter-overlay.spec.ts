@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideLocale } from '@ethlete/core';
 import { provideRouter } from '@angular/router';
-import { createQueryForm, queryField } from '@ethlete/query';
+import { defineQueryForm, queryField } from '@ethlete/query';
 import '../../test-helpers';
 import { FilterOverlay, provideFilterOverlay } from './filter-overlay';
 import { DEFAULT_FILTER_OVERLAY_LABELS, resolveFilterOverlaySubmitButton } from './filter-overlay-labels';
@@ -26,7 +26,7 @@ const setup = (config: { preview?: (v: never) => FilterOverlayPreview; maxCounte
   TestBed.runInInjectionContext(() => {
     // Observed, because `value()` is the *committed* value and nothing commits on an unobserved form. URL sync
     // is off: these assertions are about the draft/apply contract, not the address bar.
-    const queryForm = createQueryForm({ fields: FIELDS }).observe({
+    const queryForm = defineQueryForm({ fields: FIELDS }).observe({
       writeToQueryParams: false,
       syncOnNavigation: false,
     });

@@ -36,7 +36,7 @@ const settle = async () => {
 
 const currentParams = (router: Router) => router.parseUrl(router.url).queryParams;
 
-describe('createQueryForm', () => {
+describe('defineQueryForm', () => {
   afterEach(() => {
     vi.useRealTimers();
     TestBed.resetTestingModule();
@@ -47,7 +47,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({
+        .defineQueryForm({
           fields: { search: mod.searchQueryField(), page: mod.queryField<number>({ defaultValue: 1 }) },
         })
         .observe({ writeToQueryParams: false, syncOnNavigation: false }),
@@ -63,7 +63,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({ fields: { search: mod.searchQueryField() } })
+        .defineQueryForm({ fields: { search: mod.searchQueryField() } })
         .observe({ writeToQueryParams: false, syncOnNavigation: false }),
     );
 
@@ -88,7 +88,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({ fields: { limit: mod.queryField<number>({ defaultValue: 10 }) } })
+        .defineQueryForm({ fields: { limit: mod.queryField<number>({ defaultValue: 10 }) } })
         .observe({ writeToQueryParams: false, syncOnNavigation: false }),
     );
 
@@ -103,7 +103,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({
+        .defineQueryForm({
           fields: {
             search: mod.queryField<string>(),
             page: mod.queryField<number>({ defaultValue: 1, isResetBy: 'search' }),
@@ -126,7 +126,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({
+        .defineQueryForm({
           fields: {
             search: mod.queryField<string>(),
             page: mod.queryField<number>({ defaultValue: 1, isResetBy: 'search' }),
@@ -148,7 +148,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({
+        .defineQueryForm({
           fields: {
             page: mod.queryField<number>({ defaultValue: 1 }), // ignored key
             region: mod.queryField<string>(),
@@ -171,7 +171,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({ fields: { region: mod.queryField<string>() } })
+        .defineQueryForm({ fields: { region: mod.queryField<string>() } })
         .observe({ writeToQueryParams: false, syncOnNavigation: false }),
     );
 
@@ -195,7 +195,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({
+        .defineQueryForm({
           fields: { region: mod.queryField<string>(), page: mod.queryField<number>({ defaultValue: 1 }) },
         })
         .observe(),
@@ -213,7 +213,7 @@ describe('createQueryForm', () => {
     const { injector, router, mod } = await setup();
 
     const qf = runInInjectionContext(injector, () =>
-      mod.createQueryForm({ fields: { region: mod.queryField<string>({ defaultValue: 'all' }) } }).observe(),
+      mod.defineQueryForm({ fields: { region: mod.queryField<string>({ defaultValue: 'all' }) } }).observe(),
     );
 
     qf.setValue({ region: null });
@@ -227,7 +227,7 @@ describe('createQueryForm', () => {
     const { injector, router, mod } = await setup();
 
     const qf = runInInjectionContext(injector, () =>
-      mod.createQueryForm({ fields: { sort: mod.sortQueryField() } }).observe(),
+      mod.defineQueryForm({ fields: { sort: mod.sortQueryField() } }).observe(),
     );
 
     qf.setValue({ sort: { active: 'name', direction: 'asc' } });
@@ -244,7 +244,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({
+        .defineQueryForm({
           fields: { region: mod.queryField<string>(), page: mod.queryField<number>({ defaultValue: 1 }) },
         })
         .observe(),
@@ -257,7 +257,7 @@ describe('createQueryForm', () => {
     const { harness, injector, mod } = await setup();
 
     const qf = runInInjectionContext(injector, () =>
-      mod.createQueryForm({ fields: { region: mod.queryField<string>() } }).observe(),
+      mod.defineQueryForm({ fields: { region: mod.queryField<string>() } }).observe(),
     );
 
     await harness.navigateByUrl('/?region=us');
@@ -271,7 +271,7 @@ describe('createQueryForm', () => {
 
     runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({ fields: { region: mod.queryField<string>() }, queryParamPrefix: 'users' })
+        .defineQueryForm({ fields: { region: mod.queryField<string>() }, queryParamPrefix: 'users' })
         .observe()
         .setValue({ region: 'eu' }),
     );
@@ -288,7 +288,7 @@ describe('createQueryForm', () => {
 
     const qf = runInInjectionContext(injector, () =>
       mod
-        .createQueryForm({ fields: { search: mod.queryField<string>() } })
+        .defineQueryForm({ fields: { search: mod.queryField<string>() } })
         .observe({ writeToQueryParams: false, syncOnNavigation: false }),
     );
 

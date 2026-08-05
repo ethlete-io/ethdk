@@ -2,7 +2,7 @@
  * The internal, fully-resolved definition of a single query-form field.
  *
  * Produced by the field creators (`queryField()`, `searchQueryField()`, …) and
- * consumed by `createQueryForm()`. `T` is the field's value type and always
+ * consumed by `defineQueryForm()`. `T` is the field's value type and always
  * includes `null` (a field can be cleared).
  */
 export type QueryFieldDef<T> = {
@@ -89,7 +89,7 @@ export type QueryFieldConfig<T> = Partial<Omit<QueryFieldDef<T>, 'isResetBy'>> &
 /** Extracts a field definition's value type. */
 export type QueryFieldValue<F> = F extends QueryFieldDef<infer T> ? T : never;
 
-/** A map of field name → field definition, as passed to `createQueryForm({ fields })`. */
+/** A map of field name → field definition, as passed to `defineQueryForm({ fields })`. */
 export type QueryFormFields = Record<string, QueryFieldDef<unknown>>;
 
 /** The value shape of a query form - one entry per field. */

@@ -279,7 +279,7 @@ With the signals-first [QueryForm](/query/) (`page` becomes a query arg; changin
 filters resets it via `isResetBy`):
 
 ```ts
-const qf = createQueryForm({
+const qf = defineQueryForm({
   fields: { search: searchQueryField(), page: queryField<number>({ defaultValue: 1, isResetBy: ['search'] }) },
 }).observe();
 ```

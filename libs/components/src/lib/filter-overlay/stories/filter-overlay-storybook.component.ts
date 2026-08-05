@@ -2,7 +2,7 @@ import { Component, Signal, ViewEncapsulation, computed, input, signal } from '@
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { map, switchMap, tap, timer } from 'rxjs';
 import { ProvideSurfaceDirective } from '@ethlete/core';
-import { createQueryForm, queryField } from '@ethlete/query';
+import { defineQueryForm, queryField } from '@ethlete/query';
 import { BUTTON_IMPORTS } from '../../button';
 import { CHIP_IMPORTS } from '../../chip';
 import { FLOATING_ACTION_IMPORTS } from '../../floating-action';
@@ -37,7 +37,7 @@ export const TEAM_FILTER_FIELDS = {
 };
 
 /** The filters' value shape, named without naming the field map - see `FilterOverlayValueOf`. */
-const createTeamFilters = () => createQueryForm({ fields: TEAM_FILTER_FIELDS, queryParamPrefix: 'teams' });
+const createTeamFilters = () => defineQueryForm({ fields: TEAM_FILTER_FIELDS, queryParamPrefix: 'teams' });
 export type TeamFilterValue = FilterOverlayValueOf<ReturnType<typeof createTeamFilters>>;
 
 const REGIONS = ['all', 'eu', 'na', 'apac'];
