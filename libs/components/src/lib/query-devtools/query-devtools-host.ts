@@ -4,10 +4,13 @@ import {
   AnyPagedQueryStack,
   AnyQuerySnapshot,
   AnyQueryStack,
+  QueryClient,
   QueryDevtoolsEntry,
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
   QueryDevtoolsRun,
+  QueryRepository,
+  QueryRepositoryCacheEntry,
   QuerySequence,
   QuerySequenceStatus,
   WebSocketDevtoolsHandle,
@@ -16,6 +19,7 @@ import {
 import { QueryDevtoolsDiff } from './query-devtools-diff';
 import {
   AnyQuery,
+  CacheView,
   DetailTab,
   DevtoolsTab,
   PaneAxis,
@@ -54,6 +58,27 @@ export type QueryDevtoolsHost = {
   authEntries: Signal<QueryDevtoolsEntry[]>;
   wsEntries: Signal<QueryDevtoolsEntry[]>;
   repositories: Signal<RepositoryInfo[]>;
+
+  /**
+   * The cache per client, with every entry's size measured. Reading each response inside the computed is
+   * what keeps the totals current: a cache mutation bumps `cacheVersion`, but a response landing in an
+   * entry that is already there does not.
+   */
+  cacheView: Signal<CacheView[]>;
+  refetchCacheEntry(entry: QueryRepositoryCacheEntry): void;
+  evictCacheEntry(repository: QueryRepository, key: string): void;
+  /** Drops every entry of one client, consumers included - the cold-start check that does not need a reload. */
+  evictAllCacheEntries(repository: QueryRepository): void;
+  toggleCacheValue(clientName: string, key: string): void;
+  isCacheValueExpanded(clientName: string, key: string): boolean;
+  cacheFreshness(entry: QueryRepositoryCacheEntry): string;
+  cacheSync(entry: QueryRepositoryCacheEntry, pollStates: Record<string, unknown>): string;
+  cachePersistence(entry: QueryRepositoryCacheEntry): string;
+  /** How many responses this client has on disk, which is usually more than it has in memory. */
+  persistedCount(client: QueryClient): number;
+  clearPersistedQueries(client: QueryClient): void;
+  /** The features of the client behind a cache tab card, or `null` for a client without any. */
+  clientFeatures(client: QueryClient | null | undefined): QueryDevtoolsFeature[] | null;
 
   /** Unique client names present across queries and auth providers, for the Queries/Timeline pickers. */
   clientNames: Signal<string[]>;

@@ -8,6 +8,7 @@ import {
   QueryDevtoolsRun,
   QueryDevtoolsStats,
   QueryDevtoolsStatsHandle,
+  QueryKeyLockState,
   QueryRefreshCause,
   QueryRepository,
   QueryRepositoryCacheEntry,
@@ -174,6 +175,19 @@ export type CacheRow = {
 
 /** A repository the panel found, together with the client name/base URL it was registered under. */
 export type RepositoryInfo = { repository: QueryRepository; name: string; baseUrl: string; client: QueryClient | null };
+
+/** One client's cache, as the Cache tab lists it - every entry measured, with the client's poll states. */
+export type CacheView = {
+  name: string;
+  baseUrl: string;
+  repository: QueryRepository;
+  rows: CacheRow[];
+  bytes: number;
+  isEstimatedBytes: boolean;
+  unused: number;
+  pollStates: Record<string, QueryKeyLockState>;
+  client: QueryClient | null;
+};
 
 /** What each tab holds, as its badge reports it: how many entries, and how many of them are failing. */
 export type TabBadge = { count: number; errors: number; errorNoun?: string };

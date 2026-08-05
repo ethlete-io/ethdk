@@ -48,6 +48,7 @@ import {
 } from '@ethlete/query';
 import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, take, tap, timer } from 'rxjs';
 import { QueryDevtoolsAuthTabComponent } from './query-devtools-auth-tab.component';
+import { QueryDevtoolsCacheTabComponent } from './query-devtools-cache-tab.component';
 import { buildCurlCommand } from './query-devtools-curl';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
@@ -248,6 +249,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   imports: [
     NgTemplateOutlet,
     QueryDevtoolsAuthTabComponent,
+    QueryDevtoolsCacheTabComponent,
     QueryDevtoolsDetailComponent,
     QueryDevtoolsDrawerComponent,
     QueryDevtoolsFeaturesComponent,
@@ -669,7 +671,7 @@ export class QueryDevtoolsComponent {
    * what keeps the totals current: a cache mutation bumps `cacheVersion`, but a response landing in an
    * entry that is already there does not.
    */
-  protected cacheView = computed(() => {
+  public cacheView = computed(() => {
     return this.repositories().map(({ repository, name, baseUrl, client }) => {
       // Read the version signal so this recomputes on every cache mutation.
       repository.subtle.cacheVersion();
@@ -1556,11 +1558,11 @@ export class QueryDevtoolsComponent {
 
   // --- Cache actions ---
 
-  protected refetchCacheEntry(entry: QueryRepositoryCacheEntry) {
+  public refetchCacheEntry(entry: QueryRepositoryCacheEntry) {
     entry.request.execute();
   }
 
-  protected evictCacheEntry(repository: QueryRepository, key: string) {
+  public evictCacheEntry(repository: QueryRepository, key: string) {
     repository.subtle.evict(key);
   }
 
@@ -1568,7 +1570,7 @@ export class QueryDevtoolsComponent {
    * Drops every entry of one client, consumers included - the cold-start check that does not need a
    * reload. A query still bound to an evicted entry requests again on its next execution.
    */
-  protected evictAllCacheEntries(repository: QueryRepository) {
+  public evictAllCacheEntries(repository: QueryRepository) {
     for (const entry of repository.subtle.cacheEntries()) repository.subtle.evict(entry.key);
   }
 
@@ -1576,17 +1578,17 @@ export class QueryDevtoolsComponent {
    * Expands the response held under a cache key, which is the only way to read an entry no live query is
    * bound to any more - the Queries tab has nothing to select for it.
    */
-  protected toggleCacheValue(clientName: string, key: string) {
+  public toggleCacheValue(clientName: string, key: string) {
     const id = `${clientName}|${key}`;
 
     this.expandedCacheKey.update((current) => (current === id ? null : id));
   }
 
-  protected isCacheValueExpanded(clientName: string, key: string) {
+  public isCacheValueExpanded(clientName: string, key: string) {
     return this.expandedCacheKey() === `${clientName}|${key}`;
   }
 
-  protected cacheFreshness(entry: QueryRepositoryCacheEntry) {
+  public cacheFreshness(entry: QueryRepositoryCacheEntry) {
     this.clock();
     if (entry.request.loading()) return 'refreshing…';
     const expiresAt = entry.request.expiresAt();
@@ -1599,7 +1601,7 @@ export class QueryDevtoolsComponent {
    * What multi-tab sync is doing for a cache entry: whether this tab is the one polling the key, and
    * how long ago it last took a response from another tab. Empty when the client has no sync.
    */
-  protected cacheSync(entry: QueryRepositoryCacheEntry, pollStates: Record<string, QueryKeyLockState>) {
+  public cacheSync(entry: QueryRepositoryCacheEntry, pollStates: Record<string, QueryKeyLockState>) {
     this.clock();
 
     const parts: string[] = [];
@@ -1618,7 +1620,7 @@ export class QueryDevtoolsComponent {
    * Whether a cache entry is showing data that came off the disk rather than the network - the answer
    * to "why is this here already?" on a cold start. Empty when the client does not persist responses.
    */
-  protected cachePersistence(entry: QueryRepositoryCacheEntry) {
+  public cachePersistence(entry: QueryRepositoryCacheEntry) {
     this.clock();
 
     const hydratedAt = entry.request.subtle.lastPersistedResponseAt();
@@ -1629,13 +1631,13 @@ export class QueryDevtoolsComponent {
   }
 
   /** How many responses this client has on disk, which is usually more than it has in memory. */
-  protected persistedCount(client: QueryClient) {
+  public persistedCount(client: QueryClient) {
     this.clock();
 
     return client.subtle.persistence?.indexEntries().length ?? 0;
   }
 
-  protected clearPersistedQueries(client: QueryClient) {
+  public clearPersistedQueries(client: QueryClient) {
     void client.clearPersistedQueries();
   }
 
@@ -1882,7 +1884,7 @@ export class QueryDevtoolsComponent {
   }
 
   /** The features of the client behind a cache tab card, or `null` for a client without any. */
-  protected clientFeatures(client: QueryClient | null | undefined) {
+  public clientFeatures(client: QueryClient | null | undefined) {
     const features = client?.subtle.devtoolsFeatures ?? [];
 
     return features.length ? features : null;
