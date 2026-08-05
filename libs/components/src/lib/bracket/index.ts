@@ -1,10 +1,66 @@
-// TODO(bracket): curate the public surface once the default cards are built - `./core` and
-// `./linked` currently re-export internal engine builders (createBracket, relations, base
-// map/round/match builders) alongside the public data types. Narrow to the types consumers
-// actually need (data source, round/match/participant, swiss group, enums) at that point.
-export * from './core';
+export { BracketMap } from './core';
+export {
+  BRACKET_DATA_LAYOUT,
+  BRACKET_ROUND_MIRROR_TYPE,
+  COMMON_BRACKET_ROUND_TYPE,
+  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
+  GROUP_BRACKET_ROUND_TYPE,
+  SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
+  SWISS_BRACKET_ROUND_TYPE,
+  TOURNAMENT_MODE,
+} from './core';
+export type {
+  BracketDataLayout,
+  BracketMatchId,
+  BracketMatchPosition,
+  BracketMatchShortId,
+  BracketMatchStatus,
+  BracketRoundId,
+  BracketRoundMirrorType,
+  BracketRoundPosition,
+  BracketRoundShortId,
+  BracketRoundType,
+  CommonBracketRoundType,
+  DoubleEliminationBracketRoundType,
+  GroupBracketRoundType,
+  MatchParticipantId,
+  MatchParticipantShortId,
+  MatchParticipantSide,
+  ParticipantMatchResult,
+  SingleEliminationBracketRoundType,
+  SwissBracketRoundType,
+  TournamentMode,
+} from './core';
 export * from './integrations';
-export * from './linked';
+export { BRACKET_SWISS_GROUP_COLOR_TYPE } from './linked';
+export type {
+  Bracket,
+  BracketMatch,
+  BracketMatchFactor,
+  BracketMatchParticipant,
+  BracketMatchRelation,
+  BracketMatchRelationNothingToOne,
+  BracketMatchRelationOneToNothing,
+  BracketMatchRelationOneToOne,
+  BracketMatchRelationTwoToNothing,
+  BracketMatchRelationTwoToOne,
+  BracketParticipant,
+  BracketParticipantMatch,
+  BracketRound,
+  BracketRoundMapWithSwissData,
+  BracketRoundRelation,
+  BracketRoundRelationNothingToOne,
+  BracketRoundRelationOneToNothing,
+  BracketRoundRelationOneToOne,
+  BracketRoundRelationTwoToNothing,
+  BracketRoundRelationTwoToOne,
+  BracketRoundSwissData,
+  BracketRoundSwissGroup,
+  BracketRoundSwissGroupId,
+  BracketRoundSwissGroupMap,
+  BracketSwissColors,
+  BracketSwissGroupColorType,
+} from './linked';
 export * from './bracket-card-context';
 export * from './bracket-density';
 export * from './bracket-errors';
