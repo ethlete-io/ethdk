@@ -1,0 +1,17 @@
+@layer components {
+  @property --et-progress-steps-gap {
+    syntax: '<length>';
+    /* Inherited so each step's connector (progress-step.component.css) can span the gap too - a
+       step doesn't otherwise know the row's own gap. */
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  .et-progress-steps {
+    display: flex;
+    gap: var(--et-progress-steps-gap);
+    /* Numbers the projected .et-progress-steps, in DOM order, purely in CSS - see the marker's
+       counter() in progress-step.component.css. */
+    counter-reset: et-progress-step;
+  }
+}

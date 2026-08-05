@@ -1,0 +1,9 @@
+<span class="et-progress-step-marker">
+  @if (state() === 'complete') {
+    <i etIcon="et-check"></i>
+  } @else {
+    <span class="et-progress-step-marker-number"></span>
+  }
+</span>
+
+<span class="et-progress-step-label"><ng-content /></span>
