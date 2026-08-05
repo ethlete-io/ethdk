@@ -494,6 +494,42 @@ lifecycle.directive.ts` are class-driven CSS-transition directives typed
   from scratch before pie/sankey are on the table - bar charts alone could
   ship without solving this.
 
+## Password input: caps-lock warning
+
+The indicator (`password-input.component.html`) is a bare
+`etIcon="et-triangle-exclamation"` marked `aria-hidden="true"`, next to a
+`resolvedCapsLockLabel()` text span (default `'Caps Lock is on'`,
+`input-labels.ts`) - but that text span is styled with the standard
+visually-hidden clip pattern in `password-input.component.css`, so it's
+screen-reader-only. Sighted users get the bare triangle with nothing
+visible explaining it. Fix is straightforward: the icon can take
+`[etTooltip]` directly (it's a directive attachable to any host, same as
+already noted for badge) using the same text already resolved for the
+screen-reader label, rather than inventing a second copy.
+
+The "stays on after caps lock is turned off" report doesn't trace to a
+filtering bug in the wiring - `password-input.directive.ts`'s
+`syncCapsLock(event)` calls the standard `event.getModifierState('CapsLock')`
+unconditionally from `(keydown)`, `(keyup)`, _and_ `(mousedown)` on the
+input (the directive's own comment notes `mousedown` was added specifically
+so a focus-click with no keystroke still re-checks state), with no
+`event.key`/`event.code` filter excluding the CapsLock key itself. On spec
+behavior that should catch a bare toggle immediately via the CapsLock key's
+own keyup. The likely explanation is a real cross-browser/OS quirk in
+whether the CapsLock key reliably fires a `keyup` (or reports the post-
+toggle modifier state at that point) at all - well documented as
+inconsistent, particularly on macOS - which source alone can't confirm.
+Needs reproducing on the actual browser/OS combo before designing a fix;
+if confirmed, the workaround is re-checking on some event other than the
+CapsLock key's own keyup (e.g. next `focusin`, or accepting the state can
+only be trusted to update on the next real keystroke and saying so in the
+label) rather than anything fixable in this directive's current listener
+set.
+
+No duplication elsewhere - `otp-input` and every other password-adjacent
+control have no caps-lock logic of their own; `password-input` owns this
+exclusively.
+
 ## Storybook structure
 
 Every story sits under a flat `Components/<Name>` (or `Components/<Domain>/
