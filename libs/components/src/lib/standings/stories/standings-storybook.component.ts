@@ -14,7 +14,7 @@ import { NormalizedStandingRow, StandingsZone } from '../standings.types';
           table read sideways is worse than a table with fewer columns.
         </p>
 
-        <div [style.inline-size.px]="width()">
+        <div [style.inline-size]="boxWidth()">
           <et-standings
             [rows]="rows()"
             [zones]="zones()"
@@ -35,6 +35,9 @@ export class StandingsStorybookComponent {
   public highlight = input(true);
   public withZones = input(true);
   public withForm = input(true);
+
+  /** Caps at the viewport so a phone gets the collapsed table instead of a horizontal scrollbar. */
+  protected boxWidth = computed(() => `min(${this.width()}px, 100%)`);
 
   protected zones = computed<StandingsZone[]>(() =>
     this.withZones()
