@@ -687,3 +687,240 @@ Two ways out, and the second is probably the real one:
   full strength - so a disabled tree with selections looks essentially
   identical to an enabled one. Adopting the opacity approach fixes the
   missing disabled affordance and the specificity leak together.
+
+## Query devtools: a failed query vanishes instead of going stale
+
+A `PUT` that comes back `401` is unreadable in the panel by the time you look
+at it. Three separate mechanisms drop it, and they need three separate fixes.
+
+**The row itself is tied to the query's lifetime.** `registerQueryDevtoolsEntry`
+returns an unregister callback and `base-query-factory.ts` wires it straight to
+`deps.destroyRef.onDestroy` (same in `query-stack`, `paged-query-stack`,
+`query-sequence`, `web-socket-client`, `bearer-auth-provider`,
+`query-form-signals`); the callback filters the entry out of the `entries()`
+signal in `query-devtools-registry.ts`. So a 401 that makes the app redirect to
+login destroys the component holding the mutation, and the row - with its
+stats, its run history and its route - is gone before the panel is opened. The
+registry keeps no record that the query ever existed.
+
+**A logout wipes the error even when the row survives.** `logout()` calls
+`repository.unbindAllSecure()`, which destroys every secure entry and emits
+`unbind-all-secure`; `secure-query-execute-factory.ts` subscribes to it and
+calls `reset()` → `resetExecuteState`, which nulls `error`, `rawResponse`,
+`args`, `loading` and `lastTimeExecutedAt` - exactly the fields you wanted to
+read. That wipe is correct for rendering (its comment says so: a still-mounted
+component must not go on showing the previous user's data), so the fix is not
+to weaken it but to have the devtools take a copy _before_ it happens.
+
+**The repository entry is destroyed, not retained.** `unbind` only retains an
+orphaned entry when `keepUnusedFor > 0` **and** `request.response() !== null` -
+"only data is worth keeping around". A mutation is uncacheable, so
+`resolveKeepUnusedFor` returns `0` anyway; but even a failed `GET` fails the
+second condition, which means failures are precisely the class of entry
+retention never keeps. `destroyEntry` deletes the map entry and the Cache tab
+reads `subtle.cacheEntries()` live, so the row disappears from there too. Note
+`destroyEntry` emits no event at all - there is no `entry-destroyed` to pair
+with `entry-created`, so the panel cannot even notice.
+
+What does survive is thin: `stats.errors` counts the failure, and the run
+buffer keeps a run with `status: 'error'`, its `url` and its `attempts` - but
+`recordError` takes no payload, so the status code and the response body are
+never recorded anywhere. The Events tab keeps a `request-error` row with
+`status` and `url` for the last 100 events, and that is currently the only
+place a 401 is legible at all. Its `queryId` is resolved at event time by
+identity-matching `subtle.request()` against the registered entries, so
+clicking such a row calls `selectQuery` with an id nothing is registered under
+any more - `findQuery` returns `null` and the click silently does nothing.
+
+The fix, in the order it pays off:
+
+- **Record the error onto the run.** `recordError` should take the
+  `QueryError` (status + a trimmed body, the way runs already keep a bounded
+  `response`) and store it on the run in flight. The run buffer is already
+  capped, already survives `resetExecuteState` (it lives on the stats
+  recorder, not on the query state), and the detail drawer's History tab
+  already renders runs - so this alone makes the 401 inspectable for every
+  query whose row is still there, including one blanked by a logout. Cheapest
+  item here and independently useful.
+- **Tombstone the registry entry.** Instead of filtering on unregister, set
+  `destroyedAt` and keep it, capped, with a "Clear gone" action. A destroyed
+  row should read like `stale` does - the muted chip and a dimmed row, not an
+  error colour - be excluded from the live facet counts, and sit behind a
+  facet chip that is off by default. Id collisions are not a concern:
+  `idCounters` only ever increments within a page load, so a re-created query
+  gets `#1` next to the tombstone's `#0`.
+  - The trap: an entry holds `handle` (the query, and through it the request
+    and its response body) and `meta.element` (a host DOM node). Retaining
+    live entries would make the devtools a leak factory - the thing
+    `MAX_UNUSED_ENTRIES` exists to prevent on the repository side. A tombstone
+    has to be a frozen snapshot (method, route parts, last url, stats, runs,
+    last error) with the handle and element dropped, which means the detail
+    drawer needs to render from a snapshot as well as from a live handle.
+    Today every tab reads `entry.handle` signals directly, so this is the
+    actual work in the item.
+- **Emit `entry-destroyed` from the repository** so the Cache tab can keep its
+  own tombstone row the same way, and so "why did this entry go away" (logout
+  vs. `keepUnusedFor` expiry vs. the unused-entry cap vs. a manual evict)
+  becomes answerable at all. The repository must not keep the tombstones
+  itself - it stays lean in production; the panel already subscribes to
+  `events$` and is the right owner.
+- **Fall back to key/url matching for an event row's `queryId`.** With
+  tombstones in place the link resolves again, but an error event fired after
+  the query was already gone still records `queryId: null` - match on the
+  request url/key against tombstones as a second pass.
+
+## Auth: what the consumer app had to rebuild around the bearer provider
+
+Read against `fut-frontend` (`libs/domain/auth`, `libs/queries/*/…​.client.ts`)
+and `libs/query/src/lib/auth`. All four of that repo's providers are configured
+identically - `withRefreshQuery` + `withPersistentAuth({ autoLogin })` +
+`withBearerAuthMultiTabSync()` - so everything below applies to each of them.
+Ordered by how visible it is to a user.
+
+### A 401 in a non-leader tab never recovers
+
+`withRefreshQuery`'s 401 listener (`bearer-auth-query-builders.ts`) calls
+`executeRefresh`, which returns early on `!context.isLeader()`. So a secure
+request that 401s in a follower tab triggers no refresh at all. The leader
+eventually refreshes on its own timer - up to 25% of the token lifetime later -
+and broadcasts the new tokens, but `setupMultiTabSync` writes
+`accessToken`/`refreshToken` **directly** (it is handed the raw writable
+signals) instead of going through `applyTokens`, so `afterTokenRefresh$` never
+fires in the receiving tab. And `afterTokenRefresh$` filtered on
+`error()?.code === 401` is the _only_ thing that re-executes a secure query
+that already failed (`secure-query-execute-factory.ts`) - `tokenWaitSubscription`
+is only ever armed on the initial path, when there was no token yet. Net
+effect: the second tab shows a permanently failed page until a reload, while
+the first tab is fine. Two independent fixes, both needed:
+
+- Route incoming broadcast tokens through `applyTokens` so every tab's 401'd
+  queries retry. On its own this closes the common case, since the leader does
+  refresh eventually.
+- Give a follower a way to ask for a refresh instead of dropping it - post a
+  `refresh-requested` message (the presence channel in `leader-election.ts`
+  already exists) rather than returning early on `!isLeader()`. The leader gate
+  is right about _who spends the refresh token_; it is wrong as a way to
+  discard the event.
+
+### The remember-me cookie is deleted on every startup
+
+`withPersistentAuth` mirrors the token into the cookie with an `effect` that
+deletes it whenever `refreshToken()` is falsy - and at startup it always is:
+`tryLogin()` reads the cookie synchronously, the effect then runs on the next
+tick with the token still null and calls `deleteCookie`. Verified against the
+real feature: with a valid cookie present and the auto-login in flight,
+`deleteCookie('testAuth', '/', 'test.com')` is called on the first `tick()`.
+
+So the cookie exists only while a token does. Reload while offline, or with the
+refresh endpoint 500ing, or close the tab during the in-flight auto-login, and
+a refresh token with 30 days left is gone - the user is back at the login form
+with no way to explain why. The `defaultRememberMe: true` all four apps set is
+what makes this reachable in normal use.
+
+The mirror-effect is the wrong shape. Writing the cookie should be an event, not
+a projection of current state: write on `applyTokens`, delete on `logout()` and
+on an auth failure the server was definite about (401/403 from the refresh
+query), and never on "there is no token right now". Seeding `refreshToken` from
+the cookie at construction would also work and is smaller, but leaves the same
+trap for anything else that nulls the token transiently.
+
+### A cross-tab logout is not a logout
+
+`setupMultiTabSync`'s `logout` handler clears the two signals and calls
+`repository.unbindAllSecure()` directly, bypassing `logout()`. Three things
+that belong to ending a session therefore don't happen in the other tabs:
+`executionState` is never set to `{ type: 'logout' }`, `unsavedChanges.abandonAll('logout')`
+is never called (so those tabs keep guarding edits that can no longer be
+saved - the exact case the comment in `logout()` describes), and with
+`withTokenRevocation` installed the revocation effect _does_ fire in every tab,
+so N tabs each POST a revocation for tokens that are already gone.
+
+The consumer-visible half is the first one. `fut-frontend`'s auth flow redirects
+to login on `(!query || query.type === 'logout') && !isAuthenticated()`
+(`auth-flow.ts`); after a cross-tab logout `executionState` still holds the
+previous `{ type: 'login', state: 'success' }`, so the branch does not match and
+the tab neither redirects nor prompts - it sits on an authenticated shell whose
+queries have all been reset. Fix is one line of intent: have the message handler
+call the provider's own `logout()` (guarded against re-broadcasting) instead of
+reimplementing two thirds of it.
+
+### A failed refresh leaves the session looking valid
+
+Nothing in the provider reacts to the refresh query failing. Tokens stay set,
+`isAuthenticated()` stays `true`, and every secure query keeps firing with a
+dead token - each 401 calling `executeRefresh` again, most of them swallowed by
+the `minRefreshInterval` guard (30s default, and `lastRefreshTime` is stamped
+_before_ the attempt and not rolled back when it fails). `fut-frontend` has to
+watch for it from outside and log out itself:
+
+```ts
+const isRefreshFailure =
+  execState?.state === 'error' && (execState.type === 'tokenRefresh' || execState.type === 'autoLogin');
+if (isRefreshFailure) logoutService.logout({ quiet: true, via: 'system' });
+```
+
+That is policy every consumer of `withRefreshQuery` needs and none should have
+to write. `withRefreshQuery` should own it - an `onRefreshFailure` option
+defaulting to "end the session when the server was definite (401/403), keep
+retrying otherwise", which is also what makes the `retryableStatusCodes` list
+(0/408/425/429/5xx, `maxAttempts: 0` = unlimited) coherent: those are the
+statuses worth retrying, everything else is terminal and should log out.
+
+While there: a 401-driven refresh must not be dropped by `minRefreshInterval`.
+The interval exists to stop refresh loops, but a real 401 within 30s of a
+proactive refresh (revoked token, clock skew) is exactly when the swallowed
+attempt strands the query. Throttle the _proactive_ path and dedupe the reactive
+one (one refresh in flight at a time), rather than sharing one guard.
+
+### `executionState` is one latched slot doing three jobs
+
+It answers "which auth query is running", "how did the last one end", and "has
+the session ended" at once, and it never returns to idle. Every consumer then
+reverse-engineers what it actually needs, and `fut-frontend` does it three
+separate times:
+
+- `AUTH_LOGOUT_DEF` (`auth-state.ts`) exists solely to record _why_ the session
+  ended - its own comment says "which the v3 provider does not model" - because
+  a user-initiated logout must stay put while a system one redirects back with
+  a `?go=` param. `BearerAuthExecutionStateLogout` carries no cause, and
+  `withInactivityLogout` calls the same `context.logout()`, so an inactivity
+  logout is indistinguishable from a click.
+- `AppInitializedService` gates every app's entire template
+  (`@if (initializedApp())`) on a heuristic over `executionState`: no state on a
+  public route, or any `state === 'success'`, or an error on a public route. It
+  is guessing at "has the session finished settling", which the provider knows
+  precisely (was there a cookie? is the auto-login in flight?) and never
+  publishes. With no cookie on a protected route no `executionState` is ever
+  produced at all, so first paint waits on the redirect landing.
+- The auth flow needs `debounceTime(1)` over `[executionState$, urlState$]`,
+  plus a special case whose comment reads "a stale `logout` state never clears
+  on its own, so treat it as no operation too - otherwise a second Entra
+  attempt in the same page load silently no-ops".
+
+Two additions would delete all three: a **`sessionStatus`** signal
+(`unknown | restoring | authenticated | anonymous`) that an app can gate its
+shell on, and a **cause on the session ending** (`user | inactivity | expired |
+revoked | otherTab`) set by whoever ends it. Both are things the provider
+already knows and currently throws away. Note also that `withTokenRevocation`
+overwrites `executionState` with `{ type: 'revocation', state: 'loading' }`
+immediately after a logout set `{ type: 'logout' }` - a single slot cannot
+carry two concurrent concerns, which is the argument for splitting it rather
+than adding a fourth state to it.
+
+### The sync channel and the leader lock are global constants
+
+`channelName` defaults to `'ethlete-auth-sync'` and the Web Locks name is the
+module constant `'ethlete-auth:leader'` (`leader-election.ts`), neither derived
+from the provider's `name`. All four `fut-frontend` providers call
+`withBearerAuthMultiTabSync()` with no `channelName` - while every one of them
+_does_ namespace its cookie by hand (`hub_`, `platform_`, `toty_`, `voting_`),
+which is the same problem solved once at the call site because the SDK doesn't
+solve it. Two providers reachable from one origin would share a token channel
+and elect one leader between them. Default both names off the provider `name`
+that is already required.
+
+Minor, same file: `isProcessingExternalUpdate` in `setupMultiTabSync` is reset
+synchronously in a `finally`, but the outgoing broadcast is an `effect` that
+runs later - so the guard never actually suppresses anything and every received
+token update is re-broadcast once per tab. It converges only because setting a
+signal to an identical string is a no-op, which is luck, not design.
