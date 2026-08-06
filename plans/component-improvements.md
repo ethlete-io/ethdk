@@ -437,73 +437,6 @@ it reads as its own subsystem when it's one piece of the form-field
 wrapper. Both are one-line `title:` fixes. Whether `Components/*` should
 gain real top-level categories at all is a bigger, separate call.
 
-## Query devtools: response overrides are presets-only
-
-The ✎ menu on every value-explorer row
-(`query-devtools-override-menu.component.html`) offers only fixed presets.
-There is no way to type a value. The op model already supports it -
-`OverrideOp` in `libs/query/src/lib/devtools/query-devtools-overrides.ts`
-declares `{ type: 'set'; path; value }`, plus a `custom` variant on both
-`stringPreset` (`custom?: string`) and `numberPreset` (`custom?: number`),
-and `applyOp` handles all three. Nothing in the panel ever arms them: grep
-for `'set'` or `preset: 'custom'` in `libs/components/src/lib/query-devtools`
-returns no hits. So the entire gap is UI - a "Custom…" menu item that opens
-a small input and arms `set` (or the `custom` preset for a typed leaf), no
-query-side work at all.
-
-The only other editing affordance is the whole-body one: `openResponseEditor`
-→ `setResponse()` (`query-devtools-detail.component.html`, the `Edit`
-→ `Response` button), a raw-JSON textarea over the entire response that is
-one-shot and does not survive a refetch. Path-addressed and free-form are
-today mutually exclusive; a custom `set` op is what joins them.
-
-- **Copy/paste subtrees.** Copy already exists as the ⧉ button on every
-  row - `copyValue()` writes the whole subtree as JSON for containers, the
-  raw unquoted value for leaves, and `copyLabel()` already says "Copy
-  object (n keys)" / "Copy array (n items)". The missing half is paste:
-  read the clipboard, `JSON.parse`, and arm `{ type: 'set', path, value }`.
-  Gate the menu item on the parse succeeding and, for a container row,
-  on the pasted value's kind matching (`kindOf`) so an array isn't silently
-  dropped onto an object. This is the cheapest real win here - copy from
-  one query's response, paste onto another's, and the op replays on every
-  future fetch, which the whole-body editor can't do. Note clipboard reads
-  need permission and a user gesture; the menu item is a gesture, but the
-  read can reject and needs an error path (the panel has no clipboard-read
-  precedent yet - all six existing sites are writes).
-- **Randomize what the presets generate.** `STRING_PRESETS` and
-  `NUMBER_PRESETS` are frozen literals - `short` is always `'Ab'`, `long`
-  is the same lorem paragraph repeated 4x, `negative` is always `-1`,
-  `huge` is always `Number.MAX_SAFE_INTEGER`. Applying "short text" to
-  twenty fields fills all twenty identically, which hides exactly the bugs
-  a fill is meant to surface (a key collision, a wrong field rendered, a
-  layout that only breaks on varied widths). Generating a value per arm -
-  a short phrase from a small word pool, a length-varied lorem slice, a
-  random negative/large integer - fixes that. The constraint: the value has
-  to be generated **at arm time and stored in the op**, not re-rolled inside
-  `applyOp`, or every refetch reshuffles the response and the panel stops
-  being reproducible. That is what the existing `custom` field is for -
-  `arm({ type: 'stringPreset', preset: 'custom', custom: generated })` - so
-  randomization and custom values are the same change, and `Math.random()`
-  stays out of the replay path. `datePreset` is the precedent for the
-  opposite choice: `now`/`plusDay` deliberately resolve at apply time, which
-  is right for "now" and wrong for a random sample.
-- **A long-word string preset.** Today's `long` preset is lorem - all short
-  words with whitespace everywhere, so it only ever tests wrapping, never
-  overflow. The bug class it can't reach is a single unbreakable token:
-  a German compound (`Straßenverkehrs-Zulassungs-Ordnung` spelled out in
-  full, or the classic
-  `Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz`), a long
-  URL, a base64 blob, an email address. Those blow out flex/grid tracks,
-  push ellipsis truncation past its container, and break table column
-  sizing in ways lorem never will. Add a `longWord` preset (and its
-  matching menu item) rather than folding it into `long` - "does it wrap"
-  and "does it overflow" are separate checks and you want to arm them
-  independently.
-- **While in there: the fill-recursively actions are hardcoded to one
-  preset each.** `fillStrings()` always arms `'short'`, `fillNumbers()`
-  always `'zero'`. Once presets randomize, the natural shape is "fill every
-  string with «preset»" as a submenu rather than three fixed verbs.
-
 ## Auth: what the consumer app had to rebuild around the bearer provider
 
 Read against `fut-frontend` (`libs/domain/auth`, `libs/queries/*/…​.client.ts`)
@@ -721,6 +654,19 @@ Narrow-viewport pass:
 - **Query devtools pins** - a pin is keyed on `entry.id` rather than the endpoint
   (`pins:v1` → `v2`), and a `gone` chip hides tombstones by default.
   Changeset `devtools-hide-gone-and-per-query-pins.md`.
+
+Devtools overrides pass (2026-08-06):
+
+- **Query devtools: response overrides are presets-only** (was its own section) - all four items
+  shipped. "Custom…" renders an in-menu input (`etMenuSearch`, so the menu's typeahead skips it) and
+  arms `set` or the `custom` preset; "Paste value" reads the clipboard, kind-checks containers, and
+  shows read/parse errors inside the open menu; presets generate a varied sample per arm via
+  `generateQueryDevtoolsStringPreset`/`...NumberPreset` (stored in the op's `custom` field at arm
+  time - `custom` now wins over the preset label - so replay stays reproducible); `longWord` is a
+  new preset (compound word / URL / hex blob, no whitespace); "fill recursively" became per-preset
+  submenus. Changeset `devtools-override-custom-paste-randomized.md`. Verified headlessly against
+  the devtools story: 16/16 checks (menu contents, custom commit, number validation error, paste
+  mismatch error, fill).
 
 Bug pass 2:
 
