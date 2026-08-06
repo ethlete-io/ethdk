@@ -236,8 +236,8 @@ export type QueryDevtoolsHost = {
   queryFilter: WritableSignal<string>;
   queryFacets: WritableSignal<ReadonlySet<QueryListFacet>>;
 
-  /** The endpoints sorted to the top of the Queries list. Persisted apart from the rest - see the panel. */
-  pinnedQueryKeys: Signal<ReadonlySet<string>>;
+  /** The entry ids sorted to the top of the Queries list. Persisted apart from the rest - see the panel. */
+  pinnedQueryIds: Signal<ReadonlySet<string>>;
   isQueryPinned(entry: QueryDevtoolsEntry): boolean;
   toggleQueryPin(entry: QueryDevtoolsEntry): void;
 

@@ -104,7 +104,7 @@
     @for (item of filteredQueries(); track item.entry.id) {
       @let isGone = !!item.entry.destroyedAt;
       @let isPinned = host.isQueryPinned(item.entry);
-      @let pinLabel = isPinned ? 'Unpin this endpoint' : 'Pin this endpoint to the top of the list';
+      @let pinLabel = isPinned ? 'Unpin this query' : 'Pin this query to the top of the list';
       <div
         [class.et-query-devtools-row--active]="host.selectedQueryId() === item.entry.id"
         [class.et-query-devtools-row--gone]="isGone"
@@ -168,6 +168,10 @@
            latter is the user's own doing - so it names the way out. -->
       @if (scopedQueryCount()) {
         <p class="et-query-devtools-empty">No query matches the filter · {{ scopedQueryCount() }} in scope.</p>
+      } @else if (goneQueryCount()) {
+        <p class="et-query-devtools-empty">
+          No query in scope still exists · pick Gone to list the {{ goneQueryCount() }} destroyed.
+        </p>
       } @else if (host.inspectFilterIds()) {
         <p class="et-query-devtools-empty">
           The inspected element's queries are no longer registered. Clear the filter.

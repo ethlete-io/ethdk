@@ -69,18 +69,25 @@ export class QueryDevtoolsQueriesTabComponent {
 
   protected filteredQueries = computed(() => {
     const facets = this.host.queryFacets();
-    const items = this.searchedQueries();
-
-    if (!facets.size) return this.pinnedFirst(items);
 
     // Same reason as in `facetCounts`: a list narrowed to stale queries has to re-evaluate as they age.
     if (facets.has('stale')) this.host.clock();
 
-    return this.pinnedFirst(items.filter((item) => this.matchesFacets(item, facets)));
+    const items = this.searchedQueries().filter((item) =>
+      item.entry.destroyedAt
+        ? this.listsTombstone(item.entry, facets)
+        : !facets.size || this.matchesFacets(item, facets),
+    );
+
+    return this.pinnedFirst(items);
   });
 
-  /** How many queries are in scope, which is what the list shows unfiltered. */
-  protected scopedQueryCount = computed(() => this.host.scopedQueries().length);
+  /** How many queries the list would hold with the search box empty, which is what the count compares to. */
+  protected scopedQueryCount = computed(() => {
+    const facets = this.host.queryFacets();
+
+    return this.host.scopedQueries().filter((entry) => !entry.destroyedAt || this.listsTombstone(entry, facets)).length;
+  });
 
   protected goneQueryCount = computed(() => this.host.scopedQueries().filter((entry) => !!entry.destroyedAt).length);
 
@@ -98,11 +105,19 @@ export class QueryDevtoolsQueriesTabComponent {
   }
 
   /**
-   * Pinned endpoints first, everything else left in registration order. A chip could not do this job:
+   * A tombstone is the last state a query held, not a state it is in, so the list leaves one out unless the
+   * Gone chip asks for it - or the detail is showing it, so a query dying under the detail keeps its row.
+   */
+  private listsTombstone(entry: QueryDevtoolsEntry, facets: ReadonlySet<QueryListFacet>) {
+    return facets.has('gone') || (!facets.size && entry.id === this.host.selectedQueryId());
+  }
+
+  /**
+   * Pinned queries first, everything else left in registration order. A chip could not do this job:
    * {@link matchesFacets} widens, so a Pinned chip would mean "pinned or failing" and never both.
    */
   private pinnedFirst(items: { entry: QueryDevtoolsEntry; query: AnyQuery }[]) {
-    if (!this.host.pinnedQueryKeys().size) return items;
+    if (!this.host.pinnedQueryIds().size) return items;
 
     // Copied first: `items` is a computed's cached array, and `sort` is in place.
     return items
@@ -110,11 +125,8 @@ export class QueryDevtoolsQueriesTabComponent {
       .sort((a, b) => Number(this.host.isQueryPinned(b.entry)) - Number(this.host.isQueryPinned(a.entry)));
   }
 
-  /** A query matches the chips if it is in any of the picked states - chips widen, they don't intersect. */
+  /** A live query matches the chips if it is in any of the picked states - chips widen, they don't intersect. */
   private matchesFacets(item: { entry: QueryDevtoolsEntry; query: AnyQuery }, facets: ReadonlySet<QueryListFacet>) {
-    // A tombstone's frozen state is not a state to match against, so Gone is the only chip that holds it.
-    if (item.entry.destroyedAt) return facets.has('gone');
-
     const status = this.host.queryStatus(item.query);
 
     return (

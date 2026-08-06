@@ -139,11 +139,11 @@ const noop = () => undefined;
 const STORAGE_KEY = 'ethlete:query:devtools:v4';
 
 /**
- * Pinned endpoints, held apart from {@link STORAGE_KEY} and in `localStorage`: everything under that key
- * is view state that should die with the tab, while a pin says which endpoint is being worked on and is
+ * Pinned queries, held apart from {@link STORAGE_KEY} and in `localStorage`: everything under that key
+ * is view state that should die with the tab, while a pin says which query is being worked on and is
  * meant to outlive one. Folding it in would silently make pins per-tab.
  */
-const PINS_STORAGE_KEY = 'ethlete:query:devtools:pins:v1';
+const PINS_STORAGE_KEY = 'ethlete:query:devtools:pins:v2';
 
 const MAX_EVENTS = 100;
 
@@ -191,15 +191,7 @@ const readPersistedState = (): PersistedState => {
   }
 };
 
-/**
- * What a pin is keyed on: the endpoint, not the entry. An `id` carries a per-page-load sequence number, so
- * it only names the same query across reloads while queries are created in the same order - and a creator
- * used by three components is one endpoint to pin, not three.
- */
-const queryPinKey = (entry: QueryDevtoolsEntry) =>
-  `${entry.meta.clientName ?? ''}|${entry.meta.method ?? ''}|${entry.meta.route ?? ''}`;
-
-const readPinnedQueryKeys = (): string[] => {
+const readPinnedQueryIds = (): string[] => {
   try {
     const raw = localStorage.getItem(PINS_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
@@ -403,8 +395,12 @@ export class QueryDevtoolsComponent {
   /** The status facets the Queries list is narrowed to. Empty means no status narrowing. */
   public queryFacets = signal<ReadonlySet<QueryListFacet>>(new Set(this.persisted.queryFacets ?? []));
 
-  /** The endpoints sorted to the top of the Queries list, by {@link queryPinKey}. */
-  public pinnedQueryKeys = signal<ReadonlySet<string>>(new Set(readPinnedQueryKeys()));
+  /**
+   * The entry ids sorted to the top of the Queries list. Ids are derived from a stable descriptor plus a
+   * per-descriptor sequence number, so a pin survives a reload as long as queries are created in the same
+   * order - the same property the restored selection already relies on.
+   */
+  public pinnedQueryIds = signal<ReadonlySet<string>>(new Set(readPinnedQueryIds()));
 
   public eventLog = signal<EventLogItem[]>([]);
 
@@ -620,9 +616,9 @@ export class QueryDevtoolsComponent {
 
     return {
       queries: {
-        // The count says how many rows the tab holds, tombstones included, so the badge and the list
-        // agree. The error flag stays live-only: a frozen failure is history, not something to chase.
-        count: this.queryEntries().length,
+        // Live queries only, so the badge and the list agree: the list leaves tombstones out until the
+        // Gone chip asks for them. A frozen failure is history too, so it never sets the error flag.
+        count: queries.length,
         errors: queries.filter((entry) => this.queryStatus(entry.handle as AnyQuery) === 'error').length,
       },
       stacks: {
@@ -800,10 +796,10 @@ export class QueryDevtoolsComponent {
     });
 
     effect(() => {
-      const keys = [...this.pinnedQueryKeys()];
+      const ids = [...this.pinnedQueryIds()];
 
       try {
-        localStorage.setItem(PINS_STORAGE_KEY, JSON.stringify(keys));
+        localStorage.setItem(PINS_STORAGE_KEY, JSON.stringify(ids));
       } catch {
         // ignore (private mode / disabled storage)
       }
@@ -1009,16 +1005,15 @@ export class QueryDevtoolsComponent {
   }
 
   public isQueryPinned(entry: QueryDevtoolsEntry) {
-    return this.pinnedQueryKeys().has(queryPinKey(entry));
+    return this.pinnedQueryIds().has(entry.id);
   }
 
   public toggleQueryPin(entry: QueryDevtoolsEntry) {
-    const key = queryPinKey(entry);
-    const next = new Set(this.pinnedQueryKeys());
+    const next = new Set(this.pinnedQueryIds());
 
-    if (!next.delete(key)) next.add(key);
+    if (!next.delete(entry.id)) next.add(entry.id);
 
-    this.pinnedQueryKeys.set(next);
+    this.pinnedQueryIds.set(next);
   }
 
   protected toggleInspect() {
