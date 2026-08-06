@@ -154,6 +154,10 @@ export type CreatePagedQueryStackOptions<
   /**
    * If true, no queries will be executed while the paged query is loading.
    * This is useful if you need the current response to be used in the next query.
+   *
+   * This governs the `fetchNextPage()` / `fetchPreviousPage()` methods only. The
+   * `canFetchNextPage` / `canFetchPreviousPage` signals are `false` while any page loads either way,
+   * so a UI bound to them never issues the concurrent call this option would allow.
    */
   blockExecutionDuringLoading?: boolean;
 };

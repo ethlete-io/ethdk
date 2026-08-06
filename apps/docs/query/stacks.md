@@ -57,6 +57,8 @@ The paged stack exposes `items`, `loading`, `error`, `isFirstLoad`, `canFetchNex
 
 `canFetchNextPage` / `canFetchPreviousPage` are also `false` while any page is loading - including a refresh of an already loaded page - so a "load more" button bound to them goes quiet until the stack settles. `isFirstPageLoaded` means page 1 is in the stack, which a stack started at a higher `initialPage` only reaches by fetching backwards.
 
+The loading gate on those two signals is unconditional; `blockExecutionDuringLoading` governs the **methods** only. So under the default (`false`) a `fetchNextPage()` call mid-flight still runs, while the signals already read `false` - bind the UI to the signals and the two never disagree in practice. Set the option to `true` when a page's args depend on the previous page's response, so an out-of-order call cannot happen at all.
+
 - `fetchNextPage()` / `fetchPreviousPage()`
 - `reset({ initialPage? })`
 - `execute({ where?, allowCache? })` - `where: (item) => boolean` selectively re-executes the pages containing matching items (plus their neighbors), e.g. after editing one row.
