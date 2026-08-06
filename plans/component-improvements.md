@@ -691,7 +691,7 @@ Two ways out, and the second is probably the real one:
 ## Query devtools: a failed query vanishes instead of going stale
 
 A `PUT` that comes back `401` is unreadable in the panel by the time you look
-at it. Three separate mechanisms drop it, and they need three separate fixes.
+at it. Two separate mechanisms drop it, and they need separate fixes.
 
 **The row itself is tied to the query's lifetime.** `registerQueryDevtoolsEntry`
 returns an unregister callback and `base-query-factory.ts` wires it straight to
@@ -703,15 +703,6 @@ login destroys the component holding the mutation, and the row - with its
 stats, its run history and its route - is gone before the panel is opened. The
 registry keeps no record that the query ever existed.
 
-**A logout wipes the error even when the row survives.** `logout()` calls
-`repository.unbindAllSecure()`, which destroys every secure entry and emits
-`unbind-all-secure`; `secure-query-execute-factory.ts` subscribes to it and
-calls `reset()` → `resetExecuteState`, which nulls `error`, `rawResponse`,
-`args`, `loading` and `lastTimeExecutedAt` - exactly the fields you wanted to
-read. That wipe is correct for rendering (its comment says so: a still-mounted
-component must not go on showing the previous user's data), so the fix is not
-to weaken it but to have the devtools take a copy _before_ it happens.
-
 **The repository entry is destroyed, not retained.** `unbind` only retains an
 orphaned entry when `keepUnusedFor > 0` **and** `request.response() !== null` -
 "only data is worth keeping around". A mutation is uncacheable, so
@@ -722,10 +713,13 @@ reads `subtle.cacheEntries()` live, so the row disappears from there too. Note
 `destroyEntry` emits no event at all - there is no `entry-destroyed` to pair
 with `entry-created`, so the panel cannot even notice.
 
-What does survive is thin: `stats.errors` counts the failure, and the run
-buffer keeps a run with `status: 'error'`, its `url` and its `attempts` - but
-`recordError` takes no payload, so the status code and the response body are
-never recorded anywhere. The Events tab keeps a `request-error` row with
+What survives is the run buffer: `recordError` takes the `QueryError`, so a run
+keeps `status: 'error'`, its url, its attempts, the status code and a trimmed
+body, and the detail drawer's History tab renders them. The buffer lives on the
+stats recorder rather than on the query state, so it also outlives the
+`resetExecuteState` a logout triggers through `unbindAllSecure` - a row blanked
+by a logout stays readable. That only helps while the row is still there. The
+Events tab keeps a `request-error` row with
 `status` and `url` for the last 100 events, and that is currently the only
 place a 401 is legible at all. Its `queryId` is resolved at event time by
 identity-matching `subtle.request()` against the registered entries, so
@@ -734,14 +728,6 @@ any more - `findQuery` returns `null` and the click silently does nothing.
 
 The fix, in the order it pays off:
 
-- **Record the error onto the run.** `recordError` should take the
-  `QueryError` (status + a trimmed body, the way runs already keep a bounded
-  `response`) and store it on the run in flight. The run buffer is already
-  capped, already survives `resetExecuteState` (it lives on the stats
-  recorder, not on the query state), and the detail drawer's History tab
-  already renders runs - so this alone makes the 401 inspectable for every
-  query whose row is still there, including one blanked by a logout. Cheapest
-  item here and independently useful.
 - **Tombstone the registry entry.** Instead of filtering on unregister, set
   `destroyedAt` and keep it, capped, with a "Clear gone" action. A destroyed
   row should read like `stale` does - the muted chip and a dimmed row, not an
@@ -777,72 +763,21 @@ identically - `withRefreshQuery` + `withPersistentAuth({ autoLogin })` +
 `withBearerAuthMultiTabSync()` - so everything below applies to each of them.
 Ordered by how visible it is to a user.
 
-### A 401 in a non-leader tab never recovers
+### A 401 in a follower tab waits for the leader's timer
 
-`withRefreshQuery`'s 401 listener (`bearer-auth-query-builders.ts`) calls
+`withRefreshQuery`'s 401 listener (`bearer-auth-query-builders.ts:193`) calls
 `executeRefresh`, which returns early on `!context.isLeader()`. So a secure
-request that 401s in a follower tab triggers no refresh at all. The leader
-eventually refreshes on its own timer - up to 25% of the token lifetime later -
-and broadcasts the new tokens, but `setupMultiTabSync` writes
-`accessToken`/`refreshToken` **directly** (it is handed the raw writable
-signals) instead of going through `applyTokens`, so `afterTokenRefresh$` never
-fires in the receiving tab. And `afterTokenRefresh$` filtered on
-`error()?.code === 401` is the _only_ thing that re-executes a secure query
-that already failed (`secure-query-execute-factory.ts`) - `tokenWaitSubscription`
-is only ever armed on the initial path, when there was no token yet. Net
-effect: the second tab shows a permanently failed page until a reload, while
-the first tab is fine. Two independent fixes, both needed:
-
-- Route incoming broadcast tokens through `applyTokens` so every tab's 401'd
-  queries retry. On its own this closes the common case, since the leader does
-  refresh eventually.
-- Give a follower a way to ask for a refresh instead of dropping it - post a
-  `refresh-requested` message (the presence channel in `leader-election.ts`
-  already exists) rather than returning early on `!isLeader()`. The leader gate
-  is right about _who spends the refresh token_; it is wrong as a way to
-  discard the event.
-
-### The remember-me cookie is deleted on every startup
-
-`withPersistentAuth` mirrors the token into the cookie with an `effect` that
-deletes it whenever `refreshToken()` is falsy - and at startup it always is:
-`tryLogin()` reads the cookie synchronously, the effect then runs on the next
-tick with the token still null and calls `deleteCookie`. Verified against the
-real feature: with a valid cookie present and the auto-login in flight,
-`deleteCookie('testAuth', '/', 'test.com')` is called on the first `tick()`.
-
-So the cookie exists only while a token does. Reload while offline, or with the
-refresh endpoint 500ing, or close the tab during the in-flight auto-login, and
-a refresh token with 30 days left is gone - the user is back at the login form
-with no way to explain why. The `defaultRememberMe: true` all four apps set is
-what makes this reachable in normal use.
-
-The mirror-effect is the wrong shape. Writing the cookie should be an event, not
-a projection of current state: write on `applyTokens`, delete on `logout()` and
-on an auth failure the server was definite about (401/403 from the refresh
-query), and never on "there is no token right now". Seeding `refreshToken` from
-the cookie at construction would also work and is smaller, but leaves the same
-trap for anything else that nulls the token transiently.
-
-### A cross-tab logout is not a logout
-
-`setupMultiTabSync`'s `logout` handler clears the two signals and calls
-`repository.unbindAllSecure()` directly, bypassing `logout()`. Three things
-that belong to ending a session therefore don't happen in the other tabs:
-`executionState` is never set to `{ type: 'logout' }`, `unsavedChanges.abandonAll('logout')`
-is never called (so those tabs keep guarding edits that can no longer be
-saved - the exact case the comment in `logout()` describes), and with
-`withTokenRevocation` installed the revocation effect _does_ fire in every tab,
-so N tabs each POST a revocation for tokens that are already gone.
-
-The consumer-visible half is the first one. `fut-frontend`'s auth flow redirects
-to login on `(!query || query.type === 'logout') && !isAuthenticated()`
-(`auth-flow.ts`); after a cross-tab logout `executionState` still holds the
-previous `{ type: 'login', state: 'success' }`, so the branch does not match and
-the tab neither redirects nor prompts - it sits on an authenticated shell whose
-queries have all been reset. Fix is one line of intent: have the message handler
-call the provider's own `logout()` (guarded against re-broadcasting) instead of
-reimplementing two thirds of it.
+request that 401s in a follower tab triggers no refresh at all - it waits until
+the leader refreshes on its own timer, up to 25% of the token lifetime later,
+and broadcasts. Incoming broadcast tokens now go through `applyTokens`, so
+`afterTokenRefresh$` fires and the tab's 401'd queries do retry once that lands
+(`secure-query-execute-factory.ts` - that emission filtered on
+`error()?.code === 401` is the only thing that re-executes an already-failed
+secure query). What is left is the delay: give a follower a way to ask for a
+refresh instead of dropping the event - post a `refresh-requested` message (the
+presence channel in `leader-election.ts` already exists) rather than returning
+early on `!isLeader()`. The leader gate is right about _who spends the refresh
+token_; it is wrong as a way to discard the event.
 
 ### A failed refresh leaves the session looking valid
 
@@ -918,12 +853,6 @@ which is the same problem solved once at the call site because the SDK doesn't
 solve it. Two providers reachable from one origin would share a token channel
 and elect one leader between them. Default both names off the provider `name`
 that is already required.
-
-Minor, same file: `isProcessingExternalUpdate` in `setupMultiTabSync` is reset
-synchronously in a `finally`, but the outgoing broadcast is an `effect` that
-runs later - so the guard never actually suppresses anything and every received
-token update is re-broadcast once per tab. It converges only because setting a
-signal to an identical string is a no-op, which is luck, not design.
 
 ## Auth: the provider's execution model is what makes the app's flow brittle
 
@@ -1235,3 +1164,53 @@ Minor, same function: the `!rooms.has(room)` branch in `leaveRoom` throws in dev
 no `return`, so in production a `subtle.leaveRoom()` for a room that was never joined falls
 through and emits a `leave-room` frame anyway - potentially evicting a room another part of
 the app is using.
+
+## Query stack: a lying `transform` signature and a `lastQuery` that can point at a corpse
+
+Two independent problems in `createQueryStack` (`libs/query/src/lib/http/query-stack.ts`), the
+base every paged stack is built on. Both verified with a throwaway spec (added, run, deleted).
+
+### `transform` is typed as if responses were never null
+
+`transform` is declared `(responses: ResponseType<QueryArgsOf<TCreator>>[]) => TTransform`
+(`:160`) - a non-nullable array. What it actually receives is
+`queries().map((q) => q.response())` (`:391`), and `response()` is null for any query that is
+loading or errored. The same file says so 100 lines earlier, in the doc for the `response`
+signal (`:60`): "Will be `null` for queries that are loading or errored."
+
+Verified: a stack with one in-flight query calls `transform` with `[null]`.
+
+Both shipped transforms already work around it - `transformArrayResponse` (`:192`) and
+`transformPaginatedResponse` (`:196`) each open with `.filter((r) => !!r)`. That filter is the
+tell: the author knew nulls arrive, but the type never learned. Anyone writing a custom
+transform against the signature - `(responses) => responses.flatMap((r) => r.items)` is the
+obvious one, and it is exactly what `transformPaginatedResponse` does after filtering - gets a
+`TypeError` on the first render, before any request settles. The fix is one `| null` in the
+option's type; the two built-ins are already correct and the default `TTransform`
+(`(ResponseType<TArgs> | null)[]`, `:81`) already admits null, so only the callback's input
+type is wrong.
+
+### `maxQueries` with `removeStrategy: 'newest'` leaves `lastQuery` dangling
+
+The eviction block (`:282`) destroys the excess queries and rewrites `finalQueries`, but
+`lastQuery.set(lastAppendedQuery)` (`:295`) runs afterwards with the value `appendFn` returned
+_before_ the eviction. Under `removeStrategy: 'newest'` the query just appended is by
+definition the newest, so it is the one evicted - and `lastQuery` is then set to it.
+
+Verified with `maxQueries: 2`, `removeStrategy: 'newest'`, appending pages 1, 2, 3:
+
+- `queries()` → `[{ page: 1 }, { page: 2 }]`
+- `lastQuery()` → `{ page: 3 }` - destroyed, and not a member of `queries()`
+
+Every consumer that reaches through `lastQuery` is then reading a torn-down query.
+`createPagedQueryStack` derives `maxPagination` from `stack.lastQuery()?.response()`
+(`paged-query-stack.ts:342`), so a paged stack configured this way would compute its pagination
+
+- and therefore `canFetchNextPage`, `isLastPageLoaded` and the guard in `fetchNextPage` - from a
+  query that no longer exists. It does not pass `maxQueries` today, which is the only reason this
+  is latent rather than shipped.
+
+`lastQuery` should be recomputed from `finalQueries` after eviction, the way the non-append
+branch already does it (`:337`: `finalQueries[finalQueries.length - 1] ?? null`). Worth asking
+separately whether `removeStrategy: 'newest'` earns its keep at all - it makes an append a no-op
+that destroys the thing it just built.
