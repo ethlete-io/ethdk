@@ -1229,3 +1229,55 @@ focus ring and the border onto a child. Stating it here so the question is not r
 All of this changes the card-presets section of `choice-inputs.md`, which currently documents the
 label-carries-selection and no-fill behaviour as rules, and the tile needs its own story in both
 the checkbox-group and radio-group story files.
+
+## Query devtools: the response diff can only compare a run against the one before it
+
+A run's Diff button picks one side, not two. `diffRunIndex` is a single `number | null`
+(`query-devtools.component.ts:408`), `toggleRunDiff` sets it to the clicked run (`:1131`), and
+`responseDiff` derives the other side by walking backwards from there to the newest older run
+that still holds a body (`:1141`). So the pairing is always "picked run vs. its nearest
+body-holding predecessor", and the History table's `#1 → #2` header is describing a choice the
+user never made. Clicking Diff on #5 in a stampede of five identical polls compares #4 → #5 and
+reports "identical" - the comparison worth seeing is #1 → #5, and there is no way to ask for it.
+The interesting pairs are usually non-adjacent: the response before a mutation against the one
+two refetches later, the first run of a session against the current one, pre-login against
+post-login.
+
+What it should be is two picks - a base and a compare - with the derived-predecessor behaviour
+kept as the default so a single click still works the way it does today.
+
+Four things to settle:
+
+- **Only five runs hold a body.** `RUN_HISTORY = 25` but `RESPONSE_HISTORY = 5`
+  (`query-devtools-stats.ts:237`/`:243`), and `trimRetainedBodies` nulls the body of everything
+  past that, so at most five rows can ever be an endpoint of a diff. Worse, the constant's own
+  doc comment justifies the number with "a diff only ever looks a couple of runs back" - a
+  user-chosen pairing removes that premise, and the whole point of the feature is reaching
+  further back than a couple of runs. Either raise the retention (bodies dominate what the
+  buffer holds, so this is a real memory decision and probably wants to be a devtools option
+  rather than a constant) or accept a five-run window and make the table say so - the cell
+  already renders `body no longer held` for exactly this case, but only for `status === 'success'`
+  runs, and it reads as a fact about that row rather than as the reason it cannot be picked.
+- **The row cell is already four branches deep.** One `<td>` switches between Diff, Error,
+  `nothing earlier to diff`, `body no longer held` and `—` (`query-devtools-detail.component.html:382`),
+  and the Diff and Error toggles are mutually exclusive only because the markup happens to
+  render one or the other - `diffRunIndex` and `errorRunIndex` are independent signals, so
+  nothing stops both sections being open at once. Two diff endpoints should not become two more
+  buttons per row. Cheapest shape that stays one button: the click sets the compare side,
+  shift-click (or a second click on an already-armed row) sets the base, and the section header
+  already prints `#before → #after` so the current pair is legible without extra chrome. The two
+  armed rows need visually distinct states, though - `--active` is one class doing one job today.
+- **Direction.** `canDiffRun` currently guarantees before-is-older by construction (`:1125` -
+  it only offers the button when an older body-holding run exists). A free pair can be picked in
+  either order, which either gets normalised by run index (always render older → newer, so the
+  pick order does not matter) or is left to the user as a deliberate inversion. Normalising is
+  right; nobody wants an accidentally reversed diff.
+- **Every reset path becomes two slots.** `diffRunIndex` is cleared on selection or tab change
+  (`:763`), by `resetStats` (`:1107`) and by the timeline's own reset
+  (`query-devtools-timeline-tab.component.ts:102`). A pair needs all three updated, plus a defined
+  fallback for the case only a pair can produce: the base's body is trimmed away while the
+  compare side is still held. Dropping both is the honest behaviour; silently falling back to
+  the nearest predecessor would show a different diff under the same header.
+
+Neither slot is persisted (`diffRunIndex` is not in `PersistedState`), and a pair should not
+start being - it is per-inspection state, and the runs it names do not survive a reload anyway.

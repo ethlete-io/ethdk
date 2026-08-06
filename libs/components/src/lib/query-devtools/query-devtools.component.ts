@@ -136,6 +136,14 @@ const COPIED_RESET_MS = 1200;
 const noop = () => undefined;
 
 const STORAGE_KEY = 'ethlete:query:devtools:v4';
+
+/**
+ * Pinned endpoints, held apart from {@link STORAGE_KEY} and in `localStorage`: everything under that key
+ * is view state that should die with the tab, while a pin says which endpoint is being worked on and is
+ * meant to outlive one. Folding it in would silently make pins per-tab.
+ */
+const PINS_STORAGE_KEY = 'ethlete:query:devtools:pins:v1';
+
 const MAX_EVENTS = 100;
 
 /** Per client, not in total - a client that drops a lot must not push another client's out of view. */
@@ -179,6 +187,25 @@ const readPersistedState = (): PersistedState => {
     return raw ? (JSON.parse(raw) as PersistedState) : {};
   } catch {
     return {};
+  }
+};
+
+/**
+ * What a pin is keyed on: the endpoint, not the entry. An `id` carries a per-page-load sequence number, so
+ * it only names the same query across reloads while queries are created in the same order - and a creator
+ * used by three components is one endpoint to pin, not three.
+ */
+const queryPinKey = (entry: QueryDevtoolsEntry) =>
+  `${entry.meta.clientName ?? ''}|${entry.meta.method ?? ''}|${entry.meta.route ?? ''}`;
+
+const readPinnedQueryKeys = (): string[] => {
+  try {
+    const raw = localStorage.getItem(PINS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
+  } catch {
+    return [];
   }
 };
 
@@ -366,6 +393,9 @@ export class QueryDevtoolsComponent {
 
   /** The status facets the Queries list is narrowed to. Empty means no status narrowing. */
   public queryFacets = signal<ReadonlySet<QueryListFacet>>(new Set(this.persisted.queryFacets ?? []));
+
+  /** The endpoints sorted to the top of the Queries list, by {@link queryPinKey}. */
+  public pinnedQueryKeys = signal<ReadonlySet<string>>(new Set(readPinnedQueryKeys()));
 
   public eventLog = signal<EventLogItem[]>([]);
 
@@ -747,6 +777,16 @@ export class QueryDevtoolsComponent {
       }
     });
 
+    effect(() => {
+      const keys = [...this.pinnedQueryKeys()];
+
+      try {
+        localStorage.setItem(PINS_STORAGE_KEY, JSON.stringify(keys));
+      } catch {
+        // ignore (private mode / disabled storage)
+      }
+    });
+
     // Close any open JIT editor on any selection / tab change, and reset the value-explorer search
     // when the *selected query* actually changes (but not on the initial restore, so a persisted
     // search survives a reload).
@@ -943,6 +983,19 @@ export class QueryDevtoolsComponent {
   public clearQueryFilters() {
     this.queryFilter.set('');
     this.queryFacets.set(new Set());
+  }
+
+  public isQueryPinned(entry: QueryDevtoolsEntry) {
+    return this.pinnedQueryKeys().has(queryPinKey(entry));
+  }
+
+  public toggleQueryPin(entry: QueryDevtoolsEntry) {
+    const key = queryPinKey(entry);
+    const next = new Set(this.pinnedQueryKeys());
+
+    if (!next.delete(key)) next.add(key);
+
+    this.pinnedQueryKeys.set(next);
   }
 
   protected toggleInspect() {

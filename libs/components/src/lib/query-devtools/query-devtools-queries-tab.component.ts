@@ -71,12 +71,12 @@ export class QueryDevtoolsQueriesTabComponent {
     const facets = this.host.queryFacets();
     const items = this.searchedQueries();
 
-    if (!facets.size) return items;
+    if (!facets.size) return this.pinnedFirst(items);
 
     // Same reason as in `facetCounts`: a list narrowed to stale queries has to re-evaluate as they age.
     if (facets.has('stale')) this.host.clock();
 
-    return items.filter((item) => this.matchesFacets(item, facets));
+    return this.pinnedFirst(items.filter((item) => this.matchesFacets(item, facets)));
   });
 
   /** How many queries are in scope, which is what the list shows unfiltered. */
@@ -95,6 +95,19 @@ export class QueryDevtoolsQueriesTabComponent {
 
   protected downloadInsomniaCollection() {
     this.host.downloadInsomniaCollection(this.filteredQueries(), this.host.selectedClientName());
+  }
+
+  /**
+   * Pinned endpoints first, everything else left in registration order. A chip could not do this job:
+   * {@link matchesFacets} widens, so a Pinned chip would mean "pinned or failing" and never both.
+   */
+  private pinnedFirst(items: { entry: QueryDevtoolsEntry; query: AnyQuery }[]) {
+    if (!this.host.pinnedQueryKeys().size) return items;
+
+    // Copied first: `items` is a computed's cached array, and `sort` is in place.
+    return items
+      .slice()
+      .sort((a, b) => Number(this.host.isQueryPinned(b.entry)) - Number(this.host.isQueryPinned(a.entry)));
   }
 
   /** A query matches the chips if it is in any of the picked states - chips widen, they don't intersect. */

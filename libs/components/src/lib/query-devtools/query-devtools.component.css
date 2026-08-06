@@ -734,24 +734,59 @@
      route text and a capped chip, so a query going stale can't make its row jump. */
   .et-query-devtools-row {
     display: flex;
-    align-items: center;
-    gap: 0.8rem;
+    align-items: stretch;
     inline-size: 100%;
     min-block-size: 3.6rem;
+    border-block-end: 1px solid var(--_et-qdt-border);
+    color: var(--_et-qdt-fg);
+  }
+
+  /* The row is a container and not the button, so the pin can be a sibling of the selection control -
+     a button nested inside another is invalid, and its click would select the row on the way out. The
+     hover/active backgrounds stay on the container so the strip still highlights as one thing. */
+  .et-query-devtools-row-select {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.8rem;
+    min-inline-size: 0;
     text-align: start;
     appearance: none;
     border: none;
-    border-block-end: 1px solid var(--_et-qdt-border);
     background: transparent;
-    color: var(--_et-qdt-fg);
+    color: inherit;
     padding: 0.8rem;
     cursor: pointer;
     font: inherit;
   }
 
-  .et-query-devtools-row > .et-query-devtools-chip {
+  .et-query-devtools-row-select > .et-query-devtools-chip {
     padding-block: 0.1rem;
     line-height: 1.2;
+  }
+
+  .et-query-devtools-row-pin {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--_et-qdt-subtle);
+    padding-inline: 0.8rem;
+    cursor: pointer;
+    font: inherit;
+    opacity: 0;
+  }
+
+  .et-query-devtools-row:hover .et-query-devtools-row-pin,
+  .et-query-devtools-row-pin:focus-visible,
+  .et-query-devtools-row-pin--active {
+    opacity: 1;
+  }
+
+  .et-query-devtools-row-pin--active {
+    color: var(--_et-qdt-accent);
   }
 
   .et-query-devtools-row:hover {

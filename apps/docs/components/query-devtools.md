@@ -139,6 +139,34 @@ list, and **Clear filters** drops the term and the chips while keeping the clien
 scope. The [Insomnia download](#export-to-insomnia) exports whatever is listed, so
 these filters pick what ends up in the collection.
 
+### Pinning the endpoint you are working on
+
+Narrowing is not prioritising. The list is in registration order end to end, so the
+one query you are debugging sits wherever it happened to be registered and drifts
+further down as the app registers more - and typing its route into the filter box
+keeps it in view only by throwing every other query away at the same time.
+
+The **★** button at the end of a row sorts that endpoint to the top of the list
+instead. It appears on hover (and on keyboard focus) and stays lit on a pinned row,
+which is also how you unpin it.
+
+A pin is keyed on the **endpoint** - the client, the method and the route template -
+rather than on the row you clicked. Pinning `GET /posts` therefore pins every query
+that creator made, however many components hold one, and the pin survives the
+registration order changing. A row's own id carries a per-page-load sequence number,
+so it only names the same query across reloads while queries are created in the same
+order, which is why it is not what a pin holds on to.
+
+Pinning **sorts**, it does not filter, so it composes with the client picker, the
+filter box and the chips instead of competing with them, and the relative order
+within each group is untouched. That is also why there is no **Pinned** chip: the
+status chips _widen_ (failing **or** stale), so a Pinned chip could only ever mean
+"pinned or failing" and never "pinned **and** failing". The flip side is that a
+pinned query still drops out of the list under a filter term it does not match, and
+a pinned query that has only a
+[tombstone](#a-destroyed-query-leaves-a-tombstone) left stays hidden until **Gone**
+is on.
+
 ### Tabs say what they hold
 
 Each tab carries the number of entries behind it, and a second red badge with how
@@ -864,6 +892,13 @@ persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives 
 page reload within the tab session without leaking devtools state across sessions.
 (Restoring the selected query relies on registry ids being stable across reloads,
 which in turn assumes queries are created in the same order.)
+
+[Pinned endpoints](#pinning-the-endpoint-you-are-working-on) are the one thing kept
+elsewhere: `localStorage`, under `ethlete:query:devtools:pins:v1`. Everything above is
+view state that should die with the tab, while a pin says which endpoint you are
+working on and is meant to outlive one - and because it is keyed on the endpoint
+rather than on a registry id, it does not depend on creation order the way the
+restored selection does.
 
 [Armed faults](#faults-making-requests-actually-misbehave) and
 [response overrides](#response-overrides-editing-a-value-that-survives-a-refetch) are

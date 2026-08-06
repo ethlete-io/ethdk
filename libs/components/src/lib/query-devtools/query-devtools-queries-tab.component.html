@@ -103,53 +103,66 @@
 
     @for (item of filteredQueries(); track item.entry.id) {
       @let isGone = !!item.entry.destroyedAt;
-      <button
+      @let isPinned = host.isQueryPinned(item.entry);
+      @let pinLabel = isPinned ? 'Unpin this endpoint' : 'Pin this endpoint to the top of the list';
+      <div
         [class.et-query-devtools-row--active]="host.selectedQueryId() === item.entry.id"
         [class.et-query-devtools-row--gone]="isGone"
-        (click)="host.selectedQueryId.set(item.entry.id)"
         class="et-query-devtools-row"
-        type="button"
       >
-        <span
-          [attr.data-status]="isGone ? null : host.queryStatus(item.query)"
-          [title]="isGone ? 'destroyed' : host.queryStatus(item.query)"
-          class="et-query-devtools-status"
-        ></span>
-        <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
-        <span class="et-query-devtools-route">
-          <et-query-devtools-route [segments]="host.routeSegments(item.entry, item.query)" />
-        </span>
-        @if (isGone) {
+        <button (click)="host.selectedQueryId.set(item.entry.id)" class="et-query-devtools-row-select" type="button">
           <span
-            class="et-query-devtools-chip et-query-devtools-chip--muted"
-            title="This query no longer exists - what you see is the last state it held, frozen"
-          >
-            gone
+            [attr.data-status]="isGone ? null : host.queryStatus(item.query)"
+            [title]="isGone ? 'destroyed' : host.queryStatus(item.query)"
+            class="et-query-devtools-status"
+          ></span>
+          <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
+          <span class="et-query-devtools-route">
+            <et-query-devtools-route [segments]="host.routeSegments(item.entry, item.query)" />
           </span>
-        }
-        <!-- A retry is the one thing a loading dot actively misrepresents: it reads as a request
-             on its way when nothing is in flight at all. -->
-        @if (!isGone && host.requestProgress(item.query)?.retry; as retry) {
-          <span
-            class="et-query-devtools-chip et-query-devtools-chip--loading"
-            title="Waiting out a retry backoff before attempt {{ retry.attempt }}"
-          >
-            <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
-            {{ retry.attempt }}
-          </span>
-        }
-        @if (!isGone && host.isStale(item.query)) {
-          <span class="et-query-devtools-chip et-query-devtools-chip--muted">stale</span>
-        }
-        @if (host.isTampered(item.entry)) {
-          <span
-            class="et-query-devtools-chip et-query-devtools-chip--error"
-            title="Showing an armed response override or a devtools-injected failure, not what the server actually sent"
-          >
-            tampered
-          </span>
-        }
-      </button>
+          @if (isGone) {
+            <span
+              class="et-query-devtools-chip et-query-devtools-chip--muted"
+              title="This query no longer exists - what you see is the last state it held, frozen"
+            >
+              gone
+            </span>
+          }
+          <!-- A retry is the one thing a loading dot actively misrepresents: it reads as a request
+               on its way when nothing is in flight at all. -->
+          @if (!isGone && host.requestProgress(item.query)?.retry; as retry) {
+            <span
+              class="et-query-devtools-chip et-query-devtools-chip--loading"
+              title="Waiting out a retry backoff before attempt {{ retry.attempt }}"
+            >
+              <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+              {{ retry.attempt }}
+            </span>
+          }
+          @if (!isGone && host.isStale(item.query)) {
+            <span class="et-query-devtools-chip et-query-devtools-chip--muted">stale</span>
+          }
+          @if (host.isTampered(item.entry)) {
+            <span
+              class="et-query-devtools-chip et-query-devtools-chip--error"
+              title="Showing an armed response override or a devtools-injected failure, not what the server actually sent"
+            >
+              tampered
+            </span>
+          }
+        </button>
+        <button
+          [class.et-query-devtools-row-pin--active]="isPinned"
+          [title]="pinLabel"
+          [attr.aria-label]="pinLabel"
+          [attr.aria-pressed]="isPinned"
+          (click)="host.toggleQueryPin(item.entry)"
+          class="et-query-devtools-row-pin"
+          type="button"
+        >
+          <span aria-hidden="true">{{ isPinned ? '★' : '☆' }}</span>
+        </button>
+      </div>
     } @empty {
       <!-- An empty scope is a different problem from a filter that matches nothing, and only the
            latter is the user's own doing - so it names the way out. -->
