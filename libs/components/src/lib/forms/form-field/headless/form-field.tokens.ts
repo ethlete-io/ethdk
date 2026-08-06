@@ -108,6 +108,8 @@ export type FormFieldDirectiveBase = {
   registeredLabel: WritableSignal<LabelDirectiveBase | null>;
   /** The registered control's value, for the counter to measure. */
   controlValue: Signal<unknown>;
+  /** The registered control's validation errors - the counter reads its over-limit state from them. */
+  errors: Signal<readonly ValidationError.WithOptionalFieldTree[]>;
   /** The bound field's schema `maxLength()`, when it has one. */
   controlMaxLength: Signal<number | undefined>;
   /** The field's visible control frame - the box overlay-based controls anchor their panels to. */

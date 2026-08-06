@@ -153,6 +153,8 @@ const bioForm = form(model, (s) => {
 
 The counter is **persistent** - unlike the hint, it does not swap out when an error appears, so a reader who just crossed the limit sees the message and the count that caused it together. Past the limit it takes `data-over-limit` and the [semantic error color](/core/theming).
 
+"Past the limit" is the control's own `maxLength` validation error, not a second length check, so the count can never turn red while the field reports itself valid. An explicit `[max]` has no validator behind it and is compared against `lengthOf` directly.
+
 Because the default `lengthOf` counts array elements, the same element counts tags in an `et-tag-input`. The controls deliberately do **not** forward `maxLength` to the native `maxlength` attribute: truncating typed input would stop the validator from ever reporting the violation the counter exists to make visible. Set `maxlength` on the control yourself if you want the browser to clamp instead.
 
 Counting is opt-in per control family: a control declaring a `maxLength` input receives the schema limit. The controls built on the shared text-field base (`et-input`, `et-number-input`, `et-password-input`, `et-color-input`, `et-textarea`) and `et-tag-input` do; others fall back to an explicit `[max]`.

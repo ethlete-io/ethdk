@@ -72,10 +72,20 @@ export class CounterComponent implements CounterComponentBase {
   /** The current length of the control's value. */
   public current = computed(() => this.lengthOf()(this.formField?.controlValue() ?? null));
 
+  /**
+   * Whether the value is past the limit. With a schema `maxLength()` this is the control's own
+   * validation error - re-measuring the value here would be a second length check that can disagree
+   * with the one the field actually reports. An explicit `[max]` has no validator behind it, so that
+   * case still compares.
+   */
   public isOverLimit = computed(() => {
-    const max = this.resolvedMax();
+    const explicitMax = this.max();
 
-    return max !== undefined && this.current() > max;
+    if (explicitMax !== undefined) {
+      return this.current() > explicitMax;
+    }
+
+    return this.formField?.errors().some((error) => error.kind === 'maxLength') ?? false;
   });
 
   protected limitSuffix = computed(() => {
@@ -93,7 +103,7 @@ export class CounterComponent implements CounterComponentBase {
 
     const current = this.current();
 
-    if (current > max) {
+    if (this.isOverLimit()) {
       return `${current - max} characters over the limit of ${max}`;
     }
 
