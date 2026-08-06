@@ -172,6 +172,24 @@ Turn it off with `provideNotificationManager({ swipeToDismiss: false })`. A cust
 
 The `center` positions are unaffected - centering has no inline side.
 
+## Narrow viewports
+
+At `480px` and below the stack spans both edges and every toast fills it, which is the shape a toast has on a phone - and the only one that fits: the card's `300px` minimum plus the stack's insets already overflows a `320px` viewport at a `16px` rem base. The docked corner still decides which edge toasts enter from and whether they sit at the top or the bottom; only the inline size changes. An app that wants the corner card at every width overrides it from its own stylesheet, which wins over the SDK's `@layer components`:
+
+```css
+@media (max-width: 480px) {
+  .et-notification-stack {
+    left: auto;
+    align-items: flex-end;
+  }
+
+  .et-notification {
+    min-width: var(--et-notification-min-width);
+    max-width: var(--et-notification-max-width);
+  }
+}
+```
+
 ## Behavior & accessibility
 
 - The stack animates reordering/stacking (FLIP), keeps at most `maxVisible` toasts, and removes its container when the last toast leaves.
@@ -189,7 +207,7 @@ import { NOTIFICATION_IMPORTS } from '@ethlete/components';
 
 ## Theming
 
-The toast shell exposes size/typography tokens: `--et-notification-border-radius` (`4px`), `--et-notification-padding`, `--et-notification-min-width` (`300px`) / `--et-notification-max-width` (`420px`), `--et-notification-shadow`, `--et-notification-border-width` (`4px`), `--et-notification-font-size` / `--et-notification-line-height`, `--et-notification-gap`, `--et-notification-title-font-weight`, `--et-notification-message-font-size` / `-line-height` / `-opacity`, `--et-notification-progress-bar-height` (`3px`), `--et-notification-icon-size` (`16px`). Status colors resolve through `statusColorMapping` / `controlsColor` - [app-registered themes](/core/theming), not tokens; the status icon and the accent border read from the resolved status color.
+The toast shell exposes size/typography tokens: `--et-notification-border-radius` (`4px`), `--et-notification-padding`, `--et-notification-min-width` (`300px`) / `--et-notification-max-width` (`420px`, both dropped [below `480px`](#narrow-viewports)), `--et-notification-shadow`, `--et-notification-border-width` (`4px`), `--et-notification-font-size` / `--et-notification-line-height`, `--et-notification-gap`, `--et-notification-title-font-weight`, `--et-notification-message-font-size` / `-line-height` / `-opacity`, `--et-notification-progress-bar-height` (`3px`), `--et-notification-icon-size` (`16px`). Status colors resolve through `statusColorMapping` / `controlsColor` - [app-registered themes](/core/theming), not tokens; the status icon and the accent border read from the resolved status color.
 
 ## Error codes
 

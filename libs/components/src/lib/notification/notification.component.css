@@ -243,6 +243,15 @@
     color: var(--et-surface-color-muted-solid, inherit);
   }
 
+  /* The stack goes edge to edge below this width (see `notification-stack.component.css`), so the card
+     drops the bounds that would keep it a corner card and fills it. */
+  @media (max-width: 480px) {
+    .et-notification {
+      min-width: 0;
+      max-width: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .et-notification {
       &.et-animation-enter-from {

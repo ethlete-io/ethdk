@@ -71,4 +71,19 @@
       transform: none;
     }
   }
+
+  /* A corner card is the desktop shape. On a phone the stack spans both edges instead and the card
+     fills it, which is what a toast looks like there - and what keeps it on screen at all: the card's
+     300px minimum plus these insets already overflows a 320px viewport at a 16px rem base.
+     `left`/`right` rather than the logical pair because the span is symmetric, and matching the
+     `[data-position]` weight because every position rule above sets these same insets. */
+  @media (max-width: 480px) {
+    .et-notification-stack,
+    .et-notification-stack[data-position] {
+      left: 1rem;
+      right: 1rem;
+      align-items: stretch;
+      transform: none;
+    }
+  }
 }
