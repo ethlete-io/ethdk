@@ -100,8 +100,9 @@ value is a plain `string`; `autocomplete` defaults to `'current-password'` (set
   while hidden, `hideLabel` (default `'Hide password'`) while shown. The revealed
   state is also a two-way `revealed` model.
 - **Caps Lock warning** (opt-in, `capsLockWarning`): a `role="status"` warning
-  icon while the field is focused and Caps Lock is on, with `capsLockLabel`
-  (default `'Caps Lock is on'`) as screen-reader text.
+  icon while the field is focused and Caps Lock is on. `capsLockLabel`
+  (default `'Caps Lock is on'`) is both the screen-reader text and the icon's
+  tooltip, so the triangle explains itself to sighted users too.
 - **Strength score**: the directive exposes `strength` - a 0–4 typing-feedback
   score from a pure length + character-class heuristic (deliberately not a
   zxcvbn-style security estimate). Grab it via the `etPasswordInput` export and

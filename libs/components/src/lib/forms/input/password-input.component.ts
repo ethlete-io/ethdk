@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { ColorInteractiveDirective } from '@ethlete/core';
 import { EYE_ICON, EYE_SLASH_ICON, IconDirective, provideIcons, TRIANGLE_EXCLAMATION_ICON } from '../../icon';
+import { TooltipDirective } from '../../tooltip';
 import { PasswordInputDirective } from './headless';
 import { injectInputLabels } from '../../forms/input/input-labels';
 
@@ -19,7 +20,7 @@ import { injectInputLabels } from '../../forms/input/input-labels';
   templateUrl: './password-input.component.html',
   styleUrl: './password-input.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [IconDirective],
+  imports: [IconDirective, TooltipDirective],
   providers: [provideIcons(EYE_ICON, EYE_SLASH_ICON, TRIANGLE_EXCLAMATION_ICON)],
   hostDirectives: [
     {
@@ -69,7 +70,7 @@ export class PasswordInputComponent {
   /** Show a warning indicator while the field is focused and Caps Lock is on. */
   public capsLockWarning = input(false, { transform: booleanAttribute });
 
-  /** Accessible text of the Caps Lock warning. */
+  /** Text of the Caps Lock warning - announced by the live region and shown as the icon's tooltip. */
   public capsLockLabel = input<string | null>(null);
 
   private nativeInput = viewChild<ElementRef<HTMLInputElement>>('nativeInput');
