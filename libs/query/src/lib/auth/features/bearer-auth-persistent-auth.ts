@@ -121,7 +121,7 @@ export const createPersistentAuthFeature = <
   config: PersistentAuthConfig<TBuilders, TKey>,
   context: BearerAuthProviderFeatureContext<unknown, TBuilders>,
 ): PersistentAuthFeature => {
-  const { refreshToken } = context;
+  const { refreshToken, executionState } = context;
   const cookieName = config.cookie?.name ?? 'etAuth';
   const rememberMeStorageKey = `${cookieName}-rememberMe`;
   const route = injectRoute();
@@ -142,24 +142,52 @@ export const createPersistentAuthFeature = <
 
   const rememberMeSignal = signal(initializeRememberMe());
 
+  const cookieDomain = () => config.cookie?.domain ?? getDomain() ?? 'localhost';
+  const cookiePath = () => config.cookie?.path ?? '/';
+
+  const removeCookie = () => coreDeleteCookie(cookieName, cookiePath(), cookieDomain());
+
   effect(() => {
     const token = refreshToken();
     const rememberMe = rememberMeSignal();
-    const domain = config.cookie?.domain ?? getDomain() ?? 'localhost';
-    const path = config.cookie?.path ?? '/';
-    const sameSite = config.cookie?.sameSite ?? 'lax';
 
-    if (token) {
-      const encryptedToken = encryptToken(token);
-      if (rememberMe) {
-        const expiresInDays = config.cookie?.expiresInDays ?? 30;
-        setCookie(cookieName, encryptedToken, expiresInDays, domain, path, sameSite);
-      } else {
-        setCookie(cookieName, encryptedToken, null, domain, path, sameSite);
-      }
-    } else {
-      coreDeleteCookie(cookieName, path, domain);
+    // A missing token is not a reason to drop the cookie. It is missing on every startup - `tryLogin`
+    // reads the cookie synchronously and the auto-login only resolves a tick later - so deleting here
+    // would throw away a 30-day refresh token before it was ever used. Deletion is driven by the events
+    // that actually end a session instead, below.
+    if (!token) return;
+
+    const expiresInDays = rememberMe ? (config.cookie?.expiresInDays ?? 30) : null;
+
+    setCookie(
+      cookieName,
+      encryptToken(token),
+      expiresInDays,
+      cookieDomain(),
+      cookiePath(),
+      config.cookie?.sameSite ?? 'lax',
+    );
+  });
+
+  effect(() => {
+    const state = executionState();
+
+    if (!state) return;
+
+    if (state.type === 'logout') {
+      removeCookie();
+
+      return;
     }
+
+    // A token the server itself rejected is worth nothing on the next visit; anything else (offline, a
+    // 500, an aborted startup) leaves it in place so a reload can try again.
+    const wasRejected =
+      state.state === 'error' &&
+      (state.type === 'tokenRefresh' || state.type === 'autoLogin') &&
+      (state.error.code === 401 || state.error.code === 403);
+
+    if (wasRejected) removeCookie();
   });
 
   const tryLogin = () => {

@@ -102,8 +102,9 @@ export type BearerAuthFeature<TBuilders extends readonly AnyQueryBuilder[], TBea
 };
 
 /**
- * What a feature gets before the provider's queries are wired up. Only the tokens and the client
- * exist this early - everything else is built on top of what early setup returns.
+ * What a feature gets before the provider's queries are wired up. Only the tokens, the client and the
+ * two session entry points exist this early - everything else is built on top of what early setup
+ * returns.
  *
  * Advanced: only a feature that has to run before the auth queries are wired needs this.
  */
@@ -111,6 +112,16 @@ export type BearerAuthProviderEarlySetupContext = {
   accessToken: WritableSignal<string | null>;
   refreshToken: WritableSignal<string | null>;
   queryClient: QueryClient;
+
+  /**
+   * Applies a token pair the way a successful auth query does - including the `afterTokenRefresh$`
+   * emission that retries secure queries which failed with a 401. Prefer this over writing
+   * {@link accessToken} and {@link refreshToken}, which only changes what the next request sends.
+   */
+  applyTokens: (access: string, refresh: string) => void;
+
+  /** Ends the session, exactly as the provider's own `logout()` does. */
+  logout: () => void;
 };
 
 /** The parts of the provider an early setup can contribute. */
@@ -602,7 +613,13 @@ const createBearerAuthProviderImpl = <
     unsavedChanges.abandonAll('logout');
   };
 
-  const isLeader = runEarlyFeatureSetup(config.features, { accessToken, refreshToken, queryClient });
+  const isLeader = runEarlyFeatureSetup(config.features, {
+    accessToken,
+    refreshToken,
+    queryClient,
+    applyTokens,
+    logout,
+  });
 
   const querySetupContext: BearerAuthProviderQueryContext<TBearerData, TBuilders> = {
     accessToken,

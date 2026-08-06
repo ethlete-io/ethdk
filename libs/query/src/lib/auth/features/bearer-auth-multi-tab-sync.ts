@@ -95,9 +95,12 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
   const earlySetup: BearerAuthProviderEarlySetup['earlySetup'] = (context: BearerAuthProviderEarlySetupContext) => {
     setupMultiTabSync(
       { channelName: config.channelName, syncTokens: config.syncTokens, syncLogout: config.syncLogout },
-      context.accessToken,
-      context.refreshToken,
-      context.queryClient,
+      {
+        accessToken: context.accessToken,
+        refreshToken: context.refreshToken,
+        applyTokens: context.applyTokens,
+        logout: context.logout,
+      },
     );
 
     if (config.leaderElection === false) return {};

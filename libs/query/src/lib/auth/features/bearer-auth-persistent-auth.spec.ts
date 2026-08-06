@@ -104,12 +104,13 @@ describe('bearer-auth-persistent-auth', () => {
       expect(setCookie).toHaveBeenCalledWith('customAuth', encryptToken('refresh'), 7, 'custom.com', '/app', 'strict');
     });
 
-    it('should delete cookie when refresh token is cleared', () => {
+    it('should delete cookie on logout', () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
         features: [
           withPersistentAuth({
             cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
               // @ts-expect-error - Type inference issue in setupAuthTest
@@ -124,12 +125,90 @@ describe('bearer-auth-persistent-auth', () => {
       TestBed.tick();
       vi.clearAllMocks();
 
-      // Clear tokens by logging in with empty refresh token
-      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: '' });
+      authSetup.auth.logout();
 
       TestBed.tick();
 
       expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', 'test.com');
+    });
+
+    it('should keep the cookie while the auto-login it triggered is still in flight', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+
+      setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
+
+      TestBed.tick();
+
+      expect(deleteCookie).not.toHaveBeenCalled();
+    });
+
+    it('should delete the cookie when the server rejects the stored token', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+
+      setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting
+        .expectOne('https://api.test.com/auth/refresh')
+        .flush({ message: 'Invalid refresh token' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+
+      expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', 'test.com');
+    });
+
+    it('should keep the cookie when the auto-login fails without the server rejecting the token', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+
+      setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            defaultRememberMe: true,
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting
+        .expectOne('https://api.test.com/auth/refresh')
+        .flush({ message: 'Nope' }, { status: 500, statusText: 'Internal Server Error' });
+
+      TestBed.tick();
+
+      expect(deleteCookie).not.toHaveBeenCalled();
     });
 
     it('should default to rememberMe=false when no config, preference, or cookie exists', () => {

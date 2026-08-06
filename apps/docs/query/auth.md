@@ -124,6 +124,13 @@ export const AUTH_PROVIDER = createBearerAuthProvider({
 AUTH_PROVIDER.inject().features.multiTabSync.isLeader(); // and .instanceCount()
 ```
 
+A received message takes the same path a local one does, which is what makes the other tabs equal citizens rather than tabs that merely hold the right token:
+
+- **Incoming tokens** are applied like a successful refresh, so `afterTokenRefresh$` emits and every secure query in that tab which had failed with a `401` re-executes. Without this a follower tab would sit on a permanently failed page until reloaded, holding a perfectly valid token.
+- **An incoming logout** runs the provider's own `logout()`, so `executionState()` becomes `{ type: 'logout' }` and unsaved-change guards are abandoned - the receiving tab reports the end of the session the same way the tab the user clicked in does.
+
+Neither message is echoed back out, so a login or logout settles in one round of broadcasts however many tabs are open.
+
 Without the feature every tab is its own leader and refreshes its own token - exactly right for a single-tab app, a kiosk or an embedded webview, which then ship neither the channel nor the Web Locks election.
 
 Leadership is one lock in the [Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API) - the same primitive the query client elects its [polling tabs](/query/multi-tab#polling-dedup) with. Every tab asks for it, one gets it, the rest queue: requests are granted FIFO, and a holder that closes, crashes or navigates away has its lock released by the platform, so the longest-waiting tab takes over. There is no heartbeat to tune and no window in which two tabs both believe they are the leader. Without Web Locks the tab elects itself, which is the single-tab behavior anyway.
@@ -144,6 +151,17 @@ Optional behaviors passed to the provider's `features` array (each usable once -
 | `withTokenRevocation`        | Calls a revocation query - by default automatically on logout.                                                                                                                                                                                                        |
 | `withTracking`               | Typed event bus for auth telemetry (query execute/success/failure, token refresh, logout, leader changes).                                                                                                                                                            |
 | `withBearerAuthMultiTabSync` | Cross-tab token/logout sync and leader election - see [Multi-tab sync](#multi-tab-sync). Exposes `isLeader` / `instanceCount`.                                                                                                                                        |
+
+### When the remember-me cookie is written and deleted
+
+`withPersistentAuth` treats the cookie as a record of the session, not a mirror of the current token. It is **written** whenever a token is applied - a login, a refresh, `setTokens`, an incoming cross-tab update - and whenever `setRememberMe` changes whether it should outlive the browser session.
+
+It is **deleted** only on the two events that actually end a session:
+
+- `logout()`, including a logout synced from another tab.
+- A refresh or auto-login the server was definite about rejecting - a `401` or `403`. Any other failure (offline, a `500`, a tab closed mid-attempt) leaves the cookie in place so the next load can try again.
+
+The absence of a token is deliberately **not** one of those events. It is absent on every startup - `tryLogin()` reads the cookie synchronously and the auto-login only resolves a tick later - so deleting on "there is no token right now" would throw away a 30-day refresh token before it was ever used.
 
 ## Error codes
 

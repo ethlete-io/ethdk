@@ -1,9 +1,8 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { QueryClient } from '../../http';
 import { encryptToken, resetEncryptionKey } from '../utils';
-import { setupMultiTabSync } from './multi-tab-sync';
+import { MultiTabSyncConfig, setupMultiTabSync } from './multi-tab-sync';
 
 describe('setupMultiTabSync', () => {
   let originalBroadcastChannel: typeof BroadcastChannel;
@@ -12,15 +11,25 @@ describe('setupMultiTabSync', () => {
     close: ReturnType<typeof vi.fn>;
     onmessage: ((event: MessageEvent) => void) | null;
   };
-  let mockQueryClient: QueryClient;
   let accessToken: ReturnType<typeof signal<string | null>>;
   let refreshToken: ReturnType<typeof signal<string | null>>;
+  let applyTokens: ReturnType<typeof vi.fn>;
+  let logout: ReturnType<typeof vi.fn>;
   let localStorageMock: {
     getItem: ReturnType<typeof vi.fn>;
     setItem: ReturnType<typeof vi.fn>;
     removeItem: ReturnType<typeof vi.fn>;
     _storage: Map<string, string>;
   };
+
+  /** The provider's two entry points, standing in for what `createBearerAuthProvider` hands the sync. */
+  const setup = (config: MultiTabSyncConfig = {}) =>
+    setupMultiTabSync(config, {
+      accessToken,
+      refreshToken,
+      applyTokens: applyTokens as unknown as (access: string, refresh: string) => void,
+      logout: logout as unknown as () => void,
+    });
 
   beforeEach(() => {
     // Mock localStorage with actual storage behavior
@@ -52,16 +61,19 @@ describe('setupMultiTabSync', () => {
       return mockChannel;
     });
 
-    // Mock QueryClient
-    mockQueryClient = {
-      repository: {
-        unbindAllSecure: vi.fn(),
-      },
-    } as unknown as QueryClient;
-
     // Create fresh signals
     accessToken = signal<string | null>(null);
     refreshToken = signal<string | null>(null);
+
+    applyTokens = vi.fn((access: string, refresh: string) => {
+      accessToken.set(access);
+      refreshToken.set(refresh);
+    });
+
+    logout = vi.fn(() => {
+      accessToken.set(null);
+      refreshToken.set(null);
+    });
   });
 
   afterEach(() => {
@@ -71,7 +83,7 @@ describe('setupMultiTabSync', () => {
 
   it('should initialize with default config', () => {
     TestBed.runInInjectionContext(() => {
-      const sync = setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      const sync = setup();
 
       expect(sync.cleanup).toBeDefined();
       expect(globalThis.BroadcastChannel).toHaveBeenCalledWith('ethlete-auth-sync');
@@ -80,14 +92,7 @@ describe('setupMultiTabSync', () => {
 
   it('should use custom channel name', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync(
-        {
-          channelName: 'custom-channel',
-        },
-        accessToken,
-        refreshToken,
-        mockQueryClient,
-      );
+      setup({ channelName: 'custom-channel' });
 
       expect(globalThis.BroadcastChannel).toHaveBeenCalledWith('custom-channel');
     });
@@ -95,11 +100,10 @@ describe('setupMultiTabSync', () => {
 
   it('should broadcast token updates when tokens change', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      setup();
 
       mockChannel.postMessage.mockClear();
 
-      // Set tokens
       accessToken.set('access-token');
       refreshToken.set('refresh-token');
 
@@ -115,14 +119,7 @@ describe('setupMultiTabSync', () => {
 
   it('should not broadcast token updates when syncTokens is false', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync(
-        {
-          syncTokens: false,
-        },
-        accessToken,
-        refreshToken,
-        mockQueryClient,
-      );
+      setup({ syncTokens: false });
 
       mockChannel.postMessage.mockClear();
 
@@ -137,16 +134,14 @@ describe('setupMultiTabSync', () => {
 
   it('should broadcast logout when tokens are cleared', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      setup();
 
-      // Set tokens first
       accessToken.set('access-token');
       refreshToken.set('refresh-token');
       TestBed.flushEffects();
 
       mockChannel.postMessage.mockClear();
 
-      // Clear tokens (logout)
       accessToken.set(null);
       refreshToken.set(null);
 
@@ -160,23 +155,14 @@ describe('setupMultiTabSync', () => {
 
   it('should not broadcast logout when syncLogout is false', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync(
-        {
-          syncLogout: false,
-        },
-        accessToken,
-        refreshToken,
-        mockQueryClient,
-      );
+      setup({ syncLogout: false });
 
-      // Set tokens first
       accessToken.set('access-token');
       refreshToken.set('refresh-token');
       TestBed.flushEffects();
 
       mockChannel.postMessage.mockClear();
 
-      // Clear tokens
       accessToken.set(null);
 
       TestBed.flushEffects();
@@ -185,72 +171,65 @@ describe('setupMultiTabSync', () => {
     });
   });
 
-  it('should receive and apply token updates from other tabs', () => {
+  it('should apply incoming tokens through applyTokens so failed secure queries retry', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
-
-      expect(accessToken()).toBeNull();
-      expect(refreshToken()).toBeNull();
-
-      // Simulate message from another tab (encrypted tokens)
-      const encryptedAccess = encryptToken('external-access');
-      const encryptedRefresh = encryptToken('external-refresh');
+      setup();
 
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: encryptedAccess,
-          refreshToken: encryptedRefresh,
+          accessToken: encryptToken('external-access'),
+          refreshToken: encryptToken('external-refresh'),
         },
       } as MessageEvent);
 
-      // Should be decrypted
+      expect(applyTokens).toHaveBeenCalledWith('external-access', 'external-refresh');
       expect(accessToken()).toBe('external-access');
       expect(refreshToken()).toBe('external-refresh');
     });
   });
 
-  it('should receive and apply logout from other tabs', () => {
+  it('should ignore an incoming pair that decrypts to an empty token', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      setup();
 
-      // Set tokens
-      accessToken.set('access-token');
-      refreshToken.set('refresh-token');
-
-      // Simulate logout from another tab
       mockChannel.onmessage?.({
-        data: {
-          type: 'logout',
-        },
+        data: { type: 'tokens-updated', accessToken: encryptToken('external-access'), refreshToken: '' },
       } as MessageEvent);
 
+      expect(applyTokens).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should end the session through logout on an incoming logout', () => {
+    TestBed.runInInjectionContext(() => {
+      setup();
+
+      accessToken.set('access-token');
+      refreshToken.set('refresh-token');
+      TestBed.flushEffects();
+
+      mockChannel.onmessage?.({ data: { type: 'logout' } } as MessageEvent);
+
+      expect(logout).toHaveBeenCalled();
       expect(accessToken()).toBeNull();
       expect(refreshToken()).toBeNull();
-      expect(mockQueryClient.repository.unbindAllSecure).toHaveBeenCalled();
     });
   });
 
   it('should not apply token updates when syncTokens is false', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync(
-        {
-          syncTokens: false,
-        },
-        accessToken,
-        refreshToken,
-        mockQueryClient,
-      );
+      setup({ syncTokens: false });
 
-      // Simulate message from another tab
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: 'external-access',
-          refreshToken: 'external-refresh',
+          accessToken: encryptToken('external-access'),
+          refreshToken: encryptToken('external-refresh'),
         },
       } as MessageEvent);
 
+      expect(applyTokens).not.toHaveBeenCalled();
       expect(accessToken()).toBeNull();
       expect(refreshToken()).toBeNull();
     });
@@ -258,63 +237,82 @@ describe('setupMultiTabSync', () => {
 
   it('should not apply logout when syncLogout is false', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync(
-        {
-          syncLogout: false,
-        },
-        accessToken,
-        refreshToken,
-        mockQueryClient,
-      );
+      setup({ syncLogout: false });
 
       accessToken.set('access-token');
       refreshToken.set('refresh-token');
 
-      // Simulate logout from another tab
-      mockChannel.onmessage?.({
-        data: {
-          type: 'logout',
-        },
-      } as MessageEvent);
+      mockChannel.onmessage?.({ data: { type: 'logout' } } as MessageEvent);
 
+      expect(logout).not.toHaveBeenCalled();
       expect(accessToken()).toBe('access-token');
       expect(refreshToken()).toBe('refresh-token');
-      expect(mockQueryClient.repository.unbindAllSecure).not.toHaveBeenCalled();
     });
   });
 
-  it('should prevent infinite loops when processing external updates', () => {
+  it('should not echo an incoming token update back out', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      setup();
 
       mockChannel.postMessage.mockClear();
 
-      // Simulate receiving external update
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: 'external-access',
-          refreshToken: 'external-refresh',
+          accessToken: encryptToken('external-access'),
+          refreshToken: encryptToken('external-refresh'),
         },
       } as MessageEvent);
 
-      // Manually set tokens to trigger the effect
-      accessToken.set('external-access');
-      refreshToken.set('external-refresh');
+      TestBed.flushEffects();
+
+      expect(mockChannel.postMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should not echo an incoming logout back out', () => {
+    TestBed.runInInjectionContext(() => {
+      setup();
+
+      accessToken.set('access-token');
+      refreshToken.set('refresh-token');
+      TestBed.flushEffects();
+
+      mockChannel.postMessage.mockClear();
+
+      mockChannel.onmessage?.({ data: { type: 'logout' } } as MessageEvent);
 
       TestBed.flushEffects();
 
-      // The message handler sets isProcessingExternalUpdate before setting tokens,
-      // but we're setting them again manually, so it will broadcast.
-      // Let's verify the flag works by checking the tokens were updated
-      expect(accessToken()).toBe('external-access');
-      expect(refreshToken()).toBe('external-refresh');
+      expect(mockChannel.postMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should broadcast a local login that follows an incoming logout', () => {
+    TestBed.runInInjectionContext(() => {
+      setup();
+
+      mockChannel.onmessage?.({ data: { type: 'logout' } } as MessageEvent);
+      TestBed.flushEffects();
+
+      mockChannel.postMessage.mockClear();
+
+      accessToken.set('local-access');
+      refreshToken.set('local-refresh');
+
+      TestBed.flushEffects();
+
+      expect(mockChannel.postMessage).toHaveBeenCalledWith({
+        type: 'tokens-updated',
+        accessToken: encryptToken('local-access'),
+        refreshToken: encryptToken('local-refresh'),
+      });
     });
   });
 
   it('should close channel on cleanup', () => {
     TestBed.runInInjectionContext(() => {
-      const sync = setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      const sync = setup();
 
       sync.cleanup();
 
@@ -327,7 +325,7 @@ describe('setupMultiTabSync', () => {
     (globalThis as any).BroadcastChannel = undefined;
 
     TestBed.runInInjectionContext(() => {
-      const sync = setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      const sync = setup();
 
       expect(sync.cleanup).toBeDefined();
 
@@ -347,11 +345,10 @@ describe('setupMultiTabSync', () => {
 
   it('should not broadcast when only access token is set', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      setup();
 
       mockChannel.postMessage.mockClear();
 
-      // Set only access token
       accessToken.set('access-token');
 
       TestBed.flushEffects();
@@ -363,11 +360,10 @@ describe('setupMultiTabSync', () => {
 
   it('should not broadcast when only refresh token is set', () => {
     TestBed.runInInjectionContext(() => {
-      setupMultiTabSync({}, accessToken, refreshToken, mockQueryClient);
+      setup();
 
       mockChannel.postMessage.mockClear();
 
-      // Set only refresh token
       refreshToken.set('refresh-token');
 
       TestBed.flushEffects();
