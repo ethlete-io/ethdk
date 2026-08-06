@@ -128,12 +128,14 @@
 
     /* Interaction states stay bare (no `:where()`) so they outrank the base rule and the config
        modifiers, per the styling notes in CLAUDE.md. A row tint is lighter than a button's: it spans
-       the full width, where the same percentage reads much heavier. */
-    &:hover {
+       the full width, where the same percentage reads much heavier.
+       Every one of them excludes disabled rows through `:not(:where(…))` - zero added weight, so the
+       order above still decides, and no later rule has to win a specificity race to undo them. */
+    &:not(:where([aria-disabled])):hover {
       background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
     }
 
-    &:active {
+    &:not(:where([aria-disabled])):active {
       background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 14%, transparent);
     }
 
@@ -148,23 +150,20 @@
       background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 16%, transparent);
       color: var(--et-theme-color-ink-solid, inherit);
 
-      &:hover {
+      &:not(:where([aria-disabled])):hover {
         background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 24%, transparent);
       }
 
-      &:active {
+      &:not(:where([aria-disabled])):active {
         background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 32%, transparent);
       }
     }
 
+    /* Muted as a whole, the way `select-option` and `cascader-panel` state disabled - one rule that
+       reaches the fill, the label and the selection mark alike. */
     &:where([aria-disabled]) {
-      color: var(--et-surface-color-muted-solid, GrayText);
+      opacity: 0.4;
       cursor: default;
-
-      &:hover,
-      &:active {
-        background: transparent;
-      }
     }
   }
 
@@ -194,11 +193,11 @@
         opacity: 1;
       }
 
-      &:hover {
+      &:not(:where([aria-disabled])):hover {
         background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 14%, transparent);
       }
 
-      &:active {
+      &:not(:where([aria-disabled])):active {
         background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 20%, transparent);
       }
     }
