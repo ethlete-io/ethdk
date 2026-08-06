@@ -1007,7 +1007,10 @@ order they would take on release** - the table itself is the preview, so nothing
 drawn over (or past) its panel. Dropping commits that order with no visual jump,
 because the columns are already sitting where it puts them. Reduced-motion drops the
 sliding, not the preview. It's pure column-order state - no DOM surgery, since the
-grid re-lays-out from the order.
+grid re-lays-out from the order. A gesture the browser takes away mid-drag - a system
+gesture, an incoming call, the tab going to the background - slides back to the resting
+order instead of committing; a cancelled column resize likewise returns to the width it
+was grabbed at.
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTableReorder />

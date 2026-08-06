@@ -67,6 +67,16 @@ export class TableResizeDirective {
     this.resizing.set(null);
   }
 
+  /** The browser took the gesture away - put the column back to the width it was grabbed at. */
+  public cancel() {
+    const resizing = this.resizing();
+
+    if (!resizing) return;
+
+    this.table.setColumnWidth(resizing.key, resizing.startWidth);
+    this.resizing.set(null);
+  }
+
   public reset(column: TableColumnMeta) {
     this.table.resetColumnWidth(column.key);
   }

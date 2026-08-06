@@ -19,6 +19,7 @@ import { TableResizeDirective } from './table-resize.directive';
       (dragStarted)="resize.start(column())"
       (dragMoved)="resize.update($event)"
       (dragEnded)="resize.end()"
+      (dragCancelled)="resize.cancel()"
       (dblclick)="resize.reset(column())"
       class="et-table-resize-grip"
       etDragHandle

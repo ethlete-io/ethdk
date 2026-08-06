@@ -4,6 +4,7 @@ import {
   Observable,
   Subject,
   concat,
+  defer,
   distinctUntilChanged,
   exhaustMap,
   filter,
@@ -14,6 +15,7 @@ import {
   share,
   take,
   takeUntil,
+  tap,
 } from 'rxjs';
 
 export type ResizeEdge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
@@ -41,12 +43,15 @@ const EDGE_CURSORS: Record<ResizeEdge, string> = {
 type GestureEvent =
   | { readonly type: 'start'; readonly edge: ResizeEdge }
   | { readonly type: 'move'; readonly data: ResizeMoveEvent }
-  | { readonly type: 'end' };
+  | { readonly type: 'end' }
+  | { readonly type: 'cancelled' };
 
 const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Observable<GestureEvent> => {
   const pointerId = startEvent.pointerId;
   const startX = startEvent.clientX;
   const startY = startEvent.clientY;
+
+  let cancelled = false;
 
   const end$ = merge(
     fromEvent<PointerEvent>(document, 'pointerup'),
@@ -54,6 +59,8 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
   ).pipe(
     filter((e) => e.pointerId === pointerId),
     take(1),
+    // Read below by the terminating `defer`, which only runs once this has completed the moves.
+    tap((e) => (cancelled = e.type === 'pointercancel')),
   );
 
   return concat(
@@ -66,7 +73,7 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
       })),
       takeUntil(end$),
     ),
-    of<GestureEvent>({ type: 'end' }),
+    defer((): Observable<GestureEvent> => of({ type: cancelled ? 'cancelled' : 'end' })),
   );
 };
 
@@ -260,9 +267,21 @@ export class ResizeHandlesComponent {
     ),
   );
 
+  /**
+   * The browser took the gesture away mid-resize (a system gesture, an incoming call, the tab going
+   * to the background). Revert to the size the resize started from - the user never let go, so there
+   * is no size they chose.
+   */
+  resizeCancelled = outputFromObservable<void>(
+    this.gesture$.pipe(
+      filter((e) => e.type === 'cancelled'),
+      map(() => undefined),
+    ),
+  );
+
   isResizing = toSignal(
     this.gesture$.pipe(
-      map((e) => e.type !== 'end'),
+      map((e) => e.type === 'start' || e.type === 'move'),
       distinctUntilChanged(),
     ),
     { initialValue: false },
@@ -271,9 +290,10 @@ export class ResizeHandlesComponent {
   activeEdge = toSignal<ResizeEdge | null>(
     this.gesture$.pipe(
       map((e) => {
-        if (e.type === 'end') return null;
         if (e.type === 'start') return e.edge;
-        return e.data.edge;
+        if (e.type === 'move') return e.data.edge;
+
+        return null;
       }),
       distinctUntilChanged(),
     ),

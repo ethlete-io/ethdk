@@ -24,6 +24,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
       (resizeStarted)="gridResize.beginResize()"
       (resizeMoved)="gridResize.updateResize($event)"
       (resizeEnded)="gridResize.finishResize()"
+      (resizeCancelled)="gridResize.cancelResize()"
       (pointerdown)="$event.stopPropagation()"
     />
 

@@ -1,4 +1,4 @@
-import { EMPTY, Observable, concat, concatMap, defer, filter, fromEvent, merge, of, take, takeUntil } from 'rxjs';
+import { EMPTY, Observable, concat, concatMap, defer, filter, fromEvent, merge, of, take, takeUntil, tap } from 'rxjs';
 
 export type DragStartEvent = {
   /** Pointer position at pointerdown - NOT at commit-threshold crossing. */
@@ -20,7 +20,8 @@ export type DragGestureEvent =
   | { readonly type: 'tapped' }
   | { readonly type: 'start'; readonly data: DragStartEvent }
   | { readonly type: 'move'; readonly data: DragMoveEvent }
-  | { readonly type: 'end' };
+  | { readonly type: 'end' }
+  | { readonly type: 'cancelled' };
 
 const setupDragObservable = (
   startEvent: PointerEvent,
@@ -29,12 +30,16 @@ const setupDragObservable = (
 ): Observable<DragGestureEvent> => {
   const { pointerId, clientX: startX, clientY: startY } = startEvent;
 
+  let cancelled = false;
+
   const end$ = merge(
     fromEvent<PointerEvent>(document, 'pointerup'),
     fromEvent<PointerEvent>(document, 'pointercancel'),
   ).pipe(
     filter((e) => e.pointerId === pointerId),
     take(1),
+    // Read below by the terminating `defer`, which only runs once this has completed the moves.
+    tap((e) => (cancelled = e.type === 'pointercancel')),
   );
 
   let lastX = startX;
@@ -91,7 +96,11 @@ const setupDragObservable = (
 
   return concat(
     moves$,
-    defer((): Observable<DragGestureEvent> => of(committed ? { type: 'end' } : { type: 'tapped' })),
+    defer((): Observable<DragGestureEvent> => {
+      if (cancelled) return of({ type: 'cancelled' as const });
+
+      return of(committed ? { type: 'end' as const } : { type: 'tapped' as const });
+    }),
   );
 };
 
@@ -102,6 +111,10 @@ const setupDragObservable = (
  * immediately followed by a catch-up `move`, then a `move` per pointer move, and finally `end`. A
  * pointer released before crossing the threshold emits a single `tapped` instead. The stream
  * completes with the gesture, so there is nothing to unsubscribe on the happy path.
+ *
+ * A gesture the browser takes away - a `pointercancel` from a system gesture, an incoming call, the
+ * tab going to the background - ends on `cancelled` rather than `end` or `tapped`. Treat it as
+ * "revert", not "drop here": the user never let go, so there is no position they chose.
  *
  * This is the primitive behind {@link DragHandleDirective}. Prefer the directive; reach for this when
  * the draggable element belongs to someone else's template (e.g. a table feature attaching a drag to

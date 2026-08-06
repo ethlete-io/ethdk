@@ -55,6 +55,18 @@ export class DragHandleDirective {
     ),
   );
 
+  /**
+   * The browser took the gesture away mid-drag (a system gesture, an incoming call, the tab going to
+   * the background). Revert to where the drag started - the user never chose a drop position. A
+   * consumer that does not handle this leaves the item wherever the pointer happened to be.
+   */
+  dragCancelled = outputFromObservable<void>(
+    this.gesture$.pipe(
+      filter((e) => e.type === 'cancelled'),
+      map(() => undefined),
+    ),
+  );
+
   isDragging = toSignal(
     this.gesture$.pipe(
       map((e) => e.type === 'start' || e.type === 'move'),

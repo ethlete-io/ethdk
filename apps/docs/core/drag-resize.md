@@ -12,6 +12,7 @@ Pointer-gesture primitives: a drag handle directive and a resize handles compone
   (dragStarted)="beginDrag($event)"
   (dragMoved)="updateDrag($event)"
   (dragEnded)="finishDrag()"
+  (dragCancelled)="revertDrag()"
   etDragHandle
 ></div>
 ```
@@ -25,12 +26,15 @@ import { DragHandleDirective } from '@ethlete/core';
 | `commitThreshold` | `8`     | Pixels of movement (either axis) before the drag commits. |
 | `disabled`        | `false` | Ignore pointer input.                                     |
 
-| Output        | Payload                                                | Emitted                                                 |
-| ------------- | ------------------------------------------------------ | ------------------------------------------------------- |
-| `dragTapped`  | `void`                                                 | Released without ever crossing the threshold.           |
-| `dragStarted` | `{ clientX, clientY }`                                 | Threshold crossed (position is the pointerdown origin). |
-| `dragMoved`   | `{ stepX, stepY, clientX, clientY, totalDx, totalDy }` | Every pointer move while dragging.                      |
-| `dragEnded`   | `void`                                                 | Released after a committed drag.                        |
+| Output          | Payload                                                | Emitted                                                 |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| `dragTapped`    | `void`                                                 | Released without ever crossing the threshold.           |
+| `dragStarted`   | `{ clientX, clientY }`                                 | Threshold crossed (position is the pointerdown origin). |
+| `dragMoved`     | `{ stepX, stepY, clientX, clientY, totalDx, totalDy }` | Every pointer move while dragging.                      |
+| `dragEnded`     | `void`                                                 | Released after a committed drag.                        |
+| `dragCancelled` | `void`                                                 | The browser took the gesture away mid-drag.             |
+
+**Handle `dragCancelled`.** The browser cancels a gesture it decides it owns - a system back/home gesture, an incoming call, the tab going to the background - and the user never let go, so there is no position they chose: revert to where the drag started. A consumer that only listens to `dragEnded` gets no terminating event at all on that path and stays stuck mid-drag; one that treats a cancel as a drop commits a move the user did not make. `dragTapped` is likewise not emitted for a press the browser cancelled below the threshold.
 
 `isDragging` is exposed as a signal. On commit, the directive captures the pointer and emits a catch-up move in the same tick so the dragged element snaps to the pointer instead of trailing by the threshold. Only the primary button starts a gesture, and a new gesture is ignored while one is active. There is no built-in keyboard support - provide a keyboard path yourself where dragging changes state (the grid does).
 
@@ -47,6 +51,7 @@ While enabled, the handle sets `touch-action: none` on its host so touch drags w
   (resizeStarted)="beginResize()"
   (resizeMoved)="updateResize($event)"
   (resizeEnded)="finishResize()"
+  (resizeCancelled)="revertResize()"
 />
 ```
 
@@ -59,11 +64,12 @@ import { ResizeHandlesComponent } from '@ethlete/core';
 | `edges`    | all 8 (`n s e w ne nw se sw`) | Which handles to render.                      |
 | `disabled` | `false`                       | Hides the handles from interaction (`inert`). |
 
-| Output          | Payload                                                                        |
-| --------------- | ------------------------------------------------------------------------------ |
-| `resizeStarted` | The `ResizeEdge` being dragged.                                                |
-| `resizeMoved`   | `{ edge, dx, dy, clientX, clientY }` - `dx`/`dy` cumulative since pointerdown. |
-| `resizeEnded`   | `void`                                                                         |
+| Output            | Payload                                                                        |
+| ----------------- | ------------------------------------------------------------------------------ |
+| `resizeStarted`   | The `ResizeEdge` being dragged.                                                |
+| `resizeMoved`     | `{ edge, dx, dy, clientX, clientY }` - `dx`/`dy` cumulative since pointerdown. |
+| `resizeEnded`     | `void`                                                                         |
+| `resizeCancelled` | `void` - the browser took the gesture away; revert to the size it started at.  |
 
 `isResizing` and `activeEdge` are signals; the active edge is also reflected as `data-active-edge` on the host. Handles set the matching resize cursor per edge. Sizing is themable via CSS custom properties (`--et-resize-handles-edge-size`, `--et-resize-handles-corner-size`, `--et-resize-handles-z-index`, …) - see `resize-handles.component.ts` for the full list and defaults.
 

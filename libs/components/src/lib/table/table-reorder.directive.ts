@@ -116,6 +116,7 @@ export class TableReorderDirective {
               if (gesture.type === 'start') this.start(hit.key, gesture.data);
               if (gesture.type === 'move') this.move(gesture.data);
               if (gesture.type === 'end') this.end();
+              if (gesture.type === 'cancelled') this.cancel();
             }),
           );
         }),
@@ -160,6 +161,12 @@ export class TableReorderDirective {
     this.pointer.set({ x: at.clientX, y: at.clientY });
     this.resolveDropTarget(at.clientX);
     this.previewLandingOrder();
+  }
+
+  /** The browser took the gesture away, so there is no drop the user chose - slide back and clean up. */
+  private cancel() {
+    this.target.set(null);
+    this.end();
   }
 
   /** Commit the deferred move once; the columns are already sitting where it puts them. */

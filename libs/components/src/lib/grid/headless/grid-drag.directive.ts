@@ -91,6 +91,13 @@ export class GridDragDirective {
       )
       .subscribe();
 
+    outputToObservable(this.dragHandle.dragCancelled)
+      .pipe(
+        tap(() => this.cancelDrag()),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     // Cancel when the gesture's frame of reference breaks mid-drag: readOnly flips on,
     // or a breakpoint switch invalidates the origin position and column count.
     effect(() => {
