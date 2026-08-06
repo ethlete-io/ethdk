@@ -1136,8 +1136,8 @@ make the target smaller in practice than the defaults suggest:
   on top of the SDK's own hover hint - the `::after` bars are drawn at a 2px inset in
   `--et-surface-color-solid` at `opacity: 0.2`, which against a solid dotted outline in
   `--et-surface-border-solid` is not a distinguishable marker.
-- **Every widget is at its minimum height most of the time.** All three registered types set
-  `minRowSpan: 2` (text also `maxRowSpan: 8`) and new widgets are created at `rowSpan: 2`, so
+- **Every widget is at its minimum height most of the time.** All three production types set
+  `minRowSpan: 2, maxRowSpan: 8` and new widgets are created at `rowSpan: 2`, so
   a correctly-grabbed `n` or `s` handle does nothing at all unless dragged outward. Grab-did-
   nothing and grabbed-the-wrong-thing are indistinguishable to the user, which is part of why
   this reads as "the handle doesn't work" rather than "I missed it".
@@ -1158,3 +1158,151 @@ Net: outward into the gap is the only direction with real room in this app, the 
 unrecoverable while the toolbar owns it (the corner handle would have to move, or the toolbar
 inset back to the SDK's 4px so the 12px handle is at least reachable), and dropping the dead
 edges at `sm` is free.
+
+## Grid: registering a widget forces the consumer to cast
+
+Every entry in the same app's `widgets/widget.ts` is cast, against a local escape-hatch type
+the file has to declare and lint-disable for:
+
+```ts
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WidgetComponent = Type<{ data: InputSignal<any> }>;
+
+{ type: 'text', component: TextWidgetComponent as WidgetComponent, constraints: { minRowSpan: 2, maxRowSpan: 8 } },
+```
+
+`GridComponentRegistration<TData = unknown>` declares
+`component: Type<{ data: InputSignal<TData> }>` (`grid.types.ts:53`) and the array is used at
+its default, so the target is `InputSignal<unknown>`. `InputSignal<T>` is invariant in `T`:
+`InputSignalNode<T, TransformT>` carries `transformFn: ((value: TransformT) => T) | undefined`,
+which puts `T` in parameter position. So a widget declaring
+`data = input.required<DashboardWidgetData>()` is not assignable, and `tsc` says so exactly
+there:
+
+```
+The types of 'data[SIGNAL].transformFn' are incompatible between these types.
+  Type '(value: Payload) => Payload' is not assignable to type '(value: unknown) => unknown'.
+```
+
+No amount of care at the call site fixes that - the only ways out are `any` (what the app
+picked) or typing every widget's input as `unknown` and casting on each read.
+
+The generic is not earning the cost. Rendering goes through
+`[ngComponentOutletInputs]="{ data: entry.item.data }"` (`grid.component.ts:26`), a
+`Record<string, unknown>` with no type relationship to the component, and `entry.item.data` is
+already `unknown` because `GridItemConfig` defaults `TData = unknown` too. The single check the
+declared type performs is "this component has an input named `data`" - and the `any` cast the
+type forces is what throws that check away.
+
+It shipped because nothing in-repo exercises it. All three dummy widgets behind the stories and
+`apps/docs/components/grid.md` declare `data = input<unknown>()`, which matches
+`InputSignal<unknown>` exactly, so the docs snippet is cast-free and no story ever registers a
+widget with a real payload type.
+
+The same hole exists on the actions side: `GridItemActionsComponent<TData = unknown>`
+(`grid.types.ts:47`) has the identical shape, and the app worked around it the other way -
+`DashboardWidgetToolbarComponent` declares `data = input.required<unknown>()` and casts at each
+read (`this.data() as DashboardWidgetData`). One type problem, two different workarounds in one
+folder.
+
+The fix that fits is a per-entry factory that infers `TData` from the component and erases it,
+so the one cast lives in the SDK:
+
+```ts
+export const gridComponent = <TData>(reg: GridComponentRegistration<TData>): GridComponentRegistration =>
+  reg as GridComponentRegistration;
+```
+
+Verified with `tsc`: entries with different payload types coexist in one
+`GridComponentRegistration[]`, and a component whose input is named anything other than `data`
+is still rejected - the presence check survives, which is more than the status quo manages.
+
+A mapped-tuple generic on `provideGridConfig` would be nicer still (no helper at the call site
+at all) and also type-checks, but it only infers from an array literal passed inline, and this
+app exports its registrations as an annotated `const` from another module and spreads a
+dev-only tail into it. It would also mean `provideGridConfig` can no longer come from
+`toProvideFn`, which hands back the definition's non-generic `provide` function verbatim
+(`di.ts:139`).
+
+## Grid: the item/state API is there, but the integration can't find it
+
+The rest of the partner dashboard's friction is one theme - `et-grid` already has the API the
+app needs, and every piece of it is either misnamed, undocumented, or subtly wrong at the edge
+the app hits.
+
+**`initialItems` is a live input that says it isn't.** The effect at `grid.directive.ts:305`
+reconciles the input against `itemConfigs` on every change - adds go through `placeItem`,
+removals through `removeItem`, and a same-item-set change with different positions restores
+`itemConfigs` and rebuilds `layoutOverrides` for every visited breakpoint (its own comment:
+"e.g. the host reset its signal to a saved snapshot after the user cancelled edits"). The name
+says one-shot, `apps/docs/components/grid.md` shows only `[initialItems]="items()"` and never
+mentions reconciliation, so the app concluded the opposite and built around it:
+
+```ts
+// `et-grid` consumes its items once via `[initialItems]`, so it can't observe changes to `gridItems`.
+// Bumping this counter re-keys the grid's `@for` in the template, forcing a full rebuild after a save.
+const gridRevision = signal(0);
+```
+
+paired with `@for (revision of [partnerDashboard.gridRevision()]; track revision)` wrapped
+around `<et-grid>`. Every widget add, edit or delete therefore destroys and rebuilds the whole
+grid - all items re-run their enter animation, and any scroll or focus inside a widget is lost.
+Renaming to `items` (keeping `initialItems` as a deprecated alias) and documenting the
+reconciliation is most of the fix.
+
+**Two things must be fixed with it, or removing the workaround makes things worse.**
+
+- The reconcile path bails on an empty array (`if (initial.length === 0) return;`), so a host
+  that clears its items keeps rendering the old ones. Deleting the last widget is the case that
+  hits it - masked today by the re-key, which starts a fresh grid.
+- `placeItem` ends in `emitLayoutChange()` (`:870`), so items arriving _from the input_ emit
+  `layoutChange` exactly like a user drag. This app treats that event as its dirty flag
+  (`pendingLayout.set($event)`, `hasUnsavedLayout = pendingLayout() !== null`) and gates a
+  "Discard dashboard changes?" route guard on it - so as soon as the grid observes a server
+  refresh instead of being rebuilt, navigating away prompts about changes the user never made.
+  Also masked by the re-key: a fresh grid takes the `current.length === 0` branch, which does
+  not emit. Either suppress the emit on the input-reconciliation path, or tag the event with
+  its origin.
+
+**Cancelling edit mode does not revert the layout.** `toggleEditMode` clears `pendingLayout`
+and flips `readOnly` back on, but the grid keeps the positions the user dragged to, so the
+screen and the server disagree until a reload. The reconcile comment advertises the snapshot-
+reset pattern as the answer, but it cannot work from a computed over unchanged server state:
+nothing changed, so there is no new input to react to. `restoreState()` (`:745`) is the actual
+answer and is public, but appears nowhere in the docs - nor do `getSerializedState()` or
+`addItem()`. Documenting the imperative half of the API, or adding an explicit `resetLayout()`,
+is what stops the next integration from re-deriving this.
+
+**The state round-trip loses the item type.** `initialItems` and `layoutChange` both use the
+erased `GridItemConfig` / `GridSerializedState`, so what goes in typed comes back `unknown`:
+
+```ts
+(pendingLayout?.items as GridItemConfig<string, DashboardWidgetData>[] | undefined) ?? toGridItems(widgets);
+```
+
+Threading `TData` through `GridSerializedState` and the directive removes it. Same family as
+the registration cast above - the generic parameters exist on the types and are dropped at
+every public boundary.
+
+**The documented `createGridAdapter` call does not compile.** `grid.md` shows an object
+argument with a two-parameter `toExternal`:
+
+```ts
+createGridAdapter<BackendWidget>({ fromExternal: (w) => …, toExternal: (item, position) => … });
+```
+
+The real signature (`grid-adapter.ts:8`) takes two positional functions,
+`(fromItem: (item: TExternal) => GridItemConfig, toItem: (item: GridItemConfig) => TExternal)` -
+no object, and `toItem` gets no position. The app uses `toGridPosition`/`fromGridPosition` and
+hand-rolls `toGridItems`/`toWidgetPayload` instead, which is the outcome a wrong snippet
+produces. Fix the doc, and reconsider the signature while there: the app's mapping is
+per-breakpoint (`sm`/`md`/`lg` at once), which the single-position adapter shape doesn't
+express.
+
+**Nothing ties an item's layout keys to the configured breakpoints.** `GridItemConfig.layout`
+is `Record<string, GridItemPosition>` and `assertValidItemConfigs` (`:792`) only checks for
+duplicate ids; a missing breakpoint entry silently becomes `{ col: 0, row: 0, colSpan: 1,
+rowSpan: 1 }` in two places. The app hand-writes all three keys and then still guards with
+`item.layout['sm'] ?? fallbackPosition('sm')` on the way back out. Cheap fix: assert coverage
+of the configured breakpoint names in the dev-mode check. Real fix: a `TBp extends string`
+parameter on `GridItemConfig` so `[breakpoints]` and the items have to agree.
