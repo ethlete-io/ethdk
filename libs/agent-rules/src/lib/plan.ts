@@ -4,9 +4,11 @@ import { LOCAL_CONFIG_FILE_NAME, readLocalConfig, SyncConfig } from './config';
 import { filterContent, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { emitAgentsSkills } from './targets/agents-skills';
-import { assertKnownHooks, CLAUDE_HOOKS, CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
+import { CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
 import { emitClaude } from './targets/claude';
 import { CODEX_FILE, emitCodex } from './targets/codex';
+import { CODEX_HOOKS_FILE, emitCodexHooks } from './targets/codex-hooks';
+import { assertKnownHooks, KNOWN_HOOKS } from './targets/hooks-shared';
 import { COPILOT_FILE, emitCopilot } from './targets/copilot';
 import { emitCursor } from './targets/cursor';
 import { EmitContext, EmittedFile } from './targets/shared';
@@ -106,11 +108,11 @@ const collectLocalConfigWarnings = (root: string) => {
   }
 
   if (Array.isArray(disable)) {
-    const unknown = disable.filter((name) => !(name in CLAUDE_HOOKS));
+    const unknown = disable.filter((name) => !(name in KNOWN_HOOKS));
 
     if (unknown.length > 0) {
       warnings.push(
-        `${LOCAL_CONFIG_FILE_NAME} disables unknown hook(s): ${unknown.join(', ')}. Known hooks: ${Object.keys(CLAUDE_HOOKS).join(', ')}.`,
+        `${LOCAL_CONFIG_FILE_NAME} disables unknown hook(s): ${unknown.join(', ')}. Known hooks: ${Object.keys(KNOWN_HOOKS).join(', ')}.`,
       );
     }
   }
@@ -191,6 +193,11 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
       context,
       claudeTarget: config.targets.includes('claude'),
       existingSettings: readExisting(config.root, CLAUDE_SETTINGS_FILE),
+    }),
+    ...emitCodexHooks({
+      context,
+      codexTarget: config.targets.includes('codex'),
+      existingHooks: readExisting(config.root, CODEX_HOOKS_FILE),
     }),
   );
 

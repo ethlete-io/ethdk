@@ -24,7 +24,7 @@ export type SyncConfig = {
    * `AGENTS.md` marker block, and a second copy would load twice.
    */
   claudeMdImportsAgentsMd: boolean;
-  /** Opt-in Claude Code hooks (they run commands on the developer's machine, so never default). */
+  /** Opt-in agent hooks (they run commands on the developer's machine, so never default). */
   hooks: string[];
 };
 
@@ -54,7 +54,7 @@ const readRawConfig = (root: string) => {
  * - `disableHooks: true` silences every generated hook, `["context-warning"]` just the named ones.
  * - `disableAutoHandoffSave: true` keeps the context-warning hook's normal tiered messages (including
  *   in auto mode), but at the critical tier in auto mode it falls back to just recommending
- *   `/handoff` instead of writing the handoff file automatically.
+ *   a handoff instead of writing the handoff file automatically.
  * - `sdkSourcePath` points at a local `ethlete-sdk` checkout, which the SDK source and local-build
  *   skills read when they need the SDK's own sources instead of the published package.
  */

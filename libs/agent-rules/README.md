@@ -115,8 +115,8 @@ a repo without `@ethlete/query` never sees the query guide.
 
 ## Hooks (opt-in)
 
-Claude Code hooks run commands on the developer's machine, so none are emitted by
-default - opt in per hook in the config:
+Hooks run commands on the developer's machine, so none are emitted by default - opt in
+per hook in the config:
 
 ```json
 {
@@ -124,17 +124,31 @@ default - opt in per hook in the config:
 }
 ```
 
-`sync` writes the script to `.claude/hooks/ethlete/` and registers it in
-`.claude/settings.json` (your own entries are left untouched); removing the name from
-`hooks` unregisters and deletes it again.
+They are emitted for whichever of the `claude` and `codex` targets is enabled:
+
+| Target   | Script                   | Registered in           |
+| -------- | ------------------------ | ----------------------- |
+| `claude` | `.claude/hooks/ethlete/` | `.claude/settings.json` |
+| `codex`  | `.codex/hooks/ethlete/`  | `.codex/hooks.json`     |
+
+Your own entries in those files are left untouched; removing the name from `hooks`
+unregisters and deletes the script again. Codex only loads project-local hooks once the
+`.codex/` layer is trusted, and honours `[features] hooks = false`.
 
 Available hooks:
 
-- **`context-warning`** - warns once per tier (and instructs Claude) when the session
-  context crosses 70% / 85% of the token budget, recommending `/handoff`. The budget is
-  capped at the 200k long-context pricing boundary: on 1M-window models every request
-  past 200k input tokens bills the whole context at a premium rate, so the warnings
-  fire at ~140k/~170k instead of deep into the expensive range.
+- **`context-warning`** - warns once per tier (and instructs the agent) when the session
+  context crosses 70% / 85% of the token budget, recommending a handoff. Under Claude the
+  budget is capped at the 200k long-context pricing boundary: on 1M-window models every
+  request past 200k input tokens bills the whole context at a premium rate, so the
+  warnings fire at ~140k/~170k instead of deep into the expensive range. Codex has no
+  such boundary, so its budget is the model's own reported context window and the
+  warnings are pure occupancy.
+
+  Two things are Claude-only: the separate user-facing line (Codex documents only
+  `additionalContext`, so there the warning is folded into the text the model is told to
+  relay), and the auto-mode escalation that writes the handoff file unprompted - Codex's
+  `permission_mode` values are undocumented, so no value enables it.
 
 Hooks can be turned off per machine - see the local config below.
 

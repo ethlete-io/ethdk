@@ -2,31 +2,45 @@
 """UserPromptSubmit hook: warn when the context window is getting large.
 
 Reads the hook input JSON from stdin, estimates the current context size from
-the last main-chain assistant message in the session transcript, and emits a
-warning (visible to both the user and Claude) when it crosses a threshold.
-Recommends the /handoff skill so work can continue in a fresh session.
+the session transcript, and emits a warning (visible to both the user and the
+agent) when it crosses a threshold. Recommends the handoff skill so work can
+continue in a fresh session.
+
+Runs under both Claude Code and Codex, selected by `--agent` on the command
+line rather than sniffed from the payload — the generator writes the flag, so
+the two never have to be told apart at runtime. The two differ in three ways
+that matter here, all captured in AGENT_PROFILES:
+
+  * Transcript format. Claude writes one JSON object per message with
+    `message.usage`; Codex writes a rollout stream whose `token_count` events
+    carry a TokenUsageInfo. Codex's rollout format is explicitly not a stable
+    interface, so the parser searches each line for the usage object instead of
+    walking a fixed path.
+  * Context budget. Claude's budget is capped at the 200k long-context pricing
+    boundary: on models with a larger window, every request past that point
+    bills the entire context at the premium rate, which costs far more than
+    handing off into a fresh session ever would. Codex has no such boundary, so
+    its budget is just the window.
+  * How a handoff is invoked. Claude has /handoff and /clear; Codex has neither
+    and reads the skill from disk.
 
 At the critical tier, if the session's permission_mode is "auto", the
 instruction escalates from "recommend" to "just do it": auto mode already
-means the user wants Claude acting without stopping to ask, and clearing +
+means the user wants the agent acting without stopping to ask, and clearing +
 resuming can't be triggered programmatically (no hook or tool can submit
 input to a running session), so the best available automation is to save the
-handoff file itself immediately rather than waiting for Claude to notice a
-natural stopping point.
-
-The thresholds are fractions of a token budget, and the budget is capped at the
-200k long-context pricing boundary: on models with a larger window, every
-request past that point bills the entire context at the premium rate, which
-costs far more than handing off into a fresh session ever would.
+handoff file itself immediately rather than waiting for a natural stopping
+point. Codex's permission_mode value set is undocumented, so its profile lists
+no auto modes and the escalation stays off there.
 
 Warns once per tier per session (state kept in a temp file); re-arms itself
-if the context shrinks again (e.g. after /compact).
+if the context shrinks again (e.g. after a compaction).
 
 Can be disabled per machine via a gitignored ethlete-agents.config.local.json
 at the repo root: {"disableHooks": true} or {"disableHooks": ["context-warning"]}.
 To keep the tiered warnings but drop just the auto-mode auto-save escalation,
 use {"disableAutoHandoffSave": true} instead - the critical tier then falls
-back to recommending /handoff, same as non-auto mode.
+back to recommending a handoff, same as non-auto mode.
 
 Fail-safe: any error exits 0 with no output — the hook must never block a prompt.
 """
@@ -64,10 +78,87 @@ CONTEXT_WINDOWS = (
 )
 DEFAULT_WINDOW = 200_000
 
+AGENT_PROFILES = {
+    "claude": {
+        "premium_boundary": PREMIUM_BOUNDARY,
+        # Claude's transcript reports no window, so it is resolved from the model id.
+        "default_window": None,
+        "auto_modes": ("auto",),
+        "emits_system_message": True,
+        "act_now": "Run /handoff now and continue in a fresh session.",
+        "act_later": "consider /handoff to continue in a fresh session",
+        "recommend": "recommend the user run /handoff to save state and start a fresh session",
+        "suggest": "suggest the user run /handoff to save state and start a fresh session",
+        "save_now": (
+            "run the handoff skill's save mode right now (finish only an in-flight atomic "
+            "edit first, nothing new). Then tell the user exactly which handoff file was "
+            "written and that they should run /clear, then '/handoff resume <slug>', to "
+            "continue — clearing and resuming can't be done programmatically, so this is "
+            "the one step still on them."
+        ),
+    },
+    "codex": {
+        "premium_boundary": None,
+        # Only reached if a rollout omits model_context_window; the CONTEXT_WINDOWS table
+        # holds Claude model ids and would never match a Codex one.
+        "default_window": 272_000,
+        # Codex's permission_mode values are undocumented; until one is confirmed to mean
+        # "never ask", no value enables the auto-save escalation.
+        "auto_modes": (),
+        # Only hookSpecificOutput.additionalContext is documented for Codex, so the
+        # user-facing line is folded into the model-facing text instead.
+        "emits_system_message": False,
+        "act_now": "Save a handoff now and continue in a fresh session.",
+        "act_later": "consider saving a handoff and continuing in a fresh session",
+        "recommend": (
+            "tell the user you are near the context limit, then follow "
+            ".agents/skills/ethlete-handoff/SKILL.md to save a handoff and have them start a "
+            "fresh session"
+        ),
+        "suggest": (
+            "suggest saving a handoff via .agents/skills/ethlete-handoff/SKILL.md and "
+            "continuing in a fresh session"
+        ),
+        "save_now": (
+            "follow .agents/skills/ethlete-handoff/SKILL.md and save a handoff right now "
+            "(finish only an in-flight atomic edit first, nothing new). Then tell the user "
+            "exactly which handoff file was written and that they should start a fresh "
+            "codex session and resume from it."
+        ),
+    },
+}
 
-def load_local_config():
+
+def agent_name(argv):
+    """The --agent value, defaulting to claude — older registrations pass no flag."""
+    for index, arg in enumerate(argv):
+        if arg == "--agent" and index + 1 < len(argv):
+            return argv[index + 1]
+        if arg.startswith("--agent="):
+            return arg.split("=", 1)[1]
+    return "claude"
+
+
+def repo_root(data):
+    """Repo root: the env var the agent sets, else derived from this script's own location.
+
+    The script always lives at <root>/.<agent>/hooks/ethlete/context-warning.py, so walking
+    four levels up works for any agent that has no project-dir variable of its own.
+    """
+    for variable in ("CLAUDE_PROJECT_DIR", "CODEX_PROJECT_DIR"):
+        value = os.environ.get(variable)
+        if value:
+            return value
+    here = os.path.abspath(__file__)
+    derived = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(here))))
+    if os.path.isfile(os.path.join(derived, LOCAL_CONFIG_FILE)):
+        return derived
+    cwd = data.get("cwd")
+    return cwd if isinstance(cwd, str) and cwd else derived
+
+
+def load_local_config(root):
     """Parsed ethlete-agents.config.local.json at the repo root, or {} if missing/unreadable."""
-    root = os.environ.get("CLAUDE_PROJECT_DIR")
     if not root:
         return {}
     try:
@@ -98,10 +189,11 @@ def window_for(model):
     return DEFAULT_WINDOW
 
 
-def context_state(transcript_path):
-    """(tokens, model) from the last main-chain assistant message.
+def claude_context_state(transcript_path):
+    """(tokens, model, window) from the last main-chain assistant message.
 
-    tokens ≈ its total input tokens (fresh + cache read + cache creation).
+    tokens ≈ its total input tokens (fresh + cache read + cache creation). Claude reports no
+    window in the transcript, so it is resolved from the model id by the caller.
     """
     last_usage = None
     last_model = None
@@ -119,111 +211,151 @@ def context_state(transcript_path):
                 last_usage = usage
                 last_model = message.get("model") or last_model
     if not last_usage:
-        return 0, last_model
+        return 0, last_model, None
     tokens = (
         last_usage.get("input_tokens", 0)
         + last_usage.get("cache_read_input_tokens", 0)
         + last_usage.get("cache_creation_input_tokens", 0)
     )
-    return tokens, last_model
+    return tokens, last_model, None
 
 
-def messages(tier, tokens, budget, priced, auto_mode):
+def find_token_usage_info(node):
+    """The deepest TokenUsageInfo-shaped dict in a parsed rollout line, or None.
+
+    Codex documents its rollout format as unstable, so this searches for the shape
+    (a dict carrying `last_token_usage`) rather than walking a fixed key path.
+    """
+    if isinstance(node, dict):
+        if isinstance(node.get("last_token_usage"), dict):
+            return node
+        for value in node.values():
+            found = find_token_usage_info(value)
+            if found:
+                return found
+    elif isinstance(node, list):
+        for value in node:
+            found = find_token_usage_info(value)
+            if found:
+                return found
+    return None
+
+
+def codex_context_state(transcript_path):
+    """(tokens, model, window) from the last token_count event in a Codex rollout.
+
+    tokens is the last request's `total_tokens` — Codex's own `tokens_in_context_window()`
+    is exactly that field, and `last_token_usage` is replaced per request while
+    `total_token_usage` accumulates across the whole session.
+    """
+    last_info = None
+    last_model = None
+    with open(transcript_path, encoding="utf-8") as f:
+        for line in f:
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            model = (obj.get("payload") or {}).get("model") if isinstance(obj.get("payload"), dict) else None
+            if isinstance(model, str) and model:
+                last_model = model
+            info = find_token_usage_info(obj)
+            if info:
+                last_info = info
+    if not last_info:
+        return 0, last_model, None
+    usage = last_info.get("last_token_usage") or {}
+    window = last_info.get("model_context_window")
+    return usage.get("total_tokens", 0), last_model, window if isinstance(window, int) else None
+
+
+CONTEXT_READERS = {"claude": claude_context_state, "codex": codex_context_state}
+
+
+def messages(profile, tier, tokens, budget, priced, auto_mode):
     """(systemMessage, additionalContext) for a tier.
 
     priced: the budget is the pricing boundary, not the window — the reason to
     hand off is cost, not an imminent auto-compact.
-    auto_mode: at the critical tier, escalates from "recommend /handoff" to
+    auto_mode: at the critical tier, escalates from "recommend a handoff" to
     "save it now" — see the module docstring for why.
     """
     k = f"~{tokens // 1000}k"
     pct = round(tokens / budget * 100)
     budget_k = f"{budget // 1000}k"
-    if tier == 2 and auto_mode and priced:
-        return (
-            f"🔴 Context is at {k} tokens — about to cross the {budget_k} long-context "
-            f"pricing boundary. Auto mode is active: saving a handoff now.",
-            f"[context-warning hook] The context is at {k} tokens — {pct}% of the "
-            f"{budget_k} long-context pricing boundary. Auto mode is active, so don't just "
-            "recommend a handoff — run the handoff skill's save mode right now (finish only "
-            "an in-flight atomic edit first, nothing new). Then tell the user exactly which "
-            "handoff file was written and that they should run /clear, then "
-            "'/handoff resume <slug>', to continue — clearing and resuming can't be done "
-            "programmatically, so this is the one step still on them.",
-        )
-    if tier == 2 and auto_mode:
-        return (
-            f"🔴 Context is at {k} tokens ({pct}% of the {budget_k} window) — "
-            f"auto-compact is imminent. Auto mode is active: saving a handoff now.",
-            f"[context-warning hook] The context window is at {k} tokens — {pct}% of "
-            f"this model's {budget_k} window (critical, ≥{int(CRITICAL_FRACTION * 100)}%). "
-            "Auto mode is active, so don't just recommend a handoff — run the handoff "
-            "skill's save mode right now (finish only an in-flight atomic edit first, "
-            "nothing new). Then tell the user exactly which handoff file was written and "
-            "that they should run /clear, then '/handoff resume <slug>', to continue — "
-            "clearing and resuming can't be done programmatically, so this is the one step "
-            "still on them.",
-        )
-    if tier == 2 and priced:
-        return (
-            f"🔴 Context is at {k} tokens — about to cross the {budget_k} long-context "
-            f"pricing boundary, after which every request bills the whole context at the "
-            f"premium rate. Run /handoff now and continue in a fresh session.",
-            f"[context-warning hook] The context is at {k} tokens — {pct}% of the "
-            f"{budget_k} long-context pricing boundary. Past it every request is billed at "
-            "the premium rate. Finish only the immediate step, then recommend the user run "
-            "/handoff to save state and start a fresh session. Do not start new sub-tasks.",
-        )
-    if tier == 2:
-        return (
-            f"🔴 Context is at {k} tokens ({pct}% of the {budget_k} window) — "
-            f"auto-compact is imminent. Run /handoff now and continue in a fresh session.",
-            f"[context-warning hook] The context window is at {k} tokens — {pct}% of "
-            f"this model's {budget_k} window (critical, ≥{int(CRITICAL_FRACTION * 100)}%). "
-            "Finish only the immediate step, then recommend the user run /handoff to "
-            "save state and start a fresh session. Do not start new sub-tasks.",
-        )
+
     if priced:
-        return (
-            f"🟡 Context is at {k} tokens, approaching the {budget_k} long-context "
-            f"pricing boundary. At the next natural stopping point, consider /handoff "
-            f"to continue in a fresh session.",
-            f"[context-warning hook] The context is at {k} tokens — {pct}% of the "
-            f"{budget_k} long-context pricing boundary, past which every request is "
-            "billed at the premium rate. When the current task reaches a natural "
-            "stopping point, suggest the user run /handoff to save state and start a "
-            "fresh session. Keep working normally until then.",
+        approach = "about to cross" if tier == 2 else "approaching"
+        headline = f"Context is at {k} tokens — {approach} the {budget_k} long-context pricing boundary"
+        detail = (
+            f"The context is at {k} tokens — {pct}% of the {budget_k} long-context "
+            f"pricing boundary."
         )
+    else:
+        headline = f"Context is at {k} tokens ({pct}% of the {budget_k} window)"
+        detail = (
+            f"The context window is at {k} tokens — {pct}% of this model's "
+            f"{budget_k} window"
+        )
+
+    if tier == 2:
+        threshold = f" (critical, ≥{int(CRITICAL_FRACTION * 100)}%)"
+        detail = detail if priced else f"{detail}{threshold}."
+        pressure = (
+            "Past it every request is billed at the premium rate. "
+            if priced
+            else ""
+        )
+        tail = "" if priced else " — auto-compact is imminent"
+        if auto_mode:
+            return (
+                f"🔴 {headline}{tail}. Auto mode is active: saving a handoff now.",
+                f"[context-warning hook] {detail} {pressure}Auto mode is active, so don't "
+                f"just recommend a handoff — {profile['save_now']}",
+            )
+        return (
+            f"🔴 {headline}{tail}. {profile['act_now']}",
+            f"[context-warning hook] {detail} {pressure}Finish only the immediate step, "
+            f"then {profile['recommend']}. Do not start new sub-tasks.",
+        )
+
+    threshold = f" (≥{int(WARN_FRACTION * 100)}%)"
+    detail = detail if priced else f"{detail}{threshold}."
+    pressure = "Past it every request is billed at the premium rate. " if priced else ""
     return (
-        f"🟡 Context is at {k} tokens ({pct}% of the {budget_k} window). At the next "
-        f"natural stopping point, consider /handoff to continue in a fresh session.",
-        f"[context-warning hook] The context window is at {k} tokens — {pct}% of "
-        f"this model's {budget_k} window (≥{int(WARN_FRACTION * 100)}%). When the "
-        "current task reaches a natural stopping point, suggest the user run "
-        "/handoff to save state and start a fresh session. Keep working normally until then.",
+        f"🟡 {headline}. At the next natural stopping point, {profile['act_later']}.",
+        f"[context-warning hook] {detail} {pressure}When the current task reaches a "
+        f"natural stopping point, {profile['suggest']}. Keep working normally until then.",
     )
 
 
 def main():
-    local_config = load_local_config()
+    agent = agent_name(sys.argv[1:])
+    profile = AGENT_PROFILES.get(agent)
+    if not profile:
+        return
+
+    data = json.load(sys.stdin)
+    local_config = load_local_config(repo_root(data))
     if disabled_locally(local_config):
         return
-    data = json.load(sys.stdin)
+
     transcript_path = data.get("transcript_path")
     session_id = data.get("session_id", "unknown")
-    auto_mode = data.get("permission_mode") == "auto" and not auto_handoff_save_disabled(local_config)
+    auto_mode = data.get("permission_mode") in profile["auto_modes"] and not auto_handoff_save_disabled(local_config)
     if not transcript_path or not os.path.isfile(transcript_path):
         return
 
-    tokens, model = context_state(transcript_path)
-    window = window_for(model)
-    budget = min(window, PREMIUM_BOUNDARY)
+    tokens, model, reported_window = CONTEXT_READERS[agent](transcript_path)
+    window = reported_window or profile["default_window"] or window_for(model)
+    boundary = profile["premium_boundary"]
+    budget = min(window, boundary) if boundary else window
     warn_tokens = int(budget * WARN_FRACTION)
     critical_tokens = int(budget * CRITICAL_FRACTION)
     tier = 2 if tokens >= critical_tokens else 1 if tokens >= warn_tokens else 0
 
     state_file = os.path.join(
-        tempfile.gettempdir(), f"claude-context-warning-{session_id}"
+        tempfile.gettempdir(), f"{agent}-context-warning-{session_id}"
     )
     prev_tier = 0
     try:
@@ -243,21 +375,23 @@ def main():
         return  # already warned at this tier (or context shrank — state re-armed above)
 
     system_message, additional_context = messages(
-        tier, tokens, budget, budget < window, auto_mode
+        profile, tier, tokens, budget, budget < window, auto_mode
     )
 
-    print(
-        json.dumps(
-            {
-                "systemMessage": system_message,
-                "suppressOutput": True,
-                "hookSpecificOutput": {
-                    "hookEventName": "UserPromptSubmit",
-                    "additionalContext": additional_context,
-                },
-            }
-        )
-    )
+    if not profile["emits_system_message"]:
+        additional_context = f"{additional_context}\n\nTell the user: {system_message}"
+
+    payload = {
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": additional_context,
+        }
+    }
+    if profile["emits_system_message"]:
+        payload["systemMessage"] = system_message
+        payload["suppressOutput"] = True
+
+    print(json.dumps(payload))
 
 
 if __name__ == "__main__":
