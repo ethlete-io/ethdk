@@ -153,6 +153,19 @@ Call `abandonAll()` yourself for anything else that ends a session: an inactivit
 - `copyToClipboard(text)` - write text to the clipboard, returning a cold `Observable<boolean>` that emits `true` or `false` once and completes instead of erroring. The copy runs on subscribe. Uses the async Clipboard API and falls back to a hidden-textarea `execCommand('copy')` when that is blocked (missing permission, insecure context). Focus is restored to the previously focused element after the fallback. SSR-safe.
 - `readFromClipboard()` - read text from the clipboard, returning a cold `Observable<string | null>` that emits the text - or `null` when the Clipboard API is unavailable or reading is blocked - once and completes. The read runs on subscribe.
 
+## Files
+
+- `injectFileDownload()` - hands the user a file the browser downloads. Call it once from an injection context; the function it returns takes `{ content, filename, type? }` and can be called from anywhere, including a click handler. `content` is a string, a `Blob`, or the `BlobPart[]` to build one from. It creates the object URL through the injected document's window, appends the anchor before clicking it (Firefox does not follow the click of a detached anchor), removes it again and revokes the URL immediately. A no-op without a browser, so a toolbar button needs no SSR check of its own.
+- `createObjectUrlHandle(blob)` - an object URL that outlives the call, as a `{ url, revoke }` handle rather than a bare string, so the URL and the call that frees it cannot drift apart. `url` is `null` where there is no browser; `revoke()` is idempotent. Use it for a preview that stays on screen (an image dropped into a [dropzone](/components/dropzone)); use `injectFileDownload()` when the URL only has to survive a single click.
+
+```ts
+private download = injectFileDownload();
+
+protected save() {
+  this.download({ content: json, filename: 'session.json', type: 'application/json' });
+}
+```
+
 ## Text & data
 
 - `markdownToHtml(markdown)` / `htmlToMarkdown(html)` - the dependency-free converters behind the [pipes](/core/directives-pipes#pipes), covering the common Markdown feature set including GFM tables and fenced code blocks. `markdownToHtml` escapes raw HTML in the Markdown text (so its output is safe to bind as HTML) and refuses script-running URL schemes in links and images.

@@ -1,4 +1,4 @@
-import { randomId } from '@ethlete/core';
+import { createObjectUrlHandle, ObjectUrlHandle, randomId } from '@ethlete/core';
 import { computed, Signal } from '@angular/core';
 import {
   AnyDropzoneUploadConfig,
@@ -51,8 +51,8 @@ export type DropzoneEntry<TValue = unknown> = {
   /** @internal The upload handle driving this entry. `null` for existing entries. */
   handle: DropzoneUploadHandle<TValue> | null;
 
-  /** @internal Object URL that must be revoked when the entry is disposed. */
-  objectUrl: string | null;
+  /** @internal Object URL held for the preview, revoked when the entry is disposed. */
+  objectUrl: ObjectUrlHandle | null;
 };
 
 export type CreateFileDropzoneEntryOptions<TValue> = {
@@ -65,7 +65,7 @@ export const createFileDropzoneEntry = <TValue>(
 ): DropzoneEntry<TValue> => {
   const { file, handle } = options;
 
-  const objectUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+  const objectUrl = file.type.startsWith('image/') ? createObjectUrlHandle(file) : null;
 
   const status = computed<DropzoneEntryStatus>(() => {
     switch (handle.state()) {
@@ -83,7 +83,7 @@ export const createFileDropzoneEntry = <TValue>(
     source: { type: 'file', file },
     name: computed(() => file.name),
     size: computed(() => file.size),
-    previewUrl: computed(() => objectUrl),
+    previewUrl: computed(() => objectUrl?.url ?? null),
     status,
     progress: handle.progress,
     error: handle.error,
@@ -124,10 +124,7 @@ export const createExistingDropzoneEntry = <TValue>(
 
 /** Releases all resources held by an entry (object URL, in-flight upload). */
 export const disposeDropzoneEntry = <TValue>(entry: DropzoneEntry<TValue>) => {
-  if (entry.objectUrl) {
-    URL.revokeObjectURL(entry.objectUrl);
-  }
-
+  entry.objectUrl?.revoke();
   entry.handle?.dispose();
 };
 

@@ -14,7 +14,14 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { clamp, injectBreakpointObserver, injectRenderer, injectStyleManager } from '@ethlete/core';
+import {
+  clamp,
+  createObjectUrlHandle,
+  injectBreakpointObserver,
+  injectFileDownload,
+  injectRenderer,
+  injectStyleManager,
+} from '@ethlete/core';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
@@ -289,6 +296,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
 export class QueryDevtoolsComponent {
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   private renderer = injectRenderer();
+  private download = injectFileDownload();
   private styleManager = injectStyleManager();
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);
@@ -958,11 +966,11 @@ export class QueryDevtoolsComponent {
     // title whatever `document.title` says, and a document written into one is quirks-mode - where a
     // table ignores the font size it inherits, so the Cache and Events tables come out half again as
     // large as the panel around them. The blob carries the doctype and the title with it instead.
-    const url = URL.createObjectURL(new Blob([POPOUT_DOCUMENT], { type: 'text/html' }));
-    const popup = this.document.defaultView?.open(url, 'et-query-devtools', POPOUT_FEATURES);
+    const source = createObjectUrlHandle(new Blob([POPOUT_DOCUMENT], { type: 'text/html' }));
+    const popup = source.url ? this.document.defaultView?.open(source.url, 'et-query-devtools', POPOUT_FEATURES) : null;
 
     if (!popup) {
-      URL.revokeObjectURL(url);
+      source.revoke();
 
       return;
     }
@@ -973,7 +981,7 @@ export class QueryDevtoolsComponent {
       .pipe(
         take(1),
         tap(() => {
-          URL.revokeObjectURL(url);
+          source.revoke();
           this.zone.run(() => this.mountPopOut(popup, panel));
         }),
         takeUntilDestroyed(this.destroyRef),
@@ -2354,14 +2362,7 @@ export class QueryDevtoolsComponent {
   }
 
   private downloadFile(fileName: string, content: string) {
-    const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
-    const anchor = this.renderer.createElement('a');
-
-    anchor.href = url;
-    anchor.download = fileName;
-    anchor.click();
-
-    URL.revokeObjectURL(url);
+    this.download({ content, filename: fileName, type: 'application/json' });
   }
 
   private stepKey(entryId: string, index: number) {

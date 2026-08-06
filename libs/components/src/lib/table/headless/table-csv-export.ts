@@ -1,6 +1,6 @@
-import { DOCUMENT, inject, Injector, isDevMode } from '@angular/core';
+import { inject, Injector, isDevMode } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { injectRenderer, RuntimeError } from '@ethlete/core';
+import { injectFileDownload, RuntimeError } from '@ethlete/core';
 import { QueryArgs, ReadonlyQuery } from '@ethlete/query';
 import { defer, filter, from, isObservable, map, Observable, of, take, tap } from 'rxjs';
 import { TABLE_ERROR_CODES } from '../table-errors';
@@ -334,8 +334,7 @@ const assertNotPartial = <T>({
 /**
  * The CSV as a file the browser downloads. Call it once from an injection context - a field
  * initializer - and the function it hands back can then be called from anywhere, including a click
- * handler. It is `inject()`-based because a download is DOM work, which this library does through the
- * document and renderer it was given rather than through the globals.
+ * handler.
  *
  * It hands back an observable that writes the file on subscribe and completes - **nothing happens
  * until you subscribe**. That is what lets an export whose rows have to be fetched (`rows` as a
@@ -354,30 +353,15 @@ const assertNotPartial = <T>({
  * }
  */
 export const injectTableCsvExport = () => {
-  const document = inject(DOCUMENT);
-  const renderer = injectRenderer();
+  const download = injectFileDownload();
   const injector = inject(Injector);
 
   const save = (parts: BlobPart[], filename: string) => {
-    // No window means no browser: server-side there is nothing to hand a file to.
-    const view = document.defaultView;
-
-    if (!view) return;
-
-    const name = filename.toLowerCase().endsWith('.csv') ? filename : `${filename}.csv`;
-    const url = view.URL.createObjectURL(new view.Blob(parts, { type: 'text/csv;charset=utf-8' }));
-    const link = renderer.createElement('a');
-
-    renderer.setProperties(link, { href: url, download: name, rel: 'noopener' });
-    renderer.setStyle(link, { display: 'none' });
-
-    // Firefox only follows the click of an anchor that is in the document.
-    renderer.appendChild(document.body, link);
-    link.click();
-    renderer.removeChild(document.body, link);
-
-    // The blob would otherwise be held until the tab closes; the click has already read it.
-    view.URL.revokeObjectURL(url);
+    download({
+      content: parts,
+      filename: filename.toLowerCase().endsWith('.csv') ? filename : `${filename}.csv`,
+      type: 'text/csv;charset=utf-8',
+    });
   };
 
   return <T>(table: TableCsvSource<T>, options: TableCsvExportOptions<T> = {}): Observable<void> => {

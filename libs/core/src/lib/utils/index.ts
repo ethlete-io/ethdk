@@ -8,6 +8,7 @@ export * from './logger';
 export * from './markdown';
 export * from './math';
 export * from './object';
+export * from './object-url';
 export * from './runtime-error';
 export * from './session-memory';
 export * from './swipe';
