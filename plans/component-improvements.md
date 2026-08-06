@@ -530,50 +530,6 @@ identically - `withRefreshQuery` + `withPersistentAuth({ autoLogin })` +
 `withBearerAuthMultiTabSync()` - so everything below applies to each of them.
 Ordered by how visible it is to a user.
 
-### A 401 in a follower tab waits for the leader's timer
-
-`withRefreshQuery`'s 401 listener (`bearer-auth-query-builders.ts:193`) calls
-`executeRefresh`, which returns early on `!context.isLeader()`. So a secure
-request that 401s in a follower tab triggers no refresh at all - it waits until
-the leader refreshes on its own timer, up to 25% of the token lifetime later,
-and broadcasts. Incoming broadcast tokens now go through `applyTokens`, so
-`afterTokenRefresh$` fires and the tab's 401'd queries do retry once that lands
-(`secure-query-execute-factory.ts` - that emission filtered on
-`error()?.code === 401` is the only thing that re-executes an already-failed
-secure query). What is left is the delay: give a follower a way to ask for a
-refresh instead of dropping the event - post a `refresh-requested` message (the
-presence channel in `leader-election.ts` already exists) rather than returning
-early on `!isLeader()`. The leader gate is right about _who spends the refresh
-token_; it is wrong as a way to discard the event.
-
-### A failed refresh leaves the session looking valid
-
-Nothing in the provider reacts to the refresh query failing. Tokens stay set,
-`isAuthenticated()` stays `true`, and every secure query keeps firing with a
-dead token - each 401 calling `executeRefresh` again, most of them swallowed by
-the `minRefreshInterval` guard (30s default, and `lastRefreshTime` is stamped
-_before_ the attempt and not rolled back when it fails). `fut-frontend` has to
-watch for it from outside and log out itself:
-
-```ts
-const isRefreshFailure =
-  execState?.state === 'error' && (execState.type === 'tokenRefresh' || execState.type === 'autoLogin');
-if (isRefreshFailure) logoutService.logout({ quiet: true, via: 'system' });
-```
-
-That is policy every consumer of `withRefreshQuery` needs and none should have
-to write. `withRefreshQuery` should own it - an `onRefreshFailure` option
-defaulting to "end the session when the server was definite (401/403), keep
-retrying otherwise", which is also what makes the `retryableStatusCodes` list
-(0/408/425/429/5xx, `maxAttempts: 0` = unlimited) coherent: those are the
-statuses worth retrying, everything else is terminal and should log out.
-
-While there: a 401-driven refresh must not be dropped by `minRefreshInterval`.
-The interval exists to stop refresh loops, but a real 401 within 30s of a
-proactive refresh (revoked token, clock skew) is exactly when the swallowed
-attempt strands the query. Throttle the _proactive_ path and dedupe the reactive
-one (one refresh in flight at a time), rather than sharing one guard.
-
 ### `executionState` is one latched slot doing three jobs
 
 It answers "which auth query is running", "how did the last one end", and "has
@@ -784,94 +740,23 @@ Narrow-viewport pass:
   (`pins:v1` → `v2`), and a `gone` chip hides tombstones by default.
   Changeset `devtools-hide-gone-and-per-query-pins.md`.
 
-## Grid: the resize handles are hard to hit, you move the item instead
+Bug pass 2:
 
-In edit mode every pixel of a grid item is a drag target and only a thin border strip is a
-resize target. `GridDragDirective` is a host directive of `GridItemComponent`, so a
-`pointerdown` anywhere in the item that nothing stops begins a move; the handles opt out of
-that by stopping propagation on the `<et-resize-handles>` element
-(`grid-item.component.ts:27`). The strips they cover are small: core's
-`ResizeHandlesComponent` defaults to `--et-resize-handles-edge-size: 6px` and
-`--et-resize-handles-corner-size: 12px`, and two more defaults shrink them further -
-`--et-resize-handles-edge-inset: 8px` cuts 8px off each end of the n/s strips, and
-`--et-resize-handles-side-bottom: 8px` stops the e/w strips 8px short of the bottom (a default
-that exists for the pip window's title bar; pip is the only place that overrides any of these,
-and only `--side-top`).
-
-Nothing arbitrates after the pointer goes down. Resize starts on the `pointerdown` itself
-(`startResizeGesture` feeds the gesture immediately), while a drag waits for 8px of travel
-(`dragGestureFrom`'s default `commitThreshold`) - so missing the strip by one pixel is already
-a committed move by the time the item visibly jumps, and there is no path back to resize
-short of Escape.
-
-Touch is the one case already handled: a `@media (hover: none)` block in
-`resize-handles.component.ts` swaps in `--et-resize-handles-touch-edge-size: 20px` /
-`--et-resize-handles-touch-corner-size: 28px`. That leaves the pointer case at 6px/12px, and
-it also misses the touchscreen laptop, where the mouse is the primary input so `hover: none`
-never matches - `any-pointer: coarse` is the query that covers both.
-
-The invisible target can grow without touching the visuals: the affordance a user aims at is
-only the `::after` bar drawn by the grid item (`grid-item.component.ts:90-183`) - 3x24px per
-edge, 8x8px per corner, `opacity: 0.2` - which is already smaller than the hit strip, and part
-of why aiming is hard is that the bar's ends say nothing about where the strip ends. Two
-directions to grow into, with different costs:
-
-- **Outward, into the gap.** The grid's `gap` defaults to 16px (`grid.directive.ts:144`) and
-  is dead space today - handles are inset within the item, and neither the grid nor the item
-  sets `overflow: hidden`, so negative offsets would work. Cap the growth at half the gap:
-  adjacent items are absolutely positioned siblings at the same z-index, so overlapping strips
-  would be resolved by DOM order rather than by which item the pointer is nearer, and the
-  later item would swallow its neighbour's handle. 8px out per side still triples a 6px edge.
-- **Inward** costs content area, and the corners are already contested: `.et-grid-item__actions`
-  sits at `top: 4px; right: 4px` and comes after `<et-resize-handles>` in the template, so it
-  wins the top-right over the 12px `ne` handle regardless of what that handle's size becomes.
-
-Worth checking against a real pointer before picking numbers - the strips are configurable via
-the `@property` custom properties, so the grid can raise them for itself without changing
-core's defaults for the pip window.
-
-### Cross-checked against the only real consumer
-
-The partner dashboard in `fut-frontend` is the sole `et-grid` in the app
-(`libs/domain/hub/.../partner-detail-grid/`; the platform's `CampaignGridComponent` only
-matches on its class name and is a plain CSS grid). It overrides none of the
-`--et-resize-handles-*` properties, so it runs on the 6px/12px defaults, on the default 16px
-`gap`, with `rowHeight: 60` and breakpoints 1/2/3 columns at 0/636/950px. Three things in it
-make the target smaller in practice than the defaults suggest:
-
-- **A 60x32px toolbar sits on the `ne` corner.** `DashboardWidgetToolbarComponent` re-anchors
-  `.et-grid-item__actions` to `top: 0; right: 0` and fills it with two `xs` icon buttons
-  (2.4rem each) in an `et-grid-item-toolbar` (4px padding, 4px gap). It renders for the whole
-  of edit mode, not on hover, and both it and the actions wrapper stop `pointerdown`. So every
-  item permanently loses its `ne` handle plus the last 60px of the `n` strip and the top 32px
-  of the `e` strip - and on a typical widget (1 col x 2 rows = 136px tall) the east edge is
-  down to 96 of its 128 usable pixels.
-- **The edit-mode affordance points at the whole perimeter.** The app draws
-  `outline: 0.2rem dotted; outline-offset: -0.1rem` around each item in edit mode, so the cue
-  is a continuous 2px dotted border 1px inside the box. It says "this whole edge is grabbable"
-  when only a 6px band is, and the n/s bands stop 8px short of each end. It also lands directly
-  on top of the SDK's own hover hint - the `::after` bars are drawn at a 2px inset in
-  `--et-surface-color-solid` at `opacity: 0.2`, which against a solid dotted outline in
-  `--et-surface-border-solid` is not a distinguishable marker.
-- **Every widget is at its minimum height most of the time.** All three production types set
-  `minRowSpan: 2, maxRowSpan: 8` and new widgets are created at `rowSpan: 2`, so
-  a correctly-grabbed `n` or `s` handle does nothing at all unless dragged outward. Grab-did-
-  nothing and grabbed-the-wrong-thing are indistinguishable to the user, which is part of why
-  this reads as "the handle doesn't work" rather than "I missed it".
-
-Inward growth is also more constrained here than it looks. Every widget wraps its content in
-`p-4` (16px) and puts an `overflow-auto` scroll region inside that padding, so an `e` handle
-grown more than ~10px inward starts covering a scrollbar. Related, and worth confirming
-separately: in edit mode a `pointerdown` on one of those inner scrollbars is not stopped by
-anything (`blockPointerDownWhenReadOnly` only stops it when the grid is read-only), so dragging
-a widget's scrollbar thumb may well move the widget instead of scrolling it.
-
-Net: outward into the gap is the only direction with real room in this app, and the `ne` corner
-is unrecoverable while the toolbar owns it - the corner handle would have to move, or the
-toolbar be inset back to the SDK's 4px so the 12px handle is at least reachable. (The fourth
-item on that list, the dead e/w strips at a one-column breakpoint, is fixed: `resizeEdges()`
-now drops an axis whose span cannot change, so below 636px the whole left and right edge is
-draggable again.)
+- **Object URLs** - `injectFileDownload()` and `createObjectUrlHandle()` in `@ethlete/core`
+  replace the four hand-rolled copies. The devtools exports pick up the Firefox fix (the anchor
+  is appended before it is clicked) and the SSR guard; dropzone's `objectUrl` is a handle whose
+  `revoke()` cannot be orphaned. Changeset `core-file-download.md`.
+- **Auth: a failed refresh** - a refresh error that survives `retryConfig` ends the session,
+  overridable with `onRefreshFailure`. `minRefreshInterval` now throttles the proactive path only;
+  a 401-driven refresh is deduplicated (one in flight) instead.
+  Changeset `auth-refresh-failure-and-follower-401.md`.
+- **Auth: a 401 in a follower tab** - posts `refresh-requested` on the leader channel, which only
+  the lock holder acts on, rather than returning early on `!isLeader()`. Same changeset.
+- **Grid resize handles** - new `--et-resize-handles-outset` grows every strip outward without
+  moving its inner edge or the hover marker; a grid item spends half the gap on it, capped at 8px,
+  so an edge is a 14px target at the default `gap: 16`. The touch sizes moved from `hover: none`
+  to `any-pointer: coarse`, and a grid item drops core's pip-only `--side-bottom: 8px`.
+  Changeset `grid-resize-handle-hit-area.md`.
 
 ## Grid: registering a widget forces the consumer to cast
 
@@ -1011,63 +896,6 @@ registration exists, so a registered type's constraints cannot be refined per it
 for any item whose type is registered. (The other one is handled - the resolved value already
 varies by breakpoint, and `constraintsRegistry` is a signal, so every reader re-resolves on a
 breakpoint change instead of reading a cached entry.)
-
-## Core: every object URL in the SDK is hand-rolled, four different ways
-
-There is no shared "hand the user a file" util, so four call sites each re-derive
-`URL.createObjectURL` + anchor + revoke, and only one of them gets it right.
-
-- `injectTableCsvExport`'s `save()` (`table/headless/table-csv-export.ts:361`) is the careful
-  one. It goes through the injected `DOCUMENT` and renderer rather than the globals, bails when
-  `document.defaultView` is null so a toolbar button needs no SSR check, sets `rel="noopener"`,
-  **appends the anchor to `<body>` before clicking it** - Firefox does not follow the click of a
-  detached anchor - removes it again, and revokes immediately.
-- `QueryDevtoolsComponent.downloadFile()` (`query-devtools/query-devtools.component.ts:2198`)
-  does the same job with none of that: global `URL`/`Blob`, no `defaultView` guard, no `rel`, and
-  the anchor is created through the renderer but **never appended**, so it hits exactly the
-  Firefox caveat the table documents. Two callers, both writing JSON - `downloadInsomniaCollection`
-  (`:1306`, via `:1324`) and `downloadSession` (`:1337`, via `:1352`).
-- `createFileDropzoneEntry` (`forms/dropzone/headless/dropzone-entry.ts:68`) mints a preview URL
-  for image files and hangs the raw string on the entry, to be revoked by
-  `disposeDropzoneEntry` (`:128`). Nothing enforces that pairing - the field is a `string | null`
-  and the revoke lives in a different function.
-- `popOut()` (`query-devtools.component.ts:879`) is the odd one: a blob URL for an HTML _document_
-  rather than a file, revoked on the pop-up's `load` and on the `!popup` early return. It is the
-  case that must **not** revoke synchronously, which is why the util needs two shapes rather than
-  one.
-
-So: `libs/core/src/lib/utils/file-download.ts`, exported from `utils/index.ts` next to
-`clipboard.ts` - the same kind of thing, a browser API whose SSR guard and per-browser traps no
-component should be re-deriving.
-
-Two exports, because the four sites split in two:
-
-```ts
-const download = injectFileDownload();
-download({ content: json, filename: 'session.json', type: 'application/json' });
-```
-
-`content` takes `Blob | BlobPart | BlobPart[]` so the table can keep passing its BOM-plus-body
-parts and the devtools can pass a string. `inject()`-based rather than a plain function like
-`copyToClipboard`, because the table's version is the one to keep: it is DOM work, and this repo
-does DOM work through the injected document and renderer. That also makes the SSR no-op free for
-every caller.
-
-The second is for the lifetime cases - a handle instead of a bare string, so the revoke cannot be
-orphaned:
-
-```ts
-const preview = createObjectUrlHandle(file); // { url, revoke }
-```
-
-Dropzone's `objectUrl` field becomes that handle and `disposeDropzoneEntry` calls `revoke()`;
-`popOut` holds one and revokes it from its `load` tap.
-
-What each site loses: `save()` shrinks to a call and keeps only the filename-extension and BOM
-logic that is genuinely CSV's; `downloadFile` disappears entirely and picks up the Firefox fix and
-the SSR guard on the way out. Worth checking `@ethlete/contentful` and the playground for a fifth
-copy before writing it. New `@ethlete/core` export, so: changeset, and a mention in the core docs
-if the util page lists the clipboard helpers.
 
 ## Selection list: the card exists three times, and the variant that is missing is a tile
 
