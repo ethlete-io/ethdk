@@ -428,94 +428,7 @@ fixed"). Whether `Components/*` should gain real top-level categories at
 all is the part still open - a bigger, separate call, and one that moves
 every story id the docs site embeds.
 
-## Auth: what the consumer app had to rebuild around the bearer provider
-
-Read against `fut-frontend` (`libs/domain/auth`, `libs/queries/*/…​.client.ts`)
-and `libs/query/src/lib/auth`. All four of that repo's providers are configured
-identically - `withRefreshQuery` + `withPersistentAuth({ autoLogin })` +
-`withBearerAuthMultiTabSync()` - so everything below applies to each of them.
-Ordered by how visible it is to a user.
-
-### `executionState` is one latched slot doing three jobs
-
-It answers "which auth query is running", "how did the last one end", and "has
-the session ended" at once, and it never returns to idle. Every consumer then
-reverse-engineers what it actually needs, and `fut-frontend` does it three
-separate times:
-
-- `AUTH_LOGOUT_DEF` (`auth-state.ts`) exists solely to record _why_ the session
-  ended - its own comment says "which the v3 provider does not model" - because
-  a user-initiated logout must stay put while a system one redirects back with
-  a `?go=` param. `BearerAuthExecutionStateLogout` carries no cause, and
-  `withInactivityLogout` calls the same `context.logout()`, so an inactivity
-  logout is indistinguishable from a click.
-- `AppInitializedService` gates every app's entire template
-  (`@if (initializedApp())`) on a heuristic over `executionState`: no state on a
-  public route, or any `state === 'success'`, or an error on a public route. It
-  is guessing at "has the session finished settling", which the provider knows
-  precisely (was there a cookie? is the auto-login in flight?) and never
-  publishes. With no cookie on a protected route no `executionState` is ever
-  produced at all, so first paint waits on the redirect landing.
-- The auth flow needs `debounceTime(1)` over `[executionState$, urlState$]`,
-  plus a special case whose comment reads "a stale `logout` state never clears
-  on its own, so treat it as no operation too - otherwise a second Entra
-  attempt in the same page load silently no-ops".
-
-Two additions would delete all three: a **`sessionStatus`** signal
-(`unknown | restoring | authenticated | anonymous`) that an app can gate its
-shell on, and a **cause on the session ending** (`user | inactivity | expired |
-revoked | otherTab`) set by whoever ends it. Both are things the provider
-already knows and currently throws away. Note also that `withTokenRevocation`
-overwrites `executionState` with `{ type: 'revocation', state: 'loading' }`
-immediately after a logout set `{ type: 'logout' }` - a single slot cannot
-carry two concurrent concerns, which is the argument for splitting it rather
-than adding a fourth state to it.
-
-## Auth: the provider's execution model is what makes the app's flow brittle
-
-Second pass, this time on why `fut-frontend` needs 250 lines of `combineLatest`
-over router state and `executionState` (`libs/domain/auth/src/lib/auth-flow.ts`)
-to keep a session coherent. The defensive shapes in there - a `debounceTime(1)`,
-a `hasAttempted` latch in `dev-login-view.component.ts`, a special case for a
-"stale `logout` state" - are all downstream of one thing: `setupBearerQueryRegistry`
-in `bearer-auth-provider.ts` treats every auth execution as fire-and-forget and
-funnels all of them through single mutable slots.
-
-### Tokens and `executionState` can disagree across builder keys
-
-Within one key the two writers now agree: every execution reuses that key's single
-query, so `applyTokens` and `executionState` both read the snapshot of the latest
-execution and a superseded attempt stops reporting altogether.
-
-Across keys they still can't. `executionState` is one provider-global slot written
-by whichever key's effect fires last, while `applyTokens` runs per key off that
-key's own snapshot. A `tokenRefresh` triggered by a 401 burst while the user
-submits a login therefore ends with one key's tokens applied and the other key's
-outcome on display. The fix is the same shape as before: an execution should be a
-value the caller can await rather than a side effect on a shared slot - or the
-provider should refuse a second execution while one is in flight for any
-token-issuing key, since a single-use refresh token cannot be spent twice anyway.
-
-### The login form watches a provider-global slot for its own submit
-
-`external-user-login-view.component.ts` derives its button state from
-`executionState()` filtered by `type === 'login'`, and its comment explains why:
-"The v3 auth provider reports progress through `executionState` rather than an
-observable query". But `execute()` already returns a `QuerySnapshot`, and
-`queries.login.snapshot` is a signal of the latest one (`QueryRegistryEntry`,
-`bearer-auth-provider.ts:145`) - the per-attempt state exists and is simply not
-the documented path, so the app's own `AuthProviderContract` erased it
-(`execute(args): unknown`, `auth-state.ts`). Reading the global slot means any
-concurrent auth activity of the same derived type is rendered as the form's own
-outcome.
-
-No new API needed - this is a docs and emphasis fix in `apps/docs/query`:
-`executionState` answers session-level questions, the snapshot returned by
-`execute()` drives the UI of the attempt that produced it. Worth doing at the same
-time as the `sessionStatus` / logout-cause split proposed in the previous section,
-since it is the same confusion from the other end.
-
-### Smaller: `excludeRoutes` invites string matching
+## Auth: `excludeRoutes` invites string matching
 
 `withPersistentAuth`'s `autoLogin.excludeRoutes: string[]` is prefix-matched
 against `injectRoute()`, so a consumer expresses route policy as substrings. In
@@ -532,12 +445,13 @@ predicate (`shouldAutoLogin: (url: string) => boolean`) alongside the string lis
 so a consumer can match on the router's parsed URL instead of on substrings of a
 path.
 
-## Auth: the app hand-rolls its route guard and its "has auth settled" primitive
+## Auth: the app hand-rolls its route guard
 
 `canMatchAuthenticated` in the consumer's `libs/domain/hub/src/lib/hub.routes.ts` is
 19 lines of guard carrying three comments, and each one is an SDK gap rather than an
-app decision. (The third - a `success` state that never authenticated - is fixed;
-`extractTokens` throwing now puts the execution into `error`.)
+app decision. (Two of the three are now closed: a `success` state that never
+authenticated is fixed - `extractTokens` throwing puts the execution into `error` - and
+"has auth settled?" is `sessionStatus()` as of 2026-08-06.)
 
 **The SDK ships no route guard at all.** There is no `CanMatchFn`, `CanActivateFn` or
 `createUrlTree` anywhere in `libs/query/src` or `libs/core/src`, so every app that uses
@@ -545,15 +459,8 @@ the bearer provider hand-rolls "wait for auth to settle, redirect to login, come
 to the attempted URL". The consumer's version encodes the return URL under a param name
 it must keep manually in sync with `redirectToPlatform()` in `auth-flow.ts` - a comment
 says so explicitly. A `withAuthGuard()`-style helper that owns both halves of that
-contract is the obvious missing piece.
-
-**"Has auth settled?" is now reimplemented twice in the same app.** The `ready` computed
-in the guard derives it from `executionState()?.state`, and
-`libs/domain/auth/src/lib/services/app-initialized.service.ts` derives the same thing
-the same way to gate the whole template. Both reconstruct a primitive the provider does
-not expose. This is the second independent witness for the `sessionStatus` idea in the
-section above - it is not one app's quirk, it is the same missing signal being rebuilt
-wherever someone needs to know whether the startup attempt has finished.
+contract is the obvious missing piece, and it is what `sessionStatus()` was sequenced
+before.
 
 One claim in that file did **not** reproduce. The comment on `ready` says the tokens are
 applied "in a separate effect that can still be pending for one tick after `executionState`
@@ -568,6 +475,27 @@ is what turns the extraction failure above into a hang instead of a redirect.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+The three auth items the triage opened with (2026-08-06, one pass):
+
+- **`sessionStatus()` + `sessionEndCause()`** - `unknown | restoring | authenticated | anonymous`,
+  and `logout(cause?)` with `user | inactivity | expired | otherTab`. Added _alongside_
+  `executionState`, which keeps its shape: splitting it would have been a breaking change to a
+  signal that still has a real job (which auth query is running, how did it end). What moved out of
+  it is only the session-level question. The load-bearing detail is that `sessionStatus` reaches
+  `anonymous` **during provider construction** when nothing tries to restore - that is the case
+  `executionState` could never answer, because with no cookie it stays `null` forever.
+  `withTracking`'s `logout` event gained `{ cause }` at the same time.
+- **The cross-key race** - fixed by a provider-wide execution id: only the most recently started
+  token-issuing execution applies tokens or writes `executionState`, and a revocation is exempt
+  (`id: null`). The second half matters as much as the first: an _automatic_ refresh now refuses to
+  start while any token-issuing execution is in flight (`hasTokenIssuingExecutionInFlight`), so a
+  login already under way is never superseded by a refresh that began after it. Without that, plain
+  "last started wins" would have silently dropped a successful login whenever a stray 401 fired.
+  A manual `queries.refresh.execute()` is explicit intent and still runs.
+- **The snapshot-vs-`executionState` docs fix** - `apps/docs/query/auth.md` now has a "Don't drive
+  a form off `executionState()`" section. No API was needed; `queries.<key>.snapshot` already was
+  the per-attempt path.
 
 From the merged `opportunities.md` (its "New components", "DX / tooling", "Next major" and
 "Tech debt" sections were almost entirely shipped). Each note below is kept for the premise
