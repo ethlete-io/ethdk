@@ -112,6 +112,12 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
       initial-value: 8px;
     }
 
+    @property --et-resize-handles-outset {
+      syntax: '<length>';
+      inherits: true;
+      initial-value: 0px;
+    }
+
     @property --et-resize-handles-side-top {
       syntax: '<length>';
       inherits: true;
@@ -138,11 +144,14 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
 
     et-resize-handles {
       position: absolute;
-      inset: 0;
+      inset: calc(-1 * var(--et-resize-handles-outset));
       pointer-events: none;
     }
 
     .et-resize-handle {
+      --et-resize-handle-thickness: calc(var(--et-resize-handles-edge-size) + var(--et-resize-handles-outset));
+      --et-resize-handle-corner: calc(var(--et-resize-handles-corner-size) + var(--et-resize-handles-outset));
+
       position: absolute;
       z-index: var(--et-resize-handles-z-index);
       touch-action: none;
@@ -152,14 +161,14 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
     .et-resize-handle--n {
       left: var(--et-resize-handles-edge-inset);
       right: var(--et-resize-handles-edge-inset);
-      height: var(--et-resize-handles-edge-size);
+      height: var(--et-resize-handle-thickness);
       top: 0;
     }
 
     .et-resize-handle--s {
       left: var(--et-resize-handles-edge-inset);
       right: var(--et-resize-handles-edge-inset);
-      height: var(--et-resize-handles-edge-size);
+      height: var(--et-resize-handle-thickness);
       bottom: 0;
     }
 
@@ -167,7 +176,7 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
     .et-resize-handle--w {
       top: var(--et-resize-handles-side-top);
       bottom: var(--et-resize-handles-side-bottom);
-      width: var(--et-resize-handles-edge-size);
+      width: var(--et-resize-handle-thickness);
     }
 
     .et-resize-handle--e {
@@ -181,8 +190,8 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
     .et-resize-handle--ne,
     .et-resize-handle--nw {
       top: 0;
-      width: var(--et-resize-handles-corner-size);
-      height: var(--et-resize-handles-corner-size);
+      width: var(--et-resize-handle-corner);
+      height: var(--et-resize-handle-corner);
     }
 
     .et-resize-handle--ne {
@@ -196,8 +205,8 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
     .et-resize-handle--se,
     .et-resize-handle--sw {
       bottom: 0;
-      width: var(--et-resize-handles-corner-size);
-      height: var(--et-resize-handles-corner-size);
+      width: var(--et-resize-handle-corner);
+      height: var(--et-resize-handle-corner);
     }
 
     .et-resize-handle--se {
@@ -208,23 +217,12 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
       left: 0;
     }
 
-    @media (hover: none) {
-      .et-resize-handle--n,
-      .et-resize-handle--s {
-        height: var(--et-resize-handles-touch-edge-size);
-      }
-
-      .et-resize-handle--e,
-      .et-resize-handle--w {
-        width: var(--et-resize-handles-touch-edge-size);
-      }
-
-      .et-resize-handle--ne,
-      .et-resize-handle--nw,
-      .et-resize-handle--se,
-      .et-resize-handle--sw {
-        width: var(--et-resize-handles-touch-corner-size);
-        height: var(--et-resize-handles-touch-corner-size);
+    /* any-pointer, not hover:none - a touchscreen laptop has a mouse as its primary input, so
+       hover:none never matches there even though a finger can still grab a handle. */
+    @media (any-pointer: coarse) {
+      .et-resize-handle {
+        --et-resize-handle-thickness: calc(var(--et-resize-handles-touch-edge-size) + var(--et-resize-handles-outset));
+        --et-resize-handle-corner: calc(var(--et-resize-handles-touch-corner-size) + var(--et-resize-handles-outset));
       }
     }
   `,

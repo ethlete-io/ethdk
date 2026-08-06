@@ -72,6 +72,7 @@ Override via the `breakpoints` input. `rowHeight` (default `100`) and `gap` (def
 - **Keyboard** (on a focused item): <kbd>Ctrl/Cmd</kbd>+arrows move, <kbd>Shift</kbd>+arrows resize, <kbd>Ctrl/Cmd</kbd>+<kbd>Delete</kbd> (or <kbd>Backspace</kbd>) removes.
 - Per-item span constraints come from the registration (`constraints`) or the `et-grid-item` inputs `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan` (defaults `1` / `12` / `1` / `4`). Each item also takes an `ariaLabel` (default `'Grid item'`) and emits `remove` when it's removed.
 - Constraints are declared once but the column count is per breakpoint, so both column spans are capped at the active breakpoint's columns: `minColSpan: 3` becomes a full-width item at the one- or two-column breakpoint rather than one wider than the grid. An item whose span cannot change on an axis grows no resize handles there - at a one-column breakpoint the whole left and right edge stays draggable instead of being covered by strips that do nothing.
+- The resize strips reach **into the gap** as well as into the item, by half the gap up to 8px - so at the default `gap: 16` an edge is a 14px target rather than 6px, and the hover marker has not moved. The gap is split evenly between the two items either side of it. Nothing changes inside the item, so the strips never cover content or a scrollbar; shrink `gap` and the outward half shrinks with it.
 
 ## Item actions & labels
 

@@ -65,4 +65,8 @@ import { ResizeHandlesComponent } from '@ethlete/core';
 | `resizeMoved`   | `{ edge, dx, dy, clientX, clientY }` - `dx`/`dy` cumulative since pointerdown. |
 | `resizeEnded`   | `void`                                                                         |
 
-`isResizing` and `activeEdge` are signals; the active edge is also reflected as `data-active-edge` on the host. Handles set the matching resize cursor per edge and grow their hit areas on touch devices. Sizing is themable via CSS custom properties (`--et-resize-handles-edge-size`, `--et-resize-handles-corner-size`, `--et-resize-handles-z-index`, …) - see `resize-handles.component.ts` for the full list and defaults.
+`isResizing` and `activeEdge` are signals; the active edge is also reflected as `data-active-edge` on the host. Handles set the matching resize cursor per edge. Sizing is themable via CSS custom properties (`--et-resize-handles-edge-size`, `--et-resize-handles-corner-size`, `--et-resize-handles-z-index`, …) - see `resize-handles.component.ts` for the full list and defaults.
+
+Under `any-pointer: coarse` every strip swaps to `--et-resize-handles-touch-edge-size` / `-touch-corner-size` (20px / 28px). The query is `any-pointer`, not `hover: none`, so a touchscreen laptop - where the mouse is the primary input - grows its handles too.
+
+`--et-resize-handles-outset` (default `0px`) grows every strip **outward**, past the host's own box, without moving the handles' inner edge or costing content area. Reach for it where the host sits in dead space it can spill into - a [grid item](/components/grid) grows into half the grid's gap, which is what makes a 6px edge a 14px target. Cap it at half of whatever separates the host from its neighbour: two hosts whose strips overlap are resolved by DOM order, not by which one the pointer is nearer.

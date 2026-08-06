@@ -143,6 +143,7 @@ const CONTAINER_RESIZE_SETTLE_MS = 150;
     '[class.et-grid--readonly]': 'readOnly()',
     '[style.height.px]': 'hostHeight()',
     '[style.transition]': 'containerTransition()',
+    '[style.--et-grid-gap.px]': 'gap()',
     '[style.--et-grid-anim-duration]': 'isResizeActive() ? "160ms" : null',
   },
 })

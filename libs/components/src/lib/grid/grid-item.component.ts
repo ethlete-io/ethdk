@@ -53,6 +53,18 @@ import { GRID_TOKEN } from './headless/grid.tokens';
   },
   styles: `
     .et-grid-item {
+      /* The gap is dead space, so the hit strips grow out into it rather than eating content area.
+         Never past half of it: adjacent items are siblings at one z-index, so overlapping strips
+         would be resolved by DOM order and the later item would swallow its neighbour's handle. */
+      --et-resize-handles-outset: min(8px, calc(var(--et-grid-gap, 16px) / 2));
+
+      /* Core stops the e/w strips short of the bottom for the pip window's title bar; a grid item has
+         none, and the full-height strip is what keeps the hover bar centred on the item. */
+      --et-resize-handles-side-bottom: 0px;
+
+      --et-grid-item-resize-bar-inset: calc(var(--et-resize-handles-outset) + 2px);
+      --et-grid-item-resize-pip-inset: calc(var(--et-resize-handles-outset) + 3px);
+
       position: absolute;
       top: 0;
       left: 0;
@@ -112,7 +124,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item:hover .et-resize-handle--e::after,
     .et-grid-item--resizing .et-resize-handle--e::after {
-      right: 2px;
+      right: var(--et-grid-item-resize-bar-inset);
       top: 50%;
       transform: translateY(-50%);
       width: 3px;
@@ -121,7 +133,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item:hover .et-resize-handle--w::after,
     .et-grid-item--resizing .et-resize-handle--w::after {
-      left: 2px;
+      left: var(--et-grid-item-resize-bar-inset);
       top: 50%;
       transform: translateY(-50%);
       width: 3px;
@@ -130,7 +142,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item:hover .et-resize-handle--s::after,
     .et-grid-item--resizing .et-resize-handle--s::after {
-      bottom: 2px;
+      bottom: var(--et-grid-item-resize-bar-inset);
       left: 50%;
       transform: translateX(-50%);
       height: 3px;
@@ -139,7 +151,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item:hover .et-resize-handle--n::after,
     .et-grid-item--resizing .et-resize-handle--n::after {
-      top: 2px;
+      top: var(--et-grid-item-resize-bar-inset);
       left: 50%;
       transform: translateX(-50%);
       height: 3px;
@@ -148,8 +160,8 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item:hover .et-resize-handle--se::after,
     .et-grid-item--resizing .et-resize-handle--se::after {
-      bottom: 3px;
-      right: 3px;
+      bottom: var(--et-grid-item-resize-pip-inset);
+      right: var(--et-grid-item-resize-pip-inset);
       width: 8px;
       height: 8px;
       border-radius: 1px;
@@ -157,8 +169,8 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item:hover .et-resize-handle--sw::after,
     .et-grid-item--resizing .et-resize-handle--sw::after {
-      bottom: 3px;
-      left: 3px;
+      bottom: var(--et-grid-item-resize-pip-inset);
+      left: var(--et-grid-item-resize-pip-inset);
       width: 8px;
       height: 8px;
       border-radius: 1px;
@@ -166,8 +178,8 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item:hover .et-resize-handle--ne::after,
     .et-grid-item--resizing .et-resize-handle--ne::after {
-      top: 3px;
-      right: 3px;
+      top: var(--et-grid-item-resize-pip-inset);
+      right: var(--et-grid-item-resize-pip-inset);
       width: 8px;
       height: 8px;
       border-radius: 1px;
@@ -175,8 +187,8 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item:hover .et-resize-handle--nw::after,
     .et-grid-item--resizing .et-resize-handle--nw::after {
-      top: 3px;
-      left: 3px;
+      top: var(--et-grid-item-resize-pip-inset);
+      left: var(--et-grid-item-resize-pip-inset);
       width: 8px;
       height: 8px;
       border-radius: 1px;
