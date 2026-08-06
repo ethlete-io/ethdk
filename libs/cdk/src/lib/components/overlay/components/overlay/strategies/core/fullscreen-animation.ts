@@ -267,6 +267,15 @@ export const cleanupFullscreenAnimationStyles = (
   }
 };
 
+const pinClonedContentToRect = (renderer: AngularRenderer, content: HTMLElement, rect: DOMRect) => {
+  renderer.setStyle(content, {
+    inset: '0',
+    boxSizing: 'border-box',
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+  });
+};
+
 const updateCloneLeaveAnimationStyles = (
   renderer: AngularRenderer,
   cloneEl: HTMLElement,
@@ -279,6 +288,12 @@ const updateCloneLeaveAnimationStyles = (
     width: `${rect.width}px`,
     height: `${rect.height}px`,
   });
+
+  const clonedContent = cloneEl.firstElementChild;
+
+  if (clonedContent instanceof HTMLElement) {
+    pinClonedContentToRect(renderer, clonedContent, rect);
+  }
 
   renderer.setCssProperties(cloneEl, {
     '--leave-from-translate-x': `${transforms.cloneTranslateX}px`,
@@ -294,6 +309,7 @@ const updateCloneLeaveAnimationStyles = (
 
 const createOriginClone = (
   originElement: HTMLElement,
+  rect: DOMRect,
   deps: FullscreenAnimationDeps,
 ): ComponentRef<OverlayOriginCloneComponent> => {
   const { injector, appRef, document, renderer } = deps;
@@ -308,9 +324,10 @@ const createOriginClone = (
   renderer.setStyle(clonedContent, {
     margin: '0',
     position: 'relative',
-    boxSizing: computedStyle.boxSizing,
     display: computedStyle.display,
   });
+
+  pinClonedContentToRect(renderer, clonedContent, rect);
 
   cloneComponentRef.location.nativeElement.appendChild(clonedContent);
 
@@ -426,7 +443,7 @@ export const startFullscreenEnterAnimation = <T, R>(
   const originElement = state.originElement;
 
   const transforms = calculateViewportTransforms(originElement);
-  const cloneComponentRef = createOriginClone(originElement, deps);
+  const cloneComponentRef = createOriginClone(originElement, transforms.rect, deps);
   const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
 
   applyCloneElementStyles(renderer, cloneEl, transforms.rect, transforms);
@@ -529,7 +546,7 @@ export const startFullscreenLeaveAnimation = <T, R>(
   let isOriginHidden = state.isOriginHidden;
 
   if (!cloneComponentRef) {
-    cloneComponentRef = createOriginClone(state.originElement, deps);
+    cloneComponentRef = createOriginClone(state.originElement, transforms.rect, deps);
     const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
 
     applyCloneElementStyles(renderer, cloneEl, transforms.rect, transforms);
