@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { FormFieldCounterStorybookComponent } from './counter-storybook.component';
 
 export default {
-  title: 'Components/Forms/Form field/Counter',
+  title: 'Components/Forms/Counter',
   component: FormFieldCounterStorybookComponent,
   decorators: [moduleMetadata({ imports: [FormFieldCounterStorybookComponent] })],
   argTypes: {

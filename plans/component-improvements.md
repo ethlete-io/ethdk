@@ -429,13 +429,10 @@ exclusively.
 Every story sits under a flat `Components/<Name>` (or `Components/<Domain>/
 <Name>`) - nothing groups categories like Forms/Overlays/Data-display as
 siblings above `Components`, which is the likely source of the "big dump"
-feeling. Two concrete instances found this pass: `Components/Copy button`
-is a top-level sibling of `Components/Button/*` instead of living under it,
-and `Components/Forms/Form field/Counter` is the only story in the SDK
-nested three levels under a `Form field` category with no other children -
-it reads as its own subsystem when it's one piece of the form-field
-wrapper. Both are one-line `title:` fixes. Whether `Components/*` should
-gain real top-level categories at all is a bigger, separate call.
+feeling. The two misplaced titles found this pass are fixed (see "Already
+fixed"). Whether `Components/*` should gain real top-level categories at
+all is the part still open - a bigger, separate call, and one that moves
+every story id the docs site embeds.
 
 ## Auth: what the consumer app had to rebuild around the bearer provider
 
@@ -708,6 +705,15 @@ Grid typing pass (2026-08-06):
   checks every entry. `DummyTableComponent` in the grid stories carries a real payload type so the
   registration path is exercised in-repo. Changeset `grid-registration-typed-data-input.md`,
   `grid.md` documents both sides.
+
+Storybook structure (2026-08-06):
+
+- **Two misplaced story titles** (the concrete half of that section) - `Components/Copy button`
+  became `Components/Button/Copy`, joining `FAB`/`Icon`/`Split`/`Surface`/`Text`/`Window Control`,
+  and `Components/Forms/Form field/Counter` became `Components/Forms/Counter`, the only
+  three-level nesting in the SDK. Both story ids moved with the titles, so the two `<StoryEmbed>`
+  ids in `apps/docs/components/copy-button.md` and `forms.md` were updated - grep `apps/docs` for
+  the old id whenever a title changes. Story-only, so no changeset.
 
 Found not to reproduce:
 

@@ -144,7 +144,7 @@ const bioForm = form(model, (s) => {
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-form-field-counter--with-hint" height="360px" />
+<StoryEmbed id="components-forms-counter--with-hint" height="360px" />
 
 | Input      | Type                         | Notes                                                                                         |
 | ---------- | ---------------------------- | --------------------------------------------------------------------------------------------- |
