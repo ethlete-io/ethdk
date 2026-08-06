@@ -485,7 +485,7 @@ describe('createQueryRepository - keepUnusedFor (unused entry retention)', () =>
       httpTesting.verify();
     });
 
-    it('re-executes a cacheable POST that opted into the repository cache', () => {
+    it('re-executes a POST that declared itself refreshable', () => {
       const repo = createRepo();
 
       repo.request({
@@ -493,12 +493,29 @@ describe('createQueryRepository - keepUnusedFor (unused entry retention)', () =>
         method: 'POST',
         route: '/graphql',
         creatorOptions: { subtle: { useQueryRepositoryCache: true } },
+        isRefreshable: true,
       });
       flushAll();
 
       repo.refreshInUse();
 
       expect(httpTesting.match(() => true)).toHaveLength(1);
+    });
+
+    it('leaves a POST that only opted into the cache alone', () => {
+      const repo = createRepo();
+
+      repo.request({
+        consumerDestroyRef: destroyRef,
+        method: 'POST',
+        route: '/auth/login',
+        creatorOptions: { subtle: { useQueryRepositoryCache: true } },
+      });
+      flushAll();
+
+      repo.refreshInUse();
+
+      httpTesting.verify();
     });
 
     it('only refreshes the entries a filter accepts', () => {

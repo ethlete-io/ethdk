@@ -78,6 +78,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       executeState,
       args: computedArgs,
       options,
+      isRefreshable: executeOptions.creatorInternals.method === 'QUERY',
     });
   };
 

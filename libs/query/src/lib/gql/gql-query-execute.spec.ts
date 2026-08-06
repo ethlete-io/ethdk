@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { createQueryClient, setupQueryDependencies } from '../http';
 import { setupQueryState } from '../http/query-state';
@@ -107,5 +107,73 @@ describe('createGqlExecuteFn', () => {
 
       expect(execute).toBeTruthy();
     });
+  });
+
+  it('lets refreshQueriesInUse re-run a query transported via POST', () => {
+    const query = gql`
+      query GetUser {
+        user {
+          id
+        }
+      }
+    `;
+
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const queryClient = TestBed.inject(client.token);
+
+    TestBed.runInInjectionContext(() => {
+      const deps = setupQueryDependencies({ client, queryConfig: {} });
+      const state = setupQueryState<GqlQueryArgs>({});
+
+      const execute = createGqlExecuteFn<GqlQueryArgs>({
+        deps,
+        state,
+        creatorInternals: { method: 'QUERY', transport: 'POST', client, query },
+        queryConfig: {},
+      });
+
+      execute();
+    });
+
+    for (const req of httpTesting.match(() => true)) req.flush({ data: {} });
+    TestBed.tick();
+
+    queryClient.refreshQueriesInUse();
+
+    expect(httpTesting.match(() => true)).toHaveLength(1);
+  });
+
+  it('keeps refreshQueriesInUse away from a mutation transported via POST', () => {
+    const mutation = gql`
+      mutation CreateUser {
+        createUser {
+          id
+        }
+      }
+    `;
+
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const queryClient = TestBed.inject(client.token);
+
+    TestBed.runInInjectionContext(() => {
+      const deps = setupQueryDependencies({ client, queryConfig: {} });
+      const state = setupQueryState<GqlQueryArgs>({});
+
+      const execute = createGqlExecuteFn<GqlQueryArgs>({
+        deps,
+        state,
+        creatorInternals: { method: 'MUTATE', transport: 'POST', client, query: mutation },
+        queryConfig: {},
+      });
+
+      execute();
+    });
+
+    for (const req of httpTesting.match(() => true)) req.flush({ data: {} });
+    TestBed.tick();
+
+    queryClient.refreshQueriesInUse();
+
+    httpTesting.verify();
   });
 });

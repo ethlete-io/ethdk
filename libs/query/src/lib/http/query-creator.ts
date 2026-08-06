@@ -19,6 +19,9 @@ export type BaseQueryCreatorOptionsSubtle = {
    * - `true` means the request will always be cached
    * - `false` means the request will never be cached
    * - `undefined` means the request will be cached if the method is GET, OPTIONS or HEAD
+   *
+   * This says nothing about whether the request may be re-run: `refreshQueriesInUse()` and
+   * `invalidateQueries()` still only fire reads.
    */
   useQueryRepositoryCache?: boolean;
 };

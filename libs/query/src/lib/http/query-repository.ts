@@ -142,6 +142,13 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 
   /** @see QueryConfig.silenceUncacheableAllowCacheError */
   silenceUncacheableAllowCacheError?: boolean;
+
+  /**
+   * Whether re-running the request on its own is safe, i.e. whether {@link QueryRepository.refreshInUse}
+   * may fire it again. Defaults to the method being a read (`GET`/`HEAD`/`OPTIONS`); the GraphQL
+   * execute path passes `true` for a query transported via `POST`.
+   */
+  isRefreshable?: boolean;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -322,6 +329,9 @@ type DestroyListenerMapItem = {
   /** Whether the entry lives under a cache key other tabs derive identically. */
   isCached: boolean;
 
+  /** @see QueryRepositoryRequestOptions.isRefreshable */
+  isRefreshable: boolean;
+
   /** @see BaseQueryCreatorOptions.multiTabSync */
   isMultiTabSyncEnabled: boolean;
 
@@ -349,6 +359,9 @@ type BindEntryOptions = {
    * per-request UUID key and are never reused.
    */
   isCached: boolean;
+
+  /** @see QueryRepositoryRequestOptions.isRefreshable */
+  isRefreshable: boolean;
 
   isMultiTabSyncEnabled: boolean;
   isPersistEnabled: boolean;
@@ -413,6 +426,8 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         ? false
         : shouldCacheQuery(options.method) || creatorOptions?.subtle?.useQueryRepositoryCache === true;
 
+    const isRefreshable = shouldCache && (options.isRefreshable ?? shouldCacheQuery(options.method));
+
     if (!shouldCache && options.key) throw uncacheableRequestHasCacheKeyParam(options.key);
 
     // `allowCache` is never read on the uncacheable path below - there is no cache entry to reuse - so this throw
@@ -469,6 +484,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
           request: cacheEntry.request,
           isSecure,
           isCached: true,
+          isRefreshable,
           isMultiTabSyncEnabled,
           isPersistEnabled,
           keepUnusedFor,
@@ -503,6 +519,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       request,
       isSecure,
       isCached: shouldCache,
+      isRefreshable,
       isMultiTabSyncEnabled,
       isPersistEnabled,
       keepUnusedFor,
@@ -596,10 +613,11 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     for (const cacheEntry of cache.values()) {
       if (cacheEntry.consumers.size === 0) continue;
 
-      // Re-firing a mutation would be a side effect nobody asked for, so only reads are refreshed -
-      // "read" meaning cacheable, which also covers a GQL query transported via POST that opted into
-      // the cache explicitly.
-      if (!cacheEntry.isCached) continue;
+      // Re-firing a mutation would be a side effect nobody asked for, so only reads are refreshed:
+      // a cacheable method, or a GQL query transported via POST. Opting into the cache alone does not
+      // qualify - the auth queries do that for a stable cache key, and replaying a login POST would
+      // end the session.
+      if (!cacheEntry.isRefreshable) continue;
 
       if (filter && !filter(cacheEntry.request)) continue;
 
@@ -647,6 +665,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       request,
       isSecure,
       isCached,
+      isRefreshable,
       isMultiTabSyncEnabled,
       isPersistEnabled,
       keepUnusedFor,
@@ -691,6 +710,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         eventSubscription,
         keepUnusedFor,
         isCached,
+        isRefreshable,
         isMultiTabSyncEnabled,
         isPersistEnabled,
       });

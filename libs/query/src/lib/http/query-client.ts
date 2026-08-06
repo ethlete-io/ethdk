@@ -162,8 +162,9 @@ export type QueryClient = {
    * the new value only affects *subsequent* requests, so anything already resolved keeps data
    * fetched under the old one until this is called.
    *
-   * Only cacheable requests are refreshed: re-firing a mutation nobody asked for would be a far worse
-   * surprise than a stale read.
+   * Only reads are refreshed - `GET`/`HEAD`/`OPTIONS` and GraphQL queries transported via `POST`:
+   * re-firing a mutation nobody asked for would be a far worse surprise than a stale read. A `POST`
+   * that merely opted into the repository cache stays untouched.
    *
    * @see QueryClient.invalidateQueries for the case where the *data* went stale rather than the
    * request, which is the one that also concerns the user's other tabs.
@@ -183,7 +184,7 @@ export type QueryClient = {
    * client.invalidateQueries({ url: '/players' }); // /players, /players/1, /players?page=2
    * client.invalidateQueries(); // everything on screen, here and in the other tabs
    *
-   * Same set as {@link QueryClient.refreshQueriesInUse}: cacheable entries with at least one
+   * Same set as {@link QueryClient.refreshQueriesInUse}: reads with at least one
    * consumer, cache bypassed, in-flight requests restarted. Entries sitting out their `keepUnusedFor`
    * window are deliberately left alone - they revalidate on their own when a consumer binds again,
    * and refreshing what nobody is looking at is how an invalidation turns into a request storm.

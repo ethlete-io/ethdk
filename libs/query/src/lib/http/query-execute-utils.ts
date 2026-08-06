@@ -46,10 +46,13 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   options?: RunQueryExecuteOptions;
 
   isSecure?: boolean;
+
+  /** @see QueryRepositoryRequestOptions.isRefreshable */
+  isRefreshable?: boolean;
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
-  const { executeOptions, args, executeState, options: runQueryOptions, isSecure } = options;
+  const { executeOptions, args, executeState, options: runQueryOptions, isSecure, isRefreshable } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
   const { key, request, executed } = deps.client.repository.request({
@@ -63,6 +66,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     previousKey: executeState.previousKey(),
     runQueryOptions,
     isSecure,
+    isRefreshable,
     silenceUncacheableAllowCacheError: queryConfig.silenceUncacheableAllowCacheError,
   });
 

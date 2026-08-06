@@ -63,7 +63,9 @@ previewToken.set(token);
 injectApi().refreshQueriesInUse();
 ```
 
-It bypasses the freshness window and restarts requests that are still in flight, so the new value applies everywhere. Only **cacheable** entries that still have consumers are refreshed - `GET` / `HEAD` / `OPTIONS`, plus a [GraphQL query over POST](/query/gql): re-firing a mutation nobody asked for would be a far worse surprise than a stale read, and entries sitting out their `keepUnusedFor` window revalidate on their own when a consumer binds again.
+It bypasses the freshness window and restarts requests that are still in flight, so the new value applies everywhere. Only **reads** that still have consumers are refreshed - `GET` / `HEAD` / `OPTIONS`, plus a [GraphQL query over POST](/query/gql): re-firing a mutation nobody asked for would be a far worse surprise than a stale read, and entries sitting out their `keepUnusedFor` window revalidate on their own when a consumer binds again.
+
+Being in the cache is not what makes an entry a read. A `POST` that opted in via `subtle.useQueryRepositoryCache` - which is how the [auth queries](/query/auth) get a stable cache key - is cached but never re-fired, so a refresh cannot replay a login or a token refresh.
 
 This is what v2's `setDefaultHeaders({ refreshQueriesInUse: true })` did implicitly.
 
@@ -77,7 +79,7 @@ await createPlayer.execute({ body });
 injectApi().invalidateQueries({ url: '/players' });
 ```
 
-It refreshes the same set as `refreshQueriesInUse()` - cacheable entries with at least one consumer, cache bypassed, in-flight requests restarted - narrowed by what you pass:
+It refreshes the same set as `refreshQueriesInUse()` - reads with at least one consumer, cache bypassed, in-flight requests restarted - narrowed by what you pass:
 
 | Option      | Default | Description                                                                                                             |
 | ----------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
