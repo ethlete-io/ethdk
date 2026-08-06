@@ -31,6 +31,13 @@ export type QueryRefreshCause = {
   otherTab: boolean;
 };
 
+/**
+ * What tore a cache entry down: the last consumer went away (`unbind`), its `keepUnusedFor` window ran
+ * out (`expired`), it was the least recently orphaned entry over the cap (`unused-cap`), a logout
+ * dropped every secure entry (`logout`), or something evicted it by hand (`manual`).
+ */
+export type QueryRepositoryEntryDestroyedCause = 'unbind' | 'expired' | 'unused-cap' | 'logout' | 'manual';
+
 export type QueryRepositoryEvent =
   | {
       type: 'request-error';
@@ -95,6 +102,25 @@ export type QueryRepositoryEvent =
 
       /** The requests that were re-executed, in cache order. */
       requests: HttpRequest<QueryArgs>[];
+    }
+  | {
+      /**
+       * A cache entry was torn down: its request is destroyed and the key is gone from the cache.
+       * Emitted after the deletion, and for every teardown path there is - which is what makes "why
+       * did this entry disappear" answerable at all. {@link unbindAllSecure} emits one of these per
+       * entry as well as its own `unbind-all-secure`.
+       *
+       * The repository keeps no record of its own; a consumer that wants a history of destroyed
+       * entries (the devtools panel) is the one that keeps it.
+       */
+      type: 'entry-destroyed';
+
+      key: QueryKey;
+      isSecure: boolean;
+      method: QueryMethod;
+      url: string;
+
+      cause: QueryRepositoryEntryDestroyedCause;
     }
   | {
       /**
@@ -534,11 +560,19 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   };
 
   /** Tears an entry down for good, whether it currently has consumers or not. */
-  const destroyEntry = (key: QueryKey, cacheEntry: DestroyListenerMapItem) => {
+  const destroyEntry = (
+    key: QueryKey,
+    cacheEntry: DestroyListenerMapItem,
+    cause: QueryRepositoryEntryDestroyedCause,
+  ) => {
+    const { method, url } = cacheEntry.request;
+
     clearTimeout(cacheEntry.evictTimer);
     cacheEntry.request.destroy();
     cacheEntry.eventSubscription?.unsubscribe();
     cache.delete(key);
+
+    eventsSubject.next({ type: 'entry-destroyed', key, isSecure: cacheEntry.isSecure, method, url, cause });
   };
 
   const cancelEviction = (cacheEntry: DestroyListenerMapItem) => {
@@ -558,13 +592,13 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     unused.sort(([, a], [, b]) => (a.unusedSince ?? 0) - (b.unusedSince ?? 0));
 
     for (const [key, entry] of unused.slice(0, unused.length - MAX_UNUSED_ENTRIES)) {
-      destroyEntry(key, entry);
+      destroyEntry(key, entry, 'unused-cap');
     }
   };
 
   const retain = (key: QueryKey, cacheEntry: DestroyListenerMapItem) => {
     cacheEntry.unusedSince = Date.now();
-    cacheEntry.evictTimer = setTimeout(() => evict(key), cacheEntry.keepUnusedFor);
+    cacheEntry.evictTimer = setTimeout(() => evict(key, 'expired'), cacheEntry.keepUnusedFor);
 
     enforceUnusedEntryLimit();
   };
@@ -584,7 +618,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       if (cacheEntry.keepUnusedFor > 0 && cacheEntry.request.response() !== null) {
         retain(key, cacheEntry);
       } else {
-        destroyEntry(key, cacheEntry);
+        destroyEntry(key, cacheEntry, 'unbind');
       }
     }
 
@@ -600,7 +634,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       // Force the teardown instead of routing through `unbind`: a logged out session must not leave a
       // retained response body behind waiting out its `keepUnusedFor` window.
       cacheEntry.consumers.clear();
-      destroyEntry(key, cacheEntry);
+      destroyEntry(key, cacheEntry, 'logout');
     }
 
     bumpCacheVersion();
@@ -728,12 +762,12 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       request: entry.request,
     }));
 
-  const evict = (key: QueryKey) => {
+  const evict = (key: QueryKey, cause: 'expired' | 'manual' = 'manual') => {
     const entry = cache.get(key);
 
     if (!entry) return;
 
-    destroyEntry(key, entry);
+    destroyEntry(key, entry, cause);
     bumpCacheVersion();
   };
 

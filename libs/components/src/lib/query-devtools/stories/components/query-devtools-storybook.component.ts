@@ -595,6 +595,55 @@ export class QdProfileCardComponent {
   protected state = computed(() => stateOf(this.profile));
 }
 
+/** The query a {@link QdUnmountCardComponent} destroys along with this component. */
+@Component({
+  selector: 'et-sb-qd-doomed',
+  template: `
+    <et-sb-qd-status [state]="state()" qdStatus>
+      @if (post.error(); as error) {
+        request failed with {{ error.raw.status }}
+      } @else {
+        {{ post.response()?.title ?? 'loading' }}
+      }
+    </et-sb-qd-status>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [CARD_IMPORTS],
+})
+export class QdDoomedCardComponent {
+  protected readonly post = getPost(withArgs(() => ({ pathParams: { postId: 7 }, queryParams: { fail: true } })));
+
+  protected state = computed(() => stateOf(this.post));
+}
+
+/** A query whose component goes away while its request is failing - the case tombstones exist for. */
+@Component({
+  selector: 'et-sb-qd-unmount',
+  template: `
+    <et-sb-qd-card heading="Unmount a failing query">
+      @if (mounted()) {
+        <et-sb-qd-doomed />
+      } @else {
+        <et-sb-qd-status state="idle" qdStatus>unmounted - find it under the panel's Gone chip</et-sb-qd-status>
+      }
+
+      <button (click)="mounted.set(true)" et-button size="sm" variant="tonal">
+        <i etIcon="et-plus"></i>
+        Mount
+      </button>
+      <button (click)="mounted.set(false)" et-button size="sm" variant="tonal" color="danger">
+        <i etIcon="et-times"></i>
+        Unmount
+      </button>
+    </et-sb-qd-card>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [CARD_IMPORTS, QdDoomedCardComponent],
+})
+export class QdUnmountCardComponent {
+  protected mounted = signal(false);
+}
+
 @Component({
   selector: 'et-sb-query-devtools',
   template: `
@@ -623,6 +672,7 @@ export class QdProfileCardComponent {
         <et-sb-qd-profile />
         <et-sb-qd-gql />
         <et-sb-qd-ws />
+        <et-sb-qd-unmount />
       </div>
     </div>
 
@@ -638,6 +688,7 @@ export class QdProfileCardComponent {
     QdPostsStackCardComponent,
     QdPagedCardComponent,
     QdFilterFormCardComponent,
+    QdUnmountCardComponent,
     QdInvalidateCardComponent,
     QdLargeResponseCardComponent,
     QdCheckoutCardComponent,

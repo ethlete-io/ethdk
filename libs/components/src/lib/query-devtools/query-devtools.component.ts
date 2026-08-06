@@ -81,6 +81,7 @@ import {
   CacheRow,
   DetailTab,
   DevtoolsTab,
+  DroppedCacheEntry,
   EventLogItem,
   PaneAxis,
   PaneTarget,
@@ -136,6 +137,9 @@ const noop = () => undefined;
 
 const STORAGE_KEY = 'ethlete:query:devtools:v4';
 const MAX_EVENTS = 100;
+
+/** Per client, not in total - a client that drops a lot must not push another client's out of view. */
+const MAX_DROPPED_CACHE_ENTRIES = 20;
 const DEFAULT_HEIGHT = 360;
 const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 560;
@@ -365,6 +369,12 @@ export class QueryDevtoolsComponent {
 
   public eventLog = signal<EventLogItem[]>([]);
 
+  /**
+   * The cache entries that are gone, newest first. Kept here rather than in the repository, which stays
+   * lean in production - it emits the teardown and forgets it.
+   */
+  public droppedCacheEntries = signal<DroppedCacheEntry[]>([]);
+
   /** The client (by base URL) the event log is scoped to, or `null` for all of them. */
   public eventClient = signal<string | null>(this.persisted.eventClient ?? null);
 
@@ -430,7 +440,14 @@ export class QueryDevtoolsComponent {
 
   private queryEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query'));
 
-  protected panelTampered = computed(() => this.queryEntries().some((entry) => this.isTampered(entry)));
+  /**
+   * The queries that still exist. Everything that measures what the application is doing right now -
+   * the tab badges, the tamper dot, the timeline, the identity match behind an event row - reads this
+   * rather than {@link queryEntries}, so a tombstone never inflates a live number.
+   */
+  private liveQueryEntries = computed(() => this.queryEntries().filter((e) => !e.destroyedAt));
+
+  protected panelTampered = computed(() => this.liveQueryEntries().some((entry) => this.isTampered(entry)));
 
   public stackEntries = computed(() =>
     queryDevtoolsEntries().filter((e) => e.kind === 'query-stack' || e.kind === 'paged-query-stack'),
@@ -544,7 +561,7 @@ export class QueryDevtoolsComponent {
    * subscribes the tab bar to every entry's live state - which is the point of the badges.
    */
   protected tabBadges = computed<Record<DevtoolsTab, TabBadge>>(() => {
-    const queries = this.queryEntries();
+    const queries = this.liveQueryEntries();
     const stacks = this.stackEntries();
     const sequences = this.sequenceEntries();
     const events = this.eventLog();
@@ -602,6 +619,8 @@ export class QueryDevtoolsComponent {
    * entry that is already there does not.
    */
   public cacheView = computed(() => {
+    const dropped = this.droppedCacheEntries();
+
     return this.repositories().map(({ repository, name, baseUrl, client }) => {
       // Read the version signal so this recomputes on every cache mutation.
       repository.subtle.cacheVersion();
@@ -622,6 +641,8 @@ export class QueryDevtoolsComponent {
         unused: rows.filter((row) => row.entry.isUnused).length,
         pollStates: client?.subtle.sync?.lockManager.keyStates() ?? {},
         client,
+        // The event log labels a client by its base URL, falling back to its name - match the same way.
+        dropped: dropped.filter((entry) => entry.client === (baseUrl || name)),
       };
     });
   });
@@ -2373,11 +2394,38 @@ export class QueryDevtoolsComponent {
       client,
       type: event.type,
       cause: null,
+      destroyCause: null,
       refreshed: null,
       durationMs: null,
       bytes: null,
       isEstimatedBytes: false,
     };
+
+    // Why an entry went away is otherwise unanswerable: it is gone from the cache view with nothing to
+    // say whether a logout, its freshness window, the unused-entry cap or a manual evict took it.
+    if (event.type === 'entry-destroyed') {
+      this.droppedCacheEntries.update((list) => {
+        const next: DroppedCacheEntry[] = [
+          { client, method: event.method, url: event.url, cause: event.cause, at: base.timestamp },
+          ...list,
+        ];
+        let kept = 0;
+
+        return next.filter((entry) => entry.client !== client || ++kept <= MAX_DROPPED_CACHE_ENTRIES);
+      });
+
+      this.pushEventItem({
+        ...base,
+        method: event.method,
+        url: event.url,
+        isSecure: event.isSecure,
+        status: null,
+        destroyCause: event.cause,
+        queryId: this.resolveEventQueryId(event),
+      });
+
+      return;
+    }
 
     // A logout drops every secure entry at once - worth a row of its own, since the requests that
     // disappear from the cache view are otherwise unexplained.
@@ -2417,10 +2465,33 @@ export class QueryDevtoolsComponent {
       durationMs: event.request.subtle.lastDurationMs(),
       bytes: measured?.bytes ?? null,
       isEstimatedBytes: !!measured && !measured.isExact,
-      // A request is shared by every query on the same cache key, so the first owner is as good
-      // as any - they all show the same response.
-      queryId: this.queryEntries().find((e) => (e.handle as AnyQuery).subtle.request() === event.request)?.id ?? null,
+      queryId: this.resolveEventQueryId(event.request),
     });
+  }
+
+  /**
+   * The registered query an event's request belongs to. A request is shared by every query on the same
+   * cache key, so the first owner is as good as any - they all show the same response.
+   *
+   * The url fallback is what makes a row clickable when the query is already gone: an error that fires
+   * as the component holding it is being destroyed (a `401` that redirects to login) has no live owner
+   * left to match on identity, and its tombstone holds a copy of the request rather than the request.
+   */
+  private resolveEventQueryId(source: { url: string }) {
+    const live = this.liveQueryEntries();
+    const owner =
+      live.find((e) => (e.handle as AnyQuery).subtle.request() === source) ??
+      live.find((e) => this.requestUrl(e.handle as AnyQuery) === source.url);
+
+    if (owner) return owner.id;
+
+    // Youngest first: the same route destroyed twice leaves two tombstones, and the newer one is the
+    // one this event belongs to.
+    return (
+      this.queryEntries()
+        .filter((e) => e.destroyedAt && this.requestUrl(e.handle as AnyQuery) === source.url)
+        .sort((a, b) => (b.destroyedAt ?? 0) - (a.destroyedAt ?? 0))[0]?.id ?? null
+    );
   }
 
   /**
@@ -2436,7 +2507,7 @@ export class QueryDevtoolsComponent {
 
   private refreshedRequestOf(request: { method: string; url: string }): RefreshedRequest {
     return {
-      queryIds: this.queryEntries()
+      queryIds: this.liveQueryEntries()
         .filter((e) => (e.handle as AnyQuery).subtle.request() === request)
         .map((owner) => owner.id),
       method: request.method,

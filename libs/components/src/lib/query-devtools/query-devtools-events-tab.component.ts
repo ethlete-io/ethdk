@@ -1,6 +1,6 @@
 import { Component, computed, ViewEncapsulation } from '@angular/core';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
-import { EventLogItem } from './query-devtools-types';
+import { DESTROY_CAUSE_LABELS, EventLogItem } from './query-devtools-types';
 
 /** The Events tab: the rolling log of repository traffic, refreshes and secure unbinds. */
 @Component({
@@ -53,9 +53,18 @@ export class QueryDevtoolsEventsTabComponent {
     if (item.queryId) this.host.selectQuery(item.queryId);
   }
 
+  /** Only a request settling is a success or a failure; a teardown or a refresh is neither. */
+  protected eventRowStatus(event: EventLogItem) {
+    if (event.type === 'request-error') return 'error';
+    if (event.type === 'request-success') return 'success';
+
+    return null;
+  }
+
   protected eventTypeLabel(event: EventLogItem) {
     if (event.type === 'unbind-all-secure') return 'logout';
     if (event.type === 'queries-refreshed') return `refetch ×${event.refreshed?.length ?? 0}`;
+    if (event.type === 'entry-destroyed') return `dropped · ${DESTROY_CAUSE_LABELS[event.destroyCause ?? 'unbind']}`;
 
     return event.type === 'request-error' ? `error ${event.status}` : 'success';
   }

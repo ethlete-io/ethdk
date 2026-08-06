@@ -14,6 +14,7 @@ import { resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
 import { createQueryDevtoolsFormLinks } from './query-devtools-form-links';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
 import { createQueryDevtoolsStats } from './query-devtools-stats';
+import { MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
 
@@ -157,10 +158,52 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
     overrides: registration.overrides,
   };
 
-  entries.update((list) => [...list, fullEntry]);
+  // A registration that brings its own id can repeat one a tombstone still holds; the live entry wins.
+  entries.update((list) => [...list.filter((e) => !(e.id === id && e.destroyedAt)), fullEntry]);
 
-  return () => entries.update((list) => list.filter((e) => e.id !== fullEntry.id));
+  return () =>
+    entries.update((list) => {
+      const index = list.findIndex((e) => e.id === fullEntry.id);
+
+      if (index === -1) return list;
+
+      const next = list.slice();
+
+      // Only queries leave a tombstone. A stack, sequence, form or auth provider is a container whose
+      // interesting state is the queries it owns - each of which tombstones on its own.
+      if (fullEntry.kind !== 'query') {
+        next.splice(index, 1);
+
+        return next;
+      }
+
+      next[index] = tombstoneOf(fullEntry, Date.now());
+
+      return capTombstones(next);
+    });
 };
+
+/** Drops the oldest tombstones once there are more than {@link MAX_QUERY_DEVTOOLS_TOMBSTONES} of them. */
+const capTombstones = (list: QueryDevtoolsEntry[]) => {
+  const excess = list.filter((e) => e.destroyedAt).length - MAX_QUERY_DEVTOOLS_TOMBSTONES;
+
+  if (excess <= 0) return list;
+
+  const doomed = new Set(
+    list
+      .filter((e) => e.destroyedAt)
+      .sort((a, b) => (a.destroyedAt ?? 0) - (b.destroyedAt ?? 0))
+      .slice(0, excess),
+  );
+
+  return list.filter((e) => !doomed.has(e));
+};
+
+/**
+ * Forgets every destroyed entry the registry is holding - the panel's "clear gone" action. Live
+ * entries are untouched.
+ */
+export const clearQueryDevtoolsTombstones = () => entries.update((list) => list.filter((e) => !e.destroyedAt));
 
 /**
  * Enables the `@ethlete/query` devtools. Add this to your application providers (e.g. in

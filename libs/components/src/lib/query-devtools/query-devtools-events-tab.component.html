@@ -66,11 +66,7 @@
       </thead>
       <tbody>
         @for (event of filteredEvents(); track event.id) {
-          <tr
-            [attr.data-status]="
-              event.type === 'request-error' ? 'error' : event.type === 'queries-refreshed' ? null : 'success'
-            "
-          >
+          <tr [attr.data-status]="eventRowStatus(event)">
             <td>{{ host.formatTime(event.timestamp) }}</td>
             <td class="et-query-devtools-mono">{{ event.client }}</td>
             <td>

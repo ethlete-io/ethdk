@@ -1,4 +1,4 @@
-import { Component, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
@@ -23,6 +23,12 @@ export class QueryDevtoolsDetailComponent {
   protected host = injectQueryDevtoolsHost();
 
   public sel = input.required<{ entry: QueryDevtoolsEntry; query: AnyQuery }>();
+
+  /**
+   * Whether this is a tombstone. Everything that would run, edit or force the query is hidden for one -
+   * its handle is a frozen snapshot, so those actions have nothing to act on.
+   */
+  protected isGone = computed(() => !!this.sel().entry.destroyedAt);
 
   protected readonly detailTabs = [
     { id: 'overview', label: 'Overview' },

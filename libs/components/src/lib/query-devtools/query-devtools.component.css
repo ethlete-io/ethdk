@@ -762,6 +762,33 @@
     background: var(--_et-qdt-active);
   }
 
+  /* A tombstone reads like the stale chip does - muted, not alarming. It is history, not a failure. */
+  .et-query-devtools-row--gone {
+    color: var(--_et-qdt-muted);
+  }
+
+  .et-query-devtools-dropped {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--_et-qdt-muted);
+  }
+
+  .et-query-devtools-dropped li {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .et-query-devtools-gone-note {
+    margin: 0 0 0.8rem;
+    color: var(--_et-qdt-muted);
+    font-size: 1.1rem;
+  }
+
   .et-query-devtools-method {
     font-weight: 700;
     font-size: 1.1rem;

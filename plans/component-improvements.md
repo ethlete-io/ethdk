@@ -591,73 +591,6 @@ leading, checkbox-shaped, in a slot that's reserved whether or not the row
 is selected, so labels don't shift. Single select can keep its current fill -
 one filled row was never the problem.
 
-## Query devtools: a failed query vanishes instead of going stale
-
-A `PUT` that comes back `401` is unreadable in the panel by the time you look
-at it. Two separate mechanisms drop it, and they need separate fixes.
-
-**The row itself is tied to the query's lifetime.** `registerQueryDevtoolsEntry`
-returns an unregister callback and `base-query-factory.ts` wires it straight to
-`deps.destroyRef.onDestroy` (same in `query-stack`, `paged-query-stack`,
-`query-sequence`, `web-socket-client`, `bearer-auth-provider`,
-`query-form-signals`); the callback filters the entry out of the `entries()`
-signal in `query-devtools-registry.ts`. So a 401 that makes the app redirect to
-login destroys the component holding the mutation, and the row - with its
-stats, its run history and its route - is gone before the panel is opened. The
-registry keeps no record that the query ever existed.
-
-**The repository entry is destroyed, not retained.** `unbind` only retains an
-orphaned entry when `keepUnusedFor > 0` **and** `request.response() !== null` -
-"only data is worth keeping around". A mutation is uncacheable, so
-`resolveKeepUnusedFor` returns `0` anyway; but even a failed `GET` fails the
-second condition, which means failures are precisely the class of entry
-retention never keeps. `destroyEntry` deletes the map entry and the Cache tab
-reads `subtle.cacheEntries()` live, so the row disappears from there too. Note
-`destroyEntry` emits no event at all - there is no `entry-destroyed` to pair
-with `entry-created`, so the panel cannot even notice.
-
-What survives is the run buffer: `recordError` takes the `QueryError`, so a run
-keeps `status: 'error'`, its url, its attempts, the status code and a trimmed
-body, and the detail drawer's History tab renders them. The buffer lives on the
-stats recorder rather than on the query state, so it also outlives the
-`resetExecuteState` a logout triggers through `unbindAllSecure` - a row blanked
-by a logout stays readable. That only helps while the row is still there. The
-Events tab keeps a `request-error` row with
-`status` and `url` for the last 100 events, and that is currently the only
-place a 401 is legible at all. Its `queryId` is resolved at event time by
-identity-matching `subtle.request()` against the registered entries, so
-clicking such a row calls `selectQuery` with an id nothing is registered under
-any more - `findQuery` returns `null` and the click silently does nothing.
-
-The fix, in the order it pays off:
-
-- **Tombstone the registry entry.** Instead of filtering on unregister, set
-  `destroyedAt` and keep it, capped, with a "Clear gone" action. A destroyed
-  row should read like `stale` does - the muted chip and a dimmed row, not an
-  error colour - be excluded from the live facet counts, and sit behind a
-  facet chip that is off by default. Id collisions are not a concern:
-  `idCounters` only ever increments within a page load, so a re-created query
-  gets `#1` next to the tombstone's `#0`.
-  - The trap: an entry holds `handle` (the query, and through it the request
-    and its response body) and `meta.element` (a host DOM node). Retaining
-    live entries would make the devtools a leak factory - the thing
-    `MAX_UNUSED_ENTRIES` exists to prevent on the repository side. A tombstone
-    has to be a frozen snapshot (method, route parts, last url, stats, runs,
-    last error) with the handle and element dropped, which means the detail
-    drawer needs to render from a snapshot as well as from a live handle.
-    Today every tab reads `entry.handle` signals directly, so this is the
-    actual work in the item.
-- **Emit `entry-destroyed` from the repository** so the Cache tab can keep its
-  own tombstone row the same way, and so "why did this entry go away" (logout
-  vs. `keepUnusedFor` expiry vs. the unused-entry cap vs. a manual evict)
-  becomes answerable at all. The repository must not keep the tombstones
-  itself - it stays lean in production; the panel already subscribes to
-  `events$` and is the right owner.
-- **Fall back to key/url matching for an event row's `queryId`.** With
-  tombstones in place the link resolves again, but an error event fired after
-  the query was already gone still records `queryId: null` - match on the
-  request url/key against tombstones as a second pass.
-
 ## Auth: what the consumer app had to rebuild around the bearer provider
 
 Read against `fut-frontend` (`libs/domain/auth`, `libs/queries/*/…​.client.ts`)
@@ -890,6 +823,15 @@ Bugfix pass:
   clears the subtree so it undoes a recursive fill. The rest of that section (custom values,
   paste, randomized presets, `longWord`) is still open.
   Changeset `devtools-override-menu-empty-values.md`.
+- **Query devtools tombstones** - a destroyed `query` entry is kept as a frozen snapshot
+  (`query-devtools-tombstone.ts`) instead of being filtered out: the same handle shape
+  answering with constants, the host element dropped, capped at 50. The Queries tab hides
+  them behind a `gone` chip that is off by default, the drawer drops every action that
+  would run or edit, and `clearQueryDevtoolsTombstones()` backs "✕ Gone n". The repository
+  emits `entry-destroyed` with a cause for all five teardown paths, which feeds an Events
+  row and the Cache tab's "Dropped" list; an event row's `queryId` falls back to url
+  matching so a failure fired during teardown still opens its tombstone.
+  Changeset `devtools-query-tombstones.md`.
 - **Docs** - the `createGridAdapter` snippet compiles, `grid.md` documents the live
   `initialItems` reconciliation and the imperative API (`restoreState`, `getSerializedState`,
   `addItem`), and `query-forms.md` states that `isResetBy` is transitive.

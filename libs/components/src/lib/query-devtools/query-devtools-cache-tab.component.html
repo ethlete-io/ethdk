@@ -116,6 +116,22 @@
           }
         </tbody>
       </table>
+
+      @if (client.dropped.length) {
+        <h4 class="et-query-devtools-section">Dropped</h4>
+        <ul class="et-query-devtools-dropped">
+          @for (entry of client.dropped; track entry.at) {
+            <li>
+              <span class="et-query-devtools-method">{{ entry.method }}</span>
+              <span class="et-query-devtools-url">{{ host.requestPath(entry.url) }}</span>
+              <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{
+                dropCauseLabel(entry.cause)
+              }}</span>
+              <span class="et-query-devtools-count">{{ host.formatTime(entry.at) }}</span>
+            </li>
+          }
+        </ul>
+      }
     </div>
   } @empty {
     <p class="et-query-devtools-empty">No clients with a cache yet.</p>

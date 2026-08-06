@@ -13,7 +13,17 @@
       tampered
     </span>
   }
+  @if (isGone()) {
+    <span class="et-query-devtools-chip et-query-devtools-chip--muted">gone</span>
+  }
 </div>
+
+@if (s.entry.destroyedAt; as destroyedAt) {
+  <p class="et-query-devtools-gone-note">
+    Destroyed at {{ host.formatTime(destroyedAt) }}. This is the last state the query held - nothing here updates, and
+    it cannot be run again.
+  </p>
+}
 
 @if (host.requestProgress(s.query); as live) {
   <div class="et-query-devtools-live">
@@ -64,10 +74,12 @@
 }
 
 <div class="et-query-devtools-actions">
-  <span class="et-query-devtools-actions-label">Run</span>
-  <button (click)="host.executeQuery(s.query, false)" class="et-query-devtools-btn" type="button">Execute</button>
-  <button (click)="host.executeQuery(s.query, true)" class="et-query-devtools-btn" type="button">Cached</button>
-  <button (click)="host.resetQuery(s.query)" class="et-query-devtools-btn" type="button">Reset</button>
+  @if (!isGone()) {
+    <span class="et-query-devtools-actions-label">Run</span>
+    <button (click)="host.executeQuery(s.query, false)" class="et-query-devtools-btn" type="button">Execute</button>
+    <button (click)="host.executeQuery(s.query, true)" class="et-query-devtools-btn" type="button">Cached</button>
+    <button (click)="host.resetQuery(s.query)" class="et-query-devtools-btn" type="button">Reset</button>
+  }
   <button (click)="host.copyReport(s.entry, s.query)" class="et-query-devtools-btn" type="button">
     {{ host.copiedReport() ? '✓ Copied' : 'Copy report' }}
   </button>
@@ -87,17 +99,19 @@
   >
     {{ host.copiedInsomnia() ? '✓ Copied' : 'Insomnia' }}
   </button>
-  <span class="et-query-devtools-actions-label">Edit</span>
-  <button (click)="host.openResponseEditor(s.query)" class="et-query-devtools-btn" type="button">Response</button>
-  <button (click)="host.openArgsEditor(s.query)" class="et-query-devtools-btn" type="button">Replay args</button>
-  <span class="et-query-devtools-actions-label">Force</span>
-  <button (click)="host.forceLoading(s.query)" class="et-query-devtools-btn" type="button">Loading</button>
-  <button (click)="host.forceError(s.query)" class="et-query-devtools-btn" type="button">Error</button>
-  <button (click)="host.forceEmpty(s.query)" class="et-query-devtools-btn" type="button">Empty</button>
-  <button (click)="host.clearForced(s.query)" class="et-query-devtools-btn" type="button">Clear</button>
+  @if (!isGone()) {
+    <span class="et-query-devtools-actions-label">Edit</span>
+    <button (click)="host.openResponseEditor(s.query)" class="et-query-devtools-btn" type="button">Response</button>
+    <button (click)="host.openArgsEditor(s.query)" class="et-query-devtools-btn" type="button">Replay args</button>
+    <span class="et-query-devtools-actions-label">Force</span>
+    <button (click)="host.forceLoading(s.query)" class="et-query-devtools-btn" type="button">Loading</button>
+    <button (click)="host.forceError(s.query)" class="et-query-devtools-btn" type="button">Error</button>
+    <button (click)="host.forceEmpty(s.query)" class="et-query-devtools-btn" type="button">Empty</button>
+    <button (click)="host.clearForced(s.query)" class="et-query-devtools-btn" type="button">Clear</button>
+  }
 </div>
 
-@if (host.editorMode() !== 'none') {
+@if (!isGone() && host.editorMode() !== 'none') {
   <div class="et-query-devtools-editor">
     @if (host.editorMode() === 'response') {
       <h4 class="et-query-devtools-section">Edit response → setResponse()</h4>

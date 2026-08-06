@@ -12,6 +12,7 @@ import {
   QueryRefreshCause,
   QueryRepository,
   QueryRepositoryCacheEntry,
+  QueryRepositoryEntryDestroyedCause,
 } from '@ethlete/query';
 
 // The registry stores queries type-erased; the panel reads them structurally.
@@ -38,8 +39,12 @@ export type PaneAxis = 'inline' | 'block';
 
 export type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 
-/** A live-state facet the Queries list can be narrowed to. */
-export type QueryListFacet = 'error' | 'loading' | 'stale' | 'idle';
+/**
+ * A facet the Queries list can be narrowed to. The first four describe live state; `gone` is the odd
+ * one out - it is the only way a destroyed query's tombstone enters the list at all, which is why it
+ * is off by default rather than just another filter over what is already shown.
+ */
+export type QueryListFacet = 'error' | 'loading' | 'stale' | 'idle' | 'gone';
 
 /** The fault fields the panel arms from a number input, as opposed to the status it picks from a list. */
 export type NumericFaultField = 'latencyMs' | 'failNext' | 'failRate';
@@ -134,7 +139,13 @@ export type EventLogItem = {
   id: number;
   timestamp: number;
   client: string;
-  type: 'entry-created' | 'request-success' | 'request-error' | 'unbind-all-secure' | 'queries-refreshed';
+  type:
+    | 'entry-created'
+    | 'request-success'
+    | 'request-error'
+    | 'entry-destroyed'
+    | 'unbind-all-secure'
+    | 'queries-refreshed';
 
   /** `null` for events that are not about a single request, e.g. the logout-wide secure unbind. */
   method: string | null;
@@ -151,6 +162,9 @@ export type EventLogItem = {
   /** What asked for a refresh, for a `queries-refreshed` row. `null` for every other type. */
   cause: QueryRefreshCause | null;
 
+  /** Why a cache entry was torn down, for an `entry-destroyed` row. `null` for every other type. */
+  destroyCause: QueryRepositoryEntryDestroyedCause | null;
+
   /** The requests that refresh re-executed - the fan-out the panel could not show before. */
   refreshed: RefreshedRequest[] | null;
 
@@ -164,6 +178,28 @@ export type EventLogItem = {
 
   /** @see QueryDevtoolsStats.hasEstimatedBytes */
   isEstimatedBytes: boolean;
+};
+
+/**
+ * A cache entry that is gone, as the Cache tab still lists it. Deliberately not a {@link CacheRow}: a
+ * destroyed entry has no consumers, no size, no freshness and nothing to act on, so a full row would be
+ * seven columns of dashes. What is left worth showing is what it was and why it went.
+ */
+export type DroppedCacheEntry = {
+  client: string;
+  method: string;
+  url: string;
+  cause: QueryRepositoryEntryDestroyedCause;
+  at: number;
+};
+
+/** How the panel spells a teardown cause out - the same wording in the Events tab and the Cache tab. */
+export const DESTROY_CAUSE_LABELS: Record<QueryRepositoryEntryDestroyedCause, string> = {
+  unbind: 'last consumer gone',
+  expired: 'unused window over',
+  'unused-cap': 'unused entry cap',
+  logout: 'logout',
+  manual: 'evicted',
 };
 
 /** One cache entry as the Cache tab lists it: the repository's own snapshot plus its measured size. */
@@ -187,6 +223,9 @@ export type CacheView = {
   unused: number;
   pollStates: Record<string, QueryKeyLockState>;
   client: QueryClient | null;
+
+  /** The entries this client has lost since the panel was loaded, newest first. */
+  dropped: DroppedCacheEntry[];
 };
 
 /** What each tab holds, as its badge reports it: how many entries, and how many of them are failing. */

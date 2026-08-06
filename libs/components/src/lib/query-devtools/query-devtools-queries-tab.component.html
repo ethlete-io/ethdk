@@ -40,6 +40,16 @@
             {{ scopedQueryCount() }}
           }
         </span>
+        @if (goneQueryCount()) {
+          <button
+            (click)="CLEAR_GONE()"
+            class="et-query-devtools-btn et-query-devtools-toolbar-btn"
+            type="button"
+            title="Forget every destroyed query the panel is still holding"
+          >
+            ✕ Gone {{ goneQueryCount() }}
+          </button>
+        }
         <button
           [disabled]="!filteredQueries().length"
           (click)="downloadInsomniaCollection()"
@@ -91,24 +101,34 @@
     </div>
 
     @for (item of filteredQueries(); track item.entry.id) {
+      @let isGone = !!item.entry.destroyedAt;
       <button
         [class.et-query-devtools-row--active]="host.selectedQueryId() === item.entry.id"
+        [class.et-query-devtools-row--gone]="isGone"
         (click)="host.selectedQueryId.set(item.entry.id)"
         class="et-query-devtools-row"
         type="button"
       >
         <span
-          [attr.data-status]="host.queryStatus(item.query)"
-          [title]="host.queryStatus(item.query)"
+          [attr.data-status]="isGone ? null : host.queryStatus(item.query)"
+          [title]="isGone ? 'destroyed' : host.queryStatus(item.query)"
           class="et-query-devtools-status"
         ></span>
         <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
         <span class="et-query-devtools-route">
           <et-query-devtools-route [segments]="host.routeSegments(item.entry, item.query)" />
         </span>
+        @if (isGone) {
+          <span
+            class="et-query-devtools-chip et-query-devtools-chip--muted"
+            title="This query no longer exists - what you see is the last state it held, frozen"
+          >
+            gone
+          </span>
+        }
         <!-- A retry is the one thing a loading dot actively misrepresents: it reads as a request
              on its way when nothing is in flight at all. -->
-        @if (host.requestProgress(item.query)?.retry; as retry) {
+        @if (!isGone && host.requestProgress(item.query)?.retry; as retry) {
           <span
             class="et-query-devtools-chip et-query-devtools-chip--loading"
             title="Waiting out a retry backoff before attempt {{ retry.attempt }}"
@@ -117,7 +137,7 @@
             {{ retry.attempt }}
           </span>
         }
-        @if (host.isStale(item.query)) {
+        @if (!isGone && host.isStale(item.query)) {
           <span class="et-query-devtools-chip et-query-devtools-chip--muted">stale</span>
         }
         @if (host.isTampered(item.entry)) {

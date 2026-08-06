@@ -417,7 +417,28 @@ describe('createQueryRepository - keepUnusedFor (unused entry retention)', () =>
     repo.events$.subscribe((event) => events.push(event));
     repo.unbindAllSecure();
 
-    expect(events).toEqual([{ type: 'unbind-all-secure' }]);
+    expect(events.map((event) => event.type)).toEqual(['entry-destroyed', 'unbind-all-secure']);
+    expect(events[0]).toMatchObject({ type: 'entry-destroyed', isSecure: true, cause: 'logout', method: 'GET' });
+  });
+
+  it('emits entry-destroyed with the cause behind every teardown path', () => {
+    const repo = createRepo();
+    const events: QueryRepositoryEvent[] = [];
+
+    const unbound = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/unbound' });
+    const evicted = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/evicted' });
+
+    repo.events$.subscribe((event) => events.push(event));
+
+    // Deliberately never flushed: retention only keeps an entry that holds a response, so unbinding
+    // one that never got that far destroys it outright.
+    repo.unbind(unbound.key, destroyRef);
+    repo.subtle.evict(evicted.key);
+
+    expect(events.filter((event) => event.type === 'entry-destroyed').map((event) => event.cause)).toEqual([
+      'unbind',
+      'manual',
+    ]);
   });
 
   it('keeps unsecure entries when secure ones are unbound', () => {

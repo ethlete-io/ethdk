@@ -117,6 +117,15 @@ export type QueryDevtoolsEntry = {
   createdAt: number;
 
   /**
+   * When the query behind this entry was destroyed, or `null`/absent while it is still live. A
+   * destroyed entry is kept as a tombstone - a frozen snapshot of what the query last held - so a
+   * request that failed on the way out (a `401` that redirects to login and takes its component with
+   * it) is still readable by the time the panel is opened. Its `handle` answers with constants and
+   * every action on it is inert.
+   */
+  destroyedAt?: number | null;
+
+  /**
    * What the entry has done since it was created - executions, requests, payload sizes. Present for
    * queries; stacks, sequences and auth providers aggregate the stats of the queries they own instead.
    */

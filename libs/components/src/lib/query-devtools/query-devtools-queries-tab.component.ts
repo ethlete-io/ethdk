@@ -1,5 +1,5 @@
 import { Component, computed, ViewEncapsulation } from '@angular/core';
-import { QueryDevtoolsEntry } from '@ethlete/query';
+import { clearQueryDevtoolsTombstones, QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
@@ -21,6 +21,7 @@ export class QueryDevtoolsQueriesTabComponent {
     { id: 'loading', label: 'Loading' },
     { id: 'stale', label: 'Stale' },
     { id: 'idle', label: 'Idle' },
+    { id: 'gone', label: 'Gone' },
   ] satisfies { id: QueryListFacet; label: string }[];
 
   private searchedQueries = computed(() => {
@@ -45,9 +46,16 @@ export class QueryDevtoolsQueriesTabComponent {
     // the counts age with it - without it a chip would keep the number it happened to be built with.
     this.host.clock();
 
-    const counts: Record<QueryListFacet, number> = { error: 0, loading: 0, stale: 0, idle: 0 };
+    const counts: Record<QueryListFacet, number> = { error: 0, loading: 0, stale: 0, idle: 0, gone: 0 };
 
-    for (const { query } of this.searchedQueries()) {
+    for (const { entry, query } of this.searchedQueries()) {
+      // A tombstone's frozen state is not live state: counting it as failing or idle would put a query
+      // that no longer exists into the numbers the panel is read for.
+      if (entry.destroyedAt) {
+        counts.gone++;
+        continue;
+      }
+
       const status = this.host.queryStatus(query);
 
       if (status === 'error') counts.error++;
@@ -61,18 +69,33 @@ export class QueryDevtoolsQueriesTabComponent {
 
   protected filteredQueries = computed(() => {
     const facets = this.host.queryFacets();
-    const items = this.searchedQueries();
+    // Tombstones are the one thing the list hides until asked: a destroyed query is history, and a
+    // panel that mixes it into the default view stops answering "what is my app doing".
+    const items = facets.has('gone')
+      ? this.searchedQueries()
+      : this.searchedQueries().filter(({ entry }) => !entry.destroyedAt);
 
     if (!facets.size) return items;
 
     // Same reason as in `facetCounts`: a list narrowed to stale queries has to re-evaluate as they age.
     if (facets.has('stale')) this.host.clock();
 
-    return items.filter(({ query }) => this.matchesFacets(query, facets));
+    return items.filter((item) => this.matchesFacets(item, facets));
   });
 
-  /** How many queries are in scope, which is what the list would show unfiltered. */
-  protected scopedQueryCount = computed(() => this.host.scopedQueries().length);
+  /**
+   * How many queries are in scope, which is what the list would show unfiltered. Tombstones count only
+   * while the Gone chip is on, since they are not in the list otherwise.
+   */
+  protected scopedQueryCount = computed(() => {
+    const includeGone = this.host.queryFacets().has('gone');
+
+    return this.host.scopedQueries().filter((entry) => includeGone || !entry.destroyedAt).length;
+  });
+
+  protected goneQueryCount = computed(() => this.host.scopedQueries().filter((entry) => !!entry.destroyedAt).length);
+
+  protected readonly CLEAR_GONE = clearQueryDevtoolsTombstones;
 
   /** Whether the search box or a status chip is narrowing the list beyond its scope. */
   protected isQueryListNarrowed = computed(() => !!this.host.queryFilter().trim() || this.host.queryFacets().size > 0);
@@ -82,14 +105,16 @@ export class QueryDevtoolsQueriesTabComponent {
   }
 
   /** A query matches the chips if it is in any of the picked states - chips widen, they don't intersect. */
-  private matchesFacets(query: AnyQuery, facets: ReadonlySet<QueryListFacet>) {
-    const status = this.host.queryStatus(query);
+  private matchesFacets(item: { entry: QueryDevtoolsEntry; query: AnyQuery }, facets: ReadonlySet<QueryListFacet>) {
+    if (item.entry.destroyedAt) return facets.has('gone');
+
+    const status = this.host.queryStatus(item.query);
 
     return (
       (facets.has('error') && status === 'error') ||
       (facets.has('loading') && status === 'loading') ||
       (facets.has('idle') && status === 'idle') ||
-      (facets.has('stale') && this.host.isStale(query))
+      (facets.has('stale') && this.host.isStale(item.query))
     );
   }
 

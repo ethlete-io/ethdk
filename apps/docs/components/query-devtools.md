@@ -128,6 +128,9 @@ that stack:
   do, and a chip with no matches is disabled. The counts are computed before the
   chips are applied, so a chip always states what picking it yields.
 
+  **Gone** is the odd one out: it is the only chip that _adds_ rows rather than
+  narrowing them - see [tombstones](#a-destroyed-query-leaves-a-tombstone).
+
   A query whose request is in flight counts as **Loading** and not as **Stale**:
   it is already refreshing, so the freshness of what it is replacing is not the
   useful fact about it. That is the same precedence the Cache tab's freshness
@@ -505,11 +508,33 @@ whenever the query resets - and `logout()` resets every secure query - so the `4
 sent the app to the login screen is already gone from there by the time anyone looks for
 it. The run history is what survives.
 
-::: warning
-The run history survives a reset of the query's state, but not the query itself: the
-detail row disappears when the component holding the query is destroyed. A mutation
-whose 401 unmounts its own page still has to be caught in the **Events** tab.
-:::
+### A destroyed query leaves a tombstone
+
+The failure that is hardest to read is the one that takes its own page down: a `PUT`
+that comes back `401` and sends the app to the login screen destroys the component
+holding it, and with it the query. The panel keeps that query anyway, as a **tombstone** -
+a frozen snapshot of the state it last held, under the same row it always had.
+
+- It is **hidden until asked for**. The **Gone** chip is the only thing that puts
+  tombstones in the list, so the default view keeps answering "what is my app doing"
+  rather than "what has it ever done". Tombstones never count towards the live chips
+  (**Failing**, **Loading**, …) or the tab badges either.
+- The row reads muted, with a **gone** chip and no status dot, and the drawer says when
+  the query was destroyed.
+- **Everything it holds is still readable** - Overview, the run history, and the args,
+  response and error body under **Data**. That is the whole point: the `401`'s body is
+  right there instead of only its status code in the event log.
+- **Nothing can be run on it.** Execute / Cached / Reset, the JIT editors and the forced
+  states are gone from the drawer, since its handle answers with constants. Copy report,
+  cURL and Insomnia still work - they only read.
+- **✕ Gone _n_** in the toolbar forgets every tombstone at once. The panel keeps the 50
+  most recent on its own, oldest dropped first; a tombstone holds the last response body
+  it captured, so the list is capped for the same reason the cache caps unused entries.
+  The host DOM element is dropped, so a tombstone never keeps a destroyed component's
+  node alive.
+
+Only queries tombstone. A stack, sequence, form or auth provider is a container whose
+interesting state is the queries it owns, and each of those leaves its own.
 
 ## Forms: what a filter is actually sending
 
@@ -612,6 +637,20 @@ figure the [Activity tiles](#activity-how-often-a-query-ran-and-what-it-cost) re
 A failure has no payload worth a column and reads `—`; sizes prefixed with `≈` were
 measured from the decoded body rather than a `content-length` header.
 
+A `dropped` row says a cache entry was torn down, and names what did it: `last consumer
+gone`, `unused window over` (its `keepUnusedFor` ran out), `unused entry cap`, `logout`,
+or `evicted` by hand. Without it an entry simply vanishes from the Cache tab with nothing
+to say which of the five happened.
+
+```
+17:04:25   https://api.example.com   dropped · logout             GET /me        —   —
+```
+
+Clicking a request row opens the query it belonged to. That still resolves once the query
+is gone: the row falls back to matching on the request URL, so a failure fired while its
+component was being destroyed opens [its tombstone](#a-destroyed-query-leaves-a-tombstone)
+instead of doing nothing.
+
 Two controls narrow the log, which is what makes a hundred rows readable:
 
 - **The client picker** scopes it to one base URL. It only appears once more than one
@@ -641,6 +680,12 @@ which made an entry no live query holds unreadable. Four additions close that:
 - **Evict all** drops every entry of one client, consumers included - the cold-start
   check without a reload. Queries still bound to an evicted entry request again on
   their next execution.
+
+A **Dropped** list under the table names the last 20 entries this client has lost, with
+the same cause the Events tab spells out and the time it happened. It is deliberately not
+a table row: a destroyed entry has no consumers, no size, no freshness and nothing to act
+on, so a full row would be seven columns of dashes. What is left worth showing is what it
+was and why it went.
 
 ## Sockets: both directions, and an emit box
 
