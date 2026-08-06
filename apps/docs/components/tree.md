@@ -90,7 +90,7 @@ Selections are independent per node - a branch is not implied by its children, a
 
 Activating a branch selects **and** expands it (a folder click is both), so `selectionMode="none"` is the way to get expansion-only rows.
 
-The two modes look different on purpose. `single` fills the one selected row with the accent and tints its label to match; `multiple` keeps the label in normal text color, fills far more faintly, and marks each selected row with a check at its trailing edge - so a run of adjacent selections stays readable instead of merging into one accent block.
+The two modes look different on purpose. `single` fills the one selected row with the accent and tints its label to match. `multiple` never fills a selected row at all - a run of adjacent selections would merge into one accent block - so it states the selection through a leading check box instead, the way [select](/components/select) and [cascader](/components/cascader) do, and keeps the fill for hover and press. The box renders on every row whether or not it is selected, so ticking one never shifts its label.
 
 <StoryEmbed id="components-tree--multi-select" height="520px" />
 
@@ -159,11 +159,11 @@ Rows are `role="treeitem"` with `aria-level`, `aria-posinset`, `aria-setsize`, `
 
 ## Theming
 
-Public design tokens: `--et-tree-indent` (default `18px`), `--et-tree-node-padding-block` (`5px`), `--et-tree-node-padding-inline` (`6px`), `--et-tree-node-gap` (`6px`), `--et-tree-node-radius` (`6px`), `--et-tree-marker-size` (`12px`), `--et-tree-duration` (`150ms`).
+Public design tokens: `--et-tree-indent` (default `18px`), `--et-tree-node-padding-block` (`5px`), `--et-tree-node-padding-inline` (`6px`), `--et-tree-node-gap` (`6px`), `--et-tree-node-radius` (`6px`), `--et-tree-marker-size` (`12px`), `--et-tree-check-size` (`16px`, `multiple` mode only), `--et-tree-duration` (`150ms`).
 
 Indentation is padding on the flat row rather than nested boxes, which is what keeps the hover and selection tints spanning the full width at every depth - so `--et-tree-indent` is the one token to reach for when rows feel cramped or too far out.
 
-Colors resolve from the app-registered surface and color themes: rows take their text from `--et-surface-color-solid`, their hover and active tints from `--et-surface-interaction-solid`, and the selected state from `--et-theme-color-primary-solid` and `--et-theme-color-ink-solid` (in `multiple` mode only the check and the faint fill use the accent - the label keeps `--et-surface-color-solid`). A selected row that is hovered deepens its accent instead of falling back to the neutral tint. A disabled row - whether from the tree-wide `disabled` input or a node's own flag - drops to `opacity: 0.4` and takes no hover or press tint at all, in either selection mode. Failed-branch text uses `--et-tree-error-color`, which falls back to muted body text - point it at your error theme's ink color if you want a red one, since the tree deliberately does not require an app to register a `type: 'error'` theme just to render. See [theming](/core/theming).
+Colors resolve from the app-registered surface and color themes: rows take their text from `--et-surface-color-solid`, their hover and active tints from `--et-surface-interaction-solid`, and the selected state from `--et-theme-color-primary-solid` and `--et-theme-color-ink-solid` (in `multiple` mode only the check box uses the accent, filling with `--et-theme-color-primary-solid` and drawing its mark in `--et-theme-color-on-primary` - the row keeps its surface fill and `--et-surface-color-solid` label). In `single` mode a selected row that is hovered deepens its accent instead of falling back to the neutral tint; in `multiple` mode the neutral tint is the only fill there is. A disabled row - whether from the tree-wide `disabled` input or a node's own flag - drops to `opacity: 0.4` and takes no hover or press tint at all, in either selection mode. Failed-branch text uses `--et-tree-error-color`, which falls back to muted body text - point it at your error theme's ink color if you want a red one, since the tree deliberately does not require an app to register a `type: 'error'` theme just to render. See [theming](/core/theming).
 
 ## Error codes
 

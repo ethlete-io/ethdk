@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { TreeDirective, TreeNodeDirective, TreeRow } from './headless';
+import { TREE_SELECTION_MODES, TreeDirective, TreeNodeDirective, TreeRow } from './headless';
 import { TREE_MARKERS, TreeMarker, TreeMarkerComponent } from './tree-marker.component';
 
 const markerFor = (row: TreeRow<unknown>): TreeMarker => {
@@ -58,4 +58,6 @@ export class TreeComponent<T = unknown> {
   protected rows = computed(() =>
     this.tree.visibleRows().map((row) => ({ row, marker: markerFor(row), context: { $implicit: row.node, row } })),
   );
+
+  protected isMultiSelect = computed(() => this.tree.selectionMode() === TREE_SELECTION_MODES.MULTIPLE);
 }

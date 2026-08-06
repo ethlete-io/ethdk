@@ -2,6 +2,10 @@
   <div [row]="entry.row" [style.--_et-tree-node-depth]="entry.row.level - 1" class="et-tree-node" etTreeNode>
     <et-tree-marker [marker]="entry.marker" />
 
+    @if (isMultiSelect()) {
+      <span class="et-tree-node-check" aria-hidden="true"></span>
+    }
+
     <span class="et-tree-node-label">
       @if (tree.nodeTemplate(); as nodeTemplate) {
         <ng-container [ngTemplateOutlet]="nodeTemplate.templateRef" [ngTemplateOutletContext]="entry.context" />

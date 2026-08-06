@@ -37,6 +37,12 @@
     initial-value: 12px;
   }
 
+  @property --et-tree-check-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
   @property --et-tree-duration {
     syntax: '<time>';
     inherits: true;
@@ -144,21 +150,6 @@
       outline-offset: -2px;
     }
 
-    /* After the bare interaction states on purpose: at equal specificity these win, so hovering a
-       selected row deepens its accent instead of replacing it with the neutral tint. */
-    &:where([data-selected]) {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 16%, transparent);
-      color: var(--et-theme-color-ink-solid, inherit);
-
-      &:not(:where([aria-disabled])):hover {
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 24%, transparent);
-      }
-
-      &:not(:where([aria-disabled])):active {
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 32%, transparent);
-      }
-    }
-
     /* Muted as a whole, the way `select-option` and `cascader-panel` state disabled - one rule that
        reaches the fill, the label and the selection mark alike. */
     &:where([aria-disabled]) {
@@ -167,39 +158,60 @@
     }
   }
 
-  /* Must stay after `.et-tree-node`: the base selected rule and this one both weigh a single class
-     plus an attribute, so source order is what lets multi select win. Multi select stacks selected
-     rows into one slab, so it states the selection with a mark and keeps the fill and the label
-     untinted; single select only ever fills one row, where the stronger tint reads fine. */
-  .et-tree:where([aria-multiselectable]) .et-tree-node {
+  /* Only single select fills the row. Multi select would paint consecutive selected rows as one
+     continuous slab, so it states the selection through the leading check box alone - the same
+     choice `select-option` and `cascader-panel` make - and leaves the fill to hover and active.
+     Must stay after `.et-tree-node`: this weighs the same as the bare interaction states above, so
+     source order is what lets a selected row keep its accent while hovered. */
+  .et-tree:not(:where([aria-multiselectable])) .et-tree-node:where([data-selected]) {
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 16%, transparent);
+    color: var(--et-theme-color-ink-solid, inherit);
+
+    &:not(:where([aria-disabled])):hover {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 24%, transparent);
+    }
+
+    &:not(:where([aria-disabled])):active {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 32%, transparent);
+    }
+  }
+
+  /* Rendered on every row in multi select, selected or not, so ticking one never shifts its label. */
+  .et-tree-node-check {
+    position: relative;
+    flex: none;
+    inline-size: var(--et-tree-check-size);
+    block-size: var(--et-tree-check-size);
+    box-sizing: border-box;
+    border: 2px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.3));
+    border-radius: 4px;
+    transition:
+      background var(--et-tree-duration) ease,
+      border-color var(--et-tree-duration) ease;
+
     &::after {
       content: '';
-      flex: none;
+      position: absolute;
+      inset: 0;
+      margin: auto;
       inline-size: 4px;
       block-size: 8px;
-      margin-inline: 3px;
-      border: solid var(--et-theme-color-primary-solid, currentColor);
+      border: solid var(--et-theme-color-on-primary, rgb(0 0 0));
       border-width: 0 2px 2px 0;
+      /* the rotated L's ink sits below its box centre - lift it back to the optical centre */
+      translate: 0 -1px;
       rotate: 45deg;
       opacity: 0;
       transition: opacity var(--et-tree-duration) ease;
     }
+  }
 
-    &:where([data-selected]) {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 8%, transparent);
-      color: inherit;
+  .et-tree-node:where([data-selected]) > .et-tree-node-check {
+    border-color: var(--et-theme-color-primary-solid, currentColor);
+    background: var(--et-theme-color-primary-solid, currentColor);
 
-      &::after {
-        opacity: 1;
-      }
-
-      &:not(:where([aria-disabled])):hover {
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 14%, transparent);
-      }
-
-      &:not(:where([aria-disabled])):active {
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 20%, transparent);
-      }
+    &::after {
+      opacity: 1;
     }
   }
 
@@ -219,7 +231,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     .et-tree-node,
-    .et-tree-node::after,
+    .et-tree-node-check,
+    .et-tree-node-check::after,
     .et-tree-node .et-tree-node-chevron {
       transition: none;
     }
