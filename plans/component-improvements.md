@@ -1149,3 +1149,89 @@ registry setup and Angular runs effects in creation order, so it always wins. Th
 `tokenSeed` path applies tokens synchronously before setting the state, too. Whatever the
 author actually saw, that ordering is not it, and the extra `isAuthenticated()` condition
 is what turns the extraction failure above into a hang instead of a redirect.
+
+## Paged query stack: two of its public signals do not mean what they say
+
+`createPagedQueryStack` (`libs/query/src/lib/http/paged-query-stack.ts`) is the pagination
+primitive behind infinite scroll and "load more". Two of the six signals it exposes disagree
+with their own JSDoc, and the existing spec cannot see either problem because every test in
+`paged-query-stack.spec.ts` starts at page 1 and never asserts anything while a request is
+in flight.
+
+### `isFirstPageLoaded` is a tautology
+
+`isLastPageLoaded` (`:365`) is `loadedMaxPage() === max.totalPages` - a real question, with
+`totalPages` coming from the server. `isFirstPageLoaded` (`:359`) is
+`loadedMinPage() === min.currentPage`, and those two are the same number by construction:
+`loadedMinPage` _is_ the page the first query in the stack fetched, and `min.currentPage` is
+that same query's response echoing it back. It answers "does the server agree with our
+bookkeeping", not "is page 1 loaded".
+
+Verified with a throwaway spec (added, run, deleted). Starting at `initialPage: 5` with a
+`{ currentPage: 5, totalPages: 10 }` response:
+
+- `isFirstPageLoaded()` → `true`
+- `canFetchPreviousPage()` → `true`
+- `items()` → `[{ id: 50 }]` - page 5 only
+
+So the stack simultaneously reports that the first page is loaded and that a previous page
+can be fetched, while holding exactly one page that is not page 1. The fix is the mirror of
+its sibling: `loadedMinPage() === 1`.
+
+### `canFetchNextPage` / `canFetchPreviousPage` never look at `loading`
+
+Both JSDoc blocks (`:230`, `:237`) promise "this will be false if the paged query is already
+at the first/last page **or if the paged query is loading**". Neither implementation (`:465`,
+`:472`) reads `stack.anyLoading()` or any other loading signal - the loading half of the
+contract simply is not there.
+
+It looks correct in the common case by accident. While a _new_ page is being fetched, the
+freshly created query has no response yet, so `maxPagination` / `minPagination` fall to `null`
+and both signals short-circuit to `false`. That coincidence disappears the moment a response
+already exists, because a re-executing query keeps its previous response
+(`apps/docs/query/caching.md:32`). Verified with the same throwaway spec: after settling page
+1 of 3 and calling `stack.execute()` to refresh, `loading()` is `true` and `canFetchNextPage()`
+is still `true`.
+
+`blockExecutionDuringLoading` does not help - it gates the internal `canFetchNewPage` guard
+(`:426`), not the two public signals a template binds to. A "load more" button driven by
+`canFetchNextPage()` therefore stays live through a refresh, and the devtools story already
+writes the pattern that trips on it
+(`query-devtools-storybook.component.ts:326`: `if (canFetchNextPage()) fetchNextPage()`).
+Either add the loading term to both signals or drop the sentence from both JSDoc blocks; today
+the two disagree.
+
+## Web socket rooms: the first unmount kills the room for everyone else
+
+`createWebSocketClient` (`libs/query/src/lib/ws/web-socket-client.ts`) keeps one
+`rooms` map (`:155`) for the whole client, and `join()` (`:192`) deliberately shares: a second
+caller joining a room that already exists gets the _existing_ room object back rather than a
+new one, so both subscribers read the same `latestMessage`. That sharing is the intended
+design. The teardown never learned about it. `joinRoom`'s `onDestroy` (`:230`) calls
+`leaveRoom`, and `leaveRoom` (`:242`) unconditionally emits `leave-room` to the server and
+does `rooms.delete(room)`. There is no reference count anywhere - N joiners, and the first one
+to unmount evicts the room for all of them.
+
+Verified with a throwaway spec (the ws client has **no spec of its own** - `libs/query/src/lib/ws`
+ships only the client, its errors and a barrel). Two subscribers join `match-42` through
+separate injectors:
+
+- both receive the first message
+- subscriber A's injector is destroyed → one `leave-room` reaches the server
+- a second message for `match-42` arrives → subscriber B is still mounted, still holding a
+  live room handle, and still reads the **first** message
+
+B is silently dead. Nothing throws, nothing logs, and `latestMessage` keeps serving a stale
+value, so a match view that happens to be the second one opened just stops updating. The
+emitted traffic shows the asymmetry directly: two `join-room` frames, one `leave-room` that
+undoes both.
+
+The fix is a join count per room - increment in `join()`, decrement in `leaveRoom`, and only
+emit `leave-room` plus delete the map entry when it reaches zero. The reconnect handler
+(`:257`) already iterates `rooms.keys()` to re-join everything, so it picks up the corrected
+lifetime for free.
+
+Minor, same function: the `!rooms.has(room)` branch in `leaveRoom` throws in dev mode but has
+no `return`, so in production a `subtle.leaveRoom()` for a room that was never joined falls
+through and emits a `leave-room` frame anyway - potentially evicting a room another part of
+the app is using.
