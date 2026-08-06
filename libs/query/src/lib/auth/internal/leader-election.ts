@@ -4,17 +4,18 @@ import { createQueryKeyLockManager } from '../../http/sync/query-key-lock-manage
 /**
  * Namespace and key of the one lock the whole election is: whoever holds it is the leader, and every
  * other tab of the app is queued behind it. The lock name is what the instance count is derived from,
- * so the two can never disagree about who is taking part.
+ * so the two can never disagree about who is taking part. Both carry the provider's name, so two
+ * providers reachable from one origin elect a leader each instead of one between them.
  */
 const LEADER_LOCK_NAMESPACE = 'ethlete-auth';
-const LEADER_LOCK_KEY = 'leader';
-const LEADER_LOCK_NAME = 'ethlete-auth:leader';
+const leaderLockKey = (name: string) => `leader:${name}`;
+const leaderLockName = (name: string) => `${LEADER_LOCK_NAMESPACE}:${leaderLockKey(name)}`;
 
 /**
  * Web Locks has no "someone joined" event, so tabs announce themselves on this channel. Two messages
  * per tab lifetime, in place of the heartbeat this used to run once a second.
  */
-const PRESENCE_CHANNEL_NAME = 'ethlete-auth-leader';
+const presenceChannelName = (name: string) => `ethlete-auth-leader:${name}`;
 
 type LeaderPresenceMessage = { type: 'presence' };
 
@@ -39,8 +40,8 @@ export type InternalLeaderElection = {
   cleanup: () => void;
 };
 
-const countLeaderRequests = (snapshot: LockManagerSnapshot) => {
-  const isLeaderLock = (info: LockInfo) => info.name === LEADER_LOCK_NAME;
+const countLeaderRequests = (snapshot: LockManagerSnapshot, lockName: string) => {
+  const isLeaderLock = (info: LockInfo) => info.name === lockName;
 
   // Held plus pending is exactly the tab count: every tab requests this one lock, one gets it and the
   // rest queue. The platform drops a crashed tab from both lists on its own.
@@ -59,11 +60,12 @@ const countLeaderRequests = (snapshot: LockManagerSnapshot) => {
  * `localStorage` implementation fell back to, and the only safe default: a session that refreshes its
  * token in every tab is wasteful, one that refreshes it in none logs the user out.
  */
-export const setupLeaderElection = (): InternalLeaderElection => {
+export const setupLeaderElection = (options: { name: string }): InternalLeaderElection => {
   const destroyRef = inject(DestroyRef);
 
+  const lockName = leaderLockName(options.name);
   const lockManager = createQueryKeyLockManager(LEADER_LOCK_NAMESPACE);
-  const hold = lockManager.hold(LEADER_LOCK_KEY);
+  const hold = lockManager.hold(leaderLockKey(options.name));
   const instanceCount = signal(1);
 
   const noopCleanup = () => {
@@ -75,7 +77,8 @@ export const setupLeaderElection = (): InternalLeaderElection => {
     return { isLeader: hold.isHolder, instanceCount: instanceCount.asReadonly(), cleanup: noopCleanup };
   }
 
-  const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(PRESENCE_CHANNEL_NAME);
+  const channel =
+    typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(presenceChannelName(options.name));
 
   let isDestroyed = false;
 
@@ -86,7 +89,7 @@ export const setupLeaderElection = (): InternalLeaderElection => {
 
     // Never below one: the snapshot can be taken before this tab's own request is registered, and a
     // count of zero would say the app is not running in the tab reading it.
-    instanceCount.set(Math.max(countLeaderRequests(snapshot), 1));
+    instanceCount.set(Math.max(countLeaderRequests(snapshot, lockName), 1));
   };
 
   const announce = () => channel?.postMessage({ type: 'presence' } satisfies LeaderPresenceMessage);

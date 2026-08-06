@@ -23,6 +23,7 @@ import {
   authExtractTokensResponseMissingRefreshToken,
   authExtractTokensResponseNotObject,
   authProviderFeatureUsedMultipleTimes,
+  Query,
   QueryArgs,
   QueryClient,
   QueryErrorResponse,
@@ -112,6 +113,12 @@ export type BearerAuthProviderEarlySetupContext = {
   accessToken: WritableSignal<string | null>;
   refreshToken: WritableSignal<string | null>;
   queryClient: QueryClient;
+
+  /**
+   * The provider's own name. A feature that reaches outside the tab - a `BroadcastChannel`, a Web Lock,
+   * a storage key - must namespace it with this, or two providers on the same origin share it.
+   */
+  name: string;
 
   /**
    * Applies a token pair the way a successful auth query does - including the `afterTokenRefresh$`
@@ -412,11 +419,34 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       }
     });
 
+    const currentExecution = signal<{ type: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
+
+    effect(() => {
+      const execution = currentExecution();
+      if (!execution) return;
+
+      const { type, snapshot } = execution;
+      const response = snapshot.response();
+      const loading = snapshot.loading();
+      const error = snapshot.error();
+
+      if (loading) return;
+
+      if (error) {
+        executionState.set({ type, state: 'error', error });
+      } else if (response) {
+        executionState.set({ type, state: 'success', response });
+      }
+    });
+
+    // One query per builder, reused by every execution. A query owns a child injector, a devtools
+    // entry and a repository binding holding the request and response bodies - creating one per login
+    // attempt or token refresh grows all of that for as long as the tab lives.
+    let query: Query<QueryArgs> | null = null;
+
     const execute = (args?: RequestArgs<QueryArgs>, options?: { triggeredBy?: string }) => {
-      const query = builder.config.queryCreator({
-        onlyManualExecution: true,
-        injector,
-      });
+      query ??= builder.config.queryCreator({ onlyManualExecution: true, injector });
+
       query.execute({ args, options });
       const snapshot = query.createSnapshot();
 
@@ -430,23 +460,7 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       }
       executionState.set({ type: stateType, state: 'loading' });
 
-      effect(
-        () => {
-          const response = snapshot.response();
-          const loading = snapshot.loading();
-          const error = snapshot.error();
-
-          if (loading) return;
-
-          if (error) {
-            executionState.set({ type: stateType, state: 'error', error });
-          } else if (response) {
-            executionState.set({ type: stateType, state: 'success', response });
-          }
-        },
-        { injector },
-      );
-
+      currentExecution.set({ type: stateType, snapshot });
       querySnapshot.set(snapshot);
       return snapshot;
     };
@@ -617,6 +631,7 @@ const createBearerAuthProviderImpl = <
     accessToken,
     refreshToken,
     queryClient,
+    name: config.name,
     applyTokens,
     logout,
   });

@@ -88,6 +88,8 @@ It also **abandons every unsaved-changes guard** (`injectUnsavedChangesCoordinat
 
 This is what replaces watching a v2 query collection. A failed session restore, for instance, is `{ type: 'autoLogin', state: 'error', error }` - the signal to send the user to the login screen rather than to show a broken app.
 
+Each registry key owns **one** query that every execution reuses, so a second `execute()` for the same key supersedes the first: the earlier attempt stops reporting, and only the latest one writes `executionState()` and applies tokens. A login submitted while an auto-login is still in flight resolves to the login, not to whichever request happens to come back last.
+
 ## External tokens
 
 `setTokens(access, refresh)` applies a token pair the provider did not fetch itself - an SSO/OIDC callback that arrives with both tokens in the URL, a token handed over by a native shell, a test harness. It behaves like a successful auth query: `executionState()` becomes `{ type: 'tokenSeed', state: 'success' }`, so login-redirect logic built on `executionState` works the same for this path as for a query-driven login.
@@ -111,7 +113,7 @@ Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 
 
 ## Multi-tab sync
 
-Opt in with the `withBearerAuthMultiTabSync()` feature: tokens and logout are then synchronized across tabs via a `BroadcastChannel` (`'ethlete-auth-sync'`) with leader election, so only one tab performs proactive refreshes. Pass a config object to tune `channelName`, `syncTokens`, `syncLogout` and `leaderElection` individually.
+Opt in with the `withBearerAuthMultiTabSync()` feature: tokens and logout are then synchronized across tabs via a `BroadcastChannel` (`'ethlete-auth-sync:<provider name>'`) with leader election, so only one tab performs proactive refreshes. The channel and the leader lock are both namespaced by the provider's `name`, so two providers reachable from the same origin keep separate sessions. Pass a config object to tune `channelName`, `syncTokens`, `syncLogout` and `leaderElection` individually.
 
 ```ts
 export const AUTH_PROVIDER = createBearerAuthProvider({

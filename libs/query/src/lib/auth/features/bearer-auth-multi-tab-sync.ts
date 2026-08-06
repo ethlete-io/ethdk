@@ -6,12 +6,13 @@ import {
   BearerAuthProviderEarlySetupContext,
   BearerAuthProviderFeatureContext,
 } from '../bearer-auth-provider';
-import { setupLeaderElection, setupMultiTabSync } from '../internal';
+import { defaultSyncChannelName, setupLeaderElection, setupMultiTabSync } from '../internal';
 
 export type BearerAuthMultiTabSyncConfig = {
   /**
-   * Channel name for BroadcastChannel
-   * @default 'ethlete-auth-sync'
+   * Channel name for BroadcastChannel. Defaults to a channel of the provider's own, so two providers
+   * reachable from the same origin do not sync each other's sessions.
+   * @default `ethlete-auth-sync:<provider name>`
    */
   channelName?: string;
 
@@ -75,12 +76,13 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
   config: BearerAuthMultiTabSyncConfig = {},
 ) => {
   let instance: BearerAuthMultiTabSyncFeature = SINGLE_TAB;
+  let channelName = config.channelName ?? '';
 
   const setup = (_context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => ({
     type: BearerAuthFeatureType.MULTI_TAB_SYNC,
     instance,
     devtools: () => [
-      { label: 'channel', value: config.channelName ?? 'ethlete-auth-sync' },
+      { label: 'channel', value: channelName },
       { label: 'tokens', value: config.syncTokens === false ? 'tab local' : 'synced' },
       { label: 'logout', value: config.syncLogout === false ? 'tab local' : 'synced' },
       {
@@ -93,11 +95,14 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
   // The elected leader gates the auth queries' automatic refresh, which is wired up before the
   // regular feature setup runs - so this half has to happen earlier than `setup`.
   const earlySetup: BearerAuthProviderEarlySetup['earlySetup'] = (context: BearerAuthProviderEarlySetupContext) => {
+    channelName = config.channelName ?? defaultSyncChannelName(context.name);
+
     setupMultiTabSync(
-      { channelName: config.channelName, syncTokens: config.syncTokens, syncLogout: config.syncLogout },
+      { channelName, syncTokens: config.syncTokens, syncLogout: config.syncLogout },
       {
         accessToken: context.accessToken,
         refreshToken: context.refreshToken,
+        name: context.name,
         applyTokens: context.applyTokens,
         logout: context.logout,
       },
@@ -105,7 +110,7 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
 
     if (config.leaderElection === false) return {};
 
-    const election = setupLeaderElection();
+    const election = setupLeaderElection({ name: context.name });
 
     instance = { isLeader: election.isLeader, instanceCount: election.instanceCount };
 

@@ -27,6 +27,7 @@ describe('setupMultiTabSync', () => {
     setupMultiTabSync(config, {
       accessToken,
       refreshToken,
+      name: 'test-auth',
       applyTokens: applyTokens as unknown as (access: string, refresh: string) => void,
       logout: logout as unknown as () => void,
     });
@@ -86,7 +87,7 @@ describe('setupMultiTabSync', () => {
       const sync = setup();
 
       expect(sync.cleanup).toBeDefined();
-      expect(globalThis.BroadcastChannel).toHaveBeenCalledWith('ethlete-auth-sync');
+      expect(globalThis.BroadcastChannel).toHaveBeenCalledWith('ethlete-auth-sync:test-auth');
     });
   });
 

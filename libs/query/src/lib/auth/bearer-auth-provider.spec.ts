@@ -357,6 +357,82 @@ describe('createBearerAuthProvider', () => {
         expect(provider.isAuthenticated()).toBe(false);
       });
     });
+
+    it('reuses one query across attempts instead of leaving a cache entry per attempt', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string; password: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+        const repository = TestBed.inject(queryClientRef.token).repository;
+
+        provider.queries.login.execute({ body: { username: 'wrong', password: 'pass' } });
+        httpTesting
+          .expectOne('https://api.example.com/auth/login')
+          .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+        TestBed.tick();
+
+        provider.queries.login.execute({ body: { username: 'right', password: 'pass' } });
+        httpTesting.expectOne('https://api.example.com/auth/login').flush({
+          token: 'access-123',
+          refresh_token: 'refresh-456',
+        });
+        TestBed.tick();
+
+        expect(repository.subtle.cacheEntries()).toHaveLength(1);
+        expect(provider.accessToken()).toBe('access-123');
+      });
+    });
+
+    it('is not replayed by refreshQueriesInUse', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string; password: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.queries.login.execute({ body: { username: 'test', password: 'pass' } });
+
+        httpTesting.expectOne('https://api.example.com/auth/login').flush({
+          token: 'access-123',
+          refresh_token: 'refresh-456',
+        });
+
+        TestBed.tick();
+
+        TestBed.inject(queryClientRef.token).refreshQueriesInUse();
+
+        expect(httpTesting.match(() => true)).toHaveLength(0);
+      });
+    });
   });
 
   describe('setTokens', () => {
@@ -1104,7 +1180,7 @@ describe('createBearerAuthProvider', () => {
 
       TestBed.runInInjectionContext(() => {
         injectAuthProvider();
-        expect(globalThis.BroadcastChannel).toHaveBeenCalledWith('ethlete-auth-sync');
+        expect(globalThis.BroadcastChannel).toHaveBeenCalledWith('ethlete-auth-sync:test-auth');
       });
     });
 
@@ -1287,7 +1363,7 @@ describe('createBearerAuthProvider', () => {
 
         // Named rather than "never called": the query client opens a channel of its own for its
         // multi-tab sync, which is a separate opt-in.
-        expect(globalThis.BroadcastChannel).not.toHaveBeenCalledWith('ethlete-auth-sync');
+        expect(globalThis.BroadcastChannel).not.toHaveBeenCalledWith('ethlete-auth-sync:test-auth');
       });
     });
 

@@ -178,10 +178,10 @@ describe('bearer-auth-tracking', () => {
       };
 
       const held = navigator.locks.request(
-        'ethlete-auth:leader',
+        'ethlete-auth:leader:test-auth',
         () => new Promise<void>((resolve) => (release = resolve)),
       );
-      const channel = new BroadcastChannel('ethlete-auth-leader');
+      const channel = new BroadcastChannel('ethlete-auth-leader:test-auth');
 
       channel.postMessage({ type: 'presence' });
 

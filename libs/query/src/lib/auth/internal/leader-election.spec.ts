@@ -20,7 +20,7 @@ const settle = async () => {
   }
 };
 
-const openTab = () => TestBed.runInInjectionContext(() => setupLeaderElection());
+const openTab = (name = 'test-auth') => TestBed.runInInjectionContext(() => setupLeaderElection({ name }));
 
 describe('setupLeaderElection', () => {
   let bus: FakeBroadcastChannelHandle;
@@ -54,7 +54,7 @@ describe('setupLeaderElection', () => {
 
     await settle();
 
-    expect(locks.heldNames()).toEqual(['ethlete-auth:leader']);
+    expect(locks.heldNames()).toEqual(['ethlete-auth:leader:test-auth']);
 
     tab.cleanup();
   });
@@ -67,10 +67,26 @@ describe('setupLeaderElection', () => {
 
     expect(first.isLeader()).toBe(true);
     expect(second.isLeader()).toBe(false);
-    expect(locks.pendingNames()).toEqual(['ethlete-auth:leader']);
+    expect(locks.pendingNames()).toEqual(['ethlete-auth:leader:test-auth']);
 
     first.cleanup();
     second.cleanup();
+  });
+
+  it('should elect a leader per provider name', async () => {
+    const hub = openTab('hub');
+    const voting = openTab('voting');
+
+    await settle();
+
+    expect(hub.isLeader()).toBe(true);
+    expect(voting.isLeader()).toBe(true);
+    expect(locks.heldNames()).toEqual(['ethlete-auth:leader:hub', 'ethlete-auth:leader:voting']);
+    expect(hub.instanceCount()).toBe(1);
+    expect(voting.instanceCount()).toBe(1);
+
+    hub.cleanup();
+    voting.cleanup();
   });
 
   it('should hand leadership to the waiting tab when the leader goes away', async () => {

@@ -139,7 +139,9 @@ export const withAuthenticationQuery = <TKey extends string, TArgs extends Query
   key,
   config: {
     ...config,
-    queryCreator: config.queryCreator.clone({ subtle: { useQueryRepositoryCache: true } }),
+    // A spent credential entry must not sit out a retention window: the request body holds the
+    // username and password, the response the tokens it was exchanged for.
+    queryCreator: config.queryCreator.clone({ keepUnusedFor: 0, subtle: { useQueryRepositoryCache: true } }),
   },
   setup,
 });
@@ -299,7 +301,11 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     key,
     config: {
       ...config,
-      queryCreator: config.queryCreator.clone({ retryFn: refreshRetryFn, subtle: { useQueryRepositoryCache: true } }),
+      queryCreator: config.queryCreator.clone({
+        retryFn: refreshRetryFn,
+        keepUnusedFor: 0,
+        subtle: { useQueryRepositoryCache: true },
+      }),
     },
     setup,
     buildArgs,
