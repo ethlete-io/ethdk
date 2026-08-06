@@ -21,40 +21,35 @@ Ranked by value per unit of risk, not by size.
 > cause, the snapshot-vs-`executionState` docs fix, and the cross-key execution race - are done in
 > one pass and moved to "Already fixed" in `component-improvements.md`. `withAuthGuard()` (was #7)
 > is now unblocked; it was sequenced deliberately after `sessionStatus`. **Badge `size` + icon
-> slot** (was #5) shipped the same day.
+> slot** (was #5) shipped the same day, and **the selection-card dedupe** (was #1) on 2026-08-07 -
+> one `.et-selection-card` sheet, one `--et-selection-card-*` token set, all three components on it.
+> The tile is now a clean single edit on top of it.
 
-1. **Selection list: one card presentation instead of three** - `M`, `C`.
-   `radio.component.css:160` and `checkbox-option.component.css:176` are the same ~75 lines with
-   the names swapped - same comments, copied verbatim - and `choice-field-card-styles` is a third.
-   Three token sets mean an app changes a card radius three times. Bundle angle too: only the
-   choice-field copy is mounted lazily, so ~40% of two always-injected stylesheets ships to apps
-   that only ever use `variant="plain"`.
-
-2. **Form field: route clear and picker-trigger through `[etInputSuffix]`** - `M`, `C`.
+1. **Form field: route clear and picker-trigger through `[etInputSuffix]`** - `M`, `C`.
    Six controls (date, date-time, date-range, time, phone, password) render those buttons as
    plain siblings that only _look_ like a suffix, so form-field's documented append-after rule -
    the one written precisely so a spinner never displaces a clear button - doesn't govern the
    stack it was written for.
 
-3. **Slider and rating onto `dragGestureFrom`** - `M`, `C`.
+2. **Slider and rating onto `dragGestureFrom`** - `M`, `C`.
    Both hand-roll pointerdown/move/up, `setPointerCapture` and a `dragging` flag that
    `dragGestureFrom` already provides. The extra argument on top of dedupe: the cancelled-gesture
    fix already landed _in_ `dragGestureFrom` (`drag-resize-cancelled-gesture.md`), so consolidating
    hands slider and rating a fix they don't have today. Leave carousel out - its deadzone
    semantics differ enough that folding it in is a separate call.
 
-4. **Auth: a `withAuthGuard()` helper** - `L`, `A`.
+3. **Auth: a `withAuthGuard()` helper** - `L`, `A`.
    The SDK ships no `CanMatchFn`/`CanActivateFn` at all, so every app hand-rolls "wait for auth to
    settle, redirect to login, come back to the attempted URL" - and keeps the return-URL param
    name in sync with the redirect by hand. High value, and now unblocked - `sessionStatus()` ships,
    so the guard has the thing to wait on.
 
-5. **Scheduler's cheap mobile trio** - `S` each, `A`.
+4. **Scheduler's cheap mobile trio** - `S` each, `A`.
    Add-appointment as a FAB below a breakpoint, the today button as an icon button at narrow
    widths, and swipe-to-navigate. All three reuse primitives that already exist and that scheduler
    simply doesn't import (`floating-action.directive.ts`, `SwipeTracker` in `libs/core`).
 
-6. **Query error rebuilt on banner** - `M`, `C`.
+5. **Query error rebuilt on banner** - `M`, `C`.
    Identical `color-mix` surface formula, independently reimplemented icon slot, heading,
    description and action row; banner's `type="error"` already forces `injectErrorTheme()`.
    Needs two things layered on: the violation `<ul>` and the retry-only-if-`canRetry` conditional.
@@ -81,10 +76,9 @@ Ranked by value per unit of risk, not by size.
 
 | Item                                               | Tag     | Note                                                                                                    |
 | -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
-| Selection card dedupe                              | `C`     | See #1                                                                                                  |
-| Form field suffix unification                      | `C`     | See #2                                                                                                  |
-| Slider + rating → `dragGestureFrom`                | `C`     | See #3                                                                                                  |
-| Query error on banner                              | `C`     | See #6                                                                                                  |
+| Form field suffix unification                      | `C`     | See #1                                                                                                  |
+| Slider + rating → `dragGestureFrom`                | `C`     | See #2                                                                                                  |
+| Query error on banner                              | `C`     | See #5                                                                                                  |
 | Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                               |
 | Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types           |
 | Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                       |
@@ -100,7 +94,7 @@ Ranked by value per unit of risk, not by size.
 | Item                                         | Tag     | Note                                                                                                                                                                                                                                                                |
 | -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Charts                                       | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't |
-| Auth: `withAuthGuard()`                      | `A`     | See #4 - unblocked, `sessionStatus` ships                                                                                                                                                                                                                           |
+| Auth: `withAuthGuard()`                      | `A`     | See #3 - unblocked, `sessionStatus` ships                                                                                                                                                                                                                           |
 | Scheduler: move/resize existing appointments | `A`     | Called "the natural next feature" by the drag-to-create work                                                                                                                                                                                                        |
 | Scheduler: date-time _range_ picker          | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                              |
 | Selection list: `variant="tile"`             | `A`,`D` | Same place as #1, so consider them together. Three open questions, chiefly whether an unchecked tile still reads as selectable                                                                                                                                      |
@@ -145,6 +139,4 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 ## Sequencing
 
-#1 and the tile are the same edit in the same file - decide the tile's open questions before
-starting the dedupe, or accept doing that stylesheet twice. Everything in the `S` table is
-independent of everything else and can be picked off in any order.
+Everything in the `S` table is independent of everything else and can be picked off in any order.

@@ -487,6 +487,29 @@ The three auth items the triage opened with (2026-08-06, one pass):
   a form off `executionState()`" section. No API was needed; `queries.<key>.snapshot` already was
   the per-attempt path.
 
+**Selection card: one presentation instead of three** (2026-08-07) - `SelectionCardStylesComponent`
+(`libs/components/src/lib/forms/selection-card-styles.component.*`), mounted via
+`injectStyleManager()` by all three of `et-radio`, `et-checkbox-option` and `et-choice-field` when
+the variant is `card`. The hook is a **class**, `.et-selection-card`, not three per-component
+`[data-variant='card']` selectors - which is what let the choice field join rather than keep a
+parallel file. Three things are worth not rediscovering. The panel is the **host** for the two
+options and a **child div** for the choice field, so every state guard is a union
+(`:where([aria-checked='true'], :has(:is([aria-checked='true'], [aria-checked='mixed'])))`); the
+inapplicable branch is inert, not wrong. The two rules that reset the plain variant's control
+(`transform: none`, `outline: none`) must stay **outside `:where()` and keep chained `:not()`s** -
+collapsing them to `:not(a, b)` drops a class column and hands the win back to the plain rule. And
+the choice field keeps a small file of its own for what only a wrapper needs (the stretched hit
+area, the one-unit dim, `width: auto`), but no token names of its own. Tokens are now
+`--et-selection-card-*` - a **breaking** rename of all three old sets. Verified by diffing computed
+styles across 15 story/state combinations (card + plain, disabled, readonly, checked,
+hover, active, for radio / checkbox-option / choice-field-checkbox / choice-field-switch): identical
+before and after.
+
+Note the bundle claim is narrower than the original write-up assumed: the styles component is a
+static import, so the CSS is still in the bundle for anyone importing radio at all. What the move
+buys is one copy instead of three, one token set, and no injection into the document for an app
+that only uses `variant="plain"`.
+
 **Badge: `size` + icon slot** (2026-08-06) - `size` is `sm | md | lg`, and the icon slot is
 button's exact pattern (`<ng-content select="[etIcon]" />` through an `ngTemplateOutlet`, so one
 projected icon can render on either side), with `iconAlignment` alongside it. Two things worth not
@@ -794,27 +817,10 @@ for any item whose type is registered. (The other one is handled - the resolved 
 varies by breakpoint, and `constraintsRegistry` is a signal, so every reader re-resolves on a
 breakpoint change instead of reading a cached entry.)
 
-## Selection list: the card exists three times, and the variant that is missing is a tile
+## Selection list: the tile variant that is missing
 
-The card preset is already there - `et-radio` (`radio.component.ts:5`), `et-checkbox-option`
-(`checkbox-option.component.ts:6`) and `et-choice-field`, documented together in
-`apps/docs/components/choice-inputs.md:145`. The problem is that it is there three times.
-
-`radio.component.css:160` and `checkbox-option.component.css:176` are the same ~75 lines with the
-names swapped: same `flex-direction: row-reverse`, same `:where()` hover/active/checked ordering,
-same focus-ring-moves-to-the-panel reset, same `data-can-animate` transition list - and the same
-comments, copied verbatim down to "so a list of cards is scannable without reading every
-box/dot". `choice-field-card-styles.component.css` is a third rendering of the same design,
-differing only where it has to (`:has()` instead of `aria-checked`, because the wrapper does not
-own the state). Three token sets follow from that - `--et-radio-card-*`,
-`--et-checkbox-option-card-*`, `--et-choice-field-card-*` - so an app that wants a different card
-radius sets it three times, and any change to the preset is three edits with two chances to
-drift.
-
-Only the choice-field one is mounted the cheap way, as a styles-only component
-(`ChoiceFieldCardStylesComponent`). The radio's and the checkbox option's card chrome sits inside
-the always-injected option stylesheet, so a consumer whose whole app uses `variant="plain"` ships
-it anyway - roughly 40% of each of those two files.
+The card duplication this section opened with is fixed - see "Already fixed". What is left is the
+tile.
 
 ### The tile
 
@@ -877,31 +883,22 @@ assume a square. And the badge is decoration (`aria-hidden`): the tile keeps `ro
 `role="radio"` and `aria-checked`, and the focus ring belongs to the whole tile, as it already
 does for the card.
 
-### One card presentation instead of three
-
-The duplication and the new variant land in the same place - a shared styles-only component the
-option mounts via `injectStyleManager()` when the variant is set, keyed off a hook on the host
-(`data-variant`) rather than three per-component selectors, with one `--et-selection-card-*` token
-set. The control's own tokens stay where they are; the duplication is the panel, not the box or
-the circle. `et-choice-field` joins it by mapping its `:has()` guards onto the same rules - it may
-keep its own file if the state selectors do not merge cleanly, but not its own token names. The
-tile is a second sheet mounted the same way, so a consumer who never writes `variant="tile"` never
-ships it.
-
-Worth doing for the row card at the same time, since it is the same edit: leading and trailing
-slots (`[etSelectionCardLeading]`, `[etSelectionCardTrailing]`) for the plan icon and the price
-that a "choose your plan" row is actually made of. That forces `row-reverse` to become a decision
-rather than a constant - a `controlPosition` input, or accepting that leading media and a leading
-control cannot coexist.
+### Still open around the card
 
 `et-card` should back none of it. It is a container with `ProvideSurfaceDirective` and three chrome
 variants of its own, while the selection card's chrome is driven by the option's `aria-checked`
 and interaction state; reusing it would mean nesting an element inside the option and moving the
 focus ring and the border onto a child. Stating it here so the question is not re-opened.
 
-All of this changes the card-presets section of `choice-inputs.md`, which currently documents the
-label-carries-selection and no-fill behaviour as rules, and the tile needs its own story in both
-the checkbox-group and radio-group story files.
+Leading and trailing slots (`[etSelectionCardLeading]`, `[etSelectionCardTrailing]`) for the plan
+icon and the price that a "choose your plan" row is actually made of are still unbuilt - they force
+`row-reverse` to become a decision rather than a constant (a `controlPosition` input, or accepting
+that leading media and a leading control cannot coexist), which is why they sit in the triage's
+"decide before building" table.
+
+The tile lands as a second sheet mounted the same way as `SelectionCardStylesComponent`, so a
+consumer who never writes `variant="tile"` never injects it. It needs its own story in both the
+checkbox-group and radio-group story files.
 
 ## New components still open
 
