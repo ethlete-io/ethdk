@@ -315,7 +315,7 @@
             <th>Started</th>
             <th>Duration</th>
             <th>Received</th>
-            <th>Diff</th>
+            <th>Body</th>
           </tr>
         </thead>
         <tbody>
@@ -347,6 +347,14 @@
                     shared
                   </span>
                 }
+                @if (run.error; as error) {
+                  <span
+                    class="et-query-devtools-chip et-query-devtools-chip--error"
+                    title="{{ error.messages.join(' · ') || 'The failure carried no message' }}"
+                  >
+                    {{ error.code || 'failed' }}
+                  </span>
+                }
               </td>
               <td>{{ host.formatTime(run.startedAt) }}</td>
               <td>
@@ -368,6 +376,16 @@
                   >
                     Diff
                   </button>
+                } @else if (run.error?.hasBody) {
+                  <button
+                    [class.et-query-devtools-btn--active]="host.errorRunIndex() === run.index"
+                    (click)="host.toggleRunError(run)"
+                    class="et-query-devtools-btn"
+                    type="button"
+                    title="Show the body this failure came with"
+                  >
+                    Error
+                  </button>
                 } @else if (run.hasResponse) {
                   <span class="et-query-devtools-count">nothing earlier to diff</span>
                 } @else if (run.status === 'success') {
@@ -380,6 +398,25 @@
           }
         </tbody>
       </table>
+
+      @if (host.pickedRunError(s.entry); as failure) {
+        <div class="et-query-devtools-section-row">
+          <h5 class="et-query-devtools-section">
+            Error body · run #{{ failure.run.index }} · {{ failure.error.code || 'no status' }}
+          </h5>
+        </div>
+        @for (message of failure.error.messages; track message) {
+          <p class="et-query-devtools-count">{{ message }}</p>
+        }
+        <et-query-devtools-json
+          [value]="failure.error.body"
+          [search]="host.jsonSearchTerm()"
+          [expandedPaths]="host.jsonExpandedPaths()"
+          [collapsedPaths]="host.jsonCollapsedPaths()"
+          [toggleFn]="host.toggleJsonPath"
+          path="runError"
+        />
+      }
 
       @if (host.responseDiff(s.entry); as comparison) {
         <div class="et-query-devtools-section-row">

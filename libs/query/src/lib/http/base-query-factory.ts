@@ -238,7 +238,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
     if (devtoolsStats) {
       const statsSubscription = state.events$.subscribe((event) => {
         if (event.type === 'error') {
-          devtoolsStats.recordError({ faulted: event.faulted });
+          devtoolsStats.recordError({ faulted: event.faulted, error: event.error });
         } else if (event.type === HttpEventType.Response) {
           devtoolsStats.recordResponse({ headers: event.headers, body: event.body });
         }

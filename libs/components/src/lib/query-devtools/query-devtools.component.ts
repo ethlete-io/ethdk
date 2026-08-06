@@ -396,6 +396,7 @@ export class QueryDevtoolsComponent {
 
   /** The run whose response the diff is comparing, by run index, or `null` while no diff is open. */
   public diffRunIndex = signal<number | null>(null);
+  public errorRunIndex = signal<number | null>(null);
 
   /** JIT editor state (response / args editing on the selected query). */
   public editorMode = signal<'none' | 'response' | 'args'>('none');
@@ -737,6 +738,7 @@ export class QueryDevtoolsComponent {
       this.copiedInsomnia.set(false);
       this.copiedCurl.set(false);
       this.diffRunIndex.set(null);
+      this.errorRunIndex.set(null);
 
       if (key !== this.lastSelectionKey) {
         this.lastSelectionKey = key;
@@ -1080,6 +1082,7 @@ export class QueryDevtoolsComponent {
   public resetStats(entry: QueryDevtoolsEntry) {
     entry.stats?.reset();
     this.diffRunIndex.set(null);
+    this.errorRunIndex.set(null);
   }
 
   /** A query's runs, newest first - the order a history is read in. */
@@ -1132,6 +1135,27 @@ export class QueryDevtoolsComponent {
     }
 
     return null;
+  }
+
+  public toggleRunError(run: QueryDevtoolsRun) {
+    this.errorRunIndex.update((current) => (current === run.index ? null : run.index));
+  }
+
+  /**
+   * The error body of the picked run. Read off the run rather than off `query.error()`, which is the
+   * only other place a failure is legible and is blanked by anything that resets the query - a logout
+   * resets every secure query, so a 401 is gone from there by the time it is looked for.
+   */
+  public pickedRunError(entry: QueryDevtoolsEntry) {
+    const picked = this.errorRunIndex();
+
+    if (picked === null) return null;
+
+    const run = (entry.stats?.runs() ?? []).find((candidate) => candidate.index === picked);
+
+    if (!run?.error?.hasBody) return null;
+
+    return { run, error: run.error };
   }
 
   /** Opens a query in the Queries tab - the Events tab is a way in, not a dead end. */

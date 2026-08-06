@@ -491,6 +491,25 @@ received. `provideQueryDevtools()` is what allocates any of it; an app without i
 nothing.
 :::
 
+### A failure stays readable after the query has moved on
+
+A run that failed carries its **status code** as a chip, with every message the error
+came with on its tooltip, and an **Error** button that opens the body the failure
+arrived with - retained for the newest runs under the same budget as a response body,
+so the code and the messages outlive the body itself.
+
+This is deliberately a copy rather than a read of the query's live `error()`, which is
+the only other place a failure shows (the **Data** sub-tab). That signal is blanked
+whenever the query resets - and `logout()` resets every secure query - so the `401` that
+sent the app to the login screen is already gone from there by the time anyone looks for
+it. The run history is what survives.
+
+::: warning
+The run history survives a reset of the query's state, but not the query itself: the
+detail row disappears when the component holding the query is destroyed. A mutation
+whose 401 unmounts its own page still has to be caught in the **Events** tab.
+:::
+
 ## Forms: what a filter is actually sending
 
 A [query form](/query/query-forms) sits between the controls on screen and the args a

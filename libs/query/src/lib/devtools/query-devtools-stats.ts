@@ -1,5 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { Signal, signal } from '@angular/core';
+import { QueryErrorResponse, queryErrorMessages } from '../http/query-error-response';
 
 /**
  * What a query did over its lifetime, as the devtools panel accounts for it: how often it ran, how many
@@ -94,6 +95,28 @@ export type QueryDevtoolsPayload = {
 export type QueryDevtoolsRunStatus = 'pending' | 'success' | 'error' | 'aborted';
 
 /**
+ * How a run failed, kept on the run itself. The query's own `error` signal is the live one, but it is
+ * blanked whenever the query resets - a logout resets every secure query - so it cannot be read back
+ * after the fact. This is the copy that survives.
+ */
+export type QueryDevtoolsRunError = {
+  /** The HTTP status code, or 0 for a failure that never reached a response. */
+  code: number;
+
+  /** Every message the error carried, flattened. @see queryErrorMessages */
+  messages: string[];
+
+  /**
+   * The error response body. Only the newest few runs keep theirs, under the same budget as
+   * {@link QueryDevtoolsRun.response}.
+   */
+  body: unknown;
+
+  /** Whether {@link body} still holds this run's error body. */
+  hasBody: boolean;
+};
+
+/**
  * A single run of a query, kept alongside the running totals so overlapping runs stay tellable apart -
  * which is what turns "ran 40 times" into "ran 40 times in two seconds".
  */
@@ -144,6 +167,9 @@ export type QueryDevtoolsRun = {
 
   /** Whether {@link response} still holds this run's body; a dropped and an empty body both read `null`. */
   hasResponse: boolean;
+
+  /** How the run failed, or `null` for one that did not. */
+  error: QueryDevtoolsRunError | null;
 };
 
 /** The read side of a stats recorder, as a {@link QueryDevtoolsEntry} exposes it to the panel. */
@@ -173,7 +199,13 @@ export type QueryDevtoolsStatsRecorder = QueryDevtoolsStatsHandle & {
 
   recordResponse: (payload: QueryDevtoolsPayload) => void;
 
-  recordError: (options?: { faulted?: boolean }) => void;
+  recordError: (options?: {
+    /** Whether the error is a devtools fault rather than a real failure. */
+    faulted?: boolean;
+
+    /** The failure itself, for {@link QueryDevtoolsRun.error}. */
+    error?: QueryErrorResponse;
+  }) => void;
 
   /**
    * Raises the attempt count of the run in flight. Idempotent per attempt, so a caller driven off a
@@ -206,8 +238,8 @@ const estimateBodySize = (body: unknown) => {
 const RUN_HISTORY = 25;
 
 /**
- * How many of those runs keep their response body. Bodies dominate what the buffer retains, and a diff
- * only ever looks a couple of runs back.
+ * How many of those runs keep a body - a response, or the body an error came with. Bodies dominate what
+ * the buffer retains, and a diff only ever looks a couple of runs back.
  */
 const RESPONSE_HISTORY = 5;
 
@@ -221,17 +253,25 @@ const lastPendingRunIndex = (runs: readonly QueryDevtoolsRun[]) => {
 };
 
 /**
- * Drops the response body of every run past the newest {@link RESPONSE_HISTORY} that hold one. Mutates
- * the array it is given, which is always one this module just built.
+ * Drops the body of every run past the newest {@link RESPONSE_HISTORY} that hold one - a response body
+ * and an error body count against the same budget, since a run only ever has one of the two. Mutates the
+ * array it is given, which is always one this module just built.
  */
-const trimRetainedResponses = (runs: QueryDevtoolsRun[]) => {
+const trimRetainedBodies = (runs: QueryDevtoolsRun[]) => {
   let kept = 0;
 
   for (let index = runs.length - 1; index >= 0; index--) {
     const run = runs[index];
 
-    if (!run?.hasResponse) continue;
-    if (++kept > RESPONSE_HISTORY) runs[index] = { ...run, response: null, hasResponse: false };
+    if (!run || (!run.hasResponse && !run.error?.hasBody)) continue;
+    if (++kept <= RESPONSE_HISTORY) continue;
+
+    runs[index] = {
+      ...run,
+      response: null,
+      hasResponse: false,
+      error: run.error?.hasBody ? { ...run.error, body: null, hasBody: false } : run.error,
+    };
   }
 
   return runs;
@@ -275,7 +315,7 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
   const appendRun = (run: Omit<QueryDevtoolsRun, 'index'>, previous: readonly QueryDevtoolsRun[]) => {
     const appended: QueryDevtoolsRun = { ...run, index: ++runCounter };
 
-    runs.set(trimRetainedResponses([...previous, appended].slice(-RUN_HISTORY)));
+    runs.set(trimRetainedBodies([...previous, appended].slice(-RUN_HISTORY)));
   };
 
   /**
@@ -288,6 +328,7 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
     receivedBytes: number;
     response: unknown;
     hasResponse: boolean;
+    error: QueryDevtoolsRunError | null;
   }) => {
     const current = runs();
     const pending = lastPendingRunIndex(current);
@@ -301,7 +342,7 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
       return;
     }
 
-    runs.set(trimRetainedResponses(current.map((run, index) => (index === pending ? { ...run, ...end } : run))));
+    runs.set(trimRetainedBodies(current.map((run, index) => (index === pending ? { ...run, ...end } : run))));
   };
 
   const recordExecution: QueryDevtoolsStatsRecorder['recordExecution'] = ({ didRequest, body, url }) => {
@@ -336,6 +377,7 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
         receivedBytes: 0,
         response: null,
         hasResponse: false,
+        error: null,
       },
       runs().map((run) => (run.status === 'pending' ? { ...run, status: 'aborted', endedAt: now } : run)),
     );
@@ -363,17 +405,34 @@ export const createQueryDevtoolsStats = (): QueryDevtoolsStatsRecorder => {
       receivedBytes: received.bytes,
       response: payload.body,
       hasResponse: true,
+      error: null,
     });
   };
 
   const recordError: QueryDevtoolsStatsRecorder['recordError'] = (options) => {
+    const error = options?.error;
+
     stats.update((current) => ({
       ...current,
       errors: current.errors + 1,
       lastResponseWasFaulted: options?.faulted ?? false,
     }));
 
-    endRun({ endedAt: Date.now(), status: 'error', receivedBytes: 0, response: null, hasResponse: false });
+    endRun({
+      endedAt: Date.now(),
+      status: 'error',
+      receivedBytes: 0,
+      response: null,
+      hasResponse: false,
+      error: error
+        ? {
+            code: error.code,
+            messages: queryErrorMessages(error),
+            body: error.raw.error,
+            hasBody: error.raw.error !== null && error.raw.error !== undefined,
+          }
+        : null,
+    });
   };
 
   const recordRetry: QueryDevtoolsStatsRecorder['recordRetry'] = ({ attempt }) => {

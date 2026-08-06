@@ -1,5 +1,9 @@
-import { HttpHeaders } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { createQueryErrorResponse } from '../http/query-error-response';
 import { createQueryDevtoolsStats, measureQueryDevtoolsPayload, sumQueryDevtoolsStats } from './query-devtools-stats';
+
+const errorResponse = (status: number, body: unknown) =>
+  createQueryErrorResponse(new HttpErrorResponse({ status, error: body, url: 'https://api.test.com/posts' }));
 
 describe('query devtools stats', () => {
   describe('measureQueryDevtoolsPayload', () => {
@@ -341,6 +345,52 @@ describe('query devtools stats', () => {
       recorder.recordResponse({ body: { a: 1 } });
 
       expect(recorder.runs().filter((run) => run.hasResponse).length).toBe(1);
+    });
+
+    it('should keep the failure on the run that ended in it', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordError({ error: errorResponse(401, { message: 'Expired token' }) });
+
+      const [run] = recorder.runs();
+
+      expect(run?.error).toEqual({
+        code: 401,
+        messages: ['Expired token'],
+        body: { message: 'Expired token' },
+        hasBody: true,
+      });
+    });
+
+    it('should record no failure detail for an error reported without one', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      recorder.recordExecution({ didRequest: true });
+      recorder.recordError();
+
+      expect(recorder.runs()[0]?.error).toBe(null);
+    });
+
+    it('should retain error bodies under the same budget as response bodies', () => {
+      const recorder = createQueryDevtoolsStats();
+
+      for (let i = 0; i < 8; i++) {
+        recorder.recordExecution({ didRequest: true });
+        recorder.recordError({ error: errorResponse(500, { run: i }) });
+      }
+
+      const withBody = recorder.runs().filter((run) => run.error?.hasBody);
+
+      expect(withBody.length).toBe(5);
+      expect(withBody[0]?.error?.body).toEqual({ run: 3 });
+
+      // The status stays legible on every run - only the body is dropped.
+      const trimmed = recorder.runs()[0]?.error;
+
+      expect(trimmed?.code).toBe(500);
+      expect(trimmed?.body).toBe(null);
+      expect(trimmed?.hasBody).toBe(false);
     });
 
     it('should keep the url each run went to', () => {

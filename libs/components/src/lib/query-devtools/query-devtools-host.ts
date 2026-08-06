@@ -10,6 +10,7 @@ import {
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
   QueryDevtoolsRun,
+  QueryDevtoolsRunError,
   QueryRefreshCause,
   QueryRepository,
   QueryRepositoryCacheEntry,
@@ -192,6 +193,10 @@ export type QueryDevtoolsHost = {
   canDiffRun(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun): boolean;
   queryRuns(entry: QueryDevtoolsEntry): QueryDevtoolsRun[];
   runStatus(run: QueryDevtoolsRun): string;
+
+  errorRunIndex: WritableSignal<number | null>;
+  toggleRunError(run: QueryDevtoolsRun): void;
+  pickedRunError(entry: QueryDevtoolsEntry): { run: QueryDevtoolsRun; error: QueryDevtoolsRunError } | null;
 
   copiedReport: Signal<boolean>;
   copiedInsomnia: Signal<boolean>;
