@@ -1,4 +1,14 @@
-import { Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input } from '@angular/core';
+
+export type DummyTableData = { rows: { name: string; value: string }[] };
+
+const DUMMY_TABLE_ROWS: DummyTableData['rows'] = [
+  { name: 'Revenue', value: '$12,450' },
+  { name: 'Users', value: '1,234' },
+  { name: 'Orders', value: '456' },
+  { name: 'Conversion', value: '3.2%' },
+  { name: 'Avg. Session', value: '4m 32s' },
+];
 
 @Component({
   selector: 'et-sb-dummy-chart',
@@ -38,7 +48,7 @@ export class DummyChartComponent {
     <div class="h-full flex flex-col p-3 box-border">
       <div class="text-sm font-semibold mb-3" style="color: rgb(var(--et-surface-color))">{{ heading() }}</div>
       <div class="flex-1 overflow-auto">
-        @for (row of ROWS; track row) {
+        @for (row of rows(); track row.name) {
           <div
             class="flex justify-between py-1.5 text-[13px]"
             style="border-bottom: 1px solid rgb(var(--et-surface-border)); color: rgb(var(--et-surface-color))"
@@ -53,15 +63,9 @@ export class DummyChartComponent {
   encapsulation: ViewEncapsulation.None,
 })
 export class DummyTableComponent {
-  public data = input<unknown>();
+  public data = input<DummyTableData>();
   public heading = input('Table Widget');
-  public readonly ROWS = [
-    { name: 'Revenue', value: '$12,450' },
-    { name: 'Users', value: '1,234' },
-    { name: 'Orders', value: '456' },
-    { name: 'Conversion', value: '3.2%' },
-    { name: 'Avg. Session', value: '4m 32s' },
-  ];
+  public rows = computed(() => this.data()?.rows ?? DUMMY_TABLE_ROWS);
 }
 
 @Component({

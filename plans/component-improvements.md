@@ -694,6 +694,21 @@ Bug pass 2:
   stayed stuck in drag mode, which is the closest thing found to the touchend report below.
   Changeset `drag-resize-cancelled-gesture.md`.
 
+Grid typing pass (2026-08-06):
+
+- **Grid: registering a widget forces the consumer to cast** (was its own section) -
+  `GridComponentRegistration.component` and `GridItemActionsComponent` now take a read-only
+  `Signal<TData>` instead of an `InputSignal<TData>`, so a widget declaring
+  `data = input.required<MyPayload>()` is assignable at the default `TData = unknown` with no cast
+  and no helper. `InputSignal` can never be made covariant - `transformFn` _and_
+  `SignalNode.equal` both put `T` in an invariant position, so the `gridComponent` factory this
+  section proposed (and an `InputSignalWithTransform<T, any>` target) were both dropped in favour
+  of the plain `Signal`. What is given up: a component whose `data` is a `computed` rather than an
+  input now type-checks. Narrowing the list (`GridComponentRegistration<MyPayload>[]`) still
+  checks every entry. `DummyTableComponent` in the grid stories carries a real payload type so the
+  registration path is exercised in-repo. Changeset `grid-registration-typed-data-input.md`,
+  `grid.md` documents both sides.
+
 Found not to reproduce:
 
 - **"Grid reordering doesn't finish on touchend"** (was its own section). Driven on the real
@@ -704,71 +719,6 @@ Found not to reproduce:
   - is that it fired and was _handled_, but routed to settle; that is fixed above. If the
     original report resurfaces, capture the device, browser version and gesture, because the
     obvious paths are now covered by `drag-gesture.spec.ts`.
-
-## Grid: registering a widget forces the consumer to cast
-
-Every entry in the same app's `widgets/widget.ts` is cast, against a local escape-hatch type
-the file has to declare and lint-disable for:
-
-```ts
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type WidgetComponent = Type<{ data: InputSignal<any> }>;
-
-{ type: 'text', component: TextWidgetComponent as WidgetComponent, constraints: { minRowSpan: 2, maxRowSpan: 8 } },
-```
-
-`GridComponentRegistration<TData = unknown>` declares
-`component: Type<{ data: InputSignal<TData> }>` (`grid.types.ts:53`) and the array is used at
-its default, so the target is `InputSignal<unknown>`. `InputSignal<T>` is invariant in `T`:
-`InputSignalNode<T, TransformT>` carries `transformFn: ((value: TransformT) => T) | undefined`,
-which puts `T` in parameter position. So a widget declaring
-`data = input.required<DashboardWidgetData>()` is not assignable, and `tsc` says so exactly
-there:
-
-```
-The types of 'data[SIGNAL].transformFn' are incompatible between these types.
-  Type '(value: Payload) => Payload' is not assignable to type '(value: unknown) => unknown'.
-```
-
-No amount of care at the call site fixes that - the only ways out are `any` (what the app
-picked) or typing every widget's input as `unknown` and casting on each read.
-
-The generic is not earning the cost. Rendering goes through
-`[ngComponentOutletInputs]="{ data: entry.item.data }"` (`grid.component.ts:26`), a
-`Record<string, unknown>` with no type relationship to the component, and `entry.item.data` is
-already `unknown` because `GridItemConfig` defaults `TData = unknown` too. The single check the
-declared type performs is "this component has an input named `data`" - and the `any` cast the
-type forces is what throws that check away.
-
-It shipped because nothing in-repo exercises it. All three dummy widgets behind the stories and
-`apps/docs/components/grid.md` declare `data = input<unknown>()`, which matches
-`InputSignal<unknown>` exactly, so the docs snippet is cast-free and no story ever registers a
-widget with a real payload type.
-
-The same hole exists on the actions side: `GridItemActionsComponent<TData = unknown>`
-(`grid.types.ts:47`) has the identical shape, and the app worked around it the other way -
-`DashboardWidgetToolbarComponent` declares `data = input.required<unknown>()` and casts at each
-read (`this.data() as DashboardWidgetData`). One type problem, two different workarounds in one
-folder.
-
-The fix that fits is a per-entry factory that infers `TData` from the component and erases it,
-so the one cast lives in the SDK:
-
-```ts
-export const gridComponent = <TData>(reg: GridComponentRegistration<TData>): GridComponentRegistration =>
-  reg as GridComponentRegistration;
-```
-
-Verified with `tsc`: entries with different payload types coexist in one
-`GridComponentRegistration[]`, and a component whose input is named anything other than `data`
-is still rejected - the presence check survives, which is more than the status quo manages.
-
-A mapped-tuple generic on `provideGridConfig` would be nicer still (no helper at the call site
-at all) and also type-checks, but it only infers from an array literal passed inline, and this
-app exports its registrations as an annotated `const` from another module and spreads a
-dev-only tail into it. It would also mean `provideGridConfig` can no longer come from
-`toProvideFn`, which hands back the definition's non-generic `provide` function verbatim
-(`di.ts:139`).
 
 ## Grid: the item/state API is there, but the integration can't find it
 
@@ -802,8 +752,8 @@ erased `GridItemConfig` / `GridSerializedState`, so what goes in typed comes bac
 ```
 
 Threading `TData` through `GridSerializedState` and the directive removes it. Same family as
-the registration cast above - the generic parameters exist on the types and are dropped at
-every public boundary.
+the registration cast (fixed, see "Already fixed") - the generic parameters exist on the types
+and are dropped at every public boundary.
 
 **`createGridAdapter` maps one position per item.** The doc snippet that did not compile is
 fixed, but the signature is still worth reconsidering: the app's mapping is per-breakpoint

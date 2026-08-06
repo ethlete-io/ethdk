@@ -23,6 +23,17 @@ providers: [
 ],
 ```
 
+A registered component only has to declare a `data` input - the grid binds each item's `data` to it. Type it with your own payload type; no cast is needed at the registration:
+
+```ts
+@Component({ selector: 'app-chart-widget', template: '...' })
+export class ChartWidgetComponent {
+  data = input.required<ChartPayload>();
+}
+```
+
+`GridItemConfig.data` is `unknown`, so nothing checks that an item of a given `type` actually carries the payload its component expects - that pairing is yours to keep. If every widget in an app shares one payload type, annotating the list as `GridComponentRegistration<MyPayload>[]` does enforce it: each registered component's `data` then has to read `MyPayload`.
+
 ## Rendering
 
 ```html
@@ -77,7 +88,7 @@ Override via the `breakpoints` input. `rowHeight` (default `100`) and `gap` (def
 
 ## Item actions & labels
 
-In edit mode every item renders an actions component in its top corner - by default `et-grid-item-default-actions`, a small toolbar with a remove button. Replace it globally via `provideGridConfig({ actionsComponent: MyActionsComponent })`; the component receives the item's `itemId` and `data` as inputs and can call the grid's `removeItem()` (see the `GridItemActionsComponent` type). `et-grid-item-toolbar` is the styled toolbar shell (`--et-grid-item-toolbar-*` tokens) you can reuse in a custom actions component.
+In edit mode every item renders an actions component in its top corner - by default `et-grid-item-default-actions`, a small toolbar with a remove button. Replace it globally via `provideGridConfig({ actionsComponent: MyActionsComponent })`; the component receives the item's `itemId` and `data` as inputs and can call the grid's `removeItem()` (see the `GridItemActionsComponent` type). As with a registered widget, `data` can be typed with your own payload type - declare `itemId = input.required<string>()` and `data = input.required<MyPayload>()`, no cast needed. `et-grid-item-toolbar` is the styled toolbar shell (`--et-grid-item-toolbar-*` tokens) you can reuse in a custom actions component.
 
 The accessibility strings live in `GRID_LABELS`, not in `GridConfig` - `interactiveGrid` (`'Interactive grid layout'`), `readonlyGrid` (`'Grid layout'`) and `removeItem` (`'Remove item'`), overridable with `provideGridLabels` like [every other domain](/components/localization).
 

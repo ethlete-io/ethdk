@@ -1,4 +1,4 @@
-import { InputSignal, Signal, Type } from '@angular/core';
+import { Signal, Type } from '@angular/core';
 
 export type GridBreakpointName = string;
 
@@ -52,14 +52,25 @@ export type GridMutationOptions = {
 /**
  * Contract for a grid item's `actionsComponent`: a component that receives the item's `itemId` and
  * `data` as inputs. Both are always provided by the grid.
+ *
+ * Declare both with `input.required<T>()` - the grid binds them as inputs. The read-only `Signal`
+ * type here does not enforce that; see {@link GridComponentRegistration} for why.
  */
 export type GridItemActionsComponent<TData = unknown> = Type<{
-  itemId: InputSignal<string>;
-  data: InputSignal<TData>;
+  itemId: Signal<string>;
+  data: Signal<TData>;
 }>;
 
+/**
+ * One entry of `provideGridConfig({ registrations })`: the component rendered for grid items of
+ * `type`, plus optional span constraints and a config component for edit mode.
+ *
+ * The component's `data` must be declared with `input<T>()` - the grid binds it as an input. It is
+ * typed as a read-only `Signal` because `InputSignal<T>` is invariant in `T`, which would make a
+ * widget with a concrete payload type unassignable and force a cast at every registration.
+ */
 export type GridComponentRegistration<TData = unknown> = {
-  component: Type<{ data: InputSignal<TData> }>;
+  component: Type<{ data: Signal<TData> }>;
   type: string;
   constraints?: {
     minColSpan?: number;
