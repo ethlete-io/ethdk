@@ -842,18 +842,6 @@ immediately after a logout set `{ type: 'logout' }` - a single slot cannot
 carry two concurrent concerns, which is the argument for splitting it rather
 than adding a fourth state to it.
 
-### The sync channel and the leader lock are global constants
-
-`channelName` defaults to `'ethlete-auth-sync'` and the Web Locks name is the
-module constant `'ethlete-auth:leader'` (`leader-election.ts`), neither derived
-from the provider's `name`. All four `fut-frontend` providers call
-`withBearerAuthMultiTabSync()` with no `channelName` - while every one of them
-_does_ namespace its cookie by hand (`hub_`, `platform_`, `toty_`, `voting_`),
-which is the same problem solved once at the call site because the SDK doesn't
-solve it. Two providers reachable from one origin would share a token channel
-and elect one leader between them. Default both names off the provider `name`
-that is already required.
-
 ## Auth: the provider's execution model is what makes the app's flow brittle
 
 Second pass, this time on why `fut-frontend` needs 250 lines of `combineLatest`
@@ -864,82 +852,20 @@ a `hasAttempted` latch in `dev-login-view.component.ts`, a special case for a
 in `bearer-auth-provider.ts` treats every auth execution as fire-and-forget and
 funnels all of them through single mutable slots.
 
-### Every auth execution leaks a query, an injector and a repository entry
+### Tokens and `executionState` can disagree across builder keys
 
-`execute()` (`bearer-auth-provider.ts:404`) calls
-`builder.config.queryCreator({ onlyManualExecution: true, injector })` per call,
-where `injector` is the provider's - i.e. the root one. `setupQueryDependencies`
-gives each query its own child `EnvironmentInjector`, destroyed only when the
-_scope_ destroyRef is (`query-dependencies.ts:78`), and nothing ever destroys the
-query. The `effect()` registered inside `execute()` to mirror that snapshot into
-`executionState` is bound to the same injector, so it outlives its own execution
-too.
+Within one key the two writers now agree: every execution reuses that key's single
+query, so `applyTokens` and `executionState` both read the snapshot of the latest
+execution and a superseded attempt stops reporting altogether.
 
-So one login attempt, or one token refresh, permanently adds: a child injector, a
-query object, a live effect that still writes `executionState`, a devtools
-registry entry (`base-query-factory.ts:283` unregisters on a `DestroyRef` that
-never fires here - the mirror image of the vanishing-row problem above), and a
-repository cache entry whose consumer never unbinds. The refresh query runs every
-~45 minutes, and each 401 can trigger another, so this is not a rounding error in
-a long-lived tab.
-
-The retained cache entry is the part that bites hardest, because it holds the
-request body and the response body: the login POST keeps the username and
-password, the refresh POST keeps a refresh token and the tokens it was exchanged
-for, indefinitely. `MAX_UNUSED_ENTRIES` cannot reclaim any of it - the entries
-still have a consumer.
-
-Fix: an auth execution should own its query and destroy it when it settles (or
-reuse one query per builder key and re-execute it, which is what the per-key
-`querySnapshot` signal already implies). Either way the per-execution `effect`
-has to go with it.
-
-### `refreshQueriesInUse()` replays every past login and token refresh
-
-Both auth builders clone their creator with `subtle: { useQueryRepositoryCache: true }`
-(`bearer-auth-query-builders.ts:141` and `:302`) so the POST gets a real cache
-key. But `QueryRepository.refreshInUse` uses that exact flag to decide what is
-safe to re-fire - its comment reads "Re-firing a mutation would be a side effect
-nobody asked for, so only reads are refreshed - 'read' meaning cacheable". The
-flag means "cache me" to one caller and "you may re-run me" to the other, and the
-auth queries end up on the wrong side of it. Combined with the leak above - every
-past auth execution still has a consumer - `client.refreshQueriesInUse()`
-re-fires all of them.
-
-`fut-frontend` calls exactly that, on the same client the auth provider is
-attached to, whenever preview mode is toggled
-(`libs/domain/voting-public/shared/src/services/preview.provider.ts`), and its
-comment states the assumption the SDK breaks: "it re-runs every bound
-`GET`/`HEAD`/`OPTIONS`". What actually happens is a replay of the login POST with
-the old credentials and of the refresh POST with a long-spent refresh token. That
-second one 401s, the still-alive per-execution effect sets
-`{ type: 'tokenRefresh', state: 'error' }`, and the app's own refresh-failure
-handler logs the user out. Toggling preview mode can end the session.
-
-Two candidate fixes, and the first is worth doing regardless: make `refreshInUse`
-skip anything whose method is not a read, so the docstring becomes true and the
-flag stops carrying two meanings. Then, if the auth queries still need to opt out
-of a URL-scoped invalidation, give them an explicit `subtle.neverAutoRefresh`
-rather than inferring it.
-
-### Tokens and `executionState` can disagree about which attempt won
-
-There are two writers per builder key. The shared effect at
-`bearer-auth-provider.ts:384` watches the per-key `querySnapshot` signal - which
-only ever holds the **most recently executed** snapshot - and calls `applyTokens`
-from it. Each execution's own effect (`:422`) writes `executionState` from **its
-own** snapshot, whichever settles last. Two overlapping executions therefore
-resolve differently: the last one executed decides which tokens are applied, the
-last one to come back decides what `executionState` reports. A 401 burst across
-several secure queries, or a login submitted while an auto-login is still in
-flight, is enough to produce it.
-
-That is the race the app is defending against without naming it. The fix is for an
-execution to be a value rather than a side effect on shared slots: token
-application and state reporting should both read the snapshot the execution
-returned, and a superseded execution should be abandoned explicitly (or the
-provider should refuse to start a second one for the same key while one is in
-flight - a single-use refresh token cannot be spent twice anyway).
+Across keys they still can't. `executionState` is one provider-global slot written
+by whichever key's effect fires last, while `applyTokens` runs per key off that
+key's own snapshot. A `tokenRefresh` triggered by a 401 burst while the user
+submits a login therefore ends with one key's tokens applied and the other key's
+outcome on display. The fix is the same shape as before: an execution should be a
+value the caller can await rather than a side effect on a shared slot - or the
+provider should refuse a second execution while one is in flight for any
+token-issuing key, since a single-use refresh token cannot be spent twice anyway.
 
 ### The login form watches a provider-global slot for its own submit
 
@@ -1079,138 +1005,156 @@ registry setup and Angular runs effects in creation order, so it always wins. Th
 author actually saw, that ordering is not it, and the extra `isAuthenticated()` condition
 is what turns the extraction failure above into a hang instead of a redirect.
 
-## Paged query stack: two of its public signals do not mean what they say
+## Query audit: already fixed, do not re-report
 
-`createPagedQueryStack` (`libs/query/src/lib/http/paged-query-stack.ts`) is the pagination
-primitive behind infinite scroll and "load more". Two of the six signals it exposes disagree
-with their own JSDoc, and the existing spec cannot see either problem because every test in
-`paged-query-stack.spec.ts` starts at page 1 and never asserts anything while a request is
-in flight.
+Four findings were implemented on 2026-08-06 and their sections deleted from this file.
+Listed here so the next pass does not rediscover them:
 
-### `isFirstPageLoaded` is a tautology
+- **Paged stack signal contracts** - `isFirstPageLoaded` is now `loadedMinPage() === 1`, and
+  both `canFetch*` signals gate on `stack.anyLoading()` (`paged-query-stack.ts:362`, `:468`,
+  `:475`). Changeset `paged-stack-signal-contracts.md`.
+- **Web socket room join counting** - `InternalWebSocketRoom.joinCount`, incremented in
+  `join()` and decremented in `leaveRoom` (`web-socket-client.ts:203`, `:254`). Also fixes a
+  latent prod-mode bug: the old `leaveRoom` fell through its dev-only `throw` and emitted
+  `leave-room` for a room that was never joined. Changeset `ws-room-join-counting.md`.
+- **Query stack `transform` / `lastQuery`** - the option is typed `(ResponseType | null)[]`,
+  and `lastQuery` is recomputed from `finalQueries` after eviction (`query-stack.ts:160`,
+  `:294`). Changeset `query-stack-transform-nulls-and-last-query.md`.
+- **Bearer auth multi-tab namespacing** - the broadcast channel and the leader lock carry the
+  provider's `name`. Not a finding from this file; it surfaced while fixing the others.
+  Changeset `auth-multi-tab-namespacing.md`.
 
-`isLastPageLoaded` (`:365`) is `loadedMaxPage() === max.totalPages` - a real question, with
-`totalPages` coming from the server. `isFirstPageLoaded` (`:359`) is
-`loadedMinPage() === min.currentPage`, and those two are the same number by construction:
-`loadedMinPage` _is_ the page the first query in the stack fetched, and `min.currentPage` is
-that same query's response echoing it back. It answers "does the server agree with our
-bookkeeping", not "is page 1 loaded".
+Still open above: the devtools stale-failure row (`:691`), the three auth sections (`:758`,
+`:845`, `:1022`) and the query-form reset cascade (`:968`).
 
-Verified with a throwaway spec (added, run, deleted). Starting at `initialPage: 5` with a
-`{ currentPage: 5, totalPages: 10 }` response:
+## A literal NUL byte makes `multi-tab-sync.ts` unreviewable
 
-- `isFirstPageLoaded()` → `true`
-- `canFetchPreviousPage()` → `true`
-- `items()` → `[{ id: 50 }]` - page 5 only
+`libs/query/src/lib/auth/internal/multi-tab-sync.ts:59` builds the dedupe key that `:127`
+compares against `lastSyncedState`:
 
-So the stack simultaneously reports that the first page is loaded and that a previous page
-can be fetched, while holding exactly one page that is not page 1. The fix is the mirror of
-its sibling: `loadedMinPage() === 1`.
+```ts
+const tokenState = (access: string, refresh: string) => `${access}<0x00 byte>${refresh}`;
+```
 
-### `canFetchNextPage` / `canFetchPreviousPage` never look at `loading`
+The delimiter is a raw `0x00` byte in the source rather than the escape `\u0000`. Choosing NUL
+is sound - it cannot occur inside a JWT, so two tokens can never run together into a false
+match - but writing it literally costs what the escape does not.
 
-Both JSDoc blocks (`:230`, `:237`) promise "this will be false if the paged query is already
-at the first/last page **or if the paged query is loading**". Neither implementation (`:465`,
-`:472`) reads `stack.anyLoading()` or any other loading signal - the loading half of the
-contract simply is not there.
+Git classifies the file as binary: `git diff` reports `Bin 4231 -> 4623 bytes` and no hunks, so
+nothing in it can be reviewed in a diff, and a merge conflict there cannot be resolved by hand.
+Nothing catches it, either - `nx lint query`, `prettier --check` and all 984 tests of
+`nx test query` pass with the byte in place. And it renders as nothing in an editor, so a
+copy-paste, a reformat, or any tool that normalizes the file drops the delimiter silently; the
+comparison at `:127` would then match across different token pairs with no error anywhere.
 
-It looks correct in the common case by accident. While a _new_ page is being fetched, the
-freshly created query has no response yet, so `maxPagination` / `minPagination` fall to `null`
-and both signals short-circuit to `false`. That coincidence disappears the moment a response
-already exists, because a re-executing query keeps its previous response
-(`apps/docs/query/caching.md:32`). Verified with the same throwaway spec: after settling page
-1 of 3 and calling `stack.execute()` to refresh, `loading()` is `true` and `canFetchNextPage()`
-is still `true`.
+The fix is runtime-identical: `` `${access}\u0000${refresh}` ``. Prefer `\u0000` over `\0` -
+`\0` followed by a digit is an octal escape, which is an error in a template literal, so
+`\u0000` survives a later edit that appends to it.
 
-`blockExecutionDuringLoading` does not help - it gates the internal `canFetchNewPage` guard
-(`:426`), not the two public signals a template binds to. A "load more" button driven by
-`canFetchNextPage()` therefore stays live through a refresh, and the devtools story already
-writes the pattern that trips on it
-(`query-devtools-storybook.component.ts:326`: `if (canFetchNextPage()) fetchNextPage()`).
-Either add the loading term to both signals or drop the sentence from both JSDoc blocks; today
-the two disagree.
+## Two loose ends from the fixes above
 
-## Web socket rooms: the first unmount kills the room for everyone else
+`query-stack-transform-nulls-and-last-query.md` is marked `patch`, but widening `transform` to
+`(ResponseType | null)[]` breaks consumer compilation: a
+`transform: (responses) => responses.map((r) => r.items)` that compiled before now errors on
+`r`. The old signature was a lie and the new one is right, so the change should stay - but the
+bump belongs at `minor`.
 
-`createWebSocketClient` (`libs/query/src/lib/ws/web-socket-client.ts`) keeps one
-`rooms` map (`:155`) for the whole client, and `join()` (`:192`) deliberately shares: a second
-caller joining a room that already exists gets the _existing_ room object back rather than a
-new one, so both subscribers read the same `latestMessage`. That sharing is the intended
-design. The teardown never learned about it. `joinRoom`'s `onDestroy` (`:230`) calls
-`leaveRoom`, and `leaveRoom` (`:242`) unconditionally emits `leave-room` to the server and
-does `rooms.delete(room)`. There is no reference count anywhere - N joiners, and the first one
-to unmount evicts the room for all of them.
+`canFetchNextPage` / `canFetchPreviousPage` now return `false` whenever `stack.anyLoading()` is
+true, while `blockExecutionDuringLoading` still defaults to `false` and lets `canFetchNewPage`
+(`paged-query-stack.ts:437`) permit the fetch anyway. Under the default config the signals
+therefore say no while `fetchNextPage()` would still run. `apps/docs/query/stacks.md:58`
+documents the signal half deliberately, and signals-for-UI against methods-for-imperative is a
+defensible split - but the two halves now disagree, and nothing states which of them
+`blockExecutionDuringLoading` is meant to govern.
 
-Verified with a throwaway spec (the ws client has **no spec of its own** - `libs/query/src/lib/ws`
-ships only the client, its errors and a barrel). Two subscribers join `match-42` through
-separate injectors:
+## Grid: the resize handles are hard to hit, you move the item instead
 
-- both receive the first message
-- subscriber A's injector is destroyed → one `leave-room` reaches the server
-- a second message for `match-42` arrives → subscriber B is still mounted, still holding a
-  live room handle, and still reads the **first** message
+In edit mode every pixel of a grid item is a drag target and only a thin border strip is a
+resize target. `GridDragDirective` is a host directive of `GridItemComponent`, so a
+`pointerdown` anywhere in the item that nothing stops begins a move; the handles opt out of
+that by stopping propagation on the `<et-resize-handles>` element
+(`grid-item.component.ts:27`). The strips they cover are small: core's
+`ResizeHandlesComponent` defaults to `--et-resize-handles-edge-size: 6px` and
+`--et-resize-handles-corner-size: 12px`, and two more defaults shrink them further -
+`--et-resize-handles-edge-inset: 8px` cuts 8px off each end of the n/s strips, and
+`--et-resize-handles-side-bottom: 8px` stops the e/w strips 8px short of the bottom (a default
+that exists for the pip window's title bar; pip is the only place that overrides any of these,
+and only `--side-top`).
 
-B is silently dead. Nothing throws, nothing logs, and `latestMessage` keeps serving a stale
-value, so a match view that happens to be the second one opened just stops updating. The
-emitted traffic shows the asymmetry directly: two `join-room` frames, one `leave-room` that
-undoes both.
+Nothing arbitrates after the pointer goes down. Resize starts on the `pointerdown` itself
+(`startResizeGesture` feeds the gesture immediately), while a drag waits for 8px of travel
+(`dragGestureFrom`'s default `commitThreshold`) - so missing the strip by one pixel is already
+a committed move by the time the item visibly jumps, and there is no path back to resize
+short of Escape.
 
-The fix is a join count per room - increment in `join()`, decrement in `leaveRoom`, and only
-emit `leave-room` plus delete the map entry when it reaches zero. The reconnect handler
-(`:257`) already iterates `rooms.keys()` to re-join everything, so it picks up the corrected
-lifetime for free.
+Touch is the one case already handled: a `@media (hover: none)` block in
+`resize-handles.component.ts` swaps in `--et-resize-handles-touch-edge-size: 20px` /
+`--et-resize-handles-touch-corner-size: 28px`. That leaves the pointer case at 6px/12px, and
+it also misses the touchscreen laptop, where the mouse is the primary input so `hover: none`
+never matches - `any-pointer: coarse` is the query that covers both.
 
-Minor, same function: the `!rooms.has(room)` branch in `leaveRoom` throws in dev mode but has
-no `return`, so in production a `subtle.leaveRoom()` for a room that was never joined falls
-through and emits a `leave-room` frame anyway - potentially evicting a room another part of
-the app is using.
+The invisible target can grow without touching the visuals: the affordance a user aims at is
+only the `::after` bar drawn by the grid item (`grid-item.component.ts:90-183`) - 3x24px per
+edge, 8x8px per corner, `opacity: 0.2` - which is already smaller than the hit strip, and part
+of why aiming is hard is that the bar's ends say nothing about where the strip ends. Two
+directions to grow into, with different costs:
 
-## Query stack: a lying `transform` signature and a `lastQuery` that can point at a corpse
+- **Outward, into the gap.** The grid's `gap` defaults to 16px (`grid.directive.ts:144`) and
+  is dead space today - handles are inset within the item, and neither the grid nor the item
+  sets `overflow: hidden`, so negative offsets would work. Cap the growth at half the gap:
+  adjacent items are absolutely positioned siblings at the same z-index, so overlapping strips
+  would be resolved by DOM order rather than by which item the pointer is nearer, and the
+  later item would swallow its neighbour's handle. 8px out per side still triples a 6px edge.
+- **Inward** costs content area, and the corners are already contested: `.et-grid-item__actions`
+  sits at `top: 4px; right: 4px` and comes after `<et-resize-handles>` in the template, so it
+  wins the top-right over the 12px `ne` handle regardless of what that handle's size becomes.
 
-Two independent problems in `createQueryStack` (`libs/query/src/lib/http/query-stack.ts`), the
-base every paged stack is built on. Both verified with a throwaway spec (added, run, deleted).
+Worth checking against a real pointer before picking numbers - the strips are configurable via
+the `@property` custom properties, so the grid can raise them for itself without changing
+core's defaults for the pip window.
 
-### `transform` is typed as if responses were never null
+### Cross-checked against the only real consumer
 
-`transform` is declared `(responses: ResponseType<QueryArgsOf<TCreator>>[]) => TTransform`
-(`:160`) - a non-nullable array. What it actually receives is
-`queries().map((q) => q.response())` (`:391`), and `response()` is null for any query that is
-loading or errored. The same file says so 100 lines earlier, in the doc for the `response`
-signal (`:60`): "Will be `null` for queries that are loading or errored."
+The partner dashboard in `fut-frontend` is the sole `et-grid` in the app
+(`libs/domain/hub/.../partner-detail-grid/`; the platform's `CampaignGridComponent` only
+matches on its class name and is a plain CSS grid). It overrides none of the
+`--et-resize-handles-*` properties, so it runs on the 6px/12px defaults, on the default 16px
+`gap`, with `rowHeight: 60` and breakpoints 1/2/3 columns at 0/636/950px. Four things in it
+make the target smaller in practice than the defaults suggest:
 
-Verified: a stack with one in-flight query calls `transform` with `[null]`.
+- **A 60x32px toolbar sits on the `ne` corner.** `DashboardWidgetToolbarComponent` re-anchors
+  `.et-grid-item__actions` to `top: 0; right: 0` and fills it with two `xs` icon buttons
+  (2.4rem each) in an `et-grid-item-toolbar` (4px padding, 4px gap). It renders for the whole
+  of edit mode, not on hover, and both it and the actions wrapper stop `pointerdown`. So every
+  item permanently loses its `ne` handle plus the last 60px of the `n` strip and the top 32px
+  of the `e` strip - and on a typical widget (1 col x 2 rows = 136px tall) the east edge is
+  down to 96 of its 128 usable pixels.
+- **The edit-mode affordance points at the whole perimeter.** The app draws
+  `outline: 0.2rem dotted; outline-offset: -0.1rem` around each item in edit mode, so the cue
+  is a continuous 2px dotted border 1px inside the box. It says "this whole edge is grabbable"
+  when only a 6px band is, and the n/s bands stop 8px short of each end. It also lands directly
+  on top of the SDK's own hover hint - the `::after` bars are drawn at a 2px inset in
+  `--et-surface-color-solid` at `opacity: 0.2`, which against a solid dotted outline in
+  `--et-surface-border-solid` is not a distinguishable marker.
+- **Every widget is at its minimum height most of the time.** All three registered types set
+  `minRowSpan: 2` (text also `maxRowSpan: 8`) and new widgets are created at `rowSpan: 2`, so
+  a correctly-grabbed `n` or `s` handle does nothing at all unless dragged outward. Grab-did-
+  nothing and grabbed-the-wrong-thing are indistinguishable to the user, which is part of why
+  this reads as "the handle doesn't work" rather than "I missed it".
+- **Below 636px the e/w strips cannot do anything.** The `sm` breakpoint is one column, so
+  `resizeSpanBounds` clamps `colSpan` to 1..1 - but `resizeEdges()` is a constant eight-edge
+  array, so those two strips still exist and still consume the `pointerdown`. Deriving
+  `resizeEdges()` from `activeColumns()` would drop them, which is a fix for the aim problem
+  in its own right: it hands the whole left and right edge back to dragging.
 
-Both shipped transforms already work around it - `transformArrayResponse` (`:192`) and
-`transformPaginatedResponse` (`:196`) each open with `.filter((r) => !!r)`. That filter is the
-tell: the author knew nulls arrive, but the type never learned. Anyone writing a custom
-transform against the signature - `(responses) => responses.flatMap((r) => r.items)` is the
-obvious one, and it is exactly what `transformPaginatedResponse` does after filtering - gets a
-`TypeError` on the first render, before any request settles. The fix is one `| null` in the
-option's type; the two built-ins are already correct and the default `TTransform`
-(`(ResponseType<TArgs> | null)[]`, `:81`) already admits null, so only the callback's input
-type is wrong.
+Inward growth is also more constrained here than it looks. Every widget wraps its content in
+`p-4` (16px) and puts an `overflow-auto` scroll region inside that padding, so an `e` handle
+grown more than ~10px inward starts covering a scrollbar. Related, and worth confirming
+separately: in edit mode a `pointerdown` on one of those inner scrollbars is not stopped by
+anything (`blockPointerDownWhenReadOnly` only stops it when the grid is read-only), so dragging
+a widget's scrollbar thumb may well move the widget instead of scrolling it.
 
-### `maxQueries` with `removeStrategy: 'newest'` leaves `lastQuery` dangling
-
-The eviction block (`:282`) destroys the excess queries and rewrites `finalQueries`, but
-`lastQuery.set(lastAppendedQuery)` (`:295`) runs afterwards with the value `appendFn` returned
-_before_ the eviction. Under `removeStrategy: 'newest'` the query just appended is by
-definition the newest, so it is the one evicted - and `lastQuery` is then set to it.
-
-Verified with `maxQueries: 2`, `removeStrategy: 'newest'`, appending pages 1, 2, 3:
-
-- `queries()` → `[{ page: 1 }, { page: 2 }]`
-- `lastQuery()` → `{ page: 3 }` - destroyed, and not a member of `queries()`
-
-Every consumer that reaches through `lastQuery` is then reading a torn-down query.
-`createPagedQueryStack` derives `maxPagination` from `stack.lastQuery()?.response()`
-(`paged-query-stack.ts:342`), so a paged stack configured this way would compute its pagination
-
-- and therefore `canFetchNextPage`, `isLastPageLoaded` and the guard in `fetchNextPage` - from a
-  query that no longer exists. It does not pass `maxQueries` today, which is the only reason this
-  is latent rather than shipped.
-
-`lastQuery` should be recomputed from `finalQueries` after eviction, the way the non-append
-branch already does it (`:337`: `finalQueries[finalQueries.length - 1] ?? null`). Worth asking
-separately whether `removeStrategy: 'newest'` earns its keep at all - it makes an append a no-op
-that destroys the thing it just built.
+Net: outward into the gap is the only direction with real room in this app, the `ne` corner is
+unrecoverable while the toolbar owns it (the corner handle would have to move, or the toolbar
+inset back to the SDK's 4px so the 12px handle is at least reachable), and dropping the dead
+edges at `sm` is free.
