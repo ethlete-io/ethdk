@@ -2,10 +2,12 @@
 // Copy into the scratchpad, adjust STORY_ID + the assertions, then run:
 //   node <scratchpad>/verify.mjs
 //
-// Playwright is CommonJS and lives in the repo node_modules, so import the
-// default export and destructure (a named import fails).
-import pw from '/home/tom/dev/ethlete-sdk/node_modules/playwright/index.js';
-const { chromium } = pw;
+// Playwright is CommonJS and lives in the repo's node_modules, so resolve it
+// through createRequire from the repo root rather than importing it by name.
+import { createRequire } from 'node:module';
+
+const require = createRequire(`${process.cwd()}/`);
+const { chromium } = require('playwright');
 
 const STORY_ID = 'cdk-tabs-inline--default'; // <-- change me
 const url = `http://localhost:4400/iframe.html?viewMode=story&id=${STORY_ID}`;
