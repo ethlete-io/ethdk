@@ -1,4 +1,4 @@
-import { InjectionToken, Signal, WritableSignal } from '@angular/core';
+import { InjectionToken, Signal, TemplateRef, WritableSignal } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 
 export const FORM_FIELD_CONTROL_TYPES = {
@@ -92,6 +92,14 @@ export type HintComponentBase = object;
 /** A projected `et-counter`. The field only needs to know one is present to make room for it. */
 export type CounterComponentBase = object;
 
+/**
+ * A control's own in-field affordances (clear button, picker trigger, reveal toggle), handed to the
+ * field to render in its suffix slot.
+ */
+export type ControlSuffixBase = {
+  templateRef: TemplateRef<void>;
+};
+
 export const FORM_FIELD_TOKEN = new InjectionToken<FormFieldDirectiveBase>('FORM_FIELD_TOKEN');
 
 export type FormFieldDirectiveBase = {
@@ -106,6 +114,7 @@ export type FormFieldDirectiveBase = {
   registeredHint: WritableSignal<HintComponentBase | null>;
   registeredCounter: WritableSignal<CounterComponentBase | null>;
   registeredLabel: WritableSignal<LabelDirectiveBase | null>;
+  registeredControlSuffix: WritableSignal<ControlSuffixBase | null>;
   /** The registered control's value, for the counter to measure. */
   controlValue: Signal<unknown>;
   /** The registered control's validation errors - the counter reads its over-limit state from them. */

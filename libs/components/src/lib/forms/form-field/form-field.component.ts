@@ -11,6 +11,7 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import {
@@ -58,6 +59,7 @@ import {
     AnimatableDirective,
     ColorInteractiveExcludeDirective,
     FormErrorComponent,
+    NgTemplateOutlet,
     ProvideColorDirective,
     SpinnerComponent,
   ],

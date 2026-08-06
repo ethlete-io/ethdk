@@ -94,6 +94,39 @@ An affix takes a text glyph or an [`[etIcon]`](/components/icon#inside-sdk-compo
 the shell sizes a directly-projected icon via `--et-form-field-affix-icon-size` (`16px`), so no
 size class is needed.
 
+### One suffix stack
+
+A control's own in-field affordances - the date/time clear button and picker trigger, the phone
+input's clear button, the password reveal toggle - render in the same suffix box as your
+`etInputSuffix`, in a fixed order:
+
+| Position | What                                                          |
+| -------- | ------------------------------------------------------------- |
+| 1        | the control's own affordances (clear, picker trigger, reveal) |
+| 2        | your `[etInputSuffix]`                                        |
+| 3        | the field's busy spinner                                      |
+
+So a pending async validator never displaces a clear button, and your suffix never lands between a
+field and the button that clears it. Spacing is `--et-form-field-control-affix-gap` - the same token
+the shell uses between the affixes and the control, so it tracks `size` (6/8/10px for `sm`/`md`/`lg`).
+
+Projected affix content and the spinner render at `0.78` opacity so they recede; a control's own
+affordances render at full strength, because they are controls rather than decoration.
+
+::: warning Renamed in this release
+The clear button and picker trigger used to be per-control classes inside the control's own element.
+They are now one shared pair in the field's suffix slot - restyle against the new names:
+
+| Was                                                                                                                                           | Now                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `.et-date-input-clear`, `.et-date-time-input-clear`, `.et-date-range-input-clear`, `.et-time-input-clear`, `.et-phone-input-clear`            | `.et-input-clear`          |
+| `.et-date-input-picker-trigger`, `.et-date-time-input-picker-trigger`, `.et-date-range-input-picker-trigger`, `.et-time-input-picker-trigger` | `.et-input-picker-trigger` |
+
+`.et-password-input-reveal` keeps its name. A selector that reached these through the control
+(`et-date-input .et-date-input-clear`) no longer matches - target them under
+`.et-form-field-suffix`, or by class alone.
+:::
+
 Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 
 | Input        | Values                                                            | Default         |

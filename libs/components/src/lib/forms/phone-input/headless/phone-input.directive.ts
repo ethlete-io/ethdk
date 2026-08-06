@@ -16,6 +16,7 @@ import { PhoneInputFieldDirective } from './phone-input-field.directive';
 import { PhoneInputFlagDirective } from './phone-input-flag.directive';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
+import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
 
 const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 
@@ -126,6 +127,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
 
   constructor() {
     mountTextFieldShellStyles();
+    mountControlSuffixStyles();
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));

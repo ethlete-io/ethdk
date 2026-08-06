@@ -20,27 +20,29 @@
   side="end"
 />
 
-@if (showClear()) {
-  <!-- pointer-only, out of the tab order — keyboard users clear by erasing the text.
-       mousedown is prevented so the field keeps focus (its blur would unmount this
-       button before the click could land) -->
-  <button
-    [attr.aria-label]="resolvedClearLabel()"
-    (click)="handleClearClick($event)"
-    (mousedown)="$event.preventDefault()"
-    class="et-date-range-input-clear"
-    animate.enter="et-date-range-input-clear--enter"
-    animate.leave="et-date-range-input-clear--leave"
-    tabindex="-1"
-    type="button"
-  >
-    <i etIcon="et-times"></i>
-  </button>
-}
+<ng-template etControlSuffix>
+  @if (showClear()) {
+    <!-- pointer-only, out of the tab order — keyboard users clear by erasing the text.
+         mousedown is prevented so the field keeps focus (its blur would unmount this
+         button before the click could land) -->
+    <button
+      [attr.aria-label]="resolvedClearLabel()"
+      (click)="handleClearClick($event)"
+      (mousedown)="$event.preventDefault()"
+      class="et-input-clear"
+      animate.enter="et-input-clear--enter"
+      animate.leave="et-input-clear--leave"
+      tabindex="-1"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  }
 
-<button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-date-range-input-picker-trigger" etDatePickerTrigger>
-  <i etIcon="et-calendar"></i>
-</button>
+  <button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-input-picker-trigger" etDatePickerTrigger>
+    <i etIcon="et-calendar"></i>
+  </button>
+</ng-template>
 
 <ng-template etDatePickerSurface>
   <et-date-picker-panel dialogLabel="Choose a date range">

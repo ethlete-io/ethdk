@@ -71,46 +71,6 @@
       font-style: italic;
       color: color-mix(in srgb, currentColor 72%, transparent);
     }
-
-    .et-phone-input-clear {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      border: none;
-      background: transparent;
-      color: var(--et-surface-color-muted-solid, currentColor);
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      appearance: none;
-
-      .et-icon {
-        inline-size: 16px;
-        block-size: 16px;
-      }
-
-      @media (hover: hover) {
-        &:hover {
-          color: var(--et-surface-color-solid, currentColor);
-        }
-      }
-
-      &.et-phone-input-clear--enter {
-        animation: et-phone-input-clear-in 150ms ease;
-      }
-
-      &.et-phone-input-clear--leave {
-        animation: et-phone-input-clear-out 120ms ease forwards;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        &.et-phone-input-clear--enter,
-        &.et-phone-input-clear--leave {
-          animation: none;
-        }
-      }
-    }
   }
 
   /* panel content of the country picker (rendered in the overlay pane) */
@@ -193,17 +153,5 @@
     display: block;
     inline-size: 20px;
     block-size: auto;
-  }
-
-  @keyframes et-phone-input-clear-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes et-phone-input-clear-out {
-    to {
-      opacity: 0;
-    }
   }
 }

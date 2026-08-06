@@ -19,6 +19,12 @@
     </div>
 
     <div class="et-form-field-affix et-form-field-suffix">
+      <!-- Before the consumer's suffix: a control's own clear / picker-trigger / reveal buttons hug
+       the field they belong to, and nothing may come between them and it. -->
+      @if (formFieldDir.registeredControlSuffix(); as controlSuffix) {
+        <ng-template [ngTemplateOutlet]="controlSuffix.templateRef" />
+      }
+
       <ng-content select="[etInputSuffix]" />
 
       <!-- After the consumer's own suffix, never instead of it — a pending async validator must not

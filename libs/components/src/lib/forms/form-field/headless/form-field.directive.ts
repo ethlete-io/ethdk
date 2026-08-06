@@ -2,6 +2,7 @@ import { afterNextRender, computed, Directive, effect, signal } from '@angular/c
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_ERROR_CODES } from './form-field-errors';
 import {
+  ControlSuffixBase,
   CounterComponentBase,
   FORM_FIELD_CONTROL_TYPES,
   FORM_FIELD_TOKEN,
@@ -31,6 +32,9 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   /** @internal */
   public registeredLabel = signal<LabelDirectiveBase | null>(null);
+
+  /** @internal */
+  public registeredControlSuffix = signal<ControlSuffixBase | null>(null);
 
   /** Set by the form-field component; read by overlay-based controls (e.g. the select) as their anchor. */
   public controlFrameElement = signal<HTMLElement | null>(null);

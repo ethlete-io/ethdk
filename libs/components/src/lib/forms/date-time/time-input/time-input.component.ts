@@ -16,6 +16,7 @@ import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.direct
 import { TimeInputDirective, TimeInputFieldDirective } from './headless';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
+import { ControlSuffixDirective } from '../../form-field/partials';
 
 @Component({
   selector: 'et-time-input',
@@ -23,6 +24,7 @@ import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels'
   styleUrl: './time-input.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
+    ControlSuffixDirective,
     ...TIME_PICKER_IMPORTS,
     TimeInputFieldDirective,
     DatePickerSurfaceDirective,

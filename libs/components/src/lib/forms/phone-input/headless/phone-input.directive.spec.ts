@@ -88,7 +88,7 @@ describe('PhoneInputDirective', () => {
   });
 
   it('renders a clear control while the focused field has a value and clears on click', () => {
-    const clearButton = () => fixture.nativeElement.querySelector('.et-phone-input-clear') as HTMLButtonElement | null;
+    const clearButton = () => fixture.nativeElement.querySelector('.et-input-clear') as HTMLButtonElement | null;
 
     expect(clearButton()).toBeNull();
 

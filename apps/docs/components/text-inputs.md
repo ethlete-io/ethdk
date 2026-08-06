@@ -98,7 +98,9 @@ value is a plain `string`; `autocomplete` defaults to `'current-password'` (set
   native `type` between `password`/`text`, exposed as `aria-pressed`. Its
   accessible name is state-aware - `revealLabel` (unset → [`INPUT_LABELS.showPassword`](/components/localization), `'Show password'`)
   while hidden, `hideLabel` (default `'Hide password'`) while shown. The revealed
-  state is also a two-way `revealed` model.
+  state is also a two-way `revealed` model. It renders in the field's
+  [suffix stack](/components/forms#one-suffix-stack), so a busy spinner or your own `etInputSuffix`
+  never displaces it.
 - **Caps Lock warning** (opt-in, `capsLockWarning`): a `role="status"` warning
   icon while the field is focused and Caps Lock is on. `capsLockLabel`
   (default `'Caps Lock is on'`) is both the screen-reader text and the icon's

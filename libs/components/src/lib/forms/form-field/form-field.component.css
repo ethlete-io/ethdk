@@ -186,12 +186,10 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      gap: var(--et-form-field-control-affix-gap);
       color: var(--et-surface-color-muted-solid, currentColor);
-      opacity: 0.78;
       pointer-events: none;
-      transition:
-        color 150ms ease,
-        opacity 150ms ease;
+      transition: color 150ms ease;
 
       &:empty {
         display: none;
@@ -199,6 +197,14 @@
 
       > * {
         pointer-events: none;
+      }
+
+      /* Dimmed by what it is, not by where it sits: the slot also holds the control's own clear /
+         picker-trigger / reveal buttons, and an affordance is not decoration. A group opacity on
+         the box would catch those too, and no child can raise its way back out of one. */
+      > :is([etInputPrefix], [etInputSuffix], .et-form-field-busy-spinner) {
+        opacity: 0.78;
+        transition: opacity 150ms ease;
       }
 
       /* an affix holds either a text glyph (`@`, `€`, `.com`) or an icon — an `[etIcon]` has no

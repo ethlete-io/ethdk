@@ -3,7 +3,6 @@ import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input
 import { ColorInteractiveDirective, injectLocale } from '@ethlete/core';
 import { IconDirective, TIMES_ICON, provideIcons } from '../../icon';
 import { SELECT_IMPORTS } from '../select';
-import { FORM_FIELD_TOKEN } from '../form-field/headless';
 import {
   PHONE_COUNTRIES,
   PhoneInputDirective,
@@ -14,17 +13,22 @@ import {
 } from './headless';
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectPhoneInputLabels } from '../../forms/phone-input/phone-input-labels';
+import { ControlSuffixDirective, FormFieldBarrierDirective } from '../form-field/partials';
 
 @Component({
   selector: 'et-phone-input',
   templateUrl: './phone-input.component.html',
   styleUrl: './phone-input.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...SELECT_IMPORTS, PhoneInputFieldDirective, NgTemplateOutlet, IconDirective],
+  imports: [
+    ControlSuffixDirective,
+    FormFieldBarrierDirective,
+    ...SELECT_IMPORTS,
+    PhoneInputFieldDirective,
+    NgTemplateOutlet,
+    IconDirective,
+  ],
   providers: [provideIcons(TIMES_ICON)],
-  // the country picker is a full [etSelect] composition living INSIDE this control - the
-  // barrier stops it from registering itself as the surrounding form field's control
-  viewProviders: [{ provide: FORM_FIELD_TOKEN, useValue: null }],
   hostDirectives: [
     {
       directive: PhoneInputDirective,

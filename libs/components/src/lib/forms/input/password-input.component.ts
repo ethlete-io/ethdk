@@ -14,13 +14,14 @@ import { EYE_ICON, EYE_SLASH_ICON, IconDirective, provideIcons, TRIANGLE_EXCLAMA
 import { TooltipDirective } from '../../tooltip';
 import { PasswordInputDirective } from './headless';
 import { injectInputLabels } from '../../forms/input/input-labels';
+import { ControlSuffixDirective } from '../form-field/partials';
 
 @Component({
   selector: 'et-password-input',
   templateUrl: './password-input.component.html',
   styleUrl: './password-input.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [IconDirective, TooltipDirective],
+  imports: [ControlSuffixDirective, IconDirective, TooltipDirective],
   providers: [provideIcons(EYE_ICON, EYE_SLASH_ICON, TRIANGLE_EXCLAMATION_ICON)],
   hostDirectives: [
     {

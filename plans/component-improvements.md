@@ -122,42 +122,6 @@ styles. Moving its story from the standalone `Components/Copy button` entry
 into `Components/Button/*` is a pure story-organization move (see Storybook
 structure below), no component change.
 
-## Form field
-
-Busy state and a suffix already have a defined precedence, not a collision:
-`form-field.component.html` appends the busy spinner (`et-spinner`, driven
-by `isBusy = busy() || formFieldDir.isPending()`) _after_ whatever's
-projected into `[etInputSuffix]`, inside the same `.et-form-field-affix`
-flex box - a comment on it is explicit: "After the consumer's own suffix,
-never instead of it - a pending async validator must not displace a clear
-button or a reveal toggle." So icon and spinner sit side by side and the
-affix widens; they don't overlap.
-
-The worse case - date/time pickers with a clear (X) button, a picker-toggle
-button, a suffix icon, and a busy spinner all at once - isn't actually
-governed by that rule today, because the clear and picker-toggle buttons on
-select/date/time controls don't use `[etInputSuffix]` at all. Each control
-renders them as plain sibling buttons in its own flex template (e.g.
-`date-input.component.html`: clear button immediately before the
-`etDatePickerTrigger` button), positioned to _look_ like a suffix without
-being one. So the extreme case has three independent mechanisms sharing the
-same visual real estate - form-field's real suffix slot, each control's
-hand-rolled clear+trigger buttons, and form-field's busy spinner appended
-after the real slot - rather than one governed stack. Making "the suffix
-should be the picker toggle button already" true means moving clear and
-picker-trigger into `[etInputSuffix]` projection on date-input/date-time-
-input/date-range-input/time-input, so form-field's existing append-after
-rule covers the whole stack instead of being bypassed by four controls that
-render outside it.
-
-The same bypass isn't limited to the date/time family: `phone-input.component
-.html`'s clear button and `input/password-input.component.html`'s reveal
-button are both plain siblings too, with zero `[etInputSuffix]` usage in
-either file - so the fix scope is six controls (date-input, date-time-
-input, date-range-input, time-input, phone-input, password-input), not
-four. `masked-input` has no template of its own to compare (it's a bare
-directive applied to an existing input, per `headless/input-mask.directive.ts`).
-
 ## Description list
 
 `DescriptionListComponent` is an empty class - zero inputs, one visual
@@ -486,6 +450,33 @@ The three auth items the triage opened with (2026-08-06, one pass):
 - **The snapshot-vs-`executionState` docs fix** - `apps/docs/query/auth.md` now has a "Don't drive
   a form off `executionState()`" section. No API was needed; `queries.<key>.snapshot` already was
   the per-attempt path.
+
+**Form field: one suffix stack** (2026-08-07) - the clear button and picker trigger of date /
+date-time / date-range / time input, the phone input's clear button and the password input's reveal
+toggle now render inside `.et-form-field-suffix`, ahead of the consumer's `[etInputSuffix]` and the
+busy spinner. Content projection cannot go child → ancestor, so the route is a registration: a
+`ng-template[etControlSuffix]` partial (`form-field/partials/control-suffix.directive.ts`) sets
+`FormFieldDirective.registeredControlSuffix`, and the field renders it through `ngTemplateOutlet`.
+With no field to hand it to the directive renders the template where it stands, which is what keeps a
+standalone control working. Four things worth not rediscovering. **The phone input's barrier was too
+broad** - its component-level `viewProviders: [{ provide: FORM_FIELD_TOKEN, useValue: null }]`, there
+to stop the nested country `[etSelect]` registering as the outer control, also hid the field from the
+phone input's _own_ template, so its suffix silently self-rendered in place. It is now a
+`[etFormFieldBarrier]` directive on the country picker div - narrow enough that the rest of the
+template still reaches the field, which is also what any future control-inside-a-control will need.
+**The affix's dim moved from the box to its children**: `opacity` on `.et-form-field-affix` is a group
+opacity no child can raise itself out of, so it now targets
+`> :is([etInputPrefix], [etInputSuffix], .et-form-field-busy-spinner)` - projected content and the
+spinner recede, a control's own affordances do not. The affix also gained
+`gap: var(--et-form-field-control-affix-gap)`, without which the clear and the trigger touched (their
+8px used to come from the control's own host) - and because that token is size-scoped, their spacing
+now tracks the field's `size` (6/8/10px) instead of being pinned at 8px. And the CSS deduped: the five identical `-clear`
+blocks and four identical `-picker-trigger` blocks are one
+`FormFieldControlSuffixStylesComponent`, mounted by `date-picker-input.directive.ts`,
+`date-range-input.directive.ts` and `phone-input.directive.ts` - a **breaking** rename to
+`.et-input-clear` / `.et-input-picker-trigger`. Verified in Storybook across all six controls:
+stack order, opacity, 16px icons, 8px gap, the trigger's -14px hit area, the focus ring, the
+enter/leave keyframes, and that clear still clears while keeping focus.
 
 **Selection card: one presentation instead of three** (2026-08-07) - `SelectionCardStylesComponent`
 (`libs/components/src/lib/forms/selection-card-styles.component.*`), mounted via

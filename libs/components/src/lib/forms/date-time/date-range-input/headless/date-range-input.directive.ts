@@ -33,6 +33,7 @@ import {
 } from '../../../../calendar/headless';
 import { displayFormatForPrecision } from '../../internals/precision-format';
 import { mountTextFieldShellStyles } from '../../../form-field/form-field-text-shell-styles.component';
+import { mountControlSuffixStyles } from '../../../form-field/form-field-control-suffix-styles.component';
 
 export type DateRangeValue = {
   start: string | null;
@@ -271,6 +272,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
   constructor() {
     mountTextFieldShellStyles();
+    mountControlSuffixStyles();
 
     this.formField?.registerControl(this.formFieldControlView);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this.formFieldControlView));

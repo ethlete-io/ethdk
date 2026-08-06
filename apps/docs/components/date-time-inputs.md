@@ -44,7 +44,9 @@ scalar - see below) shares one design:
 - **Clear (×) button.** While the focused field holds a value or pending text, a
   pointer-only clear button renders before the picker trigger (label:
   `clearLabel`); disable it with `clearable="false"`. Keyboard users clear by
-  erasing the text.
+  erasing the text. Both buttons render in the field's
+  [suffix stack](/components/forms#one-suffix-stack) (`.et-input-clear` /
+  `.et-input-picker-trigger`), so a busy spinner or your own `etInputSuffix` never displaces them.
 - **Bottom sheet on mobile.** Below the `md` breakpoint (768px) the picker opens
   as a bottom sheet (backdrop, drag-to-dismiss, touch-sized cells) instead of an
   anchored panel.

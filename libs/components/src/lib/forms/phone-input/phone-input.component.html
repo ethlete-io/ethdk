@@ -4,6 +4,7 @@
   (valueChange)="handleCountryChange($event)"
   class="et-phone-input-country"
   mirrorPanelWidth="false"
+  etFormFieldBarrier
   etSelect
 >
   <button
@@ -56,20 +57,22 @@
 
 <input class="et-phone-input-field" etPhoneInputField />
 
-@if (showClear()) {
-  <!-- pointer-only, out of the tab order — keyboard users clear by erasing the text.
-       mousedown is prevented so the field keeps focus (its blur would unmount this
-       button before the click could land) -->
-  <button
-    [attr.aria-label]="resolvedClearLabel()"
-    (click)="handleClearClick($event)"
-    (mousedown)="$event.preventDefault()"
-    class="et-phone-input-clear"
-    animate.enter="et-phone-input-clear--enter"
-    animate.leave="et-phone-input-clear--leave"
-    tabindex="-1"
-    type="button"
-  >
-    <i etIcon="et-times"></i>
-  </button>
-}
+<ng-template etControlSuffix>
+  @if (showClear()) {
+    <!-- pointer-only, out of the tab order — keyboard users clear by erasing the text.
+         mousedown is prevented so the field keeps focus (its blur would unmount this
+         button before the click could land) -->
+    <button
+      [attr.aria-label]="resolvedClearLabel()"
+      (click)="handleClearClick($event)"
+      (mousedown)="$event.preventDefault()"
+      class="et-input-clear"
+      animate.enter="et-input-clear--enter"
+      animate.leave="et-input-clear--leave"
+      tabindex="-1"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  }
+</ng-template>

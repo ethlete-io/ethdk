@@ -8,6 +8,7 @@ import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.direct
 import { DateInputDirective, DateInputFieldDirective } from './headless';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
+import { ControlSuffixDirective } from '../../form-field/partials';
 
 @Component({
   selector: 'et-date-input',
@@ -15,6 +16,7 @@ import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels'
   styleUrl: './date-input.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
+    ControlSuffixDirective,
     ...CALENDAR_IMPORTS,
     DateInputFieldDirective,
     DatePickerSurfaceDirective,

@@ -21,6 +21,7 @@ import { createDatePickerOverlay } from './date-picker-overlay';
 import { maskPatternFromDisplayFormat } from './display-format-mask';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
+import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
 
 /** The registered text field a date-picker input focuses and anchors to. */
 export type DatePickerInputFieldBase = { focus(): void; elementRef: ElementRef<HTMLInputElement> };
@@ -158,6 +159,7 @@ export abstract class DatePickerInputDirective
 
   constructor() {
     mountTextFieldShellStyles();
+    mountControlSuffixStyles();
 
     const destroyRef = inject(DestroyRef);
 

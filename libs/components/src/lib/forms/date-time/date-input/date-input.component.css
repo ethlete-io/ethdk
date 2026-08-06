@@ -2,7 +2,6 @@
   et-date-input {
     display: flex;
     align-items: center;
-    gap: 8px;
     flex: 1;
     min-inline-size: 0;
     color: inherit;
@@ -34,104 +33,6 @@
     &[data-mixed] .et-date-input-field::placeholder {
       font-style: italic;
       color: color-mix(in srgb, currentColor 72%, transparent);
-    }
-
-    .et-date-input-clear {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      border: none;
-      background: transparent;
-      color: var(--et-surface-color-muted-solid, currentColor);
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      appearance: none;
-
-      .et-icon {
-        inline-size: 16px;
-        block-size: 16px;
-      }
-
-      @media (hover: hover) {
-        &:hover {
-          color: var(--et-surface-color-solid, currentColor);
-        }
-      }
-
-      &.et-date-input-clear--enter {
-        animation: et-date-input-clear-in 150ms ease;
-      }
-
-      &.et-date-input-clear--leave {
-        animation: et-date-input-clear-out 120ms ease forwards;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        &.et-date-input-clear--enter,
-        &.et-date-input-clear--leave {
-          animation: none;
-        }
-      }
-    }
-
-    .et-date-input-picker-trigger {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      outline: none;
-      background: transparent;
-      color: var(--et-surface-color-muted-solid, currentColor);
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      appearance: none;
-      /* no double-tap-zoom wait on touch — the picker opens on the first tap */
-      touch-action: manipulation;
-
-      /* invisible hit-area extension — the icon-sized box alone is far below
-         a comfortable tap target */
-      &::after {
-        content: '';
-        position: absolute;
-        inset: -14px;
-      }
-
-      .et-icon {
-        inline-size: 16px;
-      }
-
-      @media (hover: hover) {
-        &:hover {
-          color: var(--et-surface-color-solid, currentColor);
-        }
-      }
-
-      &:focus-visible {
-        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
-        outline-offset: 2px;
-        border-radius: 4px;
-      }
-
-      &:disabled {
-        cursor: not-allowed;
-        color: var(--et-surface-color-subtle-solid, currentColor);
-      }
-    }
-  }
-
-  @keyframes et-date-input-clear-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes et-date-input-clear-out {
-    to {
-      opacity: 0;
     }
   }
 }
