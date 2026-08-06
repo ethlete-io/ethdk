@@ -210,34 +210,6 @@ won't hold once free-text entry or a custom picker is in play. A contrast
 validator against another control's value needs a cross-field read - check
 how (if at all) that's wired elsewhere in `libs/forms` before designing it.
 
-## Grid: reordering doesn't finish on touchend
-
-Drag lifecycle is pointer-events-only end to end - `GridDragDirective`
-hosts core's `DragHandleDirective`, whose gesture stream
-(`drag-gesture.ts`) is built entirely from `fromEvent` on `pointerdown`/
-`pointermove`/`pointerup`/`pointercancel`. There are no `touchstart`/
-`touchmove`/`touchend` listeners anywhere in `grid/` or `drag-handle/` -
-`touch-action: none` is set on the drag handle specifically so touch
-pointer events aren't hijacked for native scrolling (its own comment:
-"Without this the browser claims touch pointermoves for scrolling and
-fires pointercancel, so a touch drag never gets past the commit
-threshold"). `setPointerCapture` is called once past the commit threshold;
-`releasePointerCapture` is never called anywhere in core or grid, relying
-on the browser's implicit release on `pointerup`/`pointercancel`. The only
-two exits from a captured drag - `settleDrag()`/`cancelDrag()` - are both
-gated exclusively on that same `pointerup`/`pointercancel` merged stream.
-
-So "stays in touch-move state" means some touch sequence reaches
-`pointermove` but its terminating `pointerup` (or `pointercancel`) never
-reaches the `document`-level listener that `end$` subscribes to. Source
-alone can't say which - the fix has to start with reproducing on real touch
-hardware and instrumenting whether `pointercancel` fires (handled, but
-maybe not routing back to `cancelDrag`) versus neither event firing at all
-(e.g. capture never released, or a synthetic mouse sequence intervening
-after the touch sequence). There's no dedicated `.css` file in `grid/` and
-no explicit state-machine type to inspect further - drag state is implicit
-in a closure `committed` flag plus a nullable `origin`/`dragState` signal.
-
 ## Progress steps
 
 Today: `ProgressStepComponent` has exactly one input, `state`
@@ -437,6 +409,16 @@ CapsLock key's own keyup (e.g. next `focusin`, or accepting the state can
 only be trusted to update on the next real keystroke and saying so in the
 label) rather than anything fixable in this directive's current listener
 set.
+
+**Blocked on a human at a Mac keyboard (checked 2026-08-06).** No automated
+route can settle it: a synthetic CapsLock keyup - WebDriver, CDP,
+`adb shell input`, whatever - always reports the post-toggle modifier state
+correctly, because the quirk being reported is in how macOS delivers the
+_physical_ key, not in how the DOM handles the event. Driving the team Mac
+over LAN does not help either: `verify-on-apple-devices` reaches its iOS
+Simulator and the iPad, neither of which has a Mac's CapsLock. So this needs
+someone to press the key on a Mac and say what happens - anything else would
+be a fix designed against a guess.
 
 No duplication elsewhere - `otp-input` and every other password-adjacent
 control have no caps-lock logic of their own; `password-input` owns this
@@ -757,6 +739,25 @@ Bug pass 2:
   so an edge is a 14px target at the default `gap: 16`. The touch sizes moved from `hover: none`
   to `any-pointer: coarse`, and a grid item drops core's pip-only `--side-bottom: 8px`.
   Changeset `grid-resize-handle-hit-area.md`.
+- **A cancelled drag committed the move** - `dragGestureFrom` merged `pointercancel` into the
+  same terminator as `pointerup`, so a gesture the browser takes away was reported as a drop.
+  It now emits `cancelled` (and `ResizeHandlesComponent` a `resizeCancelled`), which the grid,
+  the table's column reorder and its column resize revert on; a cancelled press below the
+  commit threshold is no longer reported as a tap. The pip window only had to _terminate_ -
+  before this its move stream had no end on the cancel path at all, so a cancelled pip drag
+  stayed stuck in drag mode, which is the closest thing found to the touchend report below.
+  Changeset `drag-resize-cancelled-gesture.md`.
+
+Found not to reproduce:
+
+- **"Grid reordering doesn't finish on touchend"** (was its own section). Driven on the real
+  Android emulator (Pixel, Chrome, `adb shell input swipe` and CDP touch): a clean lift, a
+  second finger landing mid-drag, a drag past the fold, and a browser `touchCancel` all
+  terminate the gesture and clear `--dragging`. `pointerup` is delivered every time. The
+  answer to the backlog's question - does `pointercancel` fire and route back to `cancelDrag`?
+  - is that it fired and was _handled_, but routed to settle; that is fixed above. If the
+    original report resurfaces, capture the device, browser version and gesture, because the
+    obvious paths are now covered by `drag-gesture.spec.ts`.
 
 ## Grid: registering a widget forces the consumer to cast
 
