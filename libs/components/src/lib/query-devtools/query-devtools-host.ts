@@ -186,13 +186,22 @@ export type QueryDevtoolsHost = {
   clearForced(query: AnyQuery): void;
 
   diffRunIndex: WritableSignal<number | null>;
-  toggleRunDiff(run: QueryDevtoolsRun): void;
+
+  /** The run the diff compares against, or `null` to derive it - see the panel's own field. */
+  diffBaseRunIndex: WritableSignal<number | null>;
+
+  toggleRunDiff(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun): void;
+  /** Which end of the open diff a run is, or `null` if it is not one of the two. */
+  diffRunRole(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun): 'base' | 'compare' | null;
   responseDiff(
     entry: QueryDevtoolsEntry,
   ): { before: QueryDevtoolsRun; after: QueryDevtoolsRun; diff: QueryDevtoolsDiff } | null;
   canDiffRun(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun): boolean;
   queryRuns(entry: QueryDevtoolsEntry): QueryDevtoolsRun[];
   runStatus(run: QueryDevtoolsRun): string;
+
+  /** How many bodies a query retains, which is what bounds how far back a diff can reach. */
+  retainedResponseCount: number;
 
   errorRunIndex: WritableSignal<number | null>;
   toggleRunError(run: QueryDevtoolsRun): void;

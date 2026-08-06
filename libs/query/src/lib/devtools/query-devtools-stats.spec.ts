@@ -1,6 +1,12 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { createQueryErrorResponse } from '../http/query-error-response';
-import { createQueryDevtoolsStats, measureQueryDevtoolsPayload, sumQueryDevtoolsStats } from './query-devtools-stats';
+import {
+  createQueryDevtoolsStats,
+  measureQueryDevtoolsPayload,
+  queryDevtoolsResponseHistory,
+  setQueryDevtoolsResponseHistory,
+  sumQueryDevtoolsStats,
+} from './query-devtools-stats';
 
 const errorResponse = (status: number, body: unknown) =>
   createQueryErrorResponse(new HttpErrorResponse({ status, error: body, url: 'https://api.test.com/posts' }));
@@ -331,6 +337,32 @@ describe('query devtools stats', () => {
       expect(withBody[4]?.response).toEqual({ run: 7 });
       // A dropped body reads the same as one that never arrived, so nothing renders a stale response.
       expect(recorder.runs()[0]?.response).toBe(null);
+    });
+
+    it('should retain as many bodies as the devtools were configured for', () => {
+      setQueryDevtoolsResponseHistory(12);
+
+      try {
+        const recorder = createQueryDevtoolsStats();
+
+        for (let i = 0; i < 20; i++) {
+          recorder.recordExecution({ didRequest: true });
+          recorder.recordResponse({ body: { run: i } });
+        }
+
+        expect(queryDevtoolsResponseHistory()).toBe(12);
+        expect(recorder.runs().filter((run) => run.hasResponse).length).toBe(12);
+      } finally {
+        setQueryDevtoolsResponseHistory(undefined);
+      }
+    });
+
+    it('should fall back to the default retention and never below one body', () => {
+      setQueryDevtoolsResponseHistory(0);
+      expect(queryDevtoolsResponseHistory()).toBe(1);
+
+      setQueryDevtoolsResponseHistory(undefined);
+      expect(queryDevtoolsResponseHistory()).toBe(5);
     });
 
     it('should not count a run without a body against the retained window', () => {

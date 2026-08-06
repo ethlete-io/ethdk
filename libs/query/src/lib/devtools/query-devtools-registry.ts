@@ -13,7 +13,7 @@ import {
 import { resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
 import { createQueryDevtoolsFormLinks } from './query-devtools-form-links';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
-import { createQueryDevtoolsStats } from './query-devtools-stats';
+import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
 import { MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
@@ -205,6 +205,15 @@ const capTombstones = (list: QueryDevtoolsEntry[]) => {
  */
 export const clearQueryDevtoolsTombstones = () => entries.update((list) => list.filter((e) => !e.destroyedAt));
 
+export type QueryDevtoolsOptions = {
+  /**
+   * How many of each query's most recent runs keep their response (or error) body, which is what the
+   * panel's response diff compares. Defaults to `5`. Bodies dominate what the run buffer retains, so
+   * raise this only as far as the reach you actually need - a polling query holds one per run.
+   */
+  responseHistory?: number;
+};
+
 /**
  * Enables the `@ethlete/query` devtools. Add this to your application providers (e.g. in
  * `bootstrapApplication`) to make query clients, queries, stacks, sequences and auth providers
@@ -220,7 +229,8 @@ export const clearQueryDevtoolsTombstones = () => entries.update((list) => list.
  * });
  * ```
  */
-export const provideQueryDevtools = (): EnvironmentProviders => {
+export const provideQueryDevtools = (options?: QueryDevtoolsOptions): EnvironmentProviders => {
+  setQueryDevtoolsResponseHistory(options?.responseHistory);
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
   setQueryDevtoolsFormLinksFactory(createQueryDevtoolsFormLinks);

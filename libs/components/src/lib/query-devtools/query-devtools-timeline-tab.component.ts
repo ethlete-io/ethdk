@@ -100,6 +100,7 @@ export class QueryDevtoolsTimelineTabComponent {
     for (const entry of this.host.scopedQueries()) entry.stats?.reset();
 
     this.host.diffRunIndex.set(null);
+    this.host.diffBaseRunIndex.set(null);
   }
 
   protected selectTimelineRow(row: TimelineRow) {

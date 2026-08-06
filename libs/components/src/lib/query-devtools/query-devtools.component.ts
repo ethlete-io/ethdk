@@ -29,6 +29,7 @@ import {
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
   queryDevtoolsFaults,
+  queryDevtoolsResponseHistory,
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
   QueryDevtoolsRun,
@@ -436,7 +437,20 @@ export class QueryDevtoolsComponent {
 
   /** The run whose response the diff is comparing, by run index, or `null` while no diff is open. */
   public diffRunIndex = signal<number | null>(null);
+
+  /**
+   * The run the diff compares it *against*, or `null` to derive that side - the newest older run that
+   * still holds a body, which is what one click on **Diff** gives you.
+   */
+  public diffBaseRunIndex = signal<number | null>(null);
+
   public errorRunIndex = signal<number | null>(null);
+
+  /**
+   * How many bodies a query retains, which is what bounds how far back a diff can reach. Read once:
+   * `provideQueryDevtools()` sets it before anything can create this panel.
+   */
+  public readonly retainedResponseCount = queryDevtoolsResponseHistory();
 
   /** JIT editor state (response / args editing on the selected query). */
   public editorMode = signal<'none' | 'response' | 'args'>('none');
@@ -801,6 +815,7 @@ export class QueryDevtoolsComponent {
       this.copiedInsomnia.set(false);
       this.copiedCurl.set(false);
       this.diffRunIndex.set(null);
+      this.diffBaseRunIndex.set(null);
       this.errorRunIndex.set(null);
 
       if (key !== this.lastSelectionKey) {
@@ -1158,6 +1173,7 @@ export class QueryDevtoolsComponent {
   public resetStats(entry: QueryDevtoolsEntry) {
     entry.stats?.reset();
     this.diffRunIndex.set(null);
+    this.diffBaseRunIndex.set(null);
     this.errorRunIndex.set(null);
   }
 
@@ -1174,43 +1190,63 @@ export class QueryDevtoolsComponent {
     return run.status === 'pending' ? 'loading' : run.status;
   }
 
-  /** Whether a run can be diffed: it still holds its body, and so does an older run of the same query. */
+  /**
+   * Whether a run can be an end of the diff: it still holds its body, and so does some other run of the
+   * same query. Deliberately not "an *older* run" - a free pair means the oldest body held is pickable
+   * too, as the base of a comparison against something newer.
+   */
   public canDiffRun(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun) {
     if (!run.hasResponse) return false;
 
-    return (entry.stats?.runs() ?? []).some((other) => other.hasResponse && other.index < run.index);
-  }
-
-  public toggleRunDiff(run: QueryDevtoolsRun) {
-    this.diffRunIndex.update((current) => (current === run.index ? null : run.index));
+    return (entry.stats?.runs() ?? []).some((other) => other.hasResponse && other.index !== run.index);
   }
 
   /**
-   * The response diff of the picked run against the newest older run that still holds a body - which is
-   * not necessarily the run right before it, since a failed run has none to compare.
-   *
-   * `null` unless a run is picked, so a closed diff costs nothing to walk.
+   * Arms a run as one end of the diff, or - with one end already armed - as the other. Clicking either
+   * end clears both.
    */
-  public responseDiff(entry: QueryDevtoolsEntry) {
-    const picked = this.diffRunIndex();
+  public toggleRunDiff(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun) {
+    const ends = this.diffEnds(entry);
 
-    if (picked === null) return null;
+    // Nothing armed to extend, so the click starts over - which is also how the slots recover after a
+    // body was trimmed out from under one of them.
+    if (!ends) {
+      this.diffRunIndex.set(run.index);
+      this.diffBaseRunIndex.set(null);
 
-    const runs = entry.stats?.runs() ?? [];
-    const at = runs.findIndex((run) => run.index === picked);
-    const after = at === -1 ? null : runs[at];
-
-    if (!after?.hasResponse) return null;
-
-    for (let index = at - 1; index >= 0; index--) {
-      const before = runs[index];
-
-      if (before?.hasResponse) {
-        return { before, after, diff: diffQueryDevtoolsResponses(before.response, after.response) };
-      }
+      return;
     }
 
-    return null;
+    if (run.index === ends.before.index || run.index === ends.after?.index) {
+      this.diffRunIndex.set(null);
+      this.diffBaseRunIndex.set(null);
+
+      return;
+    }
+
+    this.diffBaseRunIndex.set(run.index);
+  }
+
+  /** Which end of the comparison a run is, so a row says so and the two ends read differently. */
+  public diffRunRole(entry: QueryDevtoolsEntry, run: QueryDevtoolsRun): 'base' | 'compare' | null {
+    const ends = this.diffEnds(entry);
+
+    if (!ends) return null;
+    if (run.index === ends.before.index) return 'base';
+
+    return run.index === ends.after?.index ? 'compare' : null;
+  }
+
+  public responseDiff(entry: QueryDevtoolsEntry) {
+    const ends = this.diffEnds(entry);
+
+    if (!ends?.after) return null;
+
+    return {
+      before: ends.before,
+      after: ends.after,
+      diff: diffQueryDevtoolsResponses(ends.before.response, ends.after.response),
+    };
   }
 
   public toggleRunError(run: QueryDevtoolsRun) {
@@ -1844,6 +1880,49 @@ export class QueryDevtoolsComponent {
   public formatTime(timestamp: number | null) {
     if (!timestamp) return '-';
     return new Date(timestamp).toLocaleTimeString(undefined, { hour12: false });
+  }
+
+  /**
+   * The two runs the diff compares, oldest first - normalised by run index, so picking a pair in either
+   * order reads the same way round as the `#before → #after` header prints it.
+   *
+   * `null` unless a run is picked, so a closed diff costs nothing to walk.
+   */
+  /**
+   * The two runs the comparison spans, oldest first - normalised by run index, so picking a pair in
+   * either order reads the same way round as the `#before → #after` header prints it. With only one end
+   * armed, `after` is absent unless an older body-holding run can stand in for the base.
+   *
+   * `null` unless a run is armed, so a closed diff costs nothing to walk.
+   */
+  private diffEnds(entry: QueryDevtoolsEntry) {
+    const runs = entry.stats?.runs() ?? [];
+    const held = (index: number | null) =>
+      index === null ? undefined : runs.find((run) => run.index === index && run.hasResponse);
+
+    // An armed run whose body has since been trimmed counts as unarmed. Quietly re-deriving the other end
+    // instead would show a different comparison under a header still naming the one that was picked.
+    const picked = held(this.diffRunIndex());
+
+    if (!picked) return null;
+
+    const other = held(this.diffBaseRunIndex());
+
+    if (other && other.index !== picked.index) {
+      const [before, after] = other.index < picked.index ? [other, picked] : [picked, other];
+
+      return { before, after };
+    }
+
+    for (let index = runs.indexOf(picked) - 1; index >= 0; index--) {
+      const before = runs[index];
+
+      if (before?.hasResponse) return { before, after: picked };
+    }
+
+    // Armed with nothing older holding a body, so this is one end of a pair still to be completed rather
+    // than a comparison. Reporting it as an end anyway is what keeps the pick from being thrown away.
+    return { before: picked, after: undefined };
   }
 
   private isTabPrimary(tab: DevtoolsTab) {

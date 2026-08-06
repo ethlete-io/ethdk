@@ -35,4 +35,13 @@ export class QueryDevtoolsDetailComponent {
     { id: 'history', label: 'History' },
     { id: 'data', label: 'Data' },
   ] satisfies { id: DetailTab; label: string }[];
+
+  /** What a run's Diff button reads as at each end of the comparison. */
+  protected readonly diffRoles = {
+    base: {
+      label: 'Base',
+      title: 'The older end of the comparison - click another run to set the newer one, or this one to clear it',
+    },
+    compare: { label: 'Compare', title: 'The newer end of the comparison - click to clear it' },
+  } satisfies Record<'base' | 'compare', { label: string; title: string }>;
 }

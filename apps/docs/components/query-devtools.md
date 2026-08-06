@@ -498,11 +498,9 @@ took more than one attempt carries a
 [`⟳ N` marker](#retries-and-progress-what-a-loading-query-is-actually-doing), because
 its duration covers every attempt and the backoff between them.
 
-The newest **5** runs also keep their response body, which is what makes the
-**Diff** button work: it compares a run's response against the newest older run that
-still holds one (not necessarily the run right before it - a failed run has no body to
-compare). The diff is a flat list of paths, which is the shape that answers the two
-questions worth asking:
+The newest **5** runs also keep their response body ([configurable](#picking-both-ends-of-a-diff)),
+which is what makes the **Diff** button work. The diff is a flat list of paths, which is
+the shape that answers the two questions worth asking:
 
 - _The list re-rendered - what changed?_
 - _Did that poll return anything new?_ → **identical**, in as many words.
@@ -520,6 +518,46 @@ runs of each query - a polling query would otherwise hold on to every response i
 received. `provideQueryDevtools()` is what allocates any of it; an app without it pays
 nothing.
 :::
+
+### Picking both ends of a diff
+
+One click on **Diff** compares that run against the newest older run that still holds a
+body - not necessarily the run right before it, since a failed run has none to compare.
+That derived pairing is labelled **nearest older** next to the header, so a
+`#4 → #5` heading never claims to be a choice you made.
+
+It is only a default. Click **Diff** on a second run and that becomes the other end:
+the two armed rows read **Base** (older) and **Compare** (newer), and the header names
+the pair. Clicking either end clears both. The pair is normalised by run number, so it
+does not matter which end you pick first - a comparison always reads older → newer, and
+you can start from the older run and work forwards.
+
+This matters most where the adjacent pairing is useless. In a stampede of five
+near-identical polls, `#4 → #5` reports **identical** while the comparison worth seeing
+is `#1 → #5`. The same goes for the response before a mutation against the one two
+refetches later, or pre-login against post-login.
+
+Both ends have to be holding a body, so retention is the real limit on reach: with the
+default of five, five rows can be an end of a diff. An older run reads
+`body no longer held` and says why on its tooltip, and a run holding the only body left
+reads `the only body held`. If a body is trimmed away while it is armed, the diff closes
+rather than quietly re-deriving the other end under the same header.
+
+Raise the window when five is not enough reach - it is a memory decision, since bodies
+dominate what the run buffer holds:
+
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [provideQueryDevtools({ responseHistory: 15 })],
+});
+```
+
+| Option            | Type     | Default | What it does                                                              |
+| ----------------- | -------- | ------- | ------------------------------------------------------------------------- |
+| `responseHistory` | `number` | `5`     | How many of each query's newest runs keep their response (or error) body. |
+
+Neither end of a pair is persisted: it is per-inspection state, and the runs it names do
+not survive a reload anyway.
 
 ### A failure stays readable after the query has moved on
 

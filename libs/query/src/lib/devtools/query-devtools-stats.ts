@@ -239,9 +239,29 @@ const RUN_HISTORY = 25;
 
 /**
  * How many of those runs keep a body - a response, or the body an error came with. Bodies dominate what
- * the buffer retains, and a diff only ever looks a couple of runs back.
+ * the buffer retains, which is why this is far below {@link RUN_HISTORY} and why raising it is a memory
+ * decision the app has to make for itself.
  */
-const RESPONSE_HISTORY = 5;
+const DEFAULT_RESPONSE_HISTORY = 5;
+
+let responseHistory = DEFAULT_RESPONSE_HISTORY;
+
+/**
+ * How many bodies each query retains - {@link QueryDevtoolsOptions.responseHistory}, or `5`. Only a run
+ * that still holds one can be an end of a response diff, so the panel reads this to say why an older run
+ * can no longer be picked.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
+ */
+export const queryDevtoolsResponseHistory = () => responseHistory;
+
+/**
+ * Sets how many bodies each query retains. Called by `provideQueryDevtools()`; nothing else may call it.
+ * @internal
+ */
+export const setQueryDevtoolsResponseHistory = (count: number | undefined) => {
+  responseHistory = count === undefined ? DEFAULT_RESPONSE_HISTORY : Math.max(1, Math.floor(count));
+};
 
 /** The index of the newest run still in flight, or -1 when none is. */
 const lastPendingRunIndex = (runs: readonly QueryDevtoolsRun[]) => {
@@ -253,18 +273,19 @@ const lastPendingRunIndex = (runs: readonly QueryDevtoolsRun[]) => {
 };
 
 /**
- * Drops the body of every run past the newest {@link RESPONSE_HISTORY} that hold one - a response body
- * and an error body count against the same budget, since a run only ever has one of the two. Mutates the
- * array it is given, which is always one this module just built.
+ * Drops the body of every run past the newest {@link queryDevtoolsResponseHistory} that hold one - a
+ * response body and an error body count against the same budget, since a run only ever has one of the
+ * two. Mutates the array it is given, which is always one this module just built.
  */
 const trimRetainedBodies = (runs: QueryDevtoolsRun[]) => {
+  const budget = responseHistory;
   let kept = 0;
 
   for (let index = runs.length - 1; index >= 0; index--) {
     const run = runs[index];
 
     if (!run || (!run.hasResponse && !run.error?.hasBody)) continue;
-    if (++kept <= RESPONSE_HISTORY) continue;
+    if (++kept <= budget) continue;
 
     runs[index] = {
       ...run,

@@ -384,14 +384,18 @@
               <td>
                 <span class="et-query-devtools-cell-actions">
                   @if (host.canDiffRun(s.entry, run)) {
+                    @let role = host.diffRunRole(s.entry, run);
+                    @let armed = role ? diffRoles[role] : null;
                     <button
-                      [class.et-query-devtools-btn--active]="host.diffRunIndex() === run.index"
-                      (click)="host.toggleRunDiff(run)"
+                      [class.et-query-devtools-btn--active]="!!armed"
+                      [title]="
+                        armed?.title ?? 'Compare this response against another run - click a second row to pick which'
+                      "
+                      (click)="host.toggleRunDiff(s.entry, run)"
                       class="et-query-devtools-btn"
                       type="button"
-                      title="Compare this response against the previous one still held"
                     >
-                      Diff
+                      {{ armed?.label ?? 'Diff' }}
                     </button>
                   } @else if (run.error?.hasBody) {
                     <button
@@ -404,9 +408,16 @@
                       Error
                     </button>
                   } @else if (run.hasResponse) {
-                    <span class="et-query-devtools-count">nothing earlier to diff</span>
-                  } @else if (run.status === 'success') {
-                    <span class="et-query-devtools-count">body no longer held</span>
+                    <span class="et-query-devtools-count">the only body held</span>
+                  } @else if (run.status === 'success' || run.error) {
+                    <span
+                      class="et-query-devtools-count"
+                      title="Only the newest {{
+                        host.retainedResponseCount
+                      }} bodies of a query are kept, so this run can no longer be an end of a diff"
+                    >
+                      body no longer held
+                    </span>
                   } @else {
                     <span class="et-query-devtools-count">—</span>
                   }
@@ -442,6 +453,14 @@
             Response diff · run #{{ comparison.before.index }} → #{{ comparison.after.index }}
           </h5>
           <span class="et-query-devtools-count">
+            @if (host.diffBaseRunIndex() === null) {
+              <span
+                title="Nothing is picked to compare against, so this is the nearest older run that still holds a body - click another run's Diff to pick one"
+              >
+                nearest older
+              </span>
+              ·
+            }
             @if (comparison.diff.entries.length) {
               {{ comparison.diff.entries.length }} path{{ comparison.diff.entries.length === 1 ? '' : 's' }}
               @if (comparison.diff.truncated) {
