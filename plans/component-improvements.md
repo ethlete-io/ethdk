@@ -177,34 +177,6 @@ input, date-range-input, time-input, phone-input, password-input), not
 four. `masked-input` has no template of its own to compare (it's a bare
 directive applied to an existing input, per `headless/input-mask.directive.ts`).
 
-## Over limit is a validator in a trench coat
-
-`CounterComponent.isOverLimit` (`counter.component.ts:70-79`) recomputes
-`current() > max` itself from the raw value and a numeric limit, and never
-reads `errors()`/`effectiveErrors()` from the control's own maxLength
-validator. That validator already exists and already fires correctly -
-`controlMaxLength()` (`form-field.directive.ts:80`) reads the signal-forms
-schema's `maxLength()` binding, deliberately kept off the native `maxlength`
-attribute (`form-field.tokens.ts:75-81`) precisely so the validator still
-runs on overflow instead of the browser silently truncating input. Two
-independent length checks exist for the same limit today. Fix is
-`CounterComponent` deriving `isOverLimit` from the control's validation
-error state instead of re-comparing lengths itself.
-
-Checked whether this is a pattern or a one-off: it's a one-off. `otp-input`
-and `phone-input` both derive their error display from the control's real
-`invalid()`/`errors()` inputs, not a self-recomputed check - phone-input
-does carry an unused `isPlausible` length-window sanity check
-(`phone-input.directive.ts`, doc comment: "not real validation"), but it's
-dead code only referenced from its own spec, not wired into
-`shouldDisplayError` or the template. `tag-input.directive.ts` goes further
-and explicitly documents the distinction it draws: its `maxLength` input is
-"display only: the tag input does not refuse tags past it, so the
-validator is still the thing that reports the violation," while a separate
-`maxTags` input deliberately blocks `add()` as its own interaction rule,
-not a stand-in for validation. Counter is the outlier to fix, not a
-symptom of a wider habit.
-
 ## Description list
 
 `DescriptionListComponent` is an empty class - zero inputs, one visual
@@ -331,23 +303,6 @@ semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
   still need to layer on top: the violation-list rendering (a `<ul>` of
   messages vs. banner's single description paragraph) and the retry-button-
   only-if-`canRetry` conditional.
-
-## Standings story causes a mobile horizontal scrollbar
-
-Not a standings component bug - `standings.component.css` already uses
-container queries (`container-type: inline-size`) to progressively drop the
-form column below 720px and the remaining detail columns below 560px,
-collapsing to position/team/points at the narrowest; the story's own doc
-comment confirms this is deliberate. The scrollbar comes from the story
-wrapper: `standings-storybook.component.ts` renders `<et-standings>` inside
-`<div [style.inline-size.px]="width()">` with a fixed pixel width
-(Storybook control, default 760, range 280-900). On a real mobile viewport
-narrower than that default, the fixed-width div - not `100%` or `min(760px,
-100%)` - forces the page to scroll horizontally to show the whole box, even
-though standings itself would happily collapse columns if given the actual
-(narrower) container width it's sitting in. Fix is confined to the story:
-default the width control to something that shrinks with viewport, or wrap
-it in `min(760px, 100%)`.
 
 ## Overlay responsiveness: scheduler's gap is systemic
 
@@ -494,18 +449,7 @@ lifecycle.directive.ts` are class-driven CSS-transition directives typed
   from scratch before pie/sankey are on the table - bar charts alone could
   ship without solving this.
 
-## Password input: caps-lock warning
-
-The indicator (`password-input.component.html`) is a bare
-`etIcon="et-triangle-exclamation"` marked `aria-hidden="true"`, next to a
-`resolvedCapsLockLabel()` text span (default `'Caps Lock is on'`,
-`input-labels.ts`) - but that text span is styled with the standard
-visually-hidden clip pattern in `password-input.component.css`, so it's
-screen-reader-only. Sighted users get the bare triangle with nothing
-visible explaining it. Fix is straightforward: the icon can take
-`[etTooltip]` directly (it's a directive attachable to any host, same as
-already noted for badge) using the same text already resolved for the
-screen-reader label, rather than inventing a second copy.
+## Password input: caps-lock warning stays on after the key is released
 
 The "stays on after caps lock is turned off" report doesn't trace to a
 filtering bug in the wiring - `password-input.directive.ts`'s
@@ -657,36 +601,6 @@ for hover/active only, matching select-option) and promoting the mark:
 leading, checkbox-shaped, in a slot that's reserved whether or not the row
 is selected, so labels don't shift. Single select can keep its current fill -
 one filled row was never the problem.
-
-## Tree: disabled rows still take hover/active tint when multi selectable
-
-`.et-tree-node:where([aria-disabled])` resets `&:hover, &:active { background:
-transparent }`, which works in single select: that rule and the selected
-hover it has to beat both weigh one class plus one pseudo-class, and the
-disabled block is later in the file. It loses in multi select, where the
-same hover lives under a descendant selector -
-`.et-tree:where([aria-multiselectable]) .et-tree-node:where([data-selected]):hover`
-is two classes plus a pseudo-class, outweighing the disabled reset
-regardless of order. So a selected row in a disabled multi-select tree still
-lights up on hover and darkens on press while every interaction is refused
-(`TreeDirective.select`/`expand`/`focus` all early-return on `disabled()`).
-Both the tree-wide `disabled` input and a per-node `node.disabled` produce
-the same `aria-disabled` host attribute (`tree-node.directive.ts`), so this
-hits both.
-
-Two ways out, and the second is probably the real one:
-
-- Raise the reset's weight to match (scope it under the same
-  `.et-tree:where([aria-multiselectable])` prefix, or bind it to
-  `[data-disabled]` at equal depth).
-- Follow the precedent instead: `select-option` and `cascader-panel` both
-  give disabled rows `opacity: 0.4` (plus `cursor`), which mutes the fill,
-  the label and the mark in one rule and doesn't need a reset per
-  interaction state. Tree currently only recolors the label to
-  `--et-surface-color-muted-solid` and leaves the selected accent fill at
-  full strength - so a disabled tree with selections looks essentially
-  identical to an enabled one. Adopting the opacity approach fixes the
-  missing disabled affordance and the specificity leak together.
 
 ## Query devtools: a failed query vanishes instead of going stale
 
@@ -903,65 +817,12 @@ predicate (`shouldAutoLogin: (url: string) => boolean`) alongside the string lis
 so a consumer can match on the router's parsed URL instead of on substrings of a
 path.
 
-## Query forms: the signals rewrite dropped the reset cascade
-
-`fut-frontend` has 51 live uses of the class-based `QueryForm`
-(`libs/query/src/lib/query-form/query-form.ts`), none of `defineQueryForm`
-(`libs/query/src/lib/query-form-signals/query-form-signals.ts`), so the successor
-has never been exercised against the app that would migrate onto it. The field
-factories are at full parity - every `*QueryField` class has a `*QueryField()`
-function, sharing the same transforms out of `query-form/query-form.utils.ts` -
-and `libs/components` already binds signal-forms in 82 files, so neither the field
-vocabulary nor the control binding is what blocks a migration. The `isResetBy`
-graph is.
-
-The legacy form resolves resets **transitively**. `_handleQueryFormResets`
-(`query-form.ts:523`) writes the reset field through `control.setValue()`, flags
-`didResetValues`, and pushes `didValueChanges$` - which re-enters
-`handleFormChange()` and runs the whole comparison again against the newly reset
-value. A field reset in pass one therefore counts as "changed" in pass two and can
-reset a third field. `changedFieldsInLastResetLoop` exists purely to swallow the
-intermediate `_changes$` emissions, so the graph settles before a single committed
-change is published - one query execution, not one per hop.
-
-`defineQueryForm` resolves them in **one pass**. `flush()`
-(`query-form-signals.ts:350`) computes `changedKeys` once from committed → live,
-then `applyResets` (line 318) tests every field's `isResetBy` against that frozen
-list. Resets are written into the local `next` object and never re-enter the
-comparison, so a reset can never trigger another reset.
-
-Verified with a throwaway spec (added, run, deleted) over `country → league → team`,
-where `league` is `isResetBy: ['country']` and `team` is `isResetBy: ['league']`.
-Seed all three, then change `country` alone:
-
-- legacy `QueryForm` → `{ country: 'en', league: null, team: null }`, and it
-  publishes exactly one committed value (the intermediate passes are suppressed,
-  as designed).
-- `defineQueryForm` → `{ country: 'en', league: null, team: 'bvb' }`. `team` keeps
-  a value that is no longer reachable from the selected country, and it is sent to
-  the API on the next request.
-
-The app has been papering over this without naming it: `player-overview.component.ts:192`
-and `step-select-player.component.ts:166` both declare
-`isResetBy: ['country', 'league', 'gender']` on a field whose only direct dependency
-is `league` - the transitive closure, written out by hand. That workaround happens to
-be exactly what the new form needs, which is why nobody has hit it yet, but it is
-load-bearing and undocumented. `apps/docs/query/query-forms.md:78` describes
-`isResetBy` as "sibling field(s) whose change resets this field to its default" and
-says nothing either way.
-
-The fix is to iterate `applyResets` to a fixpoint - re-derive `changedKeys` after each
-pass and repeat until nothing changes, with an iteration cap for a cyclic graph (which
-the legacy form also never guarded, it just converged because a field already at its
-default stops re-triggering). The property to preserve is the one the legacy form works
-hard for: the cascade must settle before `committed` is written once, or every hop
-becomes another query execution.
-
-## Auth: `executionState: 'success'` does not mean the session started
+## Auth: the app hand-rolls its route guard and its "has auth settled" primitive
 
 `canMatchAuthenticated` in the consumer's `libs/domain/hub/src/lib/hub.routes.ts` is
 19 lines of guard carrying three comments, and each one is an SDK gap rather than an
-app decision.
+app decision. (The third - a `success` state that never authenticated - is fixed;
+`extractTokens` throwing now puts the execution into `error`.)
 
 **The SDK ships no route guard at all.** There is no `CanMatchFn`, `CanActivateFn` or
 `createUrlTree` anywhere in `libs/query/src` or `libs/core/src`, so every app that uses
@@ -979,23 +840,6 @@ not expose. This is the second independent witness for the `sessionStatus` idea 
 section above - it is not one app's quirk, it is the same missing signal being rebuilt
 wherever someone needs to know whether the startup attempt has finished.
 
-**The `success` state can mean "not authenticated", permanently.** Two separate effects
-in `setupBearerQueryRegistry` watch the same auth response: the one created per builder
-at registry setup (`bearer-auth-provider.ts:384`) calls `applyTokens`, and the one created
-inside `execute()` (line 422) sets `executionState`. Only the first is wrapped in
-`try/catch` - when `extractTokens` throws, it logs in dev mode and swallows, while the
-second still sets `{ type: 'login', state: 'success', response }`. Verified with a
-throwaway spec: with a throwing `extractTokens`, `executionState` reports `success` and
-`isAuthenticated()` stays `false` on every subsequent tick, indefinitely.
-
-That combination is fatal for the guard as written. `ready` returns
-`authProvider.isAuthenticated()` when the state is `success`, so it never becomes true,
-the guard never resolves, and the route never matches - a blank screen whose only trace
-is a dev-mode `console.error`. The state machine conflates "the HTTP call returned 2xx"
-with "a session exists", and the discriminated union invites exactly the reading the
-consumer gave it. Failing token extraction should put the execution into `error`; nothing
-about it succeeded.
-
 One claim in that file did **not** reproduce. The comment on `ready` says the tokens are
 applied "in a separate effect that can still be pending for one tick after `executionState`
 flips to `success`". On a plain login flush, `executionState: success` and
@@ -1005,67 +849,55 @@ registry setup and Angular runs effects in creation order, so it always wins. Th
 author actually saw, that ordering is not it, and the extra `isAuthenticated()` condition
 is what turns the extraction failure above into a hang instead of a redirect.
 
-## Query audit: already fixed, do not re-report
+## Already fixed, do not re-report
 
-Four findings were implemented on 2026-08-06 and their sections deleted from this file.
-Listed here so the next pass does not rediscover them:
+Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
+not rediscover them.
 
-- **Paged stack signal contracts** - `isFirstPageLoaded` is now `loadedMinPage() === 1`, and
-  both `canFetch*` signals gate on `stack.anyLoading()` (`paged-query-stack.ts:362`, `:468`,
-  `:475`). Changeset `paged-stack-signal-contracts.md`.
+Query pass:
+
+- **Paged stack signal contracts** - `isFirstPageLoaded` is `loadedMinPage() === 1`, and both
+  `canFetch*` signals gate on `stack.anyLoading()`. `blockExecutionDuringLoading` is now
+  documented as governing the methods only, which is what closed the "the two halves
+  disagree" loose end. Changeset `paged-stack-signal-contracts.md`.
 - **Web socket room join counting** - `InternalWebSocketRoom.joinCount`, incremented in
-  `join()` and decremented in `leaveRoom` (`web-socket-client.ts:203`, `:254`). Also fixes a
-  latent prod-mode bug: the old `leaveRoom` fell through its dev-only `throw` and emitted
-  `leave-room` for a room that was never joined. Changeset `ws-room-join-counting.md`.
+  `join()` and decremented in `leaveRoom`. Also fixed a latent prod-mode bug: the old
+  `leaveRoom` fell through its dev-only `throw` and emitted `leave-room` for a room that was
+  never joined. Changeset `ws-room-join-counting.md`.
 - **Query stack `transform` / `lastQuery`** - the option is typed `(ResponseType | null)[]`,
-  and `lastQuery` is recomputed from `finalQueries` after eviction (`query-stack.ts:160`,
-  `:294`). Changeset `query-stack-transform-nulls-and-last-query.md`.
+  and `lastQuery` is recomputed from `finalQueries` after eviction. Bumped to `minor`, since
+  the widened signature breaks consumer compilation.
+  Changeset `query-stack-transform-nulls-and-last-query.md`.
 - **Bearer auth multi-tab namespacing** - the broadcast channel and the leader lock carry the
-  provider's `name`. Not a finding from this file; it surfaced while fixing the others.
-  Changeset `auth-multi-tab-namespacing.md`.
+  provider's `name`. Changeset `auth-multi-tab-namespacing.md`.
+- **A literal NUL byte in `multi-tab-sync.ts`** - the delimiter is the `\0` escape, so git
+  reads the file as text again.
 
-Still open above: the devtools stale-failure row (`:691`), the three auth sections (`:758`,
-`:845`, `:1022`) and the query-form reset cascade (`:968`).
+Bugfix pass:
 
-## A literal NUL byte makes `multi-tab-sync.ts` unreviewable
-
-`libs/query/src/lib/auth/internal/multi-tab-sync.ts:59` builds the dedupe key that `:127`
-compares against `lastSyncedState`:
-
-```ts
-const tokenState = (access: string, refresh: string) => `${access}<0x00 byte>${refresh}`;
-```
-
-The delimiter is a raw `0x00` byte in the source rather than the escape `\u0000`. Choosing NUL
-is sound - it cannot occur inside a JWT, so two tokens can never run together into a false
-match - but writing it literally costs what the escape does not.
-
-Git classifies the file as binary: `git diff` reports `Bin 4231 -> 4623 bytes` and no hunks, so
-nothing in it can be reviewed in a diff, and a merge conflict there cannot be resolved by hand.
-Nothing catches it, either - `nx lint query`, `prettier --check` and all 984 tests of
-`nx test query` pass with the byte in place. And it renders as nothing in an editor, so a
-copy-paste, a reformat, or any tool that normalizes the file drops the delimiter silently; the
-comparison at `:127` would then match across different token pairs with no error anywhere.
-
-The fix is runtime-identical: `` `${access}\u0000${refresh}` ``. Prefer `\u0000` over `\0` -
-`\0` followed by a digit is an octal escape, which is an error in a template literal, so
-`\u0000` survives a later edit that appends to it.
-
-## Two loose ends from the fixes above
-
-`query-stack-transform-nulls-and-last-query.md` is marked `patch`, but widening `transform` to
-`(ResponseType | null)[]` breaks consumer compilation: a
-`transform: (responses) => responses.map((r) => r.items)` that compiled before now errors on
-`r`. The old signature was a lie and the new one is right, so the change should stay - but the
-bump belongs at `minor`.
-
-`canFetchNextPage` / `canFetchPreviousPage` now return `false` whenever `stack.anyLoading()` is
-true, while `blockExecutionDuringLoading` still defaults to `false` and lets `canFetchNewPage`
-(`paged-query-stack.ts:437`) permit the fetch anyway. Under the default config the signals
-therefore say no while `fetchNextPage()` would still run. `apps/docs/query/stacks.md:58`
-documents the signal half deliberately, and signals-for-UI against methods-for-imperative is a
-defensible split - but the two halves now disagree, and nothing states which of them
-`blockExecutionDuringLoading` is meant to govern.
+- **Counter over-limit** - `CounterComponent.isOverLimit` reads the control's `maxLength`
+  validation error; only an explicit `[max]` (which has no validator) still compares lengths.
+  Changeset `counter-over-limit-from-validator.md`.
+- **Tree disabled rows** - interaction states carry a zero-weight `:not(:where([aria-disabled]))`
+  guard instead of a reset that lost a specificity race in multi select, and a disabled row
+  mutes at `opacity: 0.4` like `select-option`. Changeset `tree-disabled-row-states.md`.
+- **Password input caps-lock** - the icon carries `[etTooltip]` with the already-resolved
+  label. Changeset `password-input-caps-lock-tooltip.md`.
+- **Standings story** - the width control renders as `min(width, 100%)`.
+- **Grid** - `resolveItemConstraints` caps both column spans at the active breakpoint's
+  columns (and `clampPosition` no longer applies a minimum after the column clamp);
+  `resizeEdges()` drops the axis that cannot move; an empty `initialItems` clears the grid;
+  reconciling that input no longer emits `layoutChange`. `constraintsRegistry` became a
+  signal so everything derived from a constraint sees a late registration.
+  Changeset `grid-constraints-and-input-reconcile.md`.
+- **Bearer auth token extraction** - a throwing `extractTokens` puts the execution into
+  `error` instead of `success`. Changeset `auth-token-extraction-failure.md`.
+- **Query form reset cascade** - `applyResets` iterates to a fixpoint (cap 10, dev warning),
+  so `country → league → team` clears the whole chain in one committed change.
+  Changeset `query-form-signals-reset-cascade.md`.
+- **Docs** - the `createGridAdapter` snippet compiles, `grid.md` documents the live
+  `initialItems` reconciliation and the imperative API (`restoreState`, `getSerializedState`,
+  `addItem`), and `query-forms.md` states that `isResetBy` is transitive.
 
 ## Grid: the resize handles are hard to hit, you move the item instead
 
@@ -1119,7 +951,7 @@ The partner dashboard in `fut-frontend` is the sole `et-grid` in the app
 (`libs/domain/hub/.../partner-detail-grid/`; the platform's `CampaignGridComponent` only
 matches on its class name and is a plain CSS grid). It overrides none of the
 `--et-resize-handles-*` properties, so it runs on the 6px/12px defaults, on the default 16px
-`gap`, with `rowHeight: 60` and breakpoints 1/2/3 columns at 0/636/950px. Four things in it
+`gap`, with `rowHeight: 60` and breakpoints 1/2/3 columns at 0/636/950px. Three things in it
 make the target smaller in practice than the defaults suggest:
 
 - **A 60x32px toolbar sits on the `ne` corner.** `DashboardWidgetToolbarComponent` re-anchors
@@ -1141,11 +973,6 @@ make the target smaller in practice than the defaults suggest:
   a correctly-grabbed `n` or `s` handle does nothing at all unless dragged outward. Grab-did-
   nothing and grabbed-the-wrong-thing are indistinguishable to the user, which is part of why
   this reads as "the handle doesn't work" rather than "I missed it".
-- **Below 636px the e/w strips cannot do anything.** The `sm` breakpoint is one column, so
-  `resizeSpanBounds` clamps `colSpan` to 1..1 - but `resizeEdges()` is a constant eight-edge
-  array, so those two strips still exist and still consume the `pointerdown`. Deriving
-  `resizeEdges()` from `activeColumns()` would drop them, which is a fix for the aim problem
-  in its own right: it hands the whole left and right edge back to dragging.
 
 Inward growth is also more constrained here than it looks. Every widget wraps its content in
 `p-4` (16px) and puts an `overflow-auto` scroll region inside that padding, so an `e` handle
@@ -1154,10 +981,12 @@ separately: in edit mode a `pointerdown` on one of those inner scrollbars is not
 anything (`blockPointerDownWhenReadOnly` only stops it when the grid is read-only), so dragging
 a widget's scrollbar thumb may well move the widget instead of scrolling it.
 
-Net: outward into the gap is the only direction with real room in this app, the `ne` corner is
-unrecoverable while the toolbar owns it (the corner handle would have to move, or the toolbar
-inset back to the SDK's 4px so the 12px handle is at least reachable), and dropping the dead
-edges at `sm` is free.
+Net: outward into the gap is the only direction with real room in this app, and the `ne` corner
+is unrecoverable while the toolbar owns it - the corner handle would have to move, or the
+toolbar be inset back to the SDK's 4px so the 12px handle is at least reachable. (The fourth
+item on that list, the dead e/w strips at a one-column breakpoint, is fixed: `resizeEdges()`
+now drops an axis whose span cannot change, so below 636px the whole left and right edge is
+draggable again.)
 
 ## Grid: registering a widget forces the consumer to cast
 
@@ -1230,13 +1059,10 @@ The rest of the partner dashboard's friction is one theme - `et-grid` already ha
 app needs, and every piece of it is either misnamed, undocumented, or subtly wrong at the edge
 the app hits.
 
-**`initialItems` is a live input that says it isn't.** The effect at `grid.directive.ts:305`
-reconciles the input against `itemConfigs` on every change - adds go through `placeItem`,
-removals through `removeItem`, and a same-item-set change with different positions restores
-`itemConfigs` and rebuilds `layoutOverrides` for every visited breakpoint (its own comment:
-"e.g. the host reset its signal to a saved snapshot after the user cancelled edits"). The name
-says one-shot, `apps/docs/components/grid.md` shows only `[initialItems]="items()"` and never
-mentions reconciliation, so the app concluded the opposite and built around it:
+**`initialItems` is still called `initialItems`.** The behaviour and the documentation are
+fixed - the input reconciles, an empty array clears the grid, the reconcile path is silent, and
+`grid.md` now says all of that plus how `restoreState()` reverts a cancelled edit. What is left
+is the name, which is what made the app conclude the opposite in the first place:
 
 ```ts
 // `et-grid` consumes its items once via `[initialItems]`, so it can't observe changes to `gridItems`.
@@ -1245,33 +1071,11 @@ const gridRevision = signal(0);
 ```
 
 paired with `@for (revision of [partnerDashboard.gridRevision()]; track revision)` wrapped
-around `<et-grid>`. Every widget add, edit or delete therefore destroys and rebuilds the whole
-grid - all items re-run their enter animation, and any scroll or focus inside a widget is lost.
-Renaming to `items` (keeping `initialItems` as a deprecated alias) and documenting the
-reconciliation is most of the fix.
-
-**Two things must be fixed with it, or removing the workaround makes things worse.**
-
-- The reconcile path bails on an empty array (`if (initial.length === 0) return;`), so a host
-  that clears its items keeps rendering the old ones. Deleting the last widget is the case that
-  hits it - masked today by the re-key, which starts a fresh grid.
-- `placeItem` ends in `emitLayoutChange()` (`:870`), so items arriving _from the input_ emit
-  `layoutChange` exactly like a user drag. This app treats that event as its dirty flag
-  (`pendingLayout.set($event)`, `hasUnsavedLayout = pendingLayout() !== null`) and gates a
-  "Discard dashboard changes?" route guard on it - so as soon as the grid observes a server
-  refresh instead of being rebuilt, navigating away prompts about changes the user never made.
-  Also masked by the re-key: a fresh grid takes the `current.length === 0` branch, which does
-  not emit. Either suppress the emit on the input-reconciliation path, or tag the event with
-  its origin.
-
-**Cancelling edit mode does not revert the layout.** `toggleEditMode` clears `pendingLayout`
-and flips `readOnly` back on, but the grid keeps the positions the user dragged to, so the
-screen and the server disagree until a reload. The reconcile comment advertises the snapshot-
-reset pattern as the answer, but it cannot work from a computed over unchanged server state:
-nothing changed, so there is no new input to react to. `restoreState()` (`:745`) is the actual
-answer and is public, but appears nowhere in the docs - nor do `getSerializedState()` or
-`addItem()`. Documenting the imperative half of the API, or adding an explicit `resetLayout()`,
-is what stops the next integration from re-deriving this.
+around `<et-grid>` - so every widget add, edit or delete destroys and rebuilds the whole grid,
+re-running every enter animation and losing any scroll or focus inside a widget. Renaming to
+`items` with `initialItems` as a deprecated alias is the remaining step, and it collides: the
+directive already exposes a public `items` computed over `itemConfigs`, so the rename has to
+resolve that first.
 
 **The state round-trip loses the item type.** `initialItems` and `layoutChange` both use the
 erased `GridItemConfig` / `GridSerializedState`, so what goes in typed comes back `unknown`:
@@ -1284,20 +1088,10 @@ Threading `TData` through `GridSerializedState` and the directive removes it. Sa
 the registration cast above - the generic parameters exist on the types and are dropped at
 every public boundary.
 
-**The documented `createGridAdapter` call does not compile.** `grid.md` shows an object
-argument with a two-parameter `toExternal`:
-
-```ts
-createGridAdapter<BackendWidget>({ fromExternal: (w) => …, toExternal: (item, position) => … });
-```
-
-The real signature (`grid-adapter.ts:8`) takes two positional functions,
-`(fromItem: (item: TExternal) => GridItemConfig, toItem: (item: GridItemConfig) => TExternal)` -
-no object, and `toItem` gets no position. The app uses `toGridPosition`/`fromGridPosition` and
-hand-rolls `toGridItems`/`toWidgetPayload` instead, which is the outcome a wrong snippet
-produces. Fix the doc, and reconsider the signature while there: the app's mapping is
-per-breakpoint (`sm`/`md`/`lg` at once), which the single-position adapter shape doesn't
-express.
+**`createGridAdapter` maps one position per item.** The doc snippet that did not compile is
+fixed, but the signature is still worth reconsidering: the app's mapping is per-breakpoint
+(`sm`/`md`/`lg` at once), which a single-position adapter shape does not express - which is why
+it hand-rolls `toGridItems`/`toWidgetPayload` off `toGridPosition`/`fromGridPosition` instead.
 
 **Nothing ties an item's layout keys to the configured breakpoints.** `GridItemConfig.layout`
 is `Record<string, GridItemPosition>` and `assertValidItemConfigs` (`:792`) only checks for
@@ -1307,45 +1101,18 @@ rowSpan: 1 }` in two places. The app hand-writes all three keys and then still g
 of the configured breakpoint names in the dev-mode check. Real fix: a `TBp extends string`
 parameter on `GridItemConfig` so `[breakpoints]` and the items have to agree.
 
-## Grid: span constraints are global, but every breakpoint has its own column count
+## Grid: per-breakpoint span constraints
 
-`minColSpan: 2` against a one-column `sm` breakpoint is not expressible today - constraints are
-one flat `{ minColSpan, maxColSpan, minRowSpan, maxRowSpan }` per registration (or per
-`et-grid-item`), while the column count is per breakpoint. The grid already knows this is
-wrong, and papers over it in four places, each differently:
+The clamping half is fixed: `resolveItemConstraints` (`grid.directive.ts`) now takes the column
+count and caps `minColSpan`/`maxColSpan` against it, `clampPosition` no longer applies a minimum
+after the column clamp, and `getConstraintsForColumns` covers the paths that write a breakpoint
+other than the active one. So `minColSpan: 2` degrades to full width at a one-column breakpoint,
+which is what anyone writing it means, and the four ad-hoc clamps that used to enforce that by
+accident are now redundant rather than load-bearing.
 
-- `placeItem` clamps on the way in: `colSpan: Math.min(constraints.minColSpan, bp.columns)`.
-- The breakpoint effect refuses to enforce min at all after a breakpoint switch, with a comment
-  explaining that doing so would fight `registerConstraints`.
-- `resizeSpanBounds` clamps min against a max that is itself clamped to the column count, so a
-  pointer resize bottoms out at 1.
-- `registerConstraints` passes an unclamped `Math.max(pos.colSpan, minColSpan)` to `autoPlace`,
-  which happens to clamp it internally (`layout-engine.ts:122`).
-
-The fifth path does not. `clampPosition` applies the minimum _after_ the column clamp:
-
-```ts
-const colSpan = Math.max(constraints.minColSpan, Math.min(constraints.maxColSpan, position.colSpan, columns));
-```
-
-so `minColSpan: 2` at one column yields `colSpan: 2` - an item wider than the grid. All three
-callers inherit it: `moveItem` (`:708`, the Ctrl+arrow keyboard path), `updateResize` (`:584`)
-and the live `layout` computed that renders a drag in progress (`:241`). The SDK's own `Default`
-story can reach it - the chart registration asks for `minColSpan: 3` while the default `sm`
-breakpoint has two columns.
-
-So the invariant "a minimum span cannot exceed the breakpoint's columns" is enforced four times
-by accident and violated once. Fixing that is the prerequisite, and it belongs in one place:
-`resolveItemConstraints` (`grid.directive.ts:102`) is already the single merge point for
-registration and per-item constraints, and it does not currently take the column count. Give it
-the active columns, clamp `minColSpan` (and `maxColSpan`) there, and the ad-hoc clamps at the
-other four sites become redundant rather than load-bearing.
-
-That alone makes the common case behave: `minColSpan: 2` degrades to full width at a
-one-column breakpoint, which is what anyone writing it means. Per-breakpoint constraints are
-then the smaller, additive step for what clamping cannot express - "two columns at `md` but
-full width at `sm`", or a different row minimum where the layout is stacked. Additive shape,
-base plus overrides, rather than a union that has to be discriminated:
+What clamping cannot express is still open: "two columns at `md` but full width at `sm`", or a
+different row minimum where the layout is stacked. Additive shape, base plus overrides, rather
+than a union that has to be discriminated:
 
 ```ts
 constraints?: Partial<GridItemConstraints> & {
@@ -1353,11 +1120,175 @@ constraints?: Partial<GridItemConstraints> & {
 };
 ```
 
-Two things to settle while designing it. `resolveItemConstraints` currently returns
-`{ ...DEFAULT_CONSTRAINTS, ...registration.constraints }` and **returns early** when a
+One thing to settle while designing it: `resolveItemConstraints` **returns early** when a
 registration exists, so a registered type's constraints cannot be refined per item - the
 `et-grid-item` `minColSpan`/`maxColSpan`/`minRowSpan`/`maxRowSpan` inputs are silently ignored
-for any item whose type is registered. And the resolved value is currently breakpoint-
-independent, so once it varies by breakpoint, `registerConstraints`' first-registration
-re-placement and the breakpoint-switch effect both need to re-resolve on a breakpoint change
-instead of reading a cached registry entry.
+for any item whose type is registered. (The other one is handled - the resolved value already
+varies by breakpoint, and `constraintsRegistry` is a signal, so every reader re-resolves on a
+breakpoint change instead of reading a cached entry.)
+
+## Core: every object URL in the SDK is hand-rolled, four different ways
+
+There is no shared "hand the user a file" util, so four call sites each re-derive
+`URL.createObjectURL` + anchor + revoke, and only one of them gets it right.
+
+- `injectTableCsvExport`'s `save()` (`table/headless/table-csv-export.ts:361`) is the careful
+  one. It goes through the injected `DOCUMENT` and renderer rather than the globals, bails when
+  `document.defaultView` is null so a toolbar button needs no SSR check, sets `rel="noopener"`,
+  **appends the anchor to `<body>` before clicking it** - Firefox does not follow the click of a
+  detached anchor - removes it again, and revokes immediately.
+- `QueryDevtoolsComponent.downloadFile()` (`query-devtools/query-devtools.component.ts:2198`)
+  does the same job with none of that: global `URL`/`Blob`, no `defaultView` guard, no `rel`, and
+  the anchor is created through the renderer but **never appended**, so it hits exactly the
+  Firefox caveat the table documents. Two callers, both writing JSON - `downloadInsomniaCollection`
+  (`:1306`, via `:1324`) and `downloadSession` (`:1337`, via `:1352`).
+- `createFileDropzoneEntry` (`forms/dropzone/headless/dropzone-entry.ts:68`) mints a preview URL
+  for image files and hangs the raw string on the entry, to be revoked by
+  `disposeDropzoneEntry` (`:128`). Nothing enforces that pairing - the field is a `string | null`
+  and the revoke lives in a different function.
+- `popOut()` (`query-devtools.component.ts:879`) is the odd one: a blob URL for an HTML _document_
+  rather than a file, revoked on the pop-up's `load` and on the `!popup` early return. It is the
+  case that must **not** revoke synchronously, which is why the util needs two shapes rather than
+  one.
+
+So: `libs/core/src/lib/utils/file-download.ts`, exported from `utils/index.ts` next to
+`clipboard.ts` - the same kind of thing, a browser API whose SSR guard and per-browser traps no
+component should be re-deriving.
+
+Two exports, because the four sites split in two:
+
+```ts
+const download = injectFileDownload();
+download({ content: json, filename: 'session.json', type: 'application/json' });
+```
+
+`content` takes `Blob | BlobPart | BlobPart[]` so the table can keep passing its BOM-plus-body
+parts and the devtools can pass a string. `inject()`-based rather than a plain function like
+`copyToClipboard`, because the table's version is the one to keep: it is DOM work, and this repo
+does DOM work through the injected document and renderer. That also makes the SSR no-op free for
+every caller.
+
+The second is for the lifetime cases - a handle instead of a bare string, so the revoke cannot be
+orphaned:
+
+```ts
+const preview = createObjectUrlHandle(file); // { url, revoke }
+```
+
+Dropzone's `objectUrl` field becomes that handle and `disposeDropzoneEntry` calls `revoke()`;
+`popOut` holds one and revokes it from its `load` tap.
+
+What each site loses: `save()` shrinks to a call and keeps only the filename-extension and BOM
+logic that is genuinely CSV's; `downloadFile` disappears entirely and picks up the Firefox fix and
+the SSR guard on the way out. Worth checking `@ethlete/contentful` and the playground for a fifth
+copy before writing it. New `@ethlete/core` export, so: changeset, and a mention in the core docs
+if the util page lists the clipboard helpers.
+
+## Selection list: the card exists three times, and the variant that is missing is a tile
+
+The card preset is already there - `et-radio` (`radio.component.ts:5`), `et-checkbox-option`
+(`checkbox-option.component.ts:6`) and `et-choice-field`, documented together in
+`apps/docs/components/choice-inputs.md:145`. The problem is that it is there three times.
+
+`radio.component.css:160` and `checkbox-option.component.css:176` are the same ~75 lines with the
+names swapped: same `flex-direction: row-reverse`, same `:where()` hover/active/checked ordering,
+same focus-ring-moves-to-the-panel reset, same `data-can-animate` transition list - and the same
+comments, copied verbatim down to "so a list of cards is scannable without reading every
+box/dot". `choice-field-card-styles.component.css` is a third rendering of the same design,
+differing only where it has to (`:has()` instead of `aria-checked`, because the wrapper does not
+own the state). Three token sets follow from that - `--et-radio-card-*`,
+`--et-checkbox-option-card-*`, `--et-choice-field-card-*` - so an app that wants a different card
+radius sets it three times, and any change to the preset is three edits with two chances to
+drift.
+
+Only the choice-field one is mounted the cheap way, as a styles-only component
+(`ChoiceFieldCardStylesComponent`). The radio's and the checkbox option's card chrome sits inside
+the always-injected option stylesheet, so a consumer whose whole app uses `variant="plain"` ships
+it anyway - roughly 40% of each of those two files.
+
+### The tile
+
+The shape the SDK has no answer for is the picker grid: a row of equal tiles, each a preview area
+carrying an image (a club crest, a template thumbnail, a colour swatch) with a footer strip under
+it holding a title and a secondary line - a filename, a size, a price. There is no visible
+checkbox anywhere. Selection is an accent check badge overlaid on the preview's top-right corner,
+the footer lifting to a tinted surface, and the title going accent; an unselected tile is just the
+image and a muted footer. The whole tile is the target. Multi-select in the case that prompted
+this ("select the crests you want to download"), but the same tile is right for a single-select
+template picker.
+
+The existing card cannot be bent into it, and the reasons are structural rather than cosmetic:
+
+- **The layout is a settings row, not a stack.** The card sets
+  `flex-direction: row-reverse; justify-content: space-between; align-items: center` on the host,
+  with the control box as a flex sibling of the content column. A tile is a column - media block,
+  then footer - with the two on different surfaces.
+- **The control is mandatory and in the wrong place.** `.et-checkbox-option-box` /
+  `.et-radio-circle` are unconditional children of the template. A tile does not want a box at
+  all; it wants that state rendered as a badge floating over the media area, which nothing in the
+  current template can express without absolutely positioning a child from the outside.
+- **There is nowhere to put the image.** The content model is a label `ng-content` plus
+  `<ng-content select="et-description" />`, both inside the content column, both restyled by the
+  card (`font-weight: 500`, muted until checked). Media has no slot.
+- **The card deliberately has no fill.** `choice-inputs.md` documents "no tinted fill - the
+  background stays the surface, so a selected card differs from its neighbours by its border
+  alone". That is right for a settings row and wrong for a tile, where the footer tint is half the
+  selection cue and the media area needs a surface of its own so a transparent-background logo is
+  still legible.
+
+So this is a third variant - `variant="tile"` on `et-checkbox-option` and `et-radio`, the two
+components that _are_ the panel - not an extension of `card`. Not on `et-choice-field`: its panel
+is a wrapper around a control that stays visible.
+
+```html
+<et-checkbox-option value="crest-alt" variant="tile">
+  <img [src]="crest.url" etSelectionMedia alt="" />
+  Main Crest (Alt)
+  <et-description>d_111235.png</et-description>
+</et-checkbox-option>
+```
+
+The template gains a media slot ahead of the footer and moves the control into the media area as a
+badge. Explicit `select="[etSelectionMedia]"` rather than "anything that is not the label falls
+into the media area" - the projection rule should be readable at the call site.
+
+The tile owns its aspect and its surfaces, not its grid: `--et-selection-tile-aspect-ratio`,
+`--et-selection-tile-media-background`, `--et-selection-tile-footer-background`, and a
+`width: auto` host so any `display: grid` wrapper the consumer writes decides the column count.
+No tile-group layout component.
+
+Three things to settle. **The unchecked tile still has to read as selectable** - with the box gone,
+the only difference between "nothing selected yet" and "these are just pictures" is the badge slot
+and the footer, so decide whether the badge has a resting state (an empty ring) or whether a
+border plus the hover response carries it; in the reference only the selected tile shows a badge,
+which works because the footer tint moves with it. **The projected image is the consumer's** - the
+media area sets `object-fit: contain` and a background from surface theming, and it should not
+assume a square. And the badge is decoration (`aria-hidden`): the tile keeps `role="checkbox"` /
+`role="radio"` and `aria-checked`, and the focus ring belongs to the whole tile, as it already
+does for the card.
+
+### One card presentation instead of three
+
+The duplication and the new variant land in the same place - a shared styles-only component the
+option mounts via `injectStyleManager()` when the variant is set, keyed off a hook on the host
+(`data-variant`) rather than three per-component selectors, with one `--et-selection-card-*` token
+set. The control's own tokens stay where they are; the duplication is the panel, not the box or
+the circle. `et-choice-field` joins it by mapping its `:has()` guards onto the same rules - it may
+keep its own file if the state selectors do not merge cleanly, but not its own token names. The
+tile is a second sheet mounted the same way, so a consumer who never writes `variant="tile"` never
+ships it.
+
+Worth doing for the row card at the same time, since it is the same edit: leading and trailing
+slots (`[etSelectionCardLeading]`, `[etSelectionCardTrailing]`) for the plan icon and the price
+that a "choose your plan" row is actually made of. That forces `row-reverse` to become a decision
+rather than a constant - a `controlPosition` input, or accepting that leading media and a leading
+control cannot coexist.
+
+`et-card` should back none of it. It is a container with `ProvideSurfaceDirective` and three chrome
+variants of its own, while the selection card's chrome is driven by the option's `aria-checked`
+and interaction state; reusing it would mean nesting an element inside the option and moving the
+focus ring and the border onto a child. Stating it here so the question is not re-opened.
+
+All of this changes the card-presets section of `choice-inputs.md`, which currently documents the
+label-carries-selection and no-fill behaviour as rules, and the tile needs its own story in both
+the checkbox-group and radio-group story files.
