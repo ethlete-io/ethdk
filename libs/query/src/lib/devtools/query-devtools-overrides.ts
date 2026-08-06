@@ -16,10 +16,19 @@ export type JsonPath = (string | number)[];
  * anywhere below it instead, so the panel's "reset this value" action and its "arm an edit" actions
  * share one entry point. Resetting a container therefore undoes a "fill recursively" run, whose ops
  * sit on the leaves rather than on the container itself.
+ *
+ * On the preset ops, `custom` - when present - is the exact value replayed, and `preset` is only the
+ * label it was generated under. Values are generated once at arm time and stored, never re-rolled
+ * inside apply, so a refetch replays the same response instead of reshuffling it.
  */
 export type OverrideOp =
   | { type: 'set'; path: JsonPath; value: unknown }
-  | { type: 'stringPreset'; path: JsonPath; preset: 'short' | 'long' | 'unicode' | 'custom'; custom?: string }
+  | {
+      type: 'stringPreset';
+      path: JsonPath;
+      preset: 'short' | 'long' | 'longWord' | 'unicode' | 'custom';
+      custom?: string;
+    }
   | { type: 'numberPreset'; path: JsonPath; preset: 'zero' | 'negative' | 'huge' | 'custom'; custom?: number }
   | { type: 'booleanFlip'; path: JsonPath }
   | {
@@ -332,11 +341,12 @@ const STRING_PRESETS = {
   long: /* @__PURE__ */ 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. '.repeat(
     4,
   ),
+  longWord: 'Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz',
   unicode: 'مرحبا بالعالم 👋 日本語テスト 🎉 Ñoño',
 } as const;
 
-const stringPresetValue = (preset: 'short' | 'long' | 'unicode' | 'custom', custom: string | undefined) =>
-  preset === 'custom' ? (custom ?? '') : STRING_PRESETS[preset];
+const stringPresetValue = (preset: 'short' | 'long' | 'longWord' | 'unicode' | 'custom', custom: string | undefined) =>
+  custom ?? (preset === 'custom' ? '' : STRING_PRESETS[preset]);
 
 const NUMBER_PRESETS = {
   zero: 0,
@@ -345,7 +355,85 @@ const NUMBER_PRESETS = {
 } as const;
 
 const numberPresetValue = (preset: 'zero' | 'negative' | 'huge' | 'custom', custom: number | undefined) =>
-  preset === 'custom' ? (custom ?? 0) : NUMBER_PRESETS[preset];
+  custom ?? (preset === 'custom' ? 0 : NUMBER_PRESETS[preset]);
+
+const pickRandom = <T>(values: readonly T[]) => values[Math.floor(Math.random() * values.length)] as T;
+
+const randomIntBetween = (min: number, max: number) => min + Math.floor(Math.random() * (max - min + 1));
+
+const randomHex = (length: number) => {
+  let out = '';
+  while (out.length < length) out += Math.random().toString(16).slice(2);
+  return out.slice(0, length);
+};
+
+const SHORT_WORDS = ['Ok', 'Ada', 'Fig', 'Kiwi', 'Nova', 'Echo', 'Amber', 'Delta', 'Mango', 'Quartz', 'Zephyr'];
+
+const LOREM_SENTENCE =
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ';
+
+const LONG_COMPOUNDS = [
+  'Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz',
+  'Donaudampfschifffahrtsgesellschaftskapitänskajütenschlüssel',
+  'Kraftfahrzeughaftpflichtversicherungsbescheinigung',
+];
+
+const UNICODE_SAMPLES = [
+  'مرحبا بالعالم 👋 اختبار النص',
+  '日本語テスト 🎉 カタカナとひらがな',
+  '한국어 테스트 💡 조합형 한글',
+  'עברית מימין לשמאל 🚀 בדיקה',
+  'Ñoño über façade — Ω≈ç√∫ 🧪',
+];
+
+/**
+ * Generates a fresh sample value for a string preset, so filling twenty fields yields twenty different
+ * values instead of twenty identical ones. Call it at arm time and store the result in the op's
+ * `custom` field - generating inside apply would reshuffle the response on every refetch. `longWord`
+ * is a single unbreakable token (a compound word, a URL, a hex blob) - it tests overflow, where
+ * `long` tests wrapping.
+ */
+export const generateQueryDevtoolsStringPreset = (preset: 'short' | 'long' | 'longWord' | 'unicode') => {
+  switch (preset) {
+    case 'short':
+      return pickRandom(SHORT_WORDS);
+    case 'long': {
+      const length = randomIntBetween(80, 480);
+      return LOREM_SENTENCE.repeat(Math.ceil(length / LOREM_SENTENCE.length))
+        .slice(0, length)
+        .trimEnd();
+    }
+    case 'longWord':
+      return pickRandom([
+        () => pickRandom(LONG_COMPOUNDS),
+        () =>
+          `https://api.example.com/v2/resources/${randomHex(24)}/attachments?signature=${randomHex(randomIntBetween(24, 96))}`,
+        () => randomHex(randomIntBetween(64, 160)),
+      ])();
+    case 'unicode':
+      return pickRandom(UNICODE_SAMPLES);
+  }
+};
+
+/**
+ * Generates a fresh sample value for a number preset - same arm-time contract as
+ * {@link generateQueryDevtoolsStringPreset}. `negative` and `huge` vary in magnitude so a batch fill
+ * produces varied digit counts; `zero` is always `0`.
+ */
+export const generateQueryDevtoolsNumberPreset = (preset: 'zero' | 'negative' | 'huge') => {
+  switch (preset) {
+    case 'zero':
+      return 0;
+    case 'negative': {
+      const magnitude = 10 ** randomIntBetween(0, 8);
+      return -randomIntBetween(magnitude, magnitude * 10 - 1);
+    }
+    case 'huge': {
+      const magnitude = 10 ** randomIntBetween(9, 15);
+      return Math.min(randomIntBetween(magnitude, magnitude * 10 - 1), Number.MAX_SAFE_INTEGER);
+    }
+  }
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

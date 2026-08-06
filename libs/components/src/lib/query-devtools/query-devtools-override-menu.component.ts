@@ -1,7 +1,10 @@
-import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import { injectErrorTheme, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import {
   collectLeafPaths,
   detectPaginationShape,
+  generateQueryDevtoolsNumberPreset,
+  generateQueryDevtoolsStringPreset,
   hasQueryDevtoolsOverridesAtPath,
   isDateShapedLeaf,
   JsonPath,
@@ -14,8 +17,7 @@ import {
   MenuItemShortcutComponent,
   MenuSeparatorComponent,
 } from '../menu';
-import { MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
-import { injectStyleManager } from '@ethlete/core';
+import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
 import { JsonKind, kindOf } from './query-devtools-json.component';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
 
@@ -34,17 +36,23 @@ import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-overr
     MenuDirective,
     MenuTriggerDirective,
     MenuSurfaceDirective,
+    MenuSearchDirective,
     MenuComponent,
     MenuItemComponent,
     MenuItemShortcutComponent,
     MenuSeparatorComponent,
+    ProvideColorDirective,
   ],
 })
 export class QueryDevtoolsOverrideMenuComponent {
+  protected errorColorTheme = injectErrorTheme();
   public value = input<unknown>();
   public path = input<JsonPath>([]);
   public parentKind = input<JsonKind | null>(null);
   public overrides = input.required<QueryDevtoolsOverridesRecorder>();
+
+  private rootMenu = viewChild.required<MenuDirective>('rootMenu');
+  private customInput = viewChild<ElementRef<HTMLInputElement>>('customValueInput');
 
   protected kind = computed(() => kindOf(this.value()));
   protected isContainer = computed(() => this.kind() === 'array' || this.kind() === 'object');
@@ -52,24 +60,49 @@ export class QueryDevtoolsOverrideMenuComponent {
   protected hasArmedOverrides = computed(() => hasQueryDevtoolsOverridesAtPath(this.overrides().list(), this.path()));
   protected isArrayElement = computed(() => this.parentKind() === 'array' && this.kind() === 'object');
   protected paginationShape = computed(() => detectPaginationShape(this.value()));
-  protected hasValueActions = computed(
-    () => this.kind() !== 'object' || this.isArrayElement() || this.paginationShape() !== null,
-  );
   protected isDate = computed(() => {
     const path = this.path();
     return this.kind() === 'string' && isDateShapedLeaf(path[path.length - 1] ?? null, this.value());
   });
 
+  protected customMode = signal(false);
+  protected menuError = signal<string | null>(null);
+
+  protected supportsCustomValue = computed(() => !this.isContainer() && this.kind() !== 'boolean');
+
+  protected customPlaceholder = computed(() => {
+    switch (this.kind()) {
+      case 'number':
+        return 'A number';
+      case 'string':
+        return 'Any text';
+      default:
+        return 'JSON or plain text';
+    }
+  });
+
   constructor() {
     injectStyleManager().mount(QueryDevtoolsOverrideMenuStylesComponent);
+
+    effect(() => this.customInput()?.nativeElement.focus());
   }
 
-  protected applyStringPreset(preset: 'short' | 'long' | 'unicode') {
-    this.overrides().arm({ type: 'stringPreset', path: this.path(), preset });
+  protected applyStringPreset(preset: 'short' | 'long' | 'longWord' | 'unicode') {
+    this.overrides().arm({
+      type: 'stringPreset',
+      path: this.path(),
+      preset,
+      custom: generateQueryDevtoolsStringPreset(preset),
+    });
   }
 
   protected applyNumberPreset(preset: 'zero' | 'negative' | 'huge') {
-    this.overrides().arm({ type: 'numberPreset', path: this.path(), preset });
+    this.overrides().arm({
+      type: 'numberPreset',
+      path: this.path(),
+      preset,
+      custom: generateQueryDevtoolsNumberPreset(preset),
+    });
   }
 
   protected applyDatePreset(preset: 'now' | 'plusDay' | 'minusDay' | 'farFuture' | 'farPast' | 'invalid') {
@@ -100,15 +133,25 @@ export class QueryDevtoolsOverrideMenuComponent {
     this.overrides().arm({ type: 'paginationResize', path: this.path(), mode, amount: 1 });
   }
 
-  protected fillStrings() {
+  protected fillStrings(preset: 'short' | 'long' | 'longWord' | 'unicode') {
     for (const leaf of collectLeafPaths(this.value(), 'string')) {
-      this.overrides().arm({ type: 'stringPreset', path: [...this.path(), ...leaf], preset: 'short' });
+      this.overrides().arm({
+        type: 'stringPreset',
+        path: [...this.path(), ...leaf],
+        preset,
+        custom: generateQueryDevtoolsStringPreset(preset),
+      });
     }
   }
 
-  protected fillNumbers() {
+  protected fillNumbers(preset: 'zero' | 'negative' | 'huge') {
     for (const leaf of collectLeafPaths(this.value(), 'number')) {
-      this.overrides().arm({ type: 'numberPreset', path: [...this.path(), ...leaf], preset: 'zero' });
+      this.overrides().arm({
+        type: 'numberPreset',
+        path: [...this.path(), ...leaf],
+        preset,
+        custom: generateQueryDevtoolsNumberPreset(preset),
+      });
     }
   }
 
@@ -121,4 +164,95 @@ export class QueryDevtoolsOverrideMenuComponent {
   protected reset() {
     this.overrides().arm({ type: 'reset', path: this.path() });
   }
+
+  protected startCustomEdit() {
+    this.menuError.set(null);
+    this.customMode.set(true);
+  }
+
+  protected commitCustomValue() {
+    const raw = this.customInput()?.nativeElement.value;
+    if (raw === undefined) return;
+
+    const kind = this.kind();
+
+    if (kind === 'number') {
+      const value = Number(raw.trim());
+
+      if (!raw.trim() || Number.isNaN(value)) {
+        this.menuError.set('Not a number');
+
+        return;
+      }
+
+      this.overrides().arm({ type: 'numberPreset', path: this.path(), preset: 'custom', custom: value });
+    } else if (kind === 'string') {
+      this.overrides().arm({ type: 'stringPreset', path: this.path(), preset: 'custom', custom: raw });
+    } else {
+      this.overrides().arm({ type: 'set', path: this.path(), value: parseLooseJson(raw) });
+    }
+
+    this.rootMenu().closeAll();
+  }
+
+  protected pasteValue() {
+    this.menuError.set(null);
+
+    if (!navigator.clipboard?.readText) {
+      this.menuError.set('Clipboard access is unavailable here');
+
+      return;
+    }
+
+    navigator.clipboard.readText().then(
+      (text) => this.armPastedText(text),
+      () => this.menuError.set('The clipboard read was blocked'),
+    );
+  }
+
+  protected resetEditingState(open: boolean) {
+    if (!open) {
+      this.customMode.set(false);
+      this.menuError.set(null);
+    }
+  }
+
+  private armPastedText(text: string) {
+    if (!text.trim()) {
+      this.menuError.set('The clipboard is empty');
+
+      return;
+    }
+
+    let value: unknown;
+
+    try {
+      value = JSON.parse(text);
+    } catch {
+      if (this.isContainer()) {
+        this.menuError.set('The clipboard does not hold valid JSON');
+
+        return;
+      }
+
+      value = text;
+    }
+
+    if (this.isContainer() && kindOf(value) !== this.kind()) {
+      this.menuError.set(`The clipboard holds ${kindOf(value)}, not ${this.kind()}`);
+
+      return;
+    }
+
+    this.overrides().arm({ type: 'set', path: this.path(), value });
+    this.rootMenu().closeAll();
+  }
 }
+
+const parseLooseJson = (raw: string): unknown => {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+};

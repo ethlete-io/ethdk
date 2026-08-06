@@ -419,17 +419,32 @@ else.
 
 What the menu offers depends on the kind of value under the cursor:
 
-| Value                                                                                               | Actions                                                                                                                                                      |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| String                                                                                              | Short text, long text, a Unicode/RTL sample - or, if the key/value look date-shaped, now / +1 day / -1 day / far future / far past / an invalid date string. |
-| Number                                                                                              | Zero, negative, huge.                                                                                                                                        |
-| Boolean                                                                                             | Flip.                                                                                                                                                        |
-| `null` / `undefined`                                                                                | Set to text, a number, `true`, an empty object or an empty array - after which that row offers the actions of whatever kind it now holds.                    |
-| Array                                                                                               | Duplicate the whole array (ids/unique fields on the copies are regenerated - see below).                                                                     |
-| An object that is itself an array element                                                           | Duplicate this item.                                                                                                                                         |
-| An object shaped like a paginated response (an `items` array plus recognized total/page/limit keys) | Shrink the page by one item, extend it by one.                                                                                                               |
-| Any object or array                                                                                 | Fill recursively - blank every string, zero every number, or flip every boolean under that subtree in one action.                                            |
-| A value with something armed on it                                                                  | Reset - clears whatever is armed at that path or below it, so resetting a container also undoes a recursive fill.                                            |
+| Value                                                                                               | Actions                                                                                                                                                                   |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| String                                                                                              | Short text, long text, a long word, a Unicode/RTL sample - or, if the key/value look date-shaped, now / +1 day / -1 day / far future / far past / an invalid date string. |
+| Number                                                                                              | Zero, negative, huge.                                                                                                                                                     |
+| Boolean                                                                                             | Flip.                                                                                                                                                                     |
+| `null` / `undefined`                                                                                | Set to text, a number, `true`, an empty object or an empty array - after which that row offers the actions of whatever kind it now holds.                                 |
+| Array                                                                                               | Duplicate the whole array (ids/unique fields on the copies are regenerated - see below).                                                                                  |
+| An object that is itself an array element                                                           | Duplicate this item.                                                                                                                                                      |
+| An object shaped like a paginated response (an `items` array plus recognized total/page/limit keys) | Shrink the page by one item, extend it by one.                                                                                                                            |
+| Any leaf except a boolean                                                                           | Custom… - a small input in the menu; the typed value is armed as a rule, so it survives refetches the way every preset does.                                              |
+| Any value                                                                                           | Paste value - reads the clipboard and arms it at that path. Onto an object or array the pasted JSON must be the same kind; onto a string leaf plain text pastes as-is.    |
+| Any object or array                                                                                 | Fill every string with a chosen preset, fill every number with zero/negative/huge, or flip every boolean under that subtree in one action.                                |
+| A value with something armed on it                                                                  | Reset - clears whatever is armed at that path or below it, so resetting a container also undoes a recursive fill.                                                         |
+
+**Presets generate varied samples.** "Short text" on twenty fields yields twenty different short
+strings, not twenty copies of the same one - identical fills would hide exactly the bugs a fill is
+meant to surface (a key collision, a wrong field rendered, a layout that only breaks on varied
+widths). The sample is generated once when the rule is armed and stored in it, so a refetch replays
+the same response instead of reshuffling. "Long word" is the overflow counterpart to "long text": a
+single unbreakable token (a compound word, a URL, a hex blob) that blows out flex tracks and
+ellipsis truncation where whitespace-rich lorem only ever tests wrapping.
+
+**Paste pairs with copy.** The `⧉` button copies a subtree as JSON; "Paste value" on another query's
+row arms it there as a replayed rule - which the whole-body response editor can't do, since that one
+is one-shot and dies on the next fetch. Clipboard reads need browser permission; a blocked or
+unparseable read shows its error inside the menu instead of arming anything.
 
 **Duplicating never clones an id.** Whether from "duplicate this item", "duplicate array",
 or a pagination extend, the copy gets a fresh value for any field that looks like an

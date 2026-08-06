@@ -40,4 +40,11 @@
   .et-query-devtools-override-trigger[data-menu-open] {
     opacity: 1;
   }
+
+  .et-query-devtools-override-error {
+    margin: 4px var(--et-menu-item-padding-inline, 10px) 2px;
+    max-inline-size: 240px;
+    font-size: 12px;
+    color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+  }
 }

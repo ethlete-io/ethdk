@@ -2,6 +2,8 @@ import {
   applyQueryDevtoolsOverrides,
   createQueryDevtoolsOverrides,
   detectPaginationShape,
+  generateQueryDevtoolsNumberPreset,
+  generateQueryDevtoolsStringPreset,
   hasQueryDevtoolsOverridesAtPath,
 } from './query-devtools-overrides';
 
@@ -134,7 +136,7 @@ describe('query devtools overrides', () => {
     });
 
     it('should apply string presets, falling back to an empty string for an unset custom value', () => {
-      const preset = (preset: 'short' | 'long' | 'unicode' | 'custom', custom?: string) => [
+      const preset = (preset: 'short' | 'long' | 'longWord' | 'unicode' | 'custom', custom?: string) => [
         { id: '1', op: { type: 'stringPreset' as const, path: ['name'], preset, custom } },
       ];
 
@@ -144,6 +146,21 @@ describe('query devtools overrides', () => {
       expect((applyQueryDevtoolsOverrides(preset('unicode'), { name: 'x' }).value as { name: string }).name).toContain(
         '👋',
       );
+      expect(
+        (applyQueryDevtoolsOverrides(preset('longWord'), { name: 'x' }).value as { name: string }).name,
+      ).not.toContain(' ');
+    });
+
+    it('should replay a stored custom value over the preset label it was generated under', () => {
+      const entries = [
+        { id: '1', op: { type: 'stringPreset' as const, path: ['name'], preset: 'short' as const, custom: 'Nova' } },
+        { id: '2', op: { type: 'numberPreset' as const, path: ['count'], preset: 'huge' as const, custom: 123456 } },
+      ];
+
+      expect(applyQueryDevtoolsOverrides(entries, { name: 'x', count: 5 }).value).toEqual({
+        name: 'Nova',
+        count: 123456,
+      });
     });
 
     it('should apply number presets', () => {
@@ -154,6 +171,24 @@ describe('query devtools overrides', () => {
       expect(applyQueryDevtoolsOverrides(preset('zero'), { count: 5 }).value).toEqual({ count: 0 });
       expect(applyQueryDevtoolsOverrides(preset('negative'), { count: 5 }).value).toEqual({ count: -1 });
       expect(applyQueryDevtoolsOverrides(preset('custom', 7), { count: 5 }).value).toEqual({ count: 7 });
+    });
+
+    it('should generate varied preset samples that stay inside their preset contract', () => {
+      for (let i = 0; i < 20; i++) {
+        expect(generateQueryDevtoolsStringPreset('short').length).toBeLessThanOrEqual(10);
+        expect(generateQueryDevtoolsStringPreset('long').length).toBeGreaterThanOrEqual(60);
+        expect(generateQueryDevtoolsStringPreset('longWord')).not.toMatch(/\s/);
+        expect(generateQueryDevtoolsStringPreset('longWord').length).toBeGreaterThanOrEqual(40);
+
+        expect(generateQueryDevtoolsNumberPreset('zero')).toBe(0);
+        expect(generateQueryDevtoolsNumberPreset('negative')).toBeLessThan(0);
+        expect(Number.isSafeInteger(generateQueryDevtoolsNumberPreset('negative'))).toBe(true);
+        expect(generateQueryDevtoolsNumberPreset('huge')).toBeGreaterThanOrEqual(10 ** 9);
+        expect(Number.isSafeInteger(generateQueryDevtoolsNumberPreset('huge'))).toBe(true);
+      }
+
+      const samples = new Set(Array.from({ length: 20 }, () => generateQueryDevtoolsStringPreset('long')));
+      expect(samples.size).toBeGreaterThan(1);
     });
 
     it('should apply an invalid date preset as a deliberately unparseable string', () => {
