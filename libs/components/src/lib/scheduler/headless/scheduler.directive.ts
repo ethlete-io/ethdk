@@ -155,6 +155,14 @@ export class SchedulerDirective<TExtra = unknown> {
     this.focusedDate.set(startOfDay(new Date()));
   }
 
+  /**
+   * Draws a drag-to-create range outright, for a view whose units are not minutes on an axis - the
+   * month grid works in whole days and computes both ends itself.
+   */
+  public setDraftRange(range: Omit<SchedulerDraftRange, 'phase'>) {
+    this.draftRange.set({ ...range, phase: 'dragging' });
+  }
+
   /** Starts a drag-to-create range at `at`. The range covers `at` until {@link extendDraftRange}. */
   public beginDraftRange(at: Date, minimumDuration: number) {
     this.draftAnchor = at;

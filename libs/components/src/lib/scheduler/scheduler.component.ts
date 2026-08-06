@@ -263,6 +263,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       title: '',
       start: draft.start,
       end: draft.end,
+      allDay: draft.allDay,
     };
 
     this.draftSurfaceOpener.open({

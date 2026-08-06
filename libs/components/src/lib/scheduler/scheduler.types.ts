@@ -41,4 +41,6 @@ export type SchedulerDraftRange = {
   end: Date;
   /** `dragging` while the pointer is still down, `committed` once it is released. */
   phase: 'dragging' | 'committed';
+  /** Set by views that draw in whole days, so the appointment is created as an all-day one. */
+  allDay?: boolean;
 };

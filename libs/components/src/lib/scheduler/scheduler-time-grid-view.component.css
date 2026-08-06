@@ -141,6 +141,10 @@
     position: relative;
     border-inline-end: 1px solid var(--et-surface-border-solid);
 
+    /* drag-to-create arms on a long press, which is also what raises iOS' selection callout */
+    -webkit-touch-callout: none;
+    user-select: none;
+
     &:where([data-today]) {
       background: color-mix(in srgb, var(--et-theme-color-primary-solid) 6%, transparent);
     }

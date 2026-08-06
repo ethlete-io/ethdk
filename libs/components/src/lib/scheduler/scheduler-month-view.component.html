@@ -6,18 +6,22 @@
   }
 </div>
 
-<div class="et-scheduler-month-view-weeks" role="rowgroup">
+<div #weeks (pointerdown)="startDraftRange($event, weeks)" class="et-scheduler-month-view-weeks" role="rowgroup">
   @for (week of month.weeks(); track $index) {
-    <div class="et-scheduler-month-view-week" role="row">
+    <div #weekRow class="et-scheduler-month-view-week" role="row">
       @for (cell of week; track cell.date.getTime()) {
         <div
+          #cell
           [attr.data-outside-month]="cell.outsideMonth ? '' : null"
           [attr.data-today]="cell.today ? '' : null"
+          [attr.data-draft]="isDrafted(cell.date) ? '' : null"
           class="et-scheduler-month-view-cell"
           role="gridcell"
         >
           <span class="et-scheduler-month-view-cell-date">{{ cell.date.getDate() }}</span>
 
+          <!-- pointerdown is stopped on everything interactive below so a press that starts on an
+               appointment or the overflow trigger does not also draw a range across the grid -->
           <div class="et-scheduler-month-view-cell-appointments">
             @for (node of cell.visible; track node.appointment.id) {
               <button
@@ -26,6 +30,7 @@
                 [attr.title]="node.appointment.title"
                 [etProvideColor]="node.appointment.colorToken ?? null"
                 (click)="select(node.appointment, appointmentButton)"
+                (pointerdown)="$event.stopPropagation()"
                 class="et-scheduler-appointment"
                 type="button"
               >
@@ -39,7 +44,12 @@
 
             @if (cell.overflow.length > 0) {
               <div class="et-scheduler-month-view-overflow" etMenu>
-                <button class="et-scheduler-month-view-overflow-trigger" etMenuTrigger type="button">
+                <button
+                  (pointerdown)="$event.stopPropagation()"
+                  class="et-scheduler-month-view-overflow-trigger"
+                  etMenuTrigger
+                  type="button"
+                >
                   {{ labels().moreAppointments(cell.overflow.length) }}
                 </button>
 

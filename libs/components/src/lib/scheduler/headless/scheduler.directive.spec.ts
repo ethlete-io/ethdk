@@ -165,5 +165,15 @@ describe('SchedulerDirective', () => {
 
       expect(directive.draftRange()).toBeNull();
     });
+
+    it('takes a whole range for a view that draws in days', () => {
+      directive.setDraftRange({ start: at(0), end: new Date(2026, 6, 17, 23, 59), allDay: true });
+
+      expect(directive.draftRange()).toMatchObject({ allDay: true, phase: 'dragging' });
+
+      directive.commitDraftRange();
+
+      expect(directive.draftRange()).toMatchObject({ allDay: true, phase: 'committed' });
+    });
   });
 });

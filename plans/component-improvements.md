@@ -703,13 +703,28 @@ Scheduler overlay + drag-to-create (2026-08-06):
   (`SCHEDULER_EDIT_SURFACE_OVERLAY` anchored, `SCHEDULER_ADD_SURFACE_OVERLAY` plain); `strategies`
   is fixed per definition (`OverlayOpenConfig` omits it) but `origin` is per-open, which is what
   makes one anchored definition serve both the edit and drag paths.
-- **Drag to create** (asked for mid-session) - dragging empty grid in a day column draws a
-  15-minute-snapped range and opens the create surface anchored to it. `draftRange` +
-  `begin/extend/commit/clearDraftRange` live on `SchedulerDirective` so any view can drive it;
-  `SchedulerTimeGridDirective.draftBlock` places it. Notes for whoever extends this: a press on an
-  existing appointment stops propagation so it cannot draw over it (there is no move/resize yet -
-  that is the natural next feature); a sub-threshold press stays a click; `pointercancel` clears
-  without opening. Month-view drag across days (an all-day range) is **not** done.
+- **Drag to create** (asked for mid-session) - on week/day it draws a 15-minute-snapped time range
+  down a day column; on month it draws an all-day span across cells, either direction. Agenda has
+  no geometry to drag across and was deliberately skipped (the user's call). `draftRange` +
+  `begin/extend/commit/clearDraftRange` (time axis) and `setDraftRange` (whole days) live on
+  `SchedulerDirective` so any view can drive it; `SchedulerTimeGridDirective.draftBlock` places the
+  time-grid preview, the month view marks cells with `data-draft`. Notes for whoever extends this:
+  a press on an appointment or a "+N more" trigger stops propagation so it cannot draw over it
+  (there is no move/resize yet - that is the natural next feature); a sub-threshold press stays a
+  click; `pointercancel` clears without opening.
+- **Touch needed its own gesture** (reported mid-session: "drag to create doesn't work with touch").
+  The time-grid body scrolls vertically, so a finger drag is a pan - the browser claims it and fires
+  `pointercancel`. It now arms on a ~400ms stationary long press (`armOnTouch`), which is early
+  enough that panning has not begun, and a **non-passive** `touchmove` listener `preventDefault()`s
+  from then on so it cannot begin. Do not swap that for `touch-action: none` on the column: it kills
+  the grid's own scrolling, and changing `touch-action` mid-gesture does not affect the in-flight
+  one. `Input.dispatchTouchEvent` cannot verify scrolling - it never drives the compositor; use
+  `Input.synthesizeScrollGesture`. The arming lives in
+  `headless/internals/scheduler-draft-gesture.ts`; both views share it. On month the long press was
+  also selecting the date numbers (reported from a real Android device), hence
+  `-webkit-touch-callout: none` / `user-select: none` on the cells and the day columns.
+  **Not verified on real iOS Safari** - `idb` is not installed, so the simulator cannot be driven;
+  WebKit's long-press callout and `preventDefault` handling are the remaining risk.
 - Anchoring deliberately avoids DOM queries - a view hands its element to
   `SchedulerDirective.surfaceAnchor`, which the host consumes and clears, so a later programmatic
   `selectedAppointmentId` write cannot inherit a stale anchor. `ethlete/no-dom-query` forbids the
