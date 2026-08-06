@@ -7,6 +7,8 @@
     "libs/*"
   ],
   "scripts": {
+    "agents:check": "nx build agent-rules && node dist/libs/agent-rules/src/index.js check",
+    "agents:sync": "nx build agent-rules && node dist/libs/agent-rules/src/index.js sync",
     "amend": "git commit --amend --no-edit",
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",

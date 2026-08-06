@@ -137,12 +137,22 @@ goldens, Storybook build - use the **`ci-check`** skill (`.agents/skills/ci-chec
 ## Agent rules & skills for other repos
 
 `libs/agent-rules` publishes `@ethlete/agent-rules`: the portable slice of this repo's
-guidance, compiled into Claude Code, Codex, Cursor and Copilot formats by
-`npx ethlete-agents sync`. Content lives in `libs/agent-rules/content/`; what this repo
-itself consumes is configured in `ethlete-agents.config.json` (`profile: sdk`, so only
-`scope: both` content is emitted here). Never hand-edit the generated marker block at
-the end of this file or a generated `ethlete-*` skill - edit the content file in
-`libs/agent-rules/content/` and re-run sync.
+guidance, compiled into Claude Code, Codex, Cursor and Copilot formats. Content lives in
+`libs/agent-rules/content/`; what this repo itself consumes is configured in
+`ethlete-agents.config.json` (`profile: sdk`, so only `scope: both` content is emitted
+here). Never hand-edit the generated marker block at the end of this file or a generated
+`ethlete-*` skill - edit the content file in `libs/agent-rules/content/`, then:
+
+```bash
+npx prettier --write libs/agent-rules/content/<file>   # format first
+yarn agents:sync                                       # then regenerate
+```
+
+Format **before** syncing. The generated copies under `.claude/` and `.agents/` are
+Prettier-ignored, so formatting the content afterwards silently leaves them stale, and
+`yarn agents:check` (which CI runs) fails. The `npx ethlete-agents sync` in the published
+README works in consumer repos only - here the package is the source, not a dependency,
+so `npx` would look it up on the registry and 404.
 
 ## Verifying UI changes
 

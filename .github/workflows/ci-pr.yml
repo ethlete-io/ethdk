@@ -38,7 +38,7 @@ jobs:
 
       # Fails when the generated agent files (AGENTS.md marker block, .agents/skills/ethlete-*)
       # drift from libs/agent-rules/content/**.
-      - run: yarn nx build agent-rules && node dist/libs/agent-rules/src/index.js check
+      - run: yarn agents:check
 
       # Changeset notes are capped at one to two sentences / 40 words (see the `changeset` skill).
       # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.

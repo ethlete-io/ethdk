@@ -168,3 +168,15 @@ The canonical content lives in the SDK repo under `libs/agent-rules/content/` -
 `rules/<name>.md` for always-loaded rules, `skills/<name>/SKILL.md` (plus resource
 files) for on-demand guides. Frontmatter controls the kind, scope, required packages
 and template variables; see the package README for the authoring reference.
+
+Inside the SDK the package is the source rather than a dependency, so `npx
+ethlete-agents` has nothing to resolve. Format the content, then regenerate from the
+local build:
+
+```bash
+npx prettier --write libs/agent-rules/content/<file>
+yarn agents:sync    # yarn agents:check is the same drift check CI runs
+```
+
+Formatting after the sync leaves the generated copies stale - they are Prettier-ignored,
+so nothing rewrites them and only `agents:check` notices.
