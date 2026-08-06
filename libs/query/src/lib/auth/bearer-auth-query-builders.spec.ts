@@ -274,6 +274,72 @@ describe('bearer-auth-query-builders', () => {
     });
   });
 
+  describe('withRefreshQuery - a refresh racing another token-issuing execution', () => {
+    const raise401On = (route: string) => {
+      setup.httpTesting
+        .expectOne(`https://api.test.com${route}`)
+        .flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+      TestBed.tick();
+    };
+
+    it('ignores a refresh that lands after the login which superseded it', () => {
+      const authSetup = setupAuthTest({ querySetup: setup, autoRetryOn401: true });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: 'refresh' });
+
+      authSetup.makeSecureRequest('/api/secure-data');
+      raise401On('/api/secure-data');
+
+      const refreshReq = setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
+
+      TestBed.runInInjectionContext(() => {
+        authSetup.auth.queries.login.execute({ body: { username: 'test', password: 'pass' } });
+      });
+
+      const loginReq = setup.httpTesting.expectOne('https://api.test.com/auth/login');
+
+      loginReq.flush({ accessToken: 'login-access', refreshToken: 'login-refresh' });
+      TestBed.tick();
+      TestBed.tick();
+
+      refreshReq.flush({ accessToken: 'refreshed-access', refreshToken: 'refreshed-refresh' });
+      TestBed.tick();
+      TestBed.tick();
+
+      expect(authSetup.auth.accessToken()).toBe('login-access');
+      expect(authSetup.auth.executionState()).toEqual({
+        type: 'login',
+        state: 'success',
+        response: { accessToken: 'login-access', refreshToken: 'login-refresh' },
+      });
+    });
+
+    it('does not start a refresh while a login is in flight', () => {
+      const authSetup = setupAuthTest({ querySetup: setup, autoRetryOn401: true });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: 'refresh' });
+
+      TestBed.runInInjectionContext(() => {
+        authSetup.auth.queries.login.execute({ body: { username: 'test', password: 'pass' } });
+      });
+
+      const loginReq = setup.httpTesting.expectOne('https://api.test.com/auth/login');
+
+      authSetup.makeSecureRequest('/api/secure-data');
+      raise401On('/api/secure-data');
+
+      setup.httpTesting.expectNone('https://api.test.com/auth/refresh');
+
+      loginReq.flush({ accessToken: 'login-access', refreshToken: 'login-refresh' });
+      TestBed.tick();
+      TestBed.tick();
+
+      expect(authSetup.auth.accessToken()).toBe('login-access');
+    });
+  });
+
   describe('withRefreshQuery - a refresh that fails', () => {
     const failRefreshWith = (status: number, authSetup: ReturnType<typeof setupAuthTest>) => {
       authSetup.makeSecureRequest('/api/secure-data');
@@ -303,6 +369,7 @@ describe('bearer-auth-query-builders', () => {
       expect(authSetup.auth.isAuthenticated()).toBe(false);
       expect(authSetup.auth.accessToken()).toBeNull();
       expect(authSetup.auth.executionState()).toEqual({ type: 'logout', state: 'success' });
+      expect(authSetup.auth.sessionEndCause()).toBe('expired');
     });
 
     it('ends the session for any status the retry config does not consider worth retrying', () => {

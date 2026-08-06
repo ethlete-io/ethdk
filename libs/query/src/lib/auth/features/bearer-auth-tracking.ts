@@ -1,9 +1,10 @@
-import { effect, isDevMode, Signal } from '@angular/core';
+import { effect, isDevMode, Signal, untracked } from '@angular/core';
 import { QueryArgs, QueryErrorResponse, QuerySnapshot } from '../../http';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
   BearerAuthProviderFeatureContext,
+  BearerAuthSessionEndCause,
   ExtractQueryArgs,
   ExtractQueryKey,
 } from '../bearer-auth-provider';
@@ -46,6 +47,10 @@ export type TokenRefreshEventData = {
   automatic: boolean;
 };
 
+export type LogoutEventData = {
+  cause: BearerAuthSessionEndCause | null;
+};
+
 export type LeaderStatusChangeEventData = {
   isLeader: boolean;
 };
@@ -64,7 +69,7 @@ export type TrackingEventDataMap<TBuilders extends readonly AnyQueryBuilder[]> =
         : K extends 'tokenRefreshSuccess'
           ? TokenRefreshEventData
           : K extends 'logout'
-            ? void
+            ? LogoutEventData
             : K extends 'leaderStatusChange'
               ? LeaderStatusChangeEventData
               : K extends 'leaderInstanceCountChange'
@@ -251,7 +256,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     const hasTokens = !!(accessToken || refreshToken);
 
     if (hadTokens && !hasTokens) {
-      emit('logout', undefined);
+      emit('logout', { cause: untracked(context.sessionEndCause) });
     }
 
     hadTokens = hasTokens;

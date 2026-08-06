@@ -7,6 +7,7 @@ import {
   isDevMode,
   Signal,
   signal,
+  untracked,
   WritableSignal,
 } from '@angular/core';
 import { defineRootProvider, injectUnsavedChangesCoordinator, isObject, ProviderDefinition } from '@ethlete/core';
@@ -84,6 +85,30 @@ export type BearerAuthExecutionState<TType extends string = string> =
   | BearerAuthExecutionStateLogout
   | BearerAuthExecutionStateTokenSeed;
 
+/**
+ * Whether this tab has a session, and whether it is still finding out.
+ *
+ * - `unknown` - the provider has not finished its own startup yet. Never observed from a component.
+ * - `restoring` - a session restore is in flight (`withPersistentAuth`'s auto-login).
+ * - `authenticated` - tokens are applied.
+ * - `anonymous` - no session, and nothing is trying to get one.
+ */
+export type BearerAuthSessionStatus = 'unknown' | 'restoring' | 'authenticated' | 'anonymous';
+
+/**
+ * Why the session ended. A user-initiated logout must stay put; a session that ended on its own
+ * usually returns the user to where they were, so the two cannot be told apart by state alone.
+ */
+export type BearerAuthSessionEndCause =
+  /** `logout()` called with no cause - a user clicking "log out". */
+  | 'user'
+  /** `withInactivityLogout`'s timer elapsed. */
+  | 'inactivity'
+  /** A token refresh failed for good, so the tab can no longer renew the session. */
+  | 'expired'
+  /** Another tab logged out and `withBearerAuthMultiTabSync` carried it here. */
+  | 'otherTab';
+
 export const BearerAuthFeatureType = {
   PERSISTENT_AUTH: 'PERSISTENT_AUTH',
   TOKEN_EXPIRATION_WARNING: 'TOKEN_EXPIRATION_WARNING',
@@ -129,7 +154,7 @@ export type BearerAuthProviderEarlySetupContext = {
   applyTokens: (access: string, refresh: string) => void;
 
   /** Ends the session, exactly as the provider's own `logout()` does. */
-  logout: () => void;
+  logout: (cause?: BearerAuthSessionEndCause) => void;
 };
 
 /**
@@ -318,6 +343,19 @@ export type BearerAuthProvider<
   > | null>;
 
   /**
+   * Whether this tab has a session, and whether it is still finding out - the signal to gate an app
+   * shell on. Unlike {@link executionState} it always has a value, it answers only this one question,
+   * and it reaches `anonymous` even when nothing ever executed (no cookie to restore from).
+   */
+  sessionStatus: Signal<BearerAuthSessionStatus>;
+
+  /**
+   * Why the last session ended, or `null` while one is running and before the first ever ended.
+   * Cleared as soon as tokens are applied again.
+   */
+  sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
+
+  /**
    * Seeds the provider with tokens that were issued outside of it - an SSO/OIDC callback that
    * arrives with both tokens in the URL, a token handed over by a native shell, a test harness.
    *
@@ -333,9 +371,10 @@ export type BearerAuthProvider<
   setTokens: (accessToken: string, refreshToken: string) => void;
 
   /**
-   * Logout the user (clears all tokens and unbinds secure queries)
+   * Logout the user (clears all tokens and unbinds secure queries). The optional cause is published
+   * as {@link sessionEndCause}; it defaults to `'user'`, so a plain `logout()` reads as a click.
    */
-  logout: () => void;
+  logout: (cause?: BearerAuthSessionEndCause) => void;
 
   /**
    * Observable that emits after a successful token refresh.
@@ -352,7 +391,7 @@ export type BearerAuthProviderFeatureContext<
   afterTokenRefresh$: Observable<void>;
   accessToken: WritableSignal<string | null>;
   bearerData: Signal<TBearerData | null>;
-  logout: () => void;
+  logout: (cause?: BearerAuthSessionEndCause) => void;
   injector: Injector;
   destroyRef: DestroyRef;
   setTokens: (access: string, refresh: string) => void;
@@ -360,6 +399,8 @@ export type BearerAuthProviderFeatureContext<
   leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
   queries: QueryRegistry<TBuilders>;
   executionState: WritableSignal<BearerAuthExecutionState | null>;
+  sessionStatus: Signal<BearerAuthSessionStatus>;
+  sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
 };
 
 export type BearerAuthProviderQueryContext<
@@ -376,8 +417,11 @@ export type BearerAuthProviderQueryContext<
   refreshCoordination: BearerAuthRefreshCoordination | undefined;
 
   /** Ends the session, exactly as the provider's own `logout()` does. */
-  logout: () => void;
+  logout: (cause?: BearerAuthSessionEndCause) => void;
   queries: QueryRegistry<TBuilders>;
+
+  /** Whether any execution that can issue tokens is still running, across every registry key. */
+  hasTokenIssuingExecutionInFlight: Signal<boolean>;
 };
 
 const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
@@ -400,16 +444,32 @@ const deriveExecutionStateType = (builder: AnyQueryBuilder, triggeredBy: string 
   return builder.key;
 };
 
+type BearerQueryRegistryContext = {
+  injector: Injector;
+  latestExecutedQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>;
+  latestNonInternalQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>;
+  applyTokens: (access: string, refresh: string) => void;
+  executionState: WritableSignal<BearerAuthExecutionState | null>;
+  sessionStatus: WritableSignal<BearerAuthSessionStatus>;
+  isAuthenticated: Signal<boolean>;
+};
+
+/** An execution in progress. `id` is `null` for the ones that cannot issue tokens (a revocation). */
+type CurrentExecution = { id: number | null; type: string; snapshot: QuerySnapshot<QueryArgs> };
+
 const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
   builders: TBuilders,
-  injector: Injector,
-  latestExecutedQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>,
-  latestNonInternalQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>,
-  applyTokens: (access: string, refresh: string) => void,
-  executionState: WritableSignal<BearerAuthExecutionState | null>,
+  context: BearerQueryRegistryContext,
 ) => {
+  const { injector, latestExecutedQuery, latestNonInternalQuery, applyTokens, executionState, sessionStatus } = context;
   const queries = {} as QueryRegistry<TBuilders>;
   const querySnapshots = new Map<string, Signal<QuerySnapshot<QueryArgs> | null>>();
+
+  // Supersession is provider-wide, not per key. Within one key the reused query already handles it,
+  // but a token refresh landing while a login is in flight would otherwise apply its tokens over the
+  // login's and report its own outcome as the session's - two writers, two different executions.
+  let latestExecutionId = 0;
+  const currentExecutions: Signal<CurrentExecution | null>[] = [];
 
   for (const builder of builders) {
     const querySnapshot = signal<QuerySnapshot<QueryArgs> | null>(null);
@@ -422,15 +482,23 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
     // unauthenticated.
     const extractionError = signal<QueryErrorResponse | null>(null);
 
-    effect(() => {
-      const snapshot = querySnapshot();
-      if (!snapshot) return;
+    const currentExecution = signal<CurrentExecution | null>(null);
+    currentExecutions.push(currentExecution);
 
+    const isSuperseded = (execution: CurrentExecution) => execution.id !== null && execution.id !== latestExecutionId;
+
+    // Runs before the state effect below, which reads the extraction error this one writes. Angular
+    // runs effects in creation order, so the two must stay in this order.
+    effect(() => {
+      const execution = currentExecution();
+      if (!execution) return;
+
+      const { snapshot } = execution;
       const response = snapshot.response();
       const loading = snapshot.loading();
       const error = snapshot.error();
 
-      if (response && !loading && !error) {
+      if (response && !loading && !error && !isSuperseded(execution)) {
         try {
           const tokens = extractTokens(response);
           extractionError.set(null);
@@ -445,8 +513,6 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       }
     });
 
-    const currentExecution = signal<{ type: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
-
     effect(() => {
       const execution = currentExecution();
       if (!execution) return;
@@ -456,7 +522,7 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       const loading = snapshot.loading();
       const error = snapshot.error();
 
-      if (loading) return;
+      if (loading || isSuperseded(execution)) return;
 
       if (error) {
         executionState.set({ type, state: 'error', error });
@@ -468,6 +534,12 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
         } else {
           executionState.set({ type, state: 'success', response });
         }
+      }
+
+      // Keyed on `isAlive` rather than on the branches above: a cancelled restore produces neither a
+      // response nor an error, and would otherwise leave `sessionStatus` at `restoring` forever.
+      if (type === 'autoLogin' && !snapshot.isAlive() && !untracked(context.isAuthenticated)) {
+        sessionStatus.set('anonymous');
       }
     });
 
@@ -484,8 +556,9 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       const snapshot = query.createSnapshot();
 
       const stateType = deriveExecutionStateType(builder, options?.triggeredBy);
+      const isRevocation = stateType === 'revocation';
 
-      if (stateType !== 'revocation') {
+      if (!isRevocation) {
         latestExecutedQuery.set({ key: builder.key, snapshot });
         if (!snapshot.triggeredBy()) {
           latestNonInternalQuery.set({ key: builder.key, snapshot });
@@ -493,7 +566,11 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       }
       executionState.set({ type: stateType, state: 'loading' });
 
-      currentExecution.set({ type: stateType, snapshot });
+      if (stateType === 'autoLogin') {
+        sessionStatus.set('restoring');
+      }
+
+      currentExecution.set({ id: isRevocation ? null : ++latestExecutionId, type: stateType, snapshot });
       querySnapshot.set(snapshot);
       return snapshot;
     };
@@ -504,7 +581,15 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
     } as unknown as QueryRegistry<TBuilders>[ExtractQueryKey<TBuilders[number]>];
   }
 
-  return { queries, querySnapshots };
+  const hasTokenIssuingExecutionInFlight = computed(() =>
+    currentExecutions.some((execution) => {
+      const current = execution();
+
+      return !!current && current.id !== null && current.snapshot.isAlive();
+    }),
+  );
+
+  return { queries, querySnapshots, hasTokenIssuingExecutionInFlight };
 };
 
 const setupFeatures = <
@@ -624,10 +709,14 @@ const createBearerAuthProviderImpl = <
   const latestExecutedQuery = signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
   const latestNonInternalQuery = signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
   const executionState = signal<BearerAuthExecutionState | null>(null);
+  const sessionStatus = signal<BearerAuthSessionStatus>('unknown');
+  const sessionEndCause = signal<BearerAuthSessionEndCause | null>(null);
 
   const applyTokens = (access: string, refresh: string) => {
     accessToken.set(access);
     refreshToken.set(refresh);
+    sessionStatus.set('authenticated');
+    sessionEndCause.set(null);
     afterTokenRefresh$.next();
   };
 
@@ -639,22 +728,25 @@ const createBearerAuthProviderImpl = <
     executionState.set({ type: 'tokenSeed', state: 'success' });
   };
 
-  const { queries } = setupBearerQueryRegistry(
-    config.queries,
+  const { queries, hasTokenIssuingExecutionInFlight } = setupBearerQueryRegistry(config.queries, {
     injector,
     latestExecutedQuery,
     latestNonInternalQuery,
     applyTokens,
     executionState,
-  );
+    sessionStatus,
+    isAuthenticated,
+  });
 
-  const logout = () => {
+  const logout = (cause: BearerAuthSessionEndCause = 'user') => {
     accessToken.set(null);
     refreshToken.set(null);
     queryClient.repository.unbindAllSecure();
     latestExecutedQuery.set(null);
     latestNonInternalQuery.set(null);
     executionState.set({ type: 'logout', state: 'success' });
+    sessionStatus.set('anonymous');
+    sessionEndCause.set(cause);
 
     // Unsaved edits can no longer be saved once the session is gone. Guarding them past this point
     // only strands a "discard your changes?" dialog over the login page the app redirects to, and
@@ -682,6 +774,7 @@ const createBearerAuthProviderImpl = <
     logout,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
+    hasTokenIssuingExecutionInFlight,
   };
 
   for (const builder of config.queries) {
@@ -701,9 +794,17 @@ const createBearerAuthProviderImpl = <
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
     executionState,
+    sessionStatus: sessionStatus.asReadonly(),
+    sessionEndCause: sessionEndCause.asReadonly(),
   };
 
   const { features, applied: appliedFeatures } = setupFeatures(config.features, featureSetupContext);
+
+  // Runs after the features, because `withPersistentAuth` starts its auto-login during setup. Still
+  // `unknown` here means nothing is trying to restore a session, so there is nothing to wait for.
+  if (sessionStatus() === 'unknown') {
+    sessionStatus.set('anonymous');
+  }
 
   const provider = {
     queries,
@@ -715,6 +816,8 @@ const createBearerAuthProviderImpl = <
     latestExecutedQuery: latestExecutedQuery.asReadonly(),
     latestNonInternalQuery: latestNonInternalQuery.asReadonly(),
     executionState: executionState.asReadonly(),
+    sessionStatus: sessionStatus.asReadonly(),
+    sessionEndCause: sessionEndCause.asReadonly(),
     setTokens,
     logout,
     afterTokenRefresh$,

@@ -134,7 +134,10 @@ export type RefreshFailure = {
   /** The error the refresh query ended on. */
   error: QueryErrorResponse;
 
-  /** Ends the session, exactly as the provider's own `logout()` does. */
+  /**
+   * Ends the session, exactly as the provider's own `logout()` does, reporting `sessionEndCause`
+   * as `'expired'`.
+   */
   logout: () => void;
 };
 
@@ -226,8 +229,6 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const refreshQuery = () => context.queries[key]!;
 
-    const isRefreshInFlight = () => refreshQuery().snapshot()?.loading() ?? false;
-
     const executeRefresh = (reason: 'scheduled' | 'unauthorized') => {
       const currentRefreshToken = context.refreshToken();
       if (!currentRefreshToken) return;
@@ -240,7 +241,10 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         return;
       }
 
-      if (isRefreshInFlight()) return;
+      // Any token-issuing execution, not just another refresh: a login already in flight is about to
+      // issue a token pair of its own, and the refresh token this would spend belongs to the session
+      // that login is replacing.
+      if (context.hasTokenIssuingExecutionInFlight()) return;
 
       if (reason === 'scheduled') {
         const now = Date.now();
@@ -338,7 +342,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
       if (!error) return;
 
-      onRefreshFailure({ error, logout: context.logout });
+      onRefreshFailure({ error, logout: () => context.logout('expired') });
     });
 
     // Auto-retry on 401: Listen to repository events and trigger refresh on 401 errors

@@ -87,6 +87,7 @@ describe('bearer-auth-inactivity-logout', () => {
       TestBed.tick();
 
       expect(auth.isAuthenticated()).toBe(false);
+      expect(auth.sessionEndCause()).toBe('inactivity');
 
       querySetup.httpTesting.verify();
     });

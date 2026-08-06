@@ -1,4 +1,5 @@
 import { DestroyRef, effect, inject, isDevMode, Signal } from '@angular/core';
+import { BearerAuthSessionEndCause } from '../bearer-auth-provider';
 import { decryptToken, encryptToken } from '../utils';
 
 type SyncMessage =
@@ -40,7 +41,7 @@ export type MultiTabSyncContext = {
    * logged out elsewhere reports `{ type: 'logout' }` and abandons its unsaved changes like the tab
    * the logout started in.
    */
-  logout: () => void;
+  logout: (cause?: BearerAuthSessionEndCause) => void;
 };
 
 export type InternalMultiTabSync = {
@@ -92,7 +93,7 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
     if (message.type === 'logout' && syncLogout) {
       lastSyncedState = LOGGED_OUT;
       hadTokens = false;
-      context.logout();
+      context.logout('otherTab');
 
       return;
     }

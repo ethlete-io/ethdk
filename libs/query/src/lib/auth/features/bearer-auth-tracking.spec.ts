@@ -340,7 +340,7 @@ describe('bearer-auth-tracking', () => {
         // The event belongs to the leader, so this tab hands it over rather than firing it.
         expect(localLogoutHandler).not.toHaveBeenCalled();
         expect(postedOn('ethlete-auth-tracking').slice(forwardedBefore)).toEqual([
-          { event: 'logout', data: undefined },
+          { event: 'logout', data: { cause: 'user' } },
         ]);
 
         leader.close();

@@ -81,7 +81,7 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
     );
 
     const logoutSubscription = inactivityLogout$.subscribe(() => {
-      context.logout();
+      context.logout('inactivity');
     });
 
     effect(() => {

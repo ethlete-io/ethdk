@@ -212,7 +212,7 @@ describe('setupMultiTabSync', () => {
 
       mockChannel.onmessage?.({ data: { type: 'logout' } } as MessageEvent);
 
-      expect(logout).toHaveBeenCalled();
+      expect(logout).toHaveBeenCalledWith('otherTab');
       expect(accessToken()).toBeNull();
       expect(refreshToken()).toBeNull();
     });

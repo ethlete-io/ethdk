@@ -1961,4 +1961,183 @@ describe('createBearerAuthProvider', () => {
       });
     });
   });
+
+  describe('sessionStatus', () => {
+    const createProvider = (withRestore: boolean) => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/login');
+      const restore = postQuery<{
+        body: { token: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/restore');
+
+      return createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', { queryCreator: login }),
+          withAuthenticationQuery('restore', { queryCreator: restore }),
+        ],
+        features: withRestore
+          ? [
+              withPersistentAuth({
+                autoLogin: { queryKey: 'restore', buildArgs: (token) => ({ body: { token } }) },
+              }),
+            ]
+          : [],
+      });
+    };
+
+    it('should be anonymous straight away when nothing tries to restore a session', () => {
+      const { inject: injectAuthProvider } = createProvider(false);
+
+      TestBed.runInInjectionContext(() => {
+        expect(injectAuthProvider().sessionStatus()).toBe('anonymous');
+      });
+    });
+
+    it('should be anonymous straight away when there is no cookie to restore from', () => {
+      vi.mocked(getCookie).mockReturnValue(null);
+      const { inject: injectAuthProvider } = createProvider(true);
+
+      TestBed.runInInjectionContext(() => {
+        expect(injectAuthProvider().sessionStatus()).toBe('anonymous');
+      });
+    });
+
+    it('should be restoring while the auto-login is in flight, then authenticated', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      resetEncryptionKey();
+
+      const { inject: injectAuthProvider } = createProvider(true);
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        expect(provider.sessionStatus()).toBe('restoring');
+
+        httpTesting
+          .expectOne('https://api.example.com/auth/restore')
+          .flush({ accessToken: 'access', refreshToken: 'refresh' });
+        TestBed.tick();
+
+        expect(provider.sessionStatus()).toBe('authenticated');
+      });
+    });
+
+    it('should be anonymous once a failed auto-login has settled', () => {
+      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      resetEncryptionKey();
+
+      const { inject: injectAuthProvider } = createProvider(true);
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        expect(provider.sessionStatus()).toBe('restoring');
+
+        httpTesting
+          .expectOne('https://api.example.com/auth/restore')
+          .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+        TestBed.tick();
+
+        expect(provider.sessionStatus()).toBe('anonymous');
+      });
+    });
+
+    it('should follow a login and a logout', () => {
+      const { inject: injectAuthProvider } = createProvider(false);
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.queries.login.execute({ body: { username: 'test' } });
+        httpTesting
+          .expectOne('https://api.example.com/auth/login')
+          .flush({ accessToken: 'access', refreshToken: 'refresh' });
+        TestBed.tick();
+
+        expect(provider.sessionStatus()).toBe('authenticated');
+
+        provider.logout();
+        expect(provider.sessionStatus()).toBe('anonymous');
+      });
+    });
+
+    it('should become authenticated on setTokens', () => {
+      const { inject: injectAuthProvider } = createProvider(false);
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.setTokens('access', 'refresh');
+
+        expect(provider.sessionStatus()).toBe('authenticated');
+      });
+    });
+  });
+
+  describe('sessionEndCause', () => {
+    const createProvider = () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/login');
+
+      return createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [withAuthenticationQuery('login', { queryCreator: login })],
+      });
+    };
+
+    it('should be null until a session has ended', () => {
+      const { inject: injectAuthProvider } = createProvider();
+
+      TestBed.runInInjectionContext(() => {
+        expect(injectAuthProvider().sessionEndCause()).toBeNull();
+      });
+    });
+
+    it('should default to user for a plain logout', () => {
+      const { inject: injectAuthProvider } = createProvider();
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.logout();
+
+        expect(provider.sessionEndCause()).toBe('user');
+      });
+    });
+
+    it('should keep the cause the caller passed', () => {
+      const { inject: injectAuthProvider } = createProvider();
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.logout('inactivity');
+
+        expect(provider.sessionEndCause()).toBe('inactivity');
+      });
+    });
+
+    it('should clear once a new session starts', () => {
+      const { inject: injectAuthProvider } = createProvider();
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.logout('inactivity');
+        provider.setTokens('access', 'refresh');
+
+        expect(provider.sessionEndCause()).toBeNull();
+      });
+    });
+  });
 });
