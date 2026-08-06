@@ -204,9 +204,21 @@ control's own `readonly` (clicks land, nothing toggles) and `disabled` (the pane
 dims as a unit and shows `not-allowed`) behavior.
 :::
 
-Tokens: `--et-radio-card-padding` / `-border-radius` / `-border-width`, the same
-three under `--et-checkbox-option-card-*` and `--et-choice-field-card-*`, plus
-`--et-choice-field-card-disabled-opacity` (default `0.5`).
+All three components share **one** token set, so a card radius is set once and
+every card follows: `--et-selection-card-padding` (`16px`), `-border-radius`
+(`10px`), `-border-width` (`1px`), `-transition-duration` (`150ms`) and
+`-disabled-opacity` (`0.5`, the choice field's one-unit dim).
+
+::: warning Renamed in favour of one set
+These replace `--et-radio-card-*`, `--et-checkbox-option-card-*` and
+`--et-choice-field-card-*`, which no longer resolve. The old names each styled one
+of the three components; the new ones style all of them. `--et-choice-field-card-disabled-opacity`
+is now `--et-selection-card-disabled-opacity`.
+:::
+
+The panel chrome is one stylesheet, injected the first time any of the three
+renders with `variant="card"` - an app that only ever uses `variant="plain"` never
+puts it in the document.
 
 ### Segmented button: tabs variant {#segmented-tabs}
 

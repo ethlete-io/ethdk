@@ -1,5 +1,6 @@
-import { Component, inject, input, ViewEncapsulation } from '@angular/core';
-import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
+import { Component, effect, inject, input, ViewEncapsulation } from '@angular/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, injectStyleManager } from '@ethlete/core';
+import { SelectionCardStylesComponent } from '../../selection-card-styles.component';
 import { SelectionOptionDirective } from '../headless';
 
 /** How a checkbox option presents itself. See {@link CheckboxOptionComponent.variant}. */
@@ -26,11 +27,14 @@ export type CheckboxOptionVariant = (typeof CHECKBOX_OPTION_VARIANTS)[keyof type
   host: {
     class: 'et-checkbox-option',
     '[attr.data-variant]': 'variant()',
+    '[class.et-selection-card]': "variant() === 'card'",
     '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
 export class CheckboxOptionComponent {
   public optionDirective = inject(SelectionOptionDirective);
+
+  private styleManager = injectStyleManager();
 
   /**
    * `'card'` turns the option into a full-width clickable panel with the label leading and the control trailing -
@@ -40,4 +44,12 @@ export class CheckboxOptionComponent {
   public variant = input<CheckboxOptionVariant>(CHECKBOX_OPTION_VARIANTS.PLAIN);
 
   public canAnimate = createCanAnimateSignal();
+
+  constructor() {
+    effect(() => {
+      if (this.variant() === CHECKBOX_OPTION_VARIANTS.CARD) {
+        this.styleManager.mount(SelectionCardStylesComponent);
+      }
+    });
+  }
 }

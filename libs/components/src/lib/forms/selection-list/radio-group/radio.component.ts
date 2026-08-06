@@ -1,5 +1,6 @@
-import { Component, inject, input, ViewEncapsulation } from '@angular/core';
-import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
+import { Component, effect, inject, input, ViewEncapsulation } from '@angular/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, injectStyleManager } from '@ethlete/core';
+import { SelectionCardStylesComponent } from '../../selection-card-styles.component';
 import { SelectionOptionDirective } from '../headless';
 
 /** How a radio presents itself. See {@link RadioComponent.variant}. */
@@ -26,11 +27,14 @@ export type RadioVariant = (typeof RADIO_VARIANTS)[keyof typeof RADIO_VARIANTS];
   host: {
     class: 'et-radio',
     '[attr.data-variant]': 'variant()',
+    '[class.et-selection-card]': "variant() === 'card'",
     '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
 export class RadioComponent {
   public optionDirective = inject(SelectionOptionDirective);
+
+  private styleManager = injectStyleManager();
 
   /**
    * `'card'` turns the option into a full-width clickable panel with the label leading and the control trailing -
@@ -40,4 +44,12 @@ export class RadioComponent {
   public variant = input<RadioVariant>(RADIO_VARIANTS.PLAIN);
 
   public canAnimate = createCanAnimateSignal();
+
+  constructor() {
+    effect(() => {
+      if (this.variant() === RADIO_VARIANTS.CARD) {
+        this.styleManager.mount(SelectionCardStylesComponent);
+      }
+    });
+  }
 }

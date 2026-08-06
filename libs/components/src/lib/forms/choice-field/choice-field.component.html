@@ -1,9 +1,14 @@
-<div class="et-choice-field-control" etColorInteractive etColorInteractiveContainer>
+<div
+  [class.et-selection-card]="variant() === 'card'"
+  class="et-choice-field-control"
+  etColorInteractive
+  etColorInteractiveContainer
+>
   <div class="et-choice-field-control-slot">
     <ng-content />
   </div>
 
-  <div class="et-choice-field-label-area">
+  <div class="et-choice-field-label-area et-selection-card-content">
     <ng-content select="et-label" />
   </div>
 </div>

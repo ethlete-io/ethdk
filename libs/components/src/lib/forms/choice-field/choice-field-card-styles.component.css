@@ -1,31 +1,7 @@
 @layer components {
-  @property --et-choice-field-card-padding {
-    syntax: '*';
-    inherits: true;
-    initial-value: 16px;
-  }
-
-  @property --et-choice-field-card-border-radius {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 10px;
-  }
-
-  @property --et-choice-field-card-border-width {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 1px;
-  }
-
-  @property --et-choice-field-card-disabled-opacity {
-    syntax: '<number>';
-    inherits: true;
-    initial-value: 0.5;
-  }
-
-  /* The card preset: the whole panel is the target. The checked border is what makes a chosen card readable at a
-     glance rather than only by its control, and `:has()` is how the wrapper learns the control's state — the
-     control owns `aria-checked`, not this element. */
+  /* The panel chrome itself is `.et-selection-card`, shared with `et-radio` and `et-checkbox-option` — see
+     `selection-card-styles.component.css`. What is left here is what only a wrapper around a projected control
+     needs: the control's hit area has to be stretched over the panel, and the panel dims as one unit. */
   et-choice-field:where([data-variant='card']) {
     /* A card fills its container rather than hugging its label, so a stack of them reads as one list of equal
        panels — `fit-content` (the plain variant's width) made every card a different width. */
@@ -36,45 +12,11 @@
     --et-switch-opacity-disabled: 1;
 
     .et-choice-field-control {
-      /* Label leading, control trailing, which is how a settings row reads. */
-      flex-direction: row-reverse;
-      justify-content: space-between;
       position: relative;
-      padding: var(--et-choice-field-card-padding);
-      border-radius: var(--et-choice-field-card-border-radius);
-      background-color: var(--et-surface-background-solid, transparent);
-      border: var(--et-choice-field-card-border-width) solid var(--et-surface-border-solid, currentColor);
-
-      /* The panel's chrome answers interaction the way a form field's frame does: a neutral border on
-         hover/press, the accent on focus. Every state guard sits in `:where()`, so all of these rules carry
-         the same (element-only) specificity and source order decides between them — which is what lets the
-         checked rule below keep a chosen card's accent border while it is hovered. */
-      @media (hover: hover) {
-        &:where(:hover:not(:has([aria-disabled='true'])):not(:has([data-readonly]))) {
-          border-color: var(--et-surface-interaction-hover-solid, currentColor);
-        }
-      }
-
-      &:where(:active:not(:has([aria-disabled='true'])):not(:has([data-readonly]))) {
-        border-color: var(--et-surface-interaction-active-solid, currentColor);
-      }
-
-      /* Declared after hover/active so a chosen card stays accented under the cursor — and because the panel
-         carries `etColorInteractive`, that accent is itself the theme's hover/active shade while the pointer
-         is on it, instead of a mix that would read as less chosen than the resting state. */
-      &:where(:has(:is([aria-checked='true'], [aria-checked='mixed']))) {
-        border-color: var(--et-theme-color-primary-solid, currentColor);
-      }
-
-      &:where(:has(:focus-visible)) {
-        border-color: var(--et-theme-color-primary-solid, currentColor);
-        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
-        outline-offset: 2px;
-      }
 
       &:where(:has([aria-disabled='true'])) {
         cursor: not-allowed;
-        opacity: var(--et-choice-field-card-disabled-opacity);
+        opacity: var(--et-selection-card-disabled-opacity);
       }
     }
 
@@ -91,9 +33,9 @@
     .et-choice-field-control-slot > *::after {
       content: '';
       position: absolute;
-      inset: calc(-1 * var(--et-choice-field-card-border-width));
+      inset: calc(-1 * var(--et-selection-card-border-width));
       /* so the hit area is the card's shape, not a rectangle poking out past its rounded corners */
-      border-radius: var(--et-choice-field-card-border-radius);
+      border-radius: var(--et-selection-card-border-radius);
     }
 
     /* The focus ring belongs to the whole panel here, not to the 20px control inside it — two rings, one
@@ -107,8 +49,6 @@
        this an unselected card under the cursor read exactly like a selected one. Muted until chosen, full
        strength once chosen. Both rules stay inside `:where()` so the disabled label colour still wins. */
     .et-choice-field-label-area {
-      flex: 1;
-      min-inline-size: 0;
       color: var(--et-surface-color-muted-solid, currentColor);
     }
 
@@ -124,11 +64,12 @@
       padding-inline-start: 0;
     }
 
+    /* Opacity on top of the shared border/background transition, for the one-unit dim above. */
     &[data-can-animate] .et-choice-field-control {
       transition:
-        border-color 150ms ease,
-        background-color 150ms ease,
-        opacity 150ms ease;
+        border-color var(--et-selection-card-transition-duration) ease,
+        background-color var(--et-selection-card-transition-duration) ease,
+        opacity var(--et-selection-card-transition-duration) ease;
     }
   }
 }

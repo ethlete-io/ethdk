@@ -35,24 +35,6 @@
     initial-value: 10px;
   }
 
-  @property --et-radio-card-padding {
-    syntax: '*';
-    inherits: true;
-    initial-value: 16px;
-  }
-
-  @property --et-radio-card-border-radius {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 10px;
-  }
-
-  @property --et-radio-card-border-width {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 1px;
-  }
-
   et-radio {
     display: flex;
     align-items: flex-start;
@@ -152,87 +134,6 @@
 
     @media (prefers-reduced-motion: reduce) {
       --et-radio-transition-duration: 1ms;
-    }
-
-    /* The card preset: the whole panel is the target, which is what makes it worth having — a 20px circle is a
-       small thing to hit, and a card with a description in it is a large one. cdk shipped this with a hardcoded
-       #2e2e2e background; here it follows the surface and the checked state follows the colour theme. */
-    &:where([data-variant='card']) {
-      /* Label leading, control trailing, which is how a settings row reads. */
-      flex-direction: row-reverse;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--et-radio-card-padding);
-      border-radius: var(--et-radio-card-border-radius);
-      background-color: var(--et-surface-background-solid, transparent);
-      border: var(--et-radio-card-border-width) solid var(--et-surface-border-solid, currentColor);
-
-      .et-radio-content {
-        flex: 1;
-        min-inline-size: 0;
-      }
-
-      /* Same trade as the border: the panel is large enough that the label can carry selection, so a list of
-         cards is scannable without reading every dot. 500 keeps the label above its `<et-description>` now that
-         an unchosen card's label shares the description's muted colour. */
-      .et-radio-label {
-        font-weight: 500;
-        color: var(--et-surface-color-muted-solid, currentColor);
-      }
-
-      &:where([aria-checked='true']) .et-radio-label {
-        color: var(--et-surface-color-solid, currentColor);
-      }
-
-      /* The panel's chrome answers interaction the way a form field's frame does: a neutral border on
-         hover/press, the accent on focus. Every state guard sits in `:where()`, so all of these rules carry the
-         same (element-only) specificity and source order decides between them — which is what lets the checked
-         rule below keep a chosen card's accent border while it is hovered. */
-      @media (hover: hover) {
-        &:where(:hover:not([aria-disabled='true']):not([data-readonly])) {
-          border-color: var(--et-surface-interaction-hover-solid, currentColor);
-        }
-      }
-
-      &:where(:active:not([aria-disabled='true']):not([data-readonly])) {
-        border-color: var(--et-surface-interaction-active-solid, currentColor);
-      }
-
-      /* The border carries the selection, so the panel reads as chosen at a glance rather than only by its dot.
-         Declared after hover/active so a chosen card stays accented under the cursor — and because the host
-         carries `etColorInteractive`, that accent is itself the theme's hover/active shade while the pointer is
-         on it, instead of a mix that would read as less chosen than the resting state. */
-      &:where([aria-checked='true']) {
-        border-color: var(--et-theme-color-primary-solid, currentColor);
-      }
-
-      /* The focus ring belongs to the whole card here, not to the circle inside it. Left outside `:where()`
-         because the circle's own ring (declared for the plain variant, at element+pseudo+class weight) has to
-         lose to the reset below. */
-      &:focus-visible {
-        border-color: var(--et-theme-color-primary-solid, currentColor);
-        outline: 2px solid var(--et-theme-color-primary-solid);
-        outline-offset: 2px;
-
-        .et-radio-circle {
-          outline: none;
-        }
-      }
-
-      /* Scaling a whole panel on press is too much movement; the plain variant's 0.92 is for a 20px circle. */
-      &:active:not([aria-disabled='true']):not([data-readonly]) .et-radio-circle {
-        transform: none;
-      }
-
-      &[data-can-animate] {
-        transition:
-          border-color var(--et-radio-transition-duration) ease,
-          background-color var(--et-radio-transition-duration) ease;
-
-        .et-radio-label {
-          transition: color var(--et-radio-transition-duration) ease;
-        }
-      }
     }
   }
 }

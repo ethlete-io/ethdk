@@ -9,6 +9,7 @@ import {
   ProvideColorDirective,
 } from '@ethlete/core';
 import { ChoiceFieldCardStylesComponent } from './choice-field-card-styles.component';
+import { SelectionCardStylesComponent } from '../selection-card-styles.component';
 import { FormErrorComponent } from '../form-field/form-error.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
@@ -65,6 +66,7 @@ export class ChoiceFieldComponent {
   constructor() {
     effect(() => {
       if (this.variant() === CHOICE_FIELD_VARIANTS.CARD) {
+        this.styleManager.mount(SelectionCardStylesComponent);
         this.styleManager.mount(ChoiceFieldCardStylesComponent);
       }
     });

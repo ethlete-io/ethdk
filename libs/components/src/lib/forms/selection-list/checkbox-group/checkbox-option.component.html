@@ -1,4 +1,4 @@
-<div class="et-checkbox-option-box">
+<div class="et-checkbox-option-box et-selection-card-control">
   <svg class="et-checkbox-option-check" viewBox="0 0 12 10" fill="none">
     <path
       d="M1 5L4.5 8.5L11 1.5"
@@ -9,8 +9,8 @@
     />
   </svg>
 </div>
-<div class="et-checkbox-option-content">
-  <span [attr.id]="optionDirective.labelId()" class="et-checkbox-option-label">
+<div class="et-checkbox-option-content et-selection-card-content">
+  <span [attr.id]="optionDirective.labelId()" class="et-checkbox-option-label et-selection-card-label">
     <ng-content />
   </span>
   <ng-content select="et-description" />
