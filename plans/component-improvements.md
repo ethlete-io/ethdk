@@ -269,24 +269,6 @@ Expanding this, roughly in order of how disruptive each is:
   whether it's a projected slot per step or a fixed description input, and
   whether it's meaningful outside the vertical orientation at all.
 
-## Query devtools: broken on mobile
-
-Layout is a fixed-position overlay (`.et-query-devtools-host { position:
-fixed; inset-inline: 0; inset-block-end: 0; }`) built as a two-pane master-
-detail split with hardcoded minimums: list pane `min-inline-size: 22rem`
-(352px), drawer pane `min-inline-size: 26rem` (416px)
-(`query-devtools.component.css`) - roughly 768px of minimum width before
-any content, wider than most phone viewports on its own. Grep for `@media`
-in this domain returns exactly two hits, both `prefers-reduced-motion` -
-there is no width-based breakpoint anywhere in query-devtools today. The
-only alternate layout is `[data-dock='right']`, a user-chosen dock
-position that already stacks list/detail vertically instead of side by
-side - it just isn't reachable except by manual choice. The cheapest fix
-for "at least not completely broken" is reusing that same stacked layout
-under a `@media (max-width: ...)` query instead of only under the manual
-right-dock attribute, before any deeper redesign of the ~10-tab header
-strip for mobile.
-
 ## Query error: rebuild on banner
 
 `query-error.component` builds its own colored card from scratch -
@@ -354,20 +336,6 @@ gesture code at all, since touch scrolling there is native CSS scroll-snap.
 Consolidating slider and rating onto `dragGestureFrom` first is the
 cleaner win since they're near-identical today; carousel's deadzone/
 threshold semantics differ enough that it may not fold in as cleanly.
-
-## Notification/toast doesn't adapt to mobile width
-
-`notification-stack.component.css` docks a fixed `--et-notification-min-
-width: 300px` / `-max-width: 420px` card to a corner via `position: fixed`
-
-- `data-position` (`bottom-end`, `top-start`, etc.), stacking multiple
-  toasts as plain flex children in document order. Grep for `@media` in the
-  whole notification domain returns only `(hover: hover)` and
-  `(prefers-reduced-motion: reduce)` - no width-based breakpoint anywhere. On
-  a phone that's a small floating card in a corner rather than the common
-  full-width mobile toast pattern; same shape of gap as the overlay
-  controls above and scheduler's header, just nobody's added a breakpoint
-  here yet.
 
 ## Already covered - don't rebuild
 
@@ -553,43 +521,6 @@ today mutually exclusive; a custom `set` op is what joins them.
   preset each.** `fillStrings()` always arms `'short'`, `fillNumbers()`
   always `'zero'`. Once presets randomize, the natural shape is "fill every
   string with «preset»" as a submenu rather than three fixed verbs.
-
-## Tree: multi select selection stacks into a slab
-
-`tree.component.css` already anticipated this - the multi-select block
-(`.et-tree:where([aria-multiselectable]) .et-tree-node`) exists purely to
-weaken the single-select treatment, with a comment saying so ("Multi select
-stacks selected rows into one slab, so it states the selection with a mark
-and keeps the fill and the label untinted"): the accent fill drops from 16%
-to 8% and the `--et-theme-color-ink-solid` label recolor is reverted to
-`inherit`. It didn't go far enough. Rows are flat flex boxes with no margin
-between them, so consecutive selected rows paint one continuous
-`--et-theme-color-primary-solid` band - the per-row `--et-tree-node-radius`
-only rounds the outer corners of each row and is invisible mid-run. Select
-five siblings and you get a solid colored block, not five marked rows.
-
-The SDK's own list-style multi-select controls both resolve this by not
-filling at all:
-
-- `select-option.component.css` states selection **only** through the
-  `.et-select-option-check` icon (opacity 0 → 1, colored
-  `--et-theme-color-primary-solid`); its backgrounds are reserved
-  exclusively for hover / `:active` / keyboard-active. A selected option has
-  no fill in single or multiple mode.
-- `cascader-panel.component.css` does the same in multi mode with a leading
-  `.et-cascader-check` square (a real checkbox shape, also driven by
-  `data-indeterminate`), and lets `[data-selected]` change only ink color and
-  `font-weight: 500`.
-
-Tree already has the mark half of that - the `::after` CSS-drawn checkmark
-on the multi-select block - but it's a **trailing** 4x8px pseudo-element
-rather than a leading check in a reserved slot, so it doesn't read as the
-primary selection signal the way cascader's leading square does. The likely
-fix is dropping the selected fill entirely in multi-select mode (keep fill
-for hover/active only, matching select-option) and promoting the mark:
-leading, checkbox-shaped, in a slot that's reserved whether or not the row
-is selected, so labels don't shift. Single select can keep its current fill -
-one filled row was never the problem.
 
 ## Auth: what the consumer app had to rebuild around the bearer provider
 
@@ -835,6 +766,23 @@ Bugfix pass:
 - **Docs** - the `createGridAdapter` snippet compiles, `grid.md` documents the live
   `initialItems` reconciliation and the imperative API (`restoreState`, `getSerializedState`,
   `addItem`), and `query-forms.md` states that `isResetBy` is transitive.
+
+Narrow-viewport pass:
+
+- **Tree multi select slab** - a multi selectable tree no longer fills a selected row.
+  Selection is a leading 16px check box (`.et-tree-node-check`) rendered on every row in
+  multi mode, so ticking one never shifts its label; the accent fill is now a
+  single-select-only rule. Changeset `tree-multi-select-check-box.md`.
+- **Query devtools below `md`** - `paneAxis` returns `'block'` for a narrow viewport as well
+  as a right dock, and the pane-stacking CSS is keyed on a new `[data-pane-axis]` attribute
+  instead of `[data-dock='right']`. Both header strips scroll sideways instead of wrapping.
+  Changeset `devtools-narrow-viewport-layout.md`.
+- **Toast width** - at `≤480px` the stack spans both edges and the card drops its
+  `min-width: 300px` / `max-width: 420px`, which overflowed a 320px viewport outright.
+  Changeset `notification-narrow-viewport-width.md`.
+- **Query devtools pins** - a pin is keyed on `entry.id` rather than the endpoint
+  (`pins:v1` → `v2`), and a `gone` chip hides tombstones by default.
+  Changeset `devtools-hide-gone-and-per-query-pins.md`.
 
 ## Grid: the resize handles are hard to hit, you move the item instead
 
