@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 5.0.0-next.43
+
+### Minor Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`6bd6057`](https://github.com/ethlete-io/ethdk/commit/6bd6057398465ecd24a2f187321934e12430d127) Thanks [@github-actions](https://github.com/apps/github-actions)! - New `injectFileDownload()` and `createObjectUrlHandle()` in core replace four hand-rolled object URLs. The query devtools exports now append their anchor before clicking it, which Firefox ignored.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`6c95aa0`](https://github.com/ethlete-io/ethdk/commit/6c95aa00bb0df0aa4c3638453a35c4f14a9364eb) Thanks [@github-actions](https://github.com/apps/github-actions)! - A gesture the browser takes away mid-drag now emits `dragCancelled` / `resizeCancelled` instead of `dragEnded`. Grid moves and resizes, table column reorder and column resize revert instead of committing a drop the user never made.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`5008c81`](https://github.com/ethlete-io/ethdk/commit/5008c81d726021d078e87ecb37cfb1d5d4eee6cb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid resize strips grow into the gap - a 14px target at the default gap, with the marker unmoved - via the new `--et-resize-handles-outset`. Touch sizes now key on `any-pointer: coarse`, so a touchscreen laptop gets them too.
+
 ## 5.0.0-next.42
 
 ### Minor Changes

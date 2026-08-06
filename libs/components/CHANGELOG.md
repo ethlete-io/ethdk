@@ -1,5 +1,68 @@
 # Changelog
 
+## 1.0.0-next.40
+
+### Major Changes
+
+- [`ead8ba8`](https://github.com/ethlete-io/ethdk/commit/ead8ba8075abb0f7629acca37413adf5240f62e5) Thanks [@TomTomB](https://github.com/TomTomB)! - A control's own clear, picker-trigger and reveal buttons now render in the form field's suffix slot, so a busy spinner can no longer displace them. **Breaking:** those per-control classes are now `.et-input-clear` / `.et-input-picker-trigger`.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`0e1f7d0`](https://github.com/ethlete-io/ethdk/commit/0e1f7d0176c92574bb10fbd9e7942bd2ae97eded) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `variant="card"` chrome on `et-radio`, `et-checkbox-option` and `et-choice-field` is now one lazily-injected stylesheet with one token set. **Breaking:** `--et-radio-card-*`, `--et-checkbox-option-card-*` and `--et-choice-field-card-*` are now `--et-selection-card-*`.
+
+### Minor Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`86659a1`](https://github.com/ethlete-io/ethdk/commit/86659a1adc3f90c8d8ce4b76ceb955c55aa61b62) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auth: a tab receiving synced tokens now retries its failed queries, a cross-tab logout is a real logout, and the remember-me cookie survives startup. Query devtools: a failed run keeps its status and body.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`c0963d5`](https://github.com/ethlete-io/ethdk/commit/c0963d501ad34962e1583434b22c8304b1e309e6) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-badge` gained a `size` input (`sm | md | lg`) and an icon slot: an element carrying `etIcon` is sized to the badge's font size, on either side of the label via `iconAlignment`.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`9fc5ec5`](https://github.com/ethlete-io/ethdk/commit/9fc5ec5ace959b50402c0688bebf721d69bd4945) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools overrides: type a custom value or paste a copied subtree as a replayed rule, and presets (including the new long-word one) now generate a varied sample per arm instead of one frozen value.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`1d181d7`](https://github.com/ethlete-io/ethdk/commit/1d181d7ecec575a2cae17f42f6914b70b4dd95ac) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a destroyed query stays readable as a tombstone - a muted row the **Gone** chip narrows to - and the repository emits `entry-destroyed` so the panel can say why a cache entry disappeared.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`484b21e`](https://github.com/ethlete-io/ethdk/commit/484b21e0b1f54aa7b8e11e9389a7cb630c6b1326) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-kbd`, which renders a shortcut such as `keys="mod+k"` as keycaps using the current platform's glyphs - `⌘ K` on Apple, `Ctrl K` elsewhere. Pin it with the `platform` input or `KBD_PLATFORM`.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`7081567`](https://github.com/ethlete-io/ethdk/commit/7081567496b2a6416b6c1a74223a278c6a2a2c1d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: pick both ends of a response diff instead of only comparing a run against its predecessor, and raise how many bodies are kept with `provideQueryDevtools({ responseHistory })`.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`08756c3`](https://github.com/ethlete-io/ethdk/commit/08756c32e228a1d68dd0077e1aa535bd6c3f3096) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a **★** on each Queries row pins that endpoint to the top of the list. Pinning sorts rather than filters, so it composes with the client, search and status chips.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`7a63efd`](https://github.com/ethlete-io/ethdk/commit/7a63efdb435e93a046620eb689a4e983463ef743) Thanks [@github-actions](https://github.com/apps/github-actions)! - Drag empty scheduler grid to create an appointment, on week, day and month. The
+  edit surface now opens anchored to what it came from, and full screen below `md`.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`52787ae`](https://github.com/ethlete-io/ethdk/commit/52787ae88fc5a0d3770a330979575e9424769530) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-timeline` / `et-timeline-item` for chronological event lists, with a per-item time slot, projectable markers and a `color` scope.
+
+### Patch Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`6bd6057`](https://github.com/ethlete-io/ethdk/commit/6bd6057398465ecd24a2f187321934e12430d127) Thanks [@github-actions](https://github.com/apps/github-actions)! - New `injectFileDownload()` and `createObjectUrlHandle()` in core replace four hand-rolled object URLs. The query devtools exports now append their anchor before clicking it, which Firefox ignored.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`b81d4bc`](https://github.com/ethlete-io/ethdk/commit/b81d4bc621be7457e2b653b5f6e2fb58a6bf27dc) Thanks [@github-actions](https://github.com/apps/github-actions)! - Form field counter: the over-limit state now comes from the control's own `maxLength` validator instead of a second length check that could disagree with it.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`eb404b8`](https://github.com/ethlete-io/ethdk/commit/eb404b86d7239c6133b69ad0b194bbfe15dc690b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the Queries list hides destroyed queries until the **Gone** chip is on,
+  and a ★ pin now holds one row instead of every query of the same endpoint.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`5953f17`](https://github.com/ethlete-io/ethdk/commit/5953f17d601ab0ba2445ef2a3824ad51b09a0b48) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: below `md` the panel stacks its panes instead of demanding ~48rem of side-by-side width, its header strips scroll rather than wrap, and both resize dividers work by touch.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`c984b8c`](https://github.com/ethlete-io/ethdk/commit/c984b8cc7e71596b0218763f90e1411d3afaf3e4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a `null`/`undefined` value can now be overridden instead of showing an empty menu, and **Reset** appears only where something is armed and clears the whole subtree.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`6c95aa0`](https://github.com/ethlete-io/ethdk/commit/6c95aa00bb0df0aa4c3638453a35c4f14a9364eb) Thanks [@github-actions](https://github.com/apps/github-actions)! - A gesture the browser takes away mid-drag now emits `dragCancelled` / `resizeCancelled` instead of `dragEnded`. Grid moves and resizes, table column reorder and column resize revert instead of committing a drop the user never made.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`1528f13`](https://github.com/ethlete-io/ethdk/commit/1528f130ba0b32e07be26f8510393ae39b3a1588) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: a `minColSpan` wider than the breakpoint's column count now degrades to full width instead of overflowing, edges that cannot resize grow no handles, clearing `initialItems` clears the grid, and reconciling that input no longer emits `layoutChange`.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`cd6c59b`](https://github.com/ethlete-io/ethdk/commit/cd6c59b9a962e6a72d68115a2a8e993a5565362a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Let a grid widget type its own `data` input. `GridComponentRegistration` and
+  `GridItemActionsComponent` now accept a read-only `Signal<TData>`, so a component
+  declaring `input.required<MyPayload>()` registers without a cast - `InputSignal<T>`
+  is invariant in `T` and made every registration need one.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`5008c81`](https://github.com/ethlete-io/ethdk/commit/5008c81d726021d078e87ecb37cfb1d5d4eee6cb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid resize strips grow into the gap - a 14px target at the default gap, with the marker unmoved - via the new `--et-resize-handles-outset`. Touch sizes now key on `any-pointer: coarse`, so a touchscreen laptop gets them too.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`21778c8`](https://github.com/ethlete-io/ethdk/commit/21778c8509f534e5999bc84bf0e91ecbcb2f70b9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Notification: at `480px` and below the stack spans both edges and toasts fill it, instead of a `300px`-minimum card floating in a corner - which overflowed a `320px` viewport outright.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`776e692`](https://github.com/ethlete-io/ethdk/commit/776e69230b990721b9b32e216b1faf4589093013) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: the full-screen open and close animation now clones the origin at the size it renders at, so a badge squeezed by a grid cell or a percentage-sized element no longer jumps to its intrinsic size.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`3ae42ba`](https://github.com/ethlete-io/ethdk/commit/3ae42bafe2f6d0d458aefb3a91a79ea7bad91d49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Password input: the Caps Lock warning icon carries a tooltip, so sighted users get the same explanation screen readers already got.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`317e4e3`](https://github.com/ethlete-io/ethdk/commit/317e4e34bc8672e095b718ac98d87ea06324f7a1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tree: a disabled row no longer lights up on hover or press in a multi selectable tree, and now mutes as a whole the way a disabled select option does.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`5b1966c`](https://github.com/ethlete-io/ethdk/commit/5b1966ca33480cc16ee39d072eea31a7424e4de6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tree: a multi selectable tree states selection with a leading check box instead of a fill, so adjacent selected rows no longer paint one continuous accent slab. Single select is unchanged.
+
 ## 1.0.0-next.39
 
 ### Minor Changes

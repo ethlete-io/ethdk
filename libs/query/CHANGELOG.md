@@ -1,5 +1,41 @@
 # @ethlete/query
 
+## 6.0.0-next.29
+
+### Minor Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`4c6c06f`](https://github.com/ethlete-io/ethdk/commit/4c6c06f072830999cf9f06730181833090db4537) Thanks [@github-actions](https://github.com/apps/github-actions)! - A refresh that fails for good now ends the session instead of leaving it looking valid - override with `onRefreshFailure`. A 401 in a follower tab asks the leader to refresh, and is no longer throttled by `minRefreshInterval`.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`d17e79d`](https://github.com/ethlete-io/ethdk/commit/d17e79db20c93f3e04033feb8e88f0db9efce6b6) Thanks [@github-actions](https://github.com/apps/github-actions)! - The bearer auth provider now publishes `sessionStatus()` (`unknown | restoring | authenticated | anonymous`) and `sessionEndCause()`, and `logout()` takes a cause. Only the most recent token-issuing execution applies its tokens and writes `executionState()`, across registry keys.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`86659a1`](https://github.com/ethlete-io/ethdk/commit/86659a1adc3f90c8d8ce4b76ceb955c55aa61b62) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auth: a tab receiving synced tokens now retries its failed queries, a cross-tab logout is a real logout, and the remember-me cookie survives startup. Query devtools: a failed run keeps its status and body.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`9fc5ec5`](https://github.com/ethlete-io/ethdk/commit/9fc5ec5ace959b50402c0688bebf721d69bd4945) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools overrides: type a custom value or paste a copied subtree as a replayed rule, and presets (including the new long-word one) now generate a varied sample per arm instead of one frozen value.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`1d181d7`](https://github.com/ethlete-io/ethdk/commit/1d181d7ecec575a2cae17f42f6914b70b4dd95ac) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a destroyed query stays readable as a tombstone - a muted row the **Gone** chip narrows to - and the repository emits `entry-destroyed` so the panel can say why a cache entry disappeared.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`7081567`](https://github.com/ethlete-io/ethdk/commit/7081567496b2a6416b6c1a74223a278c6a2a2c1d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: pick both ends of a response diff instead of only comparing a run against its predecessor, and raise how many bodies are kept with `provideQueryDevtools({ responseHistory })`.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`089d41b`](https://github.com/ethlete-io/ethdk/commit/089d41bc3180d09a0d8c0cc0da1be1ba0219cd1b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query stack: a custom `transform` is now typed with the `null` responses it actually receives (a compile-time break for callbacks that assumed otherwise), and `lastQuery` no longer points at a query `maxQueries` just evicted.
+
+### Patch Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`b31de2f`](https://github.com/ethlete-io/ethdk/commit/b31de2ff3fa0ceaea22b3f314ee4ba5ef44a6cd8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bearer auth multi-tab sync: the broadcast channel and the leader lock are namespaced by the provider's `name`, so two providers on one origin no longer share a token channel and one leader.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`b31de2f`](https://github.com/ethlete-io/ethdk/commit/b31de2ff3fa0ceaea22b3f314ee4ba5ef44a6cd8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bearer auth: each registry key now reuses one query across executions, so logins and token refreshes stop leaking an injector, an effect and cached credentials per attempt.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`16e2f77`](https://github.com/ethlete-io/ethdk/commit/16e2f77e9ae9c89bda41f744195c4233e62bc06d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bearer auth: a response the `extractTokens` step rejects now puts `executionState` into `error` instead of reporting a `success` that never authenticated the tab.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`c984b8c`](https://github.com/ethlete-io/ethdk/commit/c984b8cc7e71596b0218763f90e1411d3afaf3e4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a `null`/`undefined` value can now be overridden instead of showing an empty menu, and **Reset** appears only where something is armed and clears the whole subtree.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`089d41b`](https://github.com/ethlete-io/ethdk/commit/089d41bc3180d09a0d8c0cc0da1be1ba0219cd1b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Paged query stack: `canFetchNextPage` / `canFetchPreviousPage` are now false while a page is loading, and `isFirstPageLoaded` reports whether page 1 is loaded instead of always being true.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`69823ed`](https://github.com/ethlete-io/ethdk/commit/69823ed509254101c31df0ffd429171a40f7325b) Thanks [@github-actions](https://github.com/apps/github-actions)! - `defineQueryForm`: `isResetBy` resets now cascade transitively, so changing `country` clears `league` **and** the `team` that depends on it, in one committed change.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`fd41d42`](https://github.com/ethlete-io/ethdk/commit/fd41d42d1f7c2858b7ea19e1936ec13ada4570bc) Thanks [@github-actions](https://github.com/apps/github-actions)! - `refreshQueriesInUse()` and `invalidateQueries()` now only re-fire reads, so a cached auth `POST` is never replayed. GraphQL queries over `POST` keep refreshing.
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`8847481`](https://github.com/ethlete-io/ethdk/commit/8847481e6ef505754c56b5c1ab9d3ca19ed4f784) Thanks [@github-actions](https://github.com/apps/github-actions)! - Web socket rooms: joins are counted, so one subscriber unmounting no longer leaves a room the others still hold - they used to silently stop receiving messages.
+
 ## 6.0.0-next.28
 
 ### Minor Changes

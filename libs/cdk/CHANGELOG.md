@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.28
+
+### Patch Changes
+
+- [#3048](https://github.com/ethlete-io/ethdk/pull/3048) [`ee3bd8c`](https://github.com/ethlete-io/ethdk/commit/ee3bd8cae84be832da2ead4543b5440dd69d4e82) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: the full-screen open and close animation now clones the origin at the size it renders at, so a percentage-sized or ancestor-squeezed element no longer jumps to its intrinsic size.
+
 ## 5.0.0-next.27
 
 ### Patch Changes
