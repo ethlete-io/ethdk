@@ -20,7 +20,8 @@ Ranked by value per unit of risk, not by size.
 > **Shipped 2026-08-06.** The three auth items this list opened with - `sessionStatus` + a logout
 > cause, the snapshot-vs-`executionState` docs fix, and the cross-key execution race - are done in
 > one pass and moved to "Already fixed" in `component-improvements.md`. `withAuthGuard()` (was #7)
-> is now unblocked; it was sequenced deliberately after `sessionStatus`.
+> is now unblocked; it was sequenced deliberately after `sessionStatus`. **Badge `size` + icon
+> slot** (was #5) shipped the same day.
 
 1. **Selection list: one card presentation instead of three** - `M`, `C`.
    `radio.component.css:160` and `checkbox-option.component.css:176` are the same ~75 lines with
@@ -48,16 +49,12 @@ Ranked by value per unit of risk, not by size.
    name in sync with the redirect by hand. High value, and now unblocked - `sessionStatus()` ships,
    so the guard has the thing to wait on.
 
-5. **Badge: `size` input and an icon slot** - `S`, `A`.
-   The cheapest component win in the file. Tooltip and toggletip already compose as directives on
-   the trigger, so the real gap is exactly these two.
-
-6. **Scheduler's cheap mobile trio** - `S` each, `A`.
+5. **Scheduler's cheap mobile trio** - `S` each, `A`.
    Add-appointment as a FAB below a breakpoint, the today button as an icon button at narrow
    widths, and swipe-to-navigate. All three reuse primitives that already exist and that scheduler
    simply doesn't import (`floating-action.directive.ts`, `SwipeTracker` in `libs/core`).
 
-7. **Query error rebuilt on banner** - `M`, `C`.
+6. **Query error rebuilt on banner** - `M`, `C`.
    Identical `color-mix` surface formula, independently reimplemented icon slot, heading,
    description and action row; banner's `type="error"` already forces `injectErrorTheme()`.
    Needs two things layered on: the violation `<ul>` and the retry-only-if-`canRetry` conditional.
@@ -73,7 +70,6 @@ Ranked by value per unit of risk, not by size.
 | Scheduler: swipe navigation                       | `A` | `SwipeTracker` exists, used by drag-handle                                                 |
 | Scheduler: richer sub-appointment list            | `A` | Start time + existing chain-count badge; don't grow it into a second card                  |
 | Scheduler: agenda connector lines                 | `A` | Draws off the `depth`/`data-nested` the agenda template already emits                      |
-| Badge: `size` + icon slot                         | `A` | See #5                                                                                     |
 | Accordion: border/label transition                | `A` | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported |
 | Progress steps: success/warning/error states      | `A` | Mirror `BANNER_TYPES`, don't invent colour language                                        |
 | Colour input: hex/RGB validators                  | `A` | None exist anywhere today; the `#rrggbb` claim is a doc comment only                       |
@@ -88,7 +84,7 @@ Ranked by value per unit of risk, not by size.
 | Selection card dedupe                              | `C`     | See #1                                                                                                  |
 | Form field suffix unification                      | `C`     | See #2                                                                                                  |
 | Slider + rating → `dragGestureFrom`                | `C`     | See #3                                                                                                  |
-| Query error on banner                              | `C`     | See #7                                                                                                  |
+| Query error on banner                              | `C`     | See #6                                                                                                  |
 | Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                               |
 | Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types           |
 | Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                       |

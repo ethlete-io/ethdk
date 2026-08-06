@@ -95,16 +95,6 @@ surface. Neither avatar nor avatar-group has any `:hover` today - keep it
 that way for the plain preview-stack case (all avatars shown, no
 interaction), and only add hover once directive-usable avatars need it.
 
-## Badge
-
-One dimension today, `variant` (`filled`/`tonal`/`outline`) plus `color` -
-no `size` input. "Icon support" is currently just `<ng-content />`; nothing
-stops projecting an `et-icon` now, but there's no dedicated slot/input
-making sizing a documented contract. Tooltip/toggletip integration needs no
-new plumbing on badge's side - both already attach as directives on the
-trigger (`[etTooltip]`, `[etToggletip]`), so `<et-badge etTooltip="...">`
-composes today. The real gap is `size` and an icon slot on badge itself.
-
 ## Buttons
 
 Button's CSS has no `data-color`/`data-theme` switch - color always comes
@@ -496,6 +486,15 @@ The three auth items the triage opened with (2026-08-06, one pass):
 - **The snapshot-vs-`executionState` docs fix** - `apps/docs/query/auth.md` now has a "Don't drive
   a form off `executionState()`" section. No API was needed; `queries.<key>.snapshot` already was
   the per-attempt path.
+
+**Badge: `size` + icon slot** (2026-08-06) - `size` is `sm | md | lg`, and the icon slot is
+button's exact pattern (`<ng-content select="[etIcon]" />` through an `ngTemplateOutlet`, so one
+projected icon can render on either side), with `iconAlignment` alongside it. Two things worth not
+rediscovering. The stylesheet emits **no `md` block** - `md` _is_ the `@property` initial values,
+and because the badge tokens are `inherits: true`, emitting one would put a rule on the element
+that beats an ancestor's `--et-badge-font-size` override. Button does emit its `md` block and has
+that flaw. And the badge's `variant` handling was already correct; the "no `size`" gap was the only
+real one - tooltip/toggletip compose as directives on the badge today and needed nothing.
 
 From the merged `opportunities.md` (its "New components", "DX / tooling", "Next major" and
 "Tech debt" sections were almost entirely shipped). Each note below is kept for the premise
