@@ -39,6 +39,22 @@ const queryAt = <T>(queries: T[], index: number): T => {
   return q;
 };
 
+type StackQuery = {
+  subtle: {
+    setResponse: (response: PagedArgs['response']) => void;
+    setLoading: (loading: { executeTime: number; progress: null } | null) => void;
+  };
+};
+
+/** Settles a page the way a real response would - `setResponse` alone leaves the query loading. */
+const settle = (query: StackQuery, response: PagedArgs['response']) => {
+  query.subtle.setResponse(response);
+  query.subtle.setLoading(null);
+};
+
+/** Puts a settled page back into flight, which is what a re-execution does: the response stays. */
+const refresh = (query: StackQuery) => query.subtle.setLoading({ executeTime: 0, progress: null });
+
 describe('createPagedQueryStack', () => {
   let client: ReturnType<typeof createQueryClient>;
   let queryCreator: ReturnType<typeof createQueryCreator<PagedArgs>>;
@@ -82,9 +98,45 @@ describe('createPagedQueryStack', () => {
       const stack = makeStack();
       TestBed.tick();
 
-      queryAt(stack.queries(), 0).subtle.setResponse(makeResponse(1, 3));
+      settle(queryAt(stack.queries(), 0), makeResponse(1, 3));
 
       expect(stack.canFetchNextPage()).toBe(true);
+      expect(stack.canFetchPreviousPage()).toBe(false);
+    });
+  });
+
+  it('canFetchNextPage should be false while a page is loading', () => {
+    TestBed.runInInjectionContext(() => {
+      const stack = makeStack();
+      TestBed.tick();
+
+      settle(queryAt(stack.queries(), 0), makeResponse(1, 3));
+      expect(stack.canFetchNextPage()).toBe(true);
+
+      refresh(queryAt(stack.queries(), 0));
+
+      expect(stack.loading()).toBe(true);
+      expect(stack.canFetchNextPage()).toBe(false);
+    });
+  });
+
+  it('canFetchPreviousPage should be false while a page is loading', () => {
+    TestBed.runInInjectionContext(() => {
+      const stack = TestBed.runInInjectionContext(() =>
+        createPagedQueryStack({
+          queryCreator,
+          responseNormalizer: normalizer,
+          args: (page) => ({ queryParams: { page } }),
+          initialPage: 3,
+        }),
+      );
+      TestBed.tick();
+
+      settle(queryAt(stack.queries(), 0), makeResponse(3, 5));
+      expect(stack.canFetchPreviousPage()).toBe(true);
+
+      refresh(queryAt(stack.queries(), 0));
+
       expect(stack.canFetchPreviousPage()).toBe(false);
     });
   });
@@ -94,7 +146,7 @@ describe('createPagedQueryStack', () => {
       const stack = makeStack();
       TestBed.tick();
 
-      queryAt(stack.queries(), 0).subtle.setResponse(makeResponse(1, 1));
+      settle(queryAt(stack.queries(), 0), makeResponse(1, 1));
 
       expect(stack.canFetchNextPage()).toBe(false);
     });
@@ -109,6 +161,49 @@ describe('createPagedQueryStack', () => {
 
       expect(stack.isLastPageLoaded()).toBe(true);
       expect(stack.isFirstPageLoaded()).toBe(true);
+    });
+  });
+
+  it('isFirstPageLoaded should be false when the stack starts above page 1', () => {
+    TestBed.runInInjectionContext(() => {
+      const stack = TestBed.runInInjectionContext(() =>
+        createPagedQueryStack({
+          queryCreator,
+          responseNormalizer: normalizer,
+          args: (page) => ({ queryParams: { page } }),
+          initialPage: 5,
+        }),
+      );
+      TestBed.tick();
+
+      settle(queryAt(stack.queries(), 0), makeResponse(5, 10));
+
+      expect(stack.isFirstPageLoaded()).toBe(false);
+      expect(stack.canFetchPreviousPage()).toBe(true);
+    });
+  });
+
+  it('isFirstPageLoaded should be true once page 1 has been fetched from above', () => {
+    TestBed.runInInjectionContext(() => {
+      const stack = TestBed.runInInjectionContext(() =>
+        createPagedQueryStack({
+          queryCreator,
+          responseNormalizer: normalizer,
+          args: (page) => ({ queryParams: { page } }),
+          initialPage: 2,
+        }),
+      );
+      TestBed.tick();
+
+      settle(queryAt(stack.queries(), 0), makeResponse(2, 10));
+      stack.fetchPreviousPage();
+      TestBed.tick();
+
+      // A previous page is prepended, so the new query is index 0.
+      settle(queryAt(stack.queries(), 0), makeResponse(1, 10));
+
+      expect(stack.isFirstPageLoaded()).toBe(true);
+      expect(stack.canFetchPreviousPage()).toBe(false);
     });
   });
 

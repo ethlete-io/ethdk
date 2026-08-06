@@ -55,6 +55,8 @@ const postPages = createPagedQueryStack({
 
 The paged stack exposes `items`, `loading`, `error`, `isFirstLoad`, `canFetchNextPage` / `canFetchPreviousPage`, `isLastPageLoaded` / `isFirstPageLoaded` and `maxPagination` / `minPagination`, plus:
 
+`canFetchNextPage` / `canFetchPreviousPage` are also `false` while any page is loading - including a refresh of an already loaded page - so a "load more" button bound to them goes quiet until the stack settles. `isFirstPageLoaded` means page 1 is in the stack, which a stack started at a higher `initialPage` only reaches by fetching backwards.
+
 - `fetchNextPage()` / `fetchPreviousPage()`
 - `reset({ initialPage? })`
 - `execute({ where?, allowCache? })` - `where: (item) => boolean` selectively re-executes the pages containing matching items (plus their neighbors), e.g. after editing one row.

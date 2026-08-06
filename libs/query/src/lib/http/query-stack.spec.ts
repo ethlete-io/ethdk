@@ -231,6 +231,35 @@ describe('createQueryStack', () => {
         expect(stack.queries().some((q) => q.id() === firstQueryId)).toBe(true);
       });
     });
+
+    it('should keep lastQuery inside the stack when the newest query is evicted', () => {
+      TestBed.runInInjectionContext(() => {
+        const queryCreator = createQueryCreator(undefined, {
+          client,
+          method: 'GET',
+          route: '/posts/:postId',
+        });
+
+        const postId = signal(1);
+
+        const stack = createQueryStack({
+          queryCreator,
+          args: () => ({ pathParams: { postId: postId().toString() } }),
+          append: true,
+          maxQueries: 2,
+          removeStrategy: 'newest',
+        });
+
+        TestBed.tick();
+        postId.set(2);
+        TestBed.tick();
+        postId.set(3);
+        TestBed.tick();
+
+        expect(stack.queries()).toHaveLength(2);
+        expect(stack.queries()).toContain(stack.lastQuery());
+      });
+    });
   });
 
   describe('deduplication', () => {
@@ -451,6 +480,33 @@ describe('createQueryStack', () => {
         });
 
         expect(stack.response()).toBeDefined();
+      });
+    });
+
+    it('should hand a custom transform the nulls of queries that have not settled', () => {
+      TestBed.runInInjectionContext(() => {
+        const queryCreator = createQueryCreator<{ response: string[] }>(undefined, {
+          client,
+          method: 'GET',
+          route: '/posts/:postId',
+        });
+
+        const seen: (string[] | null)[][] = [];
+
+        const stack = createQueryStack({
+          queryCreator,
+          args: () => ({ pathParams: { postId: '1' } }),
+          transform: (responses) => {
+            seen.push(responses);
+
+            return responses.filter((r) => !!r).flat();
+          },
+        });
+
+        TestBed.tick();
+
+        expect(stack.response()).toEqual([]);
+        expect(seen.at(-1)).toEqual([null]);
       });
     });
 

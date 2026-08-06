@@ -359,7 +359,7 @@ export const createPagedQueryStack = <
   const isFirstPageLoaded = computed(() => {
     const min = minPagination();
 
-    return min ? loadedMinPage() === min.currentPage : false;
+    return min ? loadedMinPage() === 1 : false;
   });
 
   const isLastPageLoaded = computed(() => {
@@ -465,14 +465,16 @@ export const createPagedQueryStack = <
   const canFetchPreviousPage = computed(() => {
     const currentMinPagination = minPagination();
 
-    if (!currentMinPagination) return false;
+    if (!currentMinPagination || stack.anyLoading()) return false;
 
     return loadedMinPage() > 1;
   });
   const canFetchNextPage = computed(() => {
     const currentMaxPagination = maxPagination();
 
-    return currentMaxPagination ? loadedMaxPage() < currentMaxPagination.totalPages : false;
+    if (!currentMaxPagination || stack.anyLoading()) return false;
+
+    return loadedMaxPage() < currentMaxPagination.totalPages;
   });
 
   const items = computed(() => {

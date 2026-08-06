@@ -156,8 +156,10 @@ export type CreateQueryStackOptions<
 
   /**
    * Transforms the responses of all queries in the stack. Useful for merging or filtering responses.
+   * A response is `null` while its query is loading or errored, so a transform runs on nulls before
+   * anything has settled.
    */
-  transform?: (responses: ResponseType<QueryArgsOf<TCreator>>[]) => TTransform;
+  transform?: (responses: (ResponseType<QueryArgsOf<TCreator>> | null)[]) => TTransform;
 
   /**
    * If true, prevents creating queries with identical args.
@@ -292,9 +294,17 @@ export const createQueryStack = <
         }
 
         queries.set(finalQueries);
-        lastQuery.set(lastAppendedQuery);
 
-        return lastAppendedQuery;
+        // After the eviction, not before: `removeStrategy: 'newest'` destroys the query `appendFn`
+        // just returned, and `lastQuery` must never point at a query that is no longer in the stack.
+        const last =
+          lastAppendedQuery && finalQueries.includes(lastAppendedQuery)
+            ? lastAppendedQuery
+            : (finalQueries[finalQueries.length - 1] ?? null);
+
+        lastQuery.set(last);
+
+        return last;
       } else {
         const keyFn = argsKeyFn ?? ((a) => JSON.stringify(a));
         const newArgsKeys = new Set(newArgsArray.map((a) => keyFn(a)));
