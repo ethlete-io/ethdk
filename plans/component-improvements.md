@@ -1047,3 +1047,105 @@ The app side of that is the app's business, but the SDK can stop leading: accept
 predicate (`shouldAutoLogin: (url: string) => boolean`) alongside the string list,
 so a consumer can match on the router's parsed URL instead of on substrings of a
 path.
+
+## Query forms: the signals rewrite dropped the reset cascade
+
+`fut-frontend` has 51 live uses of the class-based `QueryForm`
+(`libs/query/src/lib/query-form/query-form.ts`), none of `defineQueryForm`
+(`libs/query/src/lib/query-form-signals/query-form-signals.ts`), so the successor
+has never been exercised against the app that would migrate onto it. The field
+factories are at full parity - every `*QueryField` class has a `*QueryField()`
+function, sharing the same transforms out of `query-form/query-form.utils.ts` -
+and `libs/components` already binds signal-forms in 82 files, so neither the field
+vocabulary nor the control binding is what blocks a migration. The `isResetBy`
+graph is.
+
+The legacy form resolves resets **transitively**. `_handleQueryFormResets`
+(`query-form.ts:523`) writes the reset field through `control.setValue()`, flags
+`didResetValues`, and pushes `didValueChanges$` - which re-enters
+`handleFormChange()` and runs the whole comparison again against the newly reset
+value. A field reset in pass one therefore counts as "changed" in pass two and can
+reset a third field. `changedFieldsInLastResetLoop` exists purely to swallow the
+intermediate `_changes$` emissions, so the graph settles before a single committed
+change is published - one query execution, not one per hop.
+
+`defineQueryForm` resolves them in **one pass**. `flush()`
+(`query-form-signals.ts:350`) computes `changedKeys` once from committed → live,
+then `applyResets` (line 318) tests every field's `isResetBy` against that frozen
+list. Resets are written into the local `next` object and never re-enter the
+comparison, so a reset can never trigger another reset.
+
+Verified with a throwaway spec (added, run, deleted) over `country → league → team`,
+where `league` is `isResetBy: ['country']` and `team` is `isResetBy: ['league']`.
+Seed all three, then change `country` alone:
+
+- legacy `QueryForm` → `{ country: 'en', league: null, team: null }`, and it
+  publishes exactly one committed value (the intermediate passes are suppressed,
+  as designed).
+- `defineQueryForm` → `{ country: 'en', league: null, team: 'bvb' }`. `team` keeps
+  a value that is no longer reachable from the selected country, and it is sent to
+  the API on the next request.
+
+The app has been papering over this without naming it: `player-overview.component.ts:192`
+and `step-select-player.component.ts:166` both declare
+`isResetBy: ['country', 'league', 'gender']` on a field whose only direct dependency
+is `league` - the transitive closure, written out by hand. That workaround happens to
+be exactly what the new form needs, which is why nobody has hit it yet, but it is
+load-bearing and undocumented. `apps/docs/query/query-forms.md:78` describes
+`isResetBy` as "sibling field(s) whose change resets this field to its default" and
+says nothing either way.
+
+The fix is to iterate `applyResets` to a fixpoint - re-derive `changedKeys` after each
+pass and repeat until nothing changes, with an iteration cap for a cyclic graph (which
+the legacy form also never guarded, it just converged because a field already at its
+default stops re-triggering). The property to preserve is the one the legacy form works
+hard for: the cascade must settle before `committed` is written once, or every hop
+becomes another query execution.
+
+## Auth: `executionState: 'success'` does not mean the session started
+
+`canMatchAuthenticated` in the consumer's `libs/domain/hub/src/lib/hub.routes.ts` is
+19 lines of guard carrying three comments, and each one is an SDK gap rather than an
+app decision.
+
+**The SDK ships no route guard at all.** There is no `CanMatchFn`, `CanActivateFn` or
+`createUrlTree` anywhere in `libs/query/src` or `libs/core/src`, so every app that uses
+the bearer provider hand-rolls "wait for auth to settle, redirect to login, come back
+to the attempted URL". The consumer's version encodes the return URL under a param name
+it must keep manually in sync with `redirectToPlatform()` in `auth-flow.ts` - a comment
+says so explicitly. A `withAuthGuard()`-style helper that owns both halves of that
+contract is the obvious missing piece.
+
+**"Has auth settled?" is now reimplemented twice in the same app.** The `ready` computed
+in the guard derives it from `executionState()?.state`, and
+`libs/domain/auth/src/lib/services/app-initialized.service.ts` derives the same thing
+the same way to gate the whole template. Both reconstruct a primitive the provider does
+not expose. This is the second independent witness for the `sessionStatus` idea in the
+section above - it is not one app's quirk, it is the same missing signal being rebuilt
+wherever someone needs to know whether the startup attempt has finished.
+
+**The `success` state can mean "not authenticated", permanently.** Two separate effects
+in `setupBearerQueryRegistry` watch the same auth response: the one created per builder
+at registry setup (`bearer-auth-provider.ts:384`) calls `applyTokens`, and the one created
+inside `execute()` (line 422) sets `executionState`. Only the first is wrapped in
+`try/catch` - when `extractTokens` throws, it logs in dev mode and swallows, while the
+second still sets `{ type: 'login', state: 'success', response }`. Verified with a
+throwaway spec: with a throwing `extractTokens`, `executionState` reports `success` and
+`isAuthenticated()` stays `false` on every subsequent tick, indefinitely.
+
+That combination is fatal for the guard as written. `ready` returns
+`authProvider.isAuthenticated()` when the state is `success`, so it never becomes true,
+the guard never resolves, and the route never matches - a blank screen whose only trace
+is a dev-mode `console.error`. The state machine conflates "the HTTP call returned 2xx"
+with "a session exists", and the discriminated union invites exactly the reading the
+consumer gave it. Failing token extraction should put the execution into `error`; nothing
+about it succeeded.
+
+One claim in that file did **not** reproduce. The comment on `ready` says the tokens are
+applied "in a separate effect that can still be pending for one tick after `executionState`
+flips to `success`". On a plain login flush, `executionState: success` and
+`isAuthenticated(): true` land in the same tick - the token effect is created first at
+registry setup and Angular runs effects in creation order, so it always wins. The
+`tokenSeed` path applies tokens synchronously before setting the state, too. Whatever the
+author actually saw, that ordering is not it, and the extra `isAuthenticated()` condition
+is what turns the extraction failure above into a hang instead of a redirect.
