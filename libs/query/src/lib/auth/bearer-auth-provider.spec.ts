@@ -522,6 +522,41 @@ describe('createBearerAuthProvider', () => {
         });
       });
     });
+
+    it('should report an error executionState when the response carries no usable tokens', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: () => {
+              throw new Error('no tokens in here');
+            },
+          }),
+        ],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.queries.login.execute({ body: { username: 'test' } });
+        const req = httpTesting.expectOne('https://api.example.com/auth/login');
+        req.flush({ token: 'access-123', refresh_token: 'refresh-456' });
+        TestBed.tick();
+
+        const state = provider.executionState();
+
+        expect(state?.state).toBe('error');
+        expect(provider.isAuthenticated()).toBe(false);
+      });
+    });
   });
 
   describe('logout', () => {

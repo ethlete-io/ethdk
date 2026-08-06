@@ -23,6 +23,7 @@ import {
   authExtractTokensResponseMissingRefreshToken,
   authExtractTokensResponseNotObject,
   authProviderFeatureUsedMultipleTimes,
+  createQueryErrorResponse,
   Query,
   QueryArgs,
   QueryClient,
@@ -399,6 +400,11 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
 
     const extractTokens = builder.config.extractTokens ?? defaultExtractTokens;
 
+    // A 2xx whose body carries no usable tokens is a failed execution, not a successful one - the
+    // state effect below reads this so it cannot report `success` for an attempt that left the tab
+    // unauthenticated.
+    const extractionError = signal<QueryErrorResponse | null>(null);
+
     effect(() => {
       const snapshot = querySnapshot();
       if (!snapshot) return;
@@ -410,8 +416,11 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       if (response && !loading && !error) {
         try {
           const tokens = extractTokens(response);
+          extractionError.set(null);
           applyTokens(tokens.accessToken, tokens.refreshToken);
         } catch (extractError) {
+          extractionError.set(createQueryErrorResponse(extractError));
+
           if (isDevMode()) {
             console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
           }
@@ -435,7 +444,13 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       if (error) {
         executionState.set({ type, state: 'error', error });
       } else if (response) {
-        executionState.set({ type, state: 'success', response });
+        const failedExtraction = extractionError();
+
+        if (failedExtraction) {
+          executionState.set({ type, state: 'error', error: failedExtraction });
+        } else {
+          executionState.set({ type, state: 'success', response });
+        }
       }
     });
 
@@ -447,6 +462,7 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
     const execute = (args?: RequestArgs<QueryArgs>, options?: { triggeredBy?: string }) => {
       query ??= builder.config.queryCreator({ onlyManualExecution: true, injector });
 
+      extractionError.set(null);
       query.execute({ args, options });
       const snapshot = query.createSnapshot();
 
