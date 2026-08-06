@@ -1,17 +1,76 @@
 ---
 name: figma-export
-description: Read a Figma "copy as CSS" export and reconcile a component against it - parsing the export's layer tree, knowing which of its numbers are authoritative, and measuring the real rendered result against them headlessly. Use whenever a design export (a .css dump plus a .png frame) is dropped next to a component and the component has to be matched to it.
+description: Reconcile a component against a Figma export - which exports to ask the designer for (an .svg frame and its "copy as CSS" dump), how to dump the geometry out of each, which of their numbers are authoritative, and how to measure the real rendered result against them headlessly. Use whenever a design export is dropped next to a component and the component has to be matched to it.
 kind: skill
 scope: both
 ---
 
 # Reconcile a component against a Figma export
 
-A "copy as CSS" export is a flat `.css` dump of a frame's whole layer tree, usually paired
-with a `.png` of the same frame. Treat the pair as one spec: the PNG tells you the
-**structure**, the CSS tells you the **numbers**. Neither tells you the colours.
+Three things arrive from Figma, and each answers a different question:
+
+| Export                    | Gives you                                                                     | Cannot tell you                             |
+| ------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------- |
+| **`.svg`** (Export frame) | Exact geometry with nesting, exact fills, and a picture once you rasterise it | Layer names, auto-layout intent, font sizes |
+| **`.css`** (Copy as CSS)  | Named layers, auto-layout properties, typography metrics, design-token names  | Any hierarchy at all — the dump is flat     |
+| **`.png`** (a screenshot) | Figma's own blue measurement overlays, and what the designer chose to frame   | Nothing machine-readable                    |
+
+**Ask for the `.svg` and the `.css` together, and do not start until you have both.** The two
+are complements, not alternatives: the SVG is the only export you can both look at and
+measure, and the CSS is the only one that names layers and records type. A PNG earns its place
+only when it is a _screenshot_ carrying dev-mode annotations — a PNG _render_ of the same frame
+adds nothing the SVG does not. None of the three tells you the colours.
+
+Say what you are missing and what it would settle, in one line — "I have the SVG; the `.css`
+export would give me the font sizes and whether these cards Hug or Fill" — and wait. Every
+number in your diff has to trace back to something in an export or to a token; a plausible
+`17px` you inferred from a 12px outlined glyph is worse than an open question, because it
+survives review as though it had been specified. If the pair genuinely cannot be produced, say
+in the write-up which numbers are therefore guesses.
 
 ## 1. Read the export before touching code
+
+### From an `.svg` — look at it, then measure it
+
+Rasterise it and actually open the image. Figma outlines text on export, so this needs no
+webfonts and matches the frame exactly:
+
+```bash
+magick -density 144 <export.svg> <scratch>/frame.png    # then read frame.png
+```
+
+(If the render looks wrong, ImageMagick fell back to its own SVG renderer — check for
+`RSVG` in `magick -list format | grep SVG`, or screenshot the file in Playwright instead.)
+
+Then dump the geometry with {%resource:dump-figma-svg.py%} — every shape in document order,
+indented by group nesting, with absolute coordinates:
+
+```bash
+python3 dump-figma-svg.py <export.svg>
+```
+
+It closes with two summaries worth reading first: repeated rect sizes, which say _one
+component rendered N times_ where the CSS dump would show N unrelated frames; and the measured
+gaps between rects that share a top edge, which is the auto-layout gap without having to
+believe a label.
+
+What the SVG does **not** carry:
+
+- **Layer names.** Nothing is called `Card` or `Badge`; you match shapes to the picture.
+- **Auto-layout intent.** `Hug` vs `Fixed` vs `Fill` is gone, so a width you read off is the
+  width _at this one size_, not a rule. Derive padding and gaps from the coordinates, and
+  treat a child width as content-driven until the picture or the CSS dump says otherwise.
+- **Typography.** Outlined text is a `<path>`; the dumper labels the wide ones `text?` and
+  boxes them, which places a text run but tells you nothing about `font-size` or
+  `line-height`. If the designer exported with _Outline Text_ off, `<text>` nodes survive and
+  the dumper prints their font metrics and strings — take them when you get them.
+
+Two numbers to read carefully: a **stroke is centred**, so a 32px circle with a 1px border
+exports as `31 × 31` at `.5` offsets — add the stroke width back before comparing. And an
+**outlined glyph box is the ink**, not the line box: a 17px/20px title measures ~12px tall,
+the same cap-trim the CSS dump reports, so never match a text node's height.
+
+### From a `.css` dump — names, intent and type metrics
 
 Never grep the raw file — its layout defeats naive parsing (see the traps below). Run
 {%resource:dump-figma-layers.py%}:
@@ -25,11 +84,10 @@ Then work out the frame's box model top-down — outer frame width and padding, 
 child's `width`/`gap`/`flex-grow` — and write the ladder down before you start editing, so you
 can tell a deliberate design decision from a Figma artefact.
 
-### Always open the `.png` — the CSS alone cannot tell you the shape
+### Whatever you have, look at the picture before you decide what to build
 
-The export is a **flat** sequence of layers with no nesting whatsoever, so the tree simply is
-not in it. Read the image for everything structural, and read it before you decide what to
-build:
+The CSS dump is a **flat** sequence of layers with no nesting whatsoever, so the tree is not in
+it; the SVG has the tree but no names. The image is what disambiguates:
 
 - **Hierarchy and reading order** — which layer contains which. The only other clue in the CSS
   is `order:` inside a sibling run, which does not cross frames.
@@ -41,11 +99,12 @@ build:
   read blind may belong to a hover state you are not building.
 - **Figma's own measurement overlays.** Blue annotations like `396 × 401 Hug` or `347 × 23`
   are authoritative and frequently _absent_ from the CSS — `Hug` in particular tells you a
-  dimension is content-driven, which no declaration in the export records.
+  dimension is content-driven, which no declaration in the export records. These live only in
+  a canvas _screenshot_; a frame export of any format drops them.
 - **What is decoration.** Cursors, callout arrows and section captions painted on the board
   are not part of the component, but they do emit layers.
 
-### Traps in the export itself
+### Traps in the `.css` export itself
 
 - **Sub-comments carry the real properties.** Figma writes `/* Auto layout */`,
   `/* Inside auto layout */`, `/* or 16px */` and token names like
@@ -71,7 +130,9 @@ build:
   from the surface and colour theming tokens — see {%skill:theming%}. A hex in the
   export is information about the _designer's_ palette, not a value to paste. Where the
   export's colour and the token disagree, keep the token and note the delta for the design
-  review; the export can be wrong about contrast in a way the tokens are not.
+  review; the export can be wrong about contrast in a way the tokens are not. This holds
+  hardest for an SVG, whose fills are exact and therefore tempting: an exact wrong answer is
+  still wrong.
 - **Radius and spacing snap to the scale.** Round to the nearest token rather than emitting an
   arbitrary value, and say so if the export's number is more than a step away.
 
@@ -128,5 +189,5 @@ Harness gotchas, each of which will cost you an hour:
 Report the measured numbers next to the export's, per width — not "matches the design". Say
 explicitly which parts of the export you deliberately did **not** implement and why (colour
 kept as tokens, a label the product decided never to render, a field the API lacks). Then
-delete the `.css`/`.png` pair once its component is signed off, so the folder always shows
-only what is still outstanding.
+delete the export files once their component is signed off, so the folder always shows only
+what is still outstanding.
