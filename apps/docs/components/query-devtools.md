@@ -83,6 +83,12 @@ proportion. A right dock stacks the panes, so there the same divider turns
 horizontal and sizes them along the other axis - each axis keeps its own size, so
 switching docks never carries a width over as a height.
 
+Below `md` (768px) the panel stacks whichever edge it is docked to. Side by side,
+the list alone asks for `22rem` and the drawer for `26rem`, which is wider than a
+phone - so on a narrow viewport the panes go one above the other, and the tab
+strip and the action row each scroll sideways instead of wrapping into a header
+taller than the content it labels. Both dividers are draggable by touch.
+
 Which edge you picked, the size of each and the pane sizes are
 [persisted](#persistence). Being popped out is not: a reload cannot re-adopt the window the previous document
 opened, so the panel always comes back docked.
@@ -129,33 +135,38 @@ that stack:
   matches is disabled. The counts are computed before the chips are applied, so a
   chip always states what picking it yields.
 
+  **Gone** is the odd one out: it does not narrow an unfiltered list, it _adds_ to
+  it. Destroyed queries are left out of the list by default - they are history, and a
+  page that mounts and unmounts a lot would otherwise bury the queries that still
+  exist - so the chip's count is how many are waiting behind it.
+
   A query whose request is in flight counts as **Loading** and not as **Stale**:
   it is already refreshing, so the freshness of what it is replacing is not the
   useful fact about it. That is the same precedence the Cache tab's freshness
   column uses when it reads `refreshing…`.
 
 The count next to the picker reads `12 of 87` while anything is narrowing the
-list, and **Clear filters** drops the term and the chips while keeping the client
-scope. The [Insomnia download](#export-to-insomnia) exports whatever is listed, so
-these filters pick what ends up in the collection.
+list - the `87` being what the list holds unnarrowed, so tombstones are part of it
+only while **Gone** is on - and **Clear filters** drops the term and the chips while
+keeping the client scope. The [Insomnia download](#export-to-insomnia) exports
+whatever is listed, so these filters pick what ends up in the collection.
 
-### Pinning the endpoint you are working on
+### Pinning the query you are working on
 
 Narrowing is not prioritising. The list is in registration order end to end, so the
 one query you are debugging sits wherever it happened to be registered and drifts
 further down as the app registers more - and typing its route into the filter box
 keeps it in view only by throwing every other query away at the same time.
 
-The **★** button at the end of a row sorts that endpoint to the top of the list
+The **★** button at the end of a row sorts **that row** to the top of the list
 instead. It appears on hover (and on keyboard focus) and stays lit on a pinned row,
-which is also how you unpin it.
+which is also how you unpin it. Two components holding the same creator are two rows
+and pin independently, so pinning the one you are debugging does not lift its
+siblings with it.
 
-A pin is keyed on the **endpoint** - the client, the method and the route template -
-rather than on the row you clicked. Pinning `GET /posts` therefore pins every query
-that creator made, however many components hold one, and the pin survives the
-registration order changing. A row's own id carries a per-page-load sequence number,
-so it only names the same query across reloads while queries are created in the same
-order, which is why it is not what a pin holds on to.
+A pin is keyed on the registry id, which is a stable descriptor plus a
+per-descriptor sequence number - so a pin survives a reload as long as queries are
+created in the same order, the same assumption the restored selection makes.
 
 Pinning **sorts**, it does not filter, so it composes with the client picker, the
 filter box and the chips instead of competing with them, and the relative order
@@ -178,7 +189,7 @@ panel from something you check into something that tells you.
 ### Empty tabs fold into "More"
 
 Ten tabs is a lot of strip for an app that uses neither sockets nor sequences, and
-in a right dock it wraps to a second line. A tab with nothing behind it - no
+stacked it scrolls sideways. A tab with nothing behind it - no
 entries and nothing failing - is offered under **More** instead, and moves back
 into the strip the moment it holds something, badge and all. **Queries** and
 **Faults** always stay: one is where the panel opens, the other has entries to arm
@@ -579,11 +590,12 @@ that comes back `401` and sends the app to the login screen destroys the compone
 holding it, and with it the query. The panel keeps that query anyway, as a **tombstone** -
 a frozen snapshot of the state it last held, under the same row it always had.
 
-- The row **stays in the list**, muted, with a **gone** chip and no status dot, and the
-  drawer says when the query was destroyed. The **Gone** chip narrows the list to
-  tombstones the way every other chip narrows it to a state; a tombstone never counts
-  towards the live chips (**Failing**, **Loading**, …), since its state is frozen rather
-  than current.
+- The row is **not listed by default** - picking the **Gone** chip is what brings
+  tombstones in, muted, with a **gone** chip and no status dot, and the drawer says when
+  the query was destroyed. A tombstone never counts towards the live chips (**Failing**,
+  **Loading**, …), since its state is frozen rather than current. The one exception to
+  the hiding is the row the drawer is currently showing: a query destroyed while you are
+  reading it keeps its row, so the list does not jump out from under the drawer.
 - **Everything it holds is still readable** - Overview, the run history, and the args,
   response and error body under **Data**. That is the whole point: the `401`'s body is
   right there instead of only its status code in the event log.
@@ -931,12 +943,11 @@ page reload within the tab session without leaking devtools state across session
 (Restoring the selected query relies on registry ids being stable across reloads,
 which in turn assumes queries are created in the same order.)
 
-[Pinned endpoints](#pinning-the-endpoint-you-are-working-on) are the one thing kept
-elsewhere: `localStorage`, under `ethlete:query:devtools:pins:v1`. Everything above is
-view state that should die with the tab, while a pin says which endpoint you are
-working on and is meant to outlive one - and because it is keyed on the endpoint
-rather than on a registry id, it does not depend on creation order the way the
-restored selection does.
+[Pinned queries](#pinning-the-query-you-are-working-on) are the one thing kept
+elsewhere: `localStorage`, under `ethlete:query:devtools:pins:v2`. Everything above is
+view state that should die with the tab, while a pin says which query you are working
+on and is meant to outlive one - and since a pin holds a registry id, it depends on
+creation order exactly the way the restored selection does.
 
 [Armed faults](#faults-making-requests-actually-misbehave) and
 [response overrides](#response-overrides-editing-a-value-that-survives-a-refetch) are

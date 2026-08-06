@@ -3,6 +3,7 @@
     #panel
     [class.et-query-devtools-panel--resizing]="resizing()"
     [attr.data-dock]="poppedOut() ? 'popout' : dock()"
+    [attr.data-pane-axis]="paneAxis()"
     [style.block-size.px]="panelBlockSize()"
     [style.inline-size.px]="panelInlineSize()"
     [style.--_et-qdt-list-width.px]="listWidth()"

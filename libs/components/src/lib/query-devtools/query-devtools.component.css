@@ -74,17 +74,37 @@
     box-shadow: none;
   }
 
-  /* A right dock is a column, not a page: neither pane of a side-by-side view fits next to the other at
-     that width, so both stack and the tab strip gets a line of its own. */
-  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-header {
+  /* A column, not a page: neither pane of a side-by-side view fits next to the other, so both stack and
+     the tab strip gets a line of its own. Keyed on the pane axis rather than the dock, because a right
+     dock is not the only way to get here - below `md` the panel stacks wherever it is docked. */
+  .et-query-devtools-panel:where([data-pane-axis='block']) .et-query-devtools-header {
     flex-wrap: wrap;
   }
 
-  .et-query-devtools-panel:where([data-dock='right']) :is(.et-query-devtools-master-detail, .et-query-devtools-split) {
+  /* Both header strips scroll sideways instead of wrapping. Ten tabs and six actions wrap to five lines
+     at phone width - a header taller than the content it labels - and the action group does not even
+     wrap: it is `flex: 0 0 auto`, so unshrunk it runs past the panel edge and takes Close with it. */
+  .et-query-devtools-panel:where([data-pane-axis='block'])
+    :is(.et-query-devtools-tabs, .et-query-devtools-header-actions) {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-inline-size: 0;
+    overflow-x: auto;
+  }
+
+  /* Or they compress to fit instead of scrolling, and every label wraps to two lines. */
+  .et-query-devtools-panel:where([data-pane-axis='block'])
+    :is(.et-query-devtools-tabs, .et-query-devtools-header-actions)
+    > * {
+    flex: none;
+  }
+
+  .et-query-devtools-panel:where([data-pane-axis='block'])
+    :is(.et-query-devtools-master-detail, .et-query-devtools-split) {
     flex-direction: column;
   }
 
-  .et-query-devtools-panel:where([data-dock='right'])
+  .et-query-devtools-panel:where([data-pane-axis='block'])
     :is(
       .et-query-devtools-list,
       .et-query-devtools-detail,
@@ -99,7 +119,7 @@
     border-inline-end: 0;
   }
 
-  .et-query-devtools-panel:where([data-dock='right']) :is(.et-query-devtools-detail, .et-query-devtools-drawer) {
+  .et-query-devtools-panel:where([data-pane-axis='block']) :is(.et-query-devtools-detail, .et-query-devtools-drawer) {
     border-block-start: 1px solid var(--_et-qdt-border);
   }
 
@@ -107,24 +127,31 @@
      `flex: 1 1 50%` above the way a dragged width replaces the side-by-side default. The parent has to
      be in the selector: the `:is()` rule above takes its specificity from its two-class arm, so a
      panel-plus-pane selector would lose to it. */
-  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-master-detail > .et-query-devtools-list {
+  .et-query-devtools-panel:where([data-pane-axis='block']) .et-query-devtools-master-detail > .et-query-devtools-list {
     flex: 0 1 var(--_et-qdt-list-height, 50%);
     min-block-size: var(--_et-qdt-list-height, 0);
     max-block-size: var(--_et-qdt-list-height, none);
   }
 
-  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-split > .et-query-devtools-drawer {
+  .et-query-devtools-panel:where([data-pane-axis='block']) .et-query-devtools-split > .et-query-devtools-drawer {
     flex: 0 1 var(--_et-qdt-drawer-height, 50%);
     min-block-size: var(--_et-qdt-drawer-height, 0);
     max-block-size: var(--_et-qdt-drawer-height, none);
   }
 
-  .et-query-devtools-panel:where([data-dock='right']) .et-query-devtools-pane-resize {
+  .et-query-devtools-panel:where([data-pane-axis='block']) .et-query-devtools-pane-resize {
     cursor: ns-resize;
   }
 
   .et-query-devtools-panel--resizing {
     user-select: none;
+  }
+
+  /* Both dividers drive their drag from pointer events. Without this the browser claims the touch
+     pointermoves for scrolling and fires pointercancel, so neither can be dragged by touch at all. */
+  .et-query-devtools-resize,
+  .et-query-devtools-pane-resize {
+    touch-action: none;
   }
 
   .et-query-devtools-resize {
@@ -768,14 +795,21 @@
   .et-query-devtools-row-pin {
     display: flex;
     flex: 0 0 auto;
+    align-self: center;
     align-items: center;
+    justify-content: center;
+    inline-size: 3.2rem;
+    block-size: 3.2rem;
+    margin-inline-end: 0.4rem;
     appearance: none;
     border: none;
+    border-radius: 0.4rem;
     background: transparent;
     color: var(--_et-qdt-subtle);
-    padding-inline: 0.8rem;
     cursor: pointer;
-    font: inherit;
+    font-family: inherit;
+    font-size: 1.8rem;
+    line-height: 1;
     opacity: 0;
   }
 
@@ -785,7 +819,13 @@
     opacity: 1;
   }
 
-  .et-query-devtools-row-pin--active {
+  .et-query-devtools-row-pin:hover {
+    background: var(--_et-qdt-active);
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-row-pin--active,
+  .et-query-devtools-row-pin--active:hover {
     color: var(--_et-qdt-accent);
   }
 

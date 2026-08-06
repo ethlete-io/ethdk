@@ -14,7 +14,7 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { clamp, injectRenderer, injectStyleManager } from '@ethlete/core';
+import { clamp, injectBreakpointObserver, injectRenderer, injectStyleManager } from '@ethlete/core';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
@@ -361,8 +361,16 @@ export class QueryDevtoolsComponent {
    */
   protected poppedOut = signal(false);
 
-  /** Which axis the two-pane tabs split along, which the stylesheet keys off the dock the same way. */
-  private paneAxis = computed<PaneAxis>(() => (!this.poppedOut() && this.dock() === 'right' ? 'block' : 'inline'));
+  /**
+   * Below `md` a side-by-side split cannot fit: the list alone asks for `22rem` and the drawer for
+   * `26rem`, which is wider than a phone. Narrow gets the same stacked layout a right dock does.
+   */
+  private narrowViewport = injectBreakpointObserver().observeBreakpoint({ max: 'sm' });
+
+  /** Which axis the two-pane tabs split along. The stylesheet keys the stacked layout off the same value. */
+  protected paneAxis = computed<PaneAxis>(() =>
+    !this.poppedOut() && (this.dock() === 'right' || this.narrowViewport()) ? 'block' : 'inline',
+  );
 
   private popup: Window | null = null;
 
