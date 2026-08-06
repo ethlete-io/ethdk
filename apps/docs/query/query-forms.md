@@ -75,7 +75,7 @@ Every creator accepts the same options:
 | `disableDebounceIfFalsy`  | `false` (`true` for search)      | Commit immediately when the new value is falsy (e.g. clearing a search).                                        |
 | `appendToUrl`             | `true`                           | Write the field to the URL.                                                                                     |
 | `appendDefaultValueToUrl` | `false`                          | Write the field even when it holds its default.                                                                 |
-| `isResetBy`               | -                                | Sibling field(s) whose change resets this field to its default (single key or list).                            |
+| `isResetBy`               | -                                | Sibling field(s) whose change resets this field to its default (single key or list). Transitive - see below.    |
 | `skipInFilterCount`       | `false`                          | Exclude from `activeFilterCount`.                                                                               |
 | `skipAutoTransform`       | `false`                          | Skip the URL string → number/boolean coercion.                                                                  |
 | `queryParamToValue`       | -                                | Custom URL → value transform.                                                                                   |
@@ -99,6 +99,23 @@ Every creator accepts the same options:
 | `branch()`                                  | A detached editor over the same fields - see [Filter overlays](#filter-overlays). |
 | `observe(options?)`                         | Start URL sync. Returns the form for chaining.                                    |
 | `unobserve()`                               | Stop syncing and remove this form's params from the URL.                          |
+
+### `isResetBy` is transitive
+
+A reset counts as a change for the next hop, so a chain clears all the way down. Declare each field's **direct** dependency only - the closure is resolved for you:
+
+```ts
+defineQueryForm({
+  fields: {
+    country: queryField<string>(),
+    league: queryField<string>({ isResetBy: 'country' }),
+    team: queryField<string>({ isResetBy: 'league' }),
+  },
+});
+// changing `country` clears `league` and `team`
+```
+
+The whole cascade settles before the value is committed, so it drives **one** query execution, not one per hop. A cyclic graph stops after ten passes with a dev-mode warning.
 
 ### `activeFilterCount`
 

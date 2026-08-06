@@ -121,6 +121,31 @@ describe('defineQueryForm', () => {
     expect(qf.value()).toEqual({ search: 'hello', page: 1 });
   });
 
+  it('cascades a reset through the chain that depends on the reset field', async () => {
+    const { injector, mod } = await setup();
+
+    const qf = runInInjectionContext(injector, () =>
+      mod
+        .defineQueryForm({
+          fields: {
+            country: mod.queryField<string>(),
+            league: mod.queryField<string>({ isResetBy: 'country' }),
+            team: mod.queryField<string>({ isResetBy: 'league' }),
+          },
+        })
+        .observe({ writeToQueryParams: false, syncOnNavigation: false }),
+    );
+
+    qf.setValue({ country: 'de', league: 'bl', team: 'bvb' }, { skipResets: true });
+    TestBed.tick();
+    expect(qf.value()).toEqual({ country: 'de', league: 'bl', team: 'bvb' });
+
+    qf.patchValue({ country: 'en' });
+    TestBed.tick();
+
+    expect(qf.value()).toEqual({ country: 'en', league: null, team: null });
+  });
+
   it('skips resets when skipResets is set', async () => {
     const { injector, mod } = await setup();
 

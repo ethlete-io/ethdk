@@ -62,6 +62,8 @@ const buildDefaults = (fields: QueryFormFields): Dict => {
   return out;
 };
 
+const MAX_RESET_PASSES = 10;
+
 const changedKeysBetween = (previous: Dict | null, current: Dict): string[] =>
   Object.keys(current).filter((key) => !equal(previous?.[key], current[key]));
 
@@ -347,6 +349,31 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     return next;
   };
 
+  /**
+   * Resets are transitive: a field this pass reset counts as changed in the next one, so
+   * `country → league → team` clears `team` as well when only `country` moved. Passes repeat until
+   * nothing moves, which has to happen before `committed` is written - one query execution for the
+   * whole chain, not one per hop. The cap only guards a cyclic `isResetBy` graph; a field already at
+   * its default stops triggering, so a well-formed graph settles in as many passes as it is deep.
+   */
+  const resolveResets = (prev: Dict, live: Dict): Dict => {
+    let next = live;
+
+    for (let pass = 0; pass < MAX_RESET_PASSES; pass++) {
+      const applied = applyResets(next, changedKeysBetween(prev, next));
+
+      if (equal(applied, next)) return applied;
+
+      next = applied;
+    }
+
+    if (isDevMode()) {
+      console.warn(`defineQueryForm: isResetBy did not settle within ${MAX_RESET_PASSES} passes. Check for a cycle.`);
+    }
+
+    return next;
+  };
+
   const flush = () => {
     clearTimer();
 
@@ -359,8 +386,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       return;
     }
 
-    const changedKeys = changedKeysBetween(prev, live);
-    const next = skipNextResets ? { ...live } : applyResets(live, changedKeys);
+    const next = skipNextResets ? { ...live } : resolveResets(prev, live);
 
     skipNextResets = false;
 
