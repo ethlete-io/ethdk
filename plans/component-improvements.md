@@ -924,3 +924,126 @@ synchronously in a `finally`, but the outgoing broadcast is an `effect` that
 runs later - so the guard never actually suppresses anything and every received
 token update is re-broadcast once per tab. It converges only because setting a
 signal to an identical string is a no-op, which is luck, not design.
+
+## Auth: the provider's execution model is what makes the app's flow brittle
+
+Second pass, this time on why `fut-frontend` needs 250 lines of `combineLatest`
+over router state and `executionState` (`libs/domain/auth/src/lib/auth-flow.ts`)
+to keep a session coherent. The defensive shapes in there - a `debounceTime(1)`,
+a `hasAttempted` latch in `dev-login-view.component.ts`, a special case for a
+"stale `logout` state" - are all downstream of one thing: `setupBearerQueryRegistry`
+in `bearer-auth-provider.ts` treats every auth execution as fire-and-forget and
+funnels all of them through single mutable slots.
+
+### Every auth execution leaks a query, an injector and a repository entry
+
+`execute()` (`bearer-auth-provider.ts:404`) calls
+`builder.config.queryCreator({ onlyManualExecution: true, injector })` per call,
+where `injector` is the provider's - i.e. the root one. `setupQueryDependencies`
+gives each query its own child `EnvironmentInjector`, destroyed only when the
+_scope_ destroyRef is (`query-dependencies.ts:78`), and nothing ever destroys the
+query. The `effect()` registered inside `execute()` to mirror that snapshot into
+`executionState` is bound to the same injector, so it outlives its own execution
+too.
+
+So one login attempt, or one token refresh, permanently adds: a child injector, a
+query object, a live effect that still writes `executionState`, a devtools
+registry entry (`base-query-factory.ts:283` unregisters on a `DestroyRef` that
+never fires here - the mirror image of the vanishing-row problem above), and a
+repository cache entry whose consumer never unbinds. The refresh query runs every
+~45 minutes, and each 401 can trigger another, so this is not a rounding error in
+a long-lived tab.
+
+The retained cache entry is the part that bites hardest, because it holds the
+request body and the response body: the login POST keeps the username and
+password, the refresh POST keeps a refresh token and the tokens it was exchanged
+for, indefinitely. `MAX_UNUSED_ENTRIES` cannot reclaim any of it - the entries
+still have a consumer.
+
+Fix: an auth execution should own its query and destroy it when it settles (or
+reuse one query per builder key and re-execute it, which is what the per-key
+`querySnapshot` signal already implies). Either way the per-execution `effect`
+has to go with it.
+
+### `refreshQueriesInUse()` replays every past login and token refresh
+
+Both auth builders clone their creator with `subtle: { useQueryRepositoryCache: true }`
+(`bearer-auth-query-builders.ts:141` and `:302`) so the POST gets a real cache
+key. But `QueryRepository.refreshInUse` uses that exact flag to decide what is
+safe to re-fire - its comment reads "Re-firing a mutation would be a side effect
+nobody asked for, so only reads are refreshed - 'read' meaning cacheable". The
+flag means "cache me" to one caller and "you may re-run me" to the other, and the
+auth queries end up on the wrong side of it. Combined with the leak above - every
+past auth execution still has a consumer - `client.refreshQueriesInUse()`
+re-fires all of them.
+
+`fut-frontend` calls exactly that, on the same client the auth provider is
+attached to, whenever preview mode is toggled
+(`libs/domain/voting-public/shared/src/services/preview.provider.ts`), and its
+comment states the assumption the SDK breaks: "it re-runs every bound
+`GET`/`HEAD`/`OPTIONS`". What actually happens is a replay of the login POST with
+the old credentials and of the refresh POST with a long-spent refresh token. That
+second one 401s, the still-alive per-execution effect sets
+`{ type: 'tokenRefresh', state: 'error' }`, and the app's own refresh-failure
+handler logs the user out. Toggling preview mode can end the session.
+
+Two candidate fixes, and the first is worth doing regardless: make `refreshInUse`
+skip anything whose method is not a read, so the docstring becomes true and the
+flag stops carrying two meanings. Then, if the auth queries still need to opt out
+of a URL-scoped invalidation, give them an explicit `subtle.neverAutoRefresh`
+rather than inferring it.
+
+### Tokens and `executionState` can disagree about which attempt won
+
+There are two writers per builder key. The shared effect at
+`bearer-auth-provider.ts:384` watches the per-key `querySnapshot` signal - which
+only ever holds the **most recently executed** snapshot - and calls `applyTokens`
+from it. Each execution's own effect (`:422`) writes `executionState` from **its
+own** snapshot, whichever settles last. Two overlapping executions therefore
+resolve differently: the last one executed decides which tokens are applied, the
+last one to come back decides what `executionState` reports. A 401 burst across
+several secure queries, or a login submitted while an auto-login is still in
+flight, is enough to produce it.
+
+That is the race the app is defending against without naming it. The fix is for an
+execution to be a value rather than a side effect on shared slots: token
+application and state reporting should both read the snapshot the execution
+returned, and a superseded execution should be abandoned explicitly (or the
+provider should refuse to start a second one for the same key while one is in
+flight - a single-use refresh token cannot be spent twice anyway).
+
+### The login form watches a provider-global slot for its own submit
+
+`external-user-login-view.component.ts` derives its button state from
+`executionState()` filtered by `type === 'login'`, and its comment explains why:
+"The v3 auth provider reports progress through `executionState` rather than an
+observable query". But `execute()` already returns a `QuerySnapshot`, and
+`queries.login.snapshot` is a signal of the latest one (`QueryRegistryEntry`,
+`bearer-auth-provider.ts:145`) - the per-attempt state exists and is simply not
+the documented path, so the app's own `AuthProviderContract` erased it
+(`execute(args): unknown`, `auth-state.ts`). Reading the global slot means any
+concurrent auth activity of the same derived type is rendered as the form's own
+outcome.
+
+No new API needed - this is a docs and emphasis fix in `apps/docs/query`:
+`executionState` answers session-level questions, the snapshot returned by
+`execute()` drives the UI of the attempt that produced it. Worth doing at the same
+time as the `sessionStatus` / logout-cause split proposed in the previous section,
+since it is the same confusion from the other end.
+
+### Smaller: `excludeRoutes` invites string matching
+
+`withPersistentAuth`'s `autoLogin.excludeRoutes: string[]` is prefix-matched
+against `injectRoute()`, so a consumer expresses route policy as substrings. In
+`fut-frontend` that style has spread to the flow's own predicates -
+`injectIsOnPublicRoute()` returns true for any URL merely _containing_
+`reset-password`, so a hypothetical `/campaigns/reset-password-templates` would
+count as public and skip auth entirely. The app also has two different meanings
+for the query param `token` (`PASSWORD_RESET_TOKEN_QUERY_PARAM_NAME` and
+`ENTRA_ACCESS_TOKEN_QUERY_PARAM_NAME`, `auth.routes.ts`), disambiguated only by
+which route is active.
+
+The app side of that is the app's business, but the SDK can stop leading: accept a
+predicate (`shouldAutoLogin: (url: string) => boolean`) alongside the string list,
+so a consumer can match on the router's parsed URL instead of on substrings of a
+path.
