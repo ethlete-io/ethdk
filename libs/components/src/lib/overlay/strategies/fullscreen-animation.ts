@@ -284,6 +284,21 @@ export const cleanupFullscreenAnimationStyles = (options: {
   }
 };
 
+// Reparented into the clone host, the content has lost the layout context that sized it - a grid
+// cell, a flex parent, a percentage against a scroll container - so it has to be pinned to the
+// measured box. Left alone it re-derives an intrinsic size and re-resolves its own `%` offsets
+// against the host, and the clone stops matching the element it came from.
+const pinClonedContentToRect = (options: { renderer: AngularRenderer; content: HTMLElement; rect: DOMRect }) => {
+  const { renderer, content, rect } = options;
+
+  renderer.setStyle(content, {
+    inset: '0',
+    boxSizing: 'border-box',
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+  });
+};
+
 const updateCloneLeaveAnimationStyles = (options: {
   renderer: AngularRenderer;
   cloneEl: HTMLElement;
@@ -299,6 +314,12 @@ const updateCloneLeaveAnimationStyles = (options: {
     height: `${rect.height}px`,
   });
 
+  const clonedContent = cloneEl.firstElementChild;
+
+  if (clonedContent instanceof HTMLElement) {
+    pinClonedContentToRect({ renderer, content: clonedContent, rect });
+  }
+
   renderer.setCssProperties(cloneEl, {
     '--leave-from-translate-x': `${transforms.cloneTranslateX}px`,
     '--leave-from-translate-y': `${transforms.cloneTranslateY}px`,
@@ -311,10 +332,12 @@ const updateCloneLeaveAnimationStyles = (options: {
   });
 };
 
-const createOriginClone = (
-  originElement: HTMLElement,
-  deps: FullscreenAnimationDeps,
-): ComponentRef<OverlayOriginCloneComponent> => {
+const createOriginClone = (options: {
+  originElement: HTMLElement;
+  rect: DOMRect;
+  deps: FullscreenAnimationDeps;
+}): ComponentRef<OverlayOriginCloneComponent> => {
+  const { originElement, rect, deps } = options;
   const { injector, appRef, document, renderer } = deps;
 
   const cloneComponentRef = createComponent(OverlayOriginCloneComponent, {
@@ -327,9 +350,10 @@ const createOriginClone = (
   renderer.setStyle(clonedContent, {
     margin: '0',
     position: 'relative',
-    boxSizing: computedStyle?.boxSizing ?? null,
     display: computedStyle?.display ?? null,
   });
+
+  pinClonedContentToRect({ renderer, content: clonedContent, rect });
 
   renderer.appendChild(cloneComponentRef.location.nativeElement, clonedContent);
 
@@ -458,7 +482,7 @@ export const startFullscreenEnterAnimation = (options: {
   }
 
   const transforms = calculateViewportTransforms(state.originElement, document);
-  const cloneComponentRef = createOriginClone(state.originElement, deps);
+  const cloneComponentRef = createOriginClone({ originElement: state.originElement, rect: transforms.rect, deps });
   const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
 
   applyCloneElementStyles({ renderer, cloneEl, rect: transforms.rect, transforms });
@@ -548,7 +572,7 @@ export const startFullscreenLeaveAnimation = (options: {
   let isOriginHidden = state.isOriginHidden;
 
   if (!cloneComponentRef) {
-    cloneComponentRef = createOriginClone(state.originElement, deps);
+    cloneComponentRef = createOriginClone({ originElement: state.originElement, rect: transforms.rect, deps });
     const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
 
     applyCloneElementStyles({ renderer, cloneEl, rect: transforms.rect, transforms });
