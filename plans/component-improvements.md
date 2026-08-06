@@ -5,8 +5,15 @@ checked against source in `libs/components/src/lib/{scheduler,accordion,
 avatar,badge,button,copy-button,description-list,filter-overlay,forms}`,
 `libs/core/src/lib/{theming,utils/swipe.ts}` and `libs/query/src/lib/
 {paged-query-stack.ts,legacy/infinite-query}`. Unprioritized backlog, same
-spirit as `opportunities.md` - pick items into real plans as needed. To be
-continued; this pass didn't reach every domain.
+spirit as the older `opportunities.md` pass - pick items into real plans as
+needed. To be continued; this pass didn't reach every domain.
+
+`opportunities.md` (research from 2026-07-23) was merged into this file on
+2026-08-06 and deleted - its live items are the four cross-cutting sections at
+the end (platform modernization, DX/tooling, the removal checklist, tech debt),
+its shipped work is recorded under "Already fixed", and its don't-rebuild list
+was folded into "Already covered". `plans/component-improvements-triage.md` is
+the ranked view of everything here.
 
 ## Scheduler
 
@@ -302,6 +309,14 @@ JS-measures its own rendered width and collapses through shrinking
 previous/next-plus-"page X of Y" mode - more thorough than a plain
 ellipsis truncation.
 
+From the merged `opportunities.md` pass, these were checked in 2026-07-23 and
+already exist - don't propose them as new components: date-range picker,
+segmented control, loaders, popover-as-API (the overlay system), rating, switch,
+banner/inline alert, avatar (+ group), card, badge, empty state, description
+list, copy-to-clipboard button (`copy-button`), stepper/progress-steps.
+**Back-to-top** belongs here too: `floating-action`'s generic floating trigger
+already covers it.
+
 ## Charts - new domain, uncharted
 
 Nothing chart-shaped exists today: a repo-wide grep for chart/sankey/d3/
@@ -553,6 +568,41 @@ is what turns the extraction failure above into a hang instead of a redirect.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+From the merged `opportunities.md` (its "New components", "DX / tooling", "Next major" and
+"Tech debt" sections were almost entirely shipped). Each note below is kept for the premise
+that turned out to be wrong, which is the part worth not rediscovering:
+
+- **Tree view** (2026-08-05) - `et-tree` + headless `[etTree]`. The premise was wrong:
+  `cascader-tree.ts` was already public, and it is only a data-source contract - no expand
+  state, no focus model, no rendering. The tree defines its own structurally identical
+  `TreeDataSource`, so one source object drives both without coupling the domains.
+- **Toolbar** (2026-08-05) - `et-toolbar` + headless `[etToolbar]`; the RTE's static toolbar
+  dropped ~78 lines adopting it. `et-grid-item-toolbar` was left alone (a visual wrapper, no
+  `role="toolbar"`, no keyboard model). The RTE's floating toolbar is `role="toolbar"` but every
+  button is `tabindex="-1"` by design, so it needs no roving focus.
+- **Divider** (2026-08-05) - `et-divider`. Premise wrong again: the other sites it named (tabs,
+  split-button, select-option-group, select-panel, overlay-container) are borders on structural
+  elements, not separators, and were left alone.
+- **Kbd** (2026-08-06) - `et-kbd`, platform-aware glyphs, `KBD_PLATFORM`. Neither existing
+  shortcut site became an adopter: `et-menu-item-shortcut` is a trailing _slot_ (it also carries
+  the submenu chevron), and the devtools' caps are deliberately isolated (`ShadowDom`, its own
+  `--_et-qdt-*` chrome). What did consolidate is the Apple detection both hand-rolled.
+- **Timeline** (2026-08-06) - `et-timeline` + `et-timeline-item`. Deliberately vertical only: a
+  horizontal connected row is what `et-progress-steps` already is. No state enum, for the same
+  reason - `complete`/`current`/`upcoming` belongs to a process, not a history. Worth
+  remembering: drawing the connector below each marker segments the rail, because the marker box
+  pads the dot; each item's line spans from its own marker's centre to the item's bottom instead.
+- **Component scaffolding generator** (2026-08-05) - `nx g @ethlete/components:component <name>`.
+  Self-registration was left out: it only applies to sub-directives, which a fresh domain has none of.
+- **`core/seo.directive.ts` deleted** (2026-08-05), with a per-`SeoConfig`-key migration table in
+  the SEO guide. The other `core` global-access stragglers (`scrolling/scrollable.ts`,
+  `animations/animation-utils.ts`) were guarded instead, since they stay. Still open on the
+  _consumer_ side: 15 view components in `fut-frontend` (`libs/domain/voting-public/campaigns`)
+  must migrate off it.
+- **`bracket/index.ts`** (2026-08-05) - `./core` and `./linked` are explicit named re-exports of
+  the data types; the engine builders stay internal.
+- **Docs coverage** - complete; every public domain has a docs page. The codebase carries 0 TODOs.
 
 Query pass:
 
@@ -925,3 +975,50 @@ focus ring and the border onto a child. Stating it here so the question is not r
 All of this changes the card-presets section of `choice-inputs.md`, which currently documents the
 label-carries-selection and no-fill behaviour as rules, and the tile needs its own story in both
 the checkbox-group and radio-group story files.
+
+## New components still open
+
+Merged from `opportunities.md`; everything else its "New components" section listed has
+shipped (see "Already fixed") or already existed (see "Already covered").
+
+- **Stat tile** - low / opportunistic.
+- **Command palette** - leans on the existing overlay + menu, so cheaper than it looks, but
+  carries real scope-creep risk. Decide the scope before starting, not during.
+
+## Platform modernization - team decisions recorded 2026-07-23
+
+Merged from `opportunities.md`. The repo has no browserslist config, so the baseline is
+implicitly evergreen. Already adopted, don't re-plan: `:has()` widely, `@starting-style` in
+rating + otp-input, `container-type` in stream/pip.
+
+- **Animated lifecycle stays. Decided - do not plan a replacement.**
+  `animatable.directive.ts` + `animated-lifecycle.directive.ts` took a long time to fine-tune
+  (interrupts, batching, nested trees, forced-instant states); `@starting-style`/`allow-discrete`
+  cannot replace all of it. New simple show/hide cases may use `@starting-style` directly
+  (precedent: rating, otp-input), but the directive pair is not a migration target.
+- **`<dialog>` / top layer: rejected.** The native top layer breaks consumer apps that rely on
+  z-index layering to push their own elements above modals. The overlay system keeps its portal +
+  z-index approach. The same reasoning rejects the **Popover API** for tooltip/toggletip/menu.
+- **View Transitions: agreed in principle, not yet baseline** (Firefox lacks same-document VT).
+  Highest-value target when it lands: `overlay/strategies/fullscreen-animation.ts` - 733 lines of
+  origin→viewport transform math plus trigger cloning, and VT snapshots pixels, which may also
+  sidestep the Angular style-unload constraint that forced the cloning in the first place. Also
+  `flip-animation.ts` (tab underline, segmented button). **Re-check browser support before any
+  planning.**
+- **Chrome-only for now - re-scan when Firefox and Safari ship.** CSS anchor positioning (would
+  shrink `overlay-position.ts`'s floating-ui usage - do **not** swap yet); `interpolate-size` /
+  `calc-size` (would replace `animated-block-size.ts`; a `@supports` progressive-enhancement fast
+  path is possible); `field-sizing: content` (would delete `textarea-autosize.ts` plus ~70-90
+  lines of `textarea.directive.ts`).
+
+## DX / tooling
+
+- **Test harnesses.** `forms/testing/` has exactly one utility (the `mixed-state-contract`).
+  There are no CDK-`ComponentHarness`-style drivers - every spec talks to the DOM directly.
+  Worth considering as more controls land; not urgent.
+
+## Next major - removal checklist
+
+Nothing else tracks this, so it lives here until a real changelog/migration doc exists.
+The one entry so far (`core/seo.directive.ts`) is done - see "Already fixed" for the consumer
+migration it still implies.
