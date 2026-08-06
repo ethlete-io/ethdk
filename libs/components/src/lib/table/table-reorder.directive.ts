@@ -293,7 +293,7 @@ export class TableReorderDirective {
       target && target.key !== dragging
         ? landingOrder(order, { key: dragging, overKey: target.key, before: target.before })
         : order;
-    const signature = landing.join(' ');
+    const signature = landing.join('\0');
 
     if (signature === this.previewSignature) return;
 
