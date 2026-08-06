@@ -1306,3 +1306,58 @@ rowSpan: 1 }` in two places. The app hand-writes all three keys and then still g
 `item.layout['sm'] ?? fallbackPosition('sm')` on the way back out. Cheap fix: assert coverage
 of the configured breakpoint names in the dev-mode check. Real fix: a `TBp extends string`
 parameter on `GridItemConfig` so `[breakpoints]` and the items have to agree.
+
+## Grid: span constraints are global, but every breakpoint has its own column count
+
+`minColSpan: 2` against a one-column `sm` breakpoint is not expressible today - constraints are
+one flat `{ minColSpan, maxColSpan, minRowSpan, maxRowSpan }` per registration (or per
+`et-grid-item`), while the column count is per breakpoint. The grid already knows this is
+wrong, and papers over it in four places, each differently:
+
+- `placeItem` clamps on the way in: `colSpan: Math.min(constraints.minColSpan, bp.columns)`.
+- The breakpoint effect refuses to enforce min at all after a breakpoint switch, with a comment
+  explaining that doing so would fight `registerConstraints`.
+- `resizeSpanBounds` clamps min against a max that is itself clamped to the column count, so a
+  pointer resize bottoms out at 1.
+- `registerConstraints` passes an unclamped `Math.max(pos.colSpan, minColSpan)` to `autoPlace`,
+  which happens to clamp it internally (`layout-engine.ts:122`).
+
+The fifth path does not. `clampPosition` applies the minimum _after_ the column clamp:
+
+```ts
+const colSpan = Math.max(constraints.minColSpan, Math.min(constraints.maxColSpan, position.colSpan, columns));
+```
+
+so `minColSpan: 2` at one column yields `colSpan: 2` - an item wider than the grid. All three
+callers inherit it: `moveItem` (`:708`, the Ctrl+arrow keyboard path), `updateResize` (`:584`)
+and the live `layout` computed that renders a drag in progress (`:241`). The SDK's own `Default`
+story can reach it - the chart registration asks for `minColSpan: 3` while the default `sm`
+breakpoint has two columns.
+
+So the invariant "a minimum span cannot exceed the breakpoint's columns" is enforced four times
+by accident and violated once. Fixing that is the prerequisite, and it belongs in one place:
+`resolveItemConstraints` (`grid.directive.ts:102`) is already the single merge point for
+registration and per-item constraints, and it does not currently take the column count. Give it
+the active columns, clamp `minColSpan` (and `maxColSpan`) there, and the ad-hoc clamps at the
+other four sites become redundant rather than load-bearing.
+
+That alone makes the common case behave: `minColSpan: 2` degrades to full width at a
+one-column breakpoint, which is what anyone writing it means. Per-breakpoint constraints are
+then the smaller, additive step for what clamping cannot express - "two columns at `md` but
+full width at `sm`", or a different row minimum where the layout is stacked. Additive shape,
+base plus overrides, rather than a union that has to be discriminated:
+
+```ts
+constraints?: Partial<GridItemConstraints> & {
+  perBreakpoint?: Record<GridBreakpointName, Partial<GridItemConstraints>>;
+};
+```
+
+Two things to settle while designing it. `resolveItemConstraints` currently returns
+`{ ...DEFAULT_CONSTRAINTS, ...registration.constraints }` and **returns early** when a
+registration exists, so a registered type's constraints cannot be refined per item - the
+`et-grid-item` `minColSpan`/`maxColSpan`/`minRowSpan`/`maxRowSpan` inputs are silently ignored
+for any item whose type is registered. And the resolved value is currently breakpoint-
+independent, so once it varies by breakpoint, `registerConstraints`' first-registration
+re-placement and the breakpoint-switch effect both need to re-resolve on a breakpoint change
+instead of reading a cached registry entry.
