@@ -1,10 +1,12 @@
-import { signal } from '@angular/core';
+import { createEnvironmentInjector, EnvironmentInjector, runInInjectionContext, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { createWebSocketTestDouble } from '@ethlete/query/testing';
 import { createWebSocketClient } from './web-socket-client';
 
 describe('createWebSocketClient', () => {
   afterEach(() => TestBed.resetTestingModule());
+
+  const childInjector = () => createEnvironmentInjector([], TestBed.inject(EnvironmentInjector));
 
   const setup = (options?: { name?: string; transports?: ('polling' | 'websocket' | 'webtransport')[] }) => {
     const double = createWebSocketTestDouble();
@@ -124,6 +126,75 @@ describe('createWebSocketClient', () => {
       { event: 'leave-room', data: 'lobby' },
       { event: 'join-room', data: 'match-1' },
     ]);
+  });
+
+  it('should keep a shared room alive until every joiner has left it', () => {
+    const { double, instance } = provided();
+    const first = childInjector();
+    const second = childInjector();
+
+    const roomA = runInInjectionContext(first, () => instance.joinRoom('match-42'));
+    const roomB = runInInjectionContext(second, () => instance.joinRoom('match-42'));
+    TestBed.tick();
+
+    double.serverSend({ room: 'match-42', event: 'score', data: { goals: 1 } });
+
+    expect(roomA()?.latestMessage()).toEqual({ room: 'match-42', event: 'score', data: { goals: 1 } });
+    expect(roomB()?.latestMessage()).toEqual({ room: 'match-42', event: 'score', data: { goals: 1 } });
+
+    first.destroy();
+
+    expect(double.sent()).toEqual([
+      { event: 'join-room', data: 'match-42' },
+      { event: 'join-room', data: 'match-42' },
+    ]);
+
+    double.serverSend({ room: 'match-42', event: 'score', data: { goals: 2 } });
+
+    expect(roomB()?.latestMessage()).toEqual({ room: 'match-42', event: 'score', data: { goals: 2 } });
+
+    second.destroy();
+
+    expect(double.sent().at(-1)).toEqual({ event: 'leave-room', data: 'match-42' });
+  });
+
+  it('should re-join a room that every joiner had left', () => {
+    const { double, instance } = provided();
+    const first = childInjector();
+
+    runInInjectionContext(first, () => instance.joinRoom('match-42'));
+    TestBed.tick();
+    first.destroy();
+
+    const second = childInjector();
+    const room = runInInjectionContext(second, () => instance.joinRoom('match-42'));
+    TestBed.tick();
+
+    double.serverSend({ room: 'match-42', event: 'score', data: { goals: 3 } });
+
+    expect(room()?.latestMessage()).toEqual({ room: 'match-42', event: 'score', data: { goals: 3 } });
+  });
+
+  it('should not leave a room a second joiner still holds when subtle.leaveRoom is called', () => {
+    const { double, instance } = provided();
+    const holder = childInjector();
+
+    const room = runInInjectionContext(holder, () => instance.joinRoom('match-42'));
+    TestBed.runInInjectionContext(() => instance.joinRoom('match-42'));
+    TestBed.tick();
+
+    instance.subtle.leaveRoom('match-42');
+    double.serverSend({ room: 'match-42', event: 'score', data: { goals: 4 } });
+
+    expect(double.sent()).not.toContainEqual({ event: 'leave-room', data: 'match-42' });
+    expect(room()?.latestMessage()).toEqual({ room: 'match-42', event: 'score', data: { goals: 4 } });
+  });
+
+  it('should emit nothing when leaving a room that was never joined', () => {
+    const { double, instance } = provided();
+
+    expect(() => instance.subtle.leaveRoom('ghost')).toThrow();
+    expect(double.sent()).toEqual([]);
   });
 
   it('should disconnect the socket when the injector is destroyed', () => {

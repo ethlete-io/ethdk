@@ -105,7 +105,10 @@ export type SocketMessageView<TMessageData = unknown> = {
 };
 
 export type WebSocketClientSubtle = {
-  /** Leave a socket io room */
+  /**
+   * Releases one join of a socket io room. Joiners of the same room share it, so the room is only
+   * actually left once every one of them has released it.
+   */
   leaveRoom: (room: string) => void;
 };
 
@@ -127,6 +130,12 @@ export type WebSocketClient<TMessageData extends SocketMessageView> = {
 
 export type InternalWebSocketRoom<TMessageData extends SocketMessageView> = {
   latestMessage: WritableSignal<TMessageData | null>;
+
+  /**
+   * How many callers currently hold this room. Joiners share one room object, so the room may only be
+   * left once this reaches zero - otherwise the first caller to unmount stops the messages for the rest.
+   */
+  joinCount: number;
 };
 
 export type WebSocketRoom<TMessageData extends SocketMessageView> = {
@@ -194,12 +203,17 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
           const existingRoom = rooms.get(name);
 
-          if (existingRoom) return existingRoom;
+          if (existingRoom) {
+            existingRoom.joinCount++;
+
+            return existingRoom;
+          }
 
           const message = signal<TMessageData | null>(null);
 
           const newRoom: InternalWebSocketRoom<TMessageData> = {
             latestMessage: message,
+            joinCount: 1,
           };
 
           rooms.set(name, newRoom);
@@ -240,9 +254,17 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       };
 
       const leaveRoom = (room: string) => {
-        if (!rooms.has(room)) {
+        const joinedRoom = rooms.get(room);
+
+        if (!joinedRoom) {
           if (isDevMode()) throw roomNotJoined(room);
+
+          return;
         }
+
+        joinedRoom.joinCount--;
+
+        if (joinedRoom.joinCount > 0) return;
 
         emit({ event: 'leave-room', data: room, room });
 

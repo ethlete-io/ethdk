@@ -58,7 +58,7 @@ The underlying socket always connects with `withCredentials: true` and disconnec
 `joinRoom(room)` accepts a static room name or a reactive function and returns a `Signal<WebSocketRoom | null>`:
 
 - A **function** is evaluated in a reactive context - returning a new string leaves the previous room and joins the new one; returning `null` joins nothing.
-- Rooms are **shared**: joining the same room twice returns the same underlying room, and the room is left automatically when the consuming context is destroyed.
+- Rooms are **shared**: joining the same room twice returns the same underlying room, and the room is left automatically when the consuming context is destroyed. Joins are counted, so the room is only left once the last of its joiners is gone - one component unmounting never stops the messages for another.
 - A room exposes `latestMessage()` - a signal holding the most recent message for that room (or `null`).
 
 ## Connection state & reconnects
