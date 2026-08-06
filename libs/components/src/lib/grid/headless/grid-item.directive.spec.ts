@@ -103,6 +103,7 @@ describe('GridItemDirective', () => {
 
   it('registers constraints with the parent grid on init', () => {
     fixture.detectChanges();
+    measureGrid();
     const constraints = getGridDirective().getConstraints('item-1');
     expect(constraints.minColSpan).toBe(2);
     expect(constraints.maxColSpan).toBe(6);
@@ -112,6 +113,7 @@ describe('GridItemDirective', () => {
 
   it('updates registered constraints when inputs change', () => {
     fixture.detectChanges();
+    measureGrid();
 
     // Simulate what the registration effect does when minColSpan input changes:
     // the effect calls registerConstraints with the new constraints.

@@ -124,12 +124,14 @@ describe('GridDirective', () => {
 
     it('stores constraints via registerConstraints and returns them from getConstraints', () => {
       fixture.detectChanges();
+      measureGrid();
       getDirective().registerConstraints('test-id', constraints);
       expect(getDirective().getConstraints('test-id')).toEqual(constraints);
     });
 
     it('removes constraints on unregisterConstraints', () => {
       fixture.detectChanges();
+      measureGrid();
       getDirective().registerConstraints('to-remove', constraints);
       getDirective().unregisterConstraints('to-remove');
       expect(getDirective().getConstraints('to-remove')).toEqual({
@@ -142,9 +144,22 @@ describe('GridDirective', () => {
 
     it('returns default constraints for unregistered id', () => {
       fixture.detectChanges();
+      measureGrid();
       const defaults = getDirective().getConstraints('unknown-id');
       expect(defaults.minColSpan).toBe(1);
       expect(defaults.maxColSpan).toBe(12);
+    });
+
+    it('caps both column spans at the column count of the active breakpoint', () => {
+      fixture.detectChanges();
+      measureGrid(400);
+      getDirective().registerConstraints('narrow', constraints);
+      expect(getDirective().getConstraints('narrow')).toEqual({
+        minColSpan: 2,
+        maxColSpan: 2,
+        minRowSpan: 1,
+        maxRowSpan: 3,
+      });
     });
   });
 

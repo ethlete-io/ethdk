@@ -15,6 +15,8 @@ import {
   snapResizeSpan,
 } from './internals';
 
+const ALL_RESIZE_EDGES: readonly ResizeEdge[] = ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw'];
+
 @Directive({
   selector: '[etGridResize]',
   host: {
@@ -30,7 +32,28 @@ export class GridResizeDirective {
   private readonly hostElement = injectHostElement();
 
   public isResizing = signal(false);
-  public resizeEdges = computed((): ResizeEdge[] => ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']);
+
+  /**
+   * Only the edges that can actually change a span at the active breakpoint. A strip whose axis is
+   * pinned - a column span at a one-column breakpoint, a fixed row span - would still swallow the
+   * `pointerdown` that started on it, so dropping it is what hands that part of the item's perimeter
+   * back to dragging.
+   */
+  public resizeEdges = computed((): ResizeEdge[] => {
+    const itemId = this.gridItem?.itemId();
+
+    if (!this.grid || !itemId) return [...ALL_RESIZE_EDGES];
+
+    const constraints = this.grid.getConstraints(itemId);
+    const horizontal = constraints.maxColSpan > constraints.minColSpan;
+    const vertical = constraints.maxRowSpan > constraints.minRowSpan;
+
+    if (horizontal && vertical) return [...ALL_RESIZE_EDGES];
+    if (horizontal) return ['e', 'w'];
+    if (vertical) return ['n', 's'];
+
+    return [];
+  });
 
   private start: GridItemPosition | null = null;
   private startBreakpoint: string | null = null;

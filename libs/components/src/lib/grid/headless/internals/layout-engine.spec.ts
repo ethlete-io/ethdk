@@ -230,6 +230,15 @@ describe('layout-engine', () => {
 
       expect(result.colSpan).toBe(3);
     });
+
+    it('should cap a minimum colSpan wider than the grid at the column count', () => {
+      const position: GridItemPosition = { col: 0, row: 0, colSpan: 1, rowSpan: 1 };
+      const constraints = { minColSpan: 3, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 4 };
+
+      const result = clampPosition({ position, constraints, columns: 1 });
+
+      expect(result).toEqual({ col: 0, row: 0, colSpan: 1, rowSpan: 1 });
+    });
   });
 
   describe('resolveCollisions', () => {

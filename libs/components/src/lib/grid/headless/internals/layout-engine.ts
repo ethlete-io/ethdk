@@ -133,11 +133,14 @@ export const autoPlace = (options: AutoPlaceOptions) => {
 };
 
 /**
- * Validates and clamps a position to respect grid boundaries and item constraints.
+ * Validates and clamps a position to respect grid boundaries and item constraints. The grid's own
+ * width wins: a `minColSpan` larger than the breakpoint's column count yields a full-width item, not
+ * one that overflows the grid.
  */
 export const clampPosition = (options: ClampPositionOptions) => {
   const { position, constraints, columns } = options;
-  const colSpan = Math.max(constraints.minColSpan, Math.min(constraints.maxColSpan, position.colSpan, columns));
+  const maxColSpan = Math.min(constraints.maxColSpan, columns);
+  const colSpan = Math.min(Math.max(position.colSpan, constraints.minColSpan), maxColSpan);
   const rowSpan = Math.max(constraints.minRowSpan, Math.min(constraints.maxRowSpan, position.rowSpan));
   const col = Math.max(0, Math.min(position.col, columns - colSpan));
   const row = Math.max(0, position.row);

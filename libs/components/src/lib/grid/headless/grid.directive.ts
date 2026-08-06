@@ -28,6 +28,7 @@ import {
   GridItemConstraints,
   GridItemPosition,
   GridLayoutEntry,
+  GridMutationOptions,
   GridSerializedState,
 } from './grid.types';
 import {
@@ -99,22 +100,35 @@ const DEFAULT_CONSTRAINTS: GridItemConstraints = {
   maxRowSpan: 24,
 };
 
+/**
+ * Column spans are declared once per item but the column count is per breakpoint, so a
+ * `minColSpan: 2` reaches a one-column breakpoint as a span wider than the grid. Both bounds are
+ * capped here, at the single point every consumer of a constraint reads, rather than at each of the
+ * places that place, resize or clamp a position.
+ */
+const fitConstraintsToColumns = (constraints: GridItemConstraints, columns: number): GridItemConstraints => {
+  const maxColSpan = Math.min(constraints.maxColSpan, columns);
+
+  return { ...constraints, minColSpan: Math.min(constraints.minColSpan, maxColSpan), maxColSpan };
+};
+
 const resolveItemConstraints = (
   id: string,
   context: {
     itemConfigs: GridItemConfig[];
     registrations: GridComponentRegistration[];
-    constraintsRegistry: Map<string, GridItemConstraints>;
+    constraintsRegistry: ReadonlyMap<string, GridItemConstraints>;
+    columns: number;
   },
 ): GridItemConstraints => {
   const item = context.itemConfigs.find((i) => i.id === id);
   if (item) {
     const registration = context.registrations.find((r) => r.type === item.type);
     if (registration?.constraints) {
-      return { ...DEFAULT_CONSTRAINTS, ...registration.constraints };
+      return fitConstraintsToColumns({ ...DEFAULT_CONSTRAINTS, ...registration.constraints }, context.columns);
     }
   }
-  return context.constraintsRegistry.get(id) ?? DEFAULT_CONSTRAINTS;
+  return fitConstraintsToColumns(context.constraintsRegistry.get(id) ?? DEFAULT_CONSTRAINTS, context.columns);
 };
 
 const LEAVE_ANIMATION_MS = 200;
@@ -142,9 +156,21 @@ export class GridDirective {
   public breakpoints = input<GridBreakpointConfig[]>(DEFAULT_BREAKPOINTS);
   public rowHeight = input(100, { transform: numberAttribute });
   public gap = input(16, { transform: numberAttribute });
+  /**
+   * The items to render. Despite the name this is a live input, not a one-shot seed: every change is
+   * reconciled against what the grid holds - added ids are placed, missing ids are removed, an empty
+   * array clears the grid, and the same ids with different positions restore those positions. A host
+   * can therefore keep feeding its own signal in, including a saved snapshot after cancelled edits,
+   * without rebuilding the grid.
+   */
   public initialItems = input<GridItemConfig[]>([]);
   public readOnly = input(false, { transform: booleanAttribute });
 
+  /**
+   * Emitted after the layout changed on this side: a drag, a resize, a keyboard move, `addItem()` or
+   * `removeItem()`. Reconciling `initialItems` does not emit - what the host passed in cannot be news
+   * to it - so this output can be read as "the user has unsaved changes".
+   */
   public layoutChange = output<GridSerializedState>();
 
   public registrations = computed(() => this.gridConfig.registrations);
@@ -154,7 +180,9 @@ export class GridDirective {
   private layoutOverrides = signal<Record<GridBreakpointName, GridLayoutEntry[]>>({});
   public dragState = signal<GridDragState | null>(null);
 
-  private constraintsRegistry = new Map<string, GridItemConstraints>();
+  // A signal, not a plain Map: an item registers its constraints after the first layout pass, and
+  // everything derived from them - the live drag layout, the resize edges - has to see that arrive.
+  private constraintsRegistry = signal<ReadonlyMap<string, GridItemConstraints>>(new Map());
 
   private resizeBaseLayout = signal<GridLayoutEntry[] | null>(null);
   private pendingResize: { id: string; position: GridItemPosition } | null = null;
@@ -243,7 +271,8 @@ export class GridDirective {
       constraints: resolveItemConstraints(drag.itemId, {
         itemConfigs: this.itemConfigs(),
         registrations: this.gridConfig.registrations,
-        constraintsRegistry: this.constraintsRegistry,
+        constraintsRegistry: this.constraintsRegistry(),
+        columns,
       }),
       columns,
     });
@@ -305,7 +334,7 @@ export class GridDirective {
     effect(() => {
       const initial = this.initialItems();
       untracked(() => {
-        if (initial.length === 0) return;
+        if (initial.length === 0 && this.itemConfigs().length === 0) return;
 
         if (ngDevMode) {
           this.assertValidItemConfigs(initial);
@@ -357,12 +386,14 @@ export class GridDirective {
           return;
         }
 
+        // Silent: the host is the source of these items, so echoing them back as a `layoutChange`
+        // would read as a user edit to anything treating that output as a dirty flag.
         for (const item of newItems) {
-          this.placeItem(item);
+          this.placeItem(item, { silent: true });
         }
 
         for (const id of removedIds) {
-          this.removeItem(id);
+          this.removeItem(id, { silent: true });
         }
       });
     });
@@ -443,19 +474,18 @@ export class GridDirective {
   }
 
   public registerConstraints(id: string, constraints: GridItemConstraints) {
-    const isFirstRegistration = !this.constraintsRegistry.has(id);
-    this.constraintsRegistry.set(id, constraints);
-
-    if (!isFirstRegistration) return;
-
-    // On first registration the item may have been auto-placed with 1×1 defaults
-    // (because addItem runs before the GridItemDirective initialises). If so,
-    // re-place it now at the correct minimum size.
-    // All signal reads are wrapped in untracked() to prevent this method from
-    // inadvertently becoming a dependency of the caller's reactive context
-    // (e.g. GridItemDirective's registration effect), which would cause the
-    // layoutOverrides.update() write below to re-trigger that effect in a loop.
+    // Every signal read here is wrapped in untracked() to prevent this method from inadvertently
+    // becoming a dependency of the caller's reactive context (e.g. GridItemDirective's registration
+    // effect), which would cause the writes below to re-trigger that effect in a loop.
     untracked(() => {
+      const isFirstRegistration = !this.constraintsRegistry().has(id);
+      this.constraintsRegistry.update((prev) => new Map(prev).set(id, constraints));
+
+      if (!isFirstRegistration) return;
+
+      // On first registration the item may have been auto-placed with 1×1 defaults
+      // (because addItem runs before the GridItemDirective initialises). If so,
+      // re-place it now at the correct minimum size.
       const breakpoint = this.activeBreakpoint();
       const existing = this.layoutOverrides()[breakpoint];
       if (!existing) return;
@@ -463,15 +493,16 @@ export class GridDirective {
       const entry = existing.find((e) => e.id === id);
       if (!entry) return;
 
-      const pos = entry.position;
-      if (pos.colSpan >= constraints.minColSpan && pos.rowSpan >= constraints.minRowSpan) return;
-
       const cols = this.activeColumns();
+      const effective = this.getConstraintsForColumns(id, cols);
+      const pos = entry.position;
+      if (pos.colSpan >= effective.minColSpan && pos.rowSpan >= effective.minRowSpan) return;
+
       const others = existing.filter((e) => e.id !== id);
       const newPosition = autoPlace({
         entries: others,
-        colSpan: Math.max(pos.colSpan, constraints.minColSpan),
-        rowSpan: Math.max(pos.rowSpan, constraints.minRowSpan),
+        colSpan: Math.max(pos.colSpan, effective.minColSpan),
+        rowSpan: Math.max(pos.rowSpan, effective.minRowSpan),
         columns: cols,
       });
 
@@ -482,16 +513,30 @@ export class GridDirective {
   }
 
   public unregisterConstraints(id: string) {
-    if (!this.constraintsRegistry.has(id)) return;
+    untracked(() => {
+      if (!this.constraintsRegistry().has(id)) return;
 
-    this.constraintsRegistry.delete(id);
+      this.constraintsRegistry.update((prev) => {
+        const next = new Map(prev);
+        next.delete(id);
+
+        return next;
+      });
+    });
   }
 
+  /** The item's constraints as they apply at the active breakpoint - column spans already capped to it. */
   public getConstraints(id: string): GridItemConstraints {
+    return this.getConstraintsForColumns(id, this.activeColumns());
+  }
+
+  /** The same, for a breakpoint other than the active one (placement writes every breakpoint at once). */
+  public getConstraintsForColumns(id: string, columns: number): GridItemConstraints {
     return resolveItemConstraints(id, {
       itemConfigs: this.itemConfigs(),
       registrations: this.gridConfig.registrations,
-      constraintsRegistry: this.constraintsRegistry,
+      constraintsRegistry: this.constraintsRegistry(),
+      columns,
     });
   }
 
@@ -669,12 +714,12 @@ export class GridDirective {
     this.placeItem(config);
   }
 
-  public removeItem(id: string) {
+  public removeItem(id: string, options?: GridMutationOptions) {
     if (this.leavingIds().has(id)) return;
     if (!this.itemConfigs().some((i) => i.id === id)) return;
 
     if (!this.animationsEnabled()) {
-      this.finalizeRemove(id);
+      this.finalizeRemove(id, options);
 
       return;
     }
@@ -692,7 +737,7 @@ export class GridDirective {
             next.delete(id);
             return next;
           });
-          this.finalizeRemove(id);
+          this.finalizeRemove(id, options);
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -772,17 +817,21 @@ export class GridDirective {
     const overrides: Record<GridBreakpointName, GridLayoutEntry[]> = {};
 
     for (const [bpName, columns] of Object.entries(state.columns)) {
-      overrides[bpName] = items.map((item) => ({
-        id: item.id,
-        position:
-          item.layout[bpName] ??
-          autoPlace({
-            entries: [],
-            colSpan: this.getConstraints(item.id).minColSpan,
-            rowSpan: this.getConstraints(item.id).minRowSpan,
-            columns,
-          }),
-      }));
+      overrides[bpName] = items.map((item) => {
+        const constraints = this.getConstraintsForColumns(item.id, columns);
+
+        return {
+          id: item.id,
+          position:
+            item.layout[bpName] ??
+            autoPlace({
+              entries: [],
+              colSpan: constraints.minColSpan,
+              rowSpan: constraints.minRowSpan,
+              columns,
+            }),
+        };
+      });
     }
 
     this.layoutOverrides.set(overrides);
@@ -805,7 +854,7 @@ export class GridDirective {
     }
   }
 
-  private finalizeRemove(id: string) {
+  private finalizeRemove(id: string, options?: GridMutationOptions) {
     this.itemConfigs.update((items) => items.filter((i) => i.id !== id));
 
     const columns = this.activeColumns();
@@ -814,10 +863,11 @@ export class GridDirective {
 
     this.updateLayoutForCurrentBreakpoint(compacted);
     this.compactOtherBreakpoints(id);
-    this.emitLayoutChange();
+
+    if (!options?.silent) this.emitLayoutChange();
   }
 
-  private placeItem(config: GridItemConfig) {
+  private placeItem(config: GridItemConfig, options?: GridMutationOptions) {
     const activeBp = this.activeBreakpoint();
     const columns = this.activeColumns();
     const currentLayout = this.baseLayout();
@@ -857,7 +907,7 @@ export class GridDirective {
 
       layout[bp.name] = autoPlace({
         entries: bpEntries,
-        colSpan: Math.min(constraints.minColSpan, bp.columns),
+        colSpan: this.getConstraintsForColumns(config.id, bp.columns).minColSpan,
         rowSpan: constraints.minRowSpan,
         columns: bp.columns,
       });
@@ -867,7 +917,8 @@ export class GridDirective {
 
     this.itemConfigs.update((items) => [...items, itemWithLayout]);
     this.updateLayoutForCurrentBreakpoint([...currentLayout, { id: config.id, position }]);
-    this.emitLayoutChange();
+
+    if (!options?.silent) this.emitLayoutChange();
   }
 
   private shrinkNeighbors(options: {

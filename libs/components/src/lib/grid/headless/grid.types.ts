@@ -40,6 +40,15 @@ export type GridLayoutEntry = {
   position: GridItemPosition;
 };
 
+export type GridMutationOptions = {
+  /**
+   * Skip the `layoutChange` emit for this mutation. For a change the host already knows about -
+   * it fed the item in through `initialItems` - so the output keeps meaning "the user moved
+   * something".
+   */
+  silent?: boolean;
+};
+
 /**
  * Contract for a grid item's `actionsComponent`: a component that receives the item's `itemId` and
  * `data` as inputs. Both are always provided by the grid.
