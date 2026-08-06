@@ -1379,6 +1379,13 @@
     vertical-align: top;
   }
 
+  /* Cells top-align, so a chip taller than a line of text would leave its own cell's content sitting lower
+     than every text cell beside it. Capped to a text line, the whole row reads on one line again. */
+  .et-query-devtools-table td .et-query-devtools-chip {
+    padding-block: 0;
+    line-height: 1.4;
+  }
+
   .et-query-devtools-table th {
     color: var(--_et-qdt-muted);
     font-weight: 600;
@@ -1410,8 +1417,11 @@
     margin-inline-start: 0.7rem;
   }
 
+  /* Inside the cell rather than on it: a `<td>` with a flex display is wrapped in an anonymous table cell,
+     which leaves its padding and bottom border on a box the row's height no longer stretches - so the rule
+     under the row visibly steps where such a cell sits. */
   .et-query-devtools-cell-actions {
-    display: flex;
+    display: inline-flex;
     gap: 0.4rem;
     white-space: nowrap;
   }
@@ -1587,7 +1597,7 @@
 
   /* The status dot sizes itself, which needs the cell to lay its content out as a flex line. */
   .et-query-devtools-run-cell {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
   }

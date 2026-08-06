@@ -123,13 +123,11 @@ that stack:
   matched - they repeat across nearly every entry, so a one-letter term would hit
   everything through the host name. Scoping to a client is the picker's job.
 - **The status chips** - **Failing**, **Loading**, **Stale**, **Idle** (never
-  executed) - each carry the number of queries they would leave. Picking several
-  _widens_ the result (failing **or** stale), the way a network panel's type chips
-  do, and a chip with no matches is disabled. The counts are computed before the
-  chips are applied, so a chip always states what picking it yields.
-
-  **Gone** is the odd one out: it is the only chip that _adds_ rows rather than
-  narrowing them - see [tombstones](#a-destroyed-query-leaves-a-tombstone).
+  executed), **Gone** ([destroyed](#a-destroyed-query-leaves-a-tombstone)) - each
+  carry the number of queries they would leave. Picking several _widens_ the result
+  (failing **or** stale), the way a network panel's type chips do, and a chip with no
+  matches is disabled. The counts are computed before the chips are applied, so a
+  chip always states what picking it yields.
 
   A query whose request is in flight counts as **Loading** and not as **Stale**:
   it is already refreshing, so the freshness of what it is replacing is not the
@@ -515,19 +513,19 @@ that comes back `401` and sends the app to the login screen destroys the compone
 holding it, and with it the query. The panel keeps that query anyway, as a **tombstone** -
 a frozen snapshot of the state it last held, under the same row it always had.
 
-- It is **hidden until asked for**. The **Gone** chip is the only thing that puts
-  tombstones in the list, so the default view keeps answering "what is my app doing"
-  rather than "what has it ever done". Tombstones never count towards the live chips
-  (**Failing**, **Loading**, …) or the tab badges either.
-- The row reads muted, with a **gone** chip and no status dot, and the drawer says when
-  the query was destroyed.
+- The row **stays in the list**, muted, with a **gone** chip and no status dot, and the
+  drawer says when the query was destroyed. The **Gone** chip narrows the list to
+  tombstones the way every other chip narrows it to a state; a tombstone never counts
+  towards the live chips (**Failing**, **Loading**, …), since its state is frozen rather
+  than current.
 - **Everything it holds is still readable** - Overview, the run history, and the args,
   response and error body under **Data**. That is the whole point: the `401`'s body is
   right there instead of only its status code in the event log.
 - **Nothing can be run on it.** Execute / Cached / Reset, the JIT editors and the forced
   states are gone from the drawer, since its handle answers with constants. Copy report,
   cURL and Insomnia still work - they only read.
-- **✕ Gone _n_** in the toolbar forgets every tombstone at once. The panel keeps the 50
+- **✕ Forget**, next to the **Gone** chip, drops every tombstone at once - and the chip
+  with them, since there is nothing left for it to hold. The panel keeps the 50
   most recent on its own, oldest dropped first; a tombstone holds the last response body
   it captured, so the list is capped for the same reason the cache caps unused entries.
   The host DOM element is dropped, so a tombstone never keeps a destroyed component's

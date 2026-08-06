@@ -442,8 +442,8 @@ export class QueryDevtoolsComponent {
 
   /**
    * The queries that still exist. Everything that measures what the application is doing right now -
-   * the tab badges, the tamper dot, the timeline, the identity match behind an event row - reads this
-   * rather than {@link queryEntries}, so a tombstone never inflates a live number.
+   * the tab bar's error flags, the tamper dot, the timeline, the identity match behind an event row -
+   * reads this rather than {@link queryEntries}, so a tombstone never inflates a live number.
    */
   private liveQueryEntries = computed(() => this.queryEntries().filter((e) => !e.destroyedAt));
 
@@ -568,7 +568,9 @@ export class QueryDevtoolsComponent {
 
     return {
       queries: {
-        count: queries.length,
+        // The count says how many rows the tab holds, tombstones included, so the badge and the list
+        // agree. The error flag stays live-only: a frozen failure is history, not something to chase.
+        count: this.queryEntries().length,
         errors: queries.filter((entry) => this.queryStatus(entry.handle as AnyQuery) === 'error').length,
       },
       stacks: {

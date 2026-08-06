@@ -335,40 +335,42 @@
         <tbody>
           @for (run of detailRuns; track run.index) {
             <tr [attr.data-status]="run.status === 'error' ? 'error' : null">
-              <td class="et-query-devtools-run-cell">
-                <span
-                  [attr.data-status]="host.runStatus(run)"
-                  [title]="run.status"
-                  class="et-query-devtools-status"
-                ></span>
-                #{{ run.index }}
-                @if (run.attempts > 1) {
+              <td>
+                <span class="et-query-devtools-run-cell">
                   <span
-                    class="et-query-devtools-chip et-query-devtools-chip--loading"
-                    title="Took {{
-                      run.attempts
-                    }} attempts - the duration next to it covers every one of them, backoff included"
-                  >
-                    <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
-                    {{ run.attempts }}
-                  </span>
-                }
-                @if (!run.didRequest) {
-                  <span
-                    class="et-query-devtools-chip et-query-devtools-chip--muted"
-                    title="Arrived without a request of this query's own - a poll, another consumer of the same cache entry, or another tab"
-                  >
-                    shared
-                  </span>
-                }
-                @if (run.error; as error) {
-                  <span
-                    class="et-query-devtools-chip et-query-devtools-chip--error"
-                    title="{{ error.messages.join(' · ') || 'The failure carried no message' }}"
-                  >
-                    {{ error.code || 'failed' }}
-                  </span>
-                }
+                    [attr.data-status]="host.runStatus(run)"
+                    [title]="run.status"
+                    class="et-query-devtools-status"
+                  ></span>
+                  #{{ run.index }}
+                  @if (run.attempts > 1) {
+                    <span
+                      class="et-query-devtools-chip et-query-devtools-chip--loading"
+                      title="Took {{
+                        run.attempts
+                      }} attempts - the duration next to it covers every one of them, backoff included"
+                    >
+                      <span class="et-query-devtools-retry-glyph" aria-hidden="true">⟳</span>
+                      {{ run.attempts }}
+                    </span>
+                  }
+                  @if (!run.didRequest) {
+                    <span
+                      class="et-query-devtools-chip et-query-devtools-chip--muted"
+                      title="Arrived without a request of this query's own - a poll, another consumer of the same cache entry, or another tab"
+                    >
+                      shared
+                    </span>
+                  }
+                  @if (run.error; as error) {
+                    <span
+                      class="et-query-devtools-chip et-query-devtools-chip--error"
+                      title="{{ error.messages.join(' · ') || 'The failure carried no message' }}"
+                    >
+                      {{ error.code || 'failed' }}
+                    </span>
+                  }
+                </span>
               </td>
               <td>{{ host.formatTime(run.startedAt) }}</td>
               <td>
@@ -379,34 +381,36 @@
                 }
               </td>
               <td>{{ run.receivedBytes ? host.formatBytes(run.receivedBytes) : '—' }}</td>
-              <td class="et-query-devtools-cell-actions">
-                @if (host.canDiffRun(s.entry, run)) {
-                  <button
-                    [class.et-query-devtools-btn--active]="host.diffRunIndex() === run.index"
-                    (click)="host.toggleRunDiff(run)"
-                    class="et-query-devtools-btn"
-                    type="button"
-                    title="Compare this response against the previous one still held"
-                  >
-                    Diff
-                  </button>
-                } @else if (run.error?.hasBody) {
-                  <button
-                    [class.et-query-devtools-btn--active]="host.errorRunIndex() === run.index"
-                    (click)="host.toggleRunError(run)"
-                    class="et-query-devtools-btn"
-                    type="button"
-                    title="Show the body this failure came with"
-                  >
-                    Error
-                  </button>
-                } @else if (run.hasResponse) {
-                  <span class="et-query-devtools-count">nothing earlier to diff</span>
-                } @else if (run.status === 'success') {
-                  <span class="et-query-devtools-count">body no longer held</span>
-                } @else {
-                  <span class="et-query-devtools-count">—</span>
-                }
+              <td>
+                <span class="et-query-devtools-cell-actions">
+                  @if (host.canDiffRun(s.entry, run)) {
+                    <button
+                      [class.et-query-devtools-btn--active]="host.diffRunIndex() === run.index"
+                      (click)="host.toggleRunDiff(run)"
+                      class="et-query-devtools-btn"
+                      type="button"
+                      title="Compare this response against the previous one still held"
+                    >
+                      Diff
+                    </button>
+                  } @else if (run.error?.hasBody) {
+                    <button
+                      [class.et-query-devtools-btn--active]="host.errorRunIndex() === run.index"
+                      (click)="host.toggleRunError(run)"
+                      class="et-query-devtools-btn"
+                      type="button"
+                      title="Show the body this failure came with"
+                    >
+                      Error
+                    </button>
+                  } @else if (run.hasResponse) {
+                    <span class="et-query-devtools-count">nothing earlier to diff</span>
+                  } @else if (run.status === 'success') {
+                    <span class="et-query-devtools-count">body no longer held</span>
+                  } @else {
+                    <span class="et-query-devtools-count">—</span>
+                  }
+                </span>
               </td>
             </tr>
           }

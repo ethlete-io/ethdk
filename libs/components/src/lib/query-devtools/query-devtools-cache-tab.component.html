@@ -79,27 +79,29 @@
               <td>{{ host.cacheFreshness(cacheEntry) }}</td>
               <td>{{ host.cacheSync(cacheEntry, client.pollStates) }}</td>
               <td>{{ host.cachePersistence(cacheEntry) }}</td>
-              <td class="et-query-devtools-cell-actions">
-                <button
-                  [class.et-query-devtools-btn--active]="expanded"
-                  [attr.aria-expanded]="expanded"
-                  (click)="host.toggleCacheValue(client.name, cacheEntry.key)"
-                  class="et-query-devtools-btn"
-                  type="button"
-                  title="Show the response held under this key"
-                >
-                  Value
-                </button>
-                <button (click)="host.refetchCacheEntry(cacheEntry)" class="et-query-devtools-btn" type="button">
-                  Refetch
-                </button>
-                <button
-                  (click)="host.evictCacheEntry(client.repository, cacheEntry.key)"
-                  class="et-query-devtools-btn"
-                  type="button"
-                >
-                  Evict
-                </button>
+              <td>
+                <span class="et-query-devtools-cell-actions">
+                  <button
+                    [class.et-query-devtools-btn--active]="expanded"
+                    [attr.aria-expanded]="expanded"
+                    (click)="host.toggleCacheValue(client.name, cacheEntry.key)"
+                    class="et-query-devtools-btn"
+                    type="button"
+                    title="Show the response held under this key"
+                  >
+                    Value
+                  </button>
+                  <button (click)="host.refetchCacheEntry(cacheEntry)" class="et-query-devtools-btn" type="button">
+                    Refetch
+                  </button>
+                  <button
+                    (click)="host.evictCacheEntry(client.repository, cacheEntry.key)"
+                    class="et-query-devtools-btn"
+                    type="button"
+                  >
+                    Evict
+                  </button>
+                </span>
               </td>
             </tr>
             @if (expanded) {

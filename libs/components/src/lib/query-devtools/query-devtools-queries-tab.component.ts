@@ -69,11 +69,7 @@ export class QueryDevtoolsQueriesTabComponent {
 
   protected filteredQueries = computed(() => {
     const facets = this.host.queryFacets();
-    // Tombstones are the one thing the list hides until asked: a destroyed query is history, and a
-    // panel that mixes it into the default view stops answering "what is my app doing".
-    const items = facets.has('gone')
-      ? this.searchedQueries()
-      : this.searchedQueries().filter(({ entry }) => !entry.destroyedAt);
+    const items = this.searchedQueries();
 
     if (!facets.size) return items;
 
@@ -83,22 +79,19 @@ export class QueryDevtoolsQueriesTabComponent {
     return items.filter((item) => this.matchesFacets(item, facets));
   });
 
-  /**
-   * How many queries are in scope, which is what the list would show unfiltered. Tombstones count only
-   * while the Gone chip is on, since they are not in the list otherwise.
-   */
-  protected scopedQueryCount = computed(() => {
-    const includeGone = this.host.queryFacets().has('gone');
-
-    return this.host.scopedQueries().filter((entry) => includeGone || !entry.destroyedAt).length;
-  });
+  /** How many queries are in scope, which is what the list shows unfiltered. */
+  protected scopedQueryCount = computed(() => this.host.scopedQueries().length);
 
   protected goneQueryCount = computed(() => this.host.scopedQueries().filter((entry) => !!entry.destroyedAt).length);
 
-  protected readonly CLEAR_GONE = clearQueryDevtoolsTombstones;
-
   /** Whether the search box or a status chip is narrowing the list beyond its scope. */
   protected isQueryListNarrowed = computed(() => !!this.host.queryFilter().trim() || this.host.queryFacets().size > 0);
+
+  protected forgetGoneQueries() {
+    clearQueryDevtoolsTombstones();
+    // Left lit, the chip would narrow the list to the tombstones that were just dropped - an empty list.
+    if (this.host.queryFacets().has('gone')) this.host.toggleFacet('gone');
+  }
 
   protected downloadInsomniaCollection() {
     this.host.downloadInsomniaCollection(this.filteredQueries(), this.host.selectedClientName());
@@ -106,6 +99,7 @@ export class QueryDevtoolsQueriesTabComponent {
 
   /** A query matches the chips if it is in any of the picked states - chips widen, they don't intersect. */
   private matchesFacets(item: { entry: QueryDevtoolsEntry; query: AnyQuery }, facets: ReadonlySet<QueryListFacet>) {
+    // A tombstone's frozen state is not a state to match against, so Gone is the only chip that holds it.
     if (item.entry.destroyedAt) return facets.has('gone');
 
     const status = this.host.queryStatus(item.query);

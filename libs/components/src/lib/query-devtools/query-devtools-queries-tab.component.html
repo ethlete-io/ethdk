@@ -40,16 +40,6 @@
             {{ scopedQueryCount() }}
           }
         </span>
-        @if (goneQueryCount()) {
-          <button
-            (click)="CLEAR_GONE()"
-            class="et-query-devtools-btn et-query-devtools-toolbar-btn"
-            type="button"
-            title="Forget every destroyed query the panel is still holding"
-          >
-            ✕ Gone {{ goneQueryCount() }}
-          </button>
-        }
         <button
           [disabled]="!filteredQueries().length"
           (click)="downloadInsomniaCollection()"
@@ -84,6 +74,17 @@
           >
             {{ facet.label }}
             <span class="et-query-devtools-facet-count">{{ count }}</span>
+          </button>
+        }
+        @if (goneQueryCount()) {
+          <button
+            (click)="forgetGoneQueries()"
+            class="et-query-devtools-filter-clear"
+            type="button"
+            title="Forget every destroyed query the panel is still holding"
+          >
+            <span aria-hidden="true">✕</span>
+            Forget
           </button>
         }
         @if (isQueryListNarrowed()) {
