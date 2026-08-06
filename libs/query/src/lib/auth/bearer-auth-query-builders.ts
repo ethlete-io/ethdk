@@ -1,7 +1,7 @@
-import { isDevMode } from '@angular/core';
+import { effect, isDevMode } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, of, switchMap, tap, timer } from 'rxjs';
-import { QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
+import { QueryArgs, QueryCreator, QueryErrorResponse, RequestArgs, ResponseType } from '../http';
 import { ShouldRetryRequestFn } from '../http/query-retry-utils';
 import { decryptBearer } from '../http/internal/request-route';
 import { BearerAuthProviderQueryContext } from './bearer-auth-provider';
@@ -61,8 +61,13 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
       };
 
   /**
-   * Minimum interval between refresh attempts in milliseconds.
+   * Minimum interval between the *proactive* refreshes the expiry timer schedules, in milliseconds.
    * Prevents rapid refresh loops in case of issues.
+   *
+   * A refresh a 401 asked for is never throttled by this - a token revoked seconds after a proactive
+   * refresh is exactly when the request must go out. Those are deduplicated instead: one refresh is
+   * in flight at a time.
+   *
    * @default 30000 (30 seconds)
    */
   minRefreshInterval?: number;
@@ -103,6 +108,34 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
    * @default true
    */
   autoRetryOn401?: boolean;
+
+  /**
+   * What to do once the refresh query has failed for good - `retryConfig` decides what is retried,
+   * this decides what a failure that survived it means.
+   *
+   * Defaults to ending the session for any status `retryConfig.retryableStatusCodes` does not list:
+   * those are the failures that could still succeed later, everything else leaves the tab holding a
+   * token the server will not renew. Without this the session would look valid while every secure
+   * query 401s.
+   *
+   * @example
+   * withRefreshQuery('refresh', {
+   *   queryCreator: refresh,
+   *   onRefreshFailure: ({ error, logout }) => {
+   *     if (error.code !== 503) logout();
+   *   },
+   * });
+   */
+  onRefreshFailure?: (failure: RefreshFailure) => void;
+};
+
+/** What {@link TokenRefreshQueryConfig.onRefreshFailure} is handed when a refresh gives up. */
+export type RefreshFailure = {
+  /** The error the refresh query ended on. */
+  error: QueryErrorResponse;
+
+  /** Ends the session, exactly as the provider's own `logout()` does. */
+  logout: () => void;
 };
 
 export type AuthQueryBuilder<TKey extends string, TArgs extends QueryArgs> = {
@@ -190,21 +223,34 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
     let lastRefreshTime = 0;
 
-    const executeRefresh = (triggeredInternally = true) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const refreshQuery = () => context.queries[key]!;
+
+    const isRefreshInFlight = () => refreshQuery().snapshot()?.loading() ?? false;
+
+    const executeRefresh = (reason: 'scheduled' | 'unauthorized') => {
       const currentRefreshToken = context.refreshToken();
-      if (!currentRefreshToken || !context.isLeader()) return;
+      if (!currentRefreshToken) return;
 
-      const now = Date.now();
-      const timeSinceLastRefresh = now - lastRefreshTime;
+      if (!context.isLeader()) {
+        // Only the leader may spend a single-use refresh token, but the event is still real - hand it
+        // over instead of dropping it, or this tab waits out the leader's timer with a dead token.
+        context.refreshCoordination?.request();
 
-      // Prevent too-frequent refreshes
-      if (timeSinceLastRefresh < minRefreshInterval) return;
+        return;
+      }
 
-      lastRefreshTime = now;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      context.queries[key]!.execute(buildArgs(currentRefreshToken), {
-        triggeredBy: triggeredInternally ? 'token-refresh' : undefined,
-      });
+      if (isRefreshInFlight()) return;
+
+      if (reason === 'scheduled') {
+        const now = Date.now();
+
+        if (now - lastRefreshTime < minRefreshInterval) return;
+
+        lastRefreshTime = now;
+      }
+
+      refreshQuery().execute(buildArgs(currentRefreshToken), { triggeredBy: 'token-refresh' });
     };
 
     const calculateRefreshBuffer = (tokenLifetimeMs: number) => {
@@ -271,9 +317,29 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       )
       .subscribe((shouldRefresh) => {
         if (shouldRefresh) {
-          executeRefresh(true);
+          executeRefresh('scheduled');
         }
       });
+
+    context.refreshCoordination?.requests$.pipe(takeUntilDestroyed()).subscribe(() => executeRefresh('unauthorized'));
+
+    const onRefreshFailure =
+      config.onRefreshFailure ??
+      (({ error, logout }: RefreshFailure) => {
+        if (!retryableStatusCodes.includes(error.code)) logout();
+      });
+
+    effect(() => {
+      const snapshot = refreshQuery().snapshot();
+
+      if (!snapshot || snapshot.loading()) return;
+
+      const error = snapshot.error();
+
+      if (!error) return;
+
+      onRefreshFailure({ error, logout: context.logout });
+    });
 
     // Auto-retry on 401: Listen to repository events and trigger refresh on 401 errors
     const autoRetryOn401 = config.autoRetryOn401 ?? true;
@@ -291,7 +357,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
           takeUntilDestroyed(),
         )
         .subscribe(() => {
-          executeRefresh(true);
+          executeRefresh('unauthorized');
         });
     }
   };

@@ -133,6 +133,45 @@ describe('setupLeaderElection', () => {
     second.cleanup();
   });
 
+  it('should deliver a follower’s refresh request to the leader alone', async () => {
+    const leader = openTab();
+    const follower = openTab();
+    const otherFollower = openTab();
+
+    await settle();
+
+    const heard: string[] = [];
+
+    leader.refreshRequests$.subscribe(() => heard.push('leader'));
+    otherFollower.refreshRequests$.subscribe(() => heard.push('otherFollower'));
+
+    follower.requestRefresh();
+    await settle();
+
+    expect(heard).toEqual(['leader']);
+
+    leader.cleanup();
+    follower.cleanup();
+    otherFollower.cleanup();
+  });
+
+  it('should not deliver a refresh request back to the tab that asked', async () => {
+    const tab = openTab();
+
+    await settle();
+
+    const heard: string[] = [];
+
+    tab.refreshRequests$.subscribe(() => heard.push('self'));
+
+    tab.requestRefresh();
+    await settle();
+
+    expect(heard).toEqual([]);
+
+    tab.cleanup();
+  });
+
   it('should release the lock on cleanup, idempotently', async () => {
     const tab = openTab();
 

@@ -109,7 +109,28 @@ It behaves exactly like a successful auth query: `bearerData` / `isAuthenticated
 - **Proactive** - a timer computed from the JWT's expiration claim (`expiresInPropertyName`, default `'exp'`) and the `refreshStrategy` (default: refresh at **75%** of the token lifetime, clamped between 1 and 10 minutes before expiry). With multi-tab sync active, only the elected leader tab refreshes.
 - **Reactive** - any secure query failing with a `401` triggers a refresh (`autoRetryOn401`, default `true`), then re-executes.
 
+`minRefreshInterval` (default 30s) throttles the **proactive** trigger only. A refresh a `401` asked for is never throttled - a token revoked seconds after a proactive refresh is exactly when the request has to go out. Those are deduplicated instead: one refresh is in flight at a time.
+
+In a tab that is not the elected leader, a `401` asks the leader to refresh over the leader channel rather than refreshing itself - a single-use refresh token must only be spent once, and the resulting tokens arrive back through [multi-tab sync](#multi-tab-sync). Without the feature every tab is its own leader and refreshes directly.
+
 Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 504` by default) with unlimited attempts (`retryConfig.maxAttempts: 0`) capped at 30s delay. By default the token extractor expects `{ accessToken, refreshToken }` in the response of both the authentication and refresh queries - override with `extractTokens`.
+
+### When a refresh fails for good
+
+A failure that survives `retryConfig` **ends the session**: any status the retry config does not list is one the refresh can never recover from, and leaving the tokens in place would leave `isAuthenticated()` reading `true` while every secure query `401`s. `executionState()` becomes `{ type: 'logout' }` like any other logout, and with multi-tab sync the other tabs follow.
+
+Override the policy with `onRefreshFailure`:
+
+```ts
+withRefreshQuery('refresh', {
+  queryCreator: refreshQuery,
+  onRefreshFailure: ({ error, logout }) => {
+    if (error.code !== 503) logout();
+  },
+});
+```
+
+It replaces the default entirely - a handler that never calls `logout()` keeps the session, which is what an app that shows its own "your session could not be renewed" prompt wants.
 
 ## Multi-tab sync
 
@@ -130,6 +151,7 @@ A received message takes the same path a local one does, which is what makes the
 
 - **Incoming tokens** are applied like a successful refresh, so `afterTokenRefresh$` emits and every secure query in that tab which had failed with a `401` re-executes. Without this a follower tab would sit on a permanently failed page until reloaded, holding a perfectly valid token.
 - **An incoming logout** runs the provider's own `logout()`, so `executionState()` becomes `{ type: 'logout' }` and unsaved-change guards are abandoned - the receiving tab reports the end of the session the same way the tab the user clicked in does.
+- **A follower's refresh request** reaches the leader over the leader channel, so a `401` in a tab that may not spend the refresh token still gets one out immediately instead of waiting for the leader's own timer.
 
 Neither message is echoed back out, so a login or logout settles in one round of broadcasts however many tabs are open.
 

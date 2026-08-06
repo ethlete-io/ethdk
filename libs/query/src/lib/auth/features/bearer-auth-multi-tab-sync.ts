@@ -114,7 +114,11 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
 
     instance = { isLeader: election.isLeader, instanceCount: election.instanceCount };
 
-    return { isLeader: () => election.isLeader(), leaderElection: instance };
+    return {
+      isLeader: () => election.isLeader(),
+      leaderElection: instance,
+      refreshCoordination: { request: election.requestRefresh, requests$: election.refreshRequests$ },
+    };
   };
 
   return Object.assign(setup, { earlySetup });

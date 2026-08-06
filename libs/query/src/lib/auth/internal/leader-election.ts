@@ -1,4 +1,5 @@
 import { DestroyRef, effect, inject, signal, Signal } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import { createQueryKeyLockManager } from '../../http/sync/query-key-lock-manager';
 
 /**
@@ -13,11 +14,12 @@ const leaderLockName = (name: string) => `${LEADER_LOCK_NAMESPACE}:${leaderLockK
 
 /**
  * Web Locks has no "someone joined" event, so tabs announce themselves on this channel. Two messages
- * per tab lifetime, in place of the heartbeat this used to run once a second.
+ * per tab lifetime, in place of the heartbeat this used to run once a second. It also carries a
+ * follower's request for a refresh, which is the other thing a tab can only say to the leader.
  */
 const presenceChannelName = (name: string) => `ethlete-auth-leader:${name}`;
 
-type LeaderPresenceMessage = { type: 'presence' };
+type LeaderChannelMessage = { type: 'presence' } | { type: 'refresh-requested' };
 
 export type InternalLeaderElection = {
   /**
@@ -35,6 +37,15 @@ export type InternalLeaderElection = {
    * still counted until the next of those happens.
    */
   instanceCount: Signal<number>;
+
+  /**
+   * Asks the leader to refresh the session's tokens. What a tab that hit a 401 does instead of
+   * refreshing itself, which would spend a single-use refresh token the leader also holds.
+   */
+  requestRefresh: () => void;
+
+  /** Emits in the leader tab whenever another tab called {@link requestRefresh}. */
+  refreshRequests$: Observable<void>;
 
   /** Releases the lock and leaves the channel. Idempotent, and also run on destroy. */
   cleanup: () => void;
@@ -67,14 +78,22 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
   const lockManager = createQueryKeyLockManager(LEADER_LOCK_NAMESPACE);
   const hold = lockManager.hold(leaderLockKey(options.name));
   const instanceCount = signal(1);
+  const refreshRequests = new Subject<void>();
 
-  const noopCleanup = () => {
+  const noop = () => {
     /* nothing was set up */
   };
 
-  // `hold.isHolder` is already `true` in this case, so the tab reads as the leader it effectively is.
+  // `hold.isHolder` is already `true` in this case, so the tab reads as the leader it effectively is,
+  // and asks nobody else for a refresh.
   if (!lockManager.isSupported) {
-    return { isLeader: hold.isHolder, instanceCount: instanceCount.asReadonly(), cleanup: noopCleanup };
+    return {
+      isLeader: hold.isHolder,
+      instanceCount: instanceCount.asReadonly(),
+      requestRefresh: noop,
+      refreshRequests$: refreshRequests.asObservable(),
+      cleanup: noop,
+    };
   }
 
   const channel =
@@ -92,13 +111,24 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
     instanceCount.set(Math.max(countLeaderRequests(snapshot, lockName), 1));
   };
 
-  const announce = () => channel?.postMessage({ type: 'presence' } satisfies LeaderPresenceMessage);
+  const announce = () => channel?.postMessage({ type: 'presence' } satisfies LeaderChannelMessage);
+
+  const requestRefresh = () => channel?.postMessage({ type: 'refresh-requested' } satisfies LeaderChannelMessage);
 
   if (channel) {
     channel.onmessage = (event: MessageEvent<unknown>) => {
-      if ((event.data as LeaderPresenceMessage | null)?.type !== 'presence') return;
+      const message = event.data as LeaderChannelMessage | null;
 
-      void recount();
+      if (message?.type === 'presence') {
+        void recount();
+
+        return;
+      }
+
+      // Every tab hears the request; only the one that may spend the refresh token acts on it.
+      if (message?.type === 'refresh-requested' && hold.isHolder()) {
+        refreshRequests.next();
+      }
     };
   }
 
@@ -123,9 +153,16 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
     hold.release();
     announce();
     channel?.close();
+    refreshRequests.complete();
   };
 
   destroyRef.onDestroy(cleanup);
 
-  return { isLeader: hold.isHolder, instanceCount: instanceCount.asReadonly(), cleanup };
+  return {
+    isLeader: hold.isHolder,
+    instanceCount: instanceCount.asReadonly(),
+    requestRefresh,
+    refreshRequests$: refreshRequests.asObservable(),
+    cleanup,
+  };
 };

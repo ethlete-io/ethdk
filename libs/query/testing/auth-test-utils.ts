@@ -56,6 +56,8 @@ export type AuthTestSetupConfig<
   refreshIfExpired?: boolean;
   /** Property name for expiration in JWT */
   expiresInPropertyName?: string;
+  /** What to do when the refresh query fails for good. Defaults to the provider's own policy */
+  onRefreshFailure?: TokenRefreshQueryConfig<TRefreshArgs>['onRefreshFailure'];
 };
 
 export type AuthTestSetup<
@@ -117,6 +119,7 @@ export const setupAuthTest = <
     minRefreshInterval,
     refreshIfExpired,
     expiresInPropertyName,
+    onRefreshFailure,
   } = config;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,6 +143,7 @@ export const setupAuthTest = <
         minRefreshInterval,
         refreshIfExpired,
         expiresInPropertyName,
+        onRefreshFailure,
       }),
     ] as [AuthQueryBuilder<'login', TLoginArgs>, TokenRefreshQueryBuilder<'refresh', TRefreshArgs>],
     features: (features ?? ([] as const)) as unknown as TFeatures,

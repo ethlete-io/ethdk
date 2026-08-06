@@ -132,10 +132,23 @@ export type BearerAuthProviderEarlySetupContext = {
   logout: () => void;
 };
 
+/**
+ * How a tab that is not the leader gets a refresh out of the tab that is. Contributed by
+ * `withBearerAuthMultiTabSync`; absent when every tab refreshes for itself.
+ */
+export type BearerAuthRefreshCoordination = {
+  /** Asks the leader tab to refresh the session's tokens now. */
+  request: () => void;
+
+  /** Emits in the leader tab whenever another tab asked for a refresh. */
+  requests$: Observable<void>;
+};
+
 /** The parts of the provider an early setup can contribute. */
 export type BearerAuthProviderEarlySetupResult = {
   isLeader?: () => boolean;
   leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
+  refreshCoordination?: BearerAuthRefreshCoordination;
 };
 
 /**
@@ -360,6 +373,10 @@ export type BearerAuthProviderQueryContext<
   repository: QueryRepository;
   afterTokenRefresh$: Observable<void>;
   isLeader: () => boolean;
+  refreshCoordination: BearerAuthRefreshCoordination | undefined;
+
+  /** Ends the session, exactly as the provider's own `logout()` does. */
+  logout: () => void;
   queries: QueryRegistry<TBuilders>;
 };
 
@@ -556,6 +573,7 @@ const runEarlyFeatureSetup = (
 ) => {
   let isLeaderFn: () => boolean = alwaysLeader;
   let leaderElectionContext: BearerAuthProviderFeatureContext['leaderElection'];
+  let refreshCoordination: BearerAuthRefreshCoordination | undefined;
 
   for (const featureBuilder of featureBuilders ?? []) {
     const earlySetup = (featureBuilder as BearerAuthProviderEarlySetup).earlySetup;
@@ -566,9 +584,10 @@ const runEarlyFeatureSetup = (
 
     isLeaderFn = result.isLeader ?? isLeaderFn;
     leaderElectionContext = result.leaderElection ?? leaderElectionContext;
+    refreshCoordination = result.refreshCoordination ?? refreshCoordination;
   }
 
-  return { isLeaderFn, leaderElectionContext };
+  return { isLeaderFn, leaderElectionContext, refreshCoordination };
 };
 
 const createBearerAuthProviderImpl = <
@@ -659,6 +678,8 @@ const createBearerAuthProviderImpl = <
     queryClient,
     repository: queryClient.repository,
     isLeader: isLeader.isLeaderFn,
+    refreshCoordination: isLeader.refreshCoordination,
+    logout,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
   };
