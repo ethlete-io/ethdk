@@ -73,5 +73,36 @@
       --et-theme-color-primary-opacity: 0;
       --_et-badge-border-color: var(--et-theme-color-ink-solid);
     }
+
+    /* `md` is the token initial values above, left unset so an ancestor token override still reaches it. */
+    &:where([data-size='sm']) {
+      --et-badge-gap: 3px;
+      --et-badge-padding-inline: 6px;
+      --et-badge-min-block-size: 16px;
+      --et-badge-font-size: 10px;
+    }
+
+    &:where([data-size='lg']) {
+      --et-badge-gap: 5px;
+      --et-badge-padding-inline: 10px;
+      --et-badge-min-block-size: 24px;
+      --et-badge-font-size: 12px;
+    }
+
+    .et-badge-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      &:empty {
+        display: none;
+      }
+
+      .et-icon {
+        inline-size: 1em;
+        block-size: 1em;
+      }
+    }
   }
 }
