@@ -1,6 +1,6 @@
 import { Directive, afterNextRender, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
-import { eachDayOfInterval } from 'date-fns';
+import { eachDayOfInterval, isSameDay, startOfDay } from 'date-fns';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
 import { buildSchedulerTimeGrid, computeInitialScrollHour } from './internals/scheduler-time-grid';
 import { SchedulerDirective } from './scheduler.directive';
@@ -57,6 +57,32 @@ export class SchedulerTimeGridDirective {
    * navigating days/weeks afterwards never yanks the user's own scroll position back.
    */
   public initialScrollHour = computed(() => computeInitialScrollHour(this.grid(), new Date()));
+
+  /**
+   * The scheduler's drag-to-create range placed on this grid: which day column it belongs to, and
+   * its `offset`/`span` as percentages of that column, the same units {@link days}' blocks use.
+   * `null` when nothing is being dragged or the range sits outside the visible days.
+   */
+  public draftBlock = computed(() => {
+    const draft = this.scheduler?.draftRange();
+
+    if (!draft) return null;
+
+    const dayIndex = this.days().findIndex((day) => isSameDay(day.date, draft.start));
+
+    if (dayIndex === -1) return null;
+
+    const dayStart = startOfDay(draft.start).getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const end = Math.min(draft.end.getTime(), dayStart + dayMs);
+
+    return {
+      dayIndex,
+      offset: ((draft.start.getTime() - dayStart) / dayMs) * 100,
+      span: ((end - draft.start.getTime()) / dayMs) * 100,
+      phase: draft.phase,
+    };
+  });
 
   constructor() {
     if (ngDevMode) {

@@ -31,3 +31,14 @@ export type SchedulerVisibleRange = {
   start: Date;
   end: Date;
 };
+
+/**
+ * A time range the user is dragging out on a view to create a new appointment. Stays set while the
+ * create surface is open so the surface can stay anchored to the range it came from.
+ */
+export type SchedulerDraftRange = {
+  start: Date;
+  end: Date;
+  /** `dragging` while the pointer is still down, `committed` once it is released. */
+  phase: 'dragging' | 'committed';
+};

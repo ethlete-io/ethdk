@@ -10,10 +10,11 @@
         @for (node of day.nodes; track node.appointment.id) {
           <div [style.--_et-scheduler-agenda-view-depth]="node.depth" class="et-scheduler-agenda-view-appointment">
             <button
+              #appointmentButton
               [attr.data-selected]="isSelected(node.appointment) ? '' : null"
               [attr.data-nested]="node.depth > 0 ? '' : null"
               [etProvideColor]="node.appointment.colorToken ?? null"
-              (click)="select(node.appointment)"
+              (click)="select(node.appointment, appointmentButton)"
               class="et-scheduler-appointment"
               type="button"
             >

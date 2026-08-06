@@ -7,7 +7,9 @@ import { ELLIPSIS_VERTICAL_ICON, IconDirective, PLUS_ICON, provideIcons, TRASH_I
 import { MENU_IMPORTS } from '../menu';
 import {
   defineOverlay,
-  dialogOverlayStrategy,
+  injectAnchoredDialogStrategy,
+  injectDialogStrategy,
+  injectFullscreenDialogStrategy,
   OVERLAY_REF,
   OverlayBodyComponent,
   OverlayCloseDirective,
@@ -167,12 +169,47 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
   }
 }
 
-/** Opens `<et-scheduler-edit-surface>` as a dialog - what `<et-scheduler>` uses to auto-open on selection. */
+/**
+ * Opens `<et-scheduler-edit-surface>` anchored to the appointment it edits - what `<et-scheduler>`
+ * uses to auto-open on selection. Below `md` it is a full-screen dialog instead, where the form
+ * needs the whole viewport. Pass the appointment's element as the open call's `origin`; without one
+ * the anchored strategy falls back to a centered dialog.
+ */
 export const SCHEDULER_EDIT_SURFACE_OVERLAY = /* @__PURE__ */ defineOverlay<
   SchedulerEditSurfaceComponent,
   SchedulerEditSurfaceResult
 >({
   component: SchedulerEditSurfaceComponent,
-  strategies: /* @__PURE__ */ dialogOverlayStrategy({ maxWidth: '520px' }),
+  strategies: () => {
+    const fullscreenDialogStrategy = injectFullscreenDialogStrategy();
+    const anchoredDialogStrategy = injectAnchoredDialogStrategy();
+
+    return [
+      { strategy: fullscreenDialogStrategy.build() },
+      { breakpoint: 'md', strategy: anchoredDialogStrategy.build({ maxWidth: '520px' }) },
+    ];
+  },
+  panelClass: 'et-scheduler-edit-surface-panel',
+});
+
+/**
+ * Opens `<et-scheduler-edit-surface>` as a plain centered dialog above `md`, full-screen below it.
+ * Used for an appointment added from the toolbar, which has no appointment on the calendar to
+ * anchor to. An add that starts on the calendar itself uses {@link SCHEDULER_EDIT_SURFACE_OVERLAY}.
+ */
+export const SCHEDULER_ADD_SURFACE_OVERLAY = /* @__PURE__ */ defineOverlay<
+  SchedulerEditSurfaceComponent,
+  SchedulerEditSurfaceResult
+>({
+  component: SchedulerEditSurfaceComponent,
+  strategies: () => {
+    const fullscreenDialogStrategy = injectFullscreenDialogStrategy();
+    const dialogStrategy = injectDialogStrategy();
+
+    return [
+      { strategy: fullscreenDialogStrategy.build() },
+      { breakpoint: 'md', strategy: dialogStrategy.build({ maxWidth: '520px' }) },
+    ];
+  },
   panelClass: 'et-scheduler-edit-surface-panel',
 });

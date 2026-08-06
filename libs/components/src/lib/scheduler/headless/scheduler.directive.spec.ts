@@ -115,4 +115,55 @@ describe('SchedulerDirective', () => {
   it('resolves selectedAppointment to null when nothing is selected', () => {
     expect(directive.selectedAppointment()).toBeNull();
   });
+
+  describe('drag-to-create range', () => {
+    const QUARTER_HOUR = 15 * 60 * 1000;
+    const at = (hour: number, minute = 0) => new Date(2026, 6, 15, hour, minute);
+
+    it('opens one slot wide at the point the drag began', () => {
+      directive.beginDraftRange(at(9), QUARTER_HOUR);
+
+      expect(directive.draftRange()).toEqual({ start: at(9), end: at(9, 15), phase: 'dragging' });
+    });
+
+    it('grows downwards from the anchor', () => {
+      directive.beginDraftRange(at(9), QUARTER_HOUR);
+      directive.extendDraftRange(at(11), QUARTER_HOUR);
+
+      expect(directive.draftRange()).toMatchObject({ start: at(9), end: at(11) });
+    });
+
+    it('flips so a drag above the anchor ends at it', () => {
+      directive.beginDraftRange(at(9), QUARTER_HOUR);
+      directive.extendDraftRange(at(7, 30), QUARTER_HOUR);
+
+      expect(directive.draftRange()).toMatchObject({ start: at(7, 30), end: at(9) });
+    });
+
+    it('never shrinks below one slot while dragging back through the anchor', () => {
+      directive.beginDraftRange(at(9), QUARTER_HOUR);
+      directive.extendDraftRange(at(9, 5), QUARTER_HOUR);
+
+      const range = directive.draftRange();
+
+      expect(range!.end.getTime() - range!.start.getTime()).toBe(QUARTER_HOUR);
+    });
+
+    it('marks the range committed on release and drops it on clear', () => {
+      directive.beginDraftRange(at(9), QUARTER_HOUR);
+      directive.commitDraftRange();
+
+      expect(directive.draftRange()?.phase).toBe('committed');
+
+      directive.clearDraftRange();
+
+      expect(directive.draftRange()).toBeNull();
+    });
+
+    it('ignores an extend with no drag in progress', () => {
+      directive.extendDraftRange(at(11), QUARTER_HOUR);
+
+      expect(directive.draftRange()).toBeNull();
+    });
+  });
 });

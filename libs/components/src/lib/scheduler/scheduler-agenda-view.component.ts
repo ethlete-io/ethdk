@@ -43,7 +43,8 @@ export class SchedulerAgendaViewComponent {
     return this.scheduler?.selectedAppointmentId() === appointment.id;
   }
 
-  protected select(appointment: Appointment) {
+  protected select(appointment: Appointment, element: HTMLElement) {
+    this.scheduler?.surfaceAnchor.set(element);
     this.scheduler?.selectedAppointmentId.set(appointment.id);
   }
 }

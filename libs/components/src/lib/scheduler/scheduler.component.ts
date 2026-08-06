@@ -30,11 +30,15 @@ import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.dir
 import { SchedulerBadgeLocationDirective } from './scheduler-badge-location.directive';
 import { SchedulerBadgeTimeRangeDirective } from './scheduler-badge-time-range.directive';
 import { SchedulerBadgeTitleDirective } from './scheduler-badge-title.directive';
-import { SCHEDULER_EDIT_SURFACE_OVERLAY } from './scheduler-edit-surface.component';
+import {
+  SCHEDULER_ADD_SURFACE_OVERLAY,
+  SCHEDULER_EDIT_SURFACE_OVERLAY,
+  SchedulerEditSurfaceResult,
+} from './scheduler-edit-surface.component';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
 import { SchedulerTimeGridViewComponent } from './scheduler-time-grid-view.component';
-import { Appointment, AppointmentId, SchedulerView } from './scheduler.types';
+import { Appointment, AppointmentId, SchedulerDraftRange, SchedulerView } from './scheduler.types';
 
 @Component({
   selector: 'et-scheduler',
@@ -154,14 +158,19 @@ export class SchedulerComponent implements SchedulerFeatureHost {
    * clicking the same appointment again reopens a fresh surface.
    */
   private editSurfaceOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
-    afterClosed: (result) => {
-      if (result?.kind === 'save') {
-        this.appointmentSave.emit(result.appointment);
-      } else if (result?.kind === 'delete') {
-        this.appointmentsDelete.emit(result.ids);
-      }
+    afterClosed: (result) => this.handleEditSurfaceResult(result),
+  });
 
-      this.headless.selectedAppointmentId.set(null);
+  /** The toolbar's add has no appointment to anchor to, so it opens a plain dialog instead. */
+  private addSurfaceOpener = createOverlayOpener(SCHEDULER_ADD_SURFACE_OVERLAY, {
+    afterClosed: (result) => this.handleEditSurfaceResult(result),
+  });
+
+  /** A range dragged out on a view opens over the range itself - see {@link SchedulerDraftRange}. */
+  private draftSurfaceOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
+    afterClosed: (result) => {
+      this.headless.clearDraftRange();
+      this.handleEditSurfaceResult(result);
     },
   });
 
@@ -174,6 +183,16 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       }
 
       untracked(() => this.openEditSurface(appointment));
+    });
+
+    effect(() => {
+      const draft = this.headless.draftRange();
+
+      if (draft?.phase !== 'committed') {
+        return;
+      }
+
+      untracked(() => this.openDraftSurface(draft));
     });
   }
 
@@ -194,7 +213,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     const hour = isSameDay(day, new Date()) ? Math.min(23, new Date().getHours() + 1) : 9;
     const start = setMinutes(setHours(day, hour), 0);
 
-    this.openEditSurface({ id: randomId(), parentId: null, title: '', start, end: addHours(start, 1) });
+    this.openAddSurface({ id: randomId(), parentId: null, title: '', start, end: addHours(start, 1) });
   }
 
   /** The scheduler's own element. Part of the feature contract (a feature is a directive on it). */
@@ -228,10 +247,57 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   private openEditSurface(appointment: Appointment) {
     this.editSurfaceOpener.open({
-      bindings: [
-        inputBinding('appointment', () => appointment),
-        inputBinding('appointments', () => this.headless.appointments()),
-      ],
+      origin: this.takeSurfaceAnchor(),
+      bindings: this.editSurfaceBindings(appointment),
     });
+  }
+
+  private openAddSurface(appointment: Appointment) {
+    this.addSurfaceOpener.open({ bindings: this.editSurfaceBindings(appointment) });
+  }
+
+  private openDraftSurface(draft: SchedulerDraftRange) {
+    const appointment: Appointment = {
+      id: randomId(),
+      parentId: null,
+      title: '',
+      start: draft.start,
+      end: draft.end,
+    };
+
+    this.draftSurfaceOpener.open({
+      origin: this.takeSurfaceAnchor(),
+      bindings: this.editSurfaceBindings(appointment),
+    });
+  }
+
+  /**
+   * The element the view registered for this interaction, cleared as it is read so a later
+   * selection made without one - `selectedAppointmentId` written directly - cannot inherit it and
+   * open anchored to the wrong appointment. Without an anchor the surface centers itself.
+   */
+  private takeSurfaceAnchor(): HTMLElement | undefined {
+    const anchor = this.headless.surfaceAnchor();
+
+    this.headless.surfaceAnchor.set(null);
+
+    return anchor ?? undefined;
+  }
+
+  private editSurfaceBindings(appointment: Appointment) {
+    return [
+      inputBinding('appointment', () => appointment),
+      inputBinding('appointments', () => this.headless.appointments()),
+    ];
+  }
+
+  private handleEditSurfaceResult(result: SchedulerEditSurfaceResult | null | undefined) {
+    if (result?.kind === 'save') {
+      this.appointmentSave.emit(result.appointment);
+    } else if (result?.kind === 'delete') {
+      this.appointmentsDelete.emit(result.ids);
+    }
+
+    this.headless.selectedAppointmentId.set(null);
   }
 }

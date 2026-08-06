@@ -146,6 +146,23 @@
     }
   }
 
+  .et-scheduler-time-grid-draft {
+    position: absolute;
+    inset-block-start: calc(var(--_et-scheduler-time-grid-block-offset, 0) * 1%);
+    inset-inline: 0 2px;
+    block-size: calc(var(--_et-scheduler-time-grid-block-span, 0) * 1%);
+    min-block-size: 16px;
+    border-radius: 4px;
+    border: 1px dashed var(--et-theme-color-primary-solid);
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid) 10%, transparent);
+    pointer-events: none;
+
+    &:where([data-committed]) {
+      border-style: solid;
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
+    }
+  }
+
   .et-scheduler-time-grid-block {
     position: absolute;
     inset-block-start: calc(var(--_et-scheduler-time-grid-block-offset, 0) * 1%);

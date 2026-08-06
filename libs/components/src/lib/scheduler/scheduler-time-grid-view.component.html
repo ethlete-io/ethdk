@@ -22,13 +22,14 @@
     >
       @for (entry of grid.allDay(); track entry.node.appointment.id) {
         <button
+          #appointmentButton
           [style.--_et-scheduler-time-grid-all-day-offset]="entry.inlineOffset"
           [style.--_et-scheduler-time-grid-all-day-size]="entry.inlineSize"
           [style.--_et-scheduler-time-grid-all-day-row]="entry.row"
           [attr.data-selected]="isSelected(entry.node.appointment) ? '' : null"
           [attr.title]="entry.node.appointment.title"
           [etProvideColor]="entry.node.appointment.colorToken ?? null"
-          (click)="select(entry.node.appointment)"
+          (click)="select(entry.node.appointment, appointmentButton)"
           class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry"
           type="button"
         >
@@ -53,14 +54,36 @@
   </div>
 
   <div class="et-scheduler-time-grid-days">
-    @for (day of grid.days(); track day.date.getTime()) {
-      <div [attr.data-today]="day.today ? '' : null" class="et-scheduler-time-grid-day" role="gridcell">
+    @for (day of grid.days(); track day.date.getTime(); let dayIndex = $index) {
+      <div
+        #dayColumn
+        [attr.data-today]="day.today ? '' : null"
+        (pointerdown)="startDraftRange($event, { element: dayColumn, day: day.date })"
+        class="et-scheduler-time-grid-day"
+        role="gridcell"
+      >
         @for (hour of hours(); track hour.hour) {
           <div class="et-scheduler-time-grid-hour-row" role="presentation"></div>
         }
 
+        @if (grid.draftBlock(); as draft) {
+          @if (draft.dayIndex === dayIndex) {
+            <div
+              #draftBlock
+              [style.--_et-scheduler-time-grid-block-offset]="draft.offset"
+              [style.--_et-scheduler-time-grid-block-span]="draft.span"
+              [attr.data-committed]="draft.phase === 'committed' ? '' : null"
+              class="et-scheduler-time-grid-draft"
+              role="presentation"
+            ></div>
+          }
+        }
+
+        <!-- pointerdown is stopped below so a press that starts on an appointment does not reach the
+             column's drag-to-create and lay a new range over the one already there -->
         @for (block of day.blocks; track block.node.appointment.id) {
           <button
+            #appointmentButton
             [style.--_et-scheduler-time-grid-block-offset]="block.offset"
             [style.--_et-scheduler-time-grid-block-span]="block.span"
             [style.--_et-scheduler-time-grid-block-inline-offset]="block.inlineOffset"
@@ -70,7 +93,8 @@
             [attr.data-nested]="block.node.depth > 0 ? '' : null"
             [attr.title]="block.node.appointment.title"
             [etProvideColor]="block.node.appointment.colorToken ?? null"
-            (click)="select(block.node.appointment)"
+            (click)="select(block.node.appointment, appointmentButton)"
+            (pointerdown)="$event.stopPropagation()"
             class="et-scheduler-time-grid-block"
             type="button"
           >

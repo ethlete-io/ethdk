@@ -43,7 +43,8 @@ export class SchedulerMonthViewComponent {
     return this.scheduler?.selectedAppointmentId() === appointment.id;
   }
 
-  protected select(appointment: Appointment) {
+  protected select(appointment: Appointment, element: HTMLElement | null = null) {
+    this.scheduler?.surfaceAnchor.set(element);
     this.scheduler?.selectedAppointmentId.set(appointment.id);
   }
 }

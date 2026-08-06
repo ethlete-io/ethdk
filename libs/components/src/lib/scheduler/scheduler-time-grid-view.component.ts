@@ -1,12 +1,29 @@
 import { NgComponentOutlet } from '@angular/common';
-import { afterNextRender, Component, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
-import { ProvideColorDirective, injectStyleManager } from '@ethlete/core';
-import { format, setHours, startOfDay } from 'date-fns';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DragGestureEvent, ProvideColorDirective, dragGestureFrom, injectStyleManager } from '@ethlete/core';
+import { addMinutes, format, setHours, startOfDay } from 'date-fns';
+import { tap } from 'rxjs';
 import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerTimeGridDirective } from './headless';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
 import { Appointment } from './scheduler.types';
 
 const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
+
+const MINUTES_PER_DAY = 24 * 60;
+const DRAFT_SLOT_MINUTES = 15;
+const DRAFT_MINIMUM_DURATION = DRAFT_SLOT_MINUTES * 60 * 1000;
+
+type SchedulerDraftColumn = { element: HTMLElement; day: Date };
 
 /**
  * The default time grid: an hour axis, an all-day strip, and appointments packed into
@@ -29,8 +46,10 @@ export class SchedulerTimeGridViewComponent {
   protected grid = inject(SchedulerTimeGridDirective);
 
   private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
+  private destroyRef = inject(DestroyRef);
   protected timeGridBody = viewChild<ElementRef<HTMLElement>>('timeGridBody');
   private firstHourRow = viewChild<ElementRef<HTMLElement>>('hourRow');
+  public draftBlock = viewChild<ElementRef<HTMLElement>>('draftBlock');
 
   protected hours = computed(() => {
     const locale = this.scheduler?.effectiveLocale();
@@ -74,7 +93,44 @@ export class SchedulerTimeGridViewComponent {
     return this.scheduler?.selectedAppointmentId() === appointment.id;
   }
 
-  protected select(appointment: Appointment) {
+  protected select(appointment: Appointment, element: HTMLElement) {
+    this.scheduler?.surfaceAnchor.set(element);
     this.scheduler?.selectedAppointmentId.set(appointment.id);
+  }
+
+  /**
+   * Drags a new appointment's time range out of an empty part of a day column. A press that never
+   * passes the gesture's commit threshold stays a click, so tapping empty grid does nothing.
+   */
+  protected startDraftRange(event: PointerEvent, column: SchedulerDraftColumn) {
+    const scheduler = this.scheduler;
+
+    if (!scheduler || event.button !== 0) return;
+
+    const timeAt = (clientY: number) => {
+      const { top, height } = column.element.getBoundingClientRect();
+      const fraction = Math.min(Math.max((clientY - top) / height, 0), 1);
+      const snapped = Math.round((fraction * MINUTES_PER_DAY) / DRAFT_SLOT_MINUTES) * DRAFT_SLOT_MINUTES;
+
+      return addMinutes(startOfDay(column.day), Math.min(snapped, MINUTES_PER_DAY));
+    };
+
+    const apply = (gesture: DragGestureEvent) => {
+      switch (gesture.type) {
+        case 'start':
+          return scheduler.beginDraftRange(timeAt(gesture.data.clientY), DRAFT_MINIMUM_DURATION);
+        case 'move':
+          return scheduler.extendDraftRange(timeAt(gesture.data.clientY), DRAFT_MINIMUM_DURATION);
+        case 'end':
+          // the preview is what the create surface anchors to, so hand it over before committing
+          scheduler.surfaceAnchor.set(this.draftBlock()?.nativeElement ?? null);
+
+          return scheduler.commitDraftRange();
+        case 'cancelled':
+          return scheduler.clearDraftRange();
+      }
+    };
+
+    dragGestureFrom(event, column.element).pipe(tap(apply), takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 }

@@ -116,6 +116,14 @@ It takes no inputs of its own - like the month view, it reads its host `[etSched
 
 Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view.
 
+### Drag to create
+
+Dragging across empty grid in a day column draws a new appointment's time range and opens the [edit surface](#edit-surface) over it on release, prefilled with the dragged start and end. The range snaps to 15-minute slots, is never shorter than one slot, and flips when you drag above where you started. A press that never passes the drag threshold stays a plain click, so tapping empty grid does nothing, and a press that starts **on** an appointment does not draw a range over it.
+
+The range stays visible while the surface is open and disappears when it closes - dismiss without saving and nothing is created. A gesture the browser takes away (a `pointercancel`) clears it without opening anything.
+
+The state behind it lives on the headless directive, so a custom view can drive the same flow: `draftRange` (the live range and whether it is `dragging` or `committed`), written with `beginDraftRange()` / `extendDraftRange()` / `commitDraftRange()` and dropped with `clearDraftRange()`.
+
 ## Agenda view
 
 A flat list, grouped by day: each day of the visible range that has at least one appointment gets a section, with its appointments as full-width badges in chain order (depth-first, indented per level). A day with nothing on it is skipped entirely rather than rendering an empty section.
@@ -130,7 +138,17 @@ It takes no inputs of its own - like the other views, it reads its host `[etSche
 
 ## Edit surface {#edit-surface}
 
-Clicking any appointment badge or block opens `<et-scheduler-edit-surface>` - a dialog, built on the [overlay](/components/overlays) system, that `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when the dialog does. This is the zero-config path: a plain `<et-scheduler>` with no feature directives applied already gets a full edit experience.
+Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. This is the zero-config path: a plain `<et-scheduler>` with no feature directives applied already gets a full edit experience.
+
+Where it opens depends on whether there is something on the calendar to open it over:
+
+| Opened by                                           | Below `md`  | `md` and up                            |
+| --------------------------------------------------- | ----------- | -------------------------------------- |
+| Clicking an appointment                             | Full screen | Anchored to that appointment           |
+| [Dragging a range](#drag-to-create) on a day column | Full screen | Anchored to the range you drew         |
+| The toolbar's add-appointment action                | Full screen | Centered dialog - nothing to anchor to |
+
+A phone gets the whole viewport in every case, where the form needs the space. Selecting an appointment that is not on screen - writing `selectedAppointmentId` yourself, or picking one from a month cell's overflow menu - has no element to anchor to either, so it falls back to a centered dialog.
 
 ```html
 <et-scheduler

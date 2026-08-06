@@ -1,4 +1,4 @@
-import { Directive, computed, input, model } from '@angular/core';
+import { Directive, computed, input, model, signal } from '@angular/core';
 import {
   Locale,
   addDays,
@@ -12,7 +12,13 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { injectDateLocale } from '../../forms/date-time/date-time-formats';
-import { Appointment, AppointmentId, SchedulerView, SchedulerVisibleRange } from '../scheduler.types';
+import {
+  Appointment,
+  AppointmentId,
+  SchedulerDraftRange,
+  SchedulerView,
+  SchedulerVisibleRange,
+} from '../scheduler.types';
 import { buildAppointmentTree, countDescendants } from './internals/scheduler-tree';
 
 export type { AppointmentTreeNode } from './internals/scheduler-tree';
@@ -117,6 +123,23 @@ export class SchedulerDirective<TExtra = unknown> {
     () => this.appointments().find((appointment) => appointment.id === this.selectedAppointmentId()) ?? null,
   );
 
+  /**
+   * The range being dragged out on a view to create an appointment, or `null`. A view writes it
+   * through {@link beginDraftRange} / {@link extendDraftRange} / {@link commitDraftRange}; the host
+   * clears it with {@link clearDraftRange} once it is done with it.
+   */
+  public draftRange = signal<SchedulerDraftRange | null>(null);
+
+  /**
+   * The element a host should anchor its edit surface to - the appointment that was clicked, or the
+   * range that was just dragged out. `null` whenever the interaction had no element behind it, such
+   * as a selection made by writing {@link selectedAppointmentId} directly.
+   */
+  public surfaceAnchor = signal<HTMLElement | null>(null);
+
+  /** Where the current drag started, so extending backwards past it flips the range. */
+  private draftAnchor: Date | null = null;
+
   /** Steps {@link focusedDate} forward by the active view's unit - a day, a week, or a month. */
   public next() {
     this.stepBy(1);
@@ -130,6 +153,37 @@ export class SchedulerDirective<TExtra = unknown> {
   /** Focuses today. */
   public goToToday() {
     this.focusedDate.set(startOfDay(new Date()));
+  }
+
+  /** Starts a drag-to-create range at `at`. The range covers `at` until {@link extendDraftRange}. */
+  public beginDraftRange(at: Date, minimumDuration: number) {
+    this.draftAnchor = at;
+    this.draftRange.set({ start: at, end: new Date(at.getTime() + minimumDuration), phase: 'dragging' });
+  }
+
+  /** Grows the active drag-to-create range to `to`, flipping it when dragged above its anchor. */
+  public extendDraftRange(to: Date, minimumDuration: number) {
+    const anchor = this.draftAnchor;
+
+    if (!anchor) return;
+
+    const forward = to.getTime() >= anchor.getTime() + minimumDuration;
+    const start = forward ? anchor : new Date(Math.min(to.getTime(), anchor.getTime() - minimumDuration));
+    const end = forward ? to : anchor;
+
+    this.draftRange.set({ start, end, phase: 'dragging' });
+  }
+
+  /** Releases the drag, leaving the range in place for the host to open its create surface over. */
+  public commitDraftRange() {
+    this.draftAnchor = null;
+    this.draftRange.update((range) => (range ? { ...range, phase: 'committed' } : null));
+  }
+
+  /** Drops the drag-to-create range - a cancelled gesture, or a create surface that closed. */
+  public clearDraftRange() {
+    this.draftAnchor = null;
+    this.draftRange.set(null);
   }
 
   private stepBy(step: 1 | -1) {

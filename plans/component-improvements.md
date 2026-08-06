@@ -32,22 +32,6 @@ widths.
   between parent and children. `scheduler-agenda-view.component.html`
   already flattens the tree with a `depth`/`data-nested` per node, so a
   connector can be drawn off data that already exists - no new tree-walking.
-- **Full-screen edit on mobile, anchored on desktop.** `scheduler-edit-
-surface.component.ts` hardcodes one `dialogOverlayStrategy` with no
-  breakpoint branching. `overlay/strategies/presets.ts` ships a packaged
-  `transformingFullScreenDialogToDialogOverlayStrategy`/`...ToRightSheetOverlayStrategy`,
-  but the SDK's own already-responsive controls don't actually use those
-  presets - `cascader.directive.ts` and `date-picker-overlay.ts` both hand-
-  compose `[{ strategy: bottomSheetStrategy.build(...) }, { breakpoint:
-'md', strategy: anchoredOverlayStrategy(...)... }]` directly. That hand-
-  composed shape is the real precedent to copy for a fullscreen→anchored
-  split (no packaged preset covers anchored today - see "Overlay
-  responsiveness" below for the full picture across the SDK).
-- **Add-new stays a plain dialog.** Already true - `addAppointment()` opens
-  the same `SCHEDULER_EDIT_SURFACE_OVERLAY` as edit. Once edit gets the
-  responsive split above, add-new needs pinning to its own overlay
-  definition (plain `dialogOverlayStrategy`) so it doesn't inherit edit's
-  new mobile/desktop branching.
 - **Start/end as a date-time range picker.** `scheduler-edit-time-
 range.component.ts` pairs two independent `et-date-time-input` controls.
   The SDK's `DateRangeInputComponent` is date-only; no combined date-time-
@@ -258,34 +242,29 @@ semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
   messages vs. banner's single description paragraph) and the retry-button-
   only-if-`canRetry` conditional.
 
-## Overlay responsiveness: scheduler's gap is systemic
+## Overlay responsiveness: resolved, and it was not systemic
 
-Checked every overlay-anchored dropdown-style control for the same
-"one strategy, no breakpoint" gap flagged on scheduler's edit dialog. Three
-already solve it, and none of them use the packaged `transforming*`
-presets in `overlay/strategies/presets.ts` - they hand-compose a breakpoint
-array directly: `cascader.directive.ts` and `date-picker-overlay.ts` both
-build `[{ strategy: bottomSheetStrategy.build({ hasBackdrop: true, ... }) },
-{ breakpoint: 'md', strategy: anchoredOverlayStrategy(...) }]`, and
-`rich-text-editor-link-editor.directive.ts` does the equivalent with a top
-sheet instead of a bottom sheet (comment: "on phones (< md) an anchored
-popover would be cramped against the on-screen keyboard"). Three don't:
-`menu.directive.ts`, `rich-text-editor-floating-toolbar.directive.ts`, and
-`rich-text-editor-triggers.directive.ts` all build one raw anchored
-strategy with no breakpoint at all - the same shape as scheduler's gap.
-`select.directive.ts` is anchored-only too, but that one is a documented,
-deliberate choice ("a select is a single-column listbox that reads fine
-anchored to the field on mobile"), not an oversight.
+The premise of this section was wrong; recorded here so the next pass does not
+re-open it. Of the "three that don't", only one was ever a gap:
 
-`anchored.strategy.ts` itself explains why this is inconsistent rather than
-missing: it already does real viewport-awareness for _collision avoidance_
-(`fallbackPlacements`, `shift`, `viewportPadding`, `autoResize`, `autoHide`)
-but has no concept of swapping to a different UI shape at a breakpoint -
-that only happens where a caller composes multiple strategies itself, which
-three controls do and three don't. Fixing menu and the two RTE overlays
-means copying cascader's/the date-picker's exact composition pattern, which
-is also the fix for scheduler's edit dialog above - one pattern, four
-call sites.
+- `rich-text-editor-floating-toolbar.directive.ts` **never opens on touch at all**
+  (`if (hasTouchInput()) return null`, with the reasoning in a doc comment: the
+  platform's own selection menu covers the same space, and the static toolbar
+  covers formatting there). It is a pointer-device-only enhancement, so a
+  breakpoint would have nothing to swap to.
+- `rich-text-editor-triggers.directive.ts` is a caret-anchored autocomplete that
+  stays live while typing (`autoFocus: false`, repositioned per keystroke). A
+  bottom sheet lands under the keyboard and a top sheet with a backdrop blocks the
+  editor it is completing into - anchoring to the caret is the requirement, not an
+  oversight.
+- `menu.directive.ts` stays anchored **by decision** (2026-08-06). The reasoning:
+  the finger is already at the trigger, so an anchored menu opens where the hand
+  already is, while a sheet forces the whole reach down to the bottom of the
+  screen. The iOS fly-in action sheet was the appealing precedent, and Apple
+  dropped it - nested menus were the thing that broke. Same category as
+  `select.directive.ts`: deliberate, not missing.
+
+The scheduler's edit surface - the one real gap - shipped; see "Already fixed".
 
 ## Duplicated pointer-drag logic: slider, rating, carousel
 
@@ -714,6 +693,29 @@ Storybook structure (2026-08-06):
   three-level nesting in the SDK. Both story ids moved with the titles, so the two `<StoryEmbed>`
   ids in `apps/docs/components/copy-button.md` and `forms.md` were updated - grep `apps/docs` for
   the old id whenever a title changes. Story-only, so no changeset.
+
+Scheduler overlay + drag-to-create (2026-08-06):
+
+- **Full-screen edit on mobile, anchored on desktop** and **add-new stays a plain dialog** (both
+  from the Scheduler section) - the edit surface is full screen below `md`; above it, it anchors to
+  the appointment clicked or the range dragged, and the toolbar's add opens a centered dialog since
+  it has nothing to anchor to. Two definitions in `scheduler-edit-surface.component.ts`
+  (`SCHEDULER_EDIT_SURFACE_OVERLAY` anchored, `SCHEDULER_ADD_SURFACE_OVERLAY` plain); `strategies`
+  is fixed per definition (`OverlayOpenConfig` omits it) but `origin` is per-open, which is what
+  makes one anchored definition serve both the edit and drag paths.
+- **Drag to create** (asked for mid-session) - dragging empty grid in a day column draws a
+  15-minute-snapped range and opens the create surface anchored to it. `draftRange` +
+  `begin/extend/commit/clearDraftRange` live on `SchedulerDirective` so any view can drive it;
+  `SchedulerTimeGridDirective.draftBlock` places it. Notes for whoever extends this: a press on an
+  existing appointment stops propagation so it cannot draw over it (there is no move/resize yet -
+  that is the natural next feature); a sub-threshold press stays a click; `pointercancel` clears
+  without opening. Month-view drag across days (an all-day range) is **not** done.
+- Anchoring deliberately avoids DOM queries - a view hands its element to
+  `SchedulerDirective.surfaceAnchor`, which the host consumes and clears, so a later programmatic
+  `selectedAppointmentId` write cannot inherit a stale anchor. `ethlete/no-dom-query` forbids the
+  `querySelector` approach anyway, and `signalElementChildren` is direct-children-only.
+  Changeset `scheduler-drag-to-create-and-anchored-edit.md`. Verified headlessly: 14/14 on the
+  drag/edit/add/mobile paths, 6/6 on click, cancel and press-on-appointment.
 
 Found not to reproduce:
 

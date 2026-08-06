@@ -21,10 +21,11 @@
           <div class="et-scheduler-month-view-cell-appointments">
             @for (node of cell.visible; track node.appointment.id) {
               <button
+                #appointmentButton
                 [attr.data-selected]="isSelected(node.appointment) ? '' : null"
                 [attr.title]="node.appointment.title"
                 [etProvideColor]="node.appointment.colorToken ?? null"
-                (click)="select(node.appointment)"
+                (click)="select(node.appointment, appointmentButton)"
                 class="et-scheduler-appointment"
                 type="button"
               >
