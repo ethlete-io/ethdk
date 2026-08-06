@@ -507,17 +507,6 @@ The only other editing affordance is the whole-body one: `openResponseEditor`
 one-shot and does not survive a refetch. Path-addressed and free-form are
 today mutually exclusive; a custom `set` op is what joins them.
 
-- **Null values get a dead menu.** `kindOf(null)` returns `'null'`
-  (`query-devtools-json.component.ts`), which matches no `@switch` case in
-  the override menu; `isContainer`, `isArrayElement` and `paginationShape`
-  are all false/null too, so the menu renders exactly one item: the
-  destructive `Reset` - which is itself a no-op when nothing is armed at
-  that path. Same for `'undefined'`. This is the case where custom values
-  matter most: a null field is precisely the one you want to fill with a
-  plausible value to see what the UI does. Minimum fix is a `'null'` /
-  `'undefined'` case offering `set`-backed "Set to string / number /
-  boolean / empty object / empty array", and suppressing `Reset` when the
-  path has nothing armed.
 - **Copy/paste subtrees.** Copy already exists as the ⧉ button on every
   row - `copyValue()` writes the whole subtree as JSON for containers, the
   raw unquoted value for leaves, and `copyLabel()` already says "Copy
@@ -895,6 +884,12 @@ Bugfix pass:
 - **Query form reset cascade** - `applyResets` iterates to a fixpoint (cap 10, dev warning),
   so `country → league → team` clears the whole chain in one committed change.
   Changeset `query-form-signals-reset-cascade.md`.
+- **Query devtools override menu on empty values** - `null`/`undefined` rows get `set`-backed
+  "set to text / number / true / empty object / empty array" items, `Reset` renders only when
+  `hasQueryDevtoolsOverridesAtPath` says something is armed, and `arm({ type: 'reset' })` now
+  clears the subtree so it undoes a recursive fill. The rest of that section (custom values,
+  paste, randomized presets, `longWord`) is still open.
+  Changeset `devtools-override-menu-empty-values.md`.
 - **Docs** - the `createGridAdapter` snippet compiles, `grid.md` documents the live
   `initialItems` reconciliation and the imperative API (`restoreState`, `getSerializedState`,
   `addItem`), and `query-forms.md` states that `isResetBy` is transitive.

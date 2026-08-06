@@ -2,6 +2,7 @@ import {
   applyQueryDevtoolsOverrides,
   createQueryDevtoolsOverrides,
   detectPaginationShape,
+  hasQueryDevtoolsOverridesAtPath,
 } from './query-devtools-overrides';
 
 describe('query devtools overrides', () => {
@@ -37,7 +38,7 @@ describe('query devtools overrides', () => {
       expect(recorder.list()).toEqual([]);
     });
 
-    it('should not store a reset op, and instead disarm ops already at its exact path', () => {
+    it('should not store a reset op, and instead disarm ops already at its path', () => {
       const recorder = createQueryDevtoolsOverrides();
 
       recorder.arm({ type: 'set', path: ['a', 'b'], value: 1 });
@@ -47,12 +48,39 @@ describe('query devtools overrides', () => {
       expect(recorder.list().map((entry) => entry.op.path)).toEqual([['a', 'c']]);
     });
 
+    it('should disarm ops below the reset path too, so resetting a container undoes a recursive fill', () => {
+      const recorder = createQueryDevtoolsOverrides();
+
+      recorder.arm({ type: 'set', path: ['a', 'b'], value: 1 });
+      recorder.arm({ type: 'set', path: ['a'], value: 2 });
+      recorder.arm({ type: 'set', path: ['ab'], value: 3 });
+      recorder.arm({ type: 'reset', path: ['a'] });
+
+      expect(recorder.list().map((entry) => entry.op.path)).toEqual([['ab']]);
+    });
+
     it('should apply armed ops to a raw response', () => {
       const recorder = createQueryDevtoolsOverrides();
 
       recorder.arm({ type: 'set', path: ['name'], value: 'Ada' });
 
       expect(recorder.apply({ name: 'Grace' })).toEqual({ name: 'Ada' });
+    });
+  });
+
+  describe('hasQueryDevtoolsOverridesAtPath', () => {
+    const entries = [{ id: '1', op: { type: 'set' as const, path: ['user', 'name'], value: 'Ada' } }];
+
+    it('should report an op armed at the path itself and at any path above it', () => {
+      expect(hasQueryDevtoolsOverridesAtPath(entries, ['user', 'name'])).toBe(true);
+      expect(hasQueryDevtoolsOverridesAtPath(entries, ['user'])).toBe(true);
+      expect(hasQueryDevtoolsOverridesAtPath(entries, [])).toBe(true);
+    });
+
+    it('should not report a sibling, a deeper path, or a key the path is only a prefix of', () => {
+      expect(hasQueryDevtoolsOverridesAtPath(entries, ['user', 'age'])).toBe(false);
+      expect(hasQueryDevtoolsOverridesAtPath(entries, ['user', 'name', 'first'])).toBe(false);
+      expect(hasQueryDevtoolsOverridesAtPath(entries, ['users'])).toBe(false);
     });
   });
 

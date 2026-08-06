@@ -35,7 +35,10 @@ const LATENCY_MS = 600;
 export type PostView = {
   id: number;
   title: string;
+  publishedAt: string | null;
 };
+
+const publishedAtFor = (id: number) => (id % 2 === 0 ? new Date(Date.UTC(2024, 0, id)).toISOString() : null);
 
 export type ServerTimeView = {
   requestNumber: number;
@@ -169,7 +172,7 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   if (path === '/posts' && req.method === 'POST') {
-    return respond({ id: 99, title: 'Freshly created post' } satisfies PostView);
+    return respond({ id: 99, title: 'Freshly created post', publishedAt: null } satisfies PostView);
   }
 
   if (path === '/posts') {
@@ -180,7 +183,7 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
     const body: Paginated<PostView> = {
       items: Array.from({ length: itemsPerPage }, (_, i) => {
         const id = (currentPage - 1) * itemsPerPage + i + 1;
-        return { id, title: `Post #${id}` };
+        return { id, title: `Post #${id}`, publishedAt: publishedAtFor(id) };
       }),
       currentPage,
       nextPage: currentPage < totalPageCount ? currentPage + 1 : null,
@@ -196,7 +199,7 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
   if (postMatch) {
     const id = Number(postMatch[1]);
 
-    return respond({ id, title: `Post #${id}` } satisfies PostView);
+    return respond({ id, title: `Post #${id}`, publishedAt: publishedAtFor(id) } satisfies PostView);
   }
 
   if (path === '/auth/login' || path === '/auth/refresh') {

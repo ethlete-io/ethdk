@@ -39,6 +39,14 @@
         }
       }
 
+      @if (isEmptyValue()) {
+        <button (activate)="setValue('Ab')" et-menu-item type="button">Set to text</button>
+        <button (activate)="setValue(0)" et-menu-item type="button">Set to number</button>
+        <button (activate)="setValue(true)" et-menu-item type="button">Set to true</button>
+        <button (activate)="setValue({})" et-menu-item type="button">Set to empty object</button>
+        <button (activate)="setValue([])" et-menu-item type="button">Set to empty array</button>
+      }
+
       @if (isArrayElement()) {
         <button (activate)="duplicateThisItem()" et-menu-item type="button">Duplicate this item</button>
       }
@@ -49,7 +57,9 @@
       }
 
       @if (isContainer()) {
-        <et-menu-separator />
+        @if (hasValueActions()) {
+          <et-menu-separator />
+        }
 
         <div etMenu>
           <button et-menu-item etMenuTrigger type="button">
@@ -67,9 +77,11 @@
         </div>
       }
 
-      <et-menu-separator />
+      @if (hasArmedOverrides()) {
+        <et-menu-separator />
 
-      <button (activate)="reset()" et-menu-item variant="destructive" type="button">Reset</button>
+        <button (activate)="reset()" et-menu-item variant="destructive" type="button">Reset</button>
+      }
     </et-menu>
   </ng-template>
 </div>

@@ -2,6 +2,7 @@ import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import {
   collectLeafPaths,
   detectPaginationShape,
+  hasQueryDevtoolsOverridesAtPath,
   isDateShapedLeaf,
   JsonPath,
   QueryDevtoolsOverridesRecorder,
@@ -47,8 +48,13 @@ export class QueryDevtoolsOverrideMenuComponent {
 
   protected kind = computed(() => kindOf(this.value()));
   protected isContainer = computed(() => this.kind() === 'array' || this.kind() === 'object');
+  protected isEmptyValue = computed(() => this.kind() === 'null' || this.kind() === 'undefined');
+  protected hasArmedOverrides = computed(() => hasQueryDevtoolsOverridesAtPath(this.overrides().list(), this.path()));
   protected isArrayElement = computed(() => this.parentKind() === 'array' && this.kind() === 'object');
   protected paginationShape = computed(() => detectPaginationShape(this.value()));
+  protected hasValueActions = computed(
+    () => this.kind() !== 'object' || this.isArrayElement() || this.paginationShape() !== null,
+  );
   protected isDate = computed(() => {
     const path = this.path();
     return this.kind() === 'string' && isDateShapedLeaf(path[path.length - 1] ?? null, this.value());
@@ -68,6 +74,10 @@ export class QueryDevtoolsOverrideMenuComponent {
 
   protected applyDatePreset(preset: 'now' | 'plusDay' | 'minusDay' | 'farFuture' | 'farPast' | 'invalid') {
     this.overrides().arm({ type: 'datePreset', path: this.path(), preset });
+  }
+
+  protected setValue(value: unknown) {
+    this.overrides().arm({ type: 'set', path: this.path(), value });
   }
 
   protected flipBoolean() {

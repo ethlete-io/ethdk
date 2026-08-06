@@ -12,8 +12,10 @@ export type JsonPath = (string | number)[];
  * whole body, which is what lets it survive a refetch that returns a differently-valued but same-shaped
  * response.
  *
- * `reset` is never stored or replayed - arming one clears the other ops already armed at its exact path
- * instead, so the panel's "reset this value" action and its "arm an edit" actions share one entry point.
+ * `reset` is never stored or replayed - arming one clears the other ops already armed at its path or
+ * anywhere below it instead, so the panel's "reset this value" action and its "arm an edit" actions
+ * share one entry point. Resetting a container therefore undoes a "fill recursively" run, whose ops
+ * sit on the leaves rather than on the container itself.
  */
 export type OverrideOp =
   | { type: 'set'; path: JsonPath; value: unknown }
@@ -48,8 +50,8 @@ export type QueryDevtoolsOverridesHandle = {
 /** The write side, used by the instrumentation inside the query itself. */
 export type QueryDevtoolsOverridesRecorder = QueryDevtoolsOverridesHandle & {
   /**
-   * Arms a new op, or - for `{ type: 'reset' }` - disarms whatever op(s) already sit at that exact path
-   * instead of adding one.
+   * Arms a new op, or - for `{ type: 'reset' }` - disarms whatever op(s) already sit at that path or
+   * below it instead of adding one.
    */
   arm: (op: OverrideOp) => void;
 
@@ -61,7 +63,15 @@ export type QueryDevtoolsOverridesRecorder = QueryDevtoolsOverridesHandle & {
   apply: (raw: unknown) => unknown;
 };
 
-const pathsEqual = (a: JsonPath, b: JsonPath) => a.length === b.length && a.every((step, index) => step === b[index]);
+const isPathAtOrBelow = (path: JsonPath, root: JsonPath) =>
+  path.length >= root.length && root.every((step, index) => step === path[index]);
+
+/**
+ * Whether any of `entries` is armed at `path` or anywhere below it - what the panel's menu asks before
+ * offering "Reset", so the destructive action is hidden where it would be a silent no-op.
+ */
+export const hasQueryDevtoolsOverridesAtPath = (entries: readonly QueryDevtoolsOverrideEntry[], path: JsonPath) =>
+  entries.some((entry) => isPathAtOrBelow(entry.op.path, path));
 
 type PathResolution =
   | { ok: true; exists: boolean; value: unknown }
@@ -441,7 +451,7 @@ export const createQueryDevtoolsOverrides = (): QueryDevtoolsOverridesRecorder =
 
   const arm = (op: OverrideOp) => {
     if (op.type === 'reset') {
-      list.update((current) => current.filter((entry) => !pathsEqual(entry.op.path, op.path)));
+      list.update((current) => current.filter((entry) => !isPathAtOrBelow(entry.op.path, op.path)));
 
       return;
     }
