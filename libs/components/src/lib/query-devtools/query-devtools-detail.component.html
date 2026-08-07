@@ -367,7 +367,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (run of detailRuns; track run.index) {
+          @for (run of runSections().listed.concat(foldedRunsOpen() ? runSections().folded : []); track run.index) {
             <tr [attr.data-status]="run.status === 'error' ? 'error' : null">
               <td>
                 <span class="et-query-devtools-run-cell">
@@ -461,6 +461,22 @@
           }
         </tbody>
       </table>
+      @let foldedRuns = runSections().folded.length;
+      @if (foldedRuns) {
+        <button
+          [attr.aria-expanded]="foldedRunsOpen()"
+          (click)="foldedRunsOpen.set(!foldedRunsOpen())"
+          class="et-query-devtools-btn et-query-devtools-runs-fold"
+          type="button"
+          title="Only the newest {{
+            host.retainedResponseCount
+          }} bodies of a query are kept, so none of these older runs can be an end of a diff"
+        >
+          <span aria-hidden="true">{{ foldedRunsOpen() ? '▾' : '▸' }}</span>
+          {{ foldedRunsOpen() ? 'Hide' : 'Show' }} {{ foldedRuns }} older run{{ foldedRuns === 1 ? '' : 's' }} with no
+          body
+        </button>
+      }
 
       @if (host.pickedRunError(s.entry); as failure) {
         <div class="et-query-devtools-section-row">
@@ -486,6 +502,26 @@
           <h5 class="et-query-devtools-section">
             Response diff · run #{{ comparison.before.index }} → #{{ comparison.after.index }}
           </h5>
+          <span class="et-query-devtools-diff-step">
+            <button
+              [disabled]="!host.canStepRunDiff(s.entry, true)"
+              (click)="host.stepRunDiff(s.entry, true)"
+              class="et-query-devtools-btn"
+              type="button"
+              title="Compare the pair one run older, without going back to the table"
+            >
+              ◂ Older
+            </button>
+            <button
+              [disabled]="!host.canStepRunDiff(s.entry, false)"
+              (click)="host.stepRunDiff(s.entry, false)"
+              class="et-query-devtools-btn"
+              type="button"
+              title="Compare the pair one run newer, without going back to the table"
+            >
+              Newer ▸
+            </button>
+          </span>
           <span class="et-query-devtools-count">
             @if (host.diffBaseRunIndex() === null) {
               <span

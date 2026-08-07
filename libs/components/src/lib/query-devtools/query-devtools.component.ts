@@ -1436,6 +1436,24 @@ export class QueryDevtoolsComponent {
     };
   }
 
+  /** Whether the diff header's older/newer control has a pair to move to. */
+  public canStepRunDiff(entry: QueryDevtoolsEntry, older: boolean) {
+    return !!this.steppedDiffPair(entry, older);
+  }
+
+  /**
+   * Moves the whole comparison one run older or newer, so re-picking a pair does not mean scrolling back
+   * up to the runs table. Within the handful of retained bodies there are only a few pairs to walk.
+   */
+  public stepRunDiff(entry: QueryDevtoolsEntry, older: boolean) {
+    const pair = this.steppedDiffPair(entry, older);
+
+    if (!pair) return;
+
+    this.diffBaseRunIndex.set(pair.before.index);
+    this.diffRunIndex.set(pair.after.index);
+  }
+
   public toggleRunError(run: QueryDevtoolsRun) {
     this.errorRunIndex.update((current) => (current === run.index ? null : run.index));
   }
@@ -2210,6 +2228,24 @@ export class QueryDevtoolsComponent {
    *
    * `null` unless a run is armed, so a closed diff costs nothing to walk.
    */
+  /**
+   * The pair one step older or newer than the current comparison, keeping whatever gap it has, or `null`
+   * at either end of the retained bodies.
+   */
+  private steppedDiffPair(entry: QueryDevtoolsEntry, older: boolean) {
+    const comparison = this.responseDiff(entry);
+
+    if (!comparison) return null;
+
+    // `stats.runs()` is oldest-first, so one step older is one index down.
+    const held = (entry.stats?.runs() ?? []).filter((run) => run.hasResponse);
+    const shift = older ? -1 : 1;
+    const before = held[held.findIndex((run) => run.index === comparison.before.index) + shift];
+    const after = held[held.findIndex((run) => run.index === comparison.after.index) + shift];
+
+    return before && after ? { before, after } : null;
+  }
+
   private diffEnds(entry: QueryDevtoolsEntry) {
     const runs = entry.stats?.runs() ?? [];
     const held = (index: number | null) =>

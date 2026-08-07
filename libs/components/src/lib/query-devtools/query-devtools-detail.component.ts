@@ -1,4 +1,4 @@
-import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
@@ -34,6 +34,29 @@ export class QueryDevtoolsDetailComponent {
     { id: 'history', label: 'History' },
     { id: 'data', label: 'Data' },
   ] satisfies { id: DetailTab; label: string }[];
+
+  /** Whether the tail of runs that can no longer be diffed is unfolded. */
+  protected foldedRunsOpen = signal(false);
+
+  /**
+   * The runs split at the last one that still holds a body. Only the newest few can ever be an end of a
+   * diff (`setQueryDevtoolsResponseHistory`, five by default) while the run log keeps twenty-five, so
+   * without this the diff sits under twenty rows reading `body no longer held` and the pair and its
+   * result never fit on one screen.
+   *
+   * Split, not filtered: a dead row *between* two live ones stays where it is, so the log keeps its order.
+   */
+  protected runSections = computed(() => {
+    const runs = this.host.queryRuns(this.sel().entry);
+    const isActionable = (run: (typeof runs)[number]) => run.hasResponse || !!run.error?.hasBody;
+
+    let lastActionable = -1;
+    runs.forEach((run, index) => {
+      if (isActionable(run)) lastActionable = index;
+    });
+
+    return { listed: runs.slice(0, lastActionable + 1), folded: runs.slice(lastActionable + 1) };
+  });
 
   /** What a run's Diff button reads as at each end of the comparison. */
   protected readonly diffRoles = {

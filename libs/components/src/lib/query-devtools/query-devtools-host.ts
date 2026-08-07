@@ -216,6 +216,10 @@ export type QueryDevtoolsHost = {
   /** How many bodies a query retains, which is what bounds how far back a diff can reach. */
   retainedResponseCount: number;
 
+  /** Moves the whole response diff one run older or newer, from the diff header. */
+  canStepRunDiff(entry: QueryDevtoolsEntry, older: boolean): boolean;
+  stepRunDiff(entry: QueryDevtoolsEntry, older: boolean): void;
+
   errorRunIndex: WritableSignal<number | null>;
   toggleRunError(run: QueryDevtoolsRun): void;
   pickedRunError(entry: QueryDevtoolsEntry): { run: QueryDevtoolsRun; error: QueryDevtoolsRunError } | null;

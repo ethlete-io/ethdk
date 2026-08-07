@@ -1624,6 +1624,19 @@
     margin-block-start: 1rem;
   }
 
+  /* The auto margin pulls the stepper over to the readout, so the row reads heading | controls+count
+     rather than three things spread evenly by `space-between`. */
+  .et-query-devtools-diff-step {
+    display: flex;
+    gap: 0.4rem;
+    margin-inline-start: auto;
+  }
+
+  .et-query-devtools-runs-fold {
+    margin-block-start: 0.4rem;
+    color: var(--_et-qdt-muted);
+  }
+
   .et-query-devtools-search {
     flex: 0 1 20rem;
     background: var(--_et-qdt-bg);

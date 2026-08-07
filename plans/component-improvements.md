@@ -326,37 +326,6 @@ semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
   messages vs. banner's single description paragraph) and the retry-button-
   only-if-`canRetry` conditional.
 
-## Query devtools: the History tab's diff is a scroll away from its own controls
-
-Reported 2026-08-07 from a `/user/me` history of 16 runs. The History tab is one long scroll:
-the RUNS table first, the `Response diff · run #13 → #14` section under all of it
-(`query-devtools-detail.component.html`). The Base/Compare buttons that choose the pair live in
-the table, so changing the pair and reading the result never fit on one screen - scroll down to
-read, up to re-pick, repeat.
-
-**The retention caps say the table is mostly unusable rows.** `query-devtools-stats.ts` keeps
-`RUN_HISTORY = 25` runs but only `DEFAULT_RESPONSE_HISTORY = 5` bodies, so **at most five runs can
-ever be an end of a diff** and everything older reads `body no longer held`. The screenshot is
-exactly that: five pickable rows at the top (#12-#16) and eleven dead ones beneath them, and it
-is the dead tail that pushes the diff off-screen. Any fix that ignores this is fixing the wrong
-thing.
-
-Cheapest fix first:
-
-- **Fold the bodiless tail** behind a disclosure ("20 older runs"), or render the diff section
-  directly under the pickable rows. Either one puts the pair and its result on one screen with no
-  scrolling, because the runs that can be picked are always adjacent and always newest.
-- **Step the pair from the diff header.** Older/newer controls next to `run #13 → #14` remove the
-  round trip to the table entirely - within five bodies there are only a handful of pairs.
-- **Bound the runs table** with its own scroll area, so the diff stays in view regardless.
-- Heavier, only if the above is not enough: give History a second resizable pane. The panel
-  already has the machinery (`paneSize(pane, axis)` / `PaneTarget`, on both the `inline` and
-  `block` axes), so it is a new divider rather than a new concept.
-
-Worth deciding with it: whether `setQueryDevtoolsResponseHistory` deserves a control in the panel.
-Five bodies is a memory default the app owns, but "I want to diff further back" is exactly what
-this report runs into, and today it is only reachable from app code.
-
 ## Query devtools: pop out to a window _or_ float inside the page
 
 Requested 2026-08-07. `popOut()` has exactly one mode: `window.open(…, POPOUT_FEATURES)` with
@@ -1233,6 +1202,21 @@ Query pass 2 (2026-08-07):
   `queryRecentFirst`. One thing to know when testing this: **every demo query loads in the same
   second**, so a flip changes nothing visible unless two queries are run seconds apart first.
   Changeset `devtools-queries-list-timestamps.md`. Verified headlessly: 17/17.
+
+- **Query devtools: the History tab's diff is a scroll away from its own controls** (was its own
+  section) - the section's first two "cheapest fix" bullets, both of them: the bodiless tail folds
+  behind `Show N older runs with no body`, and `◂ Older` / `Newer ▸` in the diff header step the whole
+  pair (keeping its gap, disabled at the ends of what is retained) so re-picking never returns to the
+  table. **Split, not filtered** - a dead row between two live ones stays put, so the log keeps its
+  order; folding is by "last row that still holds a body", not by predicate. The other two bullets were
+  deliberately skipped: with the tail folded the table is at most a handful of rows, so its own scroll
+  area and a second resizable pane would both be machinery for a problem that no longer exists.
+  Measured 254px from table to diff folded against 429px unfolded. The section's open question -
+  whether `setQueryDevtoolsResponseHistory` deserves a panel control - is **answered no**: the cap is
+  applied as bodies are recorded, so raising it in the panel cannot recover the bodies already dropped,
+  and a control that only helps future runs promises reach it does not deliver. It stays a
+  `provideQueryDevtools({ responseHistory })` decision the app makes once. Changeset
+  `devtools-history-diff-reachable.md`. Verified headlessly: 22/22.
 
 Found not to reproduce:
 

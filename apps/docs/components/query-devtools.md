@@ -718,6 +718,21 @@ bootstrapApplication(AppComponent, {
 Neither end of a pair is persisted: it is per-inspection state, and the runs it names do
 not survive a reload anyway.
 
+### Reaching the diff without scrolling
+
+The run log keeps **25** runs but only the newest few keep a body, so a busy query left the
+diff sitting under twenty rows that could never be an end of it. Two things keep the pair and
+its result together:
+
+- **The bodiless tail is folded.** Only the runs that can still be diffed are listed; the rest
+  are behind **Show N older runs with no body** under the table. Nothing is dropped and nothing
+  is reordered - a dead row _between_ two live ones stays where it is, so the log keeps its
+  order and every run number is still reachable.
+- **The pair steps from the diff header.** **◂ Older** and **Newer ▸** next to
+  `Response diff · run #10 → #11` move the whole comparison one run at a time, keeping whatever
+  gap it has, so re-picking never means going back up to the table. Both disable at the ends of
+  what is retained - the stepper cannot walk off into runs whose bodies are gone.
+
 ### A failure stays readable after the query has moved on
 
 A run that failed carries its **status code** as a chip, with every message the error
