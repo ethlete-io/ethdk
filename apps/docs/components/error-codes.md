@@ -426,6 +426,7 @@ Checked in dev mode only, after the first render.
 | `ET4500` | An opt-in scheduler feature is used outside an `<et-scheduler>`.                                                | Move the feature inside the scheduler root. |
 | `ET4501` | A view layout directive (e.g. `[etSchedulerMonth]`) is placed outside an `[etScheduler]`.                       | Move it inside the scheduler root.          |
 | `ET4502` | An edit-surface feature (an edit field or appointment action) is used outside an `<et-scheduler-edit-surface>`. | Move it inside the edit surface root.       |
+| `ET4503` | `[etSchedulerSwipeNavigation]` is placed on an element that is not an `[etScheduler]`.                          | Move it onto the scheduler root.            |
 
 ## Tree (ET46xx)
 

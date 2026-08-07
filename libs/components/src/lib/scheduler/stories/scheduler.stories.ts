@@ -18,3 +18,5 @@ export const Day: Story = { args: { initialView: 'day' } };
 export const Agenda: Story = { args: { initialView: 'agenda' } };
 
 export const WithoutLocationBadge: Story = { args: { initialView: 'agenda', showLocationBadge: false } };
+
+export const Narrow: Story = { args: { initialView: 'agenda', containerWidth: '380px' } };

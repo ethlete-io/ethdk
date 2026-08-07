@@ -1,5 +1,6 @@
 <div class="et-scheduler-header">
   <button
+    [attr.aria-label]="todayLabel()"
     (click)="headless.goToToday()"
     class="et-scheduler-today-button"
     et-button
@@ -7,16 +8,45 @@
     variant="outline"
     type="button"
   >
-    {{ todayLabel() }}
+    <i etIcon="et-calendar" aria-hidden="true"></i>
+    <span class="et-scheduler-today-button-label">{{ todayLabel() }}</span>
   </button>
 
-  @for (action of toolbarActions(); track $index) {
-    <button (click)="action.run()" class="et-scheduler-toolbar-action" et-button size="sm" type="button">
-      @if (action.icon) {
-        <i [etIcon]="action.icon" aria-hidden="true"></i>
-      }
-      {{ action.label() }}
-    </button>
+  @if (isNarrow()) {
+    <div class="et-scheduler-toolbar-fabs" etFloatingAction>
+      <div etFloatingActionAnchor>
+        <div class="et-scheduler-toolbar-fab-stack" etFloatingActionTrigger>
+          @for (action of toolbarActions(); track $index) {
+            <!-- The icon has to be a static child of the FAB to reach its icon slot, so the two
+                 shapes are separate elements rather than one with a conditional icon inside. -->
+            @if (action.icon; as icon) {
+              <button
+                [attr.aria-label]="action.label()"
+                (click)="action.run()"
+                class="et-scheduler-toolbar-action"
+                et-fab
+                type="button"
+              >
+                <i [etIcon]="icon" aria-hidden="true"></i>
+              </button>
+            } @else {
+              <button (click)="action.run()" class="et-scheduler-toolbar-action" et-fab expanded type="button">
+                {{ action.label() }}
+              </button>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  } @else {
+    @for (action of toolbarActions(); track $index) {
+      <button (click)="action.run()" class="et-scheduler-toolbar-action" et-button size="sm" type="button">
+        @if (action.icon) {
+          <i [etIcon]="action.icon" aria-hidden="true"></i>
+        }
+        {{ action.label() }}
+      </button>
+    }
   }
 
   <div class="et-scheduler-nav-buttons">

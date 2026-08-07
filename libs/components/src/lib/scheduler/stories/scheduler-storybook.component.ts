@@ -82,7 +82,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
 @Component({
   selector: 'et-sb-scheduler',
   template: `
-    <div class="p-8 font-sans">
+    <div [style.max-inline-size]="containerWidth()" class="p-8 font-sans">
       <et-scheduler
         [(view)]="view"
         [(selectedAppointmentId)]="selectedAppointmentId"
@@ -101,6 +101,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
 export class SchedulerStorybookComponent {
   public initialView = input<SchedulerView>('month');
   public showLocationBadge = input(true);
+  public containerWidth = input<string | null>(null);
   protected view = linkedSignal(() => this.initialView());
   protected appointments = signal(DEMO_APPOINTMENTS);
   protected selectedAppointmentId = signal<string | null>(null);

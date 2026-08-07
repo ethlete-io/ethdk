@@ -10,11 +10,12 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { randomId } from '@ethlete/core';
+import { randomId, signalHostElementDimensions } from '@ethlete/core';
 import { addHours, format, isSameDay, isSameMonth, isSameYear, setHours, setMinutes, startOfDay } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
+import { FLOATING_ACTION_IMPORTS } from '../floating-action';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
-import { CHEVRON_ICON, IconDirective, PLUS_ICON, provideIcons } from '../icon';
+import { CALENDAR_ICON, CHEVRON_ICON, IconDirective, PLUS_ICON, provideIcons } from '../icon';
 import { createOverlayOpener } from '../overlay';
 import {
   SCHEDULER_FEATURE_HOST,
@@ -37,8 +38,11 @@ import {
 } from './scheduler-edit-surface.component';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
+import { SchedulerSwipeNavigationDirective } from './scheduler-swipe-navigation.directive';
 import { SchedulerTimeGridViewComponent } from './scheduler-time-grid-view.component';
 import { Appointment, AppointmentId, SchedulerDraftRange, SchedulerView } from './scheduler.types';
+
+const NARROW_CONTAINER_WIDTH = 480;
 
 @Component({
   selector: 'et-scheduler',
@@ -47,6 +51,7 @@ import { Appointment, AppointmentId, SchedulerDraftRange, SchedulerView } from '
   encapsulation: ViewEncapsulation.None,
   imports: [
     ...BUTTON_IMPORTS,
+    ...FLOATING_ACTION_IMPORTS,
     ...SEGMENTED_BUTTON_IMPORTS,
     LabelDirective,
     IconDirective,
@@ -55,7 +60,7 @@ import { Appointment, AppointmentId, SchedulerDraftRange, SchedulerView } from '
     SchedulerTimeGridViewComponent,
   ],
   providers: [
-    provideIcons(CHEVRON_ICON, PLUS_ICON),
+    provideIcons(CALENDAR_ICON, CHEVRON_ICON, PLUS_ICON),
     { provide: SCHEDULER_FEATURE_HOST, useExisting: SchedulerComponent },
   ],
   hostDirectives: [
@@ -73,6 +78,7 @@ import { Appointment, AppointmentId, SchedulerDraftRange, SchedulerView } from '
     { directive: SchedulerBadgeLocationDirective, inputs: ['etSchedulerBadgeLocation'] },
     { directive: SchedulerBadgeChainCountDirective, inputs: ['etSchedulerBadgeChainCount'] },
     { directive: SchedulerActionAddAppointmentDirective, inputs: ['etSchedulerActionAddAppointment'] },
+    { directive: SchedulerSwipeNavigationDirective, inputs: ['etSchedulerSwipeNavigation'] },
   ],
   host: {
     class: 'et-scheduler',
@@ -94,6 +100,15 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   /** Emits every id to remove once the default edit surface deletes a chain. */
   public appointmentsDelete = output<readonly AppointmentId[]>();
+
+  private dimensions = signalHostElementDimensions();
+
+  /**
+   * Whether the scheduler has so little room that the toolbar has to give up its text buttons - the
+   * same width the `et-scheduler` container query in `scheduler.component.css` reflows the header
+   * at, so the two must move together.
+   */
+  protected isNarrow = computed(() => (this.dimensions().client?.width ?? Infinity) < NARROW_CONTAINER_WIDTH);
 
   public previousLabel = computed(() => this.labels().previous);
   public nextLabel = computed(() => this.labels().next);

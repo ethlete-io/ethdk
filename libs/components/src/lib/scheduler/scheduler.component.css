@@ -21,6 +21,28 @@
     flex-basis: 100%;
   }
 
+  .et-scheduler-toolbar-fab-stack {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* At the same width Today drops its text and becomes a round icon button the size of the nav
+     buttons beside it. Both shapes carry the same aria-label on the button, so the accessible name
+     never changes; the two-class selectors are what beat the button's own `:where()`-weighted
+     size rules. */
+  @container et-scheduler not (min-inline-size: 480px) {
+    .et-scheduler .et-scheduler-today-button {
+      --et-button-padding: 0;
+      inline-size: 3.1rem;
+      block-size: 3.1rem;
+      border-radius: 9999px;
+    }
+
+    .et-scheduler .et-scheduler-today-button-label {
+      display: none;
+    }
+  }
+
   @container et-scheduler (min-inline-size: 480px) {
     .et-scheduler-header-spacer {
       display: block;
@@ -28,6 +50,10 @@
 
     .et-scheduler-view-switch {
       flex-basis: auto;
+    }
+
+    .et-scheduler .et-scheduler-today-button .et-button-icon {
+      display: none;
     }
   }
 

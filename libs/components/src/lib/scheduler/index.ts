@@ -26,6 +26,7 @@ export * from './scheduler-edit-time-range.component';
 export * from './scheduler-edit-time-range.directive';
 export * from './scheduler-edit-title.component';
 export * from './scheduler-edit-title.directive';
+export * from './scheduler-swipe-navigation.directive';
 export * from './scheduler.component';
 export * from './scheduler-agenda-view.component';
 export * from './scheduler-month-view.component';

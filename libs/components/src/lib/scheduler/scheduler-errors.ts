@@ -6,4 +6,6 @@ export const SCHEDULER_ERROR_CODES = {
   VIEW_OUTSIDE_SCHEDULER: 4501,
   /** An edit-surface feature (e.g. an edit field or appointment action) was used outside an `<et-scheduler-edit-surface>`. */
   EDIT_SURFACE_FEATURE_OUTSIDE_SURFACE: 4502,
+  /** `[etSchedulerSwipeNavigation]` was placed on an element that is not an `[etScheduler]`. */
+  SWIPE_NAVIGATION_OUTSIDE_SCHEDULER: 4503,
 } as const;

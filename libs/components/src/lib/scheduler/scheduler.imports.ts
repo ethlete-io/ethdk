@@ -20,6 +20,7 @@ import { SchedulerEditLocationDirective } from './scheduler-edit-location.direct
 import { SchedulerEditSurfaceComponent } from './scheduler-edit-surface.component';
 import { SchedulerEditTimeRangeDirective } from './scheduler-edit-time-range.directive';
 import { SchedulerEditTitleDirective } from './scheduler-edit-title.directive';
+import { SchedulerSwipeNavigationDirective } from './scheduler-swipe-navigation.directive';
 import { SchedulerComponent } from './scheduler.component';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
 import { SchedulerTimeGridViewComponent } from './scheduler-time-grid-view.component';
@@ -48,4 +49,5 @@ export const SCHEDULER_IMPORTS = [
   SchedulerActionAddSubAppointmentDirective,
   SchedulerActionDeleteDirective,
   SchedulerActionAddAppointmentDirective,
+  SchedulerSwipeNavigationDirective,
 ] as const;

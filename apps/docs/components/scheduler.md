@@ -84,6 +84,25 @@ Toolbar actions are the same self-registering-feature mechanism as everything el
 
 Like the edit surface's own "Add sub-appointment"/"Delete" actions, this depends on the default edit surface (it's what the dialog it opens is) - a bare `[etScheduler]` composition needs its own "new appointment" affordance, the same caveat [clicking a badge](#month-view) already has.
 
+### At narrow widths {#toolbar-narrow}
+
+At the same ~480px the view switch reflows at, two more things change - both driven by the scheduler's own width, so a scheduler in a narrow sidebar gets them on a desktop viewport too:
+
+- **Today drops its text** and becomes a round icon button matching the prev/next buttons beside it. It carries the same `aria-label` in both shapes, so its accessible name never changes.
+- **Toolbar actions become FABs**, wrapped in a [floating action](/components/floating-action): they sit in the header where they were written, and pin themselves to the bottom-inline-end corner of the viewport once the header has scrolled away. An action with an `icon` renders icon-only (named by its `label`); one without renders as an extended FAB with its label.
+
+<StoryEmbed id="components-scheduler--narrow" height="640px" />
+
+## Swipe navigation {#swipe-navigation}
+
+`etSchedulerSwipeNavigation` steps the visible period with a horizontal swipe: toward the inline start for the next period, toward the inline end for the previous one - the same steps prev/next take, so what a swipe moves by depends on the active view. It's bundled by `<et-scheduler>`; add it to a bare `[etScheduler]` composition to get the same gesture, and turn it off with `{ enabled: false }`.
+
+```html
+<et-scheduler [etSchedulerSwipeNavigation]="{ enabled: false }" [appointments]="appointments" />
+```
+
+**Touch only.** A horizontal drag with a mouse is [drawing a range](#drag-to-create), not navigating. A swipe has to travel ~56px, or ~32px thrown fast enough to read as a flick; anything shorter, and anything the tracker sees as vertical, is left to the view to scroll. Once a swipe passes ~16px the scheduler takes the gesture over, which also swallows the tap the browser would otherwise synthesize on release - so swiping across an appointment navigates instead of opening it, while tapping one still opens it. A [drag-to-create](#drag-to-create) long press that has already armed keeps the gesture; the swipe drops out rather than doing both.
+
 ## Month view
 
 A day cell per day of the padded month, leading/trailing days from adjacent months included. Each cell shows up to `maxVisiblePerCell` appointments (chain order, depth-first) as one-line badges; the rest collapse into a "+N more" affordance that opens an [`et-menu`](/components/menu) popover listing them.
