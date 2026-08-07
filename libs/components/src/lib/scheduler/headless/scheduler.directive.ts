@@ -182,10 +182,15 @@ export class SchedulerDirective<TExtra = unknown> {
     this.draftRange.set({ start, end, phase: 'dragging' });
   }
 
-  /** Releases the drag, leaving the range in place for the host to open its create surface over. */
+  /**
+   * Releases the drag, leaving the range in place for the host to open its create surface over.
+   * Only a range still being dragged commits: a pointer released on an already committed range -
+   * a click on the drawn selection while its surface is open - must not re-commit it and reopen
+   * that surface.
+   */
   public commitDraftRange() {
     this.draftAnchor = null;
-    this.draftRange.update((range) => (range ? { ...range, phase: 'committed' } : null));
+    this.draftRange.update((range) => (range?.phase === 'dragging' ? { ...range, phase: 'committed' } : range));
   }
 
   /** Drops the drag-to-create range - a cancelled gesture, or a create surface that closed. */

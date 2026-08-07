@@ -25,11 +25,17 @@
   }
 
   .et-scheduler-month-view-weeks {
+    position: relative;
     display: flex;
     flex-direction: column;
     flex: 1;
     border-inline-start: 1px solid var(--et-surface-border-solid);
     border-block-start: 1px solid var(--et-surface-border-solid);
+  }
+
+  .et-scheduler-month-view-draft-anchor {
+    position: absolute;
+    pointer-events: none;
   }
 
   .et-scheduler-month-view-week {

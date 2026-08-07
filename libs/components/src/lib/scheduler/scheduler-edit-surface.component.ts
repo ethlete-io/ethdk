@@ -6,6 +6,7 @@ import { BUTTON_IMPORTS } from '../button';
 import { ELLIPSIS_VERTICAL_ICON, IconDirective, PLUS_ICON, provideIcons, TRASH_ICON } from '../icon';
 import { MENU_IMPORTS } from '../menu';
 import {
+  buildAnchoredRuntimePositionStrategy,
   defineOverlay,
   injectAnchoredDialogStrategy,
   injectDialogStrategy,
@@ -186,7 +187,22 @@ export const SCHEDULER_EDIT_SURFACE_OVERLAY = /* @__PURE__ */ defineOverlay<
 
     return [
       { strategy: fullscreenDialogStrategy.build() },
-      { breakpoint: 'md', strategy: anchoredDialogStrategy.build({ maxWidth: '520px' }) },
+      {
+        breakpoint: 'md',
+        strategy: anchoredDialogStrategy.build({
+          maxWidth: '520px',
+          // centered rather than the anchored dialog's edge-aligned default: the origin is as often
+          // a dragged-out range as a single appointment, and a range wants its surface over its middle
+          positionStrategy: buildAnchoredRuntimePositionStrategy({
+            placement: 'bottom',
+            fallbackPlacements: ['top', 'bottom-end', 'top-end'],
+            offset: 10,
+            arrowPadding: 16,
+            shift: true,
+            autoResize: true,
+          }),
+        }),
+      },
     ];
   },
   panelClass: 'et-scheduler-edit-surface-panel',

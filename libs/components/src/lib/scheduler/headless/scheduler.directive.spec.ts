@@ -160,6 +160,17 @@ describe('SchedulerDirective', () => {
       expect(directive.draftRange()).toBeNull();
     });
 
+    it('leaves an already committed range untouched, so its surface is not reopened', () => {
+      directive.beginDraftRange(at(9), QUARTER_HOUR);
+      directive.commitDraftRange();
+
+      const committed = directive.draftRange();
+
+      directive.commitDraftRange();
+
+      expect(directive.draftRange()).toBe(committed);
+    });
+
     it('ignores an extend with no drag in progress', () => {
       directive.extendDraftRange(at(11), QUARTER_HOUR);
 

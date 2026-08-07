@@ -158,7 +158,7 @@ A press that never passes the drag threshold stays a plain click, so clicking em
 
 **On touch it starts with a long press.** Both views scroll, so a finger that simply drags is panning - the browser claims the gesture and cancels it. Holding still for ~400ms arms the range instead, and from that point scrolling is blocked until you let go, so the drag draws. Releasing a long press without moving still creates the first slot or day. A quick swipe scrolls exactly as before, and a tap still does nothing.
 
-The range stays visible while the surface is open and disappears when it closes - dismiss without saving and nothing is created. A gesture the browser takes away (a `pointercancel`) clears it without opening anything.
+The range stays visible while the surface is open and disappears when it closes - dismiss without saving and nothing is created. Clicking the drawn range itself counts as clicking outside the surface, so it closes and clears, rather than drawing a fresh range underneath. A gesture the browser takes away (a `pointercancel`) clears it without opening anything.
 
 The state behind it lives on the headless directive, so a custom view can drive the same flow: `draftRange` (the live range, whether it is `dragging` or `committed`, and `allDay` for day-granular views), written with `beginDraftRange()` / `extendDraftRange()` for a time axis or `setDraftRange()` for whole days, settled with `commitDraftRange()` and dropped with `clearDraftRange()`.
 
@@ -175,6 +175,8 @@ Where it opens depends on whether there is something on the calendar to open it 
 | The toolbar's add-appointment action          | Full screen | Centered dialog - nothing to anchor to |
 
 A phone gets the whole viewport in every case, where the form needs the space. Selecting an appointment that is not on screen - writing `selectedAppointmentId` yourself, or picking one from a month cell's overflow menu - has no element to anchor to either, so it falls back to a centered dialog.
+
+Anchored, it opens **centered under** what it belongs to, not aligned to one of its edges: a dragged range anchors to the whole span you drew - across several week rows too - so the surface lands over its middle rather than over its first day. It flips above when there is no room below, and shifts along the viewport edge when centering would push it off screen.
 
 ```html
 <et-scheduler

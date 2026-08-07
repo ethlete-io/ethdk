@@ -1,7 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
-import { Component, DestroyRef, ElementRef, ViewEncapsulation, inject, viewChildren } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewEncapsulation, inject, viewChild, viewChildren } from '@angular/core';
 import { ProvideColorDirective, injectRenderer, injectStyleManager } from '@ethlete/core';
-import { endOfDay, isSameDay, startOfDay } from 'date-fns';
+import { endOfDay, startOfDay } from 'date-fns';
 import { MENU_IMPORTS } from '../menu';
 import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerMonthDirective } from './headless';
 import { startSchedulerDraftGesture } from './headless/internals/scheduler-draft-gesture';
@@ -31,6 +31,7 @@ export class SchedulerMonthViewComponent {
   private renderer = injectRenderer();
   private weekRows = viewChildren<ElementRef<HTMLElement>>('weekRow');
   private cells = viewChildren<ElementRef<HTMLElement>>('cell');
+  public draftAnchor = viewChild<ElementRef<HTMLElement>>('draftAnchor');
 
   constructor() {
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
@@ -85,21 +86,38 @@ export class SchedulerMonthViewComponent {
         scheduler.setDraftRange({ start: startOfDay(from), end: endOfDay(until), allDay: true });
       },
       settle: () => {
-        const draft = scheduler.draftRange();
+        if (scheduler.draftRange()?.phase !== 'dragging') return;
 
-        if (!draft) return;
-
-        // anchor on the cell the range starts in, so the surface opens over its own first day
-        const index = this.month
-          .weeks()
-          .flat()
-          .findIndex((cell) => isSameDay(cell.date, draft.start));
-
-        scheduler.surfaceAnchor.set(this.cells()[index]?.nativeElement ?? null);
+        scheduler.surfaceAnchor.set(this.coverDraftRange(weeks));
         scheduler.commitDraftRange();
       },
       cancel: () => scheduler.clearDraftRange(),
     });
+  }
+
+  private coverDraftRange(weeks: HTMLElement): HTMLElement | null {
+    const anchor = this.draftAnchor()?.nativeElement;
+    const drafted = this.month
+      .weeks()
+      .flat()
+      .map((cell, index) => (this.isDrafted(cell.date) ? this.cells()[index]?.nativeElement : null))
+      .filter((element) => !!element)
+      .map((element) => element.getBoundingClientRect());
+
+    if (!anchor || !drafted.length) return null;
+
+    const host = weeks.getBoundingClientRect();
+    const left = Math.min(...drafted.map((rect) => rect.left));
+    const top = Math.min(...drafted.map((rect) => rect.top));
+
+    this.renderer.setStyle(anchor, {
+      left: `${left - host.left}px`,
+      top: `${top - host.top}px`,
+      width: `${Math.max(...drafted.map((rect) => rect.right)) - left}px`,
+      height: `${Math.max(...drafted.map((rect) => rect.bottom)) - top}px`,
+    });
+
+    return anchor;
   }
 
   /**

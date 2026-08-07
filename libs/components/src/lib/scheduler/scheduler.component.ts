@@ -181,10 +181,16 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     afterClosed: (result) => this.handleEditSurfaceResult(result),
   });
 
+  private openedDraftRange: SchedulerDraftRange | null = null;
+
   /** A range dragged out on a view opens over the range itself - see {@link SchedulerDraftRange}. */
   private draftSurfaceOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
     afterClosed: (result) => {
-      this.headless.clearDraftRange();
+      // the close is animated, so a range drawn while it plays out is already the next surface's
+      if (this.headless.draftRange() === this.openedDraftRange) {
+        this.headless.clearDraftRange();
+      }
+
       this.handleEditSurfaceResult(result);
     },
   });
@@ -280,6 +286,8 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       end: draft.end,
       allDay: draft.allDay,
     };
+
+    this.openedDraftRange = draft;
 
     this.draftSurfaceOpener.open({
       origin: this.takeSurfaceAnchor(),

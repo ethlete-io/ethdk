@@ -121,7 +121,7 @@ export class SchedulerTimeGridViewComponent {
           : scheduler.beginDraftRange(at, DRAFT_MINIMUM_DURATION);
       },
       settle: () => {
-        if (!scheduler.draftRange()) return;
+        if (scheduler.draftRange()?.phase !== 'dragging') return;
 
         // the preview is what the create surface anchors to, so hand it over before committing
         scheduler.surfaceAnchor.set(this.draftBlock()?.nativeElement ?? null);
