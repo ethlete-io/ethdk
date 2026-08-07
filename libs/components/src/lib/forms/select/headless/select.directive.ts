@@ -145,9 +145,11 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
   public mirrorPanelWidth = input(true, { transform: booleanAttribute });
   /**
-   * Fire-and-forget picker mode (single select): committing an option emits `pickOption`
-   * without ever writing `value`, so the select stays empty and can feed an external list
-   * without the set-then-clear dance. No effect in multi select.
+   * Fire-and-forget picker mode: committing an option emits `pickOption` without ever writing
+   * `value`, so the field never displays a value of its own (no chips, no label, no clear) and can
+   * feed an external list without the set-then-clear dance. Bind `value` to that list to check the
+   * picked options in the panel. Single select closes on pick; multi keeps the panel open for
+   * repeated adds.
    */
   public pickOnly = input(false, { transform: booleanAttribute });
 
@@ -165,9 +167,9 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** The user picked the "Add new" row (`allowAddNew`). Emits the current search query for prefilling. */
   public addNew = output<string>();
   /**
-   * Single select committed an option - carries the picked value. In `pickOnly` mode this is
-   * the only pick signal and `value` is never mutated; otherwise it fires alongside the normal
-   * value selection.
+   * A single select - or a `pickOnly` multi select - committed an option, carrying the picked
+   * value. In `pickOnly` mode this is the only pick signal and `value` is never mutated;
+   * otherwise it fires alongside the normal value selection.
    */
   public pickOption = output<unknown>();
 
@@ -195,9 +197,13 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
-  /** The raw value normalized to the selection the control currently exposes. Mixed has no effective selection. */
+  /**
+   * The raw value normalized to the selection the control currently exposes. Mixed has no effective
+   * selection, and neither has a `pickOnly` picker - its `value` marks the picked options in the
+   * panel without ever becoming the field's own display.
+   */
   private effectiveValues = computed<readonly unknown[]>(() => {
-    if (this.mixed()) {
+    if (this.mixed() || this.pickOnly()) {
       return [];
     }
 
@@ -760,6 +766,13 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
 
     if (this.multiple()) {
+      if (this.pickOnly()) {
+        this.pickOption.emit(item.value());
+        this.registeredSearch()?.clear();
+
+        return;
+      }
+
       // toggle by value arithmetic instead of the registry (`selection.select` recomputes the
       // array from registered options only, silently dropping values without a live option -
       // custom values, or options an external filter removed)

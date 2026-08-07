@@ -254,6 +254,25 @@ class PickOnlyTestHost {
   picked: unknown[] = [];
 }
 
+@Component({
+  template: `
+    <et-select [value]="value()" (pickOption)="pick($event)" class="select" pickOnly multiple placeholder="Add a fruit">
+      <et-select-option value="apple">Apple</et-select-option>
+      <et-select-option value="banana">Banana</et-select-option>
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class MultiPickOnlyTestHost {
+  value = signal<unknown[]>([]);
+  picked: unknown[] = [];
+
+  pick(value: unknown) {
+    this.picked.push(value);
+    this.value.update((values) => (values.includes(value) ? values.filter((v) => v !== value) : [...values, value]));
+  }
+}
+
 const flushFrames = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
@@ -1729,5 +1748,93 @@ describe('SelectDirective (pickOnly)', () => {
 
     expect(fixture.componentInstance.picked).toEqual(['apple', 'banana']);
     expect(fixture.componentInstance.value()).toBeNull();
+  });
+});
+
+describe('SelectDirective (pickOnly, multiple)', () => {
+  let fixture: ComponentFixture<MultiPickOnlyTestHost>;
+  let select: SelectDirective;
+  let trigger: HTMLElement;
+
+  const tick = () => TestBed.inject(ApplicationRef).tick();
+  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
+  const options = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
+
+  const openSelect = async () => {
+    trigger.click();
+    tick();
+    await flushFrames();
+    tick();
+  };
+
+  beforeEach(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+    TestBed.configureTestingModule({
+      imports: [MultiPickOnlyTestHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+    fixture = TestBed.createComponent(MultiPickOnlyTestHost);
+    fixture.detectChanges();
+    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
+    trigger = fixture.nativeElement.querySelector('[role="combobox"]');
+  });
+
+  afterEach(async () => {
+    select.hide();
+    tick();
+    await flushFrames();
+  });
+
+  it('keeps the panel open across repeated picks', async () => {
+    await openSelect();
+
+    options()[1]!.click();
+    tick();
+    await flushFrames();
+    tick();
+
+    expect(fixture.componentInstance.picked).toEqual(['banana']);
+    expect(select.open()).toBe(true);
+
+    options()[0]!.click();
+    tick();
+    await flushFrames();
+    tick();
+
+    expect(fixture.componentInstance.picked).toEqual(['banana', 'apple']);
+    expect(select.open()).toBe(true);
+  });
+
+  it('checks the options a bound value covers without displaying them in the field', async () => {
+    await openSelect();
+
+    options()[1]!.click();
+    tick();
+    await flushFrames();
+    tick();
+
+    expect(options().map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'true']);
+    expect(fixture.componentInstance.value()).toEqual(['banana']);
+    expect(select.hasValue()).toBe(false);
+    expect(select.displayValue()).toBeNull();
+    expect(trigger.querySelectorAll('et-chip').length).toBe(0);
+  });
+
+  it('emits again for an already picked option instead of toggling it itself', async () => {
+    await openSelect();
+
+    options()[0]!.click();
+    tick();
+    await flushFrames();
+    tick();
+
+    options()[0]!.click();
+    tick();
+    await flushFrames();
+    tick();
+
+    expect(fixture.componentInstance.picked).toEqual(['apple', 'apple']);
+    expect(options()[0]!.getAttribute('aria-selected')).toBe('false');
   });
 });
