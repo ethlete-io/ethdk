@@ -72,8 +72,10 @@ export const validateWithQuery = <TCreator extends AnyQueryCreator, TValue, TPat
     mapViolations: config.mapViolations,
     factory: (params) => {
       // Created once, exactly like a query stack. A POST validate route doesn't auto-execute, so
-      // the resource loader drives it - each params change re-executes with the new args.
-      const query = config.queryCreator();
+      // the resource loader drives it - each params change re-executes with the new args. Those args
+      // reach the query through `execute()`, never `withArgs()`, so a function route has to be told
+      // the missing feature is intentional or creating the query throws ET100.
+      const query = config.queryCreator({ silenceMissingWithArgsFeatureError: true });
 
       return resource<TResult | undefined, TParams | undefined>({
         params: () => params(),

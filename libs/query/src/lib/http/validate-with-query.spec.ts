@@ -13,6 +13,12 @@ type ValidateArgs = {
   response: void;
 };
 
+type ValidatePathArgs = {
+  pathParams: { uuid: string };
+  body: { name: string };
+  response: void;
+};
+
 describe('validateWithQuery', () => {
   const client = createQueryClient({ baseUrl: 'https://example.com', name: 'validate-with-query-test' });
 
@@ -92,5 +98,29 @@ describe('validateWithQuery', () => {
     await settle();
 
     expect(testForm().errors()).toEqual([expect.objectContaining({ kind: SERVER_ERROR_KIND })]);
+  });
+
+  it('should accept a creator whose route is a function', async () => {
+    const validateName = createPostQuery(client)<ValidatePathArgs>((p) => `/entity/${p.uuid}/validate`);
+
+    const testForm = TestBed.runInInjectionContext(() =>
+      form(signal({ name: 'Ada' }), (p) => {
+        validateWithQuery(p, {
+          queryCreator: validateName,
+          args: (ctx) => ({ pathParams: { uuid: 'abc' }, body: { name: ctx.value().name } }),
+          debounce: 0,
+        });
+      }),
+    );
+
+    TestBed.tick();
+
+    httpTesting
+      .expectOne('https://example.com/entity/abc/validate')
+      .flush(null, { status: 204, statusText: 'No Content' });
+
+    await settle();
+
+    expect(testForm.name().errors()).toEqual([]);
   });
 });
