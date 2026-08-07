@@ -19,6 +19,7 @@ type QueryRowGroup = { key: string; head: QueryRow; items: QueryRow[] };
 @Component({
   selector: 'et-query-devtools-queries-tab',
   templateUrl: './query-devtools-queries-tab.component.html',
+  styleUrl: './query-devtools-queries-tab.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, QueryDevtoolsDetailComponent, QueryDevtoolsRouteComponent],
 })

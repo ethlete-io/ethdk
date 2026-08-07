@@ -23,6 +23,7 @@ import { QueryDevtoolsFeature } from '@ethlete/query';
       }
     </ul>
   `,
+  styleUrl: './query-devtools-features.component.css',
   encapsulation: ViewEncapsulation.None,
 })
 export class QueryDevtoolsFeaturesComponent {

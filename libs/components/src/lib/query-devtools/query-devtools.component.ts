@@ -75,18 +75,13 @@ import { QueryDevtoolsAuthTabComponent } from './query-devtools-auth-tab.compone
 import { QueryDevtoolsCacheTabComponent } from './query-devtools-cache-tab.component';
 import { buildCurlCommand } from './query-devtools-curl';
 import { QueryDevtoolsEventsTabComponent } from './query-devtools-events-tab.component';
-import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
-import { QueryDevtoolsDrawerComponent } from './query-devtools-drawer.component';
 import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
-import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
-import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';
-import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import { QueryDevtoolsSequencesTabComponent } from './query-devtools-sequences-tab.component';
 import { QueryDevtoolsSocketsTabComponent } from './query-devtools-sockets-tab.component';
 import { QueryDevtoolsStacksTabComponent } from './query-devtools-stacks-tab.component';
@@ -403,15 +398,10 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   imports: [
     QueryDevtoolsAuthTabComponent,
     QueryDevtoolsCacheTabComponent,
-    QueryDevtoolsDetailComponent,
-    QueryDevtoolsDrawerComponent,
     QueryDevtoolsEventsTabComponent,
     QueryDevtoolsFaultsTabComponent,
-    QueryDevtoolsFeaturesComponent,
     QueryDevtoolsFormsTabComponent,
-    QueryDevtoolsJsonComponent,
     QueryDevtoolsQueriesTabComponent,
-    QueryDevtoolsRouteComponent,
     QueryDevtoolsSequencesTabComponent,
     QueryDevtoolsSocketsTabComponent,
     QueryDevtoolsStacksTabComponent,

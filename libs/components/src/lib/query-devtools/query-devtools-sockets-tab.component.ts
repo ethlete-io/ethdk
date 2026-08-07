@@ -6,6 +6,7 @@ import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 @Component({
   selector: 'et-query-devtools-sockets-tab',
   templateUrl: './query-devtools-sockets-tab.component.html',
+  styleUrl: './query-devtools-sockets-tab.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [QueryDevtoolsJsonComponent],
 })

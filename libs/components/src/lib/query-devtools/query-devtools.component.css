@@ -525,34 +525,11 @@
     overflow: hidden;
   }
 
-  .et-query-devtools-master-detail {
-    display: flex;
-    block-size: 100%;
-    min-block-size: 0;
-  }
-
-  /* A dragged width is set on all three properties at once, so it wins outright; unset, the pane keeps
-     its proportional default between the bounds that keep it readable at any panel width. */
-  .et-query-devtools-list {
-    flex: 0 0 var(--_et-qdt-list-width, 34%);
-    min-inline-size: var(--_et-qdt-list-width, 22rem);
-    max-inline-size: var(--_et-qdt-list-width, 40rem);
-    overflow-y: auto;
-    border-inline-end: 1px solid var(--_et-qdt-border);
-  }
-
   .et-query-devtools-detail {
     flex: 1 1 auto;
     min-inline-size: 0;
     overflow-y: auto;
     padding: 1rem;
-  }
-
-  /* Detail-pane hierarchy: divide the header, the meta block and the value explorer. */
-  .et-query-devtools-detail .et-query-devtools-detail-head,
-  .et-query-devtools-drawer .et-query-devtools-detail-head {
-    padding-block-end: 0.8rem;
-    border-block-end: 1px solid var(--_et-qdt-border);
   }
 
   .et-query-devtools-detail .et-query-devtools-meta,
@@ -620,27 +597,6 @@
     color: var(--_et-qdt-fg);
   }
 
-  .et-query-devtools-forget {
-    appearance: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border: 1px solid color-mix(in srgb, var(--_et-qdt-error) 50%, transparent);
-    border-radius: 0.4rem;
-    background: color-mix(in srgb, var(--_et-qdt-error) 10%, transparent);
-    color: var(--_et-qdt-error);
-    cursor: pointer;
-    padding: 0.3rem 0.6rem;
-    font: inherit;
-    font-size: 1.15rem;
-    line-height: 1.4;
-  }
-
-  .et-query-devtools-forget:hover {
-    border-color: var(--_et-qdt-error);
-    background: color-mix(in srgb, var(--_et-qdt-error) 22%, transparent);
-  }
-
   .et-query-devtools-scroll {
     block-size: 100%;
     overflow: auto;
@@ -680,15 +636,6 @@
     padding-block: 0 1rem;
   }
 
-  .et-query-devtools-drawer {
-    flex: 0 0 var(--_et-qdt-drawer-width, 42%);
-    min-inline-size: var(--_et-qdt-drawer-width, 26rem);
-    max-inline-size: var(--_et-qdt-drawer-width, 48rem);
-    overflow-y: auto;
-    padding: 0 1rem 1rem;
-    border-inline-start: 1px solid var(--_et-qdt-border);
-  }
-
   /* The divider between a two-pane tab's panes. A flex item of its own rather than an overlay on the
      pane edge: both panes scroll, and a strip drawn over one would sit on top of its scrollbar. */
   .et-query-devtools-pane-resize {
@@ -702,20 +649,6 @@
   .et-query-devtools-pane-resize:hover,
   .et-query-devtools-pane-resize:active {
     background: var(--_et-qdt-accent);
-  }
-
-  .et-query-devtools-drawer-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.8rem;
-    padding: 0.8rem 0;
-    position: sticky;
-    inset-block-start: 0;
-    background: var(--_et-qdt-bg);
-    color: var(--_et-qdt-muted);
-    border-block-end: 1px solid var(--_et-qdt-border);
-    margin-block-end: 0.8rem;
   }
 
   .et-query-devtools-toolbar {
@@ -738,24 +671,6 @@
     flex-wrap: wrap;
     flex: 1 1 100%;
     gap: 0.8rem;
-  }
-
-  /* The list column is a third of the panel, so a filter box sharing its line with the status chips would
-     leave neither enough room. Claiming the full line puts the chips underneath at any panel width. A
-     filter box in a full-width toolbar (the Sockets tab's) keeps its own size instead. */
-  .et-query-devtools-list .et-query-devtools-toolbar-row .et-query-devtools-search {
-    flex: 1 1 100%;
-  }
-
-  /* Layered over the opaque base so the sticky toolbar still hides the rows scrolling under it; the
-     inset shadow draws the accent edge without shifting the toolbar's contents. */
-  .et-query-devtools-toolbar--filtered {
-    background:
-      linear-gradient(to right, color-mix(in srgb, var(--_et-qdt-accent) 12%, transparent), transparent 65%),
-      var(--_et-qdt-bg);
-    box-shadow:
-      inset 0.2rem 0 0 var(--_et-qdt-accent),
-      inset 0 -1px 0 color-mix(in srgb, var(--_et-qdt-accent) 30%, transparent);
   }
 
   .et-query-devtools-field {
@@ -789,150 +704,8 @@
     color: var(--_et-qdt-fg);
   }
 
-  /* The row is a container and not the button, so the pin can be a sibling of the selection control -
-     a button nested inside another is invalid, and its click would select the row on the way out. The
-     hover/active backgrounds stay on the container so the strip still highlights as one thing. */
-  .et-query-devtools-row-select {
-    display: flex;
-    flex: 1 1 auto;
-    align-items: center;
-    gap: 0.8rem;
-    min-inline-size: 0;
-    text-align: start;
-    appearance: none;
-    border: none;
-    background: transparent;
-    color: inherit;
-    padding: 0.8rem;
-    cursor: pointer;
-    font: inherit;
-  }
-
-  .et-query-devtools-row-select > .et-query-devtools-chip {
-    padding-block: 0.1rem;
-    line-height: 1.2;
-  }
-
-  .et-query-devtools-row-pin {
-    display: flex;
-    flex: 0 0 auto;
-    align-self: center;
-    align-items: center;
-    justify-content: center;
-    inline-size: 3.2rem;
-    block-size: 3.2rem;
-    margin-inline-end: 0.4rem;
-    appearance: none;
-    border: none;
-    border-radius: 0.4rem;
-    background: transparent;
-    color: var(--_et-qdt-subtle);
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 1.8rem;
-    line-height: 1;
-    opacity: 0;
-  }
-
-  .et-query-devtools-row:hover .et-query-devtools-row-pin,
-  .et-query-devtools-row-pin:focus-visible,
-  .et-query-devtools-row-pin--active {
-    opacity: 1;
-  }
-
-  .et-query-devtools-row-pin:hover {
-    background: var(--_et-qdt-active);
-    color: var(--_et-qdt-fg);
-  }
-
-  .et-query-devtools-row-pin--active,
-  .et-query-devtools-row-pin--active:hover {
-    color: var(--_et-qdt-accent);
-  }
-
   .et-query-devtools-row:hover {
     background: var(--_et-qdt-hover);
-  }
-
-  .et-query-devtools-row--active {
-    background: var(--_et-qdt-active);
-  }
-
-  /* A tombstone reads like the stale chip does - muted, not alarming. It is history, not a failure. */
-  .et-query-devtools-row--gone {
-    color: var(--_et-qdt-muted);
-  }
-
-  /* Every row reserves this column, group head or not - otherwise the rows that have a caret start
-     their status dot 1.8rem further in than the rows that don't, and nothing in the list lines up. */
-  .et-query-devtools-row-caret {
-    flex: 0 0 auto;
-    inline-size: 1rem;
-    color: var(--_et-qdt-subtle);
-    font-size: 1rem;
-    line-height: 1;
-  }
-
-  /* A group head has no pin, so without this its trailing edge sits a pin-width further out than every
-     other row's and the time column bends around it. */
-  .et-query-devtools-row--group > .et-query-devtools-row-select {
-    padding-inline-end: 4.4rem;
-  }
-
-  .et-query-devtools-row--nested > .et-query-devtools-row-select {
-    padding-inline-start: 2.6rem;
-  }
-
-  /* Half of `--_et-qdt-hover`, so a group head still reads as a header of its own but the row's real
-     hover (which is the full mix) stays visible on top of it. */
-  .et-query-devtools-row--group {
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
-  }
-
-  .et-query-devtools-row-count {
-    flex: 0 0 auto;
-    color: var(--_et-qdt-subtle);
-    font-variant-numeric: tabular-nums;
-    font-size: 1.1rem;
-  }
-
-  /* 8ch is exactly `HH:MM:SS` in a monospace face - anything narrower and the text overflows its own
-     box into whatever follows instead of forming the column it is here to form. */
-  .et-query-devtools-row-time {
-    flex: 0 0 auto;
-    inline-size: 8ch;
-    text-align: end;
-    color: var(--_et-qdt-subtle);
-    font-family: ui-monospace, monospace;
-    font-variant-numeric: tabular-nums;
-    font-size: 1.1rem;
-  }
-
-  .et-query-devtools-sort {
-    flex: 0 0 auto;
-    color: var(--_et-qdt-muted);
-  }
-
-  .et-query-devtools-dropped {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    color: var(--_et-qdt-muted);
-  }
-
-  .et-query-devtools-dropped li {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-  }
-
-  .et-query-devtools-gone-note {
-    margin: 0 0 0.8rem;
-    color: var(--_et-qdt-muted);
-    font-size: 1.1rem;
   }
 
   .et-query-devtools-method {
@@ -948,16 +721,6 @@
     white-space: nowrap;
     flex: 1 1 auto;
     min-inline-size: 0;
-  }
-
-  /* What differs between two rows of the same endpoint is its params, so those are picked out of the
-     static path: path params in the accent, the query string dimmed behind them. */
-  .et-query-devtools-route-param {
-    color: var(--_et-qdt-accent);
-  }
-
-  .et-query-devtools-route-query {
-    color: var(--_et-qdt-muted);
   }
 
   .et-query-devtools-status {
@@ -979,91 +742,6 @@
   .et-query-devtools-status[data-status='loading'],
   .et-query-devtools-status[data-status='running'] {
     background: var(--_et-qdt-loading);
-  }
-
-  .et-query-devtools-detail-head {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    margin-block-end: 0.8rem;
-  }
-
-  /* The copy button has to sit against the route, so here the route hugs its text (still ellipsing
-     when it outgrows the row) and the button's auto margin keeps the chips at the far edge. */
-  .et-query-devtools-detail-head .et-query-devtools-route {
-    flex: 0 1 auto;
-  }
-
-  /* The value explorer's copy button, minus the reveal-on-hover: there is one of these, not one per
-     row of a dense tree, so hiding it would only make it undiscoverable. */
-  .et-query-devtools-route-copy {
-    appearance: none;
-    margin-inline-end: auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    inline-size: 2.2rem;
-    block-size: 2.2rem;
-    margin-inline-start: -0.4rem;
-    border: none;
-    border-radius: 0.3rem;
-    background: transparent;
-    color: var(--_et-qdt-subtle);
-    cursor: pointer;
-    font: inherit;
-    font-size: 1.3rem;
-    line-height: 1;
-  }
-
-  .et-query-devtools-route-copy:hover:not(.et-query-devtools-route-copy--copied) {
-    background: var(--_et-qdt-active);
-    color: var(--_et-qdt-fg);
-  }
-
-  .et-query-devtools-route-copy--copied {
-    color: var(--_et-qdt-success);
-  }
-
-  .et-query-devtools-live {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.6rem;
-    margin-block-end: 0.8rem;
-  }
-
-  .et-query-devtools-live-note {
-    color: var(--_et-qdt-muted);
-    font-size: 1.15rem;
-  }
-
-  .et-query-devtools-progress {
-    display: block;
-    flex: 1 1 12rem;
-    /* A bar with no intrinsic width would collapse to its content, and its content is another bar. */
-    min-inline-size: 8rem;
-    /* Capped so the readout next to it stays next to it rather than at the far edge of a wide panel. */
-    max-inline-size: 24rem;
-    block-size: 0.5rem;
-    border-radius: 999px;
-    overflow: hidden;
-    background: var(--_et-qdt-border);
-  }
-
-  .et-query-devtools-progress-bar {
-    display: block;
-    block-size: 100%;
-    border-radius: inherit;
-    background: var(--_et-qdt-accent);
-  }
-
-  .et-query-devtools-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
-    margin-block-end: 0.8rem;
   }
 
   .et-query-devtools-btn {
@@ -1118,15 +796,6 @@
     color: var(--_et-qdt-muted);
   }
 
-  /* Counters read as figures rather than as another label/value pair, so they get tiles that wrap into
-     as many columns as the panel width allows. */
-  .et-query-devtools-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-    gap: 0.6rem;
-    margin: 0 0 1rem;
-  }
-
   .et-query-devtools-stat {
     padding: 0.6rem 0.8rem;
     border: 1px solid var(--_et-qdt-border);
@@ -1147,22 +816,9 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .et-query-devtools-stat-value--sm {
-    font-size: 1.2rem;
-  }
-
   .et-query-devtools-stat-sub {
     display: block;
     font-size: 1rem;
-    color: var(--_et-qdt-subtle);
-  }
-
-  /* Sits at the trailing edge of a row, where it can be scanned down the list as a column of figures. */
-  .et-query-devtools-traffic {
-    margin-inline-start: auto;
-    flex: 0 0 auto;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
     color: var(--_et-qdt-subtle);
   }
 
@@ -1188,61 +844,6 @@
     overflow-wrap: anywhere;
   }
 
-  .et-query-devtools-code {
-    margin: 0 0 0.8rem;
-    padding: 0.8rem;
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 4%, transparent);
-    overflow: auto;
-    white-space: pre;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 1.15rem;
-    max-block-size: 20rem;
-  }
-
-  .et-query-devtools-ws-message {
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
-    padding: 0.6rem;
-    margin-block-end: 0.4rem;
-  }
-
-  /* An outgoing message is marked on the edge it starts from, so a log of both directions can be read
-     down the margin without reading the labels. */
-  .et-query-devtools-ws-message:where([data-direction='out']) {
-    border-inline-start: 2px solid color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
-  }
-
-  .et-query-devtools-ws-direction {
-    color: var(--_et-qdt-muted);
-    white-space: nowrap;
-  }
-
-  .et-query-devtools-ws-message:where([data-direction='out']) .et-query-devtools-ws-direction {
-    color: var(--_et-qdt-accent);
-  }
-
-  .et-query-devtools-emit {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-block: 0.4rem;
-  }
-
-  /* The event name is the short field; the payload takes whatever is left. */
-  .et-query-devtools-emit .et-query-devtools-input {
-    flex: 0 0 14rem;
-  }
-
-  .et-query-devtools-emit .et-query-devtools-input + .et-query-devtools-input {
-    flex: 1 1 auto;
-  }
-
-  .et-query-devtools-emit .et-query-devtools-btn {
-    flex: 0 0 auto;
-  }
-
   /* Truncate long request URLs (e.g. GraphQL transported via query params) with the full value on hover. */
   .et-query-devtools-url {
     display: inline-block;
@@ -1261,58 +862,6 @@
     flex-wrap: wrap;
     gap: 0.4rem;
     margin-block-end: 0.8rem;
-  }
-
-  /* One grid for the whole list (rows are `display: contents`), so every feature's options start in
-     the same column however long the feature names are. */
-  .et-query-devtools-features {
-    display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    align-items: center;
-    gap: 0.4rem 0.8rem;
-    margin: 0 0 0.8rem;
-    padding: 0;
-    list-style: none;
-  }
-
-  /* Inside the meta table the row gap already separates it from the next row. */
-  .et-query-devtools-meta .et-query-devtools-features {
-    margin-block-end: 0;
-  }
-
-  .et-query-devtools-feature {
-    display: contents;
-  }
-
-  .et-query-devtools-feature > .et-query-devtools-chip {
-    justify-self: start;
-  }
-
-  .et-query-devtools-feature-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-  }
-
-  .et-query-devtools-feature-detail {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.4rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 0.4rem;
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
-    font-size: 1.1rem;
-  }
-
-  .et-query-devtools-feature-label {
-    color: var(--_et-qdt-muted);
-  }
-
-  .et-query-devtools-feature-value {
-    color: var(--_et-qdt-fg);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-variant-numeric: tabular-nums;
-    overflow-wrap: anywhere;
   }
 
   .et-query-devtools-chip {
@@ -1368,12 +917,6 @@
     color: var(--_et-qdt-accent);
   }
 
-  .et-query-devtools-caret {
-    display: inline-block;
-    width: 1.2rem;
-    color: var(--_et-qdt-muted);
-  }
-
   /* A chip that is also a filter toggle. Accent means "this filter is on" - the match count next to the
      label is what says whether there is anything to look at, so the states never compete for colour. */
   .et-query-devtools-facet {
@@ -1420,20 +963,6 @@
     margin-block-end: 0.8rem;
   }
 
-  .et-query-devtools-card-title {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin-block-end: 0.2rem;
-  }
-
-  .et-query-devtools-card-sub {
-    color: var(--_et-qdt-subtle);
-    font-size: 1.1rem;
-    margin-block-end: 0.6rem;
-    overflow-wrap: anywhere;
-  }
-
   .et-query-devtools-inner-queries {
     display: flex;
     flex-direction: column;
@@ -1470,52 +999,6 @@
     opacity: 0.6;
   }
 
-  .et-query-devtools-step-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .et-query-devtools-step-item {
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
-    overflow: hidden;
-  }
-
-  .et-query-devtools-step-item[data-status='error'] {
-    border-color: color-mix(in srgb, var(--_et-qdt-error) 50%, transparent);
-  }
-
-  .et-query-devtools-step-head {
-    display: flex;
-    align-items: stretch;
-  }
-
-  .et-query-devtools-step-head .et-query-devtools-inner-row {
-    border: none;
-    border-radius: 0;
-    flex: 1 1 auto;
-  }
-
-  .et-query-devtools-step-caret-btn {
-    appearance: none;
-    border: none;
-    border-inline-start: 1px solid var(--_et-qdt-border);
-    background: transparent;
-    color: var(--_et-qdt-muted);
-    cursor: pointer;
-    padding: 0 0.7rem;
-    font: inherit;
-  }
-
-  .et-query-devtools-step-caret-btn:hover {
-    background: var(--_et-qdt-hover);
-    color: var(--_et-qdt-fg);
-  }
-
   .et-query-devtools-step-toggle {
     display: flex;
     align-items: center;
@@ -1542,11 +1025,6 @@
 
   .et-query-devtools-step-caret {
     color: var(--_et-qdt-muted);
-  }
-
-  .et-query-devtools-step-io {
-    padding: 0 0.8rem 0.8rem;
-    border-block-start: 1px solid var(--_et-qdt-border);
   }
 
   .et-query-devtools-table {
@@ -1587,19 +1065,6 @@
     text-align: center;
   }
 
-  .et-query-devtools-actions-label {
-    color: var(--_et-qdt-subtle);
-    align-self: center;
-    text-transform: uppercase;
-    font-size: 1rem;
-    letter-spacing: 0.05em;
-  }
-
-  /* Leading space so inline group labels separate their button clusters. */
-  .et-query-devtools-actions-label:not(:first-child) {
-    margin-inline-start: 0.7rem;
-  }
-
   /* Inside the cell rather than on it: a `<td>` with a flex display is wrapped in an anonymous table cell,
      which leaves its padding and bottom border on a box the row's height no longer stretches - so the rule
      under the row visibly steps where such a cell sits. */
@@ -1609,32 +1074,12 @@
     white-space: nowrap;
   }
 
-  /* An expanded cache value is a row of its own under the entry it belongs to, indented so the table
-     still reads as rows of entries. */
-  .et-query-devtools-cell-value {
-    padding-inline-start: 1.6rem;
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 3%, transparent);
-  }
-
   .et-query-devtools-section-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.8rem;
     margin-block-start: 1rem;
-  }
-
-  /* The auto margin pulls the stepper over to the readout, so the row reads heading | controls+count
-     rather than three things spread evenly by `space-between`. */
-  .et-query-devtools-diff-step {
-    display: flex;
-    gap: 0.4rem;
-    margin-inline-start: auto;
-  }
-
-  .et-query-devtools-runs-fold {
-    margin-block-start: 0.4rem;
-    color: var(--_et-qdt-muted);
   }
 
   .et-query-devtools-search {
@@ -1678,34 +1123,6 @@
     margin: 0;
   }
 
-  /* An armed client is the one card that must be findable at a glance from across the panel, since every
-     misbehaving request in the app is coming from it. */
-  .et-query-devtools-card--armed {
-    border-color: color-mix(in srgb, var(--_et-qdt-error) 55%, transparent);
-    background: color-mix(in srgb, var(--_et-qdt-error) 6%, transparent);
-  }
-
-  .et-query-devtools-faults {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-    gap: 0.8rem 1.6rem;
-  }
-
-  /* The fault fields stack their label, control and unit hint, unlike the inline `field` elsewhere. */
-  .et-query-devtools-faults .et-query-devtools-field {
-    display: grid;
-    grid-template-columns: 8rem minmax(0, 1fr);
-    align-items: baseline;
-    row-gap: 0.2rem;
-    color: var(--_et-qdt-fg);
-  }
-
-  .et-query-devtools-faults .et-query-devtools-field small {
-    grid-column: 2;
-    color: var(--_et-qdt-subtle);
-    font-size: 1.1rem;
-  }
-
   .et-query-devtools-input {
     inline-size: 100%;
     background: var(--_et-qdt-bg);
@@ -1714,11 +1131,6 @@
     border-radius: 0.4rem;
     padding: 0.4rem 0.6rem;
     font: inherit;
-  }
-
-  .et-query-devtools-input--number {
-    inline-size: 8rem;
-    font-variant-numeric: tabular-nums;
   }
 
   /* --- JIT editor --- */
@@ -1730,98 +1142,14 @@
     margin-block-end: 1rem;
   }
 
-  .et-query-devtools-textarea {
-    inline-size: 100%;
-    min-block-size: 12rem;
-    resize: vertical;
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 4%, transparent);
-    color: var(--_et-qdt-fg);
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
-    padding: 0.6rem;
-    font-family: inherit;
-    font-size: 1.2rem;
-  }
-
   .et-query-devtools-editor-error {
     color: var(--_et-qdt-error);
     margin: 0.4rem 0 0;
-  }
-
-  /* Sub-tabs inside the query detail. Underlined rather than boxed, so they read as a section switch
-     within the drawer and not as another level of the panel's own tab bar. */
-  .et-query-devtools-subtabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem;
-    border-block-end: 1px solid var(--_et-qdt-border);
-    margin-block: 0.8rem;
-  }
-
-  /* A section row separates itself from whatever precedes it with a rule of its own. Directly under the
-     subtabs there is nothing to separate from - the nav already closes with one - so the two rules would
-     sit a few pixels apart and read as a doubled border. */
-  .et-query-devtools-subtabs + .et-query-devtools-section-row {
-    padding-block-start: 0;
-    border-block-start: 0;
-  }
-
-  .et-query-devtools-subtab {
-    appearance: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    border: 0;
-    border-block-end: 2px solid transparent;
-    background: transparent;
-    color: var(--_et-qdt-muted);
-    font: inherit;
-    font-size: 1.15rem;
-    padding: 0.4rem 0.6rem;
-    margin-block-end: -1px;
-    cursor: pointer;
-  }
-
-  .et-query-devtools-subtab:hover {
-    color: var(--_et-qdt-fg);
-  }
-
-  .et-query-devtools-subtab--active {
-    color: var(--_et-qdt-fg);
-    border-block-end-color: var(--_et-qdt-accent);
-  }
-
-  /* The status dot sizes itself, which needs the cell to lay its content out as a flex line. */
-  .et-query-devtools-run-cell {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
   }
 
   .et-query-devtools-btn--active {
     color: var(--_et-qdt-accent);
     border-color: color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
     background: color-mix(in srgb, var(--_et-qdt-accent) 12%, transparent);
-  }
-
-  .et-query-devtools-diff td {
-    max-inline-size: 28rem;
-    overflow-wrap: anywhere;
-  }
-
-  .et-query-devtools-diff-before {
-    color: var(--_et-qdt-muted);
-  }
-
-  .et-query-devtools-diff tr[data-kind='removed'] .et-query-devtools-diff-before {
-    color: var(--_et-qdt-error);
-  }
-
-  .et-query-devtools-diff tr[data-kind='added'] .et-query-devtools-diff-after {
-    color: var(--_et-qdt-success);
-  }
-
-  .et-query-devtools-diff tr[data-kind='changed'] .et-query-devtools-diff-after {
-    color: var(--_et-qdt-accent);
   }
 }

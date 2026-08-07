@@ -8,6 +8,7 @@ import { NumericFaultField } from './query-devtools-types';
 @Component({
   selector: 'et-query-devtools-faults-tab',
   templateUrl: './query-devtools-faults-tab.component.html',
+  styleUrl: './query-devtools-faults-tab.component.css',
   encapsulation: ViewEncapsulation.None,
 })
 export class QueryDevtoolsFaultsTabComponent {

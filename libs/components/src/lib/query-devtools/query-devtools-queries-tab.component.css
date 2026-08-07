@@ -15,13 +15,6 @@
     border-inline-end: 1px solid var(--_et-qdt-border);
   }
 
-  .et-query-devtools-detail {
-    flex: 1 1 auto;
-    min-inline-size: 0;
-    overflow-y: auto;
-    padding: 1rem;
-  }
-
   .et-query-devtools-forget {
     appearance: none;
     display: inline-flex;
@@ -59,17 +52,6 @@
     box-shadow:
       inset 0.2rem 0 0 var(--_et-qdt-accent),
       inset 0 -1px 0 color-mix(in srgb, var(--_et-qdt-accent) 30%, transparent);
-  }
-
-  /* Every row is one line tall, badge or no badge: the reserved content box is taller than both the
-     route text and a capped chip, so a query going stale can't make its row jump. */
-  .et-query-devtools-row {
-    display: flex;
-    align-items: stretch;
-    inline-size: 100%;
-    min-block-size: 3.6rem;
-    border-block-end: 1px solid var(--_et-qdt-border);
-    color: var(--_et-qdt-fg);
   }
 
   /* The row is a container and not the button, so the pin can be a sibling of the selection control -
@@ -131,10 +113,6 @@
   .et-query-devtools-row-pin--active,
   .et-query-devtools-row-pin--active:hover {
     color: var(--_et-qdt-accent);
-  }
-
-  .et-query-devtools-row:hover {
-    background: var(--_et-qdt-hover);
   }
 
   .et-query-devtools-row--active {

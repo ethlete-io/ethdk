@@ -13,6 +13,7 @@ import { AnyQuery } from './query-devtools-types';
 @Component({
   selector: 'et-query-devtools-drawer',
   templateUrl: './query-devtools-drawer.component.html',
+  styleUrl: './query-devtools-drawer.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [QueryDevtoolsDetailComponent],
 })

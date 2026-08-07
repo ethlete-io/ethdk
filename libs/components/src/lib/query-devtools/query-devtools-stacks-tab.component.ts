@@ -10,6 +10,7 @@ import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 @Component({
   selector: 'et-query-devtools-stacks-tab',
   templateUrl: './query-devtools-stacks-tab.component.html',
+  styleUrl: './query-devtools-stacks-tab.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     NgTemplateOutlet,

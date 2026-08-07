@@ -8,6 +8,7 @@ import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 @Component({
   selector: 'et-query-devtools-forms-tab',
   templateUrl: './query-devtools-forms-tab.component.html',
+  styleUrl: './query-devtools-forms-tab.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [QueryDevtoolsDrawerComponent, QueryDevtoolsJsonComponent, QueryDevtoolsRouteComponent],
 })

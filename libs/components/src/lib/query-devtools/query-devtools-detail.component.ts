@@ -15,6 +15,7 @@ import { DetailTab, QueryDevtoolsSelection } from './query-devtools-types';
 @Component({
   selector: 'et-query-devtools-detail',
   templateUrl: './query-devtools-detail.component.html',
+  styleUrl: './query-devtools-detail.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [QueryDevtoolsFeaturesComponent, QueryDevtoolsJsonComponent, QueryDevtoolsRouteComponent],
 })

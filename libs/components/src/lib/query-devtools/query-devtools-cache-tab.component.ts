@@ -9,6 +9,7 @@ import { DESTROY_CAUSE_LABELS } from './query-devtools-types';
 @Component({
   selector: 'et-query-devtools-cache-tab',
   templateUrl: './query-devtools-cache-tab.component.html',
+  styleUrl: './query-devtools-cache-tab.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [QueryDevtoolsFeaturesComponent, QueryDevtoolsJsonComponent],
 })

@@ -106,26 +106,6 @@
     margin: 0 0 1rem;
   }
 
-  .et-query-devtools-stat {
-    padding: 0.6rem 0.8rem;
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 3%, transparent);
-  }
-
-  .et-query-devtools-stat dt {
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--_et-qdt-muted);
-  }
-
-  .et-query-devtools-stat dd {
-    margin: 0;
-    font-size: 1.5rem;
-    font-variant-numeric: tabular-nums;
-  }
-
   .et-query-devtools-stat-value--sm {
     font-size: 1.2rem;
   }
@@ -167,13 +147,6 @@
   .et-query-devtools-runs-fold {
     margin-block-start: 0.4rem;
     color: var(--_et-qdt-muted);
-  }
-
-  .et-query-devtools-editor {
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
-    padding: 0.8rem;
-    margin-block-end: 1rem;
   }
 
   .et-query-devtools-textarea {

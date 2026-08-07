@@ -14,6 +14,7 @@ import { RouteSegment } from './query-devtools-types';
       {{ fallback() }}
     }
   `,
+  styleUrl: './query-devtools-route.component.css',
   encapsulation: ViewEncapsulation.None,
 })
 export class QueryDevtoolsRouteComponent {
