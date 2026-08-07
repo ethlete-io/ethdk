@@ -1,5 +1,12 @@
 # @ethlete/query
 
+## 6.0.0-next.31
+
+### Minor Changes
+
+- [`458f5b7`](https://github.com/ethlete-io/ethdk/commit/458f5b7ecfe9b4360fc220a8465d46833f831ffd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `buildArgs` to `withRefreshQuery`, so an API that does not name the refresh field `token` can be
+  refreshed at all.
+
 ## 6.0.0-next.30
 
 ### Minor Changes
