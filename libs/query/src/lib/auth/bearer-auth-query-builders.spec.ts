@@ -106,6 +106,44 @@ describe('bearer-auth-query-builders', () => {
     });
   });
 
+  describe('withRefreshQuery - the refresh request body', () => {
+    const unauthorizeAndExpectRefresh = () => {
+      setup.httpTesting
+        .expectOne('https://api.test.com/api/secure-data')
+        .flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+      TestBed.tick();
+
+      return setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
+    };
+
+    it('sends the refresh token as `token` by default', () => {
+      const authSetup = setupAuthTest({ querySetup: setup, autoRetryOn401: true });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: 'refresh-123' });
+      authSetup.makeSecureRequest('/api/secure-data');
+
+      expect(unauthorizeAndExpectRefresh().request.body).toEqual({ token: 'refresh-123' });
+    });
+
+    it('sends what buildArgs returns when the API names the field differently', () => {
+      const authSetup = setupAuthTest<
+        { body: { username: string; password: string }; response: { accessToken: string; refreshToken: string } },
+        { body: { refresh_token: string }; response: { accessToken: string; refreshToken: string } }
+      >({
+        querySetup: setup,
+        autoRetryOn401: true,
+        buildRefreshArgs: (refreshToken) => ({ body: { refresh_token: refreshToken } }),
+      });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: 'refresh-123' });
+      authSetup.makeSecureRequest('/api/secure-data');
+
+      expect(unauthorizeAndExpectRefresh().request.body).toEqual({ refresh_token: 'refresh-123' });
+    });
+  });
+
   describe('withRefreshQuery - Auto-retry on 401', () => {
     it('should trigger token refresh when a secure query returns 401', () => {
       const authSetup = setupAuthTest({

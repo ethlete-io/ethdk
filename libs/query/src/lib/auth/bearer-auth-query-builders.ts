@@ -27,6 +27,20 @@ export type AuthQueryConfig<TArgs extends QueryArgs> = {
 
 export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<TArgs> & {
   /**
+   * Builds the request the refresh query sends for the current refresh token. Set it whenever the
+   * API names that field anything other than `token`.
+   *
+   * @default (refreshToken) => ({ body: { token: refreshToken } })
+   *
+   * @example
+   * withRefreshQuery('refresh', {
+   *   queryCreator: refresh,
+   *   buildArgs: (refreshToken) => ({ body: { refresh_token: refreshToken } }),
+   * });
+   */
+  buildArgs?: (refreshToken: string) => RequestArgs<TArgs>;
+
+  /**
    * The property name in the decoded JWT that contains the expiration time (in seconds).
    * @default 'exp'
    */
@@ -217,7 +231,8 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     return { retry: true, delay };
   };
 
-  const buildArgs = (refreshToken: string) => ({ body: { token: refreshToken } }) as RequestArgs<QueryArgs>;
+  const buildArgs = (refreshToken: string) =>
+    (config.buildArgs?.(refreshToken) ?? { body: { token: refreshToken } }) as RequestArgs<QueryArgs>;
 
   const setup = (context: BearerAuthProviderQueryContext) => {
     const expiresInPropertyName = config.expiresInPropertyName ?? 'exp';

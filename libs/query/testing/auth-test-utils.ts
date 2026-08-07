@@ -44,6 +44,8 @@ export type AuthTestSetupConfig<
   extractLoginTokens?: (response: TLoginArgs['response']) => { accessToken: string; refreshToken: string };
   /** Function to extract tokens from refresh response */
   extractRefreshTokens?: (response: TRefreshArgs['response']) => { accessToken: string; refreshToken: string };
+  /** Builds the refresh request from the refresh token. See TokenRefreshQueryConfig for details */
+  buildRefreshArgs?: TokenRefreshQueryConfig<TRefreshArgs>['buildArgs'];
   /** Feature builders for additional auth functionality */
   features?: [...TFeatures];
   /** Custom bearer decrypt function for testing */
@@ -113,6 +115,7 @@ export const setupAuthTest = <
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
     }),
+    buildRefreshArgs,
     features,
     bearerDecryptFn,
     refreshStrategy,
@@ -138,6 +141,7 @@ export const setupAuthTest = <
       withRefreshQuery('refresh', {
         queryCreator: refresh,
         extractTokens: extractRefreshTokens,
+        buildArgs: buildRefreshArgs,
         autoRetryOn401,
         refreshStrategy,
         minRefreshInterval,
