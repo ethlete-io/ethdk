@@ -34,6 +34,7 @@ describe('query persistence', () => {
 
   beforeEach(() => {
     store = createFakeQueryPersistenceStore();
+    heldWrites = holdableWrites();
     held = [];
 
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
@@ -118,6 +119,48 @@ describe('query persistence', () => {
       await Promise.resolve();
     }
   };
+
+  /**
+   * The fake store settles a write on a microtask, which is nowhere near what a real transaction
+   * takes. This wraps it so a spec can park one write on disk-arrival and act while it is in flight.
+   */
+  const holdableWrites = () => {
+    let releaseWrite: (() => void) | null = null;
+    let onHeld: (() => void) | null = null;
+    let isHoldingNext = false;
+
+    return {
+      adapter: {
+        ...store.adapter,
+        write: async (entries: Parameters<typeof store.adapter.write>[0]) => {
+          if (isHoldingNext) {
+            isHoldingNext = false;
+
+            await new Promise<void>((resolve) => {
+              releaseWrite = resolve;
+              onHeld?.();
+            });
+          }
+
+          return await store.adapter.write(entries);
+        },
+      },
+      holdNext: () => (isHoldingNext = true),
+      whenHeld: () =>
+        new Promise<void>((resolve) => {
+          if (releaseWrite) return resolve();
+
+          onHeld = resolve;
+        }),
+      release: async () => {
+        releaseWrite?.();
+        releaseWrite = null;
+        await flushStore();
+      },
+    };
+  };
+
+  let heldWrites: ReturnType<typeof holdableWrites>;
 
   /** Ends a session the way a reload does: everything written is on disk, nothing is in memory. */
   const endSession = async (ref: QueryClientRef, mounted?: MountedQuery) => {
@@ -360,6 +403,26 @@ describe('query persistence', () => {
       ]);
     });
 
+    it('applies a lowered maxEntries at startup, before anything is written', async () => {
+      const first = createSession({ maxEntries: 3 });
+
+      for (const route of ['/a', '/b', '/c'] as const) {
+        const mounted = mountQuery(first, { route });
+
+        flushAll({ route });
+        await endSession(first);
+
+        mounted.destroy();
+      }
+
+      expect(store.entries().length).toBe(3);
+
+      client(createSession({ maxEntries: 1 }));
+      await flushStore();
+
+      expect(store.entries().map((entry) => entry.url)).toEqual(['https://api.example.com/c']);
+    });
+
     it('gives up on writing after a second failure, without breaking the client', async () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
@@ -440,6 +503,26 @@ describe('query persistence', () => {
 
       publicQuery.destroy();
     });
+
+    it('are removed from disk on a logout that lands mid-write', async () => {
+      const session = createSession({ adapter: heldWrites.adapter });
+
+      requestSecure(session, { persistence: true });
+      flushAll({ me: 'ada' });
+
+      // The write is on its way to disk when the logout happens - the window a real store's
+      // transaction takes.
+      heldWrites.holdNext();
+      void persistenceOf(session).flush();
+      await heldWrites.whenHeld();
+
+      client(session).repository.unbindAllSecure();
+
+      await heldWrites.release();
+      await flushStore();
+
+      expect(store.entries()).toEqual([]);
+    });
   });
 
   describe('with multi-tab sync', () => {
@@ -518,6 +601,27 @@ describe('query persistence', () => {
       await client(session).clearPersistedQueries();
 
       expect(store.entries()).toEqual([]);
+    });
+
+    it('clearPersistedQueries empties a store with a write in flight', async () => {
+      const session = createSession({ adapter: heldWrites.adapter });
+      const mounted = mountQuery(session);
+
+      flushAll({ version: 1 });
+
+      heldWrites.holdNext();
+      void persistenceOf(session).flush();
+      await heldWrites.whenHeld();
+
+      const cleared = client(session).clearPersistedQueries();
+
+      await heldWrites.release();
+      await cleared;
+      await flushStore();
+
+      expect(store.entries()).toEqual([]);
+
+      mounted.destroy();
     });
 
     it('whenPersistenceReady resolves once the index is loaded', async () => {

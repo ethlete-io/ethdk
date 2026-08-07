@@ -110,15 +110,15 @@ withQueryPersistence({
 });
 ```
 
-| Option        | Default                        | Description                                                                                   |
-| ------------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `storageName` | `et-query-persistence-${name}` | The IndexedDB database name. One per client, so two clients never overwrite each other.       |
-| `version`     | `1`                            | The version of your response shapes. Entries written under a different one are dropped.       |
-| `maxAge`      | `86400000` (24h)               | How old a response may be and still be shown. Older ones are dropped at startup.              |
-| `maxEntries`  | `50`                           | How many responses are kept. The least recently written go first.                             |
-| `writeDelay`  | `1000`                         | How long writes are collected before one batched flush. Always flushed when the tab hides.    |
-| `adapter`     | IndexedDB                      | Where to store responses. See [custom storage](#custom-storage).                              |
-| `filter`      | -                              | `(candidate) => boolean` over `{ key, url, method, isSecure }`; `false` keeps a response out. |
+| Option        | Default                        | Description                                                                                             |
+| ------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `storageName` | `et-query-persistence-${name}` | The IndexedDB database name. One per client, so two clients never overwrite each other.                 |
+| `version`     | `1`                            | The version of your response shapes. Entries written under a different one are dropped.                 |
+| `maxAge`      | `86400000` (24h)               | How old a response may be and still be shown. Older ones are dropped at startup.                        |
+| `maxEntries`  | `50`                           | How many responses are kept. The least recently written go first, and the cap is re-applied at startup. |
+| `writeDelay`  | `1000`                         | How long writes are collected before one batched flush. Always flushed when the tab hides.              |
+| `adapter`     | IndexedDB                      | Where to store responses. See [custom storage](#custom-storage).                                        |
+| `filter`      | -                              | `(candidate) => boolean` over `{ key, url, method, isSecure }`; `false` keeps a response out.           |
 
 ### Bump `version` when a response shape changes
 
@@ -152,14 +152,16 @@ await client.clearPersistedQueries();
 ### Gating the first paint
 
 Nothing needs to wait for the store - a query created before it is read is hydrated as soon as it is.
-An app that would rather delay its first paint than show a loading state it knows it has data for can
+An app that would rather pay for the index read up front than have its first queries wait on it can
 await it:
 
 ```ts
 provideAppInitializer(() => injectApi().whenPersistenceReady);
 ```
 
-That resolves once the store's index is loaded (immediately without the feature, or on the server).
+That resolves once the store's index is loaded (immediately without the feature, or on the server). It
+does not remove the empty first tick described above - a body is still read from the store per query -
+it only takes the index load off that path.
 
 ## Custom storage
 
@@ -202,6 +204,9 @@ write as a full disk.
 - **A full disk gives up quietly.** A write that fails frees the oldest half of the store and retries
   once; a second failure stops writing for the session with one dev-mode warning. Queries are
   unaffected either way.
+- **Removing beats writing.** Writes are batched and therefore in flight for a moment. A logout purge
+  or a `clearPersistedQueries()` that starts in that window runs _after_ the write lands, never
+  alongside it, so a response cannot survive the removal that was meant to take it.
 - **Server-side rendering.** Always a no-op - no store is opened. Angular's `transferCache` already
   covers the SSR hand-off, in memory and per request.
 - **Browsers without IndexedDB**, or with storage denied, degrade to in-memory caching rather than

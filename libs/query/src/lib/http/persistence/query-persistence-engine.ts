@@ -71,6 +71,21 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
 
   const whenReady = new Promise<void>((resolve) => (markReady = resolve));
 
+  /**
+   * Every task that touches the store runs through here, one at a time. A flush is already async by
+   * the time the batch leaves for disk, so a logout purge or a clear starting in that window would
+   * otherwise have the write land behind it and put the data back.
+   */
+  let storeChain: Promise<unknown> = Promise.resolve();
+
+  const enqueue = <T>(task: () => Promise<T>) => {
+    const run = storeChain.catch(() => undefined).then(task);
+
+    storeChain = run.catch(() => undefined);
+
+    return run;
+  };
+
   const isExpired = (meta: PersistedQueryEntryMeta, now = Date.now()) => meta.persistedAt + maxAge <= now;
 
   const metaOf = ({ body: _body, ...meta }: PersistedQueryEntry): PersistedQueryEntryMeta => meta;
@@ -97,18 +112,21 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     await removeKeys(excess);
   };
 
-  const purgeSecure = async () => {
-    // A body queued for writing must go too: the logout tore the entry down, so flushing it afterwards
-    // would put the data back on disk moments after it was removed from memory.
+  const purgeSecure = () => {
+    // Dropping the queued bodies is not deferred like the disk half below: a flush scheduled before
+    // the logout would otherwise still be holding them when it runs, and put the data back on disk
+    // moments after it left memory.
     for (const [key, entry] of pendingWrites) {
       if (entry.isSecure) pendingWrites.delete(key);
     }
 
-    const secureKeys = Array.from(index.values())
-      .filter((meta) => meta.isSecure)
-      .map((meta) => meta.key);
+    return enqueue(async () => {
+      const secureKeys = Array.from(index.values())
+        .filter((meta) => meta.isSecure)
+        .map((meta) => meta.key);
 
-    await removeKeys(secureKeys);
+      await removeKeys(secureKeys);
+    });
   };
 
   const start = async () => {
@@ -139,10 +157,15 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
       // shapes changed. Emptying the store outright also collects anything the index does not know
       // about, which a key-by-key removal cannot.
       if (droppedKeys.length && !index.size) {
-        await adapter.clear();
+        await enqueue(() => adapter.clear());
       } else if (droppedKeys.length) {
-        await removeKeys(droppedKeys);
+        await enqueue(() => removeKeys(droppedKeys));
       }
+
+      // The cap is otherwise only applied by a write, so a store left over the limit - by a deploy
+      // that lowered `maxEntries`, or by several tabs writing against their own index - would stay
+      // that way until this session happens to write something.
+      await enqueue(enforceMaxEntries);
     } catch {
       // Pruning is opportunistic: `maxAge` is re-checked before every hydration, so a failure here
       // costs disk space, never correctness.
@@ -236,10 +259,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     await enforceMaxEntries().catch(() => undefined);
   };
 
-  // Flushes are serialized: the write timer and the "tab is going away" flush can fire together, and
-  // two batches updating the index and the entry cap concurrently would race.
-  let flushChain = Promise.resolve();
-  const flush = () => (flushChain = flushChain.catch(() => undefined).then(runFlush));
+  const flush = () => enqueue(runFlush);
 
   const scheduleFlush = () => {
     if (writeTimer !== undefined || areWritesDisabled || isDestroyed) return;
@@ -306,13 +326,16 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
 
   const eventSubscription = repository.events$.subscribe(handleEvent);
 
-  const clear = async () => {
+  const clear = () => {
     clearTimeout(writeTimer);
     writeTimer = undefined;
     pendingWrites.clear();
-    index.clear();
 
-    await adapter.clear();
+    return enqueue(async () => {
+      index.clear();
+
+      await adapter.clear();
+    });
   };
 
   const destroy = () => {
