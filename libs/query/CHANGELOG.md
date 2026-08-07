@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.32
+
+### Patch Changes
+
+- [`fcdf018`](https://github.com/ethlete-io/ethdk/commit/fcdf01864995a23bc850a748455357685ae90b6d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix token refresh causing an infinite loop
+
 ## 6.0.0-next.31
 
 ### Minor Changes
