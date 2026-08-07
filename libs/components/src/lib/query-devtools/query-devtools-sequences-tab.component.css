@@ -1,0 +1,52 @@
+@layer components {
+  .et-query-devtools-step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-query-devtools-step-item {
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    overflow: hidden;
+  }
+
+  .et-query-devtools-step-item[data-status='error'] {
+    border-color: color-mix(in srgb, var(--_et-qdt-error) 50%, transparent);
+  }
+
+  .et-query-devtools-step-head {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .et-query-devtools-step-head .et-query-devtools-inner-row {
+    border: none;
+    border-radius: 0;
+    flex: 1 1 auto;
+  }
+
+  .et-query-devtools-step-caret-btn {
+    appearance: none;
+    border: none;
+    border-inline-start: 1px solid var(--_et-qdt-border);
+    background: transparent;
+    color: var(--_et-qdt-muted);
+    cursor: pointer;
+    padding: 0 0.7rem;
+    font: inherit;
+  }
+
+  .et-query-devtools-step-caret-btn:hover {
+    background: var(--_et-qdt-hover);
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-step-io {
+    padding: 0 0.8rem 0.8rem;
+    border-block-start: 1px solid var(--_et-qdt-border);
+  }
+}

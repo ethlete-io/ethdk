@@ -1,0 +1,24 @@
+@layer components {
+  .et-query-devtools-drawer {
+    flex: 0 0 var(--_et-qdt-drawer-width, 42%);
+    min-inline-size: var(--_et-qdt-drawer-width, 26rem);
+    max-inline-size: var(--_et-qdt-drawer-width, 48rem);
+    overflow-y: auto;
+    padding: 0 1rem 1rem;
+    border-inline-start: 1px solid var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.8rem 0;
+    position: sticky;
+    inset-block-start: 0;
+    background: var(--_et-qdt-bg);
+    color: var(--_et-qdt-muted);
+    border-block-end: 1px solid var(--_et-qdt-border);
+    margin-block-end: 0.8rem;
+  }
+}

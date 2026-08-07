@@ -1,0 +1,43 @@
+@layer components {
+  .et-query-devtools-ws-message {
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    padding: 0.6rem;
+    margin-block-end: 0.4rem;
+  }
+
+  /* An outgoing message is marked on the edge it starts from, so a log of both directions can be read
+     down the margin without reading the labels. */
+  .et-query-devtools-ws-message:where([data-direction='out']) {
+    border-inline-start: 2px solid color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
+  }
+
+  .et-query-devtools-ws-direction {
+    color: var(--_et-qdt-muted);
+    white-space: nowrap;
+  }
+
+  .et-query-devtools-ws-message:where([data-direction='out']) .et-query-devtools-ws-direction {
+    color: var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-emit {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-block: 0.4rem;
+  }
+
+  /* The event name is the short field; the payload takes whatever is left. */
+  .et-query-devtools-emit .et-query-devtools-input {
+    flex: 0 0 14rem;
+  }
+
+  .et-query-devtools-emit .et-query-devtools-input + .et-query-devtools-input {
+    flex: 1 1 auto;
+  }
+
+  .et-query-devtools-emit .et-query-devtools-btn {
+    flex: 0 0 auto;
+  }
+}

@@ -1,0 +1,24 @@
+@layer components {
+  .et-query-devtools-dropped {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--_et-qdt-muted);
+  }
+
+  .et-query-devtools-dropped li {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  /* An expanded cache value is a row of its own under the entry it belongs to, indented so the table
+     still reads as rows of entries. */
+  .et-query-devtools-cell-value {
+    padding-inline-start: 1.6rem;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 3%, transparent);
+  }
+}

@@ -1,0 +1,198 @@
+@layer components {
+  .et-query-devtools-master-detail {
+    display: flex;
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  /* A dragged width is set on all three properties at once, so it wins outright; unset, the pane keeps
+     its proportional default between the bounds that keep it readable at any panel width. */
+  .et-query-devtools-list {
+    flex: 0 0 var(--_et-qdt-list-width, 34%);
+    min-inline-size: var(--_et-qdt-list-width, 22rem);
+    max-inline-size: var(--_et-qdt-list-width, 40rem);
+    overflow-y: auto;
+    border-inline-end: 1px solid var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-detail {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+
+  .et-query-devtools-forget {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--_et-qdt-error) 50%, transparent);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--_et-qdt-error) 10%, transparent);
+    color: var(--_et-qdt-error);
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    font: inherit;
+    font-size: 1.15rem;
+    line-height: 1.4;
+  }
+
+  .et-query-devtools-forget:hover {
+    border-color: var(--_et-qdt-error);
+    background: color-mix(in srgb, var(--_et-qdt-error) 22%, transparent);
+  }
+
+  /* The list column is a third of the panel, so a filter box sharing its line with the status chips would
+     leave neither enough room. Claiming the full line puts the chips underneath at any panel width. A
+     filter box in a full-width toolbar (the Sockets tab's) keeps its own size instead. */
+  .et-query-devtools-list .et-query-devtools-toolbar-row .et-query-devtools-search {
+    flex: 1 1 100%;
+  }
+
+  /* Layered over the opaque base so the sticky toolbar still hides the rows scrolling under it; the
+     inset shadow draws the accent edge without shifting the toolbar's contents. */
+  .et-query-devtools-toolbar--filtered {
+    background:
+      linear-gradient(to right, color-mix(in srgb, var(--_et-qdt-accent) 12%, transparent), transparent 65%),
+      var(--_et-qdt-bg);
+    box-shadow:
+      inset 0.2rem 0 0 var(--_et-qdt-accent),
+      inset 0 -1px 0 color-mix(in srgb, var(--_et-qdt-accent) 30%, transparent);
+  }
+
+  /* Every row is one line tall, badge or no badge: the reserved content box is taller than both the
+     route text and a capped chip, so a query going stale can't make its row jump. */
+  .et-query-devtools-row {
+    display: flex;
+    align-items: stretch;
+    inline-size: 100%;
+    min-block-size: 3.6rem;
+    border-block-end: 1px solid var(--_et-qdt-border);
+    color: var(--_et-qdt-fg);
+  }
+
+  /* The row is a container and not the button, so the pin can be a sibling of the selection control -
+     a button nested inside another is invalid, and its click would select the row on the way out. The
+     hover/active backgrounds stay on the container so the strip still highlights as one thing. */
+  .et-query-devtools-row-select {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.8rem;
+    min-inline-size: 0;
+    text-align: start;
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: inherit;
+    padding: 0.8rem;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .et-query-devtools-row-select > .et-query-devtools-chip {
+    padding-block: 0.1rem;
+    line-height: 1.2;
+  }
+
+  .et-query-devtools-row-pin {
+    display: flex;
+    flex: 0 0 auto;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    inline-size: 3.2rem;
+    block-size: 3.2rem;
+    margin-inline-end: 0.4rem;
+    appearance: none;
+    border: none;
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--_et-qdt-subtle);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1.8rem;
+    line-height: 1;
+    opacity: 0;
+  }
+
+  .et-query-devtools-row:hover .et-query-devtools-row-pin,
+  .et-query-devtools-row-pin:focus-visible,
+  .et-query-devtools-row-pin--active {
+    opacity: 1;
+  }
+
+  .et-query-devtools-row-pin:hover {
+    background: var(--_et-qdt-active);
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-row-pin--active,
+  .et-query-devtools-row-pin--active:hover {
+    color: var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-row:hover {
+    background: var(--_et-qdt-hover);
+  }
+
+  .et-query-devtools-row--active {
+    background: var(--_et-qdt-active);
+  }
+
+  /* A tombstone reads like the stale chip does - muted, not alarming. It is history, not a failure. */
+  .et-query-devtools-row--gone {
+    color: var(--_et-qdt-muted);
+  }
+
+  /* Every row reserves this column, group head or not - otherwise the rows that have a caret start
+     their status dot 1.8rem further in than the rows that don't, and nothing in the list lines up. */
+  .et-query-devtools-row-caret {
+    flex: 0 0 auto;
+    inline-size: 1rem;
+    color: var(--_et-qdt-subtle);
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  /* A group head has no pin, so without this its trailing edge sits a pin-width further out than every
+     other row's and the time column bends around it. */
+  .et-query-devtools-row--group > .et-query-devtools-row-select {
+    padding-inline-end: 4.4rem;
+  }
+
+  .et-query-devtools-row--nested > .et-query-devtools-row-select {
+    padding-inline-start: 2.6rem;
+  }
+
+  /* Half of `--_et-qdt-hover`, so a group head still reads as a header of its own but the row's real
+     hover (which is the full mix) stays visible on top of it. */
+  .et-query-devtools-row--group {
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
+  }
+
+  .et-query-devtools-row-count {
+    flex: 0 0 auto;
+    color: var(--_et-qdt-subtle);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.1rem;
+  }
+
+  /* 8ch is exactly `HH:MM:SS` in a monospace face - anything narrower and the text overflows its own
+     box into whatever follows instead of forming the column it is here to form. */
+  .et-query-devtools-row-time {
+    flex: 0 0 auto;
+    inline-size: 8ch;
+    text-align: end;
+    color: var(--_et-qdt-subtle);
+    font-family: ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-sort {
+    flex: 0 0 auto;
+    color: var(--_et-qdt-muted);
+  }
+}

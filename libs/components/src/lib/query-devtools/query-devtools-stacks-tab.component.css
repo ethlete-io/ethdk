@@ -1,0 +1,24 @@
+@layer components {
+  /* Sits at the trailing edge of a row, where it can be scanned down the list as a column of figures. */
+  .et-query-devtools-traffic {
+    margin-inline-start: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--_et-qdt-subtle);
+  }
+
+  .et-query-devtools-card-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-block-end: 0.2rem;
+  }
+
+  .et-query-devtools-card-sub {
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+    margin-block-end: 0.6rem;
+    overflow-wrap: anywhere;
+  }
+}

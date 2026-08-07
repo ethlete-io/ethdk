@@ -1,0 +1,53 @@
+@layer components {
+  /* One grid for the whole list (rows are `display: contents`), so every feature's options start in
+     the same column however long the feature names are. */
+  .et-query-devtools-features {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem 0.8rem;
+    margin: 0 0 0.8rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Inside the meta table the row gap already separates it from the next row. */
+  .et-query-devtools-meta .et-query-devtools-features {
+    margin-block-end: 0;
+  }
+
+  .et-query-devtools-feature {
+    display: contents;
+  }
+
+  .et-query-devtools-feature > .et-query-devtools-chip {
+    justify-self: start;
+  }
+
+  .et-query-devtools-feature-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .et-query-devtools-feature-detail {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-feature-label {
+    color: var(--_et-qdt-muted);
+  }
+
+  .et-query-devtools-feature-value {
+    color: var(--_et-qdt-fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+}

@@ -1,0 +1,7 @@
+@layer components {
+  .et-query-devtools-caret {
+    display: inline-block;
+    width: 1.2rem;
+    color: var(--_et-qdt-muted);
+  }
+}
