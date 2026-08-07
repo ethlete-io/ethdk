@@ -1,5 +1,12 @@
 # @ethlete/core
 
+## 5.0.0-next.44
+
+### Minor Changes
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`2d44597`](https://github.com/ethlete-io/ethdk/commit/2d44597f07b165a83c19f049a022c4247a8e3eb1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Slider and rating now drag on `dragGestureFrom`, so a gesture the browser takes away reverts
+  instead of committing. `dragEnded` carries the release position.
+
 ## 5.0.0-next.43
 
 ### Minor Changes
