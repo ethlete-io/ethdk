@@ -49,12 +49,21 @@ Ranked by value per unit of risk, not by size.
 > reading in the component, because swapping a text button for a FAB is a component swap, not a
 > restyle. The other scheduler items in the `S` table are untouched by it.
 
-1. **Query error rebuilt on banner** - `M`, `C`.
+1. **Logged out after being idle** - `S` to diagnose, `B`.
+   The only item here a user is currently hitting. `fut-frontend`'s hub provider runs
+   `withPersistentAuth` + `withBearerAuthMultiTabSync()` and **no `withInactivityLogout`**, so the
+   cause to expect is `expired`: a refresh that never fired while the leader tab was hidden, then
+   ran against a rotated refresh token, and the default `onRefreshFailure` logged out. Confirm by
+   reading `sessionEndCause` in each tab first, and put the originating cause on the sync channel's
+   logout message - otherwise the tab the user was in can only ever report `otherTab`. The refresh
+   hole (a scheduled refresh that early-returns is never re-armed) is the fix that follows.
+
+2. **Query error rebuilt on banner** - `M`, `C`.
    Identical `color-mix` surface formula, independently reimplemented icon slot, heading,
    description and action row; banner's `type="error"` already forces `injectErrorTheme()`.
    Needs two things layered on: the violation `<ul>` and the retry-only-if-`canRetry` conditional.
 
-2. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
+3. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
    its three open questions first - chiefly whether an unchecked tile still reads as selectable -
    because they are design calls, not code.
@@ -63,25 +72,39 @@ Ranked by value per unit of risk, not by size.
 
 ### S - small, additive, low risk
 
-| Item                                              | Tag | Note                                                                                                |
-| ------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------- |
-| Scheduler: richer sub-appointment list            | `A` | Start time + existing chain-count badge; don't grow it into a second card                           |
-| Scheduler: agenda connector lines                 | `A` | Draws off the `depth`/`data-nested` the agenda template already emits                               |
-| Accordion: border/label transition                | `A` | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported          |
-| Progress steps: success/warning/error states      | `A` | Mirror `BANNER_TYPES`, don't invent colour language                                                 |
-| Colour input: hex/RGB validators                  | `A` | None exist anywhere today; the `#rrggbb` claim is a doc comment only                                |
-| Grid: assert breakpoint coverage in the dev check | `A` | Cheap half of the "nothing ties layout keys to breakpoints" item                                    |
-| Filter overlay story: demo dressing               | `A` | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                |
-| Auth: `shouldAutoLogin` predicate                 | `A` | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                             |
-| Query devtools: stop the Queries list repeating   | `A` | One row per query _instance_ is by design; the list should collapse or hide the repeats             |
-| Query devtools: locate the selected query         | `A` | Inspect backwards - `entry.meta.element` is already there, and works in a prod build                |
-| Query: retire `CLEAR_QUERY_ARGS`                  | `D` | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous |
+| Item                                                     | Tag     | Note                                                                                                                          |
+| -------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Auth: carry the logout cause across tabs                 | `B`     | See #1 - `{ type: 'logout' }` has no cause, so the receiving tab reports only `otherTab`. Do this before any refresh work     |
+| Auth: a missed scheduled refresh never re-arms           | `B`     | See #1 - `executeRefresh('scheduled')` early-returns four ways and the timer only re-arms on an `accessToken` change          |
+| Query devtools: Execute throws ET003                     | `B`     | Do this one first. Pass `queryArgs(query)` instead of `execute`'s default                                                     |
+| Dropzone: removing a prefilled value deletes it          | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default    |
+| Query devtools: "Forget" shows with Gone chip off        | `B`     | Gate on the chip, and stop styling a destructive action as a filter clear                                                     |
+| Scheduler: richer sub-appointment list                   | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                     |
+| Scheduler: agenda connector lines                        | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                         |
+| Accordion: border/label transition                       | `A`     | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported                                    |
+| Progress steps: success/warning/error states             | `A`     | Mirror `BANNER_TYPES`, don't invent colour language                                                                           |
+| Colour input: hex/RGB validators                         | `A`     | None exist anywhere today; the `#rrggbb` claim is a doc comment only                                                          |
+| Dropzone: reveal the preview on hover                    | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                            |
+| Grid: assert breakpoint coverage in the dev check        | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                              |
+| Filter overlay story: demo dressing                      | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                          |
+| Auth: `shouldAutoLogin` predicate                        | `A`     | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                                                       |
+| Query devtools: stop the Queries list repeating          | `A`     | One row per query _instance_ is by design; the list should collapse or hide the repeats                                       |
+| Query devtools: locate the selected query                | `A`     | Inspect backwards - `entry.meta.element` is already there, and works in a prod build                                          |
+| Query devtools: timestamp + sort the Queries list        | `A`,`D` | `createdAt` and `lastTimeExecutedAt()` both exist unrendered; pick one, keep `pinnedFirst` above the sort                     |
+| Query devtools: args explorer guts an `HttpHeaders`      | `B`,`D` | Private fields, real headers invisible - and the args editor stringifies the same mess into a replay. Reuse `insomniaHeaders` |
+| Query devtools: History diff needs no scrolling          | `A`     | Only 5 runs can ever hold a body - fold the bodiless tail, step the pair from the diff header                                 |
+| Query devtools: overrides survive a reload               | `A`     | Ops are already serializable; `sessionStorage`, default off, and loud about what it re-armed                                  |
+| Query devtools: copy a key or a path, not just the value | `A`,`D` | `⧉` is the only per-node control outside the Response explorer - settle menu vs modifier-click first                          |
+| Query devtools: copy the route from the detail head      | `A`     | `queryRoute()` already exists (private); decide rendered route vs absolute URL, reuse `writeToClipboard`                      |
+| Query devtools: show `isLeader` on the auth tab          | `A`     | Cheap half of the lock inspector - `provider.features.multiTabSync` is already reachable via `asAuth()`                       |
+| Query: retire `CLEAR_QUERY_ARGS`                         | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                           |
 
 ### M - real work, mostly consolidation
 
 | Item                                               | Tag     | Note                                                                                                                                        |
 | -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Query error on banner                              | `C`     | See #1                                                                                                                                      |
+| Auth: inactivity is per-tab, the logout is shared  | `B`,`D` | See #1 - an idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide         |
+| Query error on banner                              | `C`     | See #2                                                                                                                                      |
 | Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                                                                   |
 | Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types                                               |
 | Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                                                           |
@@ -91,8 +114,12 @@ Ranked by value per unit of risk, not by size.
 | Description list: `variant`                        | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
 | Scheduler: colour palette via DI token             | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
 | Scheduler: infinite agenda                         | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
-| Selection list: `variant="tile"`                   | `A`,`D` | See #2 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
+| Selection list: `variant="tile"`                   | `A`,`D` | See #3 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
+| Segmented `variant="tabs"` doesn't match tabs      | `C`,`D` | Underline size, baseline rule, swapped accent tokens, half the block padding, hover fills an unchecked segment. Wants shared tokens         |
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
+| Query devtools: float the panel in-page            | `A`     | Third `dock` value + a stored rect; also fix the silently-swallowed blocked pop-up                                                          |
+| Query devtools: nest the Queries list by path      | `A`     | Opt-in toggle, flat stays the default. Compress single-child chains or the tree is worse than the list                                      |
+| Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. Ship the `isLeader` chip first   |
 
 ### L - projects, not tickets
 

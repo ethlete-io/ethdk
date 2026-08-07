@@ -174,6 +174,141 @@ Expanding this, roughly in order of how disruptive each is:
   whether it's a projected slot per step or a fixed description input, and
   whether it's meaningful outside the vertical orientation at all.
 
+## Dropzone: the file-name bar sits on the preview permanently
+
+Requested 2026-08-07. In the single-file preview, `.et-dropzone-preview-info` is pinned to the
+bottom edge (`inset: auto 0 0 0`) as a dark blurred band over the image, and it never leaves - so
+the bottom of every picked image is behind it for as long as the file is selected. Wanted: it
+hides, or slides out under its own edge, while the pointer is over the preview, so the image can
+be checked unobstructed.
+
+This is CSS only - `.et-dropzone-preview:hover` needs no component state - but three things
+decide whether it is correct:
+
+- **The bar carries the upload progress.** `.et-dropzone-entry-progress` lives inside it and is
+  the single-entry preview's only progress indicator, so revealing on hover during an upload
+  hides live progress from the one pointer position a user is most likely to be in. Gate it: the
+  bar stays while the entry is `uploading` (the progress row already exposes exactly that as
+  `[data-active]`).
+- **And on error it is the explanation.** `[data-status='error']` deliberately dims the image to
+  `opacity: 0.15` "to keep the failure message readable"; hiding the bar there leaves a washed-out
+  image and nothing saying why. Error keeps the bar too.
+- **Hover-only means touch and keyboard never get it.** Wrap it in `@media (hover: hover)` the way
+  the trigger's hover rule already is, so a touch device keeps a bar it can never reveal, and pair
+  `:hover` with `:focus-within` - the preview holds the replace/remove buttons, so a keyboard user
+  reaching them is in the same situation as a pointer over the image.
+
+Not part of it: `.et-dropzone-preview-actions` (replace / remove, top-right) stays - it is the
+affordance the hover is for. And the multi-file list needs nothing; `.et-dropzone-item-info` is a
+flex sibling of its thumbnail, not an overlay.
+
+On slide versus fade: a plain opacity fade is this repo's default for enter/leave, but the band
+has `backdrop-filter: blur(12px)`, so a partial opacity leaves a half-blurred stripe mid-transition
+and a `translateY(100%)` off its own edge reads cleaner - worth looking at both in the story before
+picking. Either way it should animate on `--et-dropzone-transition-duration`, which the sheet's
+`prefers-reduced-motion` block already collapses to `1ms`, so reduced motion comes for free.
+
+## Dropzone: removing a prefilled value deletes it on the server
+
+Found 2026-08-07, from an app that prefills a form with assets a partner had already submitted.
+
+`resolveExisting` exists so a control can start with a value the server already holds. `removeEntry`
+(`dropzone.directive.ts`) then treats that value exactly like one this session uploaded:
+`isValueInControl` is true for both `SUCCESS` and `EXISTING`, so removing it fires the configured
+`delete` request. For a file uploaded a moment ago that is correct cleanup. For a value that arrived
+through `resolveExisting` it destroys a record something else already owns - in the case that
+surfaced this, the media of a still-pending submission that another view renders.
+
+The consumer cannot intervene. `DropzoneDeleteOptions` carries `{ value, injector }` and nothing
+about where the value came from, and `executeDelete` is built from `config.delete` inside
+`createDropzoneUpload`. The app worked around it by spreading the resolved config and replacing
+`executeDelete` - an `@internal` field - which is the clearest evidence the seam is missing.
+
+The directive already has what it needs at the call site: the entry's status is `EXISTING` rather
+than `SUCCESS`. Two shapes for exposing it:
+
+- **A flag on `DropzoneDeleteConfig`** - `includeExisting?: boolean`. Smallest change, reads at the
+  call site as a policy, and keeps `executeDelete` internal.
+- **An origin on `DropzoneDeleteOptions`** - `origin: 'uploaded' | 'existing'`, letting
+  `executeDelete` decide per value. Only pays off if an app wants a _different_ request per origin,
+  which nobody has asked for.
+
+Take the flag. The default is the actual decision: `false` is what a form editing an existing record
+wants and what the surfacing app needed, `true` preserves today's behaviour for anyone relying on
+the delete firing. Deleting a value the control was _initialized_ with is destructive by nature, so
+defaulting to `false` and making the cleanup case opt in is the safer asymmetry - but it changes
+behaviour on a released API, so it needs a changeset that says so.
+
+Either way, `deleteSucceed` / `deleteFail` must stay silent when the delete is skipped. A consumer
+counting those outputs to reconcile its own state would otherwise be told about a deletion that
+never happened.
+
+## Segmented button group: `variant="tabs"` only half-looks like tabs
+
+Reported 2026-08-07. The variant is documented as "underlines the selected segment instead
+of filling it and drops the tonal track for a baseline rule" (`choice-inputs.md`), and it
+does exactly that and no more - the shape changed, the tab _styling_ did not. Put the two
+side by side and they read as different components, which is the one place the variant is
+meant to be used.
+
+**Nothing is shared between them, and there is nothing to share.** The tab styles are an
+inline `styles:` block in `tab-group.component.ts`, scoped to `.et-tab-group__*`; the
+segmented ones are `segmented-button-group.component.css` + `segmented-button.component.css`,
+scoped to the element selectors. The two were written independently, so every value below
+diverges by accident rather than by decision.
+
+What actually differs, all of it checkable in those three files:
+
+- **The underline is a different object.** Tabs: `--et-tab-group-underline-size` is 2px at
+  `sm`/`md` and 3px at `lg` (3/3/4 under `variant="primary"`), with a 1px
+  `--et-tab-group-underline-radius`. Segmented: a flat
+  `--et-segmented-button-tab-underline-size: 3px`, radius equal to the thickness, so it is a
+  fully rounded bar - and it does not respond to `data-size` at all, where the whole point of
+  the tab token is that it does.
+- **The baseline rule is thinner and darker.** Tabs draw it as the header's `::after`, at the
+  underline's own thickness, in `--et-surface-border-solid` at `opacity: 0.2`, and let
+  `data-divider="false"` remove it. Segmented hardcodes `box-shadow: inset 0 -1px 0 0` in the
+  same token at full opacity, with no opt-out. A 1px full-strength hairline under a 3px
+  underline is most of why the two rows don't match.
+- **The accent tokens are swapped.** Tabs put the accent in the underline
+  (`--et-theme-color-ink-solid`) and keep the active label neutral
+  (`--et-surface-color-solid`). Segmented does the reverse: the underline is
+  `--et-theme-color-primary-solid` and the active _label_ takes
+  `--et-theme-color-ink-solid`. Idle labels differ too - `--et-surface-interaction-solid`
+  vs `--et-surface-color-muted-solid`.
+- **The row is half as tall.** Tabs at `md` are 16px inline / 12px block at `1.4rem`;
+  segmented at `md` is 14px / 6px at `14px`. Same size name, and `FORM_FIELD_SIZES` vs
+  `TAB_SIZES` are the same three keys, so a consumer reasonably expects the same rhythm. The
+  px-vs-rem split matters as well: the tab scale tracks the root font size and the segmented
+  one does not.
+- **Interaction feedback is the loudest mismatch.** Segmented paints a filled
+  `color-mix(… --et-surface-interaction-solid 10% …)` rectangle behind any hovered _unchecked_
+  segment - a tab bar never fills a tab. Tabs tint only the **active** trigger, at
+  `rgb(var(--et-color-primary) / 0.08 | 0.12 | 0.16)` for hover/focus/press. And segmented
+  presses with `transform: scale(0.97)`, so a whole tab shrinks under the pointer.
+- **The focus ring lands somewhere else.** Tabs ring the inner
+  `.et-tab-group__trigger-content` at `outline-offset: 2px`, so it hugs the label; segmented
+  rings the full segment box at 1px. In a tall tabs row those look nothing alike.
+- **Structure tabs has and this cannot express**: `data-orientation="vertical"`, `data-fit`,
+  `data-divider`, and `variant="primary"` (label stacked under an icon, underline inset to
+  the middle 50%). Not necessarily in scope - but "follows the tabs style" has to say which
+  of these it means.
+
+**The fix is a shared token set, not copied declarations.** Lifting the tab metrics into
+`--et-tab-*` custom properties the segmented tabs variant can point at is what keeps them
+from drifting again; copying the numbers across reproduces the same bug in a year. Two
+things to settle before that:
+
+- **How far the match should go.** The variant is deliberately _not_ tabs - it is a
+  radiogroup, and the docs carry a warning saying so. Matching the pixels while behaving like
+  a form control is the intent; matching `data-orientation` and `primary` starts rebuilding
+  tabs inside a selection list. Draw that line first.
+- **The tab styles are not in `@layer components`.** They are an unlayered `styles:` block
+  under `ViewEncapsulation.None`, so they currently outrank Tailwind utilities - against the
+  repo rule the segmented sheet already follows. Extracting shared tokens is the moment that
+  gets fixed, and it is a visible-to-consumers specificity change, so it wants its own
+  changeset line.
+
 ## Query error: rebuild on banner
 
 `query-error.component` builds its own colored card from scratch -
@@ -218,6 +353,49 @@ to settle first:
   that is narrowed before the user touches anything. Alternative worth weighing: collapse
   same-descriptor rows into one row with an instance count, which needs no new signal at
   all and loses nothing.
+
+## Query devtools: timestamp the Queries list, and let it be sorted
+
+Requested 2026-08-07. A row carries a status dot, the method and the route - and no time at
+all, so nothing in the list says which query is the one that just ran. Two things are asked
+for: a **timestamp per row**, and a **sort by it** whose direction can be flipped, with the
+direction the list is currently in visible rather than implied.
+
+**Both timestamps already exist and neither is rendered.** `registerEntry` stamps
+`createdAt: Date.now()` (`query-devtools-registry.ts`), `tombstoneOf` carries it onto the
+frozen copy along with `destroyedAt`, and the live query itself exposes
+`lastTimeExecutedAt()` - the detail head's copy-summary already prints it through
+`host.formatTime()`, which renders a 24h `HH:MM:SS`. So the row is a template edit plus a
+column in the grid CSS; the work is in the sort control and in the choices below.
+
+- **Which timestamp the column shows is the actual decision.** They diverge exactly when it
+  matters: a query registered at page load and executed a minute later sorts to opposite
+  ends of the list depending on the answer. `lastTimeExecutedAt` is what "which one just
+  ran" means, and it is the only one that moves while the panel is open - but it is `null`
+  for a registered-and-never-executed query, which then needs a resting place in the order
+  rather than a silent `-` at whichever end `null` happens to fall. Showing created and
+  sorting by last-executed is a defensible third answer; showing both columns is not, the
+  row is already tight at the narrow-viewport widths `paneAxis` reflows for.
+- **Sorting by `createdAt` ascending is already what the list does** - `entries` is
+  append-ordered and `filteredQueries` never reorders - so that option must not be sold as
+  a change. Descending, and last-executed in either direction, are the ones that do
+  something.
+- **Pins have to survive the sort.** `pinnedFirst()` runs last today and its own JSDoc
+  explains why a chip could not do that job; a sort that replaces it rather than feeding it
+  silently unpins the list. Sort within the two groups, keep pinned above.
+- **Tombstones stop moving.** A gone entry's `lastTimeExecutedAt` is frozen at whatever it
+  held when it died, so under a last-executed sort tombstones sink as live queries keep
+  running - which is arguably right, but it is a behaviour the Gone chip's users will see
+  and should be checked against `destroyedAt` as the tiebreak instead.
+- **Absolute, not relative.** `formatTime` is absolute and costs nothing; a `12s ago` column
+  needs a ticking signal driving a re-render of every row, which the two existing `Ns ago`
+  strings (the sync line, the hydration line) avoid by only being computed when read. Don't
+  add a timer to the list for this.
+- **Where the control goes.** The chip row is a set of OR-ing filters and this is not one -
+  the same reasoning that keeps a Pinned chip out. A small labelled control beside the
+  search box, printing the field and an arrow (`recent ↓`), satisfies "see the current
+  sorting" without a menu; whether the field is also switchable there or only the direction
+  is the last open question.
 
 ## Query devtools: locate the selected query in the app
 
@@ -328,6 +506,361 @@ sentinel, and an explicit gate (`withArgs` for data, a separate enabled/when pre
 whether the query may run) expresses it more directly. Under the `null`-means-park change the
 dependent-query example already reads correctly without one, so this is an addition to weigh on
 its own merits, not a prerequisite.
+
+## Query devtools bug: Execute throws ET003 on a function-route query
+
+Reported from real use 2026-08-07 and traced in source (not reproduced in a story yet).
+Pressing **Execute** in the query detail on a query whose route is a function throws
+`ET003 The route is a function but pathParams are missing`, and it escapes into the app's
+`ErrorHandler` as an uncaught error.
+
+The chain: `executeQuery` (`query-devtools.component.ts`) calls `query.execute()` without an
+`args` key, `createExecuteFn` then defaults `args` to `state.args()`, and `buildRoute` throws
+as soon as a function route gets no `pathParams`. Any query whose args never reach its own
+`args` signal hits this - **`withArgs` is the only thing that writes it**, so a query executed
+imperatively (`execute({ args })`, a sequence step, an auth query) has `args() === null` no
+matter how many times the app has run it successfully.
+
+**The sharpest form of the bug: the panel is already showing the args the button ignores.**
+`queryArgs()` reads `query.args() ?? query.subtle.request()?.args`, so the detail pane renders
+the args and the filled-in route from the last request while Execute passes `null`. Fixing
+`executeQuery` to pass `this.queryArgs(query)` explicitly, instead of relying on `execute`'s
+default, covers every query that has run at least once - no new UI.
+
+What is left after that is a function-route query that has **never** run and has no args
+anywhere. There is genuinely nothing to send, so Execute should be disabled with the reason
+rather than throw. Better, and cheap because both halves exist: `entry.meta.routeParts` already
+knows the param names (that is what renders the `:param` segments), and there is already an args
+editor (`openArgsEditor` / `applyArgs`) that executes with edited args - so Execute can open it
+seeded with `{ pathParams: { <name>: '' } }`.
+
+Two things to fix alongside it:
+
+- **`applyArgs` mislabels execute-time failures.** Its `catch` sets `'Invalid JSON'`, but the
+  `try` also wraps `query.execute(...)` - so perfectly valid JSON with a missing path param
+  reports the wrong reason.
+- **No devtools action should reach the app's `ErrorHandler`.** The reported stack goes through
+  `handleUncaughtError`; a panel button failing has to surface inside the panel.
+
+The `/partner/undefined` line logged after the error is not a second bug -
+`pathParamsMissingInRouteFunctionError(options.route({}))` builds its payload by calling the
+route with no params, so that string is the error's data.
+
+## Query devtools: an optional nesting toggle for the Queries list
+
+Requested 2026-08-07 from a screenshot of a real app's list, where five consecutive rows all
+start `/partner/1-fc-koeln-female/opportunity/fc27/club-packs` and differ only in the last
+segment (`…/assets`, `…/email`, `…/graphics`). The prefix is most of the row's width and is
+re-read on every line. A **toggle** (flat list ↔ nested by path) would show each shared prefix
+once. Opt-in, defaulting to the flat list, because flat order carries information the tree
+destroys - see the ordering point below.
+
+Mechanics that decide whether this is small:
+
+- **Group on resolved path segments, not on `routeParts`.** `entry.meta.routeParts` chunks a
+  route into "literal text between params", so a chunk is `/partner/`, not one path segment. A
+  prefix tree needs a split on `/` that keeps each piece's `kind` (`static` / `param` / `query`)
+  so `QueryDevtoolsRouteComponent` can still colour a param value pink inside a node label.
+- **Compress single-child chains, or the tree is worse than the list.** In the screenshot
+  `/partner/1-fc-koeln-female/opportunity/fc27` has exactly one child; rendered as four levels it
+  adds depth and saves nothing. One node per run of single-child segments is what makes the tree
+  narrower than the flat list, not deeper.
+- **A node can be both a row and a parent.** `/partner/1-fc-koeln-female` is itself a query (the
+  `gone` row) _and_ the prefix of five others. And an intermediate node is often no query at all,
+  so clicking it must expand rather than select - two different affordances in one column.
+- **The query string is a leaf, not a branch.** `/organizations?limit=100&page=1` and
+  `…&query=RYju…` share a path and differ only after the `?`; they nest under one
+  `/organizations` node with their query strings as the distinguishing labels.
+- **Ordering changes meaning.** The flat list is registration order with `pinnedFirst` on top,
+  which is roughly creation order and useful on its own. A tree re-groups, so pinning and the
+  tree have to be reconciled - probably: pinning is honoured within a parent, not hoisted out of
+  it, and the toggle is remembered so nobody loses their flat view by accident.
+- **Search and the status chips have to keep ancestors.** A match deep in a branch must render
+  its parent chain (auto-expanded), and `scopedQueryCount` / the tab badge must keep counting
+  queries, not nodes.
+- **Persist the toggle and the expand/collapse set** the way the panel already persists the rest
+  (`PersistedState` - `eventErrorsOnly` is the precedent for a remembered boolean, `expandedSteps`
+  for a remembered open-set).
+
+Related but not the same as the repeats item above: nesting folds together rows with **different**
+routes that share a prefix; the dedupe folds together rows for the **same** query. Both cut the
+same visual noise from opposite directions and neither replaces the other - though doing the
+dedupe first makes the tree's leaves honest.
+
+## Query devtools: "Forget" shows while the Gone chip is off
+
+Reported 2026-08-07. The Forget button is gated on `@if (goneQueryCount())` alone
+(`query-devtools-queries-tab.component.html`), so it appears whenever tombstones exist -
+including, as in the report, with the Gone chip unlit and not one of the 50 tombstones it would
+drop visible in the list. A destructive action offering to delete rows the user cannot see, with
+nothing to review before clicking.
+
+Two things make it worse than a gating slip:
+
+- **It is dressed as a filter reset.** It uses `.et-query-devtools-filter-clear` and the same `✕`
+  glyph as the two genuine "clear the filter" buttons, and sits right next to them. So the one
+  control in that row that throws data away looks exactly like the ones that don't.
+- **The handler already assumes the chip.** `forgetGoneQueries()` toggles the Gone chip off after
+  clearing, precisely because leaving it lit would narrow the list to the tombstones just
+  dropped. The intended context is Gone-active; only the template forgot.
+
+Fix: gate it on `host.queryFacets().has('gone')` so what it deletes is what is on screen, and
+give it its own styling instead of the filter-clear class.
+
+Not a bug, so nobody re-reports it: the tab badge reading 17 while the toolbar count reads 18 in
+the same screenshot is correct. The badge counts live entries (`liveQueryEntries`), and
+`scopedQueryCount` adds the one tombstone the detail pane has selected - `listsTombstone` keeps a
+query that died under the detail in the list on purpose.
+
+## Query devtools: the History tab's diff is a scroll away from its own controls
+
+Reported 2026-08-07 from a `/user/me` history of 16 runs. The History tab is one long scroll:
+the RUNS table first, the `Response diff · run #13 → #14` section under all of it
+(`query-devtools-detail.component.html`). The Base/Compare buttons that choose the pair live in
+the table, so changing the pair and reading the result never fit on one screen - scroll down to
+read, up to re-pick, repeat.
+
+**The retention caps say the table is mostly unusable rows.** `query-devtools-stats.ts` keeps
+`RUN_HISTORY = 25` runs but only `DEFAULT_RESPONSE_HISTORY = 5` bodies, so **at most five runs can
+ever be an end of a diff** and everything older reads `body no longer held`. The screenshot is
+exactly that: five pickable rows at the top (#12-#16) and eleven dead ones beneath them, and it
+is the dead tail that pushes the diff off-screen. Any fix that ignores this is fixing the wrong
+thing.
+
+Cheapest fix first:
+
+- **Fold the bodiless tail** behind a disclosure ("20 older runs"), or render the diff section
+  directly under the pickable rows. Either one puts the pair and its result on one screen with no
+  scrolling, because the runs that can be picked are always adjacent and always newest.
+- **Step the pair from the diff header.** Older/newer controls next to `run #13 → #14` remove the
+  round trip to the table entirely - within five bodies there are only a handful of pairs.
+- **Bound the runs table** with its own scroll area, so the diff stays in view regardless.
+- Heavier, only if the above is not enough: give History a second resizable pane. The panel
+  already has the machinery (`paneSize(pane, axis)` / `PaneTarget`, on both the `inline` and
+  `block` axes), so it is a new divider rather than a new concept.
+
+Worth deciding with it: whether `setQueryDevtoolsResponseHistory` deserves a control in the panel.
+Five bodies is a memory default the app owns, but "I want to diff further back" is exactly what
+this report runs into, and today it is only reachable from app code.
+
+## Query devtools: pop out to a window _or_ float inside the page
+
+Requested 2026-08-07. `popOut()` has exactly one mode: `window.open(…, POPOUT_FEATURES)` with
+`popup=yes`, which moves the panel element into a real browser window. Wanted: a choice between
+that and a **floating panel inside the current page** - dragged and resized in place rather than
+docked to an edge.
+
+The panel is most of the way there. `dock` is `'bottom' | 'right'` with a persisted size per edge
+and a `ResizeDrag` already handling both the panel edge and the pane dividers, so floating is a
+third `dock` value plus a stored position, and the drag primitives it needs
+(`dragGestureFrom` / drag-handle in `libs/core`) exist. Two things to settle: clamping the rect
+back into the viewport when the window shrinks, and that it stacks by z-index - the platform
+decisions in this file rule out the native top layer, so a floating panel is an overlay-style
+z-index citizen like everything else.
+
+Fold in a real defect while there: **a blocked pop-up fails silently.** `popOut()` does
+`if (!popup) { source.revoke(); return; }` - no message, no fallback, the button simply does
+nothing. Once a floating mode exists it is the obvious fallback; until then it at least has to
+say so.
+
+Worth stating in the docs when this lands, since the two modes are not interchangeable: a real
+window survives being covered by the app and can go to a second monitor; a floating panel needs
+no pop-up permission and no window management.
+
+## Query devtools: let response overrides survive a reload
+
+Requested 2026-08-07, as an opt-in checkbox. Overrides are in-memory today: the registry in
+`query-devtools-overrides.ts` is a plain signal, so a reload disarms everything.
+
+**The op format is already built for this.** An `OverrideOp` is a path-addressed edit (`set`,
+`stringPreset`, `booleanFlip`, `paginationResize`, …) replayed against each fresh response -
+explicitly _not_ a frozen body, so it is small, JSON-serializable, and survives a refetch that
+returns different values of the same shape. Persisting the op list is close to free; persisting
+the panel's raw-JSON JIT editor is not, and shouldn't be attempted - that one calls
+`subtle.setResponse` with a whole body and is a different feature.
+
+Open points, in the order they bite:
+
+- **What the ops key on across a reload.** Entry ids are deliberately reload-deterministic
+  (descriptor + per-descriptor counter, which is what already restores the selected query), so
+  the same queries created in the same order re-arm correctly. When creation order changes - a
+  new route, a flag flipped - ops silently land on a different instance of the same route, or on
+  nothing. That failure mode has to be visible, not guessed at.
+- **`sessionStorage`, not `localStorage`.** "Survives a reload" and "survives until I notice" are
+  different promises. Session scope dies with the tab, which matches the request; the panel's
+  other prefs live in `PersistedState` and can stay there.
+- **It has to be loud.** A tampered app that stays tampered across reloads is hours of debugging
+  the wrong thing. `panelTampered` / `isTampered` and the faults banner already exist for exactly
+  this reason ("impossible to read as all good") - persisted overrides need at least that, plus a
+  banner on load naming what was re-armed and one click to drop it all. Default off, and note
+  that the panel is meant to work in production builds, which raises the stakes.
+- **Decide whether armed faults come along.** `query-devtools-faults.ts` is the same shape of
+  in-memory registry, per client rather than per query, and the request reads naturally as
+  covering it. Either answer is fine; both being silently different is not.
+
+## Query devtools: the args explorer renders `HttpHeaders` inside out
+
+Reported 2026-08-07 with a screenshot: the Args tree shows `headers: {…} 4` holding
+`headers: {}`, `normalizedNames: {}`, `lazyInit: null`, `lazyUpdate: null` - four private
+fields of Angular's `HttpHeaders`, and not one actual header. The ask is that the node show
+the headers that were _set_ - per request, by the client, or by an interceptor - and nothing
+else.
+
+**The cause is `entriesOf`, which is `Object.entries` on anything object-shaped**
+(`query-devtools-json.component.ts`). A class instance therefore renders as its private
+fields, and `HttpHeaders` is the worst possible case of it: its two real payloads are `Map`s,
+and `Object.entries` on a `Map` is `[]` - so the two nodes that could have held the answer
+both print `{}`. The tree is not merely noisy here, it is empty of the thing it claims to show.
+
+**The flattening already exists.** `insomniaHeaders` (`query-devtools.component.ts`) turns
+headers into `{ name, value }` pairs with `headers.keys()` / `getAll(name).join(', ')`, for
+the Insomnia export. The explorer needs the same record, and reading it in one place is the
+sane way to do that.
+
+- **`args.headers` may be a function.** The type is `HttpHeaders | (() => HttpHeaders)`
+  (`query.ts`), a provider is called per execution so it can read a signal, and it is allowed
+  to throw - a secure query's needs an access token. `insomniaHeaders` already wraps the call
+  in a `try`/`catch`; the explorer must too, and a thrown provider should render as a reason,
+  not as an empty object.
+- **The args editor has the same bug, and there it corrupts a replay.** `openArgsEditor`
+  `JSON.stringify`s the args verbatim, so the draft a user edits contains
+  `"headers": { "normalizedNames": {}, "lazyInit": null, … }`, and executing it sends that
+  object as the headers. That is a correctness item, not cosmetics, and it argues for fixing
+  the value on the way in rather than only at render time.
+- **"Set globally" is reachable; "set by an interceptor" is not.**
+  `request.subtle.resolveHeaders()` is exactly the client's headers with the per-request ones
+  merged on top (`http-request.ts`) and is what the export already prefers over raw args -
+  so the merged view costs nothing new. Interceptors run inside `HttpClient` after the SDK
+  hands the request over; nothing the SDK holds can see what they added. Showing those would
+  mean shipping an interceptor of our own for the app to register last, which is a separate,
+  larger item - and until then the panel must not imply the list is complete.
+- **Merged and raw are different questions, and the Args section is labelled "Args".**
+  Rendering the resolved set under a heading that says args would quietly lie about where a
+  header came from. Either keep the node raw-but-readable and put the resolved set somewhere
+  that says so, or show one node per source. Settle this before writing the flattener.
+- **`HttpHeaders` is only the instance we hit today.** `Map`, `Set`, `Date`, `FormData` and
+  `File` all fall into the same hole, and a `body: FormData` is a real shape for the dropzone
+  uploads. Whether to special-case headers or teach `kindOf` / `entriesOf` about non-plain
+  objects is the scope call: the second is not much bigger and stops the next report.
+
+## Query devtools: the value explorer copies the value, never the key
+
+Requested 2026-08-07. Every node's `⧉` runs `copyValue()`
+(`query-devtools-json.component.ts`), which only ever produces a value: a leaf copies its raw
+value (a string without the display quotes, so an id or url pastes straight into a search box), a
+container the JSON of its whole subtree, a folded slice only the entries it covers. There is no
+way to get the **key** out - which is what you need to grep the app for the field that holds a
+value, or to paste back into the explorer's own `filter keys / values…` box.
+
+- **Decide key versus path, and probably offer both.** `nodeKey()` is the bare key; for an array
+  element it is the index, so a bare-key copy there is worthless and the path is the only thing
+  worth having. A canonical path format already exists in the panel - the History diff's Path
+  column (`$.data.items[0]`, built in `query-devtools-diff.ts`), so reuse it rather than inventing
+  a second one. Build it from `jsonPath()`, the array of steps the override ops already target.
+  **Not** from `path()`: that is the persistence key for expansion state, prefixed with the
+  explorer's name (`response`, `args`, `error`, `runError`) and dot-joining array indices, so it
+  reads like an accessor expression and is not one.
+- **It cannot live in the override menu.** Only the Response explorer passes `overrides`
+  (`query-devtools-detail.component.html`), so `⋯` is absent from the other ten
+  `<et-query-devtools-json>` usages - args, error, run error, auth payloads, sequence step args
+  and responses, socket messages, cache entries, form values. The `⧉` is the only per-node control
+  those have, so whatever this becomes has to hang off the copy button.
+- **Where it goes is the real question.** A second button crowds a row that already holds a caret,
+  the key, the value, `⧉` and sometimes `⋯`. Either a small menu on the copy button (value / key /
+  path / `"key": value` as a pasteable fragment) or a modifier-click documented in the `title`
+  (alt-click copies the key). The menu is discoverable and has room for the fragment variant; the
+  modifier is one press and invisible.
+- **Some nodes have no key.** A folded slice stands for a range of entries, and the explorer root
+  has `nodeKey() === null`. Key copy has to be absent there, not a button that copies nothing.
+- **The tick stops being unambiguous.** `copied` is one boolean and `copyLabel()` is both the
+  `title` and the `aria-label`; with two or three payloads behind one control, a bare `✓` no
+  longer says what landed on the clipboard.
+
+## Query devtools: copy the route from the query detail header
+
+Requested 2026-08-07. The detail header is a method, `<et-query-devtools-route>` and the
+`tampered` / `gone` chips - nothing in it is copyable. Getting the endpoint out of the panel today
+means Copy report, cURL or Insomnia from the actions row, and each of those is a whole document
+built for a different purpose.
+
+- **Three different strings hide behind "the route"; pick deliberately.** The rendered route
+  (params resolved to their values, the request's query string appended) is what is on screen and
+  already exists as `queryRoute()` - `private` today, so a template button needs it on
+  `QueryDevtoolsHost`. `requestUrl(query)` is the absolute URL the last request actually used,
+  which is what a browser or Postman wants, and it is `null` until the query runs.
+  `entry.meta.route` is the template with `:param` still in it, which is what you grep the app
+  for. Probable answer: the absolute URL when there is one, the rendered route as the fallback,
+  and the `title` saying which.
+- **Header or actions row.** Every copy action today is a labelled button in the actions row
+  (`Copy report` / `cURL` / `Insomnia`). What was asked for is beside the route, so: a small `⧉`
+  matching the value explorer's. That also keeps it reachable on a `gone` entry, where the Run and
+  Edit and Force groups are gated out but the exports stay.
+- **The list rows are a separate decision.** `<et-query-devtools-route>` also renders in the
+  Queries, Stacks, Sequences and Forms lists. A copy control there means a nested button inside a
+  click-to-select row (so `stopPropagation`) plus a control on every line of a dense list. Do the
+  detail header first and treat the rows as their own call if it is still wanted afterwards.
+- **One `copied` signal per action stops scaling here.** `copiedReport`, `copiedCurl`,
+  `copiedInsomnia` and `copiedGql` are four booleans sharing one `copiedReset$`; a fifth is the
+  point to key the tick by action instead. Reuse `writeToClipboard` either way - it is the panel's
+  one clipboard writer and it already ticks and resets.
+
+## Query devtools: a Web Locks inspector, and the missing `isLeader`
+
+Requested 2026-08-07. The auth tab's Features row renders `withBearerAuthMultiTabSync`'s
+`devtools()` description - `channel ethlete-auth-sync:hubApiClient`, `tokens synced`,
+`logout synced`, `leader election one tab refreshes` - and every one of those strings is **config
+read back at you**. Nothing says whether _this_ tab is the leader, how many tabs are in the
+election, or which lock any of it is riding on.
+
+**Two halves, and the cheap one should ship on its own.**
+
+The live state already exists and is already reachable. `BearerAuthMultiTabSyncFeature` exposes
+`isLeader` and `instanceCount` as signals, `asAuth(entry)` hands the panel the provider, so
+`provider.features.multiTabSync` is one property access away - a `leader` / `follower · 3 tabs`
+chip next to the existing `authenticated` chip needs **no new plumbing in `libs/query`**. That is
+the item the report is actually about.
+
+The inspector is the bigger half, and it is a genuinely different thing: `navigator.locks.query()`
+is **origin-wide**, so it sees the locks held and queued by every other tab, worker and service
+worker - the one place in the panel that can show something outside its own tab. What it would
+list, in full, today:
+
+- `ethlete-auth:leader:<provider name>` - one per auth provider (`leader-election.ts`). Held plus
+  pending on that one name **is** the tab count; that is exactly how `instanceCount` is derived.
+- `et-query-poll:<channel>:<key>` - one per polled cache key
+  (`query-client-features.ts` → `createQueryKeyLockManager`).
+
+What decides whether this is worth building:
+
+- **`LockInfo` has no tab identity.** It is `{ name, mode, clientId }`, and there is no API for
+  "my `clientId`" - so a raw dump can say _three tabs want this lock_ but not _you are the second
+  in the queue_. The way out: hold a uniquely-named probe lock when the panel opens, find that name
+  in the snapshot, and read its `clientId`; every other row can then be marked as this tab or
+  another one. Without that step the inspector is strictly worse than the `isLeader` chip.
+- **Web Locks has no change event.** That absence is why `leader-election.ts` runs a presence
+  channel (`ethlete-auth-leader:<name>`) and recounts on a message instead of listening. An
+  inspector therefore polls. The panel has a 1s `clock` already, but it ticks whether the panel is
+  open or not and a `locks.query()` per second is not a `Date.now()` read - gate it on the panel
+  being open and the tab being visible.
+- **Decode the names, don't dump them.** The cache tab already answers "is this tab polling this
+  key" from `lockManager.keyStates()` (`cacheSync`), so a flat list of `et-query-poll:…` strings is
+  a step backwards from what exists. The value is the row saying which provider or which cache key
+  a lock belongs to, and who is doing the work.
+- **It is read-only by nature, and that is worth saying.** A tab cannot release another tab's lock;
+  the platform offers no such call. The only lock this tab can drop is its own, so "force an
+  election" means releasing the local hold and letting the queue promote whoever is next - which is
+  a real way to test follower behaviour, and belongs with the faults/tampering vocabulary if it is
+  built at all.
+- **Both fallbacks have to be legible.** Without Web Locks `createQueryKeyLockManager` reports
+  `isSupported: false` and every hold is granted, so **every** tab reads as leader - four tabs all
+  claiming leadership is indistinguishable from a bug unless the panel says the API is missing. And
+  `instanceCount` is best-effort on purpose: it is recounted on announce, goodbye and takeover, not
+  on a timer, so a tab that crashes while a follower stays counted. Presenting either as exact
+  turns a documented limitation into a bug report.
+
+Related, and already there: `withTracking` emits `leaderStatusChange` when leadership moves
+(`bearer-auth-tracking.ts`), so the events tab has a source for "this tab became the leader" with
+nothing new to record.
 
 ## Overlay responsiveness: resolved, and it was not systemic
 
@@ -495,6 +1028,95 @@ feeling. The two misplaced titles found this pass are fixed (see "Already
 fixed"). Whether `Components/*` should gain real top-level categories at
 all is the part still open - a bigger, separate call, and one that moves
 every story id the docs site embeds.
+
+## Auth bug: logged out after being idle, with multi-tab sync on
+
+Reported from real use 2026-08-07: a user came back from being away for a while and was logged
+out. Multi-tab sync is enabled. Traced in source, not reproduced yet. **Three different mechanisms
+produce exactly this symptom**, so the first step is a read, not a fix.
+
+**`sessionEndCause` already names which one it was.** `logout(cause)` records it
+(`bearer-auth-provider.ts`), and the union is the whole differential diagnosis: `inactivity` means
+`withInactivityLogout` did what it says on the tin (15 minutes by default) and this is not a
+refresh bug at all; `expired` means a refresh failed for good; `otherTab` means the logout arrived
+over the sync channel and was decided somewhere else; `user` means it was a click.
+
+**Fix the thing that makes it undiagnosable first: `otherTab` erases the reason.** `SyncMessage`
+is `{ type: 'logout' }` with no cause on it, and the receiver calls `context.logout('otherTab')`
+(`internal/multi-tab-sync.ts`). In the multi-tab setup this report comes from, the tab the user was
+actually looking at can therefore only say _another tab did this_ - while the tab that decided is
+most likely a background one nobody will ever inspect. Put the originating cause on the message and
+keep it on the receiving side (`otherTab` plus an origin cause, or a separate signal). It is small,
+and without it this class of report cannot be answered from the app at all. The devtools half of
+the same gap: the auth tab renders neither `sessionStatus` nor `sessionEndCause` today.
+
+**The reporting app rules the inactivity mechanism out.** `hubApiClientAuthProvider` in
+`fut-frontend` (`libs/queries/hub/src/lib/hub-api/hub-api.client.ts` - the provider behind the
+reported `ethlete-auth-sync:hubApiClient` channel) configures exactly two features:
+`withPersistentAuth({ defaultRememberMe: true, cookie, autoLogin: { queryKey: 'tokenRefresh' } })`
+and a bare `withBearerAuthMultiTabSync()`. **No `withInactivityLogout`.** And
+`withRefreshQuery('tokenRefresh', …)` passes no `refreshStrategy`, no `minRefreshInterval` and no
+`onRefreshFailure`, so every default below applies as written - including the one that logs out.
+
+That leaves `expired` as the cause to expect, and makes the chain concrete: leader election is on;
+the leader tab goes hidden while the user is away and its single `timer()` does not fire; a visible
+follower's secure queries 401 and its `executeRefresh('unauthorized')` posts `refresh-requested`,
+which a frozen holder never acts on and nothing re-posts; whenever a refresh does finally run, it
+spends a refresh token the server has long since rotated or expired, the status is non-retryable,
+and the default `onRefreshFailure` calls `logout('expired')` - which `syncLogout` then broadcasts to
+every tab, where it reads as `otherTab`. **Confirm by reading `sessionEndCause` in the tab the user
+was in and in the others**; `expired` in any tab points at this chain, `user` anywhere points
+somewhere else entirely.
+
+**The per-tab inactivity timer below is therefore not this bug - but it is still a bug**, and it is
+the one that bites the moment any app turns the feature on.
+
+**If inactivity logout is enabled, an idle tab logs out an active one.** `withInactivityLogout` tracks `mousedown`/`keydown`/`scroll`/`touchstart` **on its own
+document**, so activity in one tab never resets another tab's timer, and `syncLogout` then
+broadcasts whichever tab gives up first to all of them. A forgotten second tab times out after 15
+minutes and logs the user out of the tab they are typing in. Two defects in that file feed it:
+
+- **The timer is armed by activity only.** `inactivityLogout$` is
+  `activity$.pipe(switchMap(() => timer(inactivityTimeout)))`, so a tab that never sees one of those
+  four events never arms it - while `lastActivityTime`, which `resetTimer()` and the `accessToken`
+  effect write, is read **only** by `calculateTimeUntilLogout`. So the public `resetTimer()` (and
+  `enable()`) move the reported countdown without postponing the logout they claim to reset. Drive
+  the timer off `lastActivityTime` and the two stop disagreeing.
+- **Nothing is visibility-aware**, so a hidden tab counts down toward a logout its user had no way
+  to prevent.
+
+The design call underneath both: idleness is a property of the **session**, not of a tab - so
+activity has to be shared (announced on the sync channel, or the timer owned by the leader) before
+a per-tab timer is allowed to end a shared session.
+
+**And the refresh path does have a real hole - the reported hypothesis, sharpened.** The proactive
+refresh is a single `timer(timeUntilRefresh)`, re-armed only when `accessToken` changes
+(`bearer-auth-query-builders.ts`). `executeRefresh('scheduled')` can return without refreshing in
+four ways: no refresh token, **not the leader**, a token-issuing execution already in flight, and
+the `minRefreshInterval` throttle. In every one of them the timer has already fired and **nothing
+re-arms it** - that tab has spent its only scheduled attempt. There is no interval, no retry, and
+no re-check on `visibilitychange`.
+
+So the sleeping-leader story holds up in shape: a hidden leader tab that the browser freezes keeps
+its Web Lock - the platform releases it when the client goes away, and a frozen page has not gone
+away - while its timer does not fire. Followers do hand the event over rather than drop it
+(`refreshCoordination.request()` posts `refresh-requested`, and only the lock holder acts on it),
+but that message is fire-and-forget: no ack, no retry. If the holder is frozen, or leadership is
+mid-handover, it is simply lost, and the follower has now burned its own timer too.
+
+What that does **not** explain by itself: a session that stops refreshing produces 401s, not a
+logout. It becomes a logout only through the `expired` path - once a refresh finally does run,
+against a refresh token that has since expired server-side. That junction is the one worth
+instrumenting first.
+
+Verify before changing any of it: whether the browser in question actually freezes a page that
+holds a Web Lock (holding one is a documented bfcache blocker; Energy-Saver freezing is a separate
+policy), and whether a frozen page's `BroadcastChannel` messages are queued or dropped. If frozen
+pages keep their locks, "the leader must prove it is awake" becomes a design requirement rather
+than a nicety - and the Web Locks inspector item is the other half of answering it, because "which
+tab is the leader, and has it been hidden for an hour" is not a question the panel can answer
+today. `withTracking` already emits `leaderStatusChange`, so leadership moves have a recorded
+source to correlate against.
 
 ## Auth: `excludeRoutes` invites string matching
 
