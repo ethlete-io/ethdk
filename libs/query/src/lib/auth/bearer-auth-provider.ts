@@ -717,7 +717,11 @@ const createBearerAuthProviderImpl = <
     refreshToken.set(refresh);
     sessionStatus.set('authenticated');
     sessionEndCause.set(null);
-    afterTokenRefresh$.next();
+    // Emit on the next microtask so that synchronous reactive work triggered by applying
+    // the tokens (signals/effects) has a chance to settle before subscribers react.
+    // This avoids rare races where a subscriber reacting to the emission would run
+    // before other effects have fully applied the new token state.
+    queueMicrotask(() => afterTokenRefresh$.next());
   };
 
   // Public entry point only - a query-driven login already reports its own, more specific

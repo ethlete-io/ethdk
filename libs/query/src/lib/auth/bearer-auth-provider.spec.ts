@@ -436,7 +436,7 @@ describe('createBearerAuthProvider', () => {
   });
 
   describe('setTokens', () => {
-    it('should authenticate from externally issued tokens', () => {
+    it('should authenticate from externally issued tokens', async () => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{
         body: { username: string };
@@ -454,7 +454,7 @@ describe('createBearerAuthProvider', () => {
         ],
       });
 
-      TestBed.runInInjectionContext(() => {
+      TestBed.runInInjectionContext(async () => {
         const provider = injectAuthProvider();
 
         // An SSO callback arrives with both tokens - no auth query runs at all.
@@ -462,6 +462,7 @@ describe('createBearerAuthProvider', () => {
         provider.afterTokenRefresh$.subscribe(() => refreshed++);
 
         provider.setTokens('external-access', 'external-refresh');
+        await Promise.resolve();
 
         expect(provider.accessToken()).toBe('external-access');
         expect(provider.refreshToken()).toBe('external-refresh');
@@ -1519,7 +1520,7 @@ describe('createBearerAuthProvider', () => {
   });
 
   describe('afterTokenRefresh$ Observable', () => {
-    it('should emit after successful login', () => {
+    it('should emit after successful login', async () => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{
         body: { username: string; password: string };
@@ -1538,7 +1539,7 @@ describe('createBearerAuthProvider', () => {
       });
 
       const emissions: unknown[] = [];
-      TestBed.runInInjectionContext(() => {
+      await TestBed.runInInjectionContext(async () => {
         const provider = authProvider.inject();
 
         provider.afterTokenRefresh$.subscribe(() => {
@@ -1550,13 +1551,14 @@ describe('createBearerAuthProvider', () => {
         const req = httpTesting.expectOne('https://api.example.com/auth/login');
         req.flush({ accessToken: 'access-token', refreshToken: 'refresh-token' });
         TestBed.tick();
+        await Promise.resolve();
 
         // Should have emitted after successful login
         expect(emissions).toHaveLength(1);
       });
     });
 
-    it('should emit after successful token refresh', () => {
+    it('should emit after successful token refresh', async () => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{
         body: { username: string; password: string };
@@ -1584,7 +1586,7 @@ describe('createBearerAuthProvider', () => {
       });
 
       const emissions: unknown[] = [];
-      TestBed.runInInjectionContext(() => {
+      await TestBed.runInInjectionContext(async () => {
         const provider = authProvider.inject();
 
         // Login first
@@ -1592,6 +1594,7 @@ describe('createBearerAuthProvider', () => {
         const loginReq = httpTesting.expectOne('https://api.example.com/auth/login');
         loginReq.flush({ accessToken: 'access-token', refreshToken: 'refresh-token' });
         TestBed.tick();
+        await Promise.resolve();
 
         // Now subscribe to afterTokenRefresh$
         provider.afterTokenRefresh$.subscribe(() => {
@@ -1604,6 +1607,7 @@ describe('createBearerAuthProvider', () => {
         const refreshReq = httpTesting.expectOne('https://api.example.com/auth/refresh');
         refreshReq.flush({ accessToken: 'new-access', refreshToken: 'new-refresh' });
         TestBed.tick();
+        await Promise.resolve();
 
         // Should have emitted after successful refresh
         expect(emissions).toHaveLength(1);
