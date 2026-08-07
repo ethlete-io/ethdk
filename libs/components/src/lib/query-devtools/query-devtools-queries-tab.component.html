@@ -76,15 +76,15 @@
             <span class="et-query-devtools-facet-count">{{ count }}</span>
           </button>
         }
-        @if (goneQueryCount()) {
+        @let goneListed = listedGoneQueries().length;
+        @if (goneListed) {
           <button
             (click)="forgetGoneQueries()"
-            class="et-query-devtools-filter-clear"
+            class="et-query-devtools-forget"
             type="button"
-            title="Forget every destroyed query the panel is still holding"
+            title="Drop the {{ goneListed }} destroyed queries listed below - they cannot be brought back"
           >
-            <span aria-hidden="true">✕</span>
-            Forget
+            Forget {{ goneListed }}
           </button>
         }
         @if (isQueryListNarrowed()) {

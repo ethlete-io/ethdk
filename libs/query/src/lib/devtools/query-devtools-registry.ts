@@ -200,10 +200,14 @@ const capTombstones = (list: QueryDevtoolsEntry[]) => {
 };
 
 /**
- * Forgets every destroyed entry the registry is holding - the panel's "clear gone" action. Live
- * entries are untouched.
+ * Forgets destroyed entries the registry is holding - the panel's "clear gone" action. Pass the ids to
+ * drop to forget only those; with no argument every tombstone goes. Live entries are untouched.
  */
-export const clearQueryDevtoolsTombstones = () => entries.update((list) => list.filter((e) => !e.destroyedAt));
+export const clearQueryDevtoolsTombstones = (ids?: Iterable<string>) => {
+  const doomed = ids ? new Set(ids) : null;
+
+  entries.update((list) => list.filter((e) => !e.destroyedAt || (doomed ? !doomed.has(e.id) : false)));
+};
 
 export type QueryDevtoolsOptions = {
   /**

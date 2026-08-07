@@ -635,12 +635,13 @@ a frozen snapshot of the state it last held, under the same row it always had.
 - **Nothing can be run on it.** Execute / Cached / Reset, the JIT editors and the forced
   states are gone from the drawer, since its handle answers with constants. Copy report,
   cURL and Insomnia still work - they only read.
-- **✕ Forget**, next to the **Gone** chip, drops every tombstone at once - and the chip
-  with them, since there is nothing left for it to hold. The panel keeps the 50
-  most recent on its own, oldest dropped first; a tombstone holds the last response body
-  it captured, so the list is capped for the same reason the cache caps unused entries.
-  The host DOM element is dropped, so a tombstone never keeps a destroyed component's
-  node alive.
+- **Forget n** appears only while the **Gone** chip is lit, and drops exactly the `n`
+  tombstones the list is showing - so a search term narrows what it deletes to what you
+  can see. It unlights the chip on the way out, since there is nothing left for it to
+  hold. The panel keeps the 50 most recent on its own, oldest dropped first; a tombstone
+  holds the last response body it captured, so the list is capped for the same reason the
+  cache caps unused entries. The host DOM element is dropped, so a tombstone never keeps a
+  destroyed component's node alive.
 
 Only queries tombstone. A stack, sequence, form or auth provider is a container whose
 interesting state is the queries it owns, and each of those leaves its own.

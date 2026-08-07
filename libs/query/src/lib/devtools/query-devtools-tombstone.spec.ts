@@ -160,6 +160,20 @@ describe('query devtools tombstones', () => {
       live();
     });
 
+    it('should clear only the tombstones whose ids are passed', () => {
+      registerQuery('/gone-a', fakeQuery())();
+      registerQuery('/gone-b', fakeQuery())();
+
+      const dropped = queryDevtoolsEntries().find((e) => e.meta.route === '/gone-a');
+
+      clearQueryDevtoolsTombstones([dropped!.id]);
+
+      const routes = queryDevtoolsEntries().map((e) => e.meta.route);
+
+      expect(routes).not.toContain('/gone-a');
+      expect(routes).toContain('/gone-b');
+    });
+
     it('should let a re-registration under the same id replace the tombstone it left', () => {
       const id = 'explicit-id';
       const register = () =>

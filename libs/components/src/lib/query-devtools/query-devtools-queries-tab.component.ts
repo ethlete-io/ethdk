@@ -91,13 +91,18 @@ export class QueryDevtoolsQueriesTabComponent {
 
   protected goneQueryCount = computed(() => this.host.scopedQueries().filter((entry) => !!entry.destroyedAt).length);
 
+  /** The tombstones Forget would drop: the ones the list is showing, never the whole registry. */
+  protected listedGoneQueries = computed(() =>
+    this.host.queryFacets().has('gone') ? this.filteredQueries().filter((item) => item.entry.destroyedAt) : [],
+  );
+
   /** Whether the search box or a status chip is narrowing the list beyond its scope. */
   protected isQueryListNarrowed = computed(() => !!this.host.queryFilter().trim() || this.host.queryFacets().size > 0);
 
   protected forgetGoneQueries() {
-    clearQueryDevtoolsTombstones();
+    clearQueryDevtoolsTombstones(this.listedGoneQueries().map((item) => item.entry.id));
     // Left lit, the chip would narrow the list to the tombstones that were just dropped - an empty list.
-    if (this.host.queryFacets().has('gone')) this.host.toggleFacet('gone');
+    this.host.toggleFacet('gone');
   }
 
   protected downloadInsomniaCollection() {

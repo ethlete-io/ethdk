@@ -620,6 +620,27 @@
     color: var(--_et-qdt-fg);
   }
 
+  .et-query-devtools-forget {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--_et-qdt-error) 50%, transparent);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--_et-qdt-error) 10%, transparent);
+    color: var(--_et-qdt-error);
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    font: inherit;
+    font-size: 1.15rem;
+    line-height: 1.4;
+  }
+
+  .et-query-devtools-forget:hover {
+    border-color: var(--_et-qdt-error);
+    background: color-mix(in srgb, var(--_et-qdt-error) 22%, transparent);
+  }
+
   .et-query-devtools-scroll {
     block-size: 100%;
     overflow: auto;
