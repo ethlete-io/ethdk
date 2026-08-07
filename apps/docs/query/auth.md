@@ -118,6 +118,62 @@ Do **not** rebuild this from `executionState()`. The two differ in exactly the c
 
 It is `null` before any session has ended, and cleared again as soon as tokens are applied. Pass your own cause for an app-specific path - `logout('expired')` from a handler that decided the session is unrecoverable.
 
+## Route guards
+
+`createAuthGuard(providerRef, config)` returns the guards for a session **and** the redirect back once the visitor signs in. Both halves read the same return-URL param, so the guard and the login page cannot drift apart:
+
+```ts
+import { createAuthGuard } from '@ethlete/query';
+
+export const authGuard = createAuthGuard(authProviderRef, { loginUrl: '/login', defaultUrl: '/dashboard' });
+
+export const ROUTES: Routes = [
+  { path: 'login', canMatch: [authGuard.canMatchAnonymous], loadComponent: () => import('./login') },
+  { path: 'dashboard', canMatch: [authGuard.canMatch], loadChildren: () => import('./dashboard') },
+];
+```
+
+```ts
+@Component({/* … */})
+export class LoginFormComponent {
+  private auth = injectAuthProvider();
+
+  // cold - nothing navigates until it is subscribed to
+  private afterLogin$ = authGuard.navigateAfterLogin();
+
+  constructor() {
+    toObservable(this.auth.isAuthenticated)
+      .pipe(
+        filter(Boolean),
+        take(1),
+        switchMap(() => this.afterLogin$),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+}
+```
+
+| Member                 | Description                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `canMatch`             | Requires a session. On a lazy route this is the one to use - the child bundle is never downloaded.     |
+| `canActivate`          | The same decision, as a `canActivate` guard.                                                           |
+| `canMatchAnonymous`    | Requires _no_ session - keeps a signed-in visitor off the login route.                                 |
+| `canActivateAnonymous` | The same decision, as a `canActivate` guard.                                                           |
+| `returnUrl()`          | The URL the guard captured before redirecting here, or `null`. Call from an injection context.         |
+| `navigateAfterLogin()` | A cold observable that navigates to `returnUrl()`, or to `defaultUrl`. Call from an injection context. |
+
+| Option                      | Default                | Description                                                                                       |
+| --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
+| `loginUrl`                  | required               | A path, a command array, a `UrlTree`, or `(router) => UrlTree`.                                   |
+| `defaultUrl`                | `'/'`                  | Where a login lands when nothing was captured.                                                    |
+| `returnUrlParam`            | `'returnUrl'`          | The query param carrying the attempted URL. `false` redirects without one.                        |
+| `navigationBehaviorOptions` | `{ replaceUrl: true }` | How a guard's redirect navigates - the failed attempt does not become a history entry by default. |
+
+A guard **pends while a session restore is in flight** rather than deciding against a session that is about to exist - it waits for [`sessionStatus()`](#is-there-a-session) to leave `'restoring'`. That is what makes a hard reload of a protected URL stay on that URL instead of bouncing through the login page. When there is nothing to restore, `sessionStatus()` is already `'anonymous'` and the guard answers synchronously, so a never-logged-in visitor never waits.
+
+The attempted URL is captured when the guard runs, including its query params and fragment, and written to the return-URL param unencoded - Angular's URL serializer encodes it, and parses it back. Coming the other way, a captured URL is only followed when it points back into this app: anything not starting with `/`, and anything starting with `//`, is discarded in favour of `defaultUrl`.
+
 ## Execution state
 
 `executionState()` is the single place to watch what the provider is doing. Its `type` is either one of your query keys or one of the internal operations, and `state` moves `loading → success | error`:
