@@ -204,9 +204,20 @@ describe('setupLeaderElection', () => {
 
     expect(tab.isLeader()).toBe(true);
     expect(tab.instanceCount()).toBe(1);
+    expect(tab.isSupported).toBe(false);
     expect(() => tab.cleanup()).not.toThrow();
 
     locks = installFakeWebLocks();
+  });
+
+  it('should report Web Locks as supported when an election actually runs', async () => {
+    const tab = openTab();
+
+    await settle();
+
+    expect(tab.isSupported).toBe(true);
+
+    tab.cleanup();
   });
 
   it('should elect without a BroadcastChannel, only losing the instance count', async () => {

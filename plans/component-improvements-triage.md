@@ -105,7 +105,6 @@ Ranked by value per unit of risk, not by size.
 | Query devtools: History diff needs no scrolling          | `A`     | Only 5 runs can ever hold a body - fold the bodiless tail, step the pair from the diff header                              |
 | Query devtools: overrides survive a reload               | `A`     | Ops are already serializable; `sessionStorage`, default off, and loud about what it re-armed                               |
 | Query devtools: copy a key or a path, not just the value | `A`,`D` | `⧉` is the only per-node control outside the Response explorer - settle menu vs modifier-click first                       |
-| Query devtools: show `isLeader` on the auth tab          | `A`     | Cheap half of the lock inspector - `provider.features.multiTabSync` is already reachable via `asAuth()`                    |
 | Query: retire `CLEAR_QUERY_ARGS`                         | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                        |
 
 ### M - real work, mostly consolidation
@@ -128,7 +127,7 @@ Ranked by value per unit of risk, not by size.
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
 | Query devtools: float the panel in-page            | `A`     | Third `dock` value + a stored rect; also fix the silently-swallowed blocked pop-up                                                          |
 | Query devtools: nest the Queries list by path      | `A`     | Opt-in toggle, flat stays the default. Compress single-child chains or the tree is worse than the list                                      |
-| Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. Ship the `isLeader` chip first   |
+| Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped      |
 
 ### L - projects, not tickets
 

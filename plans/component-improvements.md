@@ -667,23 +667,10 @@ value, or to paste back into the explorer's own `filter keys / values…` box.
   `title` and the `aria-label`; with two or three payloads behind one control, a bare `✓` no
   longer says what landed on the clipboard.
 
-## Query devtools: a Web Locks inspector, and the missing `isLeader`
+## Query devtools: a Web Locks inspector
 
-Requested 2026-08-07. The auth tab's Features row renders `withBearerAuthMultiTabSync`'s
-`devtools()` description - `channel ethlete-auth-sync:hubApiClient`, `tokens synced`,
-`logout synced`, `leader election one tab refreshes` - and every one of those strings is **config
-read back at you**. Nothing says whether _this_ tab is the leader, how many tabs are in the
-election, or which lock any of it is riding on.
-
-**Two halves, and the cheap one should ship on its own.**
-
-The live state already exists and is already reachable. `BearerAuthMultiTabSyncFeature` exposes
-`isLeader` and `instanceCount` as signals, `asAuth(entry)` hands the panel the provider, so
-`provider.features.multiTabSync` is one property access away - a `leader` / `follower · 3 tabs`
-chip next to the existing `authenticated` chip needs **no new plumbing in `libs/query`**. That is
-the item the report is actually about.
-
-The inspector is the bigger half, and it is a genuinely different thing: `navigator.locks.query()`
+Requested 2026-08-07. **The `isLeader` half of this section shipped** - see the Query pass 2
+entry. What is left is the inspector, which is a genuinely different thing: `navigator.locks.query()`
 is **origin-wide**, so it sees the locks held and queued by every other tab, worker and service
 worker - the one place in the panel that can show something outside its own tab. What it would
 list, in full, today:
@@ -714,12 +701,10 @@ What decides whether this is worth building:
   election" means releasing the local hold and letting the queue promote whoever is next - which is
   a real way to test follower behaviour, and belongs with the faults/tampering vocabulary if it is
   built at all.
-- **Both fallbacks have to be legible.** Without Web Locks `createQueryKeyLockManager` reports
-  `isSupported: false` and every hold is granted, so **every** tab reads as leader - four tabs all
-  claiming leadership is indistinguishable from a bug unless the panel says the API is missing. And
-  `instanceCount` is best-effort on purpose: it is recounted on announce, goodbye and takeover, not
-  on a timer, so a tab that crashes while a follower stays counted. Presenting either as exact
-  turns a documented limitation into a bug report.
+- **Both fallbacks are already legible, and the inspector must not undo that.** The shipped chip
+  reads `every tab refreshes` rather than `leader` when there is no election, and prefixes the tab
+  count with `~`. A lock dump that presents `isSupported: false` as "this tab holds everything", or
+  a count as exact, walks both of those back.
 
 Related, and already there: `withTracking` emits `leaderStatusChange` when leadership moves
 (`bearer-auth-tracking.ts`), so the events tab has a source for "this tab became the leader" with
@@ -1415,6 +1400,21 @@ Query pass 2 (2026-08-07):
   `flex: 0 1 auto` and the button's `margin-inline-end: auto` keeps the chips right-aligned. The
   list rows are still a separate call, as the section said. Changeset
   `devtools-copy-route-from-detail-head.md`. Verified headlessly: 22/22, both branches.
+- **Query devtools: show `isLeader` on the auth tab** (the cheap half of the Web Locks inspector
+  section, which stays for the inspector itself) - a `leader · ~2 tabs` / `follower · ~2 tabs` chip
+  beside `authenticated`. The section's "**no new plumbing in `libs/query`**" was wrong, and the
+  section's own "both fallbacks have to be legible" is why: `isLeader` reads `true` in three
+  different situations - a won election, `leaderElection: false`, and a browser without Web Locks -
+  and the feature exposed nothing to tell them apart. The panel could sniff `navigator.locks`
+  itself, but not the config, and string-matching the `devtools()` description is exactly what
+  `QueryDevtoolsFeatureDetail`'s "pre-rendered strings so the panel never has to know a feature's
+  option shape" forbids. So `BearerAuthMultiTabSyncFeature` gained
+  `leadership: 'election' | 'off' | 'unsupported'` (`@ethlete/query` minor, fed by a new
+  `isSupported` on `InternalLeaderElection`), and the two non-election cases render as
+  `every tab refreshes` with the reason in the `title`. The count is prefixed `~` and the tooltip
+  says it is counted on the last announce. Changesets `auth-multi-tab-leadership-field.md` and
+  `devtools-auth-leadership-chip.md`; two unit tests; verified headlessly 12/12 across **two real
+  browser tabs**, including the follower's promotion when the leader closes.
 
 Found not to reproduce:
 

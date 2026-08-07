@@ -11,6 +11,16 @@
         >
           {{ auth.isAuthenticated() ? 'authenticated' : 'anonymous' }}
         </span>
+        @if (host.authLeadership(auth); as leadership) {
+          <span
+            [class.et-query-devtools-chip--success]="leadership.tone === 'success'"
+            [class.et-query-devtools-chip--muted]="leadership.tone === 'muted'"
+            [title]="leadership.title"
+            class="et-query-devtools-chip"
+          >
+            {{ leadership.label }}
+          </span>
+        }
       </div>
       <dl class="et-query-devtools-meta">
         <dt>Base URL</dt>

@@ -1219,6 +1219,28 @@ describe('createBearerAuthProvider', () => {
       });
     });
 
+    it('should report why every tab reads as the leader when no election runs', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/login');
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [withAuthenticationQuery('login', { queryCreator: login })],
+        features: [withBearerAuthMultiTabSync({ leaderElection: false })],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        expect(provider.features.multiTabSync.leadership).toBe('off');
+        expect(provider.features.multiTabSync.isLeader()).toBe(true);
+      });
+    });
+
     it('should broadcast token updates to other tabs', () => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{

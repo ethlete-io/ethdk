@@ -39,6 +39,12 @@ export type InternalLeaderElection = {
   instanceCount: Signal<number>;
 
   /**
+   * Whether the browser has the Web Locks API. Without it there is no election at all: every tab
+   * holds, so every tab reads as the leader and {@link instanceCount} stays at one.
+   */
+  isSupported: boolean;
+
+  /**
    * Asks the leader to refresh the session's tokens. What a tab that hit a 401 does instead of
    * refreshing itself, which would spend a single-use refresh token the leader also holds.
    */
@@ -90,6 +96,7 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
     return {
       isLeader: hold.isHolder,
       instanceCount: instanceCount.asReadonly(),
+      isSupported: false,
       requestRefresh: noop,
       refreshRequests$: refreshRequests.asObservable(),
       cleanup: noop,
@@ -161,6 +168,7 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
   return {
     isLeader: hold.isHolder,
     instanceCount: instanceCount.asReadonly(),
+    isSupported: true,
     requestRefresh,
     refreshRequests$: refreshRequests.asObservable(),
     cleanup,

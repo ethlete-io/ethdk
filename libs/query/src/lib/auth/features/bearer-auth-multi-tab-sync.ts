@@ -42,13 +42,21 @@ export type BearerAuthMultiTabSyncFeature = {
 
   /** How many tabs of this app currently take part in the election. Telemetry only. */
   instanceCount: Signal<number>;
+
+  /**
+   * How {@link isLeader} was decided. `election` - a Web Locks election is running and exactly one
+   * tab reads as the leader. `off` - `leaderElection: false`, so every tab refreshes and every tab
+   * reads as the leader. `unsupported` - the browser has no Web Locks, which has the same effect,
+   * and leaves {@link instanceCount} at one.
+   */
+  leadership: 'election' | 'off' | 'unsupported';
 };
 
 const SINGLE_TAB = /* @__PURE__ */ (() => {
   const isLeader = signal(true).asReadonly();
   const instanceCount = signal(1).asReadonly();
 
-  return { isLeader, instanceCount };
+  return { isLeader, instanceCount, leadership: 'off' } satisfies BearerAuthMultiTabSyncFeature;
 })();
 
 /**
@@ -112,7 +120,11 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
 
     const election = setupLeaderElection({ name: context.name });
 
-    instance = { isLeader: election.isLeader, instanceCount: election.instanceCount };
+    instance = {
+      isLeader: election.isLeader,
+      instanceCount: election.instanceCount,
+      leadership: election.isSupported ? 'election' : 'unsupported',
+    };
 
     return {
       isLeader: () => election.isLeader(),

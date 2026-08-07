@@ -292,6 +292,16 @@ Leadership is one lock in the [Web Locks API](https://developer.mozilla.org/docs
 
 Two consequences worth knowing. `isLeader` starts `false` and flips on the next microtask, because the platform grants asynchronously - nothing observes the gap, since the proactive refresh it gates runs off a timer. And the instance count `withTracking` reports is best-effort: it is recounted when a tab announces itself, says goodbye or takes over the leadership, so a tab that _crashes_ without holding the lock is counted until the next of those happens.
 
+Because `isLeader` reads `true` in three quite different situations, `leadership` says which one you are in:
+
+| `leadership`  | Means                                                                          |
+| ------------- | ------------------------------------------------------------------------------ |
+| `election`    | A Web Locks election is running. Exactly one tab reads `isLeader: true`.       |
+| `off`         | `leaderElection: false` was configured, so every tab refreshes its own tokens. |
+| `unsupported` | The browser has no Web Locks. Same effect, and `instanceCount` stays at `1`.   |
+
+Without it, four tabs all reporting themselves as the leader is indistinguishable from a bug. The [devtools auth tab](/components/query-devtools#which-tab-refreshes-the-tokens) renders exactly this distinction.
+
 This is separate from - and independent of - the query client's own [multi-tab sync](/query/multi-tab), which shares responses and deduplicates polling. Both are opt-in and configured separately: this one is about the session, that one about data. They complement each other - because logout tears down secure entries in every tab, a shared response can never outlive the session it was fetched in.
 
 ## Features
@@ -305,7 +315,7 @@ Optional behaviors passed to the provider's `features` array (each usable once -
 | `withInactivityLogout`       | Auto-logout after inactivity (default 15 minutes; listens to mouse/keyboard/scroll/touch). Reports `sessionEndCause()` as `'inactivity'`.                                                                                                                                                                                           |
 | `withTokenRevocation`        | Calls a revocation query - by default automatically on logout.                                                                                                                                                                                                                                                                      |
 | `withTracking`               | Typed event bus for auth telemetry (query execute/success/failure, token refresh, logout, leader changes). Its `logout` event carries `{ cause }`.                                                                                                                                                                                  |
-| `withBearerAuthMultiTabSync` | Cross-tab token/logout sync and leader election - see [Multi-tab sync](#multi-tab-sync). Exposes `isLeader` / `instanceCount`.                                                                                                                                                                                                      |
+| `withBearerAuthMultiTabSync` | Cross-tab token/logout sync and leader election - see [Multi-tab sync](#multi-tab-sync). Exposes `isLeader` / `instanceCount` / `leadership`.                                                                                                                                                                                       |
 
 ### When the remember-me cookie is written and deleted
 

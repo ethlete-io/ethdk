@@ -108,7 +108,7 @@ it. Pop-up blockers apply: if the window is refused, the panel stays docked.
 | **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Forms**     | Every [`defineQueryForm`](/query/query-forms) on screen: [its fields, what they put in the URL and the query it drives](#forms-what-a-filter-is-actually-sending). A driven query opens in a split-view drawer (like Stacks), so the form stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Auth**      | Each bearer auth provider: authenticated state, [which tab refreshes its tokens](#which-tab-refreshes-the-tokens), access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                                                          |
 | **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of [everything sent and received](#sockets-both-directions-and-an-emit-box), with a filter box and an emit box for test messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Cache**     | Per-client repository entries: cache key, consumer count, [measured size](#cache-what-is-actually-in-it), secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Value** / **Refetch** / **Evict** actions. The card header adds the cache's total size, how many entries are collectible, how many responses the client has on disk (with **Clear disk**), **Evict all**, and [the client's own features](#features-show-what-they-were-configured-with). |
 | **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -308,6 +308,31 @@ const withRetryBanner = <TArgs extends QueryArgs>(options: { after: number }) =>
     },
   });
 ```
+
+## Which tab refreshes the tokens
+
+The **Auth** tab's Features row describes how
+[`withBearerAuthMultiTabSync`](/query/auth#multi-tab-sync) was _configured_ -
+`leader election one tab refreshes` is the setting, not the outcome. A chip next to
+`authenticated` says what actually happened in **this** tab:
+
+| Chip                  | Means                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| `leader · ~3 tabs`    | This tab performs the automatic token refresh, and three tabs are in the election. |
+| `follower · ~3 tabs`  | Another tab does. Reload it or close the leader to watch the handover.             |
+| `every tab refreshes` | There is no election - the tooltip says whether it was turned off or is missing.   |
+
+The `~` is not decoration. The tab count is recounted when a tab announces itself,
+says goodbye or takes over, never on a timer, so a tab that _crashed_ as a follower
+stays in the count until one of those happens. The tooltip spells that out too.
+
+`every tab refreshes` covers the two cases where `isLeader` is `true` in every tab at
+once, which would otherwise read as a bug: `leaderElection: false`, and a browser
+without the Web Locks API. The provider reports which through its `leadership`
+field - the panel only renders it.
+
+The chip is absent for a provider without the feature, where one tab refreshing its
+own token is simply correct.
 
 ## Activity: how often a query ran and what it cost
 

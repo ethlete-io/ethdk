@@ -59,6 +59,13 @@ export type NumericFaultField = 'latencyMs' | 'failNext' | 'failRate';
  */
 export type RouteSegment = { text: string; kind: 'static' | 'param' | 'query'; name?: string };
 
+/**
+ * Which tab refreshes an auth provider's tokens, as the auth tab's chip renders it. `title` carries
+ * the caveats the label has no room for - why every tab reads as the leader, or how approximate the
+ * tab count is.
+ */
+export type QueryDevtoolsLeadership = { label: string; tone: 'success' | 'muted'; title: string };
+
 /** A query reachable from a stack or sequence card, rendered as a row that opens the detail drawer. */
 export type QueryLink = {
   id: string;

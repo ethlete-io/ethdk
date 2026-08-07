@@ -28,6 +28,7 @@ import {
   AnyPagedQueryStack,
   AnyQuerySnapshot,
   AnyQueryStack,
+  BearerAuthMultiTabSyncFeature,
   clearQueryDevtoolsFaults,
   createQueryErrorResponse,
   EMPTY_QUERY_DEVTOOLS_FAULT,
@@ -95,6 +96,7 @@ import {
   PaneAxis,
   PaneTarget,
   QueryActivity,
+  QueryDevtoolsLeadership,
   QueryDevtoolsSelection,
   QueryLink,
   QueryListFacet,
@@ -1977,6 +1979,36 @@ export class QueryDevtoolsComponent {
 
   public authQueryKeys(auth: AnyBearerAuthProvider): string[] {
     return Object.keys(auth.queries ?? {});
+  }
+
+  /**
+   * Which tab refreshes this provider's tokens, as a chip: whether it is this one, how many tabs are
+   * in the election, and - when there is no election - why every tab reads as the leader.
+   */
+  public authLeadership(auth: AnyBearerAuthProvider): QueryDevtoolsLeadership | null {
+    const sync = (auth.features as { multiTabSync?: BearerAuthMultiTabSyncFeature } | undefined)?.multiTabSync;
+    if (!sync) return null;
+
+    if (sync.leadership !== 'election') {
+      const reason =
+        sync.leadership === 'off'
+          ? 'Leader election is off, so every tab refreshes its own tokens - this one included.'
+          : 'This browser has no Web Locks API, so the election cannot run and every tab refreshes its own tokens.';
+
+      return { label: 'every tab refreshes', tone: 'muted', title: reason };
+    }
+
+    const tabs = sync.instanceCount();
+    const isLeader = sync.isLeader();
+    // The count is recounted on announce, goodbye and takeover rather than on a timer, so a tab that
+    // crashed as a follower is still in it. Presenting it as exact would turn that into a bug report.
+    const title = `${isLeader ? 'This tab performs the automatic token refresh.' : 'Another tab performs the automatic token refresh.'} ${tabs} tab${tabs === 1 ? '' : 's'} in the election, counted on the last announce - a tab that crashed as a follower is still counted.`;
+
+    return {
+      label: `${isLeader ? 'leader' : 'follower'} · ~${tabs} tab${tabs === 1 ? '' : 's'}`,
+      tone: isLeader ? 'success' : 'muted',
+      title,
+    };
   }
 
   /** Countdown to the access-token's `exp` (the point a refresh becomes due), or `null` if unknown. */
