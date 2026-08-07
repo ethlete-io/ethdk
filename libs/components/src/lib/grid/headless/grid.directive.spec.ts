@@ -202,6 +202,52 @@ describe('GridDirective', () => {
 
       expect(getDirective().items()).toHaveLength(1);
     });
+
+    it('applies new data for items whose id and layout did not change', () => {
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: { value: 'before' }, layout: {} },
+        { id: 'b', type: 'test', data: { value: 'kept' }, layout: {} },
+      ] satisfies GridItemConfig[]);
+      fixture.detectChanges();
+
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: { value: 'after' }, layout: {} },
+        { id: 'b', type: 'test', data: { value: 'kept' }, layout: {} },
+      ] satisfies GridItemConfig[]);
+      fixture.detectChanges();
+
+      expect(
+        getDirective()
+          .items()
+          .map((item) => item.data),
+      ).toEqual([{ value: 'after' }, { value: 'kept' }]);
+    });
+
+    it('leaves positions alone when only data changed', () => {
+      const layout = { lg: { col: 2, row: 1, colSpan: 1, rowSpan: 1 } };
+
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: { value: 'before' }, layout },
+      ] satisfies GridItemConfig[]);
+      fixture.detectChanges();
+      measureGrid();
+
+      const positionBefore = getDirective()
+        .layout()
+        .find((entry) => entry.id === 'a')?.position;
+
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: { value: 'after' }, layout },
+      ] satisfies GridItemConfig[]);
+      fixture.detectChanges();
+
+      expect(getDirective().items()[0]?.data).toEqual({ value: 'after' });
+      expect(
+        getDirective()
+          .layout()
+          .find((entry) => entry.id === 'a')?.position,
+      ).toEqual(positionBefore);
+    });
   });
 
   describe('addItem / removeItem', () => {

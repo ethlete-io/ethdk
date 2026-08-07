@@ -382,6 +382,22 @@ export class GridDirective {
               }
               this.layoutOverrides.set(restored);
             }
+
+            return;
+          }
+
+          // Same items in the same places, but the host refreshed their `data` - a re-fetch landing
+          // new widget contents, say. Copy `data` alone: an existing config's `layout` holds what
+          // `moveItem` last wrote, which is ahead of the host's snapshot, so setting `initial`
+          // wholesale here would revert the moves.
+          const changedData = initial.filter((incoming) => currentById.get(incoming.id)?.data !== incoming.data);
+
+          if (changedData.length > 0) {
+            const dataById = new Map(changedData.map((item) => [item.id, item.data]));
+
+            this.itemConfigs.update((items) =>
+              items.map((item) => (dataById.has(item.id) ? { ...item, data: dataById.get(item.id) } : item)),
+            );
           }
 
           return;
