@@ -154,9 +154,9 @@ Dragging across empty space on the **week**, **day** or **month** view draws a n
 - **Week and day** draw a time range down a day column. It snaps to 15-minute slots and is never shorter than one.
 - **Month** draws an all-day span across day cells, in either direction.
 
-A press that never passes the drag threshold stays a plain click, and a click on empty space creates too: on the week and day views an hour starting where it landed, snapped to the same 15-minute slots, and on the month view an all-day appointment on the cell clicked. A press that starts **on** an appointment (or a "+N more" trigger) does not draw over it, and a click made while a surface is open only dismisses it.
+**A press that never drags still creates**, at a default size: an hour from where it landed on the week and day views - snapped to the same 15-minute slots - and an all-day appointment on the month view's clicked cell. A press that starts **on** an appointment (or a "+N more" trigger) does not draw over it, and a click made while a surface is open only dismisses it.
 
-**On touch it starts with a long press.** Both views scroll, so a finger that simply drags is panning - the browser claims the gesture and cancels it. Holding still for ~400ms arms the range instead, and from that point scrolling is blocked until you let go, so the drag draws. Releasing a long press without moving still creates the first slot or day. A quick swipe scrolls exactly as before, and a tap still does nothing.
+**On touch it starts with a long press.** Both views scroll, so a finger that simply drags is panning - the browser claims the gesture and cancels it. Holding still for ~400ms arms the range instead, and from that point scrolling is blocked until you let go, so the drag draws. A quick swipe scrolls exactly as before; a tap, and a long press released without moving, both create the same default a click does.
 
 The range stays visible while the surface is open and disappears when it closes - dismiss without saving and nothing is created. Clicking the drawn range itself counts as clicking outside the surface, so it closes and clears, rather than drawing a fresh range underneath. A gesture the browser takes away (a `pointercancel`) clears it without opening anything.
 

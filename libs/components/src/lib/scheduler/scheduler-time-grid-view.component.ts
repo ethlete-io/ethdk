@@ -22,7 +22,9 @@ const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 const MINUTES_PER_DAY = 24 * 60;
 const DRAFT_SLOT_MINUTES = 15;
 const DRAFT_MINIMUM_DURATION = DRAFT_SLOT_MINUTES * 60 * 1000;
-const CLICK_DRAFT_MINUTES = 60;
+/** What a press that never drags creates - a click, or a long press released where it landed. */
+const DEFAULT_DRAFT_MINUTES = 60;
+const DEFAULT_DRAFT_DURATION = DEFAULT_DRAFT_MINUTES * 60 * 1000;
 
 type SchedulerDraftColumn = { element: HTMLElement; day: Date };
 
@@ -120,9 +122,11 @@ export class SchedulerTimeGridViewComponent {
       draw: (_, clientY) => {
         const at = this.draftTimeAt(column, clientY);
 
+        // the first unit is the full default: a long press released without moving has to land on
+        // the same hour a click does, and the first drag move recomputes from the anchor anyway
         return scheduler.draftRange()
           ? scheduler.extendDraftRange(at, DRAFT_MINIMUM_DURATION)
-          : scheduler.beginDraftRange(at, DRAFT_MINIMUM_DURATION);
+          : scheduler.beginDraftRange(at, DEFAULT_DRAFT_DURATION);
       },
       settle: () => {
         const draft = scheduler.draftRange();
@@ -145,9 +149,7 @@ export class SchedulerTimeGridViewComponent {
     // a click made while a surface is open is dismissing it, not asking for another appointment
     if (!scheduler || scheduler.selectedAppointmentId()) return;
 
-    const start = this.draftTimeAt(column, clientY);
-
-    scheduler.setDraftRange({ start, end: addMinutes(start, CLICK_DRAFT_MINUTES) });
+    scheduler.beginDraftRange(this.draftTimeAt(column, clientY), DEFAULT_DRAFT_DURATION);
 
     // unlike a drag, nothing has drawn the preview yet - it is only there to anchor to a pass later
     afterNextRender(
