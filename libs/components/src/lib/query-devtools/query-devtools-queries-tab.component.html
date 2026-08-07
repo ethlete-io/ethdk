@@ -162,8 +162,8 @@
                 tampered
               </span>
             }
-            <span class="et-query-devtools-row-time">{{ host.formatTime(lastExecutedAt(head)) }}</span>
             <span class="et-query-devtools-row-count">×{{ group.items.length }}</span>
+            <span class="et-query-devtools-row-time">{{ host.formatTime(lastExecutedAt(head)) }}</span>
           </button>
         </div>
         @if (expanded) {
@@ -201,6 +201,7 @@
         class="et-query-devtools-row"
       >
         <button (click)="host.selectedQueryId.set(item.entry.id)" class="et-query-devtools-row-select" type="button">
+          <span class="et-query-devtools-row-caret" aria-hidden="true"></span>
           <span
             [attr.data-status]="isGone ? null : host.queryStatus(item.query)"
             [title]="isGone ? 'destroyed' : host.queryStatus(item.query)"
