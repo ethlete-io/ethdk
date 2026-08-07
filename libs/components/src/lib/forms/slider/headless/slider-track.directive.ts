@@ -1,5 +1,7 @@
-import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DragGestureEvent, RuntimeError, dragGestureFrom } from '@ethlete/core';
+import { tap } from 'rxjs';
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import { nearestThumbIndex, valueFromPointerPosition } from './internals/slider-engine';
 import { SLIDER_MARK_VALUE_ATTRIBUTE, SLIDER_TOKEN } from './slider.tokens';
@@ -30,14 +32,12 @@ const markValueUnderPointer = (event: PointerEvent) => {
     // drags along the slider axis adjust it, page scrolling on the other axis stays native
     '[style.touch-action]': 'vertical() ? "pan-x" : "pan-y"',
     '(pointerdown)': 'handlePointerDown($event)',
-    '(pointermove)': 'handlePointerMove($event)',
-    '(pointerup)': 'handlePointerUp($event)',
-    '(pointercancel)': 'handlePointerCancel()',
   },
 })
 export class SliderTrackDirective {
   private slider = inject(SLIDER_TOKEN, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private destroyRef = inject(DestroyRef);
 
   protected vertical = computed(() => this.slider?.orientation() === 'vertical');
 
@@ -58,56 +58,64 @@ export class SliderTrackDirective {
   protected handlePointerDown(event: PointerEvent) {
     const slider = this.slider;
 
-    if (!slider || !slider.interactive() || event.button !== 0) {
+    if (!slider || !slider.interactive() || event.button !== 0 || slider.draggingThumbIndex() !== null) {
       return;
     }
 
     // a tap that starts on a tick commits that tick exactly, not the value under the pointer
-    const value = markValueUnderPointer(event) ?? this.valueFromEvent(event);
-    const index = nearestThumbIndex(value, slider.thumbValues());
+    const pressValue = markValueUnderPointer(event) ?? this.valueFromPosition(event.clientX, event.clientY);
+    const index = nearestThumbIndex(pressValue, slider.thumbValues());
 
     slider.draggingThumbIndex.set(index);
-    slider.commitThumbValue(index, value);
+    slider.commitThumbValue(index, pressValue);
     slider.thumbs()[index]?.focus();
-
-    try {
-      this.elementRef.nativeElement.setPointerCapture(event.pointerId);
-    } catch {
-      // pointer capture is unavailable in some test environments - dragging still works
-    }
 
     // keep the interaction from selecting text or starting a native drag
     event.preventDefault();
+
+    // every pointer move counts: a slider follows the pointer from the first pixel, so there is
+    // no threshold below which the press is still just a click
+    dragGestureFrom(event, this.elementRef.nativeElement, { commitThreshold: 0 })
+      .pipe(
+        tap((gesture) => this.applyGesture(gesture, { index, pressValue })),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
-  protected handlePointerMove(event: PointerEvent) {
+  private applyGesture(gesture: DragGestureEvent, press: { index: number; pressValue: number }) {
     const slider = this.slider;
-    const draggingIndex = slider?.draggingThumbIndex() ?? null;
 
-    if (!slider || draggingIndex === null) {
+    if (!slider) {
       return;
     }
 
-    slider.commitThumbValue(draggingIndex, this.valueFromEvent(event));
-  }
+    switch (gesture.type) {
+      case 'start':
+        return;
+      case 'move':
+        slider.commitThumbValue(press.index, this.valueFromPosition(gesture.data.clientX, gesture.data.clientY));
 
-  protected handlePointerUp(event: PointerEvent) {
-    const slider = this.slider;
-    const draggingIndex = slider?.draggingThumbIndex() ?? null;
+        return;
+      case 'end':
+        slider.commitThumbValue(press.index, this.valueFromPosition(gesture.data.clientX, gesture.data.clientY));
+        slider.draggingThumbIndex.set(null);
 
-    if (!slider || draggingIndex === null) {
-      return;
+        return;
+      case 'cancelled':
+        // the browser took the gesture away - the last position the user chose is the one they pressed
+        slider.commitThumbValue(press.index, press.pressValue);
+        slider.draggingThumbIndex.set(null);
+
+        return;
+      case 'tapped':
+        slider.draggingThumbIndex.set(null);
+
+        return;
     }
-
-    slider.commitThumbValue(draggingIndex, this.valueFromEvent(event));
-    slider.draggingThumbIndex.set(null);
   }
 
-  protected handlePointerCancel() {
-    this.slider?.draggingThumbIndex.set(null);
-  }
-
-  private valueFromEvent(event: PointerEvent) {
+  private valueFromPosition(clientX: number, clientY: number) {
     const slider = this.slider;
 
     if (!slider) {
@@ -117,8 +125,8 @@ export class SliderTrackDirective {
     const element = this.elementRef.nativeElement;
 
     return valueFromPointerPosition({
-      clientX: event.clientX,
-      clientY: event.clientY,
+      clientX,
+      clientY,
       trackRect: element.getBoundingClientRect(),
       rtl: getComputedStyle(element).direction === 'rtl',
       orientation: slider.orientation(),

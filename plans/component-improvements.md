@@ -203,6 +203,66 @@ semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
   messages vs. banner's single description paragraph) and the retry-button-
   only-if-`canRetry` conditional.
 
+## Query devtools: the Queries list repeats the same query
+
+Noted from real use 2026-08-07. The Queries tab lists the same query two or more times,
+because the same query gets used by several consumers in one rendered context and the
+registry keeps **one entry per instance** - `registerEntry` derives ids from a descriptor
+(`query|<client>|<method>|<route>`) plus a per-descriptor counter, so N instances of the
+same route are N rows by design. The list is what should hide that, not the registry: the
+ids have to stay one-per-instance for the detail pane, pinning, tombstones and
+reload-restore to keep working.
+
+Proposal to evaluate: a **"network only" chip, on by default**, leaving only the instances
+that actually issued a request - so the repeats that only read a shared cache entry drop
+out of the default view, and the chip can be turned off to see every consumer. Two things
+to settle first:
+
+- **There is no per-entry "did this instance request" flag today.** No `fromCache` /
+  request-count lives on `QueryDevtoolsEntry`; the closest signals are the event log's
+  `request-success` / `request-error` events and `query-devtools-stats.ts`'s response
+  history. Whether an instance can be attributed cheaply and reliably decides if this is
+  `S` or bigger.
+- **Every existing chip widens** (`matchesFacets` is an OR, and the counts are computed
+  before the active chips apply). A default-on chip that _narrows_ is a different kind of
+  control - it likely wants to sit apart from the status chips rather than join them, and
+  `isQueryListNarrowed` / `scopedQueryCount` have to keep telling the truth about a list
+  that is narrowed before the user touches anything. Alternative worth weighing: collapse
+  same-descriptor rows into one row with an instance count, which needs no new signal at
+  all and loses nothing.
+
+## Query devtools: locate the selected query in the app
+
+Noted 2026-08-07, alongside the repeats item above - the same confusion is what makes both
+worth doing. Inspect only runs one way today: arm it, hover an element, and the list is
+filtered to that element's queries (`updateInspectHover` walks up from `event.target`
+through `elementQueryMap`, keyed on `entry.meta.element`). The reverse - a **"locate" button
+on the selected query** that points at roughly where it lives - does not exist.
+
+**The data is already there and works in prod.** `entry.meta.element` is the creating
+injector's `ElementRef` (`query-dependencies.ts` reads `hostInjector.get(ElementRef, null,
+{ optional: true })`), not a debug API - so locate is the same `elementQueryMap` read
+backwards: scroll the element into view and draw the hover box (`inspectHover` already
+holds a `{ rect, entries }` pair and the CSS for it, `.et-query-devtools-inspect-box`,
+already exists). That makes this small. What to settle:
+
+- **`element` is nullable, and null is common.** A query created outside a
+  component/directive injector - a root service, a resolver, anything in the root injector -
+  has no host element. The button has to be absent or disabled with a reason, not silently
+  do nothing.
+- **The element can be gone or invisible** - detached, `display: none`, inside a collapsed
+  panel, or outliving the query's own tombstone. Locate needs a "couldn't find it on screen"
+  state; `checkVisibility()` plus the existing rect drawing covers the cheap version.
+- **A component's host element is a rough answer by construction** - it is where the query
+  was _created_, which is not necessarily where its data is rendered. Say so in the label
+  ("created here"), so nobody reads it as the consumer.
+
+**On hooking Angular DevTools metadata:** only as an enhancement, never as the mechanism.
+Angular's debug APIs (`ng.getComponent()` and friends) are dev-mode only, and the devtools
+panel is explicitly meant to work in a production build - where component class names are
+mangled anyway. If it is used at all, it can only enrich the label when available and must
+degrade to the element rect otherwise.
+
 ## Overlay responsiveness: resolved, and it was not systemic
 
 The premise of this section was wrong; recorded here so the next pass does not
@@ -227,27 +287,15 @@ re-open it. Of the "three that don't", only one was ever a gap:
 
 The scheduler's edit surface - the one real gap - shipped; see "Already fixed".
 
-## Duplicated pointer-drag logic: slider, rating, carousel
+## Duplicated pointer-drag logic: carousel
 
-`libs/core`'s `dragGestureFrom` (`drag-handle/drag-gesture.ts`) already
-models exactly this problem - pointerdown/move/up plus capture, exposed as
-`start`/`move`/`end`/`tapped` events - and `grid` plus the stream domain's
-PIP window chrome (`pip-title-bar.directive.ts`,
-`pip-collapse-overlay.directive.ts`, via `DragHandleDirective`) both reuse
-it correctly. Two other controls that need the same "track pointer delta
-from a start point" behavior don't: `slider-track.directive.ts` and
-`rating.component.ts` each hand-roll their own
-`pointerdown`/`pointermove`/`pointerup` handling, their own
-`setPointerCapture` call, and their own boolean `dragging` flag - nearly
-identical in shape to each other and to what `dragGestureFrom` already
-provides. Carousel adds a third, more distinct reimplementation:
-`cursor-drag-scroll.ts` (behind `ScrollableDragDirective`, opt-in for
-mouse-drag-to-scroll) hand-rolls its own `mousedown`/`mousemove`/`mouseup`
-pipeline with its own deadzone concept - carousel's touch path needs no
-gesture code at all, since touch scrolling there is native CSS scroll-snap.
-Consolidating slider and rating onto `dragGestureFrom` first is the
-cleaner win since they're near-identical today; carousel's deadzone/
-threshold semantics differ enough that it may not fold in as cleanly.
+Slider and rating shipped onto `dragGestureFrom` (see "Already fixed"). Carousel is the
+remaining reimplementation, and a more distinct one: `cursor-drag-scroll.ts` (behind
+`ScrollableDragDirective`, opt-in for mouse-drag-to-scroll) hand-rolls its own
+`mousedown`/`mousemove`/`mouseup` pipeline with its own deadzone concept - carousel's touch
+path needs no gesture code at all, since touch scrolling there is native CSS scroll-snap. Its
+deadzone/threshold semantics differ enough that it may not fold in cleanly; folding it in is a
+separate call, not a follow-up to the slider/rating pass.
 
 ## Already covered - don't rebuild
 
@@ -722,6 +770,27 @@ Scheduler overlay + drag-to-create (2026-08-06):
   `querySelector` approach anyway, and `signalElementChildren` is direct-children-only.
   Changeset `scheduler-drag-to-create-and-anchored-edit.md`. Verified headlessly: 14/14 on the
   drag/edit/add/mobile paths, 6/6 on click, cancel and press-on-appointment.
+
+Pointer-drag consolidation (2026-08-07):
+
+- **Slider and rating onto `dragGestureFrom`** (was "Duplicated pointer-drag logic", the slider and
+  rating half) - `slider-track.directive.ts` and `rating.component.ts` each dropped their
+  `pointermove`/`pointerup`/`pointercancel` bindings, their `setPointerCapture` try/catch and their
+  `dragging` flag for one `dragGestureFrom(event, el, { commitThreshold: 0 })` per press. The
+  threshold is `0` on purpose: both controls follow the pointer from the first pixel, so the 8px
+  default that keeps a click a click on a drag handle would give them a dead zone. What they gain is
+  the cancelled-gesture path - the slider reverts to the value the press landed on, the rating
+  commits nothing. Two things the primitive needed for this: `end` now carries the release position
+  (`DragEndEvent`, also the payload of `DragHandleDirective.dragEnded`), because the slider committed
+  at the pointerup coordinates and the last `pointermove` can lag those by a frame; and
+  `setPointerCapture` is called through a `try`/`catch` inside the primitive, which is what the two
+  consumers were each doing by hand. Rating also stopped starting a gesture on a secondary button.
+  Changeset `slider-rating-drag-gesture.md`. Verified headlessly against the slider, vertical slider,
+  range slider and rating stories: 20/20 (press, drag, release, sub-threshold move, cancel-reverts,
+  thumb non-crossing, hover preview, clear-by-repick). Note when reading those results: signal writes
+  from the gesture's `document` listeners flush on the next frame (~6ms), so a Playwright assertion
+  in the same tick as the release reads the previous attribute value - settle before asserting.
+  Carousel stays out, as the section said: `cursor-drag-scroll.ts`'s deadzone semantics differ.
 
 Found not to reproduce:
 

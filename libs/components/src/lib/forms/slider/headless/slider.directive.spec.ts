@@ -206,6 +206,20 @@ describe('SliderDirective', () => {
     expect(fixture.componentInstance.value()).toBe(62);
   });
 
+  it('reverts to the pressed value when the browser takes the drag away', () => {
+    pointer('pointerdown', 30);
+    pointer('pointermove', 62);
+    expect(fixture.componentInstance.value()).toBe(62);
+
+    pointer('pointercancel', 62);
+    expect(fixture.componentInstance.value()).toBe(30);
+    expect(host.hasAttribute('data-dragging')).toBe(false);
+
+    // the gesture is over - later moves belong to no drag
+    pointer('pointermove', 90);
+    expect(fixture.componentInstance.value()).toBe(30);
+  });
+
   it('ignores interaction while disabled or readonly', () => {
     fixture.componentInstance.disabled.set(true);
     fixture.detectChanges();

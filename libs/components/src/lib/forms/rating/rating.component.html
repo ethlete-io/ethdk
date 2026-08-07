@@ -5,10 +5,8 @@
 <div
   [style.--_et-rating-fill-icons]="fillIcons()"
   [style.--_et-rating-fill-gaps]="fillGaps()"
-  (pointercancel)="handlePointerCancel($event)"
   (pointerdown)="handlePointerDown($event)"
   (pointermove)="handlePointerMove($event)"
-  (pointerup)="handlePointerUp($event)"
   class="et-rating-icons"
 >
   @if (rating.registeredIconTemplate(); as iconTemplate) {

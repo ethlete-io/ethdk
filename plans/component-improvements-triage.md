@@ -32,26 +32,24 @@ Ranked by value per unit of risk, not by size.
 > `[etFormFieldBarrier]`, which is what a future control-inside-a-control needs; **select and
 > cascader are the obvious next adopters** - both still render their clear button and dropdown arrow
 > as plain siblings, and neither was in this item's scope.
+>
+> **Slider and rating onto `dragGestureFrom`** (was #1) also shipped 2026-08-07 - one gesture per
+> press at `commitThreshold: 0`, so both now revert on a cancelled gesture. It left `end` carrying
+> the release position (`DragEndEvent`, also `dragEnded`'s payload) and moved the
+> `setPointerCapture` try/catch into the primitive. Carousel stays out, as planned.
 
-1. **Slider and rating onto `dragGestureFrom`** - `M`, `C`.
-   Both hand-roll pointerdown/move/up, `setPointerCapture` and a `dragging` flag that
-   `dragGestureFrom` already provides. The extra argument on top of dedupe: the cancelled-gesture
-   fix already landed _in_ `dragGestureFrom` (`drag-resize-cancelled-gesture.md`), so consolidating
-   hands slider and rating a fix they don't have today. Leave carousel out - its deadzone
-   semantics differ enough that folding it in is a separate call.
-
-2. **Auth: a `withAuthGuard()` helper** - `L`, `A`.
+1. **Auth: a `withAuthGuard()` helper** - `L`, `A`.
    The SDK ships no `CanMatchFn`/`CanActivateFn` at all, so every app hand-rolls "wait for auth to
    settle, redirect to login, come back to the attempted URL" - and keeps the return-URL param
    name in sync with the redirect by hand. High value, and now unblocked - `sessionStatus()` ships,
    so the guard has the thing to wait on.
 
-3. **Scheduler's cheap mobile trio** - `S` each, `A`.
+2. **Scheduler's cheap mobile trio** - `S` each, `A`.
    Add-appointment as a FAB below a breakpoint, the today button as an icon button at narrow
    widths, and swipe-to-navigate. All three reuse primitives that already exist and that scheduler
    simply doesn't import (`floating-action.directive.ts`, `SwipeTracker` in `libs/core`).
 
-4. **Query error rebuilt on banner** - `M`, `C`.
+3. **Query error rebuilt on banner** - `M`, `C`.
    Identical `color-mix` surface formula, independently reimplemented icon slot, heading,
    description and action row; banner's `type="error"` already forces `injectErrorTheme()`.
    Needs two things layered on: the violation `<ul>` and the retry-only-if-`canRetry` conditional.
@@ -73,13 +71,14 @@ Ranked by value per unit of risk, not by size.
 | Grid: assert breakpoint coverage in the dev check | `A` | Cheap half of the "nothing ties layout keys to breakpoints" item                           |
 | Filter overlay story: demo dressing               | `A` | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields       |
 | Auth: `shouldAutoLogin` predicate                 | `A` | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                    |
+| Query devtools: stop the Queries list repeating   | `A` | One row per query _instance_ is by design; the list should collapse or hide the repeats    |
+| Query devtools: locate the selected query         | `A` | Inspect backwards - `entry.meta.element` is already there, and works in a prod build       |
 
 ### M - real work, mostly consolidation
 
 | Item                                               | Tag     | Note                                                                                                    |
 | -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
-| Slider + rating → `dragGestureFrom`                | `C`     | See #1                                                                                                  |
-| Query error on banner                              | `C`     | See #4                                                                                                  |
+| Query error on banner                              | `C`     | See #3                                                                                                  |
 | Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                               |
 | Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types           |
 | Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                       |
@@ -95,7 +94,7 @@ Ranked by value per unit of risk, not by size.
 | Item                                         | Tag     | Note                                                                                                                                                                                                                                                                |
 | -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Charts                                       | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't |
-| Auth: `withAuthGuard()`                      | `A`     | See #2 - unblocked, `sessionStatus` ships                                                                                                                                                                                                                           |
+| Auth: `withAuthGuard()`                      | `A`     | See #1 - unblocked, `sessionStatus` ships                                                                                                                                                                                                                           |
 | Scheduler: move/resize existing appointments | `A`     | Called "the natural next feature" by the drag-to-create work                                                                                                                                                                                                        |
 | Scheduler: date-time _range_ picker          | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                              |
 | Selection list: `variant="tile"`             | `A`,`D` | Sits on the shipped selection-card sheet, so it is a single edit now. Three open questions, chiefly whether an unchecked tile still reads as selectable                                                                                                             |

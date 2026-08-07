@@ -1,7 +1,7 @@
 import { Directive, ElementRef, booleanAttribute, inject, input } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Subject, distinctUntilChanged, exhaustMap, filter, map, share } from 'rxjs';
-import { DragGestureEvent, DragMoveEvent, DragStartEvent, dragGestureFrom } from './drag-gesture';
+import { DragEndEvent, DragGestureEvent, DragMoveEvent, DragStartEvent, dragGestureFrom } from './drag-gesture';
 import { applyHostListener } from '../utils/angular/host-listener';
 
 @Directive({
@@ -48,10 +48,10 @@ export class DragHandleDirective {
     ),
   );
 
-  dragEnded = outputFromObservable<void>(
+  dragEnded = outputFromObservable<DragEndEvent>(
     this.gesture$.pipe(
-      filter((e) => e.type === 'end'),
-      map(() => undefined),
+      filter((e): e is Extract<DragGestureEvent, { type: 'end' }> => e.type === 'end'),
+      map((e) => e.data),
     ),
   );
 

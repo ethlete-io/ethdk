@@ -177,6 +177,73 @@ describe('RatingDirective', () => {
     expect(fixture.componentInstance.value()).toBeNull();
   });
 
+  describe('pointer interaction', () => {
+    const ICON_WIDTH = 20;
+
+    const surface = () => host.querySelector<HTMLElement>('.et-rating-icons')!;
+
+    const pointer = (type: string, clientX: number, pointerType = 'mouse') => {
+      surface().dispatchEvent(new PointerEvent(type, { clientX, bubbles: true, button: 0, pointerType }));
+      fixture.detectChanges();
+    };
+
+    beforeEach(() => {
+      icons().forEach((icon, position) => {
+        const left = position * ICON_WIDTH;
+        const rect = { left, right: left + ICON_WIDTH, width: ICON_WIDTH, top: 0, bottom: 20, height: 20 } as DOMRect;
+
+        icon.getBoundingClientRect = () => rect;
+      });
+    });
+
+    it('previews the icon under a hovering mouse without committing', () => {
+      pointer('pointermove', 45);
+
+      expect(fillVars().icons).toBe('3');
+      expect(fixture.componentInstance.value()).toBeNull();
+    });
+
+    it('previews along a drag and commits where the pointer is released', () => {
+      pointer('pointerdown', 10);
+      expect(fillVars().icons).toBe('1');
+
+      pointer('pointermove', 65);
+      expect(fillVars().icons).toBe('4');
+      expect(fixture.componentInstance.value()).toBeNull();
+
+      pointer('pointerup', 45);
+      expect(fixture.componentInstance.value()).toBe(3);
+    });
+
+    it('commits the pressed icon when the press is released without moving', () => {
+      pointer('pointerdown', 25);
+      pointer('pointerup', 25);
+
+      expect(fixture.componentInstance.value()).toBe(2);
+    });
+
+    it('commits nothing and drops the preview when the browser takes the drag away', () => {
+      pointer('pointerdown', 10);
+      pointer('pointermove', 65);
+      pointer('pointercancel', 65);
+
+      expect(fixture.componentInstance.value()).toBeNull();
+      expect(fillVars().icons).toBe('0');
+
+      // the gesture is over - later moves preview again instead of extending it
+      pointer('pointermove', 25);
+      expect(fillVars().icons).toBe('2');
+    });
+
+    it('ignores a secondary-button press', () => {
+      surface().dispatchEvent(new PointerEvent('pointerdown', { clientX: 45, bubbles: true, button: 2 }));
+      fixture.detectChanges();
+      pointer('pointerup', 45);
+
+      expect(fixture.componentInstance.value()).toBeNull();
+    });
+  });
+
   it('ignores interaction while disabled or readonly', () => {
     fixture.componentInstance.disabled.set(true);
     fixture.detectChanges();

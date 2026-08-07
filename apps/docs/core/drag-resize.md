@@ -11,7 +11,7 @@ Pointer-gesture primitives: a drag handle directive and a resize handles compone
   (dragTapped)="toggle()"
   (dragStarted)="beginDrag($event)"
   (dragMoved)="updateDrag($event)"
-  (dragEnded)="finishDrag()"
+  (dragEnded)="finishDrag($event)"
   (dragCancelled)="revertDrag()"
   etDragHandle
 ></div>
@@ -31,7 +31,7 @@ import { DragHandleDirective } from '@ethlete/core';
 | `dragTapped`    | `void`                                                 | Released without ever crossing the threshold.           |
 | `dragStarted`   | `{ clientX, clientY }`                                 | Threshold crossed (position is the pointerdown origin). |
 | `dragMoved`     | `{ stepX, stepY, clientX, clientY, totalDx, totalDy }` | Every pointer move while dragging.                      |
-| `dragEnded`     | `void`                                                 | Released after a committed drag.                        |
+| `dragEnded`     | `{ clientX, clientY, totalDx, totalDy }`               | Released after a committed drag (position at release).  |
 | `dragCancelled` | `void`                                                 | The browser took the gesture away mid-drag.             |
 
 **Handle `dragCancelled`.** The browser cancels a gesture it decides it owns - a system back/home gesture, an incoming call, the tab going to the background - and the user never let go, so there is no position they chose: revert to where the drag started. A consumer that only listens to `dragEnded` gets no terminating event at all on that path and stays stuck mid-drag; one that treats a cancel as a drop commits a move the user did not make. `dragTapped` is likewise not emitted for a press the browser cancelled below the threshold.

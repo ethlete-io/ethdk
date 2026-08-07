@@ -16,12 +16,31 @@ export type DragMoveEvent = {
   readonly totalDy: number;
 };
 
+export type DragEndEvent = {
+  /** Pointer position at release - the last move can lag it by a frame of movement. */
+  readonly clientX: number;
+  readonly clientY: number;
+  /** Cumulative delta from the pointerdown position. */
+  readonly totalDx: number;
+  readonly totalDy: number;
+};
+
 export type DragGestureEvent =
   | { readonly type: 'tapped' }
   | { readonly type: 'start'; readonly data: DragStartEvent }
   | { readonly type: 'move'; readonly data: DragMoveEvent }
-  | { readonly type: 'end' }
+  | { readonly type: 'end'; readonly data: DragEndEvent }
   | { readonly type: 'cancelled' };
+
+// jsdom and other non-browser DOMs ship no pointer capture; the document listeners track the
+// gesture either way, so a failure here only costs events over a cross-origin frame.
+const capturePointer = (el: HTMLElement, pointerId: number) => {
+  try {
+    el.setPointerCapture(pointerId);
+  } catch {
+    return;
+  }
+};
 
 const setupDragObservable = (
   startEvent: PointerEvent,
@@ -31,6 +50,8 @@ const setupDragObservable = (
   const { pointerId, clientX: startX, clientY: startY } = startEvent;
 
   let cancelled = false;
+  let endX = startX;
+  let endY = startY;
 
   const end$ = merge(
     fromEvent<PointerEvent>(document, 'pointerup'),
@@ -39,7 +60,11 @@ const setupDragObservable = (
     filter((e) => e.pointerId === pointerId),
     take(1),
     // Read below by the terminating `defer`, which only runs once this has completed the moves.
-    tap((e) => (cancelled = e.type === 'pointercancel')),
+    tap((e) => {
+      cancelled = e.type === 'pointercancel';
+      endX = e.clientX;
+      endY = e.clientY;
+    }),
   );
 
   let lastX = startX;
@@ -54,7 +79,7 @@ const setupDragObservable = (
           return EMPTY;
         }
         committed = true;
-        el.setPointerCapture(pointerId);
+        capturePointer(el, pointerId);
         lastX = e.clientX;
         lastY = e.clientY;
         // Emit the catch-up move together with start so consumers snap to the pointer
@@ -98,8 +123,12 @@ const setupDragObservable = (
     moves$,
     defer((): Observable<DragGestureEvent> => {
       if (cancelled) return of({ type: 'cancelled' as const });
+      if (!committed) return of({ type: 'tapped' as const });
 
-      return of(committed ? { type: 'end' as const } : { type: 'tapped' as const });
+      return of({
+        type: 'end' as const,
+        data: { clientX: endX, clientY: endY, totalDx: endX - startX, totalDy: endY - startY },
+      });
     }),
   );
 };
@@ -108,8 +137,9 @@ const setupDragObservable = (
  * Observe one drag gesture, starting from a `pointerdown` on `element`.
  *
  * Emits `start` once the pointer has travelled `commitThreshold` px (so a click is not a drag),
- * immediately followed by a catch-up `move`, then a `move` per pointer move, and finally `end`. A
- * pointer released before crossing the threshold emits a single `tapped` instead. The stream
+ * immediately followed by a catch-up `move`, then a `move` per pointer move, and finally `end`
+ * carrying the release position. A pointer released before crossing the threshold emits a single
+ * `tapped` instead - its position is the `pointerdown` the caller already holds. The stream
  * completes with the gesture, so there is nothing to unsubscribe on the happy path.
  *
  * A gesture the browser takes away - a `pointercancel` from a system gesture, an incoming call, the

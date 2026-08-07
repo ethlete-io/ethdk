@@ -167,6 +167,7 @@ All of the behavior above lives in the headless tier - the default components on
 - Each thumb is a `role="slider"` element with `aria-valuemin`/`aria-valuemax`/`aria-valuenow`, an `aria-orientation` that follows the `orientation` input, and `aria-readonly`/`aria-disabled`/`aria-invalid` as applicable.
 - A single slider's thumb is labelled by the projected `et-label`; range thumbs get individual `aria-label`s (`startLabel`/`endLabel`).
 - Clicking or dragging anywhere on the track moves the nearest thumb (and focuses it); the drag captures the pointer, and touch scrolling on the other axis stays native (`touch-action: pan-y` horizontally, `pan-x` vertically).
+- A drag the browser takes away mid-gesture - a system back/home swipe, an incoming call, the tab going to the background - reverts the thumb to the value the press landed on. The user never released, so the position the pointer happened to be at is not one they chose.
 - Right-to-left contexts mirror a horizontal slider: positioning uses logical properties and the horizontal arrow keys follow the visual direction. A vertical slider is never mirrored.
 - Tick labels are `aria-hidden`. With `snapToMarks`, the current mark's label becomes the thumb's `aria-valuetext`.
 
