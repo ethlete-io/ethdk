@@ -1,16 +1,26 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, ViewEncapsulation } from '@angular/core';
 import { clearQueryDevtoolsTombstones, QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
-import { AnyQuery, QueryListFacet } from './query-devtools-types';
+import { AnyQuery, QueryListFacet, QueryStatus } from './query-devtools-types';
+
+/** One query as the Queries list renders it: the registry entry plus the handle it was registered with. */
+type QueryRow = { entry: QueryDevtoolsEntry; query: AnyQuery };
+
+/**
+ * Rows the list folds into one line. `head` is the row the collapsed line renders from - every row in
+ * `items` looks the same, which is what put them in one group.
+ */
+type QueryRowGroup = { key: string; head: QueryRow; items: QueryRow[] };
 
 /** The Queries tab: every registered query, filterable by client/search/status, with an inline detail. */
 @Component({
   selector: 'et-query-devtools-queries-tab',
   templateUrl: './query-devtools-queries-tab.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [QueryDevtoolsDetailComponent, QueryDevtoolsRouteComponent],
+  imports: [NgTemplateOutlet, QueryDevtoolsDetailComponent, QueryDevtoolsRouteComponent],
 })
 export class QueryDevtoolsQueriesTabComponent {
   protected host = injectQueryDevtoolsHost();
@@ -82,6 +92,34 @@ export class QueryDevtoolsQueriesTabComponent {
     return this.pinnedFirst(items);
   });
 
+  /**
+   * The list as it is rendered: rows that would be indistinguishable from each other - same method, same
+   * resolved route, same live-or-gone - folded into one group. One query used by several consumers is one
+   * entry per consumer by design (the ids have to stay per-instance for the detail, pins and tombstones),
+   * and this is where that stops being N identical lines.
+   *
+   * Grouping on what the row *shows* rather than on the registry's descriptor is deliberate: the
+   * descriptor is the route template, so `/post/1` and `/post/2` share it while being different data.
+   * Folding only what looks the same can never hide a distinction the list was making.
+   */
+  protected queryGroups = computed(() => {
+    const groups = new Map<string, QueryRowGroup>();
+
+    for (const item of this.filteredQueries()) {
+      const key = this.groupKey(item);
+      const group = groups.get(key);
+
+      if (group) {
+        group.items.push(item);
+        continue;
+      }
+
+      groups.set(key, { key, head: item, items: [item] });
+    }
+
+    return [...groups.values()];
+  });
+
   /** How many queries the list would hold with the search box empty, which is what the count compares to. */
   protected scopedQueryCount = computed(() => {
     const facets = this.host.queryFacets();
@@ -98,6 +136,36 @@ export class QueryDevtoolsQueriesTabComponent {
 
   /** Whether the search box or a status chip is narrowing the list beyond its scope. */
   protected isQueryListNarrowed = computed(() => !!this.host.queryFilter().trim() || this.host.queryFacets().size > 0);
+
+  /** The worst state in a folded group, so a collapsed row cannot hide the one instance that is failing. */
+  protected groupStatus(group: QueryRowGroup): QueryStatus {
+    const statuses = group.items.map((item) => this.host.queryStatus(item.query));
+
+    if (statuses.includes('error')) return 'error';
+    if (statuses.includes('loading')) return 'loading';
+    if (statuses.includes('success')) return 'success';
+
+    return 'idle';
+  }
+
+  protected isGroupStale(group: QueryRowGroup) {
+    return group.items.some((item) => this.host.isStale(item.query));
+  }
+
+  protected isGroupTampered(group: QueryRowGroup) {
+    return group.items.some((item) => this.host.isTampered(item.entry));
+  }
+
+  /**
+   * A group opens when the user opens it, and always while it holds the selected query - a detail pane
+   * showing a query with no row to match it reads as the list having lost it.
+   */
+  protected isGroupExpanded(group: QueryRowGroup) {
+    return (
+      this.host.expandedQueryGroups().has(group.key) ||
+      group.items.some((item) => item.entry.id === this.host.selectedQueryId())
+    );
+  }
 
   protected forgetGoneQueries() {
     clearQueryDevtoolsTombstones(this.listedGoneQueries().map((item) => item.entry.id));
@@ -121,7 +189,7 @@ export class QueryDevtoolsQueriesTabComponent {
    * Pinned queries first, everything else left in registration order. A chip could not do this job:
    * {@link matchesFacets} widens, so a Pinned chip would mean "pinned or failing" and never both.
    */
-  private pinnedFirst(items: { entry: QueryDevtoolsEntry; query: AnyQuery }[]) {
+  private pinnedFirst(items: QueryRow[]) {
     if (!this.host.pinnedQueryIds().size) return items;
 
     // Copied first: `items` is a computed's cached array, and `sort` is in place.
@@ -131,7 +199,7 @@ export class QueryDevtoolsQueriesTabComponent {
   }
 
   /** A live query matches the chips if it is in any of the picked states - chips widen, they don't intersect. */
-  private matchesFacets(item: { entry: QueryDevtoolsEntry; query: AnyQuery }, facets: ReadonlySet<QueryListFacet>) {
+  private matchesFacets(item: QueryRow, facets: ReadonlySet<QueryListFacet>) {
     const status = this.host.queryStatus(item.query);
 
     return (
@@ -140,6 +208,16 @@ export class QueryDevtoolsQueriesTabComponent {
       (facets.has('idle') && status === 'idle') ||
       (facets.has('stale') && this.host.isStale(item.query))
     );
+  }
+
+  /** What makes two rows indistinguishable on screen. A tombstone never folds into a live query. */
+  private groupKey(item: QueryRow) {
+    const route = this.host
+      .routeSegments(item.entry, item.query)
+      .map((segment) => segment.text)
+      .join('');
+
+    return `${item.entry.destroyedAt ? 'gone' : 'live'} ${item.entry.meta.method ?? ''} ${route}`;
   }
 
   /**

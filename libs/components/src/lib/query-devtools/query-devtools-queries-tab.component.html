@@ -101,13 +101,90 @@
       </div>
     </div>
 
-    @for (item of filteredQueries(); track item.entry.id) {
+    @for (group of queryGroups(); track group.key) {
+      @if (group.items.length === 1) {
+        <ng-container [ngTemplateOutlet]="queryRow" [ngTemplateOutletContext]="{ item: group.head }" />
+      } @else {
+        @let expanded = isGroupExpanded(group);
+        @let head = group.head;
+        @let groupGone = !!head.entry.destroyedAt;
+        <div class="et-query-devtools-row et-query-devtools-row--group">
+          <button
+            [attr.aria-expanded]="expanded"
+            [title]="
+              (expanded ? 'Collapse' : 'Expand') +
+              ' the ' +
+              group.items.length +
+              ' consumers of this query - one registry entry each'
+            "
+            (click)="host.toggleQueryGroup(group.key)"
+            class="et-query-devtools-row-select"
+            type="button"
+          >
+            <span class="et-query-devtools-row-caret" aria-hidden="true">{{ expanded ? '▾' : '▸' }}</span>
+            <span
+              [attr.data-status]="groupGone ? null : groupStatus(group)"
+              [title]="groupGone ? 'destroyed' : groupStatus(group)"
+              class="et-query-devtools-status"
+            ></span>
+            <span class="et-query-devtools-method">{{ head.entry.meta.method }}</span>
+            <span class="et-query-devtools-route">
+              <et-query-devtools-route [segments]="host.routeSegments(head.entry, head.query)" />
+            </span>
+            @if (groupGone) {
+              <span
+                class="et-query-devtools-chip et-query-devtools-chip--muted"
+                title="These queries no longer exist - what you see is the last state they held, frozen"
+              >
+                gone
+              </span>
+            }
+            @if (!groupGone && isGroupStale(group)) {
+              <span class="et-query-devtools-chip et-query-devtools-chip--muted">stale</span>
+            }
+            @if (isGroupTampered(group)) {
+              <span
+                class="et-query-devtools-chip et-query-devtools-chip--error"
+                title="At least one of these is showing an armed response override or a devtools-injected failure"
+              >
+                tampered
+              </span>
+            }
+            <span class="et-query-devtools-row-count">×{{ group.items.length }}</span>
+          </button>
+        </div>
+        @if (expanded) {
+          @for (item of group.items; track item.entry.id) {
+            <ng-container [ngTemplateOutlet]="queryRow" [ngTemplateOutletContext]="{ item, nested: true }" />
+          }
+        }
+      }
+    } @empty {
+      <!-- An empty scope is a different problem from a filter that matches nothing, and only the
+           latter is the user's own doing - so it names the way out. -->
+      @if (scopedQueryCount()) {
+        <p class="et-query-devtools-empty">No query matches the filter · {{ scopedQueryCount() }} in scope.</p>
+      } @else if (goneQueryCount()) {
+        <p class="et-query-devtools-empty">
+          No query in scope still exists · pick Gone to list the {{ goneQueryCount() }} destroyed.
+        </p>
+      } @else if (host.inspectFilterIds()) {
+        <p class="et-query-devtools-empty">
+          The inspected element's queries are no longer registered. Clear the filter.
+        </p>
+      } @else {
+        <p class="et-query-devtools-empty">No queries registered.</p>
+      }
+    }
+
+    <ng-template #queryRow let-item="item" let-nested="nested">
       @let isGone = !!item.entry.destroyedAt;
       @let isPinned = host.isQueryPinned(item.entry);
       @let pinLabel = isPinned ? 'Unpin this query' : 'Pin this query to the top of the list';
       <div
         [class.et-query-devtools-row--active]="host.selectedQueryId() === item.entry.id"
         [class.et-query-devtools-row--gone]="isGone"
+        [class.et-query-devtools-row--nested]="nested"
         class="et-query-devtools-row"
       >
         <button (click)="host.selectedQueryId.set(item.entry.id)" class="et-query-devtools-row-select" type="button">
@@ -163,23 +240,7 @@
           <span aria-hidden="true">{{ isPinned ? '★' : '☆' }}</span>
         </button>
       </div>
-    } @empty {
-      <!-- An empty scope is a different problem from a filter that matches nothing, and only the
-           latter is the user's own doing - so it names the way out. -->
-      @if (scopedQueryCount()) {
-        <p class="et-query-devtools-empty">No query matches the filter · {{ scopedQueryCount() }} in scope.</p>
-      } @else if (goneQueryCount()) {
-        <p class="et-query-devtools-empty">
-          No query in scope still exists · pick Gone to list the {{ goneQueryCount() }} destroyed.
-        </p>
-      } @else if (host.inspectFilterIds()) {
-        <p class="et-query-devtools-empty">
-          The inspected element's queries are no longer registered. Clear the filter.
-        </p>
-      } @else {
-        <p class="et-query-devtools-empty">No queries registered.</p>
-      }
-    }
+    </ng-template>
   </div>
 
   <div

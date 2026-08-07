@@ -138,6 +138,7 @@ type PersistedState = {
   socketFilter?: string;
   jsonSearch?: string;
   expandedSteps?: string[];
+  expandedQueryGroups?: string[];
   jsonExpanded?: string[];
   jsonCollapsed?: string[];
 };
@@ -546,6 +547,9 @@ export class QueryDevtoolsComponent {
   /** Keys (`<entryId>:<stepIndex>`) of the sequence steps whose in/out detail is expanded. */
   private expandedSteps = signal<ReadonlySet<string>>(new Set(this.persisted.expandedSteps ?? []));
 
+  /** Keys of the Queries-list groups the user opened - the tab is rebuilt on every switch back. */
+  public expandedQueryGroups = signal<ReadonlySet<string>>(new Set(this.persisted.expandedQueryGroups ?? []));
+
   /** Shared value-explorer search term. */
   public jsonSearch = signal(this.persisted.jsonSearch ?? '');
   public jsonSearchTerm = computed(() => this.jsonSearch().trim().toLowerCase());
@@ -907,6 +911,7 @@ export class QueryDevtoolsComponent {
         socketFilter: this.socketFilter(),
         jsonSearch: this.jsonSearch(),
         expandedSteps: [...this.expandedSteps()],
+        expandedQueryGroups: [...this.expandedQueryGroups()],
         jsonExpanded: [...this.jsonExpandedPaths()],
         jsonCollapsed: [...this.jsonCollapsedPaths()],
       };
@@ -2040,6 +2045,16 @@ export class QueryDevtoolsComponent {
   /** The snapshot of a sequence step, once it has run (holds the args in and the response/error out). */
   public stepSnapshot(sequence: QuerySequence<unknown[]>, index: number): AnyQuerySnapshot | null {
     return sequence.snapshots()[index] ?? null;
+  }
+
+  public toggleQueryGroup(key: string) {
+    const next = new Set(this.expandedQueryGroups());
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    this.expandedQueryGroups.set(next);
   }
 
   public isStepExpanded(entryId: string, index: number) {

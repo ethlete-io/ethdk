@@ -152,6 +152,9 @@ export type QueryDevtoolsHost = {
   /** Whether a sequence step's in/out detail (`<entryId>:<stepIndex>`) is expanded - persisted. */
   isStepExpanded(entryId: string, index: number): boolean;
   toggleStep(entryId: string, index: number): void;
+  /** Keys of the Queries-list groups of identical rows the user opened - persisted. */
+  expandedQueryGroups: Signal<ReadonlySet<string>>;
+  toggleQueryGroup(key: string): void;
   resetStats(entry: QueryDevtoolsEntry): void;
   executeQuery(selection: QueryDevtoolsSelection, allowCache: boolean): void;
   resetQuery(query: AnyQuery): void;

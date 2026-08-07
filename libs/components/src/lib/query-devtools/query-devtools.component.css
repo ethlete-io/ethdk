@@ -863,6 +863,33 @@
     color: var(--_et-qdt-muted);
   }
 
+  /* The caret column is what an instance row indents past, so the two line up under their group head. */
+  .et-query-devtools-row-caret {
+    flex: 0 0 auto;
+    inline-size: 1rem;
+    color: var(--_et-qdt-subtle);
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .et-query-devtools-row--nested > .et-query-devtools-row-select {
+    padding-inline-start: 2.6rem;
+  }
+
+  /* Half of `--_et-qdt-hover`, so a group head still reads as a header of its own but the row's real
+     hover (which is the full mix) stays visible on top of it. */
+  .et-query-devtools-row--group {
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
+  }
+
+  .et-query-devtools-row-count {
+    flex: 0 0 auto;
+    margin-inline-start: auto;
+    color: var(--_et-qdt-subtle);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.1rem;
+  }
+
   .et-query-devtools-dropped {
     display: flex;
     flex-direction: column;

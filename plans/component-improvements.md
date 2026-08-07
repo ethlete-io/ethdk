@@ -326,34 +326,6 @@ semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
   messages vs. banner's single description paragraph) and the retry-button-
   only-if-`canRetry` conditional.
 
-## Query devtools: the Queries list repeats the same query
-
-Noted from real use 2026-08-07. The Queries tab lists the same query two or more times,
-because the same query gets used by several consumers in one rendered context and the
-registry keeps **one entry per instance** - `registerEntry` derives ids from a descriptor
-(`query|<client>|<method>|<route>`) plus a per-descriptor counter, so N instances of the
-same route are N rows by design. The list is what should hide that, not the registry: the
-ids have to stay one-per-instance for the detail pane, pinning, tombstones and
-reload-restore to keep working.
-
-Proposal to evaluate: a **"network only" chip, on by default**, leaving only the instances
-that actually issued a request - so the repeats that only read a shared cache entry drop
-out of the default view, and the chip can be turned off to see every consumer. Two things
-to settle first:
-
-- **There is no per-entry "did this instance request" flag today.** No `fromCache` /
-  request-count lives on `QueryDevtoolsEntry`; the closest signals are the event log's
-  `request-success` / `request-error` events and `query-devtools-stats.ts`'s response
-  history. Whether an instance can be attributed cheaply and reliably decides if this is
-  `S` or bigger.
-- **Every existing chip widens** (`matchesFacets` is an OR, and the counts are computed
-  before the active chips apply). A default-on chip that _narrows_ is a different kind of
-  control - it likely wants to sit apart from the status chips rather than join them, and
-  `isQueryListNarrowed` / `scopedQueryCount` have to keep telling the truth about a list
-  that is narrowed before the user touches anything. Alternative worth weighing: collapse
-  same-descriptor rows into one row with an instance count, which needs no new signal at
-  all and loses nothing.
-
 ## Query devtools: timestamp the Queries list, and let it be sorted
 
 Requested 2026-08-07. A row carries a status dot, the method and the route - and no time at
@@ -1415,6 +1387,21 @@ Query pass 2 (2026-08-07):
   says it is counted on the last announce. Changesets `auth-multi-tab-leadership-field.md` and
   `devtools-auth-leadership-chip.md`; two unit tests; verified headlessly 12/12 across **two real
   browser tabs**, including the follower's promotion when the leader closes.
+
+- **Query devtools: the Queries list repeats the same query** (was its own section) - the user picked
+  **collapse over the "network only" chip**, so no new signal was needed. Rows fold on **what the row
+  shows** (live-or-gone + method + resolved route), deliberately _not_ on the registry descriptor the
+  section pointed at: that descriptor is the route template, so `/post/1` and `/post/2` share it and
+  folding on it would have hidden real data. Folding only identical-looking rows cannot hide a
+  distinction the list was making. A group head reports the **worst** state among its members and
+  carries `stale`/`tampered` if any does, and it stays open while it holds the selected query - a
+  detail pane with no matching row reads as the list having lost it. `expandedQueryGroups` is on the
+  host and persisted, because the tab component is destroyed on every tab switch. The section's other
+  worry - that the counts would start lying - did not apply: the toolbar count still counts queries,
+  not lines. Two lint traps on the way: `ethlete/class-member-order` (methods after properties) and
+  `ethlete/no-trivial-wrapper-method`, which is why the host exposes the `expandedQueryGroups` signal
+  rather than an `isQueryGroupExpanded(key)` forwarder. Changeset
+  `devtools-fold-identical-query-rows.md`. Verified headlessly: 22/22, three real groups in the demo.
 
 Found not to reproduce:
 

@@ -151,6 +151,34 @@ only while **Gone** is on - and **Clear filters** drops the term and the chips w
 keeping the client scope. The [Insomnia download](#export-to-insomnia) exports
 whatever is listed, so these filters pick what ends up in the collection.
 
+### Rows that would repeat are folded
+
+One query used by several components is **one registry entry per component** - that is
+what makes the detail pane, pinning and tombstones work per instance - so a list in
+registration order shows the same line once per consumer. Three cards reading the same
+endpoint is three identical rows, and none of them says which is which.
+
+Rows that would be indistinguishable fold into one, with the instance count at the end:
+
+```
+▸ POST /posts                            ×3
+```
+
+Click it to expand; the members appear indented underneath and each behaves exactly as a
+row always did - select it, pin it, read its own detail. The **group is folded on what the
+row shows**, not on the query creator, so `/post/1` and `/post/2` stay two lines: folding
+can never hide a distinction the list was already making. A tombstone never folds into a
+live query either.
+
+The collapsed line reports the **worst** state in the group - if one of three instances is
+failing, the folded row is the failing dot - and carries **stale** or **tampered** if any
+member does. A group holding the selected query stays open regardless, so the detail pane
+can never show a query with no row to match it. Which groups you opened is
+[persisted](#persistence).
+
+The count beside the client picker still counts **queries**, not lines, so `19` with
+fourteen rows on screen is the list telling you it folded five.
+
 ### Pinning the query you are working on
 
 Narrowing is not prioritising. The list is in registration order end to end, so the
@@ -1043,7 +1071,8 @@ active tab, the query detail's
 query, inspect filter, the query filter term and status chips, the
 [event log's](#events-what-each-request-cost) client scope and errors-only toggle,
 the [socket message filter](#sockets-both-directions-and-an-emit-box), value-explorer
-search and expanded tree paths - is
+search and expanded tree paths, and which
+[folded query groups](#rows-that-would-repeat-are-folded) are open - is
 persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives a
 page reload within the tab session without leaking devtools state across sessions.
 (Restoring the selected query relies on registry ids being stable across reloads,

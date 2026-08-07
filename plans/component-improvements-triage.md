@@ -99,7 +99,6 @@ Ranked by value per unit of risk, not by size.
 | Grid: assert breakpoint coverage in the dev check        | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                           |
 | Filter overlay story: demo dressing                      | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                       |
 | Auth: `shouldAutoLogin` predicate                        | `A`     | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                                                    |
-| Query devtools: stop the Queries list repeating          | `A`     | One row per query _instance_ is by design; the list should collapse or hide the repeats                                    |
 | Query devtools: locate the selected query                | `A`     | Inspect backwards - `entry.meta.element` is already there, and works in a prod build                                       |
 | Query devtools: timestamp + sort the Queries list        | `A`,`D` | `createdAt` and `lastTimeExecutedAt()` both exist unrendered; pick one, keep `pinnedFirst` above the sort                  |
 | Query devtools: History diff needs no scrolling          | `A`     | Only 5 runs can ever hold a body - fold the bodiless tail, step the pair from the diff header                              |
