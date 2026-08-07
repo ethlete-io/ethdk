@@ -218,7 +218,7 @@ A strategy's default enter/leave animation ships with the strategy rather than w
 
 The consequence is for hand-rolled strategies: an overlay that sets a layout `containerClass` of its own (instead of composing a built-in factory) gets no default animation unless it points `stylesComponent` at a styles-only component of its own - a `@Component` with an empty template, `ViewEncapsulation.None` and the animation rules in its `styleUrl`.
 
-`anchoredDialogOverlayStrategy` **fades only** - no scale, no slide. A scale-from-origin animation reads as the origin morphing into the pane, which is not what an anchored dialog does: it appears beside its origin and stays a separate surface. The strategies that _do_ morph (the full-screen dialog) keep theirs, and so `applyTransformOrigin` defaults to `false` on the anchored dialog - set it back to `true` only if your own `containerClass` stylesheet consumes the `--origin-scale-*` / `--origin-translate-*` custom properties it computes.
+`anchoredDialogOverlayStrategy` enters and leaves with the same scale-and-fade the plain dialog uses, but around a `transform-origin` set to the origin element's center - so the pane grows out of its trigger without ever taking the trigger's dimensions. Scaling _to the origin's width and height_ reads as the trigger morphing into the pane, which is what the full-screen dialog does and an anchored dialog does not: it appears beside its origin and stays a separate surface. `applyTransformOrigin` (default `true`) is what computes and writes that origin point; set it to `false` to scale from the pane's own center instead.
 
 ### Drag-to-dismiss direction
 

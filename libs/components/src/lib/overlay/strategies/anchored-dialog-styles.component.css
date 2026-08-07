@@ -1,15 +1,50 @@
 @layer components {
   .et-overlay.et-with-default-animation {
     &.et-overlay--anchored-dialog {
-      /* no transform of its own - the anchored position strategy writes the pane's transform inline */
-      &.et-animation-enter-from,
-      &.et-animation-leave-to {
+      /* composes the floating-ui anchor position, which the position strategy writes as custom properties */
+      &.et-animation-enter-from {
+        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) scale(0.85) !important;
         opacity: 0;
       }
 
-      &.et-animation-enter-active,
+      &.et-animation-leave-to {
+        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) scale(0.7) !important;
+        opacity: 0;
+      }
+
+      &.et-animation-enter-active {
+        transition:
+          transform 300ms var(--ease-out-5),
+          opacity 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition:
+            transform 300ms var(--ease-spring-2),
+            opacity 300ms var(--ease-out-5);
+        }
+      }
+
       &.et-animation-leave-active {
-        transition: opacity 150ms linear;
+        transition:
+          transform 150ms var(--ease-out-5),
+          opacity 150ms var(--ease-out-5);
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-overlay--anchored-dialog {
+      &.et-animation-enter-active {
+        transition: opacity 300ms var(--ease-out-5);
+      }
+
+      &.et-animation-leave-active {
+        transition: opacity 150ms var(--ease-out-5);
+      }
+
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
       }
     }
   }

@@ -38,7 +38,7 @@ const ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootPr
     containerClass: 'et-overlay--anchored-dialog',
     stylesComponent: AnchoredDialogStylesComponent,
     positionStrategy: /* @__PURE__ */ buildAnchoredRuntimePositionStrategy(DEFAULT_ANCHORED_DIALOG_POSITION),
-    applyTransformOrigin: false,
+    applyTransformOrigin: true,
     arrow: true,
     hasBackdrop: false,
   },
@@ -58,28 +58,13 @@ const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
     const build = (config: Partial<OverlayBreakpointConfig> = {}): OverlayStrategy => {
       const cfg = mergeOverlayBreakpointConfigs(defaults, config);
 
-      const applyOriginTransformProperties = (context: OverlayStrategyContext, originElement: HTMLElement) => {
+      // must run while the pane is untransformed - both hooks are called before the enter/leave classes land
+      const applyOriginTransformOrigin = (context: OverlayStrategyContext, origin: { x: number; y: number }) => {
         const { containerEl } = context;
-        const originRect = originElement.getBoundingClientRect();
         const overlayRect = containerEl.getBoundingClientRect();
 
-        const scaleX = originRect.width / overlayRect.width;
-        const scaleY = originRect.height / overlayRect.height;
-
-        const originCenterX = originRect.left + originRect.width / 2;
-        const originCenterY = originRect.top + originRect.height / 2;
-
-        const overlayCenterX = overlayRect.left + overlayRect.width / 2;
-        const overlayCenterY = overlayRect.top + overlayRect.height / 2;
-
-        const translateX = originCenterX - overlayCenterX;
-        const translateY = originCenterY - overlayCenterY;
-
-        renderer.setCssProperties(containerEl, {
-          '--origin-scale-x': `${scaleX}`,
-          '--origin-scale-y': `${scaleY}`,
-          '--origin-translate-x': `${translateX}px`,
-          '--origin-translate-y': `${translateY}px`,
+        renderer.setStyle(containerEl, {
+          transformOrigin: `${origin.x - overlayRect.left}px ${origin.y - overlayRect.top}px`,
         });
       };
 
@@ -101,8 +86,7 @@ const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
-          applyOriginTransformProperties(context, originData.element);
-          renderer.setStyle(context.containerEl, { transformOrigin: 'center center' });
+          applyOriginTransformOrigin(context, originData);
 
           forceReflow(context.containerEl);
 
@@ -112,16 +96,7 @@ const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
         },
 
         onSwitchedAwayFrom: (context) => {
-          const { containerEl } = context;
-
-          renderer.setCssProperties(containerEl, {
-            '--origin-scale-x': null,
-            '--origin-scale-y': null,
-            '--origin-translate-x': null,
-            '--origin-translate-y': null,
-          });
-
-          renderer.setStyle(containerEl, { transformOrigin: null });
+          renderer.setStyle(context.containerEl, { transformOrigin: null });
         },
 
         onBeforeLeave: (context) => {
@@ -138,7 +113,7 @@ const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
-          applyOriginTransformProperties(context, originData.element);
+          applyOriginTransformOrigin(context, originData);
           context.lifecycle.leave();
         },
       };
