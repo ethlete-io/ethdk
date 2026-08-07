@@ -61,6 +61,18 @@
           placeholder="filter method / route / url…"
           aria-label="Filter queries"
         />
+        @let recentFirst = host.queryRecentFirst();
+        <button
+          [title]="
+            (recentFirst ? 'Newest run first.' : 'Oldest run first.') +
+            ' Click to reverse. Queries that have never run stay at the bottom either way.'
+          "
+          (click)="host.queryRecentFirst.set(!recentFirst)"
+          class="et-query-devtools-btn et-query-devtools-sort"
+          type="button"
+        >
+          recent <span aria-hidden="true">{{ recentFirst ? '↓' : '↑' }}</span>
+        </button>
         @for (facet of facets; track facet.id) {
           @let count = facetCounts()[facet.id];
           @let isActive = host.queryFacets().has(facet.id);
@@ -150,6 +162,7 @@
                 tampered
               </span>
             }
+            <span class="et-query-devtools-row-time">{{ host.formatTime(lastExecutedAt(head)) }}</span>
             <span class="et-query-devtools-row-count">×{{ group.items.length }}</span>
           </button>
         </div>
@@ -227,6 +240,7 @@
               tampered
             </span>
           }
+          <span class="et-query-devtools-row-time">{{ host.formatTime(lastExecutedAt(item)) }}</span>
         </button>
         <button
           [class.et-query-devtools-row-pin--active]="isPinned"

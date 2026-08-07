@@ -151,6 +151,40 @@ only while **Gone** is on - and **Clear filters** drops the term and the chips w
 keeping the client scope. The [Insomnia download](#export-to-insomnia) exports
 whatever is listed, so these filters pick what ends up in the collection.
 
+### When each query last ran
+
+Every row ends with the time of its **last run**, absolute and 24-hour (`14:22:07`), and the
+list is sorted by it - **newest first** by default, so the query that just ran is at the top.
+A query that has never executed reads `-`.
+
+The control beside the search box shows the direction rather than implying it, and clicking
+it reverses:
+
+```
+recent ↓     newest run first
+recent ↑     oldest run first
+```
+
+Only the direction is switchable. The field is not, because "which one just ran" is the
+question the column exists to answer - and `createdAt` ascending is what the list already did
+before it had a column at all.
+
+Queries that have **never run** sink to the bottom in _both_ directions. They have no place on
+a time axis, and flipping the arrow must not turn the list into the queries that have not run
+yet. A [tombstone](#a-destroyed-query-leaves-a-tombstone) keeps the time it was frozen at, and
+falls back to when it was destroyed, so gone entries stay ordered among themselves rather than
+piling up with the never-run ones.
+
+[Pins](#pinning-the-query-you-are-working-on) still sit above the sort - the sort orders within
+the pinned and unpinned groups, it does not replace them. The direction is
+[persisted](#persistence).
+
+::: tip
+The column is absolute, not `12s ago`. A relative column needs a ticking signal re-rendering
+every row once a second; the two `Ns ago` strings elsewhere in the panel avoid that by only
+being computed when they are read.
+:::
+
 ### Rows that would repeat are folded
 
 One query used by several components is **one registry entry per component** - that is
@@ -175,6 +209,9 @@ failing, the folded row is the failing dot - and carries **stale** or **tampered
 member does. A group holding the selected query stays open regardless, so the detail pane
 can never show a query with no row to match it. Which groups you opened is
 [persisted](#persistence).
+
+A folded row carries [the time](#when-each-query-last-ran) of the member that placed it -
+the newest of the group under `recent ↓`, the oldest under `recent ↑` - followed by the count.
 
 The count beside the client picker still counts **queries**, not lines, so `19` with
 fourteen rows on screen is the list telling you it folded five.
@@ -1083,7 +1120,8 @@ active tab, the query detail's
 query, inspect filter, the query filter term and status chips, the
 [event log's](#events-what-each-request-cost) client scope and errors-only toggle,
 the [socket message filter](#sockets-both-directions-and-an-emit-box), value-explorer
-search and expanded tree paths, and which
+search and expanded tree paths, the
+[Queries list's sort direction](#when-each-query-last-ran) and which
 [folded query groups](#rows-that-would-repeat-are-folded) are open - is
 persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives a
 page reload within the tab session without leaking devtools state across sessions.

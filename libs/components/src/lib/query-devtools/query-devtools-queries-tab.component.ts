@@ -89,7 +89,7 @@ export class QueryDevtoolsQueriesTabComponent {
         : !facets.size || this.matchesFacets(item, facets),
     );
 
-    return this.pinnedFirst(items);
+    return this.pinnedFirst(this.byLastExecuted(items));
   });
 
   /**
@@ -178,6 +178,14 @@ export class QueryDevtoolsQueriesTabComponent {
   }
 
   /**
+   * When a query last ran, or `null` for one that never has. A tombstone's is frozen at whatever it held
+   * when it died, so `destroyedAt` is the tiebreak that keeps gone entries ordered among themselves.
+   */
+  protected lastExecutedAt(item: QueryRow) {
+    return item.query.lastTimeExecutedAt() ?? item.entry.destroyedAt ?? null;
+  }
+
+  /**
    * A tombstone is the last state a query held, not a state it is in, so the list leaves one out unless the
    * Gone chip asks for it - or the detail is showing it, so a query dying under the detail keeps its row.
    */
@@ -186,7 +194,26 @@ export class QueryDevtoolsQueriesTabComponent {
   }
 
   /**
-   * Pinned queries first, everything else left in registration order. A chip could not do this job:
+   * Newest or oldest run first. A query that has **never** executed has no place on a time axis, so it
+   * sinks to the bottom in *both* directions rather than piling up at whichever end `null` sorts to -
+   * flipping the arrow must not turn the list into the queries that have not run yet.
+   */
+  private byLastExecuted(items: QueryRow[]) {
+    const recentFirst = this.host.queryRecentFirst();
+
+    // Copied first: `items` came out of a computed and `sort` is in place.
+    return items.slice().sort((a, b) => {
+      const left = this.lastExecutedAt(a);
+      const right = this.lastExecutedAt(b);
+
+      if (left === null || right === null) return Number(left === null) - Number(right === null);
+
+      return recentFirst ? right - left : left - right;
+    });
+  }
+
+  /**
+   * Pinned queries first, everything else in {@link byLastExecuted} order. A chip could not do this job:
    * {@link matchesFacets} widens, so a Pinned chip would mean "pinned or failing" and never both.
    */
   private pinnedFirst(items: QueryRow[]) {
@@ -217,7 +244,7 @@ export class QueryDevtoolsQueriesTabComponent {
       .map((segment) => segment.text)
       .join('');
 
-    return `${item.entry.destroyedAt ? 'gone' : 'live'} ${item.entry.meta.method ?? ''} ${route}`;
+    return `${item.entry.destroyedAt ? 'gone' : 'live'}|${item.entry.meta.method ?? ''}|${route}`;
   }
 
   /**

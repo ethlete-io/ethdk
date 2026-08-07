@@ -155,6 +155,8 @@ export type QueryDevtoolsHost = {
   /** Keys of the Queries-list groups of identical rows the user opened - persisted. */
   expandedQueryGroups: Signal<ReadonlySet<string>>;
   toggleQueryGroup(key: string): void;
+  /** Which way the Queries list sorts by last-executed time - persisted. */
+  queryRecentFirst: WritableSignal<boolean>;
   /** The element a query was created in, or `null` for one created outside a component/directive. */
   locatableElement(entry: QueryDevtoolsEntry): HTMLElement | null;
   locateQuery(entry: QueryDevtoolsEntry): void;

@@ -149,6 +149,7 @@ type PersistedState = {
   inspectFilterIds?: string[] | null;
   queryFilter?: string;
   queryFacets?: QueryListFacet[];
+  queryRecentFirst?: boolean;
   eventClient?: string | null;
   eventErrorsOnly?: boolean;
   socketFilter?: string;
@@ -532,6 +533,12 @@ export class QueryDevtoolsComponent {
 
   /** The status facets the Queries list is narrowed to. Empty means no status narrowing. */
   public queryFacets = signal<ReadonlySet<QueryListFacet>>(new Set(this.persisted.queryFacets ?? []));
+
+  /**
+   * Which way the Queries list sorts by last-executed time. Only the direction is switchable - the field
+   * is not, because "which one just ran" is the question the column exists to answer.
+   */
+  public queryRecentFirst = signal(this.persisted.queryRecentFirst ?? true);
 
   /**
    * The entry ids sorted to the top of the Queries list. Ids are derived from a stable descriptor plus a
@@ -953,6 +960,7 @@ export class QueryDevtoolsComponent {
         inspectFilterIds: this.inspectFilterIds(),
         queryFilter: this.queryFilter(),
         queryFacets: [...this.queryFacets()],
+        queryRecentFirst: this.queryRecentFirst(),
         eventClient: this.eventClient(),
         eventErrorsOnly: this.eventErrorsOnly(),
         socketFilter: this.socketFilter(),

@@ -326,168 +326,6 @@ semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
   messages vs. banner's single description paragraph) and the retry-button-
   only-if-`canRetry` conditional.
 
-## Query devtools: timestamp the Queries list, and let it be sorted
-
-Requested 2026-08-07. A row carries a status dot, the method and the route - and no time at
-all, so nothing in the list says which query is the one that just ran. Two things are asked
-for: a **timestamp per row**, and a **sort by it** whose direction can be flipped, with the
-direction the list is currently in visible rather than implied.
-
-**Both timestamps already exist and neither is rendered.** `registerEntry` stamps
-`createdAt: Date.now()` (`query-devtools-registry.ts`), `tombstoneOf` carries it onto the
-frozen copy along with `destroyedAt`, and the live query itself exposes
-`lastTimeExecutedAt()` - the detail head's copy-summary already prints it through
-`host.formatTime()`, which renders a 24h `HH:MM:SS`. So the row is a template edit plus a
-column in the grid CSS; the work is in the sort control and in the choices below.
-
-- **Which timestamp the column shows is the actual decision.** They diverge exactly when it
-  matters: a query registered at page load and executed a minute later sorts to opposite
-  ends of the list depending on the answer. `lastTimeExecutedAt` is what "which one just
-  ran" means, and it is the only one that moves while the panel is open - but it is `null`
-  for a registered-and-never-executed query, which then needs a resting place in the order
-  rather than a silent `-` at whichever end `null` happens to fall. Showing created and
-  sorting by last-executed is a defensible third answer; showing both columns is not, the
-  row is already tight at the narrow-viewport widths `paneAxis` reflows for.
-- **Sorting by `createdAt` ascending is already what the list does** - `entries` is
-  append-ordered and `filteredQueries` never reorders - so that option must not be sold as
-  a change. Descending, and last-executed in either direction, are the ones that do
-  something.
-- **Pins have to survive the sort.** `pinnedFirst()` runs last today and its own JSDoc
-  explains why a chip could not do that job; a sort that replaces it rather than feeding it
-  silently unpins the list. Sort within the two groups, keep pinned above.
-- **Tombstones stop moving.** A gone entry's `lastTimeExecutedAt` is frozen at whatever it
-  held when it died, so under a last-executed sort tombstones sink as live queries keep
-  running - which is arguably right, but it is a behaviour the Gone chip's users will see
-  and should be checked against `destroyedAt` as the tiebreak instead.
-- **Absolute, not relative.** `formatTime` is absolute and costs nothing; a `12s ago` column
-  needs a ticking signal driving a re-render of every row, which the two existing `Ns ago`
-  strings (the sync line, the hydration line) avoid by only being computed when read. Don't
-  add a timer to the list for this.
-- **Where the control goes.** The chip row is a set of OR-ing filters and this is not one -
-  the same reasoning that keeps a Pinned chip out. A small labelled control beside the
-  search box, printing the field and an arrow (`recent ↓`), satisfies "see the current
-  sorting" without a menu; whether the field is also switchable there or only the direction
-  is the last open question.
-
-## Query system: long polling
-
-Noted 2026-08-07. `@ethlete/query` has three ways to get fresh data and none of them is long
-polling: `withPolling` is a fixed `setInterval` clock (`query-features.ts`), `withAutoRefresh`
-re-executes when a signal changes, and websockets (`libs/query/src/lib/ws` + `withResponseUpdate`)
-push. Long polling is a fourth shape - the server holds the request open until something changes
-or its own timeout fires, and the client re-issues the moment it completes. **`setInterval`
-cannot express that**: a request open for 30-60s under a 5s interval stacks ticks, so this is a
-new feature, not an option on `withPolling`.
-
-What it needs, roughly in order of how much design each one wants:
-
-- **A completion-driven chain.** The next execution starts when the previous one _ends_ -
-  success, "nothing changed", or error - not on a clock. Nothing in the feature set chains off
-  completion today; the closest precedent for a chain of executions is `paged-query-stack.ts`.
-- **Next-args-from-last-response.** A long poll normally carries a cursor / `since` / etag from
-  the response into the following request. `withArgs` pulls args from a signal source and
-  `withResponseUpdate` writes the response back, but nothing derives the _next args_ from the
-  _last response_. This is the actual new primitive, and it is useful well beyond long polling.
-- **An empty cycle has to be a no-op.** A 204 / "nothing changed" must not overwrite the cached
-  response, must not move the cache entry's freshness, and must not re-render. Related: the
-  query has to stay out of a loading state across cycles, or a consumer shows a spinner for a
-  minute at a time - `state.loading` is bound straight to the live request, so a "background
-  poll" notion is needed for this to be usable in UI at all.
-- **Backoff vs. re-issue.** `withDefaultRetry` already retries connection failures indefinitely
-  and 5xx up to three times with a backing-off delay. Decide whether the chain sits above or
-  below that layer, so a dead server backs off instead of hot-looping - and so a normal
-  re-issue is not mistaken for a retry.
-- **No request timeout exists client-side.** I found no per-request timeout in the http layer,
-  so an abandoned long poll has nothing to cut it off. A client-side ceiling is new work.
-- **Multi-tab dedupe works differently.** `withPolling`'s Web Locks dedupe lets a follower tab
-  keep its interval and skip each tick. A chained long poll has no tick to skip - a follower has
-  to not open a request at all and take data through response sharing, so the hold logic in
-  `withPolling` is not reusable as-is.
-- **Devtools will misread it.** One cycle is an open request for up to a minute: the timeline
-  and stats would show it as a very slow request, and the events log grows an entry per cycle.
-  Both need to know a poll cycle is not a slow request.
-
-Positioning is worth writing down with it: websockets already exist and are the better answer
-when the infrastructure allows them. Long polling is the fallback when they don't - the docs
-should say which to reach for (`apps/docs/query/features.md` for the feature,
-`apps/docs/query/ws.md` for the socket side).
-
-## Query system: `withArgs`'s `CLEAR_QUERY_ARGS` sentinel
-
-Noted 2026-08-07. `withArgs` gives `null` and a symbol two different jobs, and picks the
-surprising assignment for each (`query-features.ts`): returning **`CLEAR_QUERY_ARGS` sets the
-args to `null`**, and returning **`null` keeps the previous args**. The intuitive line -
-`if (!id) return null` - compiles, reads like "no args yet", and does the opposite: the query
-keeps executing with the args it had.
-
-**The evidence says the keep-previous branch is dead weight.** Nothing in this repo returns
-`null` from a `withArgs` source, and neither does the consumer app - all three of its call
-sites, and every example in `apps/docs/query/`, are the same shape:
-`cond ? args : CLEAR_QUERY_ARGS`. The spec coverage for the symbol only asserts that it is a
-symbol. So the entire sentinel exists to distinguish a case everybody writes from one nobody
-writes.
-
-**Proposed direction: `null` means park, and the symbol goes away.** `withArgs` becomes
-`() => RequestArgs<TArgs> | null`, `null` resets the args (pausing polling and auto-refresh, as
-`CLEAR_QUERY_ARGS` does today), and keep-previous is dropped - or, if a real use case turns up,
-comes back as an explicitly named export rather than as the meaning of `null`.
-
-The migration is cheaper than it looks: `CLEAR_QUERY_ARGS` can be re-exported as a deprecated
-alias for `null`, so `cond ? args : CLEAR_QUERY_ARGS` keeps compiling _and_ keeps behaving
-identically. The only behaviour that changes is the keep-previous branch, which nothing uses -
-and it cannot be warned about at runtime, since `null` is a legitimate value either way. That
-makes it a minor with a deprecation, not a major, with the alias removal going on the checklist
-at the end of this file. The type also gets simpler: the `ClearQueryArgs` member drops out of
-the signature.
-
-Worth deciding at the same time, but separable: whether "not ready yet" belongs in the args
-source at all. `apps/docs/query/dependent-queries.md` shows it as the primary use of the
-sentinel, and an explicit gate (`withArgs` for data, a separate enabled/when predicate for
-whether the query may run) expresses it more directly. Under the `null`-means-park change the
-dependent-query example already reads correctly without one, so this is an addition to weigh on
-its own merits, not a prerequisite.
-
-## Query devtools: an optional nesting toggle for the Queries list
-
-Requested 2026-08-07 from a screenshot of a real app's list, where five consecutive rows all
-start `/partner/1-fc-koeln-female/opportunity/fc27/club-packs` and differ only in the last
-segment (`…/assets`, `…/email`, `…/graphics`). The prefix is most of the row's width and is
-re-read on every line. A **toggle** (flat list ↔ nested by path) would show each shared prefix
-once. Opt-in, defaulting to the flat list, because flat order carries information the tree
-destroys - see the ordering point below.
-
-Mechanics that decide whether this is small:
-
-- **Group on resolved path segments, not on `routeParts`.** `entry.meta.routeParts` chunks a
-  route into "literal text between params", so a chunk is `/partner/`, not one path segment. A
-  prefix tree needs a split on `/` that keeps each piece's `kind` (`static` / `param` / `query`)
-  so `QueryDevtoolsRouteComponent` can still colour a param value pink inside a node label.
-- **Compress single-child chains, or the tree is worse than the list.** In the screenshot
-  `/partner/1-fc-koeln-female/opportunity/fc27` has exactly one child; rendered as four levels it
-  adds depth and saves nothing. One node per run of single-child segments is what makes the tree
-  narrower than the flat list, not deeper.
-- **A node can be both a row and a parent.** `/partner/1-fc-koeln-female` is itself a query (the
-  `gone` row) _and_ the prefix of five others. And an intermediate node is often no query at all,
-  so clicking it must expand rather than select - two different affordances in one column.
-- **The query string is a leaf, not a branch.** `/organizations?limit=100&page=1` and
-  `…&query=RYju…` share a path and differ only after the `?`; they nest under one
-  `/organizations` node with their query strings as the distinguishing labels.
-- **Ordering changes meaning.** The flat list is registration order with `pinnedFirst` on top,
-  which is roughly creation order and useful on its own. A tree re-groups, so pinning and the
-  tree have to be reconciled - probably: pinning is honoured within a parent, not hoisted out of
-  it, and the toggle is remembered so nobody loses their flat view by accident.
-- **Search and the status chips have to keep ancestors.** A match deep in a branch must render
-  its parent chain (auto-expanded), and `scopedQueryCount` / the tab badge must keep counting
-  queries, not nodes.
-- **Persist the toggle and the expand/collapse set** the way the panel already persists the rest
-  (`PersistedState` - `eventErrorsOnly` is the precedent for a remembered boolean, `expandedSteps`
-  for a remembered open-set).
-
-Related but not the same as the repeats item above: nesting folds together rows with **different**
-routes that share a prefix; the dedupe folds together rows for the **same** query. Both cut the
-same visual noise from opposite directions and neither replaces the other - though doing the
-dedupe first makes the tree's leaves honest.
-
 ## Query devtools: the History tab's diff is a scroll away from its own controls
 
 Reported 2026-08-07 from a `/user/me` history of 16 runs. The History tab is one long scroll:
@@ -1383,6 +1221,18 @@ Query pass 2 (2026-08-07):
   being positioned once. Angular's debug APIs were not used, as the section required. Changeset
   `devtools-locate-the-selected-query.md`. Verified headlessly: 17/17, including the hidden-element
   branch.
+
+- **Query devtools: timestamp the Queries list, and let it be sorted** (was its own section, `A`,`D`) -
+  the user settled the decision the section called "the actual decision": the column shows
+  **`lastTimeExecutedAt`**, the control flips **direction only**, and never-executed rows rest at the
+  bottom in _both_ directions rather than piling up at whichever end `null` falls. Every other point
+  the section raised was honoured: `pinnedFirst` still runs last so pins survive the sort, tombstones
+  tiebreak on `destroyedAt` (their `lastTimeExecutedAt` is frozen), the column is absolute
+  (`host.formatTime`, no ticking signal), and the control sits beside the search box printing
+  `recent ↓` rather than joining the OR-ing status chips. A folded group head shows the time of the member that placed it. Direction is persisted as
+  `queryRecentFirst`. One thing to know when testing this: **every demo query loads in the same
+  second**, so a flip changes nothing visible unless two queries are run seconds apart first.
+  Changeset `devtools-queries-list-timestamps.md`. Verified headlessly: 17/17.
 
 Found not to reproduce:
 

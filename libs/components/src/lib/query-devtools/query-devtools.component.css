@@ -884,10 +884,27 @@
 
   .et-query-devtools-row-count {
     flex: 0 0 auto;
-    margin-inline-start: auto;
     color: var(--_et-qdt-subtle);
     font-variant-numeric: tabular-nums;
     font-size: 1.1rem;
+  }
+
+  /* Fixed width and tabular figures so the times form a column the eye can scan, and a row whose
+     chips push against it still ends at the same place. */
+  .et-query-devtools-row-time {
+    flex: 0 0 auto;
+    margin-inline-start: auto;
+    inline-size: 6.5ch;
+    text-align: end;
+    color: var(--_et-qdt-subtle);
+    font-family: ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-sort {
+    flex: 0 0 auto;
+    color: var(--_et-qdt-muted);
   }
 
   .et-query-devtools-dropped {
