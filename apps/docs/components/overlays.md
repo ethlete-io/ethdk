@@ -218,6 +218,8 @@ A strategy's default enter/leave animation ships with the strategy rather than w
 
 The consequence is for hand-rolled strategies: an overlay that sets a layout `containerClass` of its own (instead of composing a built-in factory) gets no default animation unless it points `stylesComponent` at a styles-only component of its own - a `@Component` with an empty template, `ViewEncapsulation.None` and the animation rules in its `styleUrl`.
 
+`anchoredDialogOverlayStrategy` **fades only** - no scale, no slide. A scale-from-origin animation reads as the origin morphing into the pane, which is not what an anchored dialog does: it appears beside its origin and stays a separate surface. The strategies that _do_ morph (the full-screen dialog) keep theirs, and so `applyTransformOrigin` defaults to `false` on the anchored dialog - set it back to `true` only if your own `containerClass` stylesheet consumes the `--origin-scale-*` / `--origin-translate-*` custom properties it computes.
+
 ### Drag-to-dismiss direction
 
 `dragToDismiss.direction` takes either a physical direction (`'to-top'`, `'to-bottom'`, `'to-left'`, `'to-right'`) or a **logical** one (`'to-inline-start'`, `'to-inline-end'`). Logical values are resolved against the overlay container's computed `direction` when the gesture is attached, so they follow the writing direction the same way the `horizontal: 'start' | 'end'` position strategies do - a side sheet stays draggable toward the edge it is docked to under `dir="rtl"`. The side-sheet strategies use the logical values by default; physical values keep meaning exactly what they say.

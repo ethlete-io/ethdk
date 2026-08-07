@@ -38,7 +38,7 @@ const ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootPr
     containerClass: 'et-overlay--anchored-dialog',
     stylesComponent: AnchoredDialogStylesComponent,
     positionStrategy: /* @__PURE__ */ buildAnchoredRuntimePositionStrategy(DEFAULT_ANCHORED_DIALOG_POSITION),
-    applyTransformOrigin: true,
+    applyTransformOrigin: false,
     arrow: true,
     hasBackdrop: false,
   },
