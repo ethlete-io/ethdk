@@ -369,38 +369,6 @@ column in the grid CSS; the work is in the sort control and in the choices below
   sorting" without a menu; whether the field is also switchable there or only the direction
   is the last open question.
 
-## Query devtools: locate the selected query in the app
-
-Noted 2026-08-07, alongside the repeats item above - the same confusion is what makes both
-worth doing. Inspect only runs one way today: arm it, hover an element, and the list is
-filtered to that element's queries (`updateInspectHover` walks up from `event.target`
-through `elementQueryMap`, keyed on `entry.meta.element`). The reverse - a **"locate" button
-on the selected query** that points at roughly where it lives - does not exist.
-
-**The data is already there and works in prod.** `entry.meta.element` is the creating
-injector's `ElementRef` (`query-dependencies.ts` reads `hostInjector.get(ElementRef, null,
-{ optional: true })`), not a debug API - so locate is the same `elementQueryMap` read
-backwards: scroll the element into view and draw the hover box (`inspectHover` already
-holds a `{ rect, entries }` pair and the CSS for it, `.et-query-devtools-inspect-box`,
-already exists). That makes this small. What to settle:
-
-- **`element` is nullable, and null is common.** A query created outside a
-  component/directive injector - a root service, a resolver, anything in the root injector -
-  has no host element. The button has to be absent or disabled with a reason, not silently
-  do nothing.
-- **The element can be gone or invisible** - detached, `display: none`, inside a collapsed
-  panel, or outliving the query's own tombstone. Locate needs a "couldn't find it on screen"
-  state; `checkVisibility()` plus the existing rect drawing covers the cheap version.
-- **A component's host element is a rough answer by construction** - it is where the query
-  was _created_, which is not necessarily where its data is rendered. Say so in the label
-  ("created here"), so nobody reads it as the consumer.
-
-**On hooking Angular DevTools metadata:** only as an enhancement, never as the mechanism.
-Angular's debug APIs (`ng.getComponent()` and friends) are dev-mode only, and the devtools
-panel is explicitly meant to work in a production build - where component class names are
-mangled anyway. If it is used at all, it can only enrich the label when available and must
-degrade to the element rect otherwise.
-
 ## Query system: long polling
 
 Noted 2026-08-07. `@ethlete/query` has three ways to get fresh data and none of them is long
@@ -1402,6 +1370,19 @@ Query pass 2 (2026-08-07):
   `ethlete/no-trivial-wrapper-method`, which is why the host exposes the `expandedQueryGroups` signal
   rather than an `isQueryGroupExpanded(key)` forwarder. Changeset
   `devtools-fold-identical-query-rows.md`. Verified headlessly: 22/22, three real groups in the demo.
+
+- **Query devtools: locate the selected query in the app** (was its own section) - a `⌖ Locate` action
+  in the detail's action row, ungated by the Gone chip the way the exports are. All three of the
+  section's "what to settle" points are handled as it proposed: an elementless query (root service,
+  resolver, guard) gets the button **disabled with the reason in its tooltip** rather than absent,
+  `checkVisibility()` turns a detached / `display: none` / collapsed-panel element into
+  `⌖ Not on screen` instead of a box over unrelated page, and the tag reads **created here** so nobody
+  reads it as where the data is rendered. One thing the section did not anticipate: with
+  `behavior: 'smooth'` a rect measured once is stale for the whole scroll, so the box tracks the
+  element per frame (`animationFrames()` under a `takeUntil(timer(LOCATE_HOLD_MS))`, 2.5s) rather than
+  being positioned once. Angular's debug APIs were not used, as the section required. Changeset
+  `devtools-locate-the-selected-query.md`. Verified headlessly: 17/17, including the hidden-element
+  branch.
 
 Found not to reproduce:
 

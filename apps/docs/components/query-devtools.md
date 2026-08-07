@@ -1059,6 +1059,18 @@ components are bound to, which the browser Network tab can't do:
   restores the full list. While the mode is armed the button stays lit and pulsing
   (the pointer is out in the app, not on the panel) and shows the **Esc** key that
   cancels it.
+- **⌖ Locate** - inspect run backwards. In the selected query's action row, it scrolls
+  the element the query was created in into view and outlines it for a moment, tagged
+  **created here**. That wording is the caveat: it is where the query was _created_,
+  which is not necessarily where its data is rendered.
+
+  The element comes from the creating injector, not from a debug API, so this works in
+  a production build. A query created outside a component or directive - a root
+  service, a resolver, a guard - has no element, and the button is **disabled** with
+  that reason in its tooltip rather than doing nothing. An element that is detached,
+  `display: none` or inside a collapsed panel reports **Not on screen** instead of
+  drawing a box over an unrelated strip of the page.
+
 - **Copy the GraphQL document** - a GraphQL query's detail renders its document
   dedented, with a **⧉ Copy** button next to the heading, so it pastes straight
   into a GraphQL playground.

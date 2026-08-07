@@ -90,6 +90,30 @@
     <button (click)="host.executeQuery(s, true)" class="et-query-devtools-btn" type="button">Cached</button>
     <button (click)="host.resetQuery(s.query)" class="et-query-devtools-btn" type="button">Reset</button>
   }
+  @let locatable = host.locatableElement(s.entry);
+  <button
+    [disabled]="!locatable"
+    [title]="
+      locatable
+        ? 'Scroll to and outline the element this query was created in. That is where it was created, not necessarily where its data is rendered.'
+        : 'This query was created outside a component or directive - a root service, a resolver or a guard - so it has no element to point at.'
+    "
+    (click)="host.locateQuery(s.entry)"
+    class="et-query-devtools-btn"
+    type="button"
+  >
+    @switch (host.locateState()) {
+      @case ('located') {
+        ⌖ Created here
+      }
+      @case ('offscreen') {
+        ⌖ Not on screen
+      }
+      @default {
+        ⌖ Locate
+      }
+    }
+  </button>
   <button (click)="host.copyReport(s.entry, s.query)" class="et-query-devtools-btn" type="button">
     {{ host.copiedReport() ? '✓ Copied' : 'Copy report' }}
   </button>

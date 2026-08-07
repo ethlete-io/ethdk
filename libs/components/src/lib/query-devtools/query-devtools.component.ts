@@ -54,7 +54,23 @@ import {
   WebSocketDevtoolsHandle,
   WebSocketDevtoolsMessage,
 } from '@ethlete/query';
-import { EMPTY, filter, fromEvent, interval, map, merge, Subject, switchMap, take, tap, timer } from 'rxjs';
+import {
+  animationFrames,
+  EMPTY,
+  filter,
+  finalize,
+  fromEvent,
+  interval,
+  map,
+  merge,
+  NEVER,
+  Subject,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+  timer,
+} from 'rxjs';
 import { QueryDevtoolsAuthTabComponent } from './query-devtools-auth-tab.component';
 import { QueryDevtoolsCacheTabComponent } from './query-devtools-cache-tab.component';
 import { buildCurlCommand } from './query-devtools-curl';
@@ -145,6 +161,9 @@ type PersistedState = {
 
 /** How long a copy button stays ticked after a successful write. */
 const COPIED_RESET_MS = 1200;
+
+/** How long the locate box stays up. Long enough to outlast a smooth scroll and still be read. */
+const LOCATE_HOLD_MS = 2500;
 
 const noop = () => undefined;
 
@@ -609,6 +628,11 @@ export class QueryDevtoolsComponent {
   protected inspectActive = signal(false);
   protected inspectHover = signal<{ rect: DOMRect; entries: QueryDevtoolsEntry[] } | null>(null);
 
+  /** Inspect run backwards: the box drawn over the element the selected query was created in. */
+  protected locatedRect = signal<DOMRect | null>(null);
+  public locateState = signal<'idle' | 'located' | 'offscreen'>('idle');
+  private locate$ = new Subject<HTMLElement | null>();
+
   /** When set (via inspect), the Queries list is filtered to exactly these entry ids. */
   public inspectFilterIds = signal<string[] | null>(this.persisted.inspectFilterIds ?? null);
 
@@ -867,6 +891,29 @@ export class QueryDevtoolsComponent {
           this.copiedCurl.set(false);
           this.copiedGql.set(false);
           this.copiedRoute.set(false);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    // The box has to follow the element for as long as the smooth scroll is moving it, so it tracks per
+    // frame rather than measuring once. Each locate cancels the previous run's frames and its timeout.
+    this.locate$
+      .pipe(
+        switchMap((element) => {
+          // `NEVER` for the not-on-screen case: there is no box to move, but the button's reason has to
+          // stay up for the same beat before `finalize` clears it.
+          const frames = element
+            ? animationFrames().pipe(tap(() => this.locatedRect.set(element.getBoundingClientRect())))
+            : NEVER;
+
+          return frames.pipe(
+            takeUntil(timer(LOCATE_HOLD_MS)),
+            finalize(() => {
+              this.locatedRect.set(null);
+              this.locateState.set('idle');
+            }),
+          );
         }),
         takeUntilDestroyed(),
       )
@@ -2106,6 +2153,40 @@ export class QueryDevtoolsComponent {
   public formatTime(timestamp: number | null) {
     if (!timestamp) return '-';
     return new Date(timestamp).toLocaleTimeString(undefined, { hour12: false });
+  }
+
+  /**
+   * The element a query was created in, which is what {@link locateQuery} can point at. `null` for a
+   * query created outside a component or directive injector - a root service, a resolver, a guard.
+   */
+  public locatableElement(entry: QueryDevtoolsEntry) {
+    return entry.meta.element ?? null;
+  }
+
+  /**
+   * Scrolls the element the selected query was created in into view and draws the inspect box over it -
+   * inspect run backwards. Where a query was *created* is not necessarily where its data is rendered,
+   * which is what the button's "created here" wording is for.
+   */
+  public locateQuery(entry: QueryDevtoolsEntry) {
+    const element = this.locatableElement(entry);
+    if (!element) return;
+
+    // Detached, `display: none`, or inside a collapsed panel: scrolling to it lands nowhere and the box
+    // would be drawn over an unrelated strip of the page.
+    const isVisible = typeof element.checkVisibility === 'function' ? element.checkVisibility() : element.isConnected;
+
+    if (!isVisible) {
+      this.locatedRect.set(null);
+      this.locateState.set('offscreen');
+      this.locate$.next(null);
+
+      return;
+    }
+
+    element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+    this.locateState.set('located');
+    this.locate$.next(element);
   }
 
   /**

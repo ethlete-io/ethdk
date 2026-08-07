@@ -241,3 +241,15 @@
     <span class="et-query-devtools-inspect-tag">{{ inspectLabel(hover.entries) }}</span>
   </div>
 }
+
+@if (locatedRect(); as rect) {
+  <div
+    [style.left.px]="rect.left"
+    [style.top.px]="rect.top"
+    [style.width.px]="rect.width"
+    [style.height.px]="rect.height"
+    class="et-query-devtools-inspect-box"
+  >
+    <span class="et-query-devtools-inspect-tag">created here</span>
+  </div>
+}
