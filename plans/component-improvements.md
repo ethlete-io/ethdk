@@ -263,6 +263,49 @@ panel is explicitly meant to work in a production build - where component class 
 mangled anyway. If it is used at all, it can only enrich the label when available and must
 degrade to the element rect otherwise.
 
+## Query system: long polling
+
+Noted 2026-08-07. `@ethlete/query` has three ways to get fresh data and none of them is long
+polling: `withPolling` is a fixed `setInterval` clock (`query-features.ts`), `withAutoRefresh`
+re-executes when a signal changes, and websockets (`libs/query/src/lib/ws` + `withResponseUpdate`)
+push. Long polling is a fourth shape - the server holds the request open until something changes
+or its own timeout fires, and the client re-issues the moment it completes. **`setInterval`
+cannot express that**: a request open for 30-60s under a 5s interval stacks ticks, so this is a
+new feature, not an option on `withPolling`.
+
+What it needs, roughly in order of how much design each one wants:
+
+- **A completion-driven chain.** The next execution starts when the previous one _ends_ -
+  success, "nothing changed", or error - not on a clock. Nothing in the feature set chains off
+  completion today; the closest precedent for a chain of executions is `paged-query-stack.ts`.
+- **Next-args-from-last-response.** A long poll normally carries a cursor / `since` / etag from
+  the response into the following request. `withArgs` pulls args from a signal source and
+  `withResponseUpdate` writes the response back, but nothing derives the _next args_ from the
+  _last response_. This is the actual new primitive, and it is useful well beyond long polling.
+- **An empty cycle has to be a no-op.** A 204 / "nothing changed" must not overwrite the cached
+  response, must not move the cache entry's freshness, and must not re-render. Related: the
+  query has to stay out of a loading state across cycles, or a consumer shows a spinner for a
+  minute at a time - `state.loading` is bound straight to the live request, so a "background
+  poll" notion is needed for this to be usable in UI at all.
+- **Backoff vs. re-issue.** `withDefaultRetry` already retries connection failures indefinitely
+  and 5xx up to three times with a backing-off delay. Decide whether the chain sits above or
+  below that layer, so a dead server backs off instead of hot-looping - and so a normal
+  re-issue is not mistaken for a retry.
+- **No request timeout exists client-side.** I found no per-request timeout in the http layer,
+  so an abandoned long poll has nothing to cut it off. A client-side ceiling is new work.
+- **Multi-tab dedupe works differently.** `withPolling`'s Web Locks dedupe lets a follower tab
+  keep its interval and skip each tick. A chained long poll has no tick to skip - a follower has
+  to not open a request at all and take data through response sharing, so the hold logic in
+  `withPolling` is not reusable as-is.
+- **Devtools will misread it.** One cycle is an open request for up to a minute: the timeline
+  and stats would show it as a very slow request, and the events log grows an entry per cycle.
+  Both need to know a poll cycle is not a slow request.
+
+Positioning is worth writing down with it: websockets already exist and are the better answer
+when the infrastructure allows them. Long polling is the fallback when they don't - the docs
+should say which to reach for (`apps/docs/query/features.md` for the feature,
+`apps/docs/query/ws.md` for the socket side).
+
 ## Overlay responsiveness: resolved, and it was not systemic
 
 The premise of this section was wrong; recorded here so the next pass does not
@@ -447,32 +490,6 @@ predicate (`shouldAutoLogin: (url: string) => boolean`) alongside the string lis
 so a consumer can match on the router's parsed URL instead of on substrings of a
 path.
 
-## Auth: the app hand-rolls its route guard
-
-`canMatchAuthenticated` in the consumer's `libs/domain/hub/src/lib/hub.routes.ts` is
-19 lines of guard carrying three comments, and each one is an SDK gap rather than an
-app decision. (Two of the three are now closed: a `success` state that never
-authenticated is fixed - `extractTokens` throwing puts the execution into `error` - and
-"has auth settled?" is `sessionStatus()` as of 2026-08-06.)
-
-**The SDK ships no route guard at all.** There is no `CanMatchFn`, `CanActivateFn` or
-`createUrlTree` anywhere in `libs/query/src` or `libs/core/src`, so every app that uses
-the bearer provider hand-rolls "wait for auth to settle, redirect to login, come back
-to the attempted URL". The consumer's version encodes the return URL under a param name
-it must keep manually in sync with `redirectToPlatform()` in `auth-flow.ts` - a comment
-says so explicitly. A `withAuthGuard()`-style helper that owns both halves of that
-contract is the obvious missing piece, and it is what `sessionStatus()` was sequenced
-before.
-
-One claim in that file did **not** reproduce. The comment on `ready` says the tokens are
-applied "in a separate effect that can still be pending for one tick after `executionState`
-flips to `success`". On a plain login flush, `executionState: success` and
-`isAuthenticated(): true` land in the same tick - the token effect is created first at
-registry setup and Angular runs effects in creation order, so it always wins. The
-`tokenSeed` path applies tokens synchronously before setting the state, too. Whatever the
-author actually saw, that ordering is not it, and the extra `isAuthenticated()` condition
-is what turns the extraction failure above into a hang instead of a redirect.
-
 ## Already fixed, do not re-report
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
@@ -498,6 +515,27 @@ The three auth items the triage opened with (2026-08-06, one pass):
 - **The snapshot-vs-`executionState` docs fix** - `apps/docs/query/auth.md` now has a "Don't drive
   a form off `executionState()`" section. No API was needed; `queries.<key>.snapshot` already was
   the per-attempt path.
+
+**Auth: `createAuthGuard`** (2026-08-07) - `libs/query/src/lib/auth/auth-guard.ts`. The SDK shipped
+no `CanMatchFn`/`CanActivateFn` at all, so every app hand-rolled "wait for auth to settle, redirect to
+login, come back to the attempted URL" and kept the return-URL param name in sync with its own login
+page by hand. `createAuthGuard(providerRef, config)` returns both halves off one param:
+`canMatch`/`canActivate`, their `…Anonymous` inverses for the login route, `returnUrl()` and a cold
+`navigateAfterLogin()`. Three things worth not rediscovering. **The wait is on `sessionStatus()`, not
+`executionState()`** - the guard pends only while `'unknown' | 'restoring'`, which is why a visitor
+with no cookie answers synchronously instead of waiting for a state that never arrives. **The
+attempted URL is captured before the wait**, because by the time the session settles
+`router.currentNavigation()` has moved on. And **the return URL is not hand-encoded** - Angular's URL
+serializer encodes the query param and parses it back, so the consumer's `encodeURIComponent` /
+`decodeURIComponent` pair was double work; what is needed instead is rejecting a captured URL that
+does not start with `/`, or starts with `//`.
+
+One claim in the consumer's guard did **not** reproduce, and the replacement deliberately drops it.
+The comment on its `ready` says the tokens are applied "in a separate effect that can still be pending
+for one tick after `executionState` flips to `success`". On a plain login flush, `executionState:
+success` and `isAuthenticated(): true` land in the same tick - the token effect is created first at
+registry setup and Angular runs effects in creation order, so it always wins. The `tokenSeed` path
+applies tokens synchronously before setting the state, too.
 
 **Form field: one suffix stack** (2026-08-07) - the clear button and picker trigger of date /
 date-time / date-range / time input, the phone input's clear button and the password input's reveal

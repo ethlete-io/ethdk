@@ -37,22 +37,26 @@ Ranked by value per unit of risk, not by size.
 > press at `commitThreshold: 0`, so both now revert on a cancelled gesture. It left `end` carrying
 > the release position (`DragEndEvent`, also `dragEnded`'s payload) and moved the
 > `setPointerCapture` try/catch into the primitive. Carousel stays out, as planned.
+>
+> **The auth route guard** (was #1) shipped 2026-08-07 as `createAuthGuard(providerRef, config)` -
+> not the `withAuthGuard()` the backlog guessed at, because a guard is built at route-config time
+> and is not a provider feature. It came in well under its `L` estimate: `sessionStatus()` had
+> already done the hard part. `shouldAutoLogin` (in the `S` table) is now the last open auth item.
 
-1. **Auth: a `withAuthGuard()` helper** - `L`, `A`.
-   The SDK ships no `CanMatchFn`/`CanActivateFn` at all, so every app hand-rolls "wait for auth to
-   settle, redirect to login, come back to the attempted URL" - and keeps the return-URL param
-   name in sync with the redirect by hand. High value, and now unblocked - `sessionStatus()` ships,
-   so the guard has the thing to wait on.
-
-2. **Scheduler's cheap mobile trio** - `S` each, `A`.
+1. **Scheduler's cheap mobile trio** - `S` each, `A`.
    Add-appointment as a FAB below a breakpoint, the today button as an icon button at narrow
    widths, and swipe-to-navigate. All three reuse primitives that already exist and that scheduler
    simply doesn't import (`floating-action.directive.ts`, `SwipeTracker` in `libs/core`).
 
-3. **Query error rebuilt on banner** - `M`, `C`.
+2. **Query error rebuilt on banner** - `M`, `C`.
    Identical `color-mix` surface formula, independently reimplemented icon slot, heading,
    description and action row; banner's `type="error"` already forces `injectErrorTheme()`.
    Needs two things layered on: the violation `<ul>` and the retry-only-if-`canRetry` conditional.
+
+3. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
+   Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
+   its three open questions first - chiefly whether an unchecked tile still reads as selectable -
+   because they are design calls, not code.
 
 ## Everything else, by effort
 
@@ -76,28 +80,28 @@ Ranked by value per unit of risk, not by size.
 
 ### M - real work, mostly consolidation
 
-| Item                                               | Tag     | Note                                                                                                    |
-| -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
-| Query error on banner                              | `C`     | See #3                                                                                                  |
-| Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                               |
-| Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types           |
-| Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                       |
-| Progress steps: steps as links                     | `A`     | Polymorphic root (`span`/`a`/`button`) + the `:hover` rules that don't exist yet                        |
-| Avatar: extract `AvatarDirective`                  | `C`     | Follow tooltip/toggletip/accordion's headless split                                                     |
-| Avatar group: `maxVisible` + "+N"                  | `A`     | No "+N" pattern exists anywhere to copy - new surface                                                   |
-| Description list: `variant`                        | `A`     | Empty class today, five CSS properties; any variant is new surface                                      |
-| Scheduler: colour palette via DI token             | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                             |
-| Scheduler: infinite agenda                         | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler |
+| Item                                               | Tag     | Note                                                                                                                                        |
+| -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Query error on banner                              | `C`     | See #2                                                                                                                                      |
+| Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                                                                   |
+| Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types                                               |
+| Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                                                           |
+| Progress steps: steps as links                     | `A`     | Polymorphic root (`span`/`a`/`button`) + the `:hover` rules that don't exist yet                                                            |
+| Avatar: extract `AvatarDirective`                  | `C`     | Follow tooltip/toggletip/accordion's headless split                                                                                         |
+| Avatar group: `maxVisible` + "+N"                  | `A`     | No "+N" pattern exists anywhere to copy - new surface                                                                                       |
+| Description list: `variant`                        | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
+| Scheduler: colour palette via DI token             | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
+| Scheduler: infinite agenda                         | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
+| Selection list: `variant="tile"`                   | `A`,`D` | See #3 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
+| Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
 
 ### L - projects, not tickets
 
 | Item                                         | Tag     | Note                                                                                                                                                                                                                                                                |
 | -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Charts                                       | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't |
-| Auth: `withAuthGuard()`                      | `A`     | See #1 - unblocked, `sessionStatus` ships                                                                                                                                                                                                                           |
 | Scheduler: move/resize existing appointments | `A`     | Called "the natural next feature" by the drag-to-create work                                                                                                                                                                                                        |
 | Scheduler: date-time _range_ picker          | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                              |
-| Selection list: `variant="tile"`             | `A`,`D` | Sits on the shipped selection-card sheet, so it is a single edit now. Three open questions, chiefly whether an unchecked tile still reads as selectable                                                                                                             |
 | Colour input: custom picker                  | `A`     | Replaces the native input behind the same directive contract                                                                                                                                                                                                        |
 | Command palette                              | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                  |
 | Stat tile                                    | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                             |
