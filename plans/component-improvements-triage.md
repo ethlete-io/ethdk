@@ -48,6 +48,14 @@ Ranked by value per unit of risk, not by size.
 > reflowed at, and it now lives twice: as the container query and as a `signalHostElementDimensions()`
 > reading in the component, because swapping a text button for a FAB is a component swap, not a
 > restyle. The other scheduler items in the `S` table are untouched by it.
+>
+> **Both devtools `B` items** shipped 2026-08-07 and their rows are gone from the `S` table.
+> **Execute throws ET003** turned out to be reachable only through `silenceMissingWithArgsFeatureError`,
+> since the lib refuses a function-route query without `withArgs`; the fix covers all four parts the
+> section listed, not just the args replay. **"Forget" with the Gone chip off** was worse than the
+> gating slip it was filed as - the button cleared the whole registry, every client and past any
+> search - so `clearQueryDevtoolsTombstones()` now takes ids and the button drops only what is listed.
+> The remaining query devtools items are all `A`.
 
 1. **Logged out after being idle** - `S` to diagnose, `B`.
    The only item here a user is currently hitting. `fut-frontend`'s hub provider runs
@@ -76,9 +84,7 @@ Ranked by value per unit of risk, not by size.
 | -------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Auth: carry the logout cause across tabs                 | `B`     | See #1 - `{ type: 'logout' }` has no cause, so the receiving tab reports only `otherTab`. Do this before any refresh work     |
 | Auth: a missed scheduled refresh never re-arms           | `B`     | See #1 - `executeRefresh('scheduled')` early-returns four ways and the timer only re-arms on an `accessToken` change          |
-| Query devtools: Execute throws ET003                     | `B`     | Do this one first. Pass `queryArgs(query)` instead of `execute`'s default                                                     |
 | Dropzone: removing a prefilled value deletes it          | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default    |
-| Query devtools: "Forget" shows with Gone chip off        | `B`     | Gate on the chip, and stop styling a destructive action as a filter clear                                                     |
 | Scheduler: richer sub-appointment list                   | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                     |
 | Scheduler: agenda connector lines                        | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                         |
 | Accordion: border/label transition                       | `A`     | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported                                    |

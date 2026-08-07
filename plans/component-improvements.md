@@ -507,45 +507,6 @@ whether the query may run) expresses it more directly. Under the `null`-means-pa
 dependent-query example already reads correctly without one, so this is an addition to weigh on
 its own merits, not a prerequisite.
 
-## Query devtools bug: Execute throws ET003 on a function-route query
-
-Reported from real use 2026-08-07 and traced in source (not reproduced in a story yet).
-Pressing **Execute** in the query detail on a query whose route is a function throws
-`ET003 The route is a function but pathParams are missing`, and it escapes into the app's
-`ErrorHandler` as an uncaught error.
-
-The chain: `executeQuery` (`query-devtools.component.ts`) calls `query.execute()` without an
-`args` key, `createExecuteFn` then defaults `args` to `state.args()`, and `buildRoute` throws
-as soon as a function route gets no `pathParams`. Any query whose args never reach its own
-`args` signal hits this - **`withArgs` is the only thing that writes it**, so a query executed
-imperatively (`execute({ args })`, a sequence step, an auth query) has `args() === null` no
-matter how many times the app has run it successfully.
-
-**The sharpest form of the bug: the panel is already showing the args the button ignores.**
-`queryArgs()` reads `query.args() ?? query.subtle.request()?.args`, so the detail pane renders
-the args and the filled-in route from the last request while Execute passes `null`. Fixing
-`executeQuery` to pass `this.queryArgs(query)` explicitly, instead of relying on `execute`'s
-default, covers every query that has run at least once - no new UI.
-
-What is left after that is a function-route query that has **never** run and has no args
-anywhere. There is genuinely nothing to send, so Execute should be disabled with the reason
-rather than throw. Better, and cheap because both halves exist: `entry.meta.routeParts` already
-knows the param names (that is what renders the `:param` segments), and there is already an args
-editor (`openArgsEditor` / `applyArgs`) that executes with edited args - so Execute can open it
-seeded with `{ pathParams: { <name>: '' } }`.
-
-Two things to fix alongside it:
-
-- **`applyArgs` mislabels execute-time failures.** Its `catch` sets `'Invalid JSON'`, but the
-  `try` also wraps `query.execute(...)` - so perfectly valid JSON with a missing path param
-  reports the wrong reason.
-- **No devtools action should reach the app's `ErrorHandler`.** The reported stack goes through
-  `handleUncaughtError`; a panel button failing has to surface inside the panel.
-
-The `/partner/undefined` line logged after the error is not a second bug -
-`pathParamsMissingInRouteFunctionError(options.route({}))` builds its payload by calling the
-route with no params, so that string is the error's data.
-
 ## Query devtools: an optional nesting toggle for the Queries list
 
 Requested 2026-08-07 from a screenshot of a real app's list, where five consecutive rows all
@@ -586,31 +547,6 @@ Related but not the same as the repeats item above: nesting folds together rows 
 routes that share a prefix; the dedupe folds together rows for the **same** query. Both cut the
 same visual noise from opposite directions and neither replaces the other - though doing the
 dedupe first makes the tree's leaves honest.
-
-## Query devtools: "Forget" shows while the Gone chip is off
-
-Reported 2026-08-07. The Forget button is gated on `@if (goneQueryCount())` alone
-(`query-devtools-queries-tab.component.html`), so it appears whenever tombstones exist -
-including, as in the report, with the Gone chip unlit and not one of the 50 tombstones it would
-drop visible in the list. A destructive action offering to delete rows the user cannot see, with
-nothing to review before clicking.
-
-Two things make it worse than a gating slip:
-
-- **It is dressed as a filter reset.** It uses `.et-query-devtools-filter-clear` and the same `✕`
-  glyph as the two genuine "clear the filter" buttons, and sits right next to them. So the one
-  control in that row that throws data away looks exactly like the ones that don't.
-- **The handler already assumes the chip.** `forgetGoneQueries()` toggles the Gone chip off after
-  clearing, precisely because leaving it lit would narrow the list to the tombstones just
-  dropped. The intended context is Gone-active; only the template forgot.
-
-Fix: gate it on `host.queryFacets().has('gone')` so what it deletes is what is on screen, and
-give it its own styling instead of the filter-clear class.
-
-Not a bug, so nobody re-reports it: the tab badge reading 17 while the toolbar count reads 18 in
-the same screenshot is correct. The badge counts live entries (`liveQueryEntries`), and
-`scopedQueryCount` adds the one tombstone the detail pane has selected - `listsTombstone` keeps a
-query that died under the detail in the list on purpose.
 
 ## Query devtools: the History tab's diff is a scroll away from its own controls
 
@@ -1495,6 +1431,36 @@ Pointer-drag consolidation (2026-08-07):
   from the gesture's `document` listeners flush on the next frame (~6ms), so a Playwright assertion
   in the same tick as the release reads the previous attribute value - settle before asserting.
   Carousel stays out, as the section said: `cursor-drag-scroll.ts`'s deadzone semantics differ.
+
+Query pass 2 (2026-08-07):
+
+- **Persistence store ordering** (`e7ffcfc50`, no backlog section - found by the source audit). Store
+  mutations were not ordered against writes in flight, so a logout purge or `clearPersistedQueries()`
+  starting while a batched write was on its way to disk left the secure response on disk. Every store
+  task now runs through one `enqueue` chain in `query-persistence-engine.ts`. `maxEntries` is applied
+  at startup too, not only by a write, so a store left over the cap by a lowered limit or by several
+  tabs enforcing against their own in-memory index shrinks back. Two regression tests in
+  `query-persistence.spec.ts`, both verified failing first. Also corrected two docs claims: the
+  `maxEntries` row, and "Gating the first paint", which implied `whenPersistenceReady` removes the
+  empty first tick - it does not, it only takes the index load off that path.
+- **Query devtools: Execute throws ET003 on a function-route query** (was its own section, `f523fb264`) -
+  **Execute** passes `queryArgs(query)` instead of letting `execute` fall back to its default, so a
+  query executed imperatively replays the args the panel is showing. The precondition the section
+  omitted: the lib refuses to create a function-route query without `withArgs` (`ET100`, guard at
+  `libs/query/src/lib/http/base-query-factory.ts:58`), so the bug was only reachable through the
+  `silenceMissingWithArgsFeatureError` escape hatch - which is why reproducing it needed a new
+  `QdImperativeCardComponent` demo card. Changeset `devtools-execute-replays-shown-args.md`.
+- **Query devtools: "Forget" shows while the Gone chip is off** (was its own section, `33e705bfb`) -
+  gated on the chip being lit, so what it deletes is what is on screen, and styled as the destructive
+  action it is rather than borrowing `.et-query-devtools-filter-clear` and its `✕`. The section
+  described a gating slip; the button was also clearing the **whole registry** - every client, past
+  any active search - because `clearQueryDevtoolsTombstones()` was all-or-nothing. It now takes an
+  optional id list and the panel passes the rows it is listing, so the label (`Forget n`) states
+  exactly what goes. Changeset `devtools-forget-gated-on-gone-chip.md`. Verified headlessly: 12/12.
+  Carried over from that section, because it is not a bug and should not be re-reported: the tab
+  badge reading 17 while the toolbar count reads 18 is correct. The badge counts live entries
+  (`liveQueryEntries`), and `scopedQueryCount` adds the one tombstone the detail pane has selected -
+  `listsTombstone` keeps a query that died under the detail in the list on purpose.
 
 Found not to reproduce:
 
