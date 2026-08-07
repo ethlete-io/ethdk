@@ -42,18 +42,19 @@ Ranked by value per unit of risk, not by size.
 > not the `withAuthGuard()` the backlog guessed at, because a guard is built at route-config time
 > and is not a provider feature. It came in well under its `L` estimate: `sessionStatus()` had
 > already done the hard part. `shouldAutoLogin` (in the `S` table) is now the last open auth item.
+>
+> **The scheduler's mobile trio** (was #1) shipped 2026-08-07, all three in one pass - they turned
+> out to share one question, which width counts as narrow. It is 480px, the same the header already
+> reflowed at, and it now lives twice: as the container query and as a `signalHostElementDimensions()`
+> reading in the component, because swapping a text button for a FAB is a component swap, not a
+> restyle. The other scheduler items in the `S` table are untouched by it.
 
-1. **Scheduler's cheap mobile trio** - `S` each, `A`.
-   Add-appointment as a FAB below a breakpoint, the today button as an icon button at narrow
-   widths, and swipe-to-navigate. All three reuse primitives that already exist and that scheduler
-   simply doesn't import (`floating-action.directive.ts`, `SwipeTracker` in `libs/core`).
-
-2. **Query error rebuilt on banner** - `M`, `C`.
+1. **Query error rebuilt on banner** - `M`, `C`.
    Identical `color-mix` surface formula, independently reimplemented icon slot, heading,
    description and action row; banner's `type="error"` already forces `injectErrorTheme()`.
    Needs two things layered on: the violation `<ul>` and the retry-only-if-`canRetry` conditional.
 
-3. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
+2. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
    its three open questions first - chiefly whether an unchecked tile still reads as selectable -
    because they are design calls, not code.
@@ -62,27 +63,25 @@ Ranked by value per unit of risk, not by size.
 
 ### S - small, additive, low risk
 
-| Item                                              | Tag | Note                                                                                       |
-| ------------------------------------------------- | --- | ------------------------------------------------------------------------------------------ |
-| Scheduler: today button as icon button            | `A` | Styling only; `headless.goToToday()` unchanged                                             |
-| Scheduler: add-appointment FAB                    | `A` | `floating-action` exists, unused by scheduler                                              |
-| Scheduler: swipe navigation                       | `A` | `SwipeTracker` exists, used by drag-handle                                                 |
-| Scheduler: richer sub-appointment list            | `A` | Start time + existing chain-count badge; don't grow it into a second card                  |
-| Scheduler: agenda connector lines                 | `A` | Draws off the `depth`/`data-nested` the agenda template already emits                      |
-| Accordion: border/label transition                | `A` | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported |
-| Progress steps: success/warning/error states      | `A` | Mirror `BANNER_TYPES`, don't invent colour language                                        |
-| Colour input: hex/RGB validators                  | `A` | None exist anywhere today; the `#rrggbb` claim is a doc comment only                       |
-| Grid: assert breakpoint coverage in the dev check | `A` | Cheap half of the "nothing ties layout keys to breakpoints" item                           |
-| Filter overlay story: demo dressing               | `A` | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields       |
-| Auth: `shouldAutoLogin` predicate                 | `A` | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                    |
-| Query devtools: stop the Queries list repeating   | `A` | One row per query _instance_ is by design; the list should collapse or hide the repeats    |
-| Query devtools: locate the selected query         | `A` | Inspect backwards - `entry.meta.element` is already there, and works in a prod build       |
+| Item                                              | Tag | Note                                                                                                |
+| ------------------------------------------------- | --- | --------------------------------------------------------------------------------------------------- |
+| Scheduler: richer sub-appointment list            | `A` | Start time + existing chain-count badge; don't grow it into a second card                           |
+| Scheduler: agenda connector lines                 | `A` | Draws off the `depth`/`data-nested` the agenda template already emits                               |
+| Accordion: border/label transition                | `A` | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported          |
+| Progress steps: success/warning/error states      | `A` | Mirror `BANNER_TYPES`, don't invent colour language                                                 |
+| Colour input: hex/RGB validators                  | `A` | None exist anywhere today; the `#rrggbb` claim is a doc comment only                                |
+| Grid: assert breakpoint coverage in the dev check | `A` | Cheap half of the "nothing ties layout keys to breakpoints" item                                    |
+| Filter overlay story: demo dressing               | `A` | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                |
+| Auth: `shouldAutoLogin` predicate                 | `A` | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                             |
+| Query devtools: stop the Queries list repeating   | `A` | One row per query _instance_ is by design; the list should collapse or hide the repeats             |
+| Query devtools: locate the selected query         | `A` | Inspect backwards - `entry.meta.element` is already there, and works in a prod build                |
+| Query: retire `CLEAR_QUERY_ARGS`                  | `D` | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous |
 
 ### M - real work, mostly consolidation
 
 | Item                                               | Tag     | Note                                                                                                                                        |
 | -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Query error on banner                              | `C`     | See #2                                                                                                                                      |
+| Query error on banner                              | `C`     | See #1                                                                                                                                      |
 | Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                                                                   |
 | Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types                                               |
 | Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                                                           |
@@ -92,7 +91,7 @@ Ranked by value per unit of risk, not by size.
 | Description list: `variant`                        | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
 | Scheduler: colour palette via DI token             | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
 | Scheduler: infinite agenda                         | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
-| Selection list: `variant="tile"`                   | `A`,`D` | See #3 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
+| Selection list: `variant="tile"`                   | `A`,`D` | See #2 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
 
 ### L - projects, not tickets

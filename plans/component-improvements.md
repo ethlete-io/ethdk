@@ -25,14 +25,6 @@ means actually separating these concerns (nav vs. view-switch vs. actions)
 into distinct sections instead of one row that presumably wraps at narrow
 widths.
 
-- **Add-appointment as a FAB.** Today it's a plain toolbar button
-  (`scheduler-action-add-appointment.directive.ts`). The `floating-action`
-  domain (`floating-action.directive.ts`) already exists and is unused by
-  scheduler - swap to it below a breakpoint, keep the toolbar button on
-  desktop.
-- **Today button as an icon button.** Currently `size="sm" variant="outline"`
-  text button. A descriptive icon-only form at narrow widths is a styling
-  change, no behavior change (`headless.goToToday()` stays as-is).
 - **Connector lines for linked appointments in agenda.** The only
   relationship indicator today is `scheduler-badge-chain-count.component.ts`
   (a chevron + descendant count on the parent's badge); no line renders
@@ -54,10 +46,6 @@ range.component.ts` pairs two independent `et-date-time-input` controls.
   children list is bare `<button>`s with just a title. Carrying start time
   and the existing chain-count badge is additive; don't turn it into a
   second full appointment card.
-- **Swipe navigation on mobile.** `libs/core/src/lib/utils/swipe.ts`'s
-  `SwipeTracker` already exists (used by `drag-handle`) but scheduler
-  doesn't import it - wiring it to `headless.goToPrevious()`/`goToNext()`
-  needs no new gesture primitive.
 - **Infinite-scrolling agenda.** The agenda directive takes a plain array,
   no paging concept. `libs/query`'s `paged-query-stack.ts` and the legacy
   `infinite-query` module both exist, neither wired to scheduler. This
@@ -305,6 +293,41 @@ Positioning is worth writing down with it: websockets already exist and are the 
 when the infrastructure allows them. Long polling is the fallback when they don't - the docs
 should say which to reach for (`apps/docs/query/features.md` for the feature,
 `apps/docs/query/ws.md` for the socket side).
+
+## Query system: `withArgs`'s `CLEAR_QUERY_ARGS` sentinel
+
+Noted 2026-08-07. `withArgs` gives `null` and a symbol two different jobs, and picks the
+surprising assignment for each (`query-features.ts`): returning **`CLEAR_QUERY_ARGS` sets the
+args to `null`**, and returning **`null` keeps the previous args**. The intuitive line -
+`if (!id) return null` - compiles, reads like "no args yet", and does the opposite: the query
+keeps executing with the args it had.
+
+**The evidence says the keep-previous branch is dead weight.** Nothing in this repo returns
+`null` from a `withArgs` source, and neither does the consumer app - all three of its call
+sites, and every example in `apps/docs/query/`, are the same shape:
+`cond ? args : CLEAR_QUERY_ARGS`. The spec coverage for the symbol only asserts that it is a
+symbol. So the entire sentinel exists to distinguish a case everybody writes from one nobody
+writes.
+
+**Proposed direction: `null` means park, and the symbol goes away.** `withArgs` becomes
+`() => RequestArgs<TArgs> | null`, `null` resets the args (pausing polling and auto-refresh, as
+`CLEAR_QUERY_ARGS` does today), and keep-previous is dropped - or, if a real use case turns up,
+comes back as an explicitly named export rather than as the meaning of `null`.
+
+The migration is cheaper than it looks: `CLEAR_QUERY_ARGS` can be re-exported as a deprecated
+alias for `null`, so `cond ? args : CLEAR_QUERY_ARGS` keeps compiling _and_ keeps behaving
+identically. The only behaviour that changes is the keep-previous branch, which nothing uses -
+and it cannot be warned about at runtime, since `null` is a legitimate value either way. That
+makes it a minor with a deprecation, not a major, with the alias removal going on the checklist
+at the end of this file. The type also gets simpler: the `ClearQueryArgs` member drops out of
+the signature.
+
+Worth deciding at the same time, but separable: whether "not ready yet" belongs in the args
+source at all. `apps/docs/query/dependent-queries.md` shows it as the primary use of the
+sentinel, and an explicit gate (`withArgs` for data, a separate enabled/when predicate for
+whether the query may run) expresses it more directly. Under the `null`-means-park change the
+dependent-query example already reads correctly without one, so this is an addition to weigh on
+its own merits, not a prerequisite.
 
 ## Overlay responsiveness: resolved, and it was not systemic
 
@@ -586,6 +609,27 @@ Note the bundle claim is narrower than the original write-up assumed: the styles
 static import, so the CSS is still in the bundle for anyone importing radio at all. What the move
 buys is one copy instead of three, one token set, and no injection into the document for an app
 that only uses `variant="plain"`.
+
+**Scheduler: the mobile trio** (2026-08-07) - swipe navigation, the today button as an icon button,
+and add-appointment as a FAB, all three at once because they share the same width question. Four
+things worth not rediscovering. **The narrow branch needs a signal, not just a container query** -
+a FAB is a different component from a text button, not a restyled one, so the swap is `@if`, and
+`signalHostElementDimensions()` is what gives the component the same 480px the stylesheet already
+reflows the header at. The two now have to move together. **A projected icon cannot sit inside an
+`@if` in the consumer's template** - `ng-content select="[etIcon]"` never matches it, and it lands
+in the default slot instead, which for a collapsed `et-fab` means an invisible button. The
+conditional therefore wraps the whole `<button et-fab>`, once per shape. (The pre-existing
+`et-button` toolbar action has the same bug, harmlessly - its icon renders inside
+`.et-button-contents`.) **`floating-action` had to go inside the narrow branch**, not on the
+scheduler host: `disabled` is an `input()` a host directive cannot bind, and its dev-mode
+missing-anchor assert fires when the wide branch renders no anchor. The cost is giving up
+`etFloatingActionScope` (the body is not a DI descendant of a directive inside the header), so the
+FAB floats for the rest of the page - the primitive's documented default, and right for a
+page-filling scheduler. And **the swipe is touch-only and listens through the renderer**: a
+horizontal mouse drag is drag-to-create, and `preventDefault()` on a non-passive `touchmove` is what
+both stops the page panning and swallows the tap the browser would synthesize on release - without
+it, swiping across an appointment opens it. It drops out entirely once `draftRange()` is set, so a
+long press that armed the view's own gesture keeps it.
 
 **Badge: `size` + icon slot** (2026-08-06) - `size` is `sm | md | lg`, and the icon slot is
 button's exact pattern (`<ng-content select="[etIcon]" />` through an `ngTemplateOutlet`, so one
@@ -1044,3 +1088,6 @@ rating + otp-input, `container-type` in stream/pip.
 Nothing else tracks this, so it lives here until a real changelog/migration doc exists.
 The one entry so far (`core/seo.directive.ts`) is done - see "Already fixed" for the consumer
 migration it still implies.
+
+- **`CLEAR_QUERY_ARGS`** - only if the `withArgs` change above ships as a deprecated alias for
+  `null`. Removing the alias (and the `ClearQueryArgs` type) is the major-version half.
