@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.0.0-next.41
+
+### Minor Changes
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`a2da930`](https://github.com/ethlete-io/ethdk/commit/a2da9302a9ca7b45d7e7a9a64d50bafae5853ba1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: swipe left/right to step the visible period (`etSchedulerSwipeNavigation`), and at narrow
+  container widths Today collapses to an icon button while toolbar actions become floating FABs.
+
+- [`9587953`](https://github.com/ethlete-io/ethdk/commit/9587953cdcf598fb18674a077d2dbf74e50d2b81) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: `pickOnly` now works in multi mode - the panel stays open for repeated picks - and never
+  displays a value of its own, so a bound `value` only checks the picked options in the panel.
+
+### Patch Changes
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`08c4a5a`](https://github.com/ethlete-io/ethdk/commit/08c4a5ae90b60bca140a02595b55e6ebdbc0064e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: `anchoredDialogOverlayStrategy` scales from a fixed `0.85` around its origin's center instead of starting at the origin's own width and height.
+
+- [`70a0602`](https://github.com/ethlete-io/ethdk/commit/70a06025c2f919bd1582b2d0adbf80b21a25696a) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: the auth tab shows which tab performs the automatic token refresh and how many are in the election, instead of only echoing back how the feature was configured.
+
+- [`4fe5656`](https://github.com/ethlete-io/ethdk/commit/4fe5656a01b6842cb1717828b94f19b22fbb04fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: the query detail header gets a copy button for its route - the absolute URL of the last request, or the rendered route for a query that has not run yet.
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`f523fb2`](https://github.com/ethlete-io/ethdk/commit/f523fb26476071293c05bef13b685f5154f76533) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: **Execute** replays the args the panel is showing, so a query executed imperatively no longer replays empty - a function route used to throw `ET003` into the app's `ErrorHandler`.
+
+- [`7d6bc17`](https://github.com/ethlete-io/ethdk/commit/7d6bc17bb50c4977af27c6d81edb72e7e7882266) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: `HttpHeaders`, `FormData`, `Map`, `Set`, `Date`, `File` and `Blob` args render their real contents instead of private fields or `{}`, and the args editor preserves the ones JSON cannot carry rather than replaying them empty.
+
+- [`397fd34`](https://github.com/ethlete-io/ethdk/commit/397fd34e5ba574c7ebc089b3d0f65900d397db4b) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: the Queries list folds rows it would otherwise repeat - one query used by several consumers is now one line with an instance count, expandable to reach each consumer.
+
+- [`33e705b`](https://github.com/ethlete-io/ethdk/commit/33e705bfb989ec80e245b4bd9e2091c57cd337b8) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: **Forget** shows only while the **Gone** chip is lit, drops exactly the tombstones the list is showing, and is styled as the destructive action it is instead of as a filter clear. `clearQueryDevtoolsTombstones()` takes optional ids.
+
+- [`467dcb9`](https://github.com/ethlete-io/ethdk/commit/467dcb9f0986d6a169dbcba94c02fdf942326854) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: the History tab folds the older runs whose bodies are gone, and the response diff gains Older/Newer controls, so re-picking a pair no longer means scrolling back up to the runs table.
+
+- [`ef6a5e4`](https://github.com/ethlete-io/ethdk/commit/ef6a5e4ce9f574da45cf02790dde7259fe23237e) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: a Locate action on the selected query scrolls the element it was created in into view and outlines it - Inspect run backwards.
+
+- [`b8ffa81`](https://github.com/ethlete-io/ethdk/commit/b8ffa814b1f855f4f5d6b9b73bdef9b3004c0f60) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: the Queries list carries a last-run time per row and sorts by it, newest first by default, with a control beside the search box that reverses the direction.
+
+- [`5013381`](https://github.com/ethlete-io/ethdk/commit/5013381569abba69cc291846789f0ef78510628c) Thanks [@TomTomB](https://github.com/TomTomB)! - Grid: an `initialItems` update that only changes an item's `data` now reaches the grid instead of
+  being dropped.
+
+- [`0bc0d7f`](https://github.com/ethlete-io/ethdk/commit/0bc0d7f51b2fd38daefad41b8fcf0109f6393dcc) Thanks [@TomTomB](https://github.com/TomTomB)! - Split the query devtools stylesheet across the components that own its classes, so a
+  consumer only pays for the tabs it opens.
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`b32ef3f`](https://github.com/ethlete-io/ethdk/commit/b32ef3fdb05d4b34c553dc18b59aa9253ee24b21) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: clicking empty grid now creates an appointment - an hour from the clicked time on the week and day views, an all-day one on the month view.
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`6af0e52`](https://github.com/ethlete-io/ethdk/commit/6af0e52baacd5bae6c63824f612591ac2be81d55) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: the drag-to-create surface now opens centered over the range you drew - its first week row if it wraps - and clicking that range closes it instead of reopening it.
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`2d44597`](https://github.com/ethlete-io/ethdk/commit/2d44597f07b165a83c19f049a022c4247a8e3eb1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Slider and rating now drag on `dragGestureFrom`, so a gesture the browser takes away reverts
+  instead of committing. `dragEnded` carries the release position.
+
 ## 1.0.0-next.40
 
 ### Major Changes

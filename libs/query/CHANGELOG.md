@@ -1,5 +1,22 @@
 # @ethlete/query
 
+## 6.0.0-next.30
+
+### Minor Changes
+
+- [`70a0602`](https://github.com/ethlete-io/ethdk/commit/70a06025c2f919bd1582b2d0adbf80b21a25696a) Thanks [@TomTomB](https://github.com/TomTomB)! - `withBearerAuthMultiTabSync` exposes `leadership` (`election` / `off` / `unsupported`), so a tab reading `isLeader: true` can tell a won election from one that never ran.
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`cab3d1a`](https://github.com/ethlete-io/ethdk/commit/cab3d1ae2f3ef37df63663b62edb842e8e4a8f9b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auth: add `createAuthGuard(providerRef, config)` - route guards that wait out a session restore, redirect to your login URL with the attempted URL attached, and navigate back afterwards.
+
+- [`33e705b`](https://github.com/ethlete-io/ethdk/commit/33e705bfb989ec80e245b4bd9e2091c57cd337b8) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: **Forget** shows only while the **Gone** chip is lit, drops exactly the tombstones the list is showing, and is styled as the destructive action it is instead of as a filter clear. `clearQueryDevtoolsTombstones()` takes optional ids.
+
+### Patch Changes
+
+- [#3050](https://github.com/ethlete-io/ethdk/pull/3050) [`e7ffcfc`](https://github.com/ethlete-io/ethdk/commit/e7ffcfc5049e81f27732bda7d71ba4e467778fed) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query persistence: a logout purge or `clearPersistedQueries()` can no longer be undone by a write that was already on its way to disk, and `maxEntries` is applied at startup as well.
+
+- [`4b8499d`](https://github.com/ethlete-io/ethdk/commit/4b8499dbd099b81a593ced27bd6df63b4047e173) Thanks [@TomTomB](https://github.com/TomTomB)! - `validateWithQuery` no longer throws `ET100` when the creator's route is a function - its args reach
+  the query at execute time, which the created query now declares.
+
 ## 6.0.0-next.29
 
 ### Minor Changes
