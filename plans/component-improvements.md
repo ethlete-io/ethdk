@@ -634,51 +634,6 @@ Open points, in the order they bite:
   in-memory registry, per client rather than per query, and the request reads naturally as
   covering it. Either answer is fine; both being silently different is not.
 
-## Query devtools: the args explorer renders `HttpHeaders` inside out
-
-Reported 2026-08-07 with a screenshot: the Args tree shows `headers: {…} 4` holding
-`headers: {}`, `normalizedNames: {}`, `lazyInit: null`, `lazyUpdate: null` - four private
-fields of Angular's `HttpHeaders`, and not one actual header. The ask is that the node show
-the headers that were _set_ - per request, by the client, or by an interceptor - and nothing
-else.
-
-**The cause is `entriesOf`, which is `Object.entries` on anything object-shaped**
-(`query-devtools-json.component.ts`). A class instance therefore renders as its private
-fields, and `HttpHeaders` is the worst possible case of it: its two real payloads are `Map`s,
-and `Object.entries` on a `Map` is `[]` - so the two nodes that could have held the answer
-both print `{}`. The tree is not merely noisy here, it is empty of the thing it claims to show.
-
-**The flattening already exists.** `insomniaHeaders` (`query-devtools.component.ts`) turns
-headers into `{ name, value }` pairs with `headers.keys()` / `getAll(name).join(', ')`, for
-the Insomnia export. The explorer needs the same record, and reading it in one place is the
-sane way to do that.
-
-- **`args.headers` may be a function.** The type is `HttpHeaders | (() => HttpHeaders)`
-  (`query.ts`), a provider is called per execution so it can read a signal, and it is allowed
-  to throw - a secure query's needs an access token. `insomniaHeaders` already wraps the call
-  in a `try`/`catch`; the explorer must too, and a thrown provider should render as a reason,
-  not as an empty object.
-- **The args editor has the same bug, and there it corrupts a replay.** `openArgsEditor`
-  `JSON.stringify`s the args verbatim, so the draft a user edits contains
-  `"headers": { "normalizedNames": {}, "lazyInit": null, … }`, and executing it sends that
-  object as the headers. That is a correctness item, not cosmetics, and it argues for fixing
-  the value on the way in rather than only at render time.
-- **"Set globally" is reachable; "set by an interceptor" is not.**
-  `request.subtle.resolveHeaders()` is exactly the client's headers with the per-request ones
-  merged on top (`http-request.ts`) and is what the export already prefers over raw args -
-  so the merged view costs nothing new. Interceptors run inside `HttpClient` after the SDK
-  hands the request over; nothing the SDK holds can see what they added. Showing those would
-  mean shipping an interceptor of our own for the app to register last, which is a separate,
-  larger item - and until then the panel must not imply the list is complete.
-- **Merged and raw are different questions, and the Args section is labelled "Args".**
-  Rendering the resolved set under a heading that says args would quietly lie about where a
-  header came from. Either keep the node raw-but-readable and put the resolved set somewhere
-  that says so, or show one node per source. Settle this before writing the flattener.
-- **`HttpHeaders` is only the instance we hit today.** `Map`, `Set`, `Date`, `FormData` and
-  `File` all fall into the same hole, and a `body: FormData` is a real shape for the dropzone
-  uploads. Whether to special-case headers or teach `kindOf` / `entriesOf` about non-plain
-  objects is the scope call: the second is not much bigger and stops the next report.
-
 ## Query devtools: the value explorer copies the value, never the key
 
 Requested 2026-08-07. Every node's `⧉` runs `copyValue()`
@@ -1461,6 +1416,21 @@ Query pass 2 (2026-08-07):
   badge reading 17 while the toolbar count reads 18 is correct. The badge counts live entries
   (`liveQueryEntries`), and `scopedQueryCount` adds the one tombstone the detail pane has selected -
   `listsTombstone` keeps a query that died under the detail in the list on purpose.
+- **Query devtools: the args explorer renders `HttpHeaders` inside out** (was its own section,
+  `7d6bc17bb`) - both scope calls the section left open were settled by the user: teach the explorer
+  about non-plain objects generally (not just headers), and keep **Args** raw - no merged
+  `resolveHeaders()` node, since a heading that says args must not quietly show where a header came
+  from. `query-devtools-exotic.ts` reads `HttpHeaders`, `Map`, `Set`, `FormData`, `File`, `Blob` and
+  `Date`, and names a function (`fn(headerProvider)`) instead of dumping its source; `entriesOf`,
+  `displayOf`, `matchesDeep`, the container preview and `copyValue` all go through it, so search and
+  copy stopped lying too. The editor half needed more than the section expected: headers round-trip
+  as a plain record and are rebuilt with `new HttpHeaders(...)`, but `FormData`/`File`/`Blob`/`Map`/
+  `Set`/a header provider **cannot** survive JSON at all, so they are left out of the draft and
+  restored verbatim at any depth - a key the user deletes still stays deleted. A `Date` is
+  deliberately editable, since its ISO string is what the request would send anyway. Changeset
+  `devtools-exotic-arg-values.md`, 10 unit tests, verified headlessly 19/19 against a new
+  `QdExoticArgsCardComponent`. Still true and worth keeping: interceptor-added headers are invisible
+  to the SDK, so no view here can claim to be the complete set.
 
 Found not to reproduce:
 

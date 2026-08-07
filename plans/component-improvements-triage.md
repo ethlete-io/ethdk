@@ -55,7 +55,12 @@ Ranked by value per unit of risk, not by size.
 > section listed, not just the args replay. **"Forget" with the Gone chip off** was worse than the
 > gating slip it was filed as - the button cleared the whole registry, every client and past any
 > search - so `clearQueryDevtoolsTombstones()` now takes ids and the button drops only what is listed.
-> The remaining query devtools items are all `A`.
+>
+> **The args explorer's `HttpHeaders`** (`B`,`D`) shipped 2026-08-07 too, both scope calls settled by
+> the user: the explorer learned non-plain objects generally, and **Args** stays raw - no merged
+> `resolveHeaders()` node. The editor half was bigger than the section implied, because most of those
+> values cannot survive JSON at all; they are now preserved rather than replayed as `{}`. **Every
+> remaining query devtools item is `A`.**
 
 1. **Logged out after being idle** - `S` to diagnose, `B`.
    The only item here a user is currently hitting. `fut-frontend`'s hub provider runs
@@ -80,30 +85,29 @@ Ranked by value per unit of risk, not by size.
 
 ### S - small, additive, low risk
 
-| Item                                                     | Tag     | Note                                                                                                                          |
-| -------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Auth: carry the logout cause across tabs                 | `B`     | See #1 - `{ type: 'logout' }` has no cause, so the receiving tab reports only `otherTab`. Do this before any refresh work     |
-| Auth: a missed scheduled refresh never re-arms           | `B`     | See #1 - `executeRefresh('scheduled')` early-returns four ways and the timer only re-arms on an `accessToken` change          |
-| Dropzone: removing a prefilled value deletes it          | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default    |
-| Scheduler: richer sub-appointment list                   | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                     |
-| Scheduler: agenda connector lines                        | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                         |
-| Accordion: border/label transition                       | `A`     | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported                                    |
-| Progress steps: success/warning/error states             | `A`     | Mirror `BANNER_TYPES`, don't invent colour language                                                                           |
-| Colour input: hex/RGB validators                         | `A`     | None exist anywhere today; the `#rrggbb` claim is a doc comment only                                                          |
-| Dropzone: reveal the preview on hover                    | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                            |
-| Grid: assert breakpoint coverage in the dev check        | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                              |
-| Filter overlay story: demo dressing                      | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                          |
-| Auth: `shouldAutoLogin` predicate                        | `A`     | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                                                       |
-| Query devtools: stop the Queries list repeating          | `A`     | One row per query _instance_ is by design; the list should collapse or hide the repeats                                       |
-| Query devtools: locate the selected query                | `A`     | Inspect backwards - `entry.meta.element` is already there, and works in a prod build                                          |
-| Query devtools: timestamp + sort the Queries list        | `A`,`D` | `createdAt` and `lastTimeExecutedAt()` both exist unrendered; pick one, keep `pinnedFirst` above the sort                     |
-| Query devtools: args explorer guts an `HttpHeaders`      | `B`,`D` | Private fields, real headers invisible - and the args editor stringifies the same mess into a replay. Reuse `insomniaHeaders` |
-| Query devtools: History diff needs no scrolling          | `A`     | Only 5 runs can ever hold a body - fold the bodiless tail, step the pair from the diff header                                 |
-| Query devtools: overrides survive a reload               | `A`     | Ops are already serializable; `sessionStorage`, default off, and loud about what it re-armed                                  |
-| Query devtools: copy a key or a path, not just the value | `A`,`D` | `⧉` is the only per-node control outside the Response explorer - settle menu vs modifier-click first                          |
-| Query devtools: copy the route from the detail head      | `A`     | `queryRoute()` already exists (private); decide rendered route vs absolute URL, reuse `writeToClipboard`                      |
-| Query devtools: show `isLeader` on the auth tab          | `A`     | Cheap half of the lock inspector - `provider.features.multiTabSync` is already reachable via `asAuth()`                       |
-| Query: retire `CLEAR_QUERY_ARGS`                         | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                           |
+| Item                                                     | Tag     | Note                                                                                                                       |
+| -------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Auth: carry the logout cause across tabs                 | `B`     | See #1 - `{ type: 'logout' }` has no cause, so the receiving tab reports only `otherTab`. Do this before any refresh work  |
+| Auth: a missed scheduled refresh never re-arms           | `B`     | See #1 - `executeRefresh('scheduled')` early-returns four ways and the timer only re-arms on an `accessToken` change       |
+| Dropzone: removing a prefilled value deletes it          | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default |
+| Scheduler: richer sub-appointment list                   | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                  |
+| Scheduler: agenda connector lines                        | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                      |
+| Accordion: border/label transition                       | `A`     | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported                                 |
+| Progress steps: success/warning/error states             | `A`     | Mirror `BANNER_TYPES`, don't invent colour language                                                                        |
+| Colour input: hex/RGB validators                         | `A`     | None exist anywhere today; the `#rrggbb` claim is a doc comment only                                                       |
+| Dropzone: reveal the preview on hover                    | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                         |
+| Grid: assert breakpoint coverage in the dev check        | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                           |
+| Filter overlay story: demo dressing                      | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                       |
+| Auth: `shouldAutoLogin` predicate                        | `A`     | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                                                    |
+| Query devtools: stop the Queries list repeating          | `A`     | One row per query _instance_ is by design; the list should collapse or hide the repeats                                    |
+| Query devtools: locate the selected query                | `A`     | Inspect backwards - `entry.meta.element` is already there, and works in a prod build                                       |
+| Query devtools: timestamp + sort the Queries list        | `A`,`D` | `createdAt` and `lastTimeExecutedAt()` both exist unrendered; pick one, keep `pinnedFirst` above the sort                  |
+| Query devtools: History diff needs no scrolling          | `A`     | Only 5 runs can ever hold a body - fold the bodiless tail, step the pair from the diff header                              |
+| Query devtools: overrides survive a reload               | `A`     | Ops are already serializable; `sessionStorage`, default off, and loud about what it re-armed                               |
+| Query devtools: copy a key or a path, not just the value | `A`,`D` | `⧉` is the only per-node control outside the Response explorer - settle menu vs modifier-click first                       |
+| Query devtools: copy the route from the detail head      | `A`     | `queryRoute()` already exists (private); decide rendered route vs absolute URL, reuse `writeToClipboard`                   |
+| Query devtools: show `isLeader` on the auth tab          | `A`     | Cheap half of the lock inspector - `provider.features.multiTabSync` is already reachable via `asAuth()`                    |
+| Query: retire `CLEAR_QUERY_ARGS`                         | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                        |
 
 ### M - real work, mostly consolidation
 
