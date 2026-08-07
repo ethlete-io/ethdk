@@ -76,8 +76,8 @@
 <div class="et-query-devtools-actions">
   @if (!isGone()) {
     <span class="et-query-devtools-actions-label">Run</span>
-    <button (click)="host.executeQuery(s.query, false)" class="et-query-devtools-btn" type="button">Execute</button>
-    <button (click)="host.executeQuery(s.query, true)" class="et-query-devtools-btn" type="button">Cached</button>
+    <button (click)="host.executeQuery(s, false)" class="et-query-devtools-btn" type="button">Execute</button>
+    <button (click)="host.executeQuery(s, true)" class="et-query-devtools-btn" type="button">Cached</button>
     <button (click)="host.resetQuery(s.query)" class="et-query-devtools-btn" type="button">Reset</button>
   }
   <button (click)="host.copyReport(s.entry, s.query)" class="et-query-devtools-btn" type="button">
@@ -102,7 +102,7 @@
   @if (!isGone()) {
     <span class="et-query-devtools-actions-label">Edit</span>
     <button (click)="host.openResponseEditor(s.query)" class="et-query-devtools-btn" type="button">Response</button>
-    <button (click)="host.openArgsEditor(s.query)" class="et-query-devtools-btn" type="button">Replay args</button>
+    <button (click)="host.openArgsEditor(s)" class="et-query-devtools-btn" type="button">Replay args</button>
     <span class="et-query-devtools-actions-label">Force</span>
     <button (click)="host.forceLoading(s.query)" class="et-query-devtools-btn" type="button">Loading</button>
     <button (click)="host.forceError(s.query)" class="et-query-devtools-btn" type="button">Error</button>

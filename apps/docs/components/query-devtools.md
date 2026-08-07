@@ -227,6 +227,24 @@ Args follow the same rule. A query that receives its args through
 does not - for those the args of its current request are shown, so the panel no
 longer reads `null` for a query that plainly sent something.
 
+**Execute replays those same args.** `execute()` on its own would fall back to
+`args()`, which only `withArgs` ever writes - so on an imperatively executed query
+the panel's **Execute** button would replay with no args at all, and a function
+route would fail outright. It passes what the panel is showing instead, so a
+replay repeats the request you are looking at.
+
+A function route that has **never** run has no args anywhere, and there is nothing
+to send. **Execute** opens the args editor seeded with the param names the route
+declares:
+
+```json
+{ "pathParams": { "postId": "" } }
+```
+
+Fill them in and run it from there. Nothing a panel button does escapes into the
+application's `ErrorHandler`: a failure is reported in the editor, and it names
+the real reason - `Invalid JSON` only ever means the draft did not parse.
+
 ## Features show what they were configured with
 
 Every feature is listed by name **and by the options it was created with**, so a

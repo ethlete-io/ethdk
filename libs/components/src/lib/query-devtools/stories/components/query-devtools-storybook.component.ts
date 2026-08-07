@@ -188,6 +188,37 @@ export class QdPostCardComponent {
   }
 }
 
+/**
+ * The same dynamic route, executed imperatively instead of through `withArgs` - so its args never reach
+ * the query's own `args` signal, and only the request it last built knows them.
+ */
+@Component({
+  selector: 'et-sb-qd-imperative',
+  template: `
+    <et-sb-qd-card heading="Imperative dynamic route">
+      <et-sb-qd-status [state]="state()" qdStatus>{{ post.response()?.title ?? 'nothing loaded yet' }}</et-sb-qd-status>
+
+      <button [loading]="!!post.loading()" (click)="load()" et-button size="sm" variant="tonal">
+        <i etIcon="et-arrow-right"></i>
+        Load post {{ postId() }}
+      </button>
+    </et-sb-qd-card>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [CARD_IMPORTS],
+})
+export class QdImperativeCardComponent {
+  protected postId = signal(1);
+  protected readonly post = getPost({ silenceMissingWithArgsFeatureError: true });
+
+  protected state = computed(() => stateOf(this.post));
+
+  protected load() {
+    this.post.execute({ args: { pathParams: { postId: this.postId() } } });
+    this.postId.update((id) => id + 1);
+  }
+}
+
 /** A query the API fails a few times before answering - the retry policy is what makes it succeed. */
 @Component({
   selector: 'et-sb-qd-flaky',
@@ -660,6 +691,7 @@ export class QdUnmountCardComponent {
       <div class="et-sb-devtools-grid">
         <et-sb-qd-server-time />
         <et-sb-qd-post />
+        <et-sb-qd-imperative />
         <et-sb-qd-flaky />
         <et-sb-qd-download />
         <et-sb-qd-posts-stack />
@@ -683,6 +715,7 @@ export class QdUnmountCardComponent {
     QUERY_DEVTOOLS_IMPORTS,
     QdServerTimeCardComponent,
     QdPostCardComponent,
+    QdImperativeCardComponent,
     QdFlakyCardComponent,
     QdDownloadCardComponent,
     QdPostsStackCardComponent,

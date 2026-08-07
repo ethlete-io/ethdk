@@ -94,6 +94,7 @@ import {
   PaneAxis,
   PaneTarget,
   QueryActivity,
+  QueryDevtoolsSelection,
   QueryLink,
   QueryListFacet,
   QueryStatus,
@@ -214,6 +215,24 @@ const DEFAULT_TOKEN_MAX_AGE_S = 300;
 
 /** Upper bound for the same, so a token that claims a year of life still gets refreshed hourly. */
 const MAX_TOKEN_MAX_AGE_S = 3600;
+
+/**
+ * A panel action must never reach the application's `ErrorHandler` - it reports its own failure inside
+ * the panel instead, and this is the text it shows.
+ */
+const actionErrorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+/**
+ * What to seed the args editor with for a query that has never run and holds no args anywhere. A
+ * function route cannot execute without its path params, so the editor offers them as blanks to fill.
+ */
+const emptyArgsSeed = (entry: QueryDevtoolsEntry) => {
+  const params = entry.meta.routeParts?.flatMap((part) => (part.param ? [part.param] : [])) ?? [];
+
+  if (!params.length) return {};
+
+  return { pathParams: Object.fromEntries(params.map((name) => [name, ''])) };
+};
 
 /**
  * The JSONPath of a string value inside a response, or `null`. Used to locate the access token in an
@@ -1328,8 +1347,20 @@ export class QueryDevtoolsComponent {
     return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
   }
 
-  public executeQuery(query: AnyQuery, allowCache: boolean) {
-    query.execute(allowCache ? { options: { allowCache: true } } : undefined);
+  /**
+   * Replays a query with the args the panel is already showing. `execute()` would otherwise default to
+   * `state.args()`, which only `withArgs` ever writes - so a query executed imperatively, by a sequence
+   * step or as an auth query would replay with no args at all and a function route would throw.
+   */
+  public executeQuery(selection: QueryDevtoolsSelection, allowCache: boolean) {
+    const { query } = selection;
+
+    try {
+      query.execute({ args: this.queryArgs(query), options: allowCache ? { allowCache: true } : undefined });
+    } catch (error) {
+      this.openArgsEditor(selection);
+      this.editError.set(actionErrorMessage(error));
+    }
   }
 
   public resetQuery(query: AnyQuery) {
@@ -1486,8 +1517,8 @@ export class QueryDevtoolsComponent {
     this.editorMode.set('response');
   }
 
-  public openArgsEditor(query: AnyQuery) {
-    const draft = JSON.stringify(this.queryArgs(query) ?? {}, null, 2);
+  public openArgsEditor({ entry, query }: QueryDevtoolsSelection) {
+    const draft = JSON.stringify(this.queryArgs(query) ?? emptyArgsSeed(entry), null, 2);
 
     this.editorSeed = draft;
     this.argsDraft.set(draft);
@@ -1496,22 +1527,42 @@ export class QueryDevtoolsComponent {
   }
 
   public applyResponse(query: AnyQuery) {
+    let response: unknown;
+
     try {
-      query.subtle.setResponse(JSON.parse(this.responseDraft()));
-      this.editorMode.set('none');
-      this.editError.set(null);
+      response = JSON.parse(this.responseDraft());
     } catch {
       this.editError.set('Invalid JSON');
+
+      return;
+    }
+
+    try {
+      query.subtle.setResponse(response);
+      this.editorMode.set('none');
+      this.editError.set(null);
+    } catch (error) {
+      this.editError.set(actionErrorMessage(error));
     }
   }
 
   public applyArgs(query: AnyQuery) {
+    let args: ReturnType<typeof this.queryArgs>;
+
     try {
-      query.execute({ args: JSON.parse(this.argsDraft()) });
-      this.editorMode.set('none');
-      this.editError.set(null);
+      args = JSON.parse(this.argsDraft());
     } catch {
       this.editError.set('Invalid JSON');
+
+      return;
+    }
+
+    try {
+      query.execute({ args });
+      this.editorMode.set('none');
+      this.editError.set(null);
+    } catch (error) {
+      this.editError.set(actionErrorMessage(error));
     }
   }
 

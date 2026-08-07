@@ -29,6 +29,7 @@ import {
   PaneAxis,
   PaneTarget,
   QueryActivity,
+  QueryDevtoolsSelection,
   QueryLink,
   QueryListFacet,
   RepositoryInfo,
@@ -107,7 +108,7 @@ export type QueryDevtoolsHost = {
   /** 1-second tick driving every countdown/freshness readout across tabs. */
   clock: Signal<number>;
 
-  findQuery(id: string | null): { entry: QueryDevtoolsEntry; query: AnyQuery } | null;
+  findQuery(id: string | null): QueryDevtoolsSelection | null;
   queryLinkFor(entry: QueryDevtoolsEntry | undefined, query?: AnyQuery): QueryLink;
 
   asStack(entry: QueryDevtoolsEntry): AnyQueryStack;
@@ -149,7 +150,7 @@ export type QueryDevtoolsHost = {
   isStepExpanded(entryId: string, index: number): boolean;
   toggleStep(entryId: string, index: number): void;
   resetStats(entry: QueryDevtoolsEntry): void;
-  executeQuery(query: AnyQuery, allowCache: boolean): void;
+  executeQuery(selection: QueryDevtoolsSelection, allowCache: boolean): void;
   resetQuery(query: AnyQuery): void;
 
   formatDuration(ms: number | null): string;
@@ -175,7 +176,7 @@ export type QueryDevtoolsHost = {
   editorSeed: string;
   editError: Signal<string | null>;
   openResponseEditor(query: AnyQuery): void;
-  openArgsEditor(query: AnyQuery): void;
+  openArgsEditor(selection: QueryDevtoolsSelection): void;
   applyResponse(query: AnyQuery): void;
   applyArgs(query: AnyQuery): void;
   cancelEditor(): void;

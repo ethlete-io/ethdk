@@ -1,10 +1,9 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
-import { AnyQuery, DetailTab } from './query-devtools-types';
+import { DetailTab, QueryDevtoolsSelection } from './query-devtools-types';
 
 /**
  * The query detail: head, live progress, run/edit/force actions and the overview/history/data
@@ -22,7 +21,7 @@ import { AnyQuery, DetailTab } from './query-devtools-types';
 export class QueryDevtoolsDetailComponent {
   protected host = injectQueryDevtoolsHost();
 
-  public sel = input.required<{ entry: QueryDevtoolsEntry; query: AnyQuery }>();
+  public sel = input.required<QueryDevtoolsSelection>();
 
   /**
    * Whether this is a tombstone. Everything that would run, edit or force the query is hidden for one -

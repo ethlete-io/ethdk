@@ -5,6 +5,7 @@ import {
   HttpRequestRetryState,
   Query,
   QueryClient,
+  QueryDevtoolsEntry,
   QueryDevtoolsRun,
   QueryDevtoolsStats,
   QueryDevtoolsStatsHandle,
@@ -18,6 +19,9 @@ import {
 // The registry stores queries type-erased; the panel reads them structurally.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQuery = Query<any>;
+
+/** The query a detail pane is showing, together with the registry entry it was registered as. */
+export type QueryDevtoolsSelection = { entry: QueryDevtoolsEntry; query: AnyQuery };
 
 export type DevtoolsTab =
   'queries' | 'stacks' | 'sequences' | 'forms' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events' | 'faults';
