@@ -1,3 +1,4 @@
+import { HttpHeaders } from '@angular/common/http';
 import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import { AutoSurfaceDirective, ProvideColorDirective, toInjectFn } from '@ethlete/core';
@@ -49,6 +50,7 @@ import {
   getPosts,
   getProfile,
   getServerTime,
+  postExoticArgs,
 } from '../query-devtools-demo.utils';
 
 const injectDemoAuthProvider = toInjectFn(devtoolsDemoAuthProvider);
@@ -216,6 +218,50 @@ export class QdImperativeCardComponent {
   protected load() {
     this.post.execute({ args: { pathParams: { postId: this.postId() } } });
     this.postId.update((id) => id + 1);
+  }
+}
+
+/**
+ * Args holding the built-ins `Object.entries` cannot read - `HttpHeaders`, `FormData`, a `Map`, a
+ * `Set`, a `Date` and a `File`. What the value explorer has to render honestly.
+ */
+@Component({
+  selector: 'et-sb-qd-exotic-args',
+  template: `
+    <et-sb-qd-card heading="Exotic args">
+      <et-sb-qd-status [state]="state()" qdStatus>{{ post.response()?.title ?? 'nothing loaded yet' }}</et-sb-qd-status>
+
+      <button [loading]="!!post.loading()" (click)="load()" et-button size="sm" variant="tonal">
+        <i etIcon="et-play"></i>
+        Send exotic args
+      </button>
+    </et-sb-qd-card>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [CARD_IMPORTS],
+})
+export class QdExoticArgsCardComponent {
+  protected readonly post = postExoticArgs({ silenceMissingWithArgsFeatureError: true });
+
+  protected state = computed(() => stateOf(this.post));
+
+  protected load() {
+    const body = new FormData();
+
+    body.append('scope', 'season');
+    body.append('report', new File(['a mock report body'], 'report.pdf', { type: 'application/pdf' }));
+
+    this.post.execute({
+      args: {
+        body,
+        headers: new HttpHeaders({ 'x-tenant': 'fc27', 'x-trace': ['one', 'two'] }),
+        queryParams: {
+          since: new Date('2026-01-31T09:00:00.000Z'),
+          retries: new Map([['attempts', 2]]),
+          flags: new Set(['draft', 'archived']),
+        },
+      },
+    });
   }
 }
 
@@ -692,6 +738,7 @@ export class QdUnmountCardComponent {
         <et-sb-qd-server-time />
         <et-sb-qd-post />
         <et-sb-qd-imperative />
+        <et-sb-qd-exotic-args />
         <et-sb-qd-flaky />
         <et-sb-qd-download />
         <et-sb-qd-posts-stack />
@@ -716,6 +763,7 @@ export class QdUnmountCardComponent {
     QdServerTimeCardComponent,
     QdPostCardComponent,
     QdImperativeCardComponent,
+    QdExoticArgsCardComponent,
     QdFlakyCardComponent,
     QdDownloadCardComponent,
     QdPostsStackCardComponent,

@@ -3,6 +3,7 @@ import { Component, computed, input, linkedSignal, numberAttribute, signal, View
 import { injectStyleManager } from '@ethlete/core';
 import { JsonPath, QueryDevtoolsOverridesRecorder } from '@ethlete/query';
 import { Subject, switchMap, tap, timer } from 'rxjs';
+import { exoticOf } from './query-devtools-exotic';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import { QueryDevtoolsOverrideMenuComponent } from './query-devtools-override-menu.component';
 
@@ -32,6 +33,10 @@ export const kindOf = (value: unknown): JsonKind => {
 
 const entriesOf = (value: unknown): JsonEntry[] => {
   if (Array.isArray(value)) return value.map((v, i) => ({ k: String(i), v }));
+
+  const exotic = exoticOf(value);
+  if (exotic) return exotic.entries ?? [];
+
   if (value && typeof value === 'object') {
     return Object.entries(value as Record<string, unknown>).map(([k, v]) => ({ k, v }));
   }
@@ -192,7 +197,12 @@ export class QueryDevtoolsJsonComponent {
   public overrides = input<QueryDevtoolsOverridesRecorder | null>(null);
 
   protected kind = computed(() => kindOf(this.value()));
-  protected isContainer = computed(() => this.kind() === 'array' || this.kind() === 'object');
+  private exotic = computed(() => exoticOf(this.value()));
+
+  /** A `Date` or a `File` is object-typed but has nothing to expand into, so it renders as a leaf. */
+  protected isContainer = computed(
+    () => (this.kind() === 'array' || this.kind() === 'object') && !this.exotic()?.display,
+  );
 
   /** The entries this node covers: the container's own, or just the window a chunk stands for. */
   public ownEntries = computed<JsonEntry[]>(() => {
@@ -270,6 +280,9 @@ export class QueryDevtoolsJsonComponent {
 
     if (this.kind() === 'array') return count ? `[…] ${count}` : '[]';
 
+    const typeName = this.exotic()?.typeName;
+    if (typeName) return `${typeName}(${count})`;
+
     return count ? `{…} ${count}` : '{}';
   });
 
@@ -328,13 +341,15 @@ export class QueryDevtoolsJsonComponent {
    */
   protected copyValue() {
     const kind = this.kind();
-    const value = this.chunk() ? this.chunkValue() : this.value();
+    const exotic = this.exotic();
+    const value = this.chunk() ? this.chunkValue() : this.copyableValue();
 
     let text: string;
 
     try {
       if (kind === 'string') text = value as string;
       else if (kind === 'undefined') text = 'undefined';
+      else if (exotic?.display) text = exotic.display;
       else text = JSON.stringify(value, null, 2);
     } catch {
       // Circular references (or a BigInt / toJSON that throws) make the subtree unserializable.
@@ -345,6 +360,13 @@ export class QueryDevtoolsJsonComponent {
       ?.writeText(text)
       .then(() => this.flagCopied())
       .catch(() => undefined);
+  }
+
+  /** An exotic container copies the entries the tree shows, not the private fields `JSON.stringify` finds. */
+  private copyableValue() {
+    const entries = this.exotic()?.entries;
+
+    return entries ? Object.fromEntries(entries.map((entry) => [entry.k, entry.v])) : this.value();
   }
 
   private chunkValue() {
@@ -365,6 +387,9 @@ export class QueryDevtoolsJsonComponent {
 // language service for the whole template (see `ethlete/no-template-literal-before-inline-template`).
 
 const displayOf = (value: unknown) => {
+  const exotic = exoticOf(value);
+  if (exotic?.display) return `${exotic.typeName}(${exotic.display})`;
+
   switch (kindOf(value)) {
     case 'string':
       return `"${value as string}"`;
@@ -396,7 +421,9 @@ const buildChunks = (entries: JsonEntry[], window: { offset: number; isArray: bo
 
 /** Whether a search term appears anywhere in a subtree - used to keep non-matching slices folded. */
 const matchesDeep = (value: unknown, term: string): boolean => {
-  if (!value || typeof value !== 'object') return displayOf(value).toLowerCase().includes(term);
+  if (!value || typeof value !== 'object' || exoticOf(value)?.display) {
+    return displayOf(value).toLowerCase().includes(term);
+  }
 
   return entriesOf(value).some(({ k, v }) => k.toLowerCase().includes(term) || matchesDeep(v, term));
 };

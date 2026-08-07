@@ -1,4 +1,5 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { headerEntries, isHeadersValue } from './query-devtools-exotic';
 import { DOCUMENT } from '@angular/common';
 import {
   Component,
@@ -232,6 +233,94 @@ const emptyArgsSeed = (entry: QueryDevtoolsEntry) => {
   if (!params.length) return {};
 
   return { pathParams: Object.fromEntries(params.map((name) => [name, ''])) };
+};
+
+type HeadersRecord = Record<string, string | string[]>;
+
+/** Marks a value `editableArgs` left out of the draft, for {@link executableArgs} to put back. */
+const DROPPED = /* @__PURE__ */ Symbol('dropped');
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  if (!value || typeof value !== 'object') return false;
+
+  const proto = Object.getPrototypeOf(value);
+
+  return proto === Object.prototype || proto === null;
+};
+
+/**
+ * Values `JSON.stringify` cannot represent - it writes `{}`, private fields, or omits them outright. A
+ * `Date` is deliberately not one: it survives as an ISO string, which is what the query would send
+ * anyway, so it stays editable.
+ */
+const isUneditable = (value: unknown) =>
+  typeof value === 'function' ||
+  value instanceof Map ||
+  value instanceof Set ||
+  (typeof FormData !== 'undefined' && value instanceof FormData) ||
+  (typeof Blob !== 'undefined' && value instanceof Blob) ||
+  isHeadersValue(value);
+
+/**
+ * Args in the shape the JSON editor can carry. `JSON.stringify` writes an `HttpHeaders` as its four
+ * private fields, a `FormData` or a `Map` as `{}`, and a header provider not at all - so an unedited
+ * draft used to replay values the query never had. Headers become a plain `name: value` record, since
+ * one rebuilds them exactly; every other such value is left out of the draft and put back verbatim by
+ * {@link executableArgs}, which beats letting the user edit an empty object over the top of it.
+ */
+const editableArgs = (args: Record<string, unknown>) => editableValue(args) as Record<string, unknown>;
+
+const editableValue = (value: unknown): unknown => {
+  if (isHeadersValue(value)) return Object.fromEntries(headerEntries(value).map(({ k, v }) => [k, v]));
+  if (isUneditable(value)) return DROPPED;
+  if (Array.isArray(value)) {
+    // `null` rather than a hole, so the indices a user edits still line up with the ones being replayed.
+    return value.map((item) => {
+      const edited = editableValue(item);
+
+      return edited === DROPPED ? null : edited;
+    });
+  }
+
+  if (isPlainObject(value)) {
+    const out: Record<string, unknown> = {};
+
+    for (const [key, child] of Object.entries(value)) {
+      const edited = editableValue(child);
+
+      if (edited !== DROPPED) out[key] = edited;
+    }
+
+    return out;
+  }
+
+  return value;
+};
+
+/** The inverse of {@link editableArgs}: records become `HttpHeaders` again, dropped values come back. */
+const executableArgs = (draft: Record<string, unknown> | null, source: Record<string, unknown> | null) =>
+  draft ? (executableValue(draft, source) as Record<string, unknown>) : draft;
+
+const executableValue = (draft: unknown, source: unknown): unknown => {
+  // What the draft could not carry comes back verbatim. A key the user deleted themselves stays deleted,
+  // because only a value `editableArgs` dropped is missing from the draft while present in the source.
+  if (draft === undefined) return isUneditable(source) ? source : undefined;
+
+  if (isHeadersValue(source) && isPlainObject(draft)) return new HttpHeaders(draft as HeadersRecord);
+
+  if (isPlainObject(draft) && isPlainObject(source)) {
+    const out: Record<string, unknown> = { ...draft };
+
+    for (const [key, child] of Object.entries(source)) {
+      const restored = executableValue(draft[key], child);
+
+      if (restored !== undefined) out[key] = restored;
+    }
+
+    return out;
+  }
+
+  return draft;
 };
 
 /**
@@ -495,6 +584,9 @@ export class QueryDevtoolsComponent {
    */
   public editorSeed = '';
   public editError = signal<string | null>(null);
+
+  /** The args the open editor was seeded from, so applying can put back what the draft cannot carry. */
+  private editedArgsSource: Record<string, unknown> | null = null;
 
   /** Transient "Copied!" feedback for the copy-report, copy-as-Insomnia / cURL and copy-document actions. */
   public copiedReport = signal(false);
@@ -1320,7 +1412,6 @@ export class QueryDevtoolsComponent {
     }
   }
 
-  /** A byte count the way a network panel spells one out. */
   public formatBytes(bytes: number) {
     if (bytes < 1000) return `${bytes} B`;
     if (bytes < 1_000_000) return `${(bytes / 1000).toFixed(1)} kB`;
@@ -1518,8 +1609,10 @@ export class QueryDevtoolsComponent {
   }
 
   public openArgsEditor({ entry, query }: QueryDevtoolsSelection) {
-    const draft = JSON.stringify(this.queryArgs(query) ?? emptyArgsSeed(entry), null, 2);
+    const args = this.queryArgs(query) ?? emptyArgsSeed(entry);
+    const draft = JSON.stringify(editableArgs(args), null, 2);
 
+    this.editedArgsSource = args;
     this.editorSeed = draft;
     this.argsDraft.set(draft);
     this.editError.set(null);
@@ -1558,7 +1651,7 @@ export class QueryDevtoolsComponent {
     }
 
     try {
-      query.execute({ args });
+      query.execute({ args: executableArgs(args, this.editedArgsSource) });
       this.editorMode.set('none');
       this.editError.set(null);
     } catch (error) {

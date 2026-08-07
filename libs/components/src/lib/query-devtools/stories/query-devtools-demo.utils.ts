@@ -300,6 +300,16 @@ export type CreatePostArgs = { body: { title: string }; response: PostView };
 /** A mutation whose whole point is the invalidation that follows it - the Events tab's fan-out row. */
 export const createPost = postQuery<CreatePostArgs>('/posts');
 
+export type ExoticArgs = {
+  body: FormData;
+  headers: HttpHeaders;
+  queryParams: { since: Date; retries: Map<string, number>; flags: Set<string> };
+  response: PostView;
+};
+
+/** Args made only of the built-ins `Object.entries` cannot read - what the value explorer is tested against. */
+export const postExoticArgs = postQuery<ExoticArgs>('/posts');
+
 export const createOrder = postQuery<CreateOrderArgs>('/orders');
 export const createPayment = postQuery<CreatePaymentArgs>('/payments');
 export const confirmOrder = postQuery<ConfirmOrderArgs>('/orders/confirm');

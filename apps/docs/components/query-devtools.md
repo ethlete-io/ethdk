@@ -245,6 +245,31 @@ Fill them in and run it from there. Nothing a panel button does escapes into the
 application's `ErrorHandler`: a failure is reported in the editor, and it names
 the real reason - `Invalid JSON` only ever means the draft did not parse.
 
+### Args that are not plain JSON
+
+An arg is often not a plain object. `headers` is an `HttpHeaders` (or a function
+returning one), a file upload's `body` is `FormData`, and either can hold a `File`,
+a `Map`, a `Set` or a `Date`. `Object.entries` reads none of those - it returns the
+private fields of a class instance, and `[]` for a `Map` - so both the tree and the
+editor have their own reader for them.
+
+**The value explorer names the type and shows its contents.** `headers` renders as
+`HttpHeaders(2)` holding the headers that were actually set, a repeated header
+joined on `, ` the way the wire format writes it; `FormData`, `Map`, `Set`, `File`
+and `Blob` expand the same way, and a `Date` renders its ISO value instead of an
+empty object. A header **provider** shows as `fn(name)` rather than its source text.
+Only the args the call passed are shown - client-level headers are merged in later,
+and headers an interceptor adds are added after the SDK hands the request over, so
+neither is visible here.
+
+**The args editor carries what JSON can carry, and preserves what it cannot.**
+Headers become a plain `name: value` record you can edit, and are rebuilt into
+`HttpHeaders` when you execute. A `Date` stays editable as its ISO string. Anything
+JSON would flatten to `{}` - `FormData`, `File`, `Blob`, `Map`, `Set`, and a header
+provider - is left out of the draft and put back **verbatim** on execute, at any
+depth, so replaying an unedited draft repeats the request exactly. Deleting a key
+from the draft still removes it; only what the draft never carried comes back.
+
 ## Features show what they were configured with
 
 Every feature is listed by name **and by the options it was created with**, so a
