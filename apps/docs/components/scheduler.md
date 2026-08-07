@@ -154,7 +154,7 @@ Dragging across empty space on the **week**, **day** or **month** view draws a n
 - **Week and day** draw a time range down a day column. It snaps to 15-minute slots and is never shorter than one.
 - **Month** draws an all-day span across day cells, in either direction.
 
-A press that never passes the drag threshold stays a plain click, so clicking empty space does nothing, and a press that starts **on** an appointment (or a "+N more" trigger) does not draw over it.
+A press that never passes the drag threshold stays a plain click, and a click on empty space creates too: on the week and day views an hour starting where it landed, snapped to the same 15-minute slots, and on the month view an all-day appointment on the cell clicked. A press that starts **on** an appointment (or a "+N more" trigger) does not draw over it, and a click made while a surface is open only dismisses it.
 
 **On touch it starts with a long press.** Both views scroll, so a finger that simply drags is panning - the browser claims the gesture and cancels it. Holding still for ~400ms arms the range instead, and from that point scrolling is blocked until you let go, so the drag draws. Releasing a long press without moving still creates the first slot or day. A quick swipe scrolls exactly as before, and a tap still does nothing.
 
@@ -168,15 +168,15 @@ Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, bui
 
 Where it opens depends on whether there is something on the calendar to open it over:
 
-| Opened by                                     | Below `md`  | `md` and up                            |
-| --------------------------------------------- | ----------- | -------------------------------------- |
-| Clicking an appointment                       | Full screen | Anchored to that appointment           |
-| [Dragging a range](#drag-to-create) on a view | Full screen | Anchored to the range you drew         |
-| The toolbar's add-appointment action          | Full screen | Centered dialog - nothing to anchor to |
+| Opened by                                      | Below `md`  | `md` and up                            |
+| ---------------------------------------------- | ----------- | -------------------------------------- |
+| Clicking an appointment                        | Full screen | Anchored to that appointment           |
+| [Dragging or clicking](#drag-to-create) a view | Full screen | Anchored to the range you drew         |
+| The toolbar's add-appointment action           | Full screen | Centered dialog - nothing to anchor to |
 
 A phone gets the whole viewport in every case, where the form needs the space. Selecting an appointment that is not on screen - writing `selectedAppointmentId` yourself, or picking one from a month cell's overflow menu - has no element to anchor to either, so it falls back to a centered dialog.
 
-Anchored, it opens **centered under** what it belongs to, not aligned to one of its edges: a dragged range anchors to the whole span you drew - across several week rows too - so the surface lands over its middle rather than over its first day. It flips above when there is no room below, and shifts along the viewport edge when centering would push it off screen.
+Anchored, it opens **centered under** what it belongs to, not aligned to one of its edges: a dragged range anchors to the span you drew, so the surface lands over its middle rather than over its first day. A month range that wraps to the next week row anchors to its first row only - covering every row would span all seven columns and center the surface on the grid instead of on the range. It flips above when there is no room below, and shifts along the viewport edge when centering would push it off screen.
 
 ```html
 <et-scheduler

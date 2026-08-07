@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
   ViewEncapsulation,
   computed,
   inject,
@@ -21,6 +22,7 @@ const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 const MINUTES_PER_DAY = 24 * 60;
 const DRAFT_SLOT_MINUTES = 15;
 const DRAFT_MINIMUM_DURATION = DRAFT_SLOT_MINUTES * 60 * 1000;
+const CLICK_DRAFT_MINUTES = 60;
 
 type SchedulerDraftColumn = { element: HTMLElement; day: Date };
 
@@ -46,6 +48,7 @@ export class SchedulerTimeGridViewComponent {
 
   private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
   private destroyRef = inject(DestroyRef);
+  private hostInjector = inject(Injector);
   private renderer = injectRenderer();
   protected timeGridBody = viewChild<ElementRef<HTMLElement>>('timeGridBody');
   private firstHourRow = viewChild<ElementRef<HTMLElement>>('hourRow');
@@ -100,8 +103,9 @@ export class SchedulerTimeGridViewComponent {
 
   /**
    * Drags a new appointment's time range out of an empty part of a day column. With a mouse the
-   * gesture's own commit threshold separates a drag from a click, so tapping empty grid does
-   * nothing; a finger has to long-press first - see `startSchedulerDraftGesture`.
+   * gesture's own commit threshold separates a drag from a click, so a click on empty grid drafts
+   * an hour instead of a drawn range; a finger has to long-press first - see
+   * `startSchedulerDraftGesture`.
    */
   protected startDraftRange(event: PointerEvent, column: SchedulerDraftColumn) {
     const scheduler = this.scheduler;
@@ -121,7 +125,10 @@ export class SchedulerTimeGridViewComponent {
           : scheduler.beginDraftRange(at, DRAFT_MINIMUM_DURATION);
       },
       settle: () => {
-        if (scheduler.draftRange()?.phase !== 'dragging') return;
+        const draft = scheduler.draftRange();
+
+        if (!draft) return this.draftHourAt(column, event.clientY);
+        if (draft.phase !== 'dragging') return;
 
         // the preview is what the create surface anchors to, so hand it over before committing
         scheduler.surfaceAnchor.set(this.draftBlock()?.nativeElement ?? null);
@@ -129,6 +136,27 @@ export class SchedulerTimeGridViewComponent {
       },
       cancel: () => scheduler.clearDraftRange(),
     });
+  }
+
+  /** A click on empty grid: an hour starting where it landed, snapped like a drawn range is. */
+  private draftHourAt(column: SchedulerDraftColumn, clientY: number) {
+    const scheduler = this.scheduler;
+
+    // a click made while a surface is open is dismissing it, not asking for another appointment
+    if (!scheduler || scheduler.selectedAppointmentId()) return;
+
+    const start = this.draftTimeAt(column, clientY);
+
+    scheduler.setDraftRange({ start, end: addMinutes(start, CLICK_DRAFT_MINUTES) });
+
+    // unlike a drag, nothing has drawn the preview yet - it is only there to anchor to a pass later
+    afterNextRender(
+      () => {
+        scheduler.surfaceAnchor.set(this.draftBlock()?.nativeElement ?? null);
+        scheduler.commitDraftRange();
+      },
+      { injector: this.hostInjector },
+    );
   }
 
   /** The time a pointer at `clientY` sits at in `column`, snapped to the draft's slot size. */

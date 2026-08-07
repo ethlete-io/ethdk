@@ -86,7 +86,14 @@ export class SchedulerMonthViewComponent {
         scheduler.setDraftRange({ start: startOfDay(from), end: endOfDay(until), allDay: true });
       },
       settle: () => {
-        if (scheduler.draftRange()?.phase !== 'dragging') return;
+        const draft = scheduler.draftRange();
+
+        // a click made while a surface is open is dismissing it, not asking for another appointment
+        if (!draft && !scheduler.selectedAppointmentId()) {
+          scheduler.setDraftRange({ start: startOfDay(anchor), end: endOfDay(anchor), allDay: true });
+        } else if (draft?.phase !== 'dragging') {
+          return;
+        }
 
         scheduler.surfaceAnchor.set(this.coverDraftRange(weeks));
         scheduler.commitDraftRange();
@@ -97,14 +104,21 @@ export class SchedulerMonthViewComponent {
 
   private coverDraftRange(weeks: HTMLElement): HTMLElement | null {
     const anchor = this.draftAnchor()?.nativeElement;
-    const drafted = this.month
-      .weeks()
-      .flat()
-      .map((cell, index) => (this.isDrafted(cell.date) ? this.cells()[index]?.nativeElement : null))
+    const rows = this.month.weeks();
+    // only the first week row the range touches: a range that wraps spans every column, so covering
+    // all of it would center the surface on the grid rather than on what was drawn
+    const rowIndex = rows.findIndex((week) => week.some((cell) => this.isDrafted(cell.date)));
+    const row = rows[rowIndex];
+
+    if (!anchor || !row) return null;
+
+    const offset = rows.slice(0, rowIndex).reduce((count, week) => count + week.length, 0);
+    const drafted = row
+      .map((cell, index) => (this.isDrafted(cell.date) ? this.cells()[offset + index]?.nativeElement : null))
       .filter((element) => !!element)
       .map((element) => element.getBoundingClientRect());
 
-    if (!anchor || !drafted.length) return null;
+    if (!drafted.length) return null;
 
     const host = weeks.getBoundingClientRect();
     const left = Math.min(...drafted.map((rect) => rect.left));
