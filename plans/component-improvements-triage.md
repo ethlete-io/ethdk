@@ -105,7 +105,6 @@ Ranked by value per unit of risk, not by size.
 | Query devtools: History diff needs no scrolling          | `A`     | Only 5 runs can ever hold a body - fold the bodiless tail, step the pair from the diff header                              |
 | Query devtools: overrides survive a reload               | `A`     | Ops are already serializable; `sessionStorage`, default off, and loud about what it re-armed                               |
 | Query devtools: copy a key or a path, not just the value | `A`,`D` | `⧉` is the only per-node control outside the Response explorer - settle menu vs modifier-click first                       |
-| Query devtools: copy the route from the detail head      | `A`     | `queryRoute()` already exists (private); decide rendered route vs absolute URL, reuse `writeToClipboard`                   |
 | Query devtools: show `isLeader` on the auth tab          | `A`     | Cheap half of the lock inspector - `provider.features.multiTabSync` is already reachable via `asAuth()`                    |
 | Query: retire `CLEAR_QUERY_ARGS`                         | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                        |
 

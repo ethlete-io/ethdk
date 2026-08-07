@@ -29,6 +29,7 @@ import {
   PaneAxis,
   PaneTarget,
   QueryActivity,
+  QueryDevtoolsLeadership,
   QueryDevtoolsSelection,
   QueryLink,
   QueryListFacet,
@@ -122,6 +123,8 @@ export type QueryDevtoolsHost = {
   authQueryKeys(auth: AnyBearerAuthProvider): string[];
   /** Countdown to the access-token's `exp` (the point a refresh becomes due), or `null` if unknown. */
   authTokenExpiry(auth: AnyBearerAuthProvider): string | null;
+  /** The multi-tab leadership chip, or `null` for a provider without `withBearerAuthMultiTabSync`. */
+  authLeadership(auth: AnyBearerAuthProvider): QueryDevtoolsLeadership | null;
 
   queryStatus(query: AnyQuery): 'idle' | 'loading' | 'success' | 'error';
   isStale(query: AnyQuery): boolean;
@@ -212,10 +215,15 @@ export type QueryDevtoolsHost = {
   copiedInsomnia: Signal<boolean>;
   copiedCurl: Signal<boolean>;
   copiedGql: Signal<boolean>;
+  copiedRoute: Signal<boolean>;
   copyReport(entry: QueryDevtoolsEntry, query: AnyQuery): void;
   copyInsomniaRequest(entry: QueryDevtoolsEntry, query: AnyQuery): void;
   copyCurlRequest(entry: QueryDevtoolsEntry, query: AnyQuery): void;
   copyGqlDocument(doc: string): void;
+  /** The absolute URL of the last request, or the rendered route for a query that has not run. */
+  copyableRoute(entry: QueryDevtoolsEntry, query: AnyQuery): string;
+  copyableRouteTitle(entry: QueryDevtoolsEntry, query: AnyQuery): string;
+  copyRoute(entry: QueryDevtoolsEntry, query: AnyQuery): void;
 
   refreshesFor(entryId: string): { id: number; timestamp: number; label: string }[];
   /** What asked for a refresh, on one line - shared by the drawer's "Refetched by" and the Events tab. */

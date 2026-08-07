@@ -667,34 +667,6 @@ value, or to paste back into the explorer's own `filter keys / values…` box.
   `title` and the `aria-label`; with two or three payloads behind one control, a bare `✓` no
   longer says what landed on the clipboard.
 
-## Query devtools: copy the route from the query detail header
-
-Requested 2026-08-07. The detail header is a method, `<et-query-devtools-route>` and the
-`tampered` / `gone` chips - nothing in it is copyable. Getting the endpoint out of the panel today
-means Copy report, cURL or Insomnia from the actions row, and each of those is a whole document
-built for a different purpose.
-
-- **Three different strings hide behind "the route"; pick deliberately.** The rendered route
-  (params resolved to their values, the request's query string appended) is what is on screen and
-  already exists as `queryRoute()` - `private` today, so a template button needs it on
-  `QueryDevtoolsHost`. `requestUrl(query)` is the absolute URL the last request actually used,
-  which is what a browser or Postman wants, and it is `null` until the query runs.
-  `entry.meta.route` is the template with `:param` still in it, which is what you grep the app
-  for. Probable answer: the absolute URL when there is one, the rendered route as the fallback,
-  and the `title` saying which.
-- **Header or actions row.** Every copy action today is a labelled button in the actions row
-  (`Copy report` / `cURL` / `Insomnia`). What was asked for is beside the route, so: a small `⧉`
-  matching the value explorer's. That also keeps it reachable on a `gone` entry, where the Run and
-  Edit and Force groups are gated out but the exports stay.
-- **The list rows are a separate decision.** `<et-query-devtools-route>` also renders in the
-  Queries, Stacks, Sequences and Forms lists. A copy control there means a nested button inside a
-  click-to-select row (so `stopPropagation`) plus a control on every line of a dense list. Do the
-  detail header first and treat the rows as their own call if it is still wanted afterwards.
-- **One `copied` signal per action stops scaling here.** `copiedReport`, `copiedCurl`,
-  `copiedInsomnia` and `copiedGql` are four booleans sharing one `copiedReset$`; a fifth is the
-  point to key the tick by action instead. Reuse `writeToClipboard` either way - it is the panel's
-  one clipboard writer and it already ticks and resets.
-
 ## Query devtools: a Web Locks inspector, and the missing `isLeader`
 
 Requested 2026-08-07. The auth tab's Features row renders `withBearerAuthMultiTabSync`'s
@@ -1431,6 +1403,18 @@ Query pass 2 (2026-08-07):
   `devtools-exotic-arg-values.md`, 10 unit tests, verified headlessly 19/19 against a new
   `QdExoticArgsCardComponent`. Still true and worth keeping: interceptor-added headers are invisible
   to the SDK, so no view here can claim to be the complete set.
+- **Query devtools: copy the route from the query detail header** (was its own section) - a `⧉`
+  beside the route, matching the value explorer's, resolved the way the section proposed: the
+  absolute URL of the last request when there is one, the rendered route as the fallback, and the
+  `title` naming which plus the exact string. `queryRoute()` stayed private; `copyableRoute` /
+  `copyableRouteTitle` / `copyRoute` are the public surface. The section's worry about a fifth
+  `copied` boolean did not bite - `copiedRoute` joins the existing four on the one `copiedReset$`,
+  and keying by action is still only worth doing when two of them can be on screen at once. One
+  layout note the section did not anticipate: `.et-query-devtools-route` is `flex: 1 1 auto`, which
+  would have parked the button at the far edge of the head, so the detail head scopes it to
+  `flex: 0 1 auto` and the button's `margin-inline-end: auto` keeps the chips right-aligned. The
+  list rows are still a separate call, as the section said. Changeset
+  `devtools-copy-route-from-detail-head.md`. Verified headlessly: 22/22, both branches.
 
 Found not to reproduce:
 

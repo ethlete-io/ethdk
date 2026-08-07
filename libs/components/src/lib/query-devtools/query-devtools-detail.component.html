@@ -5,6 +5,16 @@
   <span class="et-query-devtools-route">
     <et-query-devtools-route [segments]="host.routeSegments(s.entry, s.query)" />
   </span>
+  <button
+    [attr.aria-label]="host.copyableRouteTitle(s.entry, s.query)"
+    [title]="host.copyableRouteTitle(s.entry, s.query)"
+    [class.et-query-devtools-route-copy--copied]="host.copiedRoute()"
+    (click)="host.copyRoute(s.entry, s.query)"
+    class="et-query-devtools-route-copy"
+    type="button"
+  >
+    {{ host.copiedRoute() ? '✓' : '⧉' }}
+  </button>
   @if (host.isTampered(s.entry)) {
     <span
       class="et-query-devtools-chip et-query-devtools-chip--error"

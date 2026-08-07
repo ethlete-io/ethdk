@@ -938,6 +938,43 @@
     margin-block-end: 0.8rem;
   }
 
+  /* The copy button has to sit against the route, so here the route hugs its text (still ellipsing
+     when it outgrows the row) and the button's auto margin keeps the chips at the far edge. */
+  .et-query-devtools-detail-head .et-query-devtools-route {
+    flex: 0 1 auto;
+  }
+
+  /* The value explorer's copy button, minus the reveal-on-hover: there is one of these, not one per
+     row of a dense tree, so hiding it would only make it undiscoverable. */
+  .et-query-devtools-route-copy {
+    appearance: none;
+    margin-inline-end: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    inline-size: 2.2rem;
+    block-size: 2.2rem;
+    margin-inline-start: -0.4rem;
+    border: none;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--_et-qdt-subtle);
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  .et-query-devtools-route-copy:hover:not(.et-query-devtools-route-copy--copied) {
+    background: var(--_et-qdt-active);
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-route-copy--copied {
+    color: var(--_et-qdt-success);
+  }
+
   .et-query-devtools-live {
     display: flex;
     flex-wrap: wrap;

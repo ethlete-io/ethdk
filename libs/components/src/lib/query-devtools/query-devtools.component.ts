@@ -593,6 +593,7 @@ export class QueryDevtoolsComponent {
   public copiedInsomnia = signal(false);
   public copiedCurl = signal(false);
   public copiedGql = signal(false);
+  public copiedRoute = signal(false);
   private copiedReset$ = new Subject<void>();
 
   /** 1-second tick driving the cache freshness countdowns. */
@@ -859,6 +860,7 @@ export class QueryDevtoolsComponent {
           this.copiedInsomnia.set(false);
           this.copiedCurl.set(false);
           this.copiedGql.set(false);
+          this.copiedRoute.set(false);
         }),
         takeUntilDestroyed(),
       )
@@ -937,6 +939,7 @@ export class QueryDevtoolsComponent {
       this.copiedReport.set(false);
       this.copiedInsomnia.set(false);
       this.copiedCurl.set(false);
+      this.copiedRoute.set(false);
       this.diffRunIndex.set(null);
       this.diffBaseRunIndex.set(null);
       this.errorRunIndex.set(null);
@@ -1542,6 +1545,27 @@ export class QueryDevtoolsComponent {
   /** Copies the GraphQL document as displayed — dedented, so it pastes straight into a playground. */
   public copyGqlDocument(doc: string) {
     this.writeToClipboard({ text: this.gqlDocument(doc) }, this.copiedGql);
+  }
+
+  /**
+   * The endpoint of a query as one string: the absolute URL its last request used, or - for a query
+   * that has not run - the rendered route on screen.
+   */
+  public copyableRoute(entry: QueryDevtoolsEntry, query: AnyQuery) {
+    return this.requestUrl(query) ?? this.queryRoute(entry, query);
+  }
+
+  /** Names which of the two strings {@link copyableRoute} is offering, so the button says what it copies. */
+  public copyableRouteTitle(entry: QueryDevtoolsEntry, query: AnyQuery) {
+    const route = this.copyableRoute(entry, query);
+    const kind = this.requestUrl(query) ? 'the absolute URL of the last request' : 'the rendered route';
+
+    return `Copy ${kind}: ${route}`;
+  }
+
+  /** Copies {@link copyableRoute} - the endpoint on its own, where the exports are a whole document. */
+  public copyRoute(entry: QueryDevtoolsEntry, query: AnyQuery) {
+    this.writeToClipboard({ text: this.copyableRoute(entry, query) }, this.copiedRoute);
   }
 
   /**

@@ -843,6 +843,28 @@ Outgoing capture costs nothing without `provideQueryDevtools()`: the socket clie
 checks once whether devtools are installed and every recording call is a no-op.
 :::
 
+## Copy the route
+
+The three copy actions below all produce a whole document. When all you want is the
+endpoint - to paste into a browser, a ticket or a search box - the **⧉** button beside
+the route in the detail header copies it on its own.
+
+It copies the **absolute URL the query last requested**, which is what a browser or
+Postman wants. A query that has not run yet has no such URL, so it falls back to the
+**rendered route** as shown - params resolved to their values, the query string
+appended. The button's tooltip names which of the two it is offering and shows the
+exact string, so there is no guessing before the click.
+
+The button ticks `✓` on success and resets after a moment, like every other copy
+action in the panel. It stays available on a [gone](#a-destroyed-query-leaves-a-tombstone)
+entry, where **Run**, **Edit** and **Force** are gated out but the exports still work.
+
+::: tip
+This is the detail header only. The same route also renders in the Queries, Stacks,
+Sequences and Forms lists, where the rows are click-to-select and a copy control on
+every line would crowd them - use the detail for now.
+:::
+
 ## Copy as cURL
 
 **cURL** in the selected query's action row copies the request as a shell command -
