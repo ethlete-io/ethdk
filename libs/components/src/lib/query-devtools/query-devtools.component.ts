@@ -161,6 +161,31 @@ const COPIED_RESET_MS = 1200;
 /** How long the locate box stays up. Long enough to outlast a smooth scroll and still be read. */
 const LOCATE_HOLD_MS = 2500;
 
+const LOCATE_MAX_DEPTH = 4;
+
+/**
+ * The element to scroll to and outline for a query: the one it was created in, or the shallowest
+ * descendant that renders a box when that one renders none of its own. `null` when nothing in there
+ * is rendered at all - `display: none`, or an ancestor that is.
+ *
+ * A host carrying `display: contents` - common on Angular components - generates no box, so both
+ * `checkVisibility()` and its own rect report it as absent while its content is plainly on screen.
+ */
+const renderedTarget = (element: Element, depth = 0): Element | null => {
+  const rect = element.getBoundingClientRect();
+
+  if (rect.width || rect.height) return element;
+  if (depth >= LOCATE_MAX_DEPTH) return null;
+
+  for (const child of element.children) {
+    const found = renderedTarget(child, depth + 1);
+
+    if (found) return found;
+  }
+
+  return null;
+};
+
 const noop = () => undefined;
 
 const STORAGE_KEY = 'ethlete:query:devtools:v4';
@@ -628,7 +653,7 @@ export class QueryDevtoolsComponent {
   /** Inspect run backwards: the box drawn over the element the selected query was created in. */
   protected locatedRect = signal<DOMRect | null>(null);
   public locateState = signal<'idle' | 'located' | 'offscreen'>('idle');
-  private locate$ = new Subject<HTMLElement | null>();
+  private locate$ = new Subject<Element | null>();
 
   /** When set (via inspect), the Queries list is filtered to exactly these entry ids. */
   public inspectFilterIds = signal<string[] | null>(this.persisted.inspectFilterIds ?? null);
@@ -2188,11 +2213,11 @@ export class QueryDevtoolsComponent {
     const element = this.locatableElement(entry);
     if (!element) return;
 
+    const target = element.isConnected ? renderedTarget(element) : null;
+
     // Detached, `display: none`, or inside a collapsed panel: scrolling to it lands nowhere and the box
     // would be drawn over an unrelated strip of the page.
-    const isVisible = typeof element.checkVisibility === 'function' ? element.checkVisibility() : element.isConnected;
-
-    if (!isVisible) {
+    if (!target) {
       this.locatedRect.set(null);
       this.locateState.set('offscreen');
       this.locate$.next(null);
@@ -2200,9 +2225,9 @@ export class QueryDevtoolsComponent {
       return;
     }
 
-    element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+    target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
     this.locateState.set('located');
-    this.locate$.next(element);
+    this.locate$.next(target);
   }
 
   /**

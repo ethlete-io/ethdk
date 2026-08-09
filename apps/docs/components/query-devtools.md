@@ -1121,7 +1121,9 @@ components are bound to, which the browser Network tab can't do:
   service, a resolver, a guard - has no element, and the button is **disabled** with
   that reason in its tooltip rather than doing nothing. An element that is detached,
   `display: none` or inside a collapsed panel reports **Not on screen** instead of
-  drawing a box over an unrelated strip of the page.
+  drawing a box over an unrelated strip of the page. A host element that renders no box
+  of its own - `display: contents`, which is common on Angular hosts - is located
+  through its content: the box goes around the first descendant that does render one.
 
 - **Copy the GraphQL document** - a GraphQL query's detail renders its document
   dedented, with a **⧉ Copy** button next to the heading, so it pastes straight
