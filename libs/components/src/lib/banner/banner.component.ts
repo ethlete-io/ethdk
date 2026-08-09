@@ -31,6 +31,8 @@ export const BANNER_TYPES = {
 
 export type BannerType = (typeof BANNER_TYPES)[keyof typeof BANNER_TYPES];
 
+export type BannerLiveRegion = 'alert' | 'status';
+
 const ALERT_BANNER_TYPES: ReadonlySet<BannerType> = /* @__PURE__ */ new Set([BANNER_TYPES.WARNING, BANNER_TYPES.ERROR]);
 
 /**
@@ -56,7 +58,7 @@ const ALERT_BANNER_TYPES: ReadonlySet<BannerType> = /* @__PURE__ */ new Set([BAN
   hostDirectives: [ProvideColorDirective],
   host: {
     class: 'et-banner',
-    '[attr.role]': 'role()',
+    '[attr.role]': 'resolvedRole()',
     '[attr.data-type]': 'type()',
   },
 })
@@ -72,6 +74,12 @@ export class BannerComponent {
   public dismissible = input(false, { transform: booleanAttribute });
 
   /**
+   * Overrides the live-region role `type` would pick. Pass `null` for a banner nested inside something
+   * that already announces - two live regions read the same message twice.
+   */
+  public liveRegion = input<BannerLiveRegion | null | undefined>(undefined);
+
+  /**
    * Overrides the type's default color theme. `info` has no semantic theme of its own (there is no
    * app-registered `type: 'info'` slot), so pass a theme name to color an informational banner -
    * otherwise it renders untinted.
@@ -80,7 +88,13 @@ export class BannerComponent {
 
   public dismiss = output<void>();
 
-  protected role = computed(() => (ALERT_BANNER_TYPES.has(this.type()) ? 'alert' : 'status'));
+  protected resolvedRole = computed((): BannerLiveRegion | null => {
+    const liveRegion = this.liveRegion();
+
+    if (liveRegion !== undefined) return liveRegion;
+
+    return ALERT_BANNER_TYPES.has(this.type()) ? 'alert' : 'status';
+  });
 
   constructor() {
     // Only the type actually in use is injected, and only once it's rendered: an app that only ever

@@ -5,9 +5,13 @@
     <p class="et-banner-heading">{{ heading }}</p>
   }
 
+  <ng-content select="[etBannerHeading]" />
+
   @if (description(); as description) {
     <p class="et-banner-description">{{ description }}</p>
   }
+
+  <ng-content select="[etBannerBody]" />
 
   <ng-content select="[etBannerAction]" />
 </div>

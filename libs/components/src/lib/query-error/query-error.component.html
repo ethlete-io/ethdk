@@ -1,8 +1,9 @@
 @if (queryError.view(); as error) {
-  <div class="et-query-error-card">
-    <span class="et-query-error-icon" aria-hidden="true" etIcon="et-triangle-exclamation"></span>
+  <!-- [liveRegion]="null": the host already carries `role="alert"`, and a live region inside one announces twice. -->
+  <et-banner [color]="color()" [liveRegion]="null" type="error">
+    <span etIcon="et-triangle-exclamation"></span>
 
-    <h3 class="et-query-error-title">
+    <h3 class="et-query-error-title" etBannerHeading>
       @if (queryError.titleSlot(); as titleSlot) {
         <ng-container [ngTemplateOutlet]="titleSlot" [ngTemplateOutletContext]="{ $implicit: error, error }" />
       } @else {
@@ -11,26 +12,26 @@
     </h3>
 
     @if (error.isList) {
-      <ul class="et-query-error-list">
+      <ul class="et-query-error-list" etBannerBody>
         @for (message of error.messages; track message) {
           <li class="et-query-error-list-item">{{ message }}</li>
         }
       </ul>
     } @else {
-      <p class="et-query-error-message">{{ error.messages[0] }}</p>
+      <p class="et-query-error-message" etBannerBody>{{ error.messages[0] }}</p>
     }
 
     @if (queryError.actionsSlot(); as actionsSlot) {
-      <div class="et-query-error-actions">
+      <div class="et-query-error-actions" etBannerAction>
         <ng-container [ngTemplateOutlet]="actionsSlot" [ngTemplateOutletContext]="{ $implicit: error, error }" />
       </div>
     } @else if (error.canRetry) {
-      <div class="et-query-error-actions">
-        <!-- No [color]: the host provides the error colour scope, which the button inherits. -->
+      <div class="et-query-error-actions" etBannerAction>
+        <!-- No [color]: the banner provides the error colour scope, which the button inherits. -->
         <button (click)="queryError.retry()" et-button type="button">
           {{ queryError.resolvedLabels().retry }}
         </button>
       </div>
     }
-  </div>
+  </et-banner>
 }

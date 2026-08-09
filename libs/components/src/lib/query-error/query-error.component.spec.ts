@@ -29,6 +29,10 @@ const COLOR_THEMES: ColorTheme[] = [
     type: 'error',
     primary: { color: { default: '220 38 38' }, onColor: { default: '255 255 255' } },
   },
+  {
+    name: 'calm',
+    primary: { color: { default: '100 116 139' }, onColor: { default: '255 255 255' } },
+  },
 ];
 
 const errorResponse = (status: number, body: unknown): QueryErrorResponse =>
@@ -38,7 +42,7 @@ const errorResponse = (status: number, body: unknown): QueryErrorResponse =>
   selector: 'et-test-query-error-host',
   template: `
     @if (error(); as err) {
-      <et-query-error [error]="err" [query]="query" [alwaysAllowRetry]="alwaysAllowRetry()" />
+      <et-query-error [error]="err" [query]="query" [alwaysAllowRetry]="alwaysAllowRetry()" [color]="color()" />
     }
   `,
   imports: [QUERY_ERROR_IMPORTS],
@@ -48,6 +52,7 @@ class QueryErrorHostComponent {
 
   public error = signal<QueryErrorResponse | null>(null);
   public alwaysAllowRetry = signal(false);
+  public color = signal<string | null>(null);
 
   public executions: unknown[] = [];
   public query = { execute: (args?: unknown) => this.executions.push(args) };
@@ -82,6 +87,30 @@ describe('QueryErrorComponent', () => {
     expect(text(fixture, '.et-query-error-title')).toBe('Not found');
     expect(text(fixture, '.et-query-error-message')).toBe('No such user');
     expect(host(fixture).querySelector('.et-query-error')?.getAttribute('role')).toBe('alert');
+  });
+
+  it('renders as an error banner, without nesting a second live region inside the alert', () => {
+    const fixture = createHost();
+
+    fixture.componentInstance.error.set(errorResponse(404, { message: 'No such user' }));
+    fixture.detectChanges();
+
+    const banner = host(fixture).querySelector('et-banner');
+
+    expect(banner?.getAttribute('data-type')).toBe('error');
+    expect(banner?.hasAttribute('role')).toBe(false);
+    // The banner is the colour scope now, so the error theme has to resolve there rather than on the host.
+    expect(banner?.className).toContain('et-color--danger');
+  });
+
+  it('lets a consumer recolour the panel away from the error theme', () => {
+    const fixture = createHost();
+
+    fixture.componentInstance.color.set('calm');
+    fixture.componentInstance.error.set(errorResponse(404, { message: 'No such user' }));
+    fixture.detectChanges();
+
+    expect(host(fixture).querySelector('et-banner')?.className).toContain('et-color--calm');
   });
 
   it('renders a violation list as a list', () => {

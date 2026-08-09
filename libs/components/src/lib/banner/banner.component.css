@@ -68,20 +68,22 @@
       min-inline-size: 0;
     }
 
-    .et-banner-heading {
+    .et-banner-heading,
+    [etBannerHeading] {
       margin: 0;
       font-size: var(--et-banner-heading-size);
       font-weight: var(--et-banner-heading-weight);
       color: var(--et-surface-color-solid, currentColor);
     }
 
-    .et-banner-description {
+    .et-banner-description,
+    [etBannerBody] {
       margin: 0;
       font-size: var(--et-banner-description-size);
       color: var(--et-surface-color-muted-solid, currentColor);
     }
 
-    > [etBannerAction] {
+    [etBannerAction] {
       margin-block-start: 4px;
     }
 

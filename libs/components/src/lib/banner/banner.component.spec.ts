@@ -2,7 +2,7 @@ import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ColorTheme, ProvideColorDirective, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
-import { BannerComponent, BannerType } from './banner.component';
+import { BannerComponent, BannerLiveRegion, BannerType } from './banner.component';
 import { BANNER_IMPORTS } from './banner.imports';
 
 const COLOR_THEMES: ColorTheme[] = [
@@ -22,9 +22,18 @@ const COLOR_THEMES: ColorTheme[] = [
       [heading]="heading()"
       [description]="description()"
       [type]="type()"
+      [liveRegion]="liveRegion()"
       [dismissible]="dismissible()"
       (dismiss)="dismissCount = dismissCount + 1"
     >
+      @if (projectedHeading()) {
+        <h3 etBannerHeading>Projected heading</h3>
+      }
+      @if (projectedBody()) {
+        <ul etBannerBody>
+          <li>One</li>
+        </ul>
+      }
       <button etBannerAction type="button">Retry</button>
     </et-banner>
   `,
@@ -36,7 +45,10 @@ class BannerHostComponent {
   public heading = signal<string | undefined>(undefined);
   public description = signal<string | undefined>(undefined);
   public type = signal<BannerType>('info');
+  public liveRegion = signal<BannerLiveRegion | null | undefined>(undefined);
   public dismissible = signal(false);
+  public projectedHeading = signal(false);
+  public projectedBody = signal(false);
   public dismissCount = 0;
 }
 
@@ -66,6 +78,18 @@ describe('BannerComponent', () => {
     const fixture = createHost();
 
     expect(host(fixture).querySelector('[etBannerAction]')?.textContent).toBe('Retry');
+  });
+
+  it('projects a heading and a body into the content column, in that order', () => {
+    const fixture = createHost();
+    fixture.componentInstance.description.set('Supporting copy.');
+    fixture.componentInstance.projectedHeading.set(true);
+    fixture.componentInstance.projectedBody.set(true);
+    fixture.detectChanges();
+
+    const content = host(fixture).querySelector('.et-banner-content');
+
+    expect([...(content?.children ?? [])].map((el) => el.tagName.toLowerCase())).toEqual(['h3', 'p', 'ul', 'button']);
   });
 
   it('defaults to type "info" with role="status" and no forced color', () => {
@@ -107,6 +131,16 @@ describe('BannerComponent', () => {
 
     expect(host(fixture).querySelector('et-banner')?.getAttribute('role')).toBe('status');
     expect((fixture.componentInstance.banner()?.effectiveColor() as ColorTheme)?.name).toBe('grass');
+  });
+
+  it('renders no role at all when one is forced off, for a banner nested in a live region', () => {
+    const fixture = createHost();
+    fixture.componentInstance.type.set('error');
+    fixture.componentInstance.liveRegion.set(null);
+    fixture.detectChanges();
+
+    expect(host(fixture).querySelector('et-banner')?.hasAttribute('role')).toBe(false);
+    expect((fixture.componentInstance.banner()?.effectiveColor() as ColorTheme)?.name).toBe('danger');
   });
 
   it('renders no dismiss button unless dismissible', () => {
