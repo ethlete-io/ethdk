@@ -1426,6 +1426,7 @@ describe('createBearerAuthProvider', () => {
 
         expect(mockChannel.postMessage).toHaveBeenCalledWith({
           type: 'logout',
+          cause: 'user',
         });
       });
     });
@@ -2272,6 +2273,107 @@ describe('createBearerAuthProvider', () => {
         provider.setTokens('access', 'refresh');
 
         expect(provider.sessionEndCause()).toBeNull();
+      });
+    });
+  });
+
+  describe('proactive token refresh', () => {
+    /** A token the provider's default `decryptBearer` reads an `exp` out of, in seconds. */
+    const tokenExpiringIn = (seconds: number) =>
+      `header.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + seconds }))}.signature`;
+
+    const createProvider = () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+      const refresh = postQuery<{
+        body: { token: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/refresh');
+
+      const extractTokens = (response: { token: string; refresh_token: string }) => ({
+        accessToken: response.token,
+        refreshToken: response.refresh_token,
+      });
+
+      return createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', { queryCreator: login, extractTokens }),
+          withRefreshQuery('refresh', { queryCreator: refresh, extractTokens }),
+        ],
+      });
+    };
+
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const login = (provider: {
+      queries: { login: { execute: (args: { body: { username: string } }) => unknown } };
+    }) => {
+      provider.queries.login.execute({ body: { username: 'test' } });
+      TestBed.tick();
+    };
+
+    it('should refresh once the token reaches its refresh time', () => {
+      const { inject: injectAuthProvider } = createProvider();
+
+      TestBed.runInInjectionContext(() => {
+        login(injectAuthProvider());
+
+        httpTesting
+          .expectOne('https://api.example.com/auth/login')
+          .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+        TestBed.tick();
+
+        httpTesting.expectNone('https://api.example.com/auth/refresh');
+
+        // 1000s of lifetime, a 250s buffer (25% of it), so the refresh is due 750s in.
+        vi.advanceTimersByTime(750_000);
+        TestBed.tick();
+
+        httpTesting
+          .expectOne('https://api.example.com/auth/refresh')
+          .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-2' });
+        TestBed.tick();
+      });
+    });
+
+    it('should come back for a refresh it could not run when it came due', () => {
+      const { inject: injectAuthProvider } = createProvider();
+
+      TestBed.runInInjectionContext(() => {
+        login(injectAuthProvider());
+
+        // Short-lived enough that the next refresh is due the moment the token is applied - which is
+        // while the login that issued it still counts as in flight, so the attempt is declined.
+        httpTesting
+          .expectOne('https://api.example.com/auth/login')
+          .flush({ token: tokenExpiringIn(20), refresh_token: 'refresh-1' });
+        TestBed.tick();
+
+        vi.advanceTimersByTime(5_000);
+        TestBed.tick();
+
+        httpTesting
+          .expectOne('https://api.example.com/auth/refresh')
+          .flush({ token: tokenExpiringIn(20), refresh_token: 'refresh-2' });
+        TestBed.tick();
+
+        // The one that follows lands inside `minRefreshInterval` and is declined too - without a
+        // re-arm nothing renews this session again until a request fails with a 401.
+        httpTesting.expectNone('https://api.example.com/auth/refresh');
+
+        vi.advanceTimersByTime(30_000);
+        TestBed.tick();
+
+        httpTesting
+          .expectOne('https://api.example.com/auth/refresh')
+          .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-3' });
+        TestBed.tick();
       });
     });
   });

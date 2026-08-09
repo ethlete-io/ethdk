@@ -1,6 +1,6 @@
 import { effect, isDevMode } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { filter, of, switchMap, tap, timer } from 'rxjs';
+import { concatMap, EMPTY, filter, Observable, of, switchMap, timer } from 'rxjs';
 import { QueryArgs, QueryCreator, QueryErrorResponse, RequestArgs, ResponseType } from '../http';
 import { ShouldRetryRequestFn } from '../http/query-retry-utils';
 import { decryptBearer } from '../http/internal/request-route';
@@ -155,6 +155,21 @@ export type RefreshFailure = {
   logout: () => void;
 };
 
+/**
+ * What came of a refresh attempt. Everything but `executed` left the refresh token unspent, so a
+ * scheduled attempt that ends on one has to come back for it.
+ */
+type RefreshAttempt = 'executed' | 'noToken' | 'delegated' | 'busy' | 'throttled';
+
+/** How long a scheduled refresh waits before retrying an attempt that could not run yet. */
+const rescheduleDelayMs = 5000;
+
+/**
+ * How often a scheduled refresh may re-arm before it waits for a new token pair. A tab that keeps
+ * declining is either not the leader or busy issuing tokens; either way a 401 still forces a refresh.
+ */
+const maxRescheduleAttempts = 5;
+
 export type AuthQueryBuilder<TKey extends string, TArgs extends QueryArgs> = {
   _type: 'authQuery';
   key: TKey;
@@ -244,32 +259,53 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const refreshQuery = () => context.queries[key]!;
 
-    const executeRefresh = (reason: 'scheduled' | 'unauthorized') => {
+    const executeRefresh = (reason: 'scheduled' | 'unauthorized'): RefreshAttempt => {
       const currentRefreshToken = context.refreshToken();
-      if (!currentRefreshToken) return;
+      if (!currentRefreshToken) return 'noToken';
 
       if (!context.isLeader()) {
         // Only the leader may spend a single-use refresh token, but the event is still real - hand it
         // over instead of dropping it, or this tab waits out the leader's timer with a dead token.
         context.refreshCoordination?.request();
 
-        return;
+        return 'delegated';
       }
 
       // Any token-issuing execution, not just another refresh: a login already in flight is about to
       // issue a token pair of its own, and the refresh token this would spend belongs to the session
       // that login is replacing.
-      if (context.hasTokenIssuingExecutionInFlight()) return;
+      if (context.hasTokenIssuingExecutionInFlight()) return 'busy';
 
       if (reason === 'scheduled') {
         const now = Date.now();
 
-        if (now - lastRefreshTime < minRefreshInterval) return;
+        if (now - lastRefreshTime < minRefreshInterval) return 'throttled';
 
         lastRefreshTime = now;
       }
 
       refreshQuery().execute(buildArgs(currentRefreshToken), { triggeredBy: 'token-refresh' });
+
+      return 'executed';
+    };
+
+    /**
+     * How long a scheduled refresh that did not spend the refresh token waits before trying again.
+     * `null` re-arms nothing, because only a new token pair can change the outcome - and that restarts
+     * the schedule anyway.
+     */
+    const retryScheduledIn = (attempt: RefreshAttempt): number | null => {
+      switch (attempt) {
+        case 'executed':
+        case 'noToken':
+          return null;
+        case 'throttled':
+          return Math.max(minRefreshInterval - (Date.now() - lastRefreshTime), rescheduleDelayMs);
+        case 'busy':
+          return rescheduleDelayMs;
+        case 'delegated':
+          return minRefreshInterval;
+      }
     };
 
     const calculateRefreshBuffer = (tokenLifetimeMs: number) => {
@@ -286,59 +322,64 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       return Math.max(minBufferMs, Math.min(maxBufferMs, calculatedBuffer));
     };
 
-    // Auto-refresh based on token expiration
+    /** When this access token is due to be refreshed, or `null` if it cannot be scheduled at all. */
+    const scheduledRefreshDelay = (token: string) => {
+      try {
+        const bearerDataValue = context.bearerDecryptFn ? context.bearerDecryptFn(token) : decryptBearer(token);
+        const expiresIn = (bearerDataValue as Record<string, unknown>)?.[expiresInPropertyName];
+
+        if (typeof expiresIn !== 'number') {
+          if (isDevMode()) {
+            console.warn(`Token does not contain valid ${expiresInPropertyName} property for auto-refresh`);
+          }
+
+          return null;
+        }
+
+        const tokenLifetimeMs = expiresIn * 1000 - Date.now();
+
+        if (tokenLifetimeMs <= 0) {
+          if (!refreshIfExpired) return null;
+
+          if (isDevMode()) {
+            console.warn('Token is already expired, triggering immediate refresh');
+          }
+
+          return 0;
+        }
+
+        return Math.max(tokenLifetimeMs - calculateRefreshBuffer(tokenLifetimeMs), 0);
+      } catch {
+        return null;
+      }
+    };
+
+    /**
+     * The scheduled refresh, re-armed for as long as it keeps declining to spend the refresh token.
+     * Without the re-arm a single declined attempt strands the session on a token nothing renews until
+     * a request fails with a 401 - by which time the refresh token may be gone too.
+     */
+    const scheduledRefresh = (dueInMs: number, attemptsLeft: number): Observable<unknown> =>
+      (dueInMs <= 0 ? of(0) : timer(dueInMs)).pipe(
+        concatMap(() => {
+          const retryInMs = retryScheduledIn(executeRefresh('scheduled'));
+
+          return retryInMs === null || attemptsLeft <= 0 ? EMPTY : scheduledRefresh(retryInMs, attemptsLeft - 1);
+        }),
+      );
+
     toObservable(context.accessToken)
       .pipe(
         switchMap((token) => {
-          if (!token) return of(null);
+          if (!token) return EMPTY;
 
-          try {
-            const bearerDataValue = context.bearerDecryptFn ? context.bearerDecryptFn(token) : decryptBearer(token);
-            const expiresIn = (bearerDataValue as Record<string, unknown>)?.[expiresInPropertyName];
+          const dueInMs = scheduledRefreshDelay(token);
 
-            if (typeof expiresIn !== 'number') {
-              if (isDevMode()) {
-                console.warn(`Token does not contain valid ${expiresInPropertyName} property for auto-refresh`);
-              }
-
-              return of(null);
-            }
-
-            const expiresAtMs = expiresIn * 1000;
-            const now = Date.now();
-            const tokenLifetimeMs = expiresAtMs - now;
-
-            if (tokenLifetimeMs <= 0) {
-              if (refreshIfExpired) {
-                if (isDevMode()) {
-                  console.warn('Token is already expired, triggering immediate refresh');
-                }
-
-                return of(true);
-              }
-
-              return of(null);
-            }
-
-            const refreshBufferMs = calculateRefreshBuffer(tokenLifetimeMs);
-            const timeUntilRefresh = tokenLifetimeMs - refreshBufferMs;
-
-            if (timeUntilRefresh <= 0) {
-              return of(true);
-            }
-
-            return timer(timeUntilRefresh).pipe(tap(() => true));
-          } catch {
-            return of(null);
-          }
+          return dueInMs === null ? EMPTY : scheduledRefresh(dueInMs, maxRescheduleAttempts);
         }),
         takeUntilDestroyed(),
       )
-      .subscribe((shouldRefresh) => {
-        if (shouldRefresh) {
-          executeRefresh('scheduled');
-        }
-      });
+      .subscribe();
 
     context.refreshCoordination?.requests$.pipe(takeUntilDestroyed()).subscribe(() => executeRefresh('unauthorized'));
 
