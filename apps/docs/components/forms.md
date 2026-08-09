@@ -271,6 +271,38 @@ The field chrome handles error display and aria wiring uniformly:
   accessible name - no `et-label` and no `aria-label`/`aria-labelledby`
   ([`ET2201`](/components/error-codes#form-field-et22xx)).
 
+### Validators the library ships
+
+Signal forms bring their own (`required`, `min`, `pattern`, …); these fill gaps where a control
+documents a value format that nothing was actually checking. Add them to a `form()` schema like any
+other validator.
+
+| Validator                                      | From                   | Fails unless the value is                                          |
+| ---------------------------------------------- | ---------------------- | ------------------------------------------------------------------ |
+| `hexColor(path, options?)`                     | `et-color-input`       | a hex color - strict `#rrggbb` by default                          |
+| `rgbColor(path, options?)`                     | `et-color-input`       | a functional `rgb()` color, comma or space form, channels in 0-255 |
+| `requiredLanguages(path, { codes, message? })` | the multi-language RTE | non-empty for every listed language code                           |
+
+```ts
+import { hexColor, rgbColor } from '@ethlete/components';
+
+form(model, (s) => {
+  hexColor(s.brandColor);
+  hexColor(s.overlayTint, { allowShorthand: true, allowAlpha: true });
+  rgbColor(s.legacyTint, { allowAlpha: true });
+});
+```
+
+`et-color-input`'s own picker can only ever produce `#rrggbb`, so `hexColor` is not there to police
+the picker - it guards the value's contract when it arrives from somewhere else (an API response, a
+`patchValue`, a pasted string). `allowShorthand` additionally accepts `#rgb`, `allowAlpha`
+additionally accepts `#rrggbbaa`, and both together also accept `#rgba`.
+
+All of them **pass on an empty or `null` value** - emptiness is `required`'s job, and doubling it up
+would report two errors for one blank field. Each takes a `message` to override the generated text,
+and reports its own `kind` (`'hexColor'`, `'rgbColor'`) so a
+[custom error resolver](#custom-error-messages) can translate it.
+
 ### Server-side violations
 
 `@ethlete/query` ships a bridge that maps an API error response's violation list

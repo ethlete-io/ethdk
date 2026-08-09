@@ -323,6 +323,31 @@ Optional behaviors passed to the provider's `features` array (each usable once -
 | `withTracking`               | Typed event bus for auth telemetry (query execute/success/failure, token refresh, logout, leader changes). Its `logout` event carries `{ cause }`.                                                                                                                                                                                  |
 | `withBearerAuthMultiTabSync` | Cross-tab token/logout sync and leader election - see [Multi-tab sync](#multi-tab-sync). Exposes `isLeader` / `instanceCount` / `leadership`.                                                                                                                                                                                       |
 
+### Where auto-login should not run
+
+Some routes must not restore a session - a password-reset link, an invite acceptance, anything that
+carries its own token in the URL. `withPersistentAuth` takes two independent ways to say so:
+
+```ts
+withPersistentAuth({
+  autoLogin: {
+    queryKey: 'refresh',
+    buildArgs: (token) => ({ body: { token } }),
+    excludeRoutes: ['/login'],
+    shouldAutoLogin: (url) => new URL(url, location.origin).pathname !== '/reset-password',
+  },
+});
+```
+
+`excludeRoutes` is **prefix-matched**, which is the trap: `'/reset-password'` also excludes
+`/reset-password-templates`, and a route policy written as substrings drifts wrong as the route table
+grows. `shouldAutoLogin` receives the current route and returns whether auto-login may run, so the
+decision can be an exact path, a parsed URL, or a query parameter - whatever the policy actually is.
+
+The two are **independent vetoes**: either one refusing skips auto-login. Adding a predicate can
+never re-enable a route `excludeRoutes` excluded, so the two can be introduced in any order. Most
+apps want one or the other, not both.
+
 ### When the remember-me cookie is written and deleted
 
 `withPersistentAuth` treats the cookie as a record of the session, not a mirror of the current token. It is **written** whenever a token is applied - a login, a refresh, `setTokens`, an incoming cross-tab update - and whenever `setRememberMe` changes whether it should outlive the browser session.

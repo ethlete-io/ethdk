@@ -193,6 +193,21 @@ and hairlines from the surface tokens, the hover/press tint mixed from
 | `--et-accordion-chevron-size`   | `14px`  | chevron box                                                |
 | `--et-accordion-radius`         | `0px`   | the hover tint's shape - raise it when the group is a card |
 | `--et-accordion-duration`       | `240ms` | collapse and chevron rotation                              |
+| `--et-accordion-color-duration` | `120ms` | the header's hover response - tint, hairline and chevron   |
+
+### The hover response
+
+Hovering a header does three things at once, all on `--et-accordion-color-duration`: the row takes
+its tint, the accordion's own bottom hairline brightens toward
+`--et-surface-interaction-solid`, and the hint and chevron come up from the muted colour to full
+strength. Across a full-width header the tint alone is easy to miss - the hairline is the edge that
+actually shows which row the pointer is on.
+
+All three are behind `@media (hover: hover)`, so a touch device never gets a highlight stuck on the
+last row tapped, and a header that is `disabled` responds to none of them.
+
+Under `prefers-reduced-motion: reduce` the chevron stops rotating but keeps its colour fade - a
+cross-fade is not motion.
 
 Every accordion brings its own bottom hairline and the group drops the trailing one, so
 a boxed group is a border and a radius away without having to undo anything:

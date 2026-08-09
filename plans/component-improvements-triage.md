@@ -80,6 +80,31 @@ Ranked by value per unit of risk, not by size.
 > banner's row layout** instead of banner growing a stacked orientation, and the `--et-query-error-*` tokens
 > are **retired** for `--et-banner-*` rather than aliased - so this is a `major`. **Selection list
 > `variant="tile"` is now #1**, still blocked on its three design questions.
+>
+> **Progress steps: outcome states** shipped 2026-08-10 (an `S` row). `state` grows by `success`,
+> `warning` and `error` - each a _resolved_ state that fills its marker and the connector after it,
+> carries its own icon so the outcome never rests on colour alone, and forces the app's matching
+> semantic theme onto the step via `ProvideColorDirective`, exactly as banner does per `type`. The
+> existing accent rules were reused as-is: they already read `--et-theme-color-primary-solid`, which
+> now resolves inside the step's own scope. Labels take `--et-theme-color-ink-solid`. Only the theme a
+> rendered step uses is injected, so a flow that never fails still needs no `type: 'error'` theme.
+>
+> **Accordion: the header's hover response** shipped 2026-08-10 (an `S` row). The tint stays; the
+> bottom hairline and the hint/chevron now move with it, on a new `--et-accordion-color-duration`.
+> Two things went slightly beyond the row: hover states are behind `@media (hover: hover)` now (they
+> used to stick after a tap), and reduced-motion drops only the chevron's rotation, not its fade.
+>
+> **Colour input: hex/RGB validators** shipped 2026-08-10 (an `S` row). `hexColor()` / `rgbColor()`,
+> strict `#rrggbb` by default with shorthand and alpha as opt-ins, both passing on a blank value so
+> `required` keeps sole ownership of emptiness. The **contrast validator the section also mentions is
+> still unbuilt** - it needs a cross-field read nothing in `libs/forms` does yet.
+>
+> **Auth: `shouldAutoLogin`** shipped 2026-08-10 (an `S` row), and with it **every auth item in this
+> file is closed**. It sits next to `excludeRoutes` as an independent veto - either refusing skips
+> auto-login - so a predicate can never re-enable an excluded route.
+>
+> **The tile stays #1 and stays parked** - the user declined its design questions on 2026-08-09
+> rather than settling them, so do not re-ask unprompted.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
@@ -95,13 +120,9 @@ Ranked by value per unit of risk, not by size.
 | Dropzone: removing a prefilled value deletes it          | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default |
 | Scheduler: richer sub-appointment list                   | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                  |
 | Scheduler: agenda connector lines                        | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                      |
-| Accordion: border/label transition                       | `A`     | Precedent in `button.component.css`'s `--_et-button-border-color`; tokens already imported                                 |
-| Progress steps: success/warning/error states             | `A`     | Mirror `BANNER_TYPES`, don't invent colour language                                                                        |
-| Colour input: hex/RGB validators                         | `A`     | None exist anywhere today; the `#rrggbb` claim is a doc comment only                                                       |
 | Dropzone: reveal the preview on hover                    | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                         |
 | Grid: assert breakpoint coverage in the dev check        | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                           |
 | Filter overlay story: demo dressing                      | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                       |
-| Auth: `shouldAutoLogin` predicate                        | `A`     | Alongside `excludeRoutes`, so consumers stop prefix-matching substrings                                                    |
 | Query devtools: overrides survive a reload               | `A`     | Ops are already serializable; `sessionStorage`, default off, and loud about what it re-armed                               |
 | Query devtools: copy a key or a path, not just the value | `A`,`D` | `⧉` is the only per-node control outside the Response explorer - settle menu vs modifier-click first                       |
 | Query: retire `CLEAR_QUERY_ARGS`                         | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                        |
@@ -129,15 +150,17 @@ Ranked by value per unit of risk, not by size.
 
 ### L - projects, not tickets
 
-| Item                                         | Tag     | Note                                                                                                                                                                                                                                                                |
-| -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Charts                                       | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't |
-| Scheduler: move/resize existing appointments | `A`     | Called "the natural next feature" by the drag-to-create work                                                                                                                                                                                                        |
-| Scheduler: date-time _range_ picker          | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                              |
-| Colour input: custom picker                  | `A`     | Replaces the native input behind the same directive contract                                                                                                                                                                                                        |
-| Command palette                              | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                  |
-| Stat tile                                    | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                             |
-| Test harnesses                               | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                              |
+| Item                                         | Tag     | Note                                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Charts                                       | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't            |
+| Scheduler: move/resize existing appointments | `A`     | Called "the natural next feature" by the drag-to-create work                                                                                                                                                                                                                   |
+| Scheduler: date-time _range_ picker          | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                                         |
+| Colour input: custom picker                  | `A`     | Replaces the native input behind the same directive contract                                                                                                                                                                                                                   |
+| Command palette                              | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                             |
+| Stat tile                                    | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                        |
+| Test harnesses                               | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                         |
+| Forms: a `warning` validity state            | `A`,`D` | User-raised 2026-08-10. Colour language exists; the open call is whether a warning is a signal, a validator severity, or presentation-only - and how it shares the error slot. Must never block submit                                                                         |
+| Forms: time-zone handling / local-time UX    | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, range and scheduler together |
 
 ### Decide before building
 

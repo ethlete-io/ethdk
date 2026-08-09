@@ -55,15 +55,8 @@ range.component.ts` pairs two independent `et-date-time-input` controls.
 
 ## Accordion
 
-`.et-accordion-trigger:hover` swaps `background` via `color-mix(in srgb,
-var(--et-surface-interaction-solid) 7%, transparent)` across the full
-`inline-size: 100%` row - that's the edge-to-edge tint. A border/label-color
-transition instead (or alongside) has direct precedent: `button.component
-.css` transitions `border-color` through a `--_et-button-border-color`
-custom property per variant, and `checkbox.component.css` does the same.
-Accordion already imports the tokens involved (`--et-surface-border-solid`,
-`--et-surface-interaction-solid`), so shrinking the tint to a narrower
-element plus a border/label transition needs no new theming plumbing.
+The border/label transition shipped 2026-08-10 - see "Already fixed". Nothing
+else in this section is open.
 
 ## Avatar
 
@@ -135,13 +128,12 @@ the story file alone, not the filter-overlay component.
 exists as a custom control - swatch, text value, and a native `<input
 type="color">` synced underneath, with `readonly`/`disabled`/`mixed`
 handling. A custom picker replaces that native input while keeping the same
-directive/value contract. Validators are the actual gap: no hex/RGB/hex-6-
-only/contrast validator exists anywhere in `libs/forms` or `libs/core`
-today (`value: string | null` only claims `#rrggbb` in a doc comment) -
-correctness currently depends entirely on the native picker's output, which
-won't hold once free-text entry or a custom picker is in play. A contrast
-validator against another control's value needs a cross-field read - check
-how (if at all) that's wired elsewhere in `libs/forms` before designing it.
+directive/value contract - still open, still an `L`.
+
+The **hex/RGB validators shipped 2026-08-10** (see "Already fixed"). A
+**contrast validator** is the part that did not: it needs to read another
+control's value, and nothing in `libs/forms` does a cross-field read today,
+so its shape is a design question rather than a missing regex. Left open.
 
 ## Progress steps
 
@@ -157,10 +149,8 @@ story with one hardcoded 4-step example.
 
 Expanding this, roughly in order of how disruptive each is:
 
-- **Success/warning/error states** - additive: `ProgressStepState` grows
-  from 3 values to include them, parallel to the semantic set banner
-  already has (`BANNER_TYPES.SUCCESS/WARNING/ERROR`) rather than inventing
-  new color language.
+- ~~**Success/warning/error states**~~ - shipped 2026-08-10, see "Already
+  fixed".
 - **Vertical orientation** - not a CSS flip: the horizontal connector is
   purpose-built (`inline-size` bar sized to the gap), so vertical needs its
   own connector geometry (a `block-size` bar), not a rotation of the
@@ -693,7 +683,10 @@ tab is the leader, and has it been hidden for an hour" is not a question the pan
 today. `withTracking` already emits `leaderStatusChange`, so leadership moves have a recorded
 source to correlate against.
 
-## Auth: `excludeRoutes` invites string matching
+## Auth: `excludeRoutes` invites string matching - fixed 2026-08-10
+
+The SDK half shipped; see "Already fixed". The app-side observations below are kept
+because they are the evidence for _why_, not because anything here is still open.
 
 `withPersistentAuth`'s `autoLogin.excludeRoutes: string[]` is prefix-matched
 against `injectRoute()`, so a consumer expresses route policy as substrings. In
@@ -714,6 +707,42 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Auth: `shouldAutoLogin`** (2026-08-10) - `withPersistentAuth`'s `autoLogin` config takes
+`shouldAutoLogin?: (url: string) => boolean` next to `excludeRoutes`. The two are **independent
+vetoes** - either refusing skips auto-login - chosen so a predicate can never re-enable a route the
+prefix list excluded, which makes the two safe to introduce in either order. `excludeRoutes` keeps
+its prefix matching and now says so in its JSDoc, naming the `/reset-password` vs
+`/reset-password-templates` case the section was written about. The devtools panel gains an "auto
+login predicate" row when one is set. **This was the last open auth item.**
+
+**Color input: hex/RGB validators** (2026-08-10) - `hexColor()` and `rgbColor()` in
+`forms/color-input/color-input-validators.ts`, following `requiredLanguages`' shape (a `validate()`
+wrapper taking a derived path type, a `kind`, and an overridable `message`). `hexColor` is strict
+`#rrggbb` by default - what the control documents and what the native picker emits - with
+`allowShorthand` and `allowAlpha` as opt-ins; `rgbColor` takes both the comma and the space form and
+range-checks the channels in code rather than in the pattern. Both **pass on a blank value**, so
+`required` stays the one validator that reports emptiness. The **contrast validator stays unbuilt** -
+it needs a cross-field read that nothing in `libs/forms` does yet.
+
+**Accordion: the header's hover response** (2026-08-10) - the edge-to-edge tint kept its 7% wash and
+gained two companions, both through the `--_et-*` indirection button uses for `border-color`: the
+accordion's own bottom hairline mixes 35% of `--et-surface-interaction-solid` into the border colour,
+and the hint and chevron share a `--_et-accordion-secondary-color` that goes muted → solid. The three
+are paced by a new public `--et-accordion-color-duration` (120ms), split out from
+`--et-accordion-duration` so the pointer response is tunable separately from the collapse. Hovering
+the trigger has to reach the host for the hairline, hence `:has()`. Two deliberate extras: all hover
+states moved behind `@media (hover: hover)` (they used to stick on touch), and reduced-motion now
+drops only the chevron's rotation, not its colour fade. Disabled headers respond to none of it.
+
+**Progress steps: outcome states** (2026-08-10) - `ProgressStepState` grows by `success`, `warning`
+and `error`. Each is a _resolved_ state: it fills the marker and the connector after it the way
+`complete` does, but with its own icon (check / triangle-exclamation / times, so the outcome never
+rests on colour alone) and with the app's matching semantic theme forced onto the step through
+`ProvideColorDirective` - the same per-`type` mechanism banner uses. No new colour rules were needed;
+the existing accent declarations already read `--et-theme-color-primary-solid`, which now resolves
+inside the step's own scope. Labels use `--et-theme-color-ink-solid`. Themes are injected only for
+the state actually rendered, so a flow that never fails still needs no `type: 'error'` theme.
 
 **Query error rebuilt on banner** (2026-08-09) - `et-query-error` is now an `et-banner` of
 `type="error"` rather than a second implementation of the same tinted card. The duplicated
@@ -1403,6 +1432,51 @@ that leading media and a leading control cannot coexist), which is why they sit 
 The tile lands as a second sheet mounted the same way as `SelectionCardStylesComponent`, so a
 consumer who never writes `variant="tile"` never injects it. It needs its own story in both the
 checkbox-group and radio-group story files.
+
+## Forms: validity is binary, and there is no warning state
+
+Raised by the user 2026-08-10; not yet researched against the source.
+
+A control is valid or invalid, and nothing in between. The missing middle is a **warning**: a value
+that is accepted and submittable, but that the user should look at anyway - a password that meets the
+rules yet is weak, a date far enough in the future to be a likely typo, a quantity above what is
+normally in stock. Today the only way to say that is to render your own text under the field, which
+means it neither reads like the field's own message nor takes the error styling's place in the layout.
+
+The colour language exists already (`injectWarningTheme()`, `BANNER_TYPES.WARNING`, and now progress
+steps' `warning` state), so this is not a theming question. The open questions are on the form side:
+
+- **Where does the state come from?** Signal forms model validity, not advisories. Is a warning a
+  separate signal the consumer sets on the control, a validator that returns a distinct severity, or
+  purely a presentational input on `et-form-field`?
+- **What happens to the error slot?** A field can be invalid _and_ warned. Do the two messages stack,
+  does the error win outright, and does a warning survive submit the way an error does?
+- **Does it block anything?** It must not - the point is that the form still submits. Worth stating
+  in the guide, since `aria-invalid` must stay `false` and the message wants `role="status"` rather
+  than the error's assertive announcement.
+
+## Forms: time-zone handling and local-time UX
+
+Raised by the user 2026-08-10; not yet researched against the source.
+
+The date/time controls and the scheduler all deal in some notion of "when", and there is no stated
+answer for which zone that is. The concrete want is **a way to show an input's date/time in local
+time** - typically alongside the value the user actually typed, when the two differ.
+
+The user's own constraint, verbatim: _"though we need to make sure this doesn't get confusing."_ That
+is the whole difficulty. Two clocks on one field is a reliable way to make a form worse, so the
+design has to earn each one:
+
+- **Show the second reading only when it differs**, and only when the field's zone is genuinely not
+  the viewer's - a field that already is local should look exactly as it does today.
+- **Name both.** An unlabelled second time is worse than none; if it says `14:00` it must also say
+  which zone, or it just reads as a contradiction.
+- **Decide what the value _is_** before designing the display. Whether the control's model is a zoned
+  instant, a wall-clock time plus a zone, or a naive local string changes every one of the above, and
+  it is the thing to settle first.
+
+Scope this against `forms/date-time/`, `DateRangeInputComponent` and the scheduler together - a
+per-control answer would guarantee they disagree.
 
 ## New components still open
 
