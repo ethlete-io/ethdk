@@ -1,4 +1,4 @@
-import { DestroyRef, effect, inject, isDevMode, Signal } from '@angular/core';
+import { DestroyRef, effect, inject, isDevMode, Signal, untracked } from '@angular/core';
 import { BearerAuthSessionEndCause } from '../bearer-auth-provider';
 import { decryptToken, encryptToken } from '../utils';
 
@@ -10,6 +10,7 @@ type SyncMessage =
     }
   | {
       type: 'logout';
+      cause?: BearerAuthSessionEndCause;
     };
 
 export type MultiTabSyncConfig = {
@@ -25,6 +26,9 @@ export type MultiTabSyncConfig = {
 export type MultiTabSyncContext = {
   accessToken: Signal<string | null>;
   refreshToken: Signal<string | null>;
+
+  /** Why the session this tab is broadcasting the end of ended, so the receiving tabs can report it too. */
+  sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
 
   /** The provider's name, which the default channel name is derived from. */
   name: string;
@@ -43,6 +47,14 @@ export type MultiTabSyncContext = {
    */
   logout: (cause?: BearerAuthSessionEndCause) => void;
 };
+
+/**
+ * How an incoming logout reads in the receiving tab: a deliberate logout elsewhere is this tab's
+ * `otherTab`, while a session that ended on its own ended for every tab, so that cause is carried
+ * through. A message without one comes from a tab running an older version.
+ */
+const incomingCause = (cause: BearerAuthSessionEndCause | undefined): BearerAuthSessionEndCause =>
+  !cause || cause === 'user' ? 'otherTab' : cause;
 
 export type InternalMultiTabSync = {
   cleanup: () => void;
@@ -93,7 +105,7 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
     if (message.type === 'logout' && syncLogout) {
       lastSyncedState = LOGGED_OUT;
       hadTokens = false;
-      context.logout('otherTab');
+      context.logout(incomingCause(message.cause));
 
       return;
     }
@@ -157,7 +169,7 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
       lastSyncedState = LOGGED_OUT;
 
-      const message: SyncMessage = { type: 'logout' };
+      const message: SyncMessage = { type: 'logout', cause: untracked(context.sessionEndCause) ?? undefined };
 
       channel.postMessage(message);
     });

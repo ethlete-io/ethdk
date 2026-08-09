@@ -155,6 +155,9 @@ export type BearerAuthProviderEarlySetupContext = {
 
   /** Ends the session, exactly as the provider's own `logout()` does. */
   logout: (cause?: BearerAuthSessionEndCause) => void;
+
+  /** Why the last session ended, as {@link BearerAuthProvider.sessionEndCause} reports it. */
+  sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
 };
 
 /**
@@ -765,6 +768,7 @@ const createBearerAuthProviderImpl = <
     name: config.name,
     applyTokens,
     logout,
+    sessionEndCause: sessionEndCause.asReadonly(),
   });
 
   const querySetupContext: BearerAuthProviderQueryContext<TBearerData, TBuilders> = {

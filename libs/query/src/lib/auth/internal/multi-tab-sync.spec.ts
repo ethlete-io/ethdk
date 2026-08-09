@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BearerAuthSessionEndCause } from '../bearer-auth-provider';
 import { encryptToken, resetEncryptionKey } from '../utils';
 import { MultiTabSyncConfig, setupMultiTabSync } from './multi-tab-sync';
 
@@ -13,6 +14,7 @@ describe('setupMultiTabSync', () => {
   };
   let accessToken: ReturnType<typeof signal<string | null>>;
   let refreshToken: ReturnType<typeof signal<string | null>>;
+  let sessionEndCause: ReturnType<typeof signal<BearerAuthSessionEndCause | null>>;
   let applyTokens: ReturnType<typeof vi.fn>;
   let logout: ReturnType<typeof vi.fn>;
   let localStorageMock: {
@@ -27,6 +29,7 @@ describe('setupMultiTabSync', () => {
     setupMultiTabSync(config, {
       accessToken,
       refreshToken,
+      sessionEndCause,
       name: 'test-auth',
       applyTokens: applyTokens as unknown as (access: string, refresh: string) => void,
       logout: logout as unknown as () => void,
@@ -65,15 +68,18 @@ describe('setupMultiTabSync', () => {
     // Create fresh signals
     accessToken = signal<string | null>(null);
     refreshToken = signal<string | null>(null);
+    sessionEndCause = signal<BearerAuthSessionEndCause | null>(null);
 
     applyTokens = vi.fn((access: string, refresh: string) => {
       accessToken.set(access);
       refreshToken.set(refresh);
+      sessionEndCause.set(null);
     });
 
-    logout = vi.fn(() => {
+    logout = vi.fn((cause: BearerAuthSessionEndCause = 'user') => {
       accessToken.set(null);
       refreshToken.set(null);
+      sessionEndCause.set(cause);
     });
   });
 
@@ -150,7 +156,54 @@ describe('setupMultiTabSync', () => {
 
       expect(mockChannel.postMessage).toHaveBeenCalledWith({
         type: 'logout',
+        cause: undefined,
       });
+    });
+  });
+
+  it('should broadcast the cause the session ended with', () => {
+    TestBed.runInInjectionContext(() => {
+      setup();
+
+      accessToken.set('access-token');
+      refreshToken.set('refresh-token');
+      TestBed.flushEffects();
+
+      mockChannel.postMessage.mockClear();
+
+      logout('expired');
+
+      TestBed.flushEffects();
+
+      expect(mockChannel.postMessage).toHaveBeenCalledWith({ type: 'logout', cause: 'expired' });
+    });
+  });
+
+  it('should report an incoming session that ended on its own with the cause it ended with', () => {
+    TestBed.runInInjectionContext(() => {
+      setup();
+
+      accessToken.set('access-token');
+      refreshToken.set('refresh-token');
+      TestBed.flushEffects();
+
+      mockChannel.onmessage?.({ data: { type: 'logout', cause: 'inactivity' } } as MessageEvent);
+
+      expect(logout).toHaveBeenCalledWith('inactivity');
+    });
+  });
+
+  it('should report an incoming deliberate logout as otherTab', () => {
+    TestBed.runInInjectionContext(() => {
+      setup();
+
+      accessToken.set('access-token');
+      refreshToken.set('refresh-token');
+      TestBed.flushEffects();
+
+      mockChannel.onmessage?.({ data: { type: 'logout', cause: 'user' } } as MessageEvent);
+
+      expect(logout).toHaveBeenCalledWith('otherTab');
     });
   });
 
