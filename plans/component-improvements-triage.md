@@ -61,22 +61,23 @@ Ranked by value per unit of risk, not by size.
 > `resolveHeaders()` node. The editor half was bigger than the section implied, because most of those
 > values cannot survive JSON at all; they are now preserved rather than replayed as `{}`. **Every
 > remaining query devtools item is `A`.**
+>
+> **Shipped 2026-08-09.** Both remaining auth `S` items, and with them the "logged out after being
+> idle" shortlist entry (was #1). The diagnosis it asked for turned up something larger than the
+> re-arm hole it described: the proactive refresh **had never fired**, because the scheduler mapped
+> its due signal with `tap` and gated on `timer`'s `0`. Every session was living off the reactive 401
+> path, which is exactly how a refresh token gets spent long after the server rotated it. The re-arm
+> shipped on top of the fix, and a synced logout now carries its cause, so a tab no longer reports
+> `otherTab` for a session that expired elsewhere. What is left of #1 is the **visibility** half - no
+> `visibilitychange` re-check, and `refresh-requested` is still fire-and-forget - plus the per-tab
+> inactivity timer, which stays in the `M` table.
 
-1. **Logged out after being idle** - `S` to diagnose, `B`.
-   The only item here a user is currently hitting. `fut-frontend`'s hub provider runs
-   `withPersistentAuth` + `withBearerAuthMultiTabSync()` and **no `withInactivityLogout`**, so the
-   cause to expect is `expired`: a refresh that never fired while the leader tab was hidden, then
-   ran against a rotated refresh token, and the default `onRefreshFailure` logged out. Confirm by
-   reading `sessionEndCause` in each tab first, and put the originating cause on the sync channel's
-   logout message - otherwise the tab the user was in can only ever report `otherTab`. The refresh
-   hole (a scheduled refresh that early-returns is never re-armed) is the fix that follows.
-
-2. **Query error rebuilt on banner** - `M`, `C`.
+1. **Query error rebuilt on banner** - `M`, `C`.
    Identical `color-mix` surface formula, independently reimplemented icon slot, heading,
    description and action row; banner's `type="error"` already forces `injectErrorTheme()`.
    Needs two things layered on: the violation `<ul>` and the retry-only-if-`canRetry` conditional.
 
-3. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
+2. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
    its three open questions first - chiefly whether an unchecked tile still reads as selectable -
    because they are design calls, not code.
@@ -87,8 +88,6 @@ Ranked by value per unit of risk, not by size.
 
 | Item                                                     | Tag     | Note                                                                                                                       |
 | -------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Auth: carry the logout cause across tabs                 | `B`     | See #1 - `{ type: 'logout' }` has no cause, so the receiving tab reports only `otherTab`. Do this before any refresh work  |
-| Auth: a missed scheduled refresh never re-arms           | `B`     | See #1 - `executeRefresh('scheduled')` early-returns four ways and the timer only re-arms on an `accessToken` change       |
 | Dropzone: removing a prefilled value deletes it          | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default |
 | Scheduler: richer sub-appointment list                   | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                  |
 | Scheduler: agenda connector lines                        | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                      |
@@ -107,8 +106,8 @@ Ranked by value per unit of risk, not by size.
 
 | Item                                               | Tag     | Note                                                                                                                                        |
 | -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth: inactivity is per-tab, the logout is shared  | `B`,`D` | See #1 - an idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide         |
-| Query error on banner                              | `C`     | See #2                                                                                                                                      |
+| Auth: inactivity is per-tab, the logout is shared  | `B`,`D` | An idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide                  |
+| Query error on banner                              | `C`     | See #1                                                                                                                                      |
 | Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                                                                   |
 | Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types                                               |
 | Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                                                           |
@@ -118,7 +117,7 @@ Ranked by value per unit of risk, not by size.
 | Description list: `variant`                        | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
 | Scheduler: colour palette via DI token             | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
 | Scheduler: infinite agenda                         | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
-| Selection list: `variant="tile"`                   | `A`,`D` | See #3 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
+| Selection list: `variant="tile"`                   | `A`,`D` | See #2 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
 | Segmented `variant="tabs"` doesn't match tabs      | `C`,`D` | Underline size, baseline rule, swapped accent tokens, half the block padding, hover fills an unchecked segment. Wants shared tokens         |
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
 | Query devtools: float the panel in-page            | `A`     | Third `dock` value + a stored rect; also fix the silently-swallowed blocked pop-up                                                          |

@@ -684,13 +684,10 @@ The design call underneath both: idleness is a property of the **session**, not 
 activity has to be shared (announced on the sync channel, or the timer owned by the leader) before
 a per-tab timer is allowed to end a shared session.
 
-**And the refresh path does have a real hole - the reported hypothesis, sharpened.** The proactive
-refresh is a single `timer(timeUntilRefresh)`, re-armed only when `accessToken` changes
-(`bearer-auth-query-builders.ts`). `executeRefresh('scheduled')` can return without refreshing in
-four ways: no refresh token, **not the leader**, a token-issuing execution already in flight, and
-the `minRefreshInterval` throttle. In every one of them the timer has already fired and **nothing
-re-arms it** - that tab has spent its only scheduled attempt. There is no interval, no retry, and
-no re-check on `visibilitychange`.
+**And the refresh path did have a real hole - it was bigger than the hypothesis.** Fixed 2026-08-09,
+see "Already fixed"; the proactive refresh had never fired at all. What is still open here is only
+the visibility half: there is no re-check on `visibilitychange`, and a `refresh-requested` message
+is still fire-and-forget.
 
 So the sleeping-leader story holds up in shape: a hidden leader tab that the browser freezes keeps
 its Web Lock - the platform releases it when the client goes away, and a frozen page has not gone
@@ -1217,6 +1214,29 @@ Query pass 2 (2026-08-07):
   and a control that only helps future runs promises reach it does not deliver. It stays a
   `provideQueryDevtools({ responseHistory })` decision the app makes once. Changeset
   `devtools-history-diff-reachable.md`. Verified headlessly: 22/22.
+
+**Auth: the proactive refresh never fired, and a missed one now comes back** (2026-08-09) - both
+`S` auth rows, one pass. The scheduler in `bearer-auth-query-builders.ts` ended in
+`timer(t).pipe(tap(() => true))` and its subscriber gated on that value - `timer` emits `0`, so the
+gate was never open. Only an access token already past its refresh point when it arrived triggered a
+refresh, through the separate `of(true)` branch. Every session was being renewed by the reactive 401
+path alone, which is the missing piece the "logged out after being idle" chain needed: nothing was
+refreshing ahead of expiry, so the refresh token was routinely spent long after the server had
+rotated it. No test covered the timer - the two that now do are in `bearer-auth-provider.spec.ts`.
+The re-arm sits on top: `executeRefresh` returns _why_ it declined
+(`executed | noToken | delegated | busy | throttled`) and the schedule recurses through
+`concatMap` for up to five attempts, at the throttle's remaining time, 5s, or `minRefreshInterval`
+depending on the reason. Worth not rediscovering: **a token that is already due when it is applied
+is declined as `busy`**, because the login that issued it still counts as in flight for the tick in
+which the token lands - so before the re-arm, a short-lived token stranded its session on the very
+first hop.
+
+**Auth: a synced logout carries its cause** (2026-08-09) - the `{ type: 'logout' }` sync message
+gained `cause`, read off `sessionEndCause()` untracked in the broadcasting effect. The receiving tab
+reports `'inactivity'` / `'expired'` as they are - a session that ended on its own ended for every
+tab - and only a deliberate `logout()` elsewhere still reads as `'otherTab'`, so "someone signed out
+in another tab" stays distinguishable. A message without a cause (an older tab) falls back to
+`'otherTab'`.
 
 Found not to reproduce:
 

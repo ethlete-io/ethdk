@@ -109,14 +109,16 @@ Do **not** rebuild this from `executionState()`. The two differ in exactly the c
 
 `sessionEndCause()` names what ended the last session, so an app can send a user back where they were after a session that ended on its own while leaving a deliberate logout on the login page:
 
-| Cause          | Set by                                                            |
-| -------------- | ----------------------------------------------------------------- |
-| `'user'`       | `logout()` with no argument - the default.                        |
-| `'inactivity'` | [`withInactivityLogout`](#features)'s timer.                      |
-| `'expired'`    | A refresh that [failed for good](#when-a-refresh-fails-for-good). |
-| `'otherTab'`   | A logout that arrived over [multi-tab sync](#multi-tab-sync).     |
+| Cause          | Set by                                                                   |
+| -------------- | ------------------------------------------------------------------------ |
+| `'user'`       | `logout()` with no argument - the default.                               |
+| `'inactivity'` | [`withInactivityLogout`](#features)'s timer.                             |
+| `'expired'`    | A refresh that [failed for good](#when-a-refresh-fails-for-good).        |
+| `'otherTab'`   | A deliberate logout that arrived over [multi-tab sync](#multi-tab-sync). |
 
 It is `null` before any session has ended, and cleared again as soon as tokens are applied. Pass your own cause for an app-specific path - `logout('expired')` from a handler that decided the session is unrecoverable.
+
+A logout that arrives over [multi-tab sync](#multi-tab-sync) carries the cause it had in the tab it started in. A session that ended **on its own** ended for every tab, so `'inactivity'` and `'expired'` are reported as they are - only a deliberate `logout()` elsewhere reads as `'otherTab'` here, which is what keeps "someone signed out in another tab" distinguishable from "this session is over".
 
 ## Route guards
 
@@ -244,6 +246,8 @@ A `401` is only ever retried once the refresh has actually **changed** the acces
 
 `minRefreshInterval` (default 30s) throttles the **proactive** trigger only. A refresh a `401` asked for is never throttled - a token revoked seconds after a proactive refresh is exactly when the request has to go out. Those are deduplicated instead: one refresh is in flight at a time.
 
+A proactive refresh that comes due while it cannot run - throttled, waiting on a login or refresh already in flight, or handed to a leader tab that has not answered - **comes back for it** rather than waiting out the token. It re-arms up to five times before it leaves the session to the reactive trigger; a new token pair starts the schedule over.
+
 In a tab that is not the elected leader, a `401` asks the leader to refresh over the leader channel rather than refreshing itself - a single-use refresh token must only be spent once, and the resulting tokens arrive back through [multi-tab sync](#multi-tab-sync). Without the feature every tab is its own leader and refreshes directly.
 
 Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 504` by default) with unlimited attempts (`retryConfig.maxAttempts: 0`) capped at 30s delay. By default the token extractor expects `{ accessToken, refreshToken }` in the response of both the authentication and refresh queries - override with `extractTokens`.
@@ -283,7 +287,7 @@ AUTH_PROVIDER.inject().features.multiTabSync.isLeader(); // and .instanceCount()
 A received message takes the same path a local one does, which is what makes the other tabs equal citizens rather than tabs that merely hold the right token:
 
 - **Incoming tokens** are applied like a successful refresh, so `afterTokenRefresh$` emits and every secure query in that tab which had failed with a `401` re-executes. Without this a follower tab would sit on a permanently failed page until reloaded, holding a perfectly valid token.
-- **An incoming logout** runs the provider's own `logout()`, so `executionState()` becomes `{ type: 'logout' }` and unsaved-change guards are abandoned - the receiving tab reports the end of the session the same way the tab the user clicked in does. It reports `sessionEndCause()` as `'otherTab'`, so the receiving tab can tell a logout it did not initiate from one it did.
+- **An incoming logout** runs the provider's own `logout()`, so `executionState()` becomes `{ type: 'logout' }` and unsaved-change guards are abandoned - the receiving tab reports the end of the session the same way the tab the user clicked in does. It reports `sessionEndCause()` as the cause the logout had in the tab it started in, with a deliberate `logout()` arriving as [`'otherTab'`](#why-the-session-ended) - so the receiving tab can both tell a logout it did not initiate from one it did, and see that a session ended because it expired or went idle.
 - **A follower's refresh request** reaches the leader over the leader channel, so a `401` in a tab that may not spend the refresh token still gets one out immediately instead of waiting for the leader's own timer.
 
 Neither message is echoed back out, so a login or logout settles in one round of broadcasts however many tabs are open.
