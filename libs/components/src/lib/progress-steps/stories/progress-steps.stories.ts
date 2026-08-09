@@ -10,3 +10,14 @@ export default {
 type Story = StoryObj<ProgressStepsStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Outcomes: Story = {
+  args: {
+    steps: [
+      { label: 'Upload', state: 'success' },
+      { label: 'Validate', state: 'warning' },
+      { label: 'Import', state: 'error' },
+      { label: 'Publish', state: 'upcoming' },
+    ],
+  },
+};

@@ -1,6 +1,6 @@
 <span class="et-progress-step-marker">
-  @if (state() === 'complete') {
-    <i etIcon="et-check"></i>
+  @if (markerIcon(); as icon) {
+    <i [etIcon]="icon"></i>
   } @else {
     <span class="et-progress-step-marker-number"></span>
   }
