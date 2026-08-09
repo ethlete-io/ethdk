@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { filter, merge, of, Subscription, switchMap, take, tap } from 'rxjs';
+import { EMPTY, filter, map, merge, Subscription, switchMap, take, takeWhile, tap } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
@@ -21,10 +21,14 @@ export type SecureExecuteFactoryOptions<TArgs extends QueryArgs> = {
    * re-firing a mutation on the next login would repeat it behind the user's back.
    */
   autoExecutes: boolean;
+
+  /**
+   * Hands the execution over to the concrete query implementation. `executeArgs.args.headers` is a
+   * provider function, not resolved headers - it must be passed through to the repository as-is, or
+   * the request freezes the access token it was first built with.
+   */
   transformAuthAndExec: (
     executeArgs: QueryExecuteArgs<TArgs> | undefined,
-    tokens: { accessToken: string },
-    headers: HttpHeaders,
     executeState: ReturnType<typeof setupQueryExecuteState>,
   ) => void;
 };
@@ -42,6 +46,9 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 
   let hasExecuted = false;
   let lastExecuteArgs: QueryExecuteArgs<TArgs> | undefined;
+
+  /** The access token the last request went out with - what the 401 retry below compares against. */
+  let lastRequestedWithToken: string | null = null;
 
   const reset = () => {
     authQuerySubscription.unsubscribe();
@@ -124,19 +131,16 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
       throw tokensNotAvailableInsideAuthAndExec();
     }
 
-    const tokens = { accessToken, refreshToken: options.authProvider.refreshToken() ?? '' };
-    const headers = headerProvider();
+    lastRequestedWithToken = accessToken;
 
     options.transformAuthAndExec(
       {
         ...executeArgs,
         args: {
           ...(args ?? {}),
-          headers: headerProvider, // Pass header provider instead of static headers
+          headers: headerProvider,
         } as RequestArgs<TArgs>,
       },
-      tokens,
-      headers,
       executeState,
     );
   };
@@ -187,11 +191,15 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     sessionRestartSubscription.unsubscribe();
     sessionRestartSubscription = Subscription.EMPTY;
 
+    // Retrying with the token that just produced the 401 would 401 again, and that 401 asks for
+    // another refresh - an endless refresh/retry loop for as long as the server keeps handing out
+    // tokens it rejects. A refresh that did not change the access token is therefore not a reason to
+    // retry; the subscription stays open, so a later one that does change it still is.
     tokenRefreshSubscription = options.authProvider.afterTokenRefresh$
       .pipe(
         filter(() => {
           const currentError = options.state.error();
-          return currentError?.code === 401;
+          return currentError?.code === 401 && options.authProvider.accessToken() !== lastRequestedWithToken;
         }),
         take(1),
         tap(() => exec(execArgsWithDefaults)),
@@ -221,21 +229,28 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
         injector: options.deps.injector,
       }).pipe(
         switchMap((latestQuery) => {
-          if (!latestQuery) return of(null);
+          if (!latestQuery) return EMPTY;
           const query = latestQuery.snapshot;
 
           return toObservable(query.isAlive, { injector: options.deps.injector }).pipe(
-            tap((isAlive) => {
-              if (isAlive) return;
-
-              if (query.error()) {
-                error(query);
-              } else if (query.response()) {
-                authAndExecWhenTokenReady(execArgsWithDefaults);
-              }
-            }),
+            filter((isAlive) => !isAlive),
+            filter(() => !!query.error() || !!query.response()),
+            map(() => query),
           );
         }),
+        tap((query) => {
+          if (query.error()) {
+            error(query);
+          } else {
+            authAndExecWhenTokenReady(execArgsWithDefaults);
+          }
+        }),
+        // Stop at the first auth query that hands a session over. Every later one is a token refresh,
+        // which settles before its tokens are applied - re-running here would send the token that just
+        // expired; `afterTokenRefresh$` above is what re-runs a query after a refresh. A *failed* auth
+        // query keeps the wait open, so a query that mounted during a failed auto-login still runs
+        // once the user logs in for real.
+        takeWhile((query) => !!query.error()),
       );
 
       // A `setTokens()` call that lands while this is already waiting (e.g. the SSO redirect

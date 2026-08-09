@@ -23,14 +23,13 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
     state: executeOptions.state,
     autoExecutes:
       shouldAutoExecuteQuery(executeOptions.creatorInternals.method) && !executeOptions.queryConfig.onlyManualExecution,
-    transformAuthAndExec: (executeArgs, _tokens, headers, executeState) => {
+    transformAuthAndExec: (executeArgs, executeState) => {
       const { options: runOptions } = executeArgs ?? {};
-      const updatedArgs = { ...(executeArgs?.args ?? ({} as RequestArgs<TArgs>)), headers };
 
       queryExecute({
         executeOptions: executeOptions,
         executeState,
-        args: updatedArgs,
+        args: executeArgs?.args ?? ({} as RequestArgs<TArgs>),
         options: runOptions,
         isSecure: true,
       });

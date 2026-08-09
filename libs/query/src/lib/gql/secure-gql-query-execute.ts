@@ -35,7 +35,7 @@ export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     autoExecutes:
       shouldAutoExecuteGqlQuery(executeOptions.creatorInternals.method) &&
       !executeOptions.queryConfig.onlyManualExecution,
-    transformAuthAndExec: (executeArgs, _tokens, headers, executeState) => {
+    transformAuthAndExec: (executeArgs, executeState) => {
       const { args, options: runOptions } = executeArgs ?? {};
 
       const query = transformGql(executeOptions.creatorInternals.query);
@@ -45,7 +45,7 @@ export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
         gqlParams = { ...gqlParams, ...args.queryParams };
       }
 
-      const computedArgs = { ...(args ?? ({} as RequestArgs<TArgs>)), headers };
+      const computedArgs = { ...(args ?? ({} as RequestArgs<TArgs>)) };
 
       if (executeOptions.creatorInternals.transport === 'GET') {
         computedArgs.queryParams = gqlParams;

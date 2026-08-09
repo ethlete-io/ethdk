@@ -684,6 +684,115 @@ describe('createBearerAuthProvider', () => {
       expect(userQuery.response()).toEqual({ uuid: 'user-2' });
     });
 
+    it('should run a secure query that waited out a failed login once a later one succeeds', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const authProvider = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      const getUserMe = createSecureGetQuery(queryClientRef, authProvider)<{ response: { uuid: string } }>('/user/me');
+
+      const { provider, userQuery } = TestBed.runInInjectionContext(() => ({
+        provider: authProvider.inject(),
+        userQuery: getUserMe(),
+      }));
+
+      provider.queries.login.execute({ body: { username: 'test' } });
+      TestBed.tick();
+      httpTesting.expectOne('https://api.example.com/auth/login').flush(null, { status: 403, statusText: 'Forbidden' });
+      TestBed.tick();
+
+      expect(userQuery.error()).toBeTruthy();
+      httpTesting.expectNone('https://api.example.com/user/me');
+
+      provider.queries.login.execute({ body: { username: 'test' } });
+      TestBed.tick();
+      httpTesting
+        .expectOne('https://api.example.com/auth/login')
+        .flush({ token: 'access-1', refresh_token: 'refresh-1' });
+      TestBed.tick();
+
+      httpTesting.expectOne('https://api.example.com/user/me').flush({ uuid: 'user-1' });
+      TestBed.tick();
+
+      expect(userQuery.response()).toEqual({ uuid: 'user-1' });
+    });
+
+    it('should send the refreshed access token when a 401 is retried', async () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+      const refresh = postQuery<{
+        body: { token: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/refresh');
+
+      const extractTokens = (response: { token: string; refresh_token: string }) => ({
+        accessToken: response.token,
+        refreshToken: response.refresh_token,
+      });
+
+      const authProvider = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', { queryCreator: login, extractTokens }),
+          withRefreshQuery('refresh', { queryCreator: refresh, extractTokens }),
+        ],
+      });
+
+      const getUserMe = createSecureGetQuery(queryClientRef, authProvider)<{ response: { uuid: string } }>('/user/me');
+
+      const { provider, userQuery } = TestBed.runInInjectionContext(() => ({
+        provider: authProvider.inject(),
+        userQuery: getUserMe(),
+      }));
+
+      provider.queries.login.execute({ body: { username: 'test' } });
+      TestBed.tick();
+      httpTesting
+        .expectOne('https://api.example.com/auth/login')
+        .flush({ token: 'access-1', refresh_token: 'refresh-1' });
+      TestBed.tick();
+
+      const first = httpTesting.expectOne('https://api.example.com/user/me');
+      expect(first.request.headers.get('Authorization')).toBe('Bearer access-1');
+
+      // The access token expired mid-session: the request 401s, which is what asks for a refresh.
+      first.flush(null, { status: 401, statusText: 'Unauthorized' });
+      TestBed.tick();
+
+      httpTesting
+        .expectOne('https://api.example.com/auth/refresh')
+        .flush({ token: 'access-2', refresh_token: 'refresh-2' });
+      TestBed.tick();
+      await Promise.resolve();
+      TestBed.tick();
+
+      // The retry re-uses the repository's cached request, so it must resolve its headers again
+      // rather than replay the ones the first attempt was built with.
+      const retry = httpTesting.expectOne('https://api.example.com/user/me');
+      expect(retry.request.headers.get('Authorization')).toBe('Bearer access-2');
+
+      retry.flush({ uuid: 'user-1' });
+      TestBed.tick();
+      expect(userQuery.response()).toEqual({ uuid: 'user-1' });
+    });
+
     it('should abandon unsaved-changes guards so their dialogs and tab locks are released', async () => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{

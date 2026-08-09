@@ -240,6 +240,8 @@ It behaves exactly like a successful auth query: `bearerData` / `isAuthenticated
 - **Proactive** - a timer computed from the JWT's expiration claim (`expiresInPropertyName`, default `'exp'`) and the `refreshStrategy` (default: refresh at **75%** of the token lifetime, clamped between 1 and 10 minutes before expiry). With multi-tab sync active, only the elected leader tab refreshes.
 - **Reactive** - any secure query failing with a `401` triggers a refresh (`autoRetryOn401`, default `true`), then re-executes.
 
+A `401` is only ever retried once the refresh has actually **changed** the access token. A refresh that hands back the same token is not a reason to retry: the retry would `401` again, and that `401` would ask for another refresh - an endless loop for as long as the server keeps issuing a token it rejects. The query stays armed, so the next refresh that does change the token still retries it.
+
 `minRefreshInterval` (default 30s) throttles the **proactive** trigger only. A refresh a `401` asked for is never throttled - a token revoked seconds after a proactive refresh is exactly when the request has to go out. Those are deduplicated instead: one refresh is in flight at a time.
 
 In a tab that is not the elected leader, a `401` asks the leader to refresh over the leader channel rather than refreshing itself - a single-use refresh token must only be spent once, and the resulting tokens arrive back through [multi-tab sync](#multi-tab-sync). Without the feature every tab is its own leader and refreshes directly.

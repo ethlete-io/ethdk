@@ -19,6 +19,12 @@ describe('createSecureExecuteFactory', () => {
   let mockLatestExecutedQuery: WritableSignal<{ key: string; snapshot: AnyQuerySnapshot } | null>;
   let mockRepositoryEvents$: Subject<QueryRepositoryEvent>;
 
+  /** A token refresh as the provider performs one: the token is applied, then the emission follows. */
+  const refreshTokenWith = (token: string) => {
+    (mockAuthProvider.accessToken as unknown as WritableSignal<string | null>).set(token);
+    (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -137,8 +143,8 @@ describe('createSecureExecuteFactory', () => {
 
     expect(transformSpy).toHaveBeenCalled();
     const callArgs = transformSpy.mock.calls[0];
-    const headers = callArgs?.[2] as HttpHeaders;
-    expect(headers?.get('Authorization')).toBe('Bearer test-token');
+    const headers = (callArgs?.[0]?.args?.headers as () => HttpHeaders)();
+    expect(headers.get('Authorization')).toBe('Bearer test-token');
   });
 
   it('should pass executeState to transformAuthAndExec', () => {
@@ -167,7 +173,7 @@ describe('createSecureExecuteFactory', () => {
 
     expect(transformSpy).toHaveBeenCalled();
     const callArgs = transformSpy.mock.calls[0];
-    const executeState = callArgs?.[3];
+    const executeState = callArgs?.[1];
     expect(executeState).toBeTruthy();
     expect(executeState?.previousKey).toBeTruthy();
   });
@@ -297,9 +303,46 @@ describe('createSecureExecuteFactory', () => {
         mockState.error.set({ code: 401 } as unknown as QueryErrorResponse);
 
         // Trigger token refresh
-        (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+        refreshTokenWith('new-token');
 
         // Should have re-executed
+        expect(transformSpy).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('should NOT re-execute a 401 when the refresh left the access token unchanged', () => {
+      const mockQuery = {
+        response: () => ({}),
+        error: () => null,
+        loading: () => false,
+        lastTimeExecutedAt: () => Date.now(),
+        isAlive: signal(false),
+      } as unknown as AnyQuerySnapshot;
+
+      mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        autoExecutes: true,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({});
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+
+        mockState.error.set({ code: 401 } as unknown as QueryErrorResponse);
+
+        // A refresh that hands back the very same access token - retrying would 401 again, and that
+        // 401 would ask for another refresh, forever.
+        refreshTokenWith('test-token');
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+
+        // The subscription is still armed, so the next refresh that does change the token retries.
+        refreshTokenWith('new-token');
         expect(transformSpy).toHaveBeenCalledTimes(2);
       });
     });
@@ -333,7 +376,7 @@ describe('createSecureExecuteFactory', () => {
         mockState.error.set({ code: 500 } as unknown as QueryErrorResponse);
 
         // Trigger token refresh
-        (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+        refreshTokenWith('new-token');
 
         // Should NOT have re-executed
         expect(transformSpy).toHaveBeenCalledTimes(1);
@@ -369,14 +412,14 @@ describe('createSecureExecuteFactory', () => {
         mockState.error.set({ code: 401 } as unknown as QueryErrorResponse);
 
         // Trigger token refresh - should retry once
-        (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+        refreshTokenWith('new-token');
         expect(transformSpy).toHaveBeenCalledTimes(2);
 
         // Clear error for second refresh
         mockState.error.set(null);
 
         // Second token refresh - should NOT retry because take(1) completed
-        (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+        refreshTokenWith('even-newer-token');
         expect(transformSpy).toHaveBeenCalledTimes(2);
       });
     });
