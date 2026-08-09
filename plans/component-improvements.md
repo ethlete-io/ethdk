@@ -309,23 +309,6 @@ things to settle before that:
   gets fixed, and it is a visible-to-consumers specificity change, so it wants its own
   changeset line.
 
-## Query error: rebuild on banner
-
-`query-error.component` builds its own colored card from scratch -
-`.et-query-error-card` uses `background: color-mix(in srgb, var(--et-
-theme-color-primary-solid, currentColor) 8%, transparent)` with a matching
-border - which is the _identical_ formula banner already uses for its own
-surface. Both independently implement an icon slot, a heading, a
-description/message, and an action row. Banner already carries the
-semantic type query-error needs - `type="error"` forces `injectErrorTheme()`
-
-- so rebuilding query-error on banner is mostly composition: project the
-  icon into `[etIcon]`, the retry button into `[etBannerAction]`, set
-  `type="error"`. Two things banner doesn't have yet and query-error would
-  still need to layer on top: the violation-list rendering (a `<ul>` of
-  messages vs. banner's single description paragraph) and the retry-button-
-  only-if-`canRetry` conditional.
-
 ## Query devtools: pop out to a window _or_ float inside the page
 
 Requested 2026-08-07. `popOut()` has exactly one mode: `window.open(…, POPOUT_FEATURES)` with
@@ -731,6 +714,21 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Query error rebuilt on banner** (2026-08-09) - `et-query-error` is now an `et-banner` of
+`type="error"` rather than a second implementation of the same tinted card. The duplicated
+`color-mix` surface, the icon slot and the `ProvideColorDirective`/`injectErrorTheme()` wiring are
+gone from query error; `type="error"` already resolves the app's error theme and provides the colour
+scope, so `color` just forwards. Banner grew the two slots the composition needed -
+`[etBannerHeading]` and `[etBannerBody]` - because query error needs a real `<h3>` (and its
+`etQueryErrorTitle` template) and a violation `<ul>` where banner had only string inputs. Two calls
+the user settled: the panel **adopts banner's row layout** (icon beside the content, 16px padding,
+14px heading) rather than banner growing a stacked orientation, and the seven `--et-query-error-*`
+tokens are **retired** in favour of `--et-banner-*` rather than aliased - hence the `major`
+changeset. Two things worth keeping in mind: a nested live region announces twice, so banner also
+gained `liveRegion` and query error passes `null` (the host keeps `role="alert"`); and banner's
+`> [etBannerAction]` rule had never matched, because the action projects into `.et-banner-content`
+and was never a child of `.et-banner`.
 
 The three auth items the triage opened with (2026-08-06, one pass):
 

@@ -71,13 +71,17 @@ Ranked by value per unit of risk, not by size.
 > `otherTab` for a session that expired elsewhere. What is left of #1 is the **visibility** half - no
 > `visibilitychange` re-check, and `refresh-requested` is still fire-and-forget - plus the per-tab
 > inactivity timer, which stays in the `M` table.
+>
+> **Query error rebuilt on banner** (was #1) shipped 2026-08-09. It is now an `et-banner` of
+> `type="error"`; the duplicated `color-mix` card and the whole `injectErrorTheme()`/`ProvideColorDirective`
+> wiring are gone from query error, since `type="error"` already does both. Banner gained the two slots the
+> composition needed (`[etBannerHeading]`, `[etBannerBody]`) plus a `liveRegion` override, because the host
+> keeps `role="alert"` and a live region inside one announces twice. Two user calls: the panel **adopts
+> banner's row layout** instead of banner growing a stacked orientation, and the `--et-query-error-*` tokens
+> are **retired** for `--et-banner-*` rather than aliased - so this is a `major`. **Selection list
+> `variant="tile"` is now #1**, still blocked on its three design questions.
 
-1. **Query error rebuilt on banner** - `M`, `C`.
-   Identical `color-mix` surface formula, independently reimplemented icon slot, heading,
-   description and action row; banner's `type="error"` already forces `injectErrorTheme()`.
-   Needs two things layered on: the violation `<ul>` and the retry-only-if-`canRetry` conditional.
-
-2. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
+1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
    its three open questions first - chiefly whether an unchecked tile still reads as selectable -
    because they are design calls, not code.
@@ -107,7 +111,6 @@ Ranked by value per unit of risk, not by size.
 | Item                                               | Tag     | Note                                                                                                                                        |
 | -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Auth: inactivity is per-tab, the logout is shared  | `B`,`D` | An idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide                  |
-| Query error on banner                              | `C`     | See #1                                                                                                                                      |
 | Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                                                                   |
 | Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types                                               |
 | Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                                                           |
@@ -117,7 +120,7 @@ Ranked by value per unit of risk, not by size.
 | Description list: `variant`                        | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
 | Scheduler: colour palette via DI token             | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
 | Scheduler: infinite agenda                         | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
-| Selection list: `variant="tile"`                   | `A`,`D` | See #2 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
+| Selection list: `variant="tile"`                   | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
 | Segmented `variant="tabs"` doesn't match tabs      | `C`,`D` | Underline size, baseline rule, swapped accent tokens, half the block padding, hover fills an unchecked segment. Wants shared tokens         |
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
 | Query devtools: float the panel in-page            | `A`     | Third `dock` value + a stored rect; also fix the silently-swallowed blocked pop-up                                                          |

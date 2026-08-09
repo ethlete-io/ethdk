@@ -19,14 +19,34 @@ import { BANNER_IMPORTS } from '@ethlete/components';
 
 ## Anatomy
 
-`et-banner` renders three optional pieces, in this order:
+`et-banner` renders these optional pieces, in this order:
 
 1. An icon, projected via `[etIcon]` - any [icon](/components/icon). Not rendered automatically from `type`; pick the one that matches your message.
 2. `heading` - a short string input.
-3. `description` - a longer string input.
-4. Actions, projected via `[etBannerAction]` - typically a [button](/components/button).
+3. A projected heading, via `[etBannerHeading]`.
+4. `description` - a longer string input.
+5. A projected body, via `[etBannerBody]`.
+6. Actions, projected via `[etBannerAction]` - typically a [button](/components/button).
 
 A dismiss button renders after all of it when `dismissible` is set, and emits `dismiss` on click - the banner doesn't remove itself; render it conditionally on your own state (`@if`) and unset that state on `(dismiss)`.
+
+### Projecting a heading or a body
+
+`heading` and `description` cover the common case. Project instead when you need markup the string inputs can't express - a real heading element for the document outline, or a list rather than a paragraph. Both slots inherit the built-in typography, so a projected piece matches a string one:
+
+```html
+<et-banner type="error">
+  <i etIcon="et-triangle-exclamation"></i>
+  <h3 etBannerHeading>We couldn't save your changes</h3>
+  <ul etBannerBody>
+    <li>Name is required</li>
+    <li>Email is invalid</li>
+  </ul>
+  <button et-text-button etBannerAction type="button">Retry</button>
+</et-banner>
+```
+
+This is exactly how [query-error](/components/query-error) is built: it is an `et-banner` of `type="error"` with the query's title, message or violation list projected into these slots.
 
 <StoryEmbed id="components-banner--warning" height="200px" />
 
@@ -52,6 +72,7 @@ A dismiss button renders after all of it when `dismissible` is set, and emits `d
 | `description` | `string`                                         | -        | Supporting copy, rendered as a `<p class="et-banner-description">`.                  |
 | `type`        | `'info' \| 'success' \| 'warning' \| 'error'`    | `'info'` | Drives the default color theme and the `role` (see [Accessibility](#accessibility)). |
 | `color`       | `RegisteredColorThemeName \| ColorTheme \| null` | `null`   | Overrides the type's default color.                                                  |
+| `liveRegion`  | `'alert' \| 'status' \| null \| undefined`       | -        | Overrides the `role` the type would pick. `null` renders no role at all.             |
 | `dismissible` | `boolean`                                        | `false`  | Renders a dismiss button.                                                            |
 
 | Output    | Type           | Description                            |
@@ -61,6 +82,12 @@ A dismiss button renders after all of it when `dismissible` is set, and emits `d
 ## Accessibility
 
 The host's `role` follows `type`: `alert` (assertive) for `warning`/`error`, `status` (polite) for `info`/`success` - a warning or error interrupts, an informational or success message doesn't need to. Render the banner conditionally (`@if`) for the role to announce on appearance, the same as [query-error](/components/query-error#accessibility).
+
+`liveRegion` overrides that. Pass `null` for a banner nested inside something that already announces - two live regions read the same message twice - or name the role yourself when the type's choice is wrong for the context (a persistent error banner present on load doesn't need to interrupt):
+
+```html
+<et-banner [liveRegion]="null" type="error" heading="Something went wrong" />
+```
 
 The dismiss button's accessible label comes from `injectBannerLabels()` / `provideBannerLabels({ dismiss: '...' })`, the same localization convention every domain in this library shares.
 

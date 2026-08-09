@@ -1,7 +1,9 @@
 # Query error
 
 The default rendering of a failed [query](/query/errors): a heading from the status, the message (or the
-violation list), and a retry button when the failure is one worth repeating.
+violation list), and a retry button when the failure is one worth repeating. It renders as a
+[banner](/components/banner) of `type="error"`, so a failed query looks like every other error surface in your
+app.
 
 Import `QUERY_ERROR_IMPORTS`. Your app must register a color theme with `type: 'error'` - that is what the panel
 paints itself with (see [theming](/core/theming)).
@@ -165,27 +167,28 @@ defaulting to the app's `type: 'error'` theme.
 
 The host is `role="alert"`, so an error that appears is announced - assertive rather than polite on purpose: the
 request the reader asked for did not happen. This only works if the element is created when the error is, hence
-the `@if` around it.
+the `@if` around it. The banner inside it renders with no role of its own (`[liveRegion]="null"`): a live region
+inside a live region would read the same message twice.
 
 The status icon is `aria-hidden` (it duplicates the title), and a violation list is a real `<ul>`, so a screen
 reader announces how many problems there are before reading them.
 
 ## Theming
 
-There is no global "error color" variable in this system - error is a _theme_, which is why the component takes
-it from DI via `injectErrorTheme()` and provides it as a color scope on its own host. Inside that scope
-`--et-theme-color-primary-*` **is** the error color, so the panel's tint, border and icon all follow whatever the
-app registered, and the retry button inherits it without being told.
+The panel **is** a [banner](/components/banner) of `type="error"` - the title projects into `[etBannerHeading]`,
+the message or violation list into `[etBannerBody]`, and the retry row into `[etBannerAction]`. So it is themed
+like one: the public tokens are `--et-banner-*`, and setting them on (or above) the query error retints it.
 
-| Token                            | Default | Purpose                     |
-| -------------------------------- | ------- | --------------------------- |
-| `--et-query-error-gap`           | `8px`   | Space between the parts.    |
-| `--et-query-error-padding`       | `20px`  | Panel padding.              |
-| `--et-query-error-border-radius` | `12px`  | Panel corner radius.        |
-| `--et-query-error-icon-size`     | `24px`  | The status icon.            |
-| `--et-query-error-title-size`    | `16px`  | Title font size.            |
-| `--et-query-error-title-weight`  | `600`   | Title font weight.          |
-| `--et-query-error-message-size`  | `14px`  | Message and list font size. |
+```css
+.checkout-error {
+  --et-banner-padding: 24px;
+}
+```
+
+There is no global "error color" variable in this system - error is a _theme_. `type="error"` makes the banner
+resolve the app's `type: 'error'` theme via `injectErrorTheme()` and provide it as a color scope, which is what
+`color` overrides. Inside that scope `--et-theme-color-primary-*` **is** the error color, so the panel's tint,
+border and icon all follow whatever the app registered, and the retry button inherits it without being told.
 
 Text colors come from the surface tokens, so the panel reads correctly on any elevation.
 
