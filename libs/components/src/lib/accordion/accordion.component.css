@@ -40,10 +40,33 @@
     initial-value: 240ms;
   }
 
+  /* Separate from `--et-accordion-duration`: that one paces the collapse, this one the header's
+     response to the pointer, which has to feel immediate rather than choreographed. */
+  @property --et-accordion-color-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 120ms;
+  }
+
   .et-accordion {
+    --_et-accordion-border-color: var(--et-surface-border-solid, rgb(128 128 128 / 0.25));
+
     display: block;
     color: var(--et-surface-color-solid, CanvasText);
-    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.25));
+    border-block-end: 1px solid var(--_et-accordion-border-color);
+    transition: border-color var(--et-accordion-color-duration) ease;
+
+    /* The hover lives on the trigger and the border on the host, so this has to reach back up with
+       `:has()` - moving the rule onto `.et-accordion-trigger` would silently stop it applying. */
+    @media (hover: hover) {
+      &:has(.et-accordion-trigger:hover:not([aria-disabled='true'])) {
+        --_et-accordion-border-color: color-mix(
+          in srgb,
+          var(--et-surface-interaction-solid, gray) 35%,
+          var(--et-surface-border-solid, rgb(128 128 128 / 0.25))
+        );
+      }
+    }
   }
 
   /* A `role="heading"` div, so the level is an input rather than six template branches. It is not an
@@ -53,6 +76,8 @@
   }
 
   .et-accordion-trigger {
+    --_et-accordion-secondary-color: var(--et-surface-color-muted-solid, GrayText);
+
     display: flex;
     align-items: center;
     gap: var(--et-accordion-gap);
@@ -66,14 +91,20 @@
     font-weight: 500;
     text-align: start;
     cursor: pointer;
-    /* The tint is the only animated property — the row's own geometry never moves on hover. */
-    transition: background-color 120ms ease;
+    /* Colors only — the row's own geometry never moves on hover. */
+    transition: background-color var(--et-accordion-color-duration) ease;
 
     /* Interaction states are left bare (no `:where()`) so they outrank the base rule and the
        config modifiers below, per the styling notes in CLAUDE.md. A row highlight wants to be
        lighter than a button's: it covers the full width, so the same 12% reads much heavier. */
-    &:hover {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
+    @media (hover: hover) {
+      &:hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
+
+        &:not([aria-disabled='true']) {
+          --_et-accordion-secondary-color: var(--et-surface-color-solid, CanvasText);
+        }
+      }
     }
 
     &:active {
@@ -104,18 +135,21 @@
 
     .et-accordion-hint {
       flex: none;
-      color: var(--et-surface-color-muted-solid, GrayText);
+      color: var(--_et-accordion-secondary-color);
       font-weight: 400;
+      transition: color var(--et-accordion-color-duration) ease;
     }
 
     .et-accordion-chevron {
       flex: none;
       inline-size: var(--et-accordion-chevron-size);
       block-size: var(--et-accordion-chevron-size);
-      color: var(--et-surface-color-muted-solid, GrayText);
+      color: var(--_et-accordion-secondary-color);
       /* The icon points up, so closed is the rotated state. */
       rotate: 180deg;
-      transition: rotate var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1);
+      transition:
+        rotate var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+        color var(--et-accordion-color-duration) ease;
     }
 
     &[aria-expanded='true'] .et-accordion-chevron {
@@ -163,9 +197,14 @@
     /* Both the base and the open rule, since each declares its own transition. Collapsing becomes
        instant, which also means `visibility` no longer needs its delay. */
     .et-accordion-panel,
-    .et-accordion-panel:where([data-open]),
-    .et-accordion-trigger .et-accordion-chevron {
+    .et-accordion-panel:where([data-open]) {
       transition: none;
+    }
+
+    /* Only the rotation goes: a color cross-fade is not motion, and dropping it would make the
+       header's hover response snap while the rest of the library still eases. */
+    .et-accordion-trigger .et-accordion-chevron {
+      transition: color var(--et-accordion-color-duration) ease;
     }
   }
 }
