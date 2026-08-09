@@ -117,8 +117,16 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 > the tick names which payload landed. Rows with no address of their own - the explorer root, a
 > folded slice - keep the bare `⧉`; an array element gets the caret but only Value and Path.
 >
-> **The tile stays #1 and stays parked** - the user declined its design questions on 2026-08-09
-> rather than settling them, so do not re-ask unprompted.
+> **Query devtools: float the panel in-page** shipped 2026-08-10 (an `M` row). `dock` gains `float`,
+> with a persisted rect; the one dock button cycles bottom → right → float. On the user's prompt it is
+> built on the **stream pip's primitives** rather than its own pointer code - `[etDragHandle]` plus
+> `<et-resize-handles>` from `@ethlete/core`, so a float resizes from all eight edges. One pure
+> `resizedFloatRect`/`clampFloatRect` pair serves the drag, the window resize _and_ the restore of a
+> rect stored on a bigger screen. The blocked pop-up the section filed alongside it now raises a notice
+> with a one-click **Float instead**.
+>
+> > **The tile stays #1 and stays parked** - the user declined its design questions on 2026-08-09
+> > rather than settling them, so do not re-ask unprompted.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
@@ -156,7 +164,6 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 | Selection list: `variant="tile"`                   | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
 | Segmented `variant="tabs"` doesn't match tabs      | `C`,`D` | Underline size, baseline rule, swapped accent tokens, half the block padding, hover fills an unchecked segment. Wants shared tokens         |
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
-| Query devtools: float the panel in-page            | `A`     | Third `dock` value + a stored rect; also fix the silently-swallowed blocked pop-up                                                          |
 | Query devtools: nest the Queries list by path      | `A`     | Opt-in toggle, flat stays the default. Compress single-child chains or the tree is worse than the list                                      |
 | Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped      |
 

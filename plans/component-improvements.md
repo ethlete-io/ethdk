@@ -299,30 +299,6 @@ things to settle before that:
   gets fixed, and it is a visible-to-consumers specificity change, so it wants its own
   changeset line.
 
-## Query devtools: pop out to a window _or_ float inside the page
-
-Requested 2026-08-07. `popOut()` has exactly one mode: `window.open(…, POPOUT_FEATURES)` with
-`popup=yes`, which moves the panel element into a real browser window. Wanted: a choice between
-that and a **floating panel inside the current page** - dragged and resized in place rather than
-docked to an edge.
-
-The panel is most of the way there. `dock` is `'bottom' | 'right'` with a persisted size per edge
-and a `ResizeDrag` already handling both the panel edge and the pane dividers, so floating is a
-third `dock` value plus a stored position, and the drag primitives it needs
-(`dragGestureFrom` / drag-handle in `libs/core`) exist. Two things to settle: clamping the rect
-back into the viewport when the window shrinks, and that it stacks by z-index - the platform
-decisions in this file rule out the native top layer, so a floating panel is an overlay-style
-z-index citizen like everything else.
-
-Fold in a real defect while there: **a blocked pop-up fails silently.** `popOut()` does
-`if (!popup) { source.revoke(); return; }` - no message, no fallback, the button simply does
-nothing. Once a floating mode exists it is the obvious fallback; until then it at least has to
-say so.
-
-Worth stating in the docs when this lands, since the two modes are not interchangeable: a real
-window survives being covered by the app and can go to a second monitor; a floating panel needs
-no pop-up permission and no window management.
-
 ## Query devtools: a Web Locks inspector
 
 Requested 2026-08-07. **The `isLeader` half of this section shipped** - see the Query pass 2
@@ -643,6 +619,29 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Query devtools: the panel floats in the page** (2026-08-10, was "pop out to a window _or_ float inside
+the page") - `dock` grows a third value, `float`, with a persisted `{ x, y, width, height }`. The one
+dock button now cycles bottom → right → float, always naming the next one. Worth not rediscovering:
+
+- **It reuses the stream pip's primitives**, on the user's prompt: `[etDragHandle]` for the title bar
+  and `<et-resize-handles>` for all eight edges, both from `@ethlete/core`. The first draft hand-rolled
+  pointer tracking through the panel's own `ResizeDrag` union; that is gone. Both primitives bind to the
+  global `document`, which is safe here only because `floating()` is false while popped out - the docked
+  edge and pane dividers still need `ResizeDrag`'s `doc`, because they run in the pop-up's document.
+- **The clamp is one pure function**, `resizedFloatRect` → `clampFloatRect`, and three things run into
+  it: a drag, a viewport resize, and a rect restored from `sessionStorage` into a smaller window. The
+  restore case is the one that is easy to miss - it is covered by the effect that watches `viewport()`.
+- **The title bar is a move handle, not a resize one.** It first shipped with the docked handle's pill
+  grip and immediately read as a duplicate control; it is a dot grid now. The `n` edge handle still
+  overlays its outermost 6px, which is how a real window behaves.
+- **`paneAxis` keys on the float's own width** (620px), not the viewport - a float is sized by the user.
+- Fixed alongside, as the section asked: a **blocked pop-up no longer fails silently**. It raises a
+  neutral notice bar with "Float instead", which is exactly the fallback floating gives it.
+
+Changeset `devtools-float-the-panel.md`; 9 unit tests on the resize maths; verified headlessly 18/18
+(cycle, drag, resize, clamp, reload, pointer pass-through, blocked pop-up), 4/4 on restoring a stale
+rect, and 6/6 on the pop-out round trip from a float.
 
 **Query devtools: the value explorer copies the key and the path** (2026-08-10, was its own section) -
 the user settled the open call in favour of a **menu on the copy button**: `⧉` still copies the value

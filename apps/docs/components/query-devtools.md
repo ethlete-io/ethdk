@@ -64,16 +64,32 @@ character the keyboard reports.
 ## Where the panel sits
 
 A bottom dock is right for a waterfall and wrong for a wide screen, and on two
-monitors neither is right. The header carries both alternatives:
+monitors neither is right. The header carries the alternatives. One button cycles
+the three in-page positions, always naming the next one:
 
 - **◨ Right** docks the panel to the right edge, sized by dragging its inner edge
   instead of its top one. At that width the master/detail and split views stack
   vertically rather than sitting side by side, so neither pane is squeezed below
-  what it needs. **⬓ Bottom** puts it back.
+  what it needs.
+- **❐ Float** lifts it off the edges entirely: a window inside the page, moved by
+  the dotted grip on its title bar and resized from any of its eight edges and
+  corners. **⬓ Bottom** puts it back.
 - **⧉ Pop out** moves the panel into a window of its own - the _same_ live panel,
   not a second one, so every signal in it keeps updating from the app you are
   inspecting, and **Inspect** still highlights components in the app window.
   **⧈ Dock back** (or closing the window) brings it home.
+
+**Float or pop out?** They are not interchangeable. A real window survives being
+covered by the app and can go to a second monitor, but needs pop-up permission and
+dies with the tab that opened it. A float needs no permission and no window
+management, and it is the only one of the two a reload can restore - but it is an
+element in your page, so it stacks by `z-index` like any other overlay in this
+library. (The native top layer is deliberately not used anywhere in the SDK: it
+would break apps that rely on `z-index` layering.)
+
+A float is moved and resized on the same `@ethlete/core` primitives the stream
+[picture-in-picture window](/components/stream) uses - `[etDragHandle]` and
+`<et-resize-handles>` - so the two behave the same way under the hand.
 
 Inside the panel, **the divider between two panes is draggable** on every tab that
 has two: the Queries list against its detail, and the split views (Stacks,
@@ -89,15 +105,24 @@ phone - so on a narrow viewport the panes go one above the other, and the tab
 strip and the action row each scroll sideways instead of wrapping into a header
 taller than the content it labels. Both dividers are draggable by touch.
 
-Which edge you picked, the size of each and the pane sizes are
-[persisted](#persistence). Being popped out is not: a reload cannot re-adopt the window the previous document
-opened, so the panel always comes back docked.
+Which position you picked, the size of each, the floating panel's rect and the pane
+sizes are all [persisted](#persistence). A restored float is **checked against the
+current viewport before it is shown**, so a rect stored on a large monitor - or one
+dragged to an edge of a window that has since been shrunk - is pulled back into
+view rather than opening off screen. The same clamp runs while you drag and
+whenever the window resizes, so the panel can never end up somewhere you cannot
+reach it. A float narrower than 620px stacks its two panes, the same way a right
+dock does.
+
+Being popped out is not persisted: a reload cannot re-adopt the window the previous
+document opened, so the panel always comes back where it was docked or floating.
 
 ::: tip
 A pop-out is the app's own panel relocated, which is what makes it live - but it
 also means it borrows the app's stylesheets and the surface theme the panel was
 docked in, and it cannot outlive the tab that opened it. Reloading the app closes
-it. Pop-up blockers apply: if the window is refused, the panel stays docked.
+it. Pop-up blockers apply - and if the window is refused the panel says so, with a
+one-click **Float instead**, rather than the button appearing to do nothing.
 :::
 
 ## Tabs
@@ -1191,7 +1216,7 @@ components are bound to, which the browser Network tab can't do:
 
 ## Persistence
 
-The view state - open/closed, [dock edge, the size of each and the pane sizes](#where-the-panel-sits),
+The view state - open/closed, [dock edge or float rect, the size of each and the pane sizes](#where-the-panel-sits),
 active tab, the query detail's
 [sub-tab](#the-detail-view-overview-history-data), selected client, selected
 query, inspect filter, the query filter term and status chips, the
