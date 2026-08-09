@@ -3,6 +3,8 @@ import { Component, computed, input, linkedSignal, numberAttribute, signal, View
 import { injectStyleManager } from '@ethlete/core';
 import { JsonPath, QueryDevtoolsOverridesRecorder } from '@ethlete/query';
 import { Subject, switchMap, tap, timer } from 'rxjs';
+import { QueryDevtoolsCopyMenuComponent, QueryDevtoolsCopyPayload } from './query-devtools-copy-menu.component';
+import { formatJsonPath } from './query-devtools-diff';
 import { exoticOf } from './query-devtools-exotic';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import { QueryDevtoolsOverrideMenuComponent } from './query-devtools-override-menu.component';
@@ -83,12 +85,15 @@ const chunkSizeFor = (count: number) => {
             [attr.aria-label]="copyLabel()"
             [title]="copyLabel()"
             [class.et-query-devtools-json-copy--copied]="copied()"
-            (click)="copyValue()"
+            (click)="copy('value')"
             class="et-query-devtools-json-copy"
             type="button"
           >
             {{ copied() ? '✓' : '⧉' }}
           </button>
+          @if (addressable()) {
+            <et-query-devtools-copy-menu [parentKind]="parentKind()" (pick)="copy($event)" />
+          }
           @if (overrides(); as overrides) {
             <et-query-devtools-override-menu
               [value]="value()"
@@ -147,12 +152,15 @@ const chunkSizeFor = (count: number) => {
           [attr.aria-label]="copyLabel()"
           [title]="copyLabel()"
           [class.et-query-devtools-json-copy--copied]="copied()"
-          (click)="copyValue()"
+          (click)="copy('value')"
           class="et-query-devtools-json-copy"
           type="button"
         >
           {{ copied() ? '✓' : '⧉' }}
         </button>
+        @if (addressable()) {
+          <et-query-devtools-copy-menu [parentKind]="parentKind()" (pick)="copy($event)" />
+        }
         @if (overrides(); as overrides) {
           <et-query-devtools-override-menu
             [value]="value()"
@@ -165,7 +173,7 @@ const chunkSizeFor = (count: number) => {
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [QueryDevtoolsJsonComponent, QueryDevtoolsOverrideMenuComponent],
+  imports: [QueryDevtoolsJsonComponent, QueryDevtoolsCopyMenuComponent, QueryDevtoolsOverrideMenuComponent],
 })
 export class QueryDevtoolsJsonComponent {
   public value = input<unknown>();
@@ -260,19 +268,38 @@ export class QueryDevtoolsJsonComponent {
     return this.chunk() ? this.chunkHasHit() : true;
   });
 
-  protected copied = signal(false);
+  /** What the last copy put on the clipboard, or `null` once the tick has expired. */
+  protected copied = signal<QueryDevtoolsCopyPayload | null>(null);
   private copiedReset$ = new Subject<void>();
 
-  protected copyLabel = computed(() => {
+  /**
+   * Whether this node has an address of its own to copy. An explorer root has no key, and a folded
+   * slice stands for a range of entries rather than one path - neither can name itself.
+   */
+  protected addressable = computed(() => this.nodeKey() !== null && !this.chunk());
+
+  private valueLabel = computed(() => {
     const count = this.ownEntries().length;
 
-    if (this.chunk()) return `Copy slice (${count} ${count === 1 ? 'entry' : 'entries'})`;
+    if (this.chunk()) return `slice (${count} ${count === 1 ? 'entry' : 'entries'})`;
 
-    if (this.kind() === 'array') return `Copy array (${count} ${count === 1 ? 'item' : 'items'})`;
+    if (this.kind() === 'array') return `array (${count} ${count === 1 ? 'item' : 'items'})`;
 
-    if (this.kind() === 'object') return `Copy object (${count} ${count === 1 ? 'key' : 'keys'})`;
+    if (this.kind() === 'object') return `object (${count} ${count === 1 ? 'key' : 'keys'})`;
 
-    return 'Copy value';
+    return 'value';
+  });
+
+  /**
+   * Doubles as the button's `title` and its `aria-label`, and names what landed while the tick is up -
+   * a bare `✓` stopped being unambiguous once the menu put four payloads behind one control.
+   */
+  protected copyLabel = computed(() => {
+    const copied = this.copied();
+
+    if (copied) return `Copied the ${copied === 'entry' ? '"key": value pair' : copied}`;
+
+    return `Copy ${this.valueLabel()}`;
   });
 
   protected preview = computed(() => {
@@ -306,7 +333,7 @@ export class QueryDevtoolsJsonComponent {
     this.copiedReset$
       .pipe(
         switchMap(() => timer(COPIED_RESET_MS)),
-        tap(() => this.copied.set(false)),
+        tap(() => this.copied.set(null)),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -335,31 +362,45 @@ export class QueryDevtoolsJsonComponent {
   }
 
   /**
+   * Writes one of the node's four pasteable forms. All of them go through here so the tick stays a
+   * single readout of what actually landed.
+   */
+  protected copy(payload: QueryDevtoolsCopyPayload) {
+    const text = this.copyTextFor(payload);
+
+    if (text === null) return;
+
+    navigator.clipboard
+      ?.writeText(text)
+      .then(() => this.flagCopied(payload))
+      .catch(() => undefined);
+  }
+
+  /**
    * Containers copy their whole subtree as JSON, slices only the entries they cover; leaves copy
    * something pasteable - a raw string without the display quotes, so an id or url can go straight
-   * into a search box.
+   * into a search box. `null` for a subtree that cannot be serialized at all.
    */
-  protected copyValue() {
+  private copyTextFor(payload: QueryDevtoolsCopyPayload): string | null {
+    if (payload === 'key') return this.nodeKey();
+    if (payload === 'path') return formatJsonPath(this.jsonPath());
+
     const kind = this.kind();
     const exotic = this.exotic();
     const value = this.chunk() ? this.chunkValue() : this.copyableValue();
 
-    let text: string;
-
     try {
-      if (kind === 'string') text = value as string;
-      else if (kind === 'undefined') text = 'undefined';
-      else if (exotic?.display) text = exotic.display;
-      else text = JSON.stringify(value, null, 2);
+      if (payload === 'entry') return `${JSON.stringify(this.nodeKey())}: ${JSON.stringify(value, null, 2)}`;
+
+      if (kind === 'string') return value as string;
+      if (kind === 'undefined') return 'undefined';
+      if (exotic?.display) return exotic.display;
+
+      return JSON.stringify(value, null, 2);
     } catch {
       // Circular references (or a BigInt / toJSON that throws) make the subtree unserializable.
-      return;
+      return null;
     }
-
-    navigator.clipboard
-      ?.writeText(text)
-      .then(() => this.flagCopied())
-      .catch(() => undefined);
   }
 
   /** An exotic container copies the entries the tree shows, not the private fields `JSON.stringify` finds. */
@@ -377,8 +418,8 @@ export class QueryDevtoolsJsonComponent {
     return Object.fromEntries(entries.map((entry) => [entry.k, entry.v]));
   }
 
-  private flagCopied() {
-    this.copied.set(true);
+  private flagCopied(payload: QueryDevtoolsCopyPayload) {
+    this.copied.set(payload);
     this.copiedReset$.next();
   }
 }

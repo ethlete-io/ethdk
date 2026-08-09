@@ -1,0 +1,41 @@
+@layer components {
+  et-query-devtools-copy-menu,
+  .et-query-devtools-json-copy-menu {
+    display: contents;
+  }
+
+  /* Narrower than the row's other controls: it is the second half of the copy button, not a peer of it.
+     Same 2.2rem block size and negative block margin so the tree rows don't grow taller. */
+  .et-query-devtools-json-copy-more {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    flex: 0 0 auto;
+    inline-size: 1.4rem;
+    block-size: 2.2rem;
+    margin-block: -0.4rem;
+    margin-inline-start: -0.6rem;
+    border: none;
+    border-radius: 0.3rem;
+    background: transparent;
+    color: var(--_et-qdt-subtle, currentColor);
+    cursor: pointer;
+    opacity: 0;
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .et-query-devtools-json-copy-more:hover {
+    background: var(--_et-qdt-active);
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-json-row:hover .et-query-devtools-json-copy-more,
+  .et-query-devtools-json-copy-more:focus-visible,
+  .et-query-devtools-json-copy-more[data-menu-open] {
+    opacity: 1;
+  }
+}

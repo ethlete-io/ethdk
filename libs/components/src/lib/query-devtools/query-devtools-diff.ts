@@ -87,6 +87,17 @@ const push = (acc: DiffAccumulator, entry: QueryDevtoolsDiffEntry) => {
   acc.entries.push(entry);
 };
 
+/**
+ * Appends one step to a path in the panel's canonical JSONPath format - `$.data.items[0]`, rooted at
+ * `$` for the value an explorer or a diff was handed. The one place that format is written, so the
+ * diff's Path column and the value explorer's "Copy path" cannot drift apart.
+ */
+export const appendJsonPathStep = (path: string, step: string | number) =>
+  typeof step === 'number' ? `${path}[${step}]` : `${path}.${step}`;
+
+/** The same format, built from the array of steps an override op targets. */
+export const formatJsonPath = (steps: readonly (string | number)[]) => steps.reduce(appendJsonPathStep, '$');
+
 /** One position in the walk: the two values to compare there, and how deep into them it is. */
 type WalkStep<T = unknown> = {
   before: T;
@@ -114,7 +125,12 @@ const walk = ({ before, after, path, depth }: WalkStep, acc: DiffAccumulator) =>
     if (isRecord(before) && isRecord(after)) {
       for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
         walk(
-          { before: valueAt(before, key), after: valueAt(after, key), path: `${path}.${key}`, depth: depth + 1 },
+          {
+            before: valueAt(before, key),
+            after: valueAt(after, key),
+            path: appendJsonPathStep(path, key),
+            depth: depth + 1,
+          },
           acc,
         );
       }
@@ -163,7 +179,7 @@ const walkArrays = ({ before, after, path, depth }: WalkStep<unknown[]>, acc: Di
       {
         before: index < before.length ? before[index] : ABSENT,
         after: index < after.length ? after[index] : ABSENT,
-        path: `${path}[${index}]`,
+        path: appendJsonPathStep(path, index),
         depth: nested,
       },
       acc,

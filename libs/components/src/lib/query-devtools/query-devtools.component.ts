@@ -84,7 +84,9 @@ import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.com
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
+import { QueryDevtoolsCopyMenuStylesComponent } from './query-devtools-copy-menu-styles.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
+import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
 import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';
 import { QueryDevtoolsSequencesTabComponent } from './query-devtools-sequences-tab.component';
 import { QueryDevtoolsSocketsTabComponent } from './query-devtools-sockets-tab.component';
@@ -251,7 +253,12 @@ const POPOUT_DOCUMENT = `<!doctype html>
  * host document's styles once, on load, so all of them have to be in the document by then - whatever the
  * user has opened so far.
  */
-const DEFERRED_STYLES = [QueryDevtoolsJsonStylesComponent, QueryDevtoolsTimelineStylesComponent];
+const DEFERRED_STYLES = [
+  QueryDevtoolsJsonStylesComponent,
+  QueryDevtoolsCopyMenuStylesComponent,
+  QueryDevtoolsOverrideMenuStylesComponent,
+  QueryDevtoolsTimelineStylesComponent,
+];
 
 const readPersistedState = (): PersistedState => {
   try {

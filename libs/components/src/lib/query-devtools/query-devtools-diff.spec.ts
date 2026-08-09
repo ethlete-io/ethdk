@@ -1,4 +1,4 @@
-import { diffQueryDevtoolsResponses } from './query-devtools-diff';
+import { diffQueryDevtoolsResponses, formatJsonPath } from './query-devtools-diff';
 
 describe('diffQueryDevtoolsResponses', () => {
   it('should report nothing for two equal responses', () => {
@@ -112,5 +112,24 @@ describe('diffQueryDevtoolsResponses', () => {
       { path: '$', kind: 'changed', before: null, after: 5 },
     ]);
     expect(diffQueryDevtoolsResponses('same', 'same').entries).toEqual([]);
+  });
+});
+
+describe('formatJsonPath', () => {
+  it('should format an empty path as the root the diff column uses', () => {
+    expect(formatJsonPath([])).toBe('$');
+  });
+
+  it('should join keys with dots and indices with brackets', () => {
+    expect(formatJsonPath(['data', 'items', 0, 'title'])).toBe('$.data.items[0].title');
+  });
+
+  it('should match the path the diff reports for the same location', () => {
+    const diff = diffQueryDevtoolsResponses(
+      { data: { items: [{ title: 'a' }] } },
+      { data: { items: [{ title: 'b' }] } },
+    );
+
+    expect(diff.entries[0]?.path).toBe(formatJsonPath(['data', 'items', 0, 'title']));
   });
 });
