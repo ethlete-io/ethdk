@@ -10,6 +10,7 @@ import {
   inject,
   NgZone,
   signal,
+  untracked,
   viewChild,
   ViewEncapsulation,
   WritableSignal,
@@ -18,7 +19,13 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import {
   clamp,
   createObjectUrlHandle,
+  DragHandleDirective,
+  DragMoveEvent,
   injectBreakpointObserver,
+  injectViewportSize,
+  ResizeEdge,
+  ResizeHandlesComponent,
+  ResizeMoveEvent,
   injectFileDownload,
   injectRenderer,
   injectStyleManager,
@@ -124,10 +131,19 @@ import {
   TabBadge,
 } from './query-devtools-types';
 
-/** Which edge the panel is attached to. A pop-out is not one of these - it is a window, not an edge. */
-type DevtoolsDock = 'bottom' | 'right';
+/**
+ * Where the panel sits: attached to an edge, or floating over the page as a window of its own. A
+ * pop-out is not one of these - that is a real browser window, not a position in this document.
+ */
+type DevtoolsDock = 'bottom' | 'right' | 'float';
 
-/** A drag in progress: either the panel's docked edge, or the divider between a two-pane tab's panes. */
+/** The floating panel's position and size, in CSS px from the viewport's top-left. */
+type FloatRect = { x: number; y: number; width: number; height: number };
+
+/**
+ * A drag in progress: the panel's docked edge, the floating panel being moved or resized, or the
+ * divider between a two-pane tab's panes.
+ */
 type ResizeDrag = {
   /** The document the pointer moves in - a popped-out panel lives in a window of its own. */
   doc: Document;
@@ -142,6 +158,7 @@ type PersistedState = {
   listHeight?: number | null;
   drawerHeight?: number | null;
   dock?: DevtoolsDock;
+  floatRect?: FloatRect;
   activeTab?: DevtoolsTab;
   detailTab?: DetailTab;
   selectedClientName?: string | null;
@@ -230,6 +247,65 @@ const MIN_WIDTH = 360;
 /** The floors a dragged pane divider leaves on both sides of itself, per axis. */
 const MIN_PANE_WIDTH = 220;
 const MIN_PANE_HEIGHT = 120;
+
+/** Where a floating panel appears the first time, before any drag - clamped into the viewport on sight. */
+const DEFAULT_FLOAT_RECT: FloatRect = { x: 48, y: 48, width: 900, height: 520 };
+
+/**
+ * The inline size a floating panel stacks its two panes below. Not the `md` breakpoint the docked
+ * layouts use: a float is sized by the user, not by the viewport, so what matters is how wide the
+ * panel itself was dragged. The list asks for `22rem` and the drawer for `26rem`, plus the divider.
+ */
+const FLOAT_STACK_WIDTH = 620;
+
+type ViewportSize = { width: number; height: number };
+
+/**
+ * Keeps a floating rect inside the viewport. Three things run into this: a drag, a window shrinking
+ * under the panel, and a persisted rect restored into a viewport smaller than the one that stored it.
+ */
+const clampFloatRect = (rect: FloatRect, viewport: ViewportSize): FloatRect => {
+  const width = clamp(rect.width, MIN_WIDTH, Math.max(MIN_WIDTH, viewport.width));
+  const height = clamp(rect.height, MIN_HEIGHT, Math.max(MIN_HEIGHT, viewport.height));
+
+  return {
+    width,
+    height,
+    x: clamp(rect.x, 0, Math.max(0, viewport.width - width)),
+    y: clamp(rect.y, 0, Math.max(0, viewport.height - height)),
+  };
+};
+
+/**
+ * The rect a resize gesture from `edge` produces, given where the panel was when the gesture started.
+ * A west or north drag grows away from the edge that stays pinned, so the origin follows whatever
+ * size the drag settled on - including when the size hit its floor and the origin must stop with it.
+ */
+export const resizedFloatRect = (
+  base: FloatRect,
+  { move, viewport }: { move: ResizeMoveEvent; viewport: ViewportSize },
+): FloatRect => {
+  const { edge, dx, dy } = move;
+
+  const maxWidth = edge.includes('w') ? base.x + base.width : viewport.width - base.x;
+  const maxHeight = edge.includes('n') ? base.y + base.height : viewport.height - base.y;
+
+  const requestedWidth = edge.includes('e') ? base.width + dx : edge.includes('w') ? base.width - dx : base.width;
+  const requestedHeight = edge.includes('s') ? base.height + dy : edge.includes('n') ? base.height - dy : base.height;
+
+  const width = clamp(requestedWidth, MIN_WIDTH, Math.max(MIN_WIDTH, maxWidth));
+  const height = clamp(requestedHeight, MIN_HEIGHT, Math.max(MIN_HEIGHT, maxHeight));
+
+  return clampFloatRect(
+    {
+      width,
+      height,
+      x: edge.includes('w') ? base.x + base.width - width : base.x,
+      y: edge.includes('n') ? base.y + base.height - height : base.y,
+    },
+    viewport,
+  );
+};
 
 /** The window a pop-out opens at. Wide enough for the master/detail split the bottom dock gets. */
 const POPOUT_FEATURES = 'popup=yes,width=1200,height=800';
@@ -458,6 +534,8 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsStacksTabComponent,
     QueryDevtoolsTimelineTabComponent,
     QueryDevtoolsToggleComponent,
+    DragHandleDirective,
+    ResizeHandlesComponent,
   ],
   providers: [{ provide: QUERY_DEVTOOLS_HOST, useExisting: QueryDevtoolsComponent }],
   host: {
@@ -473,6 +551,8 @@ export class QueryDevtoolsComponent {
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
+
+  private viewport = injectViewportSize();
 
   /** The panel itself, so a pop-out can move it into another window's document. */
   private panelEl = viewChild<ElementRef<HTMLElement>>('panel');
@@ -524,14 +604,28 @@ export class QueryDevtoolsComponent {
   protected drag = signal<ResizeDrag | null>(null);
   protected resizing = computed(() => !!this.drag());
 
-  /** Which edge the panel is docked to. */
+  /** Which edge the panel is docked to, or `float` for a window of its own inside the page. */
   protected dock = signal<DevtoolsDock>(this.persisted.dock ?? 'bottom');
+
+  /** Where the floating panel sits and how big it is. Kept while docked, so a return to float restores it. */
+  private floatRect = signal<FloatRect>(this.persisted.floatRect ?? DEFAULT_FLOAT_RECT);
+
+  /** The rect a resize gesture started from, or `null` outside one. */
+  private floatResizeBase: FloatRect | null = null;
+
+  /**
+   * The browser refused the last pop-out. `window.open` returns `null` with no error to catch, so
+   * without this the button simply did nothing - and floating is the fallback it should have offered.
+   */
+  protected popOutBlocked = signal(false);
 
   /**
    * Whether the panel currently lives in a window of its own. Deliberately not persisted: a reload
    * cannot re-adopt a window the previous document opened, so it always starts docked.
    */
   protected poppedOut = signal(false);
+
+  protected floating = computed(() => !this.poppedOut() && this.dock() === 'float');
 
   /**
    * Below `md` a side-by-side split cannot fit: the list alone asks for `22rem` and the drawer for
@@ -540,19 +634,34 @@ export class QueryDevtoolsComponent {
   private narrowViewport = injectBreakpointObserver().observeBreakpoint({ max: 'sm' });
 
   /** Which axis the two-pane tabs split along. The stylesheet keys the stacked layout off the same value. */
-  protected paneAxis = computed<PaneAxis>(() =>
-    !this.poppedOut() && (this.dock() === 'right' || this.narrowViewport()) ? 'block' : 'inline',
-  );
+  protected paneAxis = computed<PaneAxis>(() => {
+    if (this.poppedOut()) return 'inline';
+    if (this.floating()) return this.floatRect().width < FLOAT_STACK_WIDTH ? 'block' : 'inline';
+
+    return this.dock() === 'right' || this.narrowViewport() ? 'block' : 'inline';
+  });
 
   private popup: Window | null = null;
 
-  // Only the axis the dock edge controls is bound; the other is the stylesheet's, and a pop-out fills
-  // its window on both.
-  protected panelBlockSize = computed(() =>
-    !this.poppedOut() && this.dock() === 'bottom' ? this.panelHeight() : null,
-  );
+  // Only the axis the dock edge controls is bound; the other is the stylesheet's. A float sets both,
+  // and a pop-out fills its window on both.
+  protected panelBlockSize = computed(() => {
+    if (this.poppedOut()) return null;
+    if (this.floating()) return this.floatRect().height;
 
-  protected panelInlineSize = computed(() => (!this.poppedOut() && this.dock() === 'right' ? this.panelWidth() : null));
+    return this.dock() === 'bottom' ? this.panelHeight() : null;
+  });
+
+  protected panelInlineSize = computed(() => {
+    if (this.poppedOut()) return null;
+    if (this.floating()) return this.floatRect().width;
+
+    return this.dock() === 'right' ? this.panelWidth() : null;
+  });
+
+  /** The floating panel's offset from the viewport's top-left, or `null` while it is docked. */
+  protected panelInsetBlock = computed(() => (this.floating() ? this.floatRect().y : null));
+  protected panelInsetInline = computed(() => (this.floating() ? this.floatRect().x : null));
 
   /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */
   public detailTab = signal<DetailTab>(this.persisted.detailTab ?? 'overview');
@@ -934,6 +1043,9 @@ export class QueryDevtoolsComponent {
   /** Drops everything the reload re-armed, and empties the store it came from. */
   protected readonly DROP_RESTORED_OVERRIDES = clearRestoredQueryDevtoolsOverrides;
 
+  /** Every edge, so a float resizes the way a window does rather than only from one corner. */
+  protected readonly FLOAT_RESIZE_EDGES: ResizeEdge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+
   constructor() {
     // Assigned here (not as an arrow property) so `this` is bound for the value-explorer callback.
     this.toggleJsonPath = (path: string, expand: boolean) => {
@@ -1016,6 +1128,7 @@ export class QueryDevtoolsComponent {
         listHeight: this.listHeight(),
         drawerHeight: this.drawerHeight(),
         dock: this.dock(),
+        floatRect: this.floatRect(),
         activeTab: this.activeTab(),
         detailTab: this.detailTab(),
         selectedClientName: this.selectedClientName(),
@@ -1040,6 +1153,16 @@ export class QueryDevtoolsComponent {
       } catch {
         // ignore (private mode / disabled storage)
       }
+    });
+
+    // A window that shrinks below the floating panel would otherwise leave it half (or wholly) off
+    // screen, with no edge left to grab. Untracked on the way in so clamping cannot re-trigger itself.
+    effect(() => {
+      const viewport = this.viewport();
+
+      if (!this.floating()) return;
+
+      untracked(() => this.floatRect.set(clampFloatRect(this.floatRect(), viewport)));
     });
 
     effect(() => {
@@ -1193,8 +1316,14 @@ export class QueryDevtoolsComponent {
     this.open.update((v) => !v);
   }
 
+  /** Bottom edge → right edge → floating → back. One button rather than three, like the pane dividers. */
   protected toggleDock() {
-    this.dock.update((current) => (current === 'bottom' ? 'right' : 'bottom'));
+    this.dock.update((current) => (current === 'bottom' ? 'right' : current === 'right' ? 'float' : 'bottom'));
+  }
+
+  protected floatPanel() {
+    this.popOutBlocked.set(false);
+    this.dock.set('float');
   }
 
   protected toggleTabMenu() {
@@ -1227,9 +1356,12 @@ export class QueryDevtoolsComponent {
 
     if (!popup) {
       source.revoke();
+      this.popOutBlocked.set(true);
 
       return;
     }
+
+    this.popOutBlocked.set(false);
 
     // That navigation replaces the pop-up's document, so the panel may only be moved once the new one is
     // there - a panel appended to the initial empty document would be dropped on load.
@@ -1287,6 +1419,25 @@ export class QueryDevtoolsComponent {
   protected startResize(event: PointerEvent) {
     event.preventDefault();
     this.drag.set({ kind: 'panel', doc: this.document });
+  }
+
+  protected moveFloat(move: DragMoveEvent) {
+    this.floatRect.update((rect) =>
+      clampFloatRect({ ...rect, x: rect.x + move.stepX, y: rect.y + move.stepY }, this.viewport()),
+    );
+  }
+
+  /** A resize reports a delta from where the pointer went down, so the rect it started from is kept. */
+  protected startFloatResize() {
+    this.floatResizeBase = this.floatRect();
+  }
+
+  protected resizeFloat(move: ResizeMoveEvent) {
+    this.floatRect.set(resizedFloatRect(this.floatResizeBase ?? this.floatRect(), { move, viewport: this.viewport() }));
+  }
+
+  protected endFloatResize() {
+    this.floatResizeBase = null;
   }
 
   public startPaneResize(event: PointerEvent, target: { pane: PaneTarget; container: HTMLElement }) {
