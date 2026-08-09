@@ -130,6 +130,9 @@ export type QueryDevtoolsHost = {
   isStale(query: AnyQuery): boolean;
   /** Whether an entry is showing an armed response override or a devtools-faulted outcome. */
   isTampered(entry: QueryDevtoolsEntry): boolean;
+  /** Whether armed response overrides are kept in `sessionStorage` and replayed on the next load. */
+  overridesPersist(): boolean;
+  toggleOverridesPersist(): void;
   requestProgress(query: AnyQuery): RequestProgress | null;
   retryCause(status: number): string;
   requestUrl(query: AnyQuery): string | null;

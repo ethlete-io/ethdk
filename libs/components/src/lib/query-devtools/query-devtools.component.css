@@ -226,6 +226,11 @@
     min-inline-size: 0;
   }
 
+  .et-query-devtools-armed-orphans {
+    display: block;
+    opacity: 0.85;
+  }
+
   /* Pulsing, because an armed client is a state you have to be able to notice without reading. */
   .et-query-devtools-armed-dot {
     flex: 0 0 auto;

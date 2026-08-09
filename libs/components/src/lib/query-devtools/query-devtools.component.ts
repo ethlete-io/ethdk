@@ -30,6 +30,7 @@ import {
   AnyQueryStack,
   BearerAuthMultiTabSyncFeature,
   clearQueryDevtoolsFaults,
+  clearRestoredQueryDevtoolsOverrides,
   createQueryErrorResponse,
   EMPTY_QUERY_DEVTOOLS_FAULT,
   isQueryDevtoolsFaultArmed,
@@ -38,6 +39,7 @@ import {
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
   queryDevtoolsFaults,
+  queryDevtoolsOverridePersistence,
   queryDevtoolsResponseHistory,
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
@@ -51,6 +53,8 @@ import {
   QueryRepositoryEvent,
   QuerySequence,
   QuerySequenceStatus,
+  restoredQueryDevtoolsOverrides,
+  setQueryDevtoolsOverridePersistence,
   WebSocketDevtoolsHandle,
   WebSocketDevtoolsMessage,
 } from '@ethlete/query';
@@ -187,6 +191,21 @@ const renderedTarget = (element: Element, depth = 0): Element | null => {
 };
 
 const noop = () => undefined;
+
+/**
+ * A devtools entry id as a person reads it. Ids are the registry's descriptor plus a per-descriptor
+ * sequence number (`query|<client>|<method>|<route>#<n>`), so the parts are all there - just not in an
+ * order anyone would read out loud. Used for stored overrides whose query never registered, which are
+ * the one case the panel has no live entry to name.
+ */
+const describeEntryId = (id: string) => {
+  const [descriptor = '', seq] = id.split('#');
+  const [kind, client, method, route] = descriptor.split('|');
+
+  if (kind !== 'query' || !route) return id;
+
+  return `${method} ${route}${client ? ` · ${client}` : ''}${seq && seq !== '0' ? ` #${seq}` : ''}`;
+};
 
 const STORAGE_KEY = 'ethlete:query:devtools:v4';
 
@@ -885,6 +904,29 @@ export class QueryDevtoolsComponent {
   /** Disarms every client's fault - the shell's "Faults armed" banner offers this above every tab. */
   protected readonly CLEAR_FAULTS = clearQueryDevtoolsFaults;
 
+  /**
+   * What the previous page load left armed: how many ops came back, how many queries took them, and the
+   * ids nothing claimed. `null` when this page inherited nothing, so a template can `@if` on it.
+   */
+  protected restoredOverrides = computed(() => {
+    const groups = restoredQueryDevtoolsOverrides();
+
+    if (!groups.length) return null;
+
+    const armed = groups.filter((group) => group.armed);
+    const orphaned = groups.filter((group) => !group.armed);
+
+    return {
+      queries: armed.length,
+      ops: armed.reduce((sum, group) => sum + group.count, 0),
+      firstId: armed[0]?.id ?? null,
+      orphaned: orphaned.map((group) => describeEntryId(group.id)),
+    };
+  });
+
+  /** Drops everything the reload re-armed, and empties the store it came from. */
+  protected readonly DROP_RESTORED_OVERRIDES = clearRestoredQueryDevtoolsOverrides;
+
   constructor() {
     // Assigned here (not as an arrow property) so `this` is bound for the value-explorer callback.
     this.toggleJsonPath = (path: string, expand: boolean) => {
@@ -1112,6 +1154,22 @@ export class QueryDevtoolsComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  /** @see queryDevtoolsOverridePersistence */
+  public overridesPersist() {
+    return queryDevtoolsOverridePersistence();
+  }
+
+  public toggleOverridesPersist() {
+    setQueryDevtoolsOverridePersistence(!this.overridesPersist());
+  }
+
+  /** Opens the first query the reload re-armed, so the banner leads somewhere rather than just warning. */
+  protected reviewRestoredOverrides(id: string) {
+    this.activeTab.set('queries');
+    this.selectedQueryId.set(id);
+    this.detailTab.set('overview');
   }
 
   /**

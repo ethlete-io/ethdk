@@ -170,6 +170,32 @@
       </div>
     }
 
+    @if (restoredOverrides(); as restored) {
+      <div class="et-query-devtools-armed-bar" role="status">
+        <span class="et-query-devtools-armed-dot" aria-hidden="true"></span>
+        <span class="et-query-devtools-armed-text">
+          @if (restored.ops) {
+            <strong>Overrides re-armed</strong> — {{ restored.ops }} {{ restored.ops === 1 ? 'edit' : 'edits' }} from
+            your last page load {{ restored.ops === 1 ? 'is' : 'are' }} back on {{ restored.queries }}
+            {{ restored.queries === 1 ? 'query' : 'queries' }}, so those responses are not what the API sent.
+          } @else {
+            <strong>Overrides could not be re-armed.</strong>
+          }
+          @if (restored.orphaned.length) {
+            <span class="et-query-devtools-armed-orphans">
+              {{ restored.orphaned.length }} stored
+              {{ restored.orphaned.length === 1 ? 'override' : 'overrides' }} matched no query —
+              <span class="et-query-devtools-mono">{{ restored.orphaned.join(', ') }}</span>
+            </span>
+          }
+        </span>
+        @if (restored.firstId; as firstId) {
+          <button (click)="reviewRestoredOverrides(firstId)" class="et-query-devtools-btn" type="button">Review</button>
+        }
+        <button (click)="DROP_RESTORED_OVERRIDES()" class="et-query-devtools-btn" type="button">Drop all</button>
+      </div>
+    }
+
     <div class="et-query-devtools-body">
       @switch (activeTab()) {
         <!-- QUERIES -->

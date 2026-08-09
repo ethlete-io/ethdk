@@ -623,6 +623,18 @@
     } @else {
       <div class="et-query-devtools-section-row">
         <h5 class="et-query-devtools-section">Response</h5>
+        @if (s.entry.overrides?.list()?.length || host.overridesPersist()) {
+          <button
+            [class.et-query-devtools-btn--active]="host.overridesPersist()"
+            [attr.aria-pressed]="host.overridesPersist()"
+            (click)="host.toggleOverridesPersist()"
+            class="et-query-devtools-btn"
+            type="button"
+            title="Panel-wide: keep every armed response override in sessionStorage and replay it on the next load of this tab. Armed faults are never kept."
+          >
+            Keep across reloads
+          </button>
+        }
         @if (s.entry.overrides?.list()?.length) {
           <button (click)="s.entry.overrides?.clearAll()" class="et-query-devtools-btn" type="button">
             Reset all overrides ({{ s.entry.overrides?.list()?.length }})

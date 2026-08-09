@@ -12,6 +12,10 @@ import {
 } from './query-devtools-hook';
 import { resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
 import { createQueryDevtoolsFormLinks } from './query-devtools-form-links';
+import {
+  initQueryDevtoolsOverridePersistence,
+  withQueryDevtoolsOverridePersistence,
+} from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
 import { MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
@@ -155,7 +159,7 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
     createdAt: Date.now(),
     stats: registration.stats,
     formLinks: registration.formLinks,
-    overrides: registration.overrides,
+    overrides: registration.overrides && withQueryDevtoolsOverridePersistence(id, registration.overrides),
   };
 
   // A registration that brings its own id can repeat one a tombstone still holds; the live entry wins.
@@ -235,6 +239,7 @@ export type QueryDevtoolsOptions = {
  */
 export const provideQueryDevtools = (options?: QueryDevtoolsOptions): EnvironmentProviders => {
   setQueryDevtoolsResponseHistory(options?.responseHistory);
+  initQueryDevtoolsOverridePersistence();
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
   setQueryDevtoolsFormLinksFactory(createQueryDevtoolsFormLinks);
