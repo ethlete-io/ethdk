@@ -550,6 +550,73 @@ describe('bearer-auth-persistent-auth', () => {
       setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
     });
 
+    it('should not auto-login when shouldAutoLogin refuses the route', () => {
+      vi.mocked(getCookie).mockReturnValue('stored-token');
+      vi.mocked(injectRoute).mockReturnValue(signal('/reset-password?token=abc'));
+
+      setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+              shouldAutoLogin: (url) => new URL(url, 'https://test.com').pathname !== '/reset-password',
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting.expectNone('https://api.test.com/auth/refresh');
+    });
+
+    it('should auto-login on a route the predicate allows but a prefix list would have caught', () => {
+      vi.mocked(getCookie).mockReturnValue('stored-token');
+      vi.mocked(injectRoute).mockReturnValue(signal('/reset-password-templates'));
+
+      setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+              shouldAutoLogin: (url) => new URL(url, 'https://test.com').pathname !== '/reset-password',
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
+    });
+
+    it('should let excludeRoutes veto a route the predicate allows', () => {
+      vi.mocked(getCookie).mockReturnValue('stored-token');
+      vi.mocked(injectRoute).mockReturnValue(signal('/public/landing'));
+
+      setupAuthTest({
+        querySetup: setup,
+        features: [
+          withPersistentAuth({
+            cookie: { name: 'testAuth' },
+            autoLogin: {
+              queryKey: 'refresh',
+              // @ts-expect-error - Type inference issue in setupAuthTest
+              buildArgs: (token) => ({ body: { token } }),
+              excludeRoutes: ['/public'],
+              shouldAutoLogin: () => true,
+            },
+          }),
+        ],
+      });
+
+      setup.httpTesting.expectNone('https://api.test.com/auth/refresh');
+    });
+
     it('should still auto-login even when rememberMe=false (session cookie)', () => {
       vi.mocked(getCookie).mockReturnValue('stored-token');
       Object.defineProperty(window, 'localStorage', {

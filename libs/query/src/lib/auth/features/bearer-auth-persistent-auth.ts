@@ -64,11 +64,24 @@ export type PersistentAuthConfig<
      */
     buildArgs: (token: string) => RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
     /**
-     * An array of routes where the auto login via cookie should not be triggered.
+     * An array of routes where the auto login via cookie should not be triggered. Prefix-matched, so
+     * `'/reset-password'` also excludes `/reset-password-templates`; reach for `shouldAutoLogin` when
+     * that matters.
      *
      * @default []
      */
     excludeRoutes?: string[];
+    /**
+     * Decides per URL whether auto-login may run, for the policy prefix matching cannot express - an
+     * exact path, a parsed `UrlTree`, a query parameter. Receives the current route as the router
+     * reports it.
+     *
+     * Runs *in addition to* `excludeRoutes`: either one refusing is enough to skip auto-login, so
+     * adding a predicate can never re-enable a route the list excluded.
+     *
+     * @default undefined
+     */
+    shouldAutoLogin?: (url: string) => boolean;
   };
 };
 
@@ -109,6 +122,7 @@ export const withPersistentAuth = <
         ...(config.autoLogin.excludeRoutes?.length
           ? [{ label: 'excluded routes', value: config.autoLogin.excludeRoutes.join(', ') }]
           : []),
+        ...(config.autoLogin.shouldAutoLogin ? [{ label: 'auto login predicate', value: 'custom' }] : []),
       ],
     };
   };
@@ -196,6 +210,10 @@ export const createPersistentAuthFeature = <
     const shouldExclude = excludeRoutes.some((r) => currentRoute.startsWith(r));
 
     if (shouldExclude) {
+      return;
+    }
+
+    if (config.autoLogin.shouldAutoLogin && !config.autoLogin.shouldAutoLogin(currentRoute)) {
       return;
     }
 
