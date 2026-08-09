@@ -89,7 +89,21 @@ would break apps that rely on `z-index` layering.)
 
 A float is moved and resized on the same `@ethlete/core` primitives the stream
 [picture-in-picture window](/components/stream) uses - `[etDragHandle]` and
-`<et-resize-handles>` - so the two behave the same way under the hand.
+`<et-resize-handles>` - so the two behave the same way under the hand, including
+parking:
+
+**Shove it off an edge to park it.** Drag the panel more than halfway past the
+left, right or bottom edge and it stays there with a grab strip of about 44px
+still on screen - out of the way of whatever you are looking at, without being
+closed and without losing the tab, the selection or the filter you had set up.
+Click that strip to bring it back. A drag that stops short of halfway is pulled
+fully back in instead, so a clumsy drag never parks it, and a parked panel drops
+its resize handles so the whole peek is grabbable.
+
+The **top edge is deliberately not a parking edge**: the title bar is the only
+thing that drags the panel back, so it is never the part allowed to leave. Parking
+survives a reload along with the rect, and a window that shrinks under a parked
+panel keeps its strip reachable rather than pulling it back in.
 
 Inside the panel, **the divider between two panes is draggable** on every tab that
 has two: the Queries list against its detail, and the split views (Stacks,

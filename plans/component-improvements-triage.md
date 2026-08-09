@@ -122,8 +122,10 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 > built on the **stream pip's primitives** rather than its own pointer code - `[etDragHandle]` plus
 > `<et-resize-handles>` from `@ethlete/core`, so a float resizes from all eight edges. One pure
 > `resizedFloatRect`/`clampFloatRect` pair serves the drag, the window resize _and_ the restore of a
-> rect stored on a bigger screen. The blocked pop-up the section filed alongside it now raises a notice
-> with a one-click **Float instead**.
+> rect stored on a bigger screen. The pip's **park-off-an-edge** behaviour was ported on top: shove the
+> panel more than halfway off the left, right or bottom and it stays there with a ~44px grab strip;
+> click the title bar to bring it back. North is never a parking edge. The blocked pop-up the section
+> filed alongside it now raises a notice with a one-click **Float instead**.
 >
 > > **The tile stays #1 and stays parked** - the user declined its design questions on 2026-08-09
 > > rather than settling them, so do not re-ask unprompted.

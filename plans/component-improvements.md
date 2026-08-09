@@ -636,6 +636,13 @@ dock button now cycles bottom → right → float, always naming the next one. W
   grip and immediately read as a duplicate control; it is a dot grid now. The `n` edge handle still
   overlays its outermost 6px, which is how a real window behaves.
 - **`paneAxis` keys on the float's own width** (620px), not the viewport - a float is sized by the user.
+- **Parking came from the pip too**, on the user's second prompt: a drag more than halfway past the
+  left, right or bottom edge stays there with a ~44px grab strip, and a click on the title bar
+  (`dragTapped`, which is why `commitThreshold` is the default 8 rather than 0) brings it back. **North
+  is never a parking edge** - the title bar is the only handle that drags it back. A parked panel
+  disables its resize handles, or they would eat most of the peek there is to click. The pip's snap
+  animation, `viewportPadding` and sticky-edge resize behaviour were **not** ported: that is
+  video-player UX and a lot of surface for a debug panel.
 - Fixed alongside, as the section asked: a **blocked pop-up no longer fails silently**. It raises a
   neutral notice bar with "Float instead", which is exactly the fallback floating gives it.
 
