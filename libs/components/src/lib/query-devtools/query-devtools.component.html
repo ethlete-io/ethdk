@@ -4,6 +4,7 @@
     [class.et-query-devtools-panel--resizing]="resizing()"
     [attr.data-dock]="poppedOut() ? 'popout' : dock()"
     [attr.data-pane-axis]="paneAxis()"
+    [attr.data-parked]="floatParked() ? '' : null"
     [style.block-size.px]="panelBlockSize()"
     [style.inline-size.px]="panelInlineSize()"
     [style.inset-block-start.px]="panelInsetBlock()"
@@ -18,18 +19,23 @@
          a title bar to move it and every edge to resize it, on the same `@ethlete/core` primitives the
          stream pip window uses. A dock has one edge, and it does both. -->
     @if (floating()) {
+      <!-- Parked, the panel is a grab strip: the edge handles would eat most of the peek that is left
+           to click, and resizing something you cannot see is not a thing to offer. -->
       <et-resize-handles
         [edges]="FLOAT_RESIZE_EDGES"
+        [disabled]="floatParked()"
         (resizeStarted)="startFloatResize()"
         (resizeMoved)="resizeFloat($event)"
         (resizeEnded)="endFloatResize()"
         (resizeCancelled)="endFloatResize()"
       />
       <div
-        [commitThreshold]="0"
         (dragMoved)="moveFloat($event)"
+        (dragEnded)="endFloatMove()"
+        (dragCancelled)="endFloatMove()"
+        (dragTapped)="restoreFloat()"
         class="et-query-devtools-move"
-        title="Drag to move"
+        title="Drag to move — shove it off an edge to park it, click the strip to bring it back"
         aria-hidden="true"
         etDragHandle
       ></div>

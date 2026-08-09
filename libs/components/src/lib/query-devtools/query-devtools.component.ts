@@ -159,6 +159,7 @@ type PersistedState = {
   drawerHeight?: number | null;
   dock?: DevtoolsDock;
   floatRect?: FloatRect;
+  floatParked?: boolean;
   activeTab?: DevtoolsTab;
   detailTab?: DetailTab;
   selectedClientName?: string | null;
@@ -261,8 +262,15 @@ const FLOAT_STACK_WIDTH = 620;
 type ViewportSize = { width: number; height: number };
 
 /**
- * Keeps a floating rect inside the viewport. Three things run into this: a drag, a window shrinking
- * under the panel, and a persisted rect restored into a viewport smaller than the one that stored it.
+ * How much of a parked float stays on screen. The title bar spans the panel's full width, so whichever
+ * edge it is parked against, this much of that bar is still there to drag it back by.
+ */
+const FLOAT_PEEK = 44;
+
+/**
+ * Keeps a floating rect fully inside the viewport. Three things run into this: releasing a drag that
+ * did not park the panel, a window shrinking under it, and a persisted rect restored into a viewport
+ * smaller than the one that stored it.
  */
 const clampFloatRect = (rect: FloatRect, viewport: ViewportSize): FloatRect => {
   const width = clamp(rect.width, MIN_WIDTH, Math.max(MIN_WIDTH, viewport.width));
@@ -273,6 +281,55 @@ const clampFloatRect = (rect: FloatRect, viewport: ViewportSize): FloatRect => {
     height,
     x: clamp(rect.x, 0, Math.max(0, viewport.width - width)),
     y: clamp(rect.y, 0, Math.max(0, viewport.height - height)),
+  };
+};
+
+/**
+ * The loosest a float may sit: shoved off an edge with only {@link FLOAT_PEEK} left, which is what a
+ * drag and a parked panel are held to. **North is never a parking edge** - the title bar is the only
+ * thing that drags the panel back, so it may never be the part that leaves.
+ */
+export const clampFloatToPeek = (rect: FloatRect, viewport: ViewportSize): FloatRect => {
+  const width = clamp(rect.width, MIN_WIDTH, Math.max(MIN_WIDTH, viewport.width));
+  const height = clamp(rect.height, MIN_HEIGHT, Math.max(MIN_HEIGHT, viewport.height));
+  const peekX = Math.min(FLOAT_PEEK, width);
+  const peekY = Math.min(FLOAT_PEEK, height);
+
+  return {
+    width,
+    height,
+    x: clamp(rect.x, peekX - width, Math.max(peekX - width, viewport.width - peekX)),
+    y: clamp(rect.y, 0, Math.max(0, viewport.height - peekY)),
+  };
+};
+
+/**
+ * Where a float settles when the pointer is released. Dragged more than halfway off an edge, it stays
+ * parked there with {@link FLOAT_PEEK} showing - the panel gets out of the way of the thing you are
+ * debugging without being closed. Anything short of halfway is pulled back in, so a slightly clumsy
+ * drag does not park it.
+ */
+export const settledFloatRect = (rect: FloatRect, viewport: ViewportSize): { rect: FloatRect; collapsed: boolean } => {
+  const offLeft = Math.max(0, -rect.x);
+  const offRight = Math.max(0, rect.x + rect.width - viewport.width);
+  const offBottom = Math.max(0, rect.y + rect.height - viewport.height);
+
+  const parkedX = Math.max(offLeft, offRight) > rect.width / 2;
+  const parkedY = offBottom > rect.height / 2;
+
+  if (!parkedX && !parkedY) return { rect: clampFloatRect(rect, viewport), collapsed: false };
+
+  const peekX = Math.min(FLOAT_PEEK, rect.width);
+  const peekY = Math.min(FLOAT_PEEK, rect.height);
+  const inside = clampFloatRect(rect, viewport);
+
+  return {
+    rect: {
+      ...rect,
+      x: parkedX ? (offLeft > offRight ? peekX - rect.width : viewport.width - peekX) : inside.x,
+      y: parkedY ? viewport.height - peekY : inside.y,
+    },
+    collapsed: true,
   };
 };
 
@@ -612,6 +669,12 @@ export class QueryDevtoolsComponent {
 
   /** The rect a resize gesture started from, or `null` outside one. */
   private floatResizeBase: FloatRect | null = null;
+
+  /**
+   * Whether the float is shoved off an edge with only its peek showing. Persisted with the rect, since
+   * restoring the rect without it would either strand the panel off screen or silently un-park it.
+   */
+  protected floatParked = signal(this.persisted.floatParked ?? false);
 
   /**
    * The browser refused the last pop-out. `window.open` returns `null` with no error to catch, so
@@ -1129,6 +1192,7 @@ export class QueryDevtoolsComponent {
         drawerHeight: this.drawerHeight(),
         dock: this.dock(),
         floatRect: this.floatRect(),
+        floatParked: this.floatParked(),
         activeTab: this.activeTab(),
         detailTab: this.detailTab(),
         selectedClientName: this.selectedClientName(),
@@ -1162,7 +1226,13 @@ export class QueryDevtoolsComponent {
 
       if (!this.floating()) return;
 
-      untracked(() => this.floatRect.set(clampFloatRect(this.floatRect(), viewport)));
+      untracked(() =>
+        this.floatRect.set(
+          this.floatParked()
+            ? clampFloatToPeek(this.floatRect(), viewport)
+            : clampFloatRect(this.floatRect(), viewport),
+        ),
+      );
     });
 
     effect(() => {
@@ -1423,8 +1493,24 @@ export class QueryDevtoolsComponent {
 
   protected moveFloat(move: DragMoveEvent) {
     this.floatRect.update((rect) =>
-      clampFloatRect({ ...rect, x: rect.x + move.stepX, y: rect.y + move.stepY }, this.viewport()),
+      clampFloatToPeek({ ...rect, x: rect.x + move.stepX, y: rect.y + move.stepY }, this.viewport()),
     );
+  }
+
+  /** Parks the panel where a drag left it, or pulls it back in if the drag stopped short of an edge. */
+  protected endFloatMove() {
+    const settled = settledFloatRect(this.floatRect(), this.viewport());
+
+    this.floatRect.set(settled.rect);
+    this.floatParked.set(settled.collapsed);
+  }
+
+  /** A click on the title bar of a parked panel brings it back - the gesture that parked it, reversed. */
+  protected restoreFloat() {
+    if (!this.floatParked()) return;
+
+    this.floatRect.update((rect) => clampFloatRect(rect, this.viewport()));
+    this.floatParked.set(false);
   }
 
   /** A resize reports a delta from where the pointer went down, so the rect it started from is kept. */

@@ -115,6 +115,25 @@
     color: var(--_et-qdt-accent);
   }
 
+  /* Parked off an edge: what is left on screen is a grab strip, so it says so rather than looking like
+     a panel that has been cut off. Clicking the title bar brings it back. */
+  .et-query-devtools-panel:where([data-dock='float'][data-parked]) {
+    opacity: 0.85;
+  }
+
+  .et-query-devtools-panel:where([data-dock='float'][data-parked]):hover {
+    opacity: 1;
+  }
+
+  .et-query-devtools-panel:where([data-dock='float'][data-parked]) .et-query-devtools-move {
+    cursor: grab;
+    background: var(--_et-qdt-active);
+  }
+
+  .et-query-devtools-panel:where([data-dock='float'][data-parked]) .et-query-devtools-move::after {
+    color: var(--_et-qdt-accent);
+  }
+
   /* Popped out: the pop-up window is the frame, so the panel drops the chrome that made it an overlay.
      Its host wrapper exists only to hand down the `--_et-qdt-*` tokens the panel resolves. */
   .et-query-devtools-host:where([data-dock='popout']) {

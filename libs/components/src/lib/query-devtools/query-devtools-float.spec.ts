@@ -1,5 +1,5 @@
 import { ResizeMoveEvent } from '@ethlete/core';
-import { resizedFloatRect } from './query-devtools.component';
+import { clampFloatToPeek, resizedFloatRect, settledFloatRect } from './query-devtools.component';
 
 const VIEWPORT = { width: 1400, height: 900 };
 const BASE = { x: 200, y: 100, width: 600, height: 400 };
@@ -59,5 +59,60 @@ describe('resizedFloatRect', () => {
     expect(resized.y).toBeGreaterThanOrEqual(0);
     expect(resized.x + resized.width).toBeLessThanOrEqual(500);
     expect(resized.y + resized.height).toBeLessThanOrEqual(300);
+  });
+});
+
+describe('clampFloatToPeek', () => {
+  it('should allow a panel to be shoved off the left with only its peek showing', () => {
+    expect(clampFloatToPeek({ ...BASE, x: -5000 }, VIEWPORT).x).toBe(44 - BASE.width);
+  });
+
+  it('should allow a panel to be shoved off the right with only its peek showing', () => {
+    expect(clampFloatToPeek({ ...BASE, x: 5000 }, VIEWPORT).x).toBe(VIEWPORT.width - 44);
+  });
+
+  it('should never let the title bar leave through the top', () => {
+    expect(clampFloatToPeek({ ...BASE, y: -5000 }, VIEWPORT).y).toBe(0);
+  });
+
+  it('should allow a panel to be shoved off the bottom', () => {
+    expect(clampFloatToPeek({ ...BASE, y: 5000 }, VIEWPORT).y).toBe(VIEWPORT.height - 44);
+  });
+});
+
+describe('settledFloatRect', () => {
+  it('should pull a panel back in when the drag stopped short of halfway', () => {
+    const settled = settledFloatRect({ ...BASE, x: -100 }, VIEWPORT);
+
+    expect(settled.collapsed).toBe(false);
+    expect(settled.rect.x).toBe(0);
+  });
+
+  it('should park a panel dragged more than halfway off the left', () => {
+    const settled = settledFloatRect({ ...BASE, x: -400 }, VIEWPORT);
+
+    expect(settled.collapsed).toBe(true);
+    expect(settled.rect.x).toBe(44 - BASE.width);
+  });
+
+  it('should park a panel dragged more than halfway off the right', () => {
+    const settled = settledFloatRect({ ...BASE, x: VIEWPORT.width - 200 }, VIEWPORT);
+
+    expect(settled.collapsed).toBe(true);
+    expect(settled.rect.x).toBe(VIEWPORT.width - 44);
+  });
+
+  it('should park a panel dragged more than halfway off the bottom', () => {
+    const settled = settledFloatRect({ ...BASE, y: VIEWPORT.height - 100 }, VIEWPORT);
+
+    expect(settled.collapsed).toBe(true);
+    expect(settled.rect.y).toBe(VIEWPORT.height - 44);
+  });
+
+  it('should keep the other axis inside when only one parks', () => {
+    const settled = settledFloatRect({ ...BASE, x: -400, y: 700 }, VIEWPORT);
+
+    expect(settled.rect.x).toBe(44 - BASE.width);
+    expect(settled.rect.y).toBe(VIEWPORT.height - BASE.height);
   });
 });
