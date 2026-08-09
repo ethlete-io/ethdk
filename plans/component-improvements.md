@@ -323,39 +323,6 @@ Worth stating in the docs when this lands, since the two modes are not interchan
 window survives being covered by the app and can go to a second monitor; a floating panel needs
 no pop-up permission and no window management.
 
-## Query devtools: the value explorer copies the value, never the key
-
-Requested 2026-08-07. Every node's `⧉` runs `copyValue()`
-(`query-devtools-json.component.ts`), which only ever produces a value: a leaf copies its raw
-value (a string without the display quotes, so an id or url pastes straight into a search box), a
-container the JSON of its whole subtree, a folded slice only the entries it covers. There is no
-way to get the **key** out - which is what you need to grep the app for the field that holds a
-value, or to paste back into the explorer's own `filter keys / values…` box.
-
-- **Decide key versus path, and probably offer both.** `nodeKey()` is the bare key; for an array
-  element it is the index, so a bare-key copy there is worthless and the path is the only thing
-  worth having. A canonical path format already exists in the panel - the History diff's Path
-  column (`$.data.items[0]`, built in `query-devtools-diff.ts`), so reuse it rather than inventing
-  a second one. Build it from `jsonPath()`, the array of steps the override ops already target.
-  **Not** from `path()`: that is the persistence key for expansion state, prefixed with the
-  explorer's name (`response`, `args`, `error`, `runError`) and dot-joining array indices, so it
-  reads like an accessor expression and is not one.
-- **It cannot live in the override menu.** Only the Response explorer passes `overrides`
-  (`query-devtools-detail.component.html`), so `⋯` is absent from the other ten
-  `<et-query-devtools-json>` usages - args, error, run error, auth payloads, sequence step args
-  and responses, socket messages, cache entries, form values. The `⧉` is the only per-node control
-  those have, so whatever this becomes has to hang off the copy button.
-- **Where it goes is the real question.** A second button crowds a row that already holds a caret,
-  the key, the value, `⧉` and sometimes `⋯`. Either a small menu on the copy button (value / key /
-  path / `"key": value` as a pasteable fragment) or a modifier-click documented in the `title`
-  (alt-click copies the key). The menu is discoverable and has room for the fragment variant; the
-  modifier is one press and invisible.
-- **Some nodes have no key.** A folded slice stands for a range of entries, and the explorer root
-  has `nodeKey() === null`. Key copy has to be absent there, not a button that copies nothing.
-- **The tick stops being unambiguous.** `copied` is one boolean and `copyLabel()` is both the
-  `title` and the `aria-label`; with two or three payloads behind one control, a bare `✓` no
-  longer says what landed on the clipboard.
-
 ## Query devtools: a Web Locks inspector
 
 Requested 2026-08-07. **The `isLeader` half of this section shipped** - see the Query pass 2
@@ -676,6 +643,24 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Query devtools: the value explorer copies the key and the path** (2026-08-10, was its own section) -
+the user settled the open call in favour of a **menu on the copy button**: `⧉` still copies the value
+in one click, and a caret (`▾`) beside it opens Value / Key / Path / `"key": value`. Notes:
+
+- **The menu only picks.** `QueryDevtoolsCopyMenuComponent` emits a `pick` output and the explorer
+  node owns the clipboard write, so all four payloads share one implementation and one tick.
+- **`copied` is no longer a boolean** - it holds which payload landed, and `copyLabel()` reads
+  "Copied the path". That was the section's last open point and it falls out of the same change.
+- **The path format now has one home.** `appendJsonPathStep` / `formatJsonPath` live in
+  `query-devtools-diff.ts` and the diff's own walk uses the first of them, so the Path column and
+  "Copy path" cannot drift.
+- **Nodes without an address get no caret**: the explorer root and a folded slice. An array element
+  gets one, but only Value and Path - its key is an index.
+- Fixed in passing: `DEFERRED_STYLES` was missing the override menu's stylesheet, so a popped-out
+  panel lost the `✎` chrome. Both menu style sheets are in it now.
+
+Changeset `devtools-copy-key-and-path.md`; 3 unit tests on the formatter; verified headlessly: 12/12.
 
 **Query devtools: response overrides survive a reload** (2026-08-10, was its own section) - a
 panel-wide **Keep across reloads** toggle beside "Reset all overrides", backed by

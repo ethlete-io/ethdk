@@ -540,6 +540,34 @@ A query whose last completed run actually came back faulted also carries the sam
 Faults are keyed by client **name**, the same identity the client picker uses - so two clients
 sharing a name are armed together.
 
+## Copying a key or a path
+
+`⧉` copies the **value**, which is what you want for an id or a URL - and no help at all when
+the question is _which field holds this_. A caret (`▾`) beside it opens the rest:
+
+| Action         | Copies                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| Value          | Exactly what `⧉` does, unchanged - one click, no menu.                                      |
+| Key            | The bare key, ready to paste into the explorer's own `filter keys / values…` box or a grep. |
+| Path           | The JSONPath from the explorer's root, e.g. `$.data.items[0].title`.                        |
+| `"key": value` | Both, as a pasteable JSON entry for a fixture or a mock.                                    |
+
+The path is the **same format the History tab's diff uses** in its Path column, so a path read
+off a diff and a path copied off the explorer are the same string. `$` is the value that explorer
+was handed - the response, the args, the error - not the query.
+
+Two rows deliberately offer less. An **array element** is keyed by its index, so "Key" and the
+`"key": value` fragment would produce `0` and `"0": …`; only the value and the path are offered
+there. A **folded slice** (`0 … 99`) and the explorer's own root have no key and no single path,
+so they keep the plain `⧉` and get no caret at all.
+
+Because one button now writes four different things, the green tick says which: the button's
+tooltip reads _Copied the path_ / _Copied the key_ while it is up.
+
+The caret is on **every** value explorer - args, response, error, run error, auth payloads,
+sequence step args, socket messages, cache entries, form values - unlike the override pencil,
+which only the Response explorer carries.
+
 ## Response overrides: editing a value that survives a refetch
 
 The value explorer's copy button (`⧉`) has a neighbour: a pencil (`✎`) that opens a menu of
@@ -1113,7 +1141,8 @@ components are bound to, which the browser Network tab can't do:
   clipboard, including arrays and objects: a container copies its whole subtree as
   formatted JSON, a leaf copies the bare value (a string without the display
   quotes, so an id or url pastes straight into a search box). The button ticks
-  green to confirm. A container with more than 100 entries is folded into
+  green to confirm, and says which of its payloads landed - see
+  [Copying a key or a path](#copying-a-key-or-a-path). A container with more than 100 entries is folded into
   collapsed slices of 100 (`0 … 99`, `100 … 199`, …) instead of being rendered in
   full, so a 5000-item list opens instantly; each slice expands on click and
   copies just the entries it covers. While the filter is active, only slices that
