@@ -590,6 +590,37 @@ failure "duplicate" exists to avoid.
 A query's **Data** tab shows a **Reset all overrides (N)** button next to the Response
 heading once anything is armed, for clearing every rule on that query at once.
 
+### Keeping overrides across a reload
+
+Overrides die with the page by default. Next to **Reset all overrides** sits a
+**Keep across reloads** toggle that changes that: with it on, every armed override in
+the panel is written to `sessionStorage` under `ethlete:query:devtools:overrides:v1` and
+replayed as each query registers on the next load.
+
+The toggle is **panel-wide**, not per query, and it captures what is armed at the moment
+you switch it on - so the sequence is "arm the edits you want, then keep them", not "turn
+it on first". Turning it off empties the store and leaves everything armed for the rest of
+the current page.
+
+Because an override is a rule rather than a frozen body, this costs almost nothing to
+store: what is written is the op list, and it re-arms against whatever the API sends next.
+Overrides key on the same registry entry ids the restored selection and pinned queries use,
+so they depend on queries being created in the same order across the reload.
+
+**A reload that re-arms says so.** The panel opens with a red bar naming how many edits came
+back and on how many queries, with **Review** (jumps to the first of them) and **Drop all**
+(disarms everything it brought back and empties the store). If the store held ops for a query
+that never registered - a route that no longer runs, a creation order that shifted - the same
+bar lists them as _matched no query_ rather than letting them land somewhere else silently.
+The [tampered badge](#the-tampered-badge) and its dot on the closed toggle light up from a
+re-armed override exactly as they do from one you just armed, so a page whose responses are
+edited never reads as a page that is merely broken.
+
+**Armed faults do not come along**, deliberately - see
+[Faults](#faults-making-requests-actually-misbehave). A fault is a client-wide switch with no
+path to point at, and a persisted one would make every request on that client fail from the
+first load with nothing on screen to attribute it to until the panel is opened.
+
 ### The tampered badge
 
 An overridden response and a faulted one both mean the same thing: what is rendering is not
@@ -1151,11 +1182,13 @@ view state that should die with the tab, while a pin says which query you are wo
 on and is meant to outlive one - and since a pin holds a registry id, it depends on
 creation order exactly the way the restored selection does.
 
-[Armed faults](#faults-making-requests-actually-misbehave) and
-[response overrides](#response-overrides-editing-a-value-that-survives-a-refetch) are
-deliberately **not** part of that: they change how the app behaves, not how the panel
-looks, and a reload clears both. Neither is [being popped out](#where-the-panel-sits),
-which a reload cannot restore.
+[Armed faults](#faults-making-requests-actually-misbehave) are deliberately **not** part of
+that: they change how the app behaves, not how the panel looks, and a reload disarms every
+client. [Response overrides](#response-overrides-editing-a-value-that-survives-a-refetch)
+default to the same, but can opt in per session - see
+[Keeping overrides across a reload](#keeping-overrides-across-a-reload), which stores them
+under their own key and announces on load what it brought back. Neither is
+[being popped out](#where-the-panel-sits), which a reload cannot restore.
 
 ## Accessibility
 

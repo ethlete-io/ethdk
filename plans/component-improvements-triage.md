@@ -103,6 +103,13 @@ Ranked by value per unit of risk, not by size.
 > file is closed**. It sits next to `excludeRoutes` as an independent veto - either refusing skips
 > auto-login - so a predicate can never re-enable an excluded route.
 >
+> **Query devtools: overrides survive a reload** shipped 2026-08-10 (an `S` row). A panel-wide
+> **Keep across reloads** toggle writes the armed op lists to `sessionStorage` and the registry
+> replays them as each query registers - so the replay happens whether or not the panel is ever
+> opened. Turning it on captures what is armed at that moment. A reload that re-armed anything opens
+> with a red bar saying what came back and what **matched no query**, with Review and Drop all;
+> armed faults deliberately stay excluded, which is what the Faults tab already promised.
+>
 > **The tile stays #1 and stays parked** - the user declined its design questions on 2026-08-09
 > rather than settling them, so do not re-ask unprompted.
 
@@ -123,7 +130,6 @@ Ranked by value per unit of risk, not by size.
 | Dropzone: reveal the preview on hover                    | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                         |
 | Grid: assert breakpoint coverage in the dev check        | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                           |
 | Filter overlay story: demo dressing                      | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                       |
-| Query devtools: overrides survive a reload               | `A`     | Ops are already serializable; `sessionStorage`, default off, and loud about what it re-armed                               |
 | Query devtools: copy a key or a path, not just the value | `A`,`D` | `⧉` is the only per-node control outside the Response explorer - settle menu vs modifier-click first                       |
 | Query: retire `CLEAR_QUERY_ARGS`                         | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                        |
 

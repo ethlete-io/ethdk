@@ -323,37 +323,6 @@ Worth stating in the docs when this lands, since the two modes are not interchan
 window survives being covered by the app and can go to a second monitor; a floating panel needs
 no pop-up permission and no window management.
 
-## Query devtools: let response overrides survive a reload
-
-Requested 2026-08-07, as an opt-in checkbox. Overrides are in-memory today: the registry in
-`query-devtools-overrides.ts` is a plain signal, so a reload disarms everything.
-
-**The op format is already built for this.** An `OverrideOp` is a path-addressed edit (`set`,
-`stringPreset`, `booleanFlip`, `paginationResize`, …) replayed against each fresh response -
-explicitly _not_ a frozen body, so it is small, JSON-serializable, and survives a refetch that
-returns different values of the same shape. Persisting the op list is close to free; persisting
-the panel's raw-JSON JIT editor is not, and shouldn't be attempted - that one calls
-`subtle.setResponse` with a whole body and is a different feature.
-
-Open points, in the order they bite:
-
-- **What the ops key on across a reload.** Entry ids are deliberately reload-deterministic
-  (descriptor + per-descriptor counter, which is what already restores the selected query), so
-  the same queries created in the same order re-arm correctly. When creation order changes - a
-  new route, a flag flipped - ops silently land on a different instance of the same route, or on
-  nothing. That failure mode has to be visible, not guessed at.
-- **`sessionStorage`, not `localStorage`.** "Survives a reload" and "survives until I notice" are
-  different promises. Session scope dies with the tab, which matches the request; the panel's
-  other prefs live in `PersistedState` and can stay there.
-- **It has to be loud.** A tampered app that stays tampered across reloads is hours of debugging
-  the wrong thing. `panelTampered` / `isTampered` and the faults banner already exist for exactly
-  this reason ("impossible to read as all good") - persisted overrides need at least that, plus a
-  banner on load naming what was re-armed and one click to drop it all. Default off, and note
-  that the panel is meant to work in production builds, which raises the stakes.
-- **Decide whether armed faults come along.** `query-devtools-faults.ts` is the same shape of
-  in-memory registry, per client rather than per query, and the request reads naturally as
-  covering it. Either answer is fine; both being silently different is not.
-
 ## Query devtools: the value explorer copies the value, never the key
 
 Requested 2026-08-07. Every node's `⧉` runs `copyValue()`
@@ -707,6 +676,28 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Query devtools: response overrides survive a reload** (2026-08-10, was its own section) - a
+panel-wide **Keep across reloads** toggle beside "Reset all overrides", backed by
+`query-devtools-override-persistence.ts` in `libs/query`. Four notes worth not rediscovering:
+
+- **The wrap happens in the registry, not the panel.** `registerEntry` passes each query's recorder
+  through `withQueryDevtoolsOverridePersistence(id, recorder)`, which both replays the stored ops
+  and writes on every later arm/clear. Replay has to happen at registration - a query can run long
+  before the panel is ever opened, and the panel is not what the ops belong to.
+- **Turning the toggle on captures what is already armed**, so it reads as "keep these" rather than
+  "keep the next ones". That is why the module tracks `armedRecorders` (only recorders holding at
+  least one op, so it stays bounded) rather than reading the registry - which would be a cycle.
+- **The banner's subject is the previous load, not the store.** `carriedOver` is frozen at init and
+  `replayed` fills as entries claim ids, so a freshly armed op never shows up in it. An id nothing
+  claims is reported as "matched no query" - the failure mode the section asked to make visible -
+  and `describeEntryId` in the panel turns `query|<client>|<method>|<route>#<n>` back into prose.
+- **Armed faults deliberately stay out.** A fault is a client-wide switch with no path to point at,
+  so a persisted one fails every request from the first load with nothing on screen to attribute it
+  to. The Faults tab already told the user its arming is not persisted; that stays true.
+
+Changeset `devtools-overrides-survive-a-reload.md`; 9 unit tests; verified headlessly against the
+devtools story across a real reload: 15/15.
 
 **Auth: `shouldAutoLogin`** (2026-08-10) - `withPersistentAuth`'s `autoLogin` config takes
 `shouldAutoLogin?: (url: string) => boolean` next to `excludeRoutes`. The two are **independent
