@@ -20,6 +20,9 @@ features:
   - title: '@ethlete/query'
     details: Declarative, typesafe HTTP query management with caching, polling, auth and GQL support.
     link: /query/
+  - title: '@ethlete/query-devtools'
+    details: The in-app inspector for the query system - queries, auth, cache, faults and mocks. Loads on demand, ships with nothing.
+    link: /query-devtools/
   - title: '@ethlete/types'
     details: Shared TypeScript types for the Ethlete API - mostly generated, zero runtime code.
     link: /types/

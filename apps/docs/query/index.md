@@ -34,7 +34,7 @@ import { createQueryClient, createGetQuery, withArgs } from '@ethlete/query';
 
 ## Tooling
 
-- [Query devtools](/components/query-devtools) - `provideQueryDevtools()` plus the `<et-query-devtools>` panel (from `@ethlete/components`) inspect live queries, stacks, sequences, auth, cache and events.
+- [Query devtools](/query-devtools/) - `provideQueryDevtools()` plus the panel from [`@ethlete/query-devtools`](/query-devtools/) inspect live queries, stacks, sequences, auth, cache and events.
 
 ## Legacy
 

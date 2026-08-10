@@ -7,8 +7,8 @@ import {
   QueryDevtoolsOverridesRecorder,
   serializeQueryDevtoolsOverrideTransfer,
 } from '@ethlete/query';
-import { MenuComponent, MenuDirective, MenuItemComponent, MenuItemShortcutComponent } from '../menu';
-import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
+import { MenuComponent, MenuDirective, MenuItemComponent, MenuItemShortcutComponent } from '@ethlete/components';
+import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from '@ethlete/components';
 import { readQueryDevtoolsClipboard, textFromQueryDevtoolsPaste } from './query-devtools-clipboard';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
 

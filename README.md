@@ -56,6 +56,18 @@ Fetch wrapper with caching, request templates, GQL support and Angular helpers
 yarn add @ethlete/query
 ```
 
+### @ethlete/query-devtools
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/query-devtools?style=flat-square)](https://www.npmjs.com/package/@ethlete/query-devtools)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/query-devtools/CHANGELOG.md)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/query-devtools/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/query-devtools)
+
+In-app inspector for the query system. Loads on demand, so it costs a shipped app nothing.
+
+```sh
+yarn add -D @ethlete/query-devtools
+```
+
 ### @ethlete/components
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)

@@ -31,6 +31,7 @@ const PACKAGES = [
   '@ethlete/core',
   '@ethlete/eslint-plugin',
   '@ethlete/query',
+  '@ethlete/query-devtools',
   '@ethlete/types',
 ];
 

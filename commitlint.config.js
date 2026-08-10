@@ -15,6 +15,7 @@ module.exports = {
         'agent-rules',
         'components',
         'query',
+        'query-devtools',
         'eslint-plugin',
         'types',
         'cli',

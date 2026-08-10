@@ -27,3 +27,6 @@ export default {
 type Story = StoryObj<QueryDevtoolsStorybookComponent>;
 
 export const Default: Story = {};
+
+/** The same panel behind `<et-query-devtools-lazy>`: only the toggle exists until it is first opened. */
+export const Lazy: Story = { args: { lazy: true } };

@@ -10,7 +10,8 @@
     "@ethlete/types": "1.11.1",
     "@ethlete/components": "0.0.1",
     "@ethlete/eslint-plugin": "0.0.1",
-    "@ethlete/agent-rules": "0.0.1"
+    "@ethlete/agent-rules": "0.0.1",
+    "@ethlete/query-devtools": "0.0.1"
   },
   "changesets": [
     "accordion-component",

@@ -1,0 +1,17 @@
+{
+  "name": "@ethlete/query-devtools",
+  "version": "0.0.1",
+  "license": "MIT",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@analogjs/vitest-angular": "2.6.3",
+    "@angular/common": "22.0.7",
+    "@angular/compiler": "22.0.7",
+    "@angular/core": "22.0.7",
+    "@ethlete/components": "^1.0.0-next.42",
+    "@ethlete/core": "^5.0.0-beta.11",
+    "@ethlete/query": "^6.0.0-beta.8",
+    "@ethlete/types": "^2.0.0-beta.4",
+    "rxjs": "7.8.2"
+  }
+}

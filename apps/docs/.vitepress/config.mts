@@ -17,6 +17,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Components', link: '/components/' },
       { text: 'Query', link: '/query/' },
+      { text: 'Query devtools', link: '/query-devtools/' },
       { text: 'Core', link: '/core/' },
       { text: 'Types', link: '/types/' },
       { text: 'ESLint', link: '/eslint/' },
@@ -40,6 +41,12 @@ export default defineConfig({
         {
           text: 'Types',
           items: [{ text: 'Overview', link: '/types/' }],
+        },
+      ],
+      '/query-devtools/': [
+        {
+          text: 'Query devtools',
+          items: [{ text: 'Overview', link: '/query-devtools/' }],
         },
       ],
       '/cli/': [
@@ -293,7 +300,6 @@ export default defineConfig({
             { text: 'Filter overlay', link: '/components/filter-overlay' },
             { text: 'Floating action', link: '/components/floating-action' },
             { text: 'Focus Ring', link: '/components/focus-ring' },
-            { text: 'Query devtools', link: '/components/query-devtools' },
             { text: 'Query error', link: '/components/query-error' },
             { text: 'Error codes', link: '/components/error-codes' },
           ],

@@ -308,7 +308,7 @@ Because `isLeader` reads `true` in three quite different situations, `leadership
 | `off`         | `leaderElection: false` was configured, so every tab refreshes its own tokens. |
 | `unsupported` | The browser has no Web Locks. Same effect, and `instanceCount` stays at `1`.   |
 
-Without it, four tabs all reporting themselves as the leader is indistinguishable from a bug. The [devtools auth tab](/components/query-devtools#which-tab-refreshes-the-tokens) renders exactly this distinction.
+Without it, four tabs all reporting themselves as the leader is indistinguishable from a bug. The [devtools auth tab](/query-devtools/#which-tab-refreshes-the-tokens) renders exactly this distinction.
 
 This is separate from - and independent of - the query client's own [multi-tab sync](/query/multi-tab), which shares responses and deduplicates polling. Both are opt-in and configured separately: this one is about the session, that one about data. They complement each other - because logout tears down secure entries in every tab, a shared response can never outlive the session it was fetched in.
 

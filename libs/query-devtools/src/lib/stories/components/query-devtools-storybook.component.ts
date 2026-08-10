@@ -16,15 +16,15 @@ import {
   withPolling,
   withSuccessHandling,
 } from '@ethlete/query';
-import { BUTTON_IMPORTS } from '../../../button';
-import { CHECKBOX_IMPORTS } from '../../../forms/checkbox';
-import { CHOICE_FIELD_IMPORTS } from '../../../forms/choice-field';
-import { FORM_FIELD_IMPORTS } from '../../../forms/form-field';
-import { INPUT_IMPORTS } from '../../../forms/input';
 import {
   ARROW_RIGHT_ICON,
+  BUTTON_IMPORTS,
+  CHECKBOX_IMPORTS,
+  CHOICE_FIELD_IMPORTS,
   FILE_ICON,
+  FORM_FIELD_IMPORTS,
   ICON_IMPORTS,
+  INPUT_IMPORTS,
   LOCK_ICON,
   PLAY_ICON,
   PLUS_ICON,
@@ -32,8 +32,9 @@ import {
   ROTATE_RIGHT_ICON,
   TIMES_ICON,
   TRIANGLE_EXCLAMATION_ICON,
-} from '../../../icon';
+} from '@ethlete/components';
 import { QUERY_DEVTOOLS_IMPORTS } from '../../query-devtools.imports';
+import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';
 import {
   armFlakyEndpoint,
   confirmOrder,
@@ -755,11 +756,16 @@ export class QdUnmountCardComponent {
       </div>
     </div>
 
-    <et-query-devtools />
+    @if (lazy()) {
+      <et-query-devtools-lazy />
+    } @else {
+      <et-query-devtools />
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
     QUERY_DEVTOOLS_IMPORTS,
+    QueryDevtoolsLazyComponent,
     QdServerTimeCardComponent,
     QdPostCardComponent,
     QdImperativeCardComponent,
@@ -878,4 +884,7 @@ export class QdUnmountCardComponent {
     }
   `,
 })
-export class QueryDevtoolsStorybookComponent {}
+export class QueryDevtoolsStorybookComponent {
+  /** Mounts the deferred shell instead of the panel, so the story exercises the lazy path. */
+  public lazy = input(false);
+}

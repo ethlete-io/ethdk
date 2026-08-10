@@ -7,12 +7,17 @@ queries, [stacks & paged stacks](/query/stacks), [dependent-query sequences](/qu
 renders as a floating, dockable panel - a development aid, not something you ship
 enabled to end users.
 
-Import `QUERY_DEVTOOLS_IMPORTS` for the component and enable instrumentation with
-`provideQueryDevtools()` from `@ethlete/query`.
+The panel ships as its own package, `@ethlete/query-devtools`. Instrumentation is
+separate: `provideQueryDevtools()` lives in `@ethlete/query`, because that is what
+has to record anything worth showing.
+
+```bash
+npm i -D @ethlete/query-devtools
+```
 
 ## Setup
 
-Two steps: turn instrumentation on at bootstrap, and drop the panel into your app
+Two steps: turn instrumentation on at bootstrap, and mount the panel in your app
 shell.
 
 ```ts
@@ -26,18 +31,24 @@ bootstrapApplication(AppComponent, {
 
 ```ts
 // app.component.ts
-import { QUERY_DEVTOOLS_IMPORTS } from '@ethlete/components';
+import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';
 
 @Component({
   selector: 'app-root',
-  imports: [QUERY_DEVTOOLS_IMPORTS],
+  imports: [QueryDevtoolsLazyComponent],
   template: `
     <!-- your app -->
-    <et-query-devtools />
+    <et-query-devtools-lazy />
   `,
 })
 export class AppComponent {}
 ```
+
+`<et-query-devtools-lazy>` renders only the floating toggle button and downloads the
+panel the first time it is opened - see
+[Keeping it out of your bundle](#keeping-it-out-of-your-bundle). `<et-query-devtools>`
+from `@ethlete/query-devtools` is the same panel loaded eagerly, if you would rather
+not have a chunk boundary there.
 
 `provideQueryDevtools()` also takes `about` (build info for the
 [About tab](#about-which-build-is-running)), `responseHistory` (how many bodies each query keeps) and
@@ -46,8 +57,53 @@ export class AppComponent {}
 
 Without `provideQueryDevtools()` the registry stays empty and the panel shows
 nothing. Instrumentation is a no-op until you call it - it retains no references
-and adds no runtime overhead - so leaving `<et-query-devtools>` mounted while
-omitting the provider in production builds is safe.
+and adds no runtime overhead - so leaving the panel mounted while omitting the
+provider in production builds is safe, and with the lazy shell it is never
+downloaded either.
+
+## Keeping it out of your bundle
+
+The panel is ~125 kB gz of code that only ever runs on a developer's machine.
+`<et-query-devtools-lazy>` is a shell that keeps it out of the bundle your users
+download: it renders the toggle button and nothing else until the panel is first
+asked for, then loads it as its own chunk.
+
+Measured on an application that already uses button, menu, form-field and input:
+
+| What it mounts             | Initial load | Deferred |
+| -------------------------- | ------------ | -------- |
+| nothing                    | 48.3 kB gz   | -        |
+| `<et-query-devtools>`      | 142.4 kB gz  | -        |
+| `<et-query-devtools-lazy>` | 63.1 kB gz   | 81.2 kB  |
+
+The shell is not just a size trick: nothing about the panel exists before it is
+opened - no component, no stylesheet in the document, no keyboard or resize
+listeners. It keeps the panel's behaviour intact, including the
+`Ctrl/Cmd + Alt + Q` shortcut (which loads it), the
+[tampered dot](#the-tampered-badge) on the closed toggle, and reopening a panel
+that was open when the tab was last reloaded - without a click and without you
+storing anything.
+
+The three entry points exist because bundlers split along module boundaries, and a
+library flattened into one file has none:
+
+| Entry point                      | Holds                                        |
+| -------------------------------- | -------------------------------------------- |
+| `@ethlete/query-devtools/lazy`   | the shell - what an application imports      |
+| `@ethlete/query-devtools`        | the panel, loaded on demand by the shell     |
+| `@ethlete/query-devtools/toggle` | the floating button both of the above render |
+
+If you would rather own the trigger yourself - a dev-only route, a feature flag, a
+button of your own - defer the panel directly and hand it `startOpen`, which opens
+it on arrival rather than waiting for a second click:
+
+```html
+@defer (when showDevtools()) {
+<et-query-devtools startOpen />
+} @placeholder {
+<button (click)="showDevtools.set(true)">Query devtools</button>
+}
+```
 
 ## Live demo
 

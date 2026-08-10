@@ -1,4 +1,4 @@
-import { detectKbdPlatform } from '../kbd/kbd-keys';
+import { detectKbdPlatform } from '@ethlete/components';
 
 /**
  * The global devtools toggle shortcut, rendered for the current platform (`⌘⌥Q` on Apple, where the

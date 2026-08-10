@@ -27,6 +27,14 @@
       "entry": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
       "gzip": 2568
     },
+    "query-devtools-panel": {
+      "entry": "import { QueryDevtoolsComponent } from '@ethlete/query-devtools';\nconsole.log(QueryDevtoolsComponent);",
+      "gzip": 127766
+    },
+    "query-devtools-toggle": {
+      "entry": "import { QueryDevtoolsToggleComponent } from '@ethlete/query-devtools/toggle';\nconsole.log(QueryDevtoolsToggleComponent);",
+      "gzip": 3021
+    },
     "bracket-single-elimination": {
       "entry": "import { BracketComponent, singleEliminationBracketLayout } from '@ethlete/components';\nconsole.log(BracketComponent, singleEliminationBracketLayout());",
       "gzip": 29320

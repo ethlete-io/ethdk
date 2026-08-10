@@ -1,6 +1,6 @@
 import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
-import { MenuComponent, MenuItemComponent, MenuSeparatorComponent } from '../menu';
-import { MenuDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
+import { MenuComponent, MenuItemComponent, MenuSeparatorComponent } from '@ethlete/components';
+import { MenuDirective, MenuSurfaceDirective, MenuTriggerDirective } from '@ethlete/components';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';

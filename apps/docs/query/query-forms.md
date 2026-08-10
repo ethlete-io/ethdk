@@ -150,7 +150,7 @@ defineQueryForm({ fields: { page: queryField<number>({ defaultValue: 1 }) }, que
 
 ## Seeing a form in the devtools
 
-With [`provideQueryDevtools()`](/components/query-devtools) installed, every form
+With [`provideQueryDevtools()`](/query-devtools/) installed, every form
 registers itself in the panel's **Forms** tab: its fields, their committed and live
 values, what each writes to the URL, and the query it drives - the last one discovered
 from the `qf.value()` read inside `withArgs`, not from a naming convention.

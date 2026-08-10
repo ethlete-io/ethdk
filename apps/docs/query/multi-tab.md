@@ -185,7 +185,7 @@ is better left alone.
 
 ## Debugging it
 
-The [query devtools](/components/query-devtools) **Cache** tab has a _Sync_ column per entry showing
+The [query devtools](/query-devtools/) **Cache** tab has a _Sync_ column per entry showing
 `polling` or `standby` for the poll election, and how long ago the entry last took a response from
 another tab. That is usually the fastest answer to "why isn't this tab polling?".
 

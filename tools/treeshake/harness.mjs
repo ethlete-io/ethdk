@@ -38,6 +38,9 @@ export const PACKAGES = {
   '@ethlete/core': 'core/fesm2022/ethlete-core.mjs',
   '@ethlete/query': 'query/fesm2022/ethlete-query.mjs',
   '@ethlete/query/testing': 'query/fesm2022/ethlete-query-testing.mjs',
+  '@ethlete/query-devtools': 'query-devtools/fesm2022/ethlete-query-devtools.mjs',
+  '@ethlete/query-devtools/lazy': 'query-devtools/fesm2022/ethlete-query-devtools-lazy.mjs',
+  '@ethlete/query-devtools/toggle': 'query-devtools/fesm2022/ethlete-query-devtools-toggle.mjs',
   '@ethlete/types': 'types/fesm2022/ethlete-types.mjs',
 };
 

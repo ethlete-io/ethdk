@@ -16,8 +16,8 @@ import {
   MenuItemComponent,
   MenuItemShortcutComponent,
   MenuSeparatorComponent,
-} from '../menu';
-import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
+} from '@ethlete/components';
+import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from '@ethlete/components';
 import { readQueryDevtoolsClipboard, textFromQueryDevtoolsPaste } from './query-devtools-clipboard';
 import { JsonKind, kindOf } from './query-devtools-json.component';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';

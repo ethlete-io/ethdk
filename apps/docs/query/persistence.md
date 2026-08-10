@@ -214,7 +214,7 @@ write as a full disk.
 
 ## Debugging it
 
-The [query devtools](/components/query-devtools) **Cache** tab shows how many responses the client has
+The [query devtools](/query-devtools/) **Cache** tab shows how many responses the client has
 on disk, a _Disk_ column saying how long ago an entry took its data from there, and a _Clear disk_
 button.
 

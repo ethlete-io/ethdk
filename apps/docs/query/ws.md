@@ -128,7 +128,7 @@ expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: {
 
 ## Debugging it
 
-With [`provideQueryDevtools()`](/components/query-devtools) installed, the panel's
+With [`provideQueryDevtools()`](/query-devtools/) installed, the panel's
 **Sockets** tab lists every client with its connection state, its joined rooms and a
 rolling log of **both directions** - the room joins and leaves this client sent as well
 as the messages that came back. That is what tells a room that was never joined apart

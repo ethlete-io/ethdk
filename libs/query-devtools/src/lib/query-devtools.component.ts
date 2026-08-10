@@ -2,13 +2,16 @@ import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { headerEntries, isHeadersValue } from './query-devtools-exotic';
 import { DOCUMENT } from '@angular/common';
 import {
+  booleanAttribute,
   Component,
   computed,
   DestroyRef,
   effect,
   ElementRef,
   inject,
+  input,
   NgZone,
+  OnInit,
   signal,
   untracked,
   viewChild,
@@ -101,20 +104,28 @@ import {
   tap,
   timer,
 } from 'rxjs';
-import { MenuComponent, MenuItemComponent, MenuRadioGroupComponent, MenuRadioItemComponent } from '../menu';
-import { MenuDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
+import {
+  COMPONENTS_VERSION,
+  MenuComponent,
+  MenuDirective,
+  MenuItemComponent,
+  MenuRadioGroupComponent,
+  MenuRadioItemComponent,
+  MenuSurfaceDirective,
+  MenuTriggerDirective,
+} from '@ethlete/components';
 import { QueryDevtoolsAuthTabComponent } from './query-devtools-auth-tab.component';
 import { QueryDevtoolsCacheTabComponent } from './query-devtools-cache-tab.component';
 import { buildCurlCommand } from './query-devtools-curl';
 import { QueryDevtoolsEventsTabComponent } from './query-devtools-events-tab.component';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
-import { COMPONENTS_VERSION } from '../version';
 import { QueryDevtoolsAboutComponent } from './query-devtools-about.component';
 import { QueryDevtoolsMocksTabComponent } from './query-devtools-mocks-tab.component';
 import { QueryDevtoolsSettingsComponent } from './query-devtools-settings.component';
 import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
+import { QUERY_DEVTOOLS_VERSION } from './version';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsCopyMenuStylesComponent } from './query-devtools-copy-menu-styles.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
@@ -133,9 +144,7 @@ import {
   SessionExportMock,
   slimForReport,
 } from './query-devtools-session';
-import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 import { QueryDevtoolsTimelineStylesComponent } from './query-devtools-timeline-styles.component';
-import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component';
 import {
   AnyQuery,
   CacheRow,
@@ -157,6 +166,11 @@ import {
   RouteSegment,
   TabBadge,
 } from './query-devtools-types';
+import {
+  QUERY_DEVTOOLS_VIEW_STATE_KEY,
+  QueryDevtoolsToggleComponent,
+  queryDevtoolsShortcutLabel,
+} from '@ethlete/query-devtools/toggle';
 
 /**
  * Where the panel sits: attached to an edge, or floating over the page as a window of its own. A
@@ -284,7 +298,7 @@ const describeEntryId = (id: string) => {
   return `${method} ${route}${client ? ` · ${client}` : ''}${seq && seq !== '0' ? ` #${seq}` : ''}`;
 };
 
-const STORAGE_KEY = 'ethlete:query:devtools:v4';
+const STORAGE_KEY = QUERY_DEVTOOLS_VIEW_STATE_KEY;
 
 /**
  * Pinned queries, held apart from {@link STORAGE_KEY} and defaulting to `localStorage`: everything under
@@ -666,7 +680,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     '[attr.data-dock]': 'dock()',
   },
 })
-export class QueryDevtoolsComponent {
+export class QueryDevtoolsComponent implements OnInit {
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   private renderer = injectRenderer();
   private download = injectFileDownload();
@@ -676,6 +690,12 @@ export class QueryDevtoolsComponent {
   private document = inject(DOCUMENT);
 
   private viewport = injectViewportSize();
+
+  /**
+   * Opens the panel as soon as it is created, whatever the stored view state says. Set by
+   * `<et-query-devtools-lazy>`, which downloads the panel on the click that was meant to open it.
+   */
+  public startOpen = input(false, { transform: booleanAttribute });
 
   /** The panel itself, so a pop-out can move it into another window's document. */
   private panelEl = viewChild<ElementRef<HTMLElement>>('panel');
@@ -1410,6 +1430,7 @@ export class QueryDevtoolsComponent {
     });
 
     registerEthleteVersion('components', COMPONENTS_VERSION);
+    registerEthleteVersion('query-devtools', QUERY_DEVTOOLS_VERSION);
 
     // A pop-out holds the panel element; leaving its window open would leave a dead panel on screen.
     this.destroyRef.onDestroy(() => this.closePopup());
@@ -1490,6 +1511,10 @@ export class QueryDevtoolsComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  public ngOnInit() {
+    if (this.startOpen()) this.open.set(true);
   }
 
   /** @see queryDevtoolsOverridePersistence */

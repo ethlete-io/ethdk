@@ -53,7 +53,7 @@ post = queryStateResponseSignal(this.postQuery);
 | `InfinityQuery` | Infinite lists: `createInfinityQueryConfig()` + `[etInfinityQuery]` / `[etInfinityQueryTrigger]` directives.                                                     | [`createPagedQueryStack`](/query/stacks#paged-queries)                                                                          |
 | `EntityStore`   | Normalized entity cache wired into queries via the `entity` config (`store`, `id`, `get`, `set`).                                                                | Nothing directly - [caching](/query/caching) dedupes by request; derive shared state with signals                               |
 | `QueryForm`     | Router-synced filter/search forms - see the [overview](/query/#also-in-the-package); works with both systems but grew up here.                                   | [`defineQueryForm`](/query/query-forms) - the class stays exported for reactive-forms apps                                      |
-| Devtools        | `<et-query-devtools>` component showing live queries and auth state (`provideQueryClientForDevtools`).                                                           | [`provideQueryDevtools()` + `<et-query-devtools />`](/components/query-devtools) from `@ethlete/components`                     |
+| Devtools        | `<et-query-devtools>` component showing live queries and auth state (`provideQueryClientForDevtools`).                                                           | [`provideQueryDevtools()` + `<et-query-devtools />`](/query-devtools/) from `@ethlete/query-devtools`                           |
 | Interop         | `createLegacyQueryCreator({ creator })` wraps a **current-system** creator in the legacy `.prepare()/.state$` surface - useful while migrating screen by screen. | This _is_ the migration seam - keep it until the consuming components are converted                                             |
 
 ## Migrating to the current system
@@ -83,7 +83,7 @@ This table is the API-to-API map. The [migration guide](/query/migrating-from-v2
 | `secure: true`                                                       | [`createSecureGetQuery(client, authProviderRef)`](/query/http#secure-queries)                                                                           |
 | `client.gqlQuery/gqlMutate`                                          | [`createGqlQueryVia…` / `createGqlMutationVia…`](/query/gql)                                                                                            |
 | `EntityStore`                                                        | No direct equivalent - [caching](/query/caching) dedupes by request; derive shared state with signals.                                                  |
-| `provideQueryClientForDevtools`                                      | [`provideQueryDevtools()`](/components/query-devtools) + `<et-query-devtools />` (registers every client at once)                                       |
+| `provideQueryClientForDevtools`                                      | [`provideQueryDevtools()`](/query-devtools/) + `<et-query-devtools />` (registers every client at once)                                                 |
 
 The `createLegacyQueryCreator` interop lets both worlds coexist: define new endpoints with the current system and consume them from legacy-style components until those are migrated.
 

@@ -14,21 +14,39 @@ at the end of this file is generated - never edit it by hand.
 
 All under `libs/<name>`, published as `@ethlete/<name>`:
 
-| Lib             | What it is                                                                                                                                 | Depends on (`@ethlete/*`)     |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
-| `types`         | Shared TS types (API, pagination, violations). Framework-agnostic base.                                                                    | -                             |
-| `core`          | Framework primitives: directives, signals utils, overlay runtime, animations, theming, scrolling, drag/resize. Angular but component-less. | `types`                       |
-| `query`         | Data fetching / query client: http, gql, ws, auth, query-form.                                                                             | `core`, `types`               |
-| `components`    | **Active** Angular UI library: overlay, menu, button, forms, grid, tabs, tooltip, etc.                                                     | `core`, `query`, `types`      |
-| `cdk`           | **Maintenance mode** - older UI toolkit. Predecessor of `components`.                                                                      | `core`, `query`, `types`      |
-| `contentful`    | Contentful integration (rich-text components, gql, types).                                                                                 | `components`, `core`, `query` |
-| `cli`           | CLI tooling (release helpers).                                                                                                             | -                             |
-| `eslint-plugin` | Custom ESLint rules + shareable flat configs for the styleguide.                                                                           | -                             |
-| `agent-rules`   | Portable agent rules + skills, compiled for Claude Code / Codex / Cursor / Copilot. See below.                                             | -                             |
+| Lib              | What it is                                                                                                                                 | Depends on (`@ethlete/*`)     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| `types`          | Shared TS types (API, pagination, violations). Framework-agnostic base.                                                                    | -                             |
+| `core`           | Framework primitives: directives, signals utils, overlay runtime, animations, theming, scrolling, drag/resize. Angular but component-less. | `types`                       |
+| `query`          | Data fetching / query client: http, gql, ws, auth, query-form.                                                                             | `core`, `types`               |
+| `components`     | **Active** Angular UI library: overlay, menu, button, forms, grid, tabs, tooltip, etc.                                                     | `core`, `query`, `types`      |
+| `query-devtools` | The `<et-query-devtools>` panel, in three entry points (`.`, `/lazy`, `/toggle`). See below.                                               | `components`, `core`, `query` |
+| `cdk`            | **Maintenance mode** - older UI toolkit. Predecessor of `components`.                                                                      | `core`, `query`, `types`      |
+| `contentful`     | Contentful integration (rich-text components, gql, types).                                                                                 | `components`, `core`, `query` |
+| `cli`            | CLI tooling (release helpers).                                                                                                             | -                             |
+| `eslint-plugin`  | Custom ESLint rules + shareable flat configs for the styleguide.                                                                           | -                             |
+| `agent-rules`    | Portable agent rules + skills, compiled for Claude Code / Codex / Cursor / Copilot. See below.                                             | -                             |
 
-Rough layering: `types` → `core` → `query` → `components` → `contentful`. No
-published lib depends on `cdk` any more - it is a leaf in the lib graph (only the
-playground's `cdk/*` demo pages still import it).
+Rough layering: `types` → `core` → `query` → `components` → `contentful` /
+`query-devtools`. No published lib depends on `cdk` any more - it is a leaf in the lib
+graph (only the playground's `cdk/*` demo pages still import it).
+
+### query-devtools: why three entry points
+
+ng-packagr flattens a library into one FESM per entry point, which rewrites a `@defer`'s
+dynamic import into `Promise.resolve().then(...)` - so a deferred component in the _same_
+entry point can never be split out of a consumer's bundle. Only a cross-entry-point defer
+emits a real `import(...)`. Hence:
+
+- `@ethlete/query-devtools/toggle` - the floating button, the shortcut label and the
+  view-state key. A leaf: it must **never** import the other two, or ng-packagr fails the
+  build with a circular entry-point dependency.
+- `@ethlete/query-devtools` - the panel. Imports the toggle entry.
+- `@ethlete/query-devtools/lazy` - the shell an application mounts. Imports the toggle
+  entry statically and the panel entry only through its `@defer`.
+
+Measured: mounting the panel eagerly costs an app ~125 kB gz; through the shell, ~3 kB up
+front and the rest on first open. `tools/treeshake` guards both numbers.
 
 ### UI work: components vs cdk
 

@@ -1,7 +1,7 @@
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { injectStyleManager } from '@ethlete/core';
-import { MenuComponent, MenuDirective, MenuItemComponent } from '../menu';
-import { MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
+import { MenuComponent, MenuDirective, MenuItemComponent } from '@ethlete/components';
+import { MenuSurfaceDirective, MenuTriggerDirective } from '@ethlete/components';
 import { QueryDevtoolsCopyMenuStylesComponent } from './query-devtools-copy-menu-styles.component';
 import { JsonKind } from './query-devtools-json.component';
 

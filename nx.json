@@ -95,7 +95,8 @@
         "libs/contentful/**/*",
         "libs/core/**/*",
         "libs/eslint-plugin/**/*",
-        "libs/query/**/*"
+        "libs/query/**/*",
+        "libs/query-devtools/**/*"
       ]
     }
   ],
