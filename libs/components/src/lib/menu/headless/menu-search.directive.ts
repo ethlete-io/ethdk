@@ -1,5 +1,4 @@
 import {
-  DOCUMENT,
   DestroyRef,
   Directive,
   ElementRef,
@@ -28,7 +27,6 @@ import { MenuDirective } from './menu.directive';
 })
 export class MenuSearchDirective {
   private menu = inject(MenuDirective, { optional: true });
-  private document = inject(DOCUMENT);
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
 
@@ -72,7 +70,9 @@ export class MenuSearchDirective {
 
   /** @internal */
   public isFocused() {
-    return this.document.activeElement === this.elementRef.nativeElement;
+    const element = this.elementRef.nativeElement;
+
+    return element.ownerDocument.activeElement === element;
   }
 
   /** @internal */

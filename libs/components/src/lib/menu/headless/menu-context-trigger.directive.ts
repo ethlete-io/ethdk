@@ -1,4 +1,4 @@
-import { DOCUMENT, DestroyRef, Directive, ElementRef, afterNextRender, effect, inject, untracked } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject, untracked } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { Subscription, fromEvent, tap } from 'rxjs';
 import { MENU_ERROR_CODES } from '../menu-errors';
@@ -14,7 +14,6 @@ import { MenuDirective } from './menu.directive';
 })
 export class MenuContextTriggerDirective {
   private menu = inject(MenuDirective, { optional: true });
-  private document = inject(DOCUMENT);
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
 
@@ -84,7 +83,10 @@ export class MenuContextTriggerDirective {
       return;
     }
 
-    this.repositionSubscription = fromEvent<MouseEvent>(this.document, 'contextmenu', { capture: true })
+    // the zone's own document, resolved on attach - the host may have been adopted by another window
+    this.repositionSubscription = fromEvent<MouseEvent>(this.elementRef.nativeElement.ownerDocument, 'contextmenu', {
+      capture: true,
+    })
       .pipe(
         tap((event) => {
           if (!this.menu || this.menu.disabled() || !this.isEventOnZone(event)) {

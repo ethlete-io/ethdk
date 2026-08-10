@@ -1,5 +1,4 @@
 import {
-  DOCUMENT,
   DestroyRef,
   Directive,
   afterNextRender,
@@ -59,7 +58,6 @@ const MENU_MIN_AVAILABLE_SPACE = 160;
 })
 export class MenuDirective {
   private destroyRef = inject(DestroyRef);
-  private document = inject(DOCUMENT);
   private overlayManager = injectOverlayManager();
   private readonly hostElement = injectHostElement();
 
@@ -510,7 +508,7 @@ export class MenuDirective {
   }
 
   private isFocusInsideTree() {
-    const active = this.document.activeElement;
+    const active = this.hostElement.ownerDocument.activeElement;
 
     if (!active) {
       return false;
@@ -711,7 +709,11 @@ export class MenuDirective {
   private attachRootInteractionListeners() {
     this.detachRootInteractionListeners();
 
-    const pointerdownSubscription = fromEvent<PointerEvent>(this.document, 'pointerdown', { capture: true })
+    // Resolved on every open, not injected: the menu's host may since have been adopted by another
+    // document (a devtools pop-up), and outside-close listeners belong to the window the menu is in.
+    const menuDocument = this.hostElement.ownerDocument;
+
+    const pointerdownSubscription = fromEvent<PointerEvent>(menuDocument, 'pointerdown', { capture: true })
       .pipe(
         tap((event) => {
           if (this.isTargetInsideTree(event.target)) {
@@ -743,7 +745,7 @@ export class MenuDirective {
       .subscribe();
 
     // bubble phase so handlers inside the tree (panel, items, search) can preventDefault first
-    const keydownSubscription = fromEvent<KeyboardEvent>(this.document, 'keydown')
+    const keydownSubscription = fromEvent<KeyboardEvent>(menuDocument, 'keydown')
       .pipe(
         tap((event) => {
           if (event.key !== 'Escape' || event.defaultPrevented || this.isTargetInsideTree(event.target)) {

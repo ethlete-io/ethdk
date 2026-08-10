@@ -59,7 +59,6 @@ export const createOverlayStrategyController = (
   parentInjector: EnvironmentInjector,
 ): OverlayStrategyController => {
   const childInjector = createEnvironmentInjector([], parentInjector);
-  const document = childInjector.get(DOCUMENT);
   const renderer = runInInjectionContext(childInjector, () => injectRenderer());
   const breakpointObserver = runInInjectionContext(childInjector, () => injectBreakpointObserver());
   const styleManager = runInInjectionContext(childInjector, () => injectStyleManager());
@@ -78,6 +77,11 @@ export const createOverlayStrategyController = (
     : origin && isHTMLElement(origin.target)
       ? (findNextRelevantHtmlElement(origin.target) ?? origin.target)
       : undefined;
+
+  // The overlay mounts into its origin's document (see the overlay manager), so `documentClass` and
+  // `bodyClass` have to land on that document too - scroll locks and the like are for the window the
+  // overlay is actually in.
+  const document = originElement?.ownerDocument ?? childInjector.get(DOCUMENT);
 
   const strategyBreakpoints = untracked(() => runInInjectionContext(childInjector, () => config.strategies?.() ?? []));
 

@@ -82,6 +82,8 @@ import {
   tap,
   timer,
 } from 'rxjs';
+import { MenuComponent, MenuItemComponent, MenuRadioGroupComponent, MenuRadioItemComponent } from '../menu';
+import { MenuDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
 import { QueryDevtoolsAuthTabComponent } from './query-devtools-auth-tab.component';
 import { QueryDevtoolsCacheTabComponent } from './query-devtools-cache-tab.component';
 import { buildCurlCommand } from './query-devtools-curl';
@@ -93,7 +95,6 @@ import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsCopyMenuStylesComponent } from './query-devtools-copy-menu-styles.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
-import { QueryDevtoolsMenuComponent } from './query-devtools-menu.component';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
 import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';
 import { QueryDevtoolsSequencesTabComponent } from './query-devtools-sequences-tab.component';
@@ -616,7 +617,6 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsEventsTabComponent,
     QueryDevtoolsFaultsTabComponent,
     QueryDevtoolsFormsTabComponent,
-    QueryDevtoolsMenuComponent,
     QueryDevtoolsQueriesTabComponent,
     QueryDevtoolsSequencesTabComponent,
     QueryDevtoolsSocketsTabComponent,
@@ -624,6 +624,13 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsTimelineTabComponent,
     QueryDevtoolsToggleComponent,
     DragHandleDirective,
+    MenuComponent,
+    MenuDirective,
+    MenuItemComponent,
+    MenuRadioGroupComponent,
+    MenuRadioItemComponent,
+    MenuSurfaceDirective,
+    MenuTriggerDirective,
     ResizeHandlesComponent,
   ],
   providers: [{ provide: QUERY_DEVTOOLS_HOST, useExisting: QueryDevtoolsComponent }],
@@ -742,6 +749,9 @@ export class QueryDevtoolsComponent {
   });
 
   private popup: Window | null = null;
+
+  /** Stops mirroring the host document's stylesheets into the pop-up. @see syncStylesInto */
+  private popOutStyleSync: (() => void) | null = null;
 
   // Only the axis the dock edge controls is bound; the other is the stylesheet's. A float sets both,
   // and a pop-out fills its window on both.
@@ -2657,11 +2667,7 @@ export class QueryDevtoolsComponent {
 
     for (const styles of DEFERRED_STYLES) this.styleManager.mount(styles);
 
-    for (const node of Array.from(this.document.head.children)) {
-      if (!this.isStyleNode(node)) continue;
-
-      renderer.appendChild(doc.head, doc.importNode(node, true));
-    }
+    this.popOutStyleSync = this.syncStylesInto(doc);
 
     // The panel's chrome tokens (`--_et-qdt-*`) are declared on the host element and inherited from it,
     // so a panel appended straight to the pop-up's body would lose every background, border and chip
@@ -2713,6 +2719,46 @@ export class QueryDevtoolsComponent {
     if (node.tagName === 'STYLE') return true;
 
     return node.tagName === 'LINK' && (node.getAttribute('rel') ?? '').includes('stylesheet');
+  }
+
+  /**
+   * Copies the host document's stylesheets into the pop-up and keeps mirroring them while it is
+   * open. Styles keep arriving after the move: Angular inserts a component's CSS and the style
+   * manager mounts overlay strategy CSS the first time each is used - e.g. the first menu opened
+   * over there - so a one-time copy would leave everything first used after the pop-out unstyled.
+   */
+  private syncStylesInto(doc: Document) {
+    const copies = new Map<Element, Element>();
+
+    const copy = (node: Node) => {
+      if (!(node instanceof Element) || !this.isStyleNode(node) || copies.has(node)) return;
+
+      const clone = doc.importNode(node, true);
+
+      copies.set(node, clone);
+      this.renderer.appendChild(doc.head, clone);
+    };
+
+    const drop = (node: Node) => {
+      if (!(node instanceof Element)) return;
+
+      copies.get(node)?.remove();
+      copies.delete(node);
+    };
+
+    for (const node of Array.from(this.document.head.children)) copy(node);
+
+    // eslint-disable-next-line ethlete/no-native-observers -- signalElementMutations reports only the first record of a batch (styles often arrive several per task), and this observer lives with the pop-out, not the component
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        mutation.removedNodes.forEach(drop);
+        mutation.addedNodes.forEach(copy);
+      }
+    });
+
+    observer.observe(this.document.head, { childList: true });
+
+    return () => observer.disconnect();
   }
 
   /** Brings the panel back into the host element and closes the window it was living in. */
@@ -3123,6 +3169,8 @@ export class QueryDevtoolsComponent {
     const popup = this.popup;
 
     this.popup = null;
+    this.popOutStyleSync?.();
+    this.popOutStyleSync = null;
     popup?.close();
   }
 

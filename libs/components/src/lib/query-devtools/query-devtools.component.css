@@ -228,13 +228,6 @@
     overflow-x: auto;
   }
 
-  /* ...but a scroller clips what is absolutely positioned inside it, and both strips hold a dropdown.
-     While one is open the strip stops scrolling instead, which is the harmless half of the trade. */
-  .et-query-devtools-panel:where([data-pane-axis='block'])
-    :is(.et-query-devtools-tabs, .et-query-devtools-header-actions):has(.et-query-devtools-menu-list) {
-    overflow: visible;
-  }
-
   /* Or they compress to fit instead of scrolling, and every label wraps to two lines. */
   .et-query-devtools-panel:where([data-pane-axis='block'])
     :is(.et-query-devtools-tabs, .et-query-devtools-header-actions)
@@ -489,10 +482,9 @@
     color: var(--_et-qdt-fg);
   }
 
+  /* An `etMenu` wrapper in the chrome; the trigger button is the strip's flex item, not the wrapper. */
   .et-query-devtools-menu {
-    position: relative;
-    display: inline-flex;
-    flex: 0 0 auto;
+    display: contents;
   }
 
   .et-query-devtools-menu-caret {
@@ -506,81 +498,34 @@
     text-align: center;
   }
 
-  .et-query-devtools-menu-trigger--open {
+  .et-query-devtools-menu > [data-menu-open] {
     background: var(--_et-qdt-hover);
     color: var(--_et-qdt-fg);
   }
 
-  /* Overlaps the tab content below it, so it needs to outrank the sticky toolbars a tab pins there. */
-  .et-query-devtools-menu-list {
-    position: absolute;
-    inset-block-start: calc(100% + 0.3rem);
-    inset-inline-start: 0;
-    z-index: 3;
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-    min-inline-size: 20rem;
-    padding: 0.4rem;
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: var(--_et-qdt-radius);
-    background: var(--_et-qdt-bg);
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 0.45);
-  }
-
-  /* A trigger near the panel's trailing edge opens a menu that would otherwise run off it. */
-  .et-query-devtools-menu-list:where([data-align='end']) {
-    inset-inline: auto 0;
-  }
-
-  .et-query-devtools-menu-item {
-    appearance: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0.15rem;
-    align-items: start;
-    min-block-size: var(--_et-qdt-control-h);
-    border: none;
-    border-radius: 0.3rem;
-    background: transparent;
-    color: var(--_et-qdt-muted);
-    padding: 0.5rem 0.8rem;
-    font: inherit;
-    font-size: 1.15rem;
-    text-align: start;
-    cursor: pointer;
-  }
-
-  .et-query-devtools-menu-item:hover {
-    background: var(--_et-qdt-hover);
-    color: var(--_et-qdt-fg);
-  }
-
-  .et-query-devtools-menu-item--active {
-    color: var(--_et-qdt-accent);
-  }
+  /* The rules below style the menu *surface*, which mounts in the overlay root outside the panel -
+     the `--_et-qdt-*` chrome tokens don't reach it, so they resolve the same surface tokens (and
+     fallbacks) the menu's own stylesheet uses. */
 
   /* A glyph column, so items with one and items without still start their labels at the same x. */
-  .et-query-devtools-menu-item-glyph {
+  .et-menu .et-query-devtools-menu-item-glyph {
     display: inline-block;
-    inline-size: 1.6rem;
+    inline-size: 16px;
+    text-align: center;
   }
 
-  .et-query-devtools-menu-item:has(.et-query-devtools-menu-item-glyph) {
-    flex-direction: row;
-    align-items: center;
+  /* A two-line item: the note under the label says what the pick produces. */
+  .et-menu-item-content:has(.et-query-devtools-menu-item-note) {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 2px;
+    padding-block: 8px;
   }
 
   .et-query-devtools-menu-item-note {
-    color: var(--_et-qdt-subtle);
-    font-size: 1rem;
-  }
-
-  .et-query-devtools-menu-sep {
-    margin: 0.3rem 0.4rem;
-    border: 0;
-    border-block-start: 1px solid var(--_et-qdt-border);
+    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    font-size: 12px;
   }
 
   .et-query-devtools-header-actions {

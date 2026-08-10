@@ -75,17 +75,25 @@
         }
 
         @if (overflowTabs().length; as overflowCount) {
-          <et-query-devtools-menu
-            [hint]="overflowCount + ' tabs with nothing in them'"
-            triggerClass="et-query-devtools-tab"
-            label="More"
-          >
-            @for (tab of overflowTabs(); track tab.id) {
-              <button (click)="activeTab.set(tab.id)" class="et-query-devtools-menu-item" type="button">
-                {{ tab.label }}
-              </button>
-            }
-          </et-query-devtools-menu>
+          <div class="et-query-devtools-menu" etMenu>
+            <button
+              [title]="overflowCount + ' tabs with nothing in them'"
+              class="et-query-devtools-tab"
+              type="button"
+              etMenuTrigger
+            >
+              More
+              <span class="et-query-devtools-menu-caret" aria-hidden="true">▾</span>
+            </button>
+
+            <ng-template etMenuSurface>
+              <et-menu>
+                @for (tab of overflowTabs(); track tab.id) {
+                  <button (activate)="activeTab.set(tab.id)" et-menu-item type="button">{{ tab.label }}</button>
+                }
+              </et-menu>
+            </ng-template>
+          </div>
         }
       </nav>
 
@@ -127,20 +135,33 @@
         </button>
         @if (!poppedOut()) {
           @let layout = currentLayout();
-          <et-query-devtools-menu [glyph]="layout.glyph" [label]="layout.label" hint="Where the panel sits" align="end">
-            @for (option of LAYOUTS; track option.id) {
-              <button
-                [class.et-query-devtools-menu-item--active]="dock() === option.id"
-                [title]="option.hint"
-                (click)="selectLayout(option.id)"
-                class="et-query-devtools-menu-item"
-                type="button"
-              >
-                <span class="et-query-devtools-menu-item-glyph" aria-hidden="true">{{ option.glyph }}</span>
-                {{ option.label }}
-              </button>
-            }
-          </et-query-devtools-menu>
+          <div class="et-query-devtools-menu" etMenu placement="bottom-end">
+            <button class="et-query-devtools-btn" title="Where the panel sits" type="button" etMenuTrigger>
+              <span class="et-query-devtools-menu-glyph" aria-hidden="true">{{ layout.glyph }}</span>
+              {{ layout.label }}
+              <span class="et-query-devtools-menu-caret" aria-hidden="true">▾</span>
+            </button>
+
+            <ng-template etMenuSurface>
+              <et-menu>
+                <et-menu-radio-group [value]="dock()">
+                  @for (option of LAYOUTS; track option.id) {
+                    <!-- eslint-disable ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
+                    <et-menu-radio-item
+                      [value]="option.id"
+                      [title]="option.hint"
+                      [closeOnActivate]="true"
+                      (activate)="selectLayout(option.id)"
+                    >
+                      <!-- eslint-enable ethlete/prefer-static-boolean-properties -->
+                      <span class="et-query-devtools-menu-item-glyph" aria-hidden="true">{{ option.glyph }}</span>
+                      {{ option.label }}
+                    </et-menu-radio-item>
+                  }
+                </et-menu-radio-group>
+              </et-menu>
+            </ng-template>
+          </div>
         }
         <span class="et-query-devtools-header-divider" aria-hidden="true"></span>
         <button

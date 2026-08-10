@@ -145,51 +145,58 @@
 
   <!-- The tick has to live on the trigger: the menu closes on the pick, so a confirmation inside it
        would be gone before it could be read. -->
-  <et-query-devtools-menu
-    [glyph]="copied() ? '✓' : '⧉'"
-    [label]="copied() ? 'Copied' : 'Copy'"
-    hint="Take this request somewhere else"
-  >
-    <button (click)="host.copyReport(s.entry, s.query)" class="et-query-devtools-menu-item" type="button">
-      Copy report
-      <span class="et-query-devtools-menu-item-note">Everything the panel knows, as markdown</span>
+  <div class="et-query-devtools-menu" etMenu>
+    <button class="et-query-devtools-btn" title="Take this request somewhere else" type="button" etMenuTrigger>
+      <span class="et-query-devtools-menu-glyph" aria-hidden="true">{{ copied() ? '✓' : '⧉' }}</span>
+      {{ copied() ? 'Copied' : 'Copy' }}
+      <span class="et-query-devtools-menu-caret" aria-hidden="true">▾</span>
     </button>
-    <button (click)="host.copyCurlRequest(s.entry, s.query)" class="et-query-devtools-menu-item" type="button">
-      Copy as cURL
-      <span class="et-query-devtools-menu-item-note">URL, resolved headers and body</span>
-    </button>
-    <button (click)="host.copyInsomniaRequest(s.entry, s.query)" class="et-query-devtools-menu-item" type="button">
-      Copy for Insomnia
-      <span class="et-query-devtools-menu-item-note">A collection to import from the clipboard</span>
-    </button>
-  </et-query-devtools-menu>
+
+    <ng-template etMenuSurface>
+      <et-menu>
+        <button (activate)="host.copyReport(s.entry, s.query)" et-menu-item type="button">
+          Copy report
+          <span class="et-query-devtools-menu-item-note">Everything the panel knows, as markdown</span>
+        </button>
+        <button (activate)="host.copyCurlRequest(s.entry, s.query)" et-menu-item type="button">
+          Copy as cURL
+          <span class="et-query-devtools-menu-item-note">URL, resolved headers and body</span>
+        </button>
+        <button (activate)="host.copyInsomniaRequest(s.entry, s.query)" et-menu-item type="button">
+          Copy for Insomnia
+          <span class="et-query-devtools-menu-item-note">A collection to import from the clipboard</span>
+        </button>
+      </et-menu>
+    </ng-template>
+  </div>
 
   @if (!isGone()) {
-    <et-query-devtools-menu
-      [triggerClass]="
-        host.isTampered(s.entry) ? 'et-query-devtools-btn et-query-devtools-btn--tampered' : 'et-query-devtools-btn'
-      "
-      glyph="✎"
-      label="Override"
-      hint="Make this query answer with something other than what the API sent"
-    >
-      <button (click)="host.openResponseEditor(s.query)" class="et-query-devtools-menu-item" type="button">
-        Edit response…
+    <div class="et-query-devtools-menu" etMenu>
+      <button
+        [class.et-query-devtools-btn--tampered]="host.isTampered(s.entry)"
+        class="et-query-devtools-btn"
+        title="Make this query answer with something other than what the API sent"
+        type="button"
+        etMenuTrigger
+      >
+        <span class="et-query-devtools-menu-glyph" aria-hidden="true">✎</span>
+        Override
+        <span class="et-query-devtools-menu-caret" aria-hidden="true">▾</span>
       </button>
-      <button (click)="host.openArgsEditor(s)" class="et-query-devtools-menu-item" type="button">
-        Replay with edited args…
-      </button>
-      <hr class="et-query-devtools-menu-sep" />
-      <button (click)="host.forceLoading(s.query)" class="et-query-devtools-menu-item" type="button">
-        Force loading
-      </button>
-      <button (click)="host.forceError(s.query)" class="et-query-devtools-menu-item" type="button">Force error</button>
-      <button (click)="host.forceEmpty(s.query)" class="et-query-devtools-menu-item" type="button">Force empty</button>
-      <hr class="et-query-devtools-menu-sep" />
-      <button (click)="host.clearForced(s.query)" class="et-query-devtools-menu-item" type="button">
-        Clear forced state
-      </button>
-    </et-query-devtools-menu>
+
+      <ng-template etMenuSurface>
+        <et-menu>
+          <button (activate)="host.openResponseEditor(s.query)" et-menu-item type="button">Edit response…</button>
+          <button (activate)="host.openArgsEditor(s)" et-menu-item type="button">Replay with edited args…</button>
+          <et-menu-separator />
+          <button (activate)="host.forceLoading(s.query)" et-menu-item type="button">Force loading</button>
+          <button (activate)="host.forceError(s.query)" et-menu-item type="button">Force error</button>
+          <button (activate)="host.forceEmpty(s.query)" et-menu-item type="button">Force empty</button>
+          <et-menu-separator />
+          <button (activate)="host.clearForced(s.query)" et-menu-item type="button">Clear forced state</button>
+        </et-menu>
+      </ng-template>
+    </div>
   }
 </div>
 

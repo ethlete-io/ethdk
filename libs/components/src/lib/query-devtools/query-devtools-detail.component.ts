@@ -1,8 +1,9 @@
 import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
+import { MenuComponent, MenuItemComponent, MenuSeparatorComponent } from '../menu';
+import { MenuDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
-import { QueryDevtoolsMenuComponent } from './query-devtools-menu.component';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import { DetailTab, QueryDevtoolsSelection } from './query-devtools-types';
 
@@ -19,9 +20,14 @@ import { DetailTab, QueryDevtoolsSelection } from './query-devtools-types';
   styleUrl: './query-devtools-detail.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
+    MenuComponent,
+    MenuDirective,
+    MenuItemComponent,
+    MenuSeparatorComponent,
+    MenuSurfaceDirective,
+    MenuTriggerDirective,
     QueryDevtoolsFeaturesComponent,
     QueryDevtoolsJsonComponent,
-    QueryDevtoolsMenuComponent,
     QueryDevtoolsRouteComponent,
   ],
 })

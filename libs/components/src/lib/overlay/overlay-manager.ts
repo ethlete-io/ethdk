@@ -45,6 +45,17 @@ const resolveOrigin = (origin: HTMLElement | Event | undefined, document: Docume
   return isValidOriginElement(activeElement) ? activeElement : undefined;
 };
 
+/**
+ * The document an overlay mounts into: its origin's, so an overlay opened from an element living in
+ * another same-origin window (e.g. a panel adopted by a pop-up) opens in that window.
+ */
+const resolveOriginDocument = (origin: HTMLElement | Event | undefined, fallback: Document) => {
+  if (origin instanceof HTMLElement) return origin.ownerDocument;
+  if (origin && origin.target instanceof Node) return origin.target.ownerDocument ?? fallback;
+
+  return fallback;
+};
+
 const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): OverlayManager => {
     const overlayRuntime = injectOverlayRuntime();
@@ -81,6 +92,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       const runtimeRef = overlayRuntime.mount<TComponent, TResult>({
         id,
         component,
+        document: resolveOriginDocument(config.origin, document),
         viewContainerRef: config.viewContainerRef,
         injector: config.injector,
         providers: [{ provide: OVERLAY_REF, useValue: overlayRef }, ...(config.providers ?? [])],
@@ -130,6 +142,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       const runtimeRef = overlayRuntime.mount<OverlayContainerComponent, TResult>({
         id,
         component: OverlayContainerComponent,
+        document: resolveOriginDocument(resolvedConfig.origin, document),
         viewContainerRef: resolvedConfig.viewContainerRef,
         injector: resolvedConfig.injector,
         providers: [{ provide: OVERLAY_REF, useValue: overlayRef }, ...(resolvedConfig.providers ?? [])],
