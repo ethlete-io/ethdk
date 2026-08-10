@@ -2480,6 +2480,12 @@ export class QueryDevtoolsComponent {
     this.expandedQueryGroups.set(next);
   }
 
+  public expandQueryGroup(key: string) {
+    if (this.expandedQueryGroups().has(key)) return;
+
+    this.expandedQueryGroups.set(new Set(this.expandedQueryGroups()).add(key));
+  }
+
   public isStepExpanded(entryId: string, index: number) {
     return this.expandedSteps().has(this.stepKey(entryId, index));
   }

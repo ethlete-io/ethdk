@@ -158,6 +158,7 @@ export type QueryDevtoolsHost = {
   /** Keys of the Queries-list groups of identical rows the user opened - persisted. */
   expandedQueryGroups: Signal<ReadonlySet<string>>;
   toggleQueryGroup(key: string): void;
+  expandQueryGroup(key: string): void;
   /** Which way the Queries list sorts by last-executed time - persisted. */
   queryRecentFirst: WritableSignal<boolean>;
   /** Whether the Queries list is arranged as a tree of route paths instead of a flat list - persisted. */

@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, ViewEncapsulation } from '@angular/core';
 import { clearQueryDevtoolsTombstones, QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
@@ -152,6 +152,20 @@ export class QueryDevtoolsQueriesTabComponent {
     ),
   );
 
+  /**
+   * The fold the selected query sits in, or `null` while it is not in the list. Keyed the way
+   * {@link groupKey} keys the fold, so it moves with the query when regrouping moves it.
+   */
+  private selectedGroupKey = computed(() => {
+    const id = this.host.selectedQueryId();
+
+    if (!id) return null;
+
+    const item = this.filteredQueries().find((item) => item.entry.id === id);
+
+    return item ? this.groupKey(item) : null;
+  });
+
   /** How many queries the list would hold with the search box empty, which is what the count compares to. */
   protected scopedQueryCount = computed(() => {
     const facets = this.host.queryFacets();
@@ -168,6 +182,17 @@ export class QueryDevtoolsQueriesTabComponent {
 
   /** Whether the search box or a status chip is narrowing the list beyond its scope. */
   protected isQueryListNarrowed = computed(() => !!this.host.queryFilter().trim() || this.host.queryFacets().size > 0);
+
+  constructor() {
+    // Opens the fold when the selection lands in it (or regrouping moves it), so the selected query
+    // always starts with a row to match the detail pane - but only *opens* it: unlike deriving
+    // "expanded" from the selection, the fold can still be collapsed over the selected query.
+    effect(() => {
+      const key = this.selectedGroupKey();
+
+      if (key) this.host.expandQueryGroup(key);
+    });
+  }
 
   /** The worst state in a folded group, so a collapsed row cannot hide the one instance that is failing. */
   protected groupStatus(group: QueryRowGroup): QueryStatus {
@@ -188,15 +213,8 @@ export class QueryDevtoolsQueriesTabComponent {
     return group.items.some((item) => this.host.isTampered(item.entry));
   }
 
-  /**
-   * A group opens when the user opens it, and always while it holds the selected query - a detail pane
-   * showing a query with no row to match it reads as the list having lost it.
-   */
   protected isGroupExpanded(group: QueryRowGroup) {
-    return (
-      this.host.expandedQueryGroups().has(group.key) ||
-      group.items.some((item) => item.entry.id === this.host.selectedQueryId())
-    );
+    return this.host.expandedQueryGroups().has(group.key);
   }
 
   protected forgetGoneQueries() {
