@@ -59,8 +59,9 @@ Ranked by value per unit of risk, not by size.
 > **The args explorer's `HttpHeaders`** (`B`,`D`) shipped 2026-08-07 too, both scope calls settled by
 > the user: the explorer learned non-plain objects generally, and **Args** stays raw - no merged
 > `resolveHeaders()` node. The editor half was bigger than the section implied, because most of those
-> values cannot survive JSON at all; they are now preserved rather than replayed as `{}`. **Every
-> remaining query devtools item is `A`.**
+> values cannot survive JSON at all; they are now preserved rather than replayed as `{}`. Every
+> remaining query devtools item was `A` as of that date - two `B`s were reported on 2026-08-10 and
+> are in the `S` table.
 >
 > **Shipped 2026-08-09.** Both remaining auth `S` items, and with them the "logged out after being
 > idle" shortlist entry (was #1). The diagnosis it asked for turned up something larger than the
@@ -128,7 +129,7 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 > filed alongside it now raises a notice with a one-click **Float instead**.
 >
 > **Query devtools: nest the Queries list by path** shipped 2026-08-10 (an `M` row). The **Web Locks
-> inspector** (`A`,`D`) is now the only query devtools item left open. An opt-in **⑂ tree** toggle,
+> inspector** (`A`,`D`) was, at that point, the only query devtools item left open. An opt-in **⑂ tree** toggle,
 > flat still the default. The row's warning was right and only showed up once it was driven in the
 > story: the first build headed every route, so a node nothing branches off now gets **no folder row
 > at all**, and single-child chains compress into one. Folders store collapsed rather than expanded,
@@ -154,48 +155,54 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 
 ### S - small, additive, low risk
 
-| Item                                              | Tag     | Note                                                                                                                       |
-| ------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Dropzone: removing a prefilled value deletes it   | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default |
-| Scheduler: richer sub-appointment list            | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                  |
-| Scheduler: agenda connector lines                 | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                      |
-| Dropzone: reveal the preview on hover             | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                         |
-| Grid: assert breakpoint coverage in the dev check | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                           |
-| Filter overlay story: demo dressing               | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                       |
-| Query: retire `CLEAR_QUERY_ARGS`                  | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                        |
+| Item                                              | Tag     | Note                                                                                                                                                                                                                                      |
+| ------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dropzone: removing a prefilled value deletes it   | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default                                                                                                                |
+| Scheduler: richer sub-appointment list            | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                                                                                                                                 |
+| Scheduler: agenda connector lines                 | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                                                                                                                                     |
+| Dropzone: reveal the preview on hover             | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                                                                                                                                        |
+| Grid: assert breakpoint coverage in the dev check | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                                                                                                                                          |
+| Filter overlay story: demo dressing               | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                                                                                                                                      |
+| Query: retire `CLEAR_QUERY_ARGS`                  | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                                                                                                                                       |
+| Query devtools: float resize selects the panel    | `B`,`C` | User-reported 2026-08-10. Fix in `@ethlete/core` - neither `ResizeHandlesComponent` nor `DragHandleDirective` suppresses selection, and the panel's `--resizing` guard only covers the docked path. The stream pip has it too             |
+| Query devtools: a pop-out orphans on reload       | `B`     | User-reported 2026-08-10. Angular never destroys the app on unload, so `onDestroy`'s `closePopup()` never runs and a dead window stays open. Close on the host's `pagehide`; re-adopting the named window is the nicer fix if it verifies |
+| Query devtools: About tab                         | `A`,`D` | User-raised 2026-08-10. No lib exports a runtime version - one generated constant each, plus the app's own handed in. Feed the session export too. Verify the publish build/bump order first                                              |
 
 ### M - real work, mostly consolidation
 
-| Item                                               | Tag     | Note                                                                                                                                        |
-| -------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth: inactivity is per-tab, the logout is shared  | `B`,`D` | An idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide                  |
-| Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                                                                   |
-| Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types                                               |
-| Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                                                           |
-| Progress steps: steps as links                     | `A`     | Polymorphic root (`span`/`a`/`button`) + the `:hover` rules that don't exist yet                                                            |
-| Avatar: extract `AvatarDirective`                  | `C`     | Follow tooltip/toggletip/accordion's headless split                                                                                         |
-| Avatar group: `maxVisible` + "+N"                  | `A`     | No "+N" pattern exists anywhere to copy - new surface                                                                                       |
-| Description list: `variant`                        | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
-| Scheduler: colour palette via DI token             | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
-| Scheduler: infinite agenda                         | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
-| Selection list: `variant="tile"`                   | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
-| Segmented `variant="tabs"` doesn't match tabs      | `C`,`D` | Underline size, baseline rule, swapped accent tokens, half the block padding, hover fills an unchecked segment. Wants shared tokens         |
-| Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
-| Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped      |
+| Item                                               | Tag     | Note                                                                                                                                                                                                       |
+| -------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth: inactivity is per-tab, the logout is shared  | `B`,`D` | An idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide                                                                                 |
+| Grid: thread `TData` through `GridSerializedState` | `A`     | Same family as the registration cast that already shipped                                                                                                                                                  |
+| Grid: per-breakpoint constraints (`perBreakpoint`) | `A`,`D` | Settle the early-return that makes per-item constraints silently ignored for registered types                                                                                                              |
+| Progress steps: vertical orientation               | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                                                                                                                          |
+| Progress steps: steps as links                     | `A`     | Polymorphic root (`span`/`a`/`button`) + the `:hover` rules that don't exist yet                                                                                                                           |
+| Avatar: extract `AvatarDirective`                  | `C`     | Follow tooltip/toggletip/accordion's headless split                                                                                                                                                        |
+| Avatar group: `maxVisible` + "+N"                  | `A`     | No "+N" pattern exists anywhere to copy - new surface                                                                                                                                                      |
+| Description list: `variant`                        | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                                                                                         |
+| Scheduler: colour palette via DI token             | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                                                                                |
+| Scheduler: infinite agenda                         | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                                                                                    |
+| Selection list: `variant="tile"`                   | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                                                                                         |
+| Segmented `variant="tabs"` doesn't match tabs      | `C`,`D` | Underline size, baseline rule, swapped accent tokens, half the block padding, hover fills an unchecked segment. Wants shared tokens                                                                        |
+| Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part                                                                |
+| Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped                                                                     |
+| Number input: drag-to-scrub + step modifiers       | `A`,`D` | User-raised 2026-08-10. One `stepBy(direction, multiplier)` serves both halves. Settle the multiplier vocabulary once, and which surface the drag lives on - the stepper buttons already own `pointerdown` |
+| Query devtools: Settings tab + storage scopes      | `A`,`D` | User-raised 2026-08-10. Panel-wide options sit in whichever tab first needed them. The three storage keys already differ on purpose; IndexedDB cannot answer the synchronous reads overrides depend on     |
 
 ### L - projects, not tickets
 
-| Item                                         | Tag     | Note                                                                                                                                                                                                                                                                           |
-| -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Charts                                       | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't            |
-| Scheduler: move/resize existing appointments | `A`     | Called "the natural next feature" by the drag-to-create work                                                                                                                                                                                                                   |
-| Scheduler: date-time _range_ picker          | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                                         |
-| Colour input: custom picker                  | `A`     | Replaces the native input behind the same directive contract                                                                                                                                                                                                                   |
-| Command palette                              | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                             |
-| Stat tile                                    | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                        |
-| Test harnesses                               | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                         |
-| Forms: a `warning` validity state            | `A`,`D` | User-raised 2026-08-10. Colour language exists; the open call is whether a warning is a signal, a validator severity, or presentation-only - and how it shares the error slot. Must never block submit                                                                         |
-| Forms: time-zone handling / local-time UX    | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, range and scheduler together |
+| Item                                         | Tag     | Note                                                                                                                                                                                                                                                                                     |
+| -------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Charts                                       | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't                      |
+| Scheduler: move/resize existing appointments | `A`     | Called "the natural next feature" by the drag-to-create work                                                                                                                                                                                                                             |
+| Scheduler: date-time _range_ picker          | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                                                   |
+| Colour input: custom picker                  | `A`     | Replaces the native input behind the same directive contract                                                                                                                                                                                                                             |
+| Command palette                              | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                                       |
+| Stat tile                                    | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                                  |
+| Test harnesses                               | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                                   |
+| Forms: a `warning` validity state            | `A`,`D` | User-raised 2026-08-10. Colour language exists; the open call is whether a warning is a signal, a validator severity, or presentation-only - and how it shares the error slot. Must never block submit                                                                                   |
+| Forms: time-zone handling / local-time UX    | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, range and scheduler together           |
+| Query devtools: mock designer + API export   | `A`,`D` | User-raised 2026-08-10. Route-level stubs at the `sendWithFaults` hook, authored with the override menu's existing generator vocabulary, exported as a spec. Settle the export format first - it decides what the designer must capture. Not MSW: the value is seeding from the registry |
 
 ### Decide before building
 
@@ -234,3 +241,10 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 ## Sequencing
 
 Everything in the `S` table is independent of everything else and can be picked off in any order.
+
+One chain, added 2026-08-10: **About → Settings → mock designer.** About is independent and can go
+first, but building it section-shaped is what lets Settings absorb it rather than end up with two
+near-identical tabs. Settings is what introduces a storage-location choice, and the mock designer is
+the feature that most needs one - a designed response library is the thing that outgrows a 5 MB
+store. Building the designer first would either hardcode a fourth storage key or force the settings
+work anyway, halfway through.

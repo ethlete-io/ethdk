@@ -135,6 +135,272 @@ The **hex/RGB validators shipped 2026-08-10** (see "Already fixed"). A
 control's value, and nothing in `libs/forms` does a cross-field read today,
 so its shape is a design question rather than a missing regex. Left open.
 
+## Number input: coarse/fine stepping - drag to scrub, modifiers to jump
+
+Raised by the user 2026-08-10. Two asks that are really one feature: **drag the stepper to
+increment like Figma/Adobe do**, and **shortcuts for ±1 / ±10 / ±100**. Both are the same missing
+idea - a step that is not always one `step()` - so design them together or they will disagree on
+what "10×" means.
+
+What exists: `NumberInputDirective.stepBy(direction: 1 | -1)` (`forms/input/headless/number-input.directive.ts`)
+takes no magnitude. It reads `step()`, clamps to `min`/`max`, handles the precision maths and the
+`mixed` commit, and marks `touched`. `NumberInputComponent.startStepRepeat()` drives press-and-hold
+auto-repeat off it (400ms delay, then 75ms). So the single edit both halves need is
+`stepBy(direction, multiplier = 1)` - everything downstream of it is already right.
+
+**The multiplier vocabulary is the design call, and it has to be picked once.** Suggested, matching
+what Figma/Adobe/Sketch trained everyone on: plain = `step`, `Shift` = 10×, `Alt`/`Option` = 0.1×.
+Native `<input type="number">` already steps on ArrowUp/ArrowDown, so a `keydown` handler that sees a
+modifier has to `preventDefault()` and step itself, or the browser's plain step lands on top of ours.
+`PageUp`/`PageDown` are free and are the natural 100× - and they are the reason not to spend
+`Ctrl`/`Cmd`, which is a browser-zoom collision on several platforms.
+
+The scrub half, in the order the questions actually block each other:
+
+- **What surface do you drag?** The `<input>` itself cannot be it - a horizontal drag there is text
+  selection, and taking that away from a text field is a worse trade than not shipping the feature.
+  The stepper buttons already own `pointerdown` (they step immediately and start the repeat timer),
+  so a drag from them means the first step fires before you know it is a drag. Options: keep the
+  press-and-hold on the buttons and add a **separate scrub grip**, or move to `dragGestureFrom(event,
+el, { commitThreshold })` on the buttons and let `tapped` be "step once, start repeating" while
+  `start` cancels the repeat and becomes a scrub. The second reuses the primitive the slider and
+  rating already moved onto and adds no chrome, and is the one to try first.
+- **The pointer runs out of screen.** Figma solves this with pointer lock, which is why you can scrub
+  a value forever. `requestPointerLock()` needs a user gesture (a drag is one) but shows a browser
+  notification bar in Chrome and reads `movementX` instead of client coords - so `dragGestureFrom`'s
+  `stepX`/`totalDx` stop being the input. Without it the scrub simply ends at the viewport edge,
+  which is honest and much cheaper. Decide whether the ceiling is acceptable before building the
+  lock.
+- **Sensitivity is per-`step`, not per-pixel.** One `step` per _n_ px, not one unit - otherwise a
+  field with `step="0.01"` needs a 100px drag per visible change and a field with `step="1000"` is
+  unusable. Accumulate the remainder across moves so a slow drag still moves, rather than rounding
+  each move to zero.
+- **Axis.** Horizontal is the Figma/Adobe convention and is what `ew-resize` signals. Vertical
+  conflicts with page scroll on touch. Pick horizontal, set `touch-action: none` on the grip, and
+  consider gating the whole thing behind `(pointer: fine)` - a scrub on a phone is a scroll the user
+  did not ask for.
+- **Cursor feedback during the drag** has to be on the document, not the grip: once the pointer is
+  captured, the cursor over the rest of the page is still whatever that element asks for. The float
+  panel's resize handles have the same problem and are the place to copy from.
+- **`touched` fires per step today.** A scrub calls `stepBy` dozens of times; if validation errors
+  surface on `touched`, a scrub past `min` flashes the error mid-gesture. Either mark touched once at
+  gesture end, or accept it - but say which.
+
+Accessibility is unaffected either way: the native input keeps its own arrow-key stepping and the
+buttons keep their labels, so the scrub is a pure enhancement. The modifier shortcuts are not - they
+need documenting, because an unlabelled 10× is indistinguishable from a bug.
+
+## Query devtools: an About tab
+
+Raised by the user 2026-08-10. The cheap one. A bug report from an app team currently carries no way
+to tell **which SDK is actually loaded** - the session export names entries, events and cache totals,
+but not one version number. `⤓ Session` is the attachment on every devtools bug report, so this is
+worth having for the export alone, not just for the tab.
+
+**There is no runtime version constant anywhere in `libs/`.** Nothing exports one, and a lib's
+`package.json` is not reachable from its own source in an ng-packagr build. So the work is in
+producing the string, not in rendering it.
+
+- **The publish pipeline makes a build-time constant truthful, which is not obvious.** `publish.yml`
+  builds _before_ `changeset version` bumps anything, so the naive reading is "the build is always
+  one release behind". It is not: the bump lands as its own commit on `next`/`main`
+  (`chore: 🤖 update prereleases`), that commit triggers the next run, and _that_ run finds no
+  changesets left, so the build it does is of already-bumped sources and is what gets published.
+  Verify it against one published tarball before relying on it - the whole item rests on this.
+- **One constant per lib, not one in `components`.** Peer dependency ranges (`^6.0.0-beta.8`) are not
+  what is loaded. If `@ethlete/query` exports its own `QUERY_VERSION`, the panel imports it and
+  reports the resolved package; if `components` guesses from its own `package.json`, it reports a
+  range. Same for `core` and `types`. A string literal per lib costs nothing and tree-shakes out of
+  any app that never reads it - but it does touch the bundle-size goldens, so run them.
+- **Angular is free.** `VERSION.full` from `@angular/core` is already a runtime constant.
+- **The app's own version is the one the SDK cannot know.** It has to be handed in -
+  `provideQueryDevtools({ about: { … } })` or an input on `<et-query-devtools>` - and the sensible
+  shape is free-form: app version, build SHA, environment name, API base URLs. The API base URLs the
+  panel can already derive from the registered clients.
+- **Then feed it into the two places that already exist.** The About tab is the readable view; the
+  session export gets the same block, and a `⧉ Copy` on the tab gives someone a paste for a ticket
+  without downloading a file.
+
+Generating the constants is the mechanical half: a script that writes `libs/<lib>/src/lib/version.ts`
+from that lib's `package.json`, wired as a `dependsOn` of `build` so it cannot go stale, with the
+generated file either committed or ignored - consistent with how the agent-rules block is generated
+rather than hand-maintained.
+
+## Query devtools: a Settings tab, and where devtools state is stored
+
+Raised by the user 2026-08-10. Two things at once: **collect the options that are currently scattered
+across the tabs**, and **make the storage location a choice** - none / session / local / something
+bigger - possibly per feature.
+
+The scattering is real. Panel-wide switches live wherever they were first needed: **Keep across
+reloads** (which governs override persistence for the whole panel) sits inside the _query detail
+drawer_; the tree/flat toggle, the recent-first sort and the Gone chip are in the Queries tab header;
+errors-only and the client scope are in the Events tab; the socket filter is in Sockets. Several
+more are not adjustable at all - `MAX_EVENTS` (100), `MAX_DROPPED_CACHE_ENTRIES` (20) and
+`provideQueryDevtools({ responseHistory })` are constants or provider-time config, and the last one
+is exactly the knob you want to raise _while_ chasing something.
+
+Two structural notes before any of it:
+
+- **A Settings tab is not a data tab.** `isTabPrimary()` hides tabs that hold nothing and pushes them
+  behind **More**; Settings holds nothing by that measure and would hide itself. It needs to sit
+  outside the badge/overflow logic - most likely a gear in the header actions next to the layout
+  menu, opening the same panel body a tab does.
+- **Decide whether About is a section of Settings or its own tab**, and decide it before either is
+  built. One tab with sections is the cheaper shape and About is a natural first section; the ask was
+  for a separate tab. Either is fine - building About section-shaped keeps both open.
+
+On storage, the important thing is that **per-feature scoping already exists, hardcoded and
+undiscoverable**, and each choice was made deliberately:
+
+| Key                                   | Where            | Why that scope                                                                                  |
+| ------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
+| `ethlete:query:devtools:v4`           | `sessionStorage` | View state - meant to die with the tab                                                          |
+| `ethlete:query:devtools:pins:v2`      | `localStorage`   | A pin says what you are working on; it should outlive a tab                                     |
+| `ethlete:query:devtools:overrides:v1` | `sessionStorage` | Deliberate: "an app that stays tampered with across days is hours of debugging the wrong thing" |
+
+Making that configurable turns three documented rules into three defaults, which is the point and
+also the risk:
+
+- **`none` has to mean something per feature.** For pins it is fine. For overrides it is what the
+  code already does at the default setting. For view state it means the panel forgets its dock and
+  its open tab on every reload, which is a legitimate thing to want on a shared machine.
+- **`local` for overrides deliberately breaks the safety argument** in
+  `query-devtools-override-persistence.ts`. Allow it - a dev asking for it usually has a reason - but
+  it has to be loud, and the red restored-overrides bar that already exists is the right place to say
+  "and these came back from _local_ storage".
+- **"Other" is IndexedDB, and it is the one that does not just drop in.** `libs/query` already ships
+  an IndexedDB persistence engine, and the quota is the reason to want it (a designed mock library
+  will not fit in 5 MB). But every read today is synchronous: `readPersistedState()` runs in a field
+  initializer, and override replay happens inside query registration, before the first fetch.
+  IndexedDB cannot answer either of those in time. So it is available only to a feature that can
+  tolerate arriving late - and overrides/mocks, whose entire job is to be in place before the first
+  request, are exactly the features that cannot. Say this in the picker rather than letting someone
+  discover it.
+- **Add a "reset devtools" that clears every key**, whatever the scopes are set to. Three keys with
+  three lifetimes is already more than a user should have to reason about when the panel is behaving
+  oddly.
+
+## Query devtools: a mock designer, with an export for the API team
+
+Raised by the user 2026-08-10. The big one: **design a response for a route, serve it to the app, and
+hand the result to the API team as a spec.** Survives a reload by definition - the authoring is the
+work.
+
+None of the three things the panel already does is this, and the gap is worth being precise about:
+
+- **Response overrides** are path-addressed edits replayed against a real response
+  (`query-devtools-overrides.ts`). They need the route to exist and to return something first.
+- **The JIT editor** freezes a body into one query's signals - panel-side only. The pipeline, the
+  cache and every error feature never see it.
+- **Faults** inject latency and failures per client, but only a status - never a body.
+
+So the missing piece is a **route-level stub that replaces the request**. The hook point already
+exists and is exact: `sendWithFaults` in `libs/query/src/lib/http/http-request.ts:352` resolves a
+devtools decision per attempt, inside a `defer`, so retries re-roll it and the cache and error
+features see the result exactly as they see a real one. A mock resolver is the same shape one level
+up: given `{ clientName, method, url }`, return a response or `null`.
+
+What that implies, concretely:
+
+- **The request observes `events`, not a body.** A mock has to emit a real `HttpResponse` (and
+  respect `reportProgress` where it is on), because `updateState(event)` consumes the event stream.
+  Returning a bare object will not work.
+- **A mock bypasses the interceptor chain.** No auth header is attached, so a mocked secure route
+  does not exercise the token flow at all. That is usually what you want and occasionally a trap -
+  it must be visible on the row.
+- **Matching is by route pattern, not by devtools entry id.** Overrides key off an id that only
+  exists once a query has registered; a mock has to be armable for a route that has never run - which
+  is the entire point when the endpoint does not exist yet. Method + client + a path pattern with
+  `:param` segments, matched against the parsed `routeParts` the registry already produces.
+- **Everything must be labelled as fake, everywhere.** The Queries list already has a tamper dot and
+  the shell already has a red "Faults armed" bar. A mocked response is a stronger lie than either and
+  reuses both.
+
+The **designer** half is where the reuse is, and it is substantial: the override menu's vocabulary -
+string/number/date presets, fill-recursively, duplicate array item, duplicate array, pagination
+shrink/extend, and the four pagination shapes it already detects - is a response generator that
+currently only runs against live data. Point it at a draft body and it is the authoring tool, with
+three seeds: capture a real run (one click from the Timeline's response history), start from the
+route's declared response type, or start empty.
+
+The **export** is a genuine design decision and should be settled first, because it determines what
+the designer must capture:
+
+- **OpenAPI 3.1 path item** with an inferred schema plus the designed body as an `example` is what an
+  API team can actually merge. It needs types inferred from one example, and one example does not
+  tell you what is nullable or optional - so either infer conservatively and say so, or let the
+  designer mark fields.
+- **A TypeScript type** is what the frontend wants back and is nearly free once a schema exists.
+- **Insomnia/cURL already exist** (`query-devtools-insomnia.ts`, `query-devtools-curl.ts`) and export
+  the _request_. The mock export is the response side of the same envelope, and exporting all
+  designed routes as one document is what makes it a deliverable rather than a screenshot.
+
+On persistence, the split that resolves the tension the override store documents: **the library of
+designed mocks persists (`localStorage`, or IndexedDB if the size settings above land); whether a
+mock is _armed_ does not.** Losing an hour of authoring to a tab close is unacceptable; an app that
+silently serves fake data tomorrow morning is worse. Same restored-banner treatment as overrides,
+and a size cap with a real message rather than a swallowed quota error.
+
+**Scope boundary, and it needs stating up front: this is not MSW.** MSW intercepts at the network
+layer, works in tests and in any framework, and is the right tool for a permanent fixture. What this
+has that MSW does not is the registry - the panel already knows every route, its params, its
+features, its auth provider and its last _n_ real responses, so seeding a mock from something that
+actually happened is one click. Mock at the query-client layer, keep it a debugging and design tool,
+and do not grow it toward being a test fixture runner.
+
+## Query devtools: resizing the float selects the whole panel
+
+Reported by the user 2026-08-10. Drag any edge of the floating panel and the browser starts a text
+selection that sweeps every string in the panel. Diagnosed, and it is two holes that happen to line
+up:
+
+- **The panel's own guard never fires for a float.** `.et-query-devtools-panel--resizing` sets
+  `user-select: none` and is bound to `resizing()`, which is `!!drag()`. `drag` is set by
+  `startResize()` (the docked edge) and `startPaneResize()` (the pane divider) - both of which also
+  `preventDefault()` the `pointerdown`. The float's path is `<et-resize-handles>` →
+  `startFloatResize()` / `resizeFloat()` / `endFloatResize()`, which never touches `drag`, so the
+  class is never applied. The same is true of the title-bar move via `[etDragHandle]`.
+- **Neither core primitive suppresses selection itself.** `ResizeHandlesComponent` sets
+  `touch-action: none` (touch only) and `DragHandleDirective` the same; neither calls
+  `preventDefault()` on `pointerdown`, and neither disables selection for the life of the gesture. So
+  every consumer of both has this bug - the stream pip included, which is where the float's
+  interaction was ported from.
+
+That argues for fixing it in `@ethlete/core` rather than in the panel: suppress selection for the
+duration of a gesture, in the primitive, so it is fixed once. Prefer setting `user-select: none` on
+the document root while a gesture runs over `preventDefault()` on `pointerdown` - the latter also
+swallows the focus change, which a handle may or may not want. Restore it on `end` **and** on
+`cancelled`, or a cancelled gesture leaves the page unselectable.
+
+## Query devtools: a pop-out does not survive a reload of the host page
+
+Reported by the user 2026-08-10: reload the app while the panel is popped out and the pop-out "gets
+stuck". Diagnosed:
+
+- `poppedOut` is deliberately not persisted (a new document cannot re-adopt the previous one's
+  window), so the reloaded page always renders the panel docked. That part is by design.
+- The clean-up that should close the orphan is `destroyRef.onDestroy(() => this.closePopup())` - and
+  **Angular does not destroy the application on a page unload**, so it never runs. The pop-up window
+  stays open holding the panel element of a document that no longer exists: no signal in it will ever
+  update again, and its buttons write to a dead component. That dead window is the "stuck".
+- The reverse direction is already handled - `fromEvent(popup, 'pagehide')` docks the panel back when
+  the _pop-up_ is closed. There is no equivalent listener on the host document.
+
+The small fix is the host-side mirror of the listener that already exists: close the pop-up on the
+host's `pagehide` (not `beforeunload` - it is unreliable and interacts badly with bfcache). A reload
+then loses the pop-out, which is exactly what the current design promises, instead of leaving a
+zombie.
+
+The better one is worth a look first, because the groundwork is already there: **the pop-up is
+opened with a name** (`window.open(url, 'et-query-devtools', …)`), and a named window can be
+re-fetched by `window.open('', 'et-query-devtools')`. If the reloaded page can get its handle back,
+it can clear the stale body and mount a fresh panel into the same window - a pop-out that genuinely
+survives a reload, which is what a second screen full of devtools should do. **Verify before
+planning on it:** re-opening a named window is still a pop-up-blocker-governed call and generally
+wants user activation, and getting it wrong opens a _second_ blank window rather than returning the
+first. If that check fails, ship the `pagehide` close and persist nothing.
+
 ## Progress steps
 
 Today: `ProgressStepComponent` has exactly one input, `state`
