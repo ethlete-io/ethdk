@@ -335,3 +335,78 @@ export const devtoolsDemoSocket = createWebSocketClient({
   url: 'wss://query-devtools-demo.invalid',
   io,
 });
+
+/**
+ * A miniature OpenAPI document for the demo API, handed to `provideQueryDevtools({ schema })` so the
+ * Mocks tab's designer has something to seed and annotate from. `/authors/{authorId}` is deliberately a
+ * route the interceptor above does not implement - designing a response for an endpoint that does not
+ * exist yet is the case mocks exist for.
+ */
+export const QUERY_DEVTOOLS_DEMO_SCHEMA = {
+  openapi: '3.1.0',
+  info: { title: 'Query devtools demo API', version: '1.0.0' },
+  paths: {
+    '/post/{postId}': {
+      get: {
+        summary: 'One post',
+        responses: {
+          '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/PostView' } } } },
+        },
+      },
+    },
+    '/posts': {
+      get: {
+        summary: 'A page of posts',
+        responses: {
+          '200': {
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/PaginatedPostView' } } },
+          },
+        },
+      },
+    },
+    '/authors/{authorId}': {
+      get: {
+        summary: 'An author (not implemented by the demo API)',
+        responses: {
+          '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthorView' } } } },
+        },
+      },
+    },
+  },
+  components: {
+    schemas: {
+      PostId: { type: 'integer', minimum: 1 },
+      PostView: {
+        type: 'object',
+        required: ['id', 'title'],
+        properties: {
+          id: { $ref: '#/components/schemas/PostId' },
+          title: { type: 'string' },
+          publishedAt: { type: ['string', 'null'], format: 'date-time' },
+        },
+      },
+      PaginatedPostView: {
+        type: 'object',
+        required: ['items', 'currentPage', 'itemsPerPage', 'totalPageCount', 'totalHits'],
+        properties: {
+          items: { type: 'array', items: { $ref: '#/components/schemas/PostView' }, minItems: 3 },
+          currentPage: { type: 'integer', minimum: 1 },
+          nextPage: { type: ['integer', 'null'] },
+          itemsPerPage: { type: 'integer', minimum: 5 },
+          totalPageCount: { type: 'integer', minimum: 1 },
+          totalHits: { type: 'integer', minimum: 40 },
+        },
+      },
+      AuthorView: {
+        type: 'object',
+        required: ['id', 'name', 'posts'],
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string' },
+          role: { enum: ['editor', 'guest'] },
+          posts: { type: 'array', items: { $ref: '#/components/schemas/PostView' } },
+        },
+      },
+    },
+  },
+};

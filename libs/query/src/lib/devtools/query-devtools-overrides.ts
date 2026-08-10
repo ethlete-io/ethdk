@@ -586,10 +586,14 @@ export const applyQueryDevtoolsOverrides = (
 };
 
 /**
- * Accumulates the response overrides armed on one query, for the devtools panel. Only ever created
- * while {@link provideQueryDevtools} is installed - like {@link createQueryDevtoolsStats}, an app
- * without devtools pays nothing for it.
- * @internal
+ * Accumulates the response overrides armed on one query, for the devtools panel. Instrumentation only
+ * creates one while {@link provideQueryDevtools} is installed - like {@link createQueryDevtoolsStats},
+ * an app without devtools pays nothing for it.
+ *
+ * The panel also creates one that belongs to no query at all, to record the edits made to a mock's draft
+ * body: the ops are flattened with {@link applyQueryDevtoolsOverrides} and thrown away on save.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
  */
 export const createQueryDevtoolsOverrides = (): QueryDevtoolsOverridesRecorder => {
   const list = signal<QueryDevtoolsOverrideEntry[]>([]);

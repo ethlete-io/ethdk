@@ -39,6 +39,11 @@ import { QUERY_DEVTOOLS_IMPORTS } from '@ethlete/components';
 export class AppComponent {}
 ```
 
+`provideQueryDevtools()` also takes `about` (build info for the
+[About tab](#about-which-build-is-running)), `responseHistory` (how many bodies each query keeps) and
+`schema` (your API description, for
+[seeding a designed mock](#seeding-from-your-api-description)).
+
 Without `provideQueryDevtools()` the registry stays empty and the panel shows
 nothing. Instrumentation is a no-op until you call it - it retains no references
 and adds no runtime overhead - so leaving `<et-query-devtools>` mounted while
@@ -674,7 +679,61 @@ a mock from the body the API really sent, which is the fast path to "the same re
 field empty". A route several queries share is listed once, saying how many - a mock answers the route, so
 it answers all of them.
 
-**Body** on a designed row opens the JSON for editing; **Status** and **Latency** are editable in place.
+**Status** and **Latency** are editable in place; **Body** opens the designer.
+
+### Designing the body
+
+**Body** on a designed row opens the same value explorer the panel uses for a real response, with the same
+per-node menu - [string, number and date presets](#response-overrides-editing-a-value-that-survives-a-refetch),
+fill-every-string, duplicate item, duplicate array, pagination shrink/extend, paste, delete. Pointed at a
+draft instead of a live response, that vocabulary is an authoring tool: a fifty-row page comes from
+duplicating one row six times, and a page with an unbreakable 200-character title is two clicks.
+
+Edits accumulate as override ops and are **flattened into a plain body on Apply**, so what is stored is a
+value rather than a recipe. Until then, **Undo all** drops every edit and returns the body the session
+started from. **JSON** switches to the raw body; leaving it carries whatever you typed there into the tree,
+so the two are two views of one draft.
+
+### Seeding from your API description
+
+Hand `provideQueryDevtools()` your OpenAPI document and a designed body can start from the real shape of a
+route rather than a guess:
+
+```ts
+provideQueryDevtools({
+  // Called at most once, and only when the Mocks tab is first opened - so a dynamic import keeps the
+  // document out of your application bundle.
+  schema: () => import('../openapi.json'),
+});
+```
+
+Anything with named schemas works: OpenAPI 3.x (`components.schemas`), Swagger 2 (`definitions`) or a bare
+JSON Schema document (`$defs`). A remote URL is a one-liner too:
+`schema: () => fetch('/openapi.json').then((res) => res.json())`.
+
+TypeScript types are erased at runtime, so "start from the route's declared response type" is not something
+the panel can do from your code - the document those types were generated _from_ is what it reads.
+
+With one loaded, the **New mock** form gains a **Seed** row:
+
+| Control            | What it does                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **a route…**       | every route the document declares - _including the ones your app has never called_ - and picking one fills the method, path and body |
+| **From this path** | generates a body from the success response the document declares for the path already in the form                                    |
+| **a named type…**  | generates a body from one named schema (`MatchView`), for a route the document does not declare                                      |
+
+Generation is deliberately dull and deterministic: `$ref`s are followed, `allOf` is merged, an `example`
+or `default` the document ships is used as-is, an `enum` takes its first value, a `format` becomes a
+shaped placeholder (`uuid`, `date-time`), a number takes its `minimum`, and a string with nothing to go on
+takes its own field name - so a seeded body reads as obviously unreal while still saying which field you
+are looking at. Everything it had to guess is listed under the body: which branch of a `oneOf` it took,
+where it cut a schema that contains itself, which base path it ignored when matching the route. **A seed is
+a starting point, never a claim about what the API returns.**
+
+Fields the document describes are then labelled in the designer with the type they are declared as -
+`MatchId` rather than `string`, with `?` on the ones the schema does not require. One label covers every
+element of an array, however many you go on to add. The mock remembers the schema it was seeded from, so
+the labels come back after a reload.
 
 ### Copying the route back out as TypeScript
 

@@ -41,6 +41,12 @@ export type QueryDevtoolsMock = {
 
   /** When the body was captured from a real response, or `null` if it was authored from nothing. */
   capturedAt: number | null;
+
+  /**
+   * The schema the body was seeded from, when it came from the application's API description - so the
+   * designer can label its fields with their declared types again after a reload.
+   */
+  schemaName?: string | null;
 };
 
 /**

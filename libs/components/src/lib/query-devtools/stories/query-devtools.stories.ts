@@ -3,7 +3,7 @@ import { provideRouter, withHashLocation } from '@angular/router';
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { provideQueryDevtools } from '@ethlete/query';
 import { QueryDevtoolsStorybookComponent } from './components/query-devtools-storybook.component';
-import { queryDevtoolsDemoInterceptor } from './query-devtools-demo.utils';
+import { QUERY_DEVTOOLS_DEMO_SCHEMA, queryDevtoolsDemoInterceptor } from './query-devtools-demo.utils';
 
 export default {
   title: 'Components/Query Devtools',
@@ -16,6 +16,7 @@ export default {
         provideRouter([{ path: '**', children: [] }], withHashLocation()),
         provideQueryDevtools({
           about: { version: '1.4.2', sha: 'a3f9c1e', environment: 'storybook' },
+          schema: () => QUERY_DEVTOOLS_DEMO_SCHEMA,
         }),
       ],
     }),

@@ -80,6 +80,9 @@ const chunkSizeFor = (count: number) => {
               <span class="et-query-devtools-json-colon">:</span>
             }
             <span class="et-query-devtools-json-preview">{{ preview() }}</span>
+            @if (annotation(); as annotation) {
+              <span [title]="annotationTitle()" class="et-query-devtools-json-type">{{ annotation }}</span>
+            }
           </button>
           <button
             [attr.aria-label]="copyLabel()"
@@ -115,6 +118,7 @@ const chunkSizeFor = (count: number) => {
                 [jsonPath]="jsonPath()"
                 [parentKind]="parentKind()"
                 [overrides]="overrides()"
+                [annotations]="annotations()"
                 [search]="search()"
                 [expandedPaths]="expandedPaths()"
                 [collapsedPaths]="collapsedPaths()"
@@ -130,6 +134,7 @@ const chunkSizeFor = (count: number) => {
                 [jsonPath]="childJsonPath(entry.k)"
                 [parentKind]="kind()"
                 [overrides]="overrides()"
+                [annotations]="annotations()"
                 [search]="search()"
                 [expandedPaths]="expandedPaths()"
                 [collapsedPaths]="collapsedPaths()"
@@ -148,6 +153,9 @@ const chunkSizeFor = (count: number) => {
         <span [class.et-query-devtools-json-hit]="valueHit()" class="et-query-devtools-json-value">{{
           display()
         }}</span>
+        @if (annotation(); as annotation) {
+          <span [title]="annotationTitle()" class="et-query-devtools-json-type">{{ annotation }}</span>
+        }
         <button
           [attr.aria-label]="copyLabel()"
           [title]="copyLabel()"
@@ -204,8 +212,26 @@ export class QueryDevtoolsJsonComponent {
   /** When provided, every node renders an override menu that arms/clears ops through it. */
   public overrides = input<QueryDevtoolsOverridesRecorder | null>(null);
 
+  /**
+   * The declared type of each field, keyed by its path with array indices as `*` (`items.*.id`) - as
+   * {@link QueryDevtoolsSchemaSeed} produces it. A node with an entry labels itself with it.
+   */
+  public annotations = input<ReadonlyMap<string, string> | null>(null);
+
   protected kind = computed(() => kindOf(this.value()));
   private exotic = computed(() => exoticOf(this.value()));
+
+  /** One annotation covers every element of an array, so the lookup path forgets which index this is. */
+  private shapePath = computed(() =>
+    this.path()
+      .split('.')
+      .map((step) => (/^\d+$/.test(step) ? '*' : step))
+      .join('.'),
+  );
+
+  protected annotation = computed(() => (this.chunk() ? null : (this.annotations()?.get(this.shapePath()) ?? null)));
+
+  protected annotationTitle = computed(() => `Declared in the API description as ${this.annotation()}`);
 
   /** A `Date` or a `File` is object-typed but has nothing to expand into, so it renders as a leaf. */
   protected isContainer = computed(

@@ -111,6 +111,43 @@
         </label>
       </div>
 
+      @if (hasSchema()) {
+        <div class="et-query-devtools-seed">
+          <span class="et-query-devtools-section">Seed</span>
+          @if (isSchemaReady()) {
+            <select #routePick (change)="pickRoute(routePick.value)" class="et-query-devtools-select">
+              <option value="">a route the API description declares…</option>
+              @for (route of SCHEMA_ROUTES(); track route.method + route.pattern) {
+                <option value="{{ route.method }} {{ route.pattern }}">
+                  {{ route.method }} {{ route.pattern }}{{ route.summary ? ' — ' + route.summary : '' }}
+                </option>
+              }
+            </select>
+            <button
+              (click)="seedFromDraftRoute()"
+              class="et-query-devtools-btn"
+              type="button"
+              title="Generate a body from what the description says this path returns"
+            >
+              From this path
+            </button>
+            <select #schemaPick (change)="pickedSchema.set(schemaPick.value)" class="et-query-devtools-select">
+              <option value="">a named type…</option>
+              @for (name of SCHEMA_NAMES(); track name) {
+                <option [value]="name" [selected]="name === pickedSchema()">{{ name }}</option>
+              }
+            </select>
+            <button [disabled]="!pickedSchema()" (click)="seedFromSchema()" class="et-query-devtools-btn" type="button">
+              From this type
+            </button>
+          } @else if (schemaError(); as error) {
+            <span class="et-query-devtools-settings-warn">The API description could not be loaded: {{ error }}</span>
+          } @else {
+            <span class="et-query-devtools-count">Loading the API description…</span>
+          }
+        </div>
+      }
+
       <label class="et-query-devtools-mock-body">
         <span class="et-query-devtools-section">Body</span>
         <textarea
@@ -122,6 +159,20 @@
           spellcheck="false"
         ></textarea>
       </label>
+
+      @if (draftSeed(); as seed) {
+        <p class="et-query-devtools-hint">
+          Generated from the API description{{ seed.schemaName ? ' as ' + seed.schemaName : '' }} - a starting point,
+          not the contract. Saving opens the designer on it.
+        </p>
+        @if (seed.notes.length) {
+          <ul class="et-query-devtools-designer-notes">
+            @for (note of seed.notes; track note) {
+              <li>{{ note }}</li>
+            }
+          </ul>
+        }
+      }
 
       @if (draftError(); as error) {
         <p class="et-query-devtools-settings-warn">{{ error }}</p>
@@ -163,6 +214,9 @@
           <span class="et-query-devtools-url">{{ row.mock.clientName }}</span>
           @if (row.mock.capturedAt) {
             <span class="et-query-devtools-chip">captured</span>
+          }
+          @if (row.mock.schemaName; as schemaName) {
+            <span class="et-query-devtools-chip" title="Seeded from the API description">{{ schemaName }}</span>
           }
           @if (row.isSecure) {
             <span
@@ -220,26 +274,12 @@
         </div>
 
         @if (editingId() === row.mock.id) {
-          <label class="et-query-devtools-mock-body">
-            <span class="et-query-devtools-section">Body</span>
-            <textarea
-              #rowBodyInput
-              [value]="bodyDraft()"
-              (input)="bodyDraft.set(rowBodyInput.value)"
-              class="et-query-devtools-input et-query-devtools-mock-textarea"
-              rows="10"
-              spellcheck="false"
-            ></textarea>
-          </label>
-          @if (bodyError(); as error) {
-            <p class="et-query-devtools-settings-warn">{{ error }}</p>
-          }
-          <div class="et-query-devtools-mock-head">
-            <button (click)="saveBody(row)" class="et-query-devtools-btn et-query-devtools-btn--primary" type="button">
-              Apply
-            </button>
-            <button (click)="cancelBody()" class="et-query-devtools-btn" type="button">Cancel</button>
-          </div>
+          <et-query-devtools-mock-designer
+            [body]="row.mock.body"
+            [annotations]="editingAnnotations()"
+            (save)="saveBody(row, $event)"
+            (dismiss)="cancelBody()"
+          />
         }
       </div>
     } @empty {

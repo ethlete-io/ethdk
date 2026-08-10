@@ -4,16 +4,24 @@ import {
   armQueryDevtoolsMock,
   clearQueryDevtoolsArmedMocks,
   deleteQueryDevtoolsMock,
+  loadQueryDevtoolsSchema,
   measureQueryDevtoolsPayload,
   QueryDevtoolsEntry,
   QueryDevtoolsMock,
   queryDevtoolsArmedMocks,
   queryDevtoolsMockId,
   queryDevtoolsMocks,
+  queryDevtoolsSchemaNames,
+  queryDevtoolsSchemaRoutes,
+  queryDevtoolsSchemaState,
+  QueryDevtoolsSchemaSeed,
   saveQueryDevtoolsMock,
+  seedQueryDevtoolsSchemaBody,
+  seedQueryDevtoolsSchemaRoute,
 } from '@ethlete/query';
 import { tap } from 'rxjs';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
+import { QueryDevtoolsMockDesignerComponent } from './query-devtools-mock-designer.component';
 import { buildQueryDefinitionSnippet } from './query-devtools-typescript';
 import { AnyQuery } from './query-devtools-types';
 
@@ -88,6 +96,7 @@ const isMockableMethod = (method: string) => !method.includes(' ');
   templateUrl: './query-devtools-mocks-tab.component.html',
   styleUrl: './query-devtools-mocks-tab.component.css',
   encapsulation: ViewEncapsulation.None,
+  imports: [QueryDevtoolsMockDesignerComponent],
 })
 export class QueryDevtoolsMocksTabComponent {
   protected host = injectQueryDevtoolsHost();
@@ -95,14 +104,37 @@ export class QueryDevtoolsMocksTabComponent {
   protected readonly DISARM_ALL = clearQueryDevtoolsArmedMocks;
   protected readonly METHODS = METHODS;
 
+  protected readonly SCHEMA_NAMES = queryDevtoolsSchemaNames;
+  protected readonly SCHEMA_ROUTES = queryDevtoolsSchemaRoutes;
+
+  /** Whether the application handed an API description in at all - nothing below shows without one. */
+  protected hasSchema = computed(() => queryDevtoolsSchemaState().status !== 'unavailable');
+  protected isSchemaReady = computed(() => queryDevtoolsSchemaState().status === 'ready');
+
+  protected schemaError = computed(() => {
+    const state = queryDevtoolsSchemaState();
+
+    return state.status === 'error' ? state.message : null;
+  });
+
   /** The new-mock form, or `null` while it is closed. */
   protected draft = signal<MockDraft | null>(null);
   protected draftError = signal<string | null>(null);
 
-  /** The mock whose body is open in an editor, and the text being edited. */
+  /** What the description said about the draft's body, kept so the designer can label its fields. */
+  protected draftSeed = signal<QueryDevtoolsSchemaSeed | null>(null);
+
+  /** The named schema picked in the form, which is not the same thing as the one a body came from. */
+  protected pickedSchema = signal('');
+
+  /**
+   * The type annotations of each seeded body, by mock id. A mock only stores the *name* it was seeded
+   * from, so this is what labels a body the description could not name - for as long as the panel is open.
+   */
+  private seededTypes = signal<Record<string, ReadonlyMap<string, string>>>({});
+
+  /** The mock whose body is open in the designer. */
   protected editingId = signal<string | null>(null);
-  protected bodyDraft = signal('');
-  protected bodyError = signal<string | null>(null);
 
   /** The mock whose definition was last copied, so the button can confirm it. */
   protected copiedId = signal<string | null>(null);
@@ -120,6 +152,26 @@ export class QueryDevtoolsMocksTabComponent {
   });
 
   protected armedCount = computed(() => this.rows().filter((row) => row.armed).length);
+
+  private editingRow = computed(() => this.rows().find((row) => row.mock.id === this.editingId()) ?? null);
+
+  /**
+   * What to label the open body's fields with: the seed it was authored from this session, or - after a
+   * reload - the schema the mock remembers being seeded from.
+   */
+  protected editingAnnotations = computed(() => {
+    const row = this.editingRow();
+
+    if (!row) return null;
+
+    const seeded = this.seededTypes()[row.mock.id];
+
+    if (seeded) return seeded;
+
+    const name = row.mock.schemaName;
+
+    return name ? (seedQueryDevtoolsSchemaBody(name)?.types ?? null) : null;
+  });
 
   /**
    * Every route a live response can seed a mock from - one row per route, not per query: several queries
@@ -158,23 +210,58 @@ export class QueryDevtoolsMocksTabComponent {
     return [...rows.values()];
   });
 
+  constructor() {
+    // The description is only worth fetching once someone is designing a mock, which is what opening
+    // this tab means - so an application that hands one in still ships it as its own lazy chunk.
+    loadQueryDevtoolsSchema();
+  }
+
   protected openDraft() {
     this.draftError.set(null);
+    this.draftSeed.set(null);
     this.draft.set({ ...EMPTY_DRAFT, clientName: this.host.clientNames()[0] ?? '' });
   }
 
   protected closeDraft() {
     this.draft.set(null);
     this.draftError.set(null);
+    this.draftSeed.set(null);
   }
 
   protected patchDraft(patch: Partial<MockDraft>) {
     this.draft.update((current) => (current ? { ...current, ...patch } : current));
   }
 
+  /** Fills the form from a route the description declares, whether or not the app has ever called it. */
+  protected pickRoute(value: string) {
+    const [method, pattern] = value.split(' ');
+
+    if (!method || !pattern) return;
+
+    this.patchDraft({ method, pattern });
+    this.seedFromRoute({ method, pattern });
+  }
+
+  /** Seeds the body from the description's success response for the route the form names. */
+  protected seedFromDraftRoute() {
+    const draft = this.draft();
+
+    if (draft) this.seedFromRoute({ method: draft.method, pattern: draft.pattern.trim() });
+  }
+
+  /** Seeds the body from one named schema, so a route the description does not declare still starts real. */
+  protected seedFromSchema() {
+    const name = this.pickedSchema();
+
+    if (!name) return;
+
+    this.applySeed(seedQueryDevtoolsSchemaBody(name), `The description does not name ${name}.`);
+  }
+
   /**
-   * Saves the form as a designed mock. Nothing is checked against the registry - a route no query has ever
-   * called is the point - only that the path is a path and the body is JSON.
+   * Saves the form as a designed mock and opens the designer on it. Nothing is checked against the
+   * registry - a route no query has ever called is the point - only that the path is a path and the body
+   * is JSON.
    */
   protected saveDraft() {
     const draft = this.draft();
@@ -206,16 +293,23 @@ export class QueryDevtoolsMocksTabComponent {
       query: draft.query.trim().replace(/^\?/, ''),
     };
 
+    const id = queryDevtoolsMockId(identity);
+    const seed = this.draftSeed();
+
     saveQueryDevtoolsMock({
       ...identity,
-      id: queryDevtoolsMockId(identity),
+      id,
       status: this.countOf(draft.status, 200),
       latencyMs: this.countOf(draft.latencyMs, 0),
       body,
       capturedAt: null,
+      schemaName: seed?.schemaName ?? null,
     });
 
+    if (seed) this.seededTypes.update((current) => ({ ...current, [id]: seed.types }));
+
     this.closeDraft();
+    this.editingId.set(id);
   }
 
   /** Captures the query's current response as a designed mock, replacing an earlier capture of the route. */
@@ -268,23 +362,42 @@ export class QueryDevtoolsMocksTabComponent {
   }
 
   protected editBody(row: MockRow) {
-    this.bodyError.set(null);
-    this.bodyDraft.set(JSON.stringify(row.mock.body, null, 2));
     this.editingId.set(row.mock.id);
   }
 
   protected cancelBody() {
     this.editingId.set(null);
-    this.bodyError.set(null);
   }
 
-  protected saveBody(row: MockRow) {
-    try {
-      saveQueryDevtoolsMock({ ...row.mock, body: JSON.parse(this.bodyDraft() || 'null') });
-      this.cancelBody();
-    } catch (error) {
-      this.bodyError.set(error instanceof Error ? error.message : String(error));
+  protected saveBody(row: MockRow, body: unknown) {
+    saveQueryDevtoolsMock({ ...row.mock, body });
+    this.cancelBody();
+  }
+
+  private seedFromRoute(target: { method: string; pattern: string }) {
+    if (!target.pattern) {
+      this.draftError.set('Name the path first - the seed comes from what the description says it returns.');
+
+      return;
     }
+
+    this.applySeed(
+      seedQueryDevtoolsSchemaRoute(target),
+      `The description declares no JSON response for ${target.method} ${target.pattern}.`,
+    );
+  }
+
+  private applySeed(seed: QueryDevtoolsSchemaSeed | null, missing: string) {
+    if (!seed) {
+      this.draftSeed.set(null);
+      this.draftError.set(missing);
+
+      return;
+    }
+
+    this.draftSeed.set(seed);
+    this.draftError.set(null);
+    this.patchDraft({ body: JSON.stringify(seed.body, null, 2) });
   }
 
   private countOf(value: string, fallback: number) {

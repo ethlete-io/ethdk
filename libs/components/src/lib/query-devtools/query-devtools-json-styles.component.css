@@ -56,6 +56,16 @@
     color: var(--_et-qdt-subtle);
   }
 
+  /* What the API description declares the field as - a label about the contract, not part of the value. */
+  .et-query-devtools-json-type {
+    color: var(--_et-qdt-subtle);
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.2rem;
+    padding: 0 0.25rem;
+    font-size: 0.85em;
+    white-space: nowrap;
+  }
+
   .et-query-devtools-json-preview {
     color: var(--_et-qdt-subtle);
   }

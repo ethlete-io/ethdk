@@ -137,8 +137,9 @@ so its shape is a design question rather than a missing regex. Left open.
 
 ## Query devtools: a mock designer, with an export for the API team
 
-**Phase 1 shipped 2026-08-10** (serve + author + a TypeScript export). What is left is phases 2 and 3.
-Settled with the user before starting:
+**Phases 1 and 2 shipped 2026-08-10** (serve + author + a TypeScript export, then the designer and the
+schema seed - both under "Already fixed"). What is left is **phase 3, the export.** Settled with the user
+before starting:
 
 - **Export format: OpenAPI 3.1 path item** with a schema inferred conservatively from one example plus the
   designed body as `example`, and the document says it was inferred. Not TypeScript-only - though the TS
@@ -163,18 +164,17 @@ Settled with the user before starting:
 - 21 query tests, 10 for the TS snippet. Verified headlessly: authoring a route the app never calls, arming
   it, and the network staying quiet.
 
-### Phase 2 - the designer
+### What phase 2 built, and what phase 3 inherits from it
 
-The reuse is the override menu's vocabulary (string/number/date presets, fill-recursively, duplicate array
-item, duplicate array, pagination shrink/extend, the four pagination shapes it detects): today it only runs
-against live data, and pointing it at a draft body is the authoring tool. Two seeds exist already (capture,
-empty); **"start from the route's declared response type" is not possible** - TS types are erased, so there
-is nothing to read at runtime.
+The designer (`query-devtools-mock-designer.component.*`) and the schema source
+(`libs/query/src/lib/devtools/query-devtools-schema.ts`) - see "Already fixed" for the full write-up. Two
+things there are the export's foundation, so phase 3 must not build a second of either:
 
-**The user's ask, 2026-08-10:** seed and annotate from the app's **generated API types** - `MatchView` as
-the base shape, `MatchId` as a field's type - so a designed body is a real view model rather than a guess.
-That needs a source of truth for those types (a generated `.d.ts`, an OpenAPI document the app already has,
-or a registry the app hands in); settle which before building.
+- **`query-devtools-schema.ts` already parses OpenAPI** - `$ref` resolution, `allOf` merging, operation
+  lookup by method + path pattern, named-schema listing. The export writes the same document shape it
+  reads; the round trip (seed from a document, hand a path item back) is the point.
+- **A mock stores `schemaName`**, so an exported path item can say which declared type it was designed
+  against rather than inferring one from scratch.
 
 ### Phase 3 - the export
 
@@ -728,6 +728,28 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Query devtools: the mock designer, phase 2** (2026-08-10, user-raised) - the designer and the
+generated-API-types seed. The user settled the type source before building: **an OpenAPI/JSON Schema
+document handed in lazily**, not a runtime registry the app has to codegen.
+
+- **The designer is the override menu pointed at a draft** (`query-devtools-mock-designer.component.*`),
+  which is what phase 2 was always meant to be: a standalone `createQueryDevtoolsOverrides()` records the
+  edits, the tree renders `applyQueryDevtoolsOverrides` of them, and **Apply flattens** so what is stored
+  stays a value rather than a recipe. `createQueryDevtoolsOverrides` had to stop being `@internal` for the
+  panel to reach it.
+- **`provideQueryDevtools({ schema })`** takes a loader, called once and only when the Mocks tab opens, so
+  the document ships as the app's own lazy chunk. `query-devtools-schema.ts` follows `$ref`s, merges
+  `allOf`, reads OpenAPI 3.x / Swagger 2 / bare JSON Schema, and matches a route pattern even when the
+  param names differ or the client carries a base path the document does not.
+- **Generation is deterministic and says what it guessed** - which `oneOf` branch it took, where it cut a
+  self-referencing schema, which prefix it ignored. A string with no `format` takes its own field name, so
+  a seed reads as obviously unreal.
+- **Fields are labelled with their declared type** (`MatchId`, not `string`; `?` for what the schema does
+  not require) via a new `annotations` input on the value explorer, keyed with `*` for array indices so one
+  label covers every element. The mock stores its `schemaName`, so the labels survive a reload.
+- **Routes the app has never called are offered**, which is the case a mock exists for - the seed list is
+  the document's `paths`, not the registry.
 
 **Query devtools: copy/paste around response overrides** (2026-08-10, user-raised) - built both
 readings the write-up split out, op-set first, plus four gaps the user added on review.

@@ -57,6 +57,19 @@
     grid-template-columns: 7rem minmax(0, 1fr);
   }
 
+  .et-query-devtools-seed {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding-block-start: 0.4rem;
+    min-block-size: var(--_et-qdt-row-h);
+  }
+
+  .et-query-devtools-seed .et-query-devtools-select {
+    max-inline-size: 32rem;
+  }
+
   .et-query-devtools-mock-body {
     display: block;
     padding-block-start: 0.4rem;

@@ -1,0 +1,34 @@
+@layer components {
+  .et-query-devtools-designer {
+    padding-block-start: 0.4rem;
+  }
+
+  .et-query-devtools-designer-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    min-block-size: var(--_et-qdt-row-h);
+  }
+
+  .et-query-devtools-designer-modes {
+    display: flex;
+    gap: 0.2rem;
+  }
+
+  /* The tree is the editor here rather than a readout, so it gets a frame and a scroll of its own. */
+  .et-query-devtools-designer-tree {
+    max-block-size: 32rem;
+    overflow: auto;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.3rem;
+  }
+
+  .et-query-devtools-designer-notes {
+    margin: 0.4rem 0 0;
+    padding-inline-start: 1.6rem;
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+}

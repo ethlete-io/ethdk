@@ -22,6 +22,7 @@ import {
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
 import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './query-devtools-mocks';
+import { QueryDevtoolsSchemaLoader, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
 import { MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
@@ -236,6 +237,14 @@ export type QueryDevtoolsOptions = {
    * `nx g @ethlete/core:devtools-about <app>`.
    */
   about?: QueryDevtoolsAppInfo;
+
+  /**
+   * The application's OpenAPI (or JSON Schema) document, so the panel's mock designer can seed a
+   * response from the real shape of a route and label each field with the type it is declared as. The
+   * loader runs at most once, and only when the designer first asks for it - see
+   * {@link QueryDevtoolsSchemaLoader}.
+   */
+  schema?: QueryDevtoolsSchemaLoader;
 };
 
 /**
@@ -263,6 +272,7 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
   setQueryDevtoolsAppInfo(options?.about);
   initQueryDevtoolsOverridePersistence();
   initQueryDevtoolsMocks();
+  setQueryDevtoolsSchemaLoader(options?.schema);
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
   setQueryDevtoolsFormLinksFactory(createQueryDevtoolsFormLinks);
