@@ -1,4 +1,19 @@
-import { EMPTY, Observable, concat, concatMap, defer, filter, fromEvent, merge, of, take, takeUntil, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  concat,
+  concatMap,
+  defer,
+  filter,
+  finalize,
+  fromEvent,
+  merge,
+  of,
+  take,
+  takeUntil,
+  tap,
+} from 'rxjs';
+import { suppressTextSelection } from '../utils/text-selection';
 
 export type DragStartEvent = {
   /** Pointer position at pointerdown - NOT at commit-threshold crossing. */
@@ -119,18 +134,22 @@ const setupDragObservable = (
     takeUntil(end$),
   );
 
-  return concat(
-    moves$,
-    defer((): Observable<DragGestureEvent> => {
-      if (cancelled) return of({ type: 'cancelled' as const });
-      if (!committed) return of({ type: 'tapped' as const });
+  return defer(() => {
+    const releaseSelection = suppressTextSelection(el.ownerDocument);
 
-      return of({
-        type: 'end' as const,
-        data: { clientX: endX, clientY: endY, totalDx: endX - startX, totalDy: endY - startY },
-      });
-    }),
-  );
+    return concat(
+      moves$,
+      defer((): Observable<DragGestureEvent> => {
+        if (cancelled) return of({ type: 'cancelled' as const });
+        if (!committed) return of({ type: 'tapped' as const });
+
+        return of({
+          type: 'end' as const,
+          data: { clientX: endX, clientY: endY, totalDx: endX - startX, totalDy: endY - startY },
+        });
+      }),
+    ).pipe(finalize(releaseSelection));
+  });
 };
 
 /**
@@ -141,6 +160,9 @@ const setupDragObservable = (
  * carrying the release position. A pointer released before crossing the threshold emits a single
  * `tapped` instead - its position is the `pointerdown` the caller already holds. The stream
  * completes with the gesture, so there is nothing to unsubscribe on the happy path.
+ *
+ * Text selection is suppressed on the element's document for as long as the gesture runs, so a drag
+ * does not sweep a selection across the page.
  *
  * A gesture the browser takes away - a `pointercancel` from a system gesture, an incoming call, the
  * tab going to the background - ends on `cancelled` rather than `end` or `tapped`. Treat it as

@@ -12,3 +12,4 @@ export * from './object-url';
 export * from './runtime-error';
 export * from './session-memory';
 export * from './swipe';
+export * from './text-selection';

@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, booleanAttribute, input } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, booleanAttribute, inject, input } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   Observable,
@@ -8,6 +8,7 @@ import {
   distinctUntilChanged,
   exhaustMap,
   filter,
+  finalize,
   fromEvent,
   map,
   merge,
@@ -17,6 +18,7 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
+import { suppressTextSelection } from '../utils/text-selection';
 
 export type ResizeEdge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 
@@ -46,7 +48,7 @@ type GestureEvent =
   | { readonly type: 'end' }
   | { readonly type: 'cancelled' };
 
-const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Observable<GestureEvent> => {
+const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge, doc: Document): Observable<GestureEvent> => {
   const pointerId = startEvent.pointerId;
   const startX = startEvent.clientX;
   const startY = startEvent.clientY;
@@ -63,18 +65,22 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
     tap((e) => (cancelled = e.type === 'pointercancel')),
   );
 
-  return concat(
-    of<GestureEvent>({ type: 'start', edge }),
-    fromEvent<PointerEvent>(document, 'pointermove').pipe(
-      filter((e) => e.pointerId === pointerId),
-      map((e): GestureEvent => ({
-        type: 'move',
-        data: { edge, dx: e.clientX - startX, dy: e.clientY - startY, clientX: e.clientX, clientY: e.clientY },
-      })),
-      takeUntil(end$),
-    ),
-    defer((): Observable<GestureEvent> => of({ type: cancelled ? 'cancelled' : 'end' })),
-  );
+  return defer(() => {
+    const releaseSelection = suppressTextSelection(doc);
+
+    return concat(
+      of<GestureEvent>({ type: 'start', edge }),
+      fromEvent<PointerEvent>(document, 'pointermove').pipe(
+        filter((e) => e.pointerId === pointerId),
+        map((e): GestureEvent => ({
+          type: 'move',
+          data: { edge, dx: e.clientX - startX, dy: e.clientY - startY, clientX: e.clientX, clientY: e.clientY },
+        })),
+        takeUntil(end$),
+      ),
+      defer((): Observable<GestureEvent> => of({ type: cancelled ? 'cancelled' : 'end' })),
+    ).pipe(finalize(releaseSelection));
+  });
 };
 
 @Component({
@@ -235,13 +241,15 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
   `,
 })
 export class ResizeHandlesComponent {
+  private el = inject<ElementRef<HTMLElement>>(ElementRef);
+
   edges = input<ResizeEdge[]>(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']);
   disabled = input(false, { transform: booleanAttribute });
 
   private gestureStart$ = new Subject<{ readonly event: PointerEvent; readonly edge: ResizeEdge }>();
 
   private gesture$ = this.gestureStart$.pipe(
-    exhaustMap(({ event, edge }) => setupResizeObservable(event, edge)),
+    exhaustMap(({ event, edge }) => setupResizeObservable(event, edge, this.el.nativeElement.ownerDocument)),
     takeUntilDestroyed(),
     share(),
   );

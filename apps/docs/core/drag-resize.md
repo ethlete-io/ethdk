@@ -76,3 +76,20 @@ import { ResizeHandlesComponent } from '@ethlete/core';
 Under `any-pointer: coarse` every strip swaps to `--et-resize-handles-touch-edge-size` / `-touch-corner-size` (20px / 28px). The query is `any-pointer`, not `hover: none`, so a touchscreen laptop - where the mouse is the primary input - grows its handles too.
 
 `--et-resize-handles-outset` (default `0px`) grows every strip **outward**, past the host's own box, without moving the handles' inner edge or costing content area. Reach for it where the host sits in dead space it can spill into - a [grid item](/components/grid) grows into half the grid's gap, which is what makes a 6px edge a 14px target. Cap it at half of whatever separates the host from its neighbour: two hosts whose strips overlap are resolved by DOM order, not by which one the pointer is nearer.
+
+## Text selection
+
+Both primitives suppress text selection on their element's document for as long as a gesture runs, and restore it when the gesture ends **or** is cancelled. Without it a drag sweeps a selection across every string the pointer passes over, which is what a resize of a text-heavy panel looks like when it goes wrong. Nothing to opt into - it applies to `[etDragHandle]`, `<et-resize-handles>` and the `dragGestureFrom()` primitive alike.
+
+If you drive a gesture yourself rather than through one of those, reach for the same helper:
+
+```ts
+import { suppressTextSelection } from '@ethlete/core';
+
+const release = suppressTextSelection(document);
+
+// … run the gesture, then, on end *and* on cancel:
+release();
+```
+
+Concurrent suppressions are counted, so the last release is the one that restores the document's original inline `user-select`; calling a release twice does nothing. Pass the document the gesture happens in - not the global one - if the element can live in a pop-up or a portal window.

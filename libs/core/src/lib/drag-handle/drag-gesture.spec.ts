@@ -65,4 +65,23 @@ describe('dragGestureFrom', () => {
 
     expect(seen).toEqual(['start', 'move', 'end']);
   });
+
+  it('suppresses text selection for the life of the gesture', () => {
+    start();
+    pointer('pointermove', 40, 0);
+
+    expect(document.documentElement.style.userSelect).toBe('none');
+
+    pointer('pointerup', 40, 0);
+
+    expect(document.documentElement.style.userSelect).toBe('');
+  });
+
+  it('restores text selection when the browser takes the gesture away', () => {
+    start();
+    pointer('pointermove', 40, 0);
+    pointer('pointercancel', 40, 0);
+
+    expect(document.documentElement.style.userSelect).toBe('');
+  });
 });
