@@ -1,5 +1,21 @@
 # @ethlete/query
 
+## 6.0.0-next.34
+
+### Minor Changes
+
+- [`d9dada4`](https://github.com/ethlete-io/ethdk/commit/d9dada4189ece040a7b5c6423ad802228ace0e88) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: override an auth provider's access-token lifetime from the Auth tab, so the proactive refresh, the expiration warning and the logout behind them happen in seconds instead of hours.
+
+- [#3054](https://github.com/ethlete-io/ethdk/pull/3054) [`9bd94f6`](https://github.com/ethlete-io/ethdk/commit/9bd94f62d01ff000c5e3e84c4f010bd109422e4c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: arm every designed mock in one click, and keep armed mocks or faults across a reload
+  with two new Settings scopes.
+
+- [#3054](https://github.com/ethlete-io/ethdk/pull/3054) [`3b0f1ea`](https://github.com/ethlete-io/ethdk/commit/3b0f1ea09f2539091a1f3da091f94cbd4e2cbec5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: export designed mocks as OpenAPI 3.1 - one route to the clipboard, or the whole library as
+  one YAML or JSON document.
+
+### Patch Changes
+
+- [`1d77cb9`](https://github.com/ethlete-io/ethdk/commit/1d77cb960587005bb97fde4825a21e09f6980caf) Thanks [@TomTomB](https://github.com/TomTomB)! - Auth: a 401 from a request sent with an already-replaced access token no longer triggers another token refresh - with rotating refresh tokens this looped refreshes indefinitely; the query now just retries with the current token.
+
 ## 6.0.0-next.33
 
 ### Minor Changes
