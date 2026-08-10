@@ -17,6 +17,14 @@ export type JsonPath = (string | number)[];
  * share one entry point. Resetting a container therefore undoes a "fill recursively" run, whose ops
  * sit on the leaves rather than on the container itself.
  *
+ * `pasteArrayItem` splices rather than writing at an index, and treats an absent `index` as "at the
+ * end": a refetch that returns a shorter array would leave an index-addressed write sitting past the
+ * end, turning the gap into `null`s.
+ *
+ * `deleteAt` removes whatever sits at `path` from its parent - a key from an object, or an element from
+ * an array by splicing it out, so the ones after it shift down rather than leaving a hole. It is the only
+ * op that can make a field *absent* rather than empty, which is a different thing to the code reading it.
+ *
  * On the preset ops, `custom` - when present - is the exact value replayed, and `preset` is only the
  * label it was generated under. Values are generated once at arm time and stored, never re-rolled
  * inside apply, so a refetch replays the same response instead of reshuffling it.
@@ -37,6 +45,8 @@ export type OverrideOp =
       preset: 'now' | 'plusDay' | 'minusDay' | 'farFuture' | 'farPast' | 'invalid';
     }
   | { type: 'duplicateArrayItem'; path: JsonPath; index: number }
+  | { type: 'pasteArrayItem'; path: JsonPath; value: unknown; index?: number }
+  | { type: 'deleteAt'; path: JsonPath }
   | { type: 'duplicateArray'; path: JsonPath }
   | { type: 'paginationResize'; path: JsonPath; mode: 'shrink' | 'extend'; amount: number }
   | { type: 'reset'; path: JsonPath };
@@ -136,6 +146,39 @@ const withValueAtPath = (root: unknown, path: JsonPath, value: unknown): unknown
 
   const container = root && typeof root === 'object' ? (root as Record<string, unknown>) : {};
   return { ...container, [head]: withValueAtPath(container[head], rest, value) };
+};
+
+/**
+ * Returns a copy of `root` with the value at `path` removed from its parent, cloning only the containers
+ * along the way. An array parent splices, so the elements after it shift down instead of the slot
+ * becoming a hole that serializes back as `null`.
+ */
+const withoutValueAtPath = (root: unknown, path: JsonPath): unknown => {
+  const [head, ...rest] = path as [string | number, ...JsonPath];
+
+  if (rest.length === 0) {
+    if (Array.isArray(root)) {
+      const next = [...root];
+      next.splice(head as number, 1);
+
+      return next;
+    }
+
+    const { [head as string]: _dropped, ...remaining } = root as Record<string, unknown>;
+
+    return remaining;
+  }
+
+  if (Array.isArray(root)) {
+    const next = [...root];
+    next[head as number] = withoutValueAtPath(root[head as number], rest);
+
+    return next;
+  }
+
+  const container = root as Record<string, unknown>;
+
+  return { ...container, [head]: withoutValueAtPath(container[head], rest) };
 };
 
 const IDENTITY_KEY_PATTERNS = [/^id$/i, /(^|[a-z])Id$/, /^uuid$/i, /^key$/i];
@@ -486,6 +529,21 @@ const applyOp = (root: unknown, op: OverrideOp): { root: unknown; ok: boolean } 
         return { root, ok: false };
       }
       return { root: withValueAtPath(root, op.path, duplicateOneArrayItem(resolution.value, op.index)), ok: true };
+
+    case 'pasteArrayItem': {
+      if (!Array.isArray(resolution.value)) return { root, ok: false };
+
+      const next = [...resolution.value];
+      const at = op.index === undefined ? next.length : Math.min(Math.max(0, op.index), next.length);
+      next.splice(at, 0, op.value);
+
+      return { root: withValueAtPath(root, op.path, next), ok: true };
+    }
+
+    case 'deleteAt':
+      // The response root has no parent to be removed from, and a key that is already gone stays gone.
+      if (!op.path.length || !resolution.exists) return { root, ok: false };
+      return { root: withoutValueAtPath(root, op.path), ok: true };
 
     case 'duplicateArray':
       if (!Array.isArray(resolution.value)) return { root, ok: false };

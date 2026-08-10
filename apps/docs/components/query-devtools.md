@@ -770,11 +770,14 @@ What the menu offers depends on the kind of value under the cursor:
 | Number                                                                                              | Zero, negative, huge.                                                                                                                                                     |
 | Boolean                                                                                             | Flip.                                                                                                                                                                     |
 | `null` / `undefined`                                                                                | Set to text, a number, `true`, an empty object or an empty array - after which that row offers the actions of whatever kind it now holds.                                 |
-| Array                                                                                               | Duplicate the whole array (ids/unique fields on the copies are regenerated - see below).                                                                                  |
+| Anything not already empty                                                                          | Set to `null`.                                                                                                                                                            |
+| Array                                                                                               | Duplicate the whole array (ids/unique fields on the copies are regenerated - see below), or empty it.                                                                     |
 | An object that is itself an array element                                                           | Duplicate this item.                                                                                                                                                      |
 | An object shaped like a paginated response (an `items` array plus recognized total/page/limit keys) | Shrink the page by one item, extend it by one.                                                                                                                            |
 | Any leaf except a boolean                                                                           | Custom… - a small input in the menu; the typed value is armed as a rule, so it survives refetches the way every preset does.                                              |
-| Any value                                                                                           | Paste value - reads the clipboard and arms it at that path. Onto an object or array the pasted JSON must be the same kind; onto a string leaf plain text pastes as-is.    |
+| Any value                                                                                           | Paste value - reads the clipboard and arms it at that path.                                                                                                               |
+| Array                                                                                               | Paste as new item - the clipboard lands as one more element on the end.                                                                                                   |
+| Anything but the response root                                                                      | Delete this key, or Delete this item inside an array - the field becomes **absent**, not empty, and a deleted element is spliced out rather than left as a hole.          |
 | Any object or array                                                                                 | Fill every string with a chosen preset, fill every number with zero/negative/huge, or flip every boolean under that subtree in one action.                                |
 | A value with something armed on it                                                                  | Reset - clears whatever is armed at that path or below it, so resetting a container also undoes a recursive fill.                                                         |
 
@@ -788,8 +791,19 @@ ellipsis truncation where whitespace-rich lorem only ever tests wrapping.
 
 **Paste pairs with copy.** The `⧉` button copies a subtree as JSON; "Paste value" on another query's
 row arms it there as a replayed rule - which the whole-body response editor can't do, since that one
-is one-shot and dies on the next fetch. Clipboard reads need browser permission; a blocked or
-unparseable read shows its error inside the menu instead of arming anything.
+is one-shot and dies on the next fetch. Pasting a kind the row does not already hold (an array over a
+string, an object over a `null`) asks first, then goes through - "this field became an array" is a
+change worth rehearsing, and the confirmation is there to catch a copied _path_ pasted over a body by
+mistake.
+
+**A blocked clipboard is not a dead end.** Reading the clipboard needs browser permission and some
+browsers refuse outright. Where the one-click read fails, the menu turns into a small box that takes a
+real `⌘V` / `Ctrl+V` - a paste event needs no permission anywhere - and arms whatever lands in it.
+
+**Deleting is not the same as emptying.** "Set to `null`", "Empty this array" and "Delete this key" are
+three different lies to tell: a field that is `null`, a field that is `[]`, and a field that is not
+there at all take different paths through the code reading them, and only the third one exercises
+optional-property handling.
 
 **Duplicating never clones an id.** Whether from "duplicate this item", "duplicate array",
 or a pagination extend, the copy gets a fresh value for any field that looks like an
@@ -801,6 +815,34 @@ failure "duplicate" exists to avoid.
 
 A query's **Data** tab shows a **Reset all overrides (N)** button next to the Response
 heading once anything is armed, for clearing every rule on that query at once.
+
+### Moving a whole set of overrides somewhere else
+
+Building up a dozen rules to reproduce a bug and then needing them on a second query - or in a
+ticket, so someone else can reproduce it - is what **Override ▾ → Override set** is for. It copies
+every rule armed on the selected query as one JSON payload, and pastes one back:
+
+```json
+{
+  "kind": "ethlete-query-overrides",
+  "version": 1,
+  "source": { "id": "query|api|GET|/post/:postId#0", "url": "https://api.example.com/post/1" },
+  "ops": [
+    { "type": "stringPreset", "path": ["title"], "preset": "custom", "custom": "A long title…" },
+    { "type": "deleteAt", "path": ["publishedAt"] }
+  ]
+}
+```
+
+Paths are relative to the response root, so a set pasted onto a differently-shaped query lands on
+whatever still matches and **says how much did not**: the menu reports how many rules it armed, how
+many of them resolve against nothing in the current response, and how many the running build has no
+`type` for. Nothing is silently dropped.
+
+A paste **adds** to whatever is already armed rather than replacing it - use **Reset all overrides**
+first if you want only the pasted set. `source` is a bearing for whoever reads the payload next;
+nothing resolves against it, so hand-editing the ops or trimming the envelope down to a bare `[…]`
+array of them still pastes.
 
 ### Keeping overrides across a reload
 

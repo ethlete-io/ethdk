@@ -54,10 +54,22 @@
     }
   }
 
-  .et-query-devtools-override-error {
+  .et-query-devtools-override-error,
+  .et-query-devtools-override-note {
     margin: 4px var(--et-menu-item-padding-inline, 10px) 2px;
     max-inline-size: 240px;
     font-size: 12px;
+  }
+
+  .et-query-devtools-override-error {
     color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+  }
+
+  .et-query-devtools-override-note {
+    color: var(--_et-qdt-subtle, currentColor);
+  }
+
+  .et-query-devtools-override-set-menu {
+    display: contents;
   }
 }

@@ -194,6 +194,15 @@
           <button (activate)="host.forceEmpty(s.query)" et-menu-item type="button">Force empty</button>
           <et-menu-separator />
           <button (activate)="host.clearForced(s.query)" et-menu-item type="button">Clear forced state</button>
+
+          @if (s.entry.overrides; as overrides) {
+            <et-menu-separator />
+            <et-query-devtools-override-set-menu
+              [overrides]="overrides"
+              [response]="s.query.response()"
+              [source]="overrideSetSource()"
+            />
+          }
         </et-menu>
       </ng-template>
     </div>

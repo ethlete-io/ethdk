@@ -1,0 +1,47 @@
+<div (openChange)="resetOnClose($event)" class="et-query-devtools-override-set-menu" etMenu>
+  <button
+    et-menu-item
+    title="Copy every response override armed on this query, or paste a set copied off another one."
+    type="button"
+    etMenuTrigger
+  >
+    Override set
+    <et-menu-item-shortcut>›</et-menu-item-shortcut>
+  </button>
+
+  <ng-template etMenuSurface>
+    <et-menu>
+      <ng-container ngProjectAs="input[etMenuSearch]">
+        @if (pasteMode()) {
+          <input
+            #pasteBox
+            [error]="error()"
+            (paste)="pasteIntoBox($event)"
+            (keydown.enter)="commitPasteBox()"
+            etMenuSearch
+            type="text"
+            placeholder="Paste a copied set here"
+          />
+        }
+      </ng-container>
+
+      @if (armedCount()) {
+        <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
+        <button [closeOnActivate]="false" (activate)="copySet()" et-menu-item type="button">
+          {{ copied() ? '✓ Copied' : 'Copy ' + armedCount() + (armedCount() === 1 ? ' armed op' : ' armed ops') }}
+        </button>
+      }
+
+      <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
+      <button [closeOnActivate]="false" (activate)="pasteSet()" et-menu-item type="button">
+        Paste a set{{ armedCount() ? ' on top' : '' }}
+      </button>
+
+      @if (error(); as err) {
+        <p [etProvideColor]="errorColorTheme" class="et-query-devtools-override-error" role="alert">{{ err }}</p>
+      } @else if (note(); as text) {
+        <p class="et-query-devtools-override-note" role="status">{{ text }}</p>
+      }
+    </et-menu>
+  </ng-template>
+</div>

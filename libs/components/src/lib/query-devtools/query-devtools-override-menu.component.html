@@ -21,12 +21,35 @@
             etMenuSearch
             type="text"
           />
+        } @else if (pasteMode()) {
+          <input
+            #pasteBox
+            [error]="menuError()"
+            (paste)="pasteIntoBox($event)"
+            (keydown.enter)="commitPasteBox()"
+            etMenuSearch
+            type="text"
+            placeholder="Paste here"
+          />
         }
       </ng-container>
 
       @if (customMode()) {
         <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
         <button [closeOnActivate]="false" (activate)="commitCustomValue()" et-menu-item type="button">Apply</button>
+      } @else if (pendingPaste(); as pending) {
+        <p class="et-query-devtools-override-note">
+          This replaces {{ kind() === 'undefined' ? 'a missing value' : 'the ' + kind() }} with {{ pending.kind }}.
+        </p>
+        <button (activate)="confirmKindChange()" et-menu-item type="button">Replace anyway</button>
+        <button (activate)="cancelKindChange()" et-menu-item type="button">Cancel</button>
+      } @else if (pasteMode()) {
+        <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
+        <button [closeOnActivate]="false" (activate)="commitPasteBox()" et-menu-item type="button">Apply</button>
+
+        @if (menuNote(); as note) {
+          <p class="et-query-devtools-override-note">{{ note }}</p>
+        }
       } @else {
         @switch (kind()) {
           @case ('string') {
@@ -54,7 +77,15 @@
           }
           @case ('array') {
             <button (activate)="duplicateArray()" et-menu-item type="button">Duplicate array</button>
+
+            @if (hasArrayItems()) {
+              <button (activate)="emptyArray()" et-menu-item type="button">Empty this array</button>
+            }
           }
+        }
+
+        @if (supportsNull()) {
+          <button (activate)="setValue(null)" et-menu-item type="button">Set to null</button>
         }
 
         @if (isEmptyValue()) {
@@ -81,6 +112,13 @@
 
         <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
         <button [closeOnActivate]="false" (activate)="pasteValue()" et-menu-item type="button">Paste value</button>
+
+        @if (kind() === 'array') {
+          <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
+          <button [closeOnActivate]="false" (activate)="pasteArrayItem()" et-menu-item type="button">
+            Paste as new item
+          </button>
+        }
 
         @if (isContainer()) {
           <et-menu-separator />
@@ -117,6 +155,14 @@
           </div>
 
           <button (activate)="fillBooleans()" et-menu-item type="button">Flip every boolean</button>
+        }
+
+        @if (isRemovable()) {
+          <et-menu-separator />
+
+          <button (activate)="deleteThis()" et-menu-item variant="destructive" type="button">
+            {{ isInArray() ? 'Delete this item' : 'Delete this key' }}
+          </button>
         }
 
         @if (menuError(); as err) {

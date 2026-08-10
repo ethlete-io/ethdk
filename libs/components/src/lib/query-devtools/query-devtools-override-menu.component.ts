@@ -18,6 +18,7 @@ import {
   MenuSeparatorComponent,
 } from '../menu';
 import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../menu/headless';
+import { readQueryDevtoolsClipboard, textFromQueryDevtoolsPaste } from './query-devtools-clipboard';
 import { JsonKind, kindOf } from './query-devtools-json.component';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
 
@@ -53,6 +54,7 @@ export class QueryDevtoolsOverrideMenuComponent {
 
   private rootMenu = viewChild.required<MenuDirective>('rootMenu');
   private customInput = viewChild<ElementRef<HTMLInputElement>>('customValueInput');
+  private pasteInput = viewChild<ElementRef<HTMLInputElement>>('pasteBox');
 
   protected kind = computed(() => kindOf(this.value()));
   protected isContainer = computed(() => this.kind() === 'array' || this.kind() === 'object');
@@ -60,13 +62,27 @@ export class QueryDevtoolsOverrideMenuComponent {
   protected hasArmedOverrides = computed(() => hasQueryDevtoolsOverridesAtPath(this.overrides().list(), this.path()));
   protected isArrayElement = computed(() => this.parentKind() === 'array' && this.kind() === 'object');
   protected paginationShape = computed(() => detectPaginationShape(this.value()));
+
+  /** Whether this node sits inside a container it can be removed from - the root does not. */
+  protected isRemovable = computed(() => this.path().length > 0);
+  protected isInArray = computed(() => this.parentKind() === 'array');
+  protected hasArrayItems = computed(() => {
+    const value = this.value();
+    return Array.isArray(value) && value.length > 0;
+  });
+  protected supportsNull = computed(() => !this.isEmptyValue());
+
   protected isDate = computed(() => {
     const path = this.path();
     return this.kind() === 'string' && isDateShapedLeaf(path[path.length - 1] ?? null, this.value());
   });
 
   protected customMode = signal(false);
+  protected pasteMode = signal(false);
+  private pasteTarget = signal<PasteTarget>('value');
+  protected pendingPaste = signal<{ value: unknown; kind: JsonKind } | null>(null);
   protected menuError = signal<string | null>(null);
+  protected menuNote = signal<string | null>(null);
 
   protected supportsCustomValue = computed(() => !this.isContainer() && this.kind() !== 'boolean');
 
@@ -85,6 +101,7 @@ export class QueryDevtoolsOverrideMenuComponent {
     injectStyleManager().mount(QueryDevtoolsOverrideMenuStylesComponent);
 
     effect(() => this.customInput()?.nativeElement.focus());
+    effect(() => this.pasteInput()?.nativeElement.focus());
   }
 
   protected applyStringPreset(preset: 'short' | 'long' | 'longWord' | 'unicode') {
@@ -127,6 +144,14 @@ export class QueryDevtoolsOverrideMenuComponent {
 
   protected duplicateArray() {
     this.overrides().arm({ type: 'duplicateArray', path: this.path() });
+  }
+
+  protected emptyArray() {
+    this.overrides().arm({ type: 'set', path: this.path(), value: [] });
+  }
+
+  protected deleteThis() {
+    this.overrides().arm({ type: 'deleteAt', path: this.path() });
   }
 
   protected resizePagination(mode: 'shrink' | 'extend') {
@@ -196,25 +221,71 @@ export class QueryDevtoolsOverrideMenuComponent {
   }
 
   protected pasteValue() {
-    this.menuError.set(null);
+    this.startPaste('value');
+  }
 
-    if (!navigator.clipboard?.readText) {
-      this.menuError.set('Clipboard access is unavailable here');
+  protected pasteArrayItem() {
+    this.startPaste('arrayItem');
+  }
 
-      return;
-    }
+  protected pasteIntoBox(event: ClipboardEvent) {
+    const text = textFromQueryDevtoolsPaste(event);
+    if (!text) return;
 
-    navigator.clipboard.readText().then(
-      (text) => this.armPastedText(text),
-      () => this.menuError.set('The clipboard read was blocked'),
-    );
+    event.preventDefault();
+    this.armPastedText(text);
+  }
+
+  protected commitPasteBox() {
+    const raw = this.pasteInput()?.nativeElement.value;
+
+    if (raw !== undefined) this.armPastedText(raw);
+  }
+
+  /** Arms the paste the kind guard stopped, now that the menu has said what it replaces. */
+  protected confirmKindChange() {
+    const pending = this.pendingPaste();
+    if (!pending) return;
+
+    this.pendingPaste.set(null);
+    this.armValue(pending.value);
+  }
+
+  protected cancelKindChange() {
+    this.pendingPaste.set(null);
   }
 
   protected resetEditingState(open: boolean) {
     if (!open) {
       this.customMode.set(false);
+      this.pasteMode.set(false);
+      this.pasteTarget.set('value');
+      this.pendingPaste.set(null);
       this.menuError.set(null);
+      this.menuNote.set(null);
     }
+  }
+
+  private startPaste(target: PasteTarget) {
+    this.menuError.set(null);
+    this.menuNote.set(null);
+    this.pendingPaste.set(null);
+    this.pasteTarget.set(target);
+
+    readQueryDevtoolsClipboard().then((read) => {
+      if (read.ok) {
+        this.armPastedText(read.text);
+
+        return;
+      }
+
+      this.pasteMode.set(true);
+      this.menuNote.set(
+        read.reason === 'unavailable'
+          ? 'This browser will not hand over the clipboard - press ⌘V / Ctrl+V here instead.'
+          : 'The clipboard read was blocked - press ⌘V / Ctrl+V here instead.',
+      );
+    });
   }
 
   private armPastedText(text: string) {
@@ -229,7 +300,7 @@ export class QueryDevtoolsOverrideMenuComponent {
     try {
       value = JSON.parse(text);
     } catch {
-      if (this.isContainer()) {
+      if (this.pasteTarget() === 'value' && this.isContainer()) {
         this.menuError.set('The clipboard does not hold valid JSON');
 
         return;
@@ -238,16 +309,38 @@ export class QueryDevtoolsOverrideMenuComponent {
       value = text;
     }
 
-    if (this.isContainer() && kindOf(value) !== this.kind()) {
-      this.menuError.set(`The clipboard holds ${kindOf(value)}, not ${this.kind()}`);
+    if (this.pasteTarget() === 'arrayItem') {
+      this.armValue(value);
 
       return;
     }
 
-    this.overrides().arm({ type: 'set', path: this.path(), value });
+    const pastedKind = kindOf(value);
+
+    // The guard catches a copied *path* pasted over a body; "this field became an array" is worth
+    // rehearsing, so it asks rather than refuses.
+    if (pastedKind !== this.kind()) {
+      this.pasteMode.set(false);
+      this.menuError.set(null);
+      this.menuNote.set(null);
+      this.pendingPaste.set({ value, kind: pastedKind });
+
+      return;
+    }
+
+    this.armValue(value);
+  }
+
+  private armValue(value: unknown) {
+    if (this.pasteTarget() === 'arrayItem') this.overrides().arm({ type: 'pasteArrayItem', path: this.path(), value });
+    else this.overrides().arm({ type: 'set', path: this.path(), value });
+
     this.rootMenu().closeAll();
   }
 }
+
+/** Whether a paste replaces the node itself or lands as a new element inside it. */
+type PasteTarget = 'value' | 'arrayItem';
 
 const parseLooseJson = (raw: string): unknown => {
   try {

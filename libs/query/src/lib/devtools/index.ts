@@ -6,6 +6,7 @@ export * from './query-devtools-form-links';
 export * from './query-devtools-hook';
 export * from './query-devtools-mocks';
 export * from './query-devtools-override-persistence';
+export * from './query-devtools-override-transfer';
 export * from './query-devtools-overrides';
 export * from './query-devtools-registry';
 export * from './query-devtools-settings';

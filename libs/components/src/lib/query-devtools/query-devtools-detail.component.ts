@@ -4,6 +4,7 @@ import { MenuDirective, MenuSurfaceDirective, MenuTriggerDirective } from '../me
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
+import { QueryDevtoolsOverrideSetMenuComponent } from './query-devtools-override-set-menu.component';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import { DetailTab, QueryDevtoolsSelection } from './query-devtools-types';
 
@@ -28,6 +29,7 @@ import { DetailTab, QueryDevtoolsSelection } from './query-devtools-types';
     MenuTriggerDirective,
     QueryDevtoolsFeaturesComponent,
     QueryDevtoolsJsonComponent,
+    QueryDevtoolsOverrideSetMenuComponent,
     QueryDevtoolsRouteComponent,
   ],
 })
@@ -38,6 +40,13 @@ export class QueryDevtoolsDetailComponent {
 
   /** Whether any of the three exports behind the Copy menu has just landed on the clipboard. */
   protected copied = computed(() => this.host.copiedReport() || this.host.copiedCurl() || this.host.copiedInsomnia());
+
+  protected overrideSetSource = computed(() => {
+    const sel = this.sel();
+    const url = this.host.requestUrl(sel.query);
+
+    return { id: sel.entry.id, ...(url ? { url } : {}) };
+  });
 
   /**
    * Whether this is a tombstone. Everything that would run, edit or force the query is hidden for one -

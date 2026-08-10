@@ -111,6 +111,12 @@ Ranked by value per unit of risk, not by size.
 > with a red bar saying what came back and what **matched no query**, with Review and Drop all;
 > armed faults deliberately stay excluded, which is what the Faults tab already promised.
 >
+> **Query devtools: both override copy/paste rows** shipped 2026-08-10 (an `A`,`D` and an `A`). The
+> armed set copies as one versioned envelope and pastes onto another query, reporting the ops that
+> resolve against nothing there; the kind guard now confirms rather than refuses; a blocked
+> `readText()` falls back to a real paste event; and `deleteAt` / `pasteArrayItem` / `Set to null` /
+> `Empty this array` close the per-node editing gaps.
+>
 > **Query devtools: copy a key or a path** shipped 2026-08-10 (an `S` row). The `menu vs
 modifier-click` question was settled by the user in favour of the **menu**: `⧉` still copies the
 > value in one click and a caret beside it offers Value / Key / Path / `"key": value`. The path is
@@ -155,17 +161,15 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 
 ### S - small, additive, low risk
 
-| Item                                              | Tag     | Note                                                                                                                                                                                                             |
-| ------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dropzone: removing a prefilled value deletes it   | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default                                                                                       |
-| Scheduler: richer sub-appointment list            | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                                                                                                        |
-| Scheduler: agenda connector lines                 | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                                                                                                            |
-| Dropzone: reveal the preview on hover             | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                                                                                                               |
-| Grid: assert breakpoint coverage in the dev check | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                                                                                                                 |
-| Filter overlay story: demo dressing               | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                                                                                                             |
-| Query: retire `CLEAR_QUERY_ARGS`                  | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                                                                                                              |
-| Query devtools: paste gaps around overrides       | `A`,`D` | User-raised 2026-08-10. Copy of a subtree and paste onto a node **already ship** - the gaps are the `readText()`-only clipboard path, the kind guard that refuses a shape change, and no paste-as-new-array-item |
-| Query devtools: copy an armed override set        | `A`     | The other reading of the same ask, and the unbuilt one. `QueryDevtoolsOverrideEntry[]` is already the JSON the persistence store writes; import is `arm()` in a loop, and stale paths already report themselves  |
+| Item                                              | Tag     | Note                                                                                                                       |
+| ------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Dropzone: removing a prefilled value deletes it   | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default |
+| Scheduler: richer sub-appointment list            | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                  |
+| Scheduler: agenda connector lines                 | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                      |
+| Dropzone: reveal the preview on hover             | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                         |
+| Grid: assert breakpoint coverage in the dev check | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                           |
+| Filter overlay story: demo dressing               | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                       |
+| Query: retire `CLEAR_QUERY_ARGS`                  | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                        |
 
 ### M - real work, mostly consolidation
 

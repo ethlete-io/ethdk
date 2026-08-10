@@ -223,6 +223,76 @@ describe('query devtools overrides', () => {
       expect(applyQueryDevtoolsOverrides(entries, { items: [1] }).staleIds).toEqual(['1']);
     });
 
+    it('should paste a new array item at the end when no index is given', () => {
+      const entries = [{ id: '1', op: { type: 'pasteArrayItem' as const, path: ['items'], value: { id: 9 } } }];
+
+      const { value, staleIds } = applyQueryDevtoolsOverrides(entries, { items: [{ id: 1 }] });
+
+      expect((value as { items: unknown[] }).items).toEqual([{ id: 1 }, { id: 9 }]);
+      expect(staleIds).toEqual([]);
+    });
+
+    it('should splice a pasted array item in at its index, shifting the tail', () => {
+      const entries = [{ id: '1', op: { type: 'pasteArrayItem' as const, path: ['items'], value: 'x', index: 1 } }];
+
+      const { value } = applyQueryDevtoolsOverrides(entries, { items: ['a', 'b', 'c'] });
+
+      expect((value as { items: unknown[] }).items).toEqual(['a', 'x', 'b', 'c']);
+    });
+
+    it('should clamp a pasted array item to the end rather than leaving a hole past it', () => {
+      const entries = [{ id: '1', op: { type: 'pasteArrayItem' as const, path: ['items'], value: 'x', index: 7 } }];
+
+      const { value } = applyQueryDevtoolsOverrides(entries, { items: ['a'] });
+
+      expect((value as { items: unknown[] }).items).toEqual(['a', 'x']);
+    });
+
+    it('should flag pasteArrayItem stale when its path is not an array', () => {
+      const entries = [{ id: '1', op: { type: 'pasteArrayItem' as const, path: ['items'], value: 1 } }];
+
+      expect(applyQueryDevtoolsOverrides(entries, { items: {} }).staleIds).toEqual(['1']);
+    });
+
+    it('should delete an object key outright, so the field reads as absent rather than empty', () => {
+      const entries = [{ id: '1', op: { type: 'deleteAt' as const, path: ['title'] } }];
+
+      const { value } = applyQueryDevtoolsOverrides(entries, { id: 1, title: 'a' });
+
+      expect(value).toEqual({ id: 1 });
+      expect('title' in (value as object)).toBe(false);
+    });
+
+    it('should splice an array element out rather than leaving a hole where it was', () => {
+      const entries = [{ id: '1', op: { type: 'deleteAt' as const, path: ['items', 1] } }];
+
+      const { value } = applyQueryDevtoolsOverrides(entries, { items: ['a', 'b', 'c'] });
+
+      expect((value as { items: unknown[] }).items).toEqual(['a', 'c']);
+    });
+
+    it('should leave sibling branches untouched when deleting a nested key', () => {
+      const raw = { keep: { deep: 1 }, drop: { gone: 2 } };
+      const entries = [{ id: '1', op: { type: 'deleteAt' as const, path: ['drop', 'gone'] } }];
+
+      const { value } = applyQueryDevtoolsOverrides(entries, raw);
+
+      expect(value).toEqual({ keep: { deep: 1 }, drop: {} });
+      expect((value as typeof raw).keep).toBe(raw.keep);
+    });
+
+    it('should flag deleteAt stale for a key that is not there', () => {
+      const entries = [{ id: '1', op: { type: 'deleteAt' as const, path: ['nope'] } }];
+
+      expect(applyQueryDevtoolsOverrides(entries, { id: 1 }).staleIds).toEqual(['1']);
+    });
+
+    it('should flag deleteAt stale at the response root, which has no parent to leave', () => {
+      const entries = [{ id: '1', op: { type: 'deleteAt' as const, path: [] } }];
+
+      expect(applyQueryDevtoolsOverrides(entries, { id: 1 }).staleIds).toEqual(['1']);
+    });
+
     it('should double a whole array, remapping ids across all copies without collisions', () => {
       const entries = [{ id: '1', op: { type: 'duplicateArray' as const, path: ['items'] } }];
       const raw = { items: [{ id: 1 }, { id: 2 }] };
