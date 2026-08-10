@@ -235,6 +235,255 @@ describe('NumberInputDirective', () => {
     });
   });
 
+  describe('coarse and fine stepping', () => {
+    let fixture: ComponentFixture<StepperTestHost>;
+
+    const nativeInput = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
+
+    const pressKey = (key: string, modifiers: { shiftKey?: boolean; altKey?: boolean; ctrlKey?: boolean } = {}) => {
+      const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...modifiers });
+
+      nativeInput().dispatchEvent(event);
+      fixture.detectChanges();
+
+      return event;
+    };
+
+    const pressButton = (index: number, modifiers: { shiftKey?: boolean; altKey?: boolean } = {}) => {
+      const button = fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.et-number-input-stepper-button')[
+        index
+      ]!;
+
+      button.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, ...modifiers }));
+      button.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+      fixture.detectChanges();
+    };
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [StepperTestHost] });
+      fixture = TestBed.createComponent(StepperTestHost);
+      fixture.componentInstance.value.set(0);
+      fixture.detectChanges();
+    });
+
+    it('steps by one step on a plain arrow key', () => {
+      const event = pressKey('ArrowUp');
+
+      expect(fixture.componentInstance.value()).toBe(1);
+      // the browser would step the native input a second time on top of ours
+      expect(event.defaultPrevented).toBe(true);
+
+      pressKey('ArrowDown');
+      expect(fixture.componentInstance.value()).toBe(0);
+    });
+
+    it('steps 10x with shift and a tenth with alt', () => {
+      pressKey('ArrowUp', { shiftKey: true });
+      expect(fixture.componentInstance.value()).toBe(10);
+
+      pressKey('ArrowDown', { altKey: true });
+      expect(fixture.componentInstance.value()).toBe(9.9);
+    });
+
+    it('steps 100x on the page keys, whatever the modifiers', () => {
+      pressKey('PageUp');
+      expect(fixture.componentInstance.value()).toBe(100);
+
+      pressKey('PageDown', { shiftKey: true });
+      expect(fixture.componentInstance.value()).toBe(0);
+    });
+
+    it('multiplies a fractional step without float noise', () => {
+      fixture.componentInstance.step.set(0.1);
+      fixture.componentInstance.value.set(0.5);
+      fixture.detectChanges();
+
+      pressKey('ArrowUp', { altKey: true });
+      expect(fixture.componentInstance.value()).toBe(0.51);
+
+      pressKey('ArrowUp', { shiftKey: true });
+      expect(fixture.componentInstance.value()).toBe(1.51);
+    });
+
+    it('clamps a multiplied step to the bounds', () => {
+      fixture.componentInstance.max.set(25);
+      fixture.detectChanges();
+
+      pressKey('ArrowUp', { shiftKey: true });
+      pressKey('ArrowUp', { shiftKey: true });
+      pressKey('ArrowUp', { shiftKey: true });
+
+      expect(fixture.componentInstance.value()).toBe(25);
+    });
+
+    it('leaves ctrl/cmd alone - it is a browser-zoom shortcut', () => {
+      const event = pressKey('ArrowUp', { ctrlKey: true });
+
+      expect(fixture.componentInstance.value()).toBe(0);
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('ignores keys it does not own', () => {
+      const event = pressKey('ArrowLeft');
+
+      expect(fixture.componentInstance.value()).toBe(0);
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('applies the modifier to a stepper button press too', () => {
+      pressButton(1, { shiftKey: true });
+      expect(fixture.componentInstance.value()).toBe(10);
+
+      pressButton(0, { altKey: true });
+      expect(fixture.componentInstance.value()).toBe(9.9);
+    });
+  });
+
+  describe('drag to scrub', () => {
+    let fixture: ComponentFixture<StepperTestHost>;
+
+    const incrementButton = () =>
+      fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.et-number-input-stepper-button')[1]!;
+
+    const scrub = (
+      steps: number[],
+      options: { pointerType?: string; shiftKey?: boolean; release?: 'pointerup' | 'pointercancel' } = {},
+    ) => {
+      const button = incrementButton();
+      const { pointerType = 'mouse', shiftKey = false, release = 'pointerup' } = options;
+
+      button.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, clientX: 0, clientY: 0, pointerType, shiftKey }),
+      );
+      fixture.detectChanges();
+
+      let x = 0;
+
+      for (const step of steps) {
+        x += step;
+        document.dispatchEvent(
+          new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: x, clientY: 0 }),
+        );
+      }
+
+      fixture.detectChanges();
+
+      document.dispatchEvent(new PointerEvent(release, { bubbles: true, pointerId: 1, clientX: x, clientY: 0 }));
+      fixture.detectChanges();
+
+      return button;
+    };
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [StepperTestHost] });
+      fixture = TestBed.createComponent(StepperTestHost);
+      fixture.componentInstance.value.set(0);
+      fixture.detectChanges();
+    });
+
+    it('runs the value while dragging sideways, one step per 4px past the commit threshold', () => {
+      // the press steps once (1), the first 10px commits the drag and is swallowed as catch-up,
+      // then 20px of travel is 5 steps
+      scrub([10, 20]);
+
+      expect(fixture.componentInstance.value()).toBe(6);
+    });
+
+    it('scrubs down when dragged left, whichever button started it', () => {
+      scrub([-10, -20]);
+
+      expect(fixture.componentInstance.value()).toBe(-4);
+    });
+
+    it('keeps the sub-step remainder so a slow drag still moves', () => {
+      // three 3px moves are under one 4px step each, but 9px of travel is two steps
+      scrub([10, 3, 3, 3]);
+
+      expect(fixture.componentInstance.value()).toBe(3);
+    });
+
+    it('does not commit a press that never crosses the threshold', () => {
+      scrub([3]);
+
+      expect(fixture.componentInstance.value()).toBe(1);
+    });
+
+    it('carries the press-time modifier into the scrub', () => {
+      scrub([10, 20], { shiftKey: true });
+
+      expect(fixture.componentInstance.value()).toBe(60);
+    });
+
+    it('marks touched once at the end of the gesture, not per step', () => {
+      const numberInputDir = fixture.debugElement
+        .query((el) => el.nativeElement.matches('et-number-input'))
+        .injector.get(NumberInputDirective);
+
+      const button = incrementButton();
+
+      button.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, clientX: 0, clientY: 0, pointerType: 'mouse' }),
+      );
+      fixture.detectChanges();
+      numberInputDir.touched.set(false);
+
+      document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 10, clientY: 0 }));
+      document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 30, clientY: 0 }));
+      fixture.detectChanges();
+
+      expect(numberInputDir.touched()).toBe(false);
+
+      document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 30, clientY: 0 }));
+      fixture.detectChanges();
+
+      expect(numberInputDir.touched()).toBe(true);
+    });
+
+    it('cancels the press-and-hold repeat once the drag commits', () => {
+      vi.useFakeTimers();
+
+      try {
+        const button = incrementButton();
+
+        button.dispatchEvent(
+          new PointerEvent('pointerdown', {
+            bubbles: true,
+            pointerId: 1,
+            clientX: 0,
+            clientY: 0,
+            pointerType: 'mouse',
+          }),
+        );
+        fixture.detectChanges();
+
+        document.dispatchEvent(
+          new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 10, clientY: 0 }),
+        );
+        fixture.detectChanges();
+
+        vi.advanceTimersByTime(400 + 75 * 10);
+        fixture.detectChanges();
+
+        // the one step from the press, and nothing from the repeat timer
+        expect(fixture.componentInstance.value()).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not scrub from a touch pointer', () => {
+      scrub([10, 20], { pointerType: 'touch' });
+
+      expect(fixture.componentInstance.value()).toBe(1);
+    });
+
+    it('clears the document scrub cursor when the gesture is cancelled', () => {
+      scrub([10, 20], { release: 'pointercancel' });
+
+      expect(document.documentElement.classList.contains('et-number-input-scrubbing')).toBe(false);
+    });
+  });
+
   describe('mixed state', () => {
     const setup = () => {
       TestBed.configureTestingModule({ imports: [MixedNumberInputTestHost] });

@@ -135,61 +135,6 @@ The **hex/RGB validators shipped 2026-08-10** (see "Already fixed"). A
 control's value, and nothing in `libs/forms` does a cross-field read today,
 so its shape is a design question rather than a missing regex. Left open.
 
-## Number input: coarse/fine stepping - drag to scrub, modifiers to jump
-
-Raised by the user 2026-08-10. Two asks that are really one feature: **drag the stepper to
-increment like Figma/Adobe do**, and **shortcuts for ±1 / ±10 / ±100**. Both are the same missing
-idea - a step that is not always one `step()` - so design them together or they will disagree on
-what "10×" means.
-
-What exists: `NumberInputDirective.stepBy(direction: 1 | -1)` (`forms/input/headless/number-input.directive.ts`)
-takes no magnitude. It reads `step()`, clamps to `min`/`max`, handles the precision maths and the
-`mixed` commit, and marks `touched`. `NumberInputComponent.startStepRepeat()` drives press-and-hold
-auto-repeat off it (400ms delay, then 75ms). So the single edit both halves need is
-`stepBy(direction, multiplier = 1)` - everything downstream of it is already right.
-
-**The multiplier vocabulary is the design call, and it has to be picked once.** Suggested, matching
-what Figma/Adobe/Sketch trained everyone on: plain = `step`, `Shift` = 10×, `Alt`/`Option` = 0.1×.
-Native `<input type="number">` already steps on ArrowUp/ArrowDown, so a `keydown` handler that sees a
-modifier has to `preventDefault()` and step itself, or the browser's plain step lands on top of ours.
-`PageUp`/`PageDown` are free and are the natural 100× - and they are the reason not to spend
-`Ctrl`/`Cmd`, which is a browser-zoom collision on several platforms.
-
-The scrub half, in the order the questions actually block each other:
-
-- **What surface do you drag?** The `<input>` itself cannot be it - a horizontal drag there is text
-  selection, and taking that away from a text field is a worse trade than not shipping the feature.
-  The stepper buttons already own `pointerdown` (they step immediately and start the repeat timer),
-  so a drag from them means the first step fires before you know it is a drag. Options: keep the
-  press-and-hold on the buttons and add a **separate scrub grip**, or move to `dragGestureFrom(event,
-el, { commitThreshold })` on the buttons and let `tapped` be "step once, start repeating" while
-  `start` cancels the repeat and becomes a scrub. The second reuses the primitive the slider and
-  rating already moved onto and adds no chrome, and is the one to try first.
-- **The pointer runs out of screen.** Figma solves this with pointer lock, which is why you can scrub
-  a value forever. `requestPointerLock()` needs a user gesture (a drag is one) but shows a browser
-  notification bar in Chrome and reads `movementX` instead of client coords - so `dragGestureFrom`'s
-  `stepX`/`totalDx` stop being the input. Without it the scrub simply ends at the viewport edge,
-  which is honest and much cheaper. Decide whether the ceiling is acceptable before building the
-  lock.
-- **Sensitivity is per-`step`, not per-pixel.** One `step` per _n_ px, not one unit - otherwise a
-  field with `step="0.01"` needs a 100px drag per visible change and a field with `step="1000"` is
-  unusable. Accumulate the remainder across moves so a slow drag still moves, rather than rounding
-  each move to zero.
-- **Axis.** Horizontal is the Figma/Adobe convention and is what `ew-resize` signals. Vertical
-  conflicts with page scroll on touch. Pick horizontal, set `touch-action: none` on the grip, and
-  consider gating the whole thing behind `(pointer: fine)` - a scrub on a phone is a scroll the user
-  did not ask for.
-- **Cursor feedback during the drag** has to be on the document, not the grip: once the pointer is
-  captured, the cursor over the rest of the page is still whatever that element asks for. The float
-  panel's resize handles have the same problem and are the place to copy from.
-- **`touched` fires per step today.** A scrub calls `stepBy` dozens of times; if validation errors
-  surface on `touched`, a scrub past `min` flashes the error mid-gesture. Either mark touched once at
-  gesture end, or accept it - but say which.
-
-Accessibility is unaffected either way: the native input keeps its own arrow-key stepping and the
-buttons keep their labels, so the scrub is a pure enhancement. The modifier shortcuts are not - they
-need documenting, because an unlabelled 10× is indistinguishable from a bug.
-
 ## Query devtools: a mock designer, with an export for the API team
 
 **Phase 1 shipped 2026-08-10** (serve + author + a TypeScript export). What is left is phases 2 and 3.
@@ -832,6 +777,33 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Number input: coarse and fine stepping** (2026-08-10, user-raised) - drag-to-scrub plus the
+step modifiers, built as one feature over `stepBy(direction, { multiplier, markTouched })`. Settled
+with the user before building:
+
+- **The stepper buttons own the drag**, via `dragGestureFrom(event, button, { commitThreshold: 8 })` -
+  no new chrome, same primitive as slider/rating/table-reorder. The press has already stepped once and
+  armed the repeat by the time a drag can be told from a click, so `start` cancels the repeat and that
+  first step stands. The catch-up move that arrives with `start` is swallowed, or the value jumps two
+  steps the instant the drag commits.
+- **No pointer lock** - the scrub ends at the viewport edge. `requestPointerLock` would take
+  `dragGestureFrom`'s coordinates out of play, show Chrome's notification bar and hide the cursor.
+- **Touched once at gesture end**, not per step, so scrubbing past a bound does not flash a validation
+  error mid-drag. Keyboard and button steps still touch immediately.
+- **Fine pointers only** (`event.pointerType === 'mouse'`), and `cursor: ew-resize` under
+  `@media (pointer: fine)` is the affordance.
+- **4px per `step`**, with the sub-step remainder carried across moves so a slow drag still moves.
+  Sensitivity is per-`step`, never per-unit - `step="0.01"` and `step="1000"` both stay usable.
+- **Arrow keys were taken over from the native input** so clamping, mixed state and `touched` are
+  shared by every route into the value. `Shift` 10x, `Alt` 0.1x, `PageUp`/`PageDown` a flat 100x;
+  `Ctrl`/`Cmd` left alone as a browser-zoom collision.
+- The multiplier is read at press and holds for the whole gesture - `DragMoveEvent` carries positions,
+  not key state.
+
+Changeset `number-input-coarse-fine-stepping.md`. Verified headlessly in Chromium (19 checks: the
+whole key vocabulary with no native double-step, scrub up/down, the document scrub cursor added and
+cleared, repeat cancelled on commit, shift-scrub at 10x).
 
 **Query devtools: a Settings tab** (2026-08-10, user-raised) - the scattered switches, and where
 state is kept. Settled with the user before building:

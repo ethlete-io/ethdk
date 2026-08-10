@@ -1,4 +1,11 @@
 @layer components {
+  /* the pointer is captured by the stepper button for the length of a scrub, but every element it
+     passes over still asks for its own cursor — only a document-wide override survives the drag */
+  html.et-number-input-scrubbing,
+  html.et-number-input-scrubbing * {
+    cursor: ew-resize !important;
+  }
+
   @property --et-number-input-stepper-size {
     syntax: '<length>';
     inherits: true;
@@ -40,6 +47,11 @@
       outline: none;
       /* the buttons are press-and-hold controls — never scroll instead */
       touch-action: none;
+
+      /* the drag-to-scrub affordance, and the gesture, are fine-pointer only */
+      @media (pointer: fine) {
+        cursor: ew-resize;
+      }
 
       .et-icon {
         inline-size: var(--et-number-input-stepper-size);

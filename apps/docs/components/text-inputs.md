@@ -76,10 +76,47 @@ The native spin buttons are hidden.
 Set `stepper` to render −/+ buttons with press-and-hold auto-repeat: each press
 changes the value by `step` (an empty value starts from `0`), clamped to
 `min`/`max`, and the exhausted button disables at a bound. The buttons stay out
-of the tab order (the native input already steps with the arrow keys) and take
-`incrementLabel` / `decrementLabel` for their accessible names (defaults
+of the tab order and take `incrementLabel` / `decrementLabel` for their
+accessible names (defaults
 unset → [`INPUT_LABELS`](/components/localization), `'Increment'` / `'Decrement'`). Design token: `--et-number-input-stepper-size`
 (default `16px`). See the `Stepper` story.
+
+### Coarse and fine stepping
+
+A step is not always one `step`. The same vocabulary applies to the arrow keys on
+the input and to a press on a stepper button:
+
+| Input                      | Steps by     |
+| -------------------------- | ------------ |
+| Arrow up / down            | `step`       |
+| **Shift** + arrow          | `step` × 10  |
+| **Alt**/**Option** + arrow | `step` × 0.1 |
+| Page up / down             | `step` × 100 |
+
+`Ctrl`/`Cmd` is deliberately unused - it is a browser-zoom shortcut on several
+platforms. The page keys are always 100×, whatever else is held.
+
+Arrow-key stepping runs through the component rather than through the native
+input's own, so it shares the clamping, the [mixed-state](/components/mixed-state)
+handling and the `touched` marking with every other way of stepping.
+
+**Drag a stepper button sideways to scrub the value**, the way Figma and Adobe
+tools do. The pointer travels 4px per `step`, sub-step movement accumulates so a
+slow drag still moves, and the modifier held at press applies for the whole
+gesture. Dragging left decrements whichever button started it. The press that
+begins a scrub has already stepped once - that step stands.
+
+Two deliberate limits: the scrub is **fine-pointer only** (a horizontal drag off a
+small button on a touch screen is a mis-grab far more often than an edit), and it
+**ends at the viewport edge** rather than taking a pointer lock. The whole scrub
+marks the control touched **once, at the end** - so dragging past `min` on the way
+somewhere valid never flashes a validation error under the pointer.
+
+<StoryEmbed id="components-forms-number-input--coarse-and-fine-stepping" height="260px" />
+
+For a headless stepper of your own, `NumberInputDirective.stepBy(direction, { multiplier })`
+is the single entry point all of the above uses, and `numberInputStepMultiplierFrom(event)`
+reads the modifier vocabulary off any event carrying `shiftKey` / `altKey`.
 
 ## Password input - `et-password-input` {#password-input}
 

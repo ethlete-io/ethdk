@@ -59,6 +59,14 @@ export const Stepper: Story = {
   args: { stepper: true, min: 0, max: 10, hint: 'Hold a button to auto-repeat' },
 };
 
+export const CoarseAndFineStepping: Story = {
+  args: {
+    stepper: true,
+    value: 0,
+    hint: 'Drag a stepper button sideways to scrub. Shift steps 10×, Alt a tenth, Page Up/Down 100×.',
+  },
+};
+
 export const Mixed: Story = {
   args: {
     value: 42,

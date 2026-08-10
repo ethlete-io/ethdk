@@ -3,8 +3,37 @@ import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
 import { INPUT_TEXT_ALIGNMENTS, InputTextAlignment } from '../input.types';
 
+/** How one `stepBy` call departs from a plain single `step`. */
+export type NumberInputStepOptions = {
+  /** Multiplies `step` for this call - `10` for the coarse modifier, `0.1` for the fine one. */
+  multiplier?: number;
+  /**
+   * Whether the step marks the control touched. A drag-to-scrub passes `false` and marks touched
+   * once the gesture ends, so scrubbing past a bound does not flash a validation error mid-drag.
+   */
+  markTouched?: boolean;
+};
+
+/**
+ * The step multiplier a modifier-carrying event asks for: `Shift` steps 10x, `Alt`/`Option` steps
+ * a tenth, and no modifier steps a plain `step`.
+ *
+ * `Ctrl`/`Cmd` is deliberately unused - it is a browser-zoom shortcut on several platforms.
+ */
+export const numberInputStepMultiplierFrom = (event: { shiftKey: boolean; altKey: boolean }) => {
+  if (event.shiftKey) return 10;
+  if (event.altKey) return 0.1;
+
+  return 1;
+};
+
+const PAGE_STEP_MULTIPLIER = 100;
+
 @Directive({
   selector: '[etNumberInput]',
+  host: {
+    '(keydown)': 'handleStepKeydown($event)',
+  },
 })
 export class NumberInputDirective extends TextFieldControlDirective implements FormValueControl<number | null> {
   public value = model<number | null>(null);
@@ -67,14 +96,23 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     }
   }
 
-  /** Steps the value by `step` (an empty or mixed value starts from `0`), clamped to `min`/`max`. */
-  public stepBy(direction: 1 | -1) {
+  /**
+   * Steps the value by `step` (an empty or mixed value starts from `0`), clamped to `min`/`max`.
+   *
+   * Pass `multiplier` to step a coarser or finer amount than one `step` - a keyboard modifier, or
+   * the whole distance a scrub covered since the last move.
+   */
+  public stepBy(direction: 1 | -1, options?: NumberInputStepOptions) {
     if (this.disabled() || this.readonly()) return;
 
+    const multiplier = options?.multiplier ?? 1;
+    const markTouched = options?.markTouched ?? true;
     const step = this.step() ?? 1;
     const current = this.steppingBase();
-    const precision = Math.max(decimalPrecisionOf(step), decimalPrecisionOf(current));
-    let next = Number((current + step * direction).toFixed(precision));
+    // the multiplier's own decimals count: a 0.1x step of a 0.1 step is 0.01, and reading the
+    // precision off the multiplied step would read float noise (0.1 * 0.1) as 18 decimals
+    const precision = Math.max(decimalPrecisionOf(step) + decimalPrecisionOf(multiplier), decimalPrecisionOf(current));
+    let next = Number((current + step * multiplier * direction).toFixed(precision));
 
     const min = this.min();
     const max = this.max();
@@ -86,7 +124,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
       // stepping is a user commit - it replaces the hidden raw value and resolves mixed
       this.mixed.set(false);
       this.value.set(next);
-      this.touched.set(true);
+      if (markTouched) this.touched.set(true);
 
       return;
     }
@@ -95,8 +133,29 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
       this.value.set(next);
       // stepping is a deliberate edit - mark touched so validation errors surface immediately,
       // rather than staying hidden until a separate blur (typed entry already touches on blur)
-      this.touched.set(true);
+      if (markTouched) this.touched.set(true);
     }
+  }
+
+  /**
+   * @internal Arrow and page keys step through {@link stepBy} rather than through the native
+   * input's own stepping, so every route into the value shares the mixed handling, the clamping
+   * and the `touched` marking - and so a modifier can change the magnitude.
+   */
+  public handleStepKeydown(event: KeyboardEvent) {
+    if (event.target !== this.nativeControl() || event.ctrlKey || event.metaKey) return;
+
+    const direction = STEP_KEY_DIRECTIONS[event.key];
+
+    if (!direction) return;
+
+    const isPageKey = event.key === 'PageUp' || event.key === 'PageDown';
+    const multiplier = isPageKey ? PAGE_STEP_MULTIPLIER : numberInputStepMultiplierFrom(event);
+
+    // the browser steps a native number input on the arrow keys by itself - without this its
+    // plain step lands on top of the multiplied one
+    event.preventDefault();
+    this.stepBy(direction, { multiplier });
   }
 
   /**
@@ -118,6 +177,13 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     this.value.set(Number.isNaN(parsed) ? null : parsed);
   }
 }
+
+const STEP_KEY_DIRECTIONS: Record<string, 1 | -1 | undefined> = {
+  ArrowUp: 1,
+  ArrowDown: -1,
+  PageUp: 1,
+  PageDown: -1,
+};
 
 /** Decimal places needed to represent `value` exactly - strips float noise from step math. */
 const decimalPrecisionOf = (value: number) => {
