@@ -1,6 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
-import { Signal, signal } from '@angular/core';
+import { Signal, signal, untracked } from '@angular/core';
 import { QueryErrorResponse, queryErrorMessages } from '../http/query-error-response';
+import { queryDevtoolsSettings } from './query-devtools-settings';
 
 /**
  * What a query did over its lifetime, as the devtools panel accounts for it: how often it ran, how many
@@ -244,23 +245,24 @@ const RUN_HISTORY = 25;
  */
 const DEFAULT_RESPONSE_HISTORY = 5;
 
-let responseHistory = DEFAULT_RESPONSE_HISTORY;
+let providedResponseHistory = DEFAULT_RESPONSE_HISTORY;
 
 /**
- * How many bodies each query retains - {@link QueryDevtoolsOptions.responseHistory}, or `5`. Only a run
- * that still holds one can be an end of a response diff, so the panel reads this to say why an older run
- * can no longer be picked.
+ * How many bodies each query retains: what the panel's Settings tab asks for, or
+ * {@link QueryDevtoolsOptions.responseHistory}, or `5`. Only a run that still holds one can be an end of
+ * a response diff, so the panel reads this to say why an older run can no longer be picked.
  *
  * Part of the devtools contract. **Not part of the general public contract.**
  */
-export const queryDevtoolsResponseHistory = () => responseHistory;
+export const queryDevtoolsResponseHistory = () => queryDevtoolsSettings().responseHistory ?? providedResponseHistory;
 
 /**
- * Sets how many bodies each query retains. Called by `provideQueryDevtools()`; nothing else may call it.
+ * Sets the application's own retention, which the panel's Settings tab can raise for the rest of the
+ * page. Called by `provideQueryDevtools()`; nothing else may call it.
  * @internal
  */
 export const setQueryDevtoolsResponseHistory = (count: number | undefined) => {
-  responseHistory = count === undefined ? DEFAULT_RESPONSE_HISTORY : Math.max(1, Math.floor(count));
+  providedResponseHistory = count === undefined ? DEFAULT_RESPONSE_HISTORY : Math.max(1, Math.floor(count));
 };
 
 /** The index of the newest run still in flight, or -1 when none is. */
@@ -278,7 +280,9 @@ const lastPendingRunIndex = (runs: readonly QueryDevtoolsRun[]) => {
  * two. Mutates the array it is given, which is always one this module just built.
  */
 const trimRetainedBodies = (runs: QueryDevtoolsRun[]) => {
-  const budget = responseHistory;
+  // Untracked: a run is recorded from whatever context the query is running in, and reading the setting
+  // there would make that context re-run every time the setting changes.
+  const budget = untracked(queryDevtoolsResponseHistory);
   let kept = 0;
 
   for (let index = runs.length - 1; index >= 0; index--) {

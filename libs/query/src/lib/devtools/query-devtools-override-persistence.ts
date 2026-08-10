@@ -1,10 +1,19 @@
-import { Signal, signal } from '@angular/core';
+import { computed, Signal, signal } from '@angular/core';
 import { OverrideOp, QueryDevtoolsOverridesRecorder } from './query-devtools-overrides';
+import {
+  clearQueryDevtoolsStore,
+  QueryDevtoolsStorageScope,
+  queryDevtoolsSettings,
+  readQueryDevtoolsStore,
+  setQueryDevtoolsSettings,
+  writeQueryDevtoolsStore,
+} from './query-devtools-settings';
 
 /**
- * `sessionStorage`, not `localStorage`: "survives a reload" and "survives until I notice" are different
- * promises, and an app that stays tampered with across days is hours of debugging the wrong thing.
- * Session scope dies with the tab, which is the promise this feature makes.
+ * Not persisted at all unless asked for, and then in `sessionStorage`: "survives a reload" and "survives
+ * until I notice" are different promises, and an app that stays tampered with across days is hours of
+ * debugging the wrong thing. `local` is offered in Settings for the dev who has a reason, and the
+ * restored-overrides bar names the scope whatever it is.
  */
 const STORAGE_KEY = 'ethlete:query:devtools:overrides:v1';
 
@@ -31,8 +40,13 @@ export type RestoredQueryDevtoolsOverrides = {
   armed: boolean;
 };
 
-const enabled = /* @__PURE__ */ signal(false);
 const restored = /* @__PURE__ */ signal<readonly RestoredQueryDevtoolsOverrides[]>([]);
+const restoredScope = /* @__PURE__ */ signal<QueryDevtoolsStorageScope | null>(null);
+
+const scope = () => queryDevtoolsSettings().overrides;
+
+/** Where "Keep across reloads" puts them back when it is switched on again. */
+let lastPersistentScope: Exclude<QueryDevtoolsStorageScope, 'none'> = 'session';
 
 /** Every recorder that currently holds at least one op, so switching persistence on can capture them. */
 const armedRecorders = /* @__PURE__ */ new Map<string, QueryDevtoolsOverridesRecorder>();
@@ -46,30 +60,21 @@ const replayed = /* @__PURE__ */ new Set<string>();
 let ops: Record<string, OverrideOp[]> = {};
 
 const readStore = (): PersistedOverrides => {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as Partial<PersistedOverrides> | null) : null;
-    const stored = parsed?.ops;
-    const usable = !!stored && typeof stored === 'object' && !Array.isArray(stored);
+  const parsed = readQueryDevtoolsStore<Partial<PersistedOverrides>>(scope(), STORAGE_KEY);
+  const stored = parsed?.ops;
+  const usable = !!stored && typeof stored === 'object' && !Array.isArray(stored);
 
-    return { enabled: parsed?.enabled === true, ops: usable ? (stored as Record<string, OverrideOp[]>) : {} };
-  } catch {
-    return { enabled: false, ops: {} };
-  }
+  return { enabled: parsed?.enabled === true, ops: usable ? (stored as Record<string, OverrideOp[]>) : {} };
 };
 
 const writeStore = () => {
-  try {
-    if (!enabled()) {
-      sessionStorage.removeItem(STORAGE_KEY);
+  if (scope() === 'none') {
+    clearQueryDevtoolsStore(STORAGE_KEY);
 
-      return;
-    }
-
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ enabled: true, ops } satisfies PersistedOverrides));
-  } catch {
-    // ignore (private mode / disabled storage)
+    return;
   }
+
+  writeQueryDevtoolsStore(scope(), STORAGE_KEY, { enabled: true, ops } satisfies PersistedOverrides);
 };
 
 const publishRestored = () =>
@@ -78,6 +83,7 @@ const publishRestored = () =>
 const forgetCarriedOver = () => {
   carriedOver.clear();
   replayed.clear();
+  restoredScope.set(null);
   publishRestored();
 };
 
@@ -99,7 +105,6 @@ const writeOps = (id: string, list: OverrideOp[]) => {
 export const initQueryDevtoolsOverridePersistence = () => {
   const store = readStore();
 
-  enabled.set(store.enabled);
   ops = store.enabled ? store.ops : {};
   armedRecorders.clear();
   carriedOver.clear();
@@ -109,36 +114,73 @@ export const initQueryDevtoolsOverridePersistence = () => {
     if (list.length) carriedOver.set(id, list.length);
   }
 
+  const current = scope();
+
+  if (current !== 'none') lastPersistentScope = current;
+
+  restoredScope.set(carriedOver.size ? current : null);
   publishRestored();
 };
 
 /**
- * Whether armed response overrides are written to `sessionStorage` and replayed on the next page load.
- * Off unless the panel's "Keep across reloads" toggle turned it on - and the flag itself is part of what
- * is stored, since otherwise nothing could ever be replayed.
+ * Whether armed response overrides are stored and replayed on the next page load - that is, whether
+ * their scope is anything other than `none`. Off by default.
  */
-export const queryDevtoolsOverridePersistence: Signal<boolean> = /* @__PURE__ */ enabled.asReadonly();
+export const queryDevtoolsOverridePersistence: Signal<boolean> = /* @__PURE__ */ computed(() => scope() !== 'none');
 
 /**
- * Turns persistence on or off. Turning it on captures whatever is armed right now, so the toggle reads
- * as "keep these" rather than "keep the next ones"; turning it off empties the store and leaves every
- * armed op exactly where it is for the rest of this page.
+ * Where armed response overrides are kept. Switching to a scope that keeps them captures whatever is
+ * armed right now, so the choice reads as "keep these" rather than "keep the next ones"; switching
+ * between `session` and `local` moves the store; switching to `none` empties it and leaves every armed
+ * op exactly where it is for the rest of this page.
  */
-export const setQueryDevtoolsOverridePersistence = (value: boolean) => {
-  enabled.set(value);
-  ops = {};
+export const setQueryDevtoolsOverridesScope = (next: QueryDevtoolsStorageScope) => {
+  const previous = scope();
 
-  if (value) {
+  if (next === previous) return;
+
+  // Off both stores first: whichever the previous scope was, its copy must not outlive the change.
+  clearQueryDevtoolsStore(STORAGE_KEY);
+  setQueryDevtoolsSettings({ overrides: next });
+
+  if (next === 'none') {
+    ops = {};
+    forgetCarriedOver();
+
+    return;
+  }
+
+  lastPersistentScope = next;
+
+  if (previous === 'none') {
+    ops = {};
+
     for (const [id, recorder] of armedRecorders) {
       const list = recorder.list().map((entry) => entry.op);
 
       if (list.length) ops[id] = list;
     }
-  } else {
-    forgetCarriedOver();
   }
 
   writeStore();
+};
+
+/**
+ * Turns persistence on or off - the panel's "Keep across reloads" toggle. On restores the last scope
+ * that kept them (`session` unless Settings picked `local`).
+ */
+export const setQueryDevtoolsOverridePersistence = (value: boolean) => {
+  setQueryDevtoolsOverridesScope(value ? lastPersistentScope : 'none');
+};
+
+/**
+ * Empties the override store in both browser stores and disarms everything a reload brought back,
+ * without changing where overrides are kept - the panel's "Reset devtools".
+ */
+export const clearQueryDevtoolsOverrideStore = () => {
+  clearRestoredQueryDevtoolsOverrides();
+  ops = {};
+  clearQueryDevtoolsStore(STORAGE_KEY);
 };
 
 /**
@@ -148,6 +190,13 @@ export const setQueryDevtoolsOverridePersistence = (value: boolean) => {
  */
 export const restoredQueryDevtoolsOverrides: Signal<readonly RestoredQueryDevtoolsOverrides[]> =
   /* @__PURE__ */ restored.asReadonly();
+
+/**
+ * The scope those ops came back from, or `null` when this page inherited none. `local` is the one worth
+ * naming in the banner: it means they outlived closing the tab, not just a reload.
+ */
+export const queryDevtoolsRestoredOverridesScope: Signal<QueryDevtoolsStorageScope | null> =
+  /* @__PURE__ */ restoredScope.asReadonly();
 
 /** Disarms every op this page load inherited and empties the store - the banner's one-click way out. */
 export const clearRestoredQueryDevtoolsOverrides = () => {
@@ -176,7 +225,7 @@ export const withQueryDevtoolsOverridePersistence = (
 ): QueryDevtoolsOverridesRecorder => {
   const inherited = ops[id];
 
-  if (enabled() && inherited?.length) {
+  if (scope() !== 'none' && inherited?.length) {
     for (const op of inherited) recorder.arm(op);
 
     armedRecorders.set(id, recorder);
@@ -190,7 +239,7 @@ export const withQueryDevtoolsOverridePersistence = (
     if (list.length) armedRecorders.set(id, recorder);
     else armedRecorders.delete(id);
 
-    if (enabled()) writeOps(id, list);
+    if (scope() !== 'none') writeOps(id, list);
   };
 
   return {

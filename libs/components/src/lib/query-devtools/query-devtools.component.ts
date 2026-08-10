@@ -37,6 +37,8 @@ import {
   AnyQueryStack,
   BearerAuthMultiTabSyncFeature,
   clearQueryDevtoolsFaults,
+  clearQueryDevtoolsOverrideStore,
+  clearQueryDevtoolsStore,
   clearRestoredQueryDevtoolsOverrides,
   createQueryErrorResponse,
   EMPTY_QUERY_DEVTOOLS_FAULT,
@@ -48,7 +50,12 @@ import {
   QueryDevtoolsEntry,
   queryDevtoolsFaults,
   queryDevtoolsOverridePersistence,
+  queryDevtoolsRestoredOverridesScope,
+  queryDevtoolsSettings,
+  QueryDevtoolsStorageScope,
+  readQueryDevtoolsStore,
   registerEthleteVersion,
+  writeQueryDevtoolsStore,
   queryDevtoolsResponseHistory,
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
@@ -93,6 +100,7 @@ import { QueryDevtoolsEventsTabComponent } from './query-devtools-events-tab.com
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
 import { COMPONENTS_VERSION } from '../version';
 import { QueryDevtoolsAboutComponent } from './query-devtools-about.component';
+import { QueryDevtoolsSettingsComponent } from './query-devtools-settings.component';
 import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
@@ -266,16 +274,13 @@ const describeEntryId = (id: string) => {
 const STORAGE_KEY = 'ethlete:query:devtools:v4';
 
 /**
- * Pinned queries, held apart from {@link STORAGE_KEY} and in `localStorage`: everything under that key
- * is view state that should die with the tab, while a pin says which query is being worked on and is
- * meant to outlive one. Folding it in would silently make pins per-tab.
+ * Pinned queries, held apart from {@link STORAGE_KEY} and defaulting to `localStorage`: everything under
+ * that key is view state that should die with the tab, while a pin says which query is being worked on
+ * and is meant to outlive one. Folding it in would silently make pins per-tab. Both scopes are
+ * `queryDevtoolsSettings()`.
  */
 const PINS_STORAGE_KEY = 'ethlete:query:devtools:pins:v2';
 
-const MAX_EVENTS = 100;
-
-/** Per client, not in total - a client that drops a lot must not push another client's out of view. */
-const MAX_DROPPED_CACHE_ENTRIES = 20;
 const DEFAULT_HEIGHT = 360;
 const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 560;
@@ -429,24 +434,13 @@ const DEFERRED_STYLES = [
   QueryDevtoolsTimelineStylesComponent,
 ];
 
-const readPersistedState = (): PersistedState => {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as PersistedState) : {};
-  } catch {
-    return {};
-  }
-};
+const readPersistedState = (): PersistedState =>
+  readQueryDevtoolsStore<PersistedState>(queryDevtoolsSettings().viewState, STORAGE_KEY) ?? {};
 
 const readPinnedQueryIds = (): string[] => {
-  try {
-    const raw = localStorage.getItem(PINS_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
+  const parsed = readQueryDevtoolsStore<string[]>(queryDevtoolsSettings().pins, PINS_STORAGE_KEY);
 
-    return Array.isArray(parsed) ? (parsed as string[]) : [];
-  } catch {
-    return [];
-  }
+  return Array.isArray(parsed) ? parsed : [];
 };
 
 /** How long an exported Insomnia collection reuses a refresh response whose token lifetime is unknown. */
@@ -620,6 +614,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsCacheTabComponent,
     QueryDevtoolsEventsTabComponent,
     QueryDevtoolsAboutComponent,
+    QueryDevtoolsSettingsComponent,
     QueryDevtoolsFaultsTabComponent,
     QueryDevtoolsFormsTabComponent,
     QueryDevtoolsQueriesTabComponent,
@@ -660,6 +655,9 @@ export class QueryDevtoolsComponent {
 
   private eventIdCounter = 0;
   private lastSelectionKey = '';
+
+  /** Where the gear goes back to, so opening Settings does not lose the tab it was opened over. */
+  private tabBeforeSettings: DevtoolsTab = 'queries';
 
   public readonly persisted = readPersistedState();
 
@@ -876,11 +874,8 @@ export class QueryDevtoolsComponent {
 
   public errorRunIndex = signal<number | null>(null);
 
-  /**
-   * How many bodies a query retains, which is what bounds how far back a diff can reach. Read once:
-   * `provideQueryDevtools()` sets it before anything can create this panel.
-   */
-  public readonly retainedResponseCount = queryDevtoolsResponseHistory();
+  /** How many bodies a query retains, which is what bounds how far back a diff can reach. */
+  public retainedResponseCount = computed(queryDevtoolsResponseHistory);
 
   /** JIT editor state (response / args editing on the selected query). */
   public editorMode = signal<'none' | 'response' | 'args'>('none');
@@ -1079,6 +1074,7 @@ export class QueryDevtoolsComponent {
       // that the app is misbehaving on purpose, and it has to be impossible to read as "all good".
       faults: { count: 0, errors: Object.keys(queryDevtoolsFaults()).length, errorNoun: 'armed' },
       about: { count: 0, errors: 0 },
+      settings: { count: 0, errors: 0 },
     };
   });
 
@@ -1164,6 +1160,8 @@ export class QueryDevtoolsComponent {
       ops: armed.reduce((sum, group) => sum + group.count, 0),
       firstId: armed[0]?.id ?? null,
       orphaned: orphaned.map((group) => describeEntryId(group.id)),
+      // `local` means they outlived closing the tab, which is a different thing to have to be told.
+      fromLocalStorage: queryDevtoolsRestoredOverridesScope() === 'local',
     };
   });
 
@@ -1245,7 +1243,14 @@ export class QueryDevtoolsComponent {
       )
       .subscribe();
 
+    // Both persistence effects below clear the key from *both* browser stores whenever their scope
+    // changes, before writing it into the store that scope now names - otherwise the copy the old scope
+    // left behind would be what the next page load reads.
+    let viewStateScope: QueryDevtoolsStorageScope | null = null;
+
     effect(() => {
+      const scope = queryDevtoolsSettings().viewState;
+
       const state: PersistedState = {
         open: this.open(),
         height: this.panelHeight(),
@@ -1278,11 +1283,12 @@ export class QueryDevtoolsComponent {
         jsonCollapsed: [...this.jsonCollapsedPaths()],
       };
 
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch {
-        // ignore (private mode / disabled storage)
+      if (scope !== viewStateScope) {
+        clearQueryDevtoolsStore(STORAGE_KEY);
+        viewStateScope = scope;
       }
+
+      writeQueryDevtoolsStore(scope, STORAGE_KEY, state);
     });
 
     // A window that shrinks below the floating panel would otherwise leave it half (or wholly) off
@@ -1301,14 +1307,26 @@ export class QueryDevtoolsComponent {
       );
     });
 
+    let pinsScope: QueryDevtoolsStorageScope | null = null;
+
     effect(() => {
+      const scope = queryDevtoolsSettings().pins;
       const ids = [...this.pinnedQueryIds()];
 
-      try {
-        localStorage.setItem(PINS_STORAGE_KEY, JSON.stringify(ids));
-      } catch {
-        // ignore (private mode / disabled storage)
+      if (scope !== pinsScope) {
+        clearQueryDevtoolsStore(PINS_STORAGE_KEY);
+        pinsScope = scope;
       }
+
+      writeQueryDevtoolsStore(scope, PINS_STORAGE_KEY, ids);
+    });
+
+    // A lowered cap has to bite now rather than at the next request, or the log it was lowered to shorten
+    // stays exactly as long as it was.
+    effect(() => {
+      const cap = queryDevtoolsSettings().maxEvents;
+
+      untracked(() => this.eventLog.update((log) => (log.length > cap ? log.slice(0, cap) : log)));
     });
 
     // Close any open JIT editor on any selection / tab change, and reset the value-explorer search
@@ -1425,6 +1443,78 @@ export class QueryDevtoolsComponent {
 
   public toggleOverridesPersist() {
     setQueryDevtoolsOverridePersistence(!this.overridesPersist());
+  }
+
+  /** Where armed overrides are kept, as the drawer's toggle and the Settings picker both name it. */
+  public overridesScopeLabel() {
+    const scope = queryDevtoolsSettings().overrides;
+
+    return scope === 'none' ? 'not kept' : `${scope}Storage`;
+  }
+
+  /**
+   * Puts the panel back the way it ships: layout, filters, selections, pins and the stored overrides.
+   * The settings themselves stay - a panel behaving oddly is a reason to reset its state, not to lose the
+   * scopes and limits that were chosen deliberately.
+   *
+   * Resetting the live state is the point, not just clearing the keys: the persistence effects would
+   * write the current state straight back into whatever store the scopes name.
+   */
+  public resetDevtools() {
+    clearQueryDevtoolsStore(STORAGE_KEY);
+    clearQueryDevtoolsStore(PINS_STORAGE_KEY);
+    clearQueryDevtoolsOverrideStore();
+
+    this.dock.set('bottom');
+    this.panelHeight.set(DEFAULT_HEIGHT);
+    this.panelWidth.set(DEFAULT_WIDTH);
+    this.floatRect.set(DEFAULT_FLOAT_RECT);
+    this.floatParked.set(false);
+    this.listWidth.set(null);
+    this.drawerWidth.set(null);
+    this.listHeight.set(null);
+    this.drawerHeight.set(null);
+
+    this.activeTab.set('queries');
+    this.detailTab.set('overview');
+    this.pinnedQueryIds.set(new Set());
+    this.inspectFilterIds.set(null);
+
+    this.selectedClientName.set(null);
+    this.selectedQueryId.set(null);
+    this.selectedFormId.set(null);
+    this.stackSelectedQueryId.set(null);
+    this.sequenceSelectedQueryId.set(null);
+    this.formSelectedQueryId.set(null);
+    this.timelineSelectedQueryId.set(null);
+
+    this.queryFilter.set('');
+    this.queryFacets.set(new Set());
+    this.queryRecentFirst.set(true);
+    this.queryTreeView.set(false);
+    this.collapsedQueryPaths.set(new Set());
+    this.expandedQueryGroups.set(new Set());
+    this.eventClient.set(null);
+    this.eventErrorsOnly.set(false);
+    this.socketFilter.set('');
+    this.jsonSearch.set('');
+    this.jsonExpandedPaths.set(new Set());
+    this.jsonCollapsedPaths.set(new Set());
+  }
+
+  /**
+   * Opens Settings over whatever tab is showing, and the same click closes it again. Settings is not in
+   * the tab bar - see {@link DevtoolsTab}.
+   */
+  protected toggleSettings() {
+    if (this.activeTab() === 'settings') {
+      this.activeTab.set(this.tabBeforeSettings);
+
+      return;
+    }
+
+    this.tabBeforeSettings = this.activeTab();
+    this.activeTab.set('settings');
   }
 
   /** Opens the first query the reload re-armed, so the banner leads somewhere rather than just warning. */
@@ -3323,7 +3413,10 @@ export class QueryDevtoolsComponent {
         ];
         let kept = 0;
 
-        return next.filter((entry) => entry.client !== client || ++kept <= MAX_DROPPED_CACHE_ENTRIES);
+        // Per client, not in total - a client that drops a lot must not push another client's out of view.
+        const cap = queryDevtoolsSettings().maxDroppedCacheEntries;
+
+        return next.filter((entry) => entry.client !== client || ++kept <= cap);
       });
 
       this.pushEventItem({
@@ -3428,6 +3521,6 @@ export class QueryDevtoolsComponent {
   }
 
   private pushEventItem(item: EventLogItem) {
-    this.eventLog.update((log) => [item, ...log].slice(0, MAX_EVENTS));
+    this.eventLog.update((log) => [item, ...log].slice(0, queryDevtoolsSettings().maxEvents));
   }
 }

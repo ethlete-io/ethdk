@@ -23,8 +23,24 @@ export type AnyQuery = Query<any>;
 /** The query a detail pane is showing, together with the registry entry it was registered as. */
 export type QueryDevtoolsSelection = { entry: QueryDevtoolsEntry; query: AnyQuery };
 
+/**
+ * A body the panel can show. Every one of them but `settings` is a tab in the bar: Settings holds nothing
+ * to count, so the badge/overflow logic would push it behind **More** - it is reached from the header's
+ * gear instead.
+ */
 export type DevtoolsTab =
-  'queries' | 'stacks' | 'sequences' | 'forms' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events' | 'faults' | 'about';
+  | 'queries'
+  | 'stacks'
+  | 'sequences'
+  | 'forms'
+  | 'auth'
+  | 'ws'
+  | 'cache'
+  | 'timeline'
+  | 'events'
+  | 'faults'
+  | 'about'
+  | 'settings';
 
 /**
  * The sections of the query detail drawer. The head and its actions stay pinned above them - the detail

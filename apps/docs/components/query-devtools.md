@@ -168,6 +168,11 @@ one-click **Float instead**, rather than the button appearing to do nothing.
 | **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | **About**     | [Which SDK and application build is actually running](#about-which-build-is-running) - the loaded `@ethlete/*` versions, the Angular version, and whatever the app handed to `provideQueryDevtools({ about })`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
+[Settings](#settings-what-the-panel-keeps-and-where) is not one of them: it holds nothing
+to count, so the [badge and overflow logic](#empty-tabs-fold-into-more) would push the one
+tab that explains a panel behaving oddly behind **More**. It opens from the **⚙** button in
+the header instead, and the same click closes it again over the tab you were on.
+
 ## Finding a query in a long list
 
 A real app registers a lot of queries, so the Queries tab narrows on three axes
@@ -719,8 +724,10 @@ heading once anything is armed, for clearing every rule on that query at once.
 
 Overrides die with the page by default. Next to **Reset all overrides** sits a
 **Keep across reloads** toggle that changes that: with it on, every armed override in
-the panel is written to `sessionStorage` under `ethlete:query:devtools:overrides:v1` and
-replayed as each query registers on the next load.
+the panel is written under `ethlete:query:devtools:overrides:v1` and replayed as each query
+registers on the next load. The store is `sessionStorage`, so they die with the tab -
+[Settings ⚙ → Storage](#settings-what-the-panel-keeps-and-where) can move them to
+`localStorage` if you have a reason, and says what that costs.
 
 The toggle is **panel-wide**, not per query, and it captures what is armed at the moment
 you switch it on - so the sequence is "arm the edits you want, then keep them", not "turn
@@ -734,7 +741,9 @@ so they depend on queries being created in the same order across the reload.
 
 **A reload that re-arms says so.** The panel opens with a red bar naming how many edits came
 back and on how many queries, with **Review** (jumps to the first of them) and **Drop all**
-(disarms everything it brought back and empties the store). If the store held ops for a query
+(disarms everything it brought back and empties the store). If they came back from
+`localStorage` the bar says that too, because "survives a reload" and "survives closing the
+tab" are different things to have been told. If the store held ops for a query
 that never registered - a route that no longer runs, a creation order that shifted - the same
 bar lists them as _matched no query_ rather than letting them land somewhere else silently.
 The [tampered badge](#the-tampered-badge) and its dot on the closed toggle light up from a
@@ -870,6 +879,11 @@ bootstrapApplication(AppComponent, {
 | Option            | Type     | Default | What it does                                                              |
 | ----------------- | -------- | ------- | ------------------------------------------------------------------------- |
 | `responseHistory` | `number` | `5`     | How many of each query's newest runs keep their response (or error) body. |
+
+This is the default rather than the last word: **Settings ⚙ → Limits** raises it for the rest
+of the page, which is what you want when you are already chasing something and do not want to
+restart the app to get more reach. It applies to runs from that point on - a body already
+trimmed is gone.
 
 Neither end of a pair is persisted: it is per-inspection state, and the runs it names do
 not survive a reload anyway.
@@ -1336,6 +1350,72 @@ components are bound to, which the browser Network tab can't do:
   dedented, with a **⧉ Copy** button next to the heading, so it pastes straight
   into a GraphQL playground.
 
+## Settings: what the panel keeps, and where
+
+The **⚙** button in the header opens Settings over whatever tab is showing. It holds three
+things: where each kind of panel state is kept, the limits the panel would otherwise carry as
+constants, and a copy of every panel-wide switch that lives in a tab of its own.
+
+Settings itself is always kept in `localStorage`, under
+`ethlete:query:devtools:settings:v1`, **whatever the scopes below say** - a scope of `none`
+that erased the choice which set it would be a setting you could never keep.
+
+### Storage: what survives a reload, and how long
+
+Each kind of state picks its own scope, because `none` costs something different for each:
+
+| State                                                             | Default   | `none` means                                              |
+| ----------------------------------------------------------------- | --------- | --------------------------------------------------------- |
+| **Panel view state** - dock, sizes, open tab, filters, selections | `session` | the panel forgets where it was on every reload            |
+| **Pinned queries**                                                | `local`   | a pin dies with the tab                                   |
+| [**Response overrides**](#keeping-overrides-across-a-reload)      | `none`    | the default - a reload is how the app stops being lied to |
+
+Changing a scope **moves** what is already stored and clears the copy the old scope left
+behind, so the next load cannot read a stale one.
+
+::: warning `local` for overrides is allowed, loudly
+`session` for overrides exists because "survives a reload" and "survives until I notice" are
+different promises, and an app that stays tampered with across days is hours of debugging the
+wrong thing. `local` is on offer anyway - a dev asking for it usually has a reason - and the
+[restored-overrides bar](#keeping-overrides-across-a-reload) names the scope it brought them
+back from.
+:::
+
+**IndexedDB is listed and disabled**, with the reason on its tooltip rather than left to be
+discovered: all three of these are read synchronously - view state in a field initializer
+before the first render, overrides inside query registration before the first request - and an
+async store cannot answer either in time. `@ethlete/query` ships an
+[IndexedDB persistence engine](/query/persistence) for query data, where arriving late is
+survivable; devtools state is not that.
+
+**Reset devtools** clears all three keys from both stores, whatever the scopes say, and puts
+the panel back where it ships: dock, sizes, filters, selections and pins. It resets the live
+panel and not just the keys, since the panel would otherwise write its current state straight
+back. What it leaves alone is Settings itself - a panel behaving oddly is a reason to reset its
+state, not to lose the scopes and limits you chose.
+
+### Limits: how much the panel keeps in memory
+
+| Limit                     | Default | Range       | Applies                                                                                                       |
+| ------------------------- | ------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
+| **Events log**            | `100`   | `10`-`1000` | at once - lowering it trims the log now, not at the next request                                              |
+| **Dropped cache entries** | `20`    | `0`-`200`   | per client, as entries are dropped                                                                            |
+| **Response history**      | `5`     | `1`-`50`    | to runs from now on; overrides [`provideQueryDevtools({ responseHistory })`](#run-history-and-response-diffs) |
+
+Response history is the one that costs real memory - bodies dominate what the run buffer
+retains - so it shows the application's own value until you change it, and offers a way back to
+it rather than making you remember what it was.
+
+### Mirrored: the switches their tabs also carry
+
+The [Queries list's sort and tree view](#grouping-the-list-by-route-path), whether
+[destroyed queries are listed](#a-destroyed-query-leaves-a-tombstone), the
+[event log's failures-only and client scope](#events-what-each-request-cost) and
+[Keep across reloads](#keeping-overrides-across-a-reload) are all here as well as where they
+already were. Nothing moved - each control stays in the tab it belongs to, and Settings is the
+one place that lists them, for the switch you know exists but not which tab it is on. Search
+boxes are not mirrored: a filter term is not a setting.
+
 ## Persistence
 
 The view state - open/closed, [dock edge or float rect, the size of each and the pane sizes](#where-the-panel-sits),
@@ -1357,6 +1437,10 @@ elsewhere: `localStorage`, under `ethlete:query:devtools:pins:v2`. Everything ab
 view state that should die with the tab, while a pin says which query you are working
 on and is meant to outlive one - and since a pin holds a registry id, it depends on
 creation order exactly the way the restored selection does.
+
+Both of those are defaults rather than rules:
+[Settings ⚙ → Storage](#storage-what-survives-a-reload-and-how-long) picks the scope per
+key, and the same tab has a **Reset devtools** that clears every one of them.
 
 [Armed faults](#faults-making-requests-actually-misbehave) are deliberately **not** part of
 that: they change how the app behaves, not how the panel looks, and a reload disarms every

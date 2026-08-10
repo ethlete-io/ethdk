@@ -1,22 +1,29 @@
 import {
+  clearQueryDevtoolsOverrideStore,
   clearRestoredQueryDevtoolsOverrides,
   initQueryDevtoolsOverridePersistence,
   queryDevtoolsOverridePersistence,
+  queryDevtoolsRestoredOverridesScope,
   restoredQueryDevtoolsOverrides,
   setQueryDevtoolsOverridePersistence,
+  setQueryDevtoolsOverridesScope,
   withQueryDevtoolsOverridePersistence,
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
+import { initQueryDevtoolsSettings, queryDevtoolsSettings } from './query-devtools-settings';
 
 const STORAGE_KEY = 'ethlete:query:devtools:overrides:v1';
 
 const register = (id: string) => withQueryDevtoolsOverridePersistence(id, createQueryDevtoolsOverrides());
 
 const stored = () => JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? 'null');
+const storedLocally = () => JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
 
 describe('query devtools override persistence', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.clear();
+    initQueryDevtoolsSettings();
     initQueryDevtoolsOverridePersistence();
   });
 
@@ -121,5 +128,56 @@ describe('query devtools override persistence', () => {
 
     expect(queryDevtoolsOverridePersistence()).toBe(false);
     expect(restoredQueryDevtoolsOverrides()).toEqual([]);
+  });
+
+  it('should keep them in localStorage when that scope is picked', () => {
+    setQueryDevtoolsOverridesScope('local');
+    register('query|api|GET|/posts#0').arm({ type: 'set', path: ['a'], value: 1 });
+
+    expect(queryDevtoolsSettings().overrides).toBe('local');
+    expect(stored()).toBeNull();
+    expect(storedLocally().ops['query|api|GET|/posts#0']).toHaveLength(1);
+  });
+
+  it('should move the store when the scope changes, leaving no copy behind', () => {
+    setQueryDevtoolsOverridePersistence(true);
+    register('query|api|GET|/posts#0').arm({ type: 'set', path: ['a'], value: 1 });
+
+    setQueryDevtoolsOverridesScope('local');
+
+    expect(stored()).toBeNull();
+    expect(storedLocally().ops['query|api|GET|/posts#0']).toHaveLength(1);
+  });
+
+  it('should report which scope a reload brought them back from', () => {
+    setQueryDevtoolsOverridesScope('local');
+    register('query|api|GET|/posts#0').arm({ type: 'set', path: ['a'], value: 1 });
+
+    initQueryDevtoolsOverridePersistence();
+
+    expect(queryDevtoolsRestoredOverridesScope()).toBe('local');
+
+    clearRestoredQueryDevtoolsOverrides();
+
+    expect(queryDevtoolsRestoredOverridesScope()).toBeNull();
+  });
+
+  it('should go back to the last scope that kept them when the toggle is switched on again', () => {
+    setQueryDevtoolsOverridesScope('local');
+    setQueryDevtoolsOverridePersistence(false);
+    setQueryDevtoolsOverridePersistence(true);
+
+    expect(queryDevtoolsSettings().overrides).toBe('local');
+  });
+
+  it('should empty the store from both stores on reset, leaving the scope alone', () => {
+    setQueryDevtoolsOverridesScope('local');
+    register('query|api|GET|/posts#0').arm({ type: 'set', path: ['a'], value: 1 });
+
+    clearQueryDevtoolsOverrideStore();
+
+    expect(storedLocally()).toBeNull();
+    expect(stored()).toBeNull();
+    expect(queryDevtoolsSettings().overrides).toBe('local');
   });
 });

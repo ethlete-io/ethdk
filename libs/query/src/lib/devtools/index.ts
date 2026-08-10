@@ -7,5 +7,6 @@ export * from './query-devtools-hook';
 export * from './query-devtools-override-persistence';
 export * from './query-devtools-overrides';
 export * from './query-devtools-registry';
+export * from './query-devtools-settings';
 export * from './query-devtools-stats';
 export * from './query-devtools-tombstone';

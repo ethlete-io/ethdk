@@ -1,0 +1,214 @@
+<div class="et-query-devtools-scroll">
+  <div class="et-query-devtools-toolbar et-query-devtools-settings-toolbar">
+    <p class="et-query-devtools-hint">
+      Panel-wide, and kept in <code class="et-query-devtools-mono">localStorage</code> whatever the scopes below say -
+      so a scope of <em>none</em> does not erase the choice that set it. Every switch under <strong>Mirrored</strong> is
+      the same one its own tab carries.
+    </p>
+  </div>
+
+  <div class="et-query-devtools-card">
+    <div class="et-query-devtools-card-head">
+      <strong>Storage</strong>
+      <span class="et-query-devtools-count">what survives a reload, and how long</span>
+    </div>
+
+    @for (row of SCOPE_ROWS; track row.key) {
+      @let scope = scopeOf(row.key);
+      <div class="et-query-devtools-settings-row">
+        <div class="et-query-devtools-settings-row-head">
+          <span>{{ row.label }}</span>
+          <div class="et-query-devtools-btn-group">
+            @for (option of SCOPES; track option.value) {
+              <button
+                [class.et-query-devtools-btn--active]="scope === option.value"
+                [attr.aria-pressed]="scope === option.value"
+                (click)="setScope(row.key, option.value)"
+                class="et-query-devtools-btn"
+                type="button"
+              >
+                {{ option.label }}
+              </button>
+            }
+            <button [title]="INDEXED_DB_TITLE" class="et-query-devtools-btn" type="button" disabled>IndexedDB</button>
+          </div>
+        </div>
+        <small>{{ row.hint }}</small>
+        @if (row.key === 'overrides' && scope === 'local') {
+          <p class="et-query-devtools-settings-warn">
+            <span aria-hidden="true">⚠</span>
+            Armed overrides now outlive closing the tab. An app that stays tampered with across days is hours of
+            debugging the wrong thing - the bar above the tabs says when they came back.
+          </p>
+        }
+      </div>
+    }
+
+    <div class="et-query-devtools-settings-row">
+      <div class="et-query-devtools-settings-row-head">
+        <span>Reset devtools</span>
+        @if (resetConfirming()) {
+          <div class="et-query-devtools-btn-group">
+            <button (click)="reset()" class="et-query-devtools-btn et-query-devtools-btn--danger" type="button">
+              Reset everything
+            </button>
+            <button (click)="resetConfirming.set(false)" class="et-query-devtools-btn" type="button">Cancel</button>
+          </div>
+        } @else {
+          <button (click)="resetConfirming.set(true)" class="et-query-devtools-btn" type="button">Reset…</button>
+        }
+      </div>
+      <small>
+        Clears all three keys from both stores, whatever the scopes above say, and puts the panel back where it ships -
+        layout, filters, selections and pins. The settings on this tab stay.
+      </small>
+    </div>
+  </div>
+
+  <div class="et-query-devtools-card">
+    <div class="et-query-devtools-card-head">
+      <strong>Limits</strong>
+      <span class="et-query-devtools-count">how much the panel keeps in memory</span>
+    </div>
+
+    <div class="et-query-devtools-settings-fields">
+      @for (row of LIMIT_ROWS; track row.key) {
+        <label class="et-query-devtools-field">
+          <span>{{ row.label }}</span>
+          <input
+            #limitInput
+            [value]="limitOf(row.key)"
+            [min]="row.min"
+            [max]="row.max"
+            [step]="row.step"
+            (change)="setLimit(row.key, limitInput.value)"
+            class="et-query-devtools-input et-query-devtools-input--number"
+            type="number"
+          />
+          <small>{{ row.hint }}</small>
+        </label>
+      }
+
+      <label class="et-query-devtools-field">
+        <span>Response history</span>
+        <input
+          #responseHistoryInput
+          [value]="responseHistory()"
+          (change)="setResponseHistory(responseHistoryInput.value)"
+          class="et-query-devtools-input et-query-devtools-input--number"
+          type="number"
+          min="1"
+          max="50"
+          step="1"
+        />
+        <small>
+          bodies each query keeps, which is how far back a response diff can reach. Bodies dominate what the run buffer
+          retains, so this is the one limit that costs real memory. Applies to runs from now on.
+          @if (settings().responseHistory !== null) {
+            <button (click)="clearResponseHistory()" class="et-query-devtools-btn" type="button">
+              Back to the app's own value
+            </button>
+          }
+        </small>
+      </label>
+    </div>
+  </div>
+
+  <div class="et-query-devtools-card">
+    <div class="et-query-devtools-card-head">
+      <strong>Mirrored</strong>
+      <span class="et-query-devtools-count">the same switches their tabs carry</span>
+    </div>
+
+    <div class="et-query-devtools-settings-row">
+      <div class="et-query-devtools-settings-row-head">
+        <span>Queries</span>
+        <div class="et-query-devtools-btn-group">
+          @let recentFirst = host.queryRecentFirst();
+          <button
+            [class.et-query-devtools-btn--active]="recentFirst"
+            [attr.aria-pressed]="recentFirst"
+            (click)="host.queryRecentFirst.set(!recentFirst)"
+            class="et-query-devtools-btn"
+            type="button"
+          >
+            recent first
+          </button>
+          @let treeView = host.queryTreeView();
+          <button
+            [class.et-query-devtools-btn--active]="treeView"
+            [attr.aria-pressed]="treeView"
+            (click)="host.queryTreeView.set(!treeView)"
+            class="et-query-devtools-btn"
+            type="button"
+          >
+            tree view
+          </button>
+          @let gone = showsGoneQueries();
+          <button
+            [class.et-query-devtools-btn--active]="gone"
+            [attr.aria-pressed]="gone"
+            (click)="toggleGoneQueries()"
+            class="et-query-devtools-btn"
+            type="button"
+          >
+            list gone
+          </button>
+        </div>
+      </div>
+      <small>Sort order, whether the list groups by route path, and whether destroyed queries are listed at all.</small>
+    </div>
+
+    <div class="et-query-devtools-settings-row">
+      <div class="et-query-devtools-settings-row-head">
+        <span>Events</span>
+        <div class="et-query-devtools-settings-controls">
+          @let errorsOnly = host.eventErrorsOnly();
+          <button
+            [class.et-query-devtools-btn--active]="errorsOnly"
+            [attr.aria-pressed]="errorsOnly"
+            (click)="host.eventErrorsOnly.set(!errorsOnly)"
+            class="et-query-devtools-btn"
+            type="button"
+          >
+            failures only
+          </button>
+          <select
+            #eventClientSelect
+            [value]="host.eventClient() ?? ''"
+            (change)="host.eventClient.set(eventClientSelect.value || null)"
+            class="et-query-devtools-select"
+            aria-label="Event log client"
+          >
+            <option value="">All clients</option>
+            @for (name of host.clientNames(); track name) {
+              <option [value]="name">{{ name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <small>What the event log is narrowed to. The log itself always holds every client's traffic.</small>
+    </div>
+
+    <div class="et-query-devtools-settings-row">
+      <div class="et-query-devtools-settings-row-head">
+        <span>Response overrides</span>
+        @let persist = host.overridesPersist();
+        <button
+          [class.et-query-devtools-btn--active]="persist"
+          [attr.aria-pressed]="persist"
+          (click)="host.toggleOverridesPersist()"
+          class="et-query-devtools-btn"
+          type="button"
+        >
+          Keep across reloads
+        </button>
+      </div>
+      <small>
+        The drawer's own toggle, which is the Storage scope above - currently
+        <span class="et-query-devtools-mono">{{ host.overridesScopeLabel() }}</span
+        >. Armed faults are never kept.
+      </small>
+    </div>
+  </div>
+</div>

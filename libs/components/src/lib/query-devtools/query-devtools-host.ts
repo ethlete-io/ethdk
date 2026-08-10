@@ -130,9 +130,13 @@ export type QueryDevtoolsHost = {
   isStale(query: AnyQuery): boolean;
   /** Whether an entry is showing an armed response override or a devtools-faulted outcome. */
   isTampered(entry: QueryDevtoolsEntry): boolean;
-  /** Whether armed response overrides are kept in `sessionStorage` and replayed on the next load. */
+  /** Whether armed response overrides are stored and replayed on the next load. */
   overridesPersist(): boolean;
   toggleOverridesPersist(): void;
+  /** Where they are kept, named for a title or a hint (`sessionStorage`, `localStorage`, `not kept`). */
+  overridesScopeLabel(): string;
+  /** Puts the panel's layout, filters, pins and stored overrides back to defaults, keeping the settings. */
+  resetDevtools(): void;
   requestProgress(query: AnyQuery): RequestProgress | null;
   retryCause(status: number): string;
   requestUrl(query: AnyQuery): string | null;
@@ -223,7 +227,7 @@ export type QueryDevtoolsHost = {
   runStatus(run: QueryDevtoolsRun): string;
 
   /** How many bodies a query retains, which is what bounds how far back a diff can reach. */
-  retainedResponseCount: number;
+  retainedResponseCount: Signal<number>;
 
   /** Moves the whole response diff one run older or newer, from the diff header. */
   canStepRunDiff(entry: QueryDevtoolsEntry, older: boolean): boolean;

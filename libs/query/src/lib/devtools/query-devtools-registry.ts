@@ -20,6 +20,7 @@ import {
   withQueryDevtoolsOverridePersistence,
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
+import { initQueryDevtoolsSettings } from './query-devtools-settings';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
 import { MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
 
@@ -221,6 +222,8 @@ export type QueryDevtoolsOptions = {
    * How many of each query's most recent runs keep their response (or error) body, which is what the
    * panel's response diff compares. Defaults to `5`. Bodies dominate what the run buffer retains, so
    * raise this only as far as the reach you actually need - a polling query holds one per run.
+   *
+   * This is the default; the panel's Settings tab can raise it for the rest of a page.
    */
   responseHistory?: number;
 
@@ -249,6 +252,9 @@ export type QueryDevtoolsOptions = {
  * ```
  */
 export const provideQueryDevtools = (options?: QueryDevtoolsOptions): EnvironmentProviders => {
+  // First: the stored settings say where the override store lives and whether the panel has raised the
+  // retention this app asked for, and both are read by the calls below.
+  initQueryDevtoolsSettings();
   setQueryDevtoolsResponseHistory(options?.responseHistory);
   registerEthleteVersion('core', CORE_VERSION);
   registerEthleteVersion('query', QUERY_VERSION);

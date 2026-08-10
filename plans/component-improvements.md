@@ -190,61 +190,6 @@ Accessibility is unaffected either way: the native input keeps its own arrow-key
 buttons keep their labels, so the scrub is a pure enhancement. The modifier shortcuts are not - they
 need documenting, because an unlabelled 10× is indistinguishable from a bug.
 
-## Query devtools: a Settings tab, and where devtools state is stored
-
-Raised by the user 2026-08-10. Two things at once: **collect the options that are currently scattered
-across the tabs**, and **make the storage location a choice** - none / session / local / something
-bigger - possibly per feature.
-
-The scattering is real. Panel-wide switches live wherever they were first needed: **Keep across
-reloads** (which governs override persistence for the whole panel) sits inside the _query detail
-drawer_; the tree/flat toggle, the recent-first sort and the Gone chip are in the Queries tab header;
-errors-only and the client scope are in the Events tab; the socket filter is in Sockets. Several
-more are not adjustable at all - `MAX_EVENTS` (100), `MAX_DROPPED_CACHE_ENTRIES` (20) and
-`provideQueryDevtools({ responseHistory })` are constants or provider-time config, and the last one
-is exactly the knob you want to raise _while_ chasing something.
-
-Two structural notes before any of it:
-
-- **A Settings tab is not a data tab.** `isTabPrimary()` hides tabs that hold nothing and pushes them
-  behind **More**; Settings holds nothing by that measure and would hide itself. It needs to sit
-  outside the badge/overflow logic - most likely a gear in the header actions next to the layout
-  menu, opening the same panel body a tab does.
-- **Decide whether About is a section of Settings or its own tab**, and decide it before either is
-  built. One tab with sections is the cheaper shape and About is a natural first section; the ask was
-  for a separate tab. Either is fine - building About section-shaped keeps both open.
-
-On storage, the important thing is that **per-feature scoping already exists, hardcoded and
-undiscoverable**, and each choice was made deliberately:
-
-| Key                                   | Where            | Why that scope                                                                                  |
-| ------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------- |
-| `ethlete:query:devtools:v4`           | `sessionStorage` | View state - meant to die with the tab                                                          |
-| `ethlete:query:devtools:pins:v2`      | `localStorage`   | A pin says what you are working on; it should outlive a tab                                     |
-| `ethlete:query:devtools:overrides:v1` | `sessionStorage` | Deliberate: "an app that stays tampered with across days is hours of debugging the wrong thing" |
-
-Making that configurable turns three documented rules into three defaults, which is the point and
-also the risk:
-
-- **`none` has to mean something per feature.** For pins it is fine. For overrides it is what the
-  code already does at the default setting. For view state it means the panel forgets its dock and
-  its open tab on every reload, which is a legitimate thing to want on a shared machine.
-- **`local` for overrides deliberately breaks the safety argument** in
-  `query-devtools-override-persistence.ts`. Allow it - a dev asking for it usually has a reason - but
-  it has to be loud, and the red restored-overrides bar that already exists is the right place to say
-  "and these came back from _local_ storage".
-- **"Other" is IndexedDB, and it is the one that does not just drop in.** `libs/query` already ships
-  an IndexedDB persistence engine, and the quota is the reason to want it (a designed mock library
-  will not fit in 5 MB). But every read today is synchronous: `readPersistedState()` runs in a field
-  initializer, and override replay happens inside query registration, before the first fetch.
-  IndexedDB cannot answer either of those in time. So it is available only to a feature that can
-  tolerate arriving late - and overrides/mocks, whose entire job is to be in place before the first
-  request, are exactly the features that cannot. Say this in the picker rather than letting someone
-  discover it.
-- **Add a "reset devtools" that clears every key**, whatever the scopes are set to. Three keys with
-  three lifetimes is already more than a user should have to reason about when the panel is behaving
-  oddly.
-
 ## Query devtools: a mock designer, with an export for the API team
 
 Raised by the user 2026-08-10. The big one: **design a response for a route, serve it to the app, and
@@ -846,6 +791,37 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Query devtools: a Settings tab** (2026-08-10, user-raised) - the scattered switches, and where
+state is kept. Settled with the user before building:
+
+- **A gear in the header, not a tab.** `isTabPrimary()` hides tabs holding nothing, so a Settings tab
+  would push itself behind **More**. `'settings'` is a `DevtoolsTab` that is deliberately absent from
+  the `tabs` array, so the body switch and the persisted `activeTab` work unchanged.
+- **`queryDevtoolsSettings()` in `libs/query`, not the panel**, because the override store's scope and
+  the response-history override are both read before the panel exists. Always `localStorage`, whatever
+  the scopes say. `provideQueryDevtools()` inits it **first** - the calls under it read from it.
+- **Scopes**: view state `session`, pins `local`, overrides **`none`** (unchanged default - the safety
+  promise). `local` for overrides is allowed and loud; the restored bar names the scope. Changing a
+  scope moves the store and clears the copy the old one left. IndexedDB is a disabled button carrying
+  its reason.
+- **Limits are live**: `maxEvents` (trims the log at once), `maxDroppedCacheEntries`, `responseHistory`
+  (overrides the provider value, with a way back to it).
+- **Mirrored, not moved** - the user's call. Search boxes are not mirrored: a filter term is not a
+  setting. About stayed its own tab, also the user's call, so Settings does not host it after all.
+- **Reset devtools resets the live state too**, not just the keys: the persistence effects would write
+  the current state straight back.
+
+Changeset `query-devtools-settings-tab.md`. Verified headlessly: scope migration between both stores,
+the events cap trimming 16 → 10, response history handed back to the app, reset returning to Queries
+with the settings intact.
+
+**Query devtools: touch and sticky-toolbar fixes** (2026-08-10, user-raised while Settings was being
+built) - every `:hover` in the panel is behind `@media (hover: hover)` so a tap no longer leaves a
+control lit, the controls a row-hover reveals (copy, pin, override trigger) are always visible under
+`(hover: none)`, and a sticky toolbar in the padded `.et-query-devtools-scroll` gets
+`inset-block-start: -1rem` so it sticks flush instead of leaving the container's padding as a gap.
+Changeset `query-devtools-touch-hover-and-sticky-toolbar.md`.
 
 **Query devtools: an About tab** (2026-08-10, user-raised) - what is running, for a bug report.
 

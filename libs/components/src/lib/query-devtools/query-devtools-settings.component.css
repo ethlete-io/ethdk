@@ -1,0 +1,67 @@
+@layer components {
+  /* The shared toolbar centres its controls against a one-line hint; this one's wraps. */
+  .et-query-devtools-settings-toolbar {
+    align-items: flex-start;
+  }
+
+  .et-query-devtools-settings-row {
+    padding-block: 0.6rem;
+    border-block-start: 1px solid var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-card > .et-query-devtools-settings-row:first-of-type {
+    border-block-start: 0;
+    padding-block-start: 0;
+  }
+
+  /* The control keeps the trailing edge whatever its label's length, so a column of them lines up. */
+  .et-query-devtools-settings-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .et-query-devtools-settings-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .et-query-devtools-settings-row > small {
+    display: block;
+    max-inline-size: 60rem;
+    margin-block-start: 0.3rem;
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-settings-warn {
+    margin: 0.4rem 0 0;
+    color: var(--_et-qdt-error);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-settings-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+    align-items: start;
+    gap: 0.8rem 1.6rem;
+  }
+
+  /* Like the faults tab: label, control and unit hint stacked, rather than the inline `field` elsewhere. */
+  .et-query-devtools-settings-fields .et-query-devtools-field {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);
+    align-items: baseline;
+    row-gap: 0.2rem;
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-settings-fields .et-query-devtools-field small {
+    grid-column: 2;
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+}

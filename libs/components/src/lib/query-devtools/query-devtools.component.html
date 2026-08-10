@@ -133,6 +133,19 @@
           <span aria-hidden="true">⤓</span>
           Session
         </button>
+        <!-- A gear, not a tab: Settings holds nothing to count, so the badge/overflow logic would push it
+             behind More - and the one control that explains a panel behaving oddly may not be hidden. -->
+        <button
+          [class.et-query-devtools-btn--active]="activeTab() === 'settings'"
+          [attr.aria-pressed]="activeTab() === 'settings'"
+          (click)="toggleSettings()"
+          class="et-query-devtools-btn et-query-devtools-icon-btn"
+          type="button"
+          title="Settings: where panel state is kept, and the limits it holds"
+          aria-label="Settings"
+        >
+          <span aria-hidden="true">⚙</span>
+        </button>
         @if (!poppedOut()) {
           @let layout = currentLayout();
           <div class="et-query-devtools-menu" etMenu placement="bottom-end">
@@ -222,6 +235,10 @@
             <strong>Overrides re-armed</strong> — {{ restored.ops }} {{ restored.ops === 1 ? 'edit' : 'edits' }} from
             your last page load {{ restored.ops === 1 ? 'is' : 'are' }} back on {{ restored.queries }}
             {{ restored.queries === 1 ? 'query' : 'queries' }}, so those responses are not what the API sent.
+            @if (restored.fromLocalStorage) {
+              They came back from <strong>localStorage</strong>, so they outlive closing this tab — clear them, or set
+              overrides back to <em>session</em> in Settings.
+            }
           } @else {
             <strong>Overrides could not be re-armed.</strong>
           }
@@ -295,6 +312,11 @@
         <!-- ABOUT -->
         @case ('about') {
           <et-query-devtools-about />
+        }
+
+        <!-- SETTINGS -->
+        @case ('settings') {
+          <et-query-devtools-settings />
         }
       }
     </div>

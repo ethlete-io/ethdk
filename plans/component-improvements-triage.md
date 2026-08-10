@@ -186,7 +186,6 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part                                                                |
 | Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped                                                                     |
 | Number input: drag-to-scrub + step modifiers       | `A`,`D` | User-raised 2026-08-10. One `stepBy(direction, multiplier)` serves both halves. Settle the multiplier vocabulary once, and which surface the drag lives on - the stepper buttons already own `pointerdown` |
-| Query devtools: Settings tab + storage scopes      | `A`,`D` | User-raised 2026-08-10. Panel-wide options sit in whichever tab first needed them. The three storage keys already differ on purpose; IndexedDB cannot answer the synchronous reads overrides depend on     |
 
 ### L - projects, not tickets
 
@@ -241,9 +240,7 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 Everything in the `S` table is independent of everything else and can be picked off in any order.
 
-One chain, added 2026-08-10: **About → Settings → mock designer.** About **shipped** the same day,
-built section-shaped as `<et-query-devtools-about>` so Settings can host it verbatim rather than end
-up with two near-identical tabs - do not rebuild it, absorb it. Settings is what introduces a
-storage-location choice, and the mock designer is the feature that most needs one: a designed
-response library is the thing that outgrows a 5 MB store. Building the designer first would either
-hardcode a fourth storage key or force the settings work anyway, halfway through.
+One chain, added 2026-08-10: **About → Settings → mock designer.** About and Settings both
+**shipped** that day, so only the designer is left - and it inherits `queryDevtoolsSettings()`, which
+is where a mock library's storage scope belongs. Do not add a fourth hardcoded key: the picker, the
+migration between stores and the "IndexedDB cannot answer a synchronous read" note are all there.
