@@ -3,6 +3,7 @@ import { Component, computed, ViewEncapsulation } from '@angular/core';
 import { clearQueryDevtoolsTombstones, QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
+import { buildQueryPathTree, flattenQueryPathTree, queryRoutePathSegments } from './query-devtools-query-tree';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import { AnyQuery, QueryListFacet, QueryStatus } from './query-devtools-types';
 
@@ -121,6 +122,23 @@ export class QueryDevtoolsQueriesTabComponent {
     return [...groups.values()];
   });
 
+  /**
+   * The same groups, arranged by route path. Built from what a row *shows* (the resolved route), the way
+   * {@link groupKey} is - so `/post/1` and `/post/2` are two leaves under `post` rather than one, which
+   * is what makes the tree answer "which ids did this screen fetch".
+   */
+  protected queryTree = computed(() =>
+    flattenQueryPathTree(
+      buildQueryPathTree(
+        this.queryGroups().map((group) => ({ path: queryRoutePathSegments(this.groupRoute(group.head)), item: group })),
+      ),
+      {
+        isCollapsed: (key) => this.host.collapsedQueryPaths().has(key),
+        keyOf: (group) => group.key,
+      },
+    ),
+  );
+
   /** How many queries the list would hold with the search box empty, which is what the count compares to. */
   protected scopedQueryCount = computed(() => {
     const facets = this.host.queryFacets();
@@ -238,14 +256,17 @@ export class QueryDevtoolsQueriesTabComponent {
     );
   }
 
-  /** What makes two rows indistinguishable on screen. A tombstone never folds into a live query. */
-  private groupKey(item: QueryRow) {
-    const route = this.host
+  /** The route a row renders, as one string - what both the fold key and the path tree are built from. */
+  private groupRoute(item: QueryRow) {
+    return this.host
       .routeSegments(item.entry, item.query)
       .map((segment) => segment.text)
       .join('');
+  }
 
-    return `${item.entry.destroyedAt ? 'gone' : 'live'}|${item.entry.meta.method ?? ''}|${route}`;
+  /** What makes two rows indistinguishable on screen. A tombstone never folds into a live query. */
+  private groupKey(item: QueryRow) {
+    return `${item.entry.destroyedAt ? 'gone' : 'live'}|${item.entry.meta.method ?? ''}|${this.groupRoute(item)}`;
   }
 
   /**

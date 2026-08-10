@@ -73,6 +73,21 @@
         >
           recent <span aria-hidden="true">{{ recentFirst ? '↓' : '↑' }}</span>
         </button>
+        @let treeView = host.queryTreeView();
+        <button
+          [class.et-query-devtools-btn--active]="treeView"
+          [attr.aria-pressed]="treeView"
+          [title]="
+            treeView
+              ? 'Grouped by route path. Click for the flat list.'
+              : 'Flat list. Click to group by route path - segments nothing branches off are folded into one row.'
+          "
+          (click)="host.queryTreeView.set(!treeView)"
+          class="et-query-devtools-btn et-query-devtools-sort"
+          type="button"
+        >
+          <span aria-hidden="true">⑂</span> tree
+        </button>
         @for (facet of facets; track facet.id) {
           @let count = facetCounts()[facet.id];
           @let isActive = host.queryFacets().has(facet.id);
@@ -113,14 +128,67 @@
       </div>
     </div>
 
-    @for (group of queryGroups(); track group.key) {
+    @if (host.queryTreeView()) {
+      @for (row of queryTree(); track row.key) {
+        @if (row.kind === 'folder') {
+          <div [style.--_et-qdt-tree-depth]="row.depth" class="et-query-devtools-row et-query-devtools-row--folder">
+            <button
+              [attr.aria-expanded]="!row.collapsed"
+              [title]="
+                (row.collapsed ? 'Expand' : 'Collapse') + ' /' + row.label + ' - ' + row.count + ' queries below it'
+              "
+              (click)="host.toggleQueryPath(row.key)"
+              class="et-query-devtools-row-select"
+              type="button"
+            >
+              <span class="et-query-devtools-row-caret" aria-hidden="true">{{ row.collapsed ? '▸' : '▾' }}</span>
+              <span class="et-query-devtools-folder">/{{ row.label }}</span>
+              <span class="et-query-devtools-row-count">{{ row.count }}</span>
+            </button>
+          </div>
+        } @else {
+          <ng-container
+            [ngTemplateOutlet]="queryGroupBlock"
+            [ngTemplateOutletContext]="{ group: row.item, depth: row.depth, trim: row.parentPath }"
+          />
+        }
+      } @empty {
+        <ng-container [ngTemplateOutlet]="emptyList" />
+      }
+    } @else {
+      @for (group of queryGroups(); track group.key) {
+        <ng-container [ngTemplateOutlet]="queryGroupBlock" [ngTemplateOutletContext]="{ group, depth: 0, trim: '' }" />
+      } @empty {
+        <ng-container [ngTemplateOutlet]="emptyList" />
+      }
+    }
+
+    <!-- An empty scope is a different problem from a filter that matches nothing, and only the
+         latter is the user's own doing - so it names the way out. -->
+    <ng-template #emptyList>
+      @if (scopedQueryCount()) {
+        <p class="et-query-devtools-empty">No query matches the filter · {{ scopedQueryCount() }} in scope.</p>
+      } @else if (goneQueryCount()) {
+        <p class="et-query-devtools-empty">
+          No query in scope still exists · pick Gone to list the {{ goneQueryCount() }} destroyed.
+        </p>
+      } @else if (host.inspectFilterIds()) {
+        <p class="et-query-devtools-empty">
+          The inspected element's queries are no longer registered. Clear the filter.
+        </p>
+      } @else {
+        <p class="et-query-devtools-empty">No queries registered.</p>
+      }
+    </ng-template>
+
+    <ng-template #queryGroupBlock let-group="group" let-depth="depth" let-trim="trim">
       @if (group.items.length === 1) {
-        <ng-container [ngTemplateOutlet]="queryRow" [ngTemplateOutletContext]="{ item: group.head }" />
+        <ng-container [ngTemplateOutlet]="queryRow" [ngTemplateOutletContext]="{ item: group.head, depth, trim }" />
       } @else {
         @let expanded = isGroupExpanded(group);
         @let head = group.head;
         @let groupGone = !!head.entry.destroyedAt;
-        <div class="et-query-devtools-row et-query-devtools-row--group">
+        <div [style.--_et-qdt-tree-depth]="depth" class="et-query-devtools-row et-query-devtools-row--group">
           <button
             [attr.aria-expanded]="expanded"
             [title]="
@@ -141,7 +209,7 @@
             ></span>
             <span class="et-query-devtools-method">{{ head.entry.meta.method }}</span>
             <span class="et-query-devtools-route">
-              <et-query-devtools-route [segments]="host.routeSegments(head.entry, head.query)" />
+              <et-query-devtools-route [segments]="host.routeSegments(head.entry, head.query)" [trimPrefix]="trim" />
             </span>
             @if (groupGone) {
               <span
@@ -168,33 +236,21 @@
         </div>
         @if (expanded) {
           @for (item of group.items; track item.entry.id) {
-            <ng-container [ngTemplateOutlet]="queryRow" [ngTemplateOutletContext]="{ item, nested: true }" />
+            <ng-container
+              [ngTemplateOutlet]="queryRow"
+              [ngTemplateOutletContext]="{ item, nested: true, depth, trim }"
+            />
           }
         }
       }
-    } @empty {
-      <!-- An empty scope is a different problem from a filter that matches nothing, and only the
-           latter is the user's own doing - so it names the way out. -->
-      @if (scopedQueryCount()) {
-        <p class="et-query-devtools-empty">No query matches the filter · {{ scopedQueryCount() }} in scope.</p>
-      } @else if (goneQueryCount()) {
-        <p class="et-query-devtools-empty">
-          No query in scope still exists · pick Gone to list the {{ goneQueryCount() }} destroyed.
-        </p>
-      } @else if (host.inspectFilterIds()) {
-        <p class="et-query-devtools-empty">
-          The inspected element's queries are no longer registered. Clear the filter.
-        </p>
-      } @else {
-        <p class="et-query-devtools-empty">No queries registered.</p>
-      }
-    }
+    </ng-template>
 
-    <ng-template #queryRow let-item="item" let-nested="nested">
+    <ng-template #queryRow let-item="item" let-nested="nested" let-depth="depth" let-trim="trim">
       @let isGone = !!item.entry.destroyedAt;
       @let isPinned = host.isQueryPinned(item.entry);
       @let pinLabel = isPinned ? 'Unpin this query' : 'Pin this query to the top of the list';
       <div
+        [style.--_et-qdt-tree-depth]="depth"
         [class.et-query-devtools-row--active]="host.selectedQueryId() === item.entry.id"
         [class.et-query-devtools-row--gone]="isGone"
         [class.et-query-devtools-row--nested]="nested"
@@ -209,7 +265,7 @@
           ></span>
           <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
           <span class="et-query-devtools-route">
-            <et-query-devtools-route [segments]="host.routeSegments(item.entry, item.query)" />
+            <et-query-devtools-route [segments]="host.routeSegments(item.entry, item.query)" [trimPrefix]="trim" />
           </span>
           @if (isGone) {
             <span

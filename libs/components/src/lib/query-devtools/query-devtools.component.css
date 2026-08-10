@@ -14,7 +14,7 @@
     --_et-qdt-success: rgb(34 197 94);
     --_et-qdt-error: rgb(239 68 68);
     --_et-qdt-loading: rgb(234 179 8);
-    --_et-qdt-title-bar: 1.4rem;
+    --_et-qdt-title-bar: 2.4rem;
 
     position: fixed;
     inset-inline: 0;
@@ -68,18 +68,29 @@
   }
 
   .et-query-devtools-panel:where([data-dock='float']) {
-    --et-resize-handles-edge-inset: 1.2rem;
-    --et-resize-handles-side-top: 0px;
-    --et-resize-handles-side-bottom: 0px;
-    /* Above the move strip, so the outermost band of the title bar still resizes from the top edge. */
+    /* The resize bands are pinned to the panel's padding box, so a frame exactly their thickness is what
+       keeps them off the panel's own controls. Their touch sizes are capped to the same frame on
+       purpose: left at the default `20px`/`28px` they blanket the title bar and the header's trailing
+       edge on any device that reports a coarse pointer, and then nothing in there can be pressed. */
+    --_et-qdt-frame: 0.8rem;
+    --et-resize-handles-edge-size: var(--_et-qdt-frame);
+    --et-resize-handles-touch-edge-size: var(--_et-qdt-frame);
+    --et-resize-handles-corner-size: 1.6rem;
+    --et-resize-handles-touch-corner-size: 1.6rem;
+    --et-resize-handles-edge-inset: 1.6rem;
+    /* The side bands stop below the title bar and above the bottom corners, so the bar is grabbable
+       across its whole width. */
+    --et-resize-handles-side-top: var(--_et-qdt-title-bar);
+    --et-resize-handles-side-bottom: 1.6rem;
     --et-resize-handles-z-index: 3;
 
     position: absolute;
     inline-size: auto;
     min-block-size: 0;
     max-block-size: none;
-    /* Room for the title bar the move strip occupies, so it costs the header no click area. */
     padding-block-start: var(--_et-qdt-title-bar);
+    padding-inline: var(--_et-qdt-frame);
+    padding-block-end: var(--_et-qdt-frame);
     border: 1px solid var(--_et-qdt-border);
     border-radius: 0.6rem;
     box-shadow: 0 1rem 4rem rgb(0 0 0 / 0.45);
@@ -98,11 +109,18 @@
     z-index: 2;
   }
 
+  /* The panel's own rounded corners are drawn on the border; the body inside the frame gets its own so
+     the scroll areas do not square off against it. */
+  .et-query-devtools-panel:where([data-dock='float']) .et-query-devtools-body {
+    border-radius: 0.3rem;
+    overflow: hidden;
+  }
+
   .et-query-devtools-move::after {
     content: '';
     position: absolute;
     inset-inline: 50%;
-    inset-block-start: 0.4rem;
+    inset-block-start: 0.9rem;
     inline-size: 3rem;
     margin-inline-start: -1.5rem;
     block-size: 0.6rem;
@@ -132,6 +150,34 @@
 
   .et-query-devtools-panel:where([data-dock='float'][data-parked]) .et-query-devtools-move::after {
     color: var(--_et-qdt-accent);
+  }
+
+  /* Docked to the left edge: the mirror of the right dock, down to which border carries the seam. */
+  .et-query-devtools-host:where([data-dock='left']) {
+    inset-block: 0;
+    inset-inline-end: auto;
+  }
+
+  .et-query-devtools-panel:where([data-dock='left']) {
+    inline-size: auto;
+    block-size: 100%;
+    max-block-size: none;
+    max-inline-size: 90vw;
+    border-block-start: 0;
+    border-inline-end: 1px solid var(--_et-qdt-border);
+    box-shadow: 0.4rem 0 2rem rgb(0 0 0 / 0.35);
+  }
+
+  /* Docked to the top edge: same shape as the bottom dock, hanging from the other side. */
+  .et-query-devtools-host:where([data-dock='top']) {
+    inset-block-start: 0;
+    inset-block-end: auto;
+  }
+
+  .et-query-devtools-panel:where([data-dock='top']) {
+    border-block-start: 0;
+    border-block-end: 1px solid var(--_et-qdt-border);
+    box-shadow: 0 0.4rem 2rem rgb(0 0 0 / 0.35);
   }
 
   /* Popped out: the pop-up window is the frame, so the panel drops the chrome that made it an overlay.
@@ -165,6 +211,13 @@
     flex-wrap: nowrap;
     min-inline-size: 0;
     overflow-x: auto;
+  }
+
+  /* ...but a scroller clips what is absolutely positioned inside it, and both strips hold a dropdown.
+     While one is open the strip stops scrolling instead, which is the harmless half of the trade. */
+  .et-query-devtools-panel:where([data-pane-axis='block'])
+    :is(.et-query-devtools-tabs, .et-query-devtools-header-actions):has(.et-query-devtools-tab-menu-list) {
+    overflow: visible;
   }
 
   /* Or they compress to fit instead of scrolling, and every label wraps to two lines. */
@@ -246,6 +299,18 @@
     cursor: ew-resize;
   }
 
+  .et-query-devtools-panel:where([data-dock='left']) .et-query-devtools-resize {
+    inset-inline: auto 0;
+    inset-block: 0;
+    inline-size: 0.6rem;
+    block-size: auto;
+    cursor: ew-resize;
+  }
+
+  .et-query-devtools-panel:where([data-dock='top']) .et-query-devtools-resize {
+    inset-block: auto 0;
+  }
+
   .et-query-devtools-resize::after {
     content: '';
     position: absolute;
@@ -265,6 +330,19 @@
     block-size: 4rem;
     margin-inline-start: 0;
     margin-block-start: -2rem;
+  }
+
+  .et-query-devtools-panel:where([data-dock='left']) .et-query-devtools-resize::after {
+    inset-inline: auto 0.2rem;
+    inset-block: 50% auto;
+    inline-size: 0.2rem;
+    block-size: 4rem;
+    margin-inline-start: 0;
+    margin-block-start: -2rem;
+  }
+
+  .et-query-devtools-panel:where([data-dock='top']) .et-query-devtools-resize::after {
+    inset-block: auto 0.2rem;
   }
 
   .et-query-devtools-resize:hover::after {
@@ -439,6 +517,21 @@
   .et-query-devtools-tab-menu-item:hover {
     background: var(--_et-qdt-hover);
     color: var(--_et-qdt-fg);
+  }
+
+  /* Anchored to the button's trailing edge - it sits at the end of the action row, so a menu opening to
+     the right would run off the panel. */
+  .et-query-devtools-layout-menu {
+    inset-inline: auto 0;
+  }
+
+  .et-query-devtools-layout-glyph {
+    display: inline-block;
+    inline-size: 1.6rem;
+  }
+
+  .et-query-devtools-tab-menu-item--active {
+    color: var(--_et-qdt-accent);
   }
 
   .et-query-devtools-header-actions {

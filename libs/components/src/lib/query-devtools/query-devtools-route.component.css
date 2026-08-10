@@ -8,4 +8,11 @@
   .et-query-devtools-route-query {
     color: var(--_et-qdt-muted);
   }
+
+  /* Stands in for the path the tree's folder heading above the row already states. Dimmed and dotted so
+     it reads as "there is more here", not as part of the route. */
+  .et-query-devtools-route-trimmed {
+    color: var(--_et-qdt-subtle);
+    cursor: help;
+  }
 }

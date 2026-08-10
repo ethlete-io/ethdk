@@ -138,25 +138,39 @@
           ⤓ Session
         </button>
         @if (!poppedOut()) {
-          @let nextDock = dock() === 'bottom' ? 'right' : dock() === 'right' ? 'float' : 'bottom';
-          <button
-            (click)="toggleDock()"
-            class="et-query-devtools-btn"
-            type="button"
-            title="{{ nextDock === 'float' ? 'Float the panel over the page' : 'Dock to the ' + nextDock + ' edge' }}"
-          >
-            <span aria-hidden="true">{{ nextDock === 'right' ? '◨' : nextDock === 'float' ? '❐' : '⬓' }}</span>
-            {{ nextDock === 'right' ? 'Right' : nextDock === 'float' ? 'Float' : 'Bottom' }}
-          </button>
-          <button
-            (click)="popOut()"
-            class="et-query-devtools-btn"
-            type="button"
-            title="Move the panel into a window of its own - the same live panel, on your other screen"
-          >
-            <span aria-hidden="true">⧉</span>
-            Pop out
-          </button>
+          @let layout = currentLayout();
+          <div #layoutMenu class="et-query-devtools-tab-menu">
+            <button
+              [class.et-query-devtools-tab-more--open]="layoutMenuOpen()"
+              [attr.aria-expanded]="layoutMenuOpen()"
+              (click)="toggleLayoutMenu()"
+              class="et-query-devtools-btn"
+              type="button"
+              aria-haspopup="true"
+              title="Where the panel sits"
+            >
+              <span aria-hidden="true">{{ layout.glyph }}</span>
+              {{ layout.label }}
+              <span class="et-query-devtools-tab-more-caret" aria-hidden="true">▾</span>
+            </button>
+
+            @if (layoutMenuOpen()) {
+              <div class="et-query-devtools-tab-menu-list et-query-devtools-layout-menu">
+                @for (option of LAYOUTS; track option.id) {
+                  <button
+                    [class.et-query-devtools-tab-menu-item--active]="dock() === option.id"
+                    [title]="option.hint"
+                    (click)="selectLayout(option.id)"
+                    class="et-query-devtools-tab-menu-item"
+                    type="button"
+                  >
+                    <span class="et-query-devtools-layout-glyph" aria-hidden="true">{{ option.glyph }}</span>
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
         }
         <button
           (click)="toggleOpen()"

@@ -144,6 +144,31 @@
     padding-inline-start: 2.6rem;
   }
 
+  /* Tree view: one indent step per path level, added to whatever padding the row already had - so a
+     nested consumer row inside a folder keeps both offsets rather than one replacing the other. */
+  .et-query-devtools-row > .et-query-devtools-row-select {
+    padding-inline-start: calc(0.8rem + var(--_et-qdt-tree-depth, 0) * 1.4rem);
+  }
+
+  .et-query-devtools-row--nested > .et-query-devtools-row-select {
+    padding-inline-start: calc(2.6rem + var(--_et-qdt-tree-depth, 0) * 1.4rem);
+  }
+
+  /* A folder is a heading, not a query: no status dot, no method, no time column - just where it sits
+     in the path and how much is under it. Same tint as a fold head, for the same reason. */
+  .et-query-devtools-row--folder {
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
+  }
+
+  .et-query-devtools-folder {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--_et-qdt-muted);
+  }
+
   /* Half of `--_et-qdt-hover`, so a group head still reads as a header of its own but the row's real
      hover (which is the full mix) stays visible on top of it. */
   .et-query-devtools-row--group {

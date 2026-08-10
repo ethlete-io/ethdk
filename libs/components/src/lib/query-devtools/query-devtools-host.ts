@@ -160,6 +160,11 @@ export type QueryDevtoolsHost = {
   toggleQueryGroup(key: string): void;
   /** Which way the Queries list sorts by last-executed time - persisted. */
   queryRecentFirst: WritableSignal<boolean>;
+  /** Whether the Queries list is arranged as a tree of route paths instead of a flat list - persisted. */
+  queryTreeView: WritableSignal<boolean>;
+  /** The path folders the user closed. Collapsed, not expanded - a tree opens open. */
+  collapsedQueryPaths: Signal<ReadonlySet<string>>;
+  toggleQueryPath(key: string): void;
   /** The element a query was created in, or `null` for one created outside a component/directive. */
   locatableElement(entry: QueryDevtoolsEntry): HTMLElement | null;
   locateQuery(entry: QueryDevtoolsEntry): void;

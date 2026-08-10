@@ -135,7 +135,10 @@ import {
  * Where the panel sits: attached to an edge, or floating over the page as a window of its own. A
  * pop-out is not one of these - that is a real browser window, not a position in this document.
  */
-type DevtoolsDock = 'bottom' | 'right' | 'float';
+type DevtoolsDock = 'bottom' | 'top' | 'left' | 'right' | 'float';
+
+/** What the layout menu offers, in the order it lists them. `popout` is a window, not a position. */
+type DevtoolsLayout = DevtoolsDock | 'popout';
 
 /** The floating panel's position and size, in CSS px from the viewport's top-left. */
 type FloatRect = { x: number; y: number; width: number; height: number };
@@ -169,6 +172,8 @@ type PersistedState = {
   queryFilter?: string;
   queryFacets?: QueryListFacet[];
   queryRecentFirst?: boolean;
+  queryTreeView?: boolean;
+  collapsedQueryPaths?: string[];
   eventClient?: string | null;
   eventErrorsOnly?: boolean;
   socketFilter?: string;
@@ -209,6 +214,31 @@ const renderedTarget = (element: Element, depth = 0): Element | null => {
 
   return null;
 };
+
+/**
+ * Every place the panel can sit, as the layout menu lists them. A menu rather than a row of buttons:
+ * six destinations do not fit in a header that already carries ten tabs, and one of them is a window.
+ */
+const DEVTOOLS_LAYOUTS = [
+  { id: 'bottom', glyph: '\u2b13', label: 'Bottom', hint: 'Dock to the bottom edge' },
+  { id: 'top', glyph: '\u2b12', label: 'Top', hint: 'Dock to the top edge' },
+  { id: 'left', glyph: '\u25e7', label: 'Left', hint: 'Dock to the left edge' },
+  { id: 'right', glyph: '\u25e8', label: 'Right', hint: 'Dock to the right edge' },
+  {
+    id: 'float',
+    glyph: '\u2750',
+    label: 'Float',
+    hint: 'A window inside the page - move it, resize it, shove it off an edge to park it',
+  },
+  {
+    id: 'popout',
+    glyph: '\u29c9',
+    label: 'Pop out',
+    hint: 'Move the panel into a window of its own - the same live panel, on your other screen',
+  },
+] as const satisfies readonly { id: DevtoolsLayout; glyph: string; label: string; hint: string }[];
+
+const layoutFor = (dock: DevtoolsDock) => DEVTOOLS_LAYOUTS.find((layout) => layout.id === dock) ?? DEVTOOLS_LAYOUTS[0];
 
 const noop = () => undefined;
 
@@ -617,6 +647,9 @@ export class QueryDevtoolsComponent {
   /** The overflow tab menu, to tell a click inside it from one that should dismiss it. */
   private tabMenuEl = viewChild<ElementRef<HTMLElement>>('tabMenu');
 
+  /** The layout menu, for the same reason. */
+  private layoutMenuEl = viewChild<ElementRef<HTMLElement>>('layoutMenu');
+
   private eventIdCounter = 0;
   private lastSelectionKey = '';
 
@@ -643,6 +676,8 @@ export class QueryDevtoolsComponent {
 
   protected readonly shortcut = queryDevtoolsShortcutLabel();
 
+  protected readonly LAYOUTS = DEVTOOLS_LAYOUTS;
+
   protected open = signal(this.persisted.open ?? false);
   private panelHeight = signal(this.persisted.height ?? DEFAULT_HEIGHT);
   private panelWidth = signal(this.persisted.width ?? DEFAULT_WIDTH);
@@ -663,6 +698,9 @@ export class QueryDevtoolsComponent {
 
   /** Which edge the panel is docked to, or `float` for a window of its own inside the page. */
   protected dock = signal<DevtoolsDock>(this.persisted.dock ?? 'bottom');
+
+  /** The entry the layout button shows, so it names where the panel is rather than where it could go. */
+  protected currentLayout = computed(() => layoutFor(this.dock()));
 
   /** Where the floating panel sits and how big it is. Kept while docked, so a return to float restores it. */
   private floatRect = signal<FloatRect>(this.persisted.floatRect ?? DEFAULT_FLOAT_RECT);
@@ -696,12 +734,15 @@ export class QueryDevtoolsComponent {
    */
   private narrowViewport = injectBreakpointObserver().observeBreakpoint({ max: 'sm' });
 
+  /** Whether the panel is docked to a side edge, which is what sizes it along the inline axis. */
+  private sideDocked = computed(() => this.dock() === 'left' || this.dock() === 'right');
+
   /** Which axis the two-pane tabs split along. The stylesheet keys the stacked layout off the same value. */
   protected paneAxis = computed<PaneAxis>(() => {
     if (this.poppedOut()) return 'inline';
     if (this.floating()) return this.floatRect().width < FLOAT_STACK_WIDTH ? 'block' : 'inline';
 
-    return this.dock() === 'right' || this.narrowViewport() ? 'block' : 'inline';
+    return this.sideDocked() || this.narrowViewport() ? 'block' : 'inline';
   });
 
   private popup: Window | null = null;
@@ -712,14 +753,14 @@ export class QueryDevtoolsComponent {
     if (this.poppedOut()) return null;
     if (this.floating()) return this.floatRect().height;
 
-    return this.dock() === 'bottom' ? this.panelHeight() : null;
+    return this.sideDocked() ? null : this.panelHeight();
   });
 
   protected panelInlineSize = computed(() => {
     if (this.poppedOut()) return null;
     if (this.floating()) return this.floatRect().width;
 
-    return this.dock() === 'right' ? this.panelWidth() : null;
+    return this.sideDocked() ? this.panelWidth() : null;
   });
 
   /** The floating panel's offset from the viewport's top-left, or `null` while it is docked. */
@@ -752,6 +793,18 @@ export class QueryDevtoolsComponent {
    * is not, because "which one just ran" is the question the column exists to answer.
    */
   public queryRecentFirst = signal(this.persisted.queryRecentFirst ?? true);
+
+  /**
+   * Whether the Queries list is arranged as a tree of route paths. Off by default: the flat list is
+   * still the right shape for "what ran just now", which is what the tab is opened for most of the time.
+   */
+  public queryTreeView = signal(this.persisted.queryTreeView ?? false);
+
+  /**
+   * The path folders the user closed. Collapsed rather than expanded, because a tree that opens closed
+   * shows nothing but the top segment of every route - which answers no question the flat list didn't.
+   */
+  public collapsedQueryPaths = signal<ReadonlySet<string>>(new Set(this.persisted.collapsedQueryPaths ?? []));
 
   /**
    * The entry ids sorted to the top of the Queries list. Ids are derived from a stable descriptor plus a
@@ -1026,6 +1079,7 @@ export class QueryDevtoolsComponent {
   protected overflowTabs = computed(() => this.tabs.filter((tab) => !this.isTabPrimary(tab.id)));
 
   protected tabMenuOpen = signal(false);
+  protected layoutMenuOpen = signal(false);
 
   public selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
   public stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
@@ -1202,6 +1256,8 @@ export class QueryDevtoolsComponent {
         queryFilter: this.queryFilter(),
         queryFacets: [...this.queryFacets()],
         queryRecentFirst: this.queryRecentFirst(),
+        queryTreeView: this.queryTreeView(),
+        collapsedQueryPaths: [...this.collapsedQueryPaths()],
         eventClient: this.eventClient(),
         eventErrorsOnly: this.eventErrorsOnly(),
         socketFilter: this.socketFilter(),
@@ -1331,6 +1387,25 @@ export class QueryDevtoolsComponent {
       )
       .subscribe();
 
+    toObservable(this.layoutMenuOpen)
+      .pipe(
+        switchMap((open) => {
+          if (!open) return EMPTY;
+
+          const menuDoc = this.panelEl()?.nativeElement.ownerDocument ?? doc;
+
+          return merge(
+            fromEvent<PointerEvent>(menuDoc, 'pointerdown', { capture: true }).pipe(
+              filter((e) => !this.layoutMenuEl()?.nativeElement.contains(e.target as Node)),
+            ),
+            fromEvent<KeyboardEvent>(menuDoc, 'keydown').pipe(filter((e) => e.key === 'Escape')),
+          );
+        }),
+        tap(() => this.layoutMenuOpen.set(false)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     // Inspect mode: while active, listen on the document to map the hovered element to a query.
     const capture = { capture: true };
     toObservable(this.inspectActive)
@@ -1386,14 +1461,26 @@ export class QueryDevtoolsComponent {
     this.open.update((v) => !v);
   }
 
-  /** Bottom edge → right edge → floating → back. One button rather than three, like the pane dividers. */
-  protected toggleDock() {
-    this.dock.update((current) => (current === 'bottom' ? 'right' : current === 'right' ? 'float' : 'bottom'));
-  }
-
   protected floatPanel() {
     this.popOutBlocked.set(false);
     this.dock.set('float');
+  }
+
+  protected toggleLayoutMenu() {
+    this.layoutMenuOpen.update((v) => !v);
+  }
+
+  protected selectLayout(layout: DevtoolsLayout) {
+    this.layoutMenuOpen.set(false);
+
+    if (layout === 'popout') {
+      this.popOut();
+
+      return;
+    }
+
+    this.popOutBlocked.set(false);
+    this.dock.set(layout);
   }
 
   protected toggleTabMenu() {
@@ -1412,7 +1499,7 @@ export class QueryDevtoolsComponent {
    * The panel's styles are global `<style>` tags in the host document, and the theming tokens it reads
    * hang off the root element, so both are copied over; without them the pop-out renders unstyled.
    */
-  protected popOut() {
+  public popOut() {
     const panel = this.panelEl()?.nativeElement;
 
     if (!panel || this.poppedOut()) return;
@@ -1472,6 +1559,14 @@ export class QueryDevtoolsComponent {
 
   public isQueryPinned(entry: QueryDevtoolsEntry) {
     return this.pinnedQueryIds().has(entry.id);
+  }
+
+  public toggleQueryPath(key: string) {
+    const next = new Set(this.collapsedQueryPaths());
+
+    if (!next.delete(key)) next.add(key);
+
+    this.collapsedQueryPaths.set(next);
   }
 
   public toggleQueryPin(entry: QueryDevtoolsEntry) {
@@ -3041,18 +3136,23 @@ export class QueryDevtoolsComponent {
     }
 
     const root = this.document.documentElement;
+    const dock = this.dock();
 
-    if (this.dock() === 'right') {
+    // The size is the distance from the pointer to the edge the panel is attached to, which is the
+    // pointer's own coordinate for a leading edge and the viewport minus it for a trailing one.
+    if (this.sideDocked()) {
       const viewport = root.clientWidth;
+      const size = dock === 'right' ? viewport - event.clientX : event.clientX;
 
-      this.panelWidth.set(clamp(viewport - event.clientX, MIN_WIDTH, Math.round(viewport * 0.9)));
+      this.panelWidth.set(clamp(size, MIN_WIDTH, Math.round(viewport * 0.9)));
 
       return;
     }
 
     const viewport = root.clientHeight;
+    const size = dock === 'bottom' ? viewport - event.clientY : event.clientY;
 
-    this.panelHeight.set(clamp(viewport - event.clientY, MIN_HEIGHT, Math.round(viewport * 0.9)));
+    this.panelHeight.set(clamp(size, MIN_HEIGHT, Math.round(viewport * 0.9)));
   }
 
   /** A pane's size is the distance from the pointer to the container edge that pane sits against. */
