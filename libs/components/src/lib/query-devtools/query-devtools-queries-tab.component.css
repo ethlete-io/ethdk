@@ -31,9 +31,11 @@
     line-height: 1.4;
   }
 
-  .et-query-devtools-forget:hover {
-    border-color: var(--_et-qdt-error);
-    background: color-mix(in srgb, var(--_et-qdt-error) 22%, transparent);
+  @media (hover: hover) {
+    .et-query-devtools-forget:hover {
+      border-color: var(--_et-qdt-error);
+      background: color-mix(in srgb, var(--_et-qdt-error) 22%, transparent);
+    }
   }
 
   /* The list column is a third of the panel, so a filter box sharing its line with the status chips would
@@ -99,15 +101,28 @@
     opacity: 0;
   }
 
-  .et-query-devtools-row:hover .et-query-devtools-row-pin,
   .et-query-devtools-row-pin:focus-visible,
   .et-query-devtools-row-pin--active {
     opacity: 1;
   }
 
-  .et-query-devtools-row-pin:hover {
-    background: var(--_et-qdt-active);
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-row:hover .et-query-devtools-row-pin {
+      opacity: 1;
+    }
+  }
+
+  @media (hover: none) {
+    .et-query-devtools-row-pin {
+      opacity: 1;
+    }
+  }
+
+  @media (hover: hover) {
+    .et-query-devtools-row-pin:hover {
+      background: var(--_et-qdt-active);
+      color: var(--_et-qdt-fg);
+    }
   }
 
   .et-query-devtools-row-pin--active,

@@ -69,8 +69,10 @@
     cursor: pointer;
   }
 
-  .et-query-devtools-timeline-row:hover {
-    background: var(--_et-qdt-hover);
+  @media (hover: hover) {
+    .et-query-devtools-timeline-row:hover {
+      background: var(--_et-qdt-hover);
+    }
   }
 
   .et-query-devtools-timeline-row--active {

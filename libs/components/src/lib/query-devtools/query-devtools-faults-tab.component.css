@@ -26,9 +26,4 @@
     color: var(--_et-qdt-subtle);
     font-size: 1.1rem;
   }
-
-  .et-query-devtools-input--number {
-    inline-size: 8rem;
-    font-variant-numeric: tabular-nums;
-  }
 }

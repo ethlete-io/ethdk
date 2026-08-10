@@ -144,8 +144,10 @@
     color: var(--_et-qdt-subtle);
   }
 
-  .et-query-devtools-move:hover::after {
-    color: var(--_et-qdt-accent);
+  @media (hover: hover) {
+    .et-query-devtools-move:hover::after {
+      color: var(--_et-qdt-accent);
+    }
   }
 
   /* Parked off an edge: what is left on screen is a grab strip, so it says so rather than looking like
@@ -154,8 +156,10 @@
     opacity: 0.85;
   }
 
-  .et-query-devtools-panel:where([data-dock='float'][data-parked]):hover {
-    opacity: 1;
+  @media (hover: hover) {
+    .et-query-devtools-panel:where([data-dock='float'][data-parked]):hover {
+      opacity: 1;
+    }
   }
 
   .et-query-devtools-panel:where([data-dock='float'][data-parked]) .et-query-devtools-move {
@@ -353,8 +357,10 @@
     inset-block: auto 0.2rem;
   }
 
-  .et-query-devtools-resize:hover::after {
-    background: var(--_et-qdt-accent);
+  @media (hover: hover) {
+    .et-query-devtools-resize:hover::after {
+      background: var(--_et-qdt-accent);
+    }
   }
 
   .et-query-devtools-header {
@@ -458,8 +464,10 @@
     font: inherit;
   }
 
-  .et-query-devtools-tab:hover {
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-tab:hover {
+      color: var(--_et-qdt-fg);
+    }
   }
 
   .et-query-devtools-tab--active {
@@ -564,10 +572,12 @@
       border-color 120ms ease;
   }
 
-  .et-query-devtools-inspect-btn:hover {
-    color: var(--_et-qdt-fg);
-    background: color-mix(in srgb, var(--_et-qdt-accent) 12%, transparent);
-    border-color: color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
+  @media (hover: hover) {
+    .et-query-devtools-inspect-btn:hover {
+      color: var(--_et-qdt-fg);
+      background: color-mix(in srgb, var(--_et-qdt-accent) 12%, transparent);
+      border-color: color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
+    }
   }
 
   .et-query-devtools-inspect-btn:focus-visible {
@@ -697,8 +707,10 @@
     white-space: nowrap;
   }
 
-  .et-query-devtools-close:hover {
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-close:hover {
+      color: var(--_et-qdt-fg);
+    }
   }
 
   .et-query-devtools-body {
@@ -774,9 +786,11 @@
     line-height: 1.4;
   }
 
-  .et-query-devtools-filter-clear:hover {
-    border-color: color-mix(in srgb, var(--_et-qdt-accent) 60%, transparent);
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-filter-clear:hover {
+      border-color: color-mix(in srgb, var(--_et-qdt-accent) 60%, transparent);
+      color: var(--_et-qdt-fg);
+    }
   }
 
   .et-query-devtools-scroll {
@@ -828,9 +842,14 @@
     transition: background 0.12s ease;
   }
 
-  .et-query-devtools-pane-resize:hover,
   .et-query-devtools-pane-resize:active {
     background: var(--_et-qdt-accent);
+  }
+
+  @media (hover: hover) {
+    .et-query-devtools-pane-resize:hover {
+      background: var(--_et-qdt-accent);
+    }
   }
 
   .et-query-devtools-toolbar {
@@ -845,6 +864,13 @@
     z-index: 1;
     background: var(--_et-qdt-bg);
     border-block-end: 1px solid var(--_et-qdt-border);
+  }
+
+  /* A sticky offset is measured from the scrollport inset by its own padding, so `0` in a padded scroller
+     parks the toolbar one padding below the top edge and leaves that band for content to scroll through
+     above it. Pulling it up by the padding is what makes it stick flush. */
+  .et-query-devtools-scroll > .et-query-devtools-toolbar {
+    inset-block-start: -1rem;
   }
 
   /* A toolbar that carries more than one group of controls puts each on its own full-width line, so the
@@ -891,8 +917,10 @@
     color: var(--_et-qdt-fg);
   }
 
-  .et-query-devtools-row:hover {
-    background: var(--_et-qdt-hover);
+  @media (hover: hover) {
+    .et-query-devtools-row:hover {
+      background: var(--_et-qdt-hover);
+    }
   }
 
   .et-query-devtools-method {
@@ -959,9 +987,13 @@
       border-color 120ms ease;
   }
 
-  .et-query-devtools-btn:hover:not(:disabled) {
-    background: var(--_et-qdt-hover);
-    color: var(--_et-qdt-fg);
+  /* Gated on a real pointer: with none, `:hover` means "the last thing tapped" and would stay lit until
+     something else was tapped. */
+  @media (hover: hover) {
+    .et-query-devtools-btn:hover:not(:disabled) {
+      background: var(--_et-qdt-hover);
+      color: var(--_et-qdt-fg);
+    }
   }
 
   .et-query-devtools-btn:focus-visible {
@@ -984,13 +1016,17 @@
     color: var(--_et-qdt-accent);
   }
 
-  .et-query-devtools-btn--primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--_et-qdt-accent) 26%, transparent);
+  @media (hover: hover) {
+    .et-query-devtools-btn--primary:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--_et-qdt-accent) 26%, transparent);
+    }
   }
 
-  .et-query-devtools-btn--danger:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--_et-qdt-error) 16%, transparent);
-    color: var(--_et-qdt-error);
+  @media (hover: hover) {
+    .et-query-devtools-btn--danger:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--_et-qdt-error) 16%, transparent);
+      color: var(--_et-qdt-error);
+    }
   }
 
   /* The trigger of a menu that has something armed behind it: the query is answering with an override,
@@ -1175,9 +1211,11 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
-  button.et-query-devtools-chip--button:hover {
-    border-color: var(--_et-qdt-accent);
-    color: var(--_et-qdt-accent);
+  @media (hover: hover) {
+    button.et-query-devtools-chip--button:hover {
+      border-color: var(--_et-qdt-accent);
+      color: var(--_et-qdt-accent);
+    }
   }
 
   /* A chip that is also a filter toggle. Accent means "this filter is on" - the match count next to the
@@ -1196,10 +1234,12 @@
     line-height: 1.4;
   }
 
-  .et-query-devtools-facet:hover:not(:disabled) {
-    color: var(--_et-qdt-fg);
-    background: var(--_et-qdt-hover);
-    border-color: color-mix(in srgb, var(--_et-qdt-accent) 60%, transparent);
+  @media (hover: hover) {
+    .et-query-devtools-facet:hover:not(:disabled) {
+      color: var(--_et-qdt-fg);
+      background: var(--_et-qdt-hover);
+      border-color: color-mix(in srgb, var(--_et-qdt-accent) 60%, transparent);
+    }
   }
 
   .et-query-devtools-facet:disabled {
@@ -1254,8 +1294,10 @@
     font: inherit;
   }
 
-  .et-query-devtools-inner-row:hover:not([disabled]) {
-    background: var(--_et-qdt-hover);
+  @media (hover: hover) {
+    .et-query-devtools-inner-row:hover:not([disabled]) {
+      background: var(--_et-qdt-hover);
+    }
   }
 
   .et-query-devtools-inner-row--active {
@@ -1283,8 +1325,10 @@
     font: inherit;
   }
 
-  .et-query-devtools-step-toggle:hover {
-    background: var(--_et-qdt-hover);
+  @media (hover: hover) {
+    .et-query-devtools-step-toggle:hover {
+      background: var(--_et-qdt-hover);
+    }
   }
 
   .et-query-devtools-step-index {
@@ -1387,10 +1431,16 @@
     cursor: pointer;
   }
 
-  .et-query-devtools-row-link:hover .et-query-devtools-url,
   .et-query-devtools-row-link:focus-visible .et-query-devtools-url {
     color: var(--_et-qdt-accent);
     text-decoration: underline;
+  }
+
+  @media (hover: hover) {
+    .et-query-devtools-row-link:hover .et-query-devtools-url {
+      color: var(--_et-qdt-accent);
+      text-decoration: underline;
+    }
   }
 
   /* --- Fault injection --- */
@@ -1410,6 +1460,13 @@
     border-radius: 0.4rem;
     padding: 0.4rem 0.6rem;
     font: inherit;
+  }
+
+  /* Shared by every tab that arms a number (faults, settings): a count is read against its neighbours, and
+     a full-width box for three digits reads as a text field. */
+  .et-query-devtools-input--number {
+    inline-size: 8rem;
+    font-variant-numeric: tabular-nums;
   }
 
   /* --- JIT editor --- */

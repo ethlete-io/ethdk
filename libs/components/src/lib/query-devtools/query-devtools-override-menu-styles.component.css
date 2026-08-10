@@ -30,15 +30,28 @@
     line-height: 1;
   }
 
-  .et-query-devtools-override-trigger:hover {
-    background: var(--_et-qdt-active);
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-override-trigger:hover {
+      background: var(--_et-qdt-active);
+      color: var(--_et-qdt-fg);
+    }
   }
 
-  .et-query-devtools-json-row:hover .et-query-devtools-override-trigger,
   .et-query-devtools-override-trigger:focus-visible,
   .et-query-devtools-override-trigger[data-menu-open] {
     opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .et-query-devtools-json-row:hover .et-query-devtools-override-trigger {
+      opacity: 1;
+    }
+  }
+
+  @media (hover: none) {
+    .et-query-devtools-override-trigger {
+      opacity: 1;
+    }
   }
 
   .et-query-devtools-override-error {

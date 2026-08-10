@@ -40,9 +40,11 @@
     font: inherit;
   }
 
-  .et-query-devtools-step-caret-btn:hover {
-    background: var(--_et-qdt-hover);
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-step-caret-btn:hover {
+      background: var(--_et-qdt-hover);
+      color: var(--_et-qdt-fg);
+    }
   }
 
   .et-query-devtools-step-io {

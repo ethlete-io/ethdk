@@ -36,8 +36,10 @@
   }
 
   /* The whole container row highlights, not just the toggle — the copy button shares the row now. */
-  .et-query-devtools-json-node > .et-query-devtools-json-row:hover {
-    background: var(--_et-qdt-hover);
+  @media (hover: hover) {
+    .et-query-devtools-json-node > .et-query-devtools-json-row:hover {
+      background: var(--_et-qdt-hover);
+    }
   }
 
   .et-query-devtools-json-caret {
@@ -112,16 +114,30 @@
     line-height: 1;
   }
 
-  .et-query-devtools-json-copy:hover:not(.et-query-devtools-json-copy--copied) {
-    background: var(--_et-qdt-active);
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-json-copy:hover:not(.et-query-devtools-json-copy--copied) {
+      background: var(--_et-qdt-active);
+      color: var(--_et-qdt-fg);
+    }
   }
 
   /* Kept visible while ticked, so the confirmation survives the pointer leaving the row. */
-  .et-query-devtools-json-row:hover .et-query-devtools-json-copy,
   .et-query-devtools-json-copy:focus-visible,
   .et-query-devtools-json-copy--copied {
     opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .et-query-devtools-json-row:hover .et-query-devtools-json-copy {
+      opacity: 1;
+    }
+  }
+
+  /* Nothing to hover with, so what a hover would have revealed is simply always there. */
+  @media (hover: none) {
+    .et-query-devtools-json-copy {
+      opacity: 1;
+    }
   }
 
   .et-query-devtools-json-copy--copied {

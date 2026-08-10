@@ -28,14 +28,27 @@
     line-height: 1;
   }
 
-  .et-query-devtools-json-copy-more:hover {
-    background: var(--_et-qdt-active);
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-json-copy-more:hover {
+      background: var(--_et-qdt-active);
+      color: var(--_et-qdt-fg);
+    }
   }
 
-  .et-query-devtools-json-row:hover .et-query-devtools-json-copy-more,
   .et-query-devtools-json-copy-more:focus-visible,
   .et-query-devtools-json-copy-more[data-menu-open] {
     opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .et-query-devtools-json-row:hover .et-query-devtools-json-copy-more {
+      opacity: 1;
+    }
+  }
+
+  @media (hover: none) {
+    .et-query-devtools-json-copy-more {
+      opacity: 1;
+    }
   }
 }

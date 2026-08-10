@@ -47,9 +47,11 @@
     line-height: 1;
   }
 
-  .et-query-devtools-route-copy:hover:not(.et-query-devtools-route-copy--copied) {
-    background: var(--_et-qdt-active);
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-route-copy:hover:not(.et-query-devtools-route-copy--copied) {
+      background: var(--_et-qdt-active);
+      color: var(--_et-qdt-fg);
+    }
   }
 
   .et-query-devtools-route-copy--copied {
@@ -191,8 +193,10 @@
     cursor: pointer;
   }
 
-  .et-query-devtools-subtab:hover {
-    color: var(--_et-qdt-fg);
+  @media (hover: hover) {
+    .et-query-devtools-subtab:hover {
+      color: var(--_et-qdt-fg);
+    }
   }
 
   .et-query-devtools-subtab--active {
