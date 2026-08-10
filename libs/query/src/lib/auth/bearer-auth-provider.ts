@@ -17,7 +17,11 @@ import {
   describeQueryDevtoolsFeatures,
   QueryDevtoolsFeatureDescriber,
 } from '../devtools/query-devtools-features';
-import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
+import {
+  isQueryDevtoolsEnabled,
+  patchQueryDevtoolsTokenPayload,
+  registerQueryDevtoolsEntry,
+} from '../devtools/query-devtools-hook';
 import {
   AnyCreateQueryClientResult,
   authExtractTokensResponseMissingAccessToken,
@@ -410,6 +414,9 @@ export type BearerAuthProviderQueryContext<
   TBearerData = unknown,
   TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
 > = {
+  /** The provider's own name, as `createBearerAuthProvider({ name })` was given it. */
+  name: string;
+
   accessToken: WritableSignal<string | null>;
   refreshToken: WritableSignal<string | null>;
   bearerDecryptFn: ((token: string) => TBearerData) | undefined;
@@ -699,7 +706,13 @@ const createBearerAuthProviderImpl = <
     if (!token) return null;
 
     try {
-      return config.bearerDecryptFn?.(token) ?? decryptBearer<TBearerData>(token);
+      const decoded = config.bearerDecryptFn?.(token) ?? decryptBearer<TBearerData>(token);
+
+      return patchQueryDevtoolsTokenPayload({
+        payload: decoded,
+        providerName: config.name,
+        expiresInPropertyName: 'exp',
+      });
     } catch (error) {
       if (isDevMode()) {
         console.error('Failed to decrypt bearer token:', error);
@@ -772,6 +785,7 @@ const createBearerAuthProviderImpl = <
   });
 
   const querySetupContext: BearerAuthProviderQueryContext<TBearerData, TBuilders> = {
+    name: config.name,
     accessToken,
     refreshToken,
     bearerDecryptFn: config.bearerDecryptFn,

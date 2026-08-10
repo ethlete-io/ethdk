@@ -165,7 +165,7 @@ one-click **Float instead**, rather than the button appearing to do nothing.
 | **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction, plus [the traffic every page caused](#activity-how-often-a-query-ran-and-what-it-cost). Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Forms**     | Every [`defineQueryForm`](/query/query-forms) on screen: [its fields, what they put in the URL and the query it drives](#forms-what-a-filter-is-actually-sending). A driven query opens in a split-view drawer (like Stacks), so the form stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **Auth**      | Each bearer auth provider: authenticated state, [which tab refreshes its tokens](#which-tab-refreshes-the-tokens), access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot and [its features with their configuration](#features-show-what-they-were-configured-with).                                                                                                                                                                                                                                                                                                                                                          |
+| **Auth**      | Each bearer auth provider: authenticated state, [which tab refreshes its tokens](#which-tab-refreshes-the-tokens), access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot, [its features with their configuration](#features-show-what-they-were-configured-with) and [an overridable token lifetime](#overriding-the-token-lifetime).                                                                                                                                                                                                                                                                                         |
 | **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of [everything sent and received](#sockets-both-directions-and-an-emit-box), with a filter box and an emit box for test messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Cache**     | Per-client repository entries: cache key, consumer count, [measured size](#cache-what-is-actually-in-it), secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Value** / **Refetch** / **Evict** actions. The card header adds the cache's total size, how many entries are collectible, how many responses the client has on disk (with **Clear disk**), **Evict all**, and [the client's own features](#features-show-what-they-were-configured-with). |
 | **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -513,6 +513,53 @@ field - the panel only renders it.
 
 The chip is absent for a provider without the feature, where one tab refreshing its
 own token is simply correct.
+
+## Overriding the token lifetime
+
+Everything the SDK does on a schedule around a session - the
+[proactive refresh](/query/auth#token-refresh), the expiration warning, a
+[logout that follows a refresh nothing could save](/query/auth#when-a-refresh-fails-for-good) -
+happens once per access token, an hour or a day apart. Waiting that out is how a
+refresh bug ships.
+
+The **Auth** tab's **Token lifetime** field replaces what the token claims:
+
+| Action              | What it does                                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| `60` in the field   | The token is presented as living 60 seconds from the moment it was **issued**.                |
+| **Expire now**      | The same thing with `0`, so the current token reads as expired and a refresh happens at once. |
+| **Clear**, or empty | Back to the lifetime the token was issued with.                                               |
+
+It is a **lifetime, not a remaining time**: the new expiry is measured from the
+token's own `iat` claim. Arming `60` on a token that was issued twenty minutes ago
+therefore refreshes immediately - and the token that refresh brings back gets a
+fresh `iat`, so it lives its full 60 seconds. That is what makes a short lifetime a
+loop you can watch rather than a single event.
+
+Nothing about the token itself changes. The **Access token payload** below the field
+keeps showing the real claims, and the countdown says both when an override is
+armed:
+
+```
+Token expires in   58s   really 41m 12s
+```
+
+The override is not a display trick and not a fake response - it is the number the
+whole app acts on. A provider carrying one shows a red `lifetime 60s` chip, its card
+turns red, and the [toggle's tamper dot](#the-tampered-badge) lights up while the
+panel is closed, because an app refreshing every minute for no visible reason is
+hours of debugging the wrong thing. Unlike the rest of the panel, it is never
+persisted: a reload puts every provider back on its real lifetime.
+
+Two things it cannot do. A token with no `exp` claim to replace, or with no `iat` /
+`nbf` to measure a new lifetime from, is left alone - the field is replaced by a line
+saying so, since inventing an expiry the API never issued would only produce a 401 the
+SDK has no way to explain. And the server still holds the real expiry: a shortened
+lifetime makes the SDK refresh early, it does not make the API reject the token.
+
+From code, the same thing is `setQueryDevtoolsTokenTtl({ providerName, seconds })` and
+`clearQueryDevtoolsTokenTtl(providerName)`, keyed by the `name` the provider was
+created with.
 
 ## Activity: how often a query ran and what it cost
 
@@ -1036,6 +1083,10 @@ The badge is deliberately narrower than "a fault is armed on this client": an ar
 `fail rate` under 100 lets most attempts through untouched, so badging every query on that
 client would over-claim. It lights up only once a query's _own_ last completed run actually
 came back faulted, or it has at least one override armed.
+
+The toggle's dot is the one place that is broader than a query. An
+[overridden token lifetime](#overriding-the-token-lifetime) belongs to no query at all, and it
+lights the dot too - the whole session is running on a schedule only this panel knows about.
 
 ## Timeline: what overlapped with what
 
@@ -1594,6 +1645,9 @@ components are bound to, which the browser Network tab can't do:
   [fault](#faults-making-requests-actually-misbehave) instead.
 - **Cache actions** - [read, refetch or evict](#cache-what-is-actually-in-it) a
   cache entry, evict a whole client, and watch the freshness countdown.
+- **Override a token's lifetime** - [present an access token as living seconds rather
+  than hours](#overriding-the-token-lifetime), so the proactive refresh, the expiration
+  warning and the logout behind them all happen while you are watching.
 - **Emit a socket message** - [send a test message](#sockets-both-directions-and-an-emit-box)
   as the app would, and see it in the log next to what came back.
 - **Inspect** - toggle inspect mode, then hover the live UI to highlight the query
@@ -1726,7 +1780,8 @@ Both of those are defaults rather than rules:
 [Settings ⚙ → Storage](#storage-what-survives-a-reload-and-how-long) picks the scope per
 key, and the same tab has a **Reset devtools** that clears every one of them.
 
-[Armed faults](#faults-making-requests-actually-misbehave) are deliberately **not** part of
+[Armed faults](#faults-making-requests-actually-misbehave) and an
+[overridden token lifetime](#overriding-the-token-lifetime) are deliberately **not** part of
 that: they change how the app behaves, not how the panel looks, and a reload disarms every
 client. [Response overrides](#response-overrides-editing-a-value-that-survives-a-refetch)
 default to the same, but can opt in per session - see

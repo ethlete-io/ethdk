@@ -71,14 +71,21 @@ const DOWNLOAD_CHUNK_BYTES = 40_000;
 const base64Url = (value: object) =>
   btoa(JSON.stringify(value)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 
-/** A structurally-valid (unsigned) JWT so the devtools auth tab can decode a real payload. */
-const fakeJwt = () =>
-  `${base64Url({ alg: 'HS256', typ: 'JWT' })}.${base64Url({
+/**
+ * A structurally-valid (unsigned) JWT so the devtools auth tab can decode a real payload. Minted with an
+ * hour of life from now rather than with fixed claims, so the tab's countdown and the lifetime override
+ * both have something realistic to act on.
+ */
+const fakeJwt = () => {
+  const iat = Math.floor(Date.now() / 1000);
+
+  return `${base64Url({ alg: 'HS256', typ: 'JWT' })}.${base64Url({
     sub: 'demo-user',
     name: 'Query Devtools',
-    iat: 1_700_000_000,
-    exp: 9_999_999_999,
+    iat,
+    exp: iat + 3600,
   })}.signature`;
+};
 
 /** Fakes the demo API in-browser: ~600ms latency, a cacheable freshness window and a forced 500 on `?fail`. */
 export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {

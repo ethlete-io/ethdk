@@ -1,7 +1,8 @@
 <div class="et-query-devtools-scroll">
   @for (entry of host.authEntries(); track entry.id) {
     @let auth = host.asAuth(entry);
-    <div class="et-query-devtools-card">
+    @let lifetime = host.authTokenLifetime(entry);
+    <div [class.et-query-devtools-card--armed]="lifetime.ttlSeconds !== null" class="et-query-devtools-card">
       <div class="et-query-devtools-card-head">
         <strong>{{ entry.meta.name || 'auth provider' }}</strong>
         <span
@@ -11,6 +12,18 @@
         >
           {{ auth.isAuthenticated() ? 'authenticated' : 'anonymous' }}
         </span>
+        @if (lifetime.ttlSeconds !== null) {
+          <span
+            [title]="
+              'This provider\'s access token is presented as living ' +
+              lifetime.ttlSeconds +
+              's from the moment it was issued, so the refresh happens on that lifetime instead of the real one.'
+            "
+            class="et-query-devtools-chip et-query-devtools-chip--error"
+          >
+            lifetime {{ lifetime.ttlSeconds }}s
+          </span>
+        }
         @if (host.authLeadership(auth); as leadership) {
           <span
             [class.et-query-devtools-chip--success]="leadership.tone === 'success'"
@@ -29,9 +42,14 @@
         <dd>{{ auth.accessToken() ? 'present' : 'none' }}</dd>
         <dt>Refresh token</dt>
         <dd>{{ auth.refreshToken() ? 'present' : 'none' }}</dd>
-        @if (host.authTokenExpiry(auth); as expiry) {
+        @if (lifetime.expiresIn; as expiry) {
           <dt>Token expires in</dt>
-          <dd>{{ expiry }}</dd>
+          <dd>
+            {{ expiry }}
+            @if (lifetime.realExpiresIn; as real) {
+              <small class="et-query-devtools-auth-real-expiry">really {{ real }}</small>
+            }
+          </dd>
         }
         @if (auth.executionState(); as state) {
           <dt>Execution state</dt>
@@ -54,6 +72,47 @@
           </dd>
         }
       </dl>
+
+      @if (auth.accessToken()) {
+        <h4 class="et-query-devtools-section">Token lifetime</h4>
+        @if (lifetime.overridable) {
+          <div class="et-query-devtools-auth-ttl">
+            <div class="et-query-devtools-auth-ttl-row">
+              <label class="et-query-devtools-field">
+                <span>Override</span>
+                <input
+                  #ttlInput
+                  [value]="lifetime.ttlSeconds ?? ''"
+                  [max]="TTL_LIMIT"
+                  (change)="armTokenTtl({ entry: entry, value: ttlInput.value })"
+                  class="et-query-devtools-input et-query-devtools-input--number"
+                  type="number"
+                  min="0"
+                  step="30"
+                />
+                <small>seconds, or empty for the lifetime the token was issued with</small>
+              </label>
+              <div class="et-query-devtools-auth-ttl-actions">
+                <button (click)="expireTokenNow(entry)" class="et-query-devtools-btn" type="button">Expire now</button>
+                @if (lifetime.ttlSeconds !== null) {
+                  <button (click)="clearTokenTtl(entry)" class="et-query-devtools-btn" type="button">Clear</button>
+                }
+              </div>
+            </div>
+            <p class="et-query-devtools-hint">
+              Measured from the token's own <code>iat</code>, so this is a lifetime and not a remaining time - a short
+              one on a token issued a while ago refreshes at once, and the token that comes back lives the full
+              lifetime. It is what the whole app acts on: the proactive refresh, the expiration warning and the
+              countdown above all read it. Never persisted - a reload puts this provider back on its real lifetime.
+            </p>
+          </div>
+        } @else {
+          <p class="et-query-devtools-hint">
+            This access token carries no <code>exp</code> claim to replace, or no <code>iat</code>/<code>nbf</code> to
+            measure a new lifetime from, so it cannot be overridden.
+          </p>
+        }
+      }
 
       @if (host.authTokenPayload(auth); as payload) {
         <h4 class="et-query-devtools-section">Access token payload</h4>

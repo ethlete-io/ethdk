@@ -1242,6 +1242,13 @@
     padding: 1rem;
   }
 
+  /* Shared by the Faults and Auth tabs: whatever a card has armed, it is the one card that must be
+     findable at a glance from across the panel, since the app is misbehaving on its account. */
+  .et-query-devtools-card--armed {
+    border-color: color-mix(in srgb, var(--_et-qdt-error) 55%, transparent);
+    background: color-mix(in srgb, var(--_et-qdt-error) 6%, transparent);
+  }
+
   .et-query-devtools-card-head {
     display: flex;
     align-items: center;

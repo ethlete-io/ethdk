@@ -12,4 +12,5 @@ export * from './query-devtools-registry';
 export * from './query-devtools-schema';
 export * from './query-devtools-settings';
 export * from './query-devtools-stats';
+export * from './query-devtools-token-ttl';
 export * from './query-devtools-tombstone';

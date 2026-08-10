@@ -13,6 +13,7 @@ import {
   setQueryDevtoolsOverridesFactory,
   setQueryDevtoolsRegistrar,
   setQueryDevtoolsStatsFactory,
+  setQueryDevtoolsTokenPayloadPatcher,
 } from './query-devtools-hook';
 import { initQueryDevtoolsFaults, resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
 import { createQueryDevtoolsFormLinks } from './query-devtools-form-links';
@@ -25,6 +26,7 @@ import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './qu
 import { QueryDevtoolsSchemaLoader, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
+import { applyQueryDevtoolsTokenTtl } from './query-devtools-token-ttl';
 import { MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
@@ -280,6 +282,7 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
   setQueryDevtoolsOverridesFactory(createQueryDevtoolsOverrides);
   setQueryDevtoolsFaultResolver(resolveQueryDevtoolsFaultForAttempt);
   setQueryDevtoolsMockResolver(resolveQueryDevtoolsMockForAttempt);
+  setQueryDevtoolsTokenPayloadPatcher(applyQueryDevtoolsTokenTtl);
 
   if (!isDevMode()) {
     console.warn(

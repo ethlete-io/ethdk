@@ -31,6 +31,7 @@ import {
   QueryActivity,
   QueryDevtoolsLeadership,
   QueryDevtoolsSelection,
+  QueryDevtoolsTokenLifetime,
   QueryLink,
   QueryListFacet,
   RepositoryInfo,
@@ -121,8 +122,8 @@ export type QueryDevtoolsHost = {
 
   authTokenPayload(auth: AnyBearerAuthProvider): Record<string, unknown> | null;
   authQueryKeys(auth: AnyBearerAuthProvider): string[];
-  /** Countdown to the access-token's `exp` (the point a refresh becomes due), or `null` if unknown. */
-  authTokenExpiry(auth: AnyBearerAuthProvider): string | null;
+  /** The access-token expiry the app acts on, plus the lifetime the panel has armed over it. */
+  authTokenLifetime(entry: QueryDevtoolsEntry): QueryDevtoolsTokenLifetime;
   /** The multi-tab leadership chip, or `null` for a provider without `withBearerAuthMultiTabSync`. */
   authLeadership(auth: AnyBearerAuthProvider): QueryDevtoolsLeadership | null;
 

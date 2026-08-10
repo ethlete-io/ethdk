@@ -83,6 +83,21 @@ export type RouteSegment = { text: string; kind: 'static' | 'param' | 'query'; n
  */
 export type QueryDevtoolsLeadership = { label: string; tone: 'success' | 'muted'; title: string };
 
+/** An auth provider's access-token expiry as the auth tab renders it, armed override included. */
+export type QueryDevtoolsTokenLifetime = {
+  /** Countdown to the expiry the app currently acts on, overridden or not. */
+  expiresIn: string | null;
+
+  /** Countdown to the token's own `exp`, and only set while an override is making it read differently. */
+  realExpiresIn: string | null;
+
+  /** The armed lifetime in seconds, or `null` while the token is on the one it was issued with. */
+  ttlSeconds: number | null;
+
+  /** Whether an override can be applied at all - the token needs an `exp` plus an `iat` or `nbf`. */
+  overridable: boolean;
+};
+
 /** A query reachable from a stack or sequence card, rendered as a row that opens the detail drawer. */
 export type QueryLink = {
   id: string;

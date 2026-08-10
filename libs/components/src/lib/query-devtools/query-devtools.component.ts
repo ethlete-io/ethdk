@@ -35,7 +35,9 @@ import {
   AnyPagedQueryStack,
   AnyQuerySnapshot,
   AnyQueryStack,
+  applyQueryDevtoolsTokenTtl,
   BearerAuthMultiTabSyncFeature,
+  canOverrideQueryDevtoolsTokenTtl,
   clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsFaults,
   clearQueryDevtoolsMockStore,
@@ -60,6 +62,7 @@ import {
   queryDevtoolsRestoredOverridesScope,
   queryDevtoolsSettings,
   QueryDevtoolsStorageScope,
+  queryDevtoolsTokenTtls,
   readQueryDevtoolsStore,
   registerEthleteVersion,
   writeQueryDevtoolsStore,
@@ -145,6 +148,7 @@ import {
   QueryActivity,
   QueryDevtoolsLeadership,
   QueryDevtoolsSelection,
+  QueryDevtoolsTokenLifetime,
   QueryLink,
   QueryListFacet,
   QueryStatus,
@@ -582,6 +586,19 @@ const findValuePath = (value: string, node: { value: unknown; path: string; dept
   return null;
 };
 
+/** A countdown to an `exp` claim in seconds-since-epoch, or `null` when there is nothing to count to. */
+const expiryCountdown = (exp: number | null): string | null => {
+  if (exp === null) return null;
+
+  const seconds = Math.round((exp * 1000 - Date.now()) / 1000);
+
+  if (seconds <= 0) return 'expired';
+  if (seconds < 120) return `${seconds}s`;
+  if (seconds > 86400) return `${Math.floor(seconds / 86400)}d`;
+
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+};
+
 /** Best-effort decode of a JWT payload for the auth tab. Returns `null` for anything non-decodable. */
 const decodeJwtPayload = (token: string | null): Record<string, unknown> | null => {
   if (!token) return null;
@@ -936,7 +953,11 @@ export class QueryDevtoolsComponent {
    */
   private liveQueryEntries = computed(() => this.queryEntries().filter((e) => !e.destroyedAt));
 
-  protected panelTampered = computed(() => this.liveQueryEntries().some((entry) => this.isTampered(entry)));
+  protected panelTampered = computed(
+    () =>
+      this.liveQueryEntries().some((entry) => this.isTampered(entry)) ||
+      Object.keys(queryDevtoolsTokenTtls()).length > 0,
+  );
 
   public stackEntries = computed(() =>
     queryDevtoolsEntries().filter((e) => e.kind === 'query-stack' || e.kind === 'paged-query-stack'),
@@ -2618,19 +2639,27 @@ export class QueryDevtoolsComponent {
     };
   }
 
-  /** Countdown to the access-token's `exp` (the point a refresh becomes due), or `null` if unknown. */
-  public authTokenExpiry(auth: AnyBearerAuthProvider): string | null {
+  /**
+   * The access token's expiry as the app sees it, plus whatever the panel is doing to it: an armed
+   * lifetime replaces the countdown, and the token's own is reported next to it so the card never claims
+   * a refresh is due at a time the API would disagree with.
+   */
+  public authTokenLifetime(entry: QueryDevtoolsEntry): QueryDevtoolsTokenLifetime {
     this.clock();
-    const payload = decodeJwtPayload(auth.accessToken());
-    const exp = typeof payload?.['exp'] === 'number' ? payload['exp'] : null;
-    if (exp === null) return null;
 
-    const seconds = Math.round((exp * 1000 - Date.now()) / 1000);
-    if (seconds <= 0) return 'expired';
-    if (seconds < 120) return `${seconds}s`;
-    if (seconds > 86400) return `${Math.floor(seconds / 86400)}d`;
+    const providerName = entry.meta.name ?? '';
+    const payload = decodeJwtPayload(this.asAuth(entry).accessToken());
+    const ttlSeconds = queryDevtoolsTokenTtls()[providerName] ?? null;
+    const realExp = typeof payload?.['exp'] === 'number' ? payload['exp'] : null;
+    const overridden = applyQueryDevtoolsTokenTtl({ payload, providerName });
+    const exp = typeof overridden?.['exp'] === 'number' ? overridden['exp'] : null;
 
-    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+    return {
+      expiresIn: expiryCountdown(exp),
+      realExpiresIn: exp === realExp ? null : expiryCountdown(realExp),
+      ttlSeconds,
+      overridable: canOverrideQueryDevtoolsTokenTtl({ payload }),
+    };
   }
 
   public queriesForSequence(sequence: QuerySequence<unknown[]>): QueryLink[] {
@@ -3229,12 +3258,14 @@ export class QueryDevtoolsComponent {
    */
   private sessionAuth(entry: QueryDevtoolsEntry): Record<string, unknown> {
     const auth = this.asAuth(entry);
+    const lifetime = this.authTokenLifetime(entry);
 
     return {
       isAuthenticated: auth.isAuthenticated(),
       hasAccessToken: !!auth.accessToken(),
       hasRefreshToken: !!auth.refreshToken(),
-      expiresIn: this.authTokenExpiry(auth),
+      expiresIn: lifetime.expiresIn,
+      overriddenTokenTtlSeconds: lifetime.ttlSeconds,
       queries: this.authQueryKeys(auth),
     };
   }

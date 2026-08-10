@@ -1,0 +1,42 @@
+@layer components {
+  .et-query-devtools-auth-real-expiry {
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-auth-ttl {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.8rem;
+  }
+
+  .et-query-devtools-auth-ttl-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.8rem 1.6rem;
+  }
+
+  .et-query-devtools-auth-ttl-row .et-query-devtools-field {
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-auth-ttl-row .et-query-devtools-field small {
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-auth-ttl-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  /* `flex: 0 0 auto` undoes the shared hint's `flex: 1 1 24rem`, whose basis would otherwise be read as a
+     240px block size in this column container. */
+  .et-query-devtools-auth-ttl .et-query-devtools-hint {
+    flex: 0 0 auto;
+    max-inline-size: 90ch;
+  }
+}

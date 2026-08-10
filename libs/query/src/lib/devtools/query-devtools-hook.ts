@@ -374,6 +374,34 @@ export const resolveQueryDevtoolsMock = (target: QueryDevtoolsMockTarget): Query
 export const resolveQueryDevtoolsFault = (target: QueryDevtoolsFaultTarget): QueryDevtoolsResolvedFault | null =>
   faultResolver?.(target) ?? null;
 
+let tokenPayloadPatcher:
+  ((options: { payload: unknown; providerName: string; expiresInPropertyName: string }) => unknown) | null = null;
+
+/**
+ * Installs the access-token payload patcher. Called by `provideQueryDevtools()`; nothing else may call it.
+ * @internal
+ */
+export const setQueryDevtoolsTokenPayloadPatcher = (
+  fn: (options: { payload: unknown; providerName: string; expiresInPropertyName: string }) => unknown,
+) => {
+  tokenPayloadPatcher = fn;
+};
+
+/**
+ * A decoded access token as the devtools want it seen, which today means with an overridden lifetime
+ * applied. Returns the payload as decoded unless `provideQueryDevtools()` installed a patcher.
+ *
+ * Auth code must reach the override through this rather than importing the registry it lives in: a
+ * static import would pin that module into every bundle that builds an auth provider, and a runtime
+ * guard at the call site does not undo that.
+ * @internal
+ */
+export const patchQueryDevtoolsTokenPayload = <T>(options: {
+  payload: T;
+  providerName: string;
+  expiresInPropertyName: string;
+}): T => (tokenPayloadPatcher ? (tokenPayloadPatcher(options) as T) : options.payload);
+
 let suppressStackRegistration = false;
 
 /**

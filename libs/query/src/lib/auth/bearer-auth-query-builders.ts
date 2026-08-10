@@ -1,6 +1,7 @@
-import { effect, isDevMode } from '@angular/core';
+import { computed, effect, isDevMode } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { concatMap, EMPTY, Observable, of, switchMap, timer } from 'rxjs';
+import { patchQueryDevtoolsTokenPayload } from '../devtools/query-devtools-hook';
 import { QueryArgs, QueryCreator, QueryErrorResponse, RequestArgs, ResponseType } from '../http';
 import { ShouldRetryRequestFn } from '../http/query-retry-utils';
 import { decryptBearer } from '../http/internal/request-route';
@@ -349,7 +350,12 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     /** When this access token is due to be refreshed, or `null` if it cannot be scheduled at all. */
     const scheduledRefreshDelay = (token: string) => {
       try {
-        const bearerDataValue = context.bearerDecryptFn ? context.bearerDecryptFn(token) : decryptBearer(token);
+        const decoded = context.bearerDecryptFn ? context.bearerDecryptFn(token) : decryptBearer(token);
+        const bearerDataValue = patchQueryDevtoolsTokenPayload({
+          payload: decoded,
+          providerName: context.name,
+          expiresInPropertyName,
+        });
         const expiresIn = (bearerDataValue as Record<string, unknown>)?.[expiresInPropertyName];
 
         if (typeof expiresIn !== 'number') {
@@ -392,15 +398,19 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         }),
       );
 
-    toObservable(context.accessToken)
+    // The delay is read in a computed rather than in the `switchMap` so that a devtools-armed token
+    // lifetime re-arms the schedule: the override is a signal, and only a reactive read of it moves the
+    // timer before the next token arrives. The wrapper object keeps every recomputation an emission, so
+    // two tokens that happen to be due at the same moment still restart the timer.
+    const nextScheduledRefresh = computed(() => {
+      const token = context.accessToken();
+
+      return { dueInMs: token ? scheduledRefreshDelay(token) : null };
+    });
+
+    toObservable(nextScheduledRefresh)
       .pipe(
-        switchMap((token) => {
-          if (!token) return EMPTY;
-
-          const dueInMs = scheduledRefreshDelay(token);
-
-          return dueInMs === null ? EMPTY : scheduledRefresh(dueInMs, maxRescheduleAttempts);
-        }),
+        switchMap(({ dueInMs }) => (dueInMs === null ? EMPTY : scheduledRefresh(dueInMs, maxRescheduleAttempts))),
         takeUntilDestroyed(),
       )
       .subscribe();
