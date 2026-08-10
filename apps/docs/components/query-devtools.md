@@ -171,7 +171,7 @@ one-click **Float instead**, rather than the button appearing to do nothing.
 | **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with [timestamps, duration and response size](#events-what-each-request-cost), narrowable by client and to failures only, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                          |
 | **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **Mocks**     | [Responses served instead of the request](#mocks-answering-a-route-the-panel-not-the-api) - designed by hand for a route nothing has called yet, or captured from one that has.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Mocks**     | [Responses served instead of the request](#mocks-answering-a-route-the-panel-not-the-api) - designed by hand for a route nothing has called yet, or captured from one that has, and [exportable as OpenAPI](#handing-the-designed-routes-to-the-api-team).                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **About**     | [Which SDK and application build is actually running](#about-which-build-is-running) - the loaded `@ethlete/*` versions, the Angular version, and whatever the app handed to `provideQueryDevtools({ about })`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 [Settings](#settings-what-the-panel-keeps-and-where) is not one of them: it holds nothing
@@ -761,6 +761,67 @@ export const getPostsComments = getQuery<GetPostsCommentsQueryArgs>((p) => `/pos
 
 One example cannot say what is optional or nullable, so everything in it reads as required - the comment
 says so rather than the type pretending otherwise.
+
+### Handing the designed routes to the API team
+
+The TypeScript snippet is what the frontend wants back. The other direction - _"here is the response we
+need, please build it"_ - is an **OpenAPI 3.1** export, and it is the reason designing a route in the panel
+is worth more than a screenshot.
+
+| Where                                       | What comes out                                                                                                                                        |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **⧉ OAS** on a row                          | that one route as a keyed `paths` entry, on the clipboard - ready to paste under the `paths` of a description you already have                        |
+| **Export OpenAPI** in the **Designed** head | the whole library as one complete document, downloaded as `openapi-designed-mocks-<date>.yaml` - armed or not, because the library is the design work |
+
+The **YAML/JSON** picker next to it applies to both. YAML is the default because it is what a specification
+repository takes; the JSON is the same tree.
+
+```yaml
+'/authors/{authorId}':
+  get:
+    tags:
+      - main
+    summary: 'Designed response for GET /authors/{authorId}'
+    description: "The response is this description's own AuthorView, which the mock was seeded from."
+    operationId: getAuthors
+    parameters:
+      - name: authorId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: The designed response served for main.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorView'
+            example:
+              id: 00000000-0000-4000-8000-000000000000
+              name: name
+              posts: []
+```
+
+**A route [seeded from your description](#seeding-from-your-api-description) references the schema it was
+seeded from** rather than an anonymous shape inferred from one body - and the whole-library export copies
+that schema, plus everything it transitively `$ref`s, into its own `components.schemas`, so the document
+resolves on its own. The single-route fragment keeps the `$ref` without the copy, because it is merged back
+into the description that already declares it; the panel says which schemas that is.
+
+Everything else is **inferred from one example, and the document says so in its own `info.description`**:
+
+- every property the example carried is listed in `required`, because that is what the example proves;
+- nothing is marked nullable, and a property whose example was `null` carries **no type at all** rather than
+  a guess;
+- `format` is only ever `date-time` or `uuid` - the two a value cannot hold by accident;
+- an array whose members disagree becomes a `oneOf`; an empty array constrains nothing;
+- a designed `POST`/`PUT`/`PATCH` declares no `requestBody`, and says why.
+
+Two mocks that differ only by query string are two examples of one response, so they export as named
+`examples` (`page=1`, `page=2`) under the first one's schema. Anything the export had to resolve that way -
+a merged status, a schema it could not find, a `$ref` pointing outside your description - is listed under
+the library after the export, the same way a seed lists what it guessed.
 
 ### What a mock is not
 

@@ -2744,6 +2744,11 @@ export class QueryDevtoolsComponent {
     this.locate$.next(target);
   }
 
+  /** Downloads a file a tab generated. @see QueryDevtoolsHost.downloadTextFile */
+  public downloadTextFile(file: { name: string; content: string; type: string }) {
+    this.download({ content: file.content, filename: file.name, type: file.type });
+  }
+
   /**
    * The two runs the diff compares, oldest first - normalised by run index, so picking a pair in either
    * order reads the same way round as the `#before → #after` header prints it.
@@ -3283,7 +3288,7 @@ export class QueryDevtoolsComponent {
   }
 
   private downloadFile(fileName: string, content: string) {
-    this.download({ content, filename: fileName, type: 'application/json' });
+    this.downloadTextFile({ name: fileName, content, type: 'application/json' });
   }
 
   private stepKey(entryId: string, index: number) {

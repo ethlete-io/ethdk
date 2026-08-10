@@ -3,6 +3,7 @@ import { copyToClipboard } from '@ethlete/core';
 import {
   armQueryDevtoolsMock,
   clearQueryDevtoolsArmedMocks,
+  collectQueryDevtoolsSchemaComponents,
   deleteQueryDevtoolsMock,
   loadQueryDevtoolsSchema,
   measureQueryDevtoolsPayload,
@@ -22,8 +23,10 @@ import {
 import { tap } from 'rxjs';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsMockDesignerComponent } from './query-devtools-mock-designer.component';
+import { buildQueryDevtoolsOpenApiDocument, buildQueryDevtoolsOpenApiPathItem } from './query-devtools-openapi';
 import { buildQueryDefinitionSnippet } from './query-devtools-typescript';
 import { AnyQuery } from './query-devtools-types';
+import { toQueryDevtoolsYaml } from './query-devtools-yaml';
 
 /** A designed mock as the list renders it: the stored mock plus what only the live registry knows. */
 type MockRow = {
@@ -68,6 +71,19 @@ type MockDraft = {
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
+/** Which spelling of the exported document is written - the same tree either way. */
+type SpecFormat = 'yaml' | 'json';
+
+const SPEC_FORMATS: { value: SpecFormat; label: string }[] = [
+  { value: 'yaml', label: 'YAML' },
+  { value: 'json', label: 'JSON' },
+];
+
+const SPEC_MEDIA_TYPES: Record<SpecFormat, string> = {
+  yaml: 'application/yaml',
+  json: 'application/json',
+};
+
 const EMPTY_DRAFT: MockDraft = {
   clientName: '',
   method: 'GET',
@@ -103,6 +119,7 @@ export class QueryDevtoolsMocksTabComponent {
 
   protected readonly DISARM_ALL = clearQueryDevtoolsArmedMocks;
   protected readonly METHODS = METHODS;
+  protected readonly SPEC_FORMATS = SPEC_FORMATS;
 
   protected readonly SCHEMA_NAMES = queryDevtoolsSchemaNames;
   protected readonly SCHEMA_ROUTES = queryDevtoolsSchemaRoutes;
@@ -138,6 +155,15 @@ export class QueryDevtoolsMocksTabComponent {
 
   /** The mock whose definition was last copied, so the button can confirm it. */
   protected copiedId = signal<string | null>(null);
+
+  /** The mock whose path item was last copied - a second button needs its own confirmation. */
+  protected copiedSpecId = signal<string | null>(null);
+
+  /** Which spelling the OpenAPI export is written in. YAML is what a specification repository takes. */
+  protected specFormat = signal<SpecFormat>('yaml');
+
+  /** What the last export had to guess or could not resolve, shown under the library it came from. */
+  protected specNotes = signal<readonly string[]>([]);
 
   protected rows = computed<MockRow[]>(() => {
     const armed = queryDevtoolsArmedMocks();
@@ -327,6 +353,12 @@ export class QueryDevtoolsMocksTabComponent {
     });
   }
 
+  protected pickSpecFormat(value: string) {
+    const format = SPEC_FORMATS.find((entry) => entry.value === value);
+
+    if (format) this.specFormat.set(format.value);
+  }
+
   protected toggleArmed(row: MockRow) {
     armQueryDevtoolsMock(row.mock.id, !row.armed);
   }
@@ -361,6 +393,44 @@ export class QueryDevtoolsMocksTabComponent {
       .subscribe();
   }
 
+  /**
+   * Copies one route as an OpenAPI `paths` entry, ready to be pasted under an existing description's
+   * `paths`. A route seeded from a named schema keeps its `$ref`, since it is merged back into the
+   * document that declares it.
+   */
+  protected copyPathItem(row: MockRow) {
+    const schemas = this.schemasFor([row.mock]);
+    const built = buildQueryDevtoolsOpenApiPathItem({ mocks: [row.mock], schemas: schemas.schemas });
+
+    this.specNotes.set([...schemas.notes, ...built.notes]);
+
+    copyToClipboard(this.write(built.document))
+      .pipe(tap((ok) => this.copiedSpecId.set(ok ? row.mock.id : null)))
+      .subscribe();
+  }
+
+  /**
+   * Downloads the whole library as one OpenAPI 3.1 document - the deliverable the API team merges. Every
+   * designed mock is in it, armed or not: the library is the design work, and arming is only what this
+   * page load happens to be serving.
+   */
+  protected exportLibrary() {
+    const mocks = this.rows().map((row) => row.mock);
+
+    if (!mocks.length) return;
+
+    const schemas = this.schemasFor(mocks);
+    const built = buildQueryDevtoolsOpenApiDocument({ mocks, schemas: schemas.schemas, now: Date.now() });
+    const format = this.specFormat();
+
+    this.specNotes.set([...schemas.notes, ...built.notes]);
+    this.host.downloadTextFile({
+      name: `openapi-designed-mocks-${new Date().toISOString().slice(0, 10)}.${format}`,
+      content: this.write(built.document),
+      type: SPEC_MEDIA_TYPES[format],
+    });
+  }
+
   protected editBody(row: MockRow) {
     this.editingId.set(row.mock.id);
   }
@@ -372,6 +442,19 @@ export class QueryDevtoolsMocksTabComponent {
   protected saveBody(row: MockRow, body: unknown) {
     saveQueryDevtoolsMock({ ...row.mock, body });
     this.cancelBody();
+  }
+
+  /** The declared schemas the given mocks were seeded from, so their responses can reference them. */
+  private schemasFor(mocks: readonly QueryDevtoolsMock[]) {
+    const names = mocks.map((mock) => mock.schemaName).filter((name): name is string => !!name);
+
+    return collectQueryDevtoolsSchemaComponents([...new Set(names)]);
+  }
+
+  private write(document: unknown) {
+    if (this.specFormat() === 'yaml') return toQueryDevtoolsYaml(document);
+
+    return `${JSON.stringify(document, null, 2)}\n`;
   }
 
   private seedFromRoute(target: { method: string; pattern: string }) {

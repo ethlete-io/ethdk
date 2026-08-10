@@ -135,115 +135,6 @@ The **hex/RGB validators shipped 2026-08-10** (see "Already fixed"). A
 control's value, and nothing in `libs/forms` does a cross-field read today,
 so its shape is a design question rather than a missing regex. Left open.
 
-## Query devtools: a mock designer, with an export for the API team
-
-**Phases 1 and 2 shipped 2026-08-10** (serve + author + a TypeScript export, then the designer and the
-schema seed - both under "Already fixed"). What is left is **phase 3, the export.** Settled with the user
-before starting:
-
-- **Export format: OpenAPI 3.1 path item** with a schema inferred conservatively from one example plus the
-  designed body as `example`, and the document says it was inferred. Not TypeScript-only - though the TS
-  side arrived in phase 1 as `⧉ TS` (`query-devtools-typescript.ts`), because a pasteable definition is
-  what the frontend wants back.
-- **Its own Mocks tab**, not a section of Faults and not a drawer entry.
-- **Phasing: serve → design → export**, each with docs and a changeset.
-
-### What phase 1 built
-
-- `libs/query/src/lib/devtools/query-devtools-mocks.ts` - the library (persisted, scope
-  `queryDevtoolsSettings().mocks`, default `local`) and the armed set (**never** persisted). Matching is
-  client + method + path pattern (`:param` = one segment) + declared query params, and the armed mock
-  naming the most query params wins.
-- `resolveQueryDevtoolsMock` in the hook, consulted from `sendOrMock()` inside `sendWithFaults` - a mock
-  emits a real `HttpResponse` (or `HttpErrorResponse` at 400+), through `timer` even at zero latency.
-  `isQueryDevtoolsFaultInjectionEnabled` became `isQueryDevtoolsRequestInterceptionEnabled`.
-- The tab: **New mock** (client, method, path, query, status, latency, JSON body - nothing checked against
-  the registry, which is the point), the library list with arm/body/status/latency/delete, **Capture** from
-  a live response (one row per route), the armed bar above every tab, the tampered badge on mocked queries,
-  and armed mocks in the session export.
-- 21 query tests, 10 for the TS snippet. Verified headlessly: authoring a route the app never calls, arming
-  it, and the network staying quiet.
-
-### What phase 2 built, and what phase 3 inherits from it
-
-The designer (`query-devtools-mock-designer.component.*`) and the schema source
-(`libs/query/src/lib/devtools/query-devtools-schema.ts`) - see "Already fixed" for the full write-up. Two
-things there are the export's foundation, so phase 3 must not build a second of either:
-
-- **`query-devtools-schema.ts` already parses OpenAPI** - `$ref` resolution, `allOf` merging, operation
-  lookup by method + path pattern, named-schema listing. The export writes the same document shape it
-  reads; the round trip (seed from a document, hand a path item back) is the point.
-- **A mock stores `schemaName`**, so an exported path item can say which declared type it was designed
-  against rather than inferring one from scratch.
-
-### Phase 3 - the export
-
-Raised by the user 2026-08-10. The big one: **design a response for a route, serve it to the app, and
-hand the result to the API team as a spec.** Survives a reload by definition - the authoring is the
-work.
-
-None of the three things the panel already does is this, and the gap is worth being precise about:
-
-- **Response overrides** are path-addressed edits replayed against a real response
-  (`query-devtools-overrides.ts`). They need the route to exist and to return something first.
-- **The JIT editor** freezes a body into one query's signals - panel-side only. The pipeline, the
-  cache and every error feature never see it.
-- **Faults** inject latency and failures per client, but only a status - never a body.
-
-So the missing piece is a **route-level stub that replaces the request**. The hook point already
-exists and is exact: `sendWithFaults` in `libs/query/src/lib/http/http-request.ts:352` resolves a
-devtools decision per attempt, inside a `defer`, so retries re-roll it and the cache and error
-features see the result exactly as they see a real one. A mock resolver is the same shape one level
-up: given `{ clientName, method, url }`, return a response or `null`.
-
-What that implies, concretely:
-
-- **The request observes `events`, not a body.** A mock has to emit a real `HttpResponse` (and
-  respect `reportProgress` where it is on), because `updateState(event)` consumes the event stream.
-  Returning a bare object will not work.
-- **A mock bypasses the interceptor chain.** No auth header is attached, so a mocked secure route
-  does not exercise the token flow at all. That is usually what you want and occasionally a trap -
-  it must be visible on the row.
-- **Matching is by route pattern, not by devtools entry id.** Overrides key off an id that only
-  exists once a query has registered; a mock has to be armable for a route that has never run - which
-  is the entire point when the endpoint does not exist yet. Method + client + a path pattern with
-  `:param` segments, matched against the parsed `routeParts` the registry already produces.
-- **Everything must be labelled as fake, everywhere.** The Queries list already has a tamper dot and
-  the shell already has a red "Faults armed" bar. A mocked response is a stronger lie than either and
-  reuses both.
-
-The **designer** half is where the reuse is, and it is substantial: the override menu's vocabulary -
-string/number/date presets, fill-recursively, duplicate array item, duplicate array, pagination
-shrink/extend, and the four pagination shapes it already detects - is a response generator that
-currently only runs against live data. Point it at a draft body and it is the authoring tool, with
-three seeds: capture a real run (one click from the Timeline's response history), start from the
-route's declared response type, or start empty.
-
-The **export** is a genuine design decision and should be settled first, because it determines what
-the designer must capture:
-
-- **OpenAPI 3.1 path item** with an inferred schema plus the designed body as an `example` is what an
-  API team can actually merge. It needs types inferred from one example, and one example does not
-  tell you what is nullable or optional - so either infer conservatively and say so, or let the
-  designer mark fields.
-- **A TypeScript type** is what the frontend wants back and is nearly free once a schema exists.
-- **Insomnia/cURL already exist** (`query-devtools-insomnia.ts`, `query-devtools-curl.ts`) and export
-  the _request_. The mock export is the response side of the same envelope, and exporting all
-  designed routes as one document is what makes it a deliverable rather than a screenshot.
-
-On persistence, the split that resolves the tension the override store documents: **the library of
-designed mocks persists (`localStorage`, or IndexedDB if the size settings above land); whether a
-mock is _armed_ does not.** Losing an hour of authoring to a tab close is unacceptable; an app that
-silently serves fake data tomorrow morning is worse. Same restored-banner treatment as overrides,
-and a size cap with a real message rather than a swallowed quota error.
-
-**Scope boundary, and it needs stating up front: this is not MSW.** MSW intercepts at the network
-layer, works in tests and in any framework, and is the right tool for a permanent fixture. What this
-has that MSW does not is the registry - the panel already knows every route, its params, its
-features, its auth provider and its last _n_ real responses, so seeding a mock from something that
-actually happened is one click. Mock at the query-client layer, keep it a debugging and design tool,
-and do not grow it toward being a test fixture runner.
-
 ## Progress steps
 
 Today: `ProgressStepComponent` has exactly one input, `state`
@@ -728,6 +619,35 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Query devtools: the mock designer, phase 3 - the OpenAPI export** (2026-08-10, user-raised) - the last
+phase, so the whole "mock designer" section is gone from this file. Three design calls, all put to the user
+first and all taken the recommended way:
+
+- **A route seeded from the description references the schema it was seeded from** (`$ref`), and the
+  whole-library export copies that schema plus everything it transitively `$ref`s into its own
+  `components.schemas` - so the document resolves on its own while a seeded route keeps the API team's own
+  type name. Only a route that was never seeded gets an inferred inline schema. The single-route fragment
+  keeps the `$ref` without the copy, since it is merged into the description that declares it.
+- **YAML and JSON, picked at export time.** YAML is what a specification repository takes, so it is the
+  default; the subset a generated OpenAPI document needs is a ~120-line serializer
+  (`query-devtools-yaml.ts`), no dependency. It was verified by round-tripping a deliberately nasty
+  generated document through the real `yaml` parser and asserting it equals the JSON tree - `yaml` is not a
+  declared dependency, so that check stayed a throwaway rather than becoming a spec.
+- **A row copies, the library downloads.** `⧉ OAS` next to the existing `⧉ TS` puts one `paths` entry on
+  the clipboard; **Export OpenAPI** in the **Designed** head downloads the whole library. Needed one new
+  host method (`downloadTextFile`), which the panel's own `downloadFile` now goes through.
+
+Everything not seeded is inferred from one example and **the document says so in its `info.description`**:
+observed properties are `required`, nothing is nullable, a `null` example carries _no type at all_, and
+`format` is only `date-time` or `uuid` - the two a value cannot hold by accident. Two mocks differing only
+by query string export as named `examples` under the first one's schema. Every such resolution is reported
+under the library, the way a seed reports what it guessed.
+
+Verified headlessly in the real panel (18 checks): seeding `/authors/{authorId}` from the demo description,
+copying it as YAML and as JSON, the `$ref` and the transitive `AuthorView` → `PostView` → `PostId` copy, a
+captured route's inferred schema alongside it, and the downloaded file's name. Changeset
+`query-devtools-mock-openapi-export.md`.
 
 **Query devtools: the mock designer, phase 2** (2026-08-10, user-raised) - the designer and the
 generated-API-types seed. The user settled the type source before building: **an OpenAPI/JSON Schema

@@ -57,6 +57,14 @@
     grid-template-columns: 7rem minmax(0, 1fr);
   }
 
+  /* The card head puts its title and count on the left, so the export controls take the rest of the row. */
+  .et-query-devtools-spec-export {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-inline-start: auto;
+  }
+
   .et-query-devtools-seed {
     display: flex;
     align-items: center;

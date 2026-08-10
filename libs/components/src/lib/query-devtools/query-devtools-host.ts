@@ -291,6 +291,9 @@ export type QueryDevtoolsHost = {
    */
   downloadInsomniaCollection(items: { entry: QueryDevtoolsEntry; query: AnyQuery }[], clientLabel: string | null): void;
 
+  /** Downloads a file a tab generated. The panel does it because the panel owns the download injector. */
+  downloadTextFile(file: { name: string; content: string; type: string }): void;
+
   // --- Per-tab drawer selections (deliberately not shared with each other, but each has to survive its
   // own tab being switched away from, so - like the Queries tab's selection above - they live here) ---
 

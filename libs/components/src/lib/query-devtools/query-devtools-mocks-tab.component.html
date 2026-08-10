@@ -191,6 +191,24 @@
     <div class="et-query-devtools-card-head">
       <strong>Designed</strong>
       <span class="et-query-devtools-count">{{ rows().length }} in the library</span>
+      @if (rows().length) {
+        <div class="et-query-devtools-spec-export">
+          <select #formatPick (change)="pickSpecFormat(formatPick.value)" class="et-query-devtools-select">
+            @for (format of SPEC_FORMATS; track format.value) {
+              <option [value]="format.value" [selected]="format.value === specFormat()">{{ format.label }}</option>
+            }
+          </select>
+          <button
+            (click)="exportLibrary()"
+            class="et-query-devtools-btn"
+            type="button"
+            title="Download every designed route as one OpenAPI 3.1 document - the response schemas inferred from the designed bodies, each body as an example"
+          >
+            <span aria-hidden="true">⇩</span>
+            Export OpenAPI
+          </button>
+        </div>
+      }
     </div>
 
     @for (row of rows(); track row.mock.id) {
@@ -236,6 +254,15 @@
           >
             <span aria-hidden="true">⧉</span>
             {{ copiedId() === row.mock.id ? 'Copied' : 'TS' }}
+          </button>
+          <button
+            (click)="copyPathItem(row)"
+            class="et-query-devtools-btn"
+            type="button"
+            title="Copy this route as an OpenAPI paths entry, ready to paste under an existing description"
+          >
+            <span aria-hidden="true">⧉</span>
+            {{ copiedSpecId() === row.mock.id ? 'Copied' : 'OAS' }}
           </button>
           <button (click)="remove(row)" class="et-query-devtools-btn et-query-devtools-btn--danger" type="button">
             Delete
@@ -287,6 +314,14 @@
         Nothing designed yet. <strong>New mock</strong> writes one from scratch; capturing below seeds one from
         something that actually happened.
       </p>
+    }
+
+    @if (specNotes().length) {
+      <ul class="et-query-devtools-designer-notes">
+        @for (note of specNotes(); track note) {
+          <li>{{ note }}</li>
+        }
+      </ul>
     }
   </div>
 

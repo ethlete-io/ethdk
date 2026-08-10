@@ -497,6 +497,125 @@ export const seedQueryDevtoolsSchemaBody = (name: string): QueryDevtoolsSchemaSe
   return seedFrom(schema, name);
 };
 
+/** Everything a set of named schemas needs to resolve on its own, lifted out of the description. */
+export type QueryDevtoolsSchemaComponents = {
+  /**
+   * The named schemas plus everything they transitively `$ref`, keyed as `components.schemas` wants
+   * them. A name the description does not declare is simply absent, which is what a caller checks.
+   */
+  schemas: Record<string, unknown>;
+
+  /** Refs that could not be brought along, so an exported document says why it does not resolve. */
+  notes: readonly string[];
+};
+
+/** Where a schema was collected from, so the same name arriving from two pointers is caught. */
+const originOf = (label: string, pointer: string | null) => pointer ?? `named:${label}`;
+
+type RefRequest = { label: string; pointer: string | null };
+
+/**
+ * Copies a schema, pointing every local `$ref` at `#/components/schemas/<name>` and queueing that name -
+ * so a document assembled from these resolves against its own `components`, whether the description kept
+ * its schemas under `components.schemas`, `definitions` or `$defs`.
+ */
+const rewriteRefs = (value: unknown, queue: (request: RefRequest) => void): unknown => {
+  if (Array.isArray(value)) return value.map((entry) => rewriteRefs(entry, queue));
+  if (!isRecord(value)) return value;
+
+  const result: Record<string, unknown> = {};
+
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === '$ref' && typeof entry === 'string') {
+      if (!entry.startsWith('#/')) {
+        result[key] = entry;
+
+        continue;
+      }
+
+      const label = refLabel(entry);
+
+      queue({ label, pointer: entry });
+      result[key] = `#/components/schemas/${label}`;
+
+      continue;
+    }
+
+    result[key] = rewriteRefs(entry, queue);
+  }
+
+  return result;
+};
+
+/**
+ * Collects the named schemas a set of routes was designed against, ready to be handed back as the
+ * `components.schemas` of an exported document - so a route seeded from `MatchView` can reference
+ * `MatchView` instead of an anonymous shape inferred from one body.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
+ */
+export const collectQueryDevtoolsSchemaComponents = (names: readonly string[]): QueryDevtoolsSchemaComponents => {
+  const declared = namedSchemas();
+  const schemas: Record<string, unknown> = {};
+  const notes = new Set<string>();
+  const origins = new Map<string, string>();
+  const pending: RefRequest[] = names.map((label) => ({ label, pointer: null }));
+
+  while (pending.length) {
+    const request = pending.shift() as RefRequest;
+    const origin = originOf(request.label, request.pointer);
+    const seen = origins.get(request.label);
+
+    if (seen !== undefined) {
+      if (seen !== origin) {
+        notes.add(`Two different schemas are both called ${request.label} - only the one from ${seen} was kept.`);
+      }
+
+      continue;
+    }
+
+    const schema = request.pointer === null ? declared[request.label] : resolveRef(request.pointer);
+
+    if (schema === undefined) {
+      if (request.pointer !== null) {
+        notes.add(`${request.pointer} could not be resolved, so ${request.label} is missing from the export.`);
+      }
+
+      continue;
+    }
+
+    origins.set(request.label, origin);
+    schemas[request.label] = rewriteRefs(schema, (next) => pending.push(next));
+  }
+
+  for (const schema of Object.values(schemas)) {
+    collectRemoteRefs(schema, notes);
+  }
+
+  return { schemas, notes: [...notes] };
+};
+
+/** A `$ref` to another file is left as it was written, so a document says where it stops resolving. */
+const collectRemoteRefs = (value: unknown, notes: Set<string>) => {
+  if (Array.isArray(value)) {
+    for (const entry of value) collectRemoteRefs(entry, notes);
+
+    return;
+  }
+
+  if (!isRecord(value)) return;
+
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === '$ref' && typeof entry === 'string' && !entry.startsWith('#/')) {
+      notes.add(`${entry} points outside the description - it was exported unchanged and will not resolve.`);
+
+      continue;
+    }
+
+    collectRemoteRefs(entry, notes);
+  }
+};
+
 const segmentsOf = (pattern: string) => pattern.split('/').filter(Boolean);
 
 /** `/matches/{id}` and `/matches/:id` describe the same route; a mock's pattern is written the second way. */

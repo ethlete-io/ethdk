@@ -1,4 +1,5 @@
 import {
+  collectQueryDevtoolsSchemaComponents,
   loadQueryDevtoolsSchema,
   queryDevtoolsSchemaNames,
   queryDevtoolsSchemaRoutes,
@@ -243,6 +244,84 @@ describe('query devtools schema', () => {
 
     it('should return null for a route that declares no JSON response', () => {
       expect(seedQueryDevtoolsSchemaRoute({ method: 'GET', pattern: '/health' })).toBeNull();
+    });
+  });
+
+  describe('collectQueryDevtoolsSchemaComponents', () => {
+    beforeEach(() => install(() => DOC));
+
+    it('should bring along everything a named schema transitively refs', () => {
+      const { schemas } = collectQueryDevtoolsSchemaComponents(['MatchView']);
+
+      expect(Object.keys(schemas).sort()).toEqual(['MatchId', 'MatchView', 'Score']);
+      expect(schemas['MatchId']).toEqual({ type: 'string', format: 'uuid' });
+    });
+
+    it('should leave a schema that refs itself resolvable', () => {
+      const { schemas } = collectQueryDevtoolsSchemaComponents(['MatchView']);
+
+      expect((schemas['MatchView'] as { properties: { parent: unknown } }).properties.parent).toEqual({
+        $ref: '#/components/schemas/MatchView',
+      });
+    });
+
+    it('should skip a name the description does not declare', () => {
+      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(['Nope']);
+
+      expect(schemas).toEqual({});
+      expect(notes).toEqual([]);
+    });
+
+    it('should point a Swagger 2 definition ref at components.schemas', async () => {
+      await install(() => ({
+        swagger: '2.0',
+        definitions: {
+          Wrapper: { type: 'object', properties: { inner: { $ref: '#/definitions/Inner' } } },
+          Inner: { type: 'string' },
+        },
+      }));
+
+      const { schemas } = collectQueryDevtoolsSchemaComponents(['Wrapper']);
+
+      expect(schemas['Wrapper']).toEqual({
+        type: 'object',
+        properties: { inner: { $ref: '#/components/schemas/Inner' } },
+      });
+      expect(schemas['Inner']).toEqual({ type: 'string' });
+    });
+
+    it('should report a ref it cannot resolve', async () => {
+      await install(() => ({ components: { schemas: { Broken: { $ref: '#/components/schemas/Gone' } } } }));
+
+      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(['Broken']);
+
+      expect(schemas['Gone']).toBeUndefined();
+      expect(notes).toEqual(['#/components/schemas/Gone could not be resolved, so Gone is missing from the export.']);
+    });
+
+    it('should export a remote ref unchanged and say it will not resolve', async () => {
+      await install(() => ({
+        components: { schemas: { Remote: { $ref: 'https://example.com/common.json#/Thing' } } },
+      }));
+
+      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(['Remote']);
+
+      expect(schemas['Remote']).toEqual({ $ref: 'https://example.com/common.json#/Thing' });
+      expect(notes).toEqual([
+        'https://example.com/common.json#/Thing points outside the description - it was exported unchanged and will not resolve.',
+      ]);
+    });
+
+    it('should keep the first of two schemas that share a name, and say so', async () => {
+      await install(() => ({
+        components: { schemas: { Holder: { $ref: '#/definitions/Thing' }, Thing: { type: 'string' } } },
+        definitions: { Thing: { type: 'number' } },
+      }));
+
+      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(['Thing', 'Holder']);
+
+      expect(schemas['Thing']).toEqual({ type: 'string' });
+      expect(notes).toEqual(['Two different schemas are both called Thing - only the one from named:Thing was kept.']);
     });
   });
 
