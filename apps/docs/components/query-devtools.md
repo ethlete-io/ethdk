@@ -124,6 +124,12 @@ phone - so on a narrow viewport the panes go one above the other, and the tab
 strip and the action row each scroll sideways instead of wrapping into a header
 taller than the content it labels. Both dividers are draggable by touch.
 
+On a coarse pointer the chrome's controls grow from 24px to 34px and its rows from
+36px to 44px, so a filter chip is a target you can hit with a thumb; the keyboard
+shortcut caps in the header are dropped, since there is no keyboard to press them on
+and they are what pushed **Close** past the panel's edge. Nothing moves or is hidden
+beyond that - it is the same panel at a size a finger can use.
+
 Which position you picked, the size of each, the floating panel's rect and the pane
 sizes are all [persisted](#persistence). A restored float is **checked against the
 current viewport before it is shown**, so a rect stored on a large monitor - or one
@@ -175,9 +181,15 @@ that stack:
 - **The status chips** - **Failing**, **Loading**, **Stale**, **Idle** (never
   executed), **Gone** ([destroyed](#a-destroyed-query-leaves-a-tombstone)) - each
   carry the number of queries they would leave. Picking several _widens_ the result
-  (failing **or** stale), the way a network panel's type chips do, and a chip with no
-  matches is disabled. The counts are computed before the chips are applied, so a
-  chip always states what picking it yields.
+  (failing **or** stale), the way a network panel's type chips do. The counts are
+  computed before the chips are applied, so a chip always states what picking it
+  yields.
+
+  Only the chips that would actually narrow the list are rendered: a status nothing
+  is in is left out rather than shown at zero, so the row reads as what the list
+  holds instead of as five controls, four of which cannot be pressed. A chip you
+  have picked stays visible even when its count falls to zero - it is the only thing
+  on screen that explains why the list is empty.
 
   **Gone** is the odd one out: it does not narrow an unfiltered list, it _adds_ to
   it. Destroyed queries are left out of the list by default - they are history, and a
@@ -515,8 +527,19 @@ sub-tabs under the pinned head and action rows:
 | **History**  | [Every run the query made, and the response diff](#run-history-and-response-diffs). Carries the run count as a badge.                                                                                                                               |
 | **Data**     | The [value explorer](#beyond-a-read-only-view) (args, response or error) and the GraphQL document, if any.                                                                                                                                          |
 
-The **Run** / **Edit** / **Force** actions stay above the sub-tabs, so nothing you
-act on is ever behind a tab. A failing query marks the **Data** sub-tab with a red
+The action row stays above the sub-tabs, so nothing you act on is ever behind a tab.
+It holds one primary action and three groups:
+
+| Control                        | What it is                                                                                                                                                                                               |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **▶ Execute / Cached / Reset** | Run the query ignoring the cache, run it the way the app would, or drop its state back to idle.                                                                                                          |
+| **⌖ Locate**                   | [Scroll to and outline the element the query was created in](#beyond-a-read-only-view).                                                                                                                  |
+| **⧉ Copy**                     | Copy report, [copy as cURL](#copy-as-curl), [copy for Insomnia](#export-to-insomnia). The trigger ticks over when one lands.                                                                             |
+| **✎ Override**                 | [Edit the response](#response-overrides-editing-a-value-that-survives-a-refetch), replay with edited args, or [force a state](#beyond-a-read-only-view). Turns red while anything is armed on the query. |
+
+Copy and Override are menus rather than seven more buttons: the row is read most
+often to press **Execute**, and a flat row of everything made that the hardest thing
+on it to find. A failing query marks the **Data** sub-tab with a red
 badge, because that is where the error body lives - a failure never hides behind a
 tab that isn't open. Which sub-tab is open is [persisted](#persistence) and shared
 by the Queries tab and every split-view drawer.
@@ -892,9 +915,9 @@ a frozen snapshot of the state it last held, under the same row it always had.
 - **Everything it holds is still readable** - Overview, the run history, and the args,
   response and error body under **Data**. That is the whole point: the `401`'s body is
   right there instead of only its status code in the event log.
-- **Nothing can be run on it.** Execute / Cached / Reset, the JIT editors and the forced
-  states are gone from the drawer, since its handle answers with constants. Copy report,
-  cURL and Insomnia still work - they only read.
+- **Nothing can be run on it.** The Execute group and the whole **Override** menu are
+  gone from the drawer, since its handle answers with constants. **Copy** stays - report,
+  cURL and Insomnia only read.
 - **Forget n** appears only while the **Gone** chip is lit, and drops exactly the `n`
   tombstones the list is showing - so a search term narrows what it deletes to what you
   can see. It unlights the chip on the way out, since there is nothing left for it to
@@ -1092,7 +1115,7 @@ exact string, so there is no guessing before the click.
 
 The button ticks `✓` on success and resets after a moment, like every other copy
 action in the panel. It stays available on a [gone](#a-destroyed-query-leaves-a-tombstone)
-entry, where **Run**, **Edit** and **Force** are gated out but the exports still work.
+entry, where the Execute group and **Override** are gated out but the exports still work.
 
 ::: tip
 This is the detail header only. The same route also renders in the Queries, Stacks,
@@ -1102,7 +1125,8 @@ every line would crowd them - use the detail for now.
 
 ## Copy as cURL
 
-**cURL** in the selected query's action row copies the request as a shell command -
+**Copy as cURL**, in the selected query's **⧉ Copy** menu, copies the request as a
+shell command -
 what goes into a terminal, a ticket or a chat message, where an Insomnia collection is
 too heavy to be read at all:
 
@@ -1160,8 +1184,8 @@ but not redacted. Read it before you attach it.
 Two buttons hand a request to [Insomnia](https://insomnia.rest) so it can be
 replayed, tweaked and shared outside the app:
 
-- **Insomnia** in the selected query's action row copies a one-request collection
-  to the clipboard - import it with `Import > From Clipboard`.
+- **Copy for Insomnia**, in the selected query's **⧉ Copy** menu, copies a one-request
+  collection to the clipboard - import it with `Import > From Clipboard`.
 - **⤓ Insomnia** in the Queries toolbar downloads everything currently listed
   ([every filter applies](#finding-a-query-in-a-long-list)) as one collection, with
   a folder per query client.
@@ -1218,7 +1242,7 @@ components are bound to, which the browser Network tab can't do:
   full, so a 5000-item list opens instantly; each slice expands on click and
   copies just the entries it covers. While the filter is active, only slices that
   actually contain a match unfold.
-- **JIT editing** - a quick one-off: paste raw JSON over a query's response and
+- **JIT editing** - a quick one-off, also in the **✎ Override** menu: paste raw JSON over a query's response and
   apply it via `setResponse()` (the UI re-renders instantly), or replay the query
   with edited args. It does not survive the next fetch - for an edit that should
   keep applying every time the query reruns, arm a
@@ -1227,7 +1251,7 @@ components are bound to, which the browser Network tab can't do:
 - **Response overrides** - a per-value menu in the value explorer that edits a
   path inside a response and keeps reapplying that edit on every future fetch -
   [see below](#response-overrides-editing-a-value-that-survives-a-refetch).
-- **Force states** - force a query into loading / error / empty to exercise
+- **Force states** - in the **✎ Override** menu, force a query into loading / error / empty to exercise
   skeletons, spinners and error / empty UIs on demand (`Clear` restores it). This
   writes the query's signals directly; to exercise the pipeline behind them -
   retries, error handling features, the cache - arm a
