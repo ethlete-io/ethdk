@@ -200,6 +200,13 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
   resolveHeaders: () => HttpHeaders | undefined;
 
   /**
+   * The headers the most recent execution actually went out with. Unlike {@link resolveHeaders} it
+   * does not re-resolve the header providers, so after a token refresh it still reports the token
+   * the request was sent with. `undefined` until the first execution.
+   */
+  lastSentHeaders: () => HttpHeaders | undefined;
+
+  /**
    * How many HTTP attempts the current execution has made, counting from 1. Anything above that is the
    * retry policy having fired. Reset by the next execution, so it keeps reading `3` after a request
    * that took three attempts to succeed.
@@ -304,6 +311,7 @@ export type RequestHttpEvent<TArgs extends QueryArgs> = HttpEvent<ResponseType<T
 
 export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRequestOptions<TArgs>) => {
   let currentStreamSubscription = Subscription.EMPTY;
+  let lastSentHeaders: HttpHeaders | undefined;
 
   const { args, clientOptions, dependencies } = options;
 
@@ -443,6 +451,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
   const createStream = () => {
     const headers = resolveHeaders();
+    lastSentHeaders = headers;
     const source$ = isQueryDevtoolsRequestInterceptionEnabled() ? sendWithFaults(headers) : send(headers);
 
     return source$.pipe(
@@ -659,6 +668,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       applyPersistedResponse,
       lastPersistedResponseAt: lastPersistedResponseAt.asReadonly(),
       resolveHeaders,
+      lastSentHeaders: () => lastSentHeaders,
       attempts: attempts.asReadonly(),
       retryState: retryState.asReadonly(),
       lastDurationMs: lastDurationMs.asReadonly(),

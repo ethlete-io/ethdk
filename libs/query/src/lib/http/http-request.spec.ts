@@ -835,6 +835,33 @@ describe('createHttpRequest', () => {
       expect(testReq2.request.headers.get('Authorization')).toBe('Bearer token-2');
       testReq2.flush(responseBody);
     });
+
+    it('reports the headers the last execution went out with via subtle.lastSentHeaders', () => {
+      let token = 'token-1';
+      const getAuthHeaders = () => new HttpHeaders({ Authorization: `Bearer ${token}` });
+
+      const reqWithTokenHeaders = createHttpRequest({
+        fullPath: 'https://example.com/secure',
+        method: 'GET',
+        args: { headers: getAuthHeaders },
+        dependencies: {
+          httpClient: TestBed.inject(HttpClient),
+          ngErrorHandler: TestBed.inject(ErrorHandler),
+          injector: TestBed.inject(Injector),
+        },
+      });
+
+      expect(reqWithTokenHeaders.subtle.lastSentHeaders()).toBeUndefined();
+
+      reqWithTokenHeaders.execute();
+      testingController.expectOne('https://example.com/secure').flush(responseBody);
+
+      token = 'token-2';
+
+      // What was sent stays token-1; what would be sent next resolves to token-2.
+      expect(reqWithTokenHeaders.subtle.lastSentHeaders()?.get('Authorization')).toBe('Bearer token-1');
+      expect(reqWithTokenHeaders.subtle.resolveHeaders()?.get('Authorization')).toBe('Bearer token-2');
+    });
   });
 
   describe('subtle.applyExternalResponse', () => {

@@ -1,6 +1,6 @@
 import { effect, isDevMode } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { concatMap, EMPTY, filter, Observable, of, switchMap, timer } from 'rxjs';
+import { concatMap, EMPTY, Observable, of, switchMap, timer } from 'rxjs';
 import { QueryArgs, QueryCreator, QueryErrorResponse, RequestArgs, ResponseType } from '../http';
 import { ShouldRetryRequestFn } from '../http/query-retry-utils';
 import { decryptBearer } from '../http/internal/request-route';
@@ -78,9 +78,12 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
    * Minimum interval between the *proactive* refreshes the expiry timer schedules, in milliseconds.
    * Prevents rapid refresh loops in case of issues.
    *
-   * A refresh a 401 asked for is never throttled by this - a token revoked seconds after a proactive
-   * refresh is exactly when the request must go out. Those are deduplicated instead: one refresh is
-   * in flight at a time.
+   * A refresh a 401 asked for is not throttled by this - a token revoked seconds after a proactive
+   * refresh is exactly when the request must go out. Those are kept in check differently: one
+   * refresh is in flight at a time, a 401 from a request that went out with an older access token
+   * refreshes nothing (the refresh it is asking for already happened), and once a whole streak of
+   * them runs back to back - every fresh token 401ing again, with no secure request succeeding in
+   * between - further ones fall back to this interval.
    *
    * @default 30000 (30 seconds)
    */
@@ -170,6 +173,13 @@ const rescheduleDelayMs = 5000;
  */
 const maxRescheduleAttempts = 5;
 
+/**
+ * How many 401-driven refreshes may run back to back before they fall back to `minRefreshInterval`.
+ * Every refresh in such a streak means the token the previous one issued was rejected too, so an
+ * unbounded streak is a refresh loop, not recovery. A secure request succeeding ends the streak.
+ */
+const maxUnauthorizedRefreshStreak = 3;
+
 export type AuthQueryBuilder<TKey extends string, TArgs extends QueryArgs> = {
   _type: 'authQuery';
   key: TKey;
@@ -255,6 +265,8 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     const refreshIfExpired = config.refreshIfExpired ?? true;
 
     let lastRefreshTime = 0;
+    let lastUnauthorizedRefreshTime = 0;
+    let unauthorizedRefreshStreak = 0;
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const refreshQuery = () => context.queries[key]!;
@@ -282,6 +294,18 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         if (now - lastRefreshTime < minRefreshInterval) return 'throttled';
 
         lastRefreshTime = now;
+      } else {
+        const now = Date.now();
+
+        if (
+          unauthorizedRefreshStreak >= maxUnauthorizedRefreshStreak &&
+          now - lastUnauthorizedRefreshTime < minRefreshInterval
+        ) {
+          return 'throttled';
+        }
+
+        unauthorizedRefreshStreak++;
+        lastUnauthorizedRefreshTime = now;
       }
 
       refreshQuery().execute(buildArgs(currentRefreshToken), { triggeredBy: 'token-refresh' });
@@ -404,21 +428,27 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     // Auto-retry on 401: Listen to repository events and trigger refresh on 401 errors
     const autoRetryOn401 = config.autoRetryOn401 ?? true;
     if (autoRetryOn401) {
-      context.repository.events$
-        .pipe(
-          filter((event) => {
-            // Only handle 401 errors for secure queries
-            if (event.type !== 'request-error') return false;
-            if (!event.isSecure) return false;
-            if (event.error?.status !== 401) return false;
+      context.repository.events$.pipe(takeUntilDestroyed()).subscribe((event) => {
+        if (event.type === 'request-success' && event.isSecure) {
+          unauthorizedRefreshStreak = 0;
 
-            return true;
-          }),
-          takeUntilDestroyed(),
-        )
-        .subscribe(() => {
-          executeRefresh('unauthorized');
-        });
+          return;
+        }
+
+        if (event.type !== 'request-error' || !event.isSecure || event.error?.status !== 401) return;
+
+        // A 401 from a request that went out with an older access token asks for a refresh that
+        // already happened - the query re-runs itself with the current token (see
+        // createSecureExecuteFactory). Refreshing again here would spend the refresh token that
+        // pair came with, invalidating the tokens every other in-flight request is using; their
+        // 401s would each do the same, keeping the loop alive for as long as queries are in flight.
+        const sentAuthorization = event.request.subtle.lastSentHeaders()?.get('Authorization');
+        const currentToken = context.accessToken();
+
+        if (sentAuthorization && currentToken && sentAuthorization !== `Bearer ${currentToken}`) return;
+
+        executeRefresh('unauthorized');
+      });
     }
   };
 

@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { EMPTY, filter, map, merge, Subscription, switchMap, take, takeWhile, tap } from 'rxjs';
+import { EMPTY, filter, map, merge, skip, Subscription, switchMap, take, takeWhile, tap } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
@@ -49,6 +49,8 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 
   /** The access token the last request went out with - what the 401 retry below compares against. */
   let lastRequestedWithToken: string | null = null;
+
+  const error$ = toObservable(options.state.error, { injector: options.deps.injector });
 
   const reset = () => {
     authQuerySubscription.unsubscribe();
@@ -195,7 +197,17 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     // another refresh - an endless refresh/retry loop for as long as the server keeps handing out
     // tokens it rejects. A refresh that did not change the access token is therefore not a reason to
     // retry; the subscription stays open, so a later one that does change it still is.
-    tokenRefreshSubscription = options.authProvider.afterTokenRefresh$
+    //
+    // The error landing is a trigger of its own: a refresh can complete before this query's 401 has
+    // even come back (which is also why that 401 must not start another refresh - see
+    // withRefreshQuery's 401 handling), and the refresh emission alone would find no error to act
+    // on. Emissions of the error this execution armed with are not landings, only replays.
+    const errorAtArm = options.state.error();
+
+    tokenRefreshSubscription = merge(
+      options.authProvider.afterTokenRefresh$,
+      error$.pipe(filter((landedError) => landedError !== errorAtArm)),
+    )
       .pipe(
         filter(() => {
           const currentError = options.state.error();

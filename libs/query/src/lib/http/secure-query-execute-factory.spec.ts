@@ -424,6 +424,75 @@ describe('createSecureExecuteFactory', () => {
       });
     });
 
+    it('re-executes when the 401 lands after the refresh already completed', () => {
+      const mockQuery = {
+        response: () => ({}),
+        error: () => null,
+        loading: () => false,
+        lastTimeExecutedAt: () => Date.now(),
+        isAlive: signal(false),
+      } as unknown as AnyQuerySnapshot;
+
+      mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        autoExecutes: true,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({});
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+
+        // The refresh settles while this query's request is still in flight - no error yet, so the
+        // emission alone retries nothing.
+        refreshTokenWith('new-token');
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+
+        // The 401 the old token earned lands afterwards - it asks for no new refresh, so the error
+        // arriving is the only trigger left.
+        mockState.error.set({ code: 401 } as unknown as QueryErrorResponse);
+        TestBed.tick();
+
+        expect(transformSpy).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('does not re-execute a late 401 when no refresh happened since the request went out', () => {
+      const mockQuery = {
+        response: () => ({}),
+        error: () => null,
+        loading: () => false,
+        lastTimeExecutedAt: () => Date.now(),
+        isAlive: signal(false),
+      } as unknown as AnyQuerySnapshot;
+
+      mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        autoExecutes: true,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({});
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+
+        mockState.error.set({ code: 401 } as unknown as QueryErrorResponse);
+        TestBed.tick();
+
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+      });
+    });
+
     it('should pass header provider function to transformAuthAndExec', () => {
       const mockQuery = {
         response: () => ({}),

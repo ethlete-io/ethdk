@@ -1,3 +1,4 @@
+import { HttpHeaders } from '@angular/common/http';
 import { DestroyRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QueryTestSetup, setupAuthTest, setupQueryTest } from '@ethlete/query/testing';
@@ -145,6 +146,36 @@ describe('bearer-auth-query-builders', () => {
   });
 
   describe('withRefreshQuery - Auto-retry on 401', () => {
+    const makeSecureRequestWithToken = (route: string, token: string) => {
+      TestBed.runInInjectionContext(() => {
+        setup.queryClient.repository.request({
+          route: route as never,
+          method: 'GET',
+          isSecure: true,
+          args: { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) },
+          consumerDestroyRef: TestBed.inject(DestroyRef),
+        });
+      });
+    };
+
+    const unauthorize = (route: string) => {
+      TestBed.runInInjectionContext(() => {
+        setup.queryClient.repository.request({
+          route: route as never,
+          method: 'GET',
+          isSecure: true,
+          consumerDestroyRef: TestBed.inject(DestroyRef),
+        });
+      });
+
+      setup.httpTesting
+        .expectOne(`https://api.test.com${route}`)
+        .flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+      TestBed.tick();
+    };
+
     it('should trigger token refresh when a secure query returns 401', () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
@@ -286,6 +317,97 @@ describe('bearer-auth-query-builders', () => {
       TestBed.tick();
 
       expect(authSetup.auth.accessToken()).toBe('new-access');
+    });
+
+    it('does not refresh for a 401 from a request sent with an older access token', () => {
+      const authSetup = setupAuthTest({ querySetup: setup, autoRetryOn401: true });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access-1', refreshToken: 'refresh-1' });
+
+      makeSecureRequestWithToken('/api/slow', 'access-1');
+
+      // The refresh already happened by the time the 401 lands - refreshing again would spend the
+      // token pair it just produced.
+      authSetup.auth.setTokens('access-2', 'refresh-2');
+      TestBed.tick();
+
+      setup.httpTesting
+        .expectOne('https://api.test.com/api/slow')
+        .flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+      TestBed.tick();
+
+      setup.httpTesting.expectNone('https://api.test.com/auth/refresh');
+    });
+
+    it('refreshes for a 401 from a request sent with the current access token', () => {
+      const authSetup = setupAuthTest({ querySetup: setup, autoRetryOn401: true });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access-1', refreshToken: 'refresh-1' });
+
+      makeSecureRequestWithToken('/api/slow', 'access-1');
+
+      setup.httpTesting
+        .expectOne('https://api.test.com/api/slow')
+        .flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      TestBed.tick();
+      TestBed.tick();
+
+      setup.httpTesting
+        .expectOne('https://api.test.com/auth/refresh')
+        .flush({ accessToken: 'access-2', refreshToken: 'refresh-2' });
+      TestBed.tick();
+
+      expect(authSetup.auth.accessToken()).toBe('access-2');
+    });
+
+    it('falls back to minRefreshInterval once a streak of fresh tokens keeps being rejected', () => {
+      const authSetup = setupAuthTest({ querySetup: setup, autoRetryOn401: true, minRefreshInterval: 30000 });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access-0', refreshToken: 'refresh-0' });
+
+      for (let round = 1; round <= 3; round++) {
+        unauthorize(`/api/secure-${round}`);
+        setup.httpTesting
+          .expectOne('https://api.test.com/auth/refresh')
+          .flush({ accessToken: `access-${round}`, refreshToken: `refresh-${round}` });
+        TestBed.tick();
+      }
+
+      // The fourth rejection inside the interval: refreshing yet again cannot help.
+      unauthorize('/api/secure-4');
+      setup.httpTesting.expectNone('https://api.test.com/auth/refresh');
+    });
+
+    it('ends the rejected-token streak when a secure request succeeds', () => {
+      const authSetup = setupAuthTest({ querySetup: setup, autoRetryOn401: true, minRefreshInterval: 30000 });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access-0', refreshToken: 'refresh-0' });
+
+      for (let round = 1; round <= 2; round++) {
+        unauthorize(`/api/secure-${round}`);
+        setup.httpTesting
+          .expectOne('https://api.test.com/auth/refresh')
+          .flush({ accessToken: `access-${round}`, refreshToken: `refresh-${round}` });
+        TestBed.tick();
+      }
+
+      authSetup.makeSecureRequest('/api/ok');
+      setup.httpTesting.expectOne('https://api.test.com/api/ok').flush({ fine: true });
+      TestBed.tick();
+      TestBed.tick();
+
+      for (let round = 3; round <= 4; round++) {
+        unauthorize(`/api/secure-${round}`);
+        setup.httpTesting
+          .expectOne('https://api.test.com/auth/refresh')
+          .flush({ accessToken: `access-${round}`, refreshToken: `refresh-${round}` });
+        TestBed.tick();
+      }
+
+      expect(authSetup.auth.accessToken()).toBe('access-4');
     });
 
     it('should not trigger refresh if refresh token is missing', () => {
