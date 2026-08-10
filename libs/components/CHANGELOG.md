@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.0.0-next.42
+
+### Major Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`45512c8`](https://github.com/ethlete-io/ethdk/commit/45512c84cea8c6ef679a5443b0f8d66a53f54558) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query error now renders as an `et-banner` of `type="error"`, themed with `--et-banner-*` - the `--et-query-error-*` tokens are gone. Banner gains `[etBannerHeading]` / `[etBannerBody]` slots and a `liveRegion` role override.
+
+### Minor Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`fe17b44`](https://github.com/ethlete-io/ethdk/commit/fe17b449795f63d818a8abb4ab56ccacfd97d5b2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Forms: add the `hexColor` and `rgbColor` signal-forms validators, so a color value that arrives from an API or a paste still has to meet the format `et-color-input` documents.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`0fa8026`](https://github.com/ethlete-io/ethdk/commit/0fa80264a9927890ff61697aba8e5b036798403f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the value explorer's copy button gains a menu for the key, the JSONPath and a `"key": value` fragment, and its tick now names which one landed.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`9df67e0`](https://github.com/ethlete-io/ethdk/commit/9df67e042bf1d1b8f6283dd5773133b5c8a0e4ce) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the panel can float over the page as a third dock — dragged, resized, and shovable off an edge to park with a grab strip showing. A blocked pop-up now says so and offers the float.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`5c0f540`](https://github.com/ethlete-io/ethdk/commit/5c0f5409e022d1bd4629e3f8dac0c09c4f80c0bb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the panel's position moved into a layout menu, which gains left and top docks alongside bottom, right, float and pop out.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`5c0f540`](https://github.com/ethlete-io/ethdk/commit/5c0f5409e022d1bd4629e3f8dac0c09c4f80c0bb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: an opt-in tree toggle groups the Queries list by route path, folding single-child chains and heading only the segments that actually branch.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`d3f1b2b`](https://github.com/ethlete-io/ethdk/commit/d3f1b2b8d3c2a6a0e68013ba130bd833ac72d7fe) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a "Keep across reloads" toggle stores armed response overrides in `sessionStorage` and replays them on the next load, announcing in a banner what came back and what matched no query.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`8a73cca`](https://github.com/ethlete-io/ethdk/commit/8a73cca2049b40c2205481d1193af28977c0d959) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: every menu is now the SDK's `et-menu`, and they all work inside the popped-out panel.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`a4a373d`](https://github.com/ethlete-io/ethdk/commit/a4a373d94100fc738bc16d1bf96ef5d682b326ae) Thanks [@github-actions](https://github.com/apps/github-actions)! - Number input: drag a stepper button sideways to scrub the value, and hold `Shift`, `Alt` or press `PageUp`/`PageDown` to step by 10x, a tenth or 100x.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`7785405`](https://github.com/ethlete-io/ethdk/commit/77854057ae224fd07c3d6bd9f86aa7fc2e8147d4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Progress steps: `state` gains `success`, `warning` and `error` - a step that finished with an outcome, each with its own icon and the app's matching semantic color theme.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`f426563`](https://github.com/ethlete-io/ethdk/commit/f4265630749f162d097b147da55256e8bfa056ad) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: an About tab reporting the loaded `@ethlete/*` and Angular versions plus `provideQueryDevtools({ about })`, mirrored on `window.ethlete` and in the session export.
+
+- [`908f35a`](https://github.com/ethlete-io/ethdk/commit/908f35a7a68445467cfe6fe60393f9dc9b140503) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: design a mock's body in the value explorer, and seed it from your API description via
+  `provideQueryDevtools({ schema })`.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`d14fcf0`](https://github.com/ethlete-io/ethdk/commit/d14fcf0cf4537bca49aee2671b178c1af0df5d39) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a Mocks tab that answers a route with a designed response instead of sending the request, and copies that route back out as a typed query definition.
+
+- [`5feb1dc`](https://github.com/ethlete-io/ethdk/commit/5feb1dcc9b5428357faba170acfce1101fa29150) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: copy a query's whole armed override set and paste it onto another, and edit response
+  values with `Set to null`, `Empty this array`, `Paste as new item` and delete.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`a51e919`](https://github.com/ethlete-io/ethdk/commit/a51e9192e7166ea22ff3cfcabdbd96ae4cb94e54) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a Settings panel behind the header's gear - a storage scope per kind of panel state, runtime limits, a reset, and every panel-wide switch in one place.
+
+### Patch Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`54352ad`](https://github.com/ethlete-io/ethdk/commit/54352ad162140782688715faa68c1aa3d2498b81) Thanks [@github-actions](https://github.com/apps/github-actions)! - Accordion: hovering a header now also brightens its hairline and lifts the hint and chevron to full strength, paced by the new `--et-accordion-color-duration`, and hover states no longer stick on touch.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`9b555f7`](https://github.com/ethlete-io/ethdk/commit/9b555f7fe66caa7a0d609cceeef7310b2404414a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: clicking a Queries-list group header now collapses it even while it holds the selected query.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`025d940`](https://github.com/ethlete-io/ethdk/commit/025d940706cc02fc89da5299b125fe70378392a5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: calmer chrome - the query action row collapses twelve buttons into an Execute group plus **Copy** and **Override** menus, empty status chips are dropped, and controls grow for touch.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`cb3a72a`](https://github.com/ethlete-io/ethdk/commit/cb3a72acf9e9ab82e8e42677462001eea7fcc963) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: **⌖ Locate** now finds a query created in a host element that renders no box of its own (`display: contents`) instead of reporting **Not on screen**.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`b8aa839`](https://github.com/ethlete-io/ethdk/commit/b8aa8391304657b543e00142df20a518a6e946b3) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: reloading the app now closes a pop-out window instead of leaving a dead panel open in it.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`b8b5268`](https://github.com/ethlete-io/ethdk/commit/b8b5268d245535dfdb9c81321867d71b561291ba) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: tapping a control no longer leaves it lit until something else is tapped, controls a hover would reveal are always visible on touch, and a sticky toolbar sticks flush to the top.
+
 ## 1.0.0-next.41
 
 ### Minor Changes

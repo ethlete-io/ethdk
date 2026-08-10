@@ -1,5 +1,19 @@
 # @ethlete/core
 
+## 5.0.0-next.45
+
+### Minor Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`19ac925`](https://github.com/ethlete-io/ethdk/commit/19ac92556c91563cda0b9639d985639e48255075) Thanks [@github-actions](https://github.com/apps/github-actions)! - Drag and resize gestures no longer sweep a text selection across the page, and `suppressTextSelection()` is exported for gestures you drive yourself.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`ebcff36`](https://github.com/ethlete-io/ethdk/commit/ebcff36d21695414d8ea93e32a88f262110f8883) Thanks [@github-actions](https://github.com/apps/github-actions)! - The overlay mount config takes an optional `document`, so an overlay anchored inside a same-origin pop-up window now opens in that window.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`f426563`](https://github.com/ethlete-io/ethdk/commit/f4265630749f162d097b147da55256e8bfa056ad) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: an About tab reporting the loaded `@ethlete/*` and Angular versions plus `provideQueryDevtools({ about })`, mirrored on `window.ethlete` and in the session export.
+
+### Patch Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`8459c8b`](https://github.com/ethlete-io/ethdk/commit/8459c8b38595133b97e33615ba8fa6f685dddb8a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Anchored overlays no longer fly to the viewport corner when their reference element is removed while they are open - the pane keeps its last position, or closes at once with `autoCloseIfReferenceHidden`.
+
 ## 5.0.0-next.44
 
 ### Minor Changes
