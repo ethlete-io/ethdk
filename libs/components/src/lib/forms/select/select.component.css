@@ -1,12 +1,10 @@
 @layer components {
-  @property --et-select-arrow-size {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 16px;
-  }
-
   et-select {
-    display: block;
+    /* a flex row, not a block: without a form field to hand them to, the control's own suffix
+       affordances render at the end of the host rather than in the field's suffix slot */
+    display: flex;
+    align-items: center;
+    gap: 6px;
     flex: 1;
     min-inline-size: 0;
     color: inherit;
@@ -15,7 +13,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      inline-size: 100%;
+      flex: 1;
       outline: none;
       color: inherit;
       min-inline-size: 0;
@@ -140,82 +138,13 @@
       flex: none;
       color: var(--et-surface-color-muted-solid, currentColor);
     }
-
-    .et-select-clear {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      inline-size: var(--et-select-arrow-size);
-      block-size: var(--et-select-arrow-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
-      border: none;
-      background: transparent;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      appearance: none;
-
-      @media (hover: hover) {
-        &:hover {
-          color: var(--et-surface-color-solid, currentColor);
-        }
-      }
-
-      .et-icon {
-        inline-size: calc(var(--et-select-arrow-size) - 4px);
-        block-size: calc(var(--et-select-arrow-size) - 4px);
-      }
-
-      &.et-select-clear--enter {
-        animation: et-select-clear-in 150ms ease;
-      }
-
-      &.et-select-clear--leave {
-        animation: et-select-clear-out 120ms ease forwards;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        &.et-select-clear--enter,
-        &.et-select-clear--leave {
-          animation: none;
-        }
-      }
-    }
-
-    .et-select-arrow {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      inline-size: var(--et-select-arrow-size);
-      block-size: var(--et-select-arrow-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
-      border: none;
-      background: transparent;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      appearance: none;
-
-      .et-icon {
-        inline-size: 100%;
-        block-size: 100%;
-        /* the registered chevron icon points up natively — this select always points down */
-        rotate: 180deg;
-      }
-    }
   }
 
-  @keyframes et-select-clear-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes et-select-clear-out {
-    to {
-      opacity: 0;
-    }
+  /* outside the `et-select` block on purpose: the chevron renders in the form field's suffix slot,
+     which is not a descendant of the host. Only its direction is select-specific - the rest of the
+     button comes from the shared picker-trigger sheet. */
+  .et-select-arrow .et-icon {
+    /* the registered chevron icon points up natively - this select always points down */
+    rotate: 180deg;
   }
 }

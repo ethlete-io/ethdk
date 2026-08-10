@@ -117,16 +117,19 @@ export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
    * `null` on success.
    */
   executeDelete?: (options: DropzoneDeleteOptions<TValue>) => Promise<DropzoneUploadError | null>;
+
+  /** @internal @see DropzoneDeleteConfig.includeExisting */
+  deleteIncludesExisting?: boolean;
 };
 
 export type AnyDropzoneUploadConfig<TValue = unknown> = ResolvedDropzoneUploadConfig<TValue>;
 
 /**
- * The authoring config for a delete request run when an already-persisted entry (a successful
- * upload or an existing value) is removed - e.g. a `DELETE` route that cleans up the uploaded
- * file server-side. Nest it under `DropzoneUploadConfig.delete` / `V2DropzoneUploadConfig.delete`.
- * Removing a still-uploading entry only cancels its upload; nothing was persisted yet, so no
- * delete request is made.
+ * The authoring config for a delete request run when an entry uploaded in this session is removed
+ * - e.g. a `DELETE` route that cleans up the uploaded file server-side. Nest it under
+ * `DropzoneUploadConfig.delete` / `V2DropzoneUploadConfig.delete`. Removing a still-uploading entry
+ * only cancels its upload; nothing was persisted yet, so no delete request is made. A value the
+ * control started with is left alone unless `includeExisting` says otherwise.
  */
 export type DropzoneDeleteConfig<TArgs extends QueryArgs, TValue> = {
   /** The query creator used to delete one value (e.g. a `DELETE /media/:id` route). */
@@ -134,6 +137,16 @@ export type DropzoneDeleteConfig<TArgs extends QueryArgs, TValue> = {
 
   /** Builds the request args to delete one value, e.g. `(id) => ({ pathParams: { id } })`. */
   createArgs: (value: TValue) => RequestArgs<TArgs>;
+
+  /**
+   * Whether removing a value the control started with - one resolved through `resolveExisting`,
+   * rather than uploaded in this session - also deletes it server-side. Off by default: an edit
+   * form is usually detaching a record something else owns, not cleaning up after itself. Turn it
+   * on where the control owns every value it shows.
+   *
+   * @default false
+   */
+  includeExisting?: boolean;
 };
 
 /** The authoring config for `createDropzoneUpload` (new `@ethlete/query` API). */
@@ -177,7 +190,8 @@ export type DropzoneUploadConfig<
   resolveExisting?: (value: TValue) => DropzoneExistingFileInfo;
 
   /**
-   * Run when an already-persisted entry (a successful upload or an existing value) is removed.
+   * Run when an entry uploaded in this session is removed - and, with `includeExisting`, when a
+   * value the control started with is removed too.
    * Absent: removing an entry only updates the control locally, with no server-side cleanup.
    */
   delete?: DropzoneDeleteConfig<TDeleteArgs, TValue>;
@@ -195,6 +209,9 @@ export type V2DropzoneDeleteConfig<TCreator extends AnyV2QueryCreator | AnyLegac
 
   /** Builds the `prepare()` args to delete one value, e.g. `(id) => ({ pathParams: { id } })`. */
   createArgs: (value: TValue) => V2DropzonePrepareArgsOf<TCreator>;
+
+  /** @see DropzoneDeleteConfig.includeExisting */
+  includeExisting?: boolean;
 };
 
 /**
@@ -242,7 +259,8 @@ export type V2DropzoneUploadConfig<
   resolveExisting?: (value: TValue) => DropzoneExistingFileInfo;
 
   /**
-   * Run when an already-persisted entry (a successful upload or an existing value) is removed.
+   * Run when an entry uploaded in this session is removed - and, with `includeExisting`, when a
+   * value the control started with is removed too.
    * Absent: removing an entry only updates the control locally, with no server-side cleanup.
    */
   delete?: V2DropzoneDeleteConfig<TDeleteCreator, TValue>;
@@ -474,6 +492,7 @@ export const createDropzoneUpload = <TArgs extends QueryArgs, TValue, TDeleteArg
   executeDelete: config.delete
     ? createNewQueryDeleteExecutor({ queryCreator: config.delete.queryCreator, createArgs: config.delete.createArgs })
     : undefined,
+  deleteIncludesExisting: config.delete?.includeExisting ?? false,
 });
 
 /**
@@ -508,4 +527,5 @@ export const createV2DropzoneUpload = <
   executeDelete: config.delete
     ? createV2QueryDeleteExecutor({ queryCreator: config.delete.queryCreator, createArgs: config.delete.createArgs })
     : undefined,
+  deleteIncludesExisting: config.delete?.includeExisting ?? false,
 });

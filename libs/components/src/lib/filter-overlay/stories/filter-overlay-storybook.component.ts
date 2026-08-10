@@ -1,11 +1,15 @@
 import { Component, Signal, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { FormField } from '@angular/forms/signals';
 import { map, switchMap, tap, timer } from 'rxjs';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { defineQueryForm, queryField } from '@ethlete/query';
 import { BUTTON_IMPORTS } from '../../button';
 import { CHIP_IMPORTS } from '../../chip';
 import { FLOATING_ACTION_IMPORTS } from '../../floating-action';
+import { FORM_FIELD_IMPORTS } from '../../forms/form-field';
+import { INPUT_IMPORTS } from '../../forms/input';
+import { RADIO_GROUP_IMPORTS } from '../../forms/selection-list';
 import {
   OverlayBodyComponent,
   OverlayFooterDirective,
@@ -43,6 +47,20 @@ export type TeamFilterValue = FilterOverlayValueOf<ReturnType<typeof createTeamF
 const REGIONS = ['all', 'eu', 'na', 'apac'];
 const DIVISIONS = ['all', 'first', 'second', 'youth'];
 
+const REGION_LABELS: Record<string, string> = {
+  all: 'All regions',
+  eu: 'Europe',
+  na: 'North America',
+  apac: 'Asia-Pacific',
+};
+
+const DIVISION_LABELS: Record<string, string> = {
+  all: 'All divisions',
+  first: 'First division',
+  second: 'Second division',
+  youth: 'Youth',
+};
+
 // ─── The overlay's routed pages ──────────────────────────────────────────────
 
 @Component({
@@ -51,42 +69,38 @@ const DIVISIONS = ['all', 'first', 'second', 'youth'];
     <ng-template etOverlayHeaderTemplate>Filters</ng-template>
 
     <div class="flex flex-col gap-4">
-      <!-- Plain buttons rather than form controls: this story is about the draft/apply contract, and binding a
-           draft field to a real input is covered by the forms guides. -->
-      <div class="flex flex-col gap-2">
-        <span class="text-small opacity-60">Search</span>
-        <div class="flex flex-wrap gap-2">
-          @for (term of SEARCH_TERMS; track term) {
-            <button
-              [variant]="filters.draft.value().search === term ? 'filled' : 'outline'"
-              (click)="filters.draft.patchValue({ search: term })"
-              et-button
-              size="xs"
-            >
-              {{ term || 'any' }}
-            </button>
-          }
-        </div>
-      </div>
+      <et-form-field>
+        <et-label>Search</et-label>
+        <et-input [formField]="filters.draft.fields.search" placeholder="Team name" />
+        <et-hint>Matches the team name.</et-hint>
+      </et-form-field>
 
       <!-- Each of these opens a page of its own, which is what the overlay router is for: a long option list
            does not belong squeezed into the panel next to everything else. -->
       <button etOverlayRouterLink="/region" et-button variant="outline" size="sm">
-        Region - {{ filters.draft.value().region }}
+        Region - {{ REGION_LABELS[filters.draft.value().region] }}
       </button>
 
       <button etOverlayRouterLink="/division" et-button variant="outline" size="sm">
-        Division - {{ filters.draft.value().division }}
+        Division - {{ DIVISION_LABELS[filters.draft.value().division] }}
       </button>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [OverlayHeaderTemplateDirective, OverlayRouterLinkDirective, BUTTON_IMPORTS],
+  imports: [
+    OverlayHeaderTemplateDirective,
+    OverlayRouterLinkDirective,
+    BUTTON_IMPORTS,
+    FORM_FIELD_IMPORTS,
+    INPUT_IMPORTS,
+    FormField,
+  ],
 })
 export class FilterOverlayMainPageComponent {
   protected filters = injectFilterOverlay<TeamFilterValue>();
 
-  protected readonly SEARCH_TERMS = ['', 'chemie', 'united', 'city'];
+  protected readonly REGION_LABELS = REGION_LABELS;
+  protected readonly DIVISION_LABELS = DIVISION_LABELS;
 }
 
 @Component({
@@ -94,25 +108,20 @@ export class FilterOverlayMainPageComponent {
   template: `
     <ng-template etOverlayHeaderTemplate>Region</ng-template>
 
-    <div class="flex flex-col items-start gap-2">
+    <et-radio-group [formField]="filters.draft.fields.region">
+      <et-label>Region</et-label>
       @for (region of REGIONS; track region) {
-        <button
-          [variant]="filters.draft.value().region === region ? 'filled' : 'outline'"
-          (click)="filters.draft.patchValue({ region })"
-          et-button
-          size="sm"
-        >
-          {{ region }}
-        </button>
+        <et-radio [value]="region">{{ REGION_LABELS[region] }}</et-radio>
       }
-    </div>
+    </et-radio-group>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [OverlayHeaderTemplateDirective, BUTTON_IMPORTS],
+  imports: [OverlayHeaderTemplateDirective, RADIO_GROUP_IMPORTS, FORM_FIELD_IMPORTS, FormField],
 })
 export class FilterOverlayRegionPageComponent {
   protected filters = injectFilterOverlay<TeamFilterValue>();
   protected readonly REGIONS = REGIONS;
+  protected readonly REGION_LABELS = REGION_LABELS;
 }
 
 @Component({
@@ -120,25 +129,20 @@ export class FilterOverlayRegionPageComponent {
   template: `
     <ng-template etOverlayHeaderTemplate>Division</ng-template>
 
-    <div class="flex flex-col items-start gap-2">
+    <et-radio-group [formField]="filters.draft.fields.division">
+      <et-label>Division</et-label>
       @for (division of DIVISIONS; track division) {
-        <button
-          [variant]="filters.draft.value().division === division ? 'filled' : 'outline'"
-          (click)="filters.draft.patchValue({ division })"
-          et-button
-          size="sm"
-        >
-          {{ division }}
-        </button>
+        <et-radio [value]="division">{{ DIVISION_LABELS[division] }}</et-radio>
       }
-    </div>
+    </et-radio-group>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [OverlayHeaderTemplateDirective, BUTTON_IMPORTS],
+  imports: [OverlayHeaderTemplateDirective, RADIO_GROUP_IMPORTS, FORM_FIELD_IMPORTS, FormField],
 })
 export class FilterOverlayDivisionPageComponent {
   protected filters = injectFilterOverlay<TeamFilterValue>();
   protected readonly DIVISIONS = DIVISIONS;
+  protected readonly DIVISION_LABELS = DIVISION_LABELS;
 }
 
 // ─── The overlay shell ───────────────────────────────────────────────────────
@@ -215,22 +219,33 @@ export class FilterOverlayShellComponent {
 
         <ul class="m-0 flex flex-col gap-2 p-0" etFloatingActionScope>
           @for (team of visibleTeams(); track team.name) {
-            <li class="list-none rounded-md p-3" style="background: var(--et-surface-background-solid)">
-              {{ team.name }} - {{ team.region }} / {{ team.division }}
+            <li class="et-sb-filter-overlay-team">
+              <span>{{ team.name }}</span>
+              <span class="text-small opacity-60">
+                {{ REGION_LABELS[team.region] }} · {{ DIVISION_LABELS[team.division] }}
+              </span>
             </li>
           } @empty {
             <li class="list-none opacity-60">No teams match these filters.</li>
           }
         </ul>
-
-        @for (paragraph of OUTRO; track $index) {
-          <p [style.max-inline-size.px]="640" class="m-0 opacity-60">{{ paragraph }}</p>
-        }
       </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, CHIP_IMPORTS, FLOATING_ACTION_IMPORTS, ProvideSurfaceDirective],
+  styles: `
+    .et-sb-filter-overlay-team {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      list-style: none;
+      background: var(--et-surface-background-solid);
+    }
+  `,
 })
 export class FilterOverlayStorybookComponent {
   private overlayManager = injectOverlayManager();
@@ -240,7 +255,8 @@ export class FilterOverlayStorybookComponent {
   public withPreview = input(true);
 
   protected readonly TEAMS = TEAMS;
-  protected readonly OUTRO = Array.from({ length: 10 }, () => LOREM);
+  protected readonly REGION_LABELS = REGION_LABELS;
+  protected readonly DIVISION_LABELS = DIVISION_LABELS;
 
   protected filters = createTeamFilters().observe();
 
@@ -266,7 +282,7 @@ export class FilterOverlayStorybookComponent {
         provideFilterOverlay({
           queryForm: this.filters,
           preview: this.withPreview() ? createLocalPreview : undefined,
-          maxCountedHits: 6,
+          maxCountedHits: 12,
         }),
       ],
     });
@@ -275,19 +291,33 @@ export class FilterOverlayStorybookComponent {
 
 // Below the component on purpose - see the `no-template-literal-before-inline-template` lint rule.
 
-const LOREM =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod nisl nec ultricies. Aenean vulputate ' +
-  'eleifend tellus. Curabitur ullamcorper ultricies nisi.';
-
+// Long enough that the page scrolls under the floating action, which is what its docking behaviour
+// needs to be visible at all.
 const TEAMS = [
   { name: 'Chemie Leipzig', region: 'eu', division: 'first' },
-  { name: 'Roter Stern', region: 'eu', division: 'second' },
+  { name: 'Roter Stern Leipzig', region: 'eu', division: 'second' },
   { name: 'Altona 93', region: 'eu', division: 'youth' },
+  { name: 'St. Pauli', region: 'eu', division: 'first' },
+  { name: 'Dulwich Hamlet', region: 'eu', division: 'second' },
+  { name: 'Rayo Vallecano', region: 'eu', division: 'first' },
+  { name: 'Red Star FC', region: 'eu', division: 'second' },
+  { name: 'Bohemians 1905', region: 'eu', division: 'youth' },
   { name: 'Portland Thorns', region: 'na', division: 'first' },
   { name: 'Cascadia United', region: 'na', division: 'second' },
+  { name: 'Detroit City', region: 'na', division: 'first' },
+  { name: 'Oakland Roots', region: 'na', division: 'second' },
+  { name: 'Chattanooga FC', region: 'na', division: 'youth' },
+  { name: 'Vancouver Rise', region: 'na', division: 'first' },
+  { name: 'Louisville City', region: 'na', division: 'second' },
+  { name: 'Monterrey Rayadas', region: 'na', division: 'youth' },
   { name: 'Yokohama FM', region: 'apac', division: 'first' },
   { name: 'Melbourne City', region: 'apac', division: 'youth' },
   { name: 'Wellington Phoenix', region: 'apac', division: 'second' },
+  { name: 'Kashima Antlers', region: 'apac', division: 'first' },
+  { name: 'Jeonbuk Motors', region: 'apac', division: 'first' },
+  { name: 'Western Sydney', region: 'apac', division: 'second' },
+  { name: 'Bengaluru FC', region: 'apac', division: 'youth' },
+  { name: 'Auckland City', region: 'apac', division: 'second' },
 ];
 
 const matchTeams = (value: TeamFilterValue) =>

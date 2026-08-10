@@ -77,7 +77,7 @@ The `upload` input takes a config object; create it with the `createDropzoneUplo
 | `selectValue`     | yes      | Maps the upload response to the control value, e.g. `(media) => media.uuid`.                                                                                         |
 | `createArgs`      | no       | Builds the request args for a file. Default: `FormData` with the file appended under the field name `file`. Override to rename the field or add extra fields/params. |
 | `resolveExisting` | no       | Maps a value already present in the control (edit forms) to display info (`name`, `previewUrl`, `size`). Required as soon as the control can start with a value.     |
-| `delete`          | no       | Runs a request when an already-persisted entry is removed - see [Deleting on remove](#deleting-on-remove).                                                           |
+| `delete`          | no       | Runs a request when an entry uploaded in this session is removed - see [Deleting on remove](#deleting-on-remove).                                                    |
 
 `resolveExisting` runs in a reactive context - it may read signals, so asynchronously loaded display data (e.g. an id → media map filled by another query) updates the entry as it arrives.
 
@@ -117,7 +117,23 @@ protected upload = createDropzoneUpload<UploadMediaArgs, string>({
 });
 ```
 
-`createArgs` builds the request args from the entry's control value, the same way the top-level `createArgs` builds them from a `File`. It only runs for an entry that was actually persisted - a successful upload or an existing value (edit forms). Removing an entry that's still uploading just cancels the in-flight request; nothing was persisted yet, so no delete request is made.
+`createArgs` builds the request args from the entry's control value, the same way the top-level `createArgs` builds them from a `File`. Removing an entry that's still uploading just cancels the in-flight request; nothing was persisted yet, so no delete request is made.
+
+### Existing values are not deleted by default
+
+A `delete` runs for entries **uploaded in this session**. A value the control started with - one resolved through `resolveExisting` in an edit form - is only detached from the control; no request fires. Deleting a record the form was merely handed is destructive, and it usually belongs to something else: the same media may be rendered by another view, or attached to a submission that is still pending.
+
+Where the control does own every value it shows, opt in:
+
+```ts
+delete: {
+  queryCreator: deleteMedia,
+  createArgs: (id) => ({ pathParams: { id } }),
+  includeExisting: true,
+},
+```
+
+`deleteSucceed` / `deleteFail` stay silent for a skipped delete, so an app reconciling its own state off those outputs is never told about a deletion that did not happen.
 
 The entry disappears from the UI immediately; the delete request runs in the background afterwards. Its outcome surfaces through two more directive outputs: `deleteSucceed` (emits the deleted value) and `deleteFail` (emits `{ value, error }`, with the same `DropzoneUploadError` union as `uploadFail`). By the time either fires, the entry is already gone from `entries()`.
 

@@ -23,13 +23,6 @@ import { QueryKey } from './query-repository';
 import { QueryState } from './query-state';
 import { QueryKeyLockHold } from './sync/query-key-lock-manager';
 
-/**
- * Returning this inside a withArgs feature will reset the query args to null.
- * This will also pause polling and auto refresh until new args are set.
- */
-export const CLEAR_QUERY_ARGS = /* @__PURE__ */ Symbol('CLEAR_QUERY_ARGS');
-export type ClearQueryArgs = typeof CLEAR_QUERY_ARGS;
-
 /** A angular effect that can be nested inside another effect */
 export const nestedEffect = (fn: () => void, options?: CreateEffectOptions) => {
   const activeConsumer = getActiveConsumer();
@@ -100,40 +93,21 @@ export const createQueryFeature = <TArgs extends QueryArgs>(config: {
  * A query feature that allows you to set the arguments of the query.
  * The arguments are read within a computed function, so you can use reactive values.
  *
- * To set the arguments to `null`, return the symbol `CLEAR_QUERY_ARGS`.
- * If you instead return `null`, the arguments won't change.
+ * Return `null` to park the query: its args are reset to `null`, and polling and auto refresh
+ * pause until args are set again.
  *
  * Changing arguments will automatically trigger a new execution of the query if it is eligible for auto execution (e.g. a GET request).
  */
-export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArgs<TArgs>> | ClearQueryArgs | null) => {
+export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArgs<TArgs>> | null) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_ARGS,
     fn: (context) => {
-      // `state.args` is reactively backed by this source, so every reader (exec, polling,
-      // auto-refresh) always sees the latest value with no pending-effect window. Sentinels are
-      // resolved here: CLEAR -> null, `null` ("don't change") -> keep the previous value.
-      let previous: RequestArgs<TArgs> | null = null;
-      const resolve = () => {
-        const value = args();
-
-        if (value === CLEAR_QUERY_ARGS) {
-          previous = null;
-
-          return null;
-        }
-
-        if (value === null) return previous;
-
-        previous = value;
-        return value;
-      };
-
       // Only ever non-null while the devtools are installed. Wrapping the source (rather than reading
       // `state.args` from the outside) is what puts the tracking window around the *evaluation* of the
       // args - a cached read of the computed runs nothing and would record no form at all.
       const formLinks = context.state.subtle.devtoolsFormLinks;
 
-      context.state.subtle.setArgsSource(formLinks ? () => formLinks.track(resolve) : resolve);
+      context.state.subtle.setArgsSource(formLinks ? () => formLinks.track(args) : args);
 
       // Trigger (auto-)execution whenever the resolved args change.
       nestedEffect(

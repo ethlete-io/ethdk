@@ -56,14 +56,22 @@
       <h3 class="et-scheduler-edit-surface-children-heading">{{ subAppointmentsLabel() }}</h3>
 
       <ul class="et-scheduler-edit-surface-children-list">
-        @for (child of surface.children(); track child.appointment.id) {
+        @for (child of childEntries(); track child.node.appointment.id) {
           <li>
             <button
-              (click)="surface.navigateTo(child.appointment.id)"
+              (click)="surface.navigateTo(child.node.appointment.id)"
               class="et-scheduler-edit-surface-children-item"
               type="button"
             >
-              {{ child.appointment.title || untitledLabel() }}
+              @if (child.startTime) {
+                <span class="et-scheduler-edit-surface-children-item-time">{{ child.startTime }}</span>
+              }
+
+              <span class="et-scheduler-edit-surface-children-item-title">
+                {{ child.node.appointment.title || untitledLabel() }}
+              </span>
+
+              <et-scheduler-badge-chain-count [node]="child.node" />
             </button>
           </li>
         }

@@ -854,7 +854,10 @@ export class GridDirective {
     this.layoutOverrides.set(overrides);
   }
 
-  /** Dev-mode-only: rejects consumer-provided item configs whose ids are not unique. */
+  /**
+   * Dev-mode-only: rejects consumer-provided item configs whose ids are not unique, and warns about
+   * layouts that do not line up with the configured breakpoints.
+   */
   private assertValidItemConfigs(items: GridItemConfig[]) {
     const seen = new Set<string>();
 
@@ -868,6 +871,37 @@ export class GridDirective {
       }
 
       seen.add(item.id);
+    }
+
+    this.warnAboutUncoveredBreakpoints(items);
+  }
+
+  /**
+   * A layout key that is not a configured breakpoint is never read, and a configured breakpoint the
+   * layout omits falls back to a 1x1 item at the grid origin - silently, which reads as the grid
+   * having lost the layout. Neither is fatal (`addItem` auto-places a partial layout on purpose), so
+   * this warns rather than throws.
+   */
+  private warnAboutUncoveredBreakpoints(items: GridItemConfig[]) {
+    const configured = this.breakpoints().map((b) => b.name);
+    const quote = (names: string[]) => names.map((name) => `"${name}"`).join(', ');
+
+    for (const item of items) {
+      const provided = Object.keys(item.layout);
+      const missing = configured.filter((name) => !provided.includes(name));
+      const unknown = provided.filter((name) => !configured.includes(name));
+
+      const problems = [
+        missing.length > 0 ? `has no position for ${quote(missing)}` : null,
+        unknown.length > 0 ? `has positions for unknown breakpoint(s) ${quote(unknown)}` : null,
+      ].filter((problem) => problem !== null);
+
+      if (problems.length === 0) continue;
+
+      console.warn(
+        `[GridDirective] The layout of grid item "${item.id}" ${problems.join(' and ')}. Configured breakpoints are ${quote(configured)}; an omitted one renders as a 1x1 item at the grid origin.`,
+        item,
+      );
     }
   }
 

@@ -77,8 +77,8 @@ raw `toObservable`). It emits `null` first - `pipe(filter(r => r !== null))`.
 - **`withArgs(() => ({ pathParams, queryParams, body }))`** - runs like a `computed`;
   re-runs when a signal it reads changes and re-executes the query. This is how you
   drive **search-as-you-type**: back it with a search signal
-  (`withArgs(() => ({ queryParams: { search: this.search() } }))`). Return
-  `CLEAR_QUERY_ARGS` to reset args to `null` (pauses polling/auto-refresh).
+  (`withArgs(() => ({ queryParams: { search: this.search() } }))`). Return `null`
+  to park the query - args reset to `null`, pausing polling/auto-refresh.
 - **Prefer `withArgs` over passing `args` to `execute()`.** Args declared on the query
   stay reactive: a `GET` re-executes itself when they change, and `withPolling` /
   `withAutoRefresh` restart off the same signal - none of which happens for args handed

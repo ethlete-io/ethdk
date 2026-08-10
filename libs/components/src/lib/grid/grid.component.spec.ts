@@ -131,15 +131,47 @@ describe('GridComponent', () => {
 
   it('loads initial items on first render', () => {
     fixture.componentInstance.items = [
-      { id: 'a', type: 'test', version: 1, data: undefined, layout: {} },
-      { id: 'b', type: 'test', version: 1, data: undefined, layout: {} },
+      {
+        id: 'a',
+        type: 'test',
+        version: 1,
+        data: undefined,
+        layout: {
+          lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+          md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+          sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        },
+      },
+      {
+        id: 'b',
+        type: 'test',
+        version: 1,
+        data: undefined,
+        layout: {
+          lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+          md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+          sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        },
+      },
     ];
     fixture.detectChanges();
     expect(getGrid().items()).toHaveLength(2);
   });
 
   it('renders the ghost element when drag is active', () => {
-    fixture.componentInstance.items = [{ id: 'a', type: 'test', version: 1, data: undefined, layout: {} }];
+    fixture.componentInstance.items = [
+      {
+        id: 'a',
+        type: 'test',
+        version: 1,
+        data: undefined,
+        layout: {
+          lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+          md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+          sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        },
+      },
+    ];
     fixture.detectChanges();
     measureGrid();
 

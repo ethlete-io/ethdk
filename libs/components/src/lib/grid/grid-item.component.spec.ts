@@ -25,7 +25,11 @@ const TEST_ITEM: GridItemConfig = {
   type: 'test',
   version: 1,
   data: undefined,
-  layout: {},
+  layout: {
+    lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+    md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+    sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+  },
 };
 
 @Component({

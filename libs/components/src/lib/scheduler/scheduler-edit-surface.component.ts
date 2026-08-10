@@ -1,6 +1,8 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, computed, ElementRef, inject, signal, ViewEncapsulation } from '@angular/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { injectStyleManager } from '@ethlete/core';
+import { format } from 'date-fns';
 import { tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../button';
 import { ELLIPSIS_VERTICAL_ICON, IconDirective, PLUS_ICON, provideIcons, TRASH_ICON } from '../icon';
@@ -25,12 +27,16 @@ import { SchedulerActionDeleteDirective } from './scheduler-action-delete.direct
 import { SchedulerEditColorDirective } from './scheduler-edit-color.directive';
 import { SchedulerEditDescriptionDirective } from './scheduler-edit-description.directive';
 import {
+  AppointmentTreeNode,
   SCHEDULER_EDIT_SURFACE_HOST,
   SchedulerAppointmentAction,
+  SchedulerDirective,
   SchedulerEditField,
   SchedulerEditSurfaceDirective,
   SchedulerEditSurfaceHost,
 } from './headless';
+import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
+import { SchedulerBadgeChainCountComponent } from './scheduler-badge-chain-count.component';
 import { SchedulerEditLocationDirective } from './scheduler-edit-location.directive';
 import { SchedulerEditTimeRangeDirective } from './scheduler-edit-time-range.directive';
 import { SchedulerEditTitleDirective } from './scheduler-edit-title.directive';
@@ -58,6 +64,7 @@ export type SchedulerEditSurfaceResult =
     ...MENU_IMPORTS,
     IconDirective,
     NgComponentOutlet,
+    SchedulerBadgeChainCountComponent,
     OverlayBodyComponent,
     OverlayCloseDirective,
     OverlayFooterDirective,
@@ -91,6 +98,7 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
   private labels = injectSchedulerLabels();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private overlayRef = inject<OverlayRef<object, SchedulerEditSurfaceResult>>(OVERLAY_REF, { optional: true });
+  protected scheduler = inject(SchedulerDirective, { optional: true });
 
   /** The headless directive behind this surface - field/action registration, draft state and navigation. */
   public surface = inject(SchedulerEditSurfaceDirective);
@@ -124,7 +132,21 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
   /** Gates the save button - every currently-enabled field must report itself valid. */
   public canSave = computed(() => this.editFields().every((field) => field.valid?.() ?? true));
 
+  protected childEntries = computed(() => {
+    const locale = this.scheduler?.effectiveLocale();
+    const options = locale ? { locale } : undefined;
+
+    return this.surface.children().map((node: AppointmentTreeNode) => ({
+      node,
+      startTime: node.appointment.allDay ? null : format(node.appointment.start, 'HH:mm', options),
+    }));
+  });
+
   constructor() {
+    // the children list borrows the appointment badge's chain-count chip, and a surface can be
+    // opened without any scheduler view having mounted that sheet
+    injectStyleManager().mount(SchedulerAppointmentStylesComponent);
+
     outputToObservable(this.surface.save)
       .pipe(
         takeUntilDestroyed(),

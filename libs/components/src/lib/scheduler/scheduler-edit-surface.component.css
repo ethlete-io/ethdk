@@ -82,8 +82,33 @@
   }
 
   .et-scheduler-edit-surface-children-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    inline-size: 100%;
     color: var(--et-theme-color-ink-solid, var(--et-surface-color-solid));
+    text-align: start;
+  }
+
+  .et-scheduler-edit-surface-children-item-time {
+    flex: none;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--et-surface-color-muted-solid);
+  }
+
+  .et-scheduler-edit-surface-children-item-title {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     text-decoration: underline;
     text-underline-offset: 2px;
+  }
+
+  .et-scheduler-edit-surface-children-item .et-scheduler-appointment-chain-count {
+    flex: none;
+    color: var(--et-surface-color-muted-solid);
   }
 }

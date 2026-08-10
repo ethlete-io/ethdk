@@ -20,10 +20,7 @@ Reactively supplies request args. The function runs in a reactive context - like
 withArgs(() => ({ queryParams: { page: this.page(), search: this.search() } }));
 ```
 
-Two special return values:
-
-- `CLEAR_QUERY_ARGS` - resets the args to `null`. Polling and auto-refresh pause while args are `null`.
-- `null` - keeps the previous args unchanged.
+Return `null` to **park** the query: its args reset to `null`, and polling and auto-refresh pause until args are set again. That is how a query waits for something it depends on - see [dependent queries](/query/dependent-queries).
 
 A function route (one using `pathParams`) requires a `withArgs` feature - creating the query without one throws in dev mode (opt out via the `silenceMissingWithArgsFeatureError` [query config](/query/queries#query-creators) if you always pass args to `execute`).
 

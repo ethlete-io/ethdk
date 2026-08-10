@@ -25,12 +25,6 @@ means actually separating these concerns (nav vs. view-switch vs. actions)
 into distinct sections instead of one row that presumably wraps at narrow
 widths.
 
-- **Connector lines for linked appointments in agenda.** The only
-  relationship indicator today is `scheduler-badge-chain-count.component.ts`
-  (a chevron + descendant count on the parent's badge); no line renders
-  between parent and children. `scheduler-agenda-view.component.html`
-  already flattens the tree with a `depth`/`data-nested` per node, so a
-  connector can be drawn off data that already exists - no new tree-walking.
 - **Start/end as a date-time range picker.** `scheduler-edit-time-
 range.component.ts` pairs two independent `et-date-time-input` controls.
   The SDK's `DateRangeInputComponent` is date-only; no combined date-time-
@@ -42,10 +36,6 @@ range.component.ts` pairs two independent `et-date-time-input` controls.
   DI token scheduler can read, parallel to `injectColorThemes`/
   `provideColorThemesWithTailwind4` for color theming, so apps opt into a
   picker - keep free text as the fallback when nothing is provided.
-- **Richer sub-appointment list.** `scheduler-edit-surface.component.html`'s
-  children list is bare `<button>`s with just a title. Carrying start time
-  and the existing chain-count badge is additive; don't turn it into a
-  second full appointment card.
 - **Infinite-scrolling agenda.** The agenda directive takes a plain array,
   no paging concept. `libs/query`'s `paged-query-stack.ts` and the legacy
   `infinite-query` module both exist, neither wired to scheduler. This
@@ -111,17 +101,6 @@ column gap, term min-width, term/detail font size). Any enhanced style
 (bordered, striped, inline) is new surface; there's no `variant` input to
 extend.
 
-## Filter overlay story
-
-The default story (`filter-overlay-storybook.component.ts`) already
-composes real components - `et-button`, `et-chip`, a floating-action
-trigger, a three-page routed overlay (main/region/division) - it isn't a
-bare unstyled form. It leans on inline Tailwind utility classes and one
-inline `style` attribute for a hard-coded team list, plus ten lorem-ipsum
-filler paragraphs, and stands toggle-buttons in for real form fields (per
-its own comment). If it looks silly, that's demo dressing fixable inside
-the story file alone, not the filter-overlay component.
-
 ## Color input
 
 `ColorInputComponent`/`ColorInputDirective` (`forms/color-input/`) already
@@ -163,75 +142,6 @@ Expanding this, roughly in order of how disruptive each is:
 - **Detailed sub-steps** - the least defined ask; needs a decision on
   whether it's a projected slot per step or a fixed description input, and
   whether it's meaningful outside the vertical orientation at all.
-
-## Dropzone: the file-name bar sits on the preview permanently
-
-Requested 2026-08-07. In the single-file preview, `.et-dropzone-preview-info` is pinned to the
-bottom edge (`inset: auto 0 0 0`) as a dark blurred band over the image, and it never leaves - so
-the bottom of every picked image is behind it for as long as the file is selected. Wanted: it
-hides, or slides out under its own edge, while the pointer is over the preview, so the image can
-be checked unobstructed.
-
-This is CSS only - `.et-dropzone-preview:hover` needs no component state - but three things
-decide whether it is correct:
-
-- **The bar carries the upload progress.** `.et-dropzone-entry-progress` lives inside it and is
-  the single-entry preview's only progress indicator, so revealing on hover during an upload
-  hides live progress from the one pointer position a user is most likely to be in. Gate it: the
-  bar stays while the entry is `uploading` (the progress row already exposes exactly that as
-  `[data-active]`).
-- **And on error it is the explanation.** `[data-status='error']` deliberately dims the image to
-  `opacity: 0.15` "to keep the failure message readable"; hiding the bar there leaves a washed-out
-  image and nothing saying why. Error keeps the bar too.
-- **Hover-only means touch and keyboard never get it.** Wrap it in `@media (hover: hover)` the way
-  the trigger's hover rule already is, so a touch device keeps a bar it can never reveal, and pair
-  `:hover` with `:focus-within` - the preview holds the replace/remove buttons, so a keyboard user
-  reaching them is in the same situation as a pointer over the image.
-
-Not part of it: `.et-dropzone-preview-actions` (replace / remove, top-right) stays - it is the
-affordance the hover is for. And the multi-file list needs nothing; `.et-dropzone-item-info` is a
-flex sibling of its thumbnail, not an overlay.
-
-On slide versus fade: a plain opacity fade is this repo's default for enter/leave, but the band
-has `backdrop-filter: blur(12px)`, so a partial opacity leaves a half-blurred stripe mid-transition
-and a `translateY(100%)` off its own edge reads cleaner - worth looking at both in the story before
-picking. Either way it should animate on `--et-dropzone-transition-duration`, which the sheet's
-`prefers-reduced-motion` block already collapses to `1ms`, so reduced motion comes for free.
-
-## Dropzone: removing a prefilled value deletes it on the server
-
-Found 2026-08-07, from an app that prefills a form with assets a partner had already submitted.
-
-`resolveExisting` exists so a control can start with a value the server already holds. `removeEntry`
-(`dropzone.directive.ts`) then treats that value exactly like one this session uploaded:
-`isValueInControl` is true for both `SUCCESS` and `EXISTING`, so removing it fires the configured
-`delete` request. For a file uploaded a moment ago that is correct cleanup. For a value that arrived
-through `resolveExisting` it destroys a record something else already owns - in the case that
-surfaced this, the media of a still-pending submission that another view renders.
-
-The consumer cannot intervene. `DropzoneDeleteOptions` carries `{ value, injector }` and nothing
-about where the value came from, and `executeDelete` is built from `config.delete` inside
-`createDropzoneUpload`. The app worked around it by spreading the resolved config and replacing
-`executeDelete` - an `@internal` field - which is the clearest evidence the seam is missing.
-
-The directive already has what it needs at the call site: the entry's status is `EXISTING` rather
-than `SUCCESS`. Two shapes for exposing it:
-
-- **A flag on `DropzoneDeleteConfig`** - `includeExisting?: boolean`. Smallest change, reads at the
-  call site as a policy, and keeps `executeDelete` internal.
-- **An origin on `DropzoneDeleteOptions`** - `origin: 'uploaded' | 'existing'`, letting
-  `executeDelete` decide per value. Only pays off if an app wants a _different_ request per origin,
-  which nobody has asked for.
-
-Take the flag. The default is the actual decision: `false` is what a form editing an existing record
-wants and what the surfacing app needed, `true` preserves today's behaviour for anyone relying on
-the delete firing. Deleting a value the control was _initialized_ with is destructive by nature, so
-defaulting to `false` and making the cleanup case opt in is the safer asymmetry - but it changes
-behaviour on a released API, so it needs a changeset that says so.
-
-Either way, `deleteSucceed` / `deleteFail` must stay silent when the delete is skipped. A consumer
-counting those outputs to reconcile its own state would otherwise be told about a deletion that
-never happened.
 
 ## Segmented button group: `variant="tabs"` only half-looks like tabs
 
@@ -614,6 +524,69 @@ The app side of that is the app's business, but the SDK can stop leading: accept
 predicate (`shouldAutoLogin: (url: string) => boolean`) alongside the string list,
 so a consumer can match on the router's parsed URL instead of on substrings of a
 path.
+
+## Auth: a second tab auto-logs-in instead of adopting the live session
+
+Reported 2026-08-11. Tab A is logged in with multi-tab sync on and holds the lock, so it is
+leader. Opening tab B runs a full auto-login there - a refresh-token exchange from a follower -
+and the rotated tokens then sync back to A. So the session survives, but every new tab spends a
+rotation it did not need to, and does it from the tab that is explicitly not supposed to refresh.
+
+Two independent causes, both confirmed in source:
+
+- **`tryLogin()` is unconditional.** `bearer-auth-persistent-auth.ts` calls it once at feature
+  setup (`:235`), past `excludeRoutes` and `shouldAutoLogin` but past nothing else - there is no
+  `isLeader()` check and no check for a session that already exists. The leader gate that
+  `withMultiTabSync` installs covers the auth queries' _automatic refresh_, not this call.
+- **Sync is push-only, so there is nothing for B to adopt.** `setupMultiTabSync`
+  (`internal/multi-tab-sync.ts`) broadcasts `tokens-updated` from an effect on
+  `accessToken`/`refreshToken`, i.e. only from a tab whose tokens just changed. A joining tab
+  never announces itself and no tab answers - A's tokens are unchanged, so A stays silent. B
+  therefore starts blank whatever the gating does, which is why gating alone is not the fix.
+
+What it needs is a join handshake: B posts a `state-request` on the channel, the leader answers
+with its current tokens, and `tryLogin()` waits a short beat for that answer before falling back
+to the cookie. The beat has to be bounded - a lone tab must not stall its own startup waiting for
+a reply that is never coming - and the answer has to be leader-only, or every open tab replies at
+once. The existing `refreshCoordination` request/response pair over the same channel is the shape
+to copy.
+
+Worth checking while in there: whether the same joining tab also re-arms a proactive refresh
+timer off tokens it just received, which would put a second rotation right behind the first.
+
+## Auth: a scheduled refresh spends two requests, not one
+
+Reported 2026-08-11, same setup as the section above: tab A leader, tab B follower, both with a live
+session. When the access token comes due, the refresh route is POSTed **twice**.
+
+Every tab runs the scheduled-refresh timer - `nextScheduledRefresh` is computed from
+`context.accessToken()`, which multi-tab sync keeps identical across tabs, so both tabs are due at
+the same instant. What each does then differs (`bearer-auth-query-builders.ts`, `executeRefresh`):
+
+- the **leader** executes, taking the `reason: 'scheduled'` path and stamping `lastRefreshTime`;
+- the **follower** cannot spend a single-use token, so it delegates - `refreshCoordination.request()`
+  posts `refresh-requested`, and the leader answers it with
+  `executeRefresh('unauthorized')`.
+
+The two reasons do not share a throttle. `'scheduled'` guards on `lastRefreshTime` against
+`minRefreshInterval`; `'unauthorized'` guards on its own `lastUnauthorizedRefreshTime` plus
+`unauthorizedRefreshStreak`, and the first unauthorized attempt is never throttled. So the leader's
+own scheduled refresh does nothing to stop the follower's delegated one arriving right behind it.
+`hasTokenIssuingExecutionInFlight()` only catches the pair when the second lands while the first is
+still open - which is a race on network latency, not a guarantee.
+
+Two fixes, and the first alone is probably enough:
+
+- **A follower should not run the scheduled timer at all.** The leader is due at the same moment
+  and is the only tab allowed to act; delegation exists for the reactive 401 path, where the
+  follower has a request that actually failed. A scheduled tick on a follower is pure duplicate.
+- **One refresh floor for both reasons.** `lastRefreshTime` should gate any execution, whatever the
+  reason, so no path can spend a second refresh token inside `minRefreshInterval`. The
+  reason-specific streak counters stay on top of that for the 401 storm case.
+
+Both are in the same function as the [join-handshake bug](#auth-a-second-tab-auto-logs-in-instead-of-adopting-the-live-session)'s
+delegation path, and a fix for either should be tested with two real tabs - the fakes in
+`@ethlete/query/testing` are what the multi-tab sync suite already uses.
 
 ## Already fixed, do not re-report
 
@@ -1518,13 +1491,10 @@ fixed, but the signature is still worth reconsidering: the app's mapping is per-
 (`sm`/`md`/`lg` at once), which a single-position adapter shape does not express - which is why
 it hand-rolls `toGridItems`/`toWidgetPayload` off `toGridPosition`/`fromGridPosition` instead.
 
-**Nothing ties an item's layout keys to the configured breakpoints.** `GridItemConfig.layout`
-is `Record<string, GridItemPosition>` and `assertValidItemConfigs` (`:792`) only checks for
-duplicate ids; a missing breakpoint entry silently becomes `{ col: 0, row: 0, colSpan: 1,
-rowSpan: 1 }` in two places. The app hand-writes all three keys and then still guards with
-`item.layout['sm'] ?? fallbackPosition('sm')` on the way back out. Cheap fix: assert coverage
-of the configured breakpoint names in the dev-mode check. Real fix: a `TBp extends string`
-parameter on `GridItemConfig` so `[breakpoints]` and the items have to agree.
+**Nothing ties an item's layout keys to the configured breakpoints at the type level.**
+`GridItemConfig.layout` is `Record<string, GridItemPosition>`, so a missing breakpoint entry is
+only caught at runtime. What it wants is a `TBp extends string` parameter on `GridItemConfig` so
+`[breakpoints]` and the items have to agree before the app compiles.
 
 ## Grid: per-breakpoint span constraints
 
@@ -1726,6 +1696,3 @@ rating + otp-input, `container-type` in stream/pip.
 Nothing else tracks this, so it lives here until a real changelog/migration doc exists.
 The one entry so far (`core/seo.directive.ts`) is done - see "Already fixed" for the consumer
 migration it still implies.
-
-- **`CLEAR_QUERY_ARGS`** - only if the `withArgs` change above ships as a deprecated alias for
-  `null`. Removing the alias (and the `ClearQueryArgs` type) is the major-version half.

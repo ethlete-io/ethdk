@@ -7,7 +7,14 @@
 
     border-radius: 16px 16px 0 0;
 
-    .et-overlay-container-drag-handle {
+    /* the panel draws the handle itself (below), so the container's own must go. Matching
+       `.et-overlay--bottom-sheet` too is what makes it win: the rule that shows the handle is
+       `.et-overlay.et-overlay--bottom-sheet .et-overlay-container-drag-handle`, identical in
+       specificity to this selector without it, so the tie went to source order - and this sheet is
+       unloaded with its last instance when the cascader closes, then re-appended on the next open.
+       That re-append put it after the overlay's rule the first time and before it every time after,
+       which is why a reopened sheet showed two handles. */
+    &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
       display: none;
     }
 

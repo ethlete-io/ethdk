@@ -4,17 +4,17 @@ Sometimes one query can't run until another has produced its data - a query whos
 
 ## Reactive dependencies (GET → GET)
 
-When an [auto-executing](/query/queries#auto-execution) query depends on another query's response, you don't need anything new - read the dependency inside [`withArgs`](/query/features#withargs) and park until it's ready. Returning `CLEAR_QUERY_ARGS` keeps the dependent query idle while the dependency is still loading; once the response arrives, `withArgs` re-runs and the query executes:
+When an [auto-executing](/query/queries#auto-execution) query depends on another query's response, you don't need anything new - read the dependency inside [`withArgs`](/query/features#withargs) and park until it's ready. Returning `null` keeps the dependent query idle while the dependency is still loading; once the response arrives, `withArgs` re-runs and the query executes:
 
 ```ts
-import { CLEAR_QUERY_ARGS, withArgs } from '@ethlete/query';
+import { withArgs } from '@ethlete/query';
 
 userQuery = getUser(withArgs(() => ({ pathParams: { id: this.userId() } })));
 
 permsQuery = getPermissions(
   withArgs(() => {
     const user = this.userQuery.response();
-    return user ? { pathParams: { userId: user.id } } : CLEAR_QUERY_ARGS;
+    return user ? { pathParams: { userId: user.id } } : null;
   }),
 );
 ```

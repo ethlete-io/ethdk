@@ -4,6 +4,8 @@ import { ColorInteractiveDirective, ProvideColorDirective, injectErrorTheme } fr
 import { TextButtonComponent } from '../../button';
 import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
+import { mountControlSuffixStyles } from '../form-field/form-field-control-suffix-styles.component';
+import { ControlSuffixDirective } from '../form-field/partials';
 import { CascaderPanelComponent } from './cascader-panel.component';
 import {
   CascaderColumnDirective,
@@ -26,6 +28,7 @@ import { injectCascaderLabels } from '../../forms/cascader/cascader-labels';
   imports: [
     CascaderTriggerDirective,
     CascaderSurfaceDirective,
+    ControlSuffixDirective,
     CascaderColumnDirective,
     CascaderNodeDirective,
     CascaderSearchDirective,
@@ -103,9 +106,21 @@ export class CascaderComponent {
       !this.cascader.readonly(),
   );
 
+  constructor() {
+    mountControlSuffixStyles();
+  }
+
   protected handleClearClick(event: Event) {
     event.stopPropagation();
     this.cascader.clearValue();
+    this.cascader.activate();
+  }
+
+  protected handleArrowClick(event: Event) {
+    // the chevron renders in the field's suffix stack, outside the trigger, so its click never
+    // reaches the trigger's own toggle - it owns the whole gesture
+    event.stopPropagation();
+    this.cascader.toggle();
     this.cascader.activate();
   }
 

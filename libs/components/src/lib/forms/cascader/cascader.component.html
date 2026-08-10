@@ -6,14 +6,19 @@
       {{ cascader.placeholder() }}
     }
   </span>
+</div>
 
+<ng-template etControlSuffix>
   @if (showClear()) {
+    <!-- mousedown is prevented so the trigger keeps focus: `showClear` reads `focused()`, so a blur
+         would unmount this button before the click could land -->
     <button
       [attr.aria-label]="resolvedClearLabel()"
       (click)="handleClearClick($event)"
-      class="et-cascader-clear"
-      animate.enter="et-cascader-clear--enter"
-      animate.leave="et-cascader-clear--leave"
+      (mousedown)="$event.preventDefault()"
+      class="et-input-clear"
+      animate.enter="et-input-clear--enter"
+      animate.leave="et-input-clear--leave"
       tabindex="-1"
       type="button"
     >
@@ -21,10 +26,18 @@
     </button>
   }
 
-  <button [disabled]="cascader.disabled()" class="et-cascader-arrow" aria-hidden="true" tabindex="-1" type="button">
+  <button
+    [disabled]="cascader.disabled()"
+    (click)="handleArrowClick($event)"
+    (mousedown)="$event.preventDefault()"
+    class="et-input-picker-trigger et-cascader-arrow"
+    aria-hidden="true"
+    tabindex="-1"
+    type="button"
+  >
     <i etIcon="et-chevron"></i>
   </button>
-</div>
+</ng-template>
 
 <ng-template etCascaderSurface>
   <et-cascader-panel #panel>

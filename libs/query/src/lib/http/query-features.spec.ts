@@ -9,7 +9,6 @@ import { createQueryClient } from './query-client';
 import { setupQueryDependencies } from './query-dependencies';
 import { createExecuteFn } from './query-execute';
 import {
-  CLEAR_QUERY_ARGS,
   nestedEffect,
   QueryFeature,
   QueryFeatureContext,
@@ -26,16 +25,6 @@ import {
 import { setupQueryState } from './query-state';
 
 describe('query features', () => {
-  describe('CLEAR_QUERY_ARGS', () => {
-    it('should be a Symbol', () => {
-      expect(typeof CLEAR_QUERY_ARGS).toBe('symbol');
-    });
-
-    it('should be referentially stable (always the same symbol)', () => {
-      expect(CLEAR_QUERY_ARGS).toBe(CLEAR_QUERY_ARGS);
-    });
-  });
-
   describe('QueryFeatureType', () => {
     it('should contain all expected feature types', () => {
       expect(QueryFeatureType.WITH_ARGS).toBe('WITH_ARGS');
@@ -431,6 +420,41 @@ describe('query features', () => {
       const req = httpTesting.expectOne((r) => r.url.includes('/items'));
       expect(req.request.url).toContain('v=2');
       req.flush({});
+    });
+
+    it('parks the query while withArgs returns null, and resumes when it returns args again', () => {
+      const id = signal<number | null>(null);
+
+      const state = TestBed.runInInjectionContext(() => {
+        const deps = setupQueryDependencies({ client, queryConfig: {} });
+        const queryState = setupQueryState<QueryArgs>({});
+        const exec = createExecuteFn<QueryArgs>({
+          creator: {},
+          creatorInternals: { client, method: 'GET', route: '/items' },
+          deps,
+          state: queryState,
+          queryConfig: {},
+        });
+        applyQueryFeatures(
+          [withArgs<QueryArgs>(() => (id() === null ? null : { queryParams: { id: id() as number } }))],
+          { state: queryState, execute: exec, deps, flags: { ...flags, shouldAutoExecute: true } },
+        );
+        return queryState;
+      });
+
+      TestBed.tick();
+      expect(untracked(() => state.args())).toBe(null);
+      httpTesting.expectNone(() => true);
+
+      id.set(1);
+      TestBed.tick();
+      expect(untracked(() => state.args())).toEqual({ queryParams: { id: 1 } });
+      httpTesting.expectOne((r) => r.url.includes('id=1')).flush({});
+
+      id.set(null);
+      TestBed.tick();
+      expect(untracked(() => state.args())).toBe(null);
+      httpTesting.expectNone(() => true);
     });
   });
 });

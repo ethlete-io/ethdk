@@ -51,10 +51,43 @@
   }
 
   .et-scheduler-agenda-view-appointment {
-    padding-inline-start: calc(min(var(--_et-scheduler-agenda-view-depth, 0), 4) * 14px);
+    display: flex;
+    align-items: stretch;
   }
 
   .et-scheduler-agenda-view-appointment .et-scheduler-appointment {
-    inline-size: 100%;
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  /* one column per ancestor level, drawing the chain a nested appointment hangs off. The lines
+     overhang the row by the list's 2px gap so consecutive rows read as one continuous trunk. */
+  .et-scheduler-agenda-view-guide {
+    position: relative;
+    flex: none;
+    inline-size: 14px;
+
+    &:where([data-guide='trunk'], [data-guide='branch'], [data-guide='last-branch'])::before {
+      content: '';
+      position: absolute;
+      inset-block: -1px;
+      inset-inline-start: 50%;
+      inline-size: 1px;
+      background: var(--et-surface-border-solid, currentColor);
+    }
+
+    /* an elbow: the trunk stops at the row's middle, where the connector turns into the appointment */
+    &:where([data-guide='last-branch'])::before {
+      inset-block: -1px 50%;
+    }
+
+    &:where([data-guide='branch'], [data-guide='last-branch'])::after {
+      content: '';
+      position: absolute;
+      inset-block-start: 50%;
+      inset-inline: 50% 0;
+      block-size: 1px;
+      background: var(--et-surface-border-solid, currentColor);
+    }
   }
 }

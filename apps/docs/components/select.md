@@ -339,11 +339,14 @@ Clicking anywhere on the form field's control frame - not just the trigger - ope
 
 ## Theming
 
-The trigger inherits the form field's chrome (border, focus ring, sizes, label modes - including floating labels). Colors come from the app-registered [surface/color theme systems](/core/theming); the panel re-applies the trigger location's theme context inside the overlay and elevates the surface one step. Public design tokens:
+The trigger inherits the form field's chrome (border, focus ring, sizes, label modes - including floating labels). Colors come from the app-registered [surface/color theme systems](/core/theming); the panel re-applies the trigger location's theme context inside the overlay and elevates the surface one step.
+
+The clear button and the chevron render in the form field's [suffix slot](/components/form-field), on the shared `.et-input-clear` / `.et-input-picker-trigger` presentation every control's in-field affordances use - ahead of a consumer's own `[etInputSuffix]` and the busy spinner. Their size follows `--et-form-field-affix-icon-size`, so it tracks the field's `size` like every other control.
+
+Public design tokens:
 
 | Token                               | Default | Purpose                                                                   |
 | ----------------------------------- | ------- | ------------------------------------------------------------------------- |
-| `--et-select-arrow-size`            | `16px`  | Trigger chevron size                                                      |
 | `--et-select-panel-max-height`      | `40vh`  | Panel max height (scrolls); capped further by the space next to the field |
 | `--et-select-panel-padding`         | `6px`   | Panel inner padding                                                       |
 | `--et-select-option-height`         | `36px`  | Option row min height                                                     |

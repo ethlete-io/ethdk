@@ -29,7 +29,19 @@ class ResizeObserverMock {
   `,
 })
 class TestHostComponent {
-  items: GridItemConfig[] = [{ id: 'drag-item', type: 'test', version: 1, data: undefined, layout: {} }];
+  items: GridItemConfig[] = [
+    {
+      id: 'drag-item',
+      type: 'test',
+      version: 1,
+      data: undefined,
+      layout: {
+        lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+      },
+    },
+  ];
 }
 
 describe('GridDragDirective', () => {

@@ -4,6 +4,8 @@ import { ColorInteractiveDirective, ProvideColorDirective, createComponentId, in
 import { ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
+import { mountControlSuffixStyles } from '../form-field/form-field-control-suffix-styles.component';
+import { ControlSuffixDirective } from '../form-field/partials';
 import { SelectDirective, SelectSurfaceDirective, SelectTriggerDirective, SelectValueContext } from './headless';
 import { SelectOptionComponent } from './select-option.component';
 import { SelectPanelComponent } from './select-panel.component';
@@ -19,6 +21,7 @@ import { injectSelectLabels } from '../../forms/select/select-labels';
   imports: [
     SelectTriggerDirective,
     SelectSurfaceDirective,
+    ControlSuffixDirective,
     SelectPanelComponent,
     SelectOptionComponent,
     SelectVirtualOptionComponent,
@@ -177,6 +180,7 @@ export class SelectComponent {
   );
 
   constructor() {
+    mountControlSuffixStyles();
     this.select.mixedLabelId.set(this.mixedLabelId);
   }
 
@@ -188,11 +192,10 @@ export class SelectComponent {
   }
 
   protected handleArrowClick(event: Event) {
-    // with an inline search input, a field click focuses the input and opens - the chevron
-    // is the one place that still toggles closed
-    if (this.hasSearch() && this.select.open()) {
-      event.stopPropagation();
-      this.select.hide();
-    }
+    // the chevron renders in the field's suffix stack, outside the trigger, so its click never
+    // reaches the trigger's own toggle - it owns the whole gesture
+    event.stopPropagation();
+    this.select.toggle();
+    this.select.activate();
   }
 }

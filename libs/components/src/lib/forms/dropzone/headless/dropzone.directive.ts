@@ -257,6 +257,7 @@ export class DropzoneDirective<TValue = unknown>
 
     const wasInControl = isValueInControl(entry);
     const persistedValue = wasInControl ? entry.value() : null;
+    const wasExisting = entry.status() === DROPZONE_ENTRY_STATUSES.EXISTING;
 
     this.internalEntries.update((entries) => entries.filter((item) => item !== entry));
     this.setRejections([]);
@@ -266,7 +267,9 @@ export class DropzoneDirective<TValue = unknown>
     if (wasInControl) {
       this.syncValue();
 
-      if (persistedValue !== null) {
+      const mayDelete = !wasExisting || (this.upload().deleteIncludesExisting ?? false);
+
+      if (persistedValue !== null && mayDelete) {
         this.executeDelete(persistedValue);
       }
     }

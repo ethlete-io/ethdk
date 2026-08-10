@@ -1,5 +1,6 @@
 import { Appointment } from '../../scheduler.types';
-import { buildSchedulerAgenda } from './scheduler-agenda';
+import { AppointmentTreeNode } from './scheduler-tree';
+import { buildSchedulerAgenda, buildSchedulerAgendaGuides } from './scheduler-agenda';
 import { buildAppointmentTree } from './scheduler-tree';
 
 const appointment = (
@@ -73,6 +74,41 @@ describe('buildSchedulerAgenda', () => {
 
     expect(agenda[0]?.nodes.map((node) => ({ id: node.appointment.id, depth: node.depth }))).toEqual([
       { id: 'child', depth: 1 },
+    ]);
+  });
+});
+
+describe('buildSchedulerAgendaGuides', () => {
+  const rows = (...depths: number[]) => depths.map((depth) => ({ depth }) as AppointmentTreeNode);
+
+  it('gives a root row no guides', () => {
+    expect(buildSchedulerAgendaGuides(rows(0, 0))).toEqual([[], []]);
+  });
+
+  it('draws a tee for a child with a following sibling and an elbow for the last one', () => {
+    expect(buildSchedulerAgendaGuides(rows(0, 1, 1))).toEqual([[], ['branch'], ['last-branch']]);
+  });
+
+  it('carries a trunk through a nephew row while the parent chain continues', () => {
+    expect(buildSchedulerAgendaGuides(rows(0, 1, 2, 1))).toEqual([
+      [],
+      ['branch'],
+      ['trunk', 'last-branch'],
+      ['last-branch'],
+    ]);
+  });
+
+  it('leaves a gap instead of a trunk once the ancestor chain has ended', () => {
+    expect(buildSchedulerAgendaGuides(rows(0, 1, 2))).toEqual([[], ['last-branch'], ['gap', 'last-branch']]);
+  });
+
+  it('ends a chain at the row that climbs back above it', () => {
+    expect(buildSchedulerAgendaGuides(rows(0, 1, 2, 2, 0))).toEqual([
+      [],
+      ['last-branch'],
+      ['gap', 'branch'],
+      ['gap', 'last-branch'],
+      [],
     ]);
   });
 });

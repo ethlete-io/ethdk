@@ -1,6 +1,10 @@
 @layer components {
   et-cascader {
-    display: block;
+    /* a flex row, not a block: without a form field to hand them to, the control's own suffix
+       affordances render at the end of the host rather than in the field's suffix slot */
+    display: flex;
+    align-items: center;
+    gap: 4px;
     flex: 1;
     min-inline-size: 0;
     color: inherit;
@@ -9,7 +13,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      inline-size: 100%;
+      flex: 1;
       min-inline-size: 0;
       cursor: pointer;
       outline: none;
@@ -38,73 +42,13 @@
       font-style: italic;
       color: color-mix(in srgb, currentColor 72%, transparent);
     }
-
-    .et-cascader-clear,
-    .et-cascader-arrow {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      inline-size: 20px;
-      block-size: 20px;
-      padding: 0;
-      border: none;
-      border-radius: 4px;
-      background: transparent;
-      color: var(--et-surface-color-muted-solid, currentColor);
-      cursor: pointer;
-      outline: none;
-
-      .et-icon {
-        inline-size: 14px;
-        block-size: 14px;
-      }
-
-      @media (hover: hover) {
-        &:hover {
-          color: var(--et-surface-color-solid, currentColor);
-        }
-      }
-
-      &:disabled {
-        cursor: default;
-        color: inherit;
-      }
-    }
-
-    /* only the clear button fades — the arrow shares the block above but stays put */
-    .et-cascader-clear {
-      &.et-cascader-clear--enter {
-        animation: et-cascader-clear-in 150ms ease;
-      }
-
-      &.et-cascader-clear--leave {
-        animation: et-cascader-clear-out 120ms ease forwards;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        &.et-cascader-clear--enter,
-        &.et-cascader-clear--leave {
-          animation: none;
-        }
-      }
-    }
-
-    .et-cascader-arrow .et-icon {
-      /* the registered chevron points up; the trigger shows it pointing down */
-      rotate: 180deg;
-    }
   }
 
-  @keyframes et-cascader-clear-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes et-cascader-clear-out {
-    to {
-      opacity: 0;
-    }
+  /* outside the `et-cascader` block on purpose: the chevron renders in the form field's suffix slot,
+     which is not a descendant of the host. Only its direction is cascader-specific - the rest of the
+     button comes from the shared picker-trigger sheet. */
+  .et-cascader-arrow .et-icon {
+    /* the registered chevron points up; the trigger shows it pointing down */
+    rotate: 180deg;
   }
 }

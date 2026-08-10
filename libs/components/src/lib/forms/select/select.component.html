@@ -45,15 +45,20 @@
   @if (select.loading() && !select.open()) {
     <et-spinner class="et-select-trigger-spinner" diameter="16" strokeWidth="2" />
   }
+</div>
 
+<ng-template etControlSuffix>
   @if (showClear()) {
-    <!-- pointer-only, out of the tab order — keyboard users clear via Backspace / erasing -->
+    <!-- pointer-only, out of the tab order — keyboard users clear via Backspace / erasing.
+         mousedown is prevented so the trigger keeps focus: `showClear` reads `focused()`, so a
+         blur would unmount this button before the click could land -->
     <button
       [attr.aria-label]="resolvedClearLabel()"
       (click)="handleClearClick($event)"
-      class="et-select-clear"
-      animate.enter="et-select-clear--enter"
-      animate.leave="et-select-clear--leave"
+      (mousedown)="$event.preventDefault()"
+      class="et-input-clear"
+      animate.enter="et-input-clear--enter"
+      animate.leave="et-input-clear--leave"
       tabindex="-1"
       type="button"
     >
@@ -65,14 +70,15 @@
   <button
     [disabled]="select.disabled()"
     (click)="handleArrowClick($event)"
-    class="et-select-arrow"
+    (mousedown)="$event.preventDefault()"
+    class="et-input-picker-trigger et-select-arrow"
     aria-hidden="true"
     tabindex="-1"
     type="button"
   >
     <i etIcon="et-chevron"></i>
   </button>
-</div>
+</ng-template>
 
 <ng-template #optionContent>
   <ng-content />

@@ -69,7 +69,7 @@ export class LoginFormComponent {
 
 ## Waiting for a token
 
-A secure query executed before login does **not** fail - it parks until `accessToken()` is set and then runs. There is no need to gate secure queries on `isAuthenticated()`, or to hold their args at `CLEAR_QUERY_ARGS` until a session exists.
+A secure query executed before login does **not** fail - it parks until `accessToken()` is set and then runs. There is no need to gate secure queries on `isAuthenticated()`, or to park their args until a session exists.
 
 `logout()` is the mirror image: it drops the tokens, tears down every secure cache entry, **and** resets the secure queries still bound to them. A component that stays mounted across a logout stops showing the previous user's data on its own. Any [persisted](/query/persistence#authenticated-responses) secure response is removed from disk at the same moment - and secure responses are not persisted at all unless the query opted in.
 

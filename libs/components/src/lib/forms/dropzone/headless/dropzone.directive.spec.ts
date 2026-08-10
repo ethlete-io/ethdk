@@ -98,7 +98,10 @@ class DropzoneSchemaTestHost {
   rejections: DropzoneFileRejection[][] = [];
 }
 
-const createUploadConfig = (setup: QueryTestSetup, options?: { withResolver?: boolean; withDelete?: boolean }) =>
+const createUploadConfig = (
+  setup: QueryTestSetup,
+  options?: { withResolver?: boolean; withDelete?: boolean; includeExisting?: boolean },
+) =>
   createDropzoneUpload<UploadArgs, string, DeleteArgs>({
     queryCreator: setup.createPost<UploadArgs>('/upload'),
     selectValue: (response) => response.uuid,
@@ -116,6 +119,7 @@ const createUploadConfig = (setup: QueryTestSetup, options?: { withResolver?: bo
           delete: {
             queryCreator: setup.createDelete<DeleteArgs>((pathParams) => `/media/${pathParams.id}`),
             createArgs: (value: string) => ({ pathParams: { id: value } }),
+            includeExisting: options.includeExisting,
           },
         }
       : {}),
@@ -474,7 +478,7 @@ describe('DropzoneDirective', () => {
       setup = setupQueryTest();
       fixture = TestBed.createComponent(DropzoneTestHost);
       host = fixture.componentInstance;
-      host.upload.set(createUploadConfig(setup, { withDelete: true }));
+      host.upload.set(createUploadConfig(setup, { withDelete: true, includeExisting: true }));
       fixture.detectChanges();
     });
 
@@ -504,7 +508,7 @@ describe('DropzoneDirective', () => {
       expect(host.deleteFailed).toEqual([]);
     });
 
-    it('should fire the delete request when an existing entry is removed', async () => {
+    it('should fire the delete request when an existing entry is removed and includeExisting is on', async () => {
       host.value.set('e1');
       fixture.detectChanges();
 
@@ -518,6 +522,43 @@ describe('DropzoneDirective', () => {
       fixture.detectChanges();
 
       expect(host.deleteSucceeded).toEqual(['e1']);
+    });
+
+    it('should not delete an existing entry by default, and stay silent about it', async () => {
+      host.upload.set(createUploadConfig(setup, { withDelete: true }));
+      host.value.set('e1');
+      fixture.detectChanges();
+
+      dropzone().removeEntry(dropzone().entries()[0]!.id);
+      fixture.detectChanges();
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      setup.httpTesting.expectNone(deleteUrl('e1'));
+      expect(host.value()).toBe(null);
+      expect(host.deleteSucceeded).toEqual([]);
+      expect(host.deleteFailed).toEqual([]);
+    });
+
+    it('should still delete an uploaded entry while includeExisting is off', async () => {
+      host.upload.set(createUploadConfig(setup, { withDelete: true }));
+      fixture.detectChanges();
+
+      dropzone().selectFiles([createFile()]);
+      fixture.detectChanges();
+      setup.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      fixture.detectChanges();
+
+      dropzone().removeEntry(dropzone().entries()[0]!.id);
+      fixture.detectChanges();
+
+      setup.httpTesting.expectOne(deleteUrl('uuid-1')).flush(null);
+
+      fixture.detectChanges();
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      expect(host.deleteSucceeded).toEqual(['uuid-1']);
     });
 
     it('should emit deleteFail (and not remove the value a second time) when the delete request fails', async () => {

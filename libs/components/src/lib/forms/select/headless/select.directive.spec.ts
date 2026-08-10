@@ -1552,12 +1552,12 @@ describe('SelectDirective (searchable custom value)', () => {
 
   it('renders a clear control while focused that clears the selection', () => {
     // no focus yet - the control stays hidden despite the value
-    expect(fixture.nativeElement.querySelector('.et-select-clear')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.et-input-clear')).toBeNull();
 
     searchInput().dispatchEvent(new FocusEvent('focus'));
     tick();
 
-    const clear = fixture.nativeElement.querySelector('.et-select-clear') as HTMLButtonElement;
+    const clear = fixture.nativeElement.querySelector('.et-input-clear') as HTMLButtonElement;
 
     expect(clear).not.toBeNull();
     expect(clear.getAttribute('aria-label')).toBe('Clear');
@@ -1568,7 +1568,7 @@ describe('SelectDirective (searchable custom value)', () => {
 
     expect(fixture.componentInstance.value()).toBeNull();
     // gone without a value, and the panel did not toggle open
-    expect(fixture.nativeElement.querySelector('.et-select-clear')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.et-input-clear')).toBeNull();
     expect(select.open()).toBe(false);
   });
 
