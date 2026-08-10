@@ -295,16 +295,34 @@ Rows that would be indistinguishable fold into one, with the instance count at t
 ▸ POST /posts                            ×3
 ```
 
-Click it to expand; the members appear indented underneath and each behaves exactly as a
-row always did - select it, pin it, read its own detail. The **group is folded on what the
-row shows**, not on the query creator, so `/post/1` and `/post/2` stay two lines: folding
-can never hide a distinction the list was already making. A tombstone never folds into a
-live query either.
+The **caret is its own button** and the rest of the line is not: clicking the row **selects the
+request** and opens the detail on it, without expanding anything. Every member is the same method,
+the same resolved route and the same response, so any one of them answers for the fold - you only
+have to open it when you care about a specific consumer. The **group is folded on what the row
+shows**, not on the query creator, so `/post/1` and `/post/2` stay two lines: folding can never hide
+a distinction the list was already making. A tombstone never folds into a live query either.
+
+Expanded, the members appear indented underneath and each behaves exactly as a row always did -
+select it, pin it, read its own detail. What they show is **where each was created**, not the route
+the fold already named:
+
+```
+▾ POST /posts                            ×3
+    <et-post-composer>              #1
+    <et-post-composer>              #2
+    created outside a component     #3
+```
+
+The element is the one the query was created in (the same one
+[**Locate**](#beyond-a-read-only-view) scrolls to); the ordinal carries the ones
+several instances of the same component created, and the ones created outside a component
+altogether.
 
 The collapsed line reports the **worst** state in the group - if one of three instances is
 failing, the folded row is the failing dot - and carries **stale** or **tampered** if any
-member does. A group holding the selected query stays open regardless, so the detail pane
-can never show a query with no row to match it. Which groups you opened is
+member does. A fold holding the selected query is highlighted like a selected row, and **opens
+itself** when the selection lands in it - but it does not stay open: collapsing it over the
+selected query is allowed, and the detail keeps showing that query. Which groups you opened is
 [persisted](#persistence).
 
 A folded row carries [the time](#when-each-query-last-ran) of the member that placed it -
@@ -637,9 +655,10 @@ not reading cannot be seen, and the nine other tabs are exactly where an injecte
 a real one. The armed client's own card is drawn with a red border, and **Disarm** on it clears
 that one client.
 
-Faults are the one part of the panel that is **not** [persisted](#persistence): they live in
-memory, so a page reload disarms every client. A persisted "fail everything" that outlived the
-session that armed it would be a trap.
+Faults are **not** [persisted](#persistence) unless you ask for them to be: `Armed faults` in
+Settings is `none` by default, so a page reload disarms every client. A "fail everything" that
+outlived the session that armed it, unannounced, would be a trap - which is why the scope exists
+but ships off, and why the red bar says when a fault came back from the last page load.
 :::
 
 A query whose last completed run actually came back faulted also carries the same
@@ -833,11 +852,17 @@ the library after the export, the same way a seed lists what it guessed.
 - **GraphQL queries are not offered.** They all POST one route, so matching them needs the document rather
   than the path.
 
-### Arming it is loud, and never survives a reload
+### Arming it is loud
 
-The library you design is [persisted](#settings-what-the-panel-keeps-and-where); **whether a mock is armed
-is not, at any scope**. Losing an hour of authoring to a closed tab is unacceptable; an app that silently
-serves designed data tomorrow morning is worse.
+The library you design is [persisted](#settings-what-the-panel-keeps-and-where) at `local`; **whether a
+mock is armed is not, unless you ask for it** - `Armed mocks` in Settings is `none` by default. Losing an
+hour of authoring to a closed tab is unacceptable; an app that silently serves designed data tomorrow
+morning is worse. At `session` or `local` the armed set comes back with the page, and the bar below says so
+in as many words.
+
+**Arm all** in the toolbar arms the whole library at once - the screen off the network in one click, which
+is what a demo or an offline afternoon actually needs - and **Disarm all** beside it puts every route back.
+Both are mirrored under Settings → Mirrored, next to the same button for faults.
 
 While anything is armed, a red bar above every tab names the routes it answers, with **Review** and
 **Disarm all**, and every query on a mocked route carries the [**tampered** badge](#the-tampered-badge). An
@@ -994,10 +1019,10 @@ The [tampered badge](#the-tampered-badge) and its dot on the closed toggle light
 re-armed override exactly as they do from one you just armed, so a page whose responses are
 edited never reads as a page that is merely broken.
 
-**Armed faults do not come along**, deliberately - see
-[Faults](#faults-making-requests-actually-misbehave). A fault is a client-wide switch with no
-path to point at, and a persisted one would make every request on that client fail from the
-first load with nothing on screen to attribute it to until the panel is opened.
+**Armed faults have a scope of their own** and do not come along with this one - see
+[Faults](#faults-making-requests-actually-misbehave). A fault is a client-wide switch with no path
+to point at, so keeping one is a separate, separately-defaulted-off decision from keeping an edit
+to one response.
 
 ### The tampered badge
 
@@ -1609,15 +1634,27 @@ that erased the choice which set it would be a setting you could never keep.
 
 Each kind of state picks its own scope, because `none` costs something different for each:
 
-| State                                                                | Default   | `none` means                                                        |
-| -------------------------------------------------------------------- | --------- | ------------------------------------------------------------------- |
-| **Panel view state** - dock, sizes, open tab, filters, selections    | `session` | the panel forgets where it was on every reload                      |
-| **Pinned queries**                                                   | `local`   | a pin dies with the tab                                             |
-| [**Response overrides**](#keeping-overrides-across-a-reload)         | `none`    | the default - a reload is how the app stops being lied to           |
-| [**Designed mocks**](#mocks-answering-a-route-the-panel-not-the-api) | `local`   | the library dies with the tab; arming never survives one either way |
+| State                                                                | Default   | `none` means                                              |
+| -------------------------------------------------------------------- | --------- | --------------------------------------------------------- |
+| **Panel view state** - dock, sizes, open tab, filters, selections    | `session` | the panel forgets where it was on every reload            |
+| **Pinned queries**                                                   | `local`   | a pin dies with the tab                                   |
+| [**Response overrides**](#keeping-overrides-across-a-reload)         | `none`    | the default - a reload is how the app stops being lied to |
+| [**Designed mocks**](#mocks-answering-a-route-the-panel-not-the-api) | `local`   | the library dies with the tab                             |
+| [**Armed mocks**](#arming-it-is-loud)                                | `none`    | the default - a reload goes back to talking to the API    |
+| [**Armed faults**](#faults-making-requests-actually-misbehave)       | `none`    | the default - a reload disarms every client               |
 
 Changing a scope **moves** what is already stored and clears the copy the old scope left
-behind, so the next load cannot read a stale one.
+behind, so the next load cannot read a stale one. The two **Armed** scopes capture what is armed
+at the moment you switch them on - "keep these", not "keep the next ones" - and switching one back
+to `none` empties its store while leaving this page serving exactly what it already was.
+
+::: danger Keeping something armed is the one setting that outlives you noticing
+Armed mocks and armed faults ship at `none` for the same reason overrides do: an app that answers
+its own routes, or fails them, before anyone opens the panel looks exactly like a broken app. They
+are on offer because re-arming twelve mocks after every reload is its own kind of unusable - and
+when a page load inherits either, the red bar above the tabs says it came back rather than just
+that it is armed.
+:::
 
 ::: warning `local` for overrides is allowed, loudly
 `session` for overrides exists because "survives a reload" and "survives until I notice" are
@@ -1634,7 +1671,7 @@ async store cannot answer either in time. `@ethlete/query` ships an
 [IndexedDB persistence engine](/query/persistence) for query data, where arriving late is
 survivable; devtools state is not that.
 
-**Reset devtools** clears all three keys from both stores, whatever the scopes say, and puts
+**Reset devtools** clears every one of these keys from both stores, whatever the scopes say, and puts
 the panel back where it ships: dock, sizes, filters, selections and pins. It resets the live
 panel and not just the keys, since the panel would otherwise write its current state straight
 back. What it leaves alone is Settings itself - a panel behaving oddly is a reason to reset its
@@ -1656,9 +1693,10 @@ it rather than making you remember what it was.
 
 The [Queries list's sort and tree view](#grouping-the-list-by-route-path), whether
 [destroyed queries are listed](#a-destroyed-query-leaves-a-tombstone), the
-[event log's failures-only and client scope](#events-what-each-request-cost) and
-[Keep across reloads](#keeping-overrides-across-a-reload) are all here as well as where they
-already were. Nothing moved - each control stays in the tab it belongs to, and Settings is the
+[event log's failures-only and client scope](#events-what-each-request-cost),
+[Keep across reloads](#keeping-overrides-across-a-reload) and the
+[arm/disarm-everything buttons](#arming-it-is-loud) the Mocks and Faults tabs carry are all here as
+well as where they already were. Nothing moved - each control stays in the tab it belongs to, and Settings is the
 one place that lists them, for the switch you know exists but not which tab it is on. Search
 boxes are not mirrored: a filter term is not a setting.
 

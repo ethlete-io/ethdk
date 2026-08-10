@@ -7,6 +7,16 @@
       offered: they all POST one route, so matching them needs the document rather than the path.
     </p>
     <div class="et-query-devtools-settings-controls">
+      @if (rows().length && armedCount() < rows().length) {
+        <button
+          (click)="ARM_ALL()"
+          class="et-query-devtools-btn"
+          type="button"
+          title="Serve every mock in the library - the whole screen off the network at once"
+        >
+          Arm all ({{ rows().length }})
+        </button>
+      }
       @if (armedCount()) {
         <button (click)="DISARM_ALL()" class="et-query-devtools-btn" type="button">
           Disarm all ({{ armedCount() }})

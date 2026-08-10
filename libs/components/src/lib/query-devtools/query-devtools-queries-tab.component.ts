@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, effect, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, untracked, ViewEncapsulation } from '@angular/core';
 import { clearQueryDevtoolsTombstones, QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
@@ -166,6 +166,19 @@ export class QueryDevtoolsQueriesTabComponent {
     return item ? this.groupKey(item) : null;
   });
 
+  /**
+   * Whether the selected query is the very row a collapsed fold renders. A boolean rather than the group
+   * itself on purpose: the effect below reads it, and a fresh object every time the list re-evaluates
+   * would re-run it - which is exactly what it must not do.
+   */
+  private selectedIsFoldHead = computed(() => {
+    const key = this.selectedGroupKey();
+
+    if (!key) return false;
+
+    return this.queryGroups().find((group) => group.key === key)?.head.entry.id === this.host.selectedQueryId();
+  });
+
   /** How many queries the list would hold with the search box empty, which is what the count compares to. */
   protected scopedQueryCount = computed(() => {
     const facets = this.host.queryFacets();
@@ -184,14 +197,43 @@ export class QueryDevtoolsQueriesTabComponent {
   protected isQueryListNarrowed = computed(() => !!this.host.queryFilter().trim() || this.host.queryFacets().size > 0);
 
   constructor() {
-    // Opens the fold when the selection lands in it (or regrouping moves it), so the selected query
-    // always starts with a row to match the detail pane - but only *opens* it: unlike deriving
-    // "expanded" from the selection, the fold can still be collapsed over the selected query.
+    // Opens the fold when the selection lands on a member it does not render, so the detail pane always
+    // has a row to match - a selection arriving from the Events tab has to say *which* consumer it is.
+    // Selecting the fold's own head leaves it shut: the collapsed row already stands for that query.
+    //
+    // Only *opens*, never closes, and `untracked` is what keeps that true: `expandQueryGroup` reads the
+    // expanded set to decide whether it has anything to do, and a tracked read of it would make
+    // collapsing the fold re-run this and open it straight back up.
     effect(() => {
       const key = this.selectedGroupKey();
 
-      if (key) this.host.expandQueryGroup(key);
+      if (key && !this.selectedIsFoldHead()) untracked(() => this.host.expandQueryGroup(key));
     });
+  }
+
+  /** Whether the selected query is one of this fold's - the row stands in for it while it is collapsed. */
+  protected holdsSelection(group: QueryRowGroup) {
+    return this.selectedGroupKey() === group.key;
+  }
+
+  /**
+   * Opens the detail on the fold without expanding it. Every row in it is the same request, so the head
+   * answers for all of them - and a fold already showing one of its own keeps that one selected.
+   */
+  protected selectGroup(group: QueryRowGroup) {
+    if (this.holdsSelection(group)) return;
+
+    this.host.selectedQueryId.set(group.head.entry.id);
+  }
+
+  /**
+   * What tells one consumer of a folded query from another. They share a method, a route and a response -
+   * what differs is where each was created, so the element it was created in is the only thing on a nested
+   * row worth reading. The ordinal carries the ones created outside a component, and the ones several
+   * instances of the same component created.
+   */
+  protected consumerLabel(item: QueryRow) {
+    return this.host.locatableElement(item.entry)?.localName ?? null;
   }
 
   /** The worst state in a folded group, so a collapsed row cannot hide the one instance that is failing. */

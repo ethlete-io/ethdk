@@ -51,7 +51,9 @@ import {
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
   queryDevtoolsArmedMocks,
+  queryDevtoolsArmedMocksRestored,
   queryDevtoolsFaults,
+  queryDevtoolsFaultsRestored,
   queryDevtoolsMockId,
   queryDevtoolsMocks,
   queryDevtoolsOverridePersistence,
@@ -1168,6 +1170,10 @@ export class QueryDevtoolsComponent {
 
   /** Disarms every client's fault - the shell's "Faults armed" banner offers this above every tab. */
   protected readonly CLEAR_FAULTS = clearQueryDevtoolsFaults;
+
+  /** Whether what is armed came back from a previous page load, which is what the bars have to say. */
+  protected faultsRestored = computed(queryDevtoolsFaultsRestored);
+  protected mocksRestored = computed(queryDevtoolsArmedMocksRestored);
 
   /** Stops serving every designed mock - the shell's "Mocks armed" banner offers the same way out. */
   protected readonly DISARM_MOCKS = clearQueryDevtoolsArmedMocks;

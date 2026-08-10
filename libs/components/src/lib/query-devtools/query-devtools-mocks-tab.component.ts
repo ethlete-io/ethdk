@@ -1,6 +1,7 @@
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { copyToClipboard } from '@ethlete/core';
 import {
+  armAllQueryDevtoolsMocks,
   armQueryDevtoolsMock,
   clearQueryDevtoolsArmedMocks,
   collectQueryDevtoolsSchemaComponents,
@@ -117,6 +118,7 @@ const isMockableMethod = (method: string) => !method.includes(' ');
 export class QueryDevtoolsMocksTabComponent {
   protected host = injectQueryDevtoolsHost();
 
+  protected readonly ARM_ALL = armAllQueryDevtoolsMocks;
   protected readonly DISARM_ALL = clearQueryDevtoolsArmedMocks;
   protected readonly METHODS = METHODS;
   protected readonly SPEC_FORMATS = SPEC_FORMATS;

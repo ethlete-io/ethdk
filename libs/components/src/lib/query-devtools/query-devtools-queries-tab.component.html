@@ -190,9 +190,21 @@
         @let expanded = isGroupExpanded(group);
         @let head = group.head;
         @let groupGone = !!head.entry.destroyedAt;
-        <div [style.--_et-qdt-tree-depth]="depth" class="et-query-devtools-row et-query-devtools-row--group">
+        <div
+          [style.--_et-qdt-tree-depth]="depth"
+          [class.et-query-devtools-row--active]="holdsSelection(group)"
+          class="et-query-devtools-row et-query-devtools-row--group"
+        >
+          <!-- The caret is its own control: every row in the fold is the same request, so opening the
+               fold and inspecting what it holds are two different intentions. -->
           <button
             [attr.aria-expanded]="expanded"
+            [attr.aria-label]="
+              (expanded ? 'Collapse' : 'Expand') +
+              ' the ' +
+              group.items.length +
+              ' consumers of this query - one registry entry each'
+            "
             [title]="
               (expanded ? 'Collapse' : 'Expand') +
               ' the ' +
@@ -200,10 +212,19 @@
               ' consumers of this query - one registry entry each'
             "
             (click)="host.toggleQueryGroup(group.key)"
-            class="et-query-devtools-row-select"
+            class="et-query-devtools-row-caret-btn"
             type="button"
           >
             <span class="et-query-devtools-row-caret" aria-hidden="true">{{ expanded ? '▾' : '▸' }}</span>
+          </button>
+          <button
+            (click)="selectGroup(group)"
+            class="et-query-devtools-row-select"
+            type="button"
+            title="Inspect this request - all {{
+              group.items.length
+            }} consumers share it, so any of them answers for it"
+          >
             <span
               [attr.data-status]="groupGone ? null : groupStatus(group)"
               [title]="groupGone ? 'destroyed' : groupStatus(group)"
@@ -232,7 +253,9 @@
                 tampered
               </span>
             }
-            <span class="et-query-devtools-row-count">×{{ group.items.length }}</span>
+            <span class="et-query-devtools-row-count" title="Consumers of this one request">
+              ×{{ group.items.length }}
+            </span>
             <span class="et-query-devtools-row-time">{{ host.formatTime(lastExecutedAt(head)) }}</span>
           </button>
         </div>
@@ -240,14 +263,14 @@
           @for (item of group.items; track item.entry.id) {
             <ng-container
               [ngTemplateOutlet]="queryRow"
-              [ngTemplateOutletContext]="{ item, nested: true, depth, trim }"
+              [ngTemplateOutletContext]="{ item, nested: true, ordinal: $index + 1, depth, trim }"
             />
           }
         }
       }
     </ng-template>
 
-    <ng-template #queryRow let-item="item" let-nested="nested" let-depth="depth" let-trim="trim">
+    <ng-template #queryRow let-item="item" let-nested="nested" let-ordinal="ordinal" let-depth="depth" let-trim="trim">
       @let isGone = !!item.entry.destroyedAt;
       @let isPinned = host.isQueryPinned(item.entry);
       @let pinLabel = isPinned ? 'Unpin this query' : 'Pin this query to the top of the list';
@@ -266,9 +289,22 @@
             class="et-query-devtools-status"
           ></span>
           <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
-          <span class="et-query-devtools-route">
-            <et-query-devtools-route [segments]="host.routeSegments(item.entry, item.query)" [trimPrefix]="trim" />
-          </span>
+          <!-- Inside a fold the route is the fold's own head, repeated once per consumer. Where the query
+               was created is the only thing that differs, so that is what the row says instead. -->
+          @if (nested) {
+            <span class="et-query-devtools-consumer">
+              @if (consumerLabel(item); as consumer) {
+                &lt;{{ consumer }}&gt;
+              } @else {
+                created outside a component
+              }
+            </span>
+            <span class="et-query-devtools-row-count">#{{ ordinal }}</span>
+          } @else {
+            <span class="et-query-devtools-route">
+              <et-query-devtools-route [segments]="host.routeSegments(item.entry, item.query)" [trimPrefix]="trim" />
+            </span>
+          }
           @if (isGone) {
             <span
               class="et-query-devtools-chip et-query-devtools-chip--muted"

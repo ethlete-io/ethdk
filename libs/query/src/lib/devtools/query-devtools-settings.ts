@@ -24,11 +24,18 @@ export type QueryDevtoolsSettings = {
    */
   overrides: QueryDevtoolsStorageScope;
 
-  /**
-   * The library of designed mocks - the authoring, not whether any of them is armed. Whether one is
-   * served is never persisted at any scope.
-   */
+  /** The library of designed mocks - the authoring, not whether any of them is armed. */
   mocks: QueryDevtoolsStorageScope;
+
+  /**
+   * Which mocks are **armed**, as opposed to the library above. `none` by default: an app that silently
+   * serves designed data tomorrow morning is worse than arming them again, so keeping them is a choice
+   * someone makes rather than the way the panel ships.
+   */
+  armedMocks: QueryDevtoolsStorageScope;
+
+  /** The faults armed per client, for the same reason and with the same default. */
+  armedFaults: QueryDevtoolsStorageScope;
 
   /** How many entries the Events log keeps. */
   maxEvents: number;
@@ -48,6 +55,8 @@ const DEFAULTS: QueryDevtoolsSettings = {
   pins: 'local',
   overrides: 'none',
   mocks: 'local',
+  armedMocks: 'none',
+  armedFaults: 'none',
   maxEvents: 100,
   maxDroppedCacheEntries: 20,
   responseHistory: null,
@@ -161,6 +170,8 @@ const sanitize = (value: Partial<QueryDevtoolsSettings> | null): QueryDevtoolsSe
   pins: asScope(value?.pins, DEFAULTS.pins),
   overrides: asScope(value?.overrides, DEFAULTS.overrides),
   mocks: asScope(value?.mocks, DEFAULTS.mocks),
+  armedMocks: asScope(value?.armedMocks, DEFAULTS.armedMocks),
+  armedFaults: asScope(value?.armedFaults, DEFAULTS.armedFaults),
   maxEvents: asCount(value?.maxEvents, LIMITS.maxEvents, DEFAULTS.maxEvents),
   maxDroppedCacheEntries: asCount(
     value?.maxDroppedCacheEntries,

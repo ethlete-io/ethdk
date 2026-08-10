@@ -861,13 +861,22 @@
   .et-query-devtools-select {
     flex: 0 0 auto;
     min-block-size: var(--_et-qdt-control-h);
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
+    /* Mixed into the panel background rather than into `transparent`: Windows draws the dropdown list
+       from the select's own colours, and a see-through background there comes out white - under the
+       panel's light `color`, that is white text on white. */
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, var(--_et-qdt-bg));
     color: var(--_et-qdt-fg);
     border: 1px solid transparent;
     border-radius: var(--_et-qdt-radius);
     padding: 0.4rem 0.6rem;
     font: inherit;
     font-size: 1.15rem;
+  }
+
+  /* Same reason: the list is drawn by the platform, and only what is set here reaches it. */
+  .et-query-devtools-select option {
+    background-color: var(--_et-qdt-bg);
+    color: var(--_et-qdt-fg);
   }
 
   .et-query-devtools-count {

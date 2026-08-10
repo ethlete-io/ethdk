@@ -214,6 +214,10 @@
           <span class="et-query-devtools-mono">{{ armed.join(', ') }}</span>
           — every failure and delay you see from
           {{ armed.length === 1 ? 'this client' : 'these clients' }} is injected, not the API.
+          @if (faultsRestored()) {
+            They came back from your last page load — set <em>Armed faults</em> back to <em>none</em> in Settings to
+            stop that.
+          }
         </span>
         <button
           [disabled]="activeTab() === 'faults'"
@@ -235,6 +239,10 @@
           <span class="et-query-devtools-mono">{{ mocked.join(', ') }}</span>
           — {{ mocked.length === 1 ? 'that route is' : 'those routes are' }} answered by the panel, so nothing they show
           reached the API.
+          @if (mocksRestored()) {
+            They came back from your last page load — set <em>Armed mocks</em> back to <em>none</em> in Settings to stop
+            that.
+          }
         </span>
         <button
           [disabled]="activeTab() === 'mocks'"

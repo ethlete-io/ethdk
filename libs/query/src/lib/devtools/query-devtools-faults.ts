@@ -1,5 +1,13 @@
 import { Signal, signal } from '@angular/core';
 import { QueryDevtoolsFaultTarget, QueryDevtoolsResolvedFault } from './query-devtools-hook';
+import {
+  clearQueryDevtoolsStore,
+  QueryDevtoolsStorageScope,
+  queryDevtoolsSettings,
+  readQueryDevtoolsStore,
+  setQueryDevtoolsSettings,
+  writeQueryDevtoolsStore,
+} from './query-devtools-settings';
 
 /**
  * A fault armed on one query client from the devtools panel. Unlike the panel's forced states - which
@@ -49,7 +57,12 @@ export const QUERY_DEVTOOLS_FAULT_STATUSES: { status: number; label: string; ret
   { status: 503, label: 'Service Unavailable', retryable: true },
 ];
 
+const STORAGE_KEY = 'ethlete:query:devtools:faults:v1';
+
 const faults = /* @__PURE__ */ signal<Record<string, QueryDevtoolsFault>>({});
+const restored = /* @__PURE__ */ signal(false);
+
+const scope = () => queryDevtoolsSettings().armedFaults;
 
 /**
  * The faults armed per client name, consumed by the `<et-query-devtools>` UI. Clients with nothing armed
@@ -57,18 +70,75 @@ const faults = /* @__PURE__ */ signal<Record<string, QueryDevtoolsFault>>({});
  */
 export const queryDevtoolsFaults: Signal<Record<string, QueryDevtoolsFault>> = /* @__PURE__ */ faults.asReadonly();
 
+/**
+ * Whether what is armed right now came back from a previous page load rather than being armed by hand.
+ * The panel's armed bar says so, because injected failures nobody remembers arming look exactly like a
+ * broken API.
+ */
+export const queryDevtoolsFaultsRestored: Signal<boolean> = /* @__PURE__ */ restored.asReadonly();
+
+const write = () => {
+  if (scope() === 'none') {
+    clearQueryDevtoolsStore(STORAGE_KEY);
+
+    return;
+  }
+
+  writeQueryDevtoolsStore(scope(), STORAGE_KEY, faults());
+};
+
+const asFault = (value: unknown): QueryDevtoolsFault | null => {
+  const fault = value as Partial<QueryDevtoolsFault> | null;
+
+  if (!fault || typeof fault !== 'object') return null;
+
+  const next: QueryDevtoolsFault = {
+    latencyMs: Number(fault.latencyMs) || 0,
+    failNext: Number(fault.failNext) || 0,
+    failRate: Number(fault.failRate) || 0,
+    status: Number.isFinite(Number(fault.status)) ? Number(fault.status) : EMPTY_QUERY_DEVTOOLS_FAULT.status,
+  };
+
+  return isQueryDevtoolsFaultArmed(next) ? next : null;
+};
+
+/**
+ * Reads the armed faults back, when the `armedFaults` setting asks for them. Called by
+ * `provideQueryDevtools()` after the settings it takes its scope from; nothing else may call it.
+ * @internal
+ */
+export const initQueryDevtoolsFaults = () => {
+  const stored = readQueryDevtoolsStore<Record<string, unknown>>(scope(), STORAGE_KEY);
+  const inherited: Record<string, QueryDevtoolsFault> = {};
+
+  for (const [clientName, value] of Object.entries(stored ?? {})) {
+    const fault = asFault(value);
+
+    if (fault) inherited[clientName] = fault;
+  }
+
+  faults.set(inherited);
+  restored.set(Object.keys(inherited).length > 0);
+};
+
+/**
+ * Where the armed faults are kept. Switching to a scope that keeps them stores whatever is armed right
+ * now; switching to `none` empties the store and leaves this page's faults exactly where they are.
+ */
+export const setQueryDevtoolsFaultsScope = (next: QueryDevtoolsStorageScope) => {
+  if (next === scope()) return;
+
+  // Off both stores first: whichever the previous scope was, its copy must not outlive the change.
+  clearQueryDevtoolsStore(STORAGE_KEY);
+  setQueryDevtoolsSettings({ armedFaults: next });
+  write();
+};
+
 /** Whether anything at all is armed on a fault. */
 export const isQueryDevtoolsFaultArmed = (fault: QueryDevtoolsFault) =>
   fault.latencyMs > 0 || fault.failNext > 0 || fault.failRate > 0;
 
-/**
- * Arms (or updates) the fault of one client. Only the given fields change; the rest keep their current
- * value. A client whose resulting fault has nothing armed is dropped from {@link queryDevtoolsFaults}.
- *
- * Part of the devtools contract consumed by `<et-query-devtools>`; a fault is a debugging tool, not
- * something an application should arm on itself.
- */
-export const setQueryDevtoolsFault = (options: { clientName: string; patch: Partial<QueryDevtoolsFault> }) => {
+const patchFault = (options: { clientName: string; patch: Partial<QueryDevtoolsFault> }) => {
   const { clientName, patch } = options;
 
   faults.update((current) => {
@@ -82,6 +152,20 @@ export const setQueryDevtoolsFault = (options: { clientName: string; patch: Part
 
     return { ...current, [clientName]: next };
   });
+
+  write();
+};
+
+/**
+ * Arms (or updates) the fault of one client. Only the given fields change; the rest keep their current
+ * value. A client whose resulting fault has nothing armed is dropped from {@link queryDevtoolsFaults}.
+ *
+ * Part of the devtools contract consumed by `<et-query-devtools>`; a fault is a debugging tool, not
+ * something an application should arm on itself.
+ */
+export const setQueryDevtoolsFault = (options: { clientName: string; patch: Partial<QueryDevtoolsFault> }) => {
+  patchFault(options);
+  restored.set(false);
 };
 
 /**
@@ -89,7 +173,7 @@ export const setQueryDevtoolsFault = (options: { clientName: string; patch: Part
  *
  * @see setQueryDevtoolsFault
  */
-export const clearQueryDevtoolsFaults = (clientName?: string) =>
+export const clearQueryDevtoolsFaults = (clientName?: string) => {
   faults.update((current) => {
     if (clientName === undefined) return {};
 
@@ -97,6 +181,10 @@ export const clearQueryDevtoolsFaults = (clientName?: string) =>
 
     return rest;
   });
+
+  restored.set(false);
+  write();
+};
 
 /**
  * Resolves what to do with one upcoming attempt, consuming a `failNext` budget in the process - so this
@@ -116,7 +204,9 @@ export const resolveQueryDevtoolsFaultForAttempt = (
 
   if (fault.failNext > 0) {
     shouldFail = true;
-    setQueryDevtoolsFault({ clientName: target.clientName, patch: { failNext: fault.failNext - 1 } });
+    // Not the public setter: spending the budget is the armed fault doing its job, not someone re-arming
+    // it, so it must not clear what the panel's bar says about where the fault came from.
+    patchFault({ clientName: target.clientName, patch: { failNext: fault.failNext - 1 } });
   } else if (fault.failRate > 0) {
     shouldFail = Math.random() * 100 < fault.failRate;
   }

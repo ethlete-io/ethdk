@@ -14,7 +14,7 @@ import {
   setQueryDevtoolsRegistrar,
   setQueryDevtoolsStatsFactory,
 } from './query-devtools-hook';
-import { resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
+import { initQueryDevtoolsFaults, resolveQueryDevtoolsFaultForAttempt } from './query-devtools-faults';
 import { createQueryDevtoolsFormLinks } from './query-devtools-form-links';
 import {
   initQueryDevtoolsOverridePersistence,
@@ -272,6 +272,7 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
   setQueryDevtoolsAppInfo(options?.about);
   initQueryDevtoolsOverridePersistence();
   initQueryDevtoolsMocks();
+  initQueryDevtoolsFaults();
   setQueryDevtoolsSchemaLoader(options?.schema);
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);

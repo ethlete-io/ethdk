@@ -1,15 +1,26 @@
 import {
   clearQueryDevtoolsFaults,
+  initQueryDevtoolsFaults,
   isQueryDevtoolsFaultArmed,
   queryDevtoolsFaults,
+  queryDevtoolsFaultsRestored,
   resolveQueryDevtoolsFaultForAttempt,
   setQueryDevtoolsFault,
+  setQueryDevtoolsFaultsScope,
   EMPTY_QUERY_DEVTOOLS_FAULT,
 } from './query-devtools-faults';
+import { initQueryDevtoolsSettings } from './query-devtools-settings';
 
 const target = { clientName: 'api', method: 'GET', url: 'https://api.test/posts' };
+const STORAGE_KEY = 'ethlete:query:devtools:faults:v1';
 
 describe('query devtools faults', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    initQueryDevtoolsSettings();
+  });
+
   afterEach(() => clearQueryDevtoolsFaults());
 
   describe('setQueryDevtoolsFault', () => {
@@ -110,6 +121,71 @@ describe('query devtools faults', () => {
       setQueryDevtoolsFault({ clientName: 'api', patch: { failRate: 100 } });
 
       expect(resolveQueryDevtoolsFaultForAttempt({ ...target, clientName: 'auth' })).toBeNull();
+    });
+  });
+
+  describe('keeping what is armed', () => {
+    it('should keep nothing by default', () => {
+      setQueryDevtoolsFault({ clientName: 'api', patch: { failRate: 100 } });
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+      expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+
+      initQueryDevtoolsFaults();
+
+      expect(queryDevtoolsFaults()['api']).toBeUndefined();
+      expect(queryDevtoolsFaultsRestored()).toBe(false);
+    });
+
+    it('should read back what was armed at a scope that keeps it, and say it came back', () => {
+      setQueryDevtoolsFaultsScope('local');
+      setQueryDevtoolsFault({ clientName: 'api', patch: { failRate: 100, status: 500 } });
+
+      initQueryDevtoolsFaults();
+
+      expect(queryDevtoolsFaults()['api']).toEqual({ ...EMPTY_QUERY_DEVTOOLS_FAULT, failRate: 100, status: 500 });
+      expect(queryDevtoolsFaultsRestored()).toBe(true);
+    });
+
+    it('should stop calling it restored once it is armed by hand again', () => {
+      setQueryDevtoolsFaultsScope('local');
+      setQueryDevtoolsFault({ clientName: 'api', patch: { failRate: 100 } });
+      initQueryDevtoolsFaults();
+
+      setQueryDevtoolsFault({ clientName: 'api', patch: { failRate: 20 } });
+
+      expect(queryDevtoolsFaultsRestored()).toBe(false);
+    });
+
+    it('should keep calling it restored while a failNext budget is spent', () => {
+      setQueryDevtoolsFaultsScope('local');
+      setQueryDevtoolsFault({ clientName: 'api', patch: { failNext: 2 } });
+      initQueryDevtoolsFaults();
+
+      resolveQueryDevtoolsFaultForAttempt(target);
+
+      expect(queryDevtoolsFaults()['api']?.failNext).toBe(1);
+      expect(queryDevtoolsFaultsRestored()).toBe(true);
+    });
+
+    it('should drop the store when the scope stops keeping it, leaving this page armed', () => {
+      setQueryDevtoolsFaultsScope('session');
+      setQueryDevtoolsFault({ clientName: 'api', patch: { failRate: 100 } });
+
+      setQueryDevtoolsFaultsScope('none');
+
+      expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+      expect(queryDevtoolsFaults()['api']?.failRate).toBe(100);
+    });
+
+    it('should ignore an entry a hand-edited store left unarmed', () => {
+      setQueryDevtoolsFaultsScope('local');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ api: { status: 500 }, auth: null }));
+
+      initQueryDevtoolsFaults();
+
+      expect(queryDevtoolsFaults()).toEqual({});
+      expect(queryDevtoolsFaultsRestored()).toBe(false);
     });
   });
 });

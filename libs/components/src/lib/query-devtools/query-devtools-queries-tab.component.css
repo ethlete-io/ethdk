@@ -149,14 +149,26 @@
     line-height: 1;
   }
 
-  /* A group head has no pin, so without this its trailing edge sits a pin-width further out than every
-     other row's and the time column bends around it. */
-  .et-query-devtools-row--group > .et-query-devtools-row-select {
-    padding-inline-end: 4.4rem;
+  /* The fold's caret, as a control of its own. It carries the start padding and the caret column the
+     row-select carries everywhere else, so the status dots of a fold head and a plain row still line up. */
+  .et-query-devtools-row-caret-btn {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding-block: 0;
+    padding-inline: calc(0.8rem + var(--_et-qdt-tree-depth, 0) * 1.4rem) 0;
+    font: inherit;
   }
 
-  .et-query-devtools-row--nested > .et-query-devtools-row-select {
-    padding-inline-start: 2.6rem;
+  @media (hover: hover) {
+    .et-query-devtools-row-caret-btn:hover .et-query-devtools-row-caret {
+      color: var(--_et-qdt-fg);
+    }
   }
 
   /* Tree view: one indent step per path level, added to whatever padding the row already had - so a
@@ -167,6 +179,23 @@
 
   .et-query-devtools-row--nested > .et-query-devtools-row-select {
     padding-inline-start: calc(2.6rem + var(--_et-qdt-tree-depth, 0) * 1.4rem);
+  }
+
+  /* The indent is the caret button's now. What is left is the gap between the caret and the status dot,
+     which every other row gets from its own `gap`. The trailing inset stands in for the pin a fold head
+     does not have - without it the time column bends around the rows that do. */
+  .et-query-devtools-row--group > .et-query-devtools-row-select {
+    padding-inline: 0.8rem 4.4rem;
+  }
+
+  /* One consumer of a folded query. Muted, because the row above it already said what the request is. */
+  .et-query-devtools-consumer {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--_et-qdt-muted);
   }
 
   /* A folder is a heading, not a query: no status dot, no method, no time column - just where it sits
@@ -188,6 +217,12 @@
      hover (which is the full mix) stays visible on top of it. */
   .et-query-devtools-row--group {
     background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
+  }
+
+  /* A fold the selected query sits in has to read as selected - collapsed, it is the only row standing
+     in for it, and the head's own tint would otherwise swallow the highlight. */
+  .et-query-devtools-row--group.et-query-devtools-row--active {
+    background: var(--_et-qdt-active);
   }
 
   .et-query-devtools-row-count {

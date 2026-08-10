@@ -2,8 +2,10 @@ import { Signal, signal } from '@angular/core';
 import { QueryDevtoolsMockTarget, QueryDevtoolsResolvedMock } from './query-devtools-hook';
 import {
   clearQueryDevtoolsStore,
+  QueryDevtoolsStorageScope,
   queryDevtoolsSettings,
   readQueryDevtoolsStore,
+  setQueryDevtoolsSettings,
   writeQueryDevtoolsStore,
 } from './query-devtools-settings';
 
@@ -50,24 +52,34 @@ export type QueryDevtoolsMock = {
 };
 
 /**
- * The designed library. Whether a mock is **armed** is deliberately not part of it - see
+ * The designed library. Which of them is **armed** is a separate store under a separate scope - see
  * {@link queryDevtoolsArmedMocks}.
  */
 const STORAGE_KEY = 'ethlete:query:devtools:mocks:v1';
 
+const ARMED_STORAGE_KEY = 'ethlete:query:devtools:mocks:armed:v1';
+
 const mocks = /* @__PURE__ */ signal<readonly QueryDevtoolsMock[]>([]);
 const armed = /* @__PURE__ */ signal<ReadonlySet<string>>(/* @__PURE__ */ new Set());
+const armedRestored = /* @__PURE__ */ signal(false);
 
 const scope = () => queryDevtoolsSettings().mocks;
+const armedScope = () => queryDevtoolsSettings().armedMocks;
 
 /** The designed mocks, armed or not. Persisted, because losing an hour of authoring is unacceptable. */
 export const queryDevtoolsMocks: Signal<readonly QueryDevtoolsMock[]> = /* @__PURE__ */ mocks.asReadonly();
 
 /**
- * The ids currently being served. **Never persisted, at any scope**: an app that silently serves designed
- * data tomorrow morning is worse than losing which mocks were armed, so arming is per page load.
+ * The ids currently being served. Not kept across page loads unless the `armedMocks` setting asks for it -
+ * an app that silently serves designed data tomorrow morning is worse than losing which mocks were armed.
  */
 export const queryDevtoolsArmedMocks: Signal<ReadonlySet<string>> = /* @__PURE__ */ armed.asReadonly();
+
+/**
+ * Whether what is armed right now came back from a previous page load rather than being armed by hand.
+ * The panel's armed bar says so, because mocks nobody remembers arming look exactly like a broken API.
+ */
+export const queryDevtoolsArmedMocksRestored: Signal<boolean> = /* @__PURE__ */ armedRestored.asReadonly();
 
 /**
  * The identity of a designed mock: one per client, method, route **and** declared query. The query is part
@@ -85,6 +97,23 @@ const write = () => {
   }
 
   writeQueryDevtoolsStore(scope(), STORAGE_KEY, mocks());
+};
+
+const writeArmed = () => {
+  if (armedScope() === 'none') {
+    clearQueryDevtoolsStore(ARMED_STORAGE_KEY);
+
+    return;
+  }
+
+  writeQueryDevtoolsStore(armedScope(), ARMED_STORAGE_KEY, [...armed()]);
+};
+
+/** Every change made by hand goes through here, so none of them can leave the store or the bar behind. */
+const setArmed = (next: ReadonlySet<string>) => {
+  armed.set(next);
+  armedRestored.set(false);
+  writeArmed();
 };
 
 const isMock = (value: unknown): value is QueryDevtoolsMock => {
@@ -110,7 +139,17 @@ export const initQueryDevtoolsMocks = () => {
 
   // `query` was added after the first version of the store, so an entry written before it still loads.
   mocks.set(Array.isArray(stored) ? stored.filter(isMock).map((mock) => ({ ...mock, query: mock.query ?? '' })) : []);
-  armed.set(new Set());
+
+  const kept = readQueryDevtoolsStore<unknown[]>(armedScope(), ARMED_STORAGE_KEY);
+  const library = new Set(mocks().map((mock) => mock.id));
+  // An id the library no longer holds would arm nothing, so it is dropped rather than kept waiting for a
+  // mock that may never be designed again.
+  const inherited = Array.isArray(kept)
+    ? kept.filter((id): id is string => typeof id === 'string' && library.has(id))
+    : [];
+
+  armed.set(new Set(inherited));
+  armedRestored.set(inherited.length > 0);
 };
 
 /** The path of a request URL, without its origin or query string - what a pattern is matched against. */
@@ -181,26 +220,43 @@ export const deleteQueryDevtoolsMock = (id: string) => {
 
 /** Starts or stops serving one designed mock. Arming a mock that is not in the library does nothing. */
 export const armQueryDevtoolsMock = (id: string, isArmed: boolean) => {
-  armed.update((current) => {
-    if (isArmed && !mocks().some((mock) => mock.id === id)) return current;
+  if (isArmed && !mocks().some((mock) => mock.id === id)) return;
 
-    const next = new Set(current);
+  const next = new Set(armed());
 
-    if (isArmed) next.add(id);
-    else next.delete(id);
+  if (isArmed) next.add(id);
+  else next.delete(id);
 
-    return next;
-  });
+  setArmed(next);
 };
 
+/** Starts serving every mock in the library - the counterpart of {@link clearQueryDevtoolsArmedMocks}. */
+export const armAllQueryDevtoolsMocks = () => setArmed(new Set(mocks().map((mock) => mock.id)));
+
 /** Stops serving every mock, leaving the library alone - the armed bar's one-click way out. */
-export const clearQueryDevtoolsArmedMocks = () => armed.set(new Set());
+export const clearQueryDevtoolsArmedMocks = () => setArmed(new Set());
+
+/**
+ * Where the armed set is kept. Switching to a scope that keeps it stores whatever is armed right now, so
+ * the choice reads as "keep these"; switching to `none` empties the store and leaves this page serving
+ * exactly what it was already serving.
+ */
+export const setQueryDevtoolsArmedMocksScope = (next: QueryDevtoolsStorageScope) => {
+  if (next === armedScope()) return;
+
+  // Off both stores first: whichever the previous scope was, its copy must not outlive the change.
+  clearQueryDevtoolsStore(ARMED_STORAGE_KEY);
+  setQueryDevtoolsSettings({ armedMocks: next });
+  writeArmed();
+};
 
 /** Empties the designed library and disarms everything - the panel's "Reset devtools". */
 export const clearQueryDevtoolsMockStore = () => {
   mocks.set([]);
   armed.set(new Set());
+  armedRestored.set(false);
   clearQueryDevtoolsStore(STORAGE_KEY);
+  clearQueryDevtoolsStore(ARMED_STORAGE_KEY);
 };
 
 const declaredParamCount = (mock: QueryDevtoolsMock) => (mock.query ? [...new URLSearchParams(mock.query)].length : 0);

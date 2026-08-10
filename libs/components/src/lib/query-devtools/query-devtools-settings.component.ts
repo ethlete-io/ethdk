@@ -1,14 +1,21 @@
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import {
+  armAllQueryDevtoolsMocks,
+  clearQueryDevtoolsArmedMocks,
+  clearQueryDevtoolsFaults,
+  queryDevtoolsArmedMocks,
+  queryDevtoolsMocks,
   queryDevtoolsResponseHistory,
   queryDevtoolsSettings,
   QueryDevtoolsStorageScope,
+  setQueryDevtoolsArmedMocksScope,
+  setQueryDevtoolsFaultsScope,
   setQueryDevtoolsOverridesScope,
   setQueryDevtoolsSettings,
 } from '@ethlete/query';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 
-type ScopeKey = 'viewState' | 'pins' | 'overrides' | 'mocks';
+type ScopeKey = 'viewState' | 'pins' | 'overrides' | 'mocks' | 'armedMocks' | 'armedFaults';
 
 type ScopeRow = {
   key: ScopeKey;
@@ -16,6 +23,12 @@ type ScopeRow = {
 
   /** What is kept, and what `none` costs - the one thing a scope picker cannot show on its own. */
   hint: string;
+
+  /**
+   * What to say on the scopes that let this state outlive the page that armed it - a picker cannot show
+   * that an app is about to start lying to itself before anyone opens the panel.
+   */
+  warn?: { scopes: QueryDevtoolsStorageScope[]; text: string };
 };
 
 type LimitKey = 'maxEvents' | 'maxDroppedCacheEntries';
@@ -37,11 +50,33 @@ const SCOPE_ROWS: ScopeRow[] = [
     key: 'overrides',
     label: 'Response overrides',
     hint: 'Armed edits, replayed as queries register - before their first fetch. None is the default: a reload is how the app stops being lied to.',
+    warn: {
+      scopes: ['local'],
+      text: 'Armed overrides now outlive closing the tab. An app that stays tampered with across days is hours of debugging the wrong thing - the bar above the tabs says when they came back.',
+    },
   },
   {
     key: 'mocks',
     label: 'Designed mocks',
-    hint: 'The library you authored, not whether any of it is armed - that is never kept, so a reload always stops serving them.',
+    hint: 'The library you authored, not whether any of it is armed - arming has its own scope below.',
+  },
+  {
+    key: 'armedMocks',
+    label: 'Armed mocks',
+    hint: 'Which of the library is served. None is the default: a reload is how the app goes back to talking to the API.',
+    warn: {
+      scopes: ['session', 'local'],
+      text: 'The next page load starts serving these routes from the panel, before anyone opens it. The bar above the tabs says when they came back.',
+    },
+  },
+  {
+    key: 'armedFaults',
+    label: 'Armed faults',
+    hint: 'The latency and failures injected per client, budgets included. None is the default, for the same reason as armed mocks.',
+    warn: {
+      scopes: ['session', 'local'],
+      text: 'The next page load starts injecting these failures on its own, so an app that looks broken may only be armed. The bar above the tabs says when they came back.',
+    },
   },
 ];
 
@@ -98,8 +133,16 @@ export class QueryDevtoolsSettingsComponent {
   protected readonly INDEXED_DB_TITLE = INDEXED_DB_TITLE;
   protected readonly LIMIT_ROWS = LIMIT_ROWS;
 
+  protected readonly ARM_ALL_MOCKS = armAllQueryDevtoolsMocks;
+  protected readonly DISARM_ALL_MOCKS = clearQueryDevtoolsArmedMocks;
+  protected readonly DISARM_ALL_FAULTS = clearQueryDevtoolsFaults;
+
   /** What queries actually retain, which is the application's value unless this panel raised it. */
   protected responseHistory = computed(queryDevtoolsResponseHistory);
+
+  protected mockCount = computed(() => queryDevtoolsMocks().length);
+  protected armedMockCount = computed(() => queryDevtoolsArmedMocks().size);
+  protected armedFaultCount = computed(() => this.host.faultClients().filter((client) => client.armed).length);
 
   protected resetConfirming = signal(false);
 
@@ -115,14 +158,17 @@ export class QueryDevtoolsSettingsComponent {
     return this.settings()[key];
   }
 
-  protected setScope(key: ScopeKey, scope: QueryDevtoolsStorageScope) {
-    // Overrides go through their own module: changing their scope moves an existing store and captures
-    // whatever is armed right now.
-    if (key === 'overrides') {
-      setQueryDevtoolsOverridesScope(scope);
+  /** What the picked scope means beyond where the state is kept, or `null` while it means nothing extra. */
+  protected warningFor(row: ScopeRow, scope: QueryDevtoolsStorageScope) {
+    return row.warn?.scopes.includes(scope) ? row.warn.text : null;
+  }
 
-      return;
-    }
+  protected setScope(key: ScopeKey, scope: QueryDevtoolsStorageScope) {
+    // Everything armed goes through its own module: changing the scope moves an existing store and
+    // captures whatever is armed right now, so the choice reads as "keep these".
+    if (key === 'overrides') return setQueryDevtoolsOverridesScope(scope);
+    if (key === 'armedMocks') return setQueryDevtoolsArmedMocksScope(scope);
+    if (key === 'armedFaults') return setQueryDevtoolsFaultsScope(scope);
 
     setQueryDevtoolsSettings(
       key === 'viewState' ? { viewState: scope } : key === 'pins' ? { pins: scope } : { mocks: scope },

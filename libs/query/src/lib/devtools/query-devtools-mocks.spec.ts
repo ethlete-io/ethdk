@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { createQuery } from '../http/query';
 import { createQueryClient, QueryClientRef } from '../http/query-client';
 import {
+  armAllQueryDevtoolsMocks,
   armQueryDevtoolsMock,
   clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsMockStore,
@@ -13,15 +14,18 @@ import {
   matchesQueryDevtoolsMockQuery,
   QueryDevtoolsMock,
   queryDevtoolsArmedMocks,
+  queryDevtoolsArmedMocksRestored,
   queryDevtoolsMockId,
   queryDevtoolsMocks,
   queryDevtoolsRequestPath,
   saveQueryDevtoolsMock,
+  setQueryDevtoolsArmedMocksScope,
 } from './query-devtools-mocks';
 import { provideQueryDevtools } from './query-devtools-registry';
 import { initQueryDevtoolsSettings, setQueryDevtoolsSettings } from './query-devtools-settings';
 
 const STORAGE_KEY = 'ethlete:query:devtools:mocks:v1';
+const ARMED_STORAGE_KEY = 'ethlete:query:devtools:mocks:armed:v1';
 
 const mockOf = (patch: Partial<QueryDevtoolsMock> = {}): QueryDevtoolsMock => {
   const base = {
@@ -101,7 +105,7 @@ describe('query devtools mocks', () => {
       expect(queryDevtoolsMocks()[0]?.status).toBe(404);
     });
 
-    it('should never persist which mocks are armed', () => {
+    it('should not keep which mocks are armed, unless the setting asks for it', () => {
       const mock = mockOf();
       saveQueryDevtoolsMock(mock);
       armQueryDevtoolsMock(mock.id, true);
@@ -111,6 +115,60 @@ describe('query devtools mocks', () => {
       initQueryDevtoolsMocks();
 
       expect(queryDevtoolsMocks()).toHaveLength(1);
+      expect(queryDevtoolsArmedMocks().size).toBe(0);
+      expect(queryDevtoolsArmedMocksRestored()).toBe(false);
+    });
+
+    it('should arm every mock in the library at once', () => {
+      saveQueryDevtoolsMock(mockOf());
+      saveQueryDevtoolsMock(mockOf({ pattern: '/users/:id' }));
+
+      armAllQueryDevtoolsMocks();
+
+      expect(queryDevtoolsArmedMocks().size).toBe(2);
+
+      clearQueryDevtoolsArmedMocks();
+
+      expect(queryDevtoolsArmedMocks().size).toBe(0);
+    });
+
+    it('should keep the armed set at a scope that asks for it, and say it came back', () => {
+      const mock = mockOf();
+      saveQueryDevtoolsMock(mock);
+      setQueryDevtoolsArmedMocksScope('local');
+      armQueryDevtoolsMock(mock.id, true);
+
+      initQueryDevtoolsMocks();
+
+      expect(queryDevtoolsArmedMocks().has(mock.id)).toBe(true);
+      expect(queryDevtoolsArmedMocksRestored()).toBe(true);
+
+      armQueryDevtoolsMock(mock.id, false);
+
+      expect(queryDevtoolsArmedMocksRestored()).toBe(false);
+    });
+
+    it('should capture what is armed when the scope starts keeping it, and drop it again on none', () => {
+      const mock = mockOf();
+      saveQueryDevtoolsMock(mock);
+      armQueryDevtoolsMock(mock.id, true);
+
+      setQueryDevtoolsArmedMocksScope('session');
+
+      expect(JSON.parse(sessionStorage.getItem(ARMED_STORAGE_KEY) ?? '[]')).toEqual([mock.id]);
+
+      setQueryDevtoolsArmedMocksScope('none');
+
+      expect(sessionStorage.getItem(ARMED_STORAGE_KEY)).toBeNull();
+      expect(queryDevtoolsArmedMocks().has(mock.id)).toBe(true);
+    });
+
+    it('should drop an armed id the library no longer holds', () => {
+      setQueryDevtoolsArmedMocksScope('local');
+      localStorage.setItem(ARMED_STORAGE_KEY, JSON.stringify(['gone|GET|/posts', 42]));
+
+      initQueryDevtoolsMocks();
+
       expect(queryDevtoolsArmedMocks().size).toBe(0);
     });
 

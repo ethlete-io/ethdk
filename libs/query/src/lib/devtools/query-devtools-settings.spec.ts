@@ -24,6 +24,8 @@ describe('query devtools settings', () => {
       pins: 'local',
       overrides: 'none',
       mocks: 'local',
+      armedMocks: 'none',
+      armedFaults: 'none',
       maxEvents: 100,
       maxDroppedCacheEntries: 20,
       responseHistory: null,

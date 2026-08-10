@@ -34,11 +34,10 @@
           </div>
         </div>
         <small>{{ row.hint }}</small>
-        @if (row.key === 'overrides' && scope === 'local') {
+        @if (warningFor(row, scope); as warning) {
           <p class="et-query-devtools-settings-warn">
             <span aria-hidden="true">⚠</span>
-            Armed overrides now outlive closing the tab. An app that stays tampered with across days is hours of
-            debugging the wrong thing - the bar above the tabs says when they came back.
+            {{ warning }}
           </p>
         }
       </div>
@@ -59,8 +58,8 @@
         }
       </div>
       <small>
-        Clears all three keys from both stores, whatever the scopes above say, and puts the panel back where it ships -
-        layout, filters, selections and pins. The settings on this tab stay.
+        Clears every one of these keys from both stores, whatever the scopes above say, and puts the panel back where it
+        ships - layout, filters, selections and pins. The settings on this tab stay.
       </small>
     </div>
   </div>
@@ -207,7 +206,43 @@
       <small>
         The drawer's own toggle, which is the Storage scope above - currently
         <span class="et-query-devtools-mono">{{ host.overridesScopeLabel() }}</span
-        >. Armed faults are never kept.
+        >.
+      </small>
+    </div>
+
+    <div class="et-query-devtools-settings-row">
+      <div class="et-query-devtools-settings-row-head">
+        <span>Armed</span>
+        <div class="et-query-devtools-settings-controls">
+          <button
+            [disabled]="!mockCount() || armedMockCount() === mockCount()"
+            (click)="ARM_ALL_MOCKS()"
+            class="et-query-devtools-btn"
+            type="button"
+          >
+            Arm every mock ({{ mockCount() }})
+          </button>
+          <button
+            [disabled]="!armedMockCount()"
+            (click)="DISARM_ALL_MOCKS()"
+            class="et-query-devtools-btn"
+            type="button"
+          >
+            Disarm mocks ({{ armedMockCount() }})
+          </button>
+          <button
+            [disabled]="!armedFaultCount()"
+            (click)="DISARM_ALL_FAULTS()"
+            class="et-query-devtools-btn"
+            type="button"
+          >
+            Disarm faults ({{ armedFaultCount() }})
+          </button>
+        </div>
+      </div>
+      <small>
+        The Mocks and Faults tabs' own buttons. Whether either survives a reload is the two <em>Armed</em> scopes above,
+        both <em>none</em> unless they were changed.
       </small>
     </div>
   </div>
