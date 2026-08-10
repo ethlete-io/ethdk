@@ -1,5 +1,35 @@
 # @ethlete/query
 
+## 6.0.0-next.33
+
+### Minor Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`4f6e1df`](https://github.com/ethlete-io/ethdk/commit/4f6e1df7b43d0a2805aed555acfff65634c2cbe8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auth: `withPersistentAuth`'s `autoLogin` takes a `shouldAutoLogin(url)` predicate alongside `excludeRoutes`, so route policy can be an exact match rather than a prefix.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`d3f1b2b`](https://github.com/ethlete-io/ethdk/commit/d3f1b2b8d3c2a6a0e68013ba130bd833ac72d7fe) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a "Keep across reloads" toggle stores armed response overrides in `sessionStorage` and replays them on the next load, announcing in a banner what came back and what matched no query.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`f426563`](https://github.com/ethlete-io/ethdk/commit/f4265630749f162d097b147da55256e8bfa056ad) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: an About tab reporting the loaded `@ethlete/*` and Angular versions plus `provideQueryDevtools({ about })`, mirrored on `window.ethlete` and in the session export.
+
+- [`908f35a`](https://github.com/ethlete-io/ethdk/commit/908f35a7a68445467cfe6fe60393f9dc9b140503) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: design a mock's body in the value explorer, and seed it from your API description via
+  `provideQueryDevtools({ schema })`.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`d14fcf0`](https://github.com/ethlete-io/ethdk/commit/d14fcf0cf4537bca49aee2671b178c1af0df5d39) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a Mocks tab that answers a route with a designed response instead of sending the request, and copies that route back out as a typed query definition.
+
+- [`5feb1dc`](https://github.com/ethlete-io/ethdk/commit/5feb1dcc9b5428357faba170acfce1101fa29150) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: copy a query's whole armed override set and paste it onto another, and edit response
+  values with `Set to null`, `Empty this array`, `Paste as new item` and delete.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`a51e919`](https://github.com/ethlete-io/ethdk/commit/a51e9192e7166ea22ff3cfcabdbd96ae4cb94e54) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a Settings panel behind the header's gear - a storage scope per kind of panel state, runtime limits, a reset, and every panel-wide switch in one place.
+
+### Patch Changes
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`b20c79c`](https://github.com/ethlete-io/ethdk/commit/b20c79cca0e3c2ebca96ca103d27fbe3628e9402) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix the proactive token refresh never firing, and re-arm a scheduled refresh that came
+  due while it could not run.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`bb32533`](https://github.com/ethlete-io/ethdk/commit/bb3253307d958abd70a103aa14a542df7a0cab51) Thanks [@github-actions](https://github.com/apps/github-actions)! - Carry the cause a logout ended the session with across multi-tab sync, so a receiving
+  tab reports `'expired'` or `'inactivity'` instead of always `'otherTab'`.
+
+- [#3053](https://github.com/ethlete-io/ethdk/pull/3053) [`2192f8d`](https://github.com/ethlete-io/ethdk/commit/2192f8d400df006525dba488248c45b5f09fc24d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Secure queries now send the current access token after a token refresh instead of the one they were first built with, which used to `401` and could loop refresh-and-retry forever.
+
 ## 6.0.0-next.32
 
 ### Patch Changes
