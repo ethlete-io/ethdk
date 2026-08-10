@@ -155,20 +155,17 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 
 ### S - small, additive, low risk
 
-| Item                                              | Tag     | Note                                                                                                                                                                                                                                      |
-| ------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dropzone: removing a prefilled value deletes it   | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default                                                                                                                |
-| Scheduler: richer sub-appointment list            | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                                                                                                                                 |
-| Scheduler: agenda connector lines                 | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                                                                                                                                     |
-| Dropzone: reveal the preview on hover             | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                                                                                                                                        |
-| Grid: assert breakpoint coverage in the dev check | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                                                                                                                                          |
-| Filter overlay story: demo dressing               | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                                                                                                                                      |
-| Query: retire `CLEAR_QUERY_ARGS`                  | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                                                                                                                                       |
-| Query devtools: float resize selects the panel    | `B`,`C` | User-reported 2026-08-10. Fix in `@ethlete/core` - neither `ResizeHandlesComponent` nor `DragHandleDirective` suppresses selection, and the panel's `--resizing` guard only covers the docked path. The stream pip has it too             |
-| Query devtools: a pop-out orphans on reload       | `B`     | User-reported 2026-08-10. Angular never destroys the app on unload, so `onDestroy`'s `closePopup()` never runs and a dead window stays open. Close on the host's `pagehide`; re-adopting the named window is the nicer fix if it verifies |
-| Query devtools: paste gaps around overrides       | `A`,`D` | User-raised 2026-08-10. Copy of a subtree and paste onto a node **already ship** - the gaps are the `readText()`-only clipboard path, the kind guard that refuses a shape change, and no paste-as-new-array-item                          |
-| Query devtools: copy an armed override set        | `A`     | The other reading of the same ask, and the unbuilt one. `QueryDevtoolsOverrideEntry[]` is already the JSON the persistence store writes; import is `arm()` in a loop, and stale paths already report themselves                           |
-| Query devtools: About tab                         | `A`,`D` | User-raised 2026-08-10. No lib exports a runtime version - one generated constant each, plus the app's own handed in. Feed the session export too. Verify the publish build/bump order first                                              |
+| Item                                              | Tag     | Note                                                                                                                                                                                                             |
+| ------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dropzone: removing a prefilled value deletes it   | `B`,`D` | Existing and uploaded entries hit the same `delete`; apps patch `@internal` `executeDelete` to stop it. Settle the default                                                                                       |
+| Scheduler: richer sub-appointment list            | `A`     | Start time + existing chain-count badge; don't grow it into a second card                                                                                                                                        |
+| Scheduler: agenda connector lines                 | `A`     | Draws off the `depth`/`data-nested` the agenda template already emits                                                                                                                                            |
+| Dropzone: reveal the preview on hover             | `A`     | CSS only, but keep the name bar while uploading or on error - it holds the progress and the reason                                                                                                               |
+| Grid: assert breakpoint coverage in the dev check | `A`     | Cheap half of the "nothing ties layout keys to breakpoints" item                                                                                                                                                 |
+| Filter overlay story: demo dressing               | `A`     | Story file only - lorem filler, inline styles, toggle-buttons standing in for fields                                                                                                                             |
+| Query: retire `CLEAR_QUERY_ARGS`                  | `D`     | Make `null` mean park; deprecated alias keeps every call site compiling. Nothing uses keep-previous                                                                                                              |
+| Query devtools: paste gaps around overrides       | `A`,`D` | User-raised 2026-08-10. Copy of a subtree and paste onto a node **already ship** - the gaps are the `readText()`-only clipboard path, the kind guard that refuses a shape change, and no paste-as-new-array-item |
+| Query devtools: copy an armed override set        | `A`     | The other reading of the same ask, and the unbuilt one. `QueryDevtoolsOverrideEntry[]` is already the JSON the persistence store writes; import is `arm()` in a loop, and stale paths already report themselves  |
 
 ### M - real work, mostly consolidation
 
@@ -244,9 +241,9 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 Everything in the `S` table is independent of everything else and can be picked off in any order.
 
-One chain, added 2026-08-10: **About → Settings → mock designer.** About is independent and can go
-first, but building it section-shaped is what lets Settings absorb it rather than end up with two
-near-identical tabs. Settings is what introduces a storage-location choice, and the mock designer is
-the feature that most needs one - a designed response library is the thing that outgrows a 5 MB
-store. Building the designer first would either hardcode a fourth storage key or force the settings
-work anyway, halfway through.
+One chain, added 2026-08-10: **About → Settings → mock designer.** About **shipped** the same day,
+built section-shaped as `<et-query-devtools-about>` so Settings can host it verbatim rather than end
+up with two near-identical tabs - do not rebuild it, absorb it. Settings is what introduces a
+storage-location choice, and the mock designer is the feature that most needs one: a designed
+response library is the thing that outgrows a 5 MB store. Building the designer first would either
+hardcode a fourth storage key or force the settings work anyway, halfway through.

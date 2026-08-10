@@ -1,3 +1,5 @@
+import { QueryDevtoolsAbout } from '@ethlete/query';
+
 /**
  * How deep a value is walked before it is replaced by a marker, and how much of a long string or a long
  * array survives. A report is read by a person, so a 5000-item list is worth two entries and a count.
@@ -118,6 +120,9 @@ export type BuildSessionExportOptions = {
   /** Where the session was captured, so a report says which environment it came from. */
   location: string;
 
+  /** Which SDK and application build produced the session - see `queryDevtoolsAbout()`. */
+  about: QueryDevtoolsAbout;
+
   clients: SessionExportClient[];
   entries: SessionExportEntry[];
   events: SessionExportEvent[];
@@ -129,6 +134,7 @@ export type QueryDevtoolsSessionExport = {
   _type: 'ethlete.query:devtools-session';
   exportedAt: string;
   location: string;
+  about: QueryDevtoolsAbout;
   counts: { clients: number; entries: number; events: number; armedFaults: number; armedOverrides: number };
   clients: SessionExportClient[];
   entries: SessionExportEntry[];
@@ -160,6 +166,7 @@ export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptio
   _type: 'ethlete.query:devtools-session',
   exportedAt: new Date(options.now).toISOString(),
   location: options.location,
+  about: options.about,
   counts: {
     clients: options.clients.length,
     entries: options.entries.length,

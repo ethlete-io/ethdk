@@ -1,5 +1,8 @@
 import { EnvironmentProviders, isDevMode, makeEnvironmentProviders, Signal, signal } from '@angular/core';
+import { CORE_VERSION } from '@ethlete/core';
 import { AnyCreateQueryClientResult } from '../http/query-client';
+import { QUERY_VERSION } from '../version';
+import { QueryDevtoolsAppInfo, registerEthleteVersion, setQueryDevtoolsAppInfo } from './query-devtools-about';
 import {
   QueryDevtoolsEntry,
   QueryDevtoolsRegistration,
@@ -220,6 +223,14 @@ export type QueryDevtoolsOptions = {
    * raise this only as far as the reach you actually need - a polling query holds one per run.
    */
   responseHistory?: number;
+
+  /**
+   * Build information about the application - version, commit SHA, environment name. Shown on the
+   * panel's About tab, included in the session export and exposed on `window.ethlete`, so a bug report
+   * says which build it came from. Generate it rather than typing it:
+   * `nx g @ethlete/core:devtools-about <app>`.
+   */
+  about?: QueryDevtoolsAppInfo;
 };
 
 /**
@@ -239,6 +250,9 @@ export type QueryDevtoolsOptions = {
  */
 export const provideQueryDevtools = (options?: QueryDevtoolsOptions): EnvironmentProviders => {
   setQueryDevtoolsResponseHistory(options?.responseHistory);
+  registerEthleteVersion('core', CORE_VERSION);
+  registerEthleteVersion('query', QUERY_VERSION);
+  setQueryDevtoolsAppInfo(options?.about);
   initQueryDevtoolsOverridePersistence();
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);

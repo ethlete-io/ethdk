@@ -13,3 +13,4 @@ export * from './lib/signals';
 export * from './lib/theming';
 export * from './lib/unsaved-changes';
 export * from './lib/utils';
+export * from './lib/version';

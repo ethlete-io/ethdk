@@ -8,7 +8,7 @@
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
-      "dependsOn": ["^build", "build-generators"],
+      "dependsOn": ["^build", "build-generators", "generate-version"],
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "defaultConfiguration": "production",
       "options": {
@@ -45,6 +45,12 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": ["rm -rf libs/query/generators/dist", "tsc -p libs/query/generators/tsconfig.json"]
+      }
+    },
+    "generate-version": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["node tools/scripts/generate-version.js query"]
       }
     }
   }

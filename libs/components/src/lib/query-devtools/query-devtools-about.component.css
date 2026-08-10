@@ -1,0 +1,33 @@
+@layer components {
+  /* The shared toolbar centres its controls against a one-line hint. This one's hint wraps to four
+     lines on a phone, which leaves Copy floating against the middle of the paragraph. */
+  .et-query-devtools-about-toolbar {
+    align-items: flex-start;
+  }
+
+  .et-query-devtools-about-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .et-query-devtools-about-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+  }
+
+  .et-query-devtools-about-row dt {
+    flex: 0 0 auto;
+    color: var(--_et-qdt-muted);
+  }
+
+  .et-query-devtools-about-row dd {
+    flex: 1 1 auto;
+    margin: 0;
+    border-block-end: 1px dotted color-mix(in srgb, var(--_et-qdt-interaction) 25%, transparent);
+    text-align: end;
+  }
+}

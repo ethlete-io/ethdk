@@ -164,6 +164,7 @@ one-click **Float instead**, rather than the button appearing to do nothing.
 | **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with [timestamps, duration and response size](#events-what-each-request-cost), narrowable by client and to failures only, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                          |
 | **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **About**     | [Which SDK and application build is actually running](#about-which-build-is-running) - the loaded `@ethlete/*` versions, the Angular version, and whatever the app handed to `provideQueryDevtools({ about })`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ## Finding a query in a long list
 
@@ -1162,6 +1163,7 @@ header downloads the whole panel as one JSON file:
 | `entries` | Every registered entry by kind - a query with its status, activity, run history, args, response, error and any [overrides](#response-overrides-editing-a-value-that-survives-a-refetch) armed on it; a stack's traffic; a sequence's steps; a form's fields; a socket's message log. |
 | `events`  | The whole event log (never the filtered view), each row with its duration, size, and the invalidation fan-out it caused.                                                                                                                                                             |
 | `faults`  | Anything [armed](#faults-making-requests-actually-misbehave) at the time. A capture taken while the panel was lying to the app has to say so, or the report sends someone chasing a fake 503.                                                                                        |
+| `about`   | [Which build produced the session](#about-which-build-is-running) - the loaded `@ethlete/*` versions, the Angular version and the app's own build info.                                                                                                                              |
 
 Bodies are slimmed the way **Copy report** slims them - long strings truncated, long
 arrays sampled down to `… (N more)` - so the file stays small enough to attach and a
@@ -1178,6 +1180,54 @@ exception - it carries a refresh token because that is what makes its chain work
 The rest is your app's data: args and responses go into the file as they are, slimmed
 but not redacted. Read it before you attach it.
 :::
+
+## About: which build is running
+
+A bug report that does not say which SDK it came from costs a round trip. The **About**
+tab answers it, and so does the `about` block of the [session export](#attaching-a-whole-session-to-a-bug-report):
+
+| Group           | Holds                                                                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ethlete**     | Every loaded `@ethlete/*` package and its real version. A package the app never imports is not listed - this is what is running, not what a peer-dependency range allows. |
+| **Runtime**     | The Angular version.                                                                                                                                                      |
+| **Application** | Whatever was handed to `provideQueryDevtools({ about })`. Absent when nothing was.                                                                                        |
+
+**⧉ Copy** puts the whole block on the clipboard as text, for pasting into a ticket
+without downloading a file.
+
+The same object is on **`window.ethlete`** - the same idea as Angular's `window.ng`, so
+the versions can be read from the console without opening the panel:
+
+```js
+> ethlete;
+{ ethlete: { core: '5.0.0-next.44', query: '6.0.0-next.32', components: '1.0.0-next.41' },
+  angular: '22.0.7',
+  app: { version: '1.4.2', sha: 'a3f9c1e' } }
+```
+
+It is installed by `provideQueryDevtools()`, so an app without the devtools has no such
+global.
+
+### The app's own build info
+
+The SDK can read its own versions; it cannot know your app's. Hand them in:
+
+```ts
+provideQueryDevtools({ about: { version: '1.4.2', sha: 'a3f9c1e' } });
+```
+
+Rather than typing that - and letting it go stale - generate it:
+
+```bash
+yarn nx g @ethlete/core:devtools-about my-app
+```
+
+That adds a `build-info` target to the app, makes `build` and `serve` depend on it, and
+points `provideQueryDevtools()` at the constant it writes. The file carries the app's
+`package.json` version, the short commit SHA, the branch and the build time, and it is
+regenerated on every build - so it is gitignored rather than committed, since its SHA
+would otherwise change in every commit. An app that already passes options to
+`provideQueryDevtools()` is left alone and told to add `about` itself.
 
 ## Export to Insomnia
 

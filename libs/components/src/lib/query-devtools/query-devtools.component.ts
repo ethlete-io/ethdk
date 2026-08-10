@@ -43,10 +43,12 @@ import {
   isQueryDevtoolsFaultArmed,
   measureQueryDevtoolsPayload,
   QueryClient,
+  queryDevtoolsAbout,
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
   queryDevtoolsFaults,
   queryDevtoolsOverridePersistence,
+  registerEthleteVersion,
   queryDevtoolsResponseHistory,
   QueryDevtoolsFeature,
   QueryDevtoolsFormHandle,
@@ -89,6 +91,8 @@ import { QueryDevtoolsCacheTabComponent } from './query-devtools-cache-tab.compo
 import { buildCurlCommand } from './query-devtools-curl';
 import { QueryDevtoolsEventsTabComponent } from './query-devtools-events-tab.component';
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
+import { COMPONENTS_VERSION } from '../version';
+import { QueryDevtoolsAboutComponent } from './query-devtools-about.component';
 import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
@@ -615,6 +619,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsAuthTabComponent,
     QueryDevtoolsCacheTabComponent,
     QueryDevtoolsEventsTabComponent,
+    QueryDevtoolsAboutComponent,
     QueryDevtoolsFaultsTabComponent,
     QueryDevtoolsFormsTabComponent,
     QueryDevtoolsQueriesTabComponent,
@@ -669,6 +674,7 @@ export class QueryDevtoolsComponent {
     { id: 'timeline', label: 'Timeline' },
     { id: 'events', label: 'Events' },
     { id: 'faults', label: 'Faults' },
+    { id: 'about', label: 'About' },
   ] satisfies { id: DevtoolsTab; label: string }[];
 
   /**
@@ -1072,6 +1078,7 @@ export class QueryDevtoolsComponent {
       // Armed faults are reported as errors rather than as a plain count: the badge is the one reminder
       // that the app is misbehaving on purpose, and it has to be impossible to read as "all good".
       faults: { count: 0, errors: Object.keys(queryDevtoolsFaults()).length, errorNoun: 'armed' },
+      about: { count: 0, errors: 0 },
     };
   });
 
@@ -1327,6 +1334,8 @@ export class QueryDevtoolsComponent {
         this.jsonSearch.set('');
       }
     });
+
+    registerEthleteVersion('components', COMPONENTS_VERSION);
 
     // A pop-out holds the panel element; leaving its window open would leave a dead panel on screen.
     this.destroyRef.onDestroy(() => this.closePopup());
@@ -2049,6 +2058,7 @@ export class QueryDevtoolsComponent {
       buildQueryDevtoolsSessionExport({
         now,
         location: this.document.location?.href ?? '',
+        about: queryDevtoolsAbout(),
         clients: this.sessionClients(),
         entries: this.sessionEntries(),
         events: this.sessionEvents(),

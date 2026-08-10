@@ -24,7 +24,7 @@ export type AnyQuery = Query<any>;
 export type QueryDevtoolsSelection = { entry: QueryDevtoolsEntry; query: AnyQuery };
 
 export type DevtoolsTab =
-  'queries' | 'stacks' | 'sequences' | 'forms' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events' | 'faults';
+  'queries' | 'stacks' | 'sequences' | 'forms' | 'auth' | 'ws' | 'cache' | 'timeline' | 'events' | 'faults' | 'about';
 
 /**
  * The sections of the query detail drawer. The head and its actions stay pinned above them - the detail

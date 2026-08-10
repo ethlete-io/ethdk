@@ -7,3 +7,4 @@ export * from './lib/pipes';
 export * from './lib/query-form';
 export * from './lib/query-form-signals';
 export * from './lib/ws';
+export * from './lib/version';

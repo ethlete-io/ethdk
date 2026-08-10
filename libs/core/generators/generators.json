@@ -19,6 +19,11 @@
       "factory": "./tailwind-4-surface-theme/generator",
       "schema": "./tailwind-4-surface-theme/schema.json",
       "description": "Generate surface theming for Tailwind CSS v4"
+    },
+    "devtools-about": {
+      "factory": "./devtools-about/generator",
+      "schema": "./devtools-about/schema.json",
+      "description": "Generate the app's build info and wire it into provideQueryDevtools({ about })"
     }
   }
 }

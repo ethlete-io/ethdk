@@ -190,42 +190,6 @@ Accessibility is unaffected either way: the native input keeps its own arrow-key
 buttons keep their labels, so the scrub is a pure enhancement. The modifier shortcuts are not - they
 need documenting, because an unlabelled 10× is indistinguishable from a bug.
 
-## Query devtools: an About tab
-
-Raised by the user 2026-08-10. The cheap one. A bug report from an app team currently carries no way
-to tell **which SDK is actually loaded** - the session export names entries, events and cache totals,
-but not one version number. `⤓ Session` is the attachment on every devtools bug report, so this is
-worth having for the export alone, not just for the tab.
-
-**There is no runtime version constant anywhere in `libs/`.** Nothing exports one, and a lib's
-`package.json` is not reachable from its own source in an ng-packagr build. So the work is in
-producing the string, not in rendering it.
-
-- **The publish pipeline makes a build-time constant truthful, which is not obvious.** `publish.yml`
-  builds _before_ `changeset version` bumps anything, so the naive reading is "the build is always
-  one release behind". It is not: the bump lands as its own commit on `next`/`main`
-  (`chore: 🤖 update prereleases`), that commit triggers the next run, and _that_ run finds no
-  changesets left, so the build it does is of already-bumped sources and is what gets published.
-  Verify it against one published tarball before relying on it - the whole item rests on this.
-- **One constant per lib, not one in `components`.** Peer dependency ranges (`^6.0.0-beta.8`) are not
-  what is loaded. If `@ethlete/query` exports its own `QUERY_VERSION`, the panel imports it and
-  reports the resolved package; if `components` guesses from its own `package.json`, it reports a
-  range. Same for `core` and `types`. A string literal per lib costs nothing and tree-shakes out of
-  any app that never reads it - but it does touch the bundle-size goldens, so run them.
-- **Angular is free.** `VERSION.full` from `@angular/core` is already a runtime constant.
-- **The app's own version is the one the SDK cannot know.** It has to be handed in -
-  `provideQueryDevtools({ about: { … } })` or an input on `<et-query-devtools>` - and the sensible
-  shape is free-form: app version, build SHA, environment name, API base URLs. The API base URLs the
-  panel can already derive from the registered clients.
-- **Then feed it into the two places that already exist.** The About tab is the readable view; the
-  session export gets the same block, and a `⧉ Copy` on the tab gives someone a paste for a ticket
-  without downloading a file.
-
-Generating the constants is the mechanical half: a script that writes `libs/<lib>/src/lib/version.ts`
-from that lib's `package.json`, wired as a `dependsOn` of `build` so it cannot go stale, with the
-generated file either committed or ignored - consistent with how the agent-rules block is generated
-rather than hand-maintained.
-
 ## Query devtools: a Settings tab, and where devtools state is stored
 
 Raised by the user 2026-08-10. Two things at once: **collect the options that are currently scattered
@@ -397,58 +361,6 @@ So the round trip works. The gaps:
 Both readings are worth building and they do not overlap; **ask which one is wanted first**. The
 per-node gaps are an `S`; the op-set copy is the interesting half and shares its serialization with
 the mock designer's import/export.
-
-## Query devtools: resizing the float selects the whole panel
-
-Reported by the user 2026-08-10. Drag any edge of the floating panel and the browser starts a text
-selection that sweeps every string in the panel. Diagnosed, and it is two holes that happen to line
-up:
-
-- **The panel's own guard never fires for a float.** `.et-query-devtools-panel--resizing` sets
-  `user-select: none` and is bound to `resizing()`, which is `!!drag()`. `drag` is set by
-  `startResize()` (the docked edge) and `startPaneResize()` (the pane divider) - both of which also
-  `preventDefault()` the `pointerdown`. The float's path is `<et-resize-handles>` →
-  `startFloatResize()` / `resizeFloat()` / `endFloatResize()`, which never touches `drag`, so the
-  class is never applied. The same is true of the title-bar move via `[etDragHandle]`.
-- **Neither core primitive suppresses selection itself.** `ResizeHandlesComponent` sets
-  `touch-action: none` (touch only) and `DragHandleDirective` the same; neither calls
-  `preventDefault()` on `pointerdown`, and neither disables selection for the life of the gesture. So
-  every consumer of both has this bug - the stream pip included, which is where the float's
-  interaction was ported from.
-
-That argues for fixing it in `@ethlete/core` rather than in the panel: suppress selection for the
-duration of a gesture, in the primitive, so it is fixed once. Prefer setting `user-select: none` on
-the document root while a gesture runs over `preventDefault()` on `pointerdown` - the latter also
-swallows the focus change, which a handle may or may not want. Restore it on `end` **and** on
-`cancelled`, or a cancelled gesture leaves the page unselectable.
-
-## Query devtools: a pop-out does not survive a reload of the host page
-
-Reported by the user 2026-08-10: reload the app while the panel is popped out and the pop-out "gets
-stuck". Diagnosed:
-
-- `poppedOut` is deliberately not persisted (a new document cannot re-adopt the previous one's
-  window), so the reloaded page always renders the panel docked. That part is by design.
-- The clean-up that should close the orphan is `destroyRef.onDestroy(() => this.closePopup())` - and
-  **Angular does not destroy the application on a page unload**, so it never runs. The pop-up window
-  stays open holding the panel element of a document that no longer exists: no signal in it will ever
-  update again, and its buttons write to a dead component. That dead window is the "stuck".
-- The reverse direction is already handled - `fromEvent(popup, 'pagehide')` docks the panel back when
-  the _pop-up_ is closed. There is no equivalent listener on the host document.
-
-The small fix is the host-side mirror of the listener that already exists: close the pop-up on the
-host's `pagehide` (not `beforeunload` - it is unreliable and interacts badly with bfcache). A reload
-then loses the pop-out, which is exactly what the current design promises, instead of leaving a
-zombie.
-
-The better one is worth a look first, because the groundwork is already there: **the pop-up is
-opened with a name** (`window.open(url, 'et-query-devtools', …)`), and a named window can be
-re-fetched by `window.open('', 'et-query-devtools')`. If the reloaded page can get its handle back,
-it can clear the stale body and mount a fresh panel into the same window - a pop-out that genuinely
-survives a reload, which is what a second screen full of devtools should do. **Verify before
-planning on it:** re-opening a named window is still a pop-up-blocker-governed call and generally
-wants user activation, and getting it wrong opens a _second_ blank window rather than returning the
-first. If that check fails, ship the `pagehide` close and persist nothing.
 
 ## Progress steps
 
@@ -934,6 +846,50 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Query devtools: an About tab** (2026-08-10, user-raised) - what is running, for a bug report.
+
+- **Per-lib version constants**, generated by `tools/scripts/generate-version.js` from each lib's
+  `package.json` and wired as a `generate-version` `dependsOn` of `build`. Committed, per the user.
+  `@ethlete/types` was **left out on purpose**: it is types-only, so a constant there would be the
+  first runtime JS it emits, and a compile-time package's version says nothing about behaviour.
+- **The build/bump order was verified** (see the note kept below) - the publishing run always builds
+  an already-bumped tree, so the constants are truthful.
+- **`window.ethlete`**, the user's addition mid-build: the same object the tab shows, installed by
+  `provideQueryDevtools()` (never at import time), so the versions read from the console like `ng`.
+- **The app's own build info is generated, not typed** - `nx g @ethlete/core:devtools-about <app>`
+  writes a `build-info` target, makes `build` and `serve` depend on it, and points an argument-less
+  `provideQueryDevtools()` at the constant. Gitignored, because its SHA would otherwise change in
+  every commit. 7 generator tests, one of which executes the emitted script for real.
+- **The tab body is `<et-query-devtools-about>`, a section with no tab chrome**, so the Settings work
+  can host it verbatim rather than growing a second near-identical tab.
+
+Changeset `query-devtools-about-tab.md`. Verified headlessly: tab renders all three groups, Copy
+flips to "Copied", `window.ethlete` reports the three loaded packages.
+
+**The publish build/bump order** (kept - the Settings and mock items rest on the same reasoning):
+`publish.yml` builds _before_ `changeset version`, which reads as "always one release behind". It is
+not: the bump lands as its own commit (`chore: 🤖 update prereleases`), that commit triggers the next
+run, and that run finds no changesets left and builds already-bumped sources. Verified 2026-08-10
+against the registry: every `@ethlete/core` prerelease was published minutes _after_ the commit that
+wrote that exact version into `libs/core/package.json` - `next.42` 10 min after `77f0a7759`, `next.43`
+26 min after `e211c12cf`, `next.44` 11 min after `c51c80f37`.
+
+**Query devtools: two pointer/window defects** (2026-08-10, both user-reported):
+
+- **Resizing the float selected the whole panel.** Fixed in `@ethlete/core`, not the panel:
+  `suppressTextSelection(doc)` counts concurrent gestures and sets `user-select: none` on the
+  document root for the life of one, released on `end` **and** on `cancelled`. Wired into
+  `dragGestureFrom()` and `ResizeHandlesComponent`, so every consumer of either gets it - the panel's
+  own `--resizing` class stays for the docked-edge and pane-divider paths, which never went through
+  the primitives. Changeset `drag-resize-suppress-text-selection.md`.
+- **A pop-out orphaned on reload.** The host document's `pagehide` now closes the pop-up.
+  `destroyRef.onDestroy` never ran because Angular does not destroy the application on unload.
+  Re-adopting the named window across a reload - `window.open('', 'et-query-devtools')` - was **not**
+  attempted and remains unverified; it is pop-up-blocker governed, and getting it wrong opens a second
+  blank window. Verified headlessly both ways (the window survives a reload without the listener,
+  closes with it).
+  Changeset `query-devtools-popout-closes-on-reload.md`.
 
 **Query devtools: the Queries list nests by path** (2026-08-10, was an `M` triage row with no section) -
 an opt-in **⑂ tree** toggle beside the sort arrow, flat still the default. With it, the **Web Locks

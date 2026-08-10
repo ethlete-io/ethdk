@@ -1,0 +1,28 @@
+<div class="et-query-devtools-scroll">
+  <div class="et-query-devtools-toolbar et-query-devtools-about-toolbar">
+    <p class="et-query-devtools-hint">
+      What is running, and what a bug report should carry. Also in the <strong>⤓ Session</strong> export and on
+      <code class="et-query-devtools-mono">window.ethlete</code>.
+    </p>
+    <button (click)="copy()" class="et-query-devtools-btn" type="button">
+      <span aria-hidden="true">⧉</span>
+      {{ copied() ? 'Copied' : 'Copy' }}
+    </button>
+  </div>
+
+  @for (group of groups; track group.title) {
+    <div class="et-query-devtools-card">
+      <div class="et-query-devtools-card-head">
+        <strong>{{ group.title }}</strong>
+      </div>
+      <dl class="et-query-devtools-about-list">
+        @for (row of group.rows; track row.label) {
+          <div class="et-query-devtools-about-row">
+            <dt class="et-query-devtools-mono">{{ row.label }}</dt>
+            <dd class="et-query-devtools-mono">{{ row.value }}</dd>
+          </div>
+        }
+      </dl>
+    </div>
+  }
+</div>
