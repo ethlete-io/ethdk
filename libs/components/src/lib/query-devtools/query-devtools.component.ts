@@ -1342,6 +1342,21 @@ export class QueryDevtoolsComponent {
 
     const doc = this.document;
 
+    // Angular does not destroy the application when the host page unloads, so the clean-up above never
+    // runs on a reload - the pop-up would outlive the document whose panel it holds and keep showing a
+    // panel no signal can ever update again. `pagehide` rather than `beforeunload`: the latter is
+    // unreliable and keeps the page out of the back/forward cache.
+    const view = doc.defaultView;
+
+    if (view) {
+      fromEvent(view, 'pagehide')
+        .pipe(
+          tap(() => this.closePopup()),
+          takeUntilDestroyed(),
+        )
+        .subscribe();
+    }
+
     // Global toggle shortcut: Ctrl/Cmd + Alt + Q ("Q" for Query) - uncommon, no browser/OS conflict.
     // Matched on `code` (the physical key), not `key`: on macOS, Option rewrites `key` to the layout's
     // alternate glyph (Option+Q is "œ" on a US layout), so a `key === 'q'` test never fires there.

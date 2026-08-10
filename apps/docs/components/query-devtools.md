@@ -141,6 +141,8 @@ dock does.
 
 Being popped out is not persisted: a reload cannot re-adopt the window the previous
 document opened, so the panel always comes back where it was docked or floating.
+The pop-up is closed as the host page unloads, rather than left behind holding a
+panel of a document that no longer exists.
 
 ::: tip
 A pop-out is the app's own panel relocated, which is what makes it live - but it
