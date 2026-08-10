@@ -551,38 +551,10 @@
     background: var(--_et-qdt-border);
   }
 
+  /* Everything but the armed state comes from `.et-query-devtools-btn`: a header of five actions in two
+     different button styles reads as two kinds of control, and only one of them is a mode. */
   .et-query-devtools-inspect-btn {
-    appearance: none;
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-block-size: var(--_et-qdt-control-h);
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: var(--_et-qdt-radius);
-    background: transparent;
-    color: var(--_et-qdt-muted);
-    cursor: pointer;
-    padding: 0.4rem 0.8rem;
-    font: inherit;
-    font-size: 1.15rem;
-    transition:
-      color 120ms ease,
-      background-color 120ms ease,
-      border-color 120ms ease;
-  }
-
-  @media (hover: hover) {
-    .et-query-devtools-inspect-btn:hover {
-      color: var(--_et-qdt-fg);
-      background: color-mix(in srgb, var(--_et-qdt-accent) 12%, transparent);
-      border-color: color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
-    }
-  }
-
-  .et-query-devtools-inspect-btn:focus-visible {
-    outline: 2px solid var(--_et-qdt-accent);
-    outline-offset: 2px;
   }
 
   .et-query-devtools-inspect-icon {
@@ -602,8 +574,8 @@
 
   /* Armed inspect mode: the pointer is out in the app, not on the panel, so the button has to stay
      noticeable in peripheral vision — hence the breathing ring around it and inside the crosshair. */
-  .et-query-devtools-inspect-btn--active,
-  .et-query-devtools-inspect-btn--active:hover {
+  .et-query-devtools-btn.et-query-devtools-inspect-btn--active,
+  .et-query-devtools-btn.et-query-devtools-inspect-btn--active:hover {
     color: #09090b;
     background: var(--_et-qdt-accent);
     border-color: var(--_et-qdt-accent);
@@ -635,10 +607,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .et-query-devtools-inspect-btn {
-      transition: none;
-    }
-
     .et-query-devtools-inspect-btn--active::after,
     .et-query-devtools-inspect-btn--active .et-query-devtools-inspect-icon-ring {
       animation: none;
