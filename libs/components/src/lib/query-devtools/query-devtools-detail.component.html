@@ -83,16 +83,43 @@
   </div>
 }
 
+<!-- One row, one primary action. Everything a query can be *made* to do lives behind Override, and
+     everything that leaves the panel behind Copy - a flat row of all twelve read as a wall of equal
+     buttons in which Execute was no easier to find than Clear. -->
 <div class="et-query-devtools-actions">
   @if (!isGone()) {
-    <span class="et-query-devtools-actions-label">Run</span>
-    <button (click)="host.executeQuery(s, false)" class="et-query-devtools-btn" type="button">Execute</button>
-    <button (click)="host.executeQuery(s, true)" class="et-query-devtools-btn" type="button">Cached</button>
-    <button (click)="host.resetQuery(s.query)" class="et-query-devtools-btn" type="button">Reset</button>
+    <div class="et-query-devtools-btn-group">
+      <button
+        (click)="host.executeQuery(s, false)"
+        class="et-query-devtools-btn et-query-devtools-btn--primary"
+        type="button"
+        title="Run the query again, ignoring the cache"
+      >
+        <span aria-hidden="true">▶</span>
+        Execute
+      </button>
+      <button
+        (click)="host.executeQuery(s, true)"
+        class="et-query-devtools-btn"
+        type="button"
+        title="Run it the way the app would - a fresh enough cached response is used instead of a request"
+      >
+        Cached
+      </button>
+      <button
+        (click)="host.resetQuery(s.query)"
+        class="et-query-devtools-btn"
+        type="button"
+        title="Drop this query's state back to idle"
+      >
+        Reset
+      </button>
+    </div>
   }
   @let locatable = host.locatableElement(s.entry);
   <button
     [disabled]="!locatable"
+    [class.et-query-devtools-btn--active]="host.locateState() === 'located'"
     [title]="
       locatable
         ? 'Scroll to and outline the element this query was created in. That is where it was created, not necessarily where its data is rendered.'
@@ -102,46 +129,67 @@
     class="et-query-devtools-btn"
     type="button"
   >
+    <span aria-hidden="true">⌖</span>
     @switch (host.locateState()) {
       @case ('located') {
-        ⌖ Created here
+        Created here
       }
       @case ('offscreen') {
-        ⌖ Not on screen
+        Not on screen
       }
       @default {
-        ⌖ Locate
+        Locate
       }
     }
   </button>
-  <button (click)="host.copyReport(s.entry, s.query)" class="et-query-devtools-btn" type="button">
-    {{ host.copiedReport() ? '✓ Copied' : 'Copy report' }}
-  </button>
-  <button
-    (click)="host.copyCurlRequest(s.entry, s.query)"
-    class="et-query-devtools-btn"
-    type="button"
-    title="Copy as a curl command - the URL, the headers as the request resolved them, and the body"
+
+  <!-- The tick has to live on the trigger: the menu closes on the pick, so a confirmation inside it
+       would be gone before it could be read. -->
+  <et-query-devtools-menu
+    [glyph]="copied() ? '✓' : '⧉'"
+    [label]="copied() ? 'Copied' : 'Copy'"
+    hint="Take this request somewhere else"
   >
-    {{ host.copiedCurl() ? '✓ Copied' : 'cURL' }}
-  </button>
-  <button
-    (click)="host.copyInsomniaRequest(s.entry, s.query)"
-    class="et-query-devtools-btn"
-    type="button"
-    title="Copy as an Insomnia collection (Import → From Clipboard). Includes the request headers, and the token refresh for a secure query."
-  >
-    {{ host.copiedInsomnia() ? '✓ Copied' : 'Insomnia' }}
-  </button>
+    <button (click)="host.copyReport(s.entry, s.query)" class="et-query-devtools-menu-item" type="button">
+      Copy report
+      <span class="et-query-devtools-menu-item-note">Everything the panel knows, as markdown</span>
+    </button>
+    <button (click)="host.copyCurlRequest(s.entry, s.query)" class="et-query-devtools-menu-item" type="button">
+      Copy as cURL
+      <span class="et-query-devtools-menu-item-note">URL, resolved headers and body</span>
+    </button>
+    <button (click)="host.copyInsomniaRequest(s.entry, s.query)" class="et-query-devtools-menu-item" type="button">
+      Copy for Insomnia
+      <span class="et-query-devtools-menu-item-note">A collection to import from the clipboard</span>
+    </button>
+  </et-query-devtools-menu>
+
   @if (!isGone()) {
-    <span class="et-query-devtools-actions-label">Edit</span>
-    <button (click)="host.openResponseEditor(s.query)" class="et-query-devtools-btn" type="button">Response</button>
-    <button (click)="host.openArgsEditor(s)" class="et-query-devtools-btn" type="button">Replay args</button>
-    <span class="et-query-devtools-actions-label">Force</span>
-    <button (click)="host.forceLoading(s.query)" class="et-query-devtools-btn" type="button">Loading</button>
-    <button (click)="host.forceError(s.query)" class="et-query-devtools-btn" type="button">Error</button>
-    <button (click)="host.forceEmpty(s.query)" class="et-query-devtools-btn" type="button">Empty</button>
-    <button (click)="host.clearForced(s.query)" class="et-query-devtools-btn" type="button">Clear</button>
+    <et-query-devtools-menu
+      [triggerClass]="
+        host.isTampered(s.entry) ? 'et-query-devtools-btn et-query-devtools-btn--tampered' : 'et-query-devtools-btn'
+      "
+      glyph="✎"
+      label="Override"
+      hint="Make this query answer with something other than what the API sent"
+    >
+      <button (click)="host.openResponseEditor(s.query)" class="et-query-devtools-menu-item" type="button">
+        Edit response…
+      </button>
+      <button (click)="host.openArgsEditor(s)" class="et-query-devtools-menu-item" type="button">
+        Replay with edited args…
+      </button>
+      <hr class="et-query-devtools-menu-sep" />
+      <button (click)="host.forceLoading(s.query)" class="et-query-devtools-menu-item" type="button">
+        Force loading
+      </button>
+      <button (click)="host.forceError(s.query)" class="et-query-devtools-menu-item" type="button">Force error</button>
+      <button (click)="host.forceEmpty(s.query)" class="et-query-devtools-menu-item" type="button">Force empty</button>
+      <hr class="et-query-devtools-menu-sep" />
+      <button (click)="host.clearForced(s.query)" class="et-query-devtools-menu-item" type="button">
+        Clear forced state
+      </button>
+    </et-query-devtools-menu>
   }
 </div>
 

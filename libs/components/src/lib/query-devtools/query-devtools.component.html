@@ -75,30 +75,17 @@
         }
 
         @if (overflowTabs().length; as overflowCount) {
-          <div #tabMenu class="et-query-devtools-tab-menu">
-            <button
-              [class.et-query-devtools-tab-more--open]="tabMenuOpen()"
-              [attr.aria-expanded]="tabMenuOpen()"
-              (click)="toggleTabMenu()"
-              class="et-query-devtools-tab et-query-devtools-tab-more"
-              type="button"
-              aria-haspopup="true"
-              title="{{ overflowCount }} tabs with nothing in them"
-            >
-              More
-              <span class="et-query-devtools-tab-more-caret" aria-hidden="true">▾</span>
-            </button>
-
-            @if (tabMenuOpen()) {
-              <div class="et-query-devtools-tab-menu-list">
-                @for (tab of overflowTabs(); track tab.id) {
-                  <button (click)="selectTab(tab.id)" class="et-query-devtools-tab-menu-item" type="button">
-                    {{ tab.label }}
-                  </button>
-                }
-              </div>
+          <et-query-devtools-menu
+            [hint]="overflowCount + ' tabs with nothing in them'"
+            triggerClass="et-query-devtools-tab"
+            label="More"
+          >
+            @for (tab of overflowTabs(); track tab.id) {
+              <button (click)="activeTab.set(tab.id)" class="et-query-devtools-menu-item" type="button">
+                {{ tab.label }}
+              </button>
             }
-          </div>
+          </et-query-devtools-menu>
         }
       </nav>
 
@@ -135,46 +122,30 @@
           type="button"
           title="Download every registered entry, the event log, the cache totals and anything armed as one JSON file - the attachment for a bug report"
         >
-          ⤓ Session
+          <span aria-hidden="true">⤓</span>
+          Session
         </button>
         @if (!poppedOut()) {
           @let layout = currentLayout();
-          <div #layoutMenu class="et-query-devtools-tab-menu">
-            <button
-              [class.et-query-devtools-tab-more--open]="layoutMenuOpen()"
-              [attr.aria-expanded]="layoutMenuOpen()"
-              (click)="toggleLayoutMenu()"
-              class="et-query-devtools-btn"
-              type="button"
-              aria-haspopup="true"
-              title="Where the panel sits"
-            >
-              <span aria-hidden="true">{{ layout.glyph }}</span>
-              {{ layout.label }}
-              <span class="et-query-devtools-tab-more-caret" aria-hidden="true">▾</span>
-            </button>
-
-            @if (layoutMenuOpen()) {
-              <div class="et-query-devtools-tab-menu-list et-query-devtools-layout-menu">
-                @for (option of LAYOUTS; track option.id) {
-                  <button
-                    [class.et-query-devtools-tab-menu-item--active]="dock() === option.id"
-                    [title]="option.hint"
-                    (click)="selectLayout(option.id)"
-                    class="et-query-devtools-tab-menu-item"
-                    type="button"
-                  >
-                    <span class="et-query-devtools-layout-glyph" aria-hidden="true">{{ option.glyph }}</span>
-                    {{ option.label }}
-                  </button>
-                }
-              </div>
+          <et-query-devtools-menu [glyph]="layout.glyph" [label]="layout.label" hint="Where the panel sits" align="end">
+            @for (option of LAYOUTS; track option.id) {
+              <button
+                [class.et-query-devtools-menu-item--active]="dock() === option.id"
+                [title]="option.hint"
+                (click)="selectLayout(option.id)"
+                class="et-query-devtools-menu-item"
+                type="button"
+              >
+                <span class="et-query-devtools-menu-item-glyph" aria-hidden="true">{{ option.glyph }}</span>
+                {{ option.label }}
+              </button>
             }
-          </div>
+          </et-query-devtools-menu>
         }
+        <span class="et-query-devtools-header-divider" aria-hidden="true"></span>
         <button
           (click)="toggleOpen()"
-          class="et-query-devtools-close-panel"
+          class="et-query-devtools-btn et-query-devtools-btn--danger"
           type="button"
           title="{{ poppedOut() ? 'Bring the panel back into the app window' : 'Close devtools (' + shortcut + ')' }}"
         >

@@ -2,6 +2,7 @@ import { Component, computed, input, signal, ViewEncapsulation } from '@angular/
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
+import { QueryDevtoolsMenuComponent } from './query-devtools-menu.component';
 import { QueryDevtoolsRouteComponent } from './query-devtools-route.component';
 import { DetailTab, QueryDevtoolsSelection } from './query-devtools-types';
 
@@ -17,12 +18,20 @@ import { DetailTab, QueryDevtoolsSelection } from './query-devtools-types';
   templateUrl: './query-devtools-detail.component.html',
   styleUrl: './query-devtools-detail.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [QueryDevtoolsFeaturesComponent, QueryDevtoolsJsonComponent, QueryDevtoolsRouteComponent],
+  imports: [
+    QueryDevtoolsFeaturesComponent,
+    QueryDevtoolsJsonComponent,
+    QueryDevtoolsMenuComponent,
+    QueryDevtoolsRouteComponent,
+  ],
 })
 export class QueryDevtoolsDetailComponent {
   protected host = injectQueryDevtoolsHost();
 
   public sel = input.required<QueryDevtoolsSelection>();
+
+  /** Whether any of the three exports behind the Copy menu has just landed on the clipboard. */
+  protected copied = computed(() => this.host.copiedReport() || this.host.copiedCurl() || this.host.copiedInsomnia());
 
   /**
    * Whether this is a tombstone. Everything that would run, edit or force the query is hidden for one -

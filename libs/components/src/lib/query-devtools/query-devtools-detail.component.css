@@ -93,8 +93,16 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
     margin-block-end: 0.8rem;
+  }
+
+  /* Override is the one action here that can make the app lie, so a rule separates it from the ones
+     that only read it - next to them, not banished to the far edge of a wide panel. */
+  .et-query-devtools-actions > .et-query-devtools-menu + .et-query-devtools-menu {
+    margin-inline-start: 0.5rem;
+    padding-inline-start: 0.9rem;
+    border-inline-start: 1px solid var(--_et-qdt-border);
   }
 
   /* Counters read as figures rather than as another label/value pair, so they get tiles that wrap into
@@ -121,19 +129,6 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 1.15rem;
     max-block-size: 20rem;
-  }
-
-  .et-query-devtools-actions-label {
-    color: var(--_et-qdt-subtle);
-    align-self: center;
-    text-transform: uppercase;
-    font-size: 1rem;
-    letter-spacing: 0.05em;
-  }
-
-  /* Leading space so inline group labels separate their button clusters. */
-  .et-query-devtools-actions-label:not(:first-child) {
-    margin-inline-start: 0.7rem;
   }
 
   /* The auto margin pulls the stepper over to the readout, so the row reads heading | controls+count

@@ -1,7 +1,18 @@
 <div #panes class="et-query-devtools-master-detail">
   <div class="et-query-devtools-list">
     <div [class.et-query-devtools-toolbar--filtered]="!!host.inspectFilterIds()" class="et-query-devtools-toolbar">
+      <!-- Search leads: it is what the list is narrowed with most of the time. The scope controls sit
+           after it, and the count reads as the search's result rather than as one more control. -->
       <div class="et-query-devtools-toolbar-row">
+        <input
+          #queryFilterInput
+          [value]="host.queryFilter()"
+          (input)="host.queryFilter.set(queryFilterInput.value)"
+          class="et-query-devtools-search"
+          type="search"
+          placeholder="filter method / route / url…"
+          aria-label="Filter queries"
+        />
         @if (host.inspectFilterIds(); as ids) {
           <span class="et-query-devtools-filter-chip">
             <span class="et-query-devtools-filter-icon" aria-hidden="true">⌖</span>
@@ -18,20 +29,18 @@
             Clear
           </button>
         } @else {
-          <label class="et-query-devtools-field">
-            <span>Client</span>
-            <select
-              #clientSelect
-              [value]="host.selectedClientName() ?? ''"
-              (change)="host.selectClient(clientSelect.value || null)"
-              class="et-query-devtools-select"
-            >
-              <option value="">All clients</option>
-              @for (name of host.clientNames(); track name) {
-                <option [value]="name">{{ name }}</option>
-              }
-            </select>
-          </label>
+          <select
+            #clientSelect
+            [value]="host.selectedClientName() ?? ''"
+            (change)="host.selectClient(clientSelect.value || null)"
+            class="et-query-devtools-select"
+            aria-label="Client"
+          >
+            <option value="">All clients</option>
+            @for (name of host.clientNames(); track name) {
+              <option [value]="name">{{ name }}</option>
+            }
+          </select>
         }
         <span class="et-query-devtools-count">
           @if (isQueryListNarrowed()) {
@@ -43,64 +52,57 @@
         <button
           [disabled]="!filteredQueries().length"
           (click)="downloadInsomniaCollection()"
-          class="et-query-devtools-btn et-query-devtools-toolbar-btn"
+          class="et-query-devtools-btn"
           type="button"
           title="Download the listed queries as an Insomnia collection, with the auth provider's token refresh"
         >
-          ⤓ Insomnia
+          <span aria-hidden="true">⤓</span>
+          Insomnia
         </button>
       </div>
 
       <div class="et-query-devtools-toolbar-row">
-        <input
-          #queryFilterInput
-          [value]="host.queryFilter()"
-          (input)="host.queryFilter.set(queryFilterInput.value)"
-          class="et-query-devtools-search"
-          type="search"
-          placeholder="filter method / route / url…"
-          aria-label="Filter queries"
-        />
         @let recentFirst = host.queryRecentFirst();
-        <button
-          [title]="
-            (recentFirst ? 'Newest run first.' : 'Oldest run first.') +
-            ' Click to reverse. Queries that have never run stay at the bottom either way.'
-          "
-          (click)="host.queryRecentFirst.set(!recentFirst)"
-          class="et-query-devtools-btn et-query-devtools-sort"
-          type="button"
-        >
-          recent <span aria-hidden="true">{{ recentFirst ? '↓' : '↑' }}</span>
-        </button>
-        @let treeView = host.queryTreeView();
-        <button
-          [class.et-query-devtools-btn--active]="treeView"
-          [attr.aria-pressed]="treeView"
-          [title]="
-            treeView
-              ? 'Grouped by route path. Click for the flat list.'
-              : 'Flat list. Click to group by route path - segments nothing branches off are folded into one row.'
-          "
-          (click)="host.queryTreeView.set(!treeView)"
-          class="et-query-devtools-btn et-query-devtools-sort"
-          type="button"
-        >
-          <span aria-hidden="true">⑂</span> tree
-        </button>
-        @for (facet of facets; track facet.id) {
-          @let count = facetCounts()[facet.id];
-          @let isActive = host.queryFacets().has(facet.id);
+        <div class="et-query-devtools-btn-group">
           <button
-            [class.et-query-devtools-facet--active]="isActive"
-            [attr.aria-pressed]="isActive"
-            [disabled]="!count && !isActive"
+            [title]="
+              (recentFirst ? 'Newest run first.' : 'Oldest run first.') +
+              ' Click to reverse. Queries that have never run stay at the bottom either way.'
+            "
+            (click)="host.queryRecentFirst.set(!recentFirst)"
+            class="et-query-devtools-btn et-query-devtools-sort"
+            type="button"
+          >
+            recent <span aria-hidden="true">{{ recentFirst ? '↓' : '↑' }}</span>
+          </button>
+          @let treeView = host.queryTreeView();
+          <button
+            [class.et-query-devtools-btn--active]="treeView"
+            [attr.aria-pressed]="treeView"
+            [title]="
+              treeView
+                ? 'Grouped by route path. Click for the flat list.'
+                : 'Flat list. Click to group by route path - segments nothing branches off are folded into one row.'
+            "
+            (click)="host.queryTreeView.set(!treeView)"
+            class="et-query-devtools-btn et-query-devtools-sort"
+            type="button"
+          >
+            <span aria-hidden="true">⑂</span> tree
+          </button>
+        </div>
+        <!-- Only the statuses something is actually in. Five chips, four of them reading `0`, were four
+             controls that could not be pressed taking up the row that says what is wrong. -->
+        @for (facet of visibleFacets(); track facet.id) {
+          <button
+            [class.et-query-devtools-facet--active]="facet.active"
+            [attr.aria-pressed]="facet.active"
             (click)="host.toggleFacet(facet.id)"
             class="et-query-devtools-chip et-query-devtools-facet"
             type="button"
           >
             {{ facet.label }}
-            <span class="et-query-devtools-facet-count">{{ count }}</span>
+            <span class="et-query-devtools-facet-count">{{ facet.count }}</span>
           </button>
         }
         @let goneListed = listedGoneQueries().length;

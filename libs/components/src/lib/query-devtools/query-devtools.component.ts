@@ -93,6 +93,7 @@ import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsCopyMenuStylesComponent } from './query-devtools-copy-menu-styles.component';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
+import { QueryDevtoolsMenuComponent } from './query-devtools-menu.component';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
 import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';
 import { QueryDevtoolsSequencesTabComponent } from './query-devtools-sequences-tab.component';
@@ -615,6 +616,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsEventsTabComponent,
     QueryDevtoolsFaultsTabComponent,
     QueryDevtoolsFormsTabComponent,
+    QueryDevtoolsMenuComponent,
     QueryDevtoolsQueriesTabComponent,
     QueryDevtoolsSequencesTabComponent,
     QueryDevtoolsSocketsTabComponent,
@@ -643,12 +645,6 @@ export class QueryDevtoolsComponent {
 
   /** The panel itself, so a pop-out can move it into another window's document. */
   private panelEl = viewChild<ElementRef<HTMLElement>>('panel');
-
-  /** The overflow tab menu, to tell a click inside it from one that should dismiss it. */
-  private tabMenuEl = viewChild<ElementRef<HTMLElement>>('tabMenu');
-
-  /** The layout menu, for the same reason. */
-  private layoutMenuEl = viewChild<ElementRef<HTMLElement>>('layoutMenu');
 
   private eventIdCounter = 0;
   private lastSelectionKey = '';
@@ -1078,9 +1074,6 @@ export class QueryDevtoolsComponent {
   /** The empty tabs, which the bar offers behind "More" instead. */
   protected overflowTabs = computed(() => this.tabs.filter((tab) => !this.isTabPrimary(tab.id)));
 
-  protected tabMenuOpen = signal(false);
-  protected layoutMenuOpen = signal(false);
-
   public selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
   public stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
   public sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
@@ -1366,46 +1359,6 @@ export class QueryDevtoolsComponent {
       )
       .subscribe();
 
-    // The overflow tab menu is a plain element rather than an overlay, so nothing dismisses it on its
-    // own. Listened for on the panel's own document, which a pop-out replaces with the pop-up's.
-    toObservable(this.tabMenuOpen)
-      .pipe(
-        switchMap((open) => {
-          if (!open) return EMPTY;
-
-          const menuDoc = this.panelEl()?.nativeElement.ownerDocument ?? doc;
-
-          return merge(
-            fromEvent<PointerEvent>(menuDoc, 'pointerdown', { capture: true }).pipe(
-              filter((e) => !this.tabMenuEl()?.nativeElement.contains(e.target as Node)),
-            ),
-            fromEvent<KeyboardEvent>(menuDoc, 'keydown').pipe(filter((e) => e.key === 'Escape')),
-          );
-        }),
-        tap(() => this.tabMenuOpen.set(false)),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-
-    toObservable(this.layoutMenuOpen)
-      .pipe(
-        switchMap((open) => {
-          if (!open) return EMPTY;
-
-          const menuDoc = this.panelEl()?.nativeElement.ownerDocument ?? doc;
-
-          return merge(
-            fromEvent<PointerEvent>(menuDoc, 'pointerdown', { capture: true }).pipe(
-              filter((e) => !this.layoutMenuEl()?.nativeElement.contains(e.target as Node)),
-            ),
-            fromEvent<KeyboardEvent>(menuDoc, 'keydown').pipe(filter((e) => e.key === 'Escape')),
-          );
-        }),
-        tap(() => this.layoutMenuOpen.set(false)),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-
     // Inspect mode: while active, listen on the document to map the hovered element to a query.
     const capture = { capture: true };
     toObservable(this.inspectActive)
@@ -1466,13 +1419,7 @@ export class QueryDevtoolsComponent {
     this.dock.set('float');
   }
 
-  protected toggleLayoutMenu() {
-    this.layoutMenuOpen.update((v) => !v);
-  }
-
   protected selectLayout(layout: DevtoolsLayout) {
-    this.layoutMenuOpen.set(false);
-
     if (layout === 'popout') {
       this.popOut();
 
@@ -1481,15 +1428,6 @@ export class QueryDevtoolsComponent {
 
     this.popOutBlocked.set(false);
     this.dock.set(layout);
-  }
-
-  protected toggleTabMenu() {
-    this.tabMenuOpen.update((v) => !v);
-  }
-
-  protected selectTab(tab: DevtoolsTab) {
-    this.activeTab.set(tab);
-    this.tabMenuOpen.set(false);
   }
 
   /**

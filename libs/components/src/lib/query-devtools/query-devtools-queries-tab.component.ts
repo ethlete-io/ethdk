@@ -28,7 +28,7 @@ export class QueryDevtoolsQueriesTabComponent {
   protected host = injectQueryDevtoolsHost();
 
   /** The status chips above the list, in the order a problem is usually looked for. */
-  protected readonly facets = [
+  private readonly facets = [
     { id: 'error', label: 'Failing' },
     { id: 'loading', label: 'Loading' },
     { id: 'stale', label: 'Stale' },
@@ -53,7 +53,7 @@ export class QueryDevtoolsQueriesTabComponent {
    * How many queries each status chip would leave. Counted before the active chips are applied, so a
    * chip always states what picking it yields rather than what the current selection happens to show.
    */
-  protected facetCounts = computed(() => {
+  private facetCounts = computed(() => {
     // Staleness is a `Date.now()` comparison and deliberately not reactive, so the clock is what makes
     // the counts age with it - without it a chip would keep the number it happened to be built with.
     this.host.clock();
@@ -77,6 +77,19 @@ export class QueryDevtoolsQueriesTabComponent {
     }
 
     return counts;
+  });
+
+  /**
+   * The status chips worth rendering: the ones that would narrow the list, plus whichever are on. An
+   * active chip stays even at zero - it is the only thing that says why the list is empty.
+   */
+  protected visibleFacets = computed(() => {
+    const counts = this.facetCounts();
+    const active = this.host.queryFacets();
+
+    return this.facets
+      .map((facet) => ({ ...facet, count: counts[facet.id], active: active.has(facet.id) }))
+      .filter((facet) => facet.count > 0 || facet.active);
   });
 
   protected filteredQueries = computed(() => {
