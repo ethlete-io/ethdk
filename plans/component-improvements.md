@@ -349,6 +349,55 @@ features, its auth provider and its last _n_ real responses, so seeding a mock f
 actually happened is one click. Mock at the query-client layer, keep it a debugging and design tool,
 and do not grow it toward being a test fixture runner.
 
+## Query devtools: copy/paste around response overrides
+
+Raised by the user 2026-08-10, asking for "copy and/or paste support for query response overrides,
+including objects and arrays". **Checked against the source first, and most of it already ships** -
+so the item is the four gaps, not the feature.
+
+What exists today:
+
+- **Copy of a whole subtree.** `copyTextFor()` in `query-devtools-json.component.ts:384` - containers
+  copy their entire subtree as JSON, slices copy only the entries they cover, leaves copy a raw
+  pasteable string. The `⧉ ▾` menu offers Value / Key / Path / `"key": value`.
+- **Paste onto a node.** `Paste value` is an unconditional item in the override menu
+  (`query-devtools-override-menu.component.html:83` → `pasteValue()` at
+  `query-devtools-override-menu.component.ts:198`). It arms `{ type: 'set', path, value }`, and
+  `set` already carries an arbitrary value, so an object or an array pastes with no change to the
+  op model.
+
+So the round trip works. The gaps:
+
+- **Clipboard reads are the fragile half, and they fail silently-ish.** `pasteValue()` goes through
+  `navigator.clipboard.readText()`, which is permission-gated and unavailable or prompt-gated in
+  several browsers; the menu then says "Clipboard access is unavailable here" or "The clipboard read
+  was blocked" and stops. That is very likely what "no paste support" looked like from the outside.
+  A real `paste` event (`ClipboardEvent`) needs no permission anywhere and is the standard way out:
+  keep `readText()` as the one-click path, and fall back to a focused box that accepts a genuine
+  ⌘V. The `Custom…` inline editor is already the shape of that box.
+- **A paste may not change a node's kind.** `armPastedText()` (line 241) rejects a paste whose kind
+  differs from the node's - no array over an object, no object over a `null`. It reads as a
+  safeguard against pasting a copied _path_ over a body, which is a real mistake to protect against.
+  But "this field became an array" is exactly the API change worth rehearsing, and the panel's whole
+  job is to lie to the app on purpose. **Decide**: keep the guard, drop it, or demote it to a
+  confirmation on the menu item. Leaving it as a hard refusal is the one option that should not
+  survive review.
+- **No paste into an array as a new element.** `Duplicate this item` exists; its sibling does not.
+  `set` at `path + [index]` covers append with no new op type, and insert-at-position is the same op
+  with the tail shifted - or a `pasteArrayItem` next to `duplicateArrayItem` if the ordering has to
+  survive a refetch that returned a different length.
+- **The armed ops themselves cannot be copied.** This is the reading of the request that is
+  genuinely unbuilt, and probably the more valuable one: copy the whole override set armed on query
+  A and paste it onto query B, or into a ticket. `QueryDevtoolsOverrideEntry[]` is already plain
+  JSON, and `query-devtools-override-persistence.ts` already serializes exactly that shape into
+  `sessionStorage` - so the export is a formatting job, and the import is `arm()` in a loop. Paths
+  are relative to the response root, so a paste onto a differently-shaped query simply reports the
+  ops that no longer resolve, which `applyQueryDevtoolsOverrides` already computes as `staleIds`.
+
+Both readings are worth building and they do not overlap; **ask which one is wanted first**. The
+per-node gaps are an `S`; the op-set copy is the interesting half and shares its serialization with
+the mock designer's import/export.
+
 ## Query devtools: resizing the float selects the whole panel
 
 Reported by the user 2026-08-10. Drag any edge of the floating panel and the browser starts a text
