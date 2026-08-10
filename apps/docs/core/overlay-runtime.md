@@ -54,6 +54,12 @@ If the mounted component exposes an `animatedLifecycle` signal (an [`AnimatedLif
 
   `autoResize`, `autoHide`, `autoCloseIfReferenceHidden` and arrows additionally need `enableAnchoredOverlayPositionExtras()`, which installs the floating-ui `size`/`hide`/`arrow` middleware. Call it once next to where the strategy is built.
 
+  A reference that is **removed from the document** while the overlay is open is handled without either of
+  those: the pane keeps its last position instead of being moved to the rect a detached element measures
+  as (zeros, i.e. the viewport's top-left corner), so an overlay whose trigger is destroyed - a menu item
+  that removes the button it was opened from - animates out where it was. With
+  `autoCloseIfReferenceHidden` it closes at once, before any transform is applied.
+
 The active strategy can be swapped on a live overlay via `ref.updatePositionStrategy(strategy)` - this is how responsive overlays morph between dialog and bottom sheet.
 
 ## The overlay ref

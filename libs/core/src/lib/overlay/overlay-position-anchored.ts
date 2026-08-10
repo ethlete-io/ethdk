@@ -146,7 +146,35 @@ export const createAnchoredPositionCleanup = (
     width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : 'max-content',
   });
 
+  /**
+   * What to do when the reference is not somewhere the pane can be positioned against: either removed
+   * from the document, or scrolled out of a clipping ancestor. Both measure as a rect the pane must not
+   * be moved to - a detached element reports zeros, which is the viewport's top-left corner.
+   */
+  const handleUnusableReference = () => {
+    if (strategy.autoCloseIfReferenceHidden) {
+      // Closed before any transform is applied, so the exit animation does not run from the corner.
+      overlayRef.close(undefined, 'reference-detached');
+
+      return;
+    }
+
+    if (strategy.autoHide) {
+      renderer.setStyle(paneElement, { visibility: 'hidden' });
+    }
+  };
+
   const cleanup = autoUpdate(strategy.referenceElement, paneElement, () => {
+    // Checked here rather than left to the `hide` middleware, which is only in the list when `autoHide`
+    // or `autoCloseIfReferenceHidden` asked for it: a trigger destroyed while its overlay is open (a
+    // menu item that removes the button it was opened from) would otherwise fly to the corner for the
+    // frames the overlay takes to animate out.
+    if (isHTMLElement(strategy.referenceElement) && !strategy.referenceElement.isConnected) {
+      handleUnusableReference();
+
+      return;
+    }
+
     const arrowElement = paneElement.querySelector<HTMLElement>('[et-floating-arrow]');
     const middleware = [];
 
@@ -236,20 +264,8 @@ export const createAnchoredPositionCleanup = (
       strategy: 'absolute',
       middleware,
     }).then(({ x, y, placement, middlewareData }) => {
-      // A detached reference reports a zeroed rect, so floating-ui positions the pane at the
-      // viewport's top-left. Tear the overlay down (without animating from that bogus position)
-      // before applying the transform when auto-close is on, and otherwise leave the pane where it
-      // last was rather than snapping it to the corner.
       if (middlewareData.hide?.referenceHidden) {
-        if (strategy.autoCloseIfReferenceHidden) {
-          overlayRef.close(undefined, 'reference-detached');
-
-          return;
-        }
-
-        if (strategy.autoHide) {
-          renderer.setStyle(paneElement, { visibility: 'hidden' });
-        }
+        handleUnusableReference();
 
         return;
       }
