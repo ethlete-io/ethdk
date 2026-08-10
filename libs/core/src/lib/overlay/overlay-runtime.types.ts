@@ -143,4 +143,10 @@ export type OverlayRuntimeMountConfig<TComponent extends object> = {
    */
   bindings?: Binding[];
   animationDelegate?: OverlayRuntimeAnimationDelegate;
+  /**
+   * The document the overlay mounts into, when it is not the application's own - e.g. an overlay
+   * opened from an element that was adopted by a same-origin pop-up window. The runtime root, the
+   * close listeners and all focus handling follow this document.
+   */
+  document?: Document;
 };

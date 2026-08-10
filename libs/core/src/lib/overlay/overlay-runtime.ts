@@ -40,24 +40,27 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
     const openEntriesState = signal<OverlayRuntimeRef<object, unknown>[]>([]);
     const openEntries = computed(() => openEntriesState());
 
-    let rootElement: HTMLElement | null = null;
+    // One runtime root per document: overlays usually all mount into the app's document, but an
+    // overlay anchored inside a same-origin pop-up window (config.document) needs a root over there.
+    const rootElements = new Map<Document, HTMLElement>();
 
     // Synchronous teardown for each currently-mounted overlay, run when the runtime's injector is
     // destroyed (app teardown). Registered on mount, removed once the overlay is destroyed normally.
     const mountedTeardowns = new Set<() => void>();
 
-    const getRootElement = () => {
-      if (rootElement) {
-        return rootElement;
+    const getRootElement = (targetDocument: Document) => {
+      const existingRoot = rootElements.get(targetDocument);
+      if (existingRoot) {
+        return existingRoot;
       }
 
       // A previous Angular app (e.g. the one that existed before a Storybook HMR update or story
       // switch) may have left its runtime root orphaned in <body> if it was torn down mid-animation.
       // Such a node keeps a backdrop/pane on screen and blocks pointer events, so clear any stragglers
       // before creating ours.
-      document.querySelectorAll('.et-overlay-runtime-root').forEach((el) => el.remove());
+      targetDocument.querySelectorAll('.et-overlay-runtime-root').forEach((el) => el.remove());
 
-      rootElement = renderer.createElement('div');
+      const rootElement = renderer.createElement('div');
       renderer.addClass(rootElement, 'et-overlay-runtime-root');
       renderer.setStyle(rootElement, {
         position: 'fixed',
@@ -71,13 +74,16 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         // rendered behind the panel that triggered it.
         zIndex: '2147483003',
       });
-      renderer.appendChild(document.body, rootElement);
+      renderer.appendChild(targetDocument.body, rootElement);
+      rootElements.set(targetDocument, rootElement);
 
       return rootElement;
     };
 
-    const maybeDestroyRootElement = () => {
-      if (!rootElement || openEntriesState().length > 0) {
+    const maybeDestroyRootElement = (targetDocument: Document) => {
+      const rootElement = rootElements.get(targetDocument);
+
+      if (!rootElement || openEntriesState().some((entry) => entry.elements.rootElement === rootElement)) {
         return;
       }
 
@@ -86,7 +92,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         renderer.removeChild(parentNode, rootElement);
       }
 
-      rootElement = null;
+      rootElements.delete(targetDocument);
     };
 
     const isTopMost = (overlayRef: OverlayRuntimeRef<object, unknown>) => {
@@ -104,11 +110,12 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
     };
 
     const mount = <TComponent extends object, TResult = unknown>(config: OverlayRuntimeMountConfig<TComponent>) => {
-      const root = getRootElement();
+      const targetDocument = config.document ?? document;
+      const root = getRootElement(targetDocument);
       const hostElement = renderer.createElement('div');
       const paneElement = renderer.createElement('div');
       const backdropElement = config.hasBackdrop === false ? null : renderer.createElement('div');
-      const previousFocusedElement = isHTMLElement(document.activeElement) ? document.activeElement : null;
+      const previousFocusedElement = isHTMLElement(targetDocument.activeElement) ? targetDocument.activeElement : null;
       const autoFocus = config.autoFocus ?? 'first-tabbable';
 
       renderer.addClass(hostElement, 'et-overlay-runtime-entry');
@@ -219,7 +226,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         }
 
         openEntriesState.update((entries) => entries.filter((entry) => entry !== overlayRef));
-        maybeDestroyRootElement();
+        maybeDestroyRootElement(targetDocument);
 
         if (config.restoreFocus !== false && previousFocusedElement?.isConnected) {
           previousFocusedElement.focus({ preventScroll: true });
@@ -287,8 +294,8 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           overlayRef.close(undefined, 'escape');
         };
 
-        document.addEventListener('keydown', onKeyDown, true);
-        cleanupFns.push(() => document.removeEventListener('keydown', onKeyDown, true));
+        targetDocument.addEventListener('keydown', onKeyDown, true);
+        cleanupFns.push(() => targetDocument.removeEventListener('keydown', onKeyDown, true));
       }
 
       const closeOnOutsidePointer = config.closeOnOutsidePointer ?? config.modal === false;
@@ -320,12 +327,12 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
               }
             };
 
-            document.addEventListener('click', swallowReopenClick, { capture: true, once: true });
+            targetDocument.addEventListener('click', swallowReopenClick, { capture: true, once: true });
           }
         };
 
-        document.addEventListener('pointerdown', onPointerDown, true);
-        cleanupFns.push(() => document.removeEventListener('pointerdown', onPointerDown, true));
+        targetDocument.addEventListener('pointerdown', onPointerDown, true);
+        cleanupFns.push(() => targetDocument.removeEventListener('pointerdown', onPointerDown, true));
       }
 
       cleanupFns.push(
@@ -334,7 +341,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           overlayRef as OverlayRuntimeRef<object, unknown>,
           config.modal !== false,
           isTopMost,
-          document,
+          targetDocument,
         ),
       );
 
@@ -348,7 +355,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         const lifecycle = getAnimatedLifecycle(componentRef);
         if (!lifecycle) {
           interactiveCloseReady = true;
-          applyInitialFocus(paneElement, autoFocus, document);
+          applyInitialFocus(paneElement, autoFocus, targetDocument);
           overlayRef.markOpened();
 
           return;
@@ -383,7 +390,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
             take(1),
           )
           .subscribe(() => {
-            applyInitialFocus(paneElement, autoFocus, document);
+            applyInitialFocus(paneElement, autoFocus, targetDocument);
             overlayRef.markOpened();
           });
       });
@@ -393,7 +400,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
     destroyRef.onDestroy(() => {
       [...mountedTeardowns].forEach((teardown) => teardown());
-      maybeDestroyRootElement();
+      [...rootElements.keys()].forEach((targetDocument) => maybeDestroyRootElement(targetDocument));
     });
 
     return {
