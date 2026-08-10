@@ -8,7 +8,7 @@ import {
 } from '@ethlete/query';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 
-type ScopeKey = 'viewState' | 'pins' | 'overrides';
+type ScopeKey = 'viewState' | 'pins' | 'overrides' | 'mocks';
 
 type ScopeRow = {
   key: ScopeKey;
@@ -38,6 +38,11 @@ const SCOPE_ROWS: ScopeRow[] = [
     label: 'Response overrides',
     hint: 'Armed edits, replayed as queries register - before their first fetch. None is the default: a reload is how the app stops being lied to.',
   },
+  {
+    key: 'mocks',
+    label: 'Designed mocks',
+    hint: 'The library you authored, not whether any of it is armed - that is never kept, so a reload always stops serving them.',
+  },
 ];
 
 const SCOPES: { value: QueryDevtoolsStorageScope; label: string }[] = [
@@ -48,12 +53,13 @@ const SCOPES: { value: QueryDevtoolsStorageScope; label: string }[] = [
 
 /**
  * Why IndexedDB - the one store with the quota for a large library of designed data - is not on offer.
- * All three keys are read synchronously: view state and pins in a field initializer of the panel, and
- * overrides inside query registration, before the first request. An async store cannot answer either in
- * time, and a scope that silently arrives late is worse than one that is missing.
+ * These are read synchronously: view state and pins in a field initializer of the panel, and overrides
+ * inside query registration, before the first request. An async store cannot answer either in time, and a
+ * scope that silently arrives late is worse than one that is missing. The mock library is the one that
+ * could tolerate arriving late, since nothing is served until a mock is armed by hand.
  */
 const INDEXED_DB_TITLE =
-  'Unavailable: every one of these is read synchronously - view state before the first render, overrides before the first fetch - and IndexedDB cannot answer in time.';
+  'Unavailable: these are read synchronously - view state before the first render, overrides before the first fetch - and IndexedDB cannot answer in time. Only the mock library could tolerate an async store, and it is not wired to one yet.';
 
 const LIMIT_ROWS: LimitRow[] = [
   {
@@ -118,7 +124,9 @@ export class QueryDevtoolsSettingsComponent {
       return;
     }
 
-    setQueryDevtoolsSettings(key === 'viewState' ? { viewState: scope } : { pins: scope });
+    setQueryDevtoolsSettings(
+      key === 'viewState' ? { viewState: scope } : key === 'pins' ? { pins: scope } : { mocks: scope },
+    );
   }
 
   protected setLimit(key: LimitKey, value: string) {

@@ -166,6 +166,7 @@ one-click **Float instead**, rather than the button appearing to do nothing.
 | **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with [timestamps, duration and response size](#events-what-each-request-cost), narrowable by client and to failures only, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                          |
 | **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Mocks**     | [Responses served instead of the request](#mocks-answering-a-route-the-panel-not-the-api) - designed by hand for a route nothing has called yet, or captured from one that has.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | **About**     | [Which SDK and application build is actually running](#about-which-build-is-running) - the loaded `@ethlete/*` versions, the Angular version, and whatever the app handed to `provideQueryDevtools({ about })`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 [Settings](#settings-what-the-panel-keeps-and-where) is not one of them: it holds nothing
@@ -641,6 +642,87 @@ A query whose last completed run actually came back faulted also carries the sam
 
 Faults are keyed by client **name**, the same identity the client picker uses - so two clients
 sharing a name are armed together.
+
+## Mocks: answering a route the panel, not the API
+
+A fault decides _whether_ a request fails; a
+[response override](#response-overrides-editing-a-value-that-survives-a-refetch) edits what came back.
+Neither can answer a route that returns nothing yet. A **mock** replaces the request itself: the panel
+serves the body, and the cache, the retry policy and every error feature see it exactly as they see a real
+response.
+
+That is what makes it usable before the endpoint exists. **New mock** takes a client, a method, a path
+pattern, the query parameters that must be present, a status, a latency and a JSON body - none of it
+checked against the registry, because a route no query has ever called is the point.
+
+| Field       | Matched                                                                                                                                   |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Client**  | by name, the same identity faults use                                                                                                     |
+| **Method**  | exactly                                                                                                                                   |
+| **Path**    | segment by segment; `:name` matches any one segment, so `/posts/:id/comments` answers the route rather than one URL                       |
+| **Query**   | every parameter you name has to be on the request; anything else it asks for is ignored. Empty answers whatever the query string is       |
+| **Status**  | `400` and above arrive as a real `HttpErrorResponse`, body and all - so error handling sees a designed failure the way it sees a real one |
+| **Latency** | ms before the mocked response settles, so a mocked route still has a loading state to render                                              |
+
+When two armed mocks could both answer, **the one naming more query parameters wins** - so a special case
+armed on top of a general mock is what answers, rather than whichever was designed first.
+
+### Capturing what actually happened
+
+The other way in is the **Capture** list: every live query holding a response, one row per route. It seeds
+a mock from the body the API really sent, which is the fast path to "the same response, but with this one
+field empty". A route several queries share is listed once, saying how many - a mock answers the route, so
+it answers all of them.
+
+**Body** on a designed row opens the JSON for editing; **Status** and **Latency** are editable in place.
+
+### Copying the route back out as TypeScript
+
+**⧉ TS** copies the route as a `@ethlete/query` definition - the response type inferred from the designed
+body, the args contract and the creator call:
+
+```ts
+// Inferred from one example: every field reads as required and non-nullable.
+// `getQuery` is `createGetQuery(client)`.
+type GetPostsCommentsResponse = {
+  items: {
+    id: number;
+    text: string;
+  }[];
+};
+
+type GetPostsCommentsQueryArgs = {
+  response: GetPostsCommentsResponse;
+  pathParams: { id: string };
+  queryParams: { page: number };
+};
+
+export const getPostsComments = getQuery<GetPostsCommentsQueryArgs>((p) => `/posts/${p.id}/comments`);
+```
+
+One example cannot say what is optional or nullable, so everything in it reads as required - the comment
+says so rather than the type pretending otherwise.
+
+### What a mock is not
+
+- **It is not [MSW](https://mswjs.io).** MSW intercepts at the network layer and belongs in tests. This
+  mocks at the query-client layer, knows every registered route, and exists to be armed for a minute while
+  you look at something.
+- **It bypasses the interceptor chain**, because nothing is sent. A mocked secure route never exercises the
+  token flow, and the row says `no auth` when a live query on it authenticates.
+- **GraphQL queries are not offered.** They all POST one route, so matching them needs the document rather
+  than the path.
+
+### Arming it is loud, and never survives a reload
+
+The library you design is [persisted](#settings-what-the-panel-keeps-and-where); **whether a mock is armed
+is not, at any scope**. Losing an hour of authoring to a closed tab is unacceptable; an app that silently
+serves designed data tomorrow morning is worse.
+
+While anything is armed, a red bar above every tab names the routes it answers, with **Review** and
+**Disarm all**, and every query on a mocked route carries the [**tampered** badge](#the-tampered-badge). An
+armed mock is also part of the [session export](#attaching-a-whole-session-to-a-bug-report), because a
+capture taken while the panel was answering requests has to say which ones.
 
 ## Copying a key or a path
 
@@ -1179,6 +1261,7 @@ header downloads the whole panel as one JSON file:
 | `entries` | Every registered entry by kind - a query with its status, activity, run history, args, response, error and any [overrides](#response-overrides-editing-a-value-that-survives-a-refetch) armed on it; a stack's traffic; a sequence's steps; a form's fields; a socket's message log. |
 | `events`  | The whole event log (never the filtered view), each row with its duration, size, and the invalidation fan-out it caused.                                                                                                                                                             |
 | `faults`  | Anything [armed](#faults-making-requests-actually-misbehave) at the time. A capture taken while the panel was lying to the app has to say so, or the report sends someone chasing a fake 503.                                                                                        |
+| `mocks`   | The [mocks](#mocks-answering-a-route-the-panel-not-the-api) armed at the time, with the body each was serving.                                                                                                                                                                       |
 | `about`   | [Which build produced the session](#about-which-build-is-running) - the loaded `@ethlete/*` versions, the Angular version and the app's own build info.                                                                                                                              |
 
 Bodies are slimmed the way **Copy report** slims them - long strings truncated, long
@@ -1364,11 +1447,12 @@ that erased the choice which set it would be a setting you could never keep.
 
 Each kind of state picks its own scope, because `none` costs something different for each:
 
-| State                                                             | Default   | `none` means                                              |
-| ----------------------------------------------------------------- | --------- | --------------------------------------------------------- |
-| **Panel view state** - dock, sizes, open tab, filters, selections | `session` | the panel forgets where it was on every reload            |
-| **Pinned queries**                                                | `local`   | a pin dies with the tab                                   |
-| [**Response overrides**](#keeping-overrides-across-a-reload)      | `none`    | the default - a reload is how the app stops being lied to |
+| State                                                                | Default   | `none` means                                                        |
+| -------------------------------------------------------------------- | --------- | ------------------------------------------------------------------- |
+| **Panel view state** - dock, sizes, open tab, filters, selections    | `session` | the panel forgets where it was on every reload                      |
+| **Pinned queries**                                                   | `local`   | a pin dies with the tab                                             |
+| [**Response overrides**](#keeping-overrides-across-a-reload)         | `none`    | the default - a reload is how the app stops being lied to           |
+| [**Designed mocks**](#mocks-answering-a-route-the-panel-not-the-api) | `local`   | the library dies with the tab; arming never survives one either way |
 
 Changing a scope **moves** what is already stored and clears the copy the old scope left
 behind, so the next load cannot read a stale one.

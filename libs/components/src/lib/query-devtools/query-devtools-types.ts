@@ -39,6 +39,7 @@ export type DevtoolsTab =
   | 'timeline'
   | 'events'
   | 'faults'
+  | 'mocks'
   | 'about'
   | 'settings';
 

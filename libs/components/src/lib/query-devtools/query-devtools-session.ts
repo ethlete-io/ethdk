@@ -113,6 +113,19 @@ export type SessionExportFault = {
   status: number;
 };
 
+/**
+ * One armed mock, as a capture reports it. A session taken while a route was answered by the panel has to
+ * say which routes those were, or the report sends someone looking for data the API never sent.
+ */
+export type SessionExportMock = {
+  client: string;
+  method: string;
+  pattern: string;
+  status: number;
+  latencyMs: number;
+  body: unknown;
+};
+
 export type BuildSessionExportOptions = {
   /** Wall-clock time of the export - passed in so the builder stays pure. */
   now: number;
@@ -127,6 +140,7 @@ export type BuildSessionExportOptions = {
   entries: SessionExportEntry[];
   events: SessionExportEvent[];
   faults: SessionExportFault[];
+  mocks: SessionExportMock[];
 };
 
 /** The whole panel state as one attachable JSON document. */
@@ -135,11 +149,19 @@ export type QueryDevtoolsSessionExport = {
   exportedAt: string;
   location: string;
   about: QueryDevtoolsAbout;
-  counts: { clients: number; entries: number; events: number; armedFaults: number; armedOverrides: number };
+  counts: {
+    clients: number;
+    entries: number;
+    events: number;
+    armedFaults: number;
+    armedOverrides: number;
+    armedMocks: number;
+  };
   clients: SessionExportClient[];
   entries: SessionExportEntry[];
   events: SessionExportEvent[];
   faults: SessionExportFault[];
+  mocks: SessionExportMock[];
 };
 
 /** Slims the free-form value fields of an entry, leaving the rest as it was collected. */
@@ -154,7 +176,8 @@ const slimEntry = (entry: SessionExportEntry): SessionExportEntry => ({
 
 /**
  * Builds the whole-session report: every registered entry with what it ran and what it holds, the event
- * log, the cache totals per client and anything armed in the Faults tab or as a response override.
+ * log, the cache totals per client and anything armed in the Faults or Mocks tabs or as a response
+ * override.
  *
  * Bodies are slimmed rather than dumped in full - the point is a file small enough to attach to a bug
  * report, and a 4 MB response says nothing a representative sample does not. Armed faults and overrides
@@ -173,9 +196,11 @@ export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptio
     events: options.events.length,
     armedFaults: options.faults.length,
     armedOverrides: options.entries.reduce((sum, entry) => sum + (entry.overrides?.length ?? 0), 0),
+    armedMocks: options.mocks.length,
   },
   clients: options.clients,
   entries: options.entries.map(slimEntry),
   events: options.events,
   faults: options.faults,
+  mocks: options.mocks,
 });

@@ -1,0 +1,285 @@
+<div class="et-query-devtools-scroll">
+  <div class="et-query-devtools-toolbar et-query-devtools-mocks-toolbar">
+    <p class="et-query-devtools-hint">
+      A mock replaces the request, so it answers a route that has never run - or does not exist yet. It bypasses the
+      interceptor chain by construction, so a mocked secure route never exercises the token flow. The library is kept;
+      whether a mock is <strong>armed</strong> is not, so a reload always stops serving them. GraphQL queries are not
+      offered: they all POST one route, so matching them needs the document rather than the path.
+    </p>
+    <div class="et-query-devtools-settings-controls">
+      @if (armedCount()) {
+        <button (click)="DISARM_ALL()" class="et-query-devtools-btn" type="button">
+          Disarm all ({{ armedCount() }})
+        </button>
+      }
+      <button (click)="openDraft()" class="et-query-devtools-btn et-query-devtools-btn--primary" type="button">
+        <span aria-hidden="true">＋</span>
+        New mock
+      </button>
+    </div>
+  </div>
+
+  @if (draft(); as form) {
+    <div class="et-query-devtools-card">
+      <div class="et-query-devtools-card-head">
+        <strong>New mock</strong>
+        <span class="et-query-devtools-count">for any route, whether a query has ever called it or not</span>
+      </div>
+
+      <div class="et-query-devtools-mock-fields">
+        <label class="et-query-devtools-field">
+          <span>Client</span>
+          <select
+            #clientSelect
+            (change)="patchDraft({ clientName: clientSelect.value })"
+            class="et-query-devtools-select"
+          >
+            @for (name of host.clientNames(); track name) {
+              <option [value]="name" [selected]="name === form.clientName">{{ name }}</option>
+            }
+          </select>
+          <small>a mock answers one client, matched by name</small>
+        </label>
+
+        <label class="et-query-devtools-field">
+          <span>Method</span>
+          <select #methodSelect (change)="patchDraft({ method: methodSelect.value })" class="et-query-devtools-select">
+            @for (method of METHODS; track method) {
+              <option [value]="method" [selected]="method === form.method">{{ method }}</option>
+            }
+          </select>
+          <small>matched exactly</small>
+        </label>
+
+        <label class="et-query-devtools-field et-query-devtools-field--wide">
+          <span>Path</span>
+          <input
+            #patternInput
+            [value]="form.pattern"
+            (input)="patchDraft({ pattern: patternInput.value })"
+            class="et-query-devtools-input"
+            type="text"
+            placeholder="/posts/:id/comments"
+          />
+          <small><code>:name</code> matches any one segment, so the route is mocked rather than one URL</small>
+        </label>
+
+        <label class="et-query-devtools-field et-query-devtools-field--wide">
+          <span>Query</span>
+          <input
+            #queryInput
+            [value]="form.query"
+            (input)="patchDraft({ query: queryInput.value })"
+            class="et-query-devtools-input"
+            type="text"
+            placeholder="page=2&limit=10"
+          />
+          <small>
+            parameters the request must carry; anything else it asks for is ignored. Empty answers whatever the query
+            string is - and a mock naming parameters wins over one that does not
+          </small>
+        </label>
+
+        <label class="et-query-devtools-field">
+          <span>Status</span>
+          <input
+            #statusDraftInput
+            [value]="form.status"
+            (input)="patchDraft({ status: statusDraftInput.value })"
+            class="et-query-devtools-input et-query-devtools-input--number"
+            type="number"
+            min="100"
+            max="599"
+            step="1"
+          />
+          <small>400 and above arrive as a real error</small>
+        </label>
+
+        <label class="et-query-devtools-field">
+          <span>Latency</span>
+          <input
+            #latencyDraftInput
+            [value]="form.latencyMs"
+            (input)="patchDraft({ latencyMs: latencyDraftInput.value })"
+            class="et-query-devtools-input et-query-devtools-input--number"
+            type="number"
+            min="0"
+            max="60000"
+            step="100"
+          />
+          <small>ms before it settles</small>
+        </label>
+      </div>
+
+      <label class="et-query-devtools-mock-body">
+        <span class="et-query-devtools-section">Body</span>
+        <textarea
+          #bodyInput
+          [value]="form.body"
+          (input)="patchDraft({ body: bodyInput.value })"
+          class="et-query-devtools-input et-query-devtools-mock-textarea"
+          rows="8"
+          spellcheck="false"
+        ></textarea>
+      </label>
+
+      @if (draftError(); as error) {
+        <p class="et-query-devtools-settings-warn">{{ error }}</p>
+      }
+
+      <div class="et-query-devtools-mock-head">
+        <button (click)="saveDraft()" class="et-query-devtools-btn et-query-devtools-btn--primary" type="button">
+          Save to the library
+        </button>
+        <button (click)="closeDraft()" class="et-query-devtools-btn" type="button">Cancel</button>
+      </div>
+    </div>
+  }
+
+  <div class="et-query-devtools-card">
+    <div class="et-query-devtools-card-head">
+      <strong>Designed</strong>
+      <span class="et-query-devtools-count">{{ rows().length }} in the library</span>
+    </div>
+
+    @for (row of rows(); track row.mock.id) {
+      <div [class.et-query-devtools-mock-row--armed]="row.armed" class="et-query-devtools-mock-row">
+        <div class="et-query-devtools-mock-head">
+          <button
+            [class.et-query-devtools-btn--tampered]="row.armed"
+            [attr.aria-pressed]="row.armed"
+            (click)="toggleArmed(row)"
+            class="et-query-devtools-btn"
+            type="button"
+            title="{{ row.armed ? 'Stop serving this response' : 'Serve this response instead of the request' }}"
+          >
+            {{ row.armed ? 'Armed' : 'Arm' }}
+          </button>
+          <span class="et-query-devtools-method">{{ row.mock.method }}</span>
+          <span class="et-query-devtools-route et-query-devtools-mono">{{ row.mock.pattern }}</span>
+          @if (row.mock.query) {
+            <span class="et-query-devtools-url">?{{ row.mock.query }}</span>
+          }
+          <span class="et-query-devtools-url">{{ row.mock.clientName }}</span>
+          @if (row.mock.capturedAt) {
+            <span class="et-query-devtools-chip">captured</span>
+          }
+          @if (row.isSecure) {
+            <span
+              class="et-query-devtools-chip et-query-devtools-chip--error"
+              title="A mock sends nothing, so no token is attached and the auth flow is never exercised"
+            >
+              no auth
+            </span>
+          }
+          <span class="et-query-devtools-count">{{ host.formatBytes(row.bytes) }}</span>
+          <button (click)="editBody(row)" class="et-query-devtools-btn" type="button">Body</button>
+          <button
+            (click)="copyDefinition(row)"
+            class="et-query-devtools-btn"
+            type="button"
+            title="Copy this route as a @ethlete/query definition - the response type inferred from the body, the args contract and the creator call"
+          >
+            <span aria-hidden="true">⧉</span>
+            {{ copiedId() === row.mock.id ? 'Copied' : 'TS' }}
+          </button>
+          <button (click)="remove(row)" class="et-query-devtools-btn et-query-devtools-btn--danger" type="button">
+            Delete
+          </button>
+        </div>
+
+        <div class="et-query-devtools-mock-fields">
+          <label class="et-query-devtools-field">
+            <span>Status</span>
+            <input
+              #statusInput
+              [value]="row.mock.status"
+              (change)="setStatus(row, statusInput.value)"
+              class="et-query-devtools-input et-query-devtools-input--number"
+              type="number"
+              min="100"
+              max="599"
+              step="1"
+            />
+            <small>400 and above arrive as a real error, body and all</small>
+          </label>
+          <label class="et-query-devtools-field">
+            <span>Latency</span>
+            <input
+              #latencyInput
+              [value]="row.mock.latencyMs"
+              (change)="setLatency(row, latencyInput.value)"
+              class="et-query-devtools-input et-query-devtools-input--number"
+              type="number"
+              min="0"
+              max="60000"
+              step="100"
+            />
+            <small>ms before it settles, so the route still has a loading state</small>
+          </label>
+        </div>
+
+        @if (editingId() === row.mock.id) {
+          <label class="et-query-devtools-mock-body">
+            <span class="et-query-devtools-section">Body</span>
+            <textarea
+              #rowBodyInput
+              [value]="bodyDraft()"
+              (input)="bodyDraft.set(rowBodyInput.value)"
+              class="et-query-devtools-input et-query-devtools-mock-textarea"
+              rows="10"
+              spellcheck="false"
+            ></textarea>
+          </label>
+          @if (bodyError(); as error) {
+            <p class="et-query-devtools-settings-warn">{{ error }}</p>
+          }
+          <div class="et-query-devtools-mock-head">
+            <button (click)="saveBody(row)" class="et-query-devtools-btn et-query-devtools-btn--primary" type="button">
+              Apply
+            </button>
+            <button (click)="cancelBody()" class="et-query-devtools-btn" type="button">Cancel</button>
+          </div>
+        }
+      </div>
+    } @empty {
+      <p class="et-query-devtools-empty">
+        Nothing designed yet. <strong>New mock</strong> writes one from scratch; capturing below seeds one from
+        something that actually happened.
+      </p>
+    }
+  </div>
+
+  <div class="et-query-devtools-card">
+    <div class="et-query-devtools-card-head">
+      <strong>Capture</strong>
+      <span class="et-query-devtools-count">live queries holding a response</span>
+    </div>
+
+    @for (row of captureRows(); track row.entry.id) {
+      <div class="et-query-devtools-mock-head">
+        <span class="et-query-devtools-method">{{ row.method }}</span>
+        <button
+          (click)="host.selectQuery(row.entry.id)"
+          class="et-query-devtools-route et-query-devtools-mono et-query-devtools-row-link"
+          type="button"
+          title="Open this query"
+        >
+          {{ row.pattern }}
+        </button>
+        <span class="et-query-devtools-url">{{ row.clientName }}</span>
+        @if (row.shared > 1) {
+          <span class="et-query-devtools-count" title="A mock answers the route, so it answers all of them">
+            {{ row.shared }} queries
+          </span>
+        }
+        <span class="et-query-devtools-count">{{ host.formatBytes(row.bytes) }}</span>
+        <button (click)="capture(row)" class="et-query-devtools-btn" type="button">
+          {{ row.exists ? 'Re-capture' : 'Capture' }}
+        </button>
+      </div>
+    } @empty {
+      <p class="et-query-devtools-empty">No live query has a response yet.</p>
+    }
+  </div>
+</div>

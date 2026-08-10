@@ -24,6 +24,12 @@ export type QueryDevtoolsSettings = {
    */
   overrides: QueryDevtoolsStorageScope;
 
+  /**
+   * The library of designed mocks - the authoring, not whether any of them is armed. Whether one is
+   * served is never persisted at any scope.
+   */
+  mocks: QueryDevtoolsStorageScope;
+
   /** How many entries the Events log keeps. */
   maxEvents: number;
 
@@ -41,6 +47,7 @@ const DEFAULTS: QueryDevtoolsSettings = {
   viewState: 'session',
   pins: 'local',
   overrides: 'none',
+  mocks: 'local',
   maxEvents: 100,
   maxDroppedCacheEntries: 20,
   responseHistory: null,
@@ -153,6 +160,7 @@ const sanitize = (value: Partial<QueryDevtoolsSettings> | null): QueryDevtoolsSe
   viewState: asScope(value?.viewState, DEFAULTS.viewState),
   pins: asScope(value?.pins, DEFAULTS.pins),
   overrides: asScope(value?.overrides, DEFAULTS.overrides),
+  mocks: asScope(value?.mocks, DEFAULTS.mocks),
   maxEvents: asCount(value?.maxEvents, LIMITS.maxEvents, DEFAULTS.maxEvents),
   maxDroppedCacheEntries: asCount(
     value?.maxDroppedCacheEntries,

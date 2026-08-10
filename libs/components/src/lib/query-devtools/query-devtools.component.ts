@@ -36,7 +36,9 @@ import {
   AnyQuerySnapshot,
   AnyQueryStack,
   BearerAuthMultiTabSyncFeature,
+  clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsFaults,
+  clearQueryDevtoolsMockStore,
   clearQueryDevtoolsOverrideStore,
   clearQueryDevtoolsStore,
   clearRestoredQueryDevtoolsOverrides,
@@ -48,7 +50,10 @@ import {
   queryDevtoolsAbout,
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
+  queryDevtoolsArmedMocks,
   queryDevtoolsFaults,
+  queryDevtoolsMockId,
+  queryDevtoolsMocks,
   queryDevtoolsOverridePersistence,
   queryDevtoolsRestoredOverridesScope,
   queryDevtoolsSettings,
@@ -100,6 +105,7 @@ import { QueryDevtoolsEventsTabComponent } from './query-devtools-events-tab.com
 import { diffQueryDevtoolsResponses } from './query-devtools-diff';
 import { COMPONENTS_VERSION } from '../version';
 import { QueryDevtoolsAboutComponent } from './query-devtools-about.component';
+import { QueryDevtoolsMocksTabComponent } from './query-devtools-mocks-tab.component';
 import { QueryDevtoolsSettingsComponent } from './query-devtools-settings.component';
 import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
@@ -119,6 +125,7 @@ import {
   SessionExportEntry,
   SessionExportEvent,
   SessionExportFault,
+  SessionExportMock,
   slimForReport,
 } from './query-devtools-session';
 import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
@@ -617,6 +624,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsSettingsComponent,
     QueryDevtoolsFaultsTabComponent,
     QueryDevtoolsFormsTabComponent,
+    QueryDevtoolsMocksTabComponent,
     QueryDevtoolsQueriesTabComponent,
     QueryDevtoolsSequencesTabComponent,
     QueryDevtoolsSocketsTabComponent,
@@ -672,6 +680,7 @@ export class QueryDevtoolsComponent {
     { id: 'timeline', label: 'Timeline' },
     { id: 'events', label: 'Events' },
     { id: 'faults', label: 'Faults' },
+    { id: 'mocks', label: 'Mocks' },
     { id: 'about', label: 'About' },
   ] satisfies { id: DevtoolsTab; label: string }[];
 
@@ -995,6 +1004,20 @@ export class QueryDevtoolsComponent {
   });
 
   /**
+   * The routes currently answered by a designed mock, for the shell's banner. A mocked response is a
+   * stronger lie than an override - nothing was sent at all - so it is named above every tab, not just
+   * badged on the one that armed it.
+   */
+  protected armedMockRoutes = computed(() => {
+    const armed = queryDevtoolsArmedMocks();
+    const routes = queryDevtoolsMocks()
+      .filter((mock) => armed.has(mock.id))
+      .map((mock) => `${mock.method} ${mock.pattern}`);
+
+    return routes.length ? routes : null;
+  });
+
+  /**
    * The queries the list is scoped to before the search box and the status chips narrow them further:
    * either the picked client's, or exactly the inspected element's.
    */
@@ -1073,6 +1096,9 @@ export class QueryDevtoolsComponent {
       // Armed faults are reported as errors rather than as a plain count: the badge is the one reminder
       // that the app is misbehaving on purpose, and it has to be impossible to read as "all good".
       faults: { count: 0, errors: Object.keys(queryDevtoolsFaults()).length, errorNoun: 'armed' },
+      // Armed mocks are errors for the same reason armed faults are: the count that matters is how much
+      // of the app is being answered by the panel, and it must be impossible to read as "all good".
+      mocks: { count: queryDevtoolsMocks().length, errors: queryDevtoolsArmedMocks().size, errorNoun: 'armed' },
       about: { count: 0, errors: 0 },
       settings: { count: 0, errors: 0 },
     };
@@ -1142,6 +1168,9 @@ export class QueryDevtoolsComponent {
 
   /** Disarms every client's fault - the shell's "Faults armed" banner offers this above every tab. */
   protected readonly CLEAR_FAULTS = clearQueryDevtoolsFaults;
+
+  /** Stops serving every designed mock - the shell's "Mocks armed" banner offers the same way out. */
+  protected readonly DISARM_MOCKS = clearQueryDevtoolsArmedMocks;
 
   /**
    * What the previous page load left armed: how many ops came back, how many queries took them, and the
@@ -1464,6 +1493,7 @@ export class QueryDevtoolsComponent {
     clearQueryDevtoolsStore(STORAGE_KEY);
     clearQueryDevtoolsStore(PINS_STORAGE_KEY);
     clearQueryDevtoolsOverrideStore();
+    clearQueryDevtoolsMockStore();
 
     this.dock.set('bottom');
     this.panelHeight.set(DEFAULT_HEIGHT);
@@ -1773,7 +1803,24 @@ export class QueryDevtoolsComponent {
    * untouched, so that would over-claim for the vast majority of queries on that client.
    */
   public isTampered(entry: QueryDevtoolsEntry) {
-    return (entry.overrides?.list().length ?? 0) > 0 || (entry.stats?.current().lastResponseWasFaulted ?? false);
+    return (
+      (entry.overrides?.list().length ?? 0) > 0 ||
+      (entry.stats?.current().lastResponseWasFaulted ?? false) ||
+      this.isMocked(entry)
+    );
+  }
+
+  /** Whether a designed mock is armed for this query's own route, so nothing it shows came off the wire. */
+  public isMocked(entry: QueryDevtoolsEntry) {
+    if (!entry.meta.route) return false;
+
+    const id = queryDevtoolsMockId({
+      clientName: entry.meta.clientName ?? '',
+      method: entry.meta.method ?? 'GET',
+      pattern: entry.meta.route,
+    });
+
+    return queryDevtoolsArmedMocks().has(id);
   }
 
   /**
@@ -2168,6 +2215,7 @@ export class QueryDevtoolsComponent {
         entries: this.sessionEntries(),
         events: this.sessionEvents(),
         faults: this.sessionFaults(),
+        mocks: this.sessionMocks(),
       }),
       null,
       2,
@@ -3216,6 +3264,22 @@ export class QueryDevtoolsComponent {
     return this.faultClients()
       .filter((client) => client.armed)
       .map((client) => ({ client: client.name, ...client.fault }));
+  }
+
+  /** Only the armed ones: a capture taken while the panel was answering requests has to say which. */
+  private sessionMocks(): SessionExportMock[] {
+    const armed = queryDevtoolsArmedMocks();
+
+    return queryDevtoolsMocks()
+      .filter((mock) => armed.has(mock.id))
+      .map((mock) => ({
+        client: mock.clientName,
+        method: mock.method,
+        pattern: mock.pattern,
+        status: mock.status,
+        latencyMs: mock.latencyMs,
+        body: slimForReport(mock.body),
+      }));
   }
 
   private downloadFile(fileName: string, content: string) {

@@ -227,6 +227,27 @@
       </div>
     }
 
+    @if (armedMockRoutes(); as mocked) {
+      <div class="et-query-devtools-armed-bar" role="status">
+        <span class="et-query-devtools-armed-dot" aria-hidden="true"></span>
+        <span class="et-query-devtools-armed-text">
+          <strong>Mocks armed</strong> on
+          <span class="et-query-devtools-mono">{{ mocked.join(', ') }}</span>
+          — {{ mocked.length === 1 ? 'that route is' : 'those routes are' }} answered by the panel, so nothing they show
+          reached the API.
+        </span>
+        <button
+          [disabled]="activeTab() === 'mocks'"
+          (click)="activeTab.set('mocks')"
+          class="et-query-devtools-btn"
+          type="button"
+        >
+          Review
+        </button>
+        <button (click)="DISARM_MOCKS()" class="et-query-devtools-btn" type="button">Disarm all</button>
+      </div>
+    }
+
     @if (restoredOverrides(); as restored) {
       <div class="et-query-devtools-armed-bar" role="status">
         <span class="et-query-devtools-armed-dot" aria-hidden="true"></span>
@@ -307,6 +328,11 @@
         <!-- FAULTS -->
         @case ('faults') {
           <et-query-devtools-faults-tab />
+        }
+
+        <!-- MOCKS -->
+        @case ('mocks') {
+          <et-query-devtools-mocks-tab />
         }
 
         <!-- ABOUT -->

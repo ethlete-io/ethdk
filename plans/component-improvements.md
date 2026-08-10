@@ -192,6 +192,47 @@ need documenting, because an unlabelled 10× is indistinguishable from a bug.
 
 ## Query devtools: a mock designer, with an export for the API team
 
+**Phase 1 shipped 2026-08-10** (serve + author + a TypeScript export). What is left is phases 2 and 3.
+Settled with the user before starting:
+
+- **Export format: OpenAPI 3.1 path item** with a schema inferred conservatively from one example plus the
+  designed body as `example`, and the document says it was inferred. Not TypeScript-only - though the TS
+  side arrived in phase 1 as `⧉ TS` (`query-devtools-typescript.ts`), because a pasteable definition is
+  what the frontend wants back.
+- **Its own Mocks tab**, not a section of Faults and not a drawer entry.
+- **Phasing: serve → design → export**, each with docs and a changeset.
+
+### What phase 1 built
+
+- `libs/query/src/lib/devtools/query-devtools-mocks.ts` - the library (persisted, scope
+  `queryDevtoolsSettings().mocks`, default `local`) and the armed set (**never** persisted). Matching is
+  client + method + path pattern (`:param` = one segment) + declared query params, and the armed mock
+  naming the most query params wins.
+- `resolveQueryDevtoolsMock` in the hook, consulted from `sendOrMock()` inside `sendWithFaults` - a mock
+  emits a real `HttpResponse` (or `HttpErrorResponse` at 400+), through `timer` even at zero latency.
+  `isQueryDevtoolsFaultInjectionEnabled` became `isQueryDevtoolsRequestInterceptionEnabled`.
+- The tab: **New mock** (client, method, path, query, status, latency, JSON body - nothing checked against
+  the registry, which is the point), the library list with arm/body/status/latency/delete, **Capture** from
+  a live response (one row per route), the armed bar above every tab, the tampered badge on mocked queries,
+  and armed mocks in the session export.
+- 21 query tests, 10 for the TS snippet. Verified headlessly: authoring a route the app never calls, arming
+  it, and the network staying quiet.
+
+### Phase 2 - the designer
+
+The reuse is the override menu's vocabulary (string/number/date presets, fill-recursively, duplicate array
+item, duplicate array, pagination shrink/extend, the four pagination shapes it detects): today it only runs
+against live data, and pointing it at a draft body is the authoring tool. Two seeds exist already (capture,
+empty); **"start from the route's declared response type" is not possible** - TS types are erased, so there
+is nothing to read at runtime.
+
+**The user's ask, 2026-08-10:** seed and annotate from the app's **generated API types** - `MatchView` as
+the base shape, `MatchId` as a field's type - so a designed body is a real view model rather than a guess.
+That needs a source of truth for those types (a generated `.d.ts`, an OpenAPI document the app already has,
+or a registry the app hands in); settle which before building.
+
+### Phase 3 - the export
+
 Raised by the user 2026-08-10. The big one: **design a response for a route, serve it to the app, and
 hand the result to the API team as a spec.** Survives a reload by definition - the authoring is the
 work.

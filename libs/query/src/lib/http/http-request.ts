@@ -5,10 +5,27 @@ import {
   HttpEventType,
   HttpHeaders,
   HttpProgressEvent,
+  HttpResponse,
 } from '@angular/common/http';
 import { ErrorHandler, Signal, signal } from '@angular/core';
-import { Observable, Subject, Subscription, catchError, defer, retry, switchMap, tap, throwError, timer } from 'rxjs';
-import { isQueryDevtoolsFaultInjectionEnabled, resolveQueryDevtoolsFault } from '../devtools/query-devtools-hook';
+import {
+  Observable,
+  Subject,
+  Subscription,
+  catchError,
+  defer,
+  of,
+  retry,
+  switchMap,
+  tap,
+  throwError,
+  timer,
+} from 'rxjs';
+import {
+  isQueryDevtoolsRequestInterceptionEnabled,
+  resolveQueryDevtoolsFault,
+  resolveQueryDevtoolsMock,
+} from '../devtools/query-devtools-hook';
 import { buildTimestampFromSeconds } from './internal/request-route';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { extractExpiresInSeconds } from './query-cache-utils';
@@ -265,6 +282,12 @@ export type HttpRequest<TArgs extends QueryArgs> = {
   subtle: HttpRequestSubtle<TArgs>;
 };
 
+/**
+ * The `statusText` of a response the devtools served instead of sending the request. It is what a log, a
+ * network-less error and a copied report all read, so it has to say where the response came from.
+ */
+const MOCKED_STATUS_TEXT = 'Served by the query devtools';
+
 /** A custom error event since the Angular http client does not provide a specific event for errors */
 export type HttpErrorEvent = {
   type: 'error';
@@ -349,6 +372,45 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
    * same tick it was started in, and settling synchronously inside `execute()` would let an injected
    * failure land before the caller has finished wiring the request up.
    */
+  /**
+   * The request, or the response a devtools mock has armed for this route instead of it. A mock bypasses
+   * the interceptor chain by construction - nothing is sent - so a mocked secure route never exercises
+   * the token flow, which the panel says on the row.
+   */
+  const sendOrMock = (headers: HttpHeaders | undefined) => {
+    const mock = resolveQueryDevtoolsMock({
+      clientName: options.clientName ?? '',
+      method: options.method,
+      url: options.fullPath,
+    });
+
+    if (!mock) return send(headers);
+
+    const settle$ =
+      mock.status >= 400
+        ? throwError(
+            () =>
+              new HttpErrorResponse({
+                status: mock.status,
+                statusText: MOCKED_STATUS_TEXT,
+                url: options.fullPath,
+                error: mock.body,
+              }),
+          )
+        : of(
+            new HttpResponse<ResponseType<TArgs>>({
+              body: mock.body as ResponseType<TArgs>,
+              status: mock.status,
+              statusText: MOCKED_STATUS_TEXT,
+              url: options.fullPath,
+            }),
+          );
+
+    // Through `timer` even at zero latency, for the same reason a faulted attempt is: settling
+    // synchronously inside `execute()` would land the response before the caller has wired the request up.
+    return timer(mock.latencyMs).pipe(switchMap(() => settle$));
+  };
+
   const sendWithFaults = (headers: HttpHeaders | undefined) =>
     defer(() => {
       const fault = resolveQueryDevtoolsFault({
@@ -359,13 +421,13 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
       lastAttemptFaulted = !!fault && fault.status !== null;
 
-      if (!fault) return send(headers);
+      if (!fault) return sendOrMock(headers);
 
       const { status } = fault;
 
       const attempt$ =
         status === null
-          ? send(headers)
+          ? sendOrMock(headers)
           : throwError(
               () =>
                 new HttpErrorResponse({
@@ -381,7 +443,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
   const createStream = () => {
     const headers = resolveHeaders();
-    const source$ = isQueryDevtoolsFaultInjectionEnabled() ? sendWithFaults(headers) : send(headers);
+    const source$ = isQueryDevtoolsRequestInterceptionEnabled() ? sendWithFaults(headers) : send(headers);
 
     return source$.pipe(
       tap((event) => updateState(event)),

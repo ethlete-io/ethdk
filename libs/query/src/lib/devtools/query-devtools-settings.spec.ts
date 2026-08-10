@@ -23,6 +23,7 @@ describe('query devtools settings', () => {
       viewState: 'session',
       pins: 'local',
       overrides: 'none',
+      mocks: 'local',
       maxEvents: 100,
       maxDroppedCacheEntries: 20,
       responseHistory: null,

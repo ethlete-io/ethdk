@@ -9,6 +9,7 @@ import {
   QueryDevtoolsRoutePart,
   setQueryDevtoolsFaultResolver,
   setQueryDevtoolsFormLinksFactory,
+  setQueryDevtoolsMockResolver,
   setQueryDevtoolsOverridesFactory,
   setQueryDevtoolsRegistrar,
   setQueryDevtoolsStatsFactory,
@@ -20,6 +21,7 @@ import {
   withQueryDevtoolsOverridePersistence,
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
+import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './query-devtools-mocks';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
 import { MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
@@ -260,11 +262,13 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
   registerEthleteVersion('query', QUERY_VERSION);
   setQueryDevtoolsAppInfo(options?.about);
   initQueryDevtoolsOverridePersistence();
+  initQueryDevtoolsMocks();
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
   setQueryDevtoolsFormLinksFactory(createQueryDevtoolsFormLinks);
   setQueryDevtoolsOverridesFactory(createQueryDevtoolsOverrides);
   setQueryDevtoolsFaultResolver(resolveQueryDevtoolsFaultForAttempt);
+  setQueryDevtoolsMockResolver(resolveQueryDevtoolsMockForAttempt);
 
   if (!isDevMode()) {
     console.warn(

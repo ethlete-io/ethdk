@@ -314,7 +314,22 @@ export type QueryDevtoolsResolvedFault = {
   status: number | null;
 };
 
+/** What a mock resolver matches against - the same three things a fault resolver sees. */
+export type QueryDevtoolsMockTarget = QueryDevtoolsFaultTarget;
+
+/** The response the devtools want served instead of one upcoming attempt. */
+export type QueryDevtoolsResolvedMock = {
+  /** The status to respond with. `400` and above are delivered as an `HttpErrorResponse`. */
+  status: number;
+
+  body: unknown;
+
+  /** How long to wait before the mocked response settles. */
+  latencyMs: number;
+};
+
 let faultResolver: ((target: QueryDevtoolsFaultTarget) => QueryDevtoolsResolvedFault | null) | null = null;
+let mockResolver: ((target: QueryDevtoolsMockTarget) => QueryDevtoolsResolvedMock | null) | null = null;
 
 /**
  * Installs the fault resolver. Called by `provideQueryDevtools()`; nothing else may call it.
@@ -327,11 +342,29 @@ export const setQueryDevtoolsFaultResolver = (
 };
 
 /**
- * Whether fault injection can do anything at all. Checked before building the wrapper that resolves a
- * fault per attempt, so a request in an app without devtools keeps the pipeline it always had.
+ * Installs the mock resolver. Called by `provideQueryDevtools()`; nothing else may call it.
  * @internal
  */
-export const isQueryDevtoolsFaultInjectionEnabled = () => faultResolver !== null;
+export const setQueryDevtoolsMockResolver = (
+  fn: (target: QueryDevtoolsMockTarget) => QueryDevtoolsResolvedMock | null,
+) => {
+  mockResolver = fn;
+};
+
+/**
+ * Whether the devtools can do anything to a request at all - inject a fault, or serve a mock instead of
+ * sending it. Checked before building the wrapper that resolves both per attempt, so a request in an app
+ * without devtools keeps the pipeline it always had.
+ * @internal
+ */
+export const isQueryDevtoolsRequestInterceptionEnabled = () => faultResolver !== null || mockResolver !== null;
+
+/**
+ * The mock to serve one upcoming attempt instead of sending it, or `null` to let it through.
+ * @internal
+ */
+export const resolveQueryDevtoolsMock = (target: QueryDevtoolsMockTarget): QueryDevtoolsResolvedMock | null =>
+  mockResolver?.(target) ?? null;
 
 /**
  * Resolves the fault to apply to one upcoming attempt, or `null` when nothing is armed. Consumes a

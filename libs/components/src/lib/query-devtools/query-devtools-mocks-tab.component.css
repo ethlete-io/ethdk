@@ -1,0 +1,74 @@
+@layer components {
+  /* The shared toolbar centres its controls against a one-line hint; this one's wraps. */
+  .et-query-devtools-mocks-toolbar {
+    align-items: flex-start;
+  }
+
+  .et-query-devtools-mock-row {
+    padding-block: 0.6rem;
+    border-block-start: 1px solid var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-card > .et-query-devtools-mock-row:first-of-type {
+    border-block-start: 0;
+    padding-block-start: 0;
+  }
+
+  /* An armed mock is a lie the app is being told, so it has to be findable from across the panel - the
+     same treatment an armed fault's card gets. */
+  .et-query-devtools-mock-row--armed {
+    background: color-mix(in srgb, var(--_et-qdt-error) 6%, transparent);
+  }
+
+  .et-query-devtools-mock-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    min-block-size: var(--_et-qdt-row-h);
+  }
+
+  .et-query-devtools-mock-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+    align-items: start;
+    gap: 0.4rem 1.6rem;
+    padding-block-start: 0.4rem;
+  }
+
+  .et-query-devtools-mock-fields .et-query-devtools-field {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    align-items: baseline;
+    row-gap: 0.2rem;
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-mock-fields .et-query-devtools-field small {
+    grid-column: 2;
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  /* A route and its query string are the two fields worth reading in full, so they take the whole row
+     rather than sharing it with a three-digit number. */
+  .et-query-devtools-mock-fields .et-query-devtools-field--wide {
+    grid-column: 1 / -1;
+    grid-template-columns: 7rem minmax(0, 1fr);
+  }
+
+  .et-query-devtools-mock-body {
+    display: block;
+    padding-block-start: 0.4rem;
+  }
+
+  .et-query-devtools-mock-textarea {
+    display: block;
+    inline-size: 100%;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 1.15rem;
+    line-height: 1.5;
+    tab-size: 2;
+  }
+}

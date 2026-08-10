@@ -6,10 +6,12 @@ const build = (overrides: Partial<BuildSessionExportOptions> = {}) =>
   buildQueryDevtoolsSessionExport({
     now: NOW,
     location: 'https://app.example.com/posts',
+    about: { ethlete: { query: '0.0.0-test' }, angular: '0.0.0-test', app: null },
     clients: [],
     entries: [],
     events: [],
     faults: [],
+    mocks: [],
     ...overrides,
   });
 
@@ -57,12 +59,21 @@ describe('buildQueryDevtoolsSessionExport', () => {
       entries: [{ id: 'query|api|GET|/posts#0', kind: 'query' }],
       events: [{ timestamp: new Date(NOW).toISOString(), client: 'api', type: 'request-success' }],
       faults: [{ client: 'api', latencyMs: 500, failNext: 0, failRate: 0, status: 500 }],
+      mocks: [{ client: 'api', method: 'GET', pattern: '/posts/:id', status: 200, latencyMs: 0, body: { a: 1 } }],
     });
 
     expect(result._type).toBe('ethlete.query:devtools-session');
     expect(result.exportedAt).toBe(new Date(NOW).toISOString());
     expect(result.location).toBe('https://app.example.com/posts');
-    expect(result.counts).toEqual({ clients: 1, entries: 1, events: 1, armedFaults: 1, armedOverrides: 0 });
+    expect(result.counts).toEqual({
+      clients: 1,
+      entries: 1,
+      events: 1,
+      armedFaults: 1,
+      armedOverrides: 0,
+      armedMocks: 1,
+    });
+    expect(result.mocks[0]).toMatchObject({ method: 'GET', pattern: '/posts/:id' });
   });
 
   it('should count and slim armed overrides across every entry', () => {
