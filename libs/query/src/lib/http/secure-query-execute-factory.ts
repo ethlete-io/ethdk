@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { EMPTY, filter, map, merge, skip, Subscription, switchMap, take, takeWhile, tap } from 'rxjs';
+import { EMPTY, filter, map, merge, Subscription, switchMap, take, takeWhile, tap } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
