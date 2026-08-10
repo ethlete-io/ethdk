@@ -64,20 +64,25 @@ character the keyboard reports.
 ## Where the panel sits
 
 A bottom dock is right for a waterfall and wrong for a wide screen, and on two
-monitors neither is right. The header carries the alternatives. One button cycles
-the three in-page positions, always naming the next one:
+monitors neither is right. The header's **layout menu** - the button naming where
+the panel currently is - lists every alternative:
 
-- **◨ Right** docks the panel to the right edge, sized by dragging its inner edge
-  instead of its top one. At that width the master/detail and split views stack
-  vertically rather than sitting side by side, so neither pane is squeezed below
-  what it needs.
-- **❐ Float** lifts it off the edges entirely: a window inside the page, moved by
-  the dotted grip on its title bar and resized from any of its eight edges and
-  corners. **⬓ Bottom** puts it back.
-- **⧉ Pop out** moves the panel into a window of its own - the _same_ live panel,
-  not a second one, so every signal in it keeps updating from the app you are
-  inspecting, and **Inspect** still highlights components in the app window.
-  **⧈ Dock back** (or closing the window) brings it home.
+| Layout        | What it does                                                                                                                                    |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **⬓ Bottom**  | The default. Sized by dragging its top edge.                                                                                                    |
+| **⬒ Top**     | The same, hanging from the top edge - useful when what you are debugging is at the bottom of a long page.                                       |
+| **◧ Left**    | Docked to the left edge, sized by dragging its inner edge.                                                                                      |
+| **◨ Right**   | The same on the right.                                                                                                                          |
+| **❐ Float**   | A window inside the page: moved by the dotted grip on its title bar, resized from any of its eight edges and corners, and parkable off an edge. |
+| **⧉ Pop out** | Moves the panel into a window of its own.                                                                                                       |
+
+Either side dock stacks the master/detail and split views vertically rather than
+side by side, so neither pane is squeezed below what it needs.
+
+A **pop-out** is the _same_ live panel, not a second one, so every signal in it
+keeps updating from the app you are inspecting, and **Inspect** still highlights
+components in the app window. **⧈ Dock back** (or closing the window) brings it
+home, to whichever layout it left from.
 
 **Float or pop out?** They are not interchangeable. A real window survives being
 covered by the app and can go to a second monitor, but needs pop-up permission and
@@ -189,6 +194,33 @@ list - the `87` being what the list holds unnarrowed, so tombstones are part of 
 only while **Gone** is on - and **Clear filters** drops the term and the chips while
 keeping the client scope. The [Insomnia download](#export-to-insomnia) exports
 whatever is listed, so these filters pick what ends up in the collection.
+
+### Grouping the list by route path
+
+The list is flat by default, which is the right shape for "what ran just now".
+The **⑂ tree** toggle beside the sort arrow rearranges it by route path instead,
+for the other question: _what does this screen actually hit?_
+
+Two rules keep the tree from being worse than the list it replaced:
+
+- **A segment nothing branches off gets no heading.** A `/flaky` folder above one
+  `GET /flaky` row costs a line and a level of indentation to repeat what is on
+  the line below it. Only a segment that actually splits the list becomes a
+  folder, so a list of unrelated routes looks almost exactly like the flat one.
+- **Single-child chains are folded into one row.** `/api` → `/v1` → `/teams`
+  becomes one `api/v1/teams` heading, not three.
+
+**Rows under a folder leave off what the folder already says.** Below a `/post`
+heading the rows read `…/1` and `…/:postId`, not `/post/1` and `/post/:postId` -
+the `…` is the marker, and hovering it gives the whole route back.
+
+A folder counts everything at or below it and can be collapsed; which folders you
+closed is [persisted](#persistence), and the tree opens **open** rather than
+closed - a tree showing only the first segment of every route answers nothing.
+The tree is built from the route each row _shows_, the same string
+[the fold](#rows-that-would-repeat-are-folded) uses - so `/post/1` and `/post/2`
+are two rows under one `/post`, which is what makes it answer "which ids did this
+screen fetch". Pinning and the sort still decide the order within a folder.
 
 ### When each query last ran
 

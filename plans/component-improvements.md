@@ -620,6 +620,51 @@ path.
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
 
+**Query devtools: the Queries list nests by path** (2026-08-10, was an `M` triage row with no section) -
+an opt-in **⑂ tree** toggle beside the sort arrow, flat still the default. With it, the **Web Locks
+inspector** is the only query devtools item left open. `query-devtools-query-tree.ts`
+is pure and separately tested; two rules do the work the row warned about:
+
+- **A node nothing branches off gets no folder row** (`flattenQueryPathTree`). The first build headed
+  every route - `/flaky` above one `GET /flaky` - which is exactly the "tree is worse than the list"
+  failure the row predicted, and it was only obvious once it was driven in the story. Only a node that
+  splits the list earns a heading.
+- **Single-child chains compress** (`buildQueryPathTree`), so `/api/v1/teams` is one row, not three.
+- The tree is built from the route a row **shows**, the same string `groupKey` folds on, so `/post/1`
+  and `/post/2` are two leaves under `/post`. Folders store **collapsed**, not expanded - a tree that
+  opens closed shows one segment per route and answers nothing.
+
+- **Rows drop the prefix their folder already states** (user-raised): under `/post` a row reads `…/1`,
+  with the full route on the `…`'s `title`. `trimRouteSegments` splits whichever route segment the
+  prefix ends inside and **refuses** a prefix the route does not start with, or one that would trim the
+  whole route away - either would produce a tail that reads as a different endpoint.
+
+The list template was restructured for it: the fold-group block and the empty state are `ng-template`s
+now, shared by the flat and tree branches instead of duplicated. Changeset
+`devtools-nest-queries-by-path.md`; 23 unit tests; verified headlessly 12/12.
+
+**Query devtools: the layout menu, plus left and top docks** (2026-08-10, user-raised while the float
+was being built) - the header's dock-cycle and Pop out buttons became one menu naming where the panel
+is. `dock` grows `left` and `top`; `sideDocked()` is what both the pane axis and the resize maths key
+on, and the resize is "distance from the pointer to the attached edge", which is the pointer's own
+coordinate for a leading edge and the viewport minus it for a trailing one. The menu is a **plain
+absolutely-positioned list**, not an `et-menu` overlay - for the same reason the tab overflow menu is:
+an overlay renders into the app's document, and the panel can be living in the pop-up's. Changeset
+`devtools-layout-menu.md`; verified headlessly 13/13.
+
+Two bugs the headless runs missed and the user hit, both fixed there and both worth remembering:
+
+- **`<et-resize-handles>` blankets its host on a coarse pointer.** Its `@media (any-pointer: coarse)`
+  rule swaps the bands to `20px`/`28px`, which covered the float's whole title bar and the header's
+  trailing edge - nothing in either could be pressed. The float now caps the touch sizes and carries a
+  frame exactly their thickness (`padding-inline` / `padding-block-end`), because the handles are
+  pinned to the **padding box**, so a frame their width keeps them off the panel's own controls. Any
+  future host of that component needs the same treatment.
+- **A dropdown inside the header strips was clipped.** Below `md` both strips are `overflow-x: auto`,
+  and a scroller clips absolutely-positioned children - so the layout menu opened invisibly. Both
+  strips now go `overflow: visible` while a menu is open (`:has()`). The tab overflow menu had the
+  same latent bug and is fixed by the same rule.
+
 **Query devtools: the panel floats in the page** (2026-08-10, was "pop out to a window _or_ float inside
 the page") - `dock` grows a third value, `float`, with a persisted `{ x, y, width, height }`. The one
 dock button now cycles bottom → right → float, always naming the next one. Worth not rediscovering:

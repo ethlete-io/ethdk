@@ -127,8 +127,23 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 > click the title bar to bring it back. North is never a parking edge. The blocked pop-up the section
 > filed alongside it now raises a notice with a one-click **Float instead**.
 >
-> > **The tile stays #1 and stays parked** - the user declined its design questions on 2026-08-09
-> > rather than settling them, so do not re-ask unprompted.
+> **Query devtools: nest the Queries list by path** shipped 2026-08-10 (an `M` row). The **Web Locks
+> inspector** (`A`,`D`) is now the only query devtools item left open. An opt-in **⑂ tree** toggle,
+> flat still the default. The row's warning was right and only showed up once it was driven in the
+> story: the first build headed every route, so a node nothing branches off now gets **no folder row
+> at all**, and single-child chains compress into one. Folders store collapsed rather than expanded,
+> because a tree that opens closed answers nothing.
+>
+> **A layout menu, with left and top docks**, shipped the same day (user-raised): the dock-cycle and
+> Pop out buttons are one menu naming where the panel is, and `dock` grows `left` and `top`. It is a
+> plain positioned list rather than an `et-menu`, for the same reason the tab overflow menu is - an
+> overlay renders into the app's document, and the panel can be in the pop-up's. Two bugs the headless
+> runs missed: `<et-resize-handles>` swaps to 20/28px bands on `any-pointer: coarse` and blanketed the
+> float's title bar, and the header strips' `overflow-x: auto` clipped the dropdown. Both fixed - see
+> `component-improvements.md`; the second one also fixes the tab overflow menu.
+>
+> **The tile stays #1 and stays parked** - the user declined its design questions on 2026-08-09
+> rather than settling them, so do not re-ask unprompted.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
@@ -166,7 +181,6 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 | Selection list: `variant="tile"`                   | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
 | Segmented `variant="tabs"` doesn't match tabs      | `C`,`D` | Underline size, baseline rule, swapped accent tokens, half the block padding, hover fills an unchecked segment. Wants shared tokens         |
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
-| Query devtools: nest the Queries list by path      | `A`     | Opt-in toggle, flat stays the default. Compress single-child chains or the tree is worse than the list                                      |
 | Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped      |
 
 ### L - projects, not tickets
