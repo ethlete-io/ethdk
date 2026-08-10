@@ -2,7 +2,6 @@ import { Type } from '@angular/core';
 import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { StreamPlayerErrorComponent } from './error';
 import { StreamPlayerLoadingComponent } from './loading';
-import { StreamPipChromeComponent } from './pip/pip-chrome.component';
 import { DEFAULT_PIP_CHROME_CONFIG, StreamPipChromeConfig } from './pip/pip-chrome.config';
 
 export type StreamPipWindowConfig = {
@@ -76,9 +75,11 @@ export type StreamConfig = {
    * Supply a custom component that provides `PIP_CHROME_REF_TOKEN` to fully
    * replace the built-in pip chrome UI.
    *
-   * @default `StreamPipChromeComponent`
+   * `null` uses the built-in `StreamPipChromeComponent`.
+   *
+   * @default null
    */
-  pipChromeComponent: Type<unknown>;
+  pipChromeComponent: Type<unknown> | null;
 
   /**
    * Sizing and layout defaults for the floating pip window.
@@ -103,7 +104,7 @@ const DEFAULT_STREAM_CONFIG: StreamConfig = {
   pipSlotPlaceholderComponent: null,
   loadingComponent: StreamPlayerLoadingComponent,
   errorComponent: StreamPlayerErrorComponent,
-  pipChromeComponent: StreamPipChromeComponent,
+  pipChromeComponent: null,
   pipWindow: DEFAULT_PIP_WINDOW_CONFIG,
   pipChrome: DEFAULT_PIP_CHROME_CONFIG,
 };

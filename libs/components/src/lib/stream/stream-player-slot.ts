@@ -342,7 +342,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     pipManager.pipActivate(el, {
       onBack,
       aspectRatio: options.aspectRatio,
-      pipChromeComponent: streamConfig.pipChromeComponent,
+      pipChromeComponent: streamConfig.pipChromeComponent ?? undefined,
       pipChromeConfig: streamConfig.pipChrome,
     });
 
