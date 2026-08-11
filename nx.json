@@ -97,7 +97,8 @@
         "libs/core/**/*",
         "libs/eslint-plugin/**/*",
         "libs/query/**/*",
-        "libs/query-devtools/**/*"
+        "libs/query-devtools/**/*",
+        "libs/timetrack/**/*"
       ]
     }
   ],

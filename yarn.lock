@@ -4494,6 +4494,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ethlete/timetrack@workspace:libs/timetrack":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/timetrack@workspace:libs/timetrack"
+  peerDependencies:
+    "@ethlete/agent-rules": ^0.1.0-next.5
+    rxjs: 7.8.2
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/types@workspace:libs/types":
   version: 0.0.0-use.local
   resolution: "@ethlete/types@workspace:libs/types"

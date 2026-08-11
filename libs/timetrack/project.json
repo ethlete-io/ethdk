@@ -1,0 +1,45 @@
+{
+  "name": "timetrack",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/timetrack/src",
+  "prefix": "ethlete",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "outputs": ["{workspaceRoot}/dist/libs/timetrack"],
+      "defaultConfiguration": "production",
+      "options": {
+        "project": "libs/timetrack/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/timetrack/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/timetrack/tsconfig.lib.json"
+        }
+      }
+    },
+    "lint": {
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
+    },
+    "test": {
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/timetrack"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/libs/timetrack"
+      }
+    }
+  }
+}

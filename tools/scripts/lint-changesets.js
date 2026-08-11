@@ -32,6 +32,7 @@ const PACKAGES = [
   '@ethlete/eslint-plugin',
   '@ethlete/query',
   '@ethlete/query-devtools',
+  '@ethlete/timetrack',
   '@ethlete/types',
 ];
 
