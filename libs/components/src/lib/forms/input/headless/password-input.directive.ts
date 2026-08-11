@@ -20,7 +20,11 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
   /** Whether the value is currently shown as plain text. */
   public revealed = model(false);
 
-  /** Whether Caps Lock was active on the last keystroke - feed it via `syncCapsLock`. */
+  /**
+   * Whether Caps Lock is known to be on - feed it via `syncCapsLock`. Only ever `true` off a
+   * reading that can be trusted, so it lags one keystroke behind Caps Lock being switched on
+   * rather than reporting it as still on after it has been switched off.
+   */
   public capsLockOn = signal(false);
 
   /**
@@ -85,12 +89,22 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
   }
 
   /**
-   * Feed keyboard or pointer events from the native input so `capsLockOn` stays current.
-   * Pointer events matter for the focus case: clicking into an already-Caps-Lock-on field
-   * fires no keystroke, so the warning would otherwise not appear until the first key -
-   * `MouseEvent`/`PointerEvent` carry `getModifierState`, `FocusEvent` does not.
+   * Feed keyboard, pointer or focus events from the native input so `capsLockOn` stays current.
+   * Pointer events matter for the focus case: clicking into an already-Caps-Lock-on field fires no
+   * keystroke, so the warning would otherwise not appear until the first key. Events that cannot
+   * report the state - `FocusEvent`, and the Caps Lock key itself - clear it.
    */
-  public syncCapsLock(event: KeyboardEvent | MouseEvent) {
+  public syncCapsLock(event: KeyboardEvent | MouseEvent | FocusEvent) {
+    // Two readings can't be trusted: a `FocusEvent` carries no modifier state at all, and on macOS
+    // the Caps Lock key's own keydown/keyup reports the state from before the toggle - which is why
+    // switching Caps Lock off used to leave the warning on. Drop the state for both and let the next
+    // real keystroke or pointer event re-establish it.
+    if (!('getModifierState' in event) || ('key' in event && event.key === 'CapsLock')) {
+      this.capsLockOn.set(false);
+
+      return;
+    }
+
     this.capsLockOn.set(event.getModifierState('CapsLock'));
   }
 }

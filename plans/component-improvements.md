@@ -344,8 +344,23 @@ order of preference:
    last keystroke". Honest, but it reads as a bug to the user who just turned it
    off.
 
-Recommend (1), and verify by hand again afterwards: an automated check cannot
-confirm it, for the reason above.
+**Fixed on 2026-08-11**, along the lines of (1) but without the lag on the case that
+actually matters. `syncCapsLock` now treats two readings as untrustworthy and clears
+the state for both: the Caps Lock key's own `keydown`/`keyup` (identified by
+`event.key === 'CapsLock'`), and any event with no modifier state to read at all
+(`FocusEvent`, which the component now feeds it on `blur` so a reading expires with
+the focus session that produced it). Everything else - real keystrokes and pointer
+presses - reads `getModifierState` as before. So switching Caps Lock off clears the
+warning immediately; switching it on while the field already has focus shows it one
+keystroke later. The asymmetry is the right way round: the warning can lag, but it
+can no longer be wrong.
+
+Driven headlessly against the real story with dispatched `KeyboardEvent`s carrying
+`modifierCapsLock` (`components-forms-password-input--caps-lock-warning`): all nine
+steps behave as designed. That is not the same as a hardware toggle - Playwright
+cannot produce one, since CDP has no Caps Lock modifier bit and
+`keyboard.down('CapsLock')` leaves `getModifierState('CapsLock')` false - so **the
+macOS hardware case still needs a hand check.**
 
 No duplication elsewhere - `otp-input` and every other password-adjacent
 control have no caps-lock logic of their own; `password-input` owns this

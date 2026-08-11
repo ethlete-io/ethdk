@@ -85,6 +85,10 @@ export class PasswordInputComponent {
   /** The string in effect: this instance's `capsLockLabel`, else the domain's label set. */
   protected resolvedCapsLockLabel = computed(() => this.capsLockLabel() ?? this.inputLabels().capsLockOn);
 
+  protected showCapsLockWarning = computed(
+    () => this.capsLockWarning() && this.passwordDir.capsLockOn() && this.passwordDir.focused(),
+  );
+
   constructor() {
     afterNextRender(() => {
       const nativeInput = this.nativeInput()?.nativeElement ?? null;
@@ -94,11 +98,13 @@ export class PasswordInputComponent {
     });
   }
 
-  protected showCapsLockWarning() {
-    return this.capsLockWarning() && this.passwordDir.capsLockOn() && this.passwordDir.focused();
-  }
-
   public syncNativeValue(event: Event) {
     this.passwordDir.syncFromNativeInput(event.target as HTMLInputElement);
+  }
+
+  protected handleBlur(event: FocusEvent) {
+    this.passwordDir.focused.set(false);
+    this.passwordDir.touched.set(true);
+    this.passwordDir.syncCapsLock(event);
   }
 }

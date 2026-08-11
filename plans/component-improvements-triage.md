@@ -21,8 +21,9 @@ Ranked by value per unit of risk, not by size.
 `warn()` schema rule, and the button surface theming variants, as `tone="surface"` (a third theming
 axis on the button rather than a generated `ColorTheme`). **Segmented `variant="tabs"` shipped the
 same day**, onto a shared tab scale - which turned out to be the fix for a dead tab size scale as
-well; see its section in `component-improvements.md`. The tile below is #1 of what is left, but
-parked - see its row.
+well; see its section in `component-improvements.md`. **The password input's stuck caps-lock warning
+shipped on 2026-08-11 too**, once the user reproduced it - it left the blocked table entirely. The
+tile below is #1 of what is left, but parked - see its row.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
@@ -68,12 +69,11 @@ parked - see its row.
 | Selection card: leading/trailing slots | Forces `row-reverse` to become a `controlPosition` decision rather than a constant                                                                                                                                               |
 | Colour input: contrast validator       | Needs to read another control's value, and nothing in `libs/forms` does a cross-field read today - so the shape is the question, not a missing regex. `hexColor()`/`rgbColor()` shipped without it                               |
 
-### Blocked - and two that may no longer be
+### Blocked - one left, and it may no longer be
 
-| Item                                        | Status                                                                                                                                                                                                                                                                                                                                                  |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Password input: caps-lock stays on          | **No longer blocked - reproduced by the user on 2026-08-11.** Toggling CapsLock off leaves the warning on, confirming the macOS `keyup` quirk the doc predicted. The fix is about _when_ to re-check, not what to filter; the doc lists three options and recommends re-checking on `focusin` plus the next keystroke. Verification is manual by nature |
-| Scheduler drag-to-create on real iOS Safari | **Recheck.** Recorded as blocked because `idb` wasn't installed on what was then a Linux PC. The machine changed: `xcrun simctl` lists 5 available iPhone simulators locally. `idb` is still missing (so real taps need it, or `safaridriver`), but the blocker's premise no longer holds - re-test before treating it as blocked                       |
+| Item                                        | Status                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scheduler drag-to-create on real iOS Safari | **Recheck.** Recorded as blocked because `idb` wasn't installed on what was then a Linux PC. The machine changed: `xcrun simctl` lists 5 available iPhone simulators locally. `idb` is still missing (so real taps need it, or `safaridriver`), but the blocker's premise no longer holds - re-test before treating it as blocked |
 
 ### Watchlist - gated on browsers, not on us
 
