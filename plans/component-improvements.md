@@ -1281,8 +1281,10 @@ other three. What is left is the `perBreakpoint` shape above.
 
 ## Selection list: the tile variant that is missing
 
-The card duplication this section opened with is fixed - see "Already fixed". What is left is the
-tile.
+**Dropped on 2026-08-12** - the user removed it from the triage rather than settling its three
+design questions. Kept here as research only; do not re-add it to the triage. The card
+duplication this section opened with is fixed - see "Already fixed". What follows is what the
+tile would have been.
 
 ### The tile
 

@@ -13,9 +13,7 @@ rebuild", "Overlay responsiveness: resolved", and "Found not to reproduce". Don'
 decision before any code · `X` blocked.
 **Effort** is a rough order of magnitude: `S` under a day · `M` a few days · `L` a week or more.
 
-## The shortlist
-
-Ranked by value per unit of risk, not by size.
+## Where this stands
 
 Nothing in this file is blocked any more: the last blocked row, scheduler drag-to-create on real iOS
 Safari, was re-tested on 2026-08-12 and passed unchanged - see `component-improvements.md`.
@@ -26,22 +24,13 @@ the per-tab inactivity logout, the description list's `variant`, the scheduler's
 query long polling, scheduler move/resize (the largest `L` row there was) plus its all-day-strip
 follow-up, the scheduler's infinite agenda, and the query devtools' Web Locks inspector - which was
 the last query devtools row. Each one's design calls and traps are recorded in
-`component-improvements.md`'s "Already fixed, do not re-report".
-The tile below is #1 of what is left, but parked - see its row.
+`component-improvements.md`'s "Already fixed, do not re-report". The selection list's
+`variant="tile"` was dropped on 2026-08-12 rather than shipped - do not re-add it.
 
-1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
-   Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
-   its three open questions first - chiefly whether an unchecked tile still reads as selectable -
-   because they are design calls, not code. **Parked:** the user declined those questions on
-   2026-08-09 rather than settling them - do not re-ask unprompted.
+Nothing is left at `M`. What remains is the `L` projects and the rows that need a decision before
+any of them can start, so the next pick is a scoping call rather than a queue position.
 
 ## Everything else, by effort
-
-### M - real work, mostly consolidation
-
-| Item                             | Tag     | Note                                                                                               |
-| -------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
-| Selection list: `variant="tile"` | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled |
 
 ### L - projects, not tickets
 
