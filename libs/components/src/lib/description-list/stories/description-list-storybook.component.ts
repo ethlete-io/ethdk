@@ -1,11 +1,12 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, input, ViewEncapsulation } from '@angular/core';
+import { DescriptionListVariant } from '../description-list.component';
 import { DESCRIPTION_LIST_IMPORTS } from '../description-list.imports';
 
 @Component({
   selector: 'et-sb-description-list',
   template: `
     <div [style.max-inline-size.px]="420" class="p-8 font-sans">
-      <dl et-description-list>
+      <dl [variant]="variant()" et-description-list>
         <dt>Name</dt>
         <dd>Jane Doe</dd>
         <dt>Email</dt>
@@ -20,4 +21,6 @@ import { DESCRIPTION_LIST_IMPORTS } from '../description-list.imports';
   encapsulation: ViewEncapsulation.None,
   imports: [...DESCRIPTION_LIST_IMPORTS],
 })
-export class DescriptionListStorybookComponent {}
+export class DescriptionListStorybookComponent {
+  public variant = input<DescriptionListVariant>('inline');
+}

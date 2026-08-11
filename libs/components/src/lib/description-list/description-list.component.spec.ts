@@ -30,10 +30,32 @@ describe('DescriptionListComponent', () => {
     expect([...host.querySelectorAll('dd')].map((el) => el.textContent)).toEqual(['Jane Doe', 'jane@example.com']);
   });
 
+  it('exposes the variant as a data attribute, defaulting to inline', () => {
+    const fixture = TestBed.createComponent(DescriptionListHostComponent);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('dl')?.dataset['variant']).toBe('inline');
+  });
+
+  it('reflects a bound variant', () => {
+    TestBed.overrideComponent(DescriptionListHostComponent, {
+      set: {
+        template: `<dl et-description-list variant="stacked"><dt>Name</dt><dd>Jane Doe</dd></dl>`,
+        imports: [DESCRIPTION_LIST_IMPORTS],
+      },
+    });
+
+    const fixture = TestBed.createComponent(DescriptionListHostComponent);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('dl')?.dataset['variant']).toBe('stacked');
+  });
+
   it('only matches a real <dl>, never a plain attribute', () => {
     TestBed.overrideComponent(DescriptionListHostComponent, {
       set: {
         template: `<div et-description-list><dt>Name</dt><dd>Jane Doe</dd></div>`,
+        imports: [DESCRIPTION_LIST_IMPORTS],
       },
     });
 

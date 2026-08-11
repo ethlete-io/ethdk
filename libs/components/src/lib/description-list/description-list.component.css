@@ -11,6 +11,12 @@
     initial-value: 16px;
   }
 
+  @property --et-description-list-stacked-term-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 2px;
+  }
+
   @property --et-description-list-term-min-width {
     syntax: '<length>';
     inherits: false;
@@ -45,6 +51,15 @@
       margin: 0;
       font-size: var(--et-description-list-detail-font-size);
       color: var(--et-surface-color-solid, currentColor);
+    }
+
+    &:where([data-variant='stacked']) {
+      grid-template-columns: 1fr;
+      row-gap: var(--et-description-list-stacked-term-gap);
+
+      dt:not(:first-of-type) {
+        margin-block-start: max(0px, var(--et-description-list-row-gap) - var(--et-description-list-stacked-term-gap));
+      }
     }
   }
 }
