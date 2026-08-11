@@ -1,5 +1,5 @@
 import { afterNextRender, computed, contentChildren, Directive, effect, inject, signal } from '@angular/core';
-import { FORM_FIELD, FormField } from '@angular/forms/signals';
+import { FORM_FIELD } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FIELD_WARNINGS, FieldWarning } from './field-warnings';
 import { FORM_FIELD_ERROR_CODES } from './form-field-errors';
@@ -28,7 +28,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   // when the control renders its own support region (`et-slider`, `et-rating`, …). Reading both here
   // means no control has to forward them. `self` matters - without it an outer binding would leak in.
   private ownFieldBinding = inject(FORM_FIELD, { optional: true, self: true });
-  private wrappedFieldBindings = contentChildren(FormField, { descendants: true });
+  private wrappedFieldBindings = contentChildren(FORM_FIELD, { descendants: true });
 
   /** @internal */
   public registeredControl = signal<FormFieldControl | null>(null);
