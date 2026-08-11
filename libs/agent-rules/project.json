@@ -27,6 +27,12 @@
           "externalDependencies": ["eslint"]
         }
       ]
+    },
+    "test": {
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/agent-rules"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/libs/agent-rules"
+      }
     }
   }
 }

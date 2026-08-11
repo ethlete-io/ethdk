@@ -12,7 +12,12 @@ export default [
         {
           // `content/**` is shipped markdown and copy-paste templates, not code this package
           // imports — a `require('playwright')` in a Storybook snippet is not a dependency.
-          ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}', '{projectRoot}/content/**'],
+          ignoredFiles: [
+            '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
+            '{projectRoot}/content/**',
+            '{projectRoot}/src/**/*.spec.ts',
+            '{projectRoot}/vitest.config.{js,ts,mts}',
+          ],
         },
       ],
     },

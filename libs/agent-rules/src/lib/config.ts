@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { ContentScope } from './frontmatter';
+import { GitFlowConfig, RawGitFlowConfig, resolveGitFlowConfig } from './git-flow';
 import { loadDefaultVars } from './load-content';
 
 export const AGENT_TARGETS = ['claude', 'codex', 'cursor', 'copilot'] as const;
@@ -26,6 +27,8 @@ export type SyncConfig = {
   claudeMdImportsAgentsMd: boolean;
   /** Opt-in agent hooks (they run commands on the developer's machine, so never default). */
   hooks: string[];
+  /** The branch grammar, resolved against its defaults — see `@ethlete/agent-rules/git-flow`. */
+  gitFlow: GitFlowConfig;
 };
 
 type RawConfig = {
@@ -35,6 +38,7 @@ type RawConfig = {
   exclude?: string[];
   claudeMdImportsAgentsMd?: boolean;
   hooks?: string[];
+  gitFlow?: RawGitFlowConfig;
 };
 
 const readRawConfig = (root: string) => {
@@ -116,11 +120,24 @@ const assertKnownTargets = (targets: AgentTarget[]) => {
   }
 };
 
+/**
+ * The git-flow skill interpolates the grammar it teaches from the same `gitFlow` block the
+ * validator reads, so the documented convention cannot drift from the enforced one. A repo can
+ * still override any of these through `vars`.
+ */
+const gitFlowVars = (gitFlow: GitFlowConfig): Record<string, string | string[]> => ({
+  gitFlowDevelopmentBranch: gitFlow.baseBranches.development,
+  gitFlowProductionBranch: gitFlow.baseBranches.production,
+  gitFlowTypes: gitFlow.types,
+  gitFlowEnforcement: gitFlow.enforcement,
+});
+
 export const loadConfig = (options: { root: string; targetOverride?: AgentTarget[] }): SyncConfig => {
   const { root, targetOverride } = options;
   const raw = readRawConfig(root);
   const configured = raw.targets && raw.targets !== 'auto' ? raw.targets : undefined;
   const targets = targetOverride ?? configured ?? detectTargets(root);
+  const gitFlow = resolveGitFlowConfig(raw.gitFlow);
 
   assertKnownTargets(targets);
 
@@ -128,9 +145,10 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     root,
     targets,
     scopes: raw.profile === 'sdk' ? ['both'] : ['consumer', 'both'],
-    vars: { ...loadDefaultVars(), ...(raw.vars ?? {}) },
+    vars: { ...loadDefaultVars(), ...gitFlowVars(gitFlow), ...(raw.vars ?? {}) },
     exclude: raw.exclude ?? [],
     claudeMdImportsAgentsMd: raw.claudeMdImportsAgentsMd ?? false,
     hooks: raw.hooks ?? [],
+    gitFlow,
   };
 };

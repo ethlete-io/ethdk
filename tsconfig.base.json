@@ -19,6 +19,7 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@ethlete/agent-rules": ["libs/agent-rules/src/index.ts"],
+      "@ethlete/agent-rules/git-flow": ["libs/agent-rules/src/lib/git-flow/index.ts"],
       "@ethlete/cdk": ["libs/cdk/src/index.ts"],
       "@ethlete/components": ["libs/components/src/index.ts"],
       "@ethlete/eslint-plugin": ["libs/eslint-plugin/src/index.js"],
