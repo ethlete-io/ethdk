@@ -5,9 +5,9 @@ watches what you actually did, reconstructs a day of worklogs from that evidence
 review and edit it, and syncs the result to Tempo - plus the ticket plumbing around it
 (create a ticket under the right parent, create the branch, open the draft MR).
 
-Everything below is grounded in what was verified on this machine (`niri`'s IPC, the local
-Claude Code session logs, `fut-frontend`'s real branch names) or is explicitly flagged as
-unverified. Where an external API's shape matters to the design, the relevant detail is
+Everything below is grounded in what was verified on this machine (the local Claude Code
+session logs, `fut-frontend`'s real branch names - and `niri`'s IPC, on the Wayland box this was
+written on rather than the Mac it is now built on) or is explicitly flagged as unverified. Where an external API's shape matters to the design, the relevant detail is
 named so the first implementation session doesn't rediscover it.
 
 The git-flow reference is `plans/git-flow-draft.md` (German, explicitly not final).
@@ -31,7 +31,7 @@ ticket creation or the MR flow.
 | Ticket creation | Both directions: retroactive work → ticket, and prospective ticket → branch → pushed draft MR            |
 | Granularity     | 15-minute rounding (configurable), day compared to a target with a warning, never silent fill            |
 | Gap filling     | Confidence model; high-confidence entries sync without per-row review, weak ones must be accepted        |
-| Platforms       | Wayland-first with a pluggable window source; degrade gracefully where there is none                     |
+| Platforms       | Pluggable window source, macOS-first now the dev machine is a Mac; degrade where there is none           |
 | Storage         | Encrypted at rest, raw-sample retention window, exclusion rules, hard pause                              |
 | Tempo sync      | Idempotent upsert of app-owned worklogs only; foreign worklogs read-only                                 |
 | UI              | Tray presence + day timeline with an editable worklog list                                               |
@@ -736,13 +736,21 @@ pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `prop
 `correlateDay` over all of them), with no network, filesystem or Angular in it, the read-only
 Jira provider on top, and the whole Tempo integration - work-attribute discovery, foreign-time
 subtraction, the sync diff and the write half that executes it, and the store's core half -
-persistence ports, exclusion rules, retention, ledger writer (254 tests).
-the Claude Code session-log parser and the git reconcile pass.
+persistence ports, exclusion rules, retention, ledger writer - plus the Claude Code
+session-log parser and the git reconcile pass (299 tests).
 Remaining: the encrypted database itself (host-side, needs `apps/timetrack`),
-the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
-watcher's inotify half, Google Calendar, the day-review UI, tray. No
+the window/idle collector, the host half of the session-log and git collectors - the file
+reader with its cursors, and the inotify watch - Google Calendar, the day-review UI, tray. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
 day.
+
+**The dev machine is now macOS, not the Wayland box this plan was written on.** The design is
+unaffected - the window source was always meant to be pluggable - but it re-ranks the work:
+the wlr/niri/X11 sources described above are not the ones this machine can test, so
+`NSWorkspace.frontmostApplication` + the AX API (with its Accessibility permission prompt, a
+real onboarding step) moves from "if they arrive" to the first window source to build. The
+Wayland notes stay - they are verified, and the app is cross-platform - but nothing in phase 1
+should now be sequenced behind them. Everything else in the phase is portable.
 
 **Phase 2 - closing the code-work gaps.** GitLab CE events and MR review time, the VS Code
 extension and the generic ingest endpoint, the reasoning provider, both ticket-creation
