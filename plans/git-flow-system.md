@@ -115,6 +115,11 @@ Config sketch, living under a `gitFlow` key in `ethlete-agents.config.json`:
 }
 ```
 
+What shipped differs from the sketch in three small ways: `releasePrefix` was split out of
+`releasePattern` so the prefix is available when _building_ a name; a `release-date` rule was
+added because a malformed date is a real violation that no other rule described honestly; and
+`keyPrefixes` was added for the reason in the tolerance section below.
+
 Two notes for implementation. The renderer's `vars` values are strings or string arrays, so a
 nested `gitFlow` object will not interpolate into skill bodies as-is - either flatten the tokens
 the skill needs (`gitFlowBaseBranch`, `gitFlowTypes`, `gitFlowKeyPattern`) or teach the renderer
@@ -199,6 +204,13 @@ So:
   to compute it, so keep `deprecated-prefix` a warning there rather than paying for a date lookup
   to block something already in flight. `start` never emits one either way, because it builds
   names from the grammar.
+- **A word followed by a number is not a key either, and anchoring alone does not catch it.**
+  Found by running the parser over all 123 branches in fut-frontend: `chore/angular-22`,
+  `chore/tailwind-4` and `feature/top-105-list` all match `[A-Z]{2,10}-\d+` case-insensitively at
+  the start of the segment, and were attributed to issues `ANGULAR-22`, `TAILWIND-4` and `TOP-105`.
+  Nothing structural separates them from `fip-2762`; only knowing the project's prefixes does.
+  Hence `keyPrefixes` in the config - empty accepts anything the pattern matches, `["FIP"]` takes
+  all three false positives to zero. Every product repo should set it.
 - **A keyless sub-branch can still be attributed through its parent.** Since reviewed branches
   land in an integration branch, a flat name like `feat/collection-item-rejection-tooltip` has a
   parent that may well carry a key - reachable from the MR target, or locally from the merge-base
@@ -302,12 +314,13 @@ ticket → branch → draft MR flow calls the CLI's `start` implementation.
 The first four steps all happen in `advisory` mode. Nothing anyone does to a branch name can
 fail a hook or a pipeline until step 6, and that is deliberate.
 
-1. **Land the grammar, parser and `check`/`explain`** in `advisory`. The commands tell the truth
-   and nothing blocks.
-2. **Ship the skill.** This is the step that actually changes behaviour, and it is worth doing
-   before any gate exists: people and agents start producing conforming names because the
-   convention is finally discoverable at the moment a branch gets created, not because something
-   rejected them afterwards.
+1. ~~**Land the grammar, parser and `check`/`explain`** in `advisory`.~~ **Done** -
+   `libs/agent-rules/src/lib/git-flow/` plus `ethlete-agents git-flow check|explain`.
+2. ~~**Ship the skill.**~~ **Done** - `libs/agent-rules/content/skills/git-flow/SKILL.md`,
+   `scope: both`, excluded in this repo. It is the step that actually changes behaviour, and it
+   was worth doing before any gate exists: people and agents start producing conforming names
+   because the convention is finally discoverable at the moment a branch gets created, not
+   because something rejected them afterwards.
 3. **Make `start` the easy path.** A command that names the branch correctly, from the right base,
    in one step beats any amount of enforcement. Adoption is a tooling problem before it is a
    discipline problem.
@@ -325,8 +338,11 @@ fail a hook or a pipeline until step 6, and that is deliberate.
 
 1. **Should `ethlete-agents sync` write git hooks**, given they can block a push - or does hook
    installation stay a documented manual step per repo?
-2. **Does the renderer need dotted-path or object `vars`**, or is flattening the handful of
-   tokens the skill needs enough?
+2. ~~**Does the renderer need dotted-path or object `vars`?**~~ **Answered: neither.** `loadConfig`
+   derives `gitFlowDevelopmentBranch`, `gitFlowProductionBranch`, `gitFlowTypes` and
+   `gitFlowEnforcement` from the resolved `gitFlow` block and merges them into `vars` ahead of the
+   repo's own, so the skill interpolates from the same data the validator reads and a repo can
+   still override a token. The renderer was not touched.
 3. **Release-fix branches nested under `release/<date>`** share their shape with sub-features but
    base on the release branch. Confirm a fix branch's MR targets the release branch only, and
    that the merge back into `next` and `main` is a separate, non-flagged operation.
