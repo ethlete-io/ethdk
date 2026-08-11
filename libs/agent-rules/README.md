@@ -103,7 +103,14 @@ Prettier rewrites them and `check` then reports drift on every run:
   authoring-side guides are not overwritten by the consumer-side versions.
 - **`vars`** - values for the template tokens a guide declares. Defaults live in
   `content/defaults.json`; a guide whose variable has no default and no value is
-  skipped with a warning rather than emitted with a dangling placeholder.
+  skipped with a warning rather than emitted with a dangling placeholder. Some are
+  derived from the repo instead of defaulted - the `gitFlow*` ones from the `gitFlow`
+  block, and `commitRuleSource` / `commitValidation` from whether a commitlint config
+  exists (`commitlint.config.*`, `.commitlintrc*`, or a `commitlint` key in
+  `package.json`). Without one, the git-commit guide presents the format as the repo's
+  convention and never mentions a `commitlint` run - an agent that goes looking for a
+  promised validator and finds nothing reports the discrepancy instead of just
+  committing. Setting either one in `vars` overrides the detection.
 - **`exclude`** - content names to skip entirely.
 - **`claudeMdImportsAgentsMd`** - set (usually by `migrate`) when `CLAUDE.md` is an
   `@AGENTS.md` import or symlink; the claude target then skips `.claude/rules/ethlete/`

@@ -1,23 +1,22 @@
 ---
 name: git-commit
-description: How to write git commits in this repo - commitlint format (type(scope): Subject), lean messages, no trailers. Read before committing anything (e.g. the user says "commit this").
+description: How to write git commits in this repo - conventional format (type(scope): Subject), lean messages, no trailers. Read before committing anything (e.g. the user says "commit this").
 kind: skill
 scope: both
-vars: [commitScopes]
+vars: [commitScopes, commitRuleSource, commitValidation]
 ---
 
 # Git commits
 
-Commits are **lean** and follow the **commitlint rules** in `commitlint.config.js`
-(conventional commits with a required scope):
+Commits are **lean** and follow {%commitRuleSource%}:
 
-- **Format: `type(scope): Subject`** - one line. All three parts are enforced:
+- **Format: `type(scope): Subject`** - one line, all three parts required:
   - `type` ∈ `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
     `build`, `ci`, `chore`, `revert`
-  - `scope` is **required**, ∈ {%commitScopes%}
+  - `scope` ∈ {%commitScopes%}
   - Subject is **sentence-case** ("Add the search filter", not
     "add the search filter")
-- When unsure a message passes, check it: `echo "<msg>" | npx commitlint`.
+- {%commitValidation%}
 - Add a short body only when the change genuinely needs context that the diff
   can't convey.
 - **No trailers.** Never append `Co-Authored-By`, `Claude-Session`, or similar

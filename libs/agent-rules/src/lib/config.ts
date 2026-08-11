@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { commitMessageVars, findCommitlintConfig } from './commitlint';
 import { ContentScope } from './frontmatter';
 import { GitFlowConfig, RawGitFlowConfig, resolveGitFlowConfig } from './git-flow';
 import { loadDefaultVars } from './load-content';
@@ -170,7 +171,12 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     root,
     targets,
     scopes: raw.profile === 'sdk' ? ['both'] : ['consumer', 'both'],
-    vars: { ...loadDefaultVars(), ...gitFlowVars(gitFlow), ...(raw.vars ?? {}) },
+    vars: {
+      ...loadDefaultVars(),
+      ...gitFlowVars(gitFlow),
+      ...commitMessageVars(findCommitlintConfig(root)),
+      ...(raw.vars ?? {}),
+    },
     exclude: raw.exclude ?? [],
     claudeMdImportsAgentsMd: raw.claudeMdImportsAgentsMd ?? false,
     hooks: raw.hooks ?? [],
