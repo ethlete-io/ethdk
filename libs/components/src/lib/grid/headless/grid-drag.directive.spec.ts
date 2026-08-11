@@ -23,7 +23,7 @@ class ResizeObserverMock {
 @Component({
   imports: [GridDirective, GridItemComponent],
   template: `
-    <div [initialItems]="items" etGrid>
+    <div [items]="items" etGrid>
       <et-grid-item itemId="drag-item" />
     </div>
   `,

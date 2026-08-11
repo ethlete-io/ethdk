@@ -122,11 +122,10 @@ export class GridComponent<TData = unknown> {
   private labels = injectGridLabels();
 
   /**
-   * The items to render. Despite the name this is a live input, not a one-shot seed - see
-   * `GridDirective.initialItems`. Typed in the item payload, so `layoutChange` hands the same
-   * `TData` back instead of `unknown`.
+   * The items to render - a live input reconciled on every change, see `GridDirective.items`. Typed
+   * in the item payload, so `layoutChange` hands the same `TData` back instead of `unknown`.
    */
-  public initialItems = input<GridItemConfig<string, TData>[]>([]);
+  public items = input<GridItemConfig<string, TData>[]>([]);
 
   /** Emitted after the layout changed on this side - see `GridDirective.layoutChange`. */
   public layoutChange = output<GridSerializedState<TData>>();
@@ -143,7 +142,7 @@ export class GridComponent<TData = unknown> {
 
   protected registeredItems = computed(() => {
     const registrations = this.gridConfig.registrations;
-    return this.grid.items().flatMap((item) => {
+    return this.grid.currentItems().flatMap((item) => {
       const reg = registrations.find((r) => r.type === item.type);
       return reg ? [{ item, reg }] : [];
     });
@@ -167,7 +166,7 @@ export class GridComponent<TData = unknown> {
   );
 
   constructor() {
-    this.grid.hostItems.set(this.initialItems);
+    this.grid.hostItems.set(this.items);
 
     outputToObservable(this.grid.layoutChange)
       .pipe(
@@ -178,7 +177,7 @@ export class GridComponent<TData = unknown> {
 
     if (ngDevMode) {
       effect(() => {
-        const items = this.grid.items();
+        const items = this.grid.currentItems();
 
         if (items.length === 0) return;
 

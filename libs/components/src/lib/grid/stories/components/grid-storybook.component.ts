@@ -53,7 +53,7 @@ const DEMO_ITEMS: GridItemConfig[] = [
       [rowHeight]="rowHeight()"
       [gap]="gap()"
       [readOnly]="readOnly()"
-      [initialItems]="items()"
+      [items]="items()"
     />
   `,
   encapsulation: ViewEncapsulation.None,

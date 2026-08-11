@@ -37,7 +37,7 @@ const everyBreakpoint = (position: GridItemPosition) => ({ sm: position, md: pos
 
 @Component({
   imports: [GridDirective],
-  template: `<div [initialItems]="items()" etGrid></div>`,
+  template: `<div [items]="items()" etGrid></div>`,
 })
 class TestHostComponent {
   items = input<GridItemConfig[]>([]);
@@ -82,7 +82,7 @@ describe('GridDirective', () => {
   describe('initial state', () => {
     it('starts with empty items', () => {
       fixture.detectChanges();
-      expect(getDirective().items()).toHaveLength(0);
+      expect(getDirective().currentItems()).toHaveLength(0);
     });
 
     it('starts with null drag state', () => {
@@ -165,17 +165,17 @@ describe('GridDirective', () => {
     });
   });
 
-  describe('initialItems', () => {
-    it('loads items from initialItems input on first render', () => {
+  describe('items', () => {
+    it('loads items from items input on first render', () => {
       fixture.componentRef.setInput('items', [
         { id: 'a', type: 'test', data: undefined, layout: {} },
         { id: 'b', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
-      expect(getDirective().items()).toHaveLength(2);
+      expect(getDirective().currentItems()).toHaveLength(2);
     });
 
-    it('adds new items when initialItems grows', () => {
+    it('adds new items when items grows', () => {
       fixture.componentRef.setInput('items', [
         { id: 'a', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
@@ -187,10 +187,10 @@ describe('GridDirective', () => {
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
-      expect(getDirective().items()).toHaveLength(2);
+      expect(getDirective().currentItems()).toHaveLength(2);
     });
 
-    it('removes items when initialItems shrinks', () => {
+    it('removes items when items shrinks', () => {
       fixture.componentRef.setInput('items', [
         { id: 'a', type: 'test', data: undefined, layout: {} },
         { id: 'b', type: 'test', data: undefined, layout: {} },
@@ -202,7 +202,7 @@ describe('GridDirective', () => {
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
-      expect(getDirective().items()).toHaveLength(1);
+      expect(getDirective().currentItems()).toHaveLength(1);
     });
 
     it('applies new data for items whose id and layout did not change', () => {
@@ -220,7 +220,7 @@ describe('GridDirective', () => {
 
       expect(
         getDirective()
-          .items()
+          .currentItems()
           .map((item) => item.data),
       ).toEqual([{ value: 'after' }, { value: 'kept' }]);
     });
@@ -243,7 +243,7 @@ describe('GridDirective', () => {
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
-      expect(getDirective().items()[0]?.data).toEqual({ value: 'after' });
+      expect(getDirective().currentItems()[0]?.data).toEqual({ value: 'after' });
       expect(
         getDirective()
           .layout()
@@ -256,7 +256,7 @@ describe('GridDirective', () => {
     it('addItem appends an item to the layout', () => {
       fixture.detectChanges();
       getDirective().addItem('chart', undefined);
-      expect(getDirective().items()).toHaveLength(1);
+      expect(getDirective().currentItems()).toHaveLength(1);
     });
 
     it('removeItem removes the item from the layout', () => {
@@ -270,7 +270,7 @@ describe('GridDirective', () => {
 
       expect(
         getDirective()
-          .items()
+          .currentItems()
           .find((i) => i.id === 'x'),
       ).toBeUndefined();
     });

@@ -44,7 +44,7 @@ class TestItemComponent {
 
 @Component({
   imports: [GridComponent],
-  template: ` <et-grid [rowHeight]="rowHeight" [gap]="gap" [initialItems]="items" /> `,
+  template: ` <et-grid [rowHeight]="rowHeight" [gap]="gap" [items]="items" /> `,
 })
 class TestHostComponent {
   rowHeight = 120;
@@ -56,7 +56,7 @@ type WidgetData = { title: string };
 
 @Component({
   imports: [GridComponent],
-  template: ` <et-grid [initialItems]="items" (layoutChange)="states.push($event)" /> `,
+  template: ` <et-grid [items]="items" (layoutChange)="states.push($event)" /> `,
 })
 class TypedHostComponent {
   // The type argument is never written down: `layoutChange` only type-checks against a
@@ -131,7 +131,7 @@ describe('GridComponent', () => {
 
   it('starts with no items in the grid directive', () => {
     fixture.detectChanges();
-    expect(getGrid().items()).toHaveLength(0);
+    expect(getGrid().currentItems()).toHaveLength(0);
   });
 
   it('starts with null drag state', () => {
@@ -180,7 +180,7 @@ describe('GridComponent', () => {
       },
     ];
     fixture.detectChanges();
-    expect(getGrid().items()).toHaveLength(2);
+    expect(getGrid().currentItems()).toHaveLength(2);
   });
 
   it('renders the ghost element when drag is active', () => {
@@ -226,7 +226,7 @@ describe('GridComponent', () => {
 
       const grid = typedFixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
 
-      expect(grid.items().map((item) => item.id)).toEqual(['a']);
+      expect(grid.currentItems().map((item) => item.id)).toEqual(['a']);
 
       grid.moveItem('a', { col: 2, row: 0, colSpan: 1, rowSpan: 1 });
       typedFixture.detectChanges();

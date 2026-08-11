@@ -248,6 +248,20 @@ path.
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
 
+**Grid: `initialItems` renamed to `items`** (2026-08-12, the first "Decide before building" row) -
+the input was already a live, reconciling one; only the name still said otherwise, and it is what
+talked the partner dashboard into re-keying the whole grid on every save. Two calls settled the
+collision the triage flagged:
+
+- **The existing public `items` computed became `currentItems()`** rather than the input picking a
+  different name. It reads as "what the grid holds now" next to "what you passed in", and it is the
+  minority name - the input is on every `<et-grid>`, the computed on a handful of handles.
+- **No deprecated `initialItems` alias**, contrary to what this file proposed. Two inputs both
+  defaulting to `[]` cannot tell "unset" from "cleared" without a third state, and `@ethlete/components`
+  is still `1.0.0-next` and renames outright elsewhere (`loadMoreRequested` → `loadMore`,
+  `opened`/`closed` → `afterOpen`/`afterClose`). Changeset `grid-items-input-rename.md`, marked
+  breaking.
+
 **Scheduler: infinite-scrolling agenda** (2026-08-12, the first `M` triage row) - the triage's
 "paging belongs to the query, not scheduler" call held, but was not sufficient on its own: the agenda
 derived its days from `visibleRange()`, which is hardcoded to the week view's 7-day window, so no
@@ -889,7 +903,7 @@ Bugfix pass:
 - **Standings story** - the width control renders as `min(width, 100%)`.
 - **Grid** - `resolveItemConstraints` caps both column spans at the active breakpoint's
   columns (and `clampPosition` no longer applies a minimum after the column clamp);
-  `resizeEdges()` drops the axis that cannot move; an empty `initialItems` clears the grid;
+  `resizeEdges()` drops the axis that cannot move; an empty `items` clears the grid;
   reconciling that input no longer emits `layoutChange`. `constraintsRegistry` became a
   signal so everything derived from a constraint sees a late registration.
   Changeset `grid-constraints-and-input-reconcile.md`.
@@ -914,7 +928,7 @@ Bugfix pass:
   matching so a failure fired during teardown still opens its tombstone.
   Changeset `devtools-query-tombstones.md`.
 - **Docs** - the `createGridAdapter` snippet compiles, `grid.md` documents the live
-  `initialItems` reconciliation and the imperative API (`restoreState`, `getSerializedState`,
+  `items` reconciliation and the imperative API (`restoreState`, `getSerializedState`,
   `addItem`), and `query-forms.md` states that `isResetBy` is transitive.
 
 Narrow-viewport pass:
@@ -1227,24 +1241,6 @@ The rest of the partner dashboard's friction is one theme - `et-grid` already ha
 app needs, and every piece of it is either misnamed, undocumented, or subtly wrong at the edge
 the app hits.
 
-**`initialItems` is still called `initialItems`.** The behaviour and the documentation are
-fixed - the input reconciles, an empty array clears the grid, the reconcile path is silent, and
-`grid.md` now says all of that plus how `restoreState()` reverts a cancelled edit. What is left
-is the name, which is what made the app conclude the opposite in the first place:
-
-```ts
-// `et-grid` consumes its items once via `[initialItems]`, so it can't observe changes to `gridItems`.
-// Bumping this counter re-keys the grid's `@for` in the template, forcing a full rebuild after a save.
-const gridRevision = signal(0);
-```
-
-paired with `@for (revision of [partnerDashboard.gridRevision()]; track revision)` wrapped
-around `<et-grid>` - so every widget add, edit or delete destroys and rebuilds the whole grid,
-re-running every enter animation and losing any scroll or focus inside a widget. Renaming to
-`items` with `initialItems` as a deprecated alias is the remaining step, and it collides: the
-directive already exposes a public `items` computed over `itemConfigs`, so the rename has to
-resolve that first.
-
 **`createGridAdapter` maps one position per item.** The doc snippet that did not compile is
 fixed, but the signature is still worth reconsidering: the app's mapping is per-breakpoint
 (`sm`/`md`/`lg` at once), which a single-position adapter shape does not express - which is why
@@ -1254,6 +1250,14 @@ it hand-rolls `toGridItems`/`toWidgetPayload` off `toGridPosition`/`fromGridPosi
 `GridItemConfig.layout` is `Record<string, GridItemPosition>`, so a missing breakpoint entry is
 only caught at runtime. What it wants is a `TBp extends string` parameter on `GridItemConfig` so
 `[breakpoints]` and the items have to agree before the app compiles.
+
+**The `ET1904` dev check assumes registrations are the only composition** (found 2026-08-12 while
+verifying the `items` rename). Projecting `<et-grid-item>` children into `<et-grid>` renders fine
+and is what `Grid → Partner Dashboard` and `→ Backend Integration` do, but the `ngDevMode` effect in
+`grid.component.ts` throws `ET1904` for every projected item's `type`, so both stories log a
+`RuntimeError` on load. Either the check has to skip types that a projected item covers, or
+projection is unsupported and the stories are wrong - and it is undocumented either way, `grid.md`
+only describes `provideGridConfig({ registrations })`.
 
 ## Grid: per-breakpoint span constraints
 

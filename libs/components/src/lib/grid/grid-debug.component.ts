@@ -16,7 +16,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
  * Development-only debug overlay for an `et-grid` instance.
  *
  * ```html
- * <et-grid #myGrid [initialItems]="items()" ...></et-grid>
+ * <et-grid #myGrid [items]="items()" ...></et-grid>
  * <et-grid-debug [grid]="myGrid" [externalItems]="items()" />
  * ```
  *
@@ -128,7 +128,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
 
         @if (hasExternal()) {
           <p style="margin-top: 6px; color: #9ca3af; font-size: 10px">
-            int = grid.items() (internal) &nbsp;·&nbsp; ext = externalItems input &nbsp;·&nbsp;
+            int = grid.currentItems() (internal) &nbsp;·&nbsp; ext = externalItems input &nbsp;·&nbsp;
             <span style="color: #dc2626">red = undefined</span> &nbsp;·&nbsp;
             <span style="color: #d97706">orange = mismatch</span>
           </p>
@@ -147,7 +147,7 @@ export class GridDebugComponent<TData = unknown> {
   public activeBreakpoint = computed(() => this.grid().grid.activeBreakpoint());
   public containerWidth = computed(() => this.grid().grid.containerWidth());
   public breakpoints = computed(() => this.grid().grid.breakpoints());
-  public items = computed(() => this.grid().grid.items());
+  public items = computed(() => this.grid().grid.currentItems());
   public layout = computed(() => this.grid().grid.layout());
   public hasDrag = computed(() => this.grid().grid.dragState() !== null);
   public hasExternal = computed(() => this.externalItems() !== null);

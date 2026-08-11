@@ -35,7 +35,7 @@ const TEST_ITEM: GridItemConfig = {
 @Component({
   imports: [GridDirective, GridItemComponent],
   template: `
-    <div [initialItems]="items" [readOnly]="readOnly" etGrid>
+    <div [items]="items" [readOnly]="readOnly" etGrid>
       <et-grid-item [ariaLabel]="ariaLabel" itemId="test-item" />
     </div>
   `,

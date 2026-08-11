@@ -37,7 +37,7 @@ export class ChartWidgetComponent {
 ## Rendering
 
 ```html
-<et-grid [initialItems]="items()" (layoutChange)="persist($event)" rowHeight="100" gap="16" />
+<et-grid [items]="items()" (layoutChange)="persist($event)" rowHeight="100" gap="16" />
 ```
 
 ```ts
@@ -58,7 +58,7 @@ protected persist(state: GridSerializedState<WidgetData>) {
 }
 ```
 
-Despite its name `initialItems` is a **live input**, not a one-shot seed. Every change is reconciled against what the grid already holds: new ids are placed, missing ids are removed, an empty array clears the grid, and the same ids with different positions restore those positions. Keep feeding your own signal in - there is no need to re-key the grid to make it observe a change.
+`items` is a **live input**, not a one-shot seed. Every change is reconciled against what the grid already holds: new ids are placed, missing ids are removed, an empty array clears the grid, and the same ids with different positions restore those positions. Keep feeding your own signal in - there is no need to re-key the grid to make it observe a change.
 
 Reconciliation does **not** emit `layoutChange`. That output fires only for changes made on the grid's side - a drag, a resize, a keyboard move, `addItem()` or `removeItem()` - so it can be read as "the user has unsaved edits".
 
@@ -66,9 +66,10 @@ Reconciliation does **not** emit `layoutChange`. That output fires only for chan
 
 Get a handle with a template reference (`<et-grid #grid />`, `exportAs: 'etGrid'`) or by injecting `GRID_TOKEN`:
 
-- `addItem(type, data)` / `removeItem(id)` - add or remove outside of the items input.
+- `addItem(type, data)` / `removeItem(id)` - add or remove outside of the `items` input.
+- `currentItems()` - what the grid holds right now: the `items` input reconciled with every drag, resize, `addItem()` and `removeItem()` since.
 - `getSerializedState()` - the current `GridSerializedState`, the same value `layoutChange` emits.
-- `restoreState(state)` - replace the whole layout with a previously serialized one. This is how you revert after a cancelled edit: snapshot with `getSerializedState()` when edit mode opens, `restoreState()` that snapshot when the user cancels. Re-feeding unchanged `initialItems` cannot do it - nothing changed, so there is nothing to reconcile.
+- `restoreState(state)` - replace the whole layout with a previously serialized one. This is how you revert after a cancelled edit: snapshot with `getSerializedState()` when edit mode opens, `restoreState()` that snapshot when the user cancels. Re-feeding unchanged `items` cannot do it - nothing changed, so there is nothing to reconcile.
 
 ## Live demo
 

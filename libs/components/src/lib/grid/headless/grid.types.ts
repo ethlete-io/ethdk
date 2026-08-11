@@ -43,7 +43,7 @@ export type GridLayoutEntry = {
 export type GridMutationOptions = {
   /**
    * Skip the `layoutChange` emit for this mutation. For a change the host already knows about -
-   * it fed the item in through `initialItems` - so the output keeps meaning "the user moved
+   * it fed the item in through `items` - so the output keeps meaning "the user moved
    * something".
    */
   silent?: boolean;

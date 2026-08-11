@@ -168,18 +168,17 @@ export class GridDirective<TData = unknown> {
   public rowHeight = input(100, { transform: numberAttribute });
   public gap = input(16, { transform: numberAttribute });
   /**
-   * The items to render. Despite the name this is a live input, not a one-shot seed: every change is
-   * reconciled against what the grid holds - added ids are placed, missing ids are removed, an empty
-   * array clears the grid, and the same ids with different positions restore those positions. A host
-   * can therefore keep feeding its own signal in, including a saved snapshot after cancelled edits,
-   * without rebuilding the grid.
+   * The items to render. Every change is reconciled against what the grid holds - added ids are
+   * placed, missing ids are removed, an empty array clears the grid, and the same ids with different
+   * positions restore those positions. A host can therefore keep feeding its own signal in, including
+   * a saved snapshot after cancelled edits, without rebuilding the grid.
    */
-  public initialItems = input<GridItemConfig<string, TData>[]>([]);
+  public items = input<GridItemConfig<string, TData>[]>([]);
   public readOnly = input(false, { transform: booleanAttribute });
 
   /**
    * Emitted after the layout changed on this side: a drag, a resize, a keyboard move, `addItem()` or
-   * `removeItem()`. Reconciling `initialItems` does not emit - what the host passed in cannot be news
+   * `removeItem()`. Reconciling `items` does not emit - what the host passed in cannot be news
    * to it - so this output can be read as "the user has unsaved changes".
    */
   public layoutChange = output<GridSerializedState<TData>>();
@@ -192,7 +191,7 @@ export class GridDirective<TData = unknown> {
    */
   public hostItems = signal<Signal<GridItemConfig<string, TData>[]> | null>(null);
 
-  private incomingItems = computed(() => this.hostItems()?.() ?? this.initialItems());
+  private incomingItems = computed(() => this.hostItems()?.() ?? this.items());
 
   public registrations = computed(() => this.gridConfig.registrations);
 
@@ -263,7 +262,11 @@ export class GridDirective<TData = unknown> {
     });
   });
 
-  public items = computed(() => this.itemConfigs());
+  /**
+   * The items the grid currently holds - the `items` input reconciled with everything that happened
+   * since: drags, resizes, `addItem()` and `removeItem()`.
+   */
+  public currentItems = computed(() => this.itemConfigs());
 
   public baseLayout = computed((): GridLayoutEntry[] => {
     const breakpoint = this.activeBreakpoint();

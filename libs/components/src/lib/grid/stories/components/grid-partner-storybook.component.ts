@@ -186,7 +186,7 @@ type LayoutRow = {
         [breakpoints]="BREAKPOINTS"
         [rowHeight]="100"
         [gap]="16"
-        [initialItems]="gridItems()"
+        [items]="gridItems()"
         (layoutChange)="syncGridItemsWithLayout($event)"
       >
         @for (item of gridItems(); track item.id) {
@@ -209,8 +209,8 @@ type LayoutRow = {
       @if (showLayoutTable()) {
         <div class="mt-4 overflow-x-auto">
           <p class="text-[11px] mb-2" style="color: rgb(var(--et-surface-color-muted))">
-            <strong>ext</strong> = gridItems() signal &nbsp;·&nbsp; <strong>int</strong> = grid.items() internal state
-            &nbsp;·&nbsp; <span style="color: #ef4444">red = undefined</span> &nbsp;·&nbsp;
+            <strong>ext</strong> = gridItems() signal &nbsp;·&nbsp; <strong>int</strong> = grid.currentItems() internal
+            state &nbsp;·&nbsp; <span style="color: #ef4444">red = undefined</span> &nbsp;·&nbsp;
             <span style="color: #f59e0b">orange = ext ≠ int</span>
           </p>
           <table class="text-[11px] font-mono border-collapse" style="border: 1px solid rgb(var(--et-surface-border))">
@@ -289,7 +289,7 @@ export class GridPartnerStorybookComponent {
 
   public layoutRows = computed((): LayoutRow[] => {
     const items = this.gridItems();
-    const internalItems = this.gridRef()?.grid.items() ?? [];
+    const internalItems = this.gridRef()?.grid.currentItems() ?? [];
     const internalById = new Map(internalItems.map((i) => [i.id, i]));
 
     return items.map((item) => ({

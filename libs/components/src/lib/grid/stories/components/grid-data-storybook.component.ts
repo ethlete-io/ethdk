@@ -300,7 +300,7 @@ const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxR
             [breakpoints]="breakpoints()"
             [rowHeight]="rowHeight()"
             [gap]="gap()"
-            [initialItems]="gridItems()"
+            [items]="gridItems()"
             (layoutChange)="syncGridItemsWithLayout($event)"
           >
             @for (item of gridItems(); track item.id) {
