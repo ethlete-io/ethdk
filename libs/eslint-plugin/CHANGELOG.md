@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.19
+
+### Minor Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`2fcb8e3`](https://github.com/ethlete-io/ethdk/commit/2fcb8e3799169956571534b75fdc152acc983877) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `require-form-submit` (a form handles its own submission, a submit control reaches a form) plus the opt-in `no-cdk-import` and `no-legacy-query-import`, which name each legacy symbol's successor in the message.
+
 ## 1.0.0-next.18
 
 ### Minor Changes

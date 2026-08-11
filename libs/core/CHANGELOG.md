@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 5.0.0-next.46
+
+### Minor Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`1f72eb9`](https://github.com/ethlete-io/ethdk/commit/1f72eb9453b6b7726cfe312720299b913f5c565f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `provideColorPalette` - the labelled color themes an app offers a user to pick from. The scheduler's color field becomes a swatch picker when one is in scope, and stays a text box when none is.
+
+- [`512750a`](https://github.com/ethlete-io/ethdk/commit/512750a654bda671b4078fc726914ed5eecda14e) Thanks [@TomTomB](https://github.com/TomTomB)! - `[etProvideColor]="'surface'"` renders a component in the ambient surface's neutral instead of an accent. **Breaking:** `SurfaceTheme['interactionColor']` is now a swatch - run `nx g @ethlete/core:migrate-surface-interaction-swatch`, then regenerate.
+
 ## 5.0.0-next.45
 
 ### Minor Changes

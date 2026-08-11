@@ -1,5 +1,27 @@
 # @ethlete/query
 
+## 6.0.0-next.35
+
+### Major Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`695c2e9`](https://github.com/ethlete-io/ethdk/commit/695c2e9d08f2e283816488938b446009acd4ad99) Thanks [@github-actions](https://github.com/apps/github-actions)! - `withArgs`: return `null` to park a query. `CLEAR_QUERY_ARGS` is removed, and `null` no longer means "keep the previous args".
+
+### Minor Changes
+
+- [`8e175ba`](https://github.com/ethlete-io/ethdk/commit/8e175bae730ea171a4f9e5727c9a5a4b4739f230) Thanks [@TomTomB](https://github.com/TomTomB)! - Retries: the default policy now backs off exponentially with jitter and gives up after
+  `maxAttempts` instead of retrying a connection failure every 5s forever, is configurable via
+  `withDefaultRetry({ … })` / `createDefaultRetryFn()`, and stops once the last consumer is gone.
+
+- [`bf291f9`](https://github.com/ethlete-io/ethdk/commit/bf291f95d69d1aa4c8e07952ad8b55432a921936) Thanks [@TomTomB](https://github.com/TomTomB)! - Add the `withLongPolling` query feature: each round starts once the previous one settled, with args derived from its response, and a failed round is repeated with a growing delay.
+
+### Patch Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`6776ec2`](https://github.com/ethlete-io/ethdk/commit/6776ec282ae9513d36fdfb199958728af083dc8f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auth multi-tab fixes: a follower no longer duplicates the leader's scheduled refresh, a joining tab
+  adopts the live session instead of auto-logging in, and a tab coming back to the foreground rechecks
+  a refresh its throttled timer missed.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`cd8072e`](https://github.com/ethlete-io/ethdk/commit/cd8072e58977194422cf86e4b52c40b3f5d4f35b) Thanks [@github-actions](https://github.com/apps/github-actions)! - `withInactivityLogout` now times out on the session being idle rather than one tab being idle, so a forgotten tab no longer logs the user out of the one they are working in.
+
 ## 6.0.0-next.34
 
 ### Minor Changes

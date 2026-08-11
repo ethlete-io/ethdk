@@ -1,5 +1,15 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.6
+
+### Minor Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`86cd6e9`](https://github.com/ethlete-io/ethdk/commit/86cd6e97072d38436650ddc94a15527da34fa946) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the git-flow branch convention: a `git-flow` skill, `ethlete-agents git-flow start|check|repair|explain`, opt-in git hooks, and the parser at `@ethlete/agent-rules/git-flow`.
+
+### Patch Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`01b0797`](https://github.com/ethlete-io/ethdk/commit/01b0797d80df17e740419402034bc3eec739daaf) Thanks [@github-actions](https://github.com/apps/github-actions)! - The context-warning hook now points at `/ethlete-handoff`, the name the generated skill actually has, instead of a `/handoff` command that does not exist in a consumer repo.
+
 ## 0.1.0-next.5
 
 ### Minor Changes
