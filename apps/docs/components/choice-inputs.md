@@ -84,6 +84,11 @@ keyboard navigation is roving-tabindex with wrapping arrows:
 - The group label is a projected `et-label` - it renders the `*` marker when the
   group is `required` and wires `aria-labelledby`. A plain
   `<span class="et-<group>-label">` also works for text-only labels.
+- When the name lives outside the group - a filter toolbar with its own caption, a
+  segmented control that should not show a visible label - set `aria-label` or
+  `aria-labelledby` on the group instead. Either counts as an accessible name, so
+  the field's labelling guard stays quiet without a visually hidden `et-label`. A
+  consumer-supplied `aria-labelledby` wins over a projected `et-label`'s id.
 - All three groups accept `size: 'sm' | 'md' | 'lg'` (default `'md'`), matching
   the `et-form-field` size scale.
 - All three groups honor `readonly`: options keep their normal focusable look,

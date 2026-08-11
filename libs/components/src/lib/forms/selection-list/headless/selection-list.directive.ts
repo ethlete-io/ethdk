@@ -17,6 +17,7 @@ import {
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
     '[attr.aria-required]': 'required() || null',
     '[attr.aria-describedby]': 'describedBy() || null',
+    '[attr.aria-label]': 'ariaLabel()?.trim() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.data-disabled]': 'disabled() || null',
     '[attr.data-mixed]': 'mixed() || null',
@@ -48,6 +49,15 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
+  /**
+   * `aria-label` / `aria-labelledby` written on the group itself, for a set of options named by
+   * something other than a projected `<et-label>` - a filter toolbar whose caption sits elsewhere, a
+   * segmented control whose name should not be visible. Without them the field's dev-time labelling
+   * guard (ET2201) fires on a group that *is* labelled.
+   */
+  public ariaLabel = input<string | null>(null, { alias: 'aria-label' });
+  public ariaLabelledby = input<string | null>(null, { alias: 'aria-labelledby' });
+
   public multiple = computed(() => this.multipleOverride ?? this.multipleInput());
 
   public selection = createSelectionState<unknown, SelectionListItem>({
@@ -68,7 +78,12 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECTION_LIST);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
+  private registeredLabelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
+
+  /** A consumer-supplied `aria-labelledby` wins over the id of a projected `<et-label>`. */
+  public labelId = computed(() => this.ariaLabelledby()?.trim() || this.registeredLabelId());
+
+  public hasCustomAccessibleName = computed(() => !!this.ariaLabel()?.trim() || !!this.ariaLabelledby()?.trim());
 
   constructor() {
     this.formField?.registerControl(this);

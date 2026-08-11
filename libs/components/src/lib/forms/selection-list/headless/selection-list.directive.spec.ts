@@ -93,6 +93,19 @@ class MixedMultiSelectTestHost {
   mixed = signal(false);
 }
 
+@Component({
+  template: `
+    <div [aria-label]="ariaLabel()" [aria-labelledby]="ariaLabelledby()" etSelectionList>
+      <div etSelectionOption value="a"></div>
+    </div>
+  `,
+  imports: [SelectionListDirective, SelectionOptionDirective],
+})
+class LabelledSelectTestHost {
+  ariaLabel = signal<string | null>(null);
+  ariaLabelledby = signal<string | null>(null);
+}
+
 describe('SelectionListDirective', () => {
   describe('single select', () => {
     let fixture: ComponentFixture<SingleSelectTestHost>;
@@ -211,6 +224,50 @@ describe('SelectionListDirective', () => {
       fixture.detectChanges();
 
       expect(fixture.componentInstance.value()).toBe('b');
+    });
+  });
+
+  describe('accessible name', () => {
+    let fixture: ComponentFixture<LabelledSelectTestHost>;
+    let listEl: HTMLElement;
+    let listDir: SelectionListDirective;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [LabelledSelectTestHost] });
+      fixture = TestBed.createComponent(LabelledSelectTestHost);
+      fixture.detectChanges();
+      listEl = fixture.nativeElement.querySelector('[etSelectionList]');
+      listDir = (fixture.debugElement.children[0] as DebugElement).injector.get(SelectionListDirective);
+    });
+
+    it('reports no custom name when neither is set', () => {
+      expect(listDir.hasCustomAccessibleName()).toBe(false);
+      expect(listEl.getAttribute('aria-label')).toBeNull();
+      expect(listEl.getAttribute('aria-labelledby')).toBeNull();
+    });
+
+    it('writes aria-label on the group and counts as a name for the field guard', () => {
+      fixture.componentInstance.ariaLabel.set('Partner scope');
+      fixture.detectChanges();
+
+      expect(listEl.getAttribute('aria-label')).toBe('Partner scope');
+      expect(listDir.hasCustomAccessibleName()).toBe(true);
+    });
+
+    it('ignores a blank aria-label', () => {
+      fixture.componentInstance.ariaLabel.set('   ');
+      fixture.detectChanges();
+
+      expect(listEl.getAttribute('aria-label')).toBeNull();
+      expect(listDir.hasCustomAccessibleName()).toBe(false);
+    });
+
+    it('writes a consumer-supplied aria-labelledby', () => {
+      fixture.componentInstance.ariaLabelledby.set('external-caption');
+      fixture.detectChanges();
+
+      expect(listEl.getAttribute('aria-labelledby')).toBe('external-caption');
+      expect(listDir.hasCustomAccessibleName()).toBe(true);
     });
   });
 });
