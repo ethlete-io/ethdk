@@ -178,10 +178,117 @@ export const parseBranch = (options: { branch: string; config: GitFlowConfig }):
 
   const [prefix, ...rest] = segments;
 
+  if (prefix === config.subPrefix) return dropRedundantSuggestion(parseNested({ branch, segments: rest, config }));
   if (prefix === config.releasePrefix) return dropRedundantSuggestion(parseRelease({ branch, segments: rest, config }));
   if (prefix === config.hotfixPrefix) return dropRedundantSuggestion(parseHotfix({ branch, segments: rest, config }));
 
   return dropRedundantSuggestion(parseFeature({ branch, prefix: prefix ?? '', segments: rest, config }));
+};
+
+const unrecognised = (options: { branch: string; message: string }): BranchParseResult => ({
+  branch: options.branch,
+  ok: false,
+  kind: 'unknown',
+  deprecated: false,
+  expectedMrTargets: [],
+  findings: [{ rule: 'unknown-type', message: options.message }],
+});
+
+/**
+ * `sub/<parent path>/<KEY>-<subject>` — the nested shape. The parent's full name is inside the
+ * child's, so the merge request target needs no lookup; only two levels are allowed, so a parent
+ * that is itself nested is not a shape.
+ */
+const parseNested = (options: { branch: string; segments: string[]; config: GitFlowConfig }): BranchParseResult => {
+  const { branch, segments, config } = options;
+  const leaf = segments[segments.length - 1];
+  const parent = segments.slice(0, -1).join('/');
+
+  if (!leaf || !parent) {
+    return unrecognised({ branch, message: `"${branch}" names no parent branch to nest under.` });
+  }
+
+  const parentParse = parseBranch({ branch: parent, config });
+  const kind = nestedKindFor(parentParse);
+
+  if (!kind) {
+    return unrecognised({
+      branch,
+      message: `"${parent}" is not a branch anything can nest under — only a main feature or a release branch is.`,
+    });
+  }
+
+  const parts = parseSegment({ segment: leaf, config, role: kind === 'release-fix' ? 'bug' : 'task' });
+  const findings = [...parentParse.findings, ...parts.findings];
+
+  return {
+    branch,
+    ok: findings.length === 0,
+    type: parentParse.type,
+    kind,
+    storyKey: parentParse.storyKey,
+    taskKey: parts.key,
+    issueKey: parts.key ?? parentParse.storyKey,
+    subject: parts.subject,
+    parent,
+    deprecated: false,
+    findings,
+    suggestedName: parts.key
+      ? buildBranchName({
+          spec: { kind, parent: parentParse.suggestedName ?? parent, key: parts.key, subject: parts.subject ?? '' },
+          config,
+        })
+      : undefined,
+    ...targetsForKind({ kind, config, parent }),
+  };
+};
+
+const nestedKindFor = (parent: BranchParseResult) => {
+  if (parent.kind === 'release') return 'release-fix' as const;
+
+  return parent.kind === 'main-feature' && !parent.deprecated ? ('sub-feature' as const) : undefined;
+};
+
+/**
+ * The spelling the convention was originally written with, `<parent>/<KEY>-<subject>`. It parses so
+ * that `explain` and `repair` can say something useful about it, but it can never exist next to the
+ * parent it names — see `subPrefix`.
+ */
+const nestedTooDeep = (options: {
+  branch: string;
+  kind: 'sub-feature' | 'release-fix';
+  parent: string;
+  leaf: SegmentParts;
+  config: GitFlowConfig;
+  storyKey?: string;
+  type?: string;
+}): BranchParseResult => {
+  const { branch, kind, parent, leaf, config, storyKey, type } = options;
+  const suggestion = leaf.key
+    ? buildBranchName({ spec: { kind, parent, key: leaf.key, subject: leaf.subject ?? '' }, config })
+    : `${config.subPrefix}/${branch}`;
+
+  return {
+    branch,
+    ok: false,
+    kind,
+    type,
+    storyKey,
+    taskKey: leaf.key,
+    issueKey: leaf.key ?? storyKey,
+    subject: leaf.subject,
+    parent,
+    deprecated: true,
+    suggestedName: suggestion,
+    findings: [
+      {
+        rule: 'deprecated-prefix',
+        message: `"${branch}" cannot exist while ${parent} does — git rejects a ref that is both a branch and a directory of branches. Use ${suggestion}.`,
+        suggestion,
+      },
+    ],
+    ...targetsForKind({ kind, config, parent }),
+  };
 };
 
 const dropRedundantSuggestion = (result: BranchParseResult): BranchParseResult =>
@@ -192,14 +299,7 @@ const parseRelease = (options: { branch: string; segments: string[]; config: Git
   const [date, leaf, ...extra] = segments;
 
   if (!date || extra.length > 0) {
-    return {
-      branch,
-      ok: false,
-      kind: 'unknown',
-      deprecated: false,
-      expectedMrTargets: [],
-      findings: [{ rule: 'unknown-type', message: `"${branch}" is not a release or release-fix branch.` }],
-    };
+    return unrecognised({ branch, message: `"${branch}" is not a release or release-fix branch.` });
   }
 
   const findings: GitFlowFinding[] = [];
@@ -221,24 +321,13 @@ const parseRelease = (options: { branch: string; segments: string[]; config: Git
     };
   }
 
-  const parts = parseSegment({ segment: leaf, config, role: 'bug' });
-  const allFindings = [...findings, ...parts.findings];
-
-  return {
+  return nestedTooDeep({
     branch,
-    ok: allFindings.length === 0,
     kind: 'release-fix',
-    taskKey: parts.key,
-    issueKey: parts.key,
-    subject: parts.subject,
     parent,
-    deprecated: false,
-    findings: allFindings,
-    suggestedName: parts.key
-      ? buildBranchName({ spec: { kind: 'release-fix', parent, key: parts.key, subject: parts.subject ?? '' }, config })
-      : undefined,
-    ...targetsForKind({ kind: 'release-fix', config, parent }),
-  };
+    leaf: parseSegment({ segment: leaf, config, role: 'bug' }),
+    config,
+  });
 };
 
 const parseHotfix = (options: { branch: string; segments: string[]; config: GitFlowConfig }): BranchParseResult => {
@@ -286,19 +375,10 @@ const parseFeature = (options: {
   const [story, task, ...extra] = segments;
 
   if (!type || !story || extra.length > 0) {
-    return {
+    return unrecognised({
       branch,
-      ok: false,
-      kind: 'unknown',
-      deprecated: false,
-      expectedMrTargets: [],
-      findings: [
-        {
-          rule: 'unknown-type',
-          message: `"${branch}" matches no branch shape; expected <type>/<KEY>-<subject> with type one of ${config.types.join(', ')}.`,
-        },
-      ],
-    };
+      message: `"${branch}" matches no branch shape; expected <type>/<KEY>-<subject> with type one of ${config.types.join(', ')}.`,
+    });
   }
 
   const findings: GitFlowFinding[] = [];
@@ -332,31 +412,15 @@ const parseFeature = (options: {
     };
   }
 
-  const taskParts = parseSegment({ segment: task, config, role: 'task' });
-  const parent = `${type}/${story}`;
-
-  findings.push(...storyParts.findings, ...taskParts.findings);
-
-  return {
+  return nestedTooDeep({
     branch,
-    ok: findings.length === 0,
     kind: 'sub-feature',
-    type,
+    parent: `${prefix}/${story}`,
+    leaf: parseSegment({ segment: task, config, role: 'task' }),
+    config,
     storyKey: storyParts.key,
-    taskKey: taskParts.key,
-    issueKey: taskParts.key ?? storyParts.key,
-    subject: taskParts.subject,
-    parent,
-    deprecated: false,
-    findings,
-    suggestedName: taskParts.key
-      ? buildBranchName({
-          spec: { kind: 'sub-feature', parent, key: taskParts.key, subject: taskParts.subject ?? '' },
-          config,
-        })
-      : undefined,
-    ...targetsForKind({ kind: 'sub-feature', config, parent }),
-  };
+    type,
+  });
 };
 
 /**

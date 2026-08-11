@@ -1,21 +1,8 @@
-import { execFileSync } from 'child_process';
 import { loadConfig } from './config';
-import { BranchParseResult, GitFlowConfig, GitFlowRule, parseBranch, stripRefPrefix, validateBranch } from './git-flow';
-
-const git = (options: { root: string; args: string[] }) =>
-  execFileSync('git', options.args, { cwd: options.root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-
-const currentBranch = (root: string) => git({ root, args: ['rev-parse', '--abbrev-ref', 'HEAD'] });
-
-const allBranches = (root: string) => {
-  const refs = git({ root, args: ['for-each-ref', '--format=%(refname)', 'refs/heads', 'refs/remotes'] });
-  const names = refs
-    .split('\n')
-    .filter((ref) => ref && !ref.endsWith('/HEAD'))
-    .map(stripRefPrefix);
-
-  return [...new Set(names)].sort();
-};
+import { allBranches, currentBranch } from './git';
+import { BranchParseResult, GitFlowConfig, GitFlowRule, parseBranch, validateBranch } from './git-flow';
+import { gitFlowRepair } from './git-flow-repair';
+import { gitFlowStart } from './git-flow-start';
 
 const describeParse = (parse: BranchParseResult) => {
   const lines = [`  kind      ${parse.kind}${parse.deprecated ? ' (deprecated spelling)' : ''}`];
@@ -112,34 +99,86 @@ const checkAll = (options: { root: string; config: GitFlowConfig }) => {
   return 0;
 };
 
-const FLAGS_WITH_VALUE = ['--target', '--root'];
+const FLAGS_WITH_VALUE = ['--target', '--root', '--to', '--key', '--of', '--subject', '--type', '--release'];
 
 const positionalArgs = (args: string[]) =>
   args.filter((entry, index) => !entry.startsWith('--') && !FLAGS_WITH_VALUE.includes(args[index - 1] ?? ''));
 
-const USAGE = `ethlete-agents git-flow — check branch names against the repo's git flow
+const flagValue = (args: string[], flag: string) => {
+  const index = args.indexOf(flag);
 
+  return index === -1 ? undefined : args[index + 1];
+};
+
+const USAGE = `ethlete-agents git-flow — name, check and repair branches against the repo's git flow
+
+  git-flow start <KEY>     Create the correctly named branch off the correct base
   git-flow check [ref]     Validate a branch name (default: the current branch)
   git-flow check --all     Adoption report over every local and remote branch
+  git-flow repair [ref]    Rename a non-conforming branch and retarget its merge requests
   git-flow explain [ref]   Print what the parser saw
 
-Options
+Options for check
   --target <branch>   Also validate the merge request target
   --push              Also report a direct push to a protected branch
+
+Options for start
+  --subject <text>    Use this subject instead of reading the issue from Jira
+  --of <branch>       Nest under this branch instead of the parent story's own branch
+  --type <type>       Branch type for a main feature (default: feat)
+  --hotfix            Branch off production as a hotfix
+  --release <date>    Create a release branch instead of a feature branch
+  --push              Push the new branch and set its upstream
+
+Options for repair
+  --key <KEY>         The issue key to put into the new name
+  --to <branch>       Use this name instead of the derived one
+  --no-mr-check       Skip the GitLab merge request lookup (only when you know none point at it)
+
+Options for start and repair
+  --yes               Do not ask for confirmation
+  --dry-run           Print the plan and stop
 `;
 
-export const gitFlowCommand = (options: { root: string; argv: string[] }) => {
+export const gitFlowCommand = async (options: { root: string; argv: string[] }) => {
   const { root, argv } = options;
-  const [subcommand, ...rest] = argv;
-  const config = loadConfig({ root }).gitFlow;
-  const targetIndex = rest.indexOf('--target');
-  const target = targetIndex === -1 ? undefined : rest[targetIndex + 1];
-  const ref = positionalArgs(rest)[0];
+  // The subcommand is the first positional, not `argv[0]` — a global flag like `--root` may precede it.
+  const [subcommand, ref] = positionalArgs(argv);
+  const rest = argv;
+  const loaded = loadConfig({ root });
+  const config = loaded.gitFlow;
+  const target = flagValue(rest, '--target');
+  const shared = { root, assumeYes: rest.includes('--yes'), dryRun: rest.includes('--dry-run') };
 
   if (subcommand === 'check') {
     if (rest.includes('--all')) return checkAll({ root, config });
 
     return checkOne({ root, config, branch: ref ?? currentBranch(root), target, push: rest.includes('--push') });
+  }
+
+  if (subcommand === 'start') {
+    return gitFlowStart({
+      ...shared,
+      config: loaded,
+      key: ref,
+      subject: flagValue(rest, '--subject'),
+      type: flagValue(rest, '--type'),
+      parent: flagValue(rest, '--of'),
+      hotfix: rest.includes('--hotfix'),
+      releaseDate: flagValue(rest, '--release'),
+      push: rest.includes('--push'),
+    });
+  }
+
+  if (subcommand === 'repair') {
+    return gitFlowRepair({
+      ...shared,
+      config: loaded,
+      ref,
+      to: flagValue(rest, '--to'),
+      key: flagValue(rest, '--key'),
+      skipMrCheck: rest.includes('--no-mr-check'),
+    });
   }
 
   if (subcommand === 'explain') {

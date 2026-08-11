@@ -11,7 +11,8 @@ const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into y
   ethlete-agents sync      Write the generated rules/skills for every detected agent
   ethlete-agents check     Exit non-zero when the generated files are out of date (for CI)
   ethlete-agents init      Write a starter ${CONFIG_FILE_NAME}
-  ethlete-agents git-flow  Check a branch name against the repo's git flow (check, explain)
+  ethlete-agents git-flow  Name, check and repair branches against the repo's git flow
+                           (start, check, repair, explain)
   ethlete-agents migrate   Convert the repo to the AGENTS.md + .agents/skills layout:
                            CLAUDE.md content moves into AGENTS.md (CLAUDE.md becomes an
                            @AGENTS.md import), hand-written .claude/skills move to
@@ -67,7 +68,7 @@ const init = (root: string) => {
   return 0;
 };
 
-const run = (argv: string[]) => {
+const run = (argv: string[]): number | Promise<number> => {
   const command = argv[0];
   const root = readFlag(argv, '--root') ?? process.cwd();
   const options = { root, version: readVersion(), targets: parseTargets(argv) };
@@ -94,10 +95,11 @@ export * from './lib';
 
 // Guarded so the package can also be imported as a library without running the CLI.
 if (require.main === module) {
-  try {
-    process.exit(run(process.argv.slice(2)));
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
-    process.exit(1);
-  }
+  Promise.resolve()
+    .then(() => run(process.argv.slice(2)))
+    .then((code) => process.exit(code))
+    .catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : error);
+      process.exit(1);
+    });
 }

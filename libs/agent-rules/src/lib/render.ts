@@ -87,13 +87,20 @@ export const renderDescription = (options: { item: ContentItem; vars: Record<str
 
 /**
  * Rewrites the block between the markers, leaving everything a repo wrote around it untouched.
- * A file without markers gets the block appended.
+ * A file without markers gets the block appended. Shell files pass their own `#` markers.
  */
-export const replaceMarkedBlock = (options: { existing: string; block: string }) => {
+export const replaceMarkedBlock = (options: {
+  existing: string;
+  block: string;
+  startMarker?: string;
+  endMarker?: string;
+}) => {
   const { existing, block } = options;
-  const wrapped = `${START_MARKER}\n${block}\n${END_MARKER}`;
-  const start = existing.indexOf(START_MARKER);
-  const end = existing.indexOf(END_MARKER);
+  const startMarker = options.startMarker ?? START_MARKER;
+  const endMarker = options.endMarker ?? END_MARKER;
+  const wrapped = `${startMarker}\n${block}\n${endMarker}`;
+  const start = existing.indexOf(startMarker);
+  const end = existing.indexOf(endMarker);
 
   if (start === -1 || end === -1 || end < start) {
     const separator = existing.trim().length > 0 ? `${existing.trimEnd()}\n\n` : '';
@@ -101,5 +108,21 @@ export const replaceMarkedBlock = (options: { existing: string; block: string })
     return `${separator}${wrapped}\n`;
   }
 
-  return `${existing.slice(0, start)}${wrapped}${existing.slice(end + END_MARKER.length)}`;
+  return `${existing.slice(0, start)}${wrapped}${existing.slice(end + endMarker.length)}`;
+};
+
+/**
+ * Takes the block back out, so switching a generated block off in the config removes it instead of
+ * leaving it behind — `sync`'s file-level pruning cannot reach inside a file the repo also owns.
+ */
+export const removeMarkedBlock = (options: { existing: string; startMarker: string; endMarker: string }) => {
+  const { existing, startMarker, endMarker } = options;
+  const start = existing.indexOf(startMarker);
+  const end = existing.indexOf(endMarker);
+
+  if (start === -1 || end === -1 || end < start) return existing;
+
+  const kept = `${existing.slice(0, start).trimEnd()}\n${existing.slice(end + endMarker.length).trimStart()}`;
+
+  return kept.trim().length > 0 ? kept : '';
 };

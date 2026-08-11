@@ -12,6 +12,21 @@ export const CONFIG_FILE_NAME = 'ethlete-agents.config.json';
 
 export const LOCAL_CONFIG_FILE_NAME = 'ethlete-agents.config.local.json';
 
+/**
+ * Non-secret Jira wiring, committed with the repo — `git-flow start` resolves an issue key through
+ * it. Credentials never live here; they come from the environment or the gitignored local config.
+ */
+export type JiraSettings = {
+  host?: string;
+  /**
+   * The instance's field holding a Story's branch subject (`customfield_10050`). Without it the
+   * summary is slugified instead, which is a paraphrase rather than the agreed subject.
+   */
+  subjectField?: string;
+  /** Branch type per Jira issue type, e.g. `{ "Bug": "fix" }`. Anything unlisted becomes `feat`. */
+  typeByIssueType?: Record<string, string>;
+};
+
 export type SyncConfig = {
   root: string;
   targets: AgentTarget[];
@@ -27,8 +42,11 @@ export type SyncConfig = {
   claudeMdImportsAgentsMd: boolean;
   /** Opt-in agent hooks (they run commands on the developer's machine, so never default). */
   hooks: string[];
+  /** Opt-in git hooks, appended to the repo's own husky hooks. Same reason they never default. */
+  gitHooks: string[];
   /** The branch grammar, resolved against its defaults — see `@ethlete/agent-rules/git-flow`. */
   gitFlow: GitFlowConfig;
+  jira: JiraSettings;
 };
 
 type RawConfig = {
@@ -38,7 +56,9 @@ type RawConfig = {
   exclude?: string[];
   claudeMdImportsAgentsMd?: boolean;
   hooks?: string[];
+  gitHooks?: string[];
   gitFlow?: RawGitFlowConfig;
+  jira?: JiraSettings;
 };
 
 const readRawConfig = (root: string) => {
@@ -61,11 +81,15 @@ const readRawConfig = (root: string) => {
  *   a handoff instead of writing the handoff file automatically.
  * - `sdkSourcePath` points at a local `ethlete-sdk` checkout, which the SDK source and local-build
  *   skills read when they need the SDK's own sources instead of the published package.
+ * - `jira` holds the per-user Jira credentials `git-flow start` needs. This is the one place in the
+ *   repo a secret may sit, and only because the file is gitignored; `JIRA_EMAIL`/`JIRA_API_TOKEN`
+ *   in the environment are the alternative.
  */
 export type LocalConfig = {
   disableHooks?: boolean | string[];
   disableAutoHandoffSave?: boolean;
   sdkSourcePath?: string;
+  jira?: { host?: string; email?: string; token?: string };
 };
 
 export type LocalConfigState =
@@ -73,7 +97,7 @@ export type LocalConfigState =
   | { exists: true; valid: false }
   | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[] };
 
-const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'disableAutoHandoffSave', 'sdkSourcePath'];
+const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'disableAutoHandoffSave', 'sdkSourcePath', 'jira'];
 
 export const readLocalConfig = (root: string): LocalConfigState => {
   const path = join(root, LOCAL_CONFIG_FILE_NAME);
@@ -130,6 +154,7 @@ const gitFlowVars = (gitFlow: GitFlowConfig): Record<string, string | string[]> 
   gitFlowProductionBranch: gitFlow.baseBranches.production,
   gitFlowTypes: gitFlow.types,
   gitFlowEnforcement: gitFlow.enforcement,
+  gitFlowSubPrefix: gitFlow.subPrefix,
 });
 
 export const loadConfig = (options: { root: string; targetOverride?: AgentTarget[] }): SyncConfig => {
@@ -149,6 +174,8 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     exclude: raw.exclude ?? [],
     claudeMdImportsAgentsMd: raw.claudeMdImportsAgentsMd ?? false,
     hooks: raw.hooks ?? [],
+    gitHooks: raw.gitHooks ?? [],
     gitFlow,
+    jira: raw.jira ?? {},
   };
 };

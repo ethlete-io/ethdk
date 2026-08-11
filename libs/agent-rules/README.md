@@ -128,15 +128,31 @@ CLI, a git hook, a CI job and `@ethlete/timetrack` all read:
 ```
 
 ```bash
+npx ethlete-agents git-flow start FIP-2177          # name it and branch off the right base
 npx ethlete-agents git-flow check                   # the current branch
 npx ethlete-agents git-flow check "$SOURCE" --target "$TARGET"
 npx ethlete-agents git-flow check --all             # adoption report
+npx ethlete-agents git-flow repair dev-game-codes --key FIP-2900
 npx ethlete-agents git-flow explain feat/FIP-2177-user-management
 ```
 
-The shapes are `feat/<KEY>-<subject>`, a sub-feature nested under it
-(`feat/<KEY>-<subject>/<KEY>-<subject>`), `release/<YYYY.MM.DD>`, a fix nested under a
-release, and `hotfix/<KEY>-<subject>`.
+The shapes:
+
+| Shape                                      | Branch from             | Merges into                    |
+| ------------------------------------------ | ----------------------- | ------------------------------ |
+| `feat/<KEY>-<subject>`                     | development             | development                    |
+| `sub/feat/<KEY>-<subject>/<KEY>-<subject>` | the main feature branch | the main feature branch        |
+| `release/<YYYY.MM.DD>`                     | development             | development **and** production |
+| `sub/release/<YYYY.MM.DD>/<KEY>-<subject>` | the release branch      | the release branch             |
+| `hotfix/<KEY>-<subject>`                   | production              | production                     |
+
+**Why nested branches carry a `sub/` prefix.** Git refuses a ref that is both a branch and
+a directory of branches, so `feat/FIP-2177-user-management/FIP-2178-reset` cannot exist
+while `feat/FIP-2177-user-management` does - the push is rejected with `refname conflict`.
+The prefix moves the nested tree out of the way while keeping the parent's full path inside
+the child's name, so the merge request target is still derivable from the name alone. The
+unprefixed spelling still parses, reports why it cannot exist, and `repair` moves it.
+Configurable as `subPrefix`.
 
 - **`enforcement`** - `"advisory"` (default) reports everything and blocks nothing, so a
   repo can adopt the convention before it gates on it. `"gated"` applies each rule's
@@ -155,10 +171,59 @@ The grammar is also importable on its own - `@ethlete/agent-rules/git-flow` has 
 dependencies and touches no Node built-ins, so it runs in a browser:
 
 ```ts
-import { parseBranch, resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
+import { parseBranch, planStart, resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 
 const { storyKey, taskKey, findings } = parseBranch({ branch, config: resolveGitFlowConfig() });
 ```
+
+### `start` - the prospective flow
+
+`git-flow start <KEY>` reads the issue from Jira, computes the name from the grammar and
+creates the branch off the correct base. It prints the plan first and asks before writing;
+`--dry-run` stops after the plan and `--yes` skips the question. It refuses on a dirty
+working tree, when the branch already exists, and when the base branch is nowhere to be
+found.
+
+A Task with a parent Story nests under that Story's feature branch, which therefore has to
+exist already - `start` says so rather than inventing a parent. `--of <branch>` picks the
+parent explicitly, `--hotfix` branches off production, `--release <date>` makes a release
+branch, and `--subject <text>` skips Jira entirely.
+
+Jira needs a host, an email and an API token. Only the host belongs in the committed
+config; the two secrets come from `JIRA_EMAIL` / `JIRA_API_TOKEN` or from the gitignored
+local config.
+
+```json
+{
+  "jira": {
+    "host": "https://your-team.atlassian.net",
+    "subjectField": "customfield_10050",
+    "typeByIssueType": { "Bug": "fix" }
+  }
+}
+```
+
+- **`subjectField`** - the field holding a Story's branch subject. Without it the summary
+  is slugified, which is a paraphrase rather than the agreed subject.
+- **`typeByIssueType`** - the branch type per Jira issue type; anything unlisted becomes
+  `feat`. `--type` overrides it per call.
+
+### `repair` - renaming a branch that does not conform
+
+`git-flow repair [ref]` derives the conforming name (`--key FIP-2900` when the old name
+carries no issue key, `--to <branch>` to override), renames the branch locally and on the
+remote, and retargets the open merge requests aimed at it through the GitLab API.
+`GITLAB_TOKEN` needs the `api` scope.
+
+Everything is checked before the first mutation, and it refuses rather than half-finishing:
+
+- An open merge request whose **source** is the branch blocks the repair. GitLab cannot
+  move a merge request to another source branch, and closing it would lose its discussion -
+  merge or close it first.
+- A branch that is pushed but whose merge requests cannot be listed (no token, or a remote
+  that is not GitLab) blocks too. `--no-mr-check` asserts that none point at it.
+- If a retarget fails halfway, the old branch is still there and the recovery commands are
+  printed.
 
 ## Hooks (opt-in)
 
@@ -199,6 +264,54 @@ Available hooks:
 
 Hooks can be turned off per machine - see the local config below.
 
+## Git hooks (opt-in)
+
+Separate from the agent hooks above, and opt-in for the same reason - a generated block
+that can reject a push is a higher-stakes artifact than a markdown one:
+
+```json
+{
+  "gitHooks": ["pre-push", "post-checkout"]
+}
+```
+
+Each one is written as an `# ethlete:git-flow:start` … `end` block **appended** to your
+`.husky/<name>`, so an existing hook there (a git-lfs hook, typically) keeps working and
+keeps reading stdin first - which is why the block never reads stdin itself. Removing the
+name from `gitHooks` takes the block back out and leaves the rest of the file alone.
+
+- **`pre-push`** - runs `git-flow check --push` on the current branch. In `advisory` mode
+  only a direct push to a base branch can actually stop it.
+- **`post-checkout`** - reports a non-conforming name on a branch that is on no remote yet,
+  which is the whole window in which renaming it is free.
+
+Only `.husky/` is written, never `.git/hooks/`: the generated files are committed and CI's
+`check` diffs them, so a hook outside the working tree could never be in sync. Without a
+`.husky/` directory `sync` warns and writes nothing. The block calls
+`node_modules/.bin/ethlete-agents` directly rather than through `npx`, so a repo where the
+package is missing gets silence instead of a registry lookup that would fail the push.
+`ETHLETE_GIT_FLOW_SKIP=1` silences both hooks on one machine.
+
+## CI job
+
+On GitLab, the merge request target is the half no local hook can see. The job needs no
+configuration beyond the predefined variables:
+
+```yaml
+Git Flow:
+  stage: Checks
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  allow_failure: true
+  script:
+    - >
+      npx ethlete-agents git-flow check "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+      --target "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+```
+
+`allow_failure: true` on top of `advisory` mode is deliberate belt and braces: the job
+reports for a whole grace period before it can ever be the reason a merge request is red.
+
 ## Per-machine local config
 
 A gitignored `ethlete-agents.config.local.json` at the repo root holds the values that
@@ -207,7 +320,8 @@ differ per developer, without touching any committed file:
 ```json
 {
   "disableHooks": true,
-  "sdkSourcePath": "/absolute/path/to/ethlete-sdk"
+  "sdkSourcePath": "/absolute/path/to/ethlete-sdk",
+  "jira": { "email": "you@example.com", "token": "…" }
 }
 ```
 
@@ -217,6 +331,9 @@ differ per developer, without touching any committed file:
 - **`disableAutoHandoffSave`** - keeps the `context-warning` hook's tiered warnings but
   drops the auto-mode escalation: at the critical tier it recommends `/ethlete-handoff`
   instead of saving the handoff file itself.
+- **`jira`** - the credentials `git-flow start` needs (`host`, `email`, `token`). This is
+  the one place in a repo a secret may sit, and only because the file is gitignored;
+  `JIRA_EMAIL` / `JIRA_API_TOKEN` in the environment are the alternative and win over it.
 - **`sdkSourcePath`** - a local `ethlete-sdk` checkout. The `sdk-source` and
   `sdk-local-build` skills read it when the agent needs the SDK's own sources, or has to
   build the SDK and install it here through a `file:` dependency. A relative path is

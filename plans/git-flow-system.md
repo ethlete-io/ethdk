@@ -85,6 +85,43 @@ must be branched **from**, and what an MR from it must **target**. The MR target
 valuable of the two enforcement points - a wrong branch name is cosmetic, a sub-feature merged
 straight into `next` bypasses the whole feature-branch test cycle.
 
+### Two of the five shapes cannot exist, and the fix is one prefix
+
+Found while implementing `start`, verified with git 2.55 both locally and against a bare remote:
+**git refuses a ref that is both a branch and a directory of branches.** So
+`feat/FIP-2177-user-management/FIP-2178-user-password-reset` cannot exist while
+`feat/FIP-2177-user-management` does - which is exactly the branch the draft says it is split
+from and merged back into. `git branch` fails with `cannot lock ref … 'refs/heads/feat/FIP-2177-user-management' exists`
+and a push is rejected with `refname conflict`. The same applies to
+`release/2026.04.28/FIP-2222-button-not-visible` against `release/2026.04.28`.
+
+The evidence that this was never noticed: of 124 branches in `fut-frontend`, **zero** have three
+segments and **zero** are a nested pair. The sub-feature shape has never been used, because it
+never could be. What the team does instead - flat branches merged into a `dev-*` integration
+branch - is the same two-level process without the encoding, exactly as the tolerance section
+below describes.
+
+**Decision: nested branches carry a `sub/` prefix** (`subPrefix` in the config).
+
+```
+feat/FIP-2177-user-management                                       unchanged
+sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset      the Task
+release/2026.04.28                                                  unchanged
+sub/release/2026.04.28/FIP-2222-button-not-visible                  the release fix
+```
+
+Chosen over the alternatives because it is the only one that fixes both broken shapes with one
+rule while keeping the parent's **full path inside the child's name** - so `expectedMrTargets`
+stays derivable from the name alone, with no key → branch lookup and no impurity in the parser.
+It also renames nothing that exists today: the main feature and release branches keep the names
+the draft gives them. Suffixing the parent instead (`feat/…/main` + `feat/…/FIP-2178-…`) would
+group children next to their parent in GitLab's branch list, but every integration and release
+branch would have to be renamed to accept a child.
+
+The unprefixed spelling still parses - as `sub-feature`/`release-fix`, `deprecated: true`, with a
+finding that says why it cannot exist and what to rename it to - so `explain` and `repair` give a
+useful answer instead of "unrecognised".
+
 Config sketch, living under a `gitFlow` key in `ethlete-agents.config.json`:
 
 ```jsonc
@@ -115,10 +152,11 @@ Config sketch, living under a `gitFlow` key in `ethlete-agents.config.json`:
 }
 ```
 
-What shipped differs from the sketch in three small ways: `releasePrefix` was split out of
+What shipped differs from the sketch in four small ways: `releasePrefix` was split out of
 `releasePattern` so the prefix is available when _building_ a name; a `release-date` rule was
-added because a malformed date is a real violation that no other rule described honestly; and
-`keyPrefixes` was added for the reason in the tolerance section below.
+added because a malformed date is a real violation that no other rule described honestly;
+`keyPrefixes` was added for the reason in the tolerance section below; and `subPrefix` was added
+for the reason above.
 
 Two notes for implementation. The renderer's `vars` values are strings or string arrays, so a
 nested `gitFlow` object will not interpolate into skill bodies as-is - either flatten the tokens
@@ -276,12 +314,22 @@ exist and are git-lfs hooks**. The check must be appended to them, never overwri
 `.husky/pre-commit` already runs `nx affected:lint` plus `git-format-staged`, so the git-flow
 check does not belong there.
 
-Open design question: should `ethlete-agents sync` write these hooks itself? It already owns
-generated files in the repo, and a one-line marker block inside an existing hook is the same
-pattern as the `AGENTS.md` marker block. It would also make adoption a single `sync` per repo
-rather than a manual copy into five repos. The risk is a code generator writing into a file
-that can block a developer's push, which is a meaningfully higher-stakes artifact than a
-markdown block.
+**Answered: `sync` writes them, opt-in** via a `gitHooks` array, as an
+`# ethlete:git-flow:start`/`end` block appended to `.husky/<name>` - the same marker-block
+contract as `AGENTS.md`, and removing the name takes the block back out again. Three constraints
+the implementation turned up, none of them obvious:
+
+- **Only `.husky/`, never `.git/hooks/`.** The generated files are committed and CI's `check`
+  diffs them; a hook outside the working tree could never be in sync. Without a `.husky/`
+  directory, `sync` warns and writes nothing rather than writing somewhere CI cannot see.
+- **The block must not read stdin.** It is appended _after_ the git-lfs hook, and a `pre-push`
+  hook's ref list on stdin can only be consumed once - lfs has already taken it. So the check
+  runs against the current branch instead of the pushed refs, which is also why `--target` has no
+  place in a hook: the pushed ref is the same branch, not a merge request target.
+- **Never `npx`.** `npx --no-install` still reaches the registry when the package is absent, and
+  that network error would reject the push. The block calls `node_modules/.bin/ethlete-agents`
+  directly, so a repo without the package gets silence. `ETHLETE_GIT_FLOW_SKIP=1` opts out per
+  machine.
 
 ### 4. CI job on MRs
 
@@ -321,9 +369,13 @@ fail a hook or a pipeline until step 6, and that is deliberate.
    was worth doing before any gate exists: people and agents start producing conforming names
    because the convention is finally discoverable at the moment a branch gets created, not
    because something rejected them afterwards.
-3. **Make `start` the easy path.** A command that names the branch correctly, from the right base,
-   in one step beats any amount of enforcement. Adoption is a tooling problem before it is a
-   discipline problem.
+3. ~~**Make `start` the easy path.**~~ **Done** - `git-flow start <KEY>` reads the issue from Jira,
+   derives the kind from the issue's own parent field (not from an assumed hierarchy), plans the
+   name through the shared `planStart`, and creates the branch off the right base after showing the
+   plan. `git-flow repair` renames a branch and retargets the merge requests aimed at it. The
+   `gitHooks` opt-in emits the `pre-push` and `post-checkout` blocks. A command that names the
+   branch correctly, from the right base, in one step beats any amount of enforcement: adoption is
+   a tooling problem before it is a discipline problem.
 4. **Run `check --all` per repo** and watch the ratio move. `dev-*` drops out as deprecated, so
    the numbers describe only branches anyone intends to keep creating. Use `repair` on what is
    worth repairing - particularly any still-open feature branch a sub-feature should nest under,
@@ -336,8 +388,8 @@ fail a hook or a pipeline until step 6, and that is deliberate.
 
 ## Open questions
 
-1. **Should `ethlete-agents sync` write git hooks**, given they can block a push - or does hook
-   installation stay a documented manual step per repo?
+1. ~~**Should `ethlete-agents sync` write git hooks**, given they can block a push?~~
+   **Answered: yes, opt-in** - see consumer 3 above for the contract and the three constraints.
 2. ~~**Does the renderer need dotted-path or object `vars`?**~~ **Answered: neither.** `loadConfig`
    derives `gitFlowDevelopmentBranch`, `gitFlowProductionBranch`, `gitFlowTypes` and
    `gitFlowEnforcement` from the resolved `gitFlow` block and merges them into `vars` ahead of the
@@ -348,12 +400,21 @@ fail a hook or a pipeline until step 6, and that is deliberate.
    that the merge back into `next` and `main` is a separate, non-flagged operation.
 4. **How the story-subject meta field relates to the branch subject** - the draft says the Jira
    Story carries the subject as a meta field, which means `start` can read it rather than derive
-   it from the summary. Same unknown field as in `plans/timetrack.md`.
-5. **Do the live `dev-*` integration branches get renamed or left to finish?** `dev-gamecodes`
+   it from the summary. Same unknown field as in `plans/timetrack.md`. `start` reads it from
+   `jira.subjectField` when configured and otherwise slugifies the summary, saying which it used -
+   so this is now a one-line config change, not a blocker. The field id is still unknown.
+5. **`git-flow-draft.md` needs updating with the `sub/` prefix**, and the team told, since the
+   shape it documents cannot be created. Not an implementation question, but the convention's
+   source of truth now disagrees with the tooling on two of its five shapes.
+6. **Should `start` also open the draft merge request?** `plans/timetrack.md` puts the branch →
+   draft MR step in its own flow, and `repair` already carries a GitLab client that `start` could
+   reuse. Deliberately left out for now: `start` writes to git only, which keeps the blast radius
+   of a wrong plan local.
+7. **Do the live `dev-*` integration branches get renamed or left to finish?** `dev-gamecodes`
    moved on 2026-08-11, so at least one is active. Renaming it retargets its open MRs; letting it
    run out means the first `feat/<KEY>-…` integration branches appear alongside it. Leaving it
    alone is probably right, but it is a decision, not an oversight.
-6. **Does anything but a main feature branch use the `dev-` prefix?** The mapping to
+8. **Does anything but a main feature branch use the `dev-` prefix?** The mapping to
    `kind: 'main-feature'` assumes not. `dev-temp-hub-staging` reads more like an environment
    branch than a feature, and if shapes like that exist they need their own classification rather
    than being mislabelled as integration branches.
