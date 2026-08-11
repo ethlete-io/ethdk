@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.36
+
+### Patch Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`3595aa0`](https://github.com/ethlete-io/ethdk/commit/3595aa0e847afcd23b294027fc5daaceb8fcf0f2) Thanks [@github-actions](https://github.com/apps/github-actions)! - A tab that adopts its session from another tab now reports it as a token seed, so its secure queries and anything else waiting on a login no longer wait forever.
+
 ## 6.0.0-next.35
 
 ### Major Changes

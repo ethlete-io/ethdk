@@ -1,5 +1,12 @@
 # @ethlete/core
 
+## 5.0.0-next.47
+
+### Patch Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`2e83ba8`](https://github.com/ethlete-io/ethdk/commit/2e83ba8233c30eead4b5f99d37fedb2629764304) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `nx g @ethlete/core:migrate-surface-interaction-swatch` failing with `Cannot find module` instead
+  of running.
+
 ## 5.0.0-next.46
 
 ### Minor Changes
