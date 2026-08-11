@@ -9,6 +9,12 @@ export type Evidence = {
   kind: EvidenceKind;
   at: Date;
   detail: string;
+  /**
+   * The wording this observation lends to a worklog description, when it has any — a commit
+   * subject, an agent session's title. Kept apart from `detail` so building a description never
+   * has to parse a string written for the UI.
+   */
+  summary?: string;
 };
 
 export type Confidence = 'certain' | 'likely' | 'weak';

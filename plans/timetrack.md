@@ -417,20 +417,51 @@ A pipeline of pure functions over an event window, each independently testable:
    learning to make a call. Still missing from the ladder: MR/issue-view activity and the Tempo
    recurring-pattern rung, both of which need a provider.
 
-5. **Merge and split.** Combine adjacent blocks on the same issue; keep a genuine context
-   switch separate even if short. Cap the number of worklogs per day so review stays
-   tractable - a day of 40 two-minute rows is not reviewable. Merging is where the
-   fragmented reality of a real day becomes a submittable set.
-6. **Round and check.** 15-minute rounding by default, applying the residue to the largest
-   entry within its own block so total time is preserved rather than invented. Compare the
-   day to the configured target and warn on over/under. Never fill to target silently.
-7. **Describe.** Build each worklog's text from commit subjects, the agent session's
-   `ai-title`, the calendar event title, the MR title - in that priority order. This is
-   where the tool earns daily goodwill: nobody wants to write "worked on user management"
-   forty times a month.
-8. **Explain.** Attach the evidence chain and compute confidence.
+5. ~~**Merge and split.**~~ **Built** - `merge.ts`. Consecutive blocks on the same issue become one
+   row, a context switch stays its own row however short it was, and blocks nothing attributed never
+   merge with anything - each is a separate question for the reasoning provider, and merging them
+   would destroy the evidence that tells them apart. The row cap is a second, more aggressive stage:
+   only when a day exceeds `maxRowsPerDay` (12) does every row on one issue collapse into one,
+   ignoring the gaps. That is why `WorkGroup.observedMs` exists beside `from`/`to` - a collapsed row
+   spans lunch on the clock while its duration still counts only observed time.
 
-Only blocks that reach step 5 with no candidate issue at all go to the reasoning provider.
+   A merged row's confidence is the tier holding **most of its time**, ties to the weaker tier.
+   Neither extreme survives review: taking the strongest lets a long weakly-evidenced stretch sync
+   unreviewed on the strength of five well-evidenced minutes, and taking the weakest lets a scrap
+   drag a whole afternoon into manual review.
+
+6. ~~**Round and check.**~~ **Built** - `round.ts`. `roundDurations()` apportions the day rather
+   than rounding each row: every row keeps its whole increments and the leftover increments go to
+   the longest remainders, so the day's total survives. Rounding rows independently is what invents
+   or loses half an hour over a fragmented day. Two rules the plan did not anticipate, both about
+   not losing a row: a row that would round to zero takes one increment from the longest row (the
+   total still holds), and a day whose whole total is under one increment still proposes one, because
+   a zero-duration worklog is not a thing Tempo can hold. When neither is possible the row stays at
+   zero and `checkDay` reports it. `checkDay()` only ever reports - `under-target`, `over-target`,
+   `unattributed-time`, `too-many-rows`, `zero-duration` - and never touches a duration.
+
+7. ~~**Describe.**~~ **Built** - `describe.ts`. Commit subjects, then the agent session title, then
+   the calendar title, then the branch subject read as words, then the issue key. Building this
+   needed one model change: `Evidence.summary` now carries the wording an observation lends to a
+   description, next to the `detail` written for the UI - otherwise describing a row means parsing
+   `abc1234 feat(user): …` back apart, which is exactly the fragility the two-field split avoids.
+   The MR title rung is still missing; it needs a provider.
+
+8. ~~**Explain.**~~ **Built** - `propose.ts` assembles `WorklogProposal`s carrying the evidence
+   chain, the confidence and `observedMs` beside `durationMs`, so review can show what rounding did.
+   Proposal ids are `<issueKey>@<from ISO>`, stable across re-runs of a day so an already-synced row
+   is recognised rather than duplicated.
+
+`correlate-day.ts` runs the whole chain: `correlateDay({ events })` → blocks, proposals,
+unattributed groups and the day check. Still pure - no clock, no network, no filesystem, so the
+same events always produce the same day.
+
+Only blocks that reach step 5 with no candidate issue at all go to the reasoning provider - they
+come back from `propose()` as `unattributed`, never forced into a row.
+
+Not built, and both waiting on a provider rather than on a decision: the MR/issue-view and Tempo
+recurring-pattern rungs of step 4's ladder, and turning an accepted calendar event with a matched
+Meet title into a meeting proposal directly.
 
 ## The reasoning provider (agent CLI, not an API key)
 
@@ -552,9 +583,11 @@ silently discard a row you touched. Mark edited proposals and merge around them.
 
 ## Phasing
 
-**Phase 1 - the spine.** ~~event model, sessionizing, the branch-grammar parser~~ **done** -
-`libs/timetrack` ships the four-layer model, the host ports, `sessionize()` and `attribute()`,
-with 16 fixture tests and no network, filesystem or Angular in it. Remaining: encrypted store,
+**Phase 1 - the spine.** ~~event model, sessionizing, the branch-grammar parser, correlation~~
+**done** - `libs/timetrack` ships the four-layer model, the host ports and the whole deterministic
+pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `propose`, and
+`correlateDay` over all of them), with 64 fixture tests and no network, filesystem or Angular in it.
+Remaining: encrypted store,
 the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
 watcher, Claude Code session logs, Jira + Tempo providers with attribute discovery and
 own-worklog upsert, Google Calendar, the day-review UI, tray, sync with diff preview. No
