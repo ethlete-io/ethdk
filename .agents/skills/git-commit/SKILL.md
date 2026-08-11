@@ -11,10 +11,11 @@ Commits in this repo are **lean** and follow the **commitlint rules**
 - **Format: `type(scope): Subject`** - one line. All three parts are enforced:
   - `type` ∈ `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
     `build`, `ci`, `chore`, `revert`
-  - `scope` is **required**, ∈ `core`, `cdk`, `components`, `query`,
-    `eslint-plugin`, `types`, `cli`, `contentful`, `playground`, `docs`,
-    `deps`, `ci`, `release`, `repo` (lib scopes for `libs/*`, `repo` for
-    repo-level things like `.claude/`, tooling, root configs)
+  - `scope` is **required**, ∈ `core`, `cdk`, `agent-rules`, `components`,
+    `query`, `query-devtools`, `eslint-plugin`, `types`, `cli`, `contentful`,
+    `playground`, `docs`, `deps`, `ci`, `release`, `repo` (lib scopes for
+    `libs/*`, `repo` for repo-level things like `.claude/`, tooling, root
+    configs)
   - Subject is **sentence-case** ("Add git-commit skill", not
     "add git-commit skill") - e.g. `chore(repo): Add git-commit skill`,
     `fix(components): Close overlay on trigger click`
