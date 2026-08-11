@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.0-next.45
+
+### Minor Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`789e597`](https://github.com/ethlete-io/ethdk/commit/789e5973dd8cb80ba7e6794d70118cc54137ba53) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: add `agendaDays` for an agenda longer than a week, and head the months a long agenda crosses into.
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`3765630`](https://github.com/ethlete-io/ethdk/commit/376563095943a74224629819ac29a61281d12198) Thanks [@github-actions](https://github.com/apps/github-actions)! - Drag scheduler all-day entries on the week and day views: sideways to move them,
+  by their leading or trailing edge to change which days they span.
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`3624dcb`](https://github.com/ethlete-io/ethdk/commit/3624dcbe7008a5e3ce1ccb9a44f913adb6e9e4b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Drag a scheduler appointment to another time: move it on the month, week and day
+  views, resize it by its edges on week and day. Emits the new
+  `appointmentReschedule`.
+
+### Patch Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`0406311`](https://github.com/ethlete-io/ethdk/commit/04063112c5c3d751b6097dcf20530e0afedb6396) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: auto-place items on breakpoints their layout has no position for, instead of
+  stacking them all on the grid origin. An empty `layout: {}` no longer warns.
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`0aba085`](https://github.com/ethlete-io/ethdk/commit/0aba085d026c4bd76734bea061c1c861de006865) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: `GridDebugComponent` is generic in the item payload, so `<et-grid-debug>` now accepts a typed
+  grid instead of only `GridComponent<unknown>`.
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`9a93121`](https://github.com/ethlete-io/ethdk/commit/9a931214fc0d4f286e931081c786656ee427946e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Selection lists (`et-radio-group`, `et-checkbox-group`, `et-segmented-button-group`) accept `aria-label` / `aria-labelledby` and count as labelled, so a group named from outside its field no longer trips the field's labelling guard (ET2201) and no longer needs a visually hidden `<et-label>`.
+
 ## 1.0.0-next.44
 
 ### Major Changes
