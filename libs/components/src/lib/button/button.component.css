@@ -4,16 +4,6 @@
     --_et-button-color: var(--et-theme-color-on-primary);
     --_et-button-border-color: transparent;
 
-    /* The surface-tone ladder for the filled look; each variant below restates it for its own
-       structural signature, and the surface-tone block near the end of the file is the only place
-       that reads it. There is no surface equivalent of --et-theme-color-primary-opacity to ramp, so
-       the tint step is a percentage per state instead of one shared opacity variable. */
-    --_et-button-surface-tint: 32%;
-    --_et-button-surface-tint-hover: 40%;
-    --_et-button-surface-tint-focus: 44%;
-    --_et-button-surface-tint-active: 48%;
-    --_et-button-surface-border: transparent;
-
     display: inline-flex;
     position: relative;
     align-items: center;
@@ -103,11 +93,6 @@
       --_et-button-background: var(--et-theme-color-primary);
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: var(--et-theme-color-ink-solid);
-      --_et-button-surface-tint: 0%;
-      --_et-button-surface-tint-hover: 12%;
-      --_et-button-surface-tint-focus: 16%;
-      --_et-button-surface-tint-active: 20%;
-      --_et-button-surface-border: var(--et-surface-interaction-solid);
 
       @media (hover: hover) {
         &:hover {
@@ -129,11 +114,6 @@
       --_et-button-background: var(--et-theme-color-primary);
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: var(--et-theme-color-ink-solid);
-      --_et-button-surface-tint: 0%;
-      --_et-button-surface-tint-hover: 12%;
-      --_et-button-surface-tint-focus: 16%;
-      --_et-button-surface-tint-active: 20%;
-      --_et-button-surface-border: var(--et-surface-interaction-solid);
 
       @media (hover: hover) {
         &:hover {
@@ -161,11 +141,6 @@
       --_et-button-background: var(--et-theme-color-primary);
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: transparent;
-      --_et-button-surface-tint: 16%;
-      --_et-button-surface-tint-hover: 24%;
-      --_et-button-surface-tint-focus: 28%;
-      --_et-button-surface-tint-active: 32%;
-      --_et-button-surface-border: transparent;
 
       @media (hover: hover) {
         &:hover {
@@ -187,11 +162,6 @@
       --_et-button-background: var(--et-theme-color-primary);
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: transparent;
-      --_et-button-surface-tint: 0%;
-      --_et-button-surface-tint-hover: 12%;
-      --_et-button-surface-tint-focus: 16%;
-      --_et-button-surface-tint-active: 20%;
-      --_et-button-surface-border: transparent;
 
       @media (hover: hover) {
         &:hover {
@@ -213,11 +183,6 @@
       --_et-button-background: var(--et-theme-color-primary);
       --_et-button-color: var(--et-theme-color-on-primary);
       --_et-button-border-color: transparent;
-      --_et-button-surface-tint: 32%;
-      --_et-button-surface-tint-hover: 40%;
-      --_et-button-surface-tint-focus: 44%;
-      --_et-button-surface-tint-active: 48%;
-      --_et-button-surface-border: transparent;
 
       @media (hover: hover) {
         &:hover {
@@ -231,39 +196,6 @@
 
       &:active {
         --et-theme-color-primary-opacity: 1;
-      }
-    }
-
-    /* --- Surface tone --- */
-
-    /* Overrides the variant blocks above: swaps the theme-color tint for the neutral
-     surface-interaction color (via SurfaceInteractiveDirective, always mounted by ButtonDirective)
-     so the button reads as chrome rather than as content colored by the ambient theme. The ladder
-     comes from whichever variant rule won, so a pressed toggle still takes its pressed variant's
-     step - and `data-muted-until-pressed` is the same look, released as soon as the button is
-     pressed. */
-    &[data-tone='surface'],
-    &[data-muted-until-pressed]:not([data-pressed='true']) {
-      --_et-button-color: var(--et-surface-color-solid, currentColor);
-      --_et-button-border-color: var(--_et-button-surface-border);
-      --_et-button-background: color-mix(
-        in srgb,
-        var(--et-surface-interaction-solid) var(--_et-button-surface-tint),
-        transparent
-      );
-
-      @media (hover: hover) {
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          --_et-button-surface-tint: var(--_et-button-surface-tint-hover);
-        }
-      }
-
-      &:focus-visible {
-        --_et-button-surface-tint: var(--_et-button-surface-tint-focus);
-      }
-
-      &:active {
-        --_et-button-surface-tint: var(--_et-button-surface-tint-active);
       }
     }
 

@@ -1,10 +1,10 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
+import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
 import { BUTTON_SIZES, BUTTON_SPINNER_CONFIG, BUTTON_VARIANTS, ButtonSize } from './button.component';
-import { ButtonDirective } from './headless';
+import { ButtonColorDirective, ButtonDirective } from './headless';
 
 type IconButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 
@@ -38,14 +38,14 @@ const PRESSED_VARIANT_MAP: Record<IconButtonVariant, string> = {
   hostDirectives: [
     {
       directive: ButtonDirective,
-      inputs: ['disabled', 'loading', 'type', 'pressed', 'tone', 'mutedUntilPressed', 'emitAriaPressed'],
+      inputs: ['disabled', 'loading', 'type', 'pressed', 'emitAriaPressed'],
     },
     ButtonStylesDirective,
     ColorInteractiveDirective,
     FocusRingDirective,
     {
-      directive: ProvideColorDirective,
-      inputs: ['etProvideColor:color'],
+      directive: ButtonColorDirective,
+      inputs: ['color', 'pressedColor'],
     },
   ],
   host: {

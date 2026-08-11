@@ -1,10 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
+import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
-import { ButtonDirective } from './headless';
+import { ButtonColorDirective, ButtonDirective } from './headless';
 
 export const BUTTON_SIZES = {
   XS: 'xs',
@@ -86,14 +86,14 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
   hostDirectives: [
     {
       directive: ButtonDirective,
-      inputs: ['disabled', 'loading', 'type', 'pressed', 'tone', 'mutedUntilPressed'],
+      inputs: ['disabled', 'loading', 'type', 'pressed'],
     },
     ButtonStylesDirective,
     ColorInteractiveDirective,
     FocusRingDirective,
     {
-      directive: ProvideColorDirective,
-      inputs: ['etProvideColor:color'],
+      directive: ButtonColorDirective,
+      inputs: ['color', 'pressedColor'],
     },
   ],
   host: {

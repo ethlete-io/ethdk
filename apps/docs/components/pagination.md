@@ -315,8 +315,8 @@ doesn't fit they wrap (rather than scrolling) so every control stays reachable.
 Colors come from the [`[et-button]`](/components/button) system: the current page is
 a `filled` button (accent from the nearest color scope -
 `--et-theme-color-primary` / `--et-theme-color-on-primary`), every other item is a
-neutral `transparent` button that stays surface-themed until it's the active page
-(`mutedUntilPressed`), with hover tints from `--et-surface-interaction-solid`. Size
+neutral `transparent` button that takes its colors from the surface until it's the
+active page (`color="surface"`). Size
 and spacing are tunable via `--et-pagination-item-size`, `--et-pagination-gap` and
 `--et-pagination-radius`; the buttons' own `--et-button-*` tokens are overridden for
 the compact, square cells.

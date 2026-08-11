@@ -23,7 +23,8 @@ import { RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
       et-icon-button
       size="sm"
       type="button"
-      mutedUntilPressed
+      color="surface"
+      pressedColor="inherit"
     >
       <i etIcon="et-image"></i>
     </button>
