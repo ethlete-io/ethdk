@@ -138,11 +138,11 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
   `,
   encapsulation: ViewEncapsulation.None,
 })
-export class GridDebugComponent {
+export class GridDebugComponent<TData = unknown> {
   private destroyRef = inject(DestroyRef);
 
-  public grid = input.required<GridComponent>();
-  public externalItems = input<GridItemConfig[] | null>(null);
+  public grid = input.required<GridComponent<TData>>();
+  public externalItems = input<GridItemConfig<string, TData>[] | null>(null);
 
   public activeBreakpoint = computed(() => this.grid().grid.activeBreakpoint());
   public containerWidth = computed(() => this.grid().grid.containerWidth());
