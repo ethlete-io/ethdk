@@ -73,7 +73,9 @@ Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role=
 
 ## Theming
 
-Content tabs: `--et-tab-group-gap` / `--et-tab-group-header-gap` (`0px`), `--et-tab-group-trigger-padding-inline` (`16px`), `--et-tab-group-trigger-padding-block` (`12px`), `--et-tab-group-underline-size` (`2px`), `--et-tab-group-underline-radius` (`1px`), `--et-tab-group-font-size` (`1.4rem`). Nav tabs mirror them as `--et-nav-tabs-gap` / `-underline-size` / `-underline-radius` / `-font-size` plus `--et-nav-tab-link-padding-inline` / `-padding-block`. Colors come from the [surface/color theme systems](/core/theming).
+Content tabs: `--et-tab-group-gap` / `--et-tab-group-header-gap` (`0px`), `--et-tab-group-trigger-padding-inline` (`16px`), `--et-tab-group-trigger-padding-block` (`12px`), `--et-tab-group-underline-size` (`2px`), `--et-tab-group-underline-radius` (`1px`), `--et-tab-group-font-size` (`1.4rem`). Nav tabs mirror them as `--et-nav-tabs-gap` / `-underline-size` / `-underline-radius` / `-font-size` plus `--et-nav-tab-link-padding-inline` / `-padding-block`. Set any of them on the tab bar's host element. Colors come from the [surface/color theme systems](/core/theming).
+
+Underneath, all of those default from **one shared scale** that `size` drives - `--et-tab-padding-inline`, `--et-tab-padding-block`, `--et-tab-font-size`, `--et-tab-underline-size`, `--et-tab-underline-radius` and `--et-tab-baseline-opacity`. Retheming the scale moves content tabs, nav tabs and a [segmented button group in its tabs variant](/components/choice-inputs#segmented-tabs) together; the per-component tokens above still win where you want one of them to differ.
 
 ## Error codes
 

@@ -1,0 +1,61 @@
+@layer components {
+  /* These inherit because every read site is a descendant of the element carrying `data-size` - the
+     trigger, the label, the underline. A non-inheriting registered property resolves to its initial
+     value there, which silently kills both the scale and any consumer override set on the host. */
+  @property --et-tab-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-tab-padding-block {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-tab-underline-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  @property --et-tab-underline-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 1px;
+  }
+
+  @property --et-tab-baseline-opacity {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.2;
+  }
+
+  .et-tab-scale {
+    /* not registered: a registered `<length>` may not take a rem initial-value, and the label size
+       tracking the root font size is deliberate */
+    --et-tab-font-size: 1.4rem;
+
+    &:where([data-size='sm']) {
+      --et-tab-padding-inline: 12px;
+      --et-tab-padding-block: 8px;
+      --et-tab-font-size: 1.2rem;
+      --et-tab-underline-size: 2px;
+    }
+
+    &:where([data-size='md']) {
+      --et-tab-padding-inline: 16px;
+      --et-tab-padding-block: 12px;
+      --et-tab-font-size: 1.4rem;
+      --et-tab-underline-size: 2px;
+    }
+
+    &:where([data-size='lg']) {
+      --et-tab-padding-inline: 20px;
+      --et-tab-padding-block: 14px;
+      --et-tab-font-size: 1.6rem;
+      --et-tab-underline-size: 3px;
+    }
+  }
+}

@@ -1,5 +1,6 @@
-import { Component, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
-import { AnimatableDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
+import { Component, computed, effect, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import { AnimatableDirective, createCanAnimateSignal, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
+import { TabScaleStylesComponent } from '../../../tabs/tab-scale-styles.component';
 import { FormErrorComponent } from '../../form-field/form-error.component';
 import { FormWarningComponent } from '../../form-field/form-warning.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
@@ -33,6 +34,7 @@ export type SegmentedButtonGroupVariant =
   ],
   host: {
     class: 'et-segmented-button-group',
+    '[class.et-tab-scale]': 'isTabsVariant()',
     '[attr.data-size]': 'size()',
     '[attr.data-variant]': 'variant()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
@@ -61,11 +63,21 @@ export class SegmentedButtonGroupComponent {
   private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
 
+  protected isTabsVariant = computed(() => this.variant() === SEGMENTED_BUTTON_GROUP_VARIANTS.TABS);
+
   /** @internal The active background element of the currently checked button. Used as the flip animation origin. */
   public lastActiveBackgroundElement = signal<HTMLElement | null>(null);
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
+    const styleManager = injectStyleManager();
+
+    effect(() => {
+      if (this.isTabsVariant()) {
+        styleManager.mount(TabScaleStylesComponent);
+      }
+    });
+
     wireFormSupport(this.support, {
       errorContent: this.errorContentRef,
       warningContent: this.warningContentRef,

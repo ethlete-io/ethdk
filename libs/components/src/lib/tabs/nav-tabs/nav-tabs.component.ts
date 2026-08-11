@@ -3,6 +3,7 @@ import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { ScrollableButtonsDirective } from '../../scrollable/headless/scrollable-buttons.directive';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { TabBarDirective } from '../headless/tab-bar.directive';
+import { mountTabScaleStyles } from '../tab-scale-styles.component';
 import { TAB_SIZES, TabSize } from '../tab-sizes';
 import { NavTabsDirective } from './headless/nav-tabs.directive';
 
@@ -40,7 +41,7 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     NavTabsDirective,
   ],
   host: {
-    class: 'et-nav-tabs',
+    class: 'et-nav-tabs et-tab-scale',
     '[attr.data-orientation]': 'tabBar.orientation()',
     '[attr.data-size]': 'size()',
     '[attr.data-fit]': 'tabBar.fit()',
@@ -48,100 +49,85 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     '[attr.data-variant]': 'tabBar.variant()',
   },
   styles: `
-    @property --et-nav-tabs-gap {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 0px;
-    }
-
-    @property --et-nav-tabs-underline-size {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 2px;
-    }
-
-    @property --et-nav-tabs-underline-radius {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 1px;
-    }
-
-    @property --et-nav-tabs-font-size {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 1.4rem;
-    }
-
-    .et-nav-tabs {
-      display: block;
-      min-inline-size: 0;
-    }
-
-    .et-nav-tabs__scrollable {
-      min-inline-size: 0;
-    }
-
-    .et-nav-tabs__container {
-      position: relative;
-      gap: var(--et-nav-tabs-gap);
-
-      &::after {
-        content: '';
-        position: absolute;
-        background: var(--et-surface-border-solid, currentColor);
-        opacity: 0.2;
-        pointer-events: none;
+    @layer components {
+      @property --et-nav-tabs-gap {
+        syntax: '<length>';
+        inherits: true;
+        initial-value: 0px;
       }
 
-      [data-divider='false'] &::after {
-        display: none;
+      @property --et-nav-tabs-underline-size {
+        syntax: '<length>';
+        inherits: true;
+        initial-value: 2px;
       }
 
-      [data-orientation='horizontal'] &::after {
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: var(--et-nav-tabs-underline-size);
-        border-radius: var(--et-nav-tabs-underline-radius);
+      @property --et-nav-tabs-underline-radius {
+        syntax: '<length>';
+        inherits: true;
+        initial-value: 1px;
       }
 
-      [data-orientation='vertical'] & {
-        justify-items: start;
+      .et-nav-tabs {
+        display: block;
+        min-inline-size: 0;
+
+        --et-nav-tabs-underline-size: var(--et-tab-underline-size);
+        --et-nav-tabs-underline-radius: var(--et-tab-underline-radius);
+        --et-nav-tabs-font-size: var(--et-tab-font-size);
+
+        &:where([data-variant='primary'][data-size='sm']) {
+          --et-nav-tabs-underline-size: 3px;
+        }
+
+        &:where([data-variant='primary'][data-size='md']) {
+          --et-nav-tabs-underline-size: 3px;
+        }
+
+        &:where([data-variant='primary'][data-size='lg']) {
+          --et-nav-tabs-underline-size: 4px;
+        }
       }
 
-      [data-orientation='vertical'] &::after {
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: var(--et-nav-tabs-underline-size);
-        border-radius: var(--et-nav-tabs-underline-radius);
+      .et-nav-tabs__scrollable {
+        min-inline-size: 0;
       }
 
-      [data-size='sm'] & {
-        --et-nav-tabs-underline-size: 2px;
-        --et-nav-tabs-font-size: 1.2rem;
-      }
+      .et-nav-tabs__container {
+        position: relative;
+        gap: var(--et-nav-tabs-gap);
 
-      [data-size='md'] & {
-        --et-nav-tabs-underline-size: 2px;
-        --et-nav-tabs-font-size: 1.4rem;
-      }
+        &::after {
+          content: '';
+          position: absolute;
+          background: var(--et-surface-border-solid, currentColor);
+          opacity: var(--et-tab-baseline-opacity);
+          pointer-events: none;
+        }
 
-      [data-size='lg'] & {
-        --et-nav-tabs-underline-size: 3px;
-        --et-nav-tabs-font-size: 1.6rem;
-      }
+        [data-divider='false'] &::after {
+          display: none;
+        }
 
-      [data-variant='primary'][data-size='sm'] & {
-        --et-nav-tabs-underline-size: 3px;
-      }
+        [data-orientation='horizontal'] &::after {
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: var(--et-nav-tabs-underline-size);
+          border-radius: var(--et-nav-tabs-underline-radius);
+        }
 
-      [data-variant='primary'][data-size='md'] & {
-        --et-nav-tabs-underline-size: 3px;
-      }
+        [data-orientation='vertical'] & {
+          justify-items: start;
+        }
 
-      [data-variant='primary'][data-size='lg'] & {
-        --et-nav-tabs-underline-size: 4px;
+        [data-orientation='vertical'] &::after {
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: var(--et-nav-tabs-underline-size);
+          border-radius: var(--et-nav-tabs-underline-radius);
+        }
       }
     }
   `,
@@ -150,4 +136,8 @@ export class NavTabsComponent {
   protected tabBar = inject(TabBarDirective);
 
   public size = input<TabSize>(TAB_SIZES.MD);
+
+  constructor() {
+    mountTabScaleStyles();
+  }
 }

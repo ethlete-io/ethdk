@@ -106,17 +106,31 @@
 
     /* Tabs variant: no track. The filled track is what makes a pill group read as one control with a slot in it;
        tabs read as a row of labels over a rule, so the container gives up its background and padding and takes a
-       baseline instead. */
+       baseline instead. Every metric comes from the shared tab scale (`et-tab-scale`), so the row matches a real
+       tab bar at each size instead of drifting from it. */
     &:where([data-variant='tabs']) .et-segmented-button-group-buttons {
       gap: 0;
       padding: 0;
       border-radius: 0;
       background-color: transparent;
-      box-shadow: inset 0 -1px 0 0 var(--et-surface-border-solid, currentColor);
+      box-shadow: inset 0 calc(var(--et-tab-underline-size) * -1) 0 0
+        color-mix(
+          in srgb,
+          var(--et-surface-border-solid, currentColor) calc(var(--et-tab-baseline-opacity) * 100%),
+          transparent
+        );
     }
 
     &:where([data-variant='tabs'])[data-error] .et-segmented-button-group-buttons {
-      box-shadow: inset 0 -1px 0 0 var(--et-theme-color-primary-solid);
+      box-shadow: inset 0 calc(var(--et-tab-underline-size) * -1) 0 0 var(--et-theme-color-primary-solid);
+    }
+
+    &:where([data-variant='tabs']) et-segmented-button {
+      --et-segmented-button-padding-x: var(--et-tab-padding-inline);
+      --et-segmented-button-padding-y: var(--et-tab-padding-block);
+      --et-segmented-button-tab-underline-size: var(--et-tab-underline-size);
+      --et-segmented-button-tab-underline-radius: var(--et-tab-underline-radius);
+      font-size: var(--et-tab-font-size);
     }
 
     /* an unresolved bulk-edit selection: no segment reads as pressed (normally impossible), so

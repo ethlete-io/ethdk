@@ -227,6 +227,12 @@ segment instead of filling it and drops the tonal track for a baseline rule. The
 same element the FLIP animation moves becomes the underline, so the selection
 still slides between segments.
 
+The variant reads the same [tab scale](/components/tabs#theming) real tabs do, so
+at a given `size` the two rows match: trigger padding, label size and weight,
+underline thickness and the baseline rule. The accent sits in the underline rather
+than the label, hovering an unselected segment warms its label without filling it,
+and the press does not scale the segment - all as a tab bar behaves.
+
 <StoryEmbed id="components-forms-selection-list-segmented-button-group--tabs" height="220px" />
 
 ::: warning It is still a selection control

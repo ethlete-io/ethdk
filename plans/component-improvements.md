@@ -123,69 +123,22 @@ Expanding this, roughly in order of how disruptive each is:
 
 ## Segmented button group: `variant="tabs"` only half-looks like tabs
 
-Reported 2026-08-07. The variant is documented as "underlines the selected segment instead
-of filling it and drops the tonal track for a baseline rule" (`choice-inputs.md`), and it
-does exactly that and no more - the shape changed, the tab _styling_ did not. Put the two
-side by side and they read as different components, which is the one place the variant is
-meant to be used.
+Reported 2026-08-07, **shipped 2026-08-11**: tabs, nav tabs and the variant now default from one
+shared scale (`TabScaleStylesComponent`, the `et-tab-scale` class), so trigger padding, label size
+and weight, underline thickness/radius and the baseline rule match at every `size`. Fixing it turned
+up the reason the tab scale looked arbitrary: the `--et-tab-group-*` metrics were registered
+non-inheriting and set on the host, so `sm`/`lg` padding, the `lg` and `primary` underline sizes and
+every consumer override of them had never applied. The tab sheets also gained their `@layer
+components` wrap.
 
-**Nothing is shared between them, and there is nothing to share.** The tab styles are an
-inline `styles:` block in `tab-group.component.ts`, scoped to `.et-tab-group__*`; the
-segmented ones are `segmented-button-group.component.css` + `segmented-button.component.css`,
-scoped to the element selectors. The two were written independently, so every value below
-diverges by accident rather than by decision.
+Two divergences were left in place on purpose:
 
-What actually differs, all of it checkable in those three files:
-
-- **The underline is a different object.** Tabs: `--et-tab-group-underline-size` is 2px at
-  `sm`/`md` and 3px at `lg` (3/3/4 under `variant="primary"`), with a 1px
-  `--et-tab-group-underline-radius`. Segmented: a flat
-  `--et-segmented-button-tab-underline-size: 3px`, radius equal to the thickness, so it is a
-  fully rounded bar - and it does not respond to `data-size` at all, where the whole point of
-  the tab token is that it does.
-- **The baseline rule is thinner and darker.** Tabs draw it as the header's `::after`, at the
-  underline's own thickness, in `--et-surface-border-solid` at `opacity: 0.2`, and let
-  `data-divider="false"` remove it. Segmented hardcodes `box-shadow: inset 0 -1px 0 0` in the
-  same token at full opacity, with no opt-out. A 1px full-strength hairline under a 3px
-  underline is most of why the two rows don't match.
-- **The accent tokens are swapped.** Tabs put the accent in the underline
-  (`--et-theme-color-ink-solid`) and keep the active label neutral
-  (`--et-surface-color-solid`). Segmented does the reverse: the underline is
-  `--et-theme-color-primary-solid` and the active _label_ takes
-  `--et-theme-color-ink-solid`. Idle labels differ too - `--et-surface-interaction-solid`
-  vs `--et-surface-color-muted-solid`.
-- **The row is half as tall.** Tabs at `md` are 16px inline / 12px block at `1.4rem`;
-  segmented at `md` is 14px / 6px at `14px`. Same size name, and `FORM_FIELD_SIZES` vs
-  `TAB_SIZES` are the same three keys, so a consumer reasonably expects the same rhythm. The
-  px-vs-rem split matters as well: the tab scale tracks the root font size and the segmented
-  one does not.
-- **Interaction feedback is the loudest mismatch.** Segmented paints a filled
-  `color-mix(… --et-surface-interaction-solid 10% …)` rectangle behind any hovered _unchecked_
-  segment - a tab bar never fills a tab. Tabs tint only the **active** trigger, at
-  `rgb(var(--et-color-primary) / 0.08 | 0.12 | 0.16)` for hover/focus/press. And segmented
-  presses with `transform: scale(0.97)`, so a whole tab shrinks under the pointer.
-- **The focus ring lands somewhere else.** Tabs ring the inner
-  `.et-tab-group__trigger-content` at `outline-offset: 2px`, so it hugs the label; segmented
-  rings the full segment box at 1px. In a tall tabs row those look nothing alike.
-- **Structure tabs has and this cannot express**: `data-orientation="vertical"`, `data-fit`,
-  `data-divider`, and `variant="primary"` (label stacked under an icon, underline inset to
-  the middle 50%). Not necessarily in scope - but "follows the tabs style" has to say which
-  of these it means.
-
-**The fix is a shared token set, not copied declarations.** Lifting the tab metrics into
-`--et-tab-*` custom properties the segmented tabs variant can point at is what keeps them
-from drifting again; copying the numbers across reproduces the same bug in a year. Two
-things to settle before that:
-
-- **How far the match should go.** The variant is deliberately _not_ tabs - it is a
-  radiogroup, and the docs carry a warning saying so. Matching the pixels while behaving like
-  a form control is the intent; matching `data-orientation` and `primary` starts rebuilding
-  tabs inside a selection list. Draw that line first.
-- **The tab styles are not in `@layer components`.** They are an unlayered `styles:` block
-  under `ViewEncapsulation.None`, so they currently outrank Tailwind utilities - against the
-  repo rule the segmented sheet already follows. Extracting shared tokens is the moment that
-  gets fixed, and it is a visible-to-consumers specificity change, so it wants its own
-  changeset line.
+- **The focus ring is still the segment box** (at the tab's `2px` offset), where tabs ring an inner
+  label-hugging span. Matching it needs a wrapper element inside `et-segmented-button`, which changes
+  the pill variant's DOM too.
+- **`data-orientation` / `data-fit` / `data-divider` / `variant="primary"`** stay tabs-only. The
+  variant is a radiogroup that looks like tabs; giving it a vertical mode and a stacked-icon variant
+  is rebuilding tabs inside a selection list.
 
 ## Query devtools: a Web Locks inspector
 

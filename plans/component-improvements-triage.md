@@ -19,7 +19,9 @@ Ranked by value per unit of risk, not by size.
 
 **Both of the user's 2026-08-11 picks shipped that day:** the form field warning mode, as the
 `warn()` schema rule, and the button surface theming variants, as `tone="surface"` (a third theming
-axis on the button rather than a generated `ColorTheme`). The tile below is #1 of what is left, but
+axis on the button rather than a generated `ColorTheme`). **Segmented `variant="tabs"` shipped the
+same day**, onto a shared tab scale - which turned out to be the fix for a dead tab size scale as
+well; see its section in `component-improvements.md`. The tile below is #1 of what is left, but
 parked - see its row.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
@@ -32,16 +34,15 @@ parked - see its row.
 
 ### M - real work, mostly consolidation
 
-| Item                                              | Tag     | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth: inactivity is per-tab, the logout is shared | `B`,`D` | An idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide                                                                                                                                                                                                                                                                                                                                                    |
-| Description list: `variant`                       | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Scheduler: colour palette via DI token            | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Scheduler: infinite agenda                        | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                                                                                                                                                                                                                                                                                                                                                       |
-| Selection list: `variant="tile"`                  | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                                                                                                                                                                                                                                                                                                                                                            |
-| Segmented `variant="tabs"` doesn't match tabs     | `C`,`D` | Underline size, baseline rule, swapped accent tokens, half the block padding, hover fills an unchecked segment. Wants shared tokens - **not** copied numbers, so it starts by lifting the tab scale into a styles-only component both mount, which is also when the tab sheet finally gets its `@layer components` wrap (a consumer-visible specificity change, own changeset line). Scope to match: the look only, not `data-orientation` / `data-fit` / `variant="primary"` |
-| Query: long polling                               | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part                                                                                                                                                                                                                                                                                                                                   |
-| Query devtools: Web Locks inspector               | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped                                                                                                                                                                                                                                                                                                                                        |
+| Item                                              | Tag     | Note                                                                                                                                        |
+| ------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth: inactivity is per-tab, the logout is shared | `B`,`D` | An idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide                  |
+| Description list: `variant`                       | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
+| Scheduler: colour palette via DI token            | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
+| Scheduler: infinite agenda                        | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
+| Selection list: `variant="tile"`                  | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
+| Query: long polling                               | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
+| Query devtools: Web Locks inspector               | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped      |
 
 ### L - projects, not tickets
 
@@ -55,7 +56,6 @@ parked - see its row.
 | Stat tile                                    | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                        |
 | Test harnesses                               | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                         |
 | Forms: time-zone handling / local-time UX    | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, range and scheduler together |
-| Query devtools: the mock API export          | `A`,`D` | User-raised 2026-08-10. Serving and the designer both shipped that day; what is left is handing a designed route to the API team as an OpenAPI path item. It reads and writes the same document `query-devtools-schema.ts` already parses - do not write a second parser       |
 
 ### Decide before building
 
@@ -93,10 +93,6 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 ## Sequencing
 
-Everything in the `S` table is independent of everything else and can be picked off in any order.
-
-The one chain that existed - **About → Settings → mock designer → the API export** - is down to its
-last link. The export inherits the designer's schema parser and each mock's stored `schemaName`; the
-library's storage scope already lives in `queryDevtoolsSettings()`, so do not add a fourth hardcoded
-key - the picker, the migration between stores and the "IndexedDB cannot answer a synchronous read"
-note are all there.
+Nothing left in this file depends on anything else in it - every remaining row can be picked off in
+any order. The one chain that existed, **About → Settings → mock designer → the API export**,
+finished on 2026-08-10 with the OpenAPI export.
