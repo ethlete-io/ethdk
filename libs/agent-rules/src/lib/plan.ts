@@ -8,6 +8,7 @@ import { CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
 import { emitClaude } from './targets/claude';
 import { CODEX_FILE, emitCodex } from './targets/codex';
 import { CODEX_HOOKS_FILE, emitCodexHooks } from './targets/codex-hooks';
+import { assertKnownGitHooks, emitGitHooks, HUSKY_DIR, huskyHookPath, KNOWN_GIT_HOOKS } from './targets/git-hooks';
 import { assertKnownHooks, KNOWN_HOOKS } from './targets/hooks-shared';
 import { COPILOT_FILE, emitCopilot } from './targets/copilot';
 import { emitCursor } from './targets/cursor';
@@ -93,7 +94,7 @@ const collectLocalConfigWarnings = (root: string) => {
 
   if (local.unknownKeys.length > 0) {
     warnings.push(
-      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports "disableHooks", "disableAutoHandoffSave" and "sdkSourcePath"; it never changes what sync writes.`,
+      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports "disableHooks", "disableAutoHandoffSave", "sdkSourcePath" and "jira"; it never changes what sync writes.`,
     );
   }
 
@@ -126,8 +127,20 @@ const collectLocalConfigWarnings = (root: string) => {
   return warnings;
 };
 
+/**
+ * Only `.husky/` is written into, never `.git/hooks/`: the generated files are committed and CI's
+ * `check` diffs them, so a hook that lives outside the working tree could never be in sync.
+ */
+const collectGitHookWarnings = (config: SyncConfig) => {
+  if (config.gitHooks.length === 0 || existsSync(join(config.root, HUSKY_DIR))) return [];
+
+  return [
+    `gitHooks is set to ${config.gitHooks.join(', ')} but there is no ${HUSKY_DIR}/ directory — nothing was written. Install husky, or run \`npx ethlete-agents git-flow check\` from your own hooks.`,
+  ];
+};
+
 const collectWarnings = (config: SyncConfig) => {
-  const warnings: string[] = collectLocalConfigWarnings(config.root);
+  const warnings: string[] = [...collectLocalConfigWarnings(config.root), ...collectGitHookWarnings(config)];
 
   if (!config.claudeMdImportsAgentsMd) return warnings;
 
@@ -154,6 +167,7 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
   const { config, version } = options;
 
   assertKnownHooks(config.hooks);
+  assertKnownGitHooks(config.gitHooks);
 
   const { kept, skipped } = filterContent(loadContent(), config);
 
@@ -198,6 +212,14 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
       context,
       codexTarget: config.targets.includes('codex'),
       existingHooks: readExisting(config.root, CODEX_HOOKS_FILE),
+    }),
+    ...emitGitHooks({
+      gitHooks: config.gitHooks,
+      version,
+      huskyExists: existsSync(join(config.root, HUSKY_DIR)),
+      existing: Object.fromEntries(
+        Object.keys(KNOWN_GIT_HOOKS).map((name) => [name, readExisting(config.root, huskyHookPath(name))]),
+      ),
     }),
   );
 

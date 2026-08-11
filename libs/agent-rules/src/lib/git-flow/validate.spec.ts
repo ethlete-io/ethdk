@@ -8,7 +8,7 @@ const gated = resolveGitFlowConfig({ enforcement: 'gated', severity: { 'missing-
 describe('validateBranch', () => {
   it('accepts a sub-feature merging into its parent', () => {
     const report = validateBranch({
-      branch: 'feat/FIP-2177-user-management/FIP-2178-user-password-reset',
+      branch: 'sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset',
       target: 'feat/FIP-2177-user-management',
       config,
     });
@@ -18,7 +18,7 @@ describe('validateBranch', () => {
 
   it('flags a sub-feature merged straight into next', () => {
     const report = validateBranch({
-      branch: 'feat/FIP-2177-user-management/FIP-2178-user-password-reset',
+      branch: 'sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset',
       target: 'next',
       config,
     });
@@ -89,7 +89,7 @@ describe('resolveSeverity', () => {
   it('lets wrong-mr-target be promoted before the naming grace period ends', () => {
     const promoted = resolveGitFlowConfig({ severity: { 'wrong-mr-target': 'error' } });
     const report = validateBranch({
-      branch: 'feat/FIP-2177-user-management/FIP-2178-reset',
+      branch: 'sub/feat/FIP-2177-user-management/FIP-2178-reset',
       target: 'next',
       config: promoted,
     });

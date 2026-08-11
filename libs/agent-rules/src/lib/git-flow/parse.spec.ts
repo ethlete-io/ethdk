@@ -21,9 +21,10 @@ describe('parseBranch', () => {
       expectedMrTargets: ['next'],
     });
 
-    expect(parse('feat/FIP-2177-user-management/FIP-2178-user-password-reset')).toMatchObject({
+    expect(parse('sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset')).toMatchObject({
       ok: true,
       kind: 'sub-feature',
+      type: 'feat',
       storyKey: 'FIP-2177',
       taskKey: 'FIP-2178',
       issueKey: 'FIP-2178',
@@ -40,11 +41,12 @@ describe('parseBranch', () => {
       expectedMrTargets: ['next', 'main'],
     });
 
-    expect(parse('release/2026.04.28/FIP-2222-button-not-visible')).toMatchObject({
+    expect(parse('sub/release/2026.04.28/FIP-2222-button-not-visible')).toMatchObject({
       ok: true,
       kind: 'release-fix',
       taskKey: 'FIP-2222',
       parent: 'release/2026.04.28',
+      expectedBase: 'release/2026.04.28',
       expectedMrTargets: ['release/2026.04.28'],
     });
 
@@ -70,6 +72,50 @@ describe('parseBranch', () => {
       suggestedName: 'feat/<KEY>-game-codes',
     });
     expect(result.findings.map((finding) => finding.rule)).toEqual<GitFlowRule[]>(['deprecated-prefix']);
+  });
+
+  it('reads the original nested spelling as one git cannot store, and says so', () => {
+    const result = parse('feat/FIP-2177-user-management/FIP-2178-user-password-reset');
+
+    expect(result).toMatchObject({
+      ok: false,
+      kind: 'sub-feature',
+      deprecated: true,
+      storyKey: 'FIP-2177',
+      taskKey: 'FIP-2178',
+      parent: 'feat/FIP-2177-user-management',
+      suggestedName: 'sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset',
+    });
+    expect(result.findings[0]?.message).toContain('both a branch and a directory');
+    expect(parse('release/2026.04.28/FIP-2222-button-not-visible')).toMatchObject({
+      kind: 'release-fix',
+      deprecated: true,
+      suggestedName: 'sub/release/2026.04.28/FIP-2222-button-not-visible',
+    });
+  });
+
+  it('suggests moving a keyless nested branch under the prefix as it stands', () => {
+    expect(parse('feat/FIP-2177-user-management/quick-thing').suggestedName).toBe(
+      'sub/feat/FIP-2177-user-management/quick-thing',
+    );
+  });
+
+  it('refuses to nest under anything but a main feature or a release branch', () => {
+    expect(rules('sub/next/FIP-2178-reset')).toEqual<GitFlowRule[]>(['unknown-type']);
+    expect(rules('sub/dev-game-codes/FIP-2178-reset')).toEqual<GitFlowRule[]>(['unknown-type']);
+    expect(rules('sub/sub/feat/FIP-1-a/FIP-2-b')).toEqual<GitFlowRule[]>(['unknown-type']);
+    expect(rules('sub/FIP-2178-reset')).toEqual<GitFlowRule[]>(['unknown-type']);
+  });
+
+  it('carries the parent findings into a nested branch, since its name embeds them', () => {
+    expect(parse('sub/feature/FIP-1-story/FIP-2-task')).toMatchObject({
+      kind: 'sub-feature',
+      ok: false,
+      parent: 'feature/FIP-1-story',
+      suggestedName: 'sub/feat/FIP-1-story/FIP-2-task',
+    });
+    expect(rules('sub/feature/FIP-1-story/FIP-2-task')).toEqual<GitFlowRule[]>(['type-alias']);
+    expect(rules('sub/feat/logout-confirmation/FIP-2-task')).toEqual<GitFlowRule[]>(['missing-key']);
   });
 
   it('treats the base branches as protected rather than malformed', () => {
@@ -130,6 +176,7 @@ describe('parseBranch', () => {
     expect(parse('wip')).toMatchObject({ ok: false, kind: 'unknown', expectedMrTargets: [] });
     expect(rules('wip')).toEqual<GitFlowRule[]>(['unknown-type']);
     expect(rules('feat/FIP-1-a/FIP-2-b/FIP-3-c')).toEqual<GitFlowRule[]>(['unknown-type']);
+    expect(rules('sub')).toEqual<GitFlowRule[]>(['unknown-type']);
     expect(rules('')).toEqual<GitFlowRule[]>(['unknown-type']);
     expect(rules('feat/')).toEqual<GitFlowRule[]>(['unknown-type']);
   });
@@ -208,14 +255,14 @@ describe('buildBranchName', () => {
         },
         config,
       }),
-    ).toBe('feat/FIP-2177-user-management/FIP-2178-user-password-reset');
+    ).toBe('sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset');
     expect(buildBranchName({ spec: { kind: 'release', date: '2026.04.28' }, config })).toBe('release/2026.04.28');
     expect(
       buildBranchName({
         spec: { kind: 'release-fix', parent: 'release/2026.04.28', key: 'FIP-2222', subject: 'Button not visible' },
         config,
       }),
-    ).toBe('release/2026.04.28/FIP-2222-button-not-visible');
+    ).toBe('sub/release/2026.04.28/FIP-2222-button-not-visible');
     expect(
       buildBranchName({ spec: { kind: 'hotfix', key: 'FIP-2799', subject: 'Password recovery broken' }, config }),
     ).toBe('hotfix/FIP-2799-password-recovery-broken');

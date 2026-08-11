@@ -9,7 +9,8 @@ export const slugifySubject = (subject: string) =>
 
 /**
  * `parent` is the full branch name the new branch nests under — `feat/FIP-2177-user-management`
- * for a sub-feature, `release/2026.04.28` for a release fix.
+ * for a sub-feature, `release/2026.04.28` for a release fix. The nested name keeps that whole path
+ * under the config's `subPrefix`, so the parent stays derivable from the child.
  */
 export type BranchNameSpec =
   | { kind: 'main-feature'; type?: string; key: string; subject: string }
@@ -29,5 +30,5 @@ export const buildBranchName = (options: { spec: BranchNameSpec; config: GitFlow
   if (spec.kind === 'main-feature') return `${spec.type ?? 'feat'}/${leaf}`;
   if (spec.kind === 'hotfix') return `${config.hotfixPrefix}/${leaf}`;
 
-  return `${spec.parent}/${leaf}`;
+  return `${config.subPrefix}/${spec.parent}/${leaf}`;
 };

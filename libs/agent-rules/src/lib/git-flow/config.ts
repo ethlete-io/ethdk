@@ -40,6 +40,13 @@ export type GitFlowDeprecatedShape = {
 
 export type GitFlowConfig = {
   enforcement: GitFlowEnforcement;
+  /**
+   * The segment a nested branch is prefixed with. Git refuses a ref that is both a branch and a
+   * directory of branches, so a sub-feature cannot be spelled `<parent>/<KEY>-<subject>` while its
+   * parent exists — the push is rejected with "refname conflict". The prefix moves the whole nested
+   * tree out of the way while keeping the parent's full path inside the child's name.
+   */
+  subPrefix: string;
   keyPattern: string;
   /**
    * Project prefixes a key may use, e.g. `["FIP"]`. Empty accepts anything `keyPattern` matches,
@@ -60,6 +67,7 @@ export type GitFlowConfig = {
 
 export const DEFAULT_GIT_FLOW_CONFIG: GitFlowConfig = {
   enforcement: 'advisory',
+  subPrefix: 'sub',
   keyPattern: '[A-Z]{2,10}-\\d+',
   keyPrefixes: [],
   baseBranches: { development: 'next', production: 'main' },
