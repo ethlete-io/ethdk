@@ -232,12 +232,34 @@ _before_ being written, and the sampled title of an excluded app is never persis
 
 ### Local git repos (Rust, phase 1)
 
-Watch configured repo roots for `HEAD` changes (an inotify watch on `.git/HEAD` and
-`.git/refs`, plus a periodic reconcile for missed events). Emit branch checkouts with
-timestamps, and read commits with author time, subject and changed paths. Under the grammar
-this yields the Story/Task keys; the commit subjects and changed paths yield the worklog
-description. Also worth capturing: rebases and stashes (they mark context switches), and
-which repo is which project.
+**The reconcile pass is built** - `libs/timetrack/src/lib/git/`: `collectGitEvents$` runs two `git`
+commands per configured root through `TimetrackProcessRunner` and returns checkout and commit events,
+with a per-command `failures` list so one stale root cannot cost the day. What is left for the host is
+the inotify watch on `.git/HEAD` and `.git/refs`, which only makes a switch show up immediately
+rather than at the next scan - the scan alone already reconstructs a day after the app was closed.
+
+Under the grammar this yields the Story/Task keys; the commit subjects yield the worklog description.
+What building it settled:
+
+- **Branch switches come from `git reflog show --date=iso-strict`**, whose `%gd` is the instant HEAD
+  actually moved. Only `checkout: moving from … to …` counts: a rebase's or a pull's internal
+  checkouts are tooling moving HEAD, not the user changing what they work on. Real reflogs here hold
+  all of those, so the filter is load-bearing. A detached checkout records an object name where a
+  branch would be and is dropped.
+- **A commit's branch comes from `%S` under `--branches`** - there is no other way for `git log` to
+  say which branch a commit belongs to. Caveat found the hard way: `%S` prints the ref as the command
+  line spelled it, so `--branches` yields `next` where `--all` yields `refs/heads/next`.
+- **A commit is timed by its author date, and the window filter has to be applied to that** - `--since`
+  and `--until` read the _commit_ date, so rebasing last week's work today would otherwise log it
+  today. Measured on this machine: 7 of 215 commits in a week were exactly that case.
+- Merges are excluded: the subject is generated text, and the commits they bring in are already
+  reported under their own branch.
+- Restricting commits to one `--author` is what keeps somebody else's work, pulled or rebased in, out
+  of the day.
+- Changed paths are not collected. `Evidence.summary` carries the subject, and adding paths means
+  teaching `describe` what to do with them - a phase-2 question, not a collector one.
+- Rebases and stashes mark context switches but have no event kind in the model, so they are not
+  emitted. Revisit only if real days show blocks that nothing else explains.
 
 ### Coding-agent session logs (Rust or TS, phase 1)
 
@@ -715,10 +737,10 @@ pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `prop
 Jira provider on top, and the whole Tempo integration - work-attribute discovery, foreign-time
 subtraction, the sync diff and the write half that executes it, and the store's core half -
 persistence ports, exclusion rules, retention, ledger writer (254 tests).
-and the Claude Code session-log parser.
+the Claude Code session-log parser and the git reconcile pass.
 Remaining: the encrypted database itself (host-side, needs `apps/timetrack`),
 the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
-watcher, Google Calendar, the day-review UI, tray. No
+watcher's inotify half, Google Calendar, the day-review UI, tray. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
 day.
 

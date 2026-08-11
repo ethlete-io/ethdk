@@ -1,5 +1,6 @@
 export * from './lib/agent-session';
 export * from './lib/correlate';
+export * from './lib/git';
 export * from './lib/jira';
 export * from './lib/model';
 export * from './lib/store';
