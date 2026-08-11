@@ -1,6 +1,6 @@
 # @ethlete/eslint-plugin
 
-Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide - 54 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access and TypeScript style. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
+Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide - 57 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access, TypeScript style and migrating off the maintenance-mode packages. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
 
 ```bash
 yarn add --dev @ethlete/eslint-plugin
@@ -24,11 +24,11 @@ export default [
 
 `recommended` is an array of three entries, also exported individually for granular composition:
 
-| Config                | Applies to     | Contents                                                                                                       |
-| --------------------- | -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `recommendedTs`       | `**/*.ts`      | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                               |
-| `recommendedTemplate` | `**/*.html`    | Angular template rules (`@angular-eslint/template/*` and `ethlete/prefer-static-boolean-properties`)           |
-| `recommendedSpec`     | `**/*.spec.ts` | Turns off `@typescript-eslint/no-non-null-assertion` - non-null assertions are common and intentional in tests |
+| Config                | Applies to     | Contents                                                                                                                         |
+| --------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `recommendedTs`       | `**/*.ts`      | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                                                 |
+| `recommendedTemplate` | `**/*.html`    | Angular template rules (`@angular-eslint/template/*`, `ethlete/prefer-static-boolean-properties`, `ethlete/require-form-submit`) |
+| `recommendedSpec`     | `**/*.spec.ts` | Turns off `@typescript-eslint/no-non-null-assertion` - non-null assertions are common and intentional in tests                   |
 
 The `ethlete` plugin itself is pre-wired into the configs - you don't need a `plugins:` entry for it.
 
@@ -77,11 +77,13 @@ Besides the [custom `ethlete/*` rules](/eslint/rules), `recommendedTs` configure
 - **Restricted globals**: direct `document` / `window` access - use `inject(DOCUMENT)` or a dedicated injection token.
 - **Angular outputs**: no `on` prefix (`@angular-eslint/no-output-on-prefix`), no native DOM event names (`@angular-eslint/no-output-native`).
 
-`recommendedTemplate` adds three template rules: no `$any()` (`@angular-eslint/template/no-any`), prefer plain attributes over property bindings for static strings (`@angular-eslint/template/prefer-static-string-properties`, e.g. `etIcon="foo"` instead of `[etIcon]="'foo'"`), and the same for static booleans (the custom [`ethlete/prefer-static-boolean-properties`](/eslint/rules#angular-templates), e.g. `isReadonly` instead of `[isReadonly]="true"` - suggestion-only, since it is only safe for inputs with a `booleanAttribute` transform).
+`recommendedTemplate` adds four template rules: no `$any()` (`@angular-eslint/template/no-any`), prefer plain attributes over property bindings for static strings (`@angular-eslint/template/prefer-static-string-properties`, e.g. `etIcon="foo"` instead of `[etIcon]="'foo'"`), and the same for static booleans (the custom [`ethlete/prefer-static-boolean-properties`](/eslint/rules#angular-templates), e.g. `isReadonly` instead of `[isReadonly]="true"` - suggestion-only, since it is only safe for inputs with a `booleanAttribute` transform). It also adds [`ethlete/require-form-submit`](/eslint/rules#angular-templates), which requires a `<form>` to handle its own submission and a `type="submit"` control to reach one.
+
+The two [migration rules](/eslint/rules#legacy-packages-migration) - `no-cdk-import` and `no-legacy-query-import` - are in no config: enable them per project once an app is leaving `@ethlete/cdk` or the legacy query system behind.
 
 ## Fixing violations
 
-Almost none of the custom rules take options - severity is the only knob for all but two ([`no-impure-top-level-provider`](/eslint/rules#no-impure-top-level-provider) and [`no-legacy-prepare-without-injector`](/eslint/rules#no-legacy-prepare-without-injector)) - and the recommended config sets almost everything to `error` (a handful of `@ethlete/core`-migration rules are `warn`; see the [rule reference](/eslint/rules)). Run lint with `--fix` first and only hand-fix what remains:
+Almost none of the custom rules take options - severity is the only knob for all but four ([`no-impure-top-level-provider`](/eslint/rules#no-impure-top-level-provider), [`no-legacy-prepare-without-injector`](/eslint/rules#no-legacy-prepare-without-injector) and the two [migration rules](/eslint/rules#legacy-packages-migration)) - and the recommended config sets almost everything to `error` (a handful of `@ethlete/core`-migration rules are `warn`; see the [rule reference](/eslint/rules)). Run lint with `--fix` first and only hand-fix what remains:
 
 ```bash
 yarn nx lint <project> --fix

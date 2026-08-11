@@ -422,6 +422,8 @@ const recommendedTemplate = {
     // (warn + suggestion-only: the rewrite is only safe when the input has a booleanAttribute transform,
     // which a template rule cannot verify)
     'ethlete/prefer-static-boolean-properties': 'warn',
+    // A form must handle its own submission, and a type="submit" control must reach a form
+    'ethlete/require-form-submit': 'error',
   },
 };
 

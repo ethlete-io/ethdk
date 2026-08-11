@@ -1,6 +1,6 @@
 # Rules
 
-Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used with the `ethlete/` prefix (e.g. `ethlete/no-inject-chain`). Only `no-impure-top-level-provider` and `no-legacy-prepare-without-injector` take options; the rest take none.
+Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used with the `ethlete/` prefix (e.g. `ethlete/no-inject-chain`). Only `no-impure-top-level-provider`, `no-legacy-prepare-without-injector` and the two [migration rules](#legacy-packages-migration) take options; the rest take none.
 
 - **Fix** - 🔧 means the rule has an auto-fixer applied by `eslint --fix` / `nx lint --fix`.
 - **Default** - the severity set by the [`recommended` config](/eslint/). `warn` is used for migration-style rules where existing code may reasonably still violate them.
@@ -190,11 +190,12 @@ export class WidgetComponent {
 
 ## Angular templates
 
-The only custom rule that runs on `**/*.html` files (via `recommendedTemplate`) instead of TypeScript. It complements `@angular-eslint/template/prefer-static-string-properties`, which covers the string-literal case.
+The custom rules that run on `**/*.html` files (via `recommendedTemplate`) instead of TypeScript. The first complements `@angular-eslint/template/prefer-static-string-properties`, which covers the string-literal case.
 
 | Rule                               | What it enforces                                                                                                                      | Fix | Default |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
 | `prefer-static-boolean-properties` | No property bindings for static booleans (`[isReadonly]="true"` / `"false"`) - use a static attribute when the input coerces booleans |     | warn    |
+| `require-form-submit`              | A `<form>` handles its own submission, and a `type="submit"` control sits inside a form or names one                                  |     | error   |
 
 The rewrite is only equivalent when the input declares a `booleanAttribute` transform - otherwise a static attribute passes the _string_ `'true'` / `'false'` instead of a boolean. A template rule has no type information to verify that, so the fix is offered as an editor **suggestion** (💡) rather than applied by `--fix`, and the severity stays at `warn`. Keep the binding for inputs that take a plain boolean without a transform.
 
@@ -205,6 +206,54 @@ The rewrite is only equivalent when the input declares a `booleanAttribute` tran
 <!-- ✅ static attributes (input uses booleanAttribute) -->
 <my-cmp isReadonly showHeader="false" />
 ```
+
+`require-form-submit` checks the two ends of the same wire, because either half missing is silent: a `<form>` with no handler does nothing when the user presses Enter in a field (or reloads the page, without an Angular form directive to call `preventDefault`), and a `type="submit"` control outside a form submits nothing at all - it just looks like a button that does not work.
+
+```html
+<!-- ❌ nothing handles submission; the button submits nothing -->
+<form [formGroup]="form"></form>
+<button type="submit">Save</button>
+
+<!-- ✅ handled, and the control reaches the form -->
+<form (ngSubmit)="save()">
+  <button type="submit">Save</button>
+</form>
+
+<!-- ✅ outside the form's subtree, associated by id -->
+<button type="submit" form="edit-user">Save</button>
+```
+
+A form that declares native submission is left alone (`action`, `ngNoForm`, `method="dialog"`) - the platform handles those. A `[type]` _binding_ is also left alone, since a template rule cannot resolve what it evaluates to.
+
+## Legacy packages & migration
+
+Two opt-in rules for an app leaving a maintenance-mode API behind. Both are **off by default** - they are only useful once that decision is made, and they name the successor of each symbol in the message so a migration does not need the guide open next to the editor.
+
+| Rule                     | What it enforces                                                                                | Fix | Default |
+| ------------------------ | ----------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-cdk-import`          | No imports from `@ethlete/cdk` - names the `@ethlete/components` (or `@ethlete/core`) successor |     | off     |
+| `no-legacy-query-import` | No imports of the legacy (v2) query system from `@ethlete/query` - names the current API        |     | off     |
+
+```js
+// eslint.config.mjs
+{
+  files: ['**/*.ts'],
+  rules: {
+    'ethlete/no-cdk-import': 'error',
+    'ethlete/no-legacy-query-import': 'error',
+  },
+}
+```
+
+`no-cdk-import` reads its successors from `migration-map.json`, which ships **inside the `@ethlete/cdk` package** - so the advice is the installed version's, and the rule holds no copy that can go stale. Where that package is not resolvable from the linted project, point the rule at the file with `migrationMapPath`; without a map it still reports every cdk import, pointing at the [migration guide](/cdk/migration) instead of a specific symbol. `docsBaseUrl` sets the host the map's doc paths are appended to.
+
+```
+`ButtonComponent` is legacy @ethlete/cdk. Use `ButtonComponent` from @ethlete/components instead
+(https://…/components/button). a real button system: variant, size and color inputs plus theming
+instead of CSS-only classes.
+```
+
+`no-legacy-query-import` matches every `V2`/`AnyV2`-prefixed export - the prefix the library gives the legacy system's half of a colliding name - plus the legacy APIs that never collided (`def`, `filterSuccess`, `InfinityQuery`, `EntityStore`, `QueryDirective`, `toQuerySignal`, …), each carrying its counterpart from the [legacy migration map](/query/legacy#migrating-to-the-current-system). `createLegacyQueryCreator` is deliberately never reported: it is the interop seam a migration runs on until its call sites are converted. It is not type-aware on purpose; for the whole deprecated surface - including the types this rule leaves alone - enable `@typescript-eslint/no-deprecated` alongside it.
 
 ## DOM, platform & `@ethlete/core`
 
