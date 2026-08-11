@@ -241,21 +241,41 @@ which repo is which project.
 
 ### Coding-agent session logs (Rust or TS, phase 1)
 
+**The core half is built** - `libs/timetrack/src/lib/agent-session/`: `AgentSessionLogParser` is the
+seam Codex plugs into, and `parseClaudeCodeSessionLog` implements it. The host tails the file and
+hands over the lines; the parser never reads one.
+
 Verified: Claude Code writes `~/.claude/projects/<cwd-slug>/<sessionId>.jsonl`, where the
 directory name is the working directory (`-home-tom-dev-fut-frontend`), and `user` /
 `assistant` / `system` / `attachment` records each carry `timestamp`, `cwd`, **`gitBranch`**
-and `sessionId`. There are also `ai-title` records (a generated session title) and
-`last-prompt` records.
+and `sessionId`.
 
 This is the single best-value collector per line of code in the whole plan: it gives precise
 start/end timestamps, the project, the branch (hence the Story and Task keys), and a
 human-readable statement of what the session was about - all from tailing a JSONL file. No
 API, no permission, no OAuth. Note the log also contains prompt and response text; parse
-only the metadata fields and the `ai-title`, and never persist message bodies.
+only the metadata fields and the title, and never persist message bodies.
+
+What building it against the 436 logs on this machine settled, and the plan above had wrong:
+
+- **`cwd` and `gitBranch` are per record, not per session** - 23 of the 436 logs change one
+  mid-session. The parser therefore keys context per record, and a change always emits a sample even
+  inside the sampling interval, so a mid-session checkout splits the block the way a real one does.
+- **The title lives in an `ai-title` record's `aiTitle` field**, and that record carries only
+  `sessionId` and the title - no timestamp, no `cwd`. It is rewritten as the session grows, so the
+  last one wins.
+- **A `last-prompt` record is appended per prompt**, so the _first_ in file order is the prompt that
+  opened the session. That is the fallback title, and taking the last would describe only what the
+  session ended on.
+- **Sampling is what makes this affordable**: 184,617 records across the 436 logs thin to 10,176
+  events (18:1) at one sample per minute, and the largest single log (4,140 lines) yields 255.
+- Records are matched by _shape_ - anything carrying `timestamp`, `cwd` and `sessionId` is a sample -
+  so `queue-operation` counts and a record type a future release adds lands without a change here.
+- A log read while the agent is writing ends in a partial line, so an unparseable line is counted
+  (`unparsedLines`) rather than thrown on. Across all 436 logs, zero.
 
 Codex's equivalent (`~/.codex/sessions/**`) is unverified - `codex` is not installed on this
-machine. Model both behind one `AgentSessionSource` interface and implement Claude Code
-first.
+machine.
 
 ### Editor heartbeats (phase 2)
 
@@ -695,9 +715,10 @@ pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `prop
 Jira provider on top, and the whole Tempo integration - work-attribute discovery, foreign-time
 subtraction, the sync diff and the write half that executes it, and the store's core half -
 persistence ports, exclusion rules, retention, ledger writer (254 tests).
+and the Claude Code session-log parser.
 Remaining: the encrypted database itself (host-side, needs `apps/timetrack`),
 the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
-watcher, Claude Code session logs, Google Calendar, the day-review UI, tray. No
+watcher, Google Calendar, the day-review UI, tray. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
 day.
 
@@ -743,6 +764,10 @@ alongside and only affects how much of a day arrives pre-labelled.
    worklog the app wrote foreign for good.
 5. **Working-hours and billability policy** - is time outside configured hours proposed at
    all, and does the day target vary by person or contract.
-6. **`ai-title` stability** in Claude Code's session logs - it is an internal field and a
+6. ~~**`ai-title` stability** in Claude Code's session logs - it is an internal field and a
    good description source, so it needs a fallback (first user message, truncated) when
-   absent.
+   absent.~~ **Answered, and the fallback is built.** Measured over the 436 logs on this machine:
+   382 carry an `ai-title` (88%), and the first `last-prompt` record closes the gap to 418 (96%).
+   The remaining 18 are sessions with no prompt at all. The fallback is opt-in
+   (`promptFallback: { maxLength }`) because a prompt is message content, so the host decides
+   whether a raw prompt may become a worklog description.
