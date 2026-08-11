@@ -12,6 +12,8 @@ import { SessionizeOptions, sessionize } from './sessionize';
 export type CorrelateDayOptions = {
   config?: GitFlowConfig;
   resolveBase?: AttributeOptions['resolveBase'];
+  activity?: AttributeOptions['activity'];
+  patterns?: AttributeOptions['patterns'];
   sessionize?: Partial<SessionizeOptions>;
   merge?: Partial<MergeOptions>;
   round?: Partial<RoundOptions>;
@@ -35,7 +37,13 @@ export type DayCorrelation = {
 export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDayOptions): DayCorrelation => {
   const blocks = sessionize({ events: options.events, options: options.sessionize });
   const attributed = blocks.map((block) =>
-    attribute({ block, config: options.config, resolveBase: options.resolveBase }),
+    attribute({
+      block,
+      config: options.config,
+      resolveBase: options.resolveBase,
+      activity: options.activity,
+      patterns: options.patterns,
+    }),
   );
   const groups = mergeBlocks({ blocks: attributed, options: options.merge });
   const { proposals, unattributed } = propose({

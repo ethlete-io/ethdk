@@ -1,7 +1,8 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
-import { attribute } from './attribute';
+import { IssueActivity, attribute } from './attribute';
+import { RecurringPattern } from './recurrence';
 
 const block = (context: ActivityBlock['context'], evidence: ActivityBlock['evidence'] = []): ActivityBlock => ({
   from: new Date('2026-08-11T08:00:00Z'),
@@ -9,6 +10,32 @@ const block = (context: ActivityBlock['context'], evidence: ActivityBlock['evide
   context,
   evidence,
 });
+
+/** Local-time, because a recurring pattern is matched on the local weekday and hour. */
+const localBlock = (context: ActivityBlock['context'], evidence: ActivityBlock['evidence'] = []): ActivityBlock => ({
+  from: new Date(2026, 7, 11, 10, 0),
+  to: new Date(2026, 7, 11, 11, 0),
+  context,
+  evidence,
+});
+
+const mergeRequest = (overrides: Partial<IssueActivity> = {}): IssueActivity => ({
+  kind: 'merge-request',
+  issueKey: 'FIP-3010',
+  at: new Date('2026-08-11T08:30:00Z'),
+  branch: 'fix/logout-confirmation',
+  detail: 'merge request !412 on `fix/logout-confirmation`',
+  summary: 'Confirm before logging out',
+  ...overrides,
+});
+
+const TUESDAY_PATTERN: RecurringPattern = {
+  issueKey: 'FIP-9000',
+  weekday: 2,
+  fromMinute: 9 * 60 + 30,
+  toMinute: 10 * 60 + 30,
+  occurrences: 5,
+};
 
 const FIP = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
 
@@ -86,5 +113,90 @@ describe('attribute', () => {
     const result = attribute({ block: block({ branch: 'fix/logout-confirmation' }), config: FIP });
 
     expect(result.issueKey).toBeUndefined();
+  });
+
+  it('attributes a keyless branch through the merge request opened for it', () => {
+    const result = attribute({
+      block: block({ branch: 'fix/logout-confirmation' }),
+      config: FIP,
+      activity: [mergeRequest()],
+    });
+
+    expect(result.issueKey).toBe('FIP-3010');
+    expect(result.confidence).toBe('likely');
+    expect(result.evidence.find((entry) => entry.kind === 'merge-request')?.summary).toBe('Confirm before logging out');
+  });
+
+  it('matches a merge request branch that still carries its ref prefix', () => {
+    const result = attribute({
+      block: block({ branch: 'fix/logout-confirmation' }),
+      config: FIP,
+      activity: [mergeRequest({ branch: 'refs/heads/fix/logout-confirmation' })],
+    });
+
+    expect(result.issueKey).toBe('FIP-3010');
+  });
+
+  it('lets a conforming branch outrank a merge request naming another issue', () => {
+    const result = attribute({
+      block: block({ branch: 'feat/FIP-2177-user-management' }),
+      config: FIP,
+      activity: [mergeRequest({ branch: 'feat/FIP-2177-user-management' })],
+    });
+
+    expect(result.issueKey).toBe('FIP-2177');
+    expect(result.confidence).toBe('certain');
+  });
+
+  it('takes an issue viewed during the block only weakly', () => {
+    const result = attribute({
+      block: block({ appId: 'chrome' }),
+      config: FIP,
+      activity: [mergeRequest({ kind: 'issue-view', branch: undefined, detail: 'viewed FIP-3010' })],
+    });
+
+    expect(result.issueKey).toBe('FIP-3010');
+    expect(result.confidence).toBe('weak');
+  });
+
+  it('ignores activity that falls outside the block', () => {
+    const result = attribute({
+      block: block({ appId: 'chrome' }),
+      config: FIP,
+      activity: [mergeRequest({ kind: 'issue-view', branch: undefined, at: new Date('2026-08-11T14:00:00Z') })],
+    });
+
+    expect(result.issueKey).toBeUndefined();
+  });
+
+  it('falls back to a recurring Tempo pattern when nothing else attributes the block', () => {
+    const result = attribute({ block: localBlock({ appId: 'meet' }), config: FIP, patterns: [TUESDAY_PATTERN] });
+
+    expect(result.issueKey).toBe('FIP-9000');
+    expect(result.confidence).toBe('weak');
+    expect(result.evidence.map((entry) => entry.kind)).toContain('tempo-history');
+  });
+
+  it('lets activity outrank a recurring pattern', () => {
+    const result = attribute({
+      block: localBlock({ appId: 'chrome' }),
+      config: FIP,
+      activity: [mergeRequest({ kind: 'issue-view', branch: undefined, at: new Date(2026, 7, 11, 10, 30) })],
+      patterns: [TUESDAY_PATTERN],
+    });
+
+    expect(result.issueKey).toBe('FIP-3010');
+  });
+
+  it('lets a recurring pattern outrank a window title', () => {
+    const result = attribute({
+      block: localBlock({ appId: 'chrome' }, [
+        { kind: 'window-title', at: new Date(2026, 7, 11, 10, 0), detail: '[FIP-2222] Button not visible - Jira' },
+      ]),
+      config: FIP,
+      patterns: [TUESDAY_PATTERN],
+    });
+
+    expect(result.issueKey).toBe('FIP-9000');
   });
 });
