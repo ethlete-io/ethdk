@@ -59,7 +59,7 @@
     -webkit-touch-callout: none;
     user-select: none;
 
-    &:where([data-draft]) {
+    &:where([data-draft], [data-drop-target]) {
       background: color-mix(in srgb, var(--et-theme-color-primary-solid) 12%, transparent);
       box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
     }

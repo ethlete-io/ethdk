@@ -18,6 +18,7 @@
           [attr.data-outside-month]="cell.outsideMonth ? '' : null"
           [attr.data-today]="cell.today ? '' : null"
           [attr.data-draft]="isDrafted(cell.date) ? '' : null"
+          [attr.data-drop-target]="isDropTarget(cell.date) ? '' : null"
           class="et-scheduler-month-view-cell"
           role="gridcell"
         >
@@ -30,10 +31,12 @@
               <button
                 #appointmentButton
                 [attr.data-selected]="isSelected(node.appointment) ? '' : null"
+                [attr.data-draggable]="canDragAppointments() ? '' : null"
+                [attr.data-dragging]="isDragging(node.appointment) ? '' : null"
                 [attr.title]="node.appointment.title"
                 [etProvideColor]="node.appointment.colorToken ?? null"
                 (click)="select(node.appointment, appointmentButton)"
-                (pointerdown)="$event.stopPropagation()"
+                (pointerdown)="startAppointmentDrag($event, { appointment: node.appointment, weeks })"
                 class="et-scheduler-appointment"
                 type="button"
               >

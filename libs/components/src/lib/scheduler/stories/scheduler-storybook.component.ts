@@ -88,7 +88,9 @@ const DEMO_APPOINTMENTS: Appointment[] = [
         [(selectedAppointmentId)]="selectedAppointmentId"
         [appointments]="appointments()"
         [etSchedulerBadgeLocation]="{ enabled: showLocationBadge() }"
+        [etSchedulerAppointmentDrag]="{ enabled: allowAppointmentDrag() }"
         (appointmentSave)="saveAppointment($event)"
+        (appointmentReschedule)="saveAppointment($event.appointment)"
         (appointmentsDelete)="deleteAppointments($event)"
       />
 
@@ -101,6 +103,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
 export class SchedulerStorybookComponent {
   public initialView = input<SchedulerView>('month');
   public showLocationBadge = input(true);
+  public allowAppointmentDrag = input(true);
   public containerWidth = input<string | null>(null);
   protected view = linkedSignal(() => this.initialView());
   protected appointments = signal(DEMO_APPOINTMENTS);

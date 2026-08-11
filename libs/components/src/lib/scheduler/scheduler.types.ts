@@ -32,6 +32,30 @@ export type SchedulerVisibleRange = {
   end: Date;
 };
 
+/** What a drag on an appointment already on the calendar changes - the whole of it, or one end. */
+export type SchedulerAppointmentDragMode = 'move' | 'resize-start' | 'resize-end';
+
+/**
+ * An appointment being dragged to a new time. Views lay their appointments out from the range on
+ * here rather than the appointment's own, which is what previews the drag; it lives only for as
+ * long as the pointer is down.
+ */
+export type SchedulerAppointmentDrag<TExtra = unknown> = {
+  /** The appointment as it stood when the drag began - the range on here is the pending one. */
+  appointment: Appointment<TExtra>;
+  mode: SchedulerAppointmentDragMode;
+  start: Date;
+  end: Date;
+};
+
+/** A completed move or resize - the payload of `appointmentReschedule`. */
+export type SchedulerAppointmentReschedule<TExtra = unknown> = {
+  /** The appointment at the time it was dragged to. */
+  appointment: Appointment<TExtra>;
+  /** The same appointment as it was before the drag. */
+  previous: Appointment<TExtra>;
+};
+
 /**
  * A time range the user is dragging out on a view to create a new appointment. Stays set while the
  * create surface is open so the surface can stay anchored to the range it came from.

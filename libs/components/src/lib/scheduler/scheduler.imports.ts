@@ -9,6 +9,7 @@ import { SchedulerActionAddAppointmentDirective } from './scheduler-action-add-a
 import { SchedulerActionAddSubAppointmentDirective } from './scheduler-action-add-sub-appointment.directive';
 import { SchedulerActionDeleteDirective } from './scheduler-action-delete.directive';
 import { SchedulerAgendaViewComponent } from './scheduler-agenda-view.component';
+import { SchedulerAppointmentDragDirective } from './scheduler-appointment-drag.directive';
 import { SchedulerBadgeChainCountDirective } from './scheduler-badge-chain-count.directive';
 import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.directive';
 import { SchedulerBadgeLocationDirective } from './scheduler-badge-location.directive';
@@ -50,4 +51,5 @@ export const SCHEDULER_IMPORTS = [
   SchedulerActionDeleteDirective,
   SchedulerActionAddAppointmentDirective,
   SchedulerSwipeNavigationDirective,
+  SchedulerAppointmentDragDirective,
 ] as const;

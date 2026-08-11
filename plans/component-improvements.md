@@ -30,35 +30,12 @@ range.component.ts` pairs two independent `et-date-time-input` controls.
   The SDK's `DateRangeInputComponent` is date-only; no combined date-time-
   range control exists. This is new `forms/date-time/` surface, not a
   scheduler-only change.
-- **Color as a predefined palette.** **Shipped 2026-08-11** as
-  `provideColorPalette` in core theming - `{ token, label }` entries, curated
-  and ordered by the app, rather than every registered `ColorTheme` (the
-  registry holds themes nobody should pick by hand, and `name` is a slug with
-  no label). With a palette in scope the field is a radio row of swatches, each
-  `[etProvideColor]`-scoped to its own theme, led by a "No color" choice;
-  without one it stays the free-text box. Both write a theme name into
-  `colorToken`, so adopting the palette needs no data change.
 - **Infinite-scrolling agenda.** The agenda directive takes a plain array,
   no paging concept. `libs/query`'s `paged-query-stack.ts` and the legacy
   `infinite-query` module both exist, neither wired to scheduler. This
   should land as a documented consumer pattern against `paged-query-stack`
   - paging state belongs to whatever query backs the appointment list, not
     inside scheduler itself.
-
-## Accordion
-
-The border/label transition shipped 2026-08-10 - see "Already fixed". Nothing
-else in this section is open.
-
-## Avatar
-
-Both open items here shipped 2026-08-11. Directive usage did **not** need a
-headless split: `et-avatar` became an attribute selector as well, so an avatar
-that has to be a link or a button is written on the consumer's own element and
-`routerLink` keeps working - the same call progress steps took the same day.
-`et-avatar-group` grew `maxVisible`, hides the avatars past it and appends its
-own `+N` avatar, copying the first projected avatar's size and shape. Still no
-`:hover` on either, which is right for the plain preview stack.
 
 ## Buttons
 
@@ -75,18 +52,6 @@ looks messy, that's the demo/story, not the directive reimplementing button
 styles. Moving its story from the standalone `Components/Copy button` entry
 into `Components/Button/*` is a pure story-organization move (see Storybook
 structure below), no component change.
-
-## Description list
-
-**`variant` shipped 2026-08-11**, so this is no longer an empty class. Two
-values, the obvious pair rather than a system: `inline` (the default - the
-two-column term/detail grid it always had) and `stacked` (one column, term
-above its detail). A sixth `@property`,
-`--et-description-list-stacked-term-gap`, carries the tighter within-pair gap
-that makes a stacked pair read as one unit; `--et-description-list-row-gap`
-still separates pairs in both. Any further style (bordered, striped) is now a
-new `variant` value on an existing input, not new surface. Nothing else here
-is open.
 
 ## Color input
 
@@ -113,31 +78,16 @@ exists. Every step renders as plain `<span>`s - no `routerLink`, `<a>`, or
 neither `.css` file has any `:hover` rule. Stories are a single `Default`
 story with one hardcoded 4-step example.
 
-Expanding this, roughly in order of how disruptive each is:
+Outcome states, vertical orientation and steps-as-links all shipped (see "Already fixed"). One ask
+is left:
 
-- ~~**Success/warning/error states**~~ - shipped 2026-08-10, see "Already
-  fixed".
-- ~~**Vertical orientation**~~ - shipped 2026-08-11 as
-  `orientation="vertical"`, with its own connector geometry.
-- ~~**Steps as links/hover states**~~ - shipped 2026-08-11. Not a
-  polymorphic root in the end: `et-progress-step` became an attribute
-  selector too, so the consumer's own `<a>`/`<button>` _is_ the step and
-  `routerLink` keeps working.
 - **Detailed sub-steps** - the least defined ask; needs a decision on
   whether it's a projected slot per step or a fixed description input, and
   whether it's meaningful outside the vertical orientation at all.
 
-## Segmented button group: `variant="tabs"` only half-looks like tabs
+## Segmented button group: two tab divergences left in place on purpose
 
-Reported 2026-08-07, **shipped 2026-08-11**: tabs, nav tabs and the variant now default from one
-shared scale (`TabScaleStylesComponent`, the `et-tab-scale` class), so trigger padding, label size
-and weight, underline thickness/radius and the baseline rule match at every `size`. Fixing it turned
-up the reason the tab scale looked arbitrary: the `--et-tab-group-*` metrics were registered
-non-inheriting and set on the host, so `sm`/`lg` padding, the `lg` and `primary` underline sizes and
-every consumer override of them had never applied. The tab sheets also gained their `@layer
-components` wrap.
-
-Two divergences were left in place on purpose:
+The rest of this shipped 2026-08-11 (see "Already fixed"). These two were deliberate:
 
 - **The focus ring is still the segment box** (at the tab's `2px` offset), where tabs ring an inner
   label-hugging span. Matching it needs a wrapper element inside `et-segmented-button`, which changes
@@ -311,69 +261,6 @@ lifecycle.directive.ts` are class-driven CSS-transition directives typed
   from scratch before pie/sankey are on the table - bar charts alone could
   ship without solving this.
 
-## Password input: caps-lock warning stays on after the key is released
-
-The "stays on after caps lock is turned off" report doesn't trace to a
-filtering bug in the wiring - `password-input.directive.ts`'s
-`syncCapsLock(event)` calls the standard `event.getModifierState('CapsLock')`
-unconditionally from `(keydown)`, `(keyup)`, _and_ `(mousedown)` on the
-input (the directive's own comment notes `mousedown` was added specifically
-so a focus-click with no keystroke still re-checks state), with no
-`event.key`/`event.code` filter excluding the CapsLock key itself. On spec
-behavior that should catch a bare toggle immediately via the CapsLock key's
-own keyup. The likely explanation is a real cross-browser/OS quirk in
-whether the CapsLock key reliably fires a `keyup` (or reports the post-
-toggle modifier state at that point) at all - well documented as
-inconsistent, particularly on macOS - which source alone can't confirm.
-Needs reproducing on the actual browser/OS combo before designing a fix;
-if confirmed, the workaround is re-checking on some event other than the
-CapsLock key's own keyup (e.g. next `focusin`, or accepting the state can
-only be trusted to update on the next real keystroke and saying so in the
-label) rather than anything fixable in this directive's current listener
-set.
-
-**Confirmed on a real Mac keyboard, 2026-08-11 (user).** Toggling CapsLock off in
-the password-input story leaves the warning on - it does not clear. So the quirk
-is real and it is exactly the one predicted above: the CapsLock key's own `keyup`
-does not deliver a trustworthy post-toggle modifier state on macOS. Nothing in the
-directive's listener set can be filtered to fix it.
-
-The fix is therefore about _when_ to re-check, not what to filter. Options, in
-order of preference:
-
-1. Re-check on `focusin` and on the next real keystroke, and accept that a bare
-   toggle while focused may lag by one key. Cheapest, no new API.
-2. Poll the state while the field has focus (e.g. a short interval or
-   `requestAnimationFrame` gated on focus). Reliable, but it burns work for a
-   warning nobody is waiting on.
-3. Say so in the label - i.e. treat the warning as "caps lock was on as of your
-   last keystroke". Honest, but it reads as a bug to the user who just turned it
-   off.
-
-**Fixed on 2026-08-11**, along the lines of (1) but without the lag on the case that
-actually matters. `syncCapsLock` now treats two readings as untrustworthy and clears
-the state for both: the Caps Lock key's own `keydown`/`keyup` (identified by
-`event.key === 'CapsLock'`), and any event with no modifier state to read at all
-(`FocusEvent`, which the component now feeds it on `blur` so a reading expires with
-the focus session that produced it). Everything else - real keystrokes and pointer
-presses - reads `getModifierState` as before. So switching Caps Lock off clears the
-warning immediately; switching it on while the field already has focus shows it one
-keystroke later. The asymmetry is the right way round: the warning can lag, but it
-can no longer be wrong.
-
-Driven headlessly against the real story with dispatched `KeyboardEvent`s carrying
-`modifierCapsLock` (`components-forms-password-input--caps-lock-warning`): all nine
-steps behave as designed. That is not the same as a hardware toggle - Playwright
-cannot produce one, since CDP has no Caps Lock modifier bit and
-`keyboard.down('CapsLock')` leaves `getModifierState('CapsLock')` false. **Hand-checked
-on a real Mac keyboard 2026-08-11 (user): correct - the warning clears the moment Caps
-Lock goes off.** The default label was then hedged to `'Caps Lock might be on'`, which is
-option (3) applied to the one case that still lags rather than to all of them.
-
-No duplication elsewhere - `otp-input` and every other password-adjacent
-control have no caps-lock logic of their own; `password-input` owns this
-exclusively.
-
 ## Storybook structure
 
 Every story sits under a flat `Components/<Name>` (or `Components/<Domain>/
@@ -383,110 +270,6 @@ feeling. The two misplaced titles found this pass are fixed (see "Already
 fixed"). Whether `Components/*` should gain real top-level categories at
 all is the part still open - a bigger, separate call, and one that moves
 every story id the docs site embeds.
-
-## Auth bug: logged out after being idle, with multi-tab sync on
-
-Reported from real use 2026-08-07: a user came back from being away for a while and was logged
-out. Multi-tab sync is enabled. Traced in source, not reproduced yet. **Three different mechanisms
-produce exactly this symptom**, so the first step is a read, not a fix.
-
-**`sessionEndCause` already names which one it was.** `logout(cause)` records it
-(`bearer-auth-provider.ts`), and the union is the whole differential diagnosis: `inactivity` means
-`withInactivityLogout` did what it says on the tin (15 minutes by default) and this is not a
-refresh bug at all; `expired` means a refresh failed for good; `otherTab` means the logout arrived
-over the sync channel and was decided somewhere else; `user` means it was a click.
-
-**Fix the thing that makes it undiagnosable first: `otherTab` erases the reason.** `SyncMessage`
-is `{ type: 'logout' }` with no cause on it, and the receiver calls `context.logout('otherTab')`
-(`internal/multi-tab-sync.ts`). In the multi-tab setup this report comes from, the tab the user was
-actually looking at can therefore only say _another tab did this_ - while the tab that decided is
-most likely a background one nobody will ever inspect. Put the originating cause on the message and
-keep it on the receiving side (`otherTab` plus an origin cause, or a separate signal). It is small,
-and without it this class of report cannot be answered from the app at all. The devtools half of
-the same gap: the auth tab renders neither `sessionStatus` nor `sessionEndCause` today.
-
-**The reporting app rules the inactivity mechanism out.** `hubApiClientAuthProvider` in
-`fut-frontend` (`libs/queries/hub/src/lib/hub-api/hub-api.client.ts` - the provider behind the
-reported `ethlete-auth-sync:hubApiClient` channel) configures exactly two features:
-`withPersistentAuth({ defaultRememberMe: true, cookie, autoLogin: { queryKey: 'tokenRefresh' } })`
-and a bare `withBearerAuthMultiTabSync()`. **No `withInactivityLogout`.** And
-`withRefreshQuery('tokenRefresh', …)` passes no `refreshStrategy`, no `minRefreshInterval` and no
-`onRefreshFailure`, so every default below applies as written - including the one that logs out.
-
-That leaves `expired` as the cause to expect, and makes the chain concrete: leader election is on;
-the leader tab goes hidden while the user is away and its single `timer()` does not fire; a visible
-follower's secure queries 401 and its `executeRefresh('unauthorized')` posts `refresh-requested`,
-which a frozen holder never acts on and nothing re-posts; whenever a refresh does finally run, it
-spends a refresh token the server has long since rotated or expired, the status is non-retryable,
-and the default `onRefreshFailure` calls `logout('expired')` - which `syncLogout` then broadcasts to
-every tab, where it reads as `otherTab`. **Confirm by reading `sessionEndCause` in the tab the user
-was in and in the others**; `expired` in any tab points at this chain, `user` anywhere points
-somewhere else entirely.
-
-**The per-tab inactivity timer below is therefore not this bug - but it is still a bug**, and it is
-the one that bites the moment any app turns the feature on.
-
-**Fixed 2026-08-11.** Idleness became a property of the session, the way the design call below
-demands. `setupMultiTabSync` carries an `{ type: 'activity' }` message and hands out an
-`activityCoordination` (`announce` / `activity$`) that the provider plumbs into the feature context -
-so `withInactivityLogout` announces local activity and postpones its own logout when it hears another
-tab's, which it never re-announces. Announcements are throttled to a quarter of the timeout: far more
-often than another tab's countdown needs, and not once a second while someone scrolls. It is only
-offered where a logout actually travels, so `syncLogout: false` keeps its per-tab timer. Three
-further defects went with it: the deadline is driven off `lastActivityTime` (so `resetTimer()`
-postpones the logout, and a tab that has seen no event still has a deadline), the deadline is
-re-checked when it fires (activity recorded in the same tick as the old deadline has not moved it
-yet), and a token _refresh_ no longer counts as user activity - it is the app working, not the user,
-and an app refreshing faster than the timeout would otherwise never log an idle user out at all.
-Visibility-awareness turned out to be unnecessary: a hidden tab's countdown is reset by the visible
-tab's activity, which is what the visibility check was reaching for.
-
-The original finding, for the record:
-
-**If inactivity logout is enabled, an idle tab logs out an active one.** `withInactivityLogout` tracks `mousedown`/`keydown`/`scroll`/`touchstart` **on its own
-document**, so activity in one tab never resets another tab's timer, and `syncLogout` then
-broadcasts whichever tab gives up first to all of them. A forgotten second tab times out after 15
-minutes and logs the user out of the tab they are typing in. Two defects in that file feed it:
-
-- **The timer is armed by activity only.** `inactivityLogout$` is
-  `activity$.pipe(switchMap(() => timer(inactivityTimeout)))`, so a tab that never sees one of those
-  four events never arms it - while `lastActivityTime`, which `resetTimer()` and the `accessToken`
-  effect write, is read **only** by `calculateTimeUntilLogout`. So the public `resetTimer()` (and
-  `enable()`) move the reported countdown without postponing the logout they claim to reset. Drive
-  the timer off `lastActivityTime` and the two stop disagreeing.
-- **Nothing is visibility-aware**, so a hidden tab counts down toward a logout its user had no way
-  to prevent.
-
-The design call underneath both: idleness is a property of the **session**, not of a tab - so
-activity has to be shared (announced on the sync channel, or the timer owned by the leader) before
-a per-tab timer is allowed to end a shared session.
-
-**And the refresh path did have a real hole - it was bigger than the hypothesis.** Fixed 2026-08-09,
-see "Already fixed"; the proactive refresh had never fired at all. The visibility half shipped
-2026-08-11: the schedule is recomputed on `visibilitychange`, and an unanswered `refresh-requested`
-is re-asked for up to three times. What is left of this section is the **inactivity** mechanism
-below, which is still per-tab.
-
-So the sleeping-leader story holds up in shape: a hidden leader tab that the browser freezes keeps
-its Web Lock - the platform releases it when the client goes away, and a frozen page has not gone
-away - while its timer does not fire. Followers do hand the event over rather than drop it
-(`refreshCoordination.request()` posts `refresh-requested`, and only the lock holder acts on it),
-but that message is fire-and-forget: no ack, no retry. If the holder is frozen, or leadership is
-mid-handover, it is simply lost, and the follower has now burned its own timer too.
-
-What that does **not** explain by itself: a session that stops refreshing produces 401s, not a
-logout. It becomes a logout only through the `expired` path - once a refresh finally does run,
-against a refresh token that has since expired server-side. That junction is the one worth
-instrumenting first.
-
-Verify before changing any of it: whether the browser in question actually freezes a page that
-holds a Web Lock (holding one is a documented bfcache blocker; Energy-Saver freezing is a separate
-policy), and whether a frozen page's `BroadcastChannel` messages are queued or dropped. If frozen
-pages keep their locks, "the leader must prove it is awake" becomes a design requirement rather
-than a nicety - and the Web Locks inspector item is the other half of answering it, because "which
-tab is the leader, and has it been hidden for an hour" is not a question the panel can answer
-today. `withTracking` already emits `leaderStatusChange`, so leadership moves have a recorded
-source to correlate against.
 
 ## Auth: `excludeRoutes` invites string matching - fixed 2026-08-10
 
@@ -512,6 +295,44 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Scheduler: move and resize existing appointments** (2026-08-11, was the `L` triage row the
+drag-to-create work called "the natural next feature") - four design calls were put to the user first
+and all taken the recommended way; the last two are the ones worth remembering:
+
+- **Scope**: week/day blocks move (down for a time, sideways for a day) _and_ resize by their top/bottom
+  edge; month badges move only. A month badge renders per covered cell rather than as one span, so it
+  has no edge to grab - the all-day strip does span, and was left out of this pass.
+- **A dedicated `appointmentReschedule`** carrying `{ appointment, previous }` rather than reusing
+  `appointmentSave`. `previous` is what makes rollback and an undo affordance possible, and a
+  "saved" toast no longer fires on a drag.
+- **The preview drops on release** rather than being held optimistically until `appointments`
+  answers. Honest - a consumer that ignores the event cannot end up showing an appointment somewhere
+  it is not - at the cost of a documented snap-back for an async persister.
+- **On by default**, disabled with `[etSchedulerAppointmentDrag]="{ enabled: false }"`, because a bare
+  `<et-scheduler>` already opens an editable surface on click; it is already an editing UI.
+
+Notes for whoever extends this:
+
+- **Every layout derives from a new `effectiveAppointments`** (the list with the in-flight drag
+  applied), so the preview is automatic in every view - including the re-pack of a day column's
+  overlap groups as the block passes over its neighbours. The gesture measures the _day column_, never
+  the block, so a re-pack that shifts the block sideways mid-drag cannot break the math.
+- **The click after a drag must be swallowed, and the flag has to be view-local.** A first attempt put
+  it on the headless directive; because the gesture's pointer capture lives on the day column, the
+  click retargets to the column and the block's handler never consumed it, so the flag went stale and
+  ate the _next_ genuine click on any appointment. A private field per view cannot: only a
+  `pointerdown` sets it, and one always precedes the click it belongs to.
+- **A resize stops a slot short of the other edge** instead of flipping - flipping would silently
+  swap which end the pointer is holding. A move is unclamped, so it can cross midnight, where the grid
+  already clips a timed appointment into one block per day.
+- `scheduler-draft-gesture.ts` is now `scheduler-drag-gesture.ts` (`startSchedulerDragGesture`, with
+  `draw` renamed `track`) - one armed gesture serving both drawing and dragging, so the touch long
+  press, the non-passive `touchmove` guard and the cancel path are shared rather than copied.
+- Verified headlessly against the real stories: 20/20 on mouse (move, cross-day move, both edges, the
+  minimum, cancel-reverts, click-still-opens, drag-to-create unbroken), 6/6 with the feature off, and
+  7/7 on touch (flick still scrolls, long press arms, the armed drag does not pan the body, tap still
+  opens). Changeset `scheduler-move-and-resize-appointments.md`.
 
 **Query devtools: the mock designer, phase 3 - the OpenAPI export** (2026-08-10, user-raised) - the last
 phase, so the whole "mock designer" section is gone from this file. Three design calls, all put to the user
@@ -1167,8 +988,8 @@ Scheduler overlay + drag-to-create (2026-08-06):
   `SchedulerDirective` so any view can drive it; `SchedulerTimeGridDirective.draftBlock` places the
   time-grid preview, the month view marks cells with `data-draft`. Notes for whoever extends this:
   a press on an appointment or a "+N more" trigger stops propagation so it cannot draw over it
-  (there is no move/resize yet - that is the natural next feature); a sub-threshold press stays a
-  click; `pointercancel` clears without opening.
+  (it moves or resizes that appointment instead, shipped 2026-08-11 - see "Already fixed"); a
+  sub-threshold press stays a click; `pointercancel` clears without opening.
 - **Touch needed its own gesture** (reported mid-session: "drag to create doesn't work with touch").
   The time-grid body scrolls vertically, so a finger drag is a pan - the browser claims it and fires
   `pointercancel`. It now arms on a ~400ms stationary long press (`armOnTouch`), which is early

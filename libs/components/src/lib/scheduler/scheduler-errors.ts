@@ -8,4 +8,6 @@ export const SCHEDULER_ERROR_CODES = {
   EDIT_SURFACE_FEATURE_OUTSIDE_SURFACE: 4502,
   /** `[etSchedulerSwipeNavigation]` was placed on an element that is not an `[etScheduler]`. */
   SWIPE_NAVIGATION_OUTSIDE_SCHEDULER: 4503,
+  /** `[etSchedulerAppointmentDrag]` was placed on an element that is not an `[etScheduler]`. */
+  APPOINTMENT_DRAG_OUTSIDE_SCHEDULER: 4504,
 } as const;

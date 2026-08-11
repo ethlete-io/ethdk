@@ -5,6 +5,7 @@ export * from './scheduler.imports';
 export * from './scheduler-action-add-appointment.directive';
 export * from './scheduler-action-add-sub-appointment.directive';
 export * from './scheduler-action-delete.directive';
+export * from './scheduler-appointment-drag.directive';
 export * from './scheduler-badge-chain-count.component';
 export * from './scheduler-badge-chain-count.directive';
 export * from './scheduler-badge-color-dot.component';

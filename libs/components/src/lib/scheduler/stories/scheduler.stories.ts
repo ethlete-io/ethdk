@@ -22,6 +22,9 @@ export const WithoutLocationBadge: Story = { args: { initialView: 'agenda', show
 
 export const Narrow: Story = { args: { initialView: 'agenda', containerWidth: '380px' } };
 
+/** Appointments cannot be dragged to another time here; drawing a new range still works. */
+export const WithoutAppointmentDrag: Story = { args: { initialView: 'week', allowAppointmentDrag: false } };
+
 /** Select an appointment and open the edit surface: the color field is a swatch picker, not a text box. */
 export const WithColorPalette: Story = {
   args: { initialView: 'agenda' },

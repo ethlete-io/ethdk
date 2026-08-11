@@ -1,10 +1,20 @@
 import { NgComponentOutlet } from '@angular/common';
-import { Component, DestroyRef, ElementRef, ViewEncapsulation, inject, viewChild, viewChildren } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  viewChild,
+  viewChildren,
+} from '@angular/core';
 import { ProvideColorDirective, injectRenderer, injectStyleManager } from '@ethlete/core';
-import { endOfDay, startOfDay } from 'date-fns';
+import { addDays, differenceInCalendarDays, endOfDay, startOfDay } from 'date-fns';
 import { MENU_IMPORTS } from '../menu';
 import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerMonthDirective } from './headless';
-import { startSchedulerDraftGesture } from './headless/internals/scheduler-draft-gesture';
+import { startSchedulerDragGesture } from './headless/internals/scheduler-drag-gesture';
+import { SchedulerAppointmentDragDirective } from './scheduler-appointment-drag.directive';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
@@ -27,11 +37,18 @@ export class SchedulerMonthViewComponent {
   protected labels = injectSchedulerLabels();
 
   private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
+  private appointmentDrag = inject(SchedulerAppointmentDragDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
   private renderer = injectRenderer();
   private weekRows = viewChildren<ElementRef<HTMLElement>>('weekRow');
   private cells = viewChildren<ElementRef<HTMLElement>>('cell');
   public draftAnchor = viewChild<ElementRef<HTMLElement>>('draftAnchor');
+
+  /** Whether the `etSchedulerAppointmentDrag` feature is present and on - see that directive. */
+  protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
+
+  /** Whether the press now ending moved a badge, rather than being a click on it - see {@link select}. */
+  private hasDragged = false;
 
   constructor() {
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
@@ -51,6 +68,10 @@ export class SchedulerMonthViewComponent {
   }
 
   protected select(appointment: Appointment, element: HTMLElement | null = null) {
+    // only a `pointerdown` sets this, and one always precedes the click it belongs to - which is why
+    // the flag can live here and cannot go stale
+    if (this.hasDragged) return;
+
     this.scheduler?.surfaceAnchor.set(element);
     this.scheduler?.selectedAppointmentId.set(appointment.id);
   }
@@ -59,6 +80,65 @@ export class SchedulerMonthViewComponent {
     const draft = this.scheduler?.draftRange();
 
     return !!draft && date >= startOfDay(draft.start) && date <= draft.end;
+  }
+
+  protected isDragging(appointment: Appointment) {
+    return this.scheduler?.appointmentDrag()?.appointment.id === appointment.id;
+  }
+
+  /**
+   * The cells a dragged appointment would land on. Needed on top of the badge's own preview: a target
+   * cell already at `maxVisiblePerCell` collapses the badge into its overflow menu, leaving the drag
+   * with no feedback at all.
+   */
+  protected isDropTarget(date: Date) {
+    const drag = this.scheduler?.appointmentDrag();
+
+    return !!drag && date >= startOfDay(drag.start) && date <= drag.end;
+  }
+
+  /**
+   * Moves an appointment to another day cell, keeping its time of day and its duration - the month
+   * works in whole days, so a badge has no edge to resize by. Touch arms on a long press, same as
+   * drawing a range does; see `startSchedulerDragGesture`.
+   */
+  protected startAppointmentDrag(event: PointerEvent, target: { appointment: Appointment; weeks: HTMLElement }) {
+    // a press on a badge must not also draw a fresh range across the cells underneath it
+    event.stopPropagation();
+
+    const scheduler = this.scheduler;
+
+    if (!scheduler || !this.canDragAppointments() || event.button !== 0) return;
+
+    const { appointment, weeks } = target;
+    const grab = this.dateAt(weeks, event);
+
+    if (!grab) return;
+
+    this.hasDragged = false;
+
+    startSchedulerDragGesture({
+      event,
+      element: weeks,
+      renderer: this.renderer,
+      destroyRef: this.destroyRef,
+      track: (clientX, clientY) => {
+        this.hasDragged = true;
+
+        if (!scheduler.appointmentDrag()) scheduler.beginAppointmentDrag(appointment, 'move');
+
+        const to = this.dateAt(weeks, { clientX, clientY });
+
+        // dragged off the grid: leave it on the last cell it was over rather than snapping home
+        if (!to) return;
+
+        const days = differenceInCalendarDays(to, grab);
+
+        scheduler.updateAppointmentDrag(addDays(appointment.start, days), addDays(appointment.end, days));
+      },
+      settle: () => scheduler.commitAppointmentDrag(),
+      cancel: () => scheduler.clearAppointmentDrag(),
+    });
   }
 
   /**
@@ -74,12 +154,12 @@ export class SchedulerMonthViewComponent {
 
     if (!anchor) return;
 
-    startSchedulerDraftGesture({
+    startSchedulerDragGesture({
       event,
       element: weeks,
       renderer: this.renderer,
       destroyRef: this.destroyRef,
-      draw: (clientX, clientY) => {
+      track: (clientX, clientY) => {
         const to = this.dateAt(weeks, { clientX, clientY }) ?? anchor;
         const [from, until] = to < anchor ? [to, anchor] : [anchor, to];
 

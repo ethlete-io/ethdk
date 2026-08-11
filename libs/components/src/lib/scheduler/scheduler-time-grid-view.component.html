@@ -79,8 +79,8 @@
           }
         }
 
-        <!-- pointerdown is stopped below so a press that starts on an appointment does not reach the
-             column's drag-to-create and lay a new range over the one already there -->
+        <!-- a block's own pointerdown moves it and stops there, so a press that starts on an
+             appointment never reaches the column's drag-to-create underneath it -->
         @for (block of day.blocks; track block.node.appointment.id) {
           <button
             #appointmentButton
@@ -91,10 +91,18 @@
             [style.--_et-scheduler-time-grid-block-depth]="block.node.depth"
             [attr.data-selected]="isSelected(block.node.appointment) ? '' : null"
             [attr.data-nested]="block.node.depth > 0 ? '' : null"
+            [attr.data-draggable]="canDragAppointments() ? '' : null"
+            [attr.data-dragging]="isDragging(block.node.appointment) ? '' : null"
             [attr.title]="block.node.appointment.title"
             [etProvideColor]="block.node.appointment.colorToken ?? null"
             (click)="select(block.node.appointment, appointmentButton)"
-            (pointerdown)="$event.stopPropagation()"
+            (pointerdown)="
+              startAppointmentDrag($event, {
+                appointment: block.node.appointment,
+                mode: 'move',
+                column: { element: dayColumn, day: day.date },
+              })
+            "
             class="et-scheduler-time-grid-block"
             type="button"
           >
@@ -102,6 +110,34 @@
               <ng-container
                 *ngComponentOutlet="adornment.component; inputs: { node: block.node }; injector: adornment.injector"
               />
+            }
+
+            @if (canDragAppointments()) {
+              <span
+                (pointerdown)="
+                  startAppointmentDrag($event, {
+                    appointment: block.node.appointment,
+                    mode: 'resize-start',
+                    column: { element: dayColumn, day: day.date },
+                  })
+                "
+                class="et-scheduler-time-grid-block-resize"
+                data-edge="start"
+                aria-hidden="true"
+              ></span>
+
+              <span
+                (pointerdown)="
+                  startAppointmentDrag($event, {
+                    appointment: block.node.appointment,
+                    mode: 'resize-end',
+                    column: { element: dayColumn, day: day.date },
+                  })
+                "
+                class="et-scheduler-time-grid-block-resize"
+                data-edge="end"
+                aria-hidden="true"
+              ></span>
             }
           </button>
         }

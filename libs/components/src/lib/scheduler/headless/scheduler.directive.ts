@@ -1,4 +1,4 @@
-import { Directive, computed, input, model, signal } from '@angular/core';
+import { Directive, computed, input, model, output, signal } from '@angular/core';
 import {
   Locale,
   addDays,
@@ -15,6 +15,9 @@ import { injectDateLocale } from '../../forms/date-time/date-time-formats';
 import {
   Appointment,
   AppointmentId,
+  SchedulerAppointmentDrag,
+  SchedulerAppointmentDragMode,
+  SchedulerAppointmentReschedule,
   SchedulerDraftRange,
   SchedulerView,
   SchedulerVisibleRange,
@@ -62,6 +65,13 @@ export class SchedulerDirective<TExtra = unknown> {
   /** Defaults to the locale's week start, else Monday. */
   public firstDayOfWeek = input<SchedulerWeekStartsOn | undefined>(undefined);
 
+  /**
+   * Emits when a move or resize lands the appointment somewhere else - see
+   * {@link commitAppointmentDrag}. `appointments` is yours, so nothing has changed until you apply
+   * it; the preview drops on release, so persisting asynchronously wants an optimistic write.
+   */
+  public appointmentReschedule = output<SchedulerAppointmentReschedule<TExtra>>();
+
   public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
 
   public effectiveFirstDayOfWeek = computed<SchedulerWeekStartsOn>(
@@ -95,8 +105,29 @@ export class SchedulerDirective<TExtra = unknown> {
     }
   });
 
-  /** {@link appointments}, arranged into sub-appointment chains - see `buildAppointmentTree`. */
-  public appointmentTree = computed(() => buildAppointmentTree(this.appointments()));
+  /**
+   * The appointment being moved or resized by a drag, or `null` - see {@link beginAppointmentDrag}.
+   * Set only while the pointer is down.
+   */
+  public appointmentDrag = signal<SchedulerAppointmentDrag<TExtra> | null>(null);
+
+  /**
+   * {@link appointments} with an in-flight {@link appointmentDrag} applied to the one being dragged.
+   * Every layout derives from this, so a drag previews itself in whichever view is on screen.
+   */
+  public effectiveAppointments = computed(() => {
+    const drag = this.appointmentDrag();
+    const appointments = this.appointments();
+
+    if (!drag) return appointments;
+
+    return appointments.map((appointment) =>
+      appointment.id === drag.appointment.id ? { ...appointment, start: drag.start, end: drag.end } : appointment,
+    );
+  });
+
+  /** {@link effectiveAppointments}, arranged into sub-appointment chains - see `buildAppointmentTree`. */
+  public appointmentTree = computed(() => buildAppointmentTree(this.effectiveAppointments()));
 
   /** The seven weekday names, starting from {@link effectiveFirstDayOfWeek} - for grid/agenda headers. */
   public weekdays = computed<SchedulerWeekday[]>(() => {
@@ -111,11 +142,11 @@ export class SchedulerDirective<TExtra = unknown> {
     });
   });
 
-  /** {@link appointments} that overlap {@link visibleRange} at all - not yet bucketed per view. */
+  /** {@link effectiveAppointments} that overlap {@link visibleRange} at all - not yet bucketed per view. */
   public visibleAppointments = computed(() => {
     const { start, end } = this.visibleRange();
 
-    return this.appointments().filter((appointment) => appointment.start <= end && appointment.end >= start);
+    return this.effectiveAppointments().filter((appointment) => appointment.start <= end && appointment.end >= start);
   });
 
   /** The selected appointment itself, or `null` - resolved from {@link selectedAppointmentId}. */
@@ -197,6 +228,46 @@ export class SchedulerDirective<TExtra = unknown> {
   public clearDraftRange() {
     this.draftAnchor = null;
     this.draftRange.set(null);
+  }
+
+  /**
+   * Starts moving or resizing an appointment already on the calendar, previewed at its current time
+   * until the first {@link updateAppointmentDrag}. A view calls this once its gesture has committed,
+   * so a press that stays a click never begins one.
+   */
+  public beginAppointmentDrag(appointment: Appointment<TExtra>, mode: SchedulerAppointmentDragMode) {
+    this.appointmentDrag.set({ appointment, mode, start: appointment.start, end: appointment.end });
+  }
+
+  /**
+   * Previews the dragged appointment at `start`-`end`. Both ends come from the view: only it knows
+   * what a pointer position means on its own geometry, and what its snapping and minimum are.
+   */
+  public updateAppointmentDrag(start: Date, end: Date) {
+    this.appointmentDrag.update((drag) => (drag ? { ...drag, start, end } : null));
+  }
+
+  /**
+   * Releases the drag, emitting {@link appointmentReschedule} when it landed on a different range.
+   * The preview goes with it - the appointment renders from {@link appointments} again.
+   */
+  public commitAppointmentDrag() {
+    const drag = this.appointmentDrag();
+
+    this.appointmentDrag.set(null);
+
+    if (!drag) return;
+
+    const { appointment, start, end } = drag;
+
+    if (start.getTime() === appointment.start.getTime() && end.getTime() === appointment.end.getTime()) return;
+
+    this.appointmentReschedule.emit({ appointment: { ...appointment, start, end }, previous: appointment });
+  }
+
+  /** Drops the drag without emitting - a gesture the browser took away, so no range was chosen. */
+  public clearAppointmentDrag() {
+    this.appointmentDrag.set(null);
   }
 
   private stepBy(step: 1 | -1) {

@@ -87,8 +87,9 @@ export class SchedulerSwipeNavigationDirective {
 
     if (!tracker) return;
 
-    // A long press has armed the view's own drag-to-create, so this finger is drawing a range.
-    if (this.scheduler?.draftRange()) return this.forgetGesture();
+    // A long press has armed a view's own gesture, so this finger is drawing a range or dragging an
+    // appointment - either way it is not a period step.
+    if (this.scheduler?.draftRange() || this.scheduler?.appointmentDrag()) return this.forgetGesture();
 
     const { positiveMovementX, isScrolling } = tracker.update(event);
 

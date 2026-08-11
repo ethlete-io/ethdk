@@ -187,4 +187,93 @@ describe('SchedulerDirective', () => {
       expect(directive.draftRange()).toMatchObject({ allDay: true, phase: 'committed' });
     });
   });
+
+  describe('moving and resizing an appointment', () => {
+    const at = (hour: number, minute = 0) => new Date(2026, 6, 15, hour, minute);
+    const moved = () => ({ start: at(11), end: at(12) });
+
+    beforeEach(() => {
+      host.appointments.set([appointment('a'), appointment('b')]);
+      fixture.detectChanges();
+    });
+
+    const drag = (id = 'a') => {
+      const target = directive.appointments().find((candidate) => candidate.id === id)!;
+
+      directive.beginAppointmentDrag(target, 'move');
+
+      return target;
+    };
+
+    it('previews the drag on the dragged appointment only', () => {
+      drag();
+      directive.updateAppointmentDrag(moved().start, moved().end);
+
+      expect(directive.effectiveAppointments()).toEqual([
+        expect.objectContaining({ id: 'a', ...moved() }),
+        expect.objectContaining({ id: 'b', start: at(9), end: at(10) }),
+      ]);
+    });
+
+    it('leaves the appointments untouched while nothing is being dragged', () => {
+      expect(directive.effectiveAppointments()).toBe(directive.appointments());
+    });
+
+    it('emits the new and the previous range on release, and drops the preview', () => {
+      const reschedules: unknown[] = [];
+
+      directive.appointmentReschedule.subscribe((event) => reschedules.push(event));
+
+      const target = drag();
+
+      directive.updateAppointmentDrag(moved().start, moved().end);
+      directive.commitAppointmentDrag();
+
+      expect(reschedules).toEqual([{ appointment: { ...target, ...moved() }, previous: target }]);
+      expect(directive.appointmentDrag()).toBeNull();
+      expect(directive.effectiveAppointments()).toBe(directive.appointments());
+    });
+
+    it('emits nothing for a drag that ends where it started', () => {
+      const reschedules: unknown[] = [];
+
+      directive.appointmentReschedule.subscribe((event) => reschedules.push(event));
+
+      const target = drag();
+
+      directive.updateAppointmentDrag(target.start, target.end);
+      directive.commitAppointmentDrag();
+
+      expect(reschedules).toEqual([]);
+    });
+
+    it('emits nothing for a cancelled gesture, since no range was chosen', () => {
+      const reschedules: unknown[] = [];
+
+      directive.appointmentReschedule.subscribe((event) => reschedules.push(event));
+
+      drag();
+      directive.updateAppointmentDrag(moved().start, moved().end);
+      directive.clearAppointmentDrag();
+
+      expect(reschedules).toEqual([]);
+      expect(directive.appointmentDrag()).toBeNull();
+    });
+
+    it('ignores an update with no drag in progress', () => {
+      directive.updateAppointmentDrag(moved().start, moved().end);
+
+      expect(directive.appointmentDrag()).toBeNull();
+    });
+
+    it('emits nothing for a release with no drag in progress', () => {
+      const reschedules: unknown[] = [];
+
+      directive.appointmentReschedule.subscribe((event) => reschedules.push(event));
+
+      directive.commitAppointmentDrag();
+
+      expect(reschedules).toEqual([]);
+    });
+  });
 });

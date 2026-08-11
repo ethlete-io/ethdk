@@ -30,6 +30,19 @@
       background: var(--et-theme-color-primary-solid);
       color: var(--et-theme-color-on-primary);
     }
+
+    &:where([data-draggable]) {
+      cursor: grab;
+
+      /* a move arms on a long press, which is also what raises iOS' selection callout */
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    &:where([data-dragging]) {
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+      cursor: grabbing;
+    }
   }
 
   /* Shared by every badge/block-shaped button a view renders, so the title adornment's own class

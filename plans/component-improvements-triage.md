@@ -17,19 +17,12 @@ decision before any code · `X` blocked.
 
 Ranked by value per unit of risk, not by size.
 
-**Both of the user's 2026-08-11 picks shipped that day:** the form field warning mode, as the
-`warn()` schema rule, and the button surface theming variants, as `tone="surface"` (a third theming
-axis on the button rather than a generated `ColorTheme`). **Segmented `variant="tabs"` shipped the
-same day**, onto a shared tab scale - which turned out to be the fix for a dead tab size scale as
-well; see its section in `component-improvements.md`. **The password input's stuck caps-lock warning
-shipped on 2026-08-11 too**, once the user reproduced it - it left the blocked table entirely, and so
-did **the per-tab inactivity logout**, which now measures the session's idleness. **The description
-list's `variant` shipped 2026-08-11** as `inline`/`stacked` - the obvious pair, not a variant system -
-and left the M table, and so did **the scheduler's colour palette**, shipped the same day as
-`provideColorPalette` in core theming. **Query long polling shipped 2026-08-11** as `withLongPolling`, a
-completion-driven chain with `nextArgs` deriving each round from the last response - the four design
-calls it needed are recorded in `apps/docs/query/features.md`. The tile below is #1 of what is left, but parked - see its
-row.
+Everything that shipped up to and including 2026-08-11 has been removed from this file - the form
+field warning mode, the button surface variants, segmented `variant="tabs"`, the caps-lock warning,
+the per-tab inactivity logout, the description list's `variant`, the scheduler's colour palette,
+query long polling, and scheduler move/resize (the largest `L` row there was). Each one's design
+calls and traps are recorded in `component-improvements.md`'s "Already fixed, do not re-report".
+The tile below is #1 of what is left, but parked - see its row.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
@@ -49,16 +42,15 @@ row.
 
 ### L - projects, not tickets
 
-| Item                                         | Tag     | Note                                                                                                                                                                                                                                                                           |
-| -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Charts                                       | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't            |
-| Scheduler: move/resize existing appointments | `A`     | Called "the natural next feature" by the drag-to-create work                                                                                                                                                                                                                   |
-| Scheduler: date-time _range_ picker          | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                                         |
-| Colour input: custom picker                  | `A`     | Replaces the native input behind the same directive contract                                                                                                                                                                                                                   |
-| Command palette                              | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                             |
-| Stat tile                                    | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                        |
-| Test harnesses                               | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                         |
-| Forms: time-zone handling / local-time UX    | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, range and scheduler together |
+| Item                                      | Tag     | Note                                                                                                                                                                                                                                                                           |
+| ----------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Charts                                    | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't            |
+| Scheduler: date-time _range_ picker       | `A`     | New `forms/date-time/` surface; `DateRangeInputComponent` is date-only                                                                                                                                                                                                         |
+| Colour input: custom picker               | `A`     | Replaces the native input behind the same directive contract                                                                                                                                                                                                                   |
+| Command palette                           | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                             |
+| Stat tile                                 | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                        |
+| Test harnesses                            | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                         |
+| Forms: time-zone handling / local-time UX | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, range and scheduler together |
 
 ### Decide before building
 

@@ -61,12 +61,13 @@ On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 | `selectedAppointmentId` | `AppointmentId \| null` | The selected appointment's id.               |
 | `focusedDate`           | `Date`                  | The date the visible period is derived from. |
 
-| Output               | Payload                    | Fires when                                                                                                      |
-| -------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `appointmentSave`    | `Appointment`              | The default [edit surface](#edit-surface) saves an edit, a new sub-appointment, or a new top-level appointment. |
-| `appointmentsDelete` | `readonly AppointmentId[]` | The edit surface's "Delete (with descendants)" action removes an appointment and its chain.                     |
+| Output                  | Payload                                               | Fires when                                                                                                      |
+| ----------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `appointmentSave`       | `Appointment`                                         | The default [edit surface](#edit-surface) saves an edit, a new sub-appointment, or a new top-level appointment. |
+| `appointmentsDelete`    | `readonly AppointmentId[]`                            | The edit surface's "Delete (with descendants)" action removes an appointment and its chain.                     |
+| `appointmentReschedule` | `{ appointment: Appointment; previous: Appointment }` | An appointment was [dragged](#move-and-resize) to another time, or resized by one of its edges.                 |
 
-The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself. `appointments` is one-way: the scheduler never mutates it, so applying `appointmentSave`/`appointmentsDelete` back onto your own signal is on you - see the [edit surface](#edit-surface) section.
+The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself. `appointments` is one-way: the scheduler never mutates it, so applying `appointmentSave`/`appointmentsDelete`/`appointmentReschedule` back onto your own signal is on you - see the [edit surface](#edit-surface) section.
 
 ## Toolbar
 
@@ -115,7 +116,7 @@ A day cell per day of the padded month, leading/trailing days from adjacent mont
 | ------------------- | -------- | ------- | ---------------------------------------------------------------- |
 | `maxVisiblePerCell` | `number` | `3`     | How many appointments a day cell shows before the rest overflow. |
 
-Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`, which `<et-scheduler>` reacts to by opening the [edit surface](#edit-surface) - see that section for what a bare `[etScheduler]` composition needs to do instead. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI, so it only renders correctly inside `<et-scheduler>` or your own `[etScheduler]` element.
+Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`, which `<et-scheduler>` reacts to by opening the [edit surface](#edit-surface); dragging one moves it to another day, see [move and resize](#move-and-resize) - see that section for what a bare `[etScheduler]` composition needs to do instead. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI, so it only renders correctly inside `<et-scheduler>` or your own `[etScheduler]` element.
 
 ## Time grid: week & day view
 
@@ -133,7 +134,7 @@ It takes no inputs of its own - like the month view, it reads its host `[etSched
 
 <StoryEmbed id="components-scheduler--day" height="640px" />
 
-Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view.
+Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view. A block can also be dragged to another time or day and resized by its edges - see [move and resize](#move-and-resize). The all-day strip is click-only.
 
 ## Agenda view
 
@@ -154,13 +155,53 @@ Dragging across empty space on the **week**, **day** or **month** view draws a n
 - **Week and day** draw a time range down a day column. It snaps to 15-minute slots and is never shorter than one.
 - **Month** draws an all-day span across day cells, in either direction.
 
-**A press that never drags still creates**, at a default size: an hour from where it landed on the week and day views - snapped to the same 15-minute slots - and an all-day appointment on the month view's clicked cell. A press that starts **on** an appointment (or a "+N more" trigger) does not draw over it, and a click made while a surface is open only dismisses it.
+**A press that never drags still creates**, at a default size: an hour from where it landed on the week and day views - snapped to the same 15-minute slots - and an all-day appointment on the month view's clicked cell. A press that starts **on** an appointment (or a "+N more" trigger) does not draw over it - it [moves or resizes](#move-and-resize) that appointment instead - and a click made while a surface is open only dismisses it.
 
 **On touch it starts with a long press.** Both views scroll, so a finger that simply drags is panning - the browser claims the gesture and cancels it. Holding still for ~400ms arms the range instead, and from that point scrolling is blocked until you let go, so the drag draws. A quick swipe scrolls exactly as before; a tap, and a long press released without moving, both create the same default a click does.
 
 The range stays visible while the surface is open and disappears when it closes - dismiss without saving and nothing is created. Clicking the drawn range itself counts as clicking outside the surface, so it closes and clears, rather than drawing a fresh range underneath. A gesture the browser takes away (a `pointercancel`) clears it without opening anything.
 
 The state behind it lives on the headless directive, so a custom view can drive the same flow: `draftRange` (the live range, whether it is `dragging` or `committed`, and `allDay` for day-granular views), written with `beginDraftRange()` / `extendDraftRange()` for a time axis or `setDraftRange()` for whole days, settled with `commitDraftRange()` and dropped with `clearDraftRange()`.
+
+## Move and resize {#move-and-resize}
+
+Appointments already on the calendar can be dragged to another time. Unlike drawing a new one, this does **not** open the edit surface - the drag itself is the edit, and it emits `appointmentReschedule` on release.
+
+- **Week and day**: drag a block's body to move it - down or up for another time, sideways for another day - or drag its **top or bottom edge** to resize it. Both snap to the same 15-minute slots a drawn range does, and a resize never shrinks a block below one slot: an edge dragged past the other stops there.
+- **Month**: drag a badge onto another day cell. It keeps its time of day and its duration, so a 3-day appointment moved one cell across is still 3 days long. There is no resize here - a month badge renders per cell rather than as one span, so it has no edge to grab.
+- **Agenda** has no geometry to drag across, same as drag-to-create.
+
+A move keeps the duration and a resize keeps the other end, so the two gestures are never ambiguous about what they change. The whole appointment previews itself as you drag - on the month view the target cells are marked as well, because a cell already at `maxVisiblePerCell` collapses the badge into its "+N more" menu.
+
+```html
+<et-scheduler [appointments]="appointments()" (appointmentReschedule)="reschedule($event)" />
+```
+
+```ts
+protected reschedule({ appointment }: SchedulerAppointmentReschedule) {
+  this.appointments.update((all) => all.map((a) => (a.id === appointment.id ? appointment : a)));
+}
+```
+
+**Nothing has moved until you apply it.** `appointments` is yours, and the preview drops the moment the pointer is released - so the appointment snaps back to whatever `appointments` still says. Applying it synchronously (above) is seamless; if you persist to a server first, write the new range optimistically and roll back on failure, or the block will visibly snap back and then jump. The payload carries `previous` alongside `appointment` for exactly that rollback - and for an undo affordance.
+
+**On touch it starts with a long press**, for the same reason [drawing a range](#drag-to-create) does: the week and day views scroll, so a finger that simply drags is panning. Hold still for ~400ms and the appointment arms; a quick swipe scrolls, and a tap still opens the edit surface. Edge handles get a larger hit area on coarse pointers.
+
+A gesture the browser takes away (a `pointercancel`) reverts the appointment - the user never chose a time - and emits nothing. Neither does a drag that ends where it started.
+
+### Turning it off
+
+Dragging is on by default. `[etSchedulerAppointmentDrag]` is one of the feature directives `<et-scheduler>` bundles, so disable it the same way as the rest:
+
+```html
+<et-scheduler [etSchedulerAppointmentDrag]="{ enabled: false }" [appointments]="appointments()" />
+```
+
+With it off, blocks render no edge handles and no grab cursor, and a press on one is only ever a click. Add the directive to a bare `[etScheduler]` composition to give its views the gesture; without it, the default views never start a drag.
+
+Keyboard users are not left out by any of this: the edit surface's time-range field edits the same two dates, so a drag is a pointer shortcut rather than the only way in.
+
+The state behind it lives on the headless directive, so a custom view can drive it: `appointmentDrag` (the appointment, the `mode` - `'move' \| 'resize-start' \| 'resize-end'` - and its pending range), written with `beginAppointmentDrag()` / `updateAppointmentDrag()`, released with `commitAppointmentDrag()` (which emits) and dropped with `clearAppointmentDrag()` (which does not). `effectiveAppointments` is the appointment list with the in-flight drag applied - every built-in layout derives from it, which is what makes the preview automatic.
 
 ## Edit surface {#edit-surface}
 

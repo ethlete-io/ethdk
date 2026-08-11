@@ -26,6 +26,7 @@ import {
 } from './headless';
 import { SchedulerActionAddAppointmentDirective } from './scheduler-action-add-appointment.directive';
 import { SchedulerAgendaViewComponent } from './scheduler-agenda-view.component';
+import { SchedulerAppointmentDragDirective } from './scheduler-appointment-drag.directive';
 import { SchedulerBadgeChainCountDirective } from './scheduler-badge-chain-count.directive';
 import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.directive';
 import { SchedulerBadgeLocationDirective } from './scheduler-badge-location.directive';
@@ -67,7 +68,7 @@ const NARROW_CONTAINER_WIDTH = 480;
     {
       directive: SchedulerDirective,
       inputs: ['appointments', 'view', 'focusedDate', 'selectedAppointmentId', 'locale', 'firstDayOfWeek'],
-      outputs: ['viewChange', 'focusedDateChange', 'selectedAppointmentIdChange'],
+      outputs: ['viewChange', 'focusedDateChange', 'selectedAppointmentIdChange', 'appointmentReschedule'],
     },
     // The built-in badge adornments, bundled by default so `<et-scheduler>` renders a full badge
     // zero-config - each forwards its own config input, so e.g. `[etSchedulerBadgeLocation]="{
@@ -79,6 +80,7 @@ const NARROW_CONTAINER_WIDTH = 480;
     { directive: SchedulerBadgeChainCountDirective, inputs: ['etSchedulerBadgeChainCount'] },
     { directive: SchedulerActionAddAppointmentDirective, inputs: ['etSchedulerActionAddAppointment'] },
     { directive: SchedulerSwipeNavigationDirective, inputs: ['etSchedulerSwipeNavigation'] },
+    { directive: SchedulerAppointmentDragDirective, inputs: ['etSchedulerAppointmentDrag'] },
   ],
   host: {
     class: 'et-scheduler',
