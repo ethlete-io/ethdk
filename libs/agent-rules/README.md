@@ -113,6 +113,53 @@ Prettier rewrites them and `check` then reports drift on every run:
 Content that declares `requires` is only emitted when those packages are installed, so
 a repo without `@ethlete/query` never sees the query guide.
 
+## Git flow
+
+The branch convention lives in the same config, as one machine-readable grammar that the
+CLI, a git hook, a CI job and `@ethlete/timetrack` all read:
+
+```json
+{
+  "gitFlow": {
+    "keyPrefixes": ["FIP"],
+    "baseBranches": { "development": "next", "production": "main" }
+  }
+}
+```
+
+```bash
+npx ethlete-agents git-flow check                   # the current branch
+npx ethlete-agents git-flow check "$SOURCE" --target "$TARGET"
+npx ethlete-agents git-flow check --all             # adoption report
+npx ethlete-agents git-flow explain feat/FIP-2177-user-management
+```
+
+The shapes are `feat/<KEY>-<subject>`, a sub-feature nested under it
+(`feat/<KEY>-<subject>/<KEY>-<subject>`), `release/<YYYY.MM.DD>`, a fix nested under a
+release, and `hotfix/<KEY>-<subject>`.
+
+- **`enforcement`** - `"advisory"` (default) reports everything and blocks nothing, so a
+  repo can adopt the convention before it gates on it. `"gated"` applies each rule's
+  `severity`. A direct push to a base branch is blocked in both modes, and
+  `wrong-mr-target` can be raised to `"error"` on its own without ending the naming
+  grace period.
+- **`keyPrefixes`** - the project's issue prefixes. Leave it empty and anything shaped
+  like `keyPattern` counts, which reads `chore/angular-22` as issue `ANGULAR-22`.
+- **`severity`** - per rule: `unknown-type`, `missing-key`, `key-case`,
+  `missing-subject`, `type-alias`, `deprecated-prefix`, `release-date`,
+  `wrong-mr-target`, `protected-push`.
+- **`deprecatedShapes`** - legacy spellings that still classify correctly and only earn a
+  rename suggestion. `dev-*` ships as the old spelling of a main feature branch.
+
+The grammar is also importable on its own - `@ethlete/agent-rules/git-flow` has no
+dependencies and touches no Node built-ins, so it runs in a browser:
+
+```ts
+import { parseBranch, resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
+
+const { storyKey, taskKey, findings } = parseBranch({ branch, config: resolveGitFlowConfig() });
+```
+
 ## Hooks (opt-in)
 
 Hooks run commands on the developer's machine, so none are emitted by default - opt in

@@ -2,6 +2,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { AGENT_TARGETS, AgentTarget, CONFIG_FILE_NAME, detectTargets } from './lib/config';
+import { gitFlowCommand } from './lib/git-flow-command';
 import { migrate } from './lib/migrate';
 import { check, sync } from './lib/sync';
 
@@ -10,6 +11,7 @@ const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into y
   ethlete-agents sync      Write the generated rules/skills for every detected agent
   ethlete-agents check     Exit non-zero when the generated files are out of date (for CI)
   ethlete-agents init      Write a starter ${CONFIG_FILE_NAME}
+  ethlete-agents git-flow  Check a branch name against the repo's git flow (check, explain)
   ethlete-agents migrate   Convert the repo to the AGENTS.md + .agents/skills layout:
                            CLAUDE.md content moves into AGENTS.md (CLAUDE.md becomes an
                            @AGENTS.md import), hand-written .claude/skills move to
@@ -77,6 +79,8 @@ const run = (argv: string[]) => {
       return check(options);
     case 'init':
       return init(root);
+    case 'git-flow':
+      return gitFlowCommand({ root, argv: argv.slice(1) });
     case 'migrate':
       return migrate({ ...options, dryRun: argv.includes('--dry-run') });
     default:

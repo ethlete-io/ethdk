@@ -2,4 +2,4 @@
 '@ethlete/agent-rules': minor
 ---
 
-Add `@ethlete/agent-rules/git-flow`: a dependency-free branch-name grammar, parser and validator, configured through a `gitFlow` block in `ethlete-agents.config.json`.
+Add the git-flow branch grammar: an `ethlete-agents git-flow check|explain` command, a `gitFlow` config block, and the dependency-free parser at `@ethlete/agent-rules/git-flow`.

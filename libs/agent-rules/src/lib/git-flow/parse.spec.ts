@@ -114,6 +114,18 @@ describe('parseBranch', () => {
     expect(result.suggestedName).toBeUndefined();
   });
 
+  it('only accepts a configured project prefix as a key', () => {
+    const scoped = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
+
+    expect(parseBranch({ branch: 'chore/angular-22', config: scoped })).toMatchObject({
+      storyKey: undefined,
+      subject: 'angular-22',
+      suggestedName: undefined,
+    });
+    expect(parseBranch({ branch: 'feat/fip-2762-widget', config: scoped }).storyKey).toBe('FIP-2762');
+    expect(parse('chore/angular-22').storyKey).toBe('ANGULAR-22');
+  });
+
   it('reports an unrecognised shape without throwing', () => {
     expect(parse('wip')).toMatchObject({ ok: false, kind: 'unknown', expectedMrTargets: [] });
     expect(rules('wip')).toEqual<GitFlowRule[]>(['unknown-type']);

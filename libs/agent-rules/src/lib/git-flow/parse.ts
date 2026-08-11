@@ -49,8 +49,11 @@ const parseSegment = (options: { segment: string; config: GitFlowConfig; role: s
   const { segment, config, role } = options;
   const match = new RegExp(`^(${config.keyPattern})(?:-(.*))?$`, 'i').exec(segment);
   const rawKey = match?.[1];
+  const known =
+    config.keyPrefixes.length === 0 ||
+    config.keyPrefixes.some((prefix) => rawKey?.toUpperCase().startsWith(prefix.toUpperCase()));
 
-  if (!rawKey) {
+  if (!rawKey || !known) {
     return {
       subject: segment || undefined,
       findings: [{ rule: 'missing-key', message: `"${segment}" carries no ${role} issue key.` }],

@@ -41,6 +41,12 @@ export type GitFlowDeprecatedShape = {
 export type GitFlowConfig = {
   enforcement: GitFlowEnforcement;
   keyPattern: string;
+  /**
+   * Project prefixes a key may use, e.g. `["FIP"]`. Empty accepts anything `keyPattern` matches,
+   * which also accepts `chore/angular-22` as issue ANGULAR-22 — set this in any repo whose
+   * branch subjects can start with a word followed by a number.
+   */
+  keyPrefixes: string[];
   baseBranches: { development: string; production: string };
   types: string[];
   typeAliases: Record<string, string>;
@@ -55,6 +61,7 @@ export type GitFlowConfig = {
 export const DEFAULT_GIT_FLOW_CONFIG: GitFlowConfig = {
   enforcement: 'advisory',
   keyPattern: '[A-Z]{2,10}-\\d+',
+  keyPrefixes: [],
   baseBranches: { development: 'next', production: 'main' },
   types: ['feat', 'fix', 'refactor', 'chore', 'docs', 'perf', 'test', 'style', 'build', 'ci'],
   typeAliases: { feature: 'feat', bugfix: 'fix' },
