@@ -403,9 +403,11 @@ fail a hook or a pipeline until step 6, and that is deliberate.
    it from the summary. Same unknown field as in `plans/timetrack.md`. `start` reads it from
    `jira.subjectField` when configured and otherwise slugifies the summary, saying which it used -
    so this is now a one-line config change, not a blocker. The field id is still unknown.
-5. **`git-flow-draft.md` needs updating with the `sub/` prefix**, and the team told, since the
-   shape it documents cannot be created. Not an implementation question, but the convention's
-   source of truth now disagrees with the tooling on two of its five shapes.
+5. ~~**`git-flow-draft.md` needs updating with the `sub/` prefix**~~ **Done for the repo copy** -
+   sections 2 and 3 now name `sub/feat/…` and `sub/release/…`, with the git constraint spelled out
+   once under section 2. The repo copy is a transcription, so the canonical doc still has to be
+   corrected and **the team still has to be told** - the tooling and the convention's source of
+   truth disagree on two of five shapes until that happens.
 6. **Should `start` also open the draft merge request?** `plans/timetrack.md` puts the branch →
    draft MR step in its own flow, and `repair` already carries a GitLab client that `start` could
    reuse. Deliberately left out for now: `start` writes to git only, which keeps the blast radius

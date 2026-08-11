@@ -13,11 +13,13 @@ Jetzt branchen wir vom aktuellen next ab und nennen den Branch nach folgendem Sc
 
 Kleinere Einheiten (Sub-Feature) werden nach Fertigstellung sukzessive in diesen Branch überführt (merged). Der Sub-Feature-Workflow sieht dafür wie folgt aus:
 
-Es wird vom Haupt-Feature-Branch ein neuer Sub-Feature-Branch nach folgendem Schema abgespalten: feat/[Ticket-Nummer der Story]-[Story-Subject]/[Ticket-Nummer der Task]-[Taks-Subject], z.B. feat/FIP-2177-user-management/FIP-2178-user-password-reset.
+Es wird vom Haupt-Feature-Branch ein neuer Sub-Feature-Branch nach folgendem Schema abgespalten: sub/feat/[Ticket-Nummer der Story]-[Story-Subject]/[Ticket-Nummer der Task]-[Task-Subject], z.B. sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset.
+
+Warum das sub/-Präfix: Git kann eine Referenz nicht gleichzeitig als Branch und als Verzeichnis von Branches führen. Solange feat/FIP-2177-user-management existiert, lässt sich feat/FIP-2177-user-management/FIP-2178-user-password-reset also gar nicht anlegen — git branch bricht mit "cannot lock ref" ab, ein Push wird mit "refname conflict" abgelehnt. Genau der Branch, von dem abgespalten und in den zurückgemerged wird, blockiert den verschachtelten Namen. Das sub/-Präfix hebt den Sub-Branch aus dem Namensraum des Eltern-Branches heraus. Der vollständige Pfad des Eltern-Branches bleibt dabei im Namen enthalten, sodass Basis- und Target-Branch weiterhin direkt am Namen ablesbar sind und kein Branch umbenannt werden muss, der heute schon existiert.
 
 Das Sub-Feature wird lokal entwickelt.
 
-Nach Fertigstellung wird das Sub-Feature per Merge-Request zurück in den zugehörigen Haupt-Feature-Branch gemerged, z.B. Source-Branch feat/FIP-2177-user-management/FIP-2178-user-password-reset → Target-Branch feat/FIP-2177-user-management
+Nach Fertigstellung wird das Sub-Feature per Merge-Request zurück in den zugehörigen Haupt-Feature-Branch gemerged, z.B. Source-Branch sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset → Target-Branch feat/FIP-2177-user-management
 Wichtig:
 --> Der MR muss von einem anderen nexter reviewed werden (sofern vorhanden).
 --> Der Sub-Feature-Branch wird nach dem Merge gelöscht (via Checkbox im MR, ansonsten manuell)
@@ -44,7 +46,7 @@ Dadurch kann der PM das Zusammenspiel der integrierten Features und somit den ak
 
 Die Release-Version spiegelt den programmcodebasierten Stand des Staging-Servers wieder.
 
-Werden auf dem Release-Branch vor der Veröffentlichung trotzdem noch Fehler gefunden, so werden Fixes für die Fehler via MR in den release-Branch gemerged. Der Fix-Branch wird nach folgendem Schema benannt: release/[Datum]/[Bug-Ticket-Nummer]-[Bug-Subject] z.B. release/2026.04.28/FIP-2222-button-not-visible
+Werden auf dem Release-Branch vor der Veröffentlichung trotzdem noch Fehler gefunden, so werden Fixes für die Fehler via MR in den release-Branch gemerged. Der Fix-Branch wird nach folgendem Schema benannt: sub/release/[Datum]/[Bug-Ticket-Nummer]-[Bug-Subject] z.B. sub/release/2026.04.28/FIP-2222-button-not-visible — dasselbe sub/-Präfix wie beim Sub-Feature und aus demselben Grund (siehe Punkt 2.), da release/2026.04.28 als Branch existiert und den verschachtelten Namen sonst blockiert. Target-Branch des MR ist release/2026.04.28.
 
 --> Der Fix-Branch wird nach dem Merge gelöscht (via Checkbox im MR, ansonsten manuell) und gesquashed?
 
