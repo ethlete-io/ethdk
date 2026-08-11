@@ -16,17 +16,17 @@ paged queries, bearer auth, GraphQL, and a socket.io realtime client.
 non-trivial query work.** This guide is the index plus the load-bearing facts, so you
 don't re-derive them from source.
 
-| Page                                                                   | Covers                                                                              |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| {%docsBaseUrl%}/query/                                                 | Overview + the two-generations note                                                 |
-| {%docsBaseUrl%}/query/queries                                          | **Start here** - client, creators, the query object's signals, auto-execution       |
-| {%docsBaseUrl%}/query/features                                         | `withArgs`, `withPolling`, `withAutoRefresh`, side-effect handlers                  |
-| {%docsBaseUrl%}/query/http                                             | REST creators, typing requests, response transforms, upload progress                |
-| {%docsBaseUrl%}/query/auth                                             | Bearer auth: login/refresh, auto token refresh, multi-tab sync                      |
-| {%docsBaseUrl%}/query/caching · `/stacks` · `/errors` · `/gql` · `/ws` | Caching/dedup, pagination, error/retry, GraphQL, WebSockets                         |
-| {%docsBaseUrl%}/query/multi-tab                                        | Opt-in cross-tab sync: shared responses, per-key polling election, mutation fan-out |
-| {%docsBaseUrl%}/query/query-forms                                      | Router-synced filter/search forms                                                   |
-| {%docsBaseUrl%}/query/legacy                                           | The maintenance-mode `V2QueryClient`                                                |
+| Page                                                                   | Covers                                                                                |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| {%docsBaseUrl%}/query/                                                 | Overview + the two-generations note                                                   |
+| {%docsBaseUrl%}/query/queries                                          | **Start here** - client, creators, the query object's signals, auto-execution         |
+| {%docsBaseUrl%}/query/features                                         | `withArgs`, `withPolling`, `withLongPolling`, `withAutoRefresh`, side-effect handlers |
+| {%docsBaseUrl%}/query/http                                             | REST creators, typing requests, response transforms, upload progress                  |
+| {%docsBaseUrl%}/query/auth                                             | Bearer auth: login/refresh, auto token refresh, multi-tab sync                        |
+| {%docsBaseUrl%}/query/caching · `/stacks` · `/errors` · `/gql` · `/ws` | Caching/dedup, pagination, error/retry, GraphQL, WebSockets                           |
+| {%docsBaseUrl%}/query/multi-tab                                        | Opt-in cross-tab sync: shared responses, per-key polling election, mutation fan-out   |
+| {%docsBaseUrl%}/query/query-forms                                      | Router-synced filter/search forms                                                     |
+| {%docsBaseUrl%}/query/legacy                                           | The maintenance-mode `V2QueryClient`                                                  |
 
 ## Two generations - use the current one
 
@@ -86,6 +86,10 @@ raw `toObservable`). It emits `null` first - `pipe(filter(r => r !== null))`.
   place a mutation is just `.execute()`, which reuses the current `args()`. Reserve
   `execute({ args })` for a one-off payload no signal holds (a form submit).
 - `withPolling({ interval })`, `withAutoRefresh({ onSignalChanges: [...] })`.
+- **`withLongPolling({ nextArgs })`** for a completion-driven chain instead of an interval: each
+  round starts once the previous settled, with args (a cursor) derived from its response. `nextArgs`
+  returning `null` ends the chain. Not `withPolling` with a small interval - and the two throw when
+  combined.
 - Side-effects: `withSuccessHandling`, `withErrorHandling`, `withLogging`.
 
 There is no built-in debounce operator - dedup/caching handles repeated identical

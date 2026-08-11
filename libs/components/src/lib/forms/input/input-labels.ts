@@ -14,7 +14,7 @@ export type InputLabels = {
   showPassword: string;
   /** Accessible label for the password input's control while the value is visible. */
   hidePassword: string;
-  /** The password input's warning that Caps Lock is on. */
+  /** The password input's warning that Caps Lock may be on. */
   capsLockOn: string;
 };
 
@@ -24,7 +24,7 @@ export const DEFAULT_INPUT_LABELS: InputLabels = {
   decrement: 'Decrement',
   showPassword: 'Show password',
   hidePassword: 'Hide password',
-  capsLockOn: 'Caps Lock is on',
+  capsLockOn: 'Caps Lock might be on',
 };
 
 const INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<InputLabels>('INPUT_LABELS', DEFAULT_INPUT_LABELS);

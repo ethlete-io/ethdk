@@ -4,16 +4,7 @@ import { ColorTheme, ProvideColorDirective, provideColorThemesWithTailwind4 } fr
 import '../../test-helpers';
 import { BannerComponent, BannerLiveRegion, BannerType } from './banner.component';
 import { BANNER_IMPORTS } from './banner.imports';
-
-const COLOR_THEMES: ColorTheme[] = [
-  { name: 'danger', type: 'error', primary: { color: { default: '220 38 38' }, onColor: { default: '255 255 255' } } },
-  {
-    name: 'sunshine',
-    type: 'warning',
-    primary: { color: { default: '234 179 8' }, onColor: { default: '0 0 0' } },
-  },
-  { name: 'grass', type: 'success', primary: { color: { default: '22 163 74' }, onColor: { default: '255 255 255' } } },
-];
+import { TEST_SEMANTIC_COLOR_THEMES } from '../testing/color-themes';
 
 @Component({
   selector: 'et-test-banner-host',
@@ -53,7 +44,7 @@ class BannerHostComponent {
 }
 
 const createHost = (): ComponentFixture<BannerHostComponent> => {
-  TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
+  TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES)] });
 
   const fixture = TestBed.createComponent(BannerHostComponent);
   fixture.detectChanges();

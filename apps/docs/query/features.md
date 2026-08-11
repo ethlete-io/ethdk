@@ -37,6 +37,46 @@ Only for `GET`/`HEAD`/`OPTIONS` queries - anything else throws.
 
 With the [multi-tab sync](/query/multi-tab#polling-dedup) client feature, the same query polled in several tabs is polled by one of them; the rest keep their interval but skip each tick and receive the data instead. Pass `withMultiTabSync({ dedupePolling: false })` if you want every tab to poll for itself, and leave the feature out entirely to keep every tab on its own.
 
+## withLongPolling
+
+Long polling: a chain of requests where each round starts once the previous one settled, with args derived from what it returned. There is no interval - the server sets the cadence by holding each request open until it has something to report.
+
+```ts
+import { withArgs, withLongPolling } from '@ethlete/query';
+
+const eventsQuery = getEvents(
+  withArgs(() => ({ queryParams: { cursor: null } })),
+  withLongPolling({
+    nextArgs: (response) => (response ? { queryParams: { cursor: response.cursor } } : null),
+  }),
+);
+```
+
+| Option            | Default      | Description                                                            |
+| ----------------- | ------------ | ---------------------------------------------------------------------- |
+| `nextArgs`        | - (required) | `(response, args) => args \| null`. `null` ends the chain.             |
+| `delay`           | `250`        | Pause between one round settling and the next starting.                |
+| `errorDelay`      | `1000`       | Wait before repeating a failed round. Doubles per consecutive failure. |
+| `maxErrorDelay`   | `30000`      | Ceiling for the doubling `errorDelay`.                                 |
+| `stopAfterErrors` | `10`         | Consecutive failures that end the chain.                               |
+
+`response` is `null` when the server answered without a body - a `204` on timeout, which is the usual way to say "nothing yet". Returning the args unchanged is what re-asks the same question; returning `null` ends the chain, and only a new `withArgs` value or a manual `execute()` starts it again.
+
+`nextArgs` is handed the args the settled round was actually sent with, not the query's `args()` signal - so a cursor chain reads its own last position even though the `withArgs` source never changes.
+
+A **failed** round is repeated after a growing delay rather than ending the chain, so a transient 502 or a dropped connection does not silently deaden a live feed. That backoff sits on top of the request's own [retry policy](/query/errors#retries): a round counts as failed once its retries are exhausted. After `stopAfterErrors` consecutive failures the chain stops and the query keeps its error.
+
+A new value from the `withArgs` source cancels the pending round - the source's own re-execution starts the new chain from it. `reset()` cancels it too.
+
+Two things this feature deliberately does not do:
+
+- **Rounds are not cached.** Each one is requested with `keepUnusedFor: 0`, because a cursor is asked for once and never again; retaining them would leave one dead entry per round behind for the whole retention window.
+- **Rounds are not deduped across tabs.** [Multi-tab sync](/query/multi-tab#polling-dedup) elects a poller per cache key, and a chain's key moves with every round, so every tab drives its own chain.
+
+Only for `GET`/`HEAD`/`OPTIONS` queries - anything else throws, as does combining it with `withPolling`, since both would drive the same query's re-execution.
+
+`delay` exists because a server that already has data answers a long poll immediately: on a busy feed, rounds would otherwise follow each other with no pause at all. Raise it to put a floor under how often a chatty endpoint is asked.
+
 ## withAutoRefresh
 
 Re-executes the query whenever one of the given signals changes:

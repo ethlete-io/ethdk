@@ -36,6 +36,12 @@ export const setupQueryExecuteState = (): QueryExecuteState => {
 export type RunQueryExecuteOptions = {
   allowCache?: boolean;
   triggeredBy?: string;
+
+  /**
+   * Overrides the creator's (and the client's) `keepUnusedFor` for this execution. Only read while the
+   * cache entry is being created: an entry that already exists keeps the retention it was created with.
+   */
+  keepUnusedFor?: number;
 };
 
 export type QueryExecuteOptions<TArgs extends QueryArgs> = {

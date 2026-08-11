@@ -26,7 +26,9 @@ shipped on 2026-08-11 too**, once the user reproduced it - it left the blocked t
 did **the per-tab inactivity logout**, which now measures the session's idleness. **The description
 list's `variant` shipped 2026-08-11** as `inline`/`stacked` - the obvious pair, not a variant system -
 and left the M table, and so did **the scheduler's colour palette**, shipped the same day as
-`provideColorPalette` in core theming. The tile below is #1 of what is left, but parked - see its
+`provideColorPalette` in core theming. **Query long polling shipped 2026-08-11** as `withLongPolling`, a
+completion-driven chain with `nextArgs` deriving each round from the last response - the four design
+calls it needed are recorded in `apps/docs/query/features.md`. The tile below is #1 of what is left, but parked - see its
 row.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
@@ -39,12 +41,11 @@ row.
 
 ### M - real work, mostly consolidation
 
-| Item                                | Tag     | Note                                                                                                                                        |
-| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Scheduler: infinite agenda          | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
-| Selection list: `variant="tile"`    | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
-| Query: long polling                 | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part |
-| Query devtools: Web Locks inspector | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped      |
+| Item                                | Tag     | Note                                                                                                                                   |
+| ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Scheduler: infinite agenda          | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                |
+| Selection list: `variant="tile"`    | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                     |
+| Query devtools: Web Locks inspector | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped |
 
 ### L - projects, not tickets
 

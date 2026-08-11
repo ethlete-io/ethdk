@@ -16,6 +16,8 @@ import { isSymfonyPagerfantaOutOfRangeError } from './query-error-response-utils
 import {
   withAutoRefreshUsedInManualQuery,
   withAutoRefreshUsedOnUnsupportedHttpMethod,
+  withLongPollingUsedOnUnsupportedHttpMethod,
+  withLongPollingUsedWithPolling,
   withPollingUsedOnUnsupportedHttpMethod,
 } from './query-errors';
 import { InternalQueryExecute } from './query-execute';
@@ -40,6 +42,7 @@ export const nestedEffect = (fn: () => void, options?: CreateEffectOptions) => {
 
 export type QueryFeatureFlags = {
   hasWithArgsFeature: boolean;
+  hasPollingFeature: boolean;
   shouldAutoExecuteMethod: boolean;
   shouldAutoExecute: boolean;
   hasRouteFunction: boolean;
@@ -58,6 +61,7 @@ export const QueryFeatureType = {
   WITH_ERROR_HANDLING: 'WITH_ERROR_HANDLING',
   WITH_SUCCESS_HANDLING: 'WITH_SUCCESS_HANDLING',
   WITH_POLLING: 'WITH_POLLING',
+  WITH_LONG_POLLING: 'WITH_LONG_POLLING',
   WITH_AUTO_REFRESH: 'WITH_AUTO_REFRESH',
   WITH_RESPONSE_UPDATE: 'WITH_RESPONSE_UPDATE',
   WITH_PAGE_RESET_ON_ERROR: 'WITH_PAGE_RESET_ON_ERROR',
@@ -236,6 +240,165 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
       );
 
       context.deps.destroyRef.onDestroy(() => intervalId !== null && clearInterval(intervalId));
+    },
+  });
+};
+
+const DEFAULT_LONG_POLLING_DELAY = 250;
+const DEFAULT_LONG_POLLING_ERROR_DELAY = 1_000;
+const DEFAULT_LONG_POLLING_MAX_ERROR_DELAY = 30_000;
+const DEFAULT_LONG_POLLING_STOP_AFTER_ERRORS = 10;
+
+export type WithLongPollingFeatureOptions<TArgs extends QueryArgs> = {
+  /**
+   * Derives the next round's args from the round that just settled - typically a cursor read off the
+   * response. `response` is `null` when the server answered without a body (a `204` on timeout).
+   * Return `null` to end the chain; only a new `withArgs` value or a manual `execute()` starts it again.
+   */
+  nextArgs: (
+    response: ResponseType<TArgs> | null,
+    args: RequestArgs<TArgs> | null,
+  ) => NoInfer<RequestArgs<TArgs>> | null;
+
+  /**
+   * The pause between one round settling and the next starting, in milliseconds. A server that already
+   * has data answers a long poll immediately, so this is what keeps a busy feed from becoming a hot
+   * request loop.
+   * @default 250
+   */
+  delay?: number;
+
+  /**
+   * How long to wait before repeating a round that failed, in milliseconds. Doubles with every
+   * consecutive failure up to {@link WithLongPollingFeatureOptions.maxErrorDelay}, and resets on the
+   * next success.
+   * @default 1000
+   */
+  errorDelay?: number;
+
+  /** The ceiling for the doubling `errorDelay`, in milliseconds. @default 30000 */
+  maxErrorDelay?: number;
+
+  /**
+   * How many consecutive failures end the chain. The query keeps its error, and only a new `withArgs`
+   * value or a manual `execute()` starts it again.
+   * @default 10
+   */
+  stopAfterErrors?: number;
+};
+
+/**
+ * A query feature for long polling: a chain of requests where each round starts once the previous one
+ * settled, with args derived from what it returned. Unlike {@link withPolling} there is no interval -
+ * the server decides the cadence by holding each request open until it has something to say.
+ *
+ * A failed round is repeated after a growing delay, so a transient failure does not silently end the
+ * feed. A new value from the `withArgs` source cancels the pending round and starts over from it.
+ *
+ * Rounds do not share the cache: each one is requested with `keepUnusedFor: 0`, because a cursor is
+ * asked for once and never again. They are also not deduped across tabs - `withMultiTabSync` elects a
+ * poller per cache key, and a chain's key moves with every round.
+ *
+ * @example
+ * const events = getEvents(
+ *   withArgs(() => ({ queryParams: { cursor: null } })),
+ *   withLongPolling({
+ *     nextArgs: (response) => (response ? { queryParams: { cursor: response.cursor } } : null),
+ *   }),
+ * );
+ *
+ * @throws If the query is not eligible for auto execution (e.g. a POST request)
+ * @throws If the query also has a `withPolling` feature
+ */
+export const withLongPolling = <TArgs extends QueryArgs>(options: WithLongPollingFeatureOptions<TArgs>) => {
+  return createQueryFeature<TArgs>({
+    type: QueryFeatureType.WITH_LONG_POLLING,
+    devtools: () => [
+      { label: 'delay', value: formatQueryDevtoolsDuration(options.delay ?? DEFAULT_LONG_POLLING_DELAY) },
+      ...queryDevtoolsFnDetail(options.nextArgs, 'nextArgs'),
+    ],
+    fn: (context) => {
+      if (!context.flags.shouldAutoExecuteMethod) {
+        throw withLongPollingUsedOnUnsupportedHttpMethod(context.flags.method);
+      }
+
+      if (context.flags.hasPollingFeature) {
+        throw withLongPollingUsedWithPolling();
+      }
+
+      const delay = options.delay ?? DEFAULT_LONG_POLLING_DELAY;
+      const errorDelay = options.errorDelay ?? DEFAULT_LONG_POLLING_ERROR_DELAY;
+      const maxErrorDelay = options.maxErrorDelay ?? DEFAULT_LONG_POLLING_MAX_ERROR_DELAY;
+      const stopAfterErrors = options.stopAfterErrors ?? DEFAULT_LONG_POLLING_STOP_AFTER_ERRORS;
+
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      let consecutiveErrors = 0;
+
+      const stop = () => {
+        if (timeoutId !== null) clearTimeout(timeoutId);
+        timeoutId = null;
+      };
+
+      const schedule = (args: RequestArgs<TArgs> | null, wait: number) => {
+        stop();
+
+        timeoutId = setTimeout(() => {
+          timeoutId = null;
+          context.execute({ args, options: { keepUnusedFor: 0, triggeredBy: 'long-polling' } });
+        }, wait);
+      };
+
+      // The chain never writes `state.args`, so what a round was sent with lives on the request itself -
+      // which is also the only place a manual `execute({ args })` records them.
+      const settledArgs = () => context.state.subtle.request()?.args ?? null;
+
+      context.state.events$.pipe(takeUntilDestroyed(context.deps.destroyRef)).subscribe((event) => {
+        if (event.type === HttpEventType.Response) {
+          consecutiveErrors = 0;
+
+          const next = options.nextArgs(context.state.response(), settledArgs());
+
+          if (next === null) return stop();
+
+          schedule(next, delay);
+        } else if (event.type === 'error') {
+          consecutiveErrors++;
+
+          if (consecutiveErrors >= stopAfterErrors) return stop();
+
+          schedule(settledArgs(), Math.min(errorDelay * 2 ** (consecutiveErrors - 1), maxErrorDelay));
+        }
+      });
+
+      // A pending round belongs to the args it was derived from, so a fresh value from the `withArgs`
+      // source must cancel it - the source's own re-execution is what starts the new chain.
+      //
+      // Only an actual change may cancel: the effect's first run can land after the chain already
+      // scheduled a round (effects flush later than the response that scheduled it), and cancelling
+      // there would end the chain before its second round.
+      let hasSeenArgs = false;
+      let seenArgs: RequestArgs<TArgs> | null = null;
+
+      nestedEffect(
+        () => {
+          const args = context.state.args();
+
+          untracked(() => {
+            const hasChanged = hasSeenArgs && args !== seenArgs;
+
+            hasSeenArgs = true;
+            seenArgs = args;
+
+            if (!hasChanged) return;
+
+            consecutiveErrors = 0;
+            stop();
+          });
+        },
+        { injector: context.deps.injector },
+      );
+
+      context.deps.destroyRef.onDestroy(stop);
     },
   });
 };

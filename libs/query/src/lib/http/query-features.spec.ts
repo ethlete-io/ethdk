@@ -18,6 +18,7 @@ import {
   withArgs,
   withErrorHandling,
   withLogging,
+  withLongPolling,
   withPageResetOnError,
   withResponseUpdate,
   withSuccessHandling,
@@ -455,6 +456,260 @@ describe('query features', () => {
       TestBed.tick();
       expect(untracked(() => state.args())).toBe(null);
       httpTesting.expectNone(() => true);
+    });
+  });
+
+  describe('withLongPolling', () => {
+    const client = createQueryClient({ baseUrl: 'https://example.com', name: 'features-long-polling-test' });
+
+    const flags: QueryFeatureFlags = {
+      hasWithArgsFeature: false,
+      hasPollingFeature: false,
+      shouldAutoExecuteMethod: true,
+      shouldAutoExecute: false,
+      hasRouteFunction: false,
+      isMultiTabSyncEnabled: true,
+      method: 'GET',
+    };
+
+    let httpTesting: HttpTestingController;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(), provideHttpClientTesting()],
+      });
+      httpTesting = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => vi.useRealTimers());
+
+    const build = (
+      longPolling: QueryFeature<QueryArgs>,
+      features: QueryFeature<QueryArgs>[] = [],
+      flagOverrides: Partial<QueryFeatureFlags> = {},
+    ) =>
+      TestBed.runInInjectionContext(() => {
+        const deps = setupQueryDependencies({ client, queryConfig: {} });
+        const state = setupQueryState<QueryArgs>({});
+        const execute = createExecuteFn<QueryArgs>({
+          creator: {},
+          creatorInternals: { client, method: 'GET', route: '/events' },
+          deps,
+          state,
+          queryConfig: {},
+        });
+
+        applyQueryFeatures([...features, longPolling], {
+          state,
+          execute,
+          deps,
+          flags: { ...flags, ...flagOverrides },
+        });
+
+        return { state, execute, deps };
+      });
+
+    const settle = (response: Record<string, unknown> | null) =>
+      httpTesting.expectOne((r) => r.url.includes('/events')).flush(response);
+
+    const fail = (status = 500) =>
+      httpTesting.expectOne((r) => r.url.includes('/events')).flush('nope', { status, statusText: 'Error' });
+
+    it('starts the next round from the settled response, after the delay', () => {
+      const { execute } = build(
+        withLongPolling<QueryArgs>({
+          nextArgs: (response) => ({ queryParams: { cursor: (response as { cursor: number }).cursor } }),
+        }),
+      );
+
+      execute({ args: { queryParams: { cursor: 0 } } });
+      settle({ cursor: 1 });
+
+      httpTesting.expectNone(() => true);
+
+      vi.advanceTimersByTime(250);
+      const req = httpTesting.expectOne((r) => r.url.includes('/events'));
+      expect(req.request.url).toContain('cursor=1');
+      req.flush({ cursor: 2 });
+
+      vi.advanceTimersByTime(250);
+      expect(httpTesting.expectOne((r) => r.url.includes('/events')).request.url).toContain('cursor=2');
+    });
+
+    it('hands nextArgs the args of the round that settled, not the args signal', () => {
+      const seen: unknown[] = [];
+
+      const { execute } = build(
+        withLongPolling<QueryArgs>({
+          nextArgs: (response, args) => {
+            seen.push(args);
+            return response === null ? null : { queryParams: { cursor: 1 } };
+          },
+        }),
+      );
+
+      execute({ args: { queryParams: { cursor: 0 } } });
+      settle({ cursor: 1 });
+
+      vi.advanceTimersByTime(250);
+      settle(null);
+
+      expect(seen).toEqual([{ queryParams: { cursor: 0 } }, { queryParams: { cursor: 1 } }]);
+    });
+
+    it('ends the chain when nextArgs returns null', () => {
+      const { execute } = build(withLongPolling<QueryArgs>({ nextArgs: () => null }));
+
+      execute({ args: { queryParams: { cursor: 0 } } });
+      settle({ cursor: 1 });
+
+      vi.advanceTimersByTime(10_000);
+      httpTesting.expectNone(() => true);
+    });
+
+    it('repeats a failed round with a doubling delay, and resets the backoff on success', () => {
+      const { execute } = build(
+        withLongPolling<QueryArgs>({
+          nextArgs: () => ({ queryParams: { cursor: 1 } }),
+          errorDelay: 1_000,
+        }),
+      );
+
+      execute({ args: { queryParams: { cursor: 0 } } });
+      fail();
+
+      vi.advanceTimersByTime(999);
+      httpTesting.expectNone(() => true);
+
+      vi.advanceTimersByTime(1);
+      const retried = httpTesting.expectOne(() => true);
+      expect(retried.request.url).toContain('cursor=0');
+      retried.flush('nope', { status: 500, statusText: 'Error' });
+
+      vi.advanceTimersByTime(1_999);
+      httpTesting.expectNone(() => true);
+
+      vi.advanceTimersByTime(1);
+      httpTesting.expectOne(() => true).flush({ cursor: 1 });
+
+      vi.advanceTimersByTime(250);
+      fail();
+
+      // Back to the base delay: the success in between reset the backoff.
+      vi.advanceTimersByTime(999);
+      httpTesting.expectNone(() => true);
+
+      vi.advanceTimersByTime(1);
+      httpTesting.expectOne(() => true);
+    });
+
+    it('caps the error delay', () => {
+      const { execute } = build(
+        withLongPolling<QueryArgs>({
+          nextArgs: () => null,
+          errorDelay: 1_000,
+          maxErrorDelay: 2_000,
+          stopAfterErrors: 20,
+        }),
+      );
+
+      execute({ args: { queryParams: { cursor: 0 } } });
+      fail();
+
+      for (const wait of [1_000, 2_000, 2_000]) {
+        vi.advanceTimersByTime(wait - 1);
+        httpTesting.expectNone(() => true);
+        vi.advanceTimersByTime(1);
+        fail();
+      }
+    });
+
+    it('ends the chain after the configured number of consecutive failures', () => {
+      const { execute } = build(
+        withLongPolling<QueryArgs>({ nextArgs: () => null, errorDelay: 100, stopAfterErrors: 3 }),
+      );
+
+      execute({ args: { queryParams: { cursor: 0 } } });
+
+      fail();
+      vi.advanceTimersByTime(100);
+      fail();
+      vi.advanceTimersByTime(200);
+      fail();
+
+      vi.advanceTimersByTime(60_000);
+      httpTesting.expectNone(() => true);
+    });
+
+    it('cancels a pending round when the withArgs source produces new args', () => {
+      const channel = signal('a');
+
+      const { execute } = build(
+        withLongPolling<QueryArgs>({ nextArgs: () => ({ queryParams: { cursor: 1 } }) }),
+        [withArgs<QueryArgs>(() => ({ queryParams: { channel: channel() } }))],
+        { hasWithArgsFeature: true, shouldAutoExecute: true },
+      );
+
+      TestBed.tick();
+      execute();
+      settle({ cursor: 1 });
+
+      channel.set('b');
+      TestBed.tick();
+
+      expect(httpTesting.expectOne(() => true).request.url).toContain('channel=b');
+
+      vi.advanceTimersByTime(10_000);
+      httpTesting.expectNone(() => true);
+    });
+
+    it('keeps the chain alive when the args effect flushes after a round was scheduled', () => {
+      const { execute } = build(
+        withLongPolling<QueryArgs>({ nextArgs: () => ({ queryParams: { cursor: 1 } }) }),
+        [withArgs<QueryArgs>(() => ({ queryParams: { cursor: 0 } }))],
+        { hasWithArgsFeature: true },
+      );
+
+      execute({ args: { queryParams: { cursor: 0 } } });
+      settle({ cursor: 1 });
+
+      TestBed.tick();
+      vi.advanceTimersByTime(250);
+
+      expect(httpTesting.expectOne(() => true).request.url).toContain('cursor=1');
+    });
+
+    it('throws when used on a method that cannot auto execute', () => {
+      expect(() =>
+        build(withLongPolling<QueryArgs>({ nextArgs: () => null }), [], {
+          shouldAutoExecuteMethod: false,
+          method: 'POST',
+        }),
+      ).toThrow(/only supported for GET, HEAD, OPTIONS/);
+    });
+
+    it('throws when combined with withPolling', () => {
+      expect(() =>
+        build(withLongPolling<QueryArgs>({ nextArgs: () => null }), [], { hasPollingFeature: true }),
+      ).toThrow(/cannot be used on the same query/);
+    });
+
+    it('does not retain a settled round in the cache once the chain moves on', () => {
+      const { execute, deps } = build(
+        withLongPolling<QueryArgs>({
+          nextArgs: (response) => ({ queryParams: { cursor: (response as { cursor: number }).cursor } }),
+        }),
+      );
+
+      execute({ args: { queryParams: { cursor: 0 } } });
+      settle({ cursor: 1 });
+
+      vi.advanceTimersByTime(250);
+      settle({ cursor: 2 });
+
+      const keys = deps.client.repository.subtle.cacheEntries().map((e) => e.key);
+      expect(keys.filter((k) => k.includes('cursor=0'))).toEqual([]);
     });
   });
 });

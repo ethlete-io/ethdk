@@ -439,10 +439,14 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   const cacheVersion = signal(0);
   const bumpCacheVersion = () => cacheVersion.update((v) => v + 1);
 
-  const resolveKeepUnusedFor = (creatorOptions: CreateQueryCreatorOptions | undefined, shouldCache: boolean) => {
+  const resolveKeepUnusedFor = (
+    creatorOptions: CreateQueryCreatorOptions | undefined,
+    shouldCache: boolean,
+    override: number | undefined,
+  ) => {
     if (config.retentionEnabled === false || !shouldCache) return 0;
 
-    return Math.max(0, creatorOptions?.keepUnusedFor ?? config.keepUnusedFor ?? DEFAULT_KEEP_UNUSED_FOR);
+    return Math.max(0, override ?? creatorOptions?.keepUnusedFor ?? config.keepUnusedFor ?? DEFAULT_KEEP_UNUSED_FOR);
   };
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
@@ -480,7 +484,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       : false;
 
     const trackingKey = cacheKey || generateUuid();
-    const keepUnusedFor = resolveKeepUnusedFor(creatorOptions, shouldCache);
+    const keepUnusedFor = resolveKeepUnusedFor(creatorOptions, shouldCache, runQueryOptions?.keepUnusedFor);
     const isMultiTabSyncEnabled = creatorOptions?.multiTabSync !== false;
     const isSecure = options.isSecure ?? false;
 

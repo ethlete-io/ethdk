@@ -4,12 +4,7 @@ import { ColorTheme, ProvideColorDirective, provideColorThemesWithTailwind4 } fr
 import '../../test-helpers';
 import { PROGRESS_STEPS_IMPORTS } from './progress-steps.imports';
 import { ProgressStepComponent, ProgressStepState } from './progress-step.component';
-
-const COLOR_THEMES: ColorTheme[] = [
-  { name: 'danger', type: 'error', primary: { color: { default: '220 38 38' }, onColor: { default: '255 255 255' } } },
-  { name: 'sunshine', type: 'warning', primary: { color: { default: '234 179 8' }, onColor: { default: '0 0 0' } } },
-  { name: 'grass', type: 'success', primary: { color: { default: '22 163 74' }, onColor: { default: '255 255 255' } } },
-];
+import { TEST_SEMANTIC_COLOR_THEMES } from '../testing/color-themes';
 
 @Component({
   selector: 'et-test-progress-step-host',
@@ -69,7 +64,7 @@ describe('ProgressStepComponent', () => {
     ['warning', 'et-triangle-exclamation', 'sunshine'],
     ['error', 'et-times', 'danger'],
   ] as const)('renders the %s outcome with its own icon and semantic theme', (state, iconName, themeName) => {
-    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES)] });
 
     const fixture = TestBed.createComponent(ProgressStepHostComponent);
     fixture.componentInstance.state.set(state);
@@ -84,7 +79,7 @@ describe('ProgressStepComponent', () => {
   });
 
   it('drops back to the surrounding theme when an outcome is cleared', () => {
-    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES)] });
 
     const fixture = TestBed.createComponent(ProgressStepHostComponent);
     fixture.componentInstance.state.set('error');
