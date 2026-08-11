@@ -45,12 +45,18 @@ ticket creation or the MR flow.
 the path:
 
 ```
-feat/FIP-2177-user-management                                  main feature branch  (Story)
-feat/FIP-2177-user-management/FIP-2178-user-password-reset     sub-feature branch   (Task)
-release/2026.04.28                                             release candidate
-release/2026.04.28/FIP-2222-button-not-visible                 release fix          (Bug)
-hotfix/FIP-2799-password-recovery-broken                       hotfix               (Bug)
+feat/FIP-2177-user-management                                      main feature branch  (Story)
+sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset     sub-feature branch   (Task)
+release/2026.04.28                                                 release candidate
+sub/release/2026.04.28/FIP-2222-button-not-visible                 release fix          (Bug)
+hotfix/FIP-2799-password-recovery-broken                           hotfix               (Bug)
 ```
+
+The `sub/` prefix on the nested shapes is not cosmetic: git cannot hold a ref that is both a
+branch and a directory of branches, so the unprefixed spelling the draft gives is uncreatable.
+See `plans/git-flow-system.md`. What matters here is that the prefix **keeps the parent's full
+path inside the child's name**, so Story-level roll-up stays a string operation on the branch
+name with no lookup.
 
 A sub-feature branch therefore carries **both** keys: the Story it belongs to and the Task
 being worked on. That is the whole parent-matching problem solved by convention rather than
@@ -545,10 +551,11 @@ titles have proven insufficient by then.
 hosted backend or cross-device sync; a Jira Data Center provider (keep the seam, do not
 build it); non-Tempo worklog targets.
 
-**Sequencing note.** Steps 1-2 of `plans/git-flow-system.md`'s rollout - the grammar config,
-the parser and `check`/`explain` - come before phase 1 here, because the correlation engine has
-nothing to attribute time with until the parser exists. They are small and independently
-useful, which makes them a good first slice of the whole system.
+**Sequencing note.** ~~Steps 1-2 of `plans/git-flow-system.md`'s rollout - the grammar config,
+the parser and `check`/`explain` - come before phase 1 here~~ **- satisfied.** The parser ships in
+`@ethlete/agent-rules/git-flow`, and `planStart` is the seam the prospective ticket → branch flow
+plugs into. Phase 1 is unblocked; the rest of that plan's rollout (adoption, gating) runs
+alongside and only affects how much of a day arrives pre-labelled.
 
 ## Open questions
 
@@ -556,9 +563,11 @@ useful, which makes them a good first slice of the whole system.
    hierarchy before building the create flows. Blocks phase 2, not phase 1.
 2. **The story-subject meta field** - which Jira field holds `user-management` in
    `feat/FIP-2177-user-management`. Needs a real instance to name.
-3. **Whether `git-flow-draft.md` lands as written**, especially nested sub-feature branches -
-   the grammar config absorbs changes, but the nesting assumption is load-bearing for
-   Story-level roll-up.
+3. ~~**Whether `git-flow-draft.md` lands as written**, especially nested sub-feature branches~~
+   **Resolved for the load-bearing part.** Nesting stays, under a `sub/` prefix, and the parent's
+   full path stays inside the child's name - so Story-level roll-up is safe. What is still open is
+   adoption, not shape: the 2026-08-11 baseline in `plans/git-flow-system.md` has 3 of 125
+   fut-frontend branches conforming, so the no-key path carries most of the day for now.
 4. **Tempo attribute writability** - whether a custom attribute can hold the app's worklog id,
    or whether the marker has to live in the description.
 5. **Working-hours and billability policy** - is time outside configured hours proposed at
