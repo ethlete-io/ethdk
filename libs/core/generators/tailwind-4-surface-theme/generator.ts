@@ -7,12 +7,26 @@ type SurfaceThemeColor = `${number} ${number} ${number}`;
 
 type SurfaceType = 'light' | 'dark';
 
-type SurfaceInteractionColor = {
+type SurfaceInteractionColorMap = {
   default: SurfaceThemeColor;
   hover: SurfaceThemeColor;
   focus: SurfaceThemeColor;
   active: SurfaceThemeColor;
   disabled: SurfaceThemeColor;
+};
+
+type SurfaceOnInteractionColorMap = {
+  default: SurfaceThemeColor;
+  hover?: SurfaceThemeColor;
+  focus?: SurfaceThemeColor;
+  active?: SurfaceThemeColor;
+  disabled?: SurfaceThemeColor;
+};
+
+type SurfaceInteractionColor = {
+  color: SurfaceInteractionColorMap;
+  onColor?: SurfaceOnInteractionColorMap;
+  inkColor?: SurfaceOnInteractionColorMap;
 };
 
 type SurfaceTheme = {
@@ -239,9 +253,68 @@ const INTERACTION_KEYS = ['default', 'hover', 'focus', 'active', 'disabled'] as 
 const isInteractionKey = (name: string): name is (typeof INTERACTION_KEYS)[number] =>
   INTERACTION_KEYS.some((key) => key === name);
 
+const SWATCH_KEYS = ['color', 'onColor', 'inkColor'] as const;
+
+const isSwatchKey = (name: string): name is (typeof SWATCH_KEYS)[number] => SWATCH_KEYS.some((key) => key === name);
+
+function parseInteractionColorMap(obj: ObjectLiteralExpression): Partial<SurfaceInteractionColorMap> {
+  const map: Partial<SurfaceInteractionColorMap> = {};
+
+  for (const prop of obj.getProperties()) {
+    if (!prop.isKind(SyntaxKind.PropertyAssignment)) continue;
+
+    const name = prop.getName();
+    const initializer = prop.getInitializer();
+
+    if (initializer?.isKind(SyntaxKind.StringLiteral) && isInteractionKey(name)) {
+      map[name] = initializer.getLiteralValue() as SurfaceThemeColor;
+    }
+  }
+
+  return map;
+}
+
+function parseInteractionColor(obj: ObjectLiteralExpression, themeName: string): SurfaceInteractionColor | undefined {
+  const swatch: Partial<SurfaceInteractionColor> = {};
+
+  for (const prop of obj.getProperties()) {
+    if (!prop.isKind(SyntaxKind.PropertyAssignment)) continue;
+
+    const name = prop.getName();
+    const initializer = prop.getInitializer();
+
+    if (isInteractionKey(name)) {
+      throw new Error(
+        `Surface theme "${themeName}" uses the old flat \`interactionColor\` shape. It now takes a swatch: ` +
+          `{ color: { default, hover, focus, active, disabled }, onColor?, inkColor? }. ` +
+          `Run \`nx g @ethlete/core:migrate-surface-interaction-swatch\` to convert your themes.`,
+      );
+    }
+
+    if (!initializer?.isKind(SyntaxKind.ObjectLiteralExpression) || !isSwatchKey(name)) continue;
+
+    const map = parseInteractionColorMap(initializer);
+
+    if (name === 'color') {
+      if (map.default && map.hover && map.focus && map.active && map.disabled) {
+        swatch.color = map as SurfaceInteractionColorMap;
+      }
+
+      continue;
+    }
+
+    if (map.default) {
+      swatch[name] = map as SurfaceOnInteractionColorMap;
+    }
+  }
+
+  return swatch.color ? (swatch as SurfaceInteractionColor) : undefined;
+}
+
 function parseSurfaceThemeObject(obj: ObjectLiteralExpression): SurfaceTheme {
   const properties = obj.getProperties();
   const theme: Partial<SurfaceTheme> = {};
+  let interactionColorObj: ObjectLiteralExpression | null = null;
 
   for (const prop of properties) {
     if (!prop.isKind(SyntaxKind.PropertyAssignment)) {
@@ -263,27 +336,7 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression): SurfaceTheme {
     }
 
     if (propName === 'interactionColor' && initializer.isKind(SyntaxKind.ObjectLiteralExpression)) {
-      const interactionProps = initializer.getProperties();
-      const interactionColor: Partial<SurfaceInteractionColor> = {};
-
-      for (const iProp of interactionProps) {
-        if (!iProp.isKind(SyntaxKind.PropertyAssignment)) continue;
-        const iPropName = iProp.getName();
-        const iInit = iProp.getInitializer();
-        if (iInit?.isKind(SyntaxKind.StringLiteral) && isInteractionKey(iPropName)) {
-          interactionColor[iPropName] = iInit.getLiteralValue() as SurfaceThemeColor;
-        }
-      }
-
-      if (
-        interactionColor.default &&
-        interactionColor.hover &&
-        interactionColor.focus &&
-        interactionColor.active &&
-        interactionColor.disabled
-      ) {
-        theme.interactionColor = interactionColor as SurfaceInteractionColor;
-      }
+      interactionColorObj = initializer;
       continue;
     }
 
@@ -323,6 +376,10 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression): SurfaceTheme {
     throw new Error(
       'SurfaceTheme must have name, type, elevation, background, color, colorMuted, colorSubtle, and border properties',
     );
+  }
+
+  if (interactionColorObj) {
+    theme.interactionColor = parseInteractionColor(interactionColorObj, theme.name);
   }
 
   return theme as SurfaceTheme;
@@ -457,21 +514,17 @@ function generateSurfaceThemeCss(
     tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}-border: rgb(${theme.border});`);
 
     if (theme.interactionColor) {
-      tailwindVars.push(
-        `  --color-${utilityPrefix}-surface-${name}-interaction: rgb(${theme.interactionColor.default});`,
-      );
-      tailwindVars.push(
-        `  --color-${utilityPrefix}-surface-${name}-interaction-hover: rgb(${theme.interactionColor.hover});`,
-      );
-      tailwindVars.push(
-        `  --color-${utilityPrefix}-surface-${name}-interaction-focus: rgb(${theme.interactionColor.focus});`,
-      );
-      tailwindVars.push(
-        `  --color-${utilityPrefix}-surface-${name}-interaction-active: rgb(${theme.interactionColor.active});`,
-      );
-      tailwindVars.push(
-        `  --color-${utilityPrefix}-surface-${name}-interaction-disabled: rgb(${theme.interactionColor.disabled});`,
-      );
+      const { color, onColor, inkColor } = theme.interactionColor;
+
+      pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-interaction`, color);
+
+      if (onColor) {
+        pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-on-interaction`, onColor);
+      }
+
+      if (inkColor) {
+        pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-interaction-ink`, inkColor);
+      }
     }
 
     tailwindVars.push('');
@@ -575,12 +628,48 @@ ${tailwindVars.join('\n')}
 ${themeVars.join('\n')}
 }
 
-${aliasBlock}`;
+${aliasBlock}
+${buildSurfaceColorScope(runtimePrefix)}`;
+}
+
+// The reserved `surface` color scope. It bridges the two theming systems - color variables out of
+// surface variables - so `[etProvideColor]="'surface'"` renders a component in the neutral of
+// whatever surface it sits on. It lives here rather than in the SDK's own CSS because a stylesheet
+// shipped with `ProvideColorDirective` would land in every bundle that themes anything, and only
+// apps that use the scope should pay for it.
+function buildSurfaceColorScope(runtimePrefix: string): string {
+  const tint = `var(--${runtimePrefix}-surface-interaction, var(--${runtimePrefix}-surface-color))`;
+  const on = `var(--${runtimePrefix}-surface-on-interaction, var(--${runtimePrefix}-surface-background))`;
+  const ink = `var(--${runtimePrefix}-surface-interaction-ink, var(--${runtimePrefix}-surface-color))`;
+
+  const state = (name: string, source: string, fallback: string) =>
+    INTERACTION_STATE_SUFFIXES.map(
+      (suffix) =>
+        `    --${runtimePrefix}-color-${name}${suffix}: ${suffix ? `var(--${runtimePrefix}-surface-${source}${suffix}, ${fallback})` : fallback};`,
+    ).join('\n');
+
+  return `/* The reserved \`surface\` color: resolves the color tokens from the ambient surface's neutral swatch. */
+@layer base {
+  .${runtimePrefix}-color--surface {
+${state('primary', 'interaction', tint)}
+
+${state('on-primary', 'on-interaction', on)}
+
+${state('primary-ink', 'interaction-ink', ink)}
+  }
+}
+`;
 }
 
 // Dynamic surface color declarations (unindented). Emitted in `@theme` (so Tailwind generates
 // the utilities) and re-declared on every surface selector (so the utilities resolve per scope).
 function buildDynamicSurfaceColors(utilityPrefix: string, runtimePrefix: string): string[] {
+  // `on-interaction` and `interaction-ink` are optional per theme, so each falls back to the
+  // surface's own background/color - the same defaults the `.<runtimePrefix>-color--surface`
+  // bridge applies.
+  const onFallback = `var(--${runtimePrefix}-surface-background)`;
+  const inkFallback = `var(--${runtimePrefix}-surface-color)`;
+
   return [
     `--color-${utilityPrefix}-surface-bg: rgb(var(--${runtimePrefix}-surface-background));`,
     `--color-${utilityPrefix}-surface: rgb(var(--${runtimePrefix}-surface-color));`,
@@ -592,7 +681,52 @@ function buildDynamicSurfaceColors(utilityPrefix: string, runtimePrefix: string)
     `--color-${utilityPrefix}-surface-interaction-focus: rgb(var(--${runtimePrefix}-surface-interaction-focus));`,
     `--color-${utilityPrefix}-surface-interaction-active: rgb(var(--${runtimePrefix}-surface-interaction-active));`,
     `--color-${utilityPrefix}-surface-interaction-disabled: rgb(var(--${runtimePrefix}-surface-interaction-disabled));`,
+    ...INTERACTION_STATE_SUFFIXES.map(
+      (suffix) =>
+        `--color-${utilityPrefix}-surface-on-interaction${suffix}: rgb(var(--${runtimePrefix}-surface-on-interaction${suffix}, ${onFallback}));`,
+    ),
+    ...INTERACTION_STATE_SUFFIXES.map(
+      (suffix) =>
+        `--color-${utilityPrefix}-surface-interaction-ink${suffix}: rgb(var(--${runtimePrefix}-surface-interaction-ink${suffix}, ${inkFallback}));`,
+    ),
   ];
+}
+
+const INTERACTION_STATE_SUFFIXES = ['', '-hover', '-focus', '-active', '-disabled'] as const;
+
+// Fills the optional states from the ones that are set, matching how the color theme generator
+// resolves a swatch: hover falls back to default, focus to hover, active and disabled to default.
+function resolveInteractionStates(map: SurfaceOnInteractionColorMap): Record<string, SurfaceThemeColor> {
+  const hover = map.hover || map.default;
+
+  return {
+    '': map.default,
+    '-hover': hover,
+    '-focus': map.focus || hover,
+    '-active': map.active || map.default,
+    '-disabled': map.disabled || map.default,
+  };
+}
+
+function pushStaticInteractionColors(vars: string[], name: string, map: SurfaceOnInteractionColorMap): void {
+  const states = resolveInteractionStates(map);
+
+  for (const suffix of INTERACTION_STATE_SUFFIXES) {
+    vars.push(`  ${name}${suffix}: rgb(${states[suffix]});`);
+  }
+}
+
+function pushRuntimeInteractionVars(
+  vars: string[],
+  name: string,
+  map: SurfaceOnInteractionColorMap,
+  indent: string,
+): void {
+  const states = resolveInteractionStates(map);
+
+  for (const suffix of INTERACTION_STATE_SUFFIXES) {
+    vars.push(`${indent}${name}${suffix}: ${states[suffix]};`);
+  }
 }
 
 function pushSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme, indent: string): void {
@@ -605,11 +739,17 @@ function pushSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTh
   vars.push(`${indent}--${runtimePrefix}-surface-elevation: ${theme.elevation};`);
 
   if (theme.interactionColor) {
-    vars.push(`${indent}--${runtimePrefix}-surface-interaction: ${theme.interactionColor.default};`);
-    vars.push(`${indent}--${runtimePrefix}-surface-interaction-hover: ${theme.interactionColor.hover};`);
-    vars.push(`${indent}--${runtimePrefix}-surface-interaction-focus: ${theme.interactionColor.focus};`);
-    vars.push(`${indent}--${runtimePrefix}-surface-interaction-active: ${theme.interactionColor.active};`);
-    vars.push(`${indent}--${runtimePrefix}-surface-interaction-disabled: ${theme.interactionColor.disabled};`);
+    const { color, onColor, inkColor } = theme.interactionColor;
+
+    pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-interaction`, color, indent);
+
+    if (onColor) {
+      pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-on-interaction`, onColor, indent);
+    }
+
+    if (inkColor) {
+      pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-interaction-ink`, inkColor, indent);
+    }
   }
 }
 

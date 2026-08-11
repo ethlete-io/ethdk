@@ -13,26 +13,6 @@
     margin-inline: -4px;
   }
 
-  /* `mutedUntilPressed` already keeps the resting trigger neutral; this does the same for the open
-     state, where the icon-button would otherwise reach for the accent. Nothing in a trail is ever
-     "active" in that sense — an accent-filled control mid-trail is the loudest thing in a row of muted
-     text — so the open state is the same neutral tint, one step stronger, which is enough to read as
-     held open next to the panel it opened. */
-  .et-breadcrumb .et-breadcrumb-overflow-trigger[data-pressed='true'] {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
-    color: var(--et-surface-color-solid, CanvasText);
-
-    @media (hover: hover) {
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
-      }
-    }
-
-    &:active {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 28%, transparent);
-    }
-  }
-
   .et-breadcrumb-overflow-list {
     display: flex;
     flex-direction: column;

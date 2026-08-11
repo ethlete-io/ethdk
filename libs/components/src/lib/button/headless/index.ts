@@ -1,3 +1,4 @@
+export * from './button-color.directive';
 export * from './button.directive';
 export * from './split-button-action.directive';
 export * from './split-button-errors';

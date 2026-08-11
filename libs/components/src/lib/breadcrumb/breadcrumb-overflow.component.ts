@@ -24,7 +24,7 @@ import { BreadcrumbDirective } from './headless';
       class="et-breadcrumb-overflow-trigger"
       et-icon-button
       etToggletipTrigger
-      mutedUntilPressed
+      color="surface"
       size="xs"
       type="button"
       variant="transparent"

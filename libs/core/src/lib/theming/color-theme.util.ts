@@ -74,6 +74,19 @@ export type RegisteredColorThemeName = EthleteColorThemeNameRegistry extends { n
   ? N
   : string;
 
+/**
+ * Reserved color name. Resolves the color tokens from the ambient surface's neutral swatch
+ * (`SurfaceTheme['interactionColor']`) instead of a registered accent, so a secondary action can
+ * read as chrome without the app registering a neutral color theme. Apps must not register a color
+ * theme under this name.
+ */
+export const SURFACE_COLOR = 'surface';
+
+export type SurfaceColor = typeof SURFACE_COLOR;
+
+/** Everything `[etProvideColor]` accepts: a registered theme name, a theme object, `surface`, or nothing. */
+export type ColorThemeInput = RegisteredColorThemeName | SurfaceColor | ColorTheme | null;
+
 export const createCssColorThemeName = (name: string) => name.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
 
 const COLOR_THEMES_DEF = /* @__PURE__ */ defineStaticProvider<ColorTheme[]>(undefined, {
@@ -89,10 +102,15 @@ const COLOR_THEMES_PREFIX_DEF = /* @__PURE__ */ defineStaticProvider('et', {
 export const ɵProvideColorThemesPrefix = /* @__PURE__ */ toProvideFn(COLOR_THEMES_PREFIX_DEF);
 export const injectColorThemesPrefix = /* @__PURE__ */ toInjectFn(COLOR_THEMES_PREFIX_DEF);
 
-export const provideColorThemesWithTailwind4 = (themes: ColorTheme[], prefix = 'et') => [
-  ɵProvideColorThemes(themes),
-  ɵProvideColorThemesPrefix(prefix),
-];
+export const provideColorThemesWithTailwind4 = (themes: ColorTheme[], prefix = 'et') => {
+  if (isDevMode() && themes.some((theme) => theme.name === SURFACE_COLOR)) {
+    console.error(
+      `[provideColorThemesWithTailwind4] "${SURFACE_COLOR}" is a reserved color name that resolves to the ambient surface's neutral swatch. Rename your theme.`,
+    );
+  }
+
+  return [ɵProvideColorThemes(themes), ɵProvideColorThemesPrefix(prefix)];
+};
 
 const injectColorThemeByType = (type: ColorThemeType) => {
   const themes = injectColorThemes();

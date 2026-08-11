@@ -73,12 +73,24 @@ A surface theme is a named set of tokens for a complete UI layer. Unlike color t
   </tr>
   <tr>
     <td>`interactionColor?`</td>
-    <td>RGB per state</td>
-    <td>Overlay color for interactive surfaces (hover, focus, active, disabled). Used by `[etSurfaceInteractive]`.</td>
+    <td>Swatch</td>
+    <td>
+      The surface's neutral swatch: `color` (RGB per state) is the tint `[etSurfaceInteractive]` mixes for
+      hover/focus/active/disabled feedback, with optional `onColor` and `inkColor` maps completing it into the palette
+      `[etProvideColor]="'surface'"` resolves.
+    </td>
   </tr>
 </table>
 
 Color values use space-separated channel numbers (same format as color themes): `"R G B"`.
+
+```ts
+interactionColor: {
+  color: { default: '115 115 115', hover: '64 64 64', focus: '64 64 64', active: '23 23 23', disabled: '180 180 180' },
+  onColor: { default: '255 255 255' },   // text on a filled neutral; defaults to `background`
+  inkColor: { default: '23 23 23' },     // text/borders on a tinted neutral; defaults to `color`
+}
+```
 
 ---
 

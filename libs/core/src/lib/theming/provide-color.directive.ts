@@ -15,11 +15,11 @@ import {
   untracked,
 } from '@angular/core';
 import {
-  ColorTheme,
+  ColorThemeInput,
   createCssColorThemeName,
   injectColorThemes,
   injectColorThemesPrefix,
-  RegisteredColorThemeName,
+  SURFACE_COLOR,
 } from './color-theme.util';
 
 export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorProvider');
@@ -47,7 +47,7 @@ export const resolveAppRootColorProvider = (appRef: ApplicationRef): ProvideColo
 
 const FORCED_COLOR_UNSET = /* @__PURE__ */ Symbol('FORCED_COLOR_UNSET');
 
-type ForcedColorState = RegisteredColorThemeName | ColorTheme | null | typeof FORCED_COLOR_UNSET;
+type ForcedColorState = ColorThemeInput | typeof FORCED_COLOR_UNSET;
 
 @Directive({
   selector: '[etProvideColor]',
@@ -65,9 +65,7 @@ export class ProvideColorDirective {
   private currentProviderSync: EffectRef | null = null;
   private forcedColor = signal<ForcedColorState>(FORCED_COLOR_UNSET);
 
-  color: InputSignal<RegisteredColorThemeName | ColorTheme | null | undefined> = input<
-    RegisteredColorThemeName | ColorTheme | null
-  >(undefined, { alias: 'etProvideColor' });
+  color: InputSignal<ColorThemeInput | undefined> = input<ColorThemeInput>(undefined, { alias: 'etProvideColor' });
 
   effectiveColor = computed(() => {
     const forcedColor = this.forcedColor();
@@ -86,7 +84,7 @@ export class ProvideColorDirective {
    * consumers that re-apply context across detached DOM (overlay panes) must use this instead
    * of `effectiveColor` or a passive in-between provider (e.g. a form field's) erases the theme.
    */
-  resolvedColor = computed((): RegisteredColorThemeName | ColorTheme | null | undefined => {
+  resolvedColor = computed((): ColorThemeInput | undefined => {
     const own = this.effectiveColor();
     const ownName = typeof own === 'object' && own !== null ? own.name : own;
 
@@ -100,6 +98,8 @@ export class ProvideColorDirective {
   colorName = computed(() => {
     const raw = this.effectiveColor();
     const value = typeof raw === 'object' && raw !== null ? raw.name : raw;
+
+    if (value === SURFACE_COLOR) return SURFACE_COLOR;
 
     if (!this.themes || !value) return;
 
@@ -152,7 +152,7 @@ export class ProvideColorDirective {
   }
 
   /** @internal */
-  forceColor(color: RegisteredColorThemeName | ColorTheme | null) {
+  forceColor(color: ColorThemeInput) {
     this.forcedColor.set(color);
   }
 

@@ -4,9 +4,11 @@ import {
   GitFlowConfig,
   parseBranch,
   resolveThroughBase,
+  stripRefPrefix,
 } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock } from '../model/block';
 import { Confidence, Evidence } from '../model/evidence';
+import { RecurringPattern, patternAt } from './recurrence';
 
 export type AttributedBlock = {
   block: ActivityBlock;
@@ -19,6 +21,22 @@ export type AttributedBlock = {
   evidence: Evidence[];
 };
 
+/**
+ * An issue a provider saw the user in outside this machine — a merge request they pushed to, an
+ * issue they opened. Pre-fetched by the provider: the core never makes a call of its own.
+ */
+export type IssueActivity = {
+  kind: 'merge-request' | 'issue-view';
+  issueKey: string;
+  at: Date;
+  /** The merge request's source branch, when the activity came from one. */
+  branch?: string;
+  /** Shown verbatim in review — "merge request !412 on `feat/FIP-2177-club-pack`". */
+  detail: string;
+  /** The wording this lends to a description, such as a merge request title. */
+  summary?: string;
+};
+
 export type AttributeOptions = {
   config?: GitFlowConfig;
   /**
@@ -26,6 +44,10 @@ export type AttributeOptions = {
    * nothing is normal and simply leaves the block keyless.
    */
   resolveBase?: (branch: string) => string | undefined;
+  /** Merge request and issue-view activity for the day, from the Jira and GitLab providers. */
+  activity?: IssueActivity[];
+  /** Standing commitments read out of Tempo history by `detectRecurringPatterns`. */
+  patterns?: RecurringPattern[];
 };
 
 const keyFromTitle = (title: string, config: GitFlowConfig) => {
@@ -54,9 +76,32 @@ const resolveBranch = (options: {
 };
 
 /**
- * Scores one block against the branch grammar. Deterministic by design: a conforming branch name
- * already states both keys, so nothing here guesses. A block that reaches the end without an
- * `issueKey` is what the reasoning provider is for — it is a first-class outcome, not a failure.
+ * A merge request opened for exactly this branch names the issue as reliably as the branch would
+ * have; an issue merely opened while the block ran is a coincidence away from being wrong, so it
+ * lands a tier lower.
+ */
+const activityFor = (options: { block: ActivityBlock; activity: IssueActivity[] }) => {
+  const { block, activity } = options;
+  const branch = block.context.branch ? stripRefPrefix(block.context.branch) : undefined;
+  const onBranch = branch
+    ? activity.find((entry) => entry.branch && stripRefPrefix(entry.branch) === branch)
+    : undefined;
+
+  if (onBranch) return { entry: onBranch, confidence: 'likely' as const };
+
+  const during = activity.find(
+    (entry) => entry.at.getTime() >= block.from.getTime() && entry.at.getTime() <= block.to.getTime(),
+  );
+
+  return during ? { entry: during, confidence: 'weak' as const } : undefined;
+};
+
+/**
+ * Scores one block against the attribution ladder — branch grammar, then merge request and
+ * issue-view activity, then a recurring Tempo pattern, then a key in a window title. Deterministic
+ * by design: a conforming branch name already states both keys, so nothing here guesses. A block
+ * that reaches the end without an `issueKey` is what the reasoning provider is for — it is a
+ * first-class outcome, not a failure.
  */
 export const attribute = (options: { block: ActivityBlock } & AttributeOptions): AttributedBlock => {
   const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
@@ -84,6 +129,28 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
         evidence,
       };
     }
+  }
+
+  const activity = options.activity?.length ? activityFor({ block, activity: options.activity }) : undefined;
+
+  if (activity) {
+    const { entry } = activity;
+
+    evidence.push({ kind: entry.kind, at: entry.at, detail: entry.detail, summary: entry.summary });
+
+    return { block, issueKey: entry.issueKey, confidence: activity.confidence, evidence };
+  }
+
+  const pattern = options.patterns?.length ? patternAt({ patterns: options.patterns, at: block.from }) : undefined;
+
+  if (pattern) {
+    evidence.push({
+      kind: 'tempo-history',
+      at: block.from,
+      detail: `${pattern.issueKey} logged at this time on ${pattern.occurrences} earlier weeks`,
+    });
+
+    return { block, issueKey: pattern.issueKey, confidence: 'weak', evidence };
   }
 
   const titleKey = block.evidence

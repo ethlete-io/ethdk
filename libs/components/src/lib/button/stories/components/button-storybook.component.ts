@@ -14,7 +14,7 @@ import {
 } from '../../../icon';
 import { BUTTON_SIZES, BUTTON_VARIANTS } from '../../button.component';
 import { BUTTON_IMPORTS } from '../../button.imports';
-import { BUTTON_TONES, ButtonTone } from '../../headless';
+import { ButtonColor } from '../../headless';
 import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES } from '../../window-control-button.component';
 
 const BUTTON_EXAMPLES = [
@@ -111,7 +111,7 @@ const WINDOW_CONTROL_BUTTON_EXAMPLES = [
   imports: [...BUTTON_IMPORTS],
 })
 export class ButtonTextStorybookComponent {
-  public color = input('brand');
+  public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
 
@@ -134,8 +134,7 @@ export class ButtonTextStorybookComponent {
                 [disabled]="disabled()"
                 [loading]="loading()"
                 [pressed]="pressed()"
-                [tone]="tone()"
-                [mutedUntilPressed]="mutedUntilPressed()"
+                [pressedColor]="pressedColor()"
                 et-button
                 type="button"
               >
@@ -151,12 +150,11 @@ export class ButtonTextStorybookComponent {
   imports: [...BUTTON_IMPORTS],
 })
 export class ButtonSurfaceStorybookComponent {
-  public color = input('brand');
+  public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public pressed = input(false, { transform: booleanAttribute });
-  public tone = input<ButtonTone>(BUTTON_TONES.THEME);
-  public mutedUntilPressed = input(false, { transform: booleanAttribute });
+  public pressedColor = input<ButtonColor | undefined>(undefined);
 
   public readonly VARIANTS = SURFACE_VARIANTS;
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
@@ -179,8 +177,7 @@ export class ButtonSurfaceStorybookComponent {
                 [loading]="loading()"
                 [pressed]="pressed()"
                 [attr.aria-label]="buttonExample.iconLabel"
-                [tone]="tone()"
-                [mutedUntilPressed]="mutedUntilPressed()"
+                [pressedColor]="pressedColor()"
                 et-icon-button
                 type="button"
               >
@@ -197,12 +194,11 @@ export class ButtonSurfaceStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonIconStorybookComponent {
-  public color = input('brand');
+  public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public pressed = input(false, { transform: booleanAttribute });
-  public tone = input<ButtonTone>(BUTTON_TONES.THEME);
-  public mutedUntilPressed = input(false, { transform: booleanAttribute });
+  public pressedColor = input<ButtonColor | undefined>(undefined);
 
   public readonly VARIANTS = SURFACE_VARIANTS;
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
@@ -261,7 +257,7 @@ export class ButtonIconStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonFabStorybookComponent {
-  public color = input('brand');
+  public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
 
@@ -326,7 +322,7 @@ export class ButtonFabStorybookComponent {
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON, FOCUS_FRAME_ICON, GRID_2X2_ICON, TIMES_ICON)],
 })
 export class ButtonWindowControlStorybookComponent {
-  public color = input('brand');
+  public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public pressed = input(false, { transform: booleanAttribute });
@@ -354,8 +350,7 @@ export class ButtonWindowControlStorybookComponent {
                     [disabled]="disabled()"
                     [loading]="loading()"
                     [iconAlignment]="iconAlignment"
-                    [tone]="tone()"
-                    [mutedUntilPressed]="mutedUntilPressed()"
+                    [pressedColor]="pressedColor()"
                     et-button
                     type="button"
                   >
@@ -375,11 +370,10 @@ export class ButtonWindowControlStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonSurfaceIconStorybookComponent {
-  public color = input('brand');
+  public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
-  public tone = input<ButtonTone>(BUTTON_TONES.THEME);
-  public mutedUntilPressed = input(false, { transform: booleanAttribute });
+  public pressedColor = input<ButtonColor | undefined>(undefined);
 
   public readonly VARIANTS = SURFACE_VARIANTS;
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
@@ -418,7 +412,7 @@ export class ButtonSurfaceIconStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonTextIconStorybookComponent {
-  public color = input('brand');
+  public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
 

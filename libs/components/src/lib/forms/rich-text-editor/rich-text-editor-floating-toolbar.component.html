@@ -11,7 +11,8 @@
       [attr.aria-label]="toolLabel(def)"
       (mousedown)="$event.preventDefault()"
       (click)="def.run?.(editor())"
-      mutedUntilPressed
+      color="surface"
+      pressedColor="inherit"
       et-icon-button
       size="sm"
       type="button"

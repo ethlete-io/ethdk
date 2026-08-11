@@ -290,6 +290,25 @@ support both parent-field and issue-link parenting, chosen per project in settin
 this wrong means the create flow files tickets in the wrong place, which is worse than not
 having the flow.
 
+**Built** - `libs/timetrack/src/lib/jira/`, all of it through `TimetrackTransport`:
+
+- `client.ts` - Basic auth over the account email, host normalization, and status mapping into a
+  `JiraRequestError` that distinguishes a rejected credential from an invisible resource. The
+  credential is UTF-8 encoded before base64, because `btoa` alone throws on a non-ASCII email.
+- `search.ts` - the `/rest/api/3/search/jql` cursor pager, `maxPages`-bounded so a runaway JQL
+  cannot page forever against a rate-limited API.
+- `issue.ts` - `fetchJiraIssues$` / `fetchJiraIssueIds$`, batched 50 keys per JQL string. A key
+  Jira does not know is simply absent from the result: correlation can produce one from a typo in
+  a branch name, and one bad key must not fail the whole day.
+- `hierarchy.ts` - `describeJiraHierarchy$` reports the levels the instance actually has and a
+  `suggestedParenting` of `parent-field` or `issue-link`. It only ever suggests; settings choose.
+- `activity.ts` - the issue-view rung. `updatedBy(currentUser(), from, to)` is the only Jira
+  signal that carries a **timestamp**; `issueHistory()` (recently viewed) has none, so it cannot
+  place a block and is not used.
+
+Not built here: ADF description building and issue creation, which belong with the phase-2 create
+flows and would be dead code until then.
+
 ### Tempo Cloud (phase 1)
 
 API v4 at `api.tempo.io/4/`, Bearer token, **separate from Jira's credentials** - two
@@ -410,12 +429,21 @@ A pipeline of pure functions over an event window, each independently testable:
    recurring pattern (same weekday, same ticket) > window-title key. Calendar events with a
    matched Meet title and an accepted response become meeting proposals directly.
 
-   **Steps 2-4 are built** for everything that needs no network -
-   `libs/timetrack/src/lib/correlate/attribute.ts` covers the branch key, the base-inherited key
-   and the window-title fallback, mapping them onto `certain` / `likely` / `weak`. Base resolution
-   is injected as `resolveBase`, so the merge-base and the MR target plug in without the core
-   learning to make a call. Still missing from the ladder: MR/issue-view activity and the Tempo
-   recurring-pattern rung, both of which need a provider.
+   ~~**Steps 2-4 are built**~~ **- the whole ladder now exists.**
+   `libs/timetrack/src/lib/correlate/attribute.ts` runs branch key → merge-request/issue-view
+   activity → recurring Tempo pattern → window title, mapping them onto `certain` / `likely` /
+   `weak`. Everything a provider supplies arrives **pre-fetched and injected**, the same seam
+   `resolveBase` uses, so the core still makes no call: `activity: IssueActivity[]` and
+   `patterns: RecurringPattern[]`.
+
+   Two things the ladder's tiers forced. A merge request opened for **exactly this branch** names
+   the issue as reliably as the branch would have, so it is `likely`; an issue merely open while
+   the block ran is one coincidence away from wrong, so it is `weak`. And the recurring rung is
+   not "same weekday, same ticket" as the plan had it - `detectRecurringPatterns()`
+   (`recurrence.ts`) also requires a **consistent time of day**. Without that, one standing Monday
+   meeting attributes every Monday block to itself; a pair whose starts spread more than
+   `maxSpreadMinutes` (120) is a weekly habit, not a slot, and yields no pattern at all. Distinct
+   weeks are counted by date, so one busy Monday is one occurrence, not four.
 
 5. ~~**Merge and split.**~~ **Built** - `merge.ts`. Consecutive blocks on the same issue become one
    row, a context switch stays its own row however short it was, and blocks nothing attributed never
@@ -445,7 +473,9 @@ A pipeline of pure functions over an event window, each independently testable:
    needed one model change: `Evidence.summary` now carries the wording an observation lends to a
    description, next to the `detail` written for the UI - otherwise describing a row means parsing
    `abc1234 feat(user): …` back apart, which is exactly the fragility the two-field split avoids.
-   The MR title rung is still missing; it needs a provider.
+   The MR title now sits in that ladder too, between the agent session and the calendar title - it
+   describes a whole branch, so it is more general than a commit subject and more specific than a
+   meeting name.
 
 8. ~~**Explain.**~~ **Built** - `propose.ts` assembles `WorklogProposal`s carrying the evidence
    chain, the confidence and `observedMs` beside `durationMs`, so review can show what rounding did.
@@ -459,9 +489,8 @@ same events always produce the same day.
 Only blocks that reach step 5 with no candidate issue at all go to the reasoning provider - they
 come back from `propose()` as `unattributed`, never forced into a row.
 
-Not built, and both waiting on a provider rather than on a decision: the MR/issue-view and Tempo
-recurring-pattern rungs of step 4's ladder, and turning an accepted calendar event with a matched
-Meet title into a meeting proposal directly.
+Still not built: turning an accepted calendar event with a matched Meet title into a meeting
+proposal directly.
 
 ## The reasoning provider (agent CLI, not an API key)
 
@@ -586,10 +615,11 @@ silently discard a row you touched. Mark edited proposals and merge around them.
 **Phase 1 - the spine.** ~~event model, sessionizing, the branch-grammar parser, correlation~~
 **done** - `libs/timetrack` ships the four-layer model, the host ports and the whole deterministic
 pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `propose`, and
-`correlateDay` over all of them), with 64 fixture tests and no network, filesystem or Angular in it.
+`correlateDay` over all of them), with no network, filesystem or Angular in it, and the read-only
+Jira provider on top (113 tests).
 Remaining: encrypted store,
 the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
-watcher, Claude Code session logs, Jira + Tempo providers with attribute discovery and
+watcher, Claude Code session logs, the Tempo provider with work-attribute discovery and
 own-worklog upsert, Google Calendar, the day-review UI, tray, sync with diff preview. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
 day.
@@ -614,10 +644,13 @@ alongside and only affects how much of a day arrives pre-labelled.
 
 ## Open questions
 
-1. **The Jira hierarchy** (Story → Task) - resolve by reading the instance's issue types and
-   hierarchy before building the create flows. Blocks phase 2, not phase 1.
+1. **The Jira hierarchy** (Story → Task) - **the reader exists**; `describeJiraHierarchy$` reports
+   the instance's levels and whether the parent field can express the relation at all. What is
+   left is running it against the real instance and writing the answer into settings. Blocks
+   phase 2, not phase 1.
 2. **The story-subject meta field** - which Jira field holds `user-management` in
-   `feat/FIP-2177-user-management`. Needs a real instance to name.
+   `feat/FIP-2177-user-management`. Needs a real instance to name. Now a one-line config change
+   on both sides: `fetchJiraIssues$` takes `subjectField`, as `git-flow start` already does.
 3. ~~**Whether `git-flow-draft.md` lands as written**, especially nested sub-feature branches~~
    **Resolved for the load-bearing part.** Nesting stays, under a `sub/` prefix, and the parent's
    full path stays inside the child's name - so Story-level roll-up is safe. What is still open is

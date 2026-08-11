@@ -38,28 +38,39 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 
 - `variant`: `'filled' | 'outline' | 'tonal' | 'transparent'` - surface buttons default to `filled`, icon buttons to `transparent`. Text buttons and window controls have no variant.
 - `size`: `'xs' | 'sm' | 'md' | 'lg' | 'xl'` (default `md`; window controls: `sm | md | lg`).
-- `color` applies one of your app's [registered color themes](/core/theming). Theme names are project-specific - the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
+- `color` applies one of your app's [registered color themes](/core/theming), or `'surface'` - see below. Theme names are project-specific - the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
 - `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label (surface, text and FAB buttons - the single-icon flavors don't have it).
-- `tone`: `'theme' | 'surface'` (default `theme`, on surface and icon buttons) - see below.
+- `pressedColor` (surface / icon buttons) swaps the color theme while the button is `pressed` - see below.
 
-### Surface tone
+### The surface color
 
-`tone="surface"` takes the button's color from the [surface](/core/theming) it sits on instead of the
-ambient color theme, for the actions that shouldn't compete with the primary one - a cancel next to a
+`color="surface"` resolves the button's colors from the [surface](/core/theming) it sits on instead of
+an accent theme, for the actions that shouldn't compete with the primary one - a cancel next to a
 submit, a toolbar of icon buttons, chrome around content:
 
 ```html
-<button et-button variant="tonal" tone="surface" type="button">Cancel</button>
+<button et-button variant="tonal" color="surface" type="button">Cancel</button>
 ```
 
-Every variant keeps its structural signature (filled stays a solid-ish fill, outline keeps its
-border), so a row of surface-toned buttons still reads as a hierarchy - only the tint source changes,
-from `--et-theme-color-*` to the surface's neutral interaction color. Text and border follow the
-surface too, so it stays readable on light and dark surfaces alike, and it needs **no neutral color
-theme registered**.
+`surface` is a color theme like any other, so every variant keeps its structural signature (filled
+stays a fill, outline keeps its border) and a row of neutral buttons still reads as a hierarchy. Text
+and borders follow the surface too, so it stays readable on light and dark surfaces alike, and it
+needs **no neutral color theme registered**. What the neutral fill and its text look like comes from
+the surface theme's [`interactionColor` swatch](/core/theming#surface-themes).
 
-A pressed toggle stays surface-toned; its pressed state comes from the usual variant swap. Use
-`mutedUntilPressed` instead when the pressed state should pick the color theme up.
+### Neutral until pressed
+
+`pressedColor` applies a different theme while the button is `pressed`. Paired with `color="surface"`
+it is the toolbar toggle: neutral at rest, adopting the surrounding theme once active - which is what
+keeps a row of formatting buttons from reading as noise.
+
+```html
+<button [pressed]="isBold()" et-icon-button color="surface" pressedColor="inherit" type="button">…</button>
+```
+
+`inherit` means the color theme surrounding the button. Pass a theme name instead when the active
+state has its own meaning (`pressedColor="danger"` on a destructive toggle). Left unset, a pressed
+button keeps its resting theme and only its variant swaps.
 
 ## States
 
@@ -68,7 +79,7 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 - `disabled` and `loading` both make the button **inactive**: native `disabled` on `<button>`, `tabindex="-1"` on `<a>`, plus `aria-disabled`.
 - `loading` additionally overlays a size-matched spinner (`aria-busy`) on top of the hidden label.
 - `pressed` (surface / icon / window-control buttons) marks toggle state - `aria-pressed` is emitted by default, and the visual **variant swaps** while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance. The `emitAriaPressed` opt-out is bindable on the raw headless `[etButton]` and on icon buttons (for pressed-styled triggers that already announce state via `aria-expanded`), but not on the other styled flavors.
-- `mutedUntilPressed` (surface / icon buttons) keeps the button neutral until pressed, only then adopting its color theme - useful for toolbars. It is [surface tone](#surface-tone) released on press; `tone="surface"` keeps it for good.
+- `pressedColor` (surface / icon buttons) re-themes the button while pressed - see [neutral until pressed](#neutral-until-pressed).
 - `type` defaults to `'button'`, so forms don't submit accidentally.
 
 ## Anchors

@@ -21,34 +21,49 @@ import { TOOLBAR_IMPORTS } from '../toolbar.imports';
   template: `
     <div class="p-8 font-sans">
       <et-toolbar [orientation]="orientation()" aria-label="Text formatting" etAutoSurface>
-        <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Bold">
+        <button et-icon-button color="surface" pressedColor="inherit" size="sm" type="button" aria-label="Bold">
           <i etIcon="et-bold"></i>
         </button>
         <button
           [disabled]="disableItalic()"
           et-icon-button
-          mutedUntilPressed
+          color="surface"
+          pressedColor="inherit"
           size="sm"
           type="button"
           aria-label="Italic"
         >
           <i etIcon="et-italic"></i>
         </button>
-        <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Underline">
+        <button et-icon-button color="surface" pressedColor="inherit" size="sm" type="button" aria-label="Underline">
           <i etIcon="et-underline"></i>
         </button>
         <et-divider [orientation]="dividerOrientation()" decorative />
-        <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Bulleted list">
+        <button
+          et-icon-button
+          color="surface"
+          pressedColor="inherit"
+          size="sm"
+          type="button"
+          aria-label="Bulleted list"
+        >
           <i etIcon="et-list-bulleted"></i>
         </button>
-        <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Numbered list">
+        <button
+          et-icon-button
+          color="surface"
+          pressedColor="inherit"
+          size="sm"
+          type="button"
+          aria-label="Numbered list"
+        >
           <i etIcon="et-list-numbered"></i>
         </button>
         <et-divider [orientation]="dividerOrientation()" decorative />
-        <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Quote">
+        <button et-icon-button color="surface" pressedColor="inherit" size="sm" type="button" aria-label="Quote">
           <i etIcon="et-quote"></i>
         </button>
-        <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Link">
+        <button et-icon-button color="surface" pressedColor="inherit" size="sm" type="button" aria-label="Link">
           <i etIcon="et-link"></i>
         </button>
       </et-toolbar>

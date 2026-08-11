@@ -10,6 +10,11 @@
       "schema": "./migrate-provider-shape/schema.json",
       "description": "Rewrite destructured provider tuples into the tree-shakeable definition shape"
     },
+    "migrate-surface-interaction-swatch": {
+      "factory": "./migrate-surface-interaction-swatch/migration",
+      "schema": "./migrate-surface-interaction-swatch/schema.json",
+      "description": "Rewrite surface theme interactionColor maps into the { color, onColor, inkColor } swatch shape"
+    },
     "tailwind-4-color-theme": {
       "factory": "./tailwind-4-color-theme/generator",
       "schema": "./tailwind-4-color-theme/schema.json",

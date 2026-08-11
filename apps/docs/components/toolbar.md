@@ -8,14 +8,14 @@ import { TOOLBAR_IMPORTS } from '@ethlete/components';
 
 ```html
 <et-toolbar aria-label="Text formatting">
-  <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Bold">
+  <button et-icon-button color="surface" pressedColor="inherit" size="sm" type="button" aria-label="Bold">
     <i etIcon="et-bold"></i>
   </button>
-  <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Italic">
+  <button et-icon-button color="surface" pressedColor="inherit" size="sm" type="button" aria-label="Italic">
     <i etIcon="et-italic"></i>
   </button>
   <et-divider orientation="vertical" decorative />
-  <button et-icon-button mutedUntilPressed size="sm" type="button" aria-label="Link">
+  <button et-icon-button color="surface" pressedColor="inherit" size="sm" type="button" aria-label="Link">
     <i etIcon="et-link"></i>
   </button>
 </et-toolbar>
