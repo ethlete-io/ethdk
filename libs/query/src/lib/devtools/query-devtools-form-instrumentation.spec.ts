@@ -8,7 +8,9 @@ import { QueryDevtoolsFormHandle } from './query-devtools-form';
 
 /**
  * The devtools registrar and `injectQueryParamChanges` are both module-scoped, so - like
- * `query-form-signals.spec.ts` - every test loads the library on a fresh graph.
+ * `query-form-signals.spec.ts` - every test loads the library on a fresh graph. That re-transforms
+ * the whole barrel per test, which is what the raised timeout below is for: the default 5s is a
+ * budget for a test, not for a cold build of the library, and it runs out first on a busy machine.
  */
 const load = async () => {
   vi.resetModules();
@@ -47,7 +49,7 @@ const handleOf = (mod: Mod, name: string) => {
   return { entry, handle: entry.handle as QueryDevtoolsFormHandle };
 };
 
-describe('query form devtools instrumentation', () => {
+describe('query form devtools instrumentation', { timeout: 30_000 }, () => {
   afterEach(() => TestBed.resetTestingModule());
 
   const makeForm = (mod: Mod, injector: Injector, name: string) =>
