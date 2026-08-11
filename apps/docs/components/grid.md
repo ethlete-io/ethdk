@@ -124,7 +124,7 @@ const widgetsToSave = adapter.toExternal(state.items);
 
 The adapter's second type argument is the item payload - name it and both directions are typed, including the `data` the reverse mapper reads. The adapter maps one position per item, so a layout with several breakpoints has to pick which one round-trips (or map `item.layout` yourself).
 
-A `layout` is expected to hold one position per configured breakpoint. An omitted one is not an error, but it renders as a 1×1 item at the grid origin rather than being auto-placed, so the grid warns in dev mode naming the item and the breakpoints it is missing - the single-breakpoint adapter above trips exactly that. Spread the position across every breakpoint (or store all three) to silence it:
+A `layout` is expected to hold one position per configured breakpoint. An omitted one is not an error - the item is auto-placed there, in item order - but that arrangement ignores the positions the layout _does_ carry, so a layout covering only some breakpoints reads as the grid having lost the others. The grid warns about that in dev mode, naming the item and the breakpoints it is missing; the single-breakpoint adapter above trips exactly that. Spread the position across every breakpoint (or store all three) to silence it:
 
 ```ts
 (w) => {
@@ -132,6 +132,8 @@ A `layout` is expected to hold one position per configured breakpoint. An omitte
   return { id: w.uuid, type: w.kind, data: w, layout: { sm: position, md: position, lg: position } };
 };
 ```
+
+An empty `layout: {}` says "place this for me" and never warns - it is what `addItem` itself passes.
 
 The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` component visualizes the underlying cells while developing - it lives in its own `GRID_DEBUG_IMPORTS` barrel so it never reaches a production bundle.
 

@@ -393,13 +393,17 @@ export class GridDirective<TData = unknown> {
             // waiting for a breakpoint switch.
             const visitedBps = Object.keys(this.layoutOverrides());
             if (visitedBps.length > 0) {
+              const columnsByBp = new Map(this.breakpoints().map((bp) => [bp.name, bp.columns]));
               const restored: Record<string, GridLayoutEntry[]> = {};
+
               for (const bp of visitedBps) {
-                restored[bp] = initial.map((item) => ({
-                  id: item.id,
-                  position: item.layout[bp] ?? { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
-                }));
+                restored[bp] = this.entriesForBreakpoint({
+                  items: initial,
+                  breakpoint: bp,
+                  columns: columnsByBp.get(bp) ?? this.activeColumns(),
+                });
               }
+
               this.layoutOverrides.set(restored);
             }
 
@@ -451,27 +455,12 @@ export class GridDirective<TData = unknown> {
         const columns = this.activeColumns();
 
         if (!existing || existing.length !== items.length) {
-          const existingById = existing ? new Map(existing.map((e) => [e.id, e])) : new Map<string, GridLayoutEntry>();
-          const entries: GridLayoutEntry[] = [];
-
-          for (const item of items) {
-            const existingEntry = existingById.get(item.id);
-
-            if (existingEntry) {
-              entries.push(existingEntry);
-            } else {
-              const constraints = this.getConstraints(item.id);
-              const position =
-                item.layout[breakpoint] ??
-                autoPlace({
-                  entries,
-                  colSpan: constraints.minColSpan,
-                  rowSpan: constraints.minRowSpan,
-                  columns,
-                });
-              entries.push({ id: item.id, position });
-            }
-          }
+          const entries = this.entriesForBreakpoint({
+            items,
+            breakpoint,
+            columns,
+            existing: existing ? new Map(existing.map((e) => [e.id, e])) : null,
+          });
 
           const compacted = compactLayout({ entries, columns });
 
@@ -858,21 +847,7 @@ export class GridDirective<TData = unknown> {
     const overrides: Record<GridBreakpointName, GridLayoutEntry[]> = {};
 
     for (const [bpName, columns] of Object.entries(state.columns)) {
-      overrides[bpName] = items.map((item) => {
-        const constraints = this.getConstraintsForColumns(item.id, columns);
-
-        return {
-          id: item.id,
-          position:
-            item.layout[bpName] ??
-            autoPlace({
-              entries: [],
-              colSpan: constraints.minColSpan,
-              rowSpan: constraints.minRowSpan,
-              columns,
-            }),
-        };
-      });
+      overrides[bpName] = this.entriesForBreakpoint({ items, breakpoint: bpName, columns });
     }
 
     this.layoutOverrides.set(overrides);
@@ -901,10 +876,11 @@ export class GridDirective<TData = unknown> {
   }
 
   /**
-   * A layout key that is not a configured breakpoint is never read, and a configured breakpoint the
-   * layout omits falls back to a 1x1 item at the grid origin - silently, which reads as the grid
-   * having lost the layout. Neither is fatal (`addItem` auto-places a partial layout on purpose), so
-   * this warns rather than throws.
+   * A layout key that is not a configured breakpoint is never read, and a breakpoint a *partially*
+   * positioned layout omits is auto-placed in item order rather than mirroring the arrangement the
+   * other breakpoints spell out - both read as the grid having lost part of the layout. An entirely
+   * empty layout is the documented "place this for me" input (`addItem` emits exactly that), so it
+   * is not a problem and stays silent.
    */
   private warnAboutUncoveredBreakpoints(items: GridItemConfig[]) {
     const configured = this.breakpoints().map((b) => b.name);
@@ -912,7 +888,7 @@ export class GridDirective<TData = unknown> {
 
     for (const item of items) {
       const provided = Object.keys(item.layout);
-      const missing = configured.filter((name) => !provided.includes(name));
+      const missing = provided.length > 0 ? configured.filter((name) => !provided.includes(name)) : [];
       const unknown = provided.filter((name) => !configured.includes(name));
 
       const problems = [
@@ -923,7 +899,7 @@ export class GridDirective<TData = unknown> {
       if (problems.length === 0) continue;
 
       console.warn(
-        `[GridDirective] The layout of grid item "${item.id}" ${problems.join(' and ')}. Configured breakpoints are ${quote(configured)}; an omitted one renders as a 1x1 item at the grid origin.`,
+        `[GridDirective] The layout of grid item "${item.id}" ${problems.join(' and ')}. Configured breakpoints are ${quote(configured)}; an omitted one is auto-placed in item order instead of following the positions the layout does carry.`,
         item,
       );
     }
@@ -940,6 +916,44 @@ export class GridDirective<TData = unknown> {
     this.compactOtherBreakpoints(id);
 
     if (!options?.silent) this.emitLayoutChange();
+  }
+
+  /**
+   * The layout entries of `items` for one breakpoint. An item the breakpoint has no position for is
+   * auto-placed against the entries built before it, so a partial layout spreads out instead of
+   * stacking every unpositioned item on the grid origin.
+   */
+  private entriesForBreakpoint(options: {
+    items: readonly GridItemConfig<string, TData>[];
+    breakpoint: string;
+    columns: number;
+    existing?: Map<string, GridLayoutEntry> | null;
+  }): GridLayoutEntry[] {
+    const { items, breakpoint, columns, existing } = options;
+    const entries: GridLayoutEntry[] = [];
+
+    for (const item of items) {
+      const existingEntry = existing?.get(item.id);
+
+      if (existingEntry) {
+        entries.push(existingEntry);
+        continue;
+      }
+
+      const constraints = this.getConstraintsForColumns(item.id, columns);
+      const position =
+        item.layout[breakpoint] ??
+        autoPlace({
+          entries,
+          colSpan: constraints.minColSpan,
+          rowSpan: constraints.minRowSpan,
+          columns,
+        });
+
+      entries.push({ id: item.id, position });
+    }
+
+    return entries;
   }
 
   private placeItem(config: GridItemConfig<string, TData>, options?: GridMutationOptions) {
@@ -975,10 +989,7 @@ export class GridDirective<TData = unknown> {
       // fall back to itemConfigs.layout[bp] (original API positions).
       const bpEntries: GridLayoutEntry[] =
         overrides[bp.name] ??
-        existingItems.map((item) => ({
-          id: item.id,
-          position: item.layout[bp.name] ?? { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
-        }));
+        this.entriesForBreakpoint({ items: existingItems, breakpoint: bp.name, columns: bp.columns });
 
       layout[bp.name] = autoPlace({
         entries: bpEntries,

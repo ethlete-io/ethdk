@@ -2,7 +2,7 @@ import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { GridDirective } from './grid.directive';
-import { GridItemConfig, GridItemConstraints, GridSerializedState } from './grid.types';
+import { GridItemConfig, GridItemConstraints, GridItemPosition, GridSerializedState } from './grid.types';
 
 class ResizeObserverMock {
   static instances: ResizeObserverMock[] = [];
@@ -32,6 +32,8 @@ class ResizeObserverMock {
     }
   }
 }
+
+const everyBreakpoint = (position: GridItemPosition) => ({ sm: position, md: position, lg: position });
 
 @Component({
   imports: [GridDirective],
@@ -224,7 +226,7 @@ describe('GridDirective', () => {
     });
 
     it('leaves positions alone when only data changed', () => {
-      const layout = { lg: { col: 2, row: 1, colSpan: 1, rowSpan: 1 } };
+      const layout = everyBreakpoint({ col: 2, row: 1, colSpan: 1, rowSpan: 1 });
 
       fixture.componentRef.setInput('items', [
         { id: 'a', type: 'test', data: { value: 'before' }, layout },
@@ -436,9 +438,19 @@ describe('GridDirective', () => {
     // compact into - but that must not happen until the gesture ends.
     beforeEach(() => {
       fixture.componentRef.setInput('items', [
-        { id: 'a', type: 'test', data: undefined, layout: { lg: { col: 0, row: 0, colSpan: 6, rowSpan: 1 } } },
-        { id: 'b', type: 'test', data: undefined, layout: { lg: { col: 0, row: 1, colSpan: 12, rowSpan: 1 } } },
-        { id: 'c', type: 'test', data: undefined, layout: { lg: { col: 0, row: 2, colSpan: 12, rowSpan: 1 } } },
+        { id: 'a', type: 'test', data: undefined, layout: everyBreakpoint({ col: 0, row: 0, colSpan: 6, rowSpan: 1 }) },
+        {
+          id: 'b',
+          type: 'test',
+          data: undefined,
+          layout: everyBreakpoint({ col: 0, row: 1, colSpan: 12, rowSpan: 1 }),
+        },
+        {
+          id: 'c',
+          type: 'test',
+          data: undefined,
+          layout: everyBreakpoint({ col: 0, row: 2, colSpan: 12, rowSpan: 1 }),
+        },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
       measureGrid();
@@ -482,6 +494,75 @@ describe('GridDirective', () => {
       layout = getDirective().layout();
       expect(layout.find((e) => e.id === 'b')?.position.row).toBe(1);
       expect(layout.find((e) => e.id === 'c')?.position.row).toBe(2);
+    });
+  });
+
+  describe('layouts that do not cover every breakpoint', () => {
+    const lgOnly = (col: number) => ({ lg: { col, row: 0, colSpan: 2, rowSpan: 1 } });
+    const positions = () =>
+      getDirective()
+        .layout()
+        .map((entry) => entry.position);
+
+    beforeEach(() => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    });
+
+    it('does not warn about an item with no positions at all', () => {
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: undefined, layout: {} },
+      ] satisfies GridItemConfig[]);
+      fixture.detectChanges();
+
+      expect(console.warn).not.toHaveBeenCalled();
+    });
+
+    it('warns about an item positioned for only some breakpoints', () => {
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: undefined, layout: lgOnly(0) },
+      ] satisfies GridItemConfig[]);
+      fixture.detectChanges();
+
+      expect(console.warn).toHaveBeenCalledOnce();
+    });
+
+    it('auto-places uncovered breakpoints when the host restores a snapshot', () => {
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: undefined, layout: lgOnly(4) },
+        { id: 'b', type: 'test', data: undefined, layout: lgOnly(0) },
+      ] satisfies GridItemConfig[]);
+      fixture.detectChanges();
+      measureGrid(1216);
+      measureGrid(500);
+      measureGrid(1216);
+
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: undefined, layout: lgOnly(6) },
+        { id: 'b', type: 'test', data: undefined, layout: lgOnly(0) },
+      ] satisfies GridItemConfig[]);
+      fixture.detectChanges();
+      measureGrid(500);
+
+      const [a, b] = positions();
+      expect(b).not.toEqual(a);
+    });
+
+    it('auto-places uncovered breakpoints in restoreState', () => {
+      fixture.detectChanges();
+      measureGrid(500);
+
+      getDirective().restoreState({
+        columns: { sm: 2, md: 6, lg: 12 },
+        rowHeight: 100,
+        items: [
+          { id: 'a', type: 'test', data: undefined, layout: lgOnly(4) },
+          { id: 'b', type: 'test', data: undefined, layout: lgOnly(0) },
+        ],
+      } satisfies GridSerializedState);
+      fixture.detectChanges();
+
+      const [a, b] = positions();
+      expect(b).not.toEqual(a);
     });
   });
 });
