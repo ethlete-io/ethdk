@@ -380,8 +380,20 @@ gap-filler, never synced without an explicit accept, and only inside the configu
 
 A pipeline of pure functions over an event window, each independently testable:
 
-1. **Sessionize.** Merge sub-minute flapping, split on idle beyond the threshold, split on
-   lock/suspend, clamp to configured working hours if enabled. Produces `ActivityBlock`s.
+1. ~~**Sessionize.**~~ **Built** - `libs/timetrack/src/lib/correlate/sessionize.ts`. Merges
+   sub-minute flapping, splits on presence, clamps to working hours when configured.
+
+   One thing the plan had wrong. "Split on idle beyond the threshold" cannot mean a gap between
+   samples, because **every phase-1 collector is edge-triggered**: focus fires on a switch, git on
+   a commit. Ten quiet minutes inside one context is ordinary work, and treating the gap as
+   idleness shattered a real session into zero-length fragments. Idleness has to arrive as a
+   presence event from the idle notifier; the gap rule survives only as `maxUnobservedMs`, a
+   generous safety valve (30 min) for a stretch nothing observed at all, and it ends the block at
+   its last sample rather than stretching it to the next one. Two rules fell out of the same
+   fixture work: repo/branch context is **sticky** for `repoStickinessMs` after its last event, so
+   glancing at Jira mid-task does not end the block; and adjacent same-context blocks merge only
+   when they are genuinely contiguous, so resuming the same branch after lunch stays two blocks.
+
 2. **Extract keys.** Run the branch-grammar parser over every branch-bearing piece of
    evidence (git checkouts, agent-session `gitBranch`, MR source branches, editor
    heartbeats), then a loose key regex over window titles as a lower-confidence pass.
@@ -397,6 +409,14 @@ A pipeline of pure functions over an event window, each independently testable:
    key > key inherited through the base > MR/issue-view activity > Tempo history for a
    recurring pattern (same weekday, same ticket) > window-title key. Calendar events with a
    matched Meet title and an accepted response become meeting proposals directly.
+
+   **Steps 2-4 are built** for everything that needs no network -
+   `libs/timetrack/src/lib/correlate/attribute.ts` covers the branch key, the base-inherited key
+   and the window-title fallback, mapping them onto `certain` / `likely` / `weak`. Base resolution
+   is injected as `resolveBase`, so the merge-base and the MR target plug in without the core
+   learning to make a call. Still missing from the ladder: MR/issue-view activity and the Tempo
+   recurring-pattern rung, both of which need a provider.
+
 5. **Merge and split.** Combine adjacent blocks on the same issue; keep a genuine context
    switch separate even if short. Cap the number of worklogs per day so review stays
    tractable - a day of 40 two-minute rows is not reviewable. Merging is where the
@@ -532,8 +552,10 @@ silently discard a row you touched. Mark edited proposals and merge around them.
 
 ## Phasing
 
-**Phase 1 - the spine.** Encrypted store, event model, sessionizing, the branch-grammar
-parser, the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
+**Phase 1 - the spine.** ~~event model, sessionizing, the branch-grammar parser~~ **done** -
+`libs/timetrack` ships the four-layer model, the host ports, `sessionize()` and `attribute()`,
+with 16 fixture tests and no network, filesystem or Angular in it. Remaining: encrypted store,
+the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
 watcher, Claude Code session logs, Jira + Tempo providers with attribute discovery and
 own-worklog upsert, Google Calendar, the day-review UI, tray, sync with diff preview. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
