@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.0.0-next.44
+
+### Major Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`695c2e9`](https://github.com/ethlete-io/ethdk/commit/695c2e9d08f2e283816488938b446009acd4ad99) Thanks [@github-actions](https://github.com/apps/github-actions)! - Dropzone: removing a value the control started with no longer fires the `delete` request. Opt back in per config with `includeExisting: true`.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`7245dc7`](https://github.com/ethlete-io/ethdk/commit/7245dc788ddab057e39b8ac8aeb1e7c019baa2dc) Thanks [@github-actions](https://github.com/apps/github-actions)! - The devtools panel moved out of `@ethlete/components` into its own package, `@ethlete/query-devtools`, where `<et-query-devtools-lazy>` loads it on first open instead of shipping it - 125 kB gz an application no longer pays.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`695c2e9`](https://github.com/ethlete-io/ethdk/commit/695c2e9d08f2e283816488938b446009acd4ad99) Thanks [@github-actions](https://github.com/apps/github-actions)! - Select and cascader render their clear button and chevron in the form field's suffix slot, on the shared `.et-input-clear` / `.et-input-picker-trigger` classes. `--et-select-arrow-size` is retired for `--et-form-field-affix-icon-size`.
+
+### Minor Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`eca35a1`](https://github.com/ethlete-io/ethdk/commit/eca35a132ce08dd3f0fd65d42f8fb6775e3c81f3) Thanks [@github-actions](https://github.com/apps/github-actions)! - Avatar: `et-avatar-group` takes `maxVisible` and appends the `+N` avatar itself, and `et-avatar` is
+  also an attribute selector, so an avatar that links somewhere is written as the link it is.
+
+- [`38c44d1`](https://github.com/ethlete-io/ethdk/commit/38c44d18cd2e7f10f9ce0b4ebe2d60106bed6a36) Thanks [@TomTomB](https://github.com/TomTomB)! - Buttons: `tone` and `mutedUntilPressed` are replaced by `color="surface"` and `pressedColor`, so neutral toning is a color theme rather than a per-component override.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`1f72eb9`](https://github.com/ethlete-io/ethdk/commit/1f72eb9453b6b7726cfe312720299b913f5c565f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `provideColorPalette` - the labelled color themes an app offers a user to pick from. The scheduler's color field becomes a swatch picker when one is in scope, and stays a text box when none is.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`f926ca3`](https://github.com/ethlete-io/ethdk/commit/f926ca38c9167091f4803e5f8090c8b12d5559af) Thanks [@github-actions](https://github.com/apps/github-actions)! - Description list: add `variant` - `stacked` puts each term above its detail in one column, next to the default two-column `inline`.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`695c2e9`](https://github.com/ethlete-io/ethdk/commit/695c2e9d08f2e283816488938b446009acd4ad99) Thanks [@github-actions](https://github.com/apps/github-actions)! - Dropzone: the single-file preview's name bar slides out of the way on hover or focus, so the image can be checked unobstructed. It stays while uploading and on error.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`791d28d`](https://github.com/ethlete-io/ethdk/commit/791d28dda1c4cd6cc1ff436ee72d97d755e303a8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Forms: a `warn()` schema rule puts a non-blocking advisory where an error would go - the field stays
+  valid and submittable, an error still wins the slot, and the text theming and resolver mirror errors.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`21d559c`](https://github.com/ethlete-io/ethdk/commit/21d559c610e8f3b2ce6bec35ce9fc9de080ac71c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: `et-grid` is generic in the item payload, so `layoutChange` / `getSerializedState()` hand your
+  own type back instead of `unknown`, and an `et-grid-item` span input now refines a registered type's
+  constraints instead of being ignored.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`21d6e15`](https://github.com/ethlete-io/ethdk/commit/21d6e157000536e45ef9bb60e14b3863822049fe) Thanks [@github-actions](https://github.com/apps/github-actions)! - Progress steps: `orientation="vertical"` stacks the steps with a vertical connector, and writing a
+  step as `<a et-progress-step>` or `<button et-progress-step>` makes it a real link or button with
+  hover and focus treatment.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`695c2e9`](https://github.com/ethlete-io/ethdk/commit/695c2e9d08f2e283816488938b446009acd4ad99) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scheduler: the agenda draws connector lines between a parent appointment and its children, and the edit surface's sub-appointment list carries each child's start time and chain count.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`914ee7f`](https://github.com/ethlete-io/ethdk/commit/914ee7f7effbc6d6463903104a456fe9f1f9e062) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tabs, nav tabs and the segmented button group's `tabs` variant read one shared tab scale now, so
+  `sm`/`lg` tab bars and their overrides finally size correctly and a tabs row matches a real tab bar.
+
+### Patch Changes
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`695c2e9`](https://github.com/ethlete-io/ethdk/commit/695c2e9d08f2e283816488938b446009acd4ad99) Thanks [@github-actions](https://github.com/apps/github-actions)! - Cascader: a reopened bottom sheet no longer shows two drag handles.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`695c2e9`](https://github.com/ethlete-io/ethdk/commit/695c2e9d08f2e283816488938b446009acd4ad99) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: warn in dev mode when an item's `layout` misses a configured breakpoint, instead of silently rendering it as a 1×1 item at the grid origin.
+
+- [`e78525a`](https://github.com/ethlete-io/ethdk/commit/e78525ac32b3e2549b2dbef51886d4ac519beaa6) Thanks [@TomTomB](https://github.com/TomTomB)! - Password input: the default Caps Lock warning now reads `'Caps Lock might be on'`, since the state can lag a keystroke behind.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`e095163`](https://github.com/ethlete-io/ethdk/commit/e095163b7a10934f1a9909d7f5b19aaf7fdcaec9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Password input: switching Caps Lock off now clears the warning instead of leaving it up, since the Caps Lock key's own events report the pre-toggle state on macOS.
+
+- [#3055](https://github.com/ethlete-io/ethdk/pull/3055) [`d35f376`](https://github.com/ethlete-io/ethdk/commit/d35f3765dbfea47acd78d6fb941b9f52384d7c0c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Stream: `provideStreamConfig({ pipChromeComponent })` now defaults to `null` (meaning the built-in chrome) rather than to the component itself, which put a circular import between the stream config and the pip window.
+
 ## 1.0.0-next.43
 
 ### Minor Changes
