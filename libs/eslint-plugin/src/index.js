@@ -55,6 +55,9 @@ const preferPresentTenseOutput = require('./rules/prefer-present-tense-output');
 const preferStaticBooleanProperties = require('./rules/prefer-static-boolean-properties');
 const noImpureTopLevelProvider = require('./rules/no-impure-top-level-provider');
 const noLegacyPrepareWithoutInjector = require('./rules/no-legacy-prepare-without-injector');
+const requireFormSubmit = require('./rules/require-form-submit');
+const noCdkImport = require('./rules/no-cdk-import');
+const noLegacyQueryImport = require('./rules/no-legacy-query-import');
 const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -118,6 +121,9 @@ const plugin = {
     'prefer-present-tense-output': preferPresentTenseOutput,
     'prefer-static-boolean-properties': preferStaticBooleanProperties,
     'no-impure-top-level-provider': noImpureTopLevelProvider,
+    'require-form-submit': requireFormSubmit,
+    'no-cdk-import': noCdkImport,
+    'no-legacy-query-import': noLegacyQueryImport,
   },
 };
 

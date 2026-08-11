@@ -51,8 +51,8 @@ describe('PasswordInputDirective', () => {
     fixture.nativeElement.querySelector('.et-password-input-reveal') as HTMLButtonElement | null;
   const capsWarning = () => fixture.nativeElement.querySelector('.et-password-input-caps-warning');
 
-  const keydown = (capsLock: boolean) => {
-    nativeInput().dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true, modifierCapsLock: capsLock }));
+  const keydown = (capsLock: boolean, key = 'a') => {
+    nativeInput().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, modifierCapsLock: capsLock }));
     fixture.detectChanges();
   };
 
@@ -114,6 +114,37 @@ describe('PasswordInputDirective', () => {
 
     keydown(true);
     nativeInput().dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+
+    expect(capsWarning()).toBeNull();
+  });
+
+  it('drops the warning on the Caps Lock key itself, whatever state that event reports', () => {
+    fixture.componentInstance.capsLockWarning.set(true);
+    fixture.detectChanges();
+
+    nativeInput().dispatchEvent(new FocusEvent('focus'));
+    keydown(true);
+
+    expect(capsWarning()).toBeTruthy();
+
+    keydown(true, 'CapsLock');
+
+    expect(capsWarning()).toBeNull();
+
+    keydown(true);
+
+    expect(capsWarning()).toBeTruthy();
+  });
+
+  it('does not bring a stale warning back when focus returns without a keystroke', () => {
+    fixture.componentInstance.capsLockWarning.set(true);
+    fixture.detectChanges();
+
+    nativeInput().dispatchEvent(new FocusEvent('focus'));
+    keydown(true);
+    nativeInput().dispatchEvent(new FocusEvent('blur'));
+    nativeInput().dispatchEvent(new FocusEvent('focus'));
     fixture.detectChanges();
 
     expect(capsWarning()).toBeNull();

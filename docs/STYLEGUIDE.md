@@ -1,4 +1,4 @@
-# Style Guide v0.22.0
+# Style Guide v0.23.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -31,6 +31,7 @@ Run `npx nx lint <project> --fix` - the rules below are enforced (and mostly aut
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | No `any` / `$any()`; use `unknown` + type guards                                                                                  | `@typescript-eslint/no-explicit-any`, `@angular-eslint/template/no-any`                                                                                                                                             |
 | No property bindings for static strings/booleans (`[etIcon]="'foo'"`, `[isReadonly]="true"`) - use static attributes              | `@angular-eslint/template/prefer-static-string-properties`, `ethlete/prefer-static-boolean-properties`                                                                                                              |
+| A `<form>` handles its own submission, and a `type="submit"` control sits in a form or names one                                  | `ethlete/require-form-submit`                                                                                                                                                                                       |
 | No `interface` - use `type`                                                                                                       | `@typescript-eslint/consistent-type-definitions`                                                                                                                                                                    |
 | No `enum` - use an `as const` object + derived union                                                                              | `no-restricted-syntax`                                                                                                                                                                                              |
 | No `var`; prefer `const`; one declaration per statement                                                                           | `no-var`, `prefer-const`, `one-var`                                                                                                                                                                                 |

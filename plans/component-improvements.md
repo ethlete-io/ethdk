@@ -326,15 +326,41 @@ only be trusted to update on the next real keystroke and saying so in the
 label) rather than anything fixable in this directive's current listener
 set.
 
-**Blocked on a human at a Mac keyboard (checked 2026-08-06).** No automated
-route can settle it: a synthetic CapsLock keyup - WebDriver, CDP,
-`adb shell input`, whatever - always reports the post-toggle modifier state
-correctly, because the quirk being reported is in how macOS delivers the
-_physical_ key, not in how the DOM handles the event. Driving the team Mac
-over LAN does not help either: `verify-on-apple-devices` reaches its iOS
-Simulator and the iPad, neither of which has a Mac's CapsLock. So this needs
-someone to press the key on a Mac and say what happens - anything else would
-be a fix designed against a guess.
+**Confirmed on a real Mac keyboard, 2026-08-11 (user).** Toggling CapsLock off in
+the password-input story leaves the warning on - it does not clear. So the quirk
+is real and it is exactly the one predicted above: the CapsLock key's own `keyup`
+does not deliver a trustworthy post-toggle modifier state on macOS. Nothing in the
+directive's listener set can be filtered to fix it.
+
+The fix is therefore about _when_ to re-check, not what to filter. Options, in
+order of preference:
+
+1. Re-check on `focusin` and on the next real keystroke, and accept that a bare
+   toggle while focused may lag by one key. Cheapest, no new API.
+2. Poll the state while the field has focus (e.g. a short interval or
+   `requestAnimationFrame` gated on focus). Reliable, but it burns work for a
+   warning nobody is waiting on.
+3. Say so in the label - i.e. treat the warning as "caps lock was on as of your
+   last keystroke". Honest, but it reads as a bug to the user who just turned it
+   off.
+
+**Fixed on 2026-08-11**, along the lines of (1) but without the lag on the case that
+actually matters. `syncCapsLock` now treats two readings as untrustworthy and clears
+the state for both: the Caps Lock key's own `keydown`/`keyup` (identified by
+`event.key === 'CapsLock'`), and any event with no modifier state to read at all
+(`FocusEvent`, which the component now feeds it on `blur` so a reading expires with
+the focus session that produced it). Everything else - real keystrokes and pointer
+presses - reads `getModifierState` as before. So switching Caps Lock off clears the
+warning immediately; switching it on while the field already has focus shows it one
+keystroke later. The asymmetry is the right way round: the warning can lag, but it
+can no longer be wrong.
+
+Driven headlessly against the real story with dispatched `KeyboardEvent`s carrying
+`modifierCapsLock` (`components-forms-password-input--caps-lock-warning`): all nine
+steps behave as designed. That is not the same as a hardware toggle - Playwright
+cannot produce one, since CDP has no Caps Lock modifier bit and
+`keyboard.down('CapsLock')` leaves `getModifierState('CapsLock')` false - so **the
+macOS hardware case still needs a hand check.**
 
 No duplication elsewhere - `otp-input` and every other password-adjacent
 control have no caps-lock logic of their own; `password-input` owns this
@@ -391,6 +417,23 @@ somewhere else entirely.
 
 **The per-tab inactivity timer below is therefore not this bug - but it is still a bug**, and it is
 the one that bites the moment any app turns the feature on.
+
+**Fixed 2026-08-11.** Idleness became a property of the session, the way the design call below
+demands. `setupMultiTabSync` carries an `{ type: 'activity' }` message and hands out an
+`activityCoordination` (`announce` / `activity$`) that the provider plumbs into the feature context -
+so `withInactivityLogout` announces local activity and postpones its own logout when it hears another
+tab's, which it never re-announces. Announcements are throttled to a quarter of the timeout: far more
+often than another tab's countdown needs, and not once a second while someone scrolls. It is only
+offered where a logout actually travels, so `syncLogout: false` keeps its per-tab timer. Three
+further defects went with it: the deadline is driven off `lastActivityTime` (so `resetTimer()`
+postpones the logout, and a tab that has seen no event still has a deadline), the deadline is
+re-checked when it fires (activity recorded in the same tick as the old deadline has not moved it
+yet), and a token _refresh_ no longer counts as user activity - it is the app working, not the user,
+and an app refreshing faster than the timeout would otherwise never log an idle user out at all.
+Visibility-awareness turned out to be unnecessary: a hidden tab's countdown is reset by the visible
+tab's activity, which is what the visibility check was reaching for.
+
+The original finding, for the record:
 
 **If inactivity logout is enabled, an idle tab logs out an active one.** `withInactivityLogout` tracks `mousedown`/`keydown`/`scroll`/`touchstart` **on its own
 document**, so activity in one tab never resets another tab's timer, and `syncLogout` then

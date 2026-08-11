@@ -177,12 +177,25 @@ export type BearerAuthRefreshCoordination = {
   requests$: Observable<void>;
 };
 
+/**
+ * How the tabs of one session keep a single idea of when the user was last active. Contributed by
+ * `withBearerAuthMultiTabSync`; absent when a tab's idleness is nobody else's business.
+ */
+export type BearerAuthActivityCoordination = {
+  /** Tells the other tabs the user did something here. */
+  announce: () => void;
+
+  /** Emits whenever another tab announced activity. Never echoes this tab's own. */
+  activity$: Observable<void>;
+};
+
 /** The parts of the provider an early setup can contribute. */
 export type BearerAuthProviderEarlySetupResult = {
   isLeader?: () => boolean;
   leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
   refreshCoordination?: BearerAuthRefreshCoordination;
   sessionAdoption?: BearerAuthSessionAdoption;
+  activityCoordination?: BearerAuthActivityCoordination;
 };
 
 /**
@@ -414,6 +427,13 @@ export type BearerAuthProviderFeatureContext<
    * there is nothing to adopt - no sync, no `BroadcastChannel`, or tokens deliberately tab-local.
    */
   sessionAdoption?: BearerAuthSessionAdoption;
+
+  /**
+   * How the tabs of this session share when the user was last active, so a feature that ends the
+   * session on idleness ends it on the _session_ being idle rather than on this tab being idle.
+   * Absent when no other tab is listening - no sync, no `BroadcastChannel`, or a tab-local logout.
+   */
+  activityCoordination?: BearerAuthActivityCoordination;
   queries: QueryRegistry<TBuilders>;
   executionState: WritableSignal<BearerAuthExecutionState | null>;
   sessionStatus: Signal<BearerAuthSessionStatus>;
@@ -680,6 +700,7 @@ const runEarlyFeatureSetup = (
   let leaderElectionContext: BearerAuthProviderFeatureContext['leaderElection'];
   let refreshCoordination: BearerAuthRefreshCoordination | undefined;
   let sessionAdoption: BearerAuthSessionAdoption | undefined;
+  let activityCoordination: BearerAuthActivityCoordination | undefined;
 
   for (const featureBuilder of featureBuilders ?? []) {
     const earlySetup = (featureBuilder as BearerAuthProviderEarlySetup).earlySetup;
@@ -692,9 +713,10 @@ const runEarlyFeatureSetup = (
     leaderElectionContext = result.leaderElection ?? leaderElectionContext;
     refreshCoordination = result.refreshCoordination ?? refreshCoordination;
     sessionAdoption = result.sessionAdoption ?? sessionAdoption;
+    activityCoordination = result.activityCoordination ?? activityCoordination;
   }
 
-  return { isLeaderFn, leaderElectionContext, refreshCoordination, sessionAdoption };
+  return { isLeaderFn, leaderElectionContext, refreshCoordination, sessionAdoption, activityCoordination };
 };
 
 const createBearerAuthProviderImpl = <
@@ -826,6 +848,7 @@ const createBearerAuthProviderImpl = <
     isLeader: isLeader.isLeaderFn,
     leaderElection: isLeader.leaderElectionContext,
     sessionAdoption: isLeader.sessionAdoption,
+    activityCoordination: isLeader.activityCoordination,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
     executionState,

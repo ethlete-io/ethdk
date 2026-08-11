@@ -141,7 +141,13 @@ value is a plain `string`; `autocomplete` defaults to `'current-password'` (set
 - **Caps Lock warning** (opt-in, `capsLockWarning`): a `role="status"` warning
   icon while the field is focused and Caps Lock is on. `capsLockLabel`
   (default `'Caps Lock is on'`) is both the screen-reader text and the icon's
-  tooltip, so the triangle explains itself to sighted users too.
+  tooltip, so the triangle explains itself to sighted users too. The state is
+  read off keystrokes and pointer presses, which is the only reliable source
+  for it: browsers on macOS report the pre-toggle state on the Caps Lock key's
+  own events, so that key clears the warning and the next keystroke re-reads
+  it. Switching Caps Lock **off** therefore clears the warning at once, while
+  switching it **on** while the field already has focus shows it one keystroke
+  later - never the other way round, which would leave a wrong warning up.
 - **Strength score**: the directive exposes `strength` - a 0–4 typing-feedback
   score from a pure length + character-class heuristic (deliberately not a
   zxcvbn-style security estimate). Grab it via the `etPasswordInput` export and

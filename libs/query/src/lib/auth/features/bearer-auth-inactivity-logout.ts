@@ -1,4 +1,5 @@
 import { DestroyRef, DOCUMENT, effect, inject, Signal, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { filter, fromEvent, interval, merge, switchMap, throttleTime, timer } from 'rxjs';
 import { formatQueryDevtoolsDuration } from '../../devtools/query-devtools-features';
 import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
@@ -31,7 +32,8 @@ export type InactivityLogoutFeature = {
    */
   disable: () => void;
   /**
-   * Reset the inactivity timer (mark user as active)
+   * Mark the user as active: postpones the logout and, with multi-tab sync on, postpones it in the
+   * session's other tabs too.
    */
   resetTimer: () => void;
   /**
@@ -44,6 +46,23 @@ export type InactivityLogoutFeature = {
   calculateTimeUntilLogout: () => number | null;
 };
 
+/**
+ * Ends the session once the user has been inactive for {@link InactivityLogoutConfig.inactivityTimeout},
+ * with `sessionEndCause` reporting `'inactivity'`.
+ *
+ * Idleness is a property of the session, not of a tab: with `withBearerAuthMultiTabSync` on, tabs tell
+ * each other about activity, so the tab the user is typing in keeps the forgotten one from logging
+ * everybody out. Without it - or with `syncLogout: false`, where a logout stays in the tab that
+ * decided it - each tab times out on its own.
+ *
+ * @example
+ * export const AUTH_PROVIDER = createBearerAuthProvider({
+ *   name: 'my-auth',
+ *   queryClientRef: MY_CLIENT,
+ *   queries: [loginQuery, refreshQuery],
+ *   features: [withBearerAuthMultiTabSync(), withInactivityLogout({ inactivityTimeout: 5 * 60 * 1000 })],
+ * });
+ */
 export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[]>(
   config: InactivityLogoutConfig = {},
 ) => {
@@ -54,9 +73,30 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
     const document = inject(DOCUMENT);
     const enabled = signal(true);
     const lastActivityTime = signal(Date.now());
+    const activityCoordination = context.activityCoordination;
+
+    // Announcing every throttled event would wake every other tab once a second for as long as the
+    // user scrolls. A quarter of the timeout is far more than the other tabs need to never expire,
+    // and it is one message per several minutes at the default.
+    const announceInterval = inactivityTimeout / 4;
+    let lastAnnouncedAt = 0;
+
+    const markActive = () => lastActivityTime.set(Date.now());
+
+    const announceActivity = () => {
+      if (!activityCoordination) return;
+
+      const now = Date.now();
+
+      if (now - lastAnnouncedAt < announceInterval) return;
+
+      lastAnnouncedAt = now;
+      activityCoordination.announce();
+    };
 
     const resetTimer = () => {
-      lastActivityTime.set(Date.now());
+      markActive();
+      announceActivity();
     };
 
     const activityFromEvents$ = merge(...activityEvents.map((event) => fromEvent(document, event))).pipe(
@@ -75,20 +115,45 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
       }
     });
 
-    const inactivityLogout$ = activity$.pipe(
-      switchMap(() => timer(inactivityTimeout)),
-      filter(() => enabled() && !!context.accessToken()),
+    // Activity from another tab is never announced onwards - two tabs would echo one keystroke back
+    // and forth for as long as they are both open.
+    const remoteActivitySubscription = activityCoordination?.activity$.subscribe(() => {
+      if (enabled() && context.accessToken()) {
+        markActive();
+      }
+    });
+
+    const isIdle = () => Date.now() - lastActivityTime() >= inactivityTimeout;
+
+    // Driven off `lastActivityTime` rather than off the activity stream, so the countdown this feature
+    // reports and the logout it performs cannot disagree: a tab that has seen no event still has a
+    // deadline, and `resetTimer()` postpones the logout it says it resets.
+    //
+    // `isIdle` re-checks at the moment the deadline fires, because the re-arm goes through an effect:
+    // activity recorded in the same tick as the old deadline has not moved it yet. The write that was
+    // missed is what schedules that re-arm, so nothing is dropped by waiting for it.
+    const inactivityLogout$ = toObservable(lastActivityTime).pipe(
+      switchMap((last) => timer(last + inactivityTimeout - Date.now())),
+      filter(() => enabled() && !!context.accessToken() && isIdle()),
     );
 
     const logoutSubscription = inactivityLogout$.subscribe(() => {
       context.logout('inactivity');
     });
 
+    let hadToken = false;
+
+    // Only the start of a session counts as activity. A token _refresh_ is the app working, not the
+    // user, and resetting on one would mean an app that refreshes faster than this timeout never logs
+    // an idle user out at all.
     effect(() => {
-      const token = context.accessToken();
-      if (token && enabled()) {
-        resetTimer();
+      const hasToken = !!context.accessToken();
+
+      if (hasToken && !hadToken) {
+        markActive();
       }
+
+      hadToken = hasToken;
     });
 
     const enable = () => {
@@ -111,10 +176,9 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
       return remaining > 0 ? remaining : 0;
     };
 
-    resetTimer();
-
     destroyRef.onDestroy(() => {
       activitySubscription.unsubscribe();
+      remoteActivitySubscription?.unsubscribe();
       logoutSubscription.unsubscribe();
     });
 
@@ -132,6 +196,7 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
       devtools: () => [
         { label: 'timeout', value: formatQueryDevtoolsDuration(inactivityTimeout) },
         { label: 'activity events', value: activityEvents.join(', ') },
+        { label: 'idleness', value: activityCoordination ? 'shared across tabs' : 'this tab only' },
         ...(config.customActivityCheck ? [{ label: 'custom activity check', value: 'yes' }] : []),
       ],
     };

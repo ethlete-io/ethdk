@@ -1,5 +1,6 @@
 import { DestroyRef, effect, inject, isDevMode, Signal, untracked } from '@angular/core';
-import { BearerAuthSessionEndCause } from '../bearer-auth-provider';
+import { Subject } from 'rxjs';
+import { BearerAuthActivityCoordination, BearerAuthSessionEndCause } from '../bearer-auth-provider';
 import { decryptToken, encryptToken } from '../utils';
 
 type SyncMessage =
@@ -15,6 +16,10 @@ type SyncMessage =
   | {
       /** A tab that just started asking whoever holds the session to send it over. */
       type: 'state-request';
+    }
+  | {
+      /** The user did something in the sending tab, so nobody's idle countdown should be running. */
+      type: 'activity';
     };
 
 export type MultiTabSyncConfig = {
@@ -91,6 +96,12 @@ export type InternalMultiTabSync = {
 
   /** Absent when there is nothing to adopt: no `BroadcastChannel`, or tokens are not synced. */
   sessionAdoption?: BearerAuthSessionAdoption;
+
+  /**
+   * Absent when no tab can end another one's session anyway: no `BroadcastChannel`, or
+   * `syncLogout: false`.
+   */
+  activityCoordination?: BearerAuthActivityCoordination;
 };
 
 /**
@@ -137,8 +148,16 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
     /* replaced below when the handshake actually runs */
   };
 
+  const remoteActivity = new Subject<void>();
+
   channel.onmessage = (event: MessageEvent<SyncMessage>) => {
     const message = event.data;
+
+    if (message.type === 'activity') {
+      if (syncLogout) remoteActivity.next();
+
+      return;
+    }
 
     if (message.type === 'state-request') {
       if (!syncTokens || !context.isLeader()) return;
@@ -183,6 +202,7 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
   const cleanup = () => {
     clearTimeout(adoptionTimeout);
     settleAdoption();
+    remoteActivity.complete();
     channel.close();
   };
 
@@ -258,5 +278,14 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
     });
   }
 
-  return { cleanup, sessionAdoption };
+  // Only where a logout travels: with `syncLogout: false` each tab already ends its own session and
+  // nothing else's, so its idleness is genuinely its own.
+  const activityCoordination = syncLogout
+    ? {
+        announce: () => channel.postMessage({ type: 'activity' } satisfies SyncMessage),
+        activity$: remoteActivity.asObservable(),
+      }
+    : undefined;
+
+  return { cleanup, sessionAdoption, activityCoordination };
 };
