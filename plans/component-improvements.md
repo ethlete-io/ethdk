@@ -119,15 +119,12 @@ Expanding this, roughly in order of how disruptive each is:
 
 - ~~**Success/warning/error states**~~ - shipped 2026-08-10, see "Already
   fixed".
-- **Vertical orientation** - not a CSS flip: the horizontal connector is
-  purpose-built (`inline-size` bar sized to the gap), so vertical needs its
-  own connector geometry (a `block-size` bar), not a rotation of the
-  existing one.
-- **Steps as links/hover states** - new markup: steps are `<span>`-only
-  today, so a linked step means conditionally swapping the step's root
-  element (`<span>`/`<a>`/`<button>`) based on whether a link/click input is
-  set, the same polymorphic-root pattern other SDK components already use,
-  plus adding the `:hover` rules that don't exist yet.
+- ~~**Vertical orientation**~~ - shipped 2026-08-11 as
+  `orientation="vertical"`, with its own connector geometry.
+- ~~**Steps as links/hover states**~~ - shipped 2026-08-11. Not a
+  polymorphic root in the end: `et-progress-step` became an attribute
+  selector too, so the consumer's own `<a>`/`<button>` _is_ the step and
+  `routerLink` keeps working.
 - **Detailed sub-steps** - the least defined ask; needs a decision on
   whether it's a projected slot per step or a fixed description input, and
   whether it's meaningful outside the vertical orientation at all.

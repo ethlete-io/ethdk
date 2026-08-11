@@ -102,5 +102,64 @@
       color: var(--et-theme-color-ink-solid, currentColor);
       font-weight: 600;
     }
+
+    /* --- Vertical --- */
+
+    /* The connector is purpose-built rather than rotated: horizontally it spans marker-center to
+       marker-center across the gap, vertically it hangs from below the marker down to the next one,
+       and the step turns into a row with the label beside the marker instead of under it. */
+    .et-progress-steps[data-orientation='vertical'] & {
+      flex: none;
+      flex-direction: row;
+      align-items: flex-start;
+
+      &:not(:last-child)::after {
+        inset-block-start: var(--et-progress-step-marker-size);
+        inset-inline-start: calc(var(--et-progress-step-marker-size) / 2 - 1px);
+        inline-size: 2px;
+        block-size: calc(100% - var(--et-progress-step-marker-size) + var(--et-progress-steps-gap, 8px));
+      }
+
+      .et-progress-step-label {
+        text-align: start;
+        /* Optically centered against the marker rather than its box: the label's own line box is
+           shorter than the marker, so aligning the boxes would leave the text sitting high. */
+        padding-block-start: calc((var(--et-progress-step-marker-size) - 1lh) / 2);
+      }
+    }
+
+    /* --- Interactive --- */
+
+    /* A step is a link or a button when the consumer writes it as one (`<a et-progress-step>`), the
+       same way the button family works - so `routerLink` and everything else on their element keeps
+       working, and the whole step is the target. */
+    &:is(a, button) {
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      font: inherit;
+      background: none;
+      border: none;
+      padding: 0;
+      appearance: none;
+      -webkit-tap-highlight-color: transparent;
+
+      @media (hover: hover) {
+        &:hover {
+          .et-progress-step-marker {
+            border-color: var(--et-theme-color-primary-solid, currentColor);
+          }
+
+          .et-progress-step-label {
+            color: var(--et-surface-color-solid, currentColor);
+          }
+        }
+      }
+
+      &:is([disabled], [aria-disabled='true']) {
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+    }
   }
 }

@@ -1,8 +1,16 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, input, ViewEncapsulation } from '@angular/core';
+
+export const PROGRESS_STEPS_ORIENTATIONS = {
+  HORIZONTAL: 'horizontal',
+  VERTICAL: 'vertical',
+} as const;
+
+export type ProgressStepsOrientation = (typeof PROGRESS_STEPS_ORIENTATIONS)[keyof typeof PROGRESS_STEPS_ORIENTATIONS];
 
 /**
- * Lays out a row of `et-progress-step`s with automatic step numbering and a connecting line
- * between them - project the steps in order, each with its own `state`.
+ * Lays out a row - or, with `orientation="vertical"`, a column - of `et-progress-step`s with automatic
+ * step numbering and a connecting line between them. Project the steps in order, each with its own
+ * `state`.
  *
  * @example
  * <et-progress-steps>
@@ -18,6 +26,10 @@ import { Component, ViewEncapsulation } from '@angular/core';
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-progress-steps',
+    '[attr.data-orientation]': 'orientation()',
   },
 })
-export class ProgressStepsComponent {}
+export class ProgressStepsComponent {
+  /** Whether the steps run across the row or down a column. The connector follows. */
+  public orientation = input<ProgressStepsOrientation>(PROGRESS_STEPS_ORIENTATIONS.HORIZONTAL);
+}

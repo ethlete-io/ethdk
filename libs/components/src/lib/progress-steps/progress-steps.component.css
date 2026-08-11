@@ -13,5 +13,14 @@
     /* Numbers the projected .et-progress-steps, in DOM order, purely in CSS - see the marker's
        counter() in progress-step.component.css. */
     counter-reset: et-progress-step;
+
+    &:where([data-orientation='vertical']) {
+      /* A row's gap is horizontal breathing room between labels; a column's is the length of the
+         connector between two markers, and 8px reads as a dash rather than a line. */
+      --et-progress-steps-gap: 20px;
+
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 }

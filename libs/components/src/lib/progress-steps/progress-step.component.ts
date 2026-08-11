@@ -9,6 +9,7 @@ import {
   runInInjectionContext,
 } from '@angular/core';
 import { ProvideColorDirective, injectErrorTheme, injectSuccessTheme, injectWarningTheme } from '@ethlete/core';
+import { FocusRingDirective } from '../focus-ring';
 import {
   CHECK_ICON,
   IconDirective,
@@ -44,15 +45,22 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
  * `complete` marks a step as done in the surrounding color theme; `success`, `warning` and `error`
  * mark it as done with an outcome and recolor the step in the app's matching semantic theme, each
  * with its own icon so the outcome does not rest on color alone.
+ *
+ * Write the step as a link or a button to make it interactive - the attribute selector puts the step
+ * on the consumer's own element, so `routerLink`, `href` and click handlers all stay where they
+ * belong, and the whole step becomes the target:
+ *
+ * @example
+ * <a [routerLink]="['/checkout/account']" state="complete" et-progress-step>Account</a>
  */
 @Component({
-  selector: 'et-progress-step',
+  selector: 'et-progress-step, [et-progress-step]',
   templateUrl: './progress-step.component.html',
   styleUrl: './progress-step.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective],
   viewProviders: [provideIcons(CHECK_ICON, TIMES_ICON, TRIANGLE_EXCLAMATION_ICON)],
-  hostDirectives: [ProvideColorDirective],
+  hostDirectives: [ProvideColorDirective, FocusRingDirective],
   host: {
     class: 'et-progress-step',
     '[attr.data-state]': 'state()',

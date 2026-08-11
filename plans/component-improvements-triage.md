@@ -35,8 +35,6 @@ parked - see its row.
 | Item                                              | Tag     | Note                                                                                                                                        |
 | ------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Auth: inactivity is per-tab, the logout is shared | `B`,`D` | An idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide                  |
-| Progress steps: vertical orientation              | `A`     | Not a CSS flip - the connector is a purpose-built inline-size bar                                                                           |
-| Progress steps: steps as links                    | `A`     | Polymorphic root (`span`/`a`/`button`) + the `:hover` rules that don't exist yet                                                            |
 | Avatar: extract `AvatarDirective`                 | `C`     | Follow tooltip/toggletip/accordion's headless split                                                                                         |
 | Avatar group: `maxVisible` + "+N"                 | `A`     | No "+N" pattern exists anywhere to copy - new surface                                                                                       |
 | Description list: `variant`                       | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |

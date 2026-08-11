@@ -58,7 +58,49 @@ line between two markers is a `::after` pseudo-element spanning from one step's 
 tinted with the color theme only where the step it's attached to is resolved (`complete`, or one of
 the three outcome states) - the line says "the flow got past here".
 
+## A column instead of a row
+
+`orientation="vertical"` on `et-progress-steps` stacks the steps, puts each label beside its marker,
+and turns the connector into a vertical bar hanging from one marker down to the next. It is not a
+rotation of the horizontal connector - the geometry is its own - and the gap default grows to `20px`,
+because in a column the gap _is_ the connector's length.
+
+```html
+<et-progress-steps orientation="vertical">
+  <et-progress-step state="complete">Account</et-progress-step>
+  <et-progress-step state="current">Shipping</et-progress-step>
+  <et-progress-step state="upcoming">Payment</et-progress-step>
+</et-progress-steps>
+```
+
+<StoryEmbed id="components-progress-steps--vertical" height="220px" />
+
+## Steps a user can go back to
+
+A step is interactive when you write it as one. `et-progress-step` is also an attribute selector, so
+put it on your own `<a>` or `<button>` and everything that belongs to you - `routerLink`, `href`, a
+click handler, `disabled` - stays where you wrote it:
+
+```html
+<et-progress-steps>
+  <a [routerLink]="['/checkout/account']" state="complete" et-progress-step>Account</a>
+  <a [routerLink]="['/checkout/shipping']" state="current" et-progress-step>Shipping</a>
+  <!-- not reachable yet, so not a link -->
+  <et-progress-step state="upcoming">Payment</et-progress-step>
+</et-progress-steps>
+```
+
+The whole step becomes the target, and it picks up a hover treatment (marker border and label in the
+foreground color) plus the library's focus ring. Mixing linked and plain steps in one row is the
+normal case: only the steps behind the user are reachable.
+
 ## Options
+
+### `et-progress-steps`
+
+| Input         | Type                         | Default        | Description                                          |
+| ------------- | ---------------------------- | -------------- | ---------------------------------------------------- |
+| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | Whether the steps run across a row or down a column. |
 
 ### `et-progress-step`
 
@@ -66,14 +108,16 @@ the three outcome states) - the line says "the flow got past here".
 | ------- | ---------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
 | `state` | `'complete' \| 'current' \| 'upcoming' \| 'success' \| 'warning' \| 'error'` | `'upcoming'` | Drives the marker (number vs. icon), the connector tint, the label weight, and the step's color theme. |
 
-`et-progress-steps` itself takes no inputs - project the steps in order.
-
 ## Accessibility
 
-Both components render plain `<span>`s with no ARIA role or live region of their own - this is a
-static, non-interactive indicator (not a step navigator you click through), so there is nothing to
-announce beyond the labels' own text. If a step's completion should be announced as it changes,
-wrap the group in your own `aria-live` region.
+A plain step renders `<span>`s with no ARIA role or live region of its own - a static indicator has
+nothing to announce beyond the labels' own text. If a step's completion should be announced as it
+changes, wrap the group in your own `aria-live` region.
+
+A step written as an `<a>` or `<button>` is keyboard-reachable and focus-ringed by virtue of being a
+real link or button; nothing is layered on top of it, so its accessible name is the label you
+projected, and a `disabled` button or `aria-disabled` link is inert exactly as it would be anywhere
+else.
 
 ## Theming
 
