@@ -14,6 +14,12 @@
   .et-avatar-group {
     display: inline-flex;
 
+    /* `hidden` alone loses to the avatar's own `display`, and the avatars past `maxVisible` have to
+       leave the row entirely - a hidden-but-laid-out avatar would still take its overlap slot. */
+    .et-avatar[hidden] {
+      display: none;
+    }
+
     .et-avatar {
       box-shadow: 0 0 0 var(--et-avatar-group-ring-width) var(--et-surface-background-solid, Canvas);
 

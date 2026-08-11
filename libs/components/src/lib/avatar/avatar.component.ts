@@ -30,13 +30,17 @@ const initialsFromName = (name: string) => {
  * A user/entity representation: an image, falling back to initials derived from `name`, falling back
  * to projected content (e.g. an icon) when neither is set. A failed image load falls back the same way.
  *
+ * Also an attribute selector, so an avatar that has to be a link or a button is written as one -
+ * `routerLink`, `href` and click handlers stay on the consumer's own element.
+ *
  * @example
  * <et-avatar src="/jane.jpg" name="Jane Doe" />
  * <et-avatar name="Jane Doe" color="brand" />
  * <et-avatar><et-icon [definition]="USER_ICON" /></et-avatar>
+ * <a [routerLink]="['/users', user.id]" [name]="user.name" et-avatar></a>
  */
 @Component({
-  selector: 'et-avatar',
+  selector: 'et-avatar, [et-avatar]',
   template: `
     @if (imageVisible()) {
       <img [src]="src()" [alt]="name() ?? ''" (error)="markImageFailed()" class="et-avatar-image" />

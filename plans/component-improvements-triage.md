@@ -35,8 +35,6 @@ parked - see its row.
 | Item                                              | Tag     | Note                                                                                                                                        |
 | ------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Auth: inactivity is per-tab, the logout is shared | `B`,`D` | An idle tab logs out the active one; `resetTimer()` moves the countdown but not the timer. Idleness has to be session-wide                  |
-| Avatar: extract `AvatarDirective`                 | `C`     | Follow tooltip/toggletip/accordion's headless split                                                                                         |
-| Avatar group: `maxVisible` + "+N"                 | `A`     | No "+N" pattern exists anywhere to copy - new surface                                                                                       |
 | Description list: `variant`                       | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
 | Scheduler: colour palette via DI token            | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
 | Scheduler: infinite agenda                        | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |

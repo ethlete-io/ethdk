@@ -12,11 +12,25 @@ import { AVATAR_IMPORTS } from '../avatar.imports';
       <et-avatar [size]="size()" [shape]="shape()" src="/broken-image.jpg" name="Fallback Fred" />
       <et-avatar [size]="size()" [shape]="shape()" color="success" />
 
+      <!-- The group counts what is over the limit and appends the +N itself. -->
+      <et-avatar-group [maxVisible]="maxVisible()">
+        @for (member of MEMBERS; track member.name) {
+          <et-avatar [size]="size()" [shape]="shape()" [name]="member.name" [color]="member.color" />
+        }
+      </et-avatar-group>
+
+      <!-- An avatar that navigates is written as the link it is. -->
       <et-avatar-group>
-        <et-avatar [size]="size()" [shape]="shape()" name="Jane Doe" />
-        <et-avatar [size]="size()" [shape]="shape()" name="John Smith" />
-        <et-avatar [size]="size()" [shape]="shape()" name="Cara Lee" color="brand" />
-        <et-avatar [size]="size()" [shape]="shape()">+5</et-avatar>
+        @for (member of MEMBERS.slice(0, 3); track member.name) {
+          <a
+            [size]="size()"
+            [shape]="shape()"
+            [name]="member.name"
+            [attr.aria-label]="member.name"
+            href="#{{ member.name }}"
+            et-avatar
+          ></a>
+        }
       </et-avatar-group>
     </div>
   `,
@@ -26,4 +40,13 @@ import { AVATAR_IMPORTS } from '../avatar.imports';
 export class AvatarStorybookComponent {
   public size = input<AvatarSize>('md');
   public shape = input<AvatarShape>('circle');
+  public maxVisible = input<number | undefined>(3);
+
+  protected readonly MEMBERS = [
+    { name: 'Jane Doe', color: undefined },
+    { name: 'John Smith', color: undefined },
+    { name: 'Cara Lee', color: 'brand' },
+    { name: 'Ada Byron', color: undefined },
+    { name: 'Grace Hopper', color: 'success' },
+  ];
 }

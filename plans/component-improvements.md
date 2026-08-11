@@ -50,21 +50,13 @@ else in this section is open.
 
 ## Avatar
 
-`AvatarComponent` (`src`, `name`, `size`, `shape`, `color` via
-`ProvideColorDirective`) is component-only today - no `headless/` split,
-unlike tooltip/toggletip/accordion. Directive usage on an arbitrary host
-(`routerLink`, `button`) means extracting an `AvatarDirective` the way those
-domains do, so hover/focus apply to whatever it's attached to.
-
-`AvatarGroupComponent` is a no-logic `<ng-content />` wrapper - overlap and
-ring come entirely from CSS (`--et-avatar-group-overlap`, `--et-avatar-
-group-ring-width`); stacking threshold and "+N" overflow are left to the
-consumer (its own JSDoc example is "just project `<et-avatar>+5</et-avatar>`
-yourself"). No other "+N" counter pattern exists anywhere in the SDK to
-copy, so a `maxVisible` input plus a built-in overflow avatar is new
-surface. Neither avatar nor avatar-group has any `:hover` today - keep it
-that way for the plain preview-stack case (all avatars shown, no
-interaction), and only add hover once directive-usable avatars need it.
+Both open items here shipped 2026-08-11. Directive usage did **not** need a
+headless split: `et-avatar` became an attribute selector as well, so an avatar
+that has to be a link or a button is written on the consumer's own element and
+`routerLink` keeps working - the same call progress steps took the same day.
+`et-avatar-group` grew `maxVisible`, hides the avatars past it and appends its
+own `+N` avatar, copying the first projected avatar's size and shape. Still no
+`:hover` on either, which is right for the plain preview stack.
 
 ## Buttons
 
