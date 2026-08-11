@@ -11,6 +11,10 @@ type SyncMessage =
   | {
       type: 'logout';
       cause?: BearerAuthSessionEndCause;
+    }
+  | {
+      /** A tab that just started asking whoever holds the session to send it over. */
+      type: 'state-request';
     };
 
 export type MultiTabSyncConfig = {
@@ -32,6 +36,13 @@ export type MultiTabSyncContext = {
 
   /** The provider's name, which the default channel name is derived from. */
   name: string;
+
+  /**
+   * Whether this tab is the one that answers a joining tab's `state-request`. Leader-only, or every
+   * open tab replies to every join at once. Reads `true` where there is no election, which is the
+   * same thing: a tab that refreshes for itself also speaks for itself.
+   */
+  isLeader: () => boolean;
 
   /**
    * Applies an incoming token pair. Must be the provider's `applyTokens` rather than a write to the
@@ -56,8 +67,30 @@ export type MultiTabSyncContext = {
 const incomingCause = (cause: BearerAuthSessionEndCause | undefined): BearerAuthSessionEndCause =>
   !cause || cause === 'user' ? 'otherTab' : cause;
 
+/**
+ * The bounded wait a joining tab gives the leader to send the live session over. Short enough to be
+ * invisible in front of the network request it defers, long enough for a same-origin channel message
+ * plus the answer to come back.
+ */
+const sessionAdoptionTimeoutMs = 250;
+
+/**
+ * The join handshake, from the joining tab's side: it asked for the session and is holding anything
+ * that would start a competing one until the answer arrives, or the wait runs out.
+ */
+export type BearerAuthSessionAdoption = {
+  /** Whether the answer is still outstanding. `false` once tokens arrived, or the wait elapsed. */
+  isPending: () => boolean;
+
+  /** Resolves when tokens arrived or the wait elapsed - never rejects, and never waits forever. */
+  settled: Promise<void>;
+};
+
 export type InternalMultiTabSync = {
   cleanup: () => void;
+
+  /** Absent when there is nothing to adopt: no `BroadcastChannel`, or tokens are not synced. */
+  sessionAdoption?: BearerAuthSessionAdoption;
 };
 
 /**
@@ -99,8 +132,30 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
   let hadTokens = false;
 
+  let isAdoptionPending = false;
+  let settleAdoption = () => {
+    /* replaced below when the handshake actually runs */
+  };
+
   channel.onmessage = (event: MessageEvent<SyncMessage>) => {
     const message = event.data;
+
+    if (message.type === 'state-request') {
+      if (!syncTokens || !context.isLeader()) return;
+
+      const access = context.accessToken();
+      const refresh = context.refreshToken();
+
+      if (!access || !refresh) return;
+
+      channel.postMessage({
+        type: 'tokens-updated',
+        accessToken: encryptToken(access),
+        refreshToken: encryptToken(refresh),
+      } satisfies SyncMessage);
+
+      return;
+    }
 
     if (message.type === 'logout' && syncLogout) {
       lastSyncedState = LOGGED_OUT;
@@ -120,13 +175,41 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
     lastSyncedState = tokenState(access, refresh);
     hadTokens = true;
     context.applyTokens(access, refresh);
+    settleAdoption();
   };
 
+  let adoptionTimeout: ReturnType<typeof setTimeout> | undefined;
+
   const cleanup = () => {
+    clearTimeout(adoptionTimeout);
+    settleAdoption();
     channel.close();
   };
 
   destroyRef.onDestroy(cleanup);
+
+  // Sync is push-only otherwise: a tab only broadcasts tokens that just changed, so a tab joining a
+  // live session would hear nothing and start its own login. Asking is the missing half.
+  const sessionAdoption = syncTokens
+    ? (() => {
+        isAdoptionPending = true;
+
+        const settled = new Promise<void>((resolve) => {
+          settleAdoption = () => {
+            if (!isAdoptionPending) return;
+
+            isAdoptionPending = false;
+            resolve();
+          };
+        });
+
+        adoptionTimeout = setTimeout(settleAdoption, sessionAdoptionTimeoutMs);
+
+        channel.postMessage({ type: 'state-request' } satisfies SyncMessage);
+
+        return { isPending: () => isAdoptionPending, settled } satisfies BearerAuthSessionAdoption;
+      })()
+    : undefined;
 
   if (syncTokens) {
     effect(() => {
@@ -175,5 +258,5 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
     });
   }
 
-  return { cleanup };
+  return { cleanup, sessionAdoption };
 };

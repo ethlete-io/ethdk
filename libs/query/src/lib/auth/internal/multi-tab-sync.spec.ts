@@ -24,6 +24,8 @@ describe('setupMultiTabSync', () => {
     _storage: Map<string, string>;
   };
 
+  let isLeader = true;
+
   /** The provider's two entry points, standing in for what `createBearerAuthProvider` hands the sync. */
   const setup = (config: MultiTabSyncConfig = {}) =>
     setupMultiTabSync(config, {
@@ -31,6 +33,7 @@ describe('setupMultiTabSync', () => {
       refreshToken,
       sessionEndCause,
       name: 'test-auth',
+      isLeader: () => isLeader,
       applyTokens: applyTokens as unknown as (access: string, refresh: string) => void,
       logout: logout as unknown as () => void,
     });
@@ -69,6 +72,7 @@ describe('setupMultiTabSync', () => {
     accessToken = signal<string | null>(null);
     refreshToken = signal<string | null>(null);
     sessionEndCause = signal<BearerAuthSessionEndCause | null>(null);
+    isLeader = true;
 
     applyTokens = vi.fn((access: string, refresh: string) => {
       accessToken.set(access);
@@ -424,6 +428,106 @@ describe('setupMultiTabSync', () => {
 
       // Should not broadcast (both tokens required)
       expect(mockChannel.postMessage).not.toHaveBeenCalled();
+    });
+  });
+  describe('join handshake', () => {
+    it('should ask for the live session on setup', () => {
+      TestBed.runInInjectionContext(() => {
+        const sync = setup();
+
+        expect(mockChannel.postMessage).toHaveBeenCalledWith({ type: 'state-request' });
+        expect(sync.sessionAdoption?.isPending()).toBe(true);
+      });
+    });
+
+    it('should not ask when tokens are deliberately tab local', () => {
+      TestBed.runInInjectionContext(() => {
+        const sync = setup({ syncTokens: false });
+
+        expect(mockChannel.postMessage).not.toHaveBeenCalled();
+        expect(sync.sessionAdoption).toBeUndefined();
+      });
+    });
+
+    it('should answer another tab with the session it holds, as the leader', () => {
+      TestBed.runInInjectionContext(() => {
+        setup();
+
+        accessToken.set('access-token');
+        refreshToken.set('refresh-token');
+        TestBed.flushEffects();
+        mockChannel.postMessage.mockClear();
+
+        mockChannel.onmessage?.({ data: { type: 'state-request' } } as MessageEvent);
+
+        expect(mockChannel.postMessage).toHaveBeenCalledWith({
+          type: 'tokens-updated',
+          accessToken: encryptToken('access-token'),
+          refreshToken: encryptToken('refresh-token'),
+        });
+      });
+    });
+
+    it('should stay silent as a follower, or with no session to hand over', () => {
+      TestBed.runInInjectionContext(() => {
+        isLeader = false;
+        setup();
+
+        accessToken.set('access-token');
+        refreshToken.set('refresh-token');
+        TestBed.flushEffects();
+        mockChannel.postMessage.mockClear();
+
+        mockChannel.onmessage?.({ data: { type: 'state-request' } } as MessageEvent);
+
+        expect(mockChannel.postMessage).not.toHaveBeenCalled();
+
+        isLeader = true;
+        accessToken.set(null);
+        refreshToken.set(null);
+        TestBed.flushEffects();
+        mockChannel.postMessage.mockClear();
+
+        mockChannel.onmessage?.({ data: { type: 'state-request' } } as MessageEvent);
+
+        expect(mockChannel.postMessage).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should settle the moment tokens arrive', async () => {
+      await TestBed.runInInjectionContext(async () => {
+        const sync = setup();
+
+        mockChannel.onmessage?.({
+          data: {
+            type: 'tokens-updated',
+            accessToken: encryptToken('incoming-access'),
+            refreshToken: encryptToken('incoming-refresh'),
+          },
+        } as MessageEvent);
+
+        expect(sync.sessionAdoption?.isPending()).toBe(false);
+        await expect(sync.sessionAdoption?.settled).resolves.toBeUndefined();
+      });
+    });
+
+    it('should settle on its own when nobody answers', async () => {
+      vi.useFakeTimers();
+
+      try {
+        await TestBed.runInInjectionContext(async () => {
+          const sync = setup();
+
+          expect(sync.sessionAdoption?.isPending()).toBe(true);
+
+          vi.advanceTimersByTime(250);
+
+          expect(sync.sessionAdoption?.isPending()).toBe(false);
+          await expect(sync.sessionAdoption?.settled).resolves.toBeUndefined();
+        });
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

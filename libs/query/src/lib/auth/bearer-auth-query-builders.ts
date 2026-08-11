@@ -1,6 +1,6 @@
-import { computed, effect, isDevMode } from '@angular/core';
+import { computed, DestroyRef, effect, inject, isDevMode, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { concatMap, EMPTY, Observable, of, switchMap, timer } from 'rxjs';
+import { concatMap, EMPTY, fromEvent, Observable, of, switchMap, timer } from 'rxjs';
 import { patchQueryDevtoolsTokenPayload } from '../devtools/query-devtools-hook';
 import { QueryArgs, QueryCreator, QueryErrorResponse, RequestArgs, ResponseType } from '../http';
 import { ShouldRetryRequestFn } from '../http/query-retry-utils';
@@ -163,10 +163,20 @@ export type RefreshFailure = {
  * What came of a refresh attempt. Everything but `executed` left the refresh token unspent, so a
  * scheduled attempt that ends on one has to come back for it.
  */
-type RefreshAttempt = 'executed' | 'noToken' | 'delegated' | 'busy' | 'throttled';
+type RefreshAttempt = 'executed' | 'noToken' | 'delegated' | 'notLeader' | 'busy' | 'throttled';
 
 /** How long a scheduled refresh waits before retrying an attempt that could not run yet. */
 const rescheduleDelayMs = 5000;
+
+/**
+ * How long a follower waits for the leader to answer a delegated refresh before asking again. The
+ * request is a `BroadcastChannel` message with no ack, so a leader that was frozen or handed the
+ * leadership over mid-flight simply never acts on it.
+ */
+const delegatedRefreshRetryMs = 3000;
+
+/** How often a delegated refresh is re-asked for before the tab leaves it to the next 401. */
+const maxDelegatedRefreshAttempts = 3;
 
 /**
  * How often a scheduled refresh may re-arm before it waits for a new token pair. A tab that keeps
@@ -265,9 +275,13 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     const minRefreshInterval = config.minRefreshInterval ?? 30000; // 30 seconds default
     const refreshIfExpired = config.refreshIfExpired ?? true;
 
+    const destroyRef = inject(DestroyRef);
+
     let lastRefreshTime = 0;
     let lastUnauthorizedRefreshTime = 0;
     let unauthorizedRefreshStreak = 0;
+    let delegatedRefreshAttempts = 0;
+    let isWatchingDelegatedRefresh = false;
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const refreshQuery = () => context.queries[key]!;
@@ -277,9 +291,14 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       if (!currentRefreshToken) return 'noToken';
 
       if (!context.isLeader()) {
-        // Only the leader may spend a single-use refresh token, but the event is still real - hand it
-        // over instead of dropping it, or this tab waits out the leader's timer with a dead token.
+        // A scheduled tick on a follower is pure duplicate: multi-tab sync keeps the access token
+        // identical across tabs, so the leader's own timer is due at the same instant and it is the
+        // only tab allowed to act. Delegation is for the 401 path, where this tab has a request that
+        // really failed and the leader has no way of knowing.
+        if (reason === 'scheduled') return 'notLeader';
+
         context.refreshCoordination?.request();
+        watchDelegatedRefresh(context.accessToken());
 
         return 'delegated';
       }
@@ -289,15 +308,11 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       // that login is replacing.
       if (context.hasTokenIssuingExecutionInFlight()) return 'busy';
 
+      const now = Date.now();
+
       if (reason === 'scheduled') {
-        const now = Date.now();
-
         if (now - lastRefreshTime < minRefreshInterval) return 'throttled';
-
-        lastRefreshTime = now;
       } else {
-        const now = Date.now();
-
         if (
           unauthorizedRefreshStreak >= maxUnauthorizedRefreshStreak &&
           now - lastUnauthorizedRefreshTime < minRefreshInterval
@@ -309,10 +324,44 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         lastUnauthorizedRefreshTime = now;
       }
 
+      // Stamped whatever the reason, so the scheduled floor covers a 401-driven rotation too - a
+      // scheduled tick right behind one would otherwise spend a second refresh token. The 401 path
+      // deliberately does not *gate* on it: a token revoked seconds after a refresh is exactly when
+      // the request has to go out.
+      lastRefreshTime = now;
+
       refreshQuery().execute(buildArgs(currentRefreshToken), { triggeredBy: 'token-refresh' });
 
       return 'executed';
     };
+
+    /**
+     * Asks the leader again if a delegated refresh went unanswered - the request is a channel message
+     * with no ack, so a frozen leader, or one that handed the leadership over mid-flight, drops it
+     * silently. One watch at a time, and by the time it re-asks this tab may be the leader itself;
+     * `executeRefresh` re-decides that on every attempt.
+     */
+    function watchDelegatedRefresh(tokenAtRequest: string | null) {
+      if (isWatchingDelegatedRefresh || delegatedRefreshAttempts >= maxDelegatedRefreshAttempts) return;
+
+      delegatedRefreshAttempts++;
+      isWatchingDelegatedRefresh = true;
+
+      timer(delegatedRefreshRetryMs)
+        .pipe(takeUntilDestroyed(destroyRef))
+        .subscribe(() => {
+          isWatchingDelegatedRefresh = false;
+
+          // A new access token is the leader's answer - nothing to re-ask for.
+          if (context.accessToken() !== tokenAtRequest) {
+            delegatedRefreshAttempts = 0;
+
+            return;
+          }
+
+          executeRefresh('unauthorized');
+        });
+    }
 
     /**
      * How long a scheduled refresh that did not spend the refresh token waits before trying again.
@@ -328,7 +377,10 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
           return Math.max(minRefreshInterval - (Date.now() - lastRefreshTime), rescheduleDelayMs);
         case 'busy':
           return rescheduleDelayMs;
+        // Both wait for the leader: `delegated` asked it to act, `notLeader` left it to its own timer.
+        // Coming back keeps this tab covered if the leadership moves here in the meantime.
         case 'delegated':
+        case 'notLeader':
           return minRefreshInterval;
       }
     };
@@ -398,12 +450,30 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         }),
       );
 
+    // A backgrounded tab's `timer()` does not fire on time - the browser throttles it, and a frozen
+    // page stops running it altogether while keeping the Web Lock that makes it the leader. So the
+    // schedule is recomputed whenever the page becomes visible again: an overdue token resolves to a
+    // delay of 0 and refreshes immediately, instead of waiting for a secure query to 401.
+    const foregroundEpoch = signal(0);
+
+    if (typeof document !== 'undefined') {
+      fromEvent(document, 'visibilitychange')
+        .pipe(takeUntilDestroyed(destroyRef))
+        .subscribe(() => {
+          if (document.visibilityState !== 'visible') return;
+
+          foregroundEpoch.update((epoch) => epoch + 1);
+        });
+    }
+
     // The delay is read in a computed rather than in the `switchMap` so that a devtools-armed token
     // lifetime re-arms the schedule: the override is a signal, and only a reactive read of it moves the
     // timer before the next token arrives. The wrapper object keeps every recomputation an emission, so
     // two tokens that happen to be due at the same moment still restart the timer.
     const nextScheduledRefresh = computed(() => {
       const token = context.accessToken();
+
+      foregroundEpoch();
 
       return { dueInMs: token ? scheduledRefreshDelay(token) : null };
     });
@@ -441,6 +511,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       context.repository.events$.pipe(takeUntilDestroyed()).subscribe((event) => {
         if (event.type === 'request-success' && event.isSecure) {
           unauthorizedRefreshStreak = 0;
+          delegatedRefreshAttempts = 0;
 
           return;
         }

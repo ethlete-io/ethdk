@@ -105,21 +105,29 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
   const earlySetup: BearerAuthProviderEarlySetup['earlySetup'] = (context: BearerAuthProviderEarlySetupContext) => {
     channelName = config.channelName ?? defaultSyncChannelName(context.name);
 
-    setupMultiTabSync(
+    // Filled in below once the election exists. Until then this tab answers as its own leader, which
+    // is what it is: the sync is set up first because the auth queries read `isLeader` while being
+    // wired, and a `state-request` cannot arrive before this function returns anyway.
+    let isLeaderRef: () => boolean = () => true;
+
+    const sync = setupMultiTabSync(
       { channelName, syncTokens: config.syncTokens, syncLogout: config.syncLogout },
       {
         accessToken: context.accessToken,
         refreshToken: context.refreshToken,
         sessionEndCause: context.sessionEndCause,
         name: context.name,
+        isLeader: () => isLeaderRef(),
         applyTokens: context.applyTokens,
         logout: context.logout,
       },
     );
 
-    if (config.leaderElection === false) return {};
+    if (config.leaderElection === false) return { sessionAdoption: sync.sessionAdoption };
 
     const election = setupLeaderElection({ name: context.name });
+
+    isLeaderRef = () => election.isLeader();
 
     instance = {
       isLeader: election.isLeader,
@@ -131,6 +139,7 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
       isLeader: () => election.isLeader(),
       leaderElection: instance,
       refreshCoordination: { request: election.requestRefresh, requests$: election.refreshRequests$ },
+      sessionAdoption: sync.sessionAdoption,
     };
   };
 

@@ -1,9 +1,19 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { deleteCookie, getCookie, injectRoute, setCookie } from '@ethlete/core';
-import { QueryTestSetup, setupAuthTest, setupQueryTest } from '@ethlete/query/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  FakeBroadcastChannelHandle,
+  FakeWebLocksHandle,
+  flushMultiTabSync,
+  installFakeBroadcastChannel,
+  installFakeWebLocks,
+  QueryTestSetup,
+  setupAuthTest,
+  setupQueryTest,
+} from '@ethlete/query/testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { encryptToken } from '../utils';
+import { withBearerAuthMultiTabSync } from './bearer-auth-multi-tab-sync';
 import { withPersistentAuth } from './bearer-auth-persistent-auth';
 
 vi.mock('@ethlete/core', async () => {
@@ -673,6 +683,101 @@ describe('bearer-auth-persistent-auth', () => {
 
       const refreshReq = setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
       expect(refreshReq.request.body).toEqual({ token: 'manual-token' });
+    });
+  });
+  describe('Auto-login with multi-tab sync', () => {
+    let bus: FakeBroadcastChannelHandle;
+    let locks: FakeWebLocksHandle;
+
+    beforeEach(() => {
+      bus = installFakeBroadcastChannel();
+      locks = installFakeWebLocks();
+    });
+
+    afterEach(() => {
+      TestBed.resetTestingModule();
+      bus.restore();
+      locks.restore();
+    });
+
+    const persistentAuthWithSync = () => [
+      withPersistentAuth({
+        cookie: { name: 'testAuth' },
+        autoLogin: {
+          queryKey: 'refresh',
+          // @ts-expect-error - Type inference issue in setupAuthTest
+          buildArgs: (token) => ({ body: { token } }),
+        },
+      }),
+      withBearerAuthMultiTabSync(),
+    ];
+
+    const settle = async () => {
+      for (let i = 0; i < 5; i++) {
+        TestBed.tick();
+        await flushMultiTabSync();
+      }
+    };
+
+    it('should adopt the session another tab hands over instead of spending the cookie', async () => {
+      vi.mocked(getCookie).mockReturnValue('stored-refresh-token');
+
+      // The tab that is already logged in: it holds the leader lock and answers the join request.
+      const leaderChannel = new BroadcastChannel('ethlete-auth-sync:test-auth');
+      let releaseLeaderLock = () => {
+        /* not granted yet */
+      };
+      const leaderLock = navigator.locks.request(
+        'ethlete-auth:leader:test-auth',
+        () => new Promise<void>((resolve) => (releaseLeaderLock = resolve)),
+      );
+
+      leaderChannel.onmessage = (event: MessageEvent<unknown>) => {
+        if ((event.data as { type: string }).type !== 'state-request') return;
+
+        leaderChannel.postMessage({
+          type: 'tokens-updated',
+          accessToken: encryptToken('live-access'),
+          refreshToken: encryptToken('live-refresh'),
+        });
+      };
+
+      try {
+        const authSetup = setupAuthTest({ querySetup: setup, features: persistentAuthWithSync() });
+
+        await settle();
+
+        expect(authSetup.auth.accessToken()).toBe('live-access');
+        expect(authSetup.auth.refreshToken()).toBe('live-refresh');
+        setup.httpTesting.expectNone('https://api.test.com/auth/refresh');
+      } finally {
+        leaderChannel.close();
+        releaseLeaderLock();
+        await leaderLock.catch(() => undefined);
+      }
+    });
+
+    it('should fall back to the cookie when no tab answers', async () => {
+      vi.useFakeTimers();
+      vi.mocked(getCookie).mockReturnValue('stored-refresh-token');
+
+      try {
+        setupAuthTest({ querySetup: setup, features: persistentAuthWithSync() });
+
+        // Nothing spent yet: the handshake is still out, and another tab may hold the session.
+        TestBed.tick();
+        setup.httpTesting.expectNone('https://api.test.com/auth/refresh');
+
+        vi.advanceTimersByTime(250);
+        await flushMultiTabSync();
+        TestBed.tick();
+
+        expect(setup.httpTesting.expectOne('https://api.test.com/auth/refresh').request.body).toEqual({
+          token: 'stored-refresh-token',
+        });
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

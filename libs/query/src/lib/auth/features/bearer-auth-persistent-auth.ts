@@ -204,6 +204,17 @@ export const createPersistentAuthFeature = <
     if (wasRejected) removeCookie();
   });
 
+  const exchangeCookie = () => {
+    const storedToken = getCookie(cookieName);
+
+    if (!storedToken) return;
+
+    const decryptedToken = decryptToken(storedToken);
+    const args = config.autoLogin.buildArgs(decryptedToken);
+
+    context.queries[config.autoLogin.queryKey].execute(args, { triggeredBy: 'persistent-auth' });
+  };
+
   const tryLogin = () => {
     const currentRoute = route();
     const excludeRoutes = config.autoLogin.excludeRoutes ?? [];
@@ -217,12 +228,27 @@ export const createPersistentAuthFeature = <
       return;
     }
 
-    const storedToken = getCookie(cookieName);
-    if (storedToken) {
-      const decryptedToken = decryptToken(storedToken);
-      const args = config.autoLogin.buildArgs(decryptedToken);
-      context.queries[config.autoLogin.queryKey].execute(args, { triggeredBy: 'persistent-auth' });
+    // A session is already here - synced in from another tab, or restored by a previous call. Spending
+    // the cookie now would rotate a refresh token every other tab is holding, for nothing.
+    if (refreshToken()) return;
+
+    const adoption = context.sessionAdoption;
+
+    // With multi-tab sync on, another tab may be about to hand this one its live session. Wait for
+    // that answer before exchanging the cookie - bounded, so a lone tab is not held up by a reply
+    // that is never coming - and only when there is a cookie to spend, so a tab with nothing to
+    // restore still starts up synchronously.
+    if (adoption?.isPending() && getCookie(cookieName)) {
+      void adoption.settled.then(() => {
+        if (refreshToken()) return;
+
+        exchangeCookie();
+      });
+
+      return;
     }
+
+    exchangeCookie();
   };
 
   const setRememberMe = (enabled: boolean) => {

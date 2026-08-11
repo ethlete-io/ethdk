@@ -4,6 +4,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { createUnsavedChangesTracker, getCookie, getDomain, injectRoute } from '@ethlete/core';
+import { flushMultiTabSync, installFakeBroadcastChannel, installFakeWebLocks } from '@ethlete/query/testing';
 import { createPostQuery, createQueryClient, createSecureGetQuery, QueryClientRef } from '../http';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery, withRefreshQuery } from './bearer-auth-query-builders';
@@ -2375,6 +2376,107 @@ describe('createBearerAuthProvider', () => {
           .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-3' });
         TestBed.tick();
       });
+    });
+    it('should refresh a token that came due while the tab was hidden, as soon as it is visible again', () => {
+      const { inject: injectAuthProvider } = createProvider();
+
+      TestBed.runInInjectionContext(() => {
+        login(injectAuthProvider());
+
+        httpTesting
+          .expectOne('https://api.example.com/auth/login')
+          .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+        TestBed.tick();
+
+        // Moving the clock without running timers is what a backgrounded tab does: the refresh came
+        // due, and the throttled (or frozen) `timer()` never fired for it. Far enough that the token
+        // is inside its refresh buffer - the schedule is always recomputed from the lifetime that is
+        // *left*, so an hour of hidden time does not by itself make a long-lived token overdue.
+        vi.setSystemTime(Date.now() + 970_000);
+
+        httpTesting.expectNone('https://api.example.com/auth/refresh');
+
+        document.dispatchEvent(new Event('visibilitychange'));
+        TestBed.tick();
+
+        httpTesting
+          .expectOne('https://api.example.com/auth/refresh')
+          .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-2' });
+        TestBed.tick();
+      });
+    });
+
+    it('should leave a scheduled refresh to the leader instead of delegating it', async () => {
+      const bus = installFakeBroadcastChannel();
+      const locks = installFakeWebLocks();
+
+      // Another tab already holds the leader lock, so the provider below is a follower.
+      let releaseLeaderLock = () => {
+        /* not granted yet */
+      };
+      const leaderLock = navigator.locks.request(
+        'ethlete-auth:leader:test-auth',
+        () => new Promise<void>((resolve) => (releaseLeaderLock = resolve)),
+      );
+
+      try {
+        const postQuery = createPostQuery(queryClientRef);
+        const loginQuery = postQuery<{
+          body: { username: string };
+          response: { token: string; refresh_token: string };
+        }>('/auth/login');
+        const refresh = postQuery<{
+          body: { token: string };
+          response: { token: string; refresh_token: string };
+        }>('/auth/refresh');
+
+        const extractTokens = (response: { token: string; refresh_token: string }) => ({
+          accessToken: response.token,
+          refreshToken: response.refresh_token,
+        });
+
+        const { inject: injectAuthProvider } = createBearerAuthProvider({
+          name: 'test-auth',
+          queryClientRef,
+          queries: [
+            withAuthenticationQuery('login', { queryCreator: loginQuery, extractTokens }),
+            withRefreshQuery('refresh', { queryCreator: refresh, extractTokens }),
+          ],
+          features: [withBearerAuthMultiTabSync()],
+        });
+
+        await TestBed.runInInjectionContext(async () => {
+          login(injectAuthProvider());
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/login')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+
+          for (let i = 0; i < 5; i++) {
+            TestBed.tick();
+            await flushMultiTabSync();
+          }
+
+          bus.posted.length = 0;
+
+          // 1000s of lifetime, a 250s buffer, so the follower's own timer is due 750s in - at the same
+          // instant as the leader's, which is why acting on it here can only duplicate the leader.
+          vi.advanceTimersByTime(750_000);
+          TestBed.tick();
+          await flushMultiTabSync();
+
+          httpTesting.expectNone('https://api.example.com/auth/refresh');
+          expect(
+            bus.posted.filter((message) => (message.data as { type: string }).type === 'refresh-requested'),
+          ).toEqual([]);
+        });
+      } finally {
+        releaseLeaderLock();
+        await leaderLock.catch(() => undefined);
+        TestBed.resetTestingModule();
+        bus.restore();
+        locks.restore();
+      }
     });
   });
 });

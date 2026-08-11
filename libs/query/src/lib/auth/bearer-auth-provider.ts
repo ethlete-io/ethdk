@@ -52,6 +52,7 @@ import {
   TokenExpirationWarningFeature,
   TrackingFeature,
 } from './features';
+import { BearerAuthSessionAdoption } from './internal';
 
 export { AnyQueryBuilder } from './bearer-auth-query-builders';
 
@@ -181,6 +182,7 @@ export type BearerAuthProviderEarlySetupResult = {
   isLeader?: () => boolean;
   leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
   refreshCoordination?: BearerAuthRefreshCoordination;
+  sessionAdoption?: BearerAuthSessionAdoption;
 };
 
 /**
@@ -404,6 +406,14 @@ export type BearerAuthProviderFeatureContext<
   setTokens: (access: string, refresh: string) => void;
   isLeader: () => boolean;
   leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
+
+  /**
+   * The join handshake a tab runs at startup when multi-tab sync is on: it asked the leader for the
+   * live session, and `withPersistentAuth` holds its cookie auto-login until the answer arrives, so a
+   * second tab adopts the session instead of spending a refresh token on one of its own. Absent when
+   * there is nothing to adopt - no sync, no `BroadcastChannel`, or tokens deliberately tab-local.
+   */
+  sessionAdoption?: BearerAuthSessionAdoption;
   queries: QueryRegistry<TBuilders>;
   executionState: WritableSignal<BearerAuthExecutionState | null>;
   sessionStatus: Signal<BearerAuthSessionStatus>;
@@ -669,6 +679,7 @@ const runEarlyFeatureSetup = (
   let isLeaderFn: () => boolean = alwaysLeader;
   let leaderElectionContext: BearerAuthProviderFeatureContext['leaderElection'];
   let refreshCoordination: BearerAuthRefreshCoordination | undefined;
+  let sessionAdoption: BearerAuthSessionAdoption | undefined;
 
   for (const featureBuilder of featureBuilders ?? []) {
     const earlySetup = (featureBuilder as BearerAuthProviderEarlySetup).earlySetup;
@@ -680,9 +691,10 @@ const runEarlyFeatureSetup = (
     isLeaderFn = result.isLeader ?? isLeaderFn;
     leaderElectionContext = result.leaderElection ?? leaderElectionContext;
     refreshCoordination = result.refreshCoordination ?? refreshCoordination;
+    sessionAdoption = result.sessionAdoption ?? sessionAdoption;
   }
 
-  return { isLeaderFn, leaderElectionContext, refreshCoordination };
+  return { isLeaderFn, leaderElectionContext, refreshCoordination, sessionAdoption };
 };
 
 const createBearerAuthProviderImpl = <
@@ -813,6 +825,7 @@ const createBearerAuthProviderImpl = <
     setTokens,
     isLeader: isLeader.isLeaderFn,
     leaderElection: isLeader.leaderElectionContext,
+    sessionAdoption: isLeader.sessionAdoption,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
     executionState,
@@ -823,9 +836,20 @@ const createBearerAuthProviderImpl = <
   const { features, applied: appliedFeatures } = setupFeatures(config.features, featureSetupContext);
 
   // Runs after the features, because `withPersistentAuth` starts its auto-login during setup. Still
-  // `unknown` here means nothing is trying to restore a session, so there is nothing to wait for.
+  // `unknown` here means nothing is trying to restore a session, so there is nothing to wait for -
+  // unless the join handshake is still out, in which case another tab may be about to hand this one a
+  // live session. Saying `anonymous` in that window would send the auth guard to the login page for a
+  // session that exists, so the fallback waits for the handshake instead.
   if (sessionStatus() === 'unknown') {
-    sessionStatus.set('anonymous');
+    const adoption = isLeader.sessionAdoption;
+
+    if (adoption?.isPending()) {
+      void adoption.settled.then(() => {
+        if (sessionStatus() === 'unknown') sessionStatus.set('anonymous');
+      });
+    } else {
+      sessionStatus.set('anonymous');
+    }
   }
 
   const provider = {

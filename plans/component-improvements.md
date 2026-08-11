@@ -469,9 +469,10 @@ activity has to be shared (announced on the sync channel, or the timer owned by 
 a per-tab timer is allowed to end a shared session.
 
 **And the refresh path did have a real hole - it was bigger than the hypothesis.** Fixed 2026-08-09,
-see "Already fixed"; the proactive refresh had never fired at all. What is still open here is only
-the visibility half: there is no re-check on `visibilitychange`, and a `refresh-requested` message
-is still fire-and-forget.
+see "Already fixed"; the proactive refresh had never fired at all. The visibility half shipped
+2026-08-11: the schedule is recomputed on `visibilitychange`, and an unanswered `refresh-requested`
+is re-asked for up to three times. What is left of this section is the **inactivity** mechanism
+below, which is still per-tab.
 
 So the sleeping-leader story holds up in shape: a hidden leader tab that the browser freezes keeps
 its Web Lock - the platform releases it when the client goes away, and a frozen page has not gone
@@ -513,69 +514,6 @@ The app side of that is the app's business, but the SDK can stop leading: accept
 predicate (`shouldAutoLogin: (url: string) => boolean`) alongside the string list,
 so a consumer can match on the router's parsed URL instead of on substrings of a
 path.
-
-## Auth: a second tab auto-logs-in instead of adopting the live session
-
-Reported 2026-08-11. Tab A is logged in with multi-tab sync on and holds the lock, so it is
-leader. Opening tab B runs a full auto-login there - a refresh-token exchange from a follower -
-and the rotated tokens then sync back to A. So the session survives, but every new tab spends a
-rotation it did not need to, and does it from the tab that is explicitly not supposed to refresh.
-
-Two independent causes, both confirmed in source:
-
-- **`tryLogin()` is unconditional.** `bearer-auth-persistent-auth.ts` calls it once at feature
-  setup (`:235`), past `excludeRoutes` and `shouldAutoLogin` but past nothing else - there is no
-  `isLeader()` check and no check for a session that already exists. The leader gate that
-  `withMultiTabSync` installs covers the auth queries' _automatic refresh_, not this call.
-- **Sync is push-only, so there is nothing for B to adopt.** `setupMultiTabSync`
-  (`internal/multi-tab-sync.ts`) broadcasts `tokens-updated` from an effect on
-  `accessToken`/`refreshToken`, i.e. only from a tab whose tokens just changed. A joining tab
-  never announces itself and no tab answers - A's tokens are unchanged, so A stays silent. B
-  therefore starts blank whatever the gating does, which is why gating alone is not the fix.
-
-What it needs is a join handshake: B posts a `state-request` on the channel, the leader answers
-with its current tokens, and `tryLogin()` waits a short beat for that answer before falling back
-to the cookie. The beat has to be bounded - a lone tab must not stall its own startup waiting for
-a reply that is never coming - and the answer has to be leader-only, or every open tab replies at
-once. The existing `refreshCoordination` request/response pair over the same channel is the shape
-to copy.
-
-Worth checking while in there: whether the same joining tab also re-arms a proactive refresh
-timer off tokens it just received, which would put a second rotation right behind the first.
-
-## Auth: a scheduled refresh spends two requests, not one
-
-Reported 2026-08-11, same setup as the section above: tab A leader, tab B follower, both with a live
-session. When the access token comes due, the refresh route is POSTed **twice**.
-
-Every tab runs the scheduled-refresh timer - `nextScheduledRefresh` is computed from
-`context.accessToken()`, which multi-tab sync keeps identical across tabs, so both tabs are due at
-the same instant. What each does then differs (`bearer-auth-query-builders.ts`, `executeRefresh`):
-
-- the **leader** executes, taking the `reason: 'scheduled'` path and stamping `lastRefreshTime`;
-- the **follower** cannot spend a single-use token, so it delegates - `refreshCoordination.request()`
-  posts `refresh-requested`, and the leader answers it with
-  `executeRefresh('unauthorized')`.
-
-The two reasons do not share a throttle. `'scheduled'` guards on `lastRefreshTime` against
-`minRefreshInterval`; `'unauthorized'` guards on its own `lastUnauthorizedRefreshTime` plus
-`unauthorizedRefreshStreak`, and the first unauthorized attempt is never throttled. So the leader's
-own scheduled refresh does nothing to stop the follower's delegated one arriving right behind it.
-`hasTokenIssuingExecutionInFlight()` only catches the pair when the second lands while the first is
-still open - which is a race on network latency, not a guarantee.
-
-Two fixes, and the first alone is probably enough:
-
-- **A follower should not run the scheduled timer at all.** The leader is due at the same moment
-  and is the only tab allowed to act; delegation exists for the reactive 401 path, where the
-  follower has a request that actually failed. A scheduled tick on a follower is pure duplicate.
-- **One refresh floor for both reasons.** `lastRefreshTime` should gate any execution, whatever the
-  reason, so no path can spend a second refresh token inside `minRefreshInterval`. The
-  reason-specific streak counters stay on top of that for the 401 storm case.
-
-Both are in the same function as the [join-handshake bug](#auth-a-second-tab-auto-logs-in-instead-of-adopting-the-live-session)'s
-delegation path, and a fix for either should be tested with two real tabs - the fakes in
-`@ethlete/query/testing` are what the multi-tab sync suite already uses.
 
 ## Already fixed, do not re-report
 
