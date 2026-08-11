@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.46
+
+### Minor Changes
+
+- [`4d77d66`](https://github.com/ethlete-io/ethdk/commit/4d77d66c11edde2a0355da66a011737f9df42682) Thanks [@TomTomB](https://github.com/TomTomB)! - Grid: **breaking** - the `initialItems` input is now `items`, and the handle's `items()` signal is
+  now `currentItems()`.
+
 ## 1.0.0-next.45
 
 ### Minor Changes
