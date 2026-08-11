@@ -1,6 +1,6 @@
 import { formatFiles, Tree } from '@nx/devkit';
-import { createMigrationScope, MigrationScopeOptions } from '../migrate-provider-shape/migration-scope';
-import { migrateInteractionSwatchInFile } from './interaction-swatch';
+import { createMigrationScope, MigrationScopeOptions } from '../migrate-provider-shape/migration-scope.js';
+import { migrateInteractionSwatchInFile } from './interaction-swatch.js';
 
 type MigrationSchema = MigrationScopeOptions & {
   skipFormat?: boolean;
