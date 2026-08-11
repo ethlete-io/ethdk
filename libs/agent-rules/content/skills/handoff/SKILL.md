@@ -15,6 +15,10 @@ continue in a fresh session. Two modes:
 - **save** ("handoff", "wrap up") - write a handoff file.
 - **resume** ("continue from the handoff") - read one and continue the work.
 
+This skill is installed as `ethlete-handoff`, so under Claude Code the commands
+are `/ethlete-handoff` and `/ethlete-handoff resume [name]` - there is no
+`/handoff`. Name them that way whenever you tell the user what to run.
+
 Handoff files live in `{%handoffDir%}/` (gitignored - they are personal,
 ephemeral working state, not team docs).
 

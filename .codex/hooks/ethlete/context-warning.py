@@ -22,8 +22,10 @@ that matter here, all captured in AGENT_PROFILES:
     bills the entire context at the premium rate, which costs far more than
     handing off into a fresh session ever would. Codex has no such boundary, so
     its budget is just the window.
-  * How a handoff is invoked. Claude has /handoff and /clear; Codex has neither
-    and reads the skill from disk.
+  * How a handoff is invoked. Claude has a slash command and /clear; Codex has
+    neither and reads the skill from disk. The skill's own name differs per repo
+    (`ethlete-handoff` where the generator installed it, `handoff` where the repo
+    ships its own copy), so it is resolved at runtime — see handoff_skill().
 
 At the critical tier, if the session's permission_mode is "auto", the
 instruction escalates from "recommend" to "just do it": auto mode already
@@ -86,14 +88,14 @@ AGENT_PROFILES = {
         "default_window": None,
         "auto_modes": ("auto",),
         "emits_system_message": True,
-        "act_now": "Run /handoff now and continue in a fresh session.",
-        "act_later": "consider /handoff to continue in a fresh session",
-        "recommend": "recommend the user run /handoff to save state and start a fresh session",
-        "suggest": "suggest the user run /handoff to save state and start a fresh session",
+        "act_now": "Run /{handoff} now and continue in a fresh session.",
+        "act_later": "consider /{handoff} to continue in a fresh session",
+        "recommend": "recommend the user run /{handoff} to save state and start a fresh session",
+        "suggest": "suggest the user run /{handoff} to save state and start a fresh session",
         "save_now": (
             "run the handoff skill's save mode right now (finish only an in-flight atomic "
             "edit first, nothing new). Then tell the user exactly which handoff file was "
-            "written and that they should run /clear, then '/handoff resume <slug>', to "
+            "written and that they should run /clear, then '/{handoff} resume <slug>', to "
             "continue — clearing and resuming can't be done programmatically, so this is "
             "the one step still on them."
         ),
@@ -113,21 +115,44 @@ AGENT_PROFILES = {
         "act_later": "consider saving a handoff and continuing in a fresh session",
         "recommend": (
             "tell the user you are near the context limit, then follow "
-            ".agents/skills/ethlete-handoff/SKILL.md to save a handoff and have them start a "
+            ".agents/skills/{handoff}/SKILL.md to save a handoff and have them start a "
             "fresh session"
         ),
         "suggest": (
-            "suggest saving a handoff via .agents/skills/ethlete-handoff/SKILL.md and "
+            "suggest saving a handoff via .agents/skills/{handoff}/SKILL.md and "
             "continuing in a fresh session"
         ),
         "save_now": (
-            "follow .agents/skills/ethlete-handoff/SKILL.md and save a handoff right now "
+            "follow .agents/skills/{handoff}/SKILL.md and save a handoff right now "
             "(finish only an in-flight atomic edit first, nothing new). Then tell the user "
             "exactly which handoff file was written and that they should start a fresh "
             "codex session and resume from it."
         ),
     },
 }
+
+
+def handoff_skill(root):
+    """Name of the handoff skill installed in this repo.
+
+    The generator prefixes every skill it writes, so the command is /ethlete-handoff in a
+    consumer repo — but a repo that excludes the generated copy and ships its own (the SDK
+    itself) has a plain /handoff instead. Naming the wrong one sends the user to a slash
+    command that does not exist, so it is read off disk rather than assumed.
+    """
+    for name in ("ethlete-handoff", "handoff"):
+        for skills_dir in (".claude/skills", ".agents/skills"):
+            if os.path.isdir(os.path.join(root or ".", skills_dir, name)):
+                return name
+    return "ethlete-handoff"
+
+
+def resolve_profile(profile, skill):
+    """Fills the installed handoff skill's name into a profile's message fragments."""
+    return {
+        key: value.replace("{handoff}", skill) if isinstance(value, str) else value
+        for key, value in profile.items()
+    }
 
 
 def agent_name(argv):
@@ -337,9 +362,12 @@ def main():
         return
 
     data = json.load(sys.stdin)
-    local_config = load_local_config(repo_root(data))
+    root = repo_root(data)
+    local_config = load_local_config(root)
     if disabled_locally(local_config):
         return
+
+    profile = resolve_profile(profile, handoff_skill(root))
 
     transcript_path = data.get("transcript_path")
     session_id = data.get("session_id", "unknown")
