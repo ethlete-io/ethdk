@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposal } from '../model/proposal';
 import { contentHashOf, planTempoSync } from './diff';
+import { TempoMarkerScheme } from './marker';
 import { TempoWorklog } from './worklogs';
 
 const HOUR = 3_600_000;
@@ -45,12 +46,14 @@ const plan = (options: {
   ledger?: SyncedWorklog[];
   remote?: TempoWorklog[];
   ids?: Map<string, string>;
+  marker?: TempoMarkerScheme;
 }) =>
   planTempoSync({
     proposals: options.proposals ?? [],
     ledger: options.ledger ?? [],
     remote: options.remote ?? [],
     issueIdsByKey: options.ids ?? IDS,
+    marker: options.marker,
   });
 
 describe('contentHashOf', () => {
@@ -178,6 +181,53 @@ describe('planTempoSync', () => {
     expect(result.foreign).toEqual([foreign]);
     expect(result.deletes).toEqual([]);
     expect(result.creates.map((entry) => entry.reason)).toEqual(['new']);
+  });
+
+  it('deletes and recreates a proposal that moved to another issue, which tempo cannot do as an update', () => {
+    const moved = proposal({ issueKey: 'FIP-4000' });
+    const result = plan({
+      proposals: [moved],
+      ledger: [ledgerFor(moved, { contentHash: contentHashOf({ proposal: moved }) })],
+      remote: [remoteFor(moved, { issueId: '10100' })],
+      ids: new Map([['FIP-4000', '10200']]),
+    });
+
+    expect(result.deletes).toEqual([{ proposalId: 'p1', tempoWorklogId: 'w1', reason: 'issue-changed' }]);
+    expect(result.creates).toEqual([
+      {
+        proposal: moved,
+        issueId: '10200',
+        contentHash: contentHashOf({ proposal: moved }),
+        reason: 'recreated-after-issue-change',
+      },
+    ]);
+    expect(result.updates).toEqual([]);
+  });
+
+  it('does not read its own description marker as a change made in tempo', () => {
+    const target = proposal();
+    const marker: TempoMarkerScheme = { kind: 'description-suffix' };
+    const result = plan({
+      proposals: [target],
+      ledger: [ledgerFor(target)],
+      remote: [remoteFor(target, { description: `${target.description} [et:p1]` })],
+      marker,
+    });
+
+    expect(result.updates).toEqual([]);
+    expect(result.unchanged).toEqual(['p1']);
+  });
+
+  it('still sees a real edit through the marker', () => {
+    const target = proposal();
+    const result = plan({
+      proposals: [target],
+      ledger: [ledgerFor(target)],
+      remote: [remoteFor(target, { description: 'Rewritten in tempo [et:p1]' })],
+      marker: { kind: 'description-suffix' },
+    });
+
+    expect(result.updates.map((entry) => entry.reason)).toEqual(['changed-in-tempo']);
   });
 
   it('reports a proposal whose key resolved to no jira id instead of writing without one', () => {

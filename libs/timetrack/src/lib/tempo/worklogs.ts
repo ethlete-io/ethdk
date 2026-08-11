@@ -2,6 +2,7 @@ import { Observable, map } from 'rxjs';
 import { HistoricalWorklog } from '../correlate/recurrence';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials, TempoPagingOptions, tempoPaged$ } from './client';
+import { parseTempoWallClock, tempoDay } from './wall-clock';
 
 /** One worklog as it exists in Tempo, normalized. Times are the user's wall clock, as Tempo sends them. */
 export type TempoWorklog = {
@@ -29,29 +30,6 @@ type TempoWorklogResource = {
   attributes?: { values?: { key?: string; value?: unknown }[] };
 };
 
-const DATE_PART = /^(\d{4})-(\d{2})-(\d{2})$/;
-const TIME_PART = /^(\d{2}):(\d{2})(?::(\d{2}))?$/;
-
-/** Tempo sends the date and the time of day separately, both in the user's own local time. */
-const toLocalDate = (startDate: string | undefined, startTime: string | undefined) => {
-  const date = DATE_PART.exec(startDate ?? '');
-
-  if (!date) return undefined;
-
-  const time = TIME_PART.exec(startTime ?? '00:00:00');
-
-  if (!time) return undefined;
-
-  return new Date(
-    Number(date[1]),
-    Number(date[2]) - 1,
-    Number(date[3]),
-    Number(time[1]),
-    Number(time[2]),
-    Number(time[3] ?? '0'),
-  );
-};
-
 const toAttributeValues = (resource: TempoWorklogResource) => {
   const values: Record<string, string> = {};
 
@@ -63,7 +41,7 @@ const toAttributeValues = (resource: TempoWorklogResource) => {
 };
 
 const toWorklog = (resource: TempoWorklogResource): TempoWorklog | undefined => {
-  const from = toLocalDate(resource.startDate, resource.startTime);
+  const from = parseTempoWallClock(resource.startDate, resource.startTime);
 
   if (resource.tempoWorklogId === undefined || resource.issue?.id === undefined || !from) return undefined;
 
@@ -78,9 +56,6 @@ const toWorklog = (resource: TempoWorklogResource): TempoWorklog | undefined => 
     attributes: toAttributeValues(resource),
   };
 };
-
-const asDay = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
 /**
  * Reads one user's worklogs over a range of days. This is the read side of the whole Tempo
@@ -101,8 +76,8 @@ export const fetchTempoWorklogs$ = (options: {
     transport: options.transport,
     credentials: options.credentials,
     path: `/worklogs/user/${encodeURIComponent(options.accountId)}`,
-    describe: `worklogs for ${asDay(options.from)}…${asDay(options.to)}`,
-    query: { from: asDay(options.from), to: asDay(options.to) },
+    describe: `worklogs for ${tempoDay(options.from)}…${tempoDay(options.to)}`,
+    query: { from: tempoDay(options.from), to: tempoDay(options.to) },
     options: options.options,
   }).pipe(map((resources) => resources.flatMap((resource) => toWorklog(resource) ?? [])));
 

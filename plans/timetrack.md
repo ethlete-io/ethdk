@@ -330,7 +330,7 @@ Sync semantics per the locked decision:
 - Sync is a two-phase operation with a preview diff (create N, update M, delete K) and a
   single confirm. Partial failures are surfaced per row and retried individually.
 
-**Built - the read side and the whole diff, `libs/timetrack/src/lib/tempo/`:**
+**Built - the read side, the diff and the write half, `libs/timetrack/src/lib/tempo/`:**
 
 - `client.ts` - Bearer auth against the v4 base, `TempoRequestError` status mapping, and
   `tempoPaged$`, which follows `metadata.next` (an **absolute** URL, so the request helper takes a
@@ -353,11 +353,39 @@ Sync semantics per the locked decision:
   people also use by hand. It also distinguishes a worklog deleted in Tempo (recreate) from one
   edited there behind the app (`changed-in-tempo`), and reports a proposal whose key resolved to no
   Jira id instead of writing without one.
+- `wall-clock.ts` - `tempoDay()`, `tempoTimeOfDay()`, `parseTempoWallClock()`. One place for the
+  "Tempo speaks the user's local wall clock, in two fields" rule, now that both directions need it.
+- `marker.ts` - the marker as a **configured scheme**, not a decision the code makes:
+  `attribute` (a free-text work attribute, nothing visible changes), `description-suffix`
+  (`… [et:<proposalId>]`, works on any instance) or `none` (the ledger is the only owner record).
+  `applyWorklogMarker()` is idempotent, and `recoverLedgerFromMarkers()` is what a lost ledger is
+  rebuilt from - with an empty `contentHash`, so the next sync re-asserts content it cannot verify,
+  and with a proposal two worklogs claim reported as `ambiguous` rather than half-adopted.
+- `write.ts` - `createTempoWorklog$` (answers with the new worklog id, and **fails** if Tempo
+  returns none rather than reporting an unowned worklog as written), `updateTempoWorklog$`,
+  `deleteTempoWorklog$`. `billableSeconds` is only sent when the caller has a policy for it
+  (open question 5); otherwise Tempo's own default stands.
+- `execute.ts` - `executeTempoSync$()`, phase two of the sync. Serialized writes, **every delete
+  before any create**, one `TempoSyncRow` per write (`written` / `blocked` / `skipped` / `failed`),
+  `ledger` upserts and `prunedProposalIds` that never name the same proposal, and `retry`: the rows
+  that did not land, shaped as a plan the same function accepts.
 
-Not built here: the write calls themselves. The identity mechanism they need is open question 4 -
-`findMarkerAttribute()` reports whether the instance offers a free-text attribute that could hold
-the app's worklog id, but which of the two schemes to use cannot be settled without a real
-instance. The ledger already gives the diff a working identity in the meantime.
+What the write half settled:
+
+- **Tempo v4 cannot move a worklog to another issue**, so a proposal whose key changed is a
+  `issue-changed` delete plus a `recreated-after-issue-change` create - visible in the preview, not
+  smuggled into the executor. Delete runs first: if the create then fails the row is retryable, where
+  the other order would leave the same hour logged on two issues with no ledger entry to find it by.
+  A create whose delete failed is reported `skipped` and never sent.
+- **A `description-suffix` marker is part of the remote text and not of the proposal's**, so
+  `planTempoSync()` takes the same `marker` and strips it before comparing - without that, every
+  synced worklog reads as `changed-in-tempo` forever.
+- **A 404 on delete is success.** A worklog that is already gone is what the delete was for.
+- **A required attribute with no value blocks its row** (`missingRequiredAttributes`) instead of being
+  guessed, and the row goes into `retry` for once the reviewer supplies it.
+
+Not built here: nothing of the sync itself. What remains is choosing the marker scheme against a real
+instance (open question 4) - both are implemented, so it is a config value, not code.
 
 ### Google Calendar (phase 1)
 
@@ -646,12 +674,11 @@ silently discard a row you touched. Mark edited proposals and merge around them.
 **done** - `libs/timetrack` ships the four-layer model, the host ports and the whole deterministic
 pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `propose`, and
 `correlateDay` over all of them), with no network, filesystem or Angular in it, the read-only
-Jira provider on top, and the Tempo read side with work-attribute discovery, foreign-time
-subtraction and the sync diff (173 tests).
+Jira provider on top, and the whole Tempo integration - work-attribute discovery, foreign-time
+subtraction, the sync diff and the write half that executes it (232 tests).
 Remaining: encrypted store,
 the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
-watcher, Claude Code session logs, the Tempo write calls (own-worklog upsert, blocked on open
-question 4), Google Calendar, the day-review UI, tray, sync execution. No
+watcher, Claude Code session logs, Google Calendar, the day-review UI, tray. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
 day.
 
@@ -687,13 +714,14 @@ alongside and only affects how much of a day arrives pre-labelled.
    full path stays inside the child's name - so Story-level roll-up is safe. What is still open is
    adoption, not shape: the 2026-08-11 baseline in `plans/git-flow-system.md` has 3 of 125
    fut-frontend branches conforming, so the no-key path carries most of the day for now.
-4. **Tempo attribute writability** - whether a custom attribute can hold the app's worklog id,
-   or whether the marker has to live in the description. **The reader exists**:
-   `fetchTempoWorkAttributes$` + `findMarkerAttribute()` say whether the instance offers a
-   non-required `INPUT_TEXT` attribute at all, and whether writing to it is permitted is the part
-   that still needs a real instance. Not blocking the diff any more - `planTempoSync()` takes its
-   identity from the local ledger - but it does block the write calls, because it decides what
-   happens when that ledger is lost or a worklog is edited in Tempo directly.
+4. **Tempo attribute writability** - whether a custom attribute can hold the app's worklog id, or
+   whether the marker has to live in the description. **No longer blocks anything**: both schemes are
+   implemented behind `TempoMarkerScheme`, and `fetchTempoWorkAttributes$` + `findMarkerAttribute()`
+   report whether the instance offers a non-required `INPUT_TEXT` attribute to use. What is left is
+   one write against a real instance to see whether the attribute is accepted, and then a config
+   value: `attribute` if it is, `description-suffix` if it is not. Until it is answered, run `none`
+   and the ledger carries ownership on its own - the cost is that losing the ledger makes every
+   worklog the app wrote foreign for good.
 5. **Working-hours and billability policy** - is time outside configured hours proposed at
    all, and does the day target vary by person or contract.
 6. **`ai-title` stability** in Claude Code's session logs - it is an internal field and a
