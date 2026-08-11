@@ -12,6 +12,8 @@ export type WorklogProposal = {
   to: Date;
   /** Kept separate from `to - from`: rounding moves the duration without moving the clock times. */
   durationMs: number;
+  /** The evidence-backed duration behind `durationMs`, so review can show what rounding did. */
+  observedMs: number;
   description: string;
   confidence: Confidence;
   evidence: Evidence[];

@@ -39,12 +39,18 @@ const evidenceFor = (event: ActivityEvent): Evidence | null => {
     case 'git-checkout':
       return { kind: 'branch', at: event.at, detail: `branch \`${event.branch}\` checked out in ${event.repoPath}` };
     case 'git-commit':
-      return { kind: 'commit', at: event.at, detail: `${event.sha.slice(0, 7)} ${event.subject}` };
+      return {
+        kind: 'commit',
+        at: event.at,
+        detail: `${event.sha.slice(0, 7)} ${event.subject}`,
+        summary: event.subject,
+      };
     case 'agent-session':
       return {
         kind: 'agent-session',
         at: event.at,
         detail: event.title ?? `agent session ${event.sessionId} in ${event.cwd}`,
+        summary: event.title,
       };
     default:
       return null;
