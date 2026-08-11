@@ -76,11 +76,15 @@ structure below), no component change.
 
 ## Description list
 
-`DescriptionListComponent` is an empty class - zero inputs, one visual
-style, tunable only through five `@property` CSS custom properties (row/
-column gap, term min-width, term/detail font size). Any enhanced style
-(bordered, striped, inline) is new surface; there's no `variant` input to
-extend.
+**`variant` shipped 2026-08-11**, so this is no longer an empty class. Two
+values, the obvious pair rather than a system: `inline` (the default - the
+two-column term/detail grid it always had) and `stacked` (one column, term
+above its detail). A sixth `@property`,
+`--et-description-list-stacked-term-gap`, carries the tighter within-pair gap
+that makes a stacked pair read as one unit; `--et-description-list-row-gap`
+still separates pairs in both. Any further style (bordered, striped) is now a
+new `variant` value on an existing input, not new surface. Nothing else here
+is open.
 
 ## Color input
 

@@ -23,8 +23,9 @@ axis on the button rather than a generated `ColorTheme`). **Segmented `variant="
 same day**, onto a shared tab scale - which turned out to be the fix for a dead tab size scale as
 well; see its section in `component-improvements.md`. **The password input's stuck caps-lock warning
 shipped on 2026-08-11 too**, once the user reproduced it - it left the blocked table entirely, and so
-did **the per-tab inactivity logout**, which now measures the session's idleness. The tile below is #1
-of what is left, but parked - see its row.
+did **the per-tab inactivity logout**, which now measures the session's idleness. **The description
+list's `variant` shipped 2026-08-11** as `inline`/`stacked` - the obvious pair, not a variant system -
+and left the M table. The tile below is #1 of what is left, but parked - see its row.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
@@ -38,7 +39,6 @@ of what is left, but parked - see its row.
 
 | Item                                   | Tag     | Note                                                                                                                                        |
 | -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Description list: `variant`            | `A`     | Empty class today, five CSS properties; any variant is new surface                                                                          |
 | Scheduler: colour palette via DI token | `A`,`D` | Parallel to `injectColorThemes`; keep free text as fallback                                                                                 |
 | Scheduler: infinite agenda             | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                     |
 | Selection list: `variant="tile"`       | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                          |
