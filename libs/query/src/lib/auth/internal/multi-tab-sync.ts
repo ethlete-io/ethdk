@@ -57,6 +57,14 @@ export type MultiTabSyncContext = {
   applyTokens: (access: string, refresh: string) => void;
 
   /**
+   * Applies an incoming token pair that is this tab's whole session rather than a rotation of one it
+   * already holds. Must be the provider's `setTokens`, so the session is reported as a token seed:
+   * a tab that adopted its session never executed an auth query of its own, and everything waiting
+   * for one - the secure queries, the app's own post-login handling - would wait forever.
+   */
+  setTokens: (access: string, refresh: string) => void;
+
+  /**
    * Ends the session on an incoming logout. Must be the provider's own `logout`, so a tab that was
    * logged out elsewhere reports `{ type: 'logout' }` and abandons its unsaved changes like the tab
    * the logout started in.
@@ -191,9 +199,17 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
     if (!access || !refresh) return;
 
+    const isNewSession = !context.accessToken();
+
     lastSyncedState = tokenState(access, refresh);
     hadTokens = true;
-    context.applyTokens(access, refresh);
+
+    if (isNewSession) {
+      context.setTokens(access, refresh);
+    } else {
+      context.applyTokens(access, refresh);
+    }
+
     settleAdoption();
   };
 

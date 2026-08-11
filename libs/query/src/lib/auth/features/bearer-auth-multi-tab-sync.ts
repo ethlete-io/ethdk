@@ -119,6 +119,7 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
         name: context.name,
         isLeader: () => isLeaderRef(),
         applyTokens: context.applyTokens,
+        setTokens: context.setTokens,
         logout: context.logout,
       },
     );

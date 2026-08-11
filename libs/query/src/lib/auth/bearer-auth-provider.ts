@@ -158,6 +158,13 @@ export type BearerAuthProviderEarlySetupContext = {
    */
   applyTokens: (access: string, refresh: string) => void;
 
+  /**
+   * Applies a token pair *and* reports it as a token seed, exactly as the provider's own
+   * `setTokens()` does. For a session this tab did not have before - everything that already holds
+   * one is a rotation, and reporting those would stomp whatever the tab is doing.
+   */
+  setTokens: (access: string, refresh: string) => void;
+
   /** Ends the session, exactly as the provider's own `logout()` does. */
   logout: (cause?: BearerAuthSessionEndCause) => void;
 
@@ -814,6 +821,7 @@ const createBearerAuthProviderImpl = <
     queryClient,
     name: config.name,
     applyTokens,
+    setTokens,
     logout,
     sessionEndCause: sessionEndCause.asReadonly(),
   });

@@ -16,6 +16,7 @@ describe('setupMultiTabSync', () => {
   let refreshToken: ReturnType<typeof signal<string | null>>;
   let sessionEndCause: ReturnType<typeof signal<BearerAuthSessionEndCause | null>>;
   let applyTokens: ReturnType<typeof vi.fn>;
+  let setTokens: ReturnType<typeof vi.fn>;
   let logout: ReturnType<typeof vi.fn>;
   let localStorageMock: {
     getItem: ReturnType<typeof vi.fn>;
@@ -35,6 +36,7 @@ describe('setupMultiTabSync', () => {
       name: 'test-auth',
       isLeader: () => isLeader,
       applyTokens: applyTokens as unknown as (access: string, refresh: string) => void,
+      setTokens: setTokens as unknown as (access: string, refresh: string) => void,
       logout: logout as unknown as () => void,
     });
 
@@ -78,6 +80,10 @@ describe('setupMultiTabSync', () => {
       accessToken.set(access);
       refreshToken.set(refresh);
       sessionEndCause.set(null);
+    });
+
+    setTokens = vi.fn((access: string, refresh: string) => {
+      applyTokens(access, refresh);
     });
 
     logout = vi.fn((cause: BearerAuthSessionEndCause = 'user') => {
@@ -244,6 +250,42 @@ describe('setupMultiTabSync', () => {
       expect(applyTokens).toHaveBeenCalledWith('external-access', 'external-refresh');
       expect(accessToken()).toBe('external-access');
       expect(refreshToken()).toBe('external-refresh');
+    });
+  });
+
+  it('should seed a session this tab did not have, so what waits on an auth query wakes up', () => {
+    TestBed.runInInjectionContext(() => {
+      setup();
+
+      mockChannel.onmessage?.({
+        data: {
+          type: 'tokens-updated',
+          accessToken: encryptToken('adopted-access'),
+          refreshToken: encryptToken('adopted-refresh'),
+        },
+      } as MessageEvent);
+
+      expect(setTokens).toHaveBeenCalledWith('adopted-access', 'adopted-refresh');
+    });
+  });
+
+  it('should not report a rotation as a seed - the tab already has the session it is updating', () => {
+    TestBed.runInInjectionContext(() => {
+      accessToken.set('own-access');
+      refreshToken.set('own-refresh');
+
+      setup();
+
+      mockChannel.onmessage?.({
+        data: {
+          type: 'tokens-updated',
+          accessToken: encryptToken('rotated-access'),
+          refreshToken: encryptToken('rotated-refresh'),
+        },
+      } as MessageEvent);
+
+      expect(setTokens).not.toHaveBeenCalled();
+      expect(applyTokens).toHaveBeenCalledWith('rotated-access', 'rotated-refresh');
     });
   });
 
