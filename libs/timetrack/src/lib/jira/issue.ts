@@ -84,3 +84,36 @@ export const fetchJiraIssueIds$ = (options: {
   keys: string[];
 }): Observable<Map<string, string>> =>
   fetchJiraIssues$(options).pipe(map((issues) => new Map(issues.map((issue) => [issue.key, issue.id]))));
+
+/**
+ * The id → key map a Tempo worklog needs to be readable, since Tempo references only the numeric id.
+ * Ids Jira does not know are absent from the result rather than failing the day.
+ */
+export const fetchJiraIssueKeysByIds$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  ids: string[];
+}): Observable<Map<string, string>> => {
+  const ids = [...new Set(options.ids.map((id) => id.trim()).filter(Boolean))];
+
+  if (ids.length === 0) return of(new Map<string, string>());
+
+  return from(chunk(ids, KEYS_PER_REQUEST)).pipe(
+    concatMap((batch) =>
+      searchJiraIssues$({
+        transport: options.transport,
+        credentials: options.credentials,
+        jql: `id in (${batch.join(',')})`,
+        fields: ['summary'],
+        describe: `issues by id ${batch[0]}…`,
+      }),
+    ),
+    reduce((all: Map<string, string>, resources) => {
+      for (const resource of resources) {
+        if (resource.id && resource.key) all.set(resource.id, resource.key);
+      }
+
+      return all;
+    }, new Map<string, string>()),
+  );
+};

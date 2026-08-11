@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { JiraIssueResource } from './search';
-import { fetchJiraIssueIds$, fetchJiraIssues$ } from './issue';
+import { fetchJiraIssueIds$, fetchJiraIssueKeysByIds$, fetchJiraIssues$ } from './issue';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
@@ -137,5 +137,58 @@ describe('fetchJiraIssueIds$', () => {
       ['FIP-2177', '10101'],
       ['FIP-2178', '10102'],
     ]);
+  });
+});
+
+const byIdTransport = (issues: JiraIssueResource[]) => {
+  const requests: TimetrackRequest[] = [];
+  const transport: TimetrackTransport = {
+    request$: vi.fn((request: TimetrackRequest) => {
+      requests.push(request);
+      const wanted = decodeURIComponent(/jql=([^&]*)/.exec(request.url)?.[1] ?? '');
+
+      return of({
+        status: 200,
+        headers: {},
+        body: { issues: issues.filter((issue) => issue.id && wanted.includes(issue.id)) },
+      }) as never;
+    }),
+  };
+
+  return { transport, requests };
+};
+
+describe('fetchJiraIssueKeysByIds$', () => {
+  it('maps the numeric ids on a tempo worklog back to keys', () => {
+    const { transport, requests } = byIdTransport([STORY, TASK]);
+    const seen = vi.fn();
+
+    fetchJiraIssueKeysByIds$({ transport, credentials: CREDENTIALS, ids: ['10101', '10102'] }).subscribe(seen);
+
+    expect(decodeURIComponent(requests[0]?.url ?? '')).toContain('id in (10101,10102)');
+    expect([...(seen.mock.calls[0]?.[0] ?? [])]).toEqual([
+      ['10101', 'FIP-2177'],
+      ['10102', 'FIP-2178'],
+    ]);
+  });
+
+  it('dedupes the ids and asks for nothing when there are none', () => {
+    const { transport, requests } = byIdTransport([STORY]);
+    const seen = vi.fn();
+
+    fetchJiraIssueKeysByIds$({ transport, credentials: CREDENTIALS, ids: ['10101', ' 10101 '] }).subscribe();
+    fetchJiraIssueKeysByIds$({ transport, credentials: CREDENTIALS, ids: [] }).subscribe(seen);
+
+    expect(requests).toHaveLength(1);
+    expect([...(seen.mock.calls[0]?.[0] ?? [])]).toEqual([]);
+  });
+
+  it('omits an id jira does not know rather than failing the day', () => {
+    const { transport } = byIdTransport([STORY]);
+    const seen = vi.fn();
+
+    fetchJiraIssueKeysByIds$({ transport, credentials: CREDENTIALS, ids: ['10101', '99999'] }).subscribe(seen);
+
+    expect([...(seen.mock.calls[0]?.[0] ?? [])]).toEqual([['10101', 'FIP-2177']]);
   });
 });

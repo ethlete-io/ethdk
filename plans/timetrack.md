@@ -299,7 +299,8 @@ having the flow.
   cannot page forever against a rate-limited API.
 - `issue.ts` - `fetchJiraIssues$` / `fetchJiraIssueIds$`, batched 50 keys per JQL string. A key
   Jira does not know is simply absent from the result: correlation can produce one from a typo in
-  a branch name, and one bad key must not fail the whole day.
+  a branch name, and one bad key must not fail the whole day. `fetchJiraIssueKeysByIds$` resolves
+  the other direction, which is what makes a Tempo worklog readable at all.
 - `hierarchy.ts` - `describeJiraHierarchy$` reports the levels the instance actually has and a
   `suggestedParenting` of `parent-field` or `issue-link`. It only ever suggests; settings choose.
 - `activity.ts` - the issue-view rung. `updatedBy(currentUser(), from, to)` is the only Jira
@@ -328,6 +329,35 @@ Sync semantics per the locked decision:
   This is what makes a second sync of the same day safe.
 - Sync is a two-phase operation with a preview diff (create N, update M, delete K) and a
   single confirm. Partial failures are surfaced per row and retried individually.
+
+**Built - the read side and the whole diff, `libs/timetrack/src/lib/tempo/`:**
+
+- `client.ts` - Bearer auth against the v4 base, `TempoRequestError` status mapping, and
+  `tempoPaged$`, which follows `metadata.next` (an **absolute** URL, so the request helper takes a
+  full URL as well as a path) and is `maxPages`-bounded like the Jira pager.
+- `attributes.ts` - `fetchTempoWorkAttributes$`, plus `missingRequiredAttributes()`, which is how
+  "never guess a required attribute's value" is actually enforced at sync time. An attribute of an
+  unmodelled type is dropped from the schema rather than half-rendered.
+- `worklogs.ts` - `fetchTempoWorklogs$` over `/worklogs/user/{accountId}` with a **date**-based
+  inclusive range. Tempo sends `startDate` and `startTime` separately, both in the user's local
+  wall clock - parsing either as UTC silently shifts a day. `toHistoricalWorklogs()` is the feed
+  `detectRecurringPatterns()` was already waiting for.
+- `subtract.ts` - `subtractForeignTime()`. Matching is **per issue over the day, not per
+  overlapping interval**: a Tempo start time is frequently nominal (hand-entered, or carried over
+  by a template), so an hour logged against an issue is the same hour wherever the evidence puts
+  it. Foreign time outliving its proposals is reported as `unmatchedMs`, never as a negative
+  duration.
+- `diff.ts` - `planTempoSync()` and `contentHashOf()`. **Ownership comes from the local ledger and
+  nothing else:** a worklog no `SyncedWorklog` points at is foreign and is never written or
+  deleted, however much it looks like ours. That is what makes the app safe against an instance
+  people also use by hand. It also distinguishes a worklog deleted in Tempo (recreate) from one
+  edited there behind the app (`changed-in-tempo`), and reports a proposal whose key resolved to no
+  Jira id instead of writing without one.
+
+Not built here: the write calls themselves. The identity mechanism they need is open question 4 -
+`findMarkerAttribute()` reports whether the instance offers a free-text attribute that could hold
+the app's worklog id, but which of the two schemes to use cannot be settled without a real
+instance. The ledger already gives the diff a working identity in the meantime.
 
 ### Google Calendar (phase 1)
 
@@ -615,12 +645,13 @@ silently discard a row you touched. Mark edited proposals and merge around them.
 **Phase 1 - the spine.** ~~event model, sessionizing, the branch-grammar parser, correlation~~
 **done** - `libs/timetrack` ships the four-layer model, the host ports and the whole deterministic
 pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `propose`, and
-`correlateDay` over all of them), with no network, filesystem or Angular in it, and the read-only
-Jira provider on top (113 tests).
+`correlateDay` over all of them), with no network, filesystem or Angular in it, the read-only
+Jira provider on top, and the Tempo read side with work-attribute discovery, foreign-time
+subtraction and the sync diff (173 tests).
 Remaining: encrypted store,
 the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
-watcher, Claude Code session logs, the Tempo provider with work-attribute discovery and
-own-worklog upsert, Google Calendar, the day-review UI, tray, sync with diff preview. No
+watcher, Claude Code session logs, the Tempo write calls (own-worklog upsert, blocked on open
+question 4), Google Calendar, the day-review UI, tray, sync execution. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
 day.
 
@@ -657,7 +688,12 @@ alongside and only affects how much of a day arrives pre-labelled.
    adoption, not shape: the 2026-08-11 baseline in `plans/git-flow-system.md` has 3 of 125
    fut-frontend branches conforming, so the no-key path carries most of the day for now.
 4. **Tempo attribute writability** - whether a custom attribute can hold the app's worklog id,
-   or whether the marker has to live in the description.
+   or whether the marker has to live in the description. **The reader exists**:
+   `fetchTempoWorkAttributes$` + `findMarkerAttribute()` say whether the instance offers a
+   non-required `INPUT_TEXT` attribute at all, and whether writing to it is permitted is the part
+   that still needs a real instance. Not blocking the diff any more - `planTempoSync()` takes its
+   identity from the local ledger - but it does block the write calls, because it decides what
+   happens when that ledger is lost or a worklog is edited in Tempo directly.
 5. **Working-hours and billability policy** - is time outside configured hours proposed at
    all, and does the day target vary by person or contract.
 6. **`ai-title` stability** in Claude Code's session logs - it is an internal field and a
