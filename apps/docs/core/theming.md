@@ -108,6 +108,25 @@ Inside a color scope these tokens resolve (the un-suffixed variant is opacity-aw
 | `ColorInteractiveExcludeDirective`   | `[etColorInteractiveExclude]`   | Marks a descendant as not triggering an ancestor's interactive reaction.                                                                                                                      |
 | `ColorInteractiveHasFocusDirective`  | `[etColorInteractiveHasFocus]`  | Tints tokens to the **base** accent while the host contains a `:focus-visible` element - never on hover/active, and not the `-focus` variant (that is for an element that is itself focused). |
 
+### Offering colors to a user
+
+A component that lets someone _pick_ a color needs more than the registry: `injectColorThemes()` returns every theme the app registered - including the ones nobody should choose by hand (`error`, `warning`) - and a `ColorTheme.name` is a slug, not a label to render. `provideColorPalette` is the curated, ordered, labelled slice:
+
+```ts
+import { provideColorPalette } from '@ethlete/core';
+
+providers: [
+  provideColorPalette([
+    { token: 'brand', label: 'Team' },
+    { token: 'ocean', label: 'Training' },
+  ]),
+];
+```
+
+`token` must name a registered theme; `label` is what a user reads next to the swatch, already translated. Provide it wherever the picker can see it - app-wide in `appConfig`, or on a single feature's component.
+
+Nothing in the SDK requires a palette. A component reads it with `injectColorPalette({ optional: true })` and falls back to accepting a raw theme name when there is none - see the [scheduler's color field](/components/scheduler#fields).
+
 ## Semantic themes
 
 Because names are app-defined, code that needs "the error color" resolves it by `type`:

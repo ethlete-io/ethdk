@@ -30,12 +30,14 @@ range.component.ts` pairs two independent `et-date-time-input` controls.
   The SDK's `DateRangeInputComponent` is date-only; no combined date-time-
   range control exists. This is new `forms/date-time/` surface, not a
   scheduler-only change.
-- **Color as a predefined palette.** `scheduler-edit-color.component.ts` is
-  deliberately free-text today (its own doc comment: theme names are
-  app-registered, the SDK has no fixed set to offer). A palette needs a new
-  DI token scheduler can read, parallel to `injectColorThemes`/
-  `provideColorThemesWithTailwind4` for color theming, so apps opt into a
-  picker - keep free text as the fallback when nothing is provided.
+- **Color as a predefined palette.** **Shipped 2026-08-11** as
+  `provideColorPalette` in core theming - `{ token, label }` entries, curated
+  and ordered by the app, rather than every registered `ColorTheme` (the
+  registry holds themes nobody should pick by hand, and `name` is a slug with
+  no label). With a palette in scope the field is a radio row of swatches, each
+  `[etProvideColor]`-scoped to its own theme, led by a "No color" choice;
+  without one it stays the free-text box. Both write a theme name into
+  `colorToken`, so adopting the palette needs no data change.
 - **Infinite-scrolling agenda.** The agenda directive takes a plain array,
   no paging concept. `libs/query`'s `paged-query-stack.ts` and the legacy
   `infinite-query` module both exist, neither wired to scheduler. This

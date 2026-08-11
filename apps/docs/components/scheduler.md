@@ -202,11 +202,26 @@ Like the badge, the surface is built from self-registering feature directives bu
 | `etSchedulerEditTimeRange`   | `start`/`end` | Two [`et-date-time-input`](/components/date-time-inputs)s | `10`          |
 | `etSchedulerEditLocation`    | `location`    | `et-input`                                                | `20`          |
 | `etSchedulerEditDescription` | `description` | [`et-textarea`](/components/text-inputs#textarea)         | `30`          |
-| `etSchedulerEditColor`       | `colorToken`  | `et-input` (plain text - see below)                       | `40`          |
+| `etSchedulerEditColor`       | `colorToken`  | Swatch picker, or `et-input` - see below                  | `40`          |
 
 The title field is required - the Save button disables while it's blank. The time-range field is invalid while `end` is before `start`. Both gate the surface's save button; a custom field can do the same by including a `valid: Signal<boolean>` in its registration.
 
-The color field is a plain text box for `colorToken`, not a swatch picker: theme names are [app-registered](/core/theming), so the SDK has no fixed palette to offer as choices. An app that wants a swatch picker can write its own `etSchedulerEditColor` replacement against a known list of its own theme names.
+The color field follows whatever the app told the SDK about its own colors. Register a palette with [`provideColorPalette`](/core/theming#offering-colors-to-a-user) and the field is a swatch picker over it - a radio row of labelled swatches, each rendering its own theme, preceded by a "No color" choice that clears `colorToken`:
+
+```ts
+import { provideColorPalette } from '@ethlete/core';
+
+providers: [
+  provideColorPalette([
+    { token: 'brand', label: 'Team' },
+    { token: 'success', label: 'Training' },
+  ]),
+];
+```
+
+Storybook's **Scheduler → With Color Palette** story runs the scheduler with that palette - select an appointment to see the picker. (It is not embedded here: this page already carries as many live stories as one page can host.)
+
+Without a palette in scope the field stays a plain text box, because theme names are [app-registered](/core/theming) and the SDK has no set of its own to offer as choices. Both shapes write the same thing - a theme name into `colorToken` - so an app can add the palette later without touching its appointment data. Word the "No color" choice with `provideSchedulerLabels({ colorFieldNone: '…' })`.
 
 Add your own field the same way: a directive that injects `SCHEDULER_EDIT_SURFACE_HOST` (via `injectSchedulerEditSurfaceHost()`) and calls `registerEditField({ component, order, enabled, valid })` from its constructor. `component` must declare a `draft: InputSignal<WritableSignal<Appointment>>` input - call `draft()` for the shared writable signal, then read (`draft()()`) or write (`draft().update(a => ({ ...a, ... }))`) the appointment being edited. Custom fields typically write into `extra`.
 
