@@ -13,5 +13,10 @@
     "@ethlete/query": "^6.0.0-beta.8",
     "@ethlete/types": "^2.0.0-beta.4",
     "rxjs": "7.8.2"
+  },
+  "peerDependenciesMeta": {
+    "@analogjs/vitest-angular": {
+      "optional": true
+    }
   }
 }
