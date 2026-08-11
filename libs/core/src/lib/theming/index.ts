@@ -3,6 +3,7 @@ export * from './color-interactive-exclude.directive';
 export * from './color-interactive-has-focus.directive';
 export * from './color-interactive.directive';
 export * from './auto-surface.directive';
+export * from './color-palette.util';
 export * from './color-theme.util';
 export * from './legacy-theming';
 export * from './provide-color.directive';

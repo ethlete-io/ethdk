@@ -1,0 +1,18 @@
+@layer components {
+  .et-scheduler-edit-color-swatch {
+    display: inline-block;
+    vertical-align: middle;
+    margin-inline-end: 6px;
+    inline-size: 14px;
+    block-size: 14px;
+    /* a rounded square, not a dot - the radio's own circle next to it is the control */
+    border-radius: 4px;
+    background: var(--et-theme-color-primary-solid, currentColor);
+
+    /* the "leave it unset" choice sits in no color scope, so it reads as an empty ring */
+    &:where([data-empty]) {
+      background: transparent;
+      border: 1px solid var(--et-surface-border-solid, currentColor);
+    }
+  }
+}

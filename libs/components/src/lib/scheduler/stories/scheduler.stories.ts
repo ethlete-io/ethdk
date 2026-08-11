@@ -1,3 +1,4 @@
+import { provideColorPalette } from '@ethlete/core';
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { SchedulerStorybookComponent } from './scheduler-storybook.component';
 
@@ -20,3 +21,21 @@ export const Agenda: Story = { args: { initialView: 'agenda' } };
 export const WithoutLocationBadge: Story = { args: { initialView: 'agenda', showLocationBadge: false } };
 
 export const Narrow: Story = { args: { initialView: 'agenda', containerWidth: '380px' } };
+
+/** Select an appointment and open the edit surface: the color field is a swatch picker, not a text box. */
+export const WithColorPalette: Story = {
+  args: { initialView: 'agenda' },
+  decorators: [
+    moduleMetadata({
+      imports: [SchedulerStorybookComponent],
+      providers: [
+        provideColorPalette([
+          { token: 'brand', label: 'Team' },
+          { token: 'success', label: 'Training' },
+          { token: 'warning', label: 'Travel' },
+          { token: 'danger', label: 'Match' },
+        ]),
+      ],
+    }),
+  ],
+};

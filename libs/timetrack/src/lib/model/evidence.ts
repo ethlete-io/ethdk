@@ -1,4 +1,13 @@
-export type EvidenceKind = 'branch' | 'inherited-branch' | 'commit' | 'agent-session' | 'window-title' | 'calendar';
+export type EvidenceKind =
+  | 'branch'
+  | 'inherited-branch'
+  | 'commit'
+  | 'agent-session'
+  | 'merge-request'
+  | 'issue-view'
+  | 'tempo-history'
+  | 'window-title'
+  | 'calendar';
 
 /**
  * One concrete observation behind a block or a proposal. `detail` is shown verbatim in the review

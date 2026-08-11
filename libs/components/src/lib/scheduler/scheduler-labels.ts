@@ -53,6 +53,8 @@ export type SchedulerLabels = {
   descriptionField: string;
   /** Label for the built-in color edit field. */
   colorField: string;
+  /** Label for the color field's "leave it unset" choice, shown when a `provideColorPalette` palette exists. */
+  colorFieldNone: string;
 };
 
 /** The built-in English labels. */
@@ -81,6 +83,7 @@ export const DEFAULT_SCHEDULER_LABELS: SchedulerLabels = {
   locationField: 'Location',
   descriptionField: 'Description',
   colorField: 'Color',
+  colorFieldNone: 'No color',
 };
 
 const SCHEDULER_LABELS_DEF = /* @__PURE__ */ defineLabels<SchedulerLabels>(
