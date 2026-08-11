@@ -16,7 +16,7 @@ load-bearing facts so you don't re-derive them from source.
 | --- | --- |
 | `apps/docs/query/index.md` | Overview + the two-generations note |
 | `apps/docs/query/queries.md` | **Start here** - client, creators, the query object's signals, auto-execution |
-| `apps/docs/query/features.md` | `withArgs`, `withPolling`, `withAutoRefresh`, side-effect handlers |
+| `apps/docs/query/features.md` | `withArgs`, `withPolling`, `withLongPolling`, `withAutoRefresh`, side-effect handlers |
 | `apps/docs/query/http.md` | REST creators, typing requests, response transforms, upload progress |
 | `apps/docs/query/auth.md` | Bearer auth: login/refresh, auto token refresh, multi-tab sync |
 | `apps/docs/query/caching.md` · `stacks.md` · `errors.md` · `gql.md` · `ws.md` | Caching/dedup, pagination, error/retry, GraphQL, WebSockets |
@@ -84,6 +84,10 @@ raw `toObservable`). It emits `null` first - `pipe(filter(r => r !== null))`.
   place a mutation is just `.execute()`, which reuses the current `args()`. Reserve
   `execute({ args })` for a one-off payload no signal holds (a form submit).
 - `withPolling({ interval })`, `withAutoRefresh({ onSignalChanges: [...] })`.
+- **`withLongPolling({ nextArgs })`** for a completion-driven chain instead of an interval: each
+  round starts once the previous settled, with args (a cursor) derived from its response. `nextArgs`
+  returning `null` ends the chain. Not `withPolling` with a small interval - and the two throw when
+  combined.
 - Side-effects: `withSuccessHandling`, `withErrorHandling`, `withLogging`.
 
 There is no built-in debounce operator - dedup/caching handles repeated identical

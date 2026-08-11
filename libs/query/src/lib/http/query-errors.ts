@@ -12,6 +12,8 @@ export const QueryRuntimeErrorCode = {
   WITH_AUTO_REFRESH_USED_ON_UNSUPPORTED_HTTP_METHOD: 102,
   WITH_AUTO_REFRESH_USED_IN_MANUAL_QUERY: 103,
   SILENCE_MISSING_WITH_ARGS_FEATURE_ERROR_USED_BUT_WITH_ARGS_PRESENT: 104,
+  WITH_LONG_POLLING_USED_ON_UNSUPPORTED_HTTP_METHOD: 105,
+  WITH_LONG_POLLING_USED_WITH_POLLING: 106,
 
   // Auth provider
   AUTH_EXTRACT_TOKENS_RESPONSE_NOT_OBJECT: 200,
@@ -92,6 +94,21 @@ export const withAutoRefreshUsedInManualQuery = () => {
     QueryRuntimeErrorCode.WITH_AUTO_REFRESH_USED_IN_MANUAL_QUERY,
     `"withAutoRefresh()" has been used inside a query that has "onlyManualExecution" set to true.` +
       ` If this is intentional, set "ignoreOnlyManualExecution" to true inside the auto refresh config.`,
+  );
+};
+
+export const withLongPollingUsedOnUnsupportedHttpMethod = (method: string) => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.WITH_LONG_POLLING_USED_ON_UNSUPPORTED_HTTP_METHOD,
+    `This is a "${method}" request, "withLongPolling()" is only supported for GET, HEAD, OPTIONS requests and GQL queries.`,
+  );
+};
+
+export const withLongPollingUsedWithPolling = () => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.WITH_LONG_POLLING_USED_WITH_POLLING,
+    `"withLongPolling()" and "withPolling()" cannot be used on the same query - both would drive its re-execution.` +
+      ` Keep the long polling feature and drop the interval, or the other way around.`,
   );
 };
 

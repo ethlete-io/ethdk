@@ -47,6 +47,7 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
   const { creator, features, queryConfig, creatorInternals } = options;
 
   const hasWithArgsFeature = features.some((f) => f.type === QueryFeatureType.WITH_ARGS);
+  const hasPollingFeature = features.some((f) => f.type === QueryFeatureType.WITH_POLLING);
   const shouldAutoExecuteMethod = isCreateGqlQueryOptions(options)
     ? shouldAutoExecuteGqlQuery(options.creatorInternals.method)
     : shouldAutoExecuteQuery(options.creatorInternals.method);
@@ -65,6 +66,7 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
 
   const featureFnContext: QueryFeatureFlags = {
     hasWithArgsFeature,
+    hasPollingFeature,
     shouldAutoExecuteMethod,
     shouldAutoExecute,
     hasRouteFunction,
