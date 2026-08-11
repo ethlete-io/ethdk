@@ -20,8 +20,9 @@ Ranked by value per unit of risk, not by size.
 Everything that shipped up to and including 2026-08-11 has been removed from this file - the form
 field warning mode, the button surface variants, segmented `variant="tabs"`, the caps-lock warning,
 the per-tab inactivity logout, the description list's `variant`, the scheduler's colour palette,
-query long polling, and scheduler move/resize (the largest `L` row there was). Each one's design
-calls and traps are recorded in `component-improvements.md`'s "Already fixed, do not re-report".
+query long polling, and scheduler move/resize (the largest `L` row there was) plus its all-day-strip
+follow-up. Each one's design calls and traps are recorded in `component-improvements.md`'s "Already
+fixed, do not re-report".
 The tile below is #1 of what is left, but parked - see its row.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.

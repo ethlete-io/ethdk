@@ -16,6 +16,7 @@
     <div class="et-scheduler-time-grid-gutter"></div>
 
     <div
+      #allDayLane
       [style.--_et-scheduler-time-grid-all-day-row-count]="grid.allDayRowCount()"
       class="et-scheduler-time-grid-all-day-lane"
       role="gridcell"
@@ -27,9 +28,14 @@
           [style.--_et-scheduler-time-grid-all-day-size]="entry.inlineSize"
           [style.--_et-scheduler-time-grid-all-day-row]="entry.row"
           [attr.data-selected]="isSelected(entry.node.appointment) ? '' : null"
+          [attr.data-draggable]="canDragAppointments() ? '' : null"
+          [attr.data-dragging]="isDragging(entry.node.appointment) ? '' : null"
           [attr.title]="entry.node.appointment.title"
           [etProvideColor]="entry.node.appointment.colorToken ?? null"
           (click)="select(entry.node.appointment, appointmentButton)"
+          (pointerdown)="
+            startAllDayDrag($event, { appointment: entry.node.appointment, mode: 'move', lane: allDayLane })
+          "
           class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry"
           type="button"
         >
@@ -37,6 +43,30 @@
             <ng-container
               *ngComponentOutlet="adornment.component; inputs: { node: entry.node }; injector: adornment.injector"
             />
+          }
+
+          @if (canDragAppointments()) {
+            <span
+              (pointerdown)="
+                startAllDayDrag($event, {
+                  appointment: entry.node.appointment,
+                  mode: 'resize-start',
+                  lane: allDayLane,
+                })
+              "
+              class="et-scheduler-time-grid-all-day-resize"
+              data-edge="start"
+              aria-hidden="true"
+            ></span>
+
+            <span
+              (pointerdown)="
+                startAllDayDrag($event, { appointment: entry.node.appointment, mode: 'resize-end', lane: allDayLane })
+              "
+              class="et-scheduler-time-grid-all-day-resize"
+              data-edge="end"
+              aria-hidden="true"
+            ></span>
           }
         </button>
       }

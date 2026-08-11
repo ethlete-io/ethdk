@@ -111,6 +111,26 @@
     block-size: calc(var(--et-scheduler-time-grid-all-day-row-size) - 2px);
   }
 
+  /* Capped against the entry's own width so a one-day entry keeps a middle to move it by. */
+  .et-scheduler-time-grid-all-day-resize {
+    position: absolute;
+    inset-block: 0;
+    inline-size: min(8px, 25%);
+    cursor: ew-resize;
+
+    &:where([data-edge='start']) {
+      inset-inline-start: 0;
+    }
+
+    &:where([data-edge='end']) {
+      inset-inline-end: 0;
+    }
+
+    @media (any-pointer: coarse) {
+      inline-size: min(14px, 25%);
+    }
+  }
+
   .et-scheduler-time-grid-hour-row {
     box-sizing: border-box;
     block-size: var(--et-scheduler-time-grid-hour-size);

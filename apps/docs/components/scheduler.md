@@ -134,7 +134,7 @@ It takes no inputs of its own - like the month view, it reads its host `[etSched
 
 <StoryEmbed id="components-scheduler--day" height="640px" />
 
-Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view. A block can also be dragged to another time or day and resized by its edges - see [move and resize](#move-and-resize). The all-day strip is click-only.
+Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view. Both can also be dragged - a block to another time or day, an all-day entry across whole days - and resized by their edges: the block's top and bottom, the entry's leading and trailing. See [move and resize](#move-and-resize).
 
 ## Agenda view
 
@@ -168,6 +168,7 @@ The state behind it lives on the headless directive, so a custom view can drive 
 Appointments already on the calendar can be dragged to another time. Unlike drawing a new one, this does **not** open the edit surface - the drag itself is the edit, and it emits `appointmentReschedule` on release.
 
 - **Week and day**: drag a block's body to move it - down or up for another time, sideways for another day - or drag its **top or bottom edge** to resize it. Both snap to the same 15-minute slots a drawn range does, and a resize never shrinks a block below one slot: an edge dragged past the other stops there.
+- **The all-day strip** above them works the same way, in whole days: drag an entry sideways to move it, or drag its **leading or trailing edge** to change which days it spans. An edge dragged past the other stops on that day, leaving a one-day entry. A move shifts both ends by the same number of days, so whatever times of day the appointment carries survive it. Dragging up or down does nothing - an all-day entry cannot be dragged into the hour grid to become a timed one, or the other way round.
 - **Month**: drag a badge onto another day cell. It keeps its time of day and its duration, so a 3-day appointment moved one cell across is still 3 days long. There is no resize here - a month badge renders per cell rather than as one span, so it has no edge to grab.
 - **Agenda** has no geometry to drag across, same as drag-to-create.
 
@@ -197,7 +198,7 @@ Dragging is on by default. `[etSchedulerAppointmentDrag]` is one of the feature 
 <et-scheduler [etSchedulerAppointmentDrag]="{ enabled: false }" [appointments]="appointments()" />
 ```
 
-With it off, blocks render no edge handles and no grab cursor, and a press on one is only ever a click. Add the directive to a bare `[etScheduler]` composition to give its views the gesture; without it, the default views never start a drag.
+With it off, blocks and all-day entries render no edge handles and no grab cursor, and a press on one is only ever a click. Add the directive to a bare `[etScheduler]` composition to give its views the gesture; without it, the default views never start a drag.
 
 Keyboard users are not left out by any of this: the edit surface's time-range field edits the same two dates, so a drag is a pointer shortcut rather than the only way in.
 

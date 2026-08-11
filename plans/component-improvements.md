@@ -334,6 +334,27 @@ Notes for whoever extends this:
   7/7 on touch (flick still scrolls, long press arms, the armed drag does not pan the body, tap still
   opens). Changeset `scheduler-move-and-resize-appointments.md`.
 
+**Scheduler: the all-day strip moves and resizes too** (2026-08-11, the follow-up the row above left
+out) - the state, the armed gesture and the `[etSchedulerAppointmentDrag]` gate all already existed, so
+this was one method, one template block and one CSS rule:
+
+- **Whole days on one axis.** An entry moves sideways and resizes by its leading/trailing edge; both are
+  applied as a day offset via `addDays`, so whatever times of day the appointment carries survive the
+  drag rather than being normalised to midnight. An edge stops on the other end's day instead of
+  flipping, leaving a one-day entry - the analogue of the timed resize's one-slot minimum.
+- **Vertical is deliberately inert.** Dragging an entry down into the hour grid does _not_ convert it to
+  a timed appointment (nor the reverse) - that is a separate design call about what `allDay` means when
+  the drag chooses the times, not a gap in this.
+- **The day under the pointer comes from `columnAt`**, which hit-tests the body's rendered day columns
+  rather than dividing the lane's width by seven. That is what makes it RTL-correct, since the columns
+  are laid out by the grid; the month view's own `dateAt` still divides and is still LTR-only.
+- The click-suppression flag is the same view-local `hasDragged` the timed blocks use, which is safe for
+  the same reason - a `pointerdown` always precedes its click. Verified headlessly on
+  `components-scheduler--week`: a move lands one column across, a resize-end grows by exactly one column,
+  a resize-start dragged far past the end clamps to a single day, a plain click still opens the surface,
+  the feature off renders no handles and a 300px drag moves nothing, and a 600ms touch long press then a
+  drag moves exactly one day. Changeset `scheduler-all-day-move-and-resize.md`.
+
 **Query devtools: the mock designer, phase 3 - the OpenAPI export** (2026-08-10, user-raised) - the last
 phase, so the whole "mock designer" section is gone from this file. Three design calls, all put to the user
 first and all taken the recommended way:

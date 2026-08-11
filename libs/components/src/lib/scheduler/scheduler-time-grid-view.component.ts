@@ -51,6 +51,18 @@ type SchedulerTimeGridDrag = SchedulerTimeGridDragTarget & {
   grabMinutes: number;
 };
 
+/** What a press on an all-day entry hands the drag: which appointment, which end of it, and the strip it sits on. */
+type SchedulerTimeGridAllDayDragTarget = {
+  appointment: Appointment;
+  mode: SchedulerAppointmentDragMode;
+  lane: HTMLElement;
+};
+
+type SchedulerTimeGridAllDayDrag = Omit<SchedulerTimeGridAllDayDragTarget, 'lane'> & {
+  /** Which day the pointer grabbed the entry on, so a move keeps that grip on it. */
+  grabDay: Date;
+};
+
 /**
  * The default time grid: an hour axis, an all-day strip, and appointments packed into
  * overlap-free columns. Backs both the week and day views - the day view is this same component
@@ -181,6 +193,52 @@ export class SchedulerTimeGridViewComponent {
   }
 
   /**
+   * Moves an all-day entry to other days, or drags one of its inline edges to change which days it
+   * spans - the strip works in whole days, so both gestures are horizontal and a move keeps the
+   * appointment's own times of day. Touch arms on a long press, same as a timed block does.
+   */
+  protected startAllDayDrag(event: PointerEvent, target: SchedulerTimeGridAllDayDragTarget) {
+    // a press on an edge handle must not also start the entry moving
+    event.stopPropagation();
+
+    const scheduler = this.scheduler;
+
+    if (!scheduler || !this.canDragAppointments() || event.button !== 0) return;
+
+    const { appointment, mode, lane } = target;
+    const grabDay = this.columnAt(event.clientX)?.day;
+
+    if (!grabDay) return;
+
+    const drag = { appointment, mode, grabDay };
+
+    this.hasDragged = false;
+
+    startSchedulerDragGesture({
+      event,
+      element: lane,
+      renderer: this.renderer,
+      destroyRef: this.destroyRef,
+      track: (clientX) => {
+        this.hasDragged = true;
+
+        if (!scheduler.appointmentDrag()) scheduler.beginAppointmentDrag(appointment, mode);
+
+        const to = this.columnAt(clientX)?.day;
+
+        // dragged off the strip: leave it on the last day it was over rather than snapping home
+        if (!to) return;
+
+        const { start, end } = this.allDayRange(drag, to);
+
+        scheduler.updateAppointmentDrag(start, end);
+      },
+      settle: () => scheduler.commitAppointmentDrag(),
+      cancel: () => scheduler.clearAppointmentDrag(),
+    });
+  }
+
+  /**
    * Drags a new appointment's time range out of an empty part of a day column. With a mouse the
    * gesture's own commit threshold separates a drag from a click, so a click on empty grid drafts
    * an hour instead of a drawn range; a finger has to long-press first - see
@@ -244,6 +302,34 @@ export class SchedulerTimeGridViewComponent {
     const earliest = new Date(appointment.start.getTime() + MINIMUM_DURATION);
 
     return { start: appointment.start, end: at < earliest ? earliest : at };
+  }
+
+  /**
+   * The all-day entry shifted to `to`, or one of its ends dragged there - whole days either way,
+   * applied as a day offset so whatever times of day the appointment carries survive the drag. An
+   * end stops on the other end's day rather than crossing it, leaving a one-day entry.
+   */
+  private allDayRange(drag: SchedulerTimeGridAllDayDrag, to: Date) {
+    const { appointment, mode, grabDay } = drag;
+    const span = differenceInCalendarDays(appointment.end, appointment.start);
+
+    switch (mode) {
+      case 'resize-start': {
+        const days = Math.min(differenceInCalendarDays(to, appointment.start), span);
+
+        return { start: addDays(appointment.start, days), end: appointment.end };
+      }
+      case 'resize-end': {
+        const days = Math.max(differenceInCalendarDays(to, appointment.end), -span);
+
+        return { start: appointment.start, end: addDays(appointment.end, days) };
+      }
+      default: {
+        const days = differenceInCalendarDays(to, grabDay);
+
+        return { start: addDays(appointment.start, days), end: addDays(appointment.end, days) };
+      }
+    }
   }
 
   /** The day column a pointer is over, or `null` past the grid's last column on either side. */
