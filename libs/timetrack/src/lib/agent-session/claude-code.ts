@@ -3,7 +3,7 @@ import { AgentSessionLogParseOptions, AgentSessionLogParser, DEFAULT_AGENT_SESSI
 
 type ActivityRecord = { at: Date; sessionId: string; cwd: string; gitBranch?: string };
 
-type TitleCandidates = { generated?: string; firstPrompt?: string };
+type TitleCandidates = { custom?: string; generated?: string; firstPrompt?: string };
 
 const asJsonObject = (line: string): Record<string, unknown> | null => {
   try {
@@ -41,6 +41,12 @@ const activityOf = (record: Record<string, unknown>): ActivityRecord | null => {
 
 const readTitle = (record: Record<string, unknown>, into: TitleCandidates) => {
   const type = stringAt(record, 'type');
+
+  if (type === 'custom-title') {
+    into.custom = stringAt(record, 'customTitle') ?? into.custom;
+
+    return;
+  }
 
   if (type === 'ai-title') {
     into.generated = stringAt(record, 'aiTitle') ?? into.generated;
@@ -106,7 +112,11 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
 
   records.sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  const title = titles.generated ?? options.resume?.title ?? fromPrompt(titles.firstPrompt, options.promptFallback);
+  const title =
+    titles.custom ??
+    titles.generated ??
+    options.resume?.title ??
+    fromPrompt(titles.firstPrompt, options.promptFallback);
   const finalIndexOf = new Map<string, number>();
 
   records.forEach((record, index) => finalIndexOf.set(record.sessionId, index));

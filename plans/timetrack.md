@@ -264,8 +264,14 @@ What building it settled:
 ### Coding-agent session logs (Rust or TS, phase 1)
 
 **The core half is built** - `libs/timetrack/src/lib/agent-session/`: `AgentSessionLogParser` is the
-seam Codex plugs into, and `parseClaudeCodeSessionLog` implements it. The host tails the file and
-hands over the lines; the parser never reads one.
+seam Codex plugs into, and `parseClaudeCodeSessionLog` implements it. `collectAgentSessions$` drives
+it over every log the host lists, one after another, and hands back a cursor per log.
+
+**What the host still owes**: `AgentSessionLogReader` - enumerating `~/.claude/projects/**/*.jsonl`
+with their mtimes and reading a log from a line offset - and persisting the cursors the collector
+returns. Persist them with the events in one transaction: a cursor that goes missing re-reads its log
+from the top and appends every sample in it twice. The reader must not hand over a line with no
+terminating newline; the agent is appending while it reads.
 
 Verified: Claude Code writes `~/.claude/projects/<cwd-slug>/<sessionId>.jsonl`, where the
 directory name is the working directory (`-home-tom-dev-fut-frontend`), and `user` /
@@ -285,7 +291,11 @@ What building it against the 436 logs on this machine settled, and the plan abov
   inside the sampling interval, so a mid-session checkout splits the block the way a real one does.
 - **The title lives in an `ai-title` record's `aiTitle` field**, and that record carries only
   `sessionId` and the title - no timestamp, no `cwd`. It is rewritten as the session grows, so the
-  last one wins.
+  last one wins. A session the user renamed writes `custom-title` / `customTitle` the same way, and
+  that name beats the generated one.
+- **A cursor is a line offset _and_ the instant of the last sample.** The offset alone would let a
+  record the agent appended out of timestamp order through a second time; the instant alone would
+  re-read the whole log every run.
 - **A `last-prompt` record is appended per prompt**, so the _first_ in file order is the prompt that
   opened the session. That is the fallback title, and taking the last would describe only what the
   session ended on.
@@ -737,10 +747,11 @@ pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `prop
 Jira provider on top, and the whole Tempo integration - work-attribute discovery, foreign-time
 subtraction, the sync diff and the write half that executes it, and the store's core half -
 persistence ports, exclusion rules, retention, ledger writer - plus the Claude Code
-session-log parser and the git reconcile pass (299 tests).
+session-log parser with its cursor-driven collector, and the git reconcile pass (312 tests).
 Remaining: the encrypted database itself (host-side, needs `apps/timetrack`),
 the window/idle collector, the host half of the session-log and git collectors - the file
-reader with its cursors, and the inotify watch - Google Calendar, the day-review UI, tray. No
+reader behind `AgentSessionLogReader`, cursor persistence, and the inotify watch - Google
+Calendar, the day-review UI, tray. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
 day.
 

@@ -12,9 +12,9 @@ export type AgentSessionLogParseOptions = {
   /**
    * Continues an earlier read of the same log: only records after `after` are used, and `title` carries
    * over what the previous batch resolved, because the record holding it may already be behind the
-   * cursor.
+   * cursor. `after` is unset while a resumed log has produced no sample yet.
    */
-  resume?: { after: Date; title?: string };
+  resume?: { after?: Date; title?: string };
   /** Defaults to `DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS`. */
   sampleIntervalMs?: number;
   /**

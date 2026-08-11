@@ -21,6 +21,8 @@ const record = (options: { minute: number; second?: number; cwd?: string; branch
 
 const aiTitle = (title: string) => JSON.stringify({ type: 'ai-title', sessionId: SESSION, aiTitle: title });
 
+const customTitle = (title: string) => JSON.stringify({ type: 'custom-title', sessionId: SESSION, customTitle: title });
+
 const lastPrompt = (prompt: string) =>
   JSON.stringify({ type: 'last-prompt', sessionId: SESSION, leafUuid: 'leaf', lastPrompt: prompt });
 
@@ -141,6 +143,19 @@ describe('parseClaudeCodeSessionLog', () => {
       const result = parse([record({ minute: 0 }), aiTitle('First guess'), aiTitle('Timetrack agent collector')]);
 
       expect(result.title).toBe('Timetrack agent collector');
+    });
+
+    it('prefers the name the user gave the session over the generated one', () => {
+      const result = parse([record({ minute: 0 }), aiTitle('Timetrack agent collector'), customTitle('claude-at/wip')]);
+
+      expect(result.title).toBe('claude-at/wip');
+      expect(result.events[0]?.title).toBe('claude-at/wip');
+    });
+
+    it('prefers the last name the user gave, since renaming rewrites the record', () => {
+      const result = parse([record({ minute: 0 }), customTitle('claude-at/wip'), customTitle('claude-at/collector')]);
+
+      expect(result.title).toBe('claude-at/collector');
     });
 
     it('leaves the title unset when nothing generated one and no fallback is asked for', () => {
