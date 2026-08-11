@@ -326,15 +326,26 @@ only be trusted to update on the next real keystroke and saying so in the
 label) rather than anything fixable in this directive's current listener
 set.
 
-**Blocked on a human at a Mac keyboard (checked 2026-08-06).** No automated
-route can settle it: a synthetic CapsLock keyup - WebDriver, CDP,
-`adb shell input`, whatever - always reports the post-toggle modifier state
-correctly, because the quirk being reported is in how macOS delivers the
-_physical_ key, not in how the DOM handles the event. Driving the team Mac
-over LAN does not help either: `verify-on-apple-devices` reaches its iOS
-Simulator and the iPad, neither of which has a Mac's CapsLock. So this needs
-someone to press the key on a Mac and say what happens - anything else would
-be a fix designed against a guess.
+**Confirmed on a real Mac keyboard, 2026-08-11 (user).** Toggling CapsLock off in
+the password-input story leaves the warning on - it does not clear. So the quirk
+is real and it is exactly the one predicted above: the CapsLock key's own `keyup`
+does not deliver a trustworthy post-toggle modifier state on macOS. Nothing in the
+directive's listener set can be filtered to fix it.
+
+The fix is therefore about _when_ to re-check, not what to filter. Options, in
+order of preference:
+
+1. Re-check on `focusin` and on the next real keystroke, and accept that a bare
+   toggle while focused may lag by one key. Cheapest, no new API.
+2. Poll the state while the field has focus (e.g. a short interval or
+   `requestAnimationFrame` gated on focus). Reliable, but it burns work for a
+   warning nobody is waiting on.
+3. Say so in the label - i.e. treat the warning as "caps lock was on as of your
+   last keystroke". Honest, but it reads as a bug to the user who just turned it
+   off.
+
+Recommend (1), and verify by hand again afterwards: an automated check cannot
+confirm it, for the reason above.
 
 No duplication elsewhere - `otp-input` and every other password-adjacent
 control have no caps-lock logic of their own; `password-input` owns this
