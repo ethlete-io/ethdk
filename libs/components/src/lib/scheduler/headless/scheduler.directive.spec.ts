@@ -11,6 +11,7 @@ import { SchedulerDirective } from './scheduler.directive';
       [(focusedDate)]="focusedDate"
       [(selectedAppointmentId)]="selectedAppointmentId"
       [appointments]="appointments()"
+      [agendaDays]="agendaDays()"
       [firstDayOfWeek]="1"
       etScheduler
     ></div>
@@ -19,6 +20,7 @@ import { SchedulerDirective } from './scheduler.directive';
 })
 class SchedulerTestHostComponent {
   appointments = signal<Appointment[]>([]);
+  agendaDays = signal<number | null>(null);
   view = signal<SchedulerView>('month');
   focusedDate = signal(new Date(2026, 6, 15));
   selectedAppointmentId = signal<string | null>(null);
@@ -67,6 +69,39 @@ describe('SchedulerDirective', () => {
     expect(directive.visibleRange()).toEqual(weekRange);
   });
 
+  it('spans agendaDays from the focused date itself, not from its week', () => {
+    host.view.set('agenda');
+    host.agendaDays.set(30);
+    fixture.detectChanges();
+
+    expect(directive.visibleRange()).toEqual({
+      start: new Date(2026, 6, 15),
+      end: new Date(2026, 7, 13, 23, 59, 59, 999),
+    });
+  });
+
+  it('keeps agendaDays off the week view', () => {
+    host.view.set('week');
+    host.agendaDays.set(30);
+    fixture.detectChanges();
+
+    expect(directive.visibleRange()).toEqual({
+      start: new Date(2026, 6, 13),
+      end: new Date(2026, 6, 19, 23, 59, 59, 999),
+    });
+  });
+
+  it('clamps agendaDays to a single day', () => {
+    host.view.set('agenda');
+    host.agendaDays.set(0);
+    fixture.detectChanges();
+
+    expect(directive.visibleRange()).toEqual({
+      start: new Date(2026, 6, 15),
+      end: new Date(2026, 6, 15, 23, 59, 59, 999),
+    });
+  });
+
   it('confines the day view to the focused date', () => {
     host.view.set('day');
     fixture.detectChanges();
@@ -92,6 +127,16 @@ describe('SchedulerDirective', () => {
     fixture.detectChanges();
     directive.previous();
     expect(host.focusedDate()).toEqual(new Date(2026, 5, 23));
+  });
+
+  it('steps the agenda by its own span once agendaDays is set', () => {
+    host.view.set('agenda');
+    host.agendaDays.set(30);
+    fixture.detectChanges();
+
+    directive.next();
+
+    expect(host.focusedDate()).toEqual(new Date(2026, 7, 14));
   });
 
   it('arranges the appointments input into a sub-appointment tree', () => {

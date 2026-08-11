@@ -6,6 +6,13 @@
     overflow-y: auto;
   }
 
+  .et-scheduler-agenda-view-month {
+    margin: 8px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--et-surface-color-solid);
+  }
+
   .et-scheduler-agenda-view-day {
     display: flex;
     flex-direction: column;

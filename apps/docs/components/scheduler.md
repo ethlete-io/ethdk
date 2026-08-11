@@ -46,14 +46,15 @@ type Appointment<TExtra = unknown> = {
 
 On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 
-| Input                   | Type                        | Default             | Description                                                                          |
-| ----------------------- | --------------------------- | ------------------- | ------------------------------------------------------------------------------------ |
-| `appointments`          | `readonly Appointment[]`    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range. |
-| `view`                  | `SchedulerView`             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                  |
-| `focusedDate`           | `Date`                      | today               | The date the visible period is derived from.                                         |
-| `selectedAppointmentId` | `AppointmentId \| null`     | `null`              | The currently selected appointment.                                                  |
-| `locale`                | `Locale \| null` (date-fns) | `DATE_LOCALE` token | Weekday names and the header label. Falls back to date-fns' built-in en-US.          |
-| `firstDayOfWeek`        | `0–6`                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.               |
+| Input                   | Type                        | Default             | Description                                                                                      |
+| ----------------------- | --------------------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
+| `appointments`          | `readonly Appointment[]`    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.             |
+| `view`                  | `SchedulerView`             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                              |
+| `focusedDate`           | `Date`                      | today               | The date the visible period is derived from.                                                     |
+| `selectedAppointmentId` | `AppointmentId \| null`     | `null`              | The currently selected appointment.                                                              |
+| `locale`                | `Locale \| null` (date-fns) | `DATE_LOCALE` token | Weekday names and the header label. Falls back to date-fns' built-in en-US.                      |
+| `firstDayOfWeek`        | `0–6`                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                           |
+| `agendaDays`            | `number \| null`            | `null`              | How many days the agenda lists, from `focusedDate` on - see [infinite agenda](#infinite-agenda). |
 
 | Model                   | Type                    | Description                                  |
 | ----------------------- | ----------------------- | -------------------------------------------- |
@@ -146,7 +147,59 @@ A flat list, grouped by day: each day of the visible range that has at least one
 <et-scheduler-agenda-view />
 ```
 
-It takes no inputs of its own - like the other views, it reads its host `[etScheduler]` via DI. The agenda shares its visible range with the week view (the same 7-day window), so switching between them keeps the same days on screen. Clicking a badge sets `selectedAppointmentId`, same as the other views.
+It takes no inputs of its own - like the other views, it reads its host `[etScheduler]` via DI. By default the agenda shares its visible range with the week view (the same 7-day window), so switching between them keeps the same days on screen. Clicking a badge sets `selectedAppointmentId`, same as the other views.
+
+A day header names its weekday and day of month; a month heading is inserted wherever the list crosses into another month - never above the first day, which the toolbar's own period label already names.
+
+### Infinite agenda {#infinite-agenda}
+
+`agendaDays` takes the agenda out of that 7-day window: it lists that many days counted from `focusedDate`'s own day, and prev/next then step by the same span instead of by a week. Growing it as the user reaches the end of the list is what makes the agenda endless:
+
+```html
+<et-scheduler [appointments]="appointments()" [agendaDays]="agendaDays()" [focusedDate]="from" view="agenda" />
+
+<div #listEnd></div>
+```
+
+The paging itself belongs to the query, not to the scheduler - it never fetches. A [paged query stack](/query/stacks#paged-queries) over an open-ended "appointments from this date on" endpoint is the whole mechanism, and the agenda spans exactly as far as the pages loaded so far reach:
+
+```ts
+protected from = startOfToday();
+
+private appointmentPages = createPagedQueryStack({
+  queryCreator: getAppointments,
+  responseNormalizer: ethletePaginationAdapter,
+  args: (page) => ({ queryParams: { page, limit: 50, from: formatISO(this.from) } }),
+});
+
+protected appointments = computed(() => this.appointmentPages.items().map(toAppointment));
+
+protected agendaDays = computed(() => {
+  const lastEnd = this.appointments().reduce((last, a) => Math.max(last, a.end.getTime()), this.from.getTime());
+
+  return differenceInCalendarDays(lastEnd, this.from) + 1;
+});
+
+private listEnd = viewChild.required<ElementRef<HTMLElement>>('listEnd');
+private listEndIntersection = signalElementIntersection(this.listEnd);
+
+constructor() {
+  effect(() => {
+    const reachedEnd = this.listEndIntersection().some((entry) => entry.isVisible);
+
+    if (!reachedEnd || !untracked(this.appointmentPages.canFetchNextPage)) return;
+
+    untracked(() => this.appointmentPages.fetchNextPage());
+  });
+}
+```
+
+Two things to get right:
+
+- **Never read the growing signal inside the stack's `args`.** `args` is reactive - a signal it reads resets the stack to its first page, so an `agendaDays` (or "loaded until") signal in there re-fetches everything instead of paging. Keep the query's own window fixed and let the day span follow the data, as above.
+- **Let the page scroll, not the list.** `canFetchNextPage` already covers "still loading" and "last page reached", so the sentinel needs no debouncing of its own - but it has to be able to intersect. The agenda list scrolls itself only when something bounds the scheduler's height; in that case put the sentinel inside the list's scroll container, or pass that container as `signalElementIntersection`'s `root`.
+
+Storybook's **Scheduler → Infinite Agenda** story runs the whole pattern against a local generator instead of a server. (It is not embedded here: this page already carries as many live stories as one page can host.)
 
 ## Drag to create {#drag-to-create}
 

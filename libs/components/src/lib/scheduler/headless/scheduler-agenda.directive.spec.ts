@@ -6,7 +6,14 @@ import { SchedulerDirective } from './scheduler.directive';
 
 @Component({
   template: `
-    <div [focusedDate]="focusedDate()" [appointments]="appointments()" [view]="view()" [firstDayOfWeek]="1" etScheduler>
+    <div
+      [focusedDate]="focusedDate()"
+      [appointments]="appointments()"
+      [view]="view()"
+      [agendaDays]="agendaDays()"
+      [firstDayOfWeek]="1"
+      etScheduler
+    >
       <div #agenda="etSchedulerAgenda" etSchedulerAgenda></div>
     </div>
   `,
@@ -14,6 +21,7 @@ import { SchedulerDirective } from './scheduler.directive';
 })
 class SchedulerAgendaTestHostComponent {
   appointments = signal<Appointment[]>([]);
+  agendaDays = signal<number | null>(null);
   focusedDate = signal(new Date(2026, 6, 15));
   view = signal<'agenda'>('agenda');
 }
@@ -45,6 +53,17 @@ describe('SchedulerAgendaDirective', () => {
     expect(days).toHaveLength(7);
     expect(days[0]?.date).toEqual(new Date(2026, 6, 13));
     expect(days[6]?.date).toEqual(new Date(2026, 6, 19));
+  });
+
+  it('grows with agendaDays, starting at the focused date', () => {
+    host.agendaDays.set(45);
+    fixture.detectChanges();
+
+    const days = directive.days();
+
+    expect(days).toHaveLength(45);
+    expect(days[0]?.date).toEqual(new Date(2026, 6, 15));
+    expect(days[44]?.date).toEqual(new Date(2026, 7, 28));
   });
 
   it('re-lays-out when the input signal changes', () => {

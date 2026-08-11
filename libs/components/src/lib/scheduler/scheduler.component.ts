@@ -67,7 +67,15 @@ const NARROW_CONTAINER_WIDTH = 480;
   hostDirectives: [
     {
       directive: SchedulerDirective,
-      inputs: ['appointments', 'view', 'focusedDate', 'selectedAppointmentId', 'locale', 'firstDayOfWeek'],
+      inputs: [
+        'appointments',
+        'view',
+        'focusedDate',
+        'selectedAppointmentId',
+        'locale',
+        'firstDayOfWeek',
+        'agendaDays',
+      ],
       outputs: ['viewChange', 'focusedDateChange', 'selectedAppointmentIdChange', 'appointmentReschedule'],
     },
     // The built-in badge adornments, bundled by default so `<et-scheduler>` renders a full badge

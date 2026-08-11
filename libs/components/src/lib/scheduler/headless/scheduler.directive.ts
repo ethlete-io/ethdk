@@ -66,6 +66,13 @@ export class SchedulerDirective<TExtra = unknown> {
   public firstDayOfWeek = input<SchedulerWeekStartsOn | undefined>(undefined);
 
   /**
+   * How many days the agenda view lists, counted from {@link focusedDate}'s own day rather than
+   * from its week - the lever an open-ended "load more as you scroll" agenda grows. `null` keeps
+   * the agenda on the week view's window, so switching between the two keeps the same days.
+   */
+  public agendaDays = input<number | null>(null);
+
+  /**
    * Emits when a move or resize lands the appointment somewhere else - see
    * {@link commitAppointmentDrag}. `appointments` is yours, so nothing has changed until you apply
    * it; the preview drops on release, so persisting asynchronously wants an optimistic write.
@@ -81,10 +88,17 @@ export class SchedulerDirective<TExtra = unknown> {
       1,
   );
 
+  private effectiveAgendaDays = computed(() => {
+    const dayCount = this.agendaDays();
+
+    return dayCount === null ? null : Math.max(1, Math.floor(dayCount));
+  });
+
   /**
    * The date span the active view is showing. Month pads out to full weeks, covering the grid's
    * leading/trailing days from adjacent months; week and agenda share one 7-day window, since
-   * agenda is a flat render of the same days the week view lays out on a grid.
+   * agenda is a flat render of the same days the week view lays out on a grid - unless
+   * {@link agendaDays} opts the agenda out of that window.
    */
   public visibleRange = computed<SchedulerVisibleRange>(() => {
     const date = this.focusedDate();
@@ -93,8 +107,16 @@ export class SchedulerDirective<TExtra = unknown> {
     switch (this.view()) {
       case 'day':
         return { start: startOfDay(date), end: endOfDay(date) };
+      case 'agenda': {
+        const dayCount = this.effectiveAgendaDays();
+
+        if (dayCount === null) {
+          return { start: startOfWeek(date, { weekStartsOn }), end: endOfWeek(date, { weekStartsOn }) };
+        }
+
+        return { start: startOfDay(date), end: endOfDay(addDays(date, dayCount - 1)) };
+      }
       case 'week':
-      case 'agenda':
         return { start: startOfWeek(date, { weekStartsOn }), end: endOfWeek(date, { weekStartsOn }) };
       case 'month':
       default:
@@ -171,7 +193,10 @@ export class SchedulerDirective<TExtra = unknown> {
   /** Where the current drag started, so extending backwards past it flips the range. */
   private draftAnchor: Date | null = null;
 
-  /** Steps {@link focusedDate} forward by the active view's unit - a day, a week, or a month. */
+  /**
+   * Steps {@link focusedDate} forward by the active view's unit - a day, a week, a month, or the
+   * agenda's own {@link agendaDays} span when it has one.
+   */
   public next() {
     this.stepBy(1);
   }
@@ -274,8 +299,9 @@ export class SchedulerDirective<TExtra = unknown> {
     switch (this.view()) {
       case 'day':
         return this.focusedDate.set(addDays(this.focusedDate(), step));
-      case 'week':
       case 'agenda':
+        return this.focusedDate.set(addDays(this.focusedDate(), step * (this.effectiveAgendaDays() ?? 7)));
+      case 'week':
         return this.focusedDate.set(addDays(this.focusedDate(), step * 7));
       case 'month':
       default:

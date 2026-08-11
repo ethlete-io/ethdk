@@ -30,12 +30,7 @@ range.component.ts` pairs two independent `et-date-time-input` controls.
   The SDK's `DateRangeInputComponent` is date-only; no combined date-time-
   range control exists. This is new `forms/date-time/` surface, not a
   scheduler-only change.
-- **Infinite-scrolling agenda.** The agenda directive takes a plain array,
-  no paging concept. `libs/query`'s `paged-query-stack.ts` and the legacy
-  `infinite-query` module both exist, neither wired to scheduler. This
-  should land as a documented consumer pattern against `paged-query-stack`
-  - paging state belongs to whatever query backs the appointment list, not
-    inside scheduler itself.
+- **Infinite-scrolling agenda** shipped 2026-08-12 - see "Already fixed".
 
 ## Buttons
 
@@ -295,6 +290,28 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Scheduler: infinite-scrolling agenda** (2026-08-12, the first `M` triage row) - the triage's
+"paging belongs to the query, not scheduler" call held, but was not sufficient on its own: the agenda
+derived its days from `visibleRange()`, which is hardcoded to the week view's 7-day window, so no
+amount of loaded data could put more days on screen. What shipped:
+
+- **`agendaDays` on `[etScheduler]`** (forwarded by `<et-scheduler>`): the agenda's day span, counted
+  from `focusedDate`'s own day, `null` keeping the week window. Deliberately on the _scheduler_
+  directive rather than on `[etSchedulerAgenda]`, so the header label, `visibleAppointments()` and
+  prev/next (which steps by the span once set) all stay consistent with what the list shows - and so
+  the feature works inside the full `<et-scheduler>` shell. A range override on the agenda directive
+  would have forced consumers into a bare `[etScheduler]` composition, where `SCHEDULER_FEATURE_HOST`
+  is absent and badges therefore render with **no adornments at all** - no title. That trap is still
+  there for any other reason to compose headlessly.
+- **Month headings** in the agenda wherever the list crosses into another month (never above the first
+  day - the toolbar label already names it). Without them a 100-day list repeats "Mon 3" every month.
+- **The pattern is documented, not built**: a `paged-query-stack` over an open-ended "from this date
+  on" endpoint, `agendaDays` derived from how far the loaded appointments reach, and a sentinel
+  driving `fetchNextPage()`. The trap worth keeping: reading the growing signal inside the stack's
+  `args` resets it to page 1, so the day span must follow the data, not feed the query.
+- `Scheduler → Infinite Agenda` in Storybook runs it against a local generator. Not embedded in the
+  docs page - it is already at its live-story budget.
 
 **Scheduler: move and resize existing appointments** (2026-08-11, was the `L` triage row the
 drag-to-create work called "the natural next feature") - four design calls were put to the user first

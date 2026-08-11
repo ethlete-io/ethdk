@@ -17,12 +17,12 @@ decision before any code · `X` blocked.
 
 Ranked by value per unit of risk, not by size.
 
-Everything that shipped up to and including 2026-08-11 has been removed from this file - the form
+Everything that shipped up to and including 2026-08-12 has been removed from this file - the form
 field warning mode, the button surface variants, segmented `variant="tabs"`, the caps-lock warning,
 the per-tab inactivity logout, the description list's `variant`, the scheduler's colour palette,
-query long polling, and scheduler move/resize (the largest `L` row there was) plus its all-day-strip
-follow-up. Each one's design calls and traps are recorded in `component-improvements.md`'s "Already
-fixed, do not re-report".
+query long polling, scheduler move/resize (the largest `L` row there was) plus its all-day-strip
+follow-up, and the scheduler's infinite agenda. Each one's design calls and traps are recorded in
+`component-improvements.md`'s "Already fixed, do not re-report".
 The tile below is #1 of what is left, but parked - see its row.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
@@ -37,7 +37,6 @@ The tile below is #1 of what is left, but parked - see its row.
 
 | Item                                | Tag     | Note                                                                                                                                   |
 | ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Scheduler: infinite agenda          | `D`     | Lands as a documented `paged-query-stack` consumer pattern - paging belongs to the query, not scheduler                                |
 | Selection list: `variant="tile"`    | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                     |
 | Query devtools: Web Locks inspector | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped |
 

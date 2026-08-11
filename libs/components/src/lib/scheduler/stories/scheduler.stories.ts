@@ -1,5 +1,6 @@
 import { provideColorPalette } from '@ethlete/core';
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { SchedulerInfiniteAgendaStorybookComponent } from './scheduler-infinite-agenda-storybook.component';
 import { SchedulerStorybookComponent } from './scheduler-storybook.component';
 
 export default {
@@ -17,6 +18,15 @@ export const Week: Story = { args: { initialView: 'week' } };
 export const Day: Story = { args: { initialView: 'day' } };
 
 export const Agenda: Story = { args: { initialView: 'agenda' } };
+
+/**
+ * `agendaDays` opens the agenda out of its 7-day window: scrolling to the end of the list loads
+ * another three weeks, the way a paged query would.
+ */
+export const InfiniteAgenda: StoryObj<SchedulerInfiniteAgendaStorybookComponent> = {
+  render: () => ({ template: '<et-sb-scheduler-infinite-agenda />' }),
+  decorators: [moduleMetadata({ imports: [SchedulerInfiniteAgendaStorybookComponent] })],
+};
 
 export const WithoutLocationBadge: Story = { args: { initialView: 'agenda', showLocationBadge: false } };
 
