@@ -380,6 +380,22 @@ fail a hook or a pipeline until step 6, and that is deliberate.
    the numbers describe only branches anyone intends to keep creating. Use `repair` on what is
    worth repairing - particularly any still-open feature branch a sub-feature should nest under,
    since nested branches cannot exist until their parents conform.
+
+   **Baseline, fut-frontend, 2026-08-11** - 125 refs (local + `origin`), read-only, `advisory`:
+   **3 conforming feature branches** (`feat/FIP-2488-club-pack`,
+   `feat/FIP-2869-internal-asset-upload`, `feat/FIP-2902-hub-game-codes-list-view`) plus `main`
+   and `next`. Non-conforming by prefix: 27 `feature/`, 23 `feat/`, 17 `refactor/`, 16 `dev-*`,
+   14 with no prefix at all, 12 `fix/`, 9 `chore/`, and one each of `merge/` and `review/`.
+   Findings by rule: `missing-key` 79, `type-alias` 27, `unknown-type` 16, `deprecated-prefix` 16,
+   `key-case` 7, `missing-subject` 1.
+
+   Two things the numbers say that the plan did not. **`keyPrefixes: ["FIP"]` does not move the
+   ratio at all** - it only reclassifies, turning 3 `key-case`/`missing-subject` false positives
+   into honest `missing-key`s, so `chore/angular-22` stops being told to become
+   `chore/ANGULAR-22`. Its value is report accuracy, not adoption. And the single biggest lever
+   is not `dev-*` but the **27 `feature/` branches**, which `type-alias` already knows how to
+   rename mechanically - `missing-key` is the long tail and no tool can invent a key.
+
 5. **Promote `wrong-mr-target` first**, once the open MRs conform. It is the only rule where being
    wrong has a real consequence, and it is not a naming rule, so it can go early without ending
    the naming grace period.
@@ -419,4 +435,12 @@ fail a hook or a pipeline until step 6, and that is deliberate.
 8. **Does anything but a main feature branch use the `dev-` prefix?** The mapping to
    `kind: 'main-feature'` assumes not. `dev-temp-hub-staging` reads more like an environment
    branch than a feature, and if shapes like that exist they need their own classification rather
-   than being mislabelled as integration branches.
+   than being mislabelled as integration branches. The step-4 baseline says it is one branch out
+   of 16 - every other `dev-*` is a plain feature name - so a special classification is not worth
+   its weight; the honest fix is to let that one branch expire.
+
+   The same report turned up **two shapes the grammar has no opinion on at all**, both currently
+   `unknown-type`: `merge/FIP-2929-into-next` (an integration branch carrying a real key) and
+   `review/dashboard-elias`. Neither is a feature, so neither should be renamed into one. Decide
+   whether they get their own kinds, an ignore list, or stay as warnings that nobody acts on -
+   the last option is fine in `advisory` but has to be settled before step 6.
