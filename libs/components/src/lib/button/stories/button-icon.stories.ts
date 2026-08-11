@@ -12,11 +12,21 @@ export default {
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
     pressed: { control: 'boolean' },
+    tone: { control: 'select', options: ['theme', 'surface'] },
     mutedUntilPressed: { control: 'boolean' },
   },
-  args: { color: 'brand', disabled: false, loading: false, pressed: false, mutedUntilPressed: false },
+  args: { color: 'brand', disabled: false, loading: false, pressed: false, tone: 'theme', mutedUntilPressed: false },
 } as Meta<ButtonIconStorybookComponent>;
 
 type Story = StoryObj<ButtonIconStorybookComponent>;
 
 export const Default: Story = {};
+
+/**
+ * `tone="surface"` takes the button's color from the surface it sits on instead of the ambient color
+ * theme, so a secondary or cancel action reads as chrome without a neutral color theme registered.
+ * Every variant keeps its structural signature; switch the `color` control and nothing moves.
+ */
+export const SurfaceTone: Story = {
+  args: { tone: 'surface' },
+};

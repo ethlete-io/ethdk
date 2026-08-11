@@ -14,6 +14,7 @@ import {
 } from '../../../icon';
 import { BUTTON_SIZES, BUTTON_VARIANTS } from '../../button.component';
 import { BUTTON_IMPORTS } from '../../button.imports';
+import { BUTTON_TONES, ButtonTone } from '../../headless';
 import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES } from '../../window-control-button.component';
 
 const BUTTON_EXAMPLES = [
@@ -133,6 +134,7 @@ export class ButtonTextStorybookComponent {
                 [disabled]="disabled()"
                 [loading]="loading()"
                 [pressed]="pressed()"
+                [tone]="tone()"
                 [mutedUntilPressed]="mutedUntilPressed()"
                 et-button
                 type="button"
@@ -153,6 +155,7 @@ export class ButtonSurfaceStorybookComponent {
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public pressed = input(false, { transform: booleanAttribute });
+  public tone = input<ButtonTone>(BUTTON_TONES.THEME);
   public mutedUntilPressed = input(false, { transform: booleanAttribute });
 
   public readonly VARIANTS = SURFACE_VARIANTS;
@@ -176,6 +179,7 @@ export class ButtonSurfaceStorybookComponent {
                 [loading]="loading()"
                 [pressed]="pressed()"
                 [attr.aria-label]="buttonExample.iconLabel"
+                [tone]="tone()"
                 [mutedUntilPressed]="mutedUntilPressed()"
                 et-icon-button
                 type="button"
@@ -197,6 +201,7 @@ export class ButtonIconStorybookComponent {
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public pressed = input(false, { transform: booleanAttribute });
+  public tone = input<ButtonTone>(BUTTON_TONES.THEME);
   public mutedUntilPressed = input(false, { transform: booleanAttribute });
 
   public readonly VARIANTS = SURFACE_VARIANTS;
@@ -349,6 +354,7 @@ export class ButtonWindowControlStorybookComponent {
                     [disabled]="disabled()"
                     [loading]="loading()"
                     [iconAlignment]="iconAlignment"
+                    [tone]="tone()"
                     [mutedUntilPressed]="mutedUntilPressed()"
                     et-button
                     type="button"
@@ -372,6 +378,7 @@ export class ButtonSurfaceIconStorybookComponent {
   public color = input('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public tone = input<ButtonTone>(BUTTON_TONES.THEME);
   public mutedUntilPressed = input(false, { transform: booleanAttribute });
 
   public readonly VARIANTS = SURFACE_VARIANTS;

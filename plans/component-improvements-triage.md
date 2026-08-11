@@ -17,11 +17,10 @@ decision before any code · `X` blocked.
 
 Ranked by value per unit of risk, not by size.
 
-**The user's pick, named 2026-08-11 and to be taken first:** the **button surface theming
-variants** (`Surface-coloured button`, under "Decide before building"). Naming it settles the "is this
-worth building" half; the shape questions in its row are still open and are the first thing to answer.
-The other pick, the form field warning mode, shipped 2026-08-11 as the `warn()` schema rule. The tile
-below stays #1 of what was already ranked, but it is parked behind the button.
+**Both of the user's 2026-08-11 picks shipped that day:** the form field warning mode, as the
+`warn()` schema rule, and the button surface theming variants, as `tone="surface"` (a third theming
+axis on the button rather than a generated `ColorTheme`). The tile below is #1 of what is left, but
+parked - see its row.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
@@ -69,15 +68,14 @@ below stays #1 of what was already ranked, but it is parked behind the button.
 
 ### Decide before building
 
-| Item                                   | Why it's stuck                                                                                                                                                                                                                    |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Surface-coloured button                | **User pick, 2026-08-11.** `mutedUntilPressed` already _is_ this look, gated behind a state. Whether "surface" becomes a generated `ColorTheme` or a third theming axis needs a design pass, and contrast risk is already flagged |
-| Storybook top-level categories         | High blast radius - moves every story id the docs site embeds. The two concrete misplacements already shipped; this is the open, bigger call                                                                                      |
-| Grid: rename `initialItems` → `items`  | Collides with the directive's existing public `items` computed; resolve that first. The behaviour and docs are already fixed - only the misleading name is left, and it's what made one app rebuild the whole grid on every save  |
-| Grid: `createGridAdapter` signature    | One position per item can't express the per-breakpoint mapping apps actually write                                                                                                                                                |
-| Progress steps: sub-steps              | Least defined ask in the file - projected slot vs description input, and whether it means anything outside vertical                                                                                                               |
-| Selection card: leading/trailing slots | Forces `row-reverse` to become a `controlPosition` decision rather than a constant                                                                                                                                                |
-| Colour input: contrast validator       | Needs to read another control's value, and nothing in `libs/forms` does a cross-field read today - so the shape is the question, not a missing regex. `hexColor()`/`rgbColor()` shipped without it                                |
+| Item                                   | Why it's stuck                                                                                                                                                                                                                   |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Storybook top-level categories         | High blast radius - moves every story id the docs site embeds. The two concrete misplacements already shipped; this is the open, bigger call                                                                                     |
+| Grid: rename `initialItems` → `items`  | Collides with the directive's existing public `items` computed; resolve that first. The behaviour and docs are already fixed - only the misleading name is left, and it's what made one app rebuild the whole grid on every save |
+| Grid: `createGridAdapter` signature    | One position per item can't express the per-breakpoint mapping apps actually write                                                                                                                                               |
+| Progress steps: sub-steps              | Least defined ask in the file - projected slot vs description input, and whether it means anything outside vertical                                                                                                              |
+| Selection card: leading/trailing slots | Forces `row-reverse` to become a `controlPosition` decision rather than a constant                                                                                                                                               |
+| Colour input: contrast validator       | Needs to read another control's value, and nothing in `libs/forms` does a cross-field read today - so the shape is the question, not a missing regex. `hexColor()`/`rgbColor()` shipped without it                               |
 
 ### Blocked - and two that may no longer be
 

@@ -68,22 +68,11 @@ interaction), and only add hover once directive-usable avatars need it.
 
 ## Buttons
 
-Button's CSS has no `data-color`/`data-theme` switch - color always comes
-from whatever `--et-theme-color-*` is in scope via `ProvideColorDirective`.
-Separately, `mutedUntilPressed` (`button.directive.ts`, host attr
-`data-muted-until-pressed`) already repoints button's color source from
-theme color to `--et-surface-interaction-solid` per variant
-(`button.component.css`, the `[data-muted-until-pressed]` block) - functionally the "surface, not theme,
-colored button" look, just gated behind the muted-until-pressed state
-rather than selectable on its own. `libs/core`'s `surface-interactive-
-styles.component.css` already defines the full interactive set
-(`--et-surface-interaction{,-hover,-focus,-active,-disabled,-rgb,-solid}`)
-a real surface color theme would consume, but nothing today promotes a
-surface's interactive set into a registered `ColorTheme` - that contract
-(`color-theme.util.ts` + the Tailwind generator) is separate machinery from
-surface theming. Deciding whether "surface" becomes a generated `ColorTheme`
-entry or a third theming axis needs a real design pass given the contrast
-risk already flagged - not a quick CSS addition.
+Button's CSS has no `data-color`/`data-theme` switch - color comes from whatever
+`--et-theme-color-*` is in scope via `ProvideColorDirective`, or, since 2026-08-11,
+from the surface when `tone="surface"` is set (a third theming axis on
+`ButtonDirective`, not a generated `ColorTheme`). `mutedUntilPressed` is the same
+look, released as soon as the button is pressed.
 
 Copy button (`copy-button.directive.ts`) is already a bare directive with
 no `.css` of its own - its doc comment says to compose it with `et-icon-
