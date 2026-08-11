@@ -1,5 +1,15 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.7
+
+### Minor Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`8aec5ff`](https://github.com/ethlete-io/ethdk/commit/8aec5ff1a3ea6dd459d0e00bc691468019dcaca6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Generated files no longer stamp the package version into their banner, so a release bump alone no longer reports every repo as out of sync - only real content changes do.
+
+### Patch Changes
+
+- [#3056](https://github.com/ethlete-io/ethdk/pull/3056) [`b5f72d6`](https://github.com/ethlete-io/ethdk/commit/b5f72d6bf35dd0e49cf14588b651012fb5d6a7c5) Thanks [@github-actions](https://github.com/apps/github-actions)! - The git-commit guide now presents its format as the repo's own convention unless a commitlint config is actually there, instead of pointing every repo at a `commitlint.config.js` it may not have.
+
 ## 0.1.0-next.6
 
 ### Minor Changes
