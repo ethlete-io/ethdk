@@ -36,6 +36,7 @@ export type DevtoolsTab =
   | 'auth'
   | 'ws'
   | 'cache'
+  | 'locks'
   | 'timeline'
   | 'events'
   | 'faults'
@@ -77,11 +78,11 @@ export type NumericFaultField = 'latencyMs' | 'failNext' | 'failRate';
 export type RouteSegment = { text: string; kind: 'static' | 'param' | 'query'; name?: string };
 
 /**
- * Which tab refreshes an auth provider's tokens, as the auth tab's chip renders it. `title` carries
- * the caveats the label has no room for - why every tab reads as the leader, or how approximate the
- * tab count is.
+ * A one-line verdict the panel renders as a chip - which tab refreshes an auth provider's tokens, where
+ * this tab stands on a lock. `title` carries the caveats the label has no room for: why every tab reads
+ * as the leader, or how approximate a tab count is.
  */
-export type QueryDevtoolsLeadership = { label: string; tone: 'success' | 'muted'; title: string };
+export type QueryDevtoolsChip = { label: string; tone: 'success' | 'muted'; title: string };
 
 /** An auth provider's access-token expiry as the auth tab renders it, armed override included. */
 export type QueryDevtoolsTokenLifetime = {

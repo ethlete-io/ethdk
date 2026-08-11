@@ -30,8 +30,10 @@ import {
   ResizeHandlesComponent,
   ResizeMoveEvent,
   injectFileDownload,
+  injectIsDocumentVisible,
   injectRenderer,
   injectStyleManager,
+  randomId,
 } from '@ethlete/core';
 import {
   AnyBearerAuthProvider,
@@ -48,6 +50,7 @@ import {
   clearQueryDevtoolsStore,
   clearRestoredQueryDevtoolsOverrides,
   createQueryErrorResponse,
+  createQueryKeyLockManager,
   EMPTY_QUERY_DEVTOOLS_FAULT,
   isQueryDevtoolsFaultArmed,
   measureQueryDevtoolsPayload,
@@ -75,6 +78,7 @@ import {
   QueryDevtoolsRun,
   QueryDevtoolsStatsHandle,
   sumQueryDevtoolsStats,
+  QueryKeyLockHold,
   QueryKeyLockState,
   QueryRefreshCause,
   QueryRepository,
@@ -97,6 +101,7 @@ import {
   map,
   merge,
   NEVER,
+  startWith,
   Subject,
   switchMap,
   take,
@@ -125,6 +130,15 @@ import { QueryDevtoolsSettingsComponent } from './query-devtools-settings.compon
 import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
+import { QueryDevtoolsLocksTabComponent } from './query-devtools-locks-tab.component';
+import {
+  DEVTOOLS_PROBE_NAMESPACE,
+  DevtoolsLockRow,
+  devtoolsProbeLockKey,
+  devtoolsProbeLockName,
+  probeClientId,
+  summarizeLocks,
+} from './query-devtools-locks';
 import { QUERY_DEVTOOLS_VERSION } from './version';
 import { buildInsomniaExport, InsomniaRequestInput, InsomniaTokenRefreshInput } from './query-devtools-insomnia';
 import { QueryDevtoolsCopyMenuStylesComponent } from './query-devtools-copy-menu-styles.component';
@@ -155,7 +169,7 @@ import {
   PaneAxis,
   PaneTarget,
   QueryActivity,
-  QueryDevtoolsLeadership,
+  QueryDevtoolsChip,
   QueryDevtoolsSelection,
   QueryDevtoolsTokenLifetime,
   QueryLink,
@@ -657,6 +671,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsSettingsComponent,
     QueryDevtoolsFaultsTabComponent,
     QueryDevtoolsFormsTabComponent,
+    QueryDevtoolsLocksTabComponent,
     QueryDevtoolsMocksTabComponent,
     QueryDevtoolsQueriesTabComponent,
     QueryDevtoolsSequencesTabComponent,
@@ -691,6 +706,8 @@ export class QueryDevtoolsComponent implements OnInit {
 
   private viewport = injectViewportSize();
 
+  private isDocumentVisible = injectIsDocumentVisible();
+
   /**
    * Opens the panel as soon as it is created, whatever the stored view state says. Set by
    * `<et-query-devtools-lazy>`, which downloads the panel on the click that was meant to open it.
@@ -716,6 +733,7 @@ export class QueryDevtoolsComponent implements OnInit {
     { id: 'auth', label: 'Auth' },
     { id: 'ws', label: 'Sockets' },
     { id: 'cache', label: 'Cache' },
+    { id: 'locks', label: 'Locks' },
     { id: 'timeline', label: 'Timeline' },
     { id: 'events', label: 'Events' },
     { id: 'faults', label: 'Faults' },
@@ -952,6 +970,25 @@ export class QueryDevtoolsComponent implements OnInit {
   /** 1-second tick driving the cache freshness countdowns. */
   private clock = toSignal(interval(1000), { initialValue: 0 });
 
+  /**
+   * The probe lock behind every Locks row's "this tab" answer, and the last snapshot read through it.
+   * Both only exist while the Locks tab is on screen - see the polling stream in the constructor.
+   */
+  private probeLocks = createQueryKeyLockManager(DEVTOOLS_PROBE_NAMESPACE);
+  private probeId = randomId();
+  private probeHold: QueryKeyLockHold | null = null;
+  private lockSnapshot = signal<LockManagerSnapshot | null>(null);
+
+  public lockRows = computed<DevtoolsLockRow[] | null>(() => {
+    if (!this.probeLocks.isSupported) return null;
+
+    const snapshot = this.lockSnapshot();
+
+    if (!snapshot) return [];
+
+    return summarizeLocks({ snapshot, clientId: probeClientId(snapshot, devtoolsProbeLockName(this.probeId)) });
+  });
+
   /** "Inspect" mode: hover the live UI to find the query that a component created. */
   protected inspectActive = signal(false);
   protected inspectHover = signal<{ rect: DOMRect; entries: QueryDevtoolsEntry[] } | null>(null);
@@ -1131,6 +1168,9 @@ export class QueryDevtoolsComponent implements OnInit {
       auth: { count: this.authEntries().length, errors: 0 },
       ws: { count: this.wsEntries().length, errors: 0 },
       cache: { count: this.cacheEntryCount(), errors: 0 },
+      // Not a count of locks: the tab only reads them while it is open, so a badge would have to poll
+      // the whole origin whenever the panel is - and the tab bar folds an uncounted tab behind "More".
+      locks: { count: 0, errors: 0 },
       timeline: this.runTotals(),
       events: {
         count: events.length,
@@ -1299,6 +1339,23 @@ export class QueryDevtoolsComponent implements OnInit {
             }),
           );
         }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    // Web Locks has no change event, so the Locks tab polls - but a `locks.query()` per second is not a
+    // `Date.now()` read, so it only runs while that tab is the one on screen and the page is visible.
+    // The probe lock is taken for the same window: it is what tells this tab's rows from another tab's.
+    toObservable(
+      computed(
+        () => this.probeLocks.isSupported && this.open() && this.activeTab() === 'locks' && this.isDocumentVisible(),
+      ),
+    )
+      .pipe(
+        tap((inspecting) => this.holdProbeLock(inspecting)),
+        switchMap((inspecting) => (inspecting ? interval(1000).pipe(startWith(0)) : EMPTY)),
+        switchMap(() => navigator.locks.query()),
+        tap((snapshot) => this.lockSnapshot.set(snapshot)),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -2634,11 +2691,38 @@ export class QueryDevtoolsComponent implements OnInit {
     return Object.keys(auth.queries ?? {});
   }
 
+  /** Where this tab stands on one lock, as a chip. @see lockRows */
+  public lockStanding(row: DevtoolsLockRow): QueryDevtoolsChip {
+    switch (row.standing) {
+      case 'holder':
+        return { label: 'holds it', tone: 'success', title: 'This tab is the one doing the work this lock guards.' };
+      case 'queued':
+        return {
+          label: `waiting · #${row.queuePlace}`,
+          tone: 'muted',
+          title: `Another tab holds this lock. This one is number ${row.queuePlace} in line and takes over as soon as the tabs ahead of it release it - by closing, crashing or navigating away.`,
+        };
+      case 'absent':
+        return {
+          label: 'not taking part',
+          tone: 'muted',
+          title: 'Another tab holds this lock and this one never asked for it.',
+        };
+      case 'unknown':
+        return {
+          label: 'unknown',
+          tone: 'muted',
+          title:
+            'The probe lock this tab identifies itself with has not been granted yet - the next poll should resolve it.',
+        };
+    }
+  }
+
   /**
    * Which tab refreshes this provider's tokens, as a chip: whether it is this one, how many tabs are
    * in the election, and - when there is no election - why every tab reads as the leader.
    */
-  public authLeadership(auth: AnyBearerAuthProvider): QueryDevtoolsLeadership | null {
+  public authLeadership(auth: AnyBearerAuthProvider): QueryDevtoolsChip | null {
     const sync = (auth.features as { multiTabSync?: BearerAuthMultiTabSyncFeature } | undefined)?.multiTabSync;
     if (!sync) return null;
 
@@ -2807,6 +2891,25 @@ export class QueryDevtoolsComponent implements OnInit {
   /** Downloads a file a tab generated. @see QueryDevtoolsHost.downloadTextFile */
   public downloadTextFile(file: { name: string; content: string; type: string }) {
     this.download({ content: file.content, filename: file.name, type: file.type });
+  }
+
+  /**
+   * Takes - or gives back - the lock whose name only this tab can have produced. Its `clientId` in the
+   * snapshot is what tells this tab's rows from another tab's: `LockInfo` carries no tab identity, and
+   * the platform offers no way to ask for one's own client id.
+   */
+  private holdProbeLock(inspecting: boolean) {
+    if (inspecting) {
+      this.probeHold ??= this.probeLocks.hold(devtoolsProbeLockKey(this.probeId));
+
+      return;
+    }
+
+    this.probeHold?.release();
+    this.probeHold = null;
+    // A snapshot outlives the probe that made it readable, so keeping it would have every row claim it
+    // belongs to some other tab the next time the tab is opened.
+    this.lockSnapshot.set(null);
   }
 
   /**

@@ -224,6 +224,7 @@ one-click **Float instead**, rather than the button appearing to do nothing.
 | **Auth**      | Each bearer auth provider: authenticated state, [which tab refreshes its tokens](#which-tab-refreshes-the-tokens), access/refresh token presence, the decoded access-token JWT payload, current `executionState`, the latest auth query snapshot, [its features with their configuration](#features-show-what-they-were-configured-with) and [an overridable token lifetime](#overriding-the-token-lifetime).                                                                                                                                                                                                                                                                                         |
 | **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of [everything sent and received](#sockets-both-directions-and-an-emit-box), with a filter box and an emit box for test messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Cache**     | Per-client repository entries: cache key, consumer count, [measured size](#cache-what-is-actually-in-it), secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Value** / **Refetch** / **Evict** actions. The card header adds the cache's total size, how many entries are collectible, how many responses the client has on disk (with **Clear disk**), **Evict all**, and [the client's own features](#features-show-what-they-were-configured-with). |
+| **Locks**     | [Every Web Lock held across the whole origin](#locks-what-the-other-tabs-are-doing) - the auth leader election and the poll election per cache key, decoded, with how many tabs are taking part in each and where this tab stands. The one view in the panel that is not about this tab alone.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with [timestamps, duration and response size](#events-what-each-request-cost), narrowable by client and to failures only, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to.                                                                                                                                                                                                                                                                                                                                                          |
 | **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -1472,6 +1473,60 @@ the same cause the Events tab spells out and the time it happened. It is deliber
 a table row: a destroyed entry has no consumers, no size, no freshness and nothing to act
 on, so a full row would be seven columns of dashes. What is left worth showing is what it
 was and why it went.
+
+## Locks: what the other tabs are doing
+
+Every other tab in the panel answers a question about _this_ tab. The **Locks** tab does
+not: [`navigator.locks.query()`](https://developer.mozilla.org/docs/Web/API/LockManager/query)
+is **origin-wide**, so it sees the locks held and queued by every other tab, worker and
+service worker of the same app.
+
+Two things in the SDK take one, and the tab decodes both rather than dumping the raw
+names:
+
+| Kind        | Raw name                        | What the row shows                                                                        |
+| ----------- | ------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Auth**    | `ethlete-auth:leader:<name>`    | The [auth provider](/query/auth#multi-tab-sync) it elects for                             |
+| **Polling** | `et-query-poll:<channel>:<key>` | The [cache key](/query/multi-tab#polling-dedup), and the client's sync channel next to it |
+| **Other**   | anything else                   | The raw name, unchanged - a lock your app or a service worker took                        |
+
+**Taking part** is held plus queued on that one name. Every participant requests the same
+lock and exactly one gets it, so the number is how many tabs are in that election - the
+same arithmetic the auth provider's own `instanceCount` does, and the reason the
+[leadership chip](#which-tab-refreshes-the-tokens) can quote a tab count at all.
+
+**This tab** is the column the raw API cannot give you. `LockInfo` is
+`{ name, mode, clientId }` and there is no call for "my own client id", so a plain dump
+can say _three tabs want this lock_ but never _you are second in line_. The panel closes
+that by holding a probe lock under a name only this tab can have produced while the tab is
+open, then reading its `clientId` out of the snapshot:
+
+| Chip              | Means                                                           |
+| ----------------- | --------------------------------------------------------------- |
+| `holds it`        | This tab is the one doing the work the lock guards.             |
+| `waiting · #2`    | Another tab holds it and this one is second in line for it.     |
+| `not taking part` | Another tab holds it and this one never asked for it.           |
+| `unknown`         | The probe has not been granted yet - the next poll resolves it. |
+
+**It is read-only, by nature.** A tab cannot release another tab's lock; the platform
+offers no such call. The only lock this tab could drop is its own, so there is nothing to
+act on here - which is also why the tab carries no actions.
+
+Two consequences of how Web Locks works are worth knowing before you read the tab as
+gospel:
+
+- **There is no change event.** That absence is why the leader election runs a presence
+  channel instead of listening, and why this tab **polls** - once a second, and only while
+  it is the tab on screen and the page is visible. A `locks.query()` per second is not a
+  free read, so the panel does not take one in the background.
+- **Without the Web Locks API there is nothing to show.** The tab says so in as many
+  words rather than rendering an empty table, because "no locks" and "no coordination at
+  all" mean opposite things - the same distinction the leadership chip's
+  `every tab refreshes` makes.
+
+Because the tab holds no count of its own, it stays [folded behind **More**](#empty-tabs-fold-into-more)
+until you open it - a badge would mean polling the whole origin whenever the panel is
+open, which is exactly what the gate above avoids.
 
 ## Sockets: both directions, and an emit box
 

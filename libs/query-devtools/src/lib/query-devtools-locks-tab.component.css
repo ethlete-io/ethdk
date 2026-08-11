@@ -1,0 +1,13 @@
+@layer components {
+  .et-query-devtools-locks-hint {
+    max-inline-size: 80ch;
+  }
+
+  /* The decoded label and the channel it belongs to are one cell, not two - a poll lock's key means
+     nothing without the client whose channel carries it. */
+  .et-query-devtools-lock-name {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+}

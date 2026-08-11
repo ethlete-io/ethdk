@@ -24,7 +24,8 @@ Everything that shipped up to and including 2026-08-12 has been removed from thi
 field warning mode, the button surface variants, segmented `variant="tabs"`, the caps-lock warning,
 the per-tab inactivity logout, the description list's `variant`, the scheduler's colour palette,
 query long polling, scheduler move/resize (the largest `L` row there was) plus its all-day-strip
-follow-up, and the scheduler's infinite agenda. Each one's design calls and traps are recorded in
+follow-up, the scheduler's infinite agenda, and the query devtools' Web Locks inspector - which was
+the last query devtools row. Each one's design calls and traps are recorded in
 `component-improvements.md`'s "Already fixed, do not re-report".
 The tile below is #1 of what is left, but parked - see its row.
 
@@ -38,10 +39,9 @@ The tile below is #1 of what is left, but parked - see its row.
 
 ### M - real work, mostly consolidation
 
-| Item                                | Tag     | Note                                                                                                                                   |
-| ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Selection list: `variant="tile"`    | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled                                     |
-| Query devtools: Web Locks inspector | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped |
+| Item                             | Tag     | Note                                                                                               |
+| -------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| Selection list: `variant="tile"` | `A`,`D` | See #1 - one edit on the shipped selection-card sheet, once the three design questions are settled |
 
 ### L - projects, not tickets
 

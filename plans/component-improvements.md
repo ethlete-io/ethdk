@@ -91,49 +91,6 @@ The rest of this shipped 2026-08-11 (see "Already fixed"). These two were delibe
   variant is a radiogroup that looks like tabs; giving it a vertical mode and a stacked-icon variant
   is rebuilding tabs inside a selection list.
 
-## Query devtools: a Web Locks inspector
-
-Requested 2026-08-07. **The `isLeader` half of this section shipped** - see the Query pass 2
-entry. What is left is the inspector, which is a genuinely different thing: `navigator.locks.query()`
-is **origin-wide**, so it sees the locks held and queued by every other tab, worker and service
-worker - the one place in the panel that can show something outside its own tab. What it would
-list, in full, today:
-
-- `ethlete-auth:leader:<provider name>` - one per auth provider (`leader-election.ts`). Held plus
-  pending on that one name **is** the tab count; that is exactly how `instanceCount` is derived.
-- `et-query-poll:<channel>:<key>` - one per polled cache key
-  (`query-client-features.ts` → `createQueryKeyLockManager`).
-
-What decides whether this is worth building:
-
-- **`LockInfo` has no tab identity.** It is `{ name, mode, clientId }`, and there is no API for
-  "my `clientId`" - so a raw dump can say _three tabs want this lock_ but not _you are the second
-  in the queue_. The way out: hold a uniquely-named probe lock when the panel opens, find that name
-  in the snapshot, and read its `clientId`; every other row can then be marked as this tab or
-  another one. Without that step the inspector is strictly worse than the `isLeader` chip.
-- **Web Locks has no change event.** That absence is why `leader-election.ts` runs a presence
-  channel (`ethlete-auth-leader:<name>`) and recounts on a message instead of listening. An
-  inspector therefore polls. The panel has a 1s `clock` already, but it ticks whether the panel is
-  open or not and a `locks.query()` per second is not a `Date.now()` read - gate it on the panel
-  being open and the tab being visible.
-- **Decode the names, don't dump them.** The cache tab already answers "is this tab polling this
-  key" from `lockManager.keyStates()` (`cacheSync`), so a flat list of `et-query-poll:…` strings is
-  a step backwards from what exists. The value is the row saying which provider or which cache key
-  a lock belongs to, and who is doing the work.
-- **It is read-only by nature, and that is worth saying.** A tab cannot release another tab's lock;
-  the platform offers no such call. The only lock this tab can drop is its own, so "force an
-  election" means releasing the local hold and letting the queue promote whoever is next - which is
-  a real way to test follower behaviour, and belongs with the faults/tampering vocabulary if it is
-  built at all.
-- **Both fallbacks are already legible, and the inspector must not undo that.** The shipped chip
-  reads `every tab refreshes` rather than `leader` when there is no election, and prefixes the tab
-  count with `~`. A lock dump that presents `isSupported: false` as "this tab holds everything", or
-  a count as exact, walks both of those back.
-
-Related, and already there: `withTracking` emits `leaderStatusChange` when leadership moves
-(`bearer-auth-tracking.ts`), so the events tab has a source for "this tab became the leader" with
-nothing new to record.
-
 ## Overlay responsiveness: resolved, and it was not systemic
 
 The premise of this section was wrong; recorded here so the next pass does not
@@ -548,8 +505,7 @@ wrote that exact version into `libs/core/package.json` - `next.42` 10 min after 
   Changeset `query-devtools-popout-closes-on-reload.md`.
 
 **Query devtools: the Queries list nests by path** (2026-08-10, was an `M` triage row with no section) -
-an opt-in **⑂ tree** toggle beside the sort arrow, flat still the default. With it, the **Web Locks
-inspector** is the only query devtools item left open. `query-devtools-query-tree.ts`
+an opt-in **⑂ tree** toggle beside the sort arrow, flat still the default. `query-devtools-query-tree.ts`
 is pure and separately tested; two rules do the work the row warned about:
 
 - **A node nothing branches off gets no folder row** (`flattenQueryPathTree`). The first build headed
@@ -569,6 +525,37 @@ is pure and separately tested; two rules do the work the row warned about:
 The list template was restructured for it: the fold-group block and the empty state are `ng-template`s
 now, shared by the flat and tree branches instead of duplicated. Changeset
 `devtools-nest-queries-by-path.md`; 23 unit tests; verified headlessly 12/12.
+
+**Query devtools: the Web Locks inspector** (2026-08-12, was the last `M` query devtools row, `A`+`D`)
+
+- a **Locks** tab over `navigator.locks.query()`, which is origin-wide and therefore the only view in
+  the panel that shows something outside its own tab. One row per lock **name**, not per `LockInfo`:
+  held plus queued on a name is the number of tabs in that election, which is the same arithmetic
+  `instanceCount` does. `query-devtools-locks.ts` is pure and separately tested (11 tests). The design
+  calls the row was waiting on, all settled here:
+
+- **`LockInfo` has no tab identity**, so the panel holds a **probe lock** under a name only this tab
+  can have produced (`ethlete-devtools:probe:<randomId()>`) and reads its `clientId` out of the
+  snapshot. Without it every row would read _some tab_ and the tab would be strictly worse than the
+  `isLeader` chip. Probe locks are filtered out of the list - every open panel on the origin holds one.
+- **It is its own tab, not a section on Auth or Cache.** It spans both (auth leader locks and poll
+  locks) and it is the only thing in the panel that polls, so folding it into either would give that
+  tab a refresh model it does not otherwise have. It carries **no badge count** deliberately: a count
+  would mean polling the whole origin whenever the panel is open, so the tab folds behind **More**
+  until it is opened - which is exactly the gate that keeps the polling cheap.
+- **Web Locks has no change event**, so it polls the existing 1s clock, gated on the panel being open,
+  the Locks tab being the active one and the page being visible. Composed as one RxJS stream off a
+  `computed` gate rather than a `locks.query()` inside an `effect`, per the styleguide.
+- **Read-only, and the tab says so.** A tab cannot release another tab's lock - the platform has no
+  such call - so the "force an election" idea in the old section was dropped rather than built; the
+  only lock this tab could drop is its own, which belongs with faults/tampering if it is ever wanted.
+- **The no-Web-Locks case renders a sentence, not an empty table**, keeping the distinction the
+  leadership chip's `every tab refreshes` makes: no locks and no coordination mean opposite things.
+
+`QueryDevtoolsLeadership` was renamed `QueryDevtoolsChip` - the leadership chip and a lock standing are
+one shape. Changeset `query-devtools-locks-tab.md`; verified headlessly across two tabs (leader reads
+`holds it`, the second `waiting · #1`, a hand-taken `et-query-poll:` lock decodes to its key + channel,
+and leaving the tab releases the probe).
 
 **Query devtools: the layout menu, plus left and top docks** (2026-08-10, user-raised while the float
 was being built) - the header's dock-cycle and Pop out buttons became one menu naming where the panel

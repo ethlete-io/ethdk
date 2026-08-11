@@ -20,6 +20,7 @@ import {
   WebSocketDevtoolsMessage,
 } from '@ethlete/query';
 import { QueryDevtoolsDiff } from './query-devtools-diff';
+import { DevtoolsLockRow } from './query-devtools-locks';
 import {
   AnyQuery,
   CacheView,
@@ -29,7 +30,7 @@ import {
   PaneAxis,
   PaneTarget,
   QueryActivity,
-  QueryDevtoolsLeadership,
+  QueryDevtoolsChip,
   QueryDevtoolsSelection,
   QueryDevtoolsTokenLifetime,
   QueryLink,
@@ -88,6 +89,15 @@ export type QueryDevtoolsHost = {
   /** The features of the client behind a cache tab card, or `null` for a client without any. */
   clientFeatures(client: QueryClient | null | undefined): QueryDevtoolsFeature[] | null;
 
+  /**
+   * Every Web Lock held or queued across this origin, decoded, or `null` in a browser without the Web
+   * Locks API. Empty while the Locks tab has not read its first snapshot - it polls, because Web Locks
+   * has no change event to listen to.
+   */
+  lockRows: Signal<DevtoolsLockRow[] | null>;
+  /** Where this tab stands on one lock, as a chip: whether it holds it, waits for it, or is not in it. */
+  lockStanding(row: DevtoolsLockRow): QueryDevtoolsChip;
+
   /** Unique client names present across queries and auth providers, for the Queries/Timeline pickers. */
   clientNames: Signal<string[]>;
 
@@ -125,7 +135,7 @@ export type QueryDevtoolsHost = {
   /** The access-token expiry the app acts on, plus the lifetime the panel has armed over it. */
   authTokenLifetime(entry: QueryDevtoolsEntry): QueryDevtoolsTokenLifetime;
   /** The multi-tab leadership chip, or `null` for a provider without `withBearerAuthMultiTabSync`. */
-  authLeadership(auth: AnyBearerAuthProvider): QueryDevtoolsLeadership | null;
+  authLeadership(auth: AnyBearerAuthProvider): QueryDevtoolsChip | null;
 
   queryStatus(query: AnyQuery): 'idle' | 'loading' | 'success' | 'error';
   isStale(query: AnyQuery): boolean;

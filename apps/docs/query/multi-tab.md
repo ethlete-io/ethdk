@@ -189,6 +189,11 @@ The [query devtools](/query-devtools/) **Cache** tab has a _Sync_ column per ent
 `polling` or `standby` for the poll election, and how long ago the entry last took a response from
 another tab. That is usually the fastest answer to "why isn't this tab polling?".
 
+When the answer is about the _other_ tabs, the
+[**Locks** tab](/query-devtools/#locks-what-the-other-tabs-are-doing) shows the same elections from
+the other side: every lock this origin holds, how many tabs are queued behind each one, and where
+this tab stands in that queue.
+
 ## Testing it
 
 `@ethlete/query/testing` ships in-memory fakes for both browser APIs, because neither jsdom nor
