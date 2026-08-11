@@ -17,6 +17,9 @@ decision before any code · `X` blocked.
 
 Ranked by value per unit of risk, not by size.
 
+Nothing in this file is blocked any more: the last blocked row, scheduler drag-to-create on real iOS
+Safari, was re-tested on 2026-08-12 and passed unchanged - see `component-improvements.md`.
+
 Everything that shipped up to and including 2026-08-12 has been removed from this file - the form
 field warning mode, the button surface variants, segmented `variant="tabs"`, the caps-lock warning,
 the per-tab inactivity logout, the description list's `variant`, the scheduler's colour palette,
@@ -62,12 +65,6 @@ The tile below is #1 of what is left, but parked - see its row.
 | Progress steps: sub-steps              | Least defined ask in the file - projected slot vs description input, and whether it means anything outside vertical                                                                                                              |
 | Selection card: leading/trailing slots | Forces `row-reverse` to become a `controlPosition` decision rather than a constant                                                                                                                                               |
 | Colour input: contrast validator       | Needs to read another control's value, and nothing in `libs/forms` does a cross-field read today - so the shape is the question, not a missing regex. `hexColor()`/`rgbColor()` shipped without it                               |
-
-### Blocked - one left, and it may no longer be
-
-| Item                                        | Status                                                                                                                                                                                                                                                                                                                            |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Scheduler drag-to-create on real iOS Safari | **Recheck.** Recorded as blocked because `idb` wasn't installed on what was then a Linux PC. The machine changed: `xcrun simctl` lists 5 available iPhone simulators locally. `idb` is still missing (so real taps need it, or `safaridriver`), but the blocker's premise no longer holds - re-test before treating it as blocked |
 
 ### Watchlist - gated on browsers, not on us
 

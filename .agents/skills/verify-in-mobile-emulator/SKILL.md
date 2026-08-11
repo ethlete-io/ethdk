@@ -190,6 +190,47 @@ Safari on the simulated iPhone. Interact by hand, or screenshot headlessly:
 xcrun simctl io booted screenshot /path/in/scratchpad/ios-story.png
 ```
 
+### Driving a real touch *gesture* - safaridriver, not idb
+
+`idb ui swipe` starts moving immediately, so it cannot express **press, hold, then
+drag** - the gesture anything long-press-armed needs (the scheduler's
+drag-to-create arms after 400ms held still, and any movement before that cancels
+it). `safaridriver` can: its W3C Actions endpoint accepts `pointerType: "touch"`
+against a simulator and dispatches real WebKit touch events, with `pause` steps
+between `pointerDown` and the moves.
+
+```bash
+/usr/bin/safaridriver --port 4444 &
+curl -s -X POST http://localhost:4444/session -H 'Content-Type: application/json' \
+  -d '{"capabilities":{"alwaysMatch":{"browserName":"safari","platformName":"ios","safari:useSimulator":true}}}'
+```
+
+Then `POST /session/<id>/actions` with one `pointer` input source:
+`pointerMove` → `pointerDown` → `pause` (800) → several `pointerMove`s → `pointerUp`.
+Read the result with `POST /session/<id>/execute/sync` (touch-event counters
+installed beforehand, `defaultPrevented`, `scrollTop`, `getSelection()`) and
+`xcrun simctl io <udid> screenshot` for the visual.
+
+Three things that will otherwise cost a session:
+
+- **`pointerUp` only lands if it is in the same `actions` call as the
+  `pointerDown`.** A follow-up call containing just the `pointerUp` silently does
+  nothing - the finger stays down. To sample the DOM *mid-gesture*, end the first
+  call after the moves, probe, then `DELETE /session/<id>/actions`: the implicit
+  release is what finally fires `touchend`.
+- **A fling swipe wedges the driver.** Momentum scrolling leaves the next request
+  hanging until it times out; the gesture itself still happened, so screenshot the
+  device to read the outcome rather than retrying.
+- **`session not created: already paired with another WebDriver session`** after
+  that wedge: `xcrun simctl terminate <udid> com.apple.mobilesafari`, then create
+  the session again.
+
+`idb` is still the tool for taps and typing outside a WebDriver session, and the
+two modes do not mix (see `verify-on-apple-devices`). It may be installed without
+an `idb` on `PATH` - `pip3 install --user fb-idb` under Xcode's interpreter is
+reachable as
+`/Applications/Xcode.app/Contents/Developer/usr/bin/python3 -m idb.cli.main`.
+
 ---
 
 ## Android emulator

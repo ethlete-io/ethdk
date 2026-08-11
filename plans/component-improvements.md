@@ -1039,8 +1039,12 @@ Scheduler overlay + drag-to-create (2026-08-06):
   `headless/internals/scheduler-draft-gesture.ts`; both views share it. On month the long press was
   also selecting the date numbers (reported from a real Android device), hence
   `-webkit-touch-callout: none` / `user-select: none` on the cells and the day columns.
-  **Not verified on real iOS Safari** - `idb` is not installed, so the simulator cannot be driven;
-  WebKit's long-press callout and `preventDefault` handling are the remaining risk.
+  **Verified on real iOS Safari 18.6** (iPhone 16 Plus simulator, 2026-08-12), which closes the last
+  blocked row: the long press draws its range, every `touchmove` comes back `defaultPrevented` and
+  the grid's `scrollTop` never moves, a quick swipe still scrolls instead of drawing, the month long
+  press selects no text (`getSelection().rangeCount === 0`, so `-webkit-touch-callout` holds), and
+  release opens the create surface. A press that starts on an appointment moves it and draws
+  nothing. Nothing had to change.
 - Anchoring deliberately avoids DOM queries - a view hands its element to
   `SchedulerDirective.surfaceAnchor`, which the host consumes and clears, so a later programmatic
   `selectedAppointmentId` write cannot inherit a stale anchor. `ethlete/no-dom-query` forbids the
