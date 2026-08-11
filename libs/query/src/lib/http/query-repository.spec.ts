@@ -298,6 +298,49 @@ describe('createQueryRepository - keepUnusedFor (unused entry retention)', () =>
     expect(repo.subtle.cacheEntries()).toHaveLength(1);
   });
 
+  it('stops the revalidation of an entry it retains', () => {
+    const repo = createRepo({ keepUnusedFor: 60_000 });
+
+    const first = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+    flushAll({ id: 1 });
+
+    first.request.execute({ force: true });
+    expect(first.request.loading()).not.toBeNull();
+
+    repo.unbind(first.key, destroyRef);
+
+    // Retention keeps the data, not the request: nobody is waiting for the revalidation, and one that
+    // kept failing would go on retrying for the whole window.
+    expect(httpTesting.match(() => true).every((req) => req.cancelled)).toBe(true);
+    expect(first.request.loading()).toBeNull();
+    expect(first.request.response()).toEqual({ id: 1 });
+
+    // ...and a consumer that binds again still gets a fresh execution.
+    const second = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+
+    expect(second.request).toBe(first.request);
+    expect(second.executed).toBe(true);
+    expect(second.request.loading()).not.toBeNull();
+  });
+
+  it('stops retrying an entry it retains', () => {
+    const repo = createRepo({ keepUnusedFor: 60_000, retryFn: () => ({ retry: true, delay: 1000 }) });
+
+    const first = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+    flushAll({ id: 1 });
+
+    first.request.execute({ force: true });
+    httpTesting.expectOne('https://example.com/test').error(new ProgressEvent('error'), { status: 0 });
+
+    expect(first.request.subtle.retryState()).not.toBeNull();
+
+    repo.unbind(first.key, destroyRef);
+    vi.advanceTimersByTime(30_000);
+
+    expect(first.request.subtle.retryState()).toBeNull();
+    httpTesting.verify();
+  });
+
   it('destroys an entry that never produced a response, regardless of the window', () => {
     const repo = createRepo({ keepUnusedFor: 60_000 });
 

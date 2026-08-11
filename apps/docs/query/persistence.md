@@ -41,9 +41,9 @@ that coin is that persisted data is always one tick behind the mount - the entry
 a skeleton may flash on a fast machine with a slow disk.
 
 If the revalidation **fails**, the persisted response stays. `query.response()` holds it, and
-`error()` holds the failure - both are true at once, and both matter. Note that a dropped connection
-is [retried](/query/errors#retries) indefinitely by the default retry policy, so a genuinely offline
-query does not reach a `failure` state at all: it stays `loading` with the persisted data on screen.
+`error()` holds the failure - both are true at once, and both matter. A dropped connection is
+[retried](/query/errors#retries) a few times first, so an offline query stays `loading` with the
+persisted data on screen for as long as the retries last, and only then reaches `failure`.
 
 ::: tip Deciding what to render
 `executionState()` reports `failure` when a request failed, even though `response()` still has the

@@ -15,12 +15,15 @@ describe('createHttpRequest', () => {
   let testingController: HttpTestingController;
   let req: HttpRequest<QueryArgs>;
   let errorSpy: MockInstance;
+  let randomSpy: MockInstance;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     vi.useFakeTimers();
+    // The middle of the jitter band, so the backoff is exactly the exponential delay.
+    randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
     errorSpy = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => {
       // noop
     });
@@ -41,6 +44,7 @@ describe('createHttpRequest', () => {
   afterEach(() => {
     vi.useRealTimers();
     errorSpy.mockRestore();
+    randomSpy.mockRestore();
   });
 
   const expectAllNull = () => {
@@ -321,19 +325,19 @@ describe('createHttpRequest', () => {
     expectSendAndLoading();
     requestAndError501();
 
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(4000);
 
     expectSendAndLoading();
     requestAndError501();
 
-    vi.advanceTimersByTime(4000);
+    vi.advanceTimersByTime(8000);
 
     expectSendAndLoading();
 
     try {
       requestAndError501();
 
-      vi.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(16000);
     } catch {
       // noop
     }
@@ -356,7 +360,7 @@ describe('createHttpRequest', () => {
     expectSendAndLoading();
     requestAndError501();
 
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(4000);
 
     expectSendAndLoading();
     const newReq = request();
@@ -410,15 +414,15 @@ describe('createHttpRequest', () => {
       requestAndError501();
       vi.advanceTimersByTime(2000);
       requestAndError501();
-      vi.advanceTimersByTime(3000);
-      requestAndError501();
       vi.advanceTimersByTime(4000);
+      requestAndError501();
+      vi.advanceTimersByTime(8000);
 
       expect(req.subtle.attempts()).toBe(4);
 
       try {
         requestAndError501();
-        vi.advanceTimersByTime(5000);
+        vi.advanceTimersByTime(16000);
       } catch {
         // noop
       }
@@ -452,6 +456,77 @@ describe('createHttpRequest', () => {
       req.destroy();
 
       expect(req.subtle.retryState()).toBeNull();
+    });
+
+    it('should back off exponentially within the jitter band', () => {
+      randomSpy.mockRestore();
+
+      req.execute();
+
+      const delays: number[] = [];
+
+      for (const exact of [2000, 4000, 8000]) {
+        requestAndError501();
+
+        const delay = req.subtle.retryState()?.delayMs ?? 0;
+
+        delays.push(delay);
+        expect(delay).toBeGreaterThanOrEqual(exact * 0.75);
+        expect(delay).toBeLessThanOrEqual(exact * 1.25);
+
+        vi.advanceTimersByTime(delay);
+      }
+
+      requestAndError501();
+
+      // The ceiling: a fourth retry is never scheduled, however transient the status.
+      expect(req.subtle.retryState()).toBeNull();
+      expect500();
+      // Jitter, not a fixed schedule - two of these being identical would mean it is not applied.
+      expect(new Set(delays).size).toBeGreaterThan(1);
+    });
+  });
+
+  describe('abort', () => {
+    it('should cancel the request in flight and clear the loading state', () => {
+      req.execute();
+
+      const inFlight = request();
+
+      expect(req.subtle.abort()).toBe(true);
+      expect(inFlight.cancelled).toBe(true);
+      expect(req.loading()).toBeNull();
+      expect(req.subtle.abort()).toBe(false);
+    });
+
+    it('should cancel a retry it is waiting out', () => {
+      req.execute();
+      requestAndError501();
+
+      expect(req.subtle.retryState()).not.toBeNull();
+
+      req.subtle.abort();
+
+      vi.advanceTimersByTime(60_000);
+
+      expect(req.subtle.retryState()).toBeNull();
+      testingController.verify();
+    });
+
+    it('should keep the response it already holds, and execute again afterwards', () => {
+      req.execute();
+      request().flush(responseBody);
+      req.execute({ force: true });
+      req.subtle.abort();
+
+      expect(req.response()).toEqual(responseBody);
+      expect(req.execute()).toBe(true);
+
+      const [nextReq] = testingController.match('https://example.com/test').filter((r) => !r.cancelled);
+
+      nextReq?.flush(responseBody2);
+
+      expectResponse2();
     });
   });
 

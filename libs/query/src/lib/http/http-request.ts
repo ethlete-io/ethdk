@@ -223,6 +223,16 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
    * this request spent any time on.
    */
   lastDurationMs: Signal<number | null>;
+
+  /**
+   * Cancels what the request currently has in flight - including a retry it is waiting out - without
+   * tearing it down: the response, error and freshness window it already holds are kept, and a later
+   * {@link HttpRequest.execute} runs as usual. Returns whether anything was in flight.
+   *
+   * What an entry retained without consumers does, so a revalidation nobody is waiting for stops
+   * instead of retrying into an empty room.
+   */
+  abort: () => boolean;
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
@@ -525,13 +535,23 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     return true;
   };
 
-  const destroy = () => {
+  const abort = () => {
     const wasActive = !currentStreamSubscription.closed;
 
     currentStreamSubscription.unsubscribe();
-    // A request destroyed mid-backoff never runs the attempt it was waiting for, so leaving the state
-    // set would keep a "retrying in …" readout counting down for a request that is gone.
+    currentStreamSubscription = Subscription.EMPTY;
+    // A request stopped mid-backoff never runs the attempt it was waiting for, so leaving the state
+    // set would keep a "retrying in …" readout counting down for a request that is not coming.
     retryState.set(null);
+    // Nothing is on its way any more, and `execute()` refuses to run while this is set.
+    loading.set(null);
+
+    return wasActive;
+  };
+
+  const destroy = () => {
+    const wasActive = abort();
+
     event$.complete();
 
     return wasActive;
@@ -672,6 +692,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       attempts: attempts.asReadonly(),
       retryState: retryState.asReadonly(),
       lastDurationMs: lastDurationMs.asReadonly(),
+      abort,
     },
   };
 

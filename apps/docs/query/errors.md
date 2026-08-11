@@ -132,13 +132,45 @@ protected form = form(signal({ email: '' }), this.emailSchema);
 
 Retrying is opt-in: add `withDefaultRetry()` (or `withEthleteApiErrors()`) to the client's `features`, or bring your own `retryFn`. Without either, a failed request is not retried.
 
-The default policy (`shouldRetryRequest`) retries up to **3 times** with a delay of `1s + 1s × attempt` (capped at 5s):
+The default policy (`shouldRetryRequest`) retries up to **3 times**, doubling the delay each time (2s, 4s, 8s) and spreading each one randomly over ±25% so the tabs that failed together do not retry together:
 
-- status `0` (offline/CORS) - always retried,
+- status `0` - a connection failure: offline, DNS, CORS, a dropped request,
 - `5xx` from `501` upwards (except a Symfony Pagerfanta out-of-range error),
-- `408` (timeout), `425` (too early), `429` (honoring `retry-after` / `x-retry-after` headers).
+- `408` (timeout), `425` (too early), `429` (honoring `retry-after` / `x-retry-after` headers, capped at the max delay).
 
-Override it per client (the `retryFn` [client option](/query/queries#the-query-client)) or per creator (the `retryFn` [creator option](/query/http#creator-options), or `.clone({ retryFn })`).
+`500` is deliberately not retried: an internal server error is a bug in the backend far more often than a blip, and repeating the request that triggered it does not make it go away.
+
+### Configuring it
+
+`withDefaultRetry()` takes the policy's numbers, and `createDefaultRetryFn()` builds the same policy as a `retryFn` for a single client or creator:
+
+```ts
+features: [withDefaultRetry({ maxAttempts: 5, maxDelayMs: 10_000 })];
+```
+
+| Option                 | Default                          | What it does                                                               |
+| ---------------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| `maxAttempts`          | `3`                              | How many retries. `0` retries indefinitely - see the warning below.        |
+| `baseDelayMs`          | `1000`                           | The delay doubles per retry, starting at twice this.                       |
+| `maxDelayMs`           | `30000`                          | Upper bound of every delay, including one a `retry-after` asked for.       |
+| `jitter`               | `0.25`                           | How far the delay is spread around its computed value. `0` makes it exact. |
+| `retryableStatusCodes` | `0`, `408`, `425`, `429`, `501`+ | Replaces the retryable statuses rather than adding to them.                |
+
+::: warning `maxAttempts: 0` never surfaces an error
+A query that retries forever never resolves to a `failure`: it stays `loading()` for as long as the server stays down, so a screen gated on `executionState()` shows a spinner and nothing else - no error, no retry button. Only ever right for a request nothing renders, which is why the [token refresh](/query/auth#token-refresh) uses it and the default policy does not.
+:::
+
+Override the policy per client (the `retryFn` [client option](/query/queries#the-query-client)) or per creator (the `retryFn` [creator option](/query/http#creator-options), or `.clone({ retryFn })`):
+
+```ts
+const getFlakyReport = myApiGet<GetReportArgs>('/report').clone({
+  retryFn: createDefaultRetryFn({ maxAttempts: 8 }),
+});
+```
+
+### A retry nobody is waiting for is dropped
+
+A request retries only while something is bound to it. When the last consumer of a query goes away mid-retry, the cache entry keeps whatever response it already had - so a consumer coming back still renders instantly - but the request itself is cancelled rather than left retrying into an empty room. A returning consumer re-executes as usual.
 
 ## Error codes
 

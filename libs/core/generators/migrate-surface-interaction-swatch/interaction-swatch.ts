@@ -14,7 +14,9 @@ const createProject = () =>
 const isFlatInteractionColor = (initializer: ObjectLiteralExpression) =>
   initializer
     .getProperties()
-    .some((property) => property.isKind(SyntaxKind.PropertyAssignment) && INTERACTION_KEYS.includes(property.getName()));
+    .some(
+      (property) => property.isKind(SyntaxKind.PropertyAssignment) && INTERACTION_KEYS.includes(property.getName()),
+    );
 
 const findFlatInteractionColor = (sourceFile: ReturnType<Project['createSourceFile']>) => {
   for (const property of sourceFile.getDescendantsOfKind(SyntaxKind.PropertyAssignment)) {
@@ -49,7 +51,7 @@ export const migrateInteractionSwatchInFile = (filePath: string, content: string
 
   // Re-queried after every rewrite: manipulating the AST forgets the nodes a single up-front
   // collection would have handed us.
-  for (let initializer = findFlatInteractionColor(sourceFile); initializer; ) {
+  for (let initializer = findFlatInteractionColor(sourceFile); initializer;) {
     initializer.replaceWithText(`{ color: ${initializer.getText()} }`);
     changed = true;
     initializer = findFlatInteractionColor(sourceFile);

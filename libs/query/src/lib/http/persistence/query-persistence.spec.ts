@@ -229,9 +229,8 @@ describe('query persistence', () => {
 
       store.deferReads();
 
-      // A 500 rather than a dropped connection: a connection error is retried indefinitely by the
-      // default retry policy, so a genuinely offline query never reaches an error state at all - it
-      // stays loading, with the persisted data on screen.
+      // A 500 rather than a dropped connection: 500 is the one status the default retry policy leaves
+      // alone, so the error lands right away instead of after a few backoffs.
       for (const req of pending().splice(0)) {
         req.flush('nope', { status: 500, statusText: 'Server Error' });
       }

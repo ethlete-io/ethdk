@@ -8,9 +8,6 @@ import { clearQueryDevtoolsFaults, setQueryDevtoolsFault } from './query-devtool
 import { QueryDevtoolsStats } from './query-devtools-stats';
 import { queryDevtoolsEntries, provideQueryDevtools } from './query-devtools-registry';
 
-/** The default retry policy's backoff for the first retry: `clamp(1000 + 1000 * 1, 1000, 5000)`. */
-const FIRST_BACKOFF_MS = 2000;
-
 describe('query devtools fault injection', () => {
   let client: QueryClientRef;
   let httpTesting: HttpTestingController;
@@ -79,7 +76,8 @@ describe('query devtools fault injection', () => {
     expect(query.subtle.request()?.subtle.retryState()).toMatchObject({ attempt: 2, status: 503 });
     expect(query.error()).toBeNull();
 
-    vi.advanceTimersByTime(FIRST_BACKOFF_MS);
+    // The policy's backoff is jittered, so it says how long it is waiting rather than being assumed.
+    vi.advanceTimersByTime(query.subtle.request()?.subtle.retryState()?.delayMs ?? 0);
 
     httpTesting.expectOne('https://api.example.com/test').flush({ hello: 'world' });
 

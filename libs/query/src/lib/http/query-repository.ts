@@ -620,6 +620,10 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       // Only data is worth keeping around: an entry that never produced a response has nothing to
       // hand back to a returning consumer, so it is aborted immediately as it always was.
       if (cacheEntry.keepUnusedFor > 0 && cacheEntry.request.response() !== null) {
+        // Retention keeps the response, not the work: a revalidation nobody is waiting for is stopped
+        // rather than left running - and a failing one left running would go on retrying into an empty
+        // room. A consumer that binds again re-executes anyway.
+        cacheEntry.request.subtle.abort();
         retain(key, cacheEntry);
       } else {
         destroyEntry(key, cacheEntry, 'unbind');
