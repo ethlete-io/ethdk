@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { createGetQuery, createQueryClient } from '@ethlete/query';
 import '../../../test-helpers';
+import { silenceExpectedConsole } from '../../testing/expected-console';
 import { SelectOptionsFromQuery } from './select-options-from-query';
 import { selectOptionsFromQuery } from './select-options-from-query';
 
@@ -102,6 +103,8 @@ describe('selectOptionsFromQuery', () => {
   });
 
   it('surfaces the error message on failure and recovers on the next search', async () => {
+    silenceExpectedConsole('error');
+
     const source = createSource();
 
     await search(source, 'boom', { error: true });

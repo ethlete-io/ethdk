@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { createGetQuery, createQueryClient } from '@ethlete/query';
 import '../../../test-helpers';
+import { silenceExpectedConsole } from '../../testing/expected-console';
 import { tableRowsFromQuery } from './table-rows-from-query';
 import { TableRowsFromQuery } from './table-rows-source';
 
@@ -112,6 +113,8 @@ describe('tableRowsFromQuery', () => {
   });
 
   it('surfaces a query error as text', () => {
+    silenceExpectedConsole('error');
+
     const source: TableRowsFromQuery<User> = createSource();
     respond({ error: true });
 

@@ -1,6 +1,7 @@
 import { addProjectConfiguration, Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { silenceExpectedConsole } from '../../src/lib/testing/expected-console';
 import { componentNames } from './component-names';
 import generate from './generator';
 import { insertBarrelExport, insertDocsSidebarEntry, nextErrorCodeBlock } from './workspace-edits';
@@ -146,6 +147,7 @@ describe('component generator', () => {
   let tree: Tree;
 
   beforeEach(() => {
+    silenceExpectedConsole('log');
     tree = setup();
   });
 
@@ -248,6 +250,8 @@ describe('component generator', () => {
   });
 
   it('refuses to overwrite an existing domain', async () => {
+    silenceExpectedConsole('error');
+
     tree.write('libs/components/src/lib/stat-tile/index.ts', 'export {};\n');
 
     await generate(tree, { name: 'stat-tile' });

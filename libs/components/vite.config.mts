@@ -17,6 +17,11 @@ export default defineConfig(() => ({
     setupFiles: ['src/test-setup.mjs'],
     reporters: ['default'],
     onConsoleLog: (log, type) => {
+      // every spec that bootstraps an ApplicationRef prints it, and a spec run is always dev mode
+      if (log.includes('Angular is running in development mode')) {
+        return false;
+      }
+
       if (type === 'stderr') {
         // Benign cross-file teardown races: a deferred overlay change-detection
         // tick or an output emission fires after a previous spec's TestBed has
@@ -27,6 +32,14 @@ export default defineConfig(() => ({
           log.includes('NG0406: This instance of the `ApplicationRef` has already been destroyed') ||
           log.includes('NG0953: Unexpected emit for destroyed `OutputRef`')
         ) {
+          return false;
+        }
+
+        // `RuntimeError` logs its `data` payload from a `setTimeout`, so the bare object arrives
+        // detached from the error it belongs to and is attributed to whichever test is running by
+        // then. Match the payload dump alone - an `ERROR RuntimeError: ET…` print still comes
+        // through, so an unexpected error is never silent.
+        if (log.trimStart().startsWith('{') && log.includes('__ngContext__')) {
           return false;
         }
 

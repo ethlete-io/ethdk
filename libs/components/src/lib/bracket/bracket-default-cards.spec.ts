@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { MatchCardSize, NormalizedMatch } from '../match';
+import { silenceExpectedConsole } from '../testing/expected-console';
 import { BRACKET_CARD_CONTEXT, BracketCardContext, BracketMatchNormalizer } from './bracket-card-context';
 import { BracketDefaultContinueComponent } from './bracket-default-continue.component';
 import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';
@@ -105,6 +106,8 @@ describe('the bracket default cards', () => {
     });
 
     it('draws nothing without a normalizer, rather than an empty card', () => {
+      silenceExpectedConsole('error');
+
       TestBed.configureTestingModule({ providers: [provideCardContext({ normalizer: null })] });
 
       const fixture = TestBed.createComponent(MatchHostComponent);

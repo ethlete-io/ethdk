@@ -35,7 +35,18 @@ const suppressJSDOMCssParsingNoise = () => {
   virtualConsole.removeAllListeners('jsdomError');
 
   const forwardJSDOMError = (error) => {
-    if (isRecord(error) && Reflect.get(error, 'type') === 'css-parsing') {
+    const type = isRecord(error) ? Reflect.get(error, 'type') : undefined;
+
+    if (type === 'css-parsing') {
+      return;
+    }
+
+    // jsdom cannot navigate, but a download does it by clicking a real anchor at a blob url. Only
+    // that one is dropped - any other unimplemented API still reports.
+    if (
+      type === 'not-implemented' &&
+      String(Reflect.get(error, 'message')).includes('navigation to another Document')
+    ) {
       return;
     }
 

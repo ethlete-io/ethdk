@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { createGetQuery, createQueryClient } from '@ethlete/query';
 import { Observable, firstValueFrom, isObservable } from 'rxjs';
 import '../../../test-helpers';
+import { silenceExpectedConsole } from '../../testing/expected-console';
 import { cascaderFromQuery } from './cascader-from-query';
 import { CascaderNode } from './headless';
 
@@ -97,6 +98,8 @@ describe('cascaderFromQuery', () => {
   });
 
   it('errors with the response message on failure', async () => {
+    silenceExpectedConsole('error');
+
     const source = createSource();
 
     const result = firstValueFrom(source.loadChildren(null) as Observable<CascaderNode<string>[]>);

@@ -4,6 +4,7 @@ import { FormField, form, required } from '@angular/forms/signals';
 import '../../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../../form-field/headless';
 import { InputMaskDirective } from '../../../masked-input/headless';
+import { silenceExpectedConsole } from '../../../../testing/expected-console';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
@@ -508,6 +509,8 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
   });
 
   it('derives the pattern from the display format and refuses non-fixed-width formats', () => {
+    silenceExpectedConsole('warn');
+
     expect(rangeInput.maskPattern()).toBe('00.00.0000');
 
     host.displayFormat.set('P');
@@ -609,6 +612,8 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
   });
 
   it('falls back to native, unmasked typing while the pattern is refused', async () => {
+    silenceExpectedConsole('warn');
+
     host.displayFormat.set('P');
     await fixture.whenStable();
 
