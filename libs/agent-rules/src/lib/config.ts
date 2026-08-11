@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { ContentScope } from './frontmatter';
+import { GitFlowConfig, RawGitFlowConfig, resolveGitFlowConfig } from './git-flow';
 import { loadDefaultVars } from './load-content';
 
 export const AGENT_TARGETS = ['claude', 'codex', 'cursor', 'copilot'] as const;
@@ -26,6 +27,8 @@ export type SyncConfig = {
   claudeMdImportsAgentsMd: boolean;
   /** Opt-in agent hooks (they run commands on the developer's machine, so never default). */
   hooks: string[];
+  /** The branch grammar, resolved against its defaults — see `@ethlete/agent-rules/git-flow`. */
+  gitFlow: GitFlowConfig;
 };
 
 type RawConfig = {
@@ -35,6 +38,7 @@ type RawConfig = {
   exclude?: string[];
   claudeMdImportsAgentsMd?: boolean;
   hooks?: string[];
+  gitFlow?: RawGitFlowConfig;
 };
 
 const readRawConfig = (root: string) => {
@@ -132,5 +136,6 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     exclude: raw.exclude ?? [],
     claudeMdImportsAgentsMd: raw.claudeMdImportsAgentsMd ?? false,
     hooks: raw.hooks ?? [],
+    gitFlow: resolveGitFlowConfig(raw.gitFlow),
   };
 };

@@ -90,6 +90,7 @@
       },
       "include": [
         "apps/docs-mcp/**/*",
+        "libs/agent-rules/**/*",
         "libs/cdk/**/*",
         "libs/components/**/*",
         "libs/contentful/**/*",
