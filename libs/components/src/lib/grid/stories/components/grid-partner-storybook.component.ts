@@ -7,6 +7,12 @@ import { posEq, posLabel } from './grid-partner-storybook.data';
 
 type BreakpointLayout = { x: number; y: number; cols: number; rows: number };
 
+/** What the widgets in this demo carry - the type `et-grid` hands back on `layoutChange`. */
+type PartnerWidgetData = {
+  title: string;
+  items: unknown[];
+};
+
 type PartnerWidgetView = {
   uuid: string;
   title: string;
@@ -15,7 +21,7 @@ type PartnerWidgetView = {
   items: unknown[];
 };
 
-const adapter = createGridAdapter<PartnerWidgetView>(
+const adapter = createGridAdapter<PartnerWidgetView, PartnerWidgetData>(
   (widget) => ({
     id: widget.uuid,
     type: widget.type,
@@ -28,14 +34,14 @@ const adapter = createGridAdapter<PartnerWidgetView>(
   }),
   (item) => ({
     uuid: item.id,
-    title: (item.data as { title: string }).title,
+    title: item.data.title,
     type: item.type,
     layout: {
       sm: fromGridPosition(item.layout['sm'] ?? { col: 0, row: 0, colSpan: 2, rowSpan: 1 }),
       md: fromGridPosition(item.layout['md'] ?? { col: 0, row: 0, colSpan: 2, rowSpan: 1 }),
       lg: fromGridPosition(item.layout['lg'] ?? { col: 0, row: 0, colSpan: 3, rowSpan: 1 }),
     },
-    items: (item.data as { items: unknown[] }).items ?? [],
+    items: item.data.items ?? [],
   }),
 );
 
@@ -187,7 +193,7 @@ type LayoutRow = {
           <et-grid-item [itemId]="item.id" [ariaLabel]="item.type + ' widget'">
             <div class="flex flex-col justify-center h-full p-3 box-border gap-1">
               <div class="text-xs font-semibold" style="color: rgb(var(--et-surface-color))">
-                {{ asData(item.data).title }}
+                {{ item.data.title }}
               </div>
               <div
                 class="text-[11px] px-1.5 py-0.5 rounded inline-block self-start font-mono"
@@ -263,7 +269,7 @@ type LayoutRow = {
   imports: [GridComponent, GridItemComponent],
 })
 export class GridPartnerStorybookComponent {
-  protected gridRef = viewChild<GridComponent>(GridComponent);
+  protected gridRef = viewChild<GridComponent<PartnerWidgetData>>(GridComponent);
 
   public readonly BREAKPOINTS = [
     { name: 'lg', columns: 12, minWidth: 1200 },
@@ -277,7 +283,7 @@ export class GridPartnerStorybookComponent {
 
   public activeBreakpoint = computed(() => this.gridRef()?.grid.activeBreakpoint() ?? '…');
 
-  public gridItems = signal<GridItemConfig[]>(adapter.fromExternal(BACKEND_WIDGETS));
+  public gridItems = signal<GridItemConfig<string, PartnerWidgetData>[]>(adapter.fromExternal(BACKEND_WIDGETS));
   public apiPayloadJson = signal<string | null>(null);
   public showLayoutTable = signal(false);
 
@@ -304,11 +310,7 @@ export class GridPartnerStorybookComponent {
     }));
   });
 
-  public asData(data: unknown): { title: string } {
-    return data as { title: string };
-  }
-
-  public syncGridItemsWithLayout(state: GridSerializedState) {
+  public syncGridItemsWithLayout(state: GridSerializedState<PartnerWidgetData>) {
     this.gridItems.update((current) =>
       current.map((item) => {
         const updated = state.items.find((s) => s.id === item.id);

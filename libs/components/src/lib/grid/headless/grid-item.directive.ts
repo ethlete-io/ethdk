@@ -20,6 +20,10 @@ import { PixelRect, pixelRectsEqual, positionsEqual, positionToPixelRect } from 
 
 const SETTLE_FALLBACK_MS = 350;
 
+/** An unset span input stays unset; anything else goes through Angular's own number coercion. */
+const optionalNumberAttribute = (value: unknown) =>
+  value === undefined || value === null || value === '' ? undefined : numberAttribute(value);
+
 @Directive({
   selector: '[etGridItem]',
   exportAs: 'etGridItem',
@@ -42,10 +46,12 @@ export class GridItemDirective {
   public hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public itemId = input.required<string>();
-  public minColSpan = input(1, { transform: numberAttribute });
-  public maxColSpan = input(12, { transform: numberAttribute });
-  public minRowSpan = input(1, { transform: numberAttribute });
-  public maxRowSpan = input(4, { transform: numberAttribute });
+  // Unset rather than defaulted, so an item that only narrows one bound of a registered type keeps
+  // the registration's other three - see `resolveItemConstraints`.
+  public minColSpan = input(undefined, { transform: optionalNumberAttribute });
+  public maxColSpan = input(undefined, { transform: optionalNumberAttribute });
+  public minRowSpan = input(undefined, { transform: optionalNumberAttribute });
+  public maxRowSpan = input(undefined, { transform: optionalNumberAttribute });
 
   public isBeingDragged = computed(() => this.grid?.dragState()?.itemId === this.itemId());
 
@@ -115,10 +121,10 @@ export class GridItemDirective {
     effect((onCleanup) => {
       const id = this.itemId();
       this.grid?.registerConstraints(id, {
-        minColSpan: this.minColSpan(),
-        maxColSpan: this.maxColSpan(),
-        minRowSpan: this.minRowSpan(),
-        maxRowSpan: this.maxRowSpan(),
+        ...(this.minColSpan() === undefined ? {} : { minColSpan: this.minColSpan() }),
+        ...(this.maxColSpan() === undefined ? {} : { maxColSpan: this.maxColSpan() }),
+        ...(this.minRowSpan() === undefined ? {} : { minRowSpan: this.minRowSpan() }),
+        ...(this.maxRowSpan() === undefined ? {} : { maxRowSpan: this.maxRowSpan() }),
       });
       onCleanup(() => this.grid?.unregisterConstraints(id));
     });

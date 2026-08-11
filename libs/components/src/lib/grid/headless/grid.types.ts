@@ -29,10 +29,10 @@ export type GridBreakpointConfig = {
   minWidth: number;
 };
 
-export type GridSerializedState = {
+export type GridSerializedState<TData = unknown> = {
   columns: Record<GridBreakpointName, number>;
   rowHeight: number;
-  items: GridItemConfig[];
+  items: GridItemConfig<string, TData>[];
 };
 
 export type GridLayoutEntry = {

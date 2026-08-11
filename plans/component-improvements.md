@@ -1402,17 +1402,6 @@ re-running every enter animation and losing any scroll or focus inside a widget.
 directive already exposes a public `items` computed over `itemConfigs`, so the rename has to
 resolve that first.
 
-**The state round-trip loses the item type.** `initialItems` and `layoutChange` both use the
-erased `GridItemConfig` / `GridSerializedState`, so what goes in typed comes back `unknown`:
-
-```ts
-(pendingLayout?.items as GridItemConfig<string, DashboardWidgetData>[] | undefined) ?? toGridItems(widgets);
-```
-
-Threading `TData` through `GridSerializedState` and the directive removes it. Same family as
-the registration cast (fixed, see "Already fixed") - the generic parameters exist on the types
-and are dropped at every public boundary.
-
 **`createGridAdapter` maps one position per item.** The doc snippet that did not compile is
 fixed, but the signature is still worth reconsidering: the app's mapping is per-breakpoint
 (`sm`/`md`/`lg` at once), which a single-position adapter shape does not express - which is why
@@ -1442,12 +1431,10 @@ constraints?: Partial<GridItemConstraints> & {
 };
 ```
 
-One thing to settle while designing it: `resolveItemConstraints` **returns early** when a
-registration exists, so a registered type's constraints cannot be refined per item - the
-`et-grid-item` `minColSpan`/`maxColSpan`/`minRowSpan`/`maxRowSpan` inputs are silently ignored
-for any item whose type is registered. (The other one is handled - the resolved value already
-varies by breakpoint, and `constraintsRegistry` is a signal, so every reader re-resolves on a
-breakpoint change instead of reading a cached entry.)
+The early-return half is fixed (2026-08-11): `resolveItemConstraints` merges three layers -
+defaults, the registration for the item's type, then the item's own inputs, which are unset
+unless a consumer writes them - so refining one bound of a registered type no longer resets the
+other three. What is left is the `perBreakpoint` shape above.
 
 ## Selection list: the tile variant that is missing
 

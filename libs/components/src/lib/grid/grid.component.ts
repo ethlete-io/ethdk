@@ -1,5 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
-import { Component, computed, effect, inject, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, inject, input, output, ViewEncapsulation } from '@angular/core';
+import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { tap } from 'rxjs';
 import { RuntimeError } from '@ethlete/core';
 import { injectGridLabels } from './grid-labels';
 import { GRID_ERROR_CODES } from './grid-errors';
@@ -7,6 +9,7 @@ import { GridItemDefaultActionsComponent } from './grid-item-default-actions.com
 import { GridItemComponent } from './grid-item.component';
 import { injectGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
+import { GridItemConfig, GridSerializedState } from './headless/grid.types';
 import { positionToPixelRect } from './headless/internals';
 
 @Component({
@@ -14,13 +17,10 @@ import { positionToPixelRect } from './headless/internals';
   template: `
     @if (grid.isReady()) {
       @for (entry of registeredItems(); track entry.item.id) {
-        <et-grid-item
-          [itemId]="entry.item.id"
-          [minColSpan]="entry.reg.constraints?.minColSpan ?? 1"
-          [maxColSpan]="entry.reg.constraints?.maxColSpan ?? 12"
-          [minRowSpan]="entry.reg.constraints?.minRowSpan ?? 1"
-          [maxRowSpan]="entry.reg.constraints?.maxRowSpan ?? 4"
-        >
+        <!-- The registration's constraints reach the item through the grid's own resolver, so
+             nothing is forwarded here - and an et-grid-item a consumer writes themselves can
+             refine one bound without resetting the rest. -->
+        <et-grid-item [itemId]="entry.item.id">
           <ng-container
             [ngComponentOutlet]="entry.reg.component"
             [ngComponentOutletInputs]="{ data: entry.item.data }"
@@ -52,8 +52,7 @@ import { positionToPixelRect } from './headless/internals';
   hostDirectives: [
     {
       directive: GridDirective,
-      inputs: ['breakpoints', 'rowHeight', 'gap', 'initialItems', 'readOnly'],
-      outputs: ['layoutChange'],
+      inputs: ['breakpoints', 'rowHeight', 'gap', 'readOnly'],
     },
   ],
   host: {
@@ -118,10 +117,24 @@ import { positionToPixelRect } from './headless/internals';
     }
   `,
 })
-export class GridComponent {
-  public grid = inject(GridDirective);
+export class GridComponent<TData = unknown> {
   private gridConfig = injectGridConfig();
   private labels = injectGridLabels();
+
+  /**
+   * The items to render. Despite the name this is a live input, not a one-shot seed - see
+   * `GridDirective.initialItems`. Typed in the item payload, so `layoutChange` hands the same
+   * `TData` back instead of `unknown`.
+   */
+  public initialItems = input<GridItemConfig<string, TData>[]>([]);
+
+  /** Emitted after the layout changed on this side - see `GridDirective.layoutChange`. */
+  public layoutChange = output<GridSerializedState<TData>>();
+
+  // The one seam where the item type is re-attached: a host directive cannot be parameterized by its
+  // component's generic, so the component owns the typed input/output pair above and hands them to
+  // the directive, which is the same instance - only with `TData` spelled out.
+  public grid = inject(GridDirective) as GridDirective<TData>;
 
   protected actionsComponent = computed(() => {
     const configured = this.gridConfig.actionsComponent;
@@ -154,6 +167,15 @@ export class GridComponent {
   );
 
   constructor() {
+    this.grid.hostItems.set(this.initialItems);
+
+    outputToObservable(this.grid.layoutChange)
+      .pipe(
+        tap((state) => this.layoutChange.emit(state)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     if (ngDevMode) {
       effect(() => {
         const items = this.grid.items();

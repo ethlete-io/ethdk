@@ -11,6 +11,7 @@ import {
   input,
   numberAttribute,
   output,
+  Signal,
   signal,
   untracked,
 } from '@angular/core';
@@ -112,23 +113,32 @@ const fitConstraintsToColumns = (constraints: GridItemConstraints, columns: numb
   return { ...constraints, minColSpan: Math.min(constraints.minColSpan, maxColSpan), maxColSpan };
 };
 
+/**
+ * Three layers, narrowest last: the defaults, the registration for the item's `type`, then whatever
+ * the item's own `et-grid-item` inputs set. The item layer is a partial - the inputs are unset unless
+ * a consumer wrote them - so refining one bound of a registered type does not silently reset the
+ * other three to an input default.
+ */
 const resolveItemConstraints = (
   id: string,
   context: {
     itemConfigs: GridItemConfig[];
     registrations: GridComponentRegistration[];
-    constraintsRegistry: ReadonlyMap<string, GridItemConstraints>;
+    constraintsRegistry: ReadonlyMap<string, Partial<GridItemConstraints>>;
     columns: number;
   },
 ): GridItemConstraints => {
   const item = context.itemConfigs.find((i) => i.id === id);
-  if (item) {
-    const registration = context.registrations.find((r) => r.type === item.type);
-    if (registration?.constraints) {
-      return fitConstraintsToColumns({ ...DEFAULT_CONSTRAINTS, ...registration.constraints }, context.columns);
-    }
-  }
-  return fitConstraintsToColumns(context.constraintsRegistry.get(id) ?? DEFAULT_CONSTRAINTS, context.columns);
+  const registration = item ? context.registrations.find((r) => r.type === item.type) : undefined;
+
+  return fitConstraintsToColumns(
+    {
+      ...DEFAULT_CONSTRAINTS,
+      ...registration?.constraints,
+      ...context.constraintsRegistry.get(id),
+    },
+    context.columns,
+  );
 };
 
 const LEAVE_ANIMATION_MS = 200;
@@ -147,7 +157,7 @@ const CONTAINER_RESIZE_SETTLE_MS = 150;
     '[style.--et-grid-anim-duration]': 'isResizeActive() ? "160ms" : null',
   },
 })
-export class GridDirective {
+export class GridDirective<TData = unknown> {
   private injector = inject(Injector);
   private destroyRef = inject(DestroyRef);
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -164,7 +174,7 @@ export class GridDirective {
    * can therefore keep feeding its own signal in, including a saved snapshot after cancelled edits,
    * without rebuilding the grid.
    */
-  public initialItems = input<GridItemConfig[]>([]);
+  public initialItems = input<GridItemConfig<string, TData>[]>([]);
   public readOnly = input(false, { transform: booleanAttribute });
 
   /**
@@ -172,18 +182,28 @@ export class GridDirective {
    * `removeItem()`. Reconciling `initialItems` does not emit - what the host passed in cannot be news
    * to it - so this output can be read as "the user has unsaved changes".
    */
-  public layoutChange = output<GridSerializedState>();
+  public layoutChange = output<GridSerializedState<TData>>();
+
+  /**
+   * @internal
+   * The items input of the `et-grid` around this directive, handed over rather than bound: a host
+   * directive cannot be parameterized by its component's generic, so the component declares the typed
+   * input and points this at it.
+   */
+  public hostItems = signal<Signal<GridItemConfig<string, TData>[]> | null>(null);
+
+  private incomingItems = computed(() => this.hostItems()?.() ?? this.initialItems());
 
   public registrations = computed(() => this.gridConfig.registrations);
 
   private dimensions = signalHostElementDimensions();
-  private itemConfigs = signal<GridItemConfig[]>([]);
+  private itemConfigs = signal<GridItemConfig<string, TData>[]>([]);
   private layoutOverrides = signal<Record<GridBreakpointName, GridLayoutEntry[]>>({});
   public dragState = signal<GridDragState | null>(null);
 
   // A signal, not a plain Map: an item registers its constraints after the first layout pass, and
   // everything derived from them - the live drag layout, the resize edges - has to see that arrive.
-  private constraintsRegistry = signal<ReadonlyMap<string, GridItemConstraints>>(new Map());
+  private constraintsRegistry = signal<ReadonlyMap<string, Partial<GridItemConstraints>>>(new Map());
 
   private resizeBaseLayout = signal<GridLayoutEntry[] | null>(null);
   private pendingResize: { id: string; position: GridItemPosition } | null = null;
@@ -333,7 +353,7 @@ export class GridDirective {
       .subscribe();
 
     effect(() => {
-      const initial = this.initialItems();
+      const initial = this.incomingItems();
       untracked(() => {
         if (initial.length === 0 && this.itemConfigs().length === 0) return;
 
@@ -396,7 +416,11 @@ export class GridDirective {
             const dataById = new Map(changedData.map((item) => [item.id, item.data]));
 
             this.itemConfigs.update((items) =>
-              items.map((item) => (dataById.has(item.id) ? { ...item, data: dataById.get(item.id) } : item)),
+              items.map((item) => {
+                const incoming = dataById.get(item.id);
+
+                return dataById.has(item.id) ? { ...item, data: incoming as TData } : item;
+              }),
             );
           }
 
@@ -490,7 +514,7 @@ export class GridDirective {
     return { left: rect.left + el.clientLeft, top: rect.top + el.clientTop };
   }
 
-  public registerConstraints(id: string, constraints: GridItemConstraints) {
+  public registerConstraints(id: string, constraints: Partial<GridItemConstraints>) {
     // Every signal read here is wrapped in untracked() to prevent this method from inadvertently
     // becoming a dependency of the caller's reactive context (e.g. GridItemDirective's registration
     // effect), which would cause the writes below to re-trigger that effect in a loop.
@@ -718,10 +742,10 @@ export class GridDirective {
     this.commitResize();
   }
 
-  public addItem(type: string, data: unknown) {
+  public addItem(type: string, data: TData) {
     const id = randomId();
 
-    const config: GridItemConfig = {
+    const config: GridItemConfig<string, TData> = {
       id,
       type,
       data,
@@ -779,7 +803,7 @@ export class GridDirective {
     this.emitLayoutChange();
   }
 
-  public getSerializedState(): GridSerializedState {
+  public getSerializedState(): GridSerializedState<TData> {
     const overrides = this.layoutOverrides();
 
     // layoutOverrides is the authoritative source for any breakpoint that has been visited.
@@ -804,7 +828,7 @@ export class GridDirective {
     });
   }
 
-  public restoreState(state: GridSerializedState) {
+  public restoreState(state: GridSerializedState<TData>) {
     if (ngDevMode) {
       this.assertValidItemConfigs(state.items);
 
@@ -822,7 +846,7 @@ export class GridDirective {
       }
     }
 
-    const items: GridItemConfig[] = state.items.map((item) => ({
+    const items: GridItemConfig<string, TData>[] = state.items.map((item) => ({
       id: item.id,
       type: item.type,
       data: item.data,
@@ -918,7 +942,7 @@ export class GridDirective {
     if (!options?.silent) this.emitLayoutChange();
   }
 
-  private placeItem(config: GridItemConfig, options?: GridMutationOptions) {
+  private placeItem(config: GridItemConfig<string, TData>, options?: GridMutationOptions) {
     const activeBp = this.activeBreakpoint();
     const columns = this.activeColumns();
     const currentLayout = this.baseLayout();
@@ -964,7 +988,7 @@ export class GridDirective {
       });
     }
 
-    const itemWithLayout: GridItemConfig = { ...config, layout };
+    const itemWithLayout: GridItemConfig<string, TData> = { ...config, layout };
 
     this.itemConfigs.update((items) => [...items, itemWithLayout]);
     this.updateLayoutForCurrentBreakpoint([...currentLayout, { id: config.id, position }]);

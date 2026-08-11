@@ -1,14 +1,14 @@
 import { GridItemConfig, GridItemPosition } from './grid.types';
 
-export type GridAdapter<TExternal> = {
-  fromExternal(items: TExternal[]): GridItemConfig[];
-  toExternal(items: GridItemConfig[]): TExternal[];
+export type GridAdapter<TExternal, TData = unknown> = {
+  fromExternal(items: TExternal[]): GridItemConfig<string, TData>[];
+  toExternal(items: GridItemConfig<string, TData>[]): TExternal[];
 };
 
-export const createGridAdapter = <TExternal>(
-  fromItem: (item: TExternal) => GridItemConfig,
-  toItem: (item: GridItemConfig) => TExternal,
-): GridAdapter<TExternal> => ({
+export const createGridAdapter = <TExternal, TData = unknown>(
+  fromItem: (item: TExternal) => GridItemConfig<string, TData>,
+  toItem: (item: GridItemConfig<string, TData>) => TExternal,
+): GridAdapter<TExternal, TData> => ({
   fromExternal: (items) => items.map(fromItem),
   toExternal: (items) => items.map(toItem),
 });

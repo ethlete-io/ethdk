@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { GridComponent } from './grid.component';
 import { provideGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
-import { GridItemConfig } from './headless/grid.types';
+import { GridItemConfig, GridSerializedState } from './headless/grid.types';
 
 class ResizeObserverMock {
   static instances: ResizeObserverMock[] = [];
@@ -50,6 +50,31 @@ class TestHostComponent {
   rowHeight = 120;
   gap = 8;
   items: GridItemConfig[] = [];
+}
+
+type WidgetData = { title: string };
+
+@Component({
+  imports: [GridComponent],
+  template: ` <et-grid [initialItems]="items" (layoutChange)="states.push($event)" /> `,
+})
+class TypedHostComponent {
+  // The type argument is never written down: `layoutChange` only type-checks against a
+  // `GridSerializedState<WidgetData>[]` because the component inferred `TData` from these items.
+  items: GridItemConfig<string, WidgetData>[] = [
+    {
+      id: 'a',
+      type: 'test',
+      data: { title: 'Widget A' },
+      layout: {
+        lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+      },
+    },
+  ];
+
+  states: GridSerializedState<WidgetData>[] = [];
 }
 
 describe('GridComponent', () => {
@@ -180,5 +205,35 @@ describe('GridComponent', () => {
 
     const ghost = (fixture.nativeElement as HTMLElement).querySelector('.et-grid-ghost');
     expect(ghost).not.toBeNull();
+  });
+  describe('typed items', () => {
+    it('hands the item payload type back through layoutChange', () => {
+      TestBed.resetTestingModule();
+      Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: ResizeObserverMock });
+      TestBed.configureTestingModule({
+        imports: [TypedHostComponent],
+        providers: [...provideGridConfig({ registrations: [{ type: 'test', component: TestItemComponent }] })],
+      });
+
+      const typedFixture = TestBed.createComponent(TypedHostComponent);
+      typedFixture.detectChanges();
+
+      const gridEl = typedFixture.debugElement.query(By.directive(GridDirective)).nativeElement as HTMLElement;
+      Object.defineProperty(gridEl, 'clientWidth', { configurable: true, value: 1216 });
+      TestBed.tick();
+      ResizeObserverMock.instances.forEach((instance) => instance.emit());
+      typedFixture.detectChanges();
+
+      const grid = typedFixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
+
+      expect(grid.items().map((item) => item.id)).toEqual(['a']);
+
+      grid.moveItem('a', { col: 2, row: 0, colSpan: 1, rowSpan: 1 });
+      typedFixture.detectChanges();
+
+      const emitted = typedFixture.componentInstance.states.at(-1);
+
+      expect(emitted?.items.find((item) => item.id === 'a')?.data.title).toBe('Widget A');
+    });
   });
 });

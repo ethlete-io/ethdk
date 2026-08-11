@@ -46,6 +46,18 @@ import { GRID_IMPORTS } from '@ethlete/components';
 
 Each `GridItemConfig` is `{ id, type, data, layout }`, where `layout` maps breakpoint names to `{ col, row, colSpan, rowSpan }` positions.
 
+**The item payload type travels with the items.** `et-grid` is generic in it and infers it from what you bind, so `layoutChange`, `getSerializedState()` and `restoreState()` all speak `GridSerializedState<YourData>` - no cast on the way back out:
+
+```ts
+type WidgetData = { title: string; series: string[] };
+
+protected widgets = signal<GridItemConfig<string, WidgetData>[]>([]);
+
+protected persist(state: GridSerializedState<WidgetData>) {
+  // state.items[0].data.title is typed
+}
+```
+
 Despite its name `initialItems` is a **live input**, not a one-shot seed. Every change is reconciled against what the grid already holds: new ids are placed, missing ids are removed, an empty array clears the grid, and the same ids with different positions restore those positions. Keep feeding your own signal in - there is no need to re-key the grid to make it observe a change.
 
 Reconciliation does **not** emit `layoutChange`. That output fires only for changes made on the grid's side - a drag, a resize, a keyboard move, `addItem()` or `removeItem()` - so it can be read as "the user has unsaved edits".
@@ -82,7 +94,7 @@ Override via the `breakpoints` input. `rowHeight` (default `100`) and `gap` (def
 - **Pointer** (mouse and touch): drag items to move, drag edges/corners to resize - neighbors that fit in the vacated space swap into it, everything else is pushed down, and the layout compacts. (The gestures are built on the core [drag & resize primitives](/core/drag-resize), if you need the same behavior outside the grid.)
 - **Keyboard** (on a focused item): <kbd>Ctrl/Cmd</kbd>+arrows move, <kbd>Shift</kbd>+arrows resize, <kbd>Ctrl/Cmd</kbd>+<kbd>Delete</kbd> (or <kbd>Backspace</kbd>) removes.
 - A gesture the **browser** takes away mid-drag - a system back gesture, an incoming call, the tab going to the background - reverts like <kbd>Escape</kbd> rather than dropping the item where the pointer happened to be. Same for a resize.
-- Per-item span constraints come from the registration (`constraints`) or the `et-grid-item` inputs `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan` (defaults `1` / `12` / `1` / `4`). Each item also takes an `ariaLabel` (default `'Grid item'`) and emits `remove` when it's removed.
+- Per-item span constraints are three layers, narrowest last: the built-in defaults (`1` / `12` / `1` / `24`), the registration's `constraints` for the item's `type`, then whatever the `et-grid-item` inputs `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan` set. Each input is unset unless you write it, so narrowing one bound of a registered type leaves the other three as the registration declared them. A `minColSpan` wider than a breakpoint's column count is capped to it, so `minColSpan: 2` degrades to full width at a one-column breakpoint. Each item also takes an `ariaLabel` (default `'Grid item'`) and emits `remove` when it's removed.
 - Constraints are declared once but the column count is per breakpoint, so both column spans are capped at the active breakpoint's columns: `minColSpan: 3` becomes a full-width item at the one- or two-column breakpoint rather than one wider than the grid. An item whose span cannot change on an axis grows no resize handles there - at a one-column breakpoint the whole left and right edge stays draggable instead of being covered by strips that do nothing.
 - The resize strips reach **into the gap** as well as into the item, by half the gap up to 8px - so at the default `gap: 16` an edge is a 14px target rather than 6px, and the hover marker has not moved. The gap is split evenly between the two items either side of it. Nothing changes inside the item, so the strips never cover content or a scrollbar; shrink `gap` and the outward half shrinks with it.
 
@@ -101,16 +113,16 @@ import { createGridAdapter, fromGridPosition, toGridPosition } from '@ethlete/co
 
 const FALLBACK_POSITION = { col: 0, row: 0, colSpan: 1, rowSpan: 1 };
 
-const adapter = createGridAdapter<BackendWidget>(
+const adapter = createGridAdapter<BackendWidget, BackendWidget>(
   (w) => ({ id: w.uuid, type: w.kind, data: w, layout: { lg: toGridPosition(w) } }),
-  (item) => ({ ...(item.data as BackendWidget), ...fromGridPosition(item.layout['lg'] ?? FALLBACK_POSITION) }),
+  (item) => ({ ...item.data, ...fromGridPosition(item.layout['lg'] ?? FALLBACK_POSITION) }),
 );
 
 const items = adapter.fromExternal(widgets);
 const widgetsToSave = adapter.toExternal(state.items);
 ```
 
-The adapter maps one position per item, so a layout with several breakpoints has to pick which one round-trips (or map `item.layout` yourself).
+The adapter's second type argument is the item payload - name it and both directions are typed, including the `data` the reverse mapper reads. The adapter maps one position per item, so a layout with several breakpoints has to pick which one round-trips (or map `item.layout` yourself).
 
 A `layout` is expected to hold one position per configured breakpoint. An omitted one is not an error, but it renders as a 1×1 item at the grid origin rather than being auto-placed, so the grid warns in dev mode naming the item and the breakpoints it is missing - the single-breakpoint adapter above trips exactly that. Spread the position across every breakpoint (or store all three) to silence it:
 
