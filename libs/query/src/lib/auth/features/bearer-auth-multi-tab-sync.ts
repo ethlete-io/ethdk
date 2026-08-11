@@ -123,7 +123,9 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
       },
     );
 
-    if (config.leaderElection === false) return { sessionAdoption: sync.sessionAdoption };
+    if (config.leaderElection === false) {
+      return { sessionAdoption: sync.sessionAdoption, activityCoordination: sync.activityCoordination };
+    }
 
     const election = setupLeaderElection({ name: context.name });
 
@@ -140,6 +142,7 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
       leaderElection: instance,
       refreshCoordination: { request: election.requestRefresh, requests$: election.refreshRequests$ },
       sessionAdoption: sync.sessionAdoption,
+      activityCoordination: sync.activityCoordination,
     };
   };
 

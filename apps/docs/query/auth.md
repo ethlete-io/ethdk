@@ -295,6 +295,7 @@ A received message takes the same path a local one does, which is what makes the
 - **Incoming tokens** are applied like a successful refresh, so `afterTokenRefresh$` emits and every secure query in that tab which had failed with a `401` re-executes. Without this a follower tab would sit on a permanently failed page until reloaded, holding a perfectly valid token.
 - **An incoming logout** runs the provider's own `logout()`, so `executionState()` becomes `{ type: 'logout' }` and unsaved-change guards are abandoned - the receiving tab reports the end of the session the same way the tab the user clicked in does. It reports `sessionEndCause()` as the cause the logout had in the tab it started in, with a deliberate `logout()` arriving as [`'otherTab'`](#why-the-session-ended) - so the receiving tab can both tell a logout it did not initiate from one it did, and see that a session ended because it expired or went idle.
 - **A follower's refresh request** reaches the leader over the leader channel, so a `401` in a tab that may not spend the refresh token still gets one out immediately instead of waiting for the leader's own timer.
+- **Activity is announced**, so `withInactivityLogout` measures the session's idleness rather than each tab's own - see [Idleness belongs to the session](#idleness-belongs-to-the-session).
 - **A tab that just opened asks for the session** rather than starting one of its own. Sync is otherwise push-only - a tab broadcasts tokens that just _changed_ - so a tab joining a live session would hear nothing and run a full cookie auto-login, spending a refresh-token rotation every open tab then has to adopt. The joining tab posts a state request, the leader answers with its current tokens, and `withPersistentAuth` holds its auto-login for that answer. The wait is bounded (250ms) and only happens when there is a cookie to spend, so a lone tab is never held up by a reply that is not coming - and while it is out, `sessionStatus()` stays `'unknown'`, which is what keeps the [route guards](#route-guards) from sending a session that exists to the login page.
 
 Neither message is echoed back out, so a login or logout settles in one round of broadcasts however many tabs are open.
@@ -325,10 +326,38 @@ Optional behaviors passed to the provider's `features` array (each usable once -
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `withPersistentAuth`         | Cookie-backed "remember me" auto-login (encrypted token storage; cookie `etAuth`, 30 days, `sameSite: 'lax'` by default). It calls `tryLogin()` itself during setup - no app initializer needed; the attempt surfaces as `executionState()` with `type: 'autoLogin'` and as [`sessionStatus()`](#is-there-a-session) `'restoring'`. |
 | `withTokenExpirationWarning` | `isExpiringSoon` / `expiresIn` signals (default threshold 5 minutes).                                                                                                                                                                                                                                                               |
-| `withInactivityLogout`       | Auto-logout after inactivity (default 15 minutes; listens to mouse/keyboard/scroll/touch). Reports `sessionEndCause()` as `'inactivity'`.                                                                                                                                                                                           |
+| `withInactivityLogout`       | Auto-logout after inactivity (default 15 minutes; listens to mouse/keyboard/scroll/touch). Reports `sessionEndCause()` as `'inactivity'`. With multi-tab sync on, idleness is measured across tabs - see [Idleness belongs to the session](#idleness-belongs-to-the-session).                                                       |
 | `withTokenRevocation`        | Calls a revocation query - by default automatically on logout.                                                                                                                                                                                                                                                                      |
 | `withTracking`               | Typed event bus for auth telemetry (query execute/success/failure, token refresh, logout, leader changes). Its `logout` event carries `{ cause }`.                                                                                                                                                                                  |
 | `withBearerAuthMultiTabSync` | Cross-tab token/logout sync and leader election - see [Multi-tab sync](#multi-tab-sync). Exposes `isLeader` / `instanceCount` / `leadership`.                                                                                                                                                                                       |
+
+### Idleness belongs to the session
+
+`withInactivityLogout` ends the session once the user has done nothing for `inactivityTimeout`. The
+question that decides whether it is usable is _whose_ nothing: with [multi-tab sync](#multi-tab-sync)
+on, a logout travels to every tab, so a per-tab timer would let a forgotten second tab log the user
+out of the one they are typing in.
+
+So activity is shared. Each tab announces the user doing something on the sync channel (at most once
+per quarter of the timeout - enough to keep any other tab's countdown from expiring, without waking
+every tab once a second while someone scrolls), and a tab that hears it postpones its own logout
+without announcing anything onward. The countdown only runs out when it has run out everywhere.
+
+Two things deliberately do **not** count as activity:
+
+- **A token refresh.** That is the app working, not the user - and resetting on one would mean an app
+  refreshing faster than the timeout never logs an idle user out at all.
+- **A tab opening.** Restoring a session is not the user doing something in it.
+
+Everything else feeds the same clock: the configured `activityEvents` on the tab's own document
+(`activityEvents` **replaces** the defaults rather than extending them), a `customActivityCheck`
+polled once a second, the start of a session, and an explicit `resetTimer()` - which also announces,
+so telling one tab the user is active tells all of them. `calculateTimeUntilLogout()` reports the
+same deadline the logout uses.
+
+Without multi-tab sync - or with `syncLogout: false`, where a logout stays in the tab that decided it
+
+- each tab times out on its own, which is correct there: nothing it does ends anybody else's session.
 
 ### Where auto-login should not run
 

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { setupAuthTest, setupQueryTest } from '@ethlete/query/testing';
+import { installFakeBroadcastChannel, setupAuthTest, setupQueryTest } from '@ethlete/query/testing';
+import { withBearerAuthMultiTabSync } from './bearer-auth-multi-tab-sync';
 import { withInactivityLogout } from './bearer-auth-inactivity-logout';
 
 describe('bearer-auth-inactivity-logout', () => {
@@ -92,6 +93,24 @@ describe('bearer-auth-inactivity-logout', () => {
       querySetup.httpTesting.verify();
     });
 
+    it('should logout after the timeout without a single activity event', () => {
+      const querySetup = setupQueryTest();
+      const { auth, login } = setupAuthTest({
+        querySetup,
+        features: [withInactivityLogout({ inactivityTimeout: 5000 })],
+      });
+
+      login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
+
+      vi.advanceTimersByTime(5500);
+      TestBed.tick();
+
+      expect(auth.isAuthenticated()).toBe(false);
+      expect(auth.sessionEndCause()).toBe('inactivity');
+
+      querySetup.httpTesting.verify();
+    });
+
     it('should track mouse activity', () => {
       const querySetup = setupQueryTest();
       const { auth, login } = setupAuthTest({
@@ -99,29 +118,19 @@ describe('bearer-auth-inactivity-logout', () => {
         features: [withInactivityLogout({ inactivityTimeout: 5000 })],
       });
 
-      const logout = vi.fn();
-      auth.logout = logout;
-
-      // Login first
       login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
 
-      auth.features.inactivityLogout.enable();
-
-      // Advance timer partway
       vi.advanceTimersByTime(3000);
       TestBed.tick();
 
-      // Simulate mouse activity
       document.dispatchEvent(new MouseEvent('mousedown'));
-      vi.advanceTimersByTime(1200); // Past throttle
       TestBed.tick();
 
-      // Advance more time but not past full timeout
+      // Past the original deadline, but only 4000 into the one the click set.
       vi.advanceTimersByTime(4000);
       TestBed.tick();
 
-      // Should NOT have logged out due to mouse activity reset
-      expect(logout).not.toHaveBeenCalled();
+      expect(auth.isAuthenticated()).toBe(true);
 
       querySetup.httpTesting.verify();
     });
@@ -133,29 +142,70 @@ describe('bearer-auth-inactivity-logout', () => {
         features: [withInactivityLogout({ inactivityTimeout: 5000 })],
       });
 
-      const logout = vi.fn();
-      auth.logout = logout;
-
-      // Login first
       login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
 
-      auth.features.inactivityLogout.enable();
-
-      // Advance timer partway
       vi.advanceTimersByTime(3000);
       TestBed.tick();
 
-      // Simulate keyboard activity
       document.dispatchEvent(new KeyboardEvent('keydown'));
-      vi.advanceTimersByTime(1200); // Past throttle
       TestBed.tick();
 
-      // Advance more time but not past full timeout
       vi.advanceTimersByTime(4000);
       TestBed.tick();
 
-      // Should NOT have logged out due to keyboard activity reset
-      expect(logout).not.toHaveBeenCalled();
+      expect(auth.isAuthenticated()).toBe(true);
+
+      querySetup.httpTesting.verify();
+    });
+
+    it('should postpone the logout itself on resetTimer, not just the reported countdown', () => {
+      const querySetup = setupQueryTest();
+      const { auth, login } = setupAuthTest({
+        querySetup,
+        features: [withInactivityLogout({ inactivityTimeout: 5000 })],
+      });
+
+      login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
+
+      vi.advanceTimersByTime(4000);
+      TestBed.tick();
+
+      auth.features.inactivityLogout.resetTimer();
+      TestBed.tick();
+
+      vi.advanceTimersByTime(4000);
+      TestBed.tick();
+
+      expect(auth.isAuthenticated()).toBe(true);
+
+      vi.advanceTimersByTime(1500);
+      TestBed.tick();
+
+      expect(auth.isAuthenticated()).toBe(false);
+      expect(auth.sessionEndCause()).toBe('inactivity');
+
+      querySetup.httpTesting.verify();
+    });
+
+    it('should not count a token refresh as user activity', () => {
+      const querySetup = setupQueryTest();
+      const { auth, login, refresh } = setupAuthTest({
+        querySetup,
+        features: [withInactivityLogout({ inactivityTimeout: 5000 })],
+      });
+
+      login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
+
+      vi.advanceTimersByTime(4000);
+      TestBed.tick();
+
+      refresh('refresh', { accessToken: 'token-2', refreshToken: 'refresh-2' });
+
+      vi.advanceTimersByTime(1500);
+      TestBed.tick();
+
+      expect(auth.isAuthenticated()).toBe(false);
+      expect(auth.sessionEndCause()).toBe('inactivity');
 
       querySetup.httpTesting.verify();
     });
@@ -167,29 +217,27 @@ describe('bearer-auth-inactivity-logout', () => {
         features: [withInactivityLogout({ inactivityTimeout: 5000, activityEvents: ['click'] })],
       });
 
-      const logout = vi.fn();
-      auth.logout = logout;
-
-      // Login first
       login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
 
-      auth.features.inactivityLogout.enable();
-
-      // Advance timer partway
       vi.advanceTimersByTime(3000);
       TestBed.tick();
 
-      // Simulate click activity (custom event)
       document.dispatchEvent(new MouseEvent('click'));
-      vi.advanceTimersByTime(1200); // Past throttle
       TestBed.tick();
 
-      // Advance more time but not past full timeout
       vi.advanceTimersByTime(4000);
       TestBed.tick();
 
-      // Should NOT have logged out due to click activity reset
-      expect(logout).not.toHaveBeenCalled();
+      expect(auth.isAuthenticated()).toBe(true);
+
+      // A tracked event of its own is the only thing that counts - the defaults are replaced, not extended.
+      document.dispatchEvent(new MouseEvent('mousedown'));
+      TestBed.tick();
+
+      vi.advanceTimersByTime(1500);
+      TestBed.tick();
+
+      expect(auth.isAuthenticated()).toBe(false);
 
       querySetup.httpTesting.verify();
     });
@@ -202,31 +250,20 @@ describe('bearer-auth-inactivity-logout', () => {
         features: [withInactivityLogout({ inactivityTimeout: 5000, customActivityCheck: customCheck })],
       });
 
-      const logout = vi.fn();
-      auth.logout = logout;
-
-      // Login first
       login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
 
-      auth.features.inactivityLogout.enable();
-
-      // Advance timer partway
-      vi.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(6000);
       TestBed.tick();
 
-      // Custom check should have been called
       expect(customCheck).toHaveBeenCalled();
+      expect(auth.isAuthenticated()).toBe(true);
 
-      // Advance to trigger check that returns true (activity detected)
-      vi.advanceTimersByTime(1200);
+      customCheck.mockReturnValue(false);
+
+      vi.advanceTimersByTime(6000);
       TestBed.tick();
 
-      // Advance more time but not past full timeout
-      vi.advanceTimersByTime(4000);
-      TestBed.tick();
-
-      // Should NOT have logged out due to custom activity check
-      expect(logout).not.toHaveBeenCalled();
+      expect(auth.isAuthenticated()).toBe(false);
 
       querySetup.httpTesting.verify();
     });
@@ -238,22 +275,100 @@ describe('bearer-auth-inactivity-logout', () => {
         features: [withInactivityLogout({ inactivityTimeout: 5000 })],
       });
 
-      const logout = vi.fn();
-      auth.logout = logout;
-
-      // Login first
       login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
 
-      // Disable tracking
       auth.features.inactivityLogout.disable();
 
-      // Wait past timeout
       vi.advanceTimersByTime(6000);
       TestBed.tick();
 
-      // Should NOT have logged out (disabled)
-      expect(logout).not.toHaveBeenCalled();
+      expect(auth.isAuthenticated()).toBe(true);
 
+      querySetup.httpTesting.verify();
+    });
+  });
+
+  describe('idleness across tabs', () => {
+    const channelName = 'ethlete-auth-sync:test-auth';
+
+    let bus: ReturnType<typeof installFakeBroadcastChannel>;
+
+    beforeEach(() => {
+      // `queueMicrotask` is left real: the fake bus delivers on it, and faking it would mean pumping
+      // the timer API to move a message between tabs.
+      vi.useRealTimers();
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+      bus = installFakeBroadcastChannel();
+    });
+
+    afterEach(() => {
+      bus.restore();
+    });
+
+    const setup = () => {
+      const querySetup = setupQueryTest();
+      const authTest = setupAuthTest({
+        querySetup,
+        features: [withBearerAuthMultiTabSync(), withInactivityLogout({ inactivityTimeout: 5000 })],
+      });
+
+      return { querySetup, ...authTest };
+    };
+
+    it('tells the other tabs about local activity', () => {
+      const { querySetup, login } = setup();
+
+      login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
+
+      document.dispatchEvent(new MouseEvent('mousedown'));
+      TestBed.tick();
+
+      expect(bus.posted.filter((message) => (message.data as { type: string }).type === 'activity')).toHaveLength(1);
+
+      querySetup.httpTesting.verify();
+    });
+
+    it('keeps this tab logged in while another tab is being used', async () => {
+      const { querySetup, auth, login } = setup();
+      const otherTab = new BroadcastChannel(channelName);
+
+      login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
+
+      vi.advanceTimersByTime(4000);
+      TestBed.tick();
+
+      otherTab.postMessage({ type: 'activity' });
+      await Promise.resolve();
+      TestBed.tick();
+
+      vi.advanceTimersByTime(4000);
+      TestBed.tick();
+
+      expect(auth.isAuthenticated()).toBe(true);
+
+      vi.advanceTimersByTime(1500);
+      TestBed.tick();
+
+      expect(auth.isAuthenticated()).toBe(false);
+      expect(auth.sessionEndCause()).toBe('inactivity');
+
+      otherTab.close();
+      querySetup.httpTesting.verify();
+    });
+
+    it('does not echo another tab’s activity back at it', async () => {
+      const { querySetup, login } = setup();
+      const otherTab = new BroadcastChannel(channelName);
+
+      login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
+
+      otherTab.postMessage({ type: 'activity' });
+      await Promise.resolve();
+      TestBed.tick();
+
+      expect(bus.posted.filter((message) => (message.data as { type: string }).type === 'activity')).toHaveLength(1);
+
+      otherTab.close();
       querySetup.httpTesting.verify();
     });
   });

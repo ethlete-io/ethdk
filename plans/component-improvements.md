@@ -418,6 +418,23 @@ somewhere else entirely.
 **The per-tab inactivity timer below is therefore not this bug - but it is still a bug**, and it is
 the one that bites the moment any app turns the feature on.
 
+**Fixed 2026-08-11.** Idleness became a property of the session, the way the design call below
+demands. `setupMultiTabSync` carries an `{ type: 'activity' }` message and hands out an
+`activityCoordination` (`announce` / `activity$`) that the provider plumbs into the feature context -
+so `withInactivityLogout` announces local activity and postpones its own logout when it hears another
+tab's, which it never re-announces. Announcements are throttled to a quarter of the timeout: far more
+often than another tab's countdown needs, and not once a second while someone scrolls. It is only
+offered where a logout actually travels, so `syncLogout: false` keeps its per-tab timer. Three
+further defects went with it: the deadline is driven off `lastActivityTime` (so `resetTimer()`
+postpones the logout, and a tab that has seen no event still has a deadline), the deadline is
+re-checked when it fires (activity recorded in the same tick as the old deadline has not moved it
+yet), and a token _refresh_ no longer counts as user activity - it is the app working, not the user,
+and an app refreshing faster than the timeout would otherwise never log an idle user out at all.
+Visibility-awareness turned out to be unnecessary: a hidden tab's countdown is reset by the visible
+tab's activity, which is what the visibility check was reaching for.
+
+The original finding, for the record:
+
 **If inactivity logout is enabled, an idle tab logs out an active one.** `withInactivityLogout` tracks `mousedown`/`keydown`/`scroll`/`touchstart` **on its own
 document**, so activity in one tab never resets another tab's timer, and `syncLogout` then
 broadcasts whichever tab gives up first to all of them. A forgotten second tab times out after 15

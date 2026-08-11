@@ -293,6 +293,32 @@ describe('setupMultiTabSync', () => {
     });
   });
 
+  it('should announce activity and report what other tabs announce', () => {
+    TestBed.runInInjectionContext(() => {
+      const sync = setup();
+      const seen: number[] = [];
+
+      sync.activityCoordination?.activity$.subscribe(() => seen.push(1));
+
+      sync.activityCoordination?.announce();
+
+      expect(mockChannel.postMessage).toHaveBeenCalledWith({ type: 'activity' });
+
+      mockChannel.onmessage?.({ data: { type: 'activity' } } as MessageEvent);
+
+      expect(seen).toHaveLength(1);
+      expect(logout).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should not coordinate activity when syncLogout is false', () => {
+    TestBed.runInInjectionContext(() => {
+      const sync = setup({ syncLogout: false });
+
+      expect(sync.activityCoordination).toBeUndefined();
+    });
+  });
+
   it('should not apply logout when syncLogout is false', () => {
     TestBed.runInInjectionContext(() => {
       setup({ syncLogout: false });
