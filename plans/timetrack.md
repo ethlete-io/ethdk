@@ -179,7 +179,7 @@ Four layers, each derived from the one before, each kept so the chain is auditab
    content hash for change detection.
 
 `Evidence` is the load-bearing type. Every proposal must be explainable in the UI as a list
-of concrete observations ("branch `feat/FIP-2177-user-management/FIP-2178-…` checked out
+of concrete observations ("branch `sub/feat/FIP-2177-user-management/FIP-2178-…` checked out
 09:12", "17 commits", "Claude Code session `51312183` in `/home/tom/dev/fut-frontend`",
 "calendar event _Sprint Planning_ 10:00-11:00, you accepted"). If a proposal cannot be
 explained, it must not be pre-checked - that is the entire trust model.
