@@ -648,15 +648,33 @@ silently discard a row you touched. Mark edited proposals and merge around them.
 
 ## Storage, privacy, secrets
 
+**The core half is built** - `libs/timetrack/src/lib/store/`: the two persistence ports, the
+exclusion rules, the retention plan and the ledger writer (22 tests). No encryption is in it and
+none belongs there: the key lives in the OS keychain and the cipher in SQLCipher, both host-side,
+so the core holds the seam and the policy the host runs around it - nothing that touches a file.
+`TimetrackEventStore` moved out of `transport/ports.ts` (a store is not a transport) and gained
+`append$`, `deleteEventsBefore$` and `oldestEventAt$`; `TimetrackPorts` gained `ledger`.
+
 - **Encrypted SQLite.** `rusqlite` with bundled SQLCipher, key generated at first run and
   stored in the OS keychain (`keyring` crate; `tauri-plugin-stronghold` as the alternative).
   Note that `tauri-plugin-sql` uses sqlx without SQLCipher, so it is the wrong choice here.
-- **Retention.** Raw `CollectedEvent`s expire on a configurable window (default ~30 days)
-  after which they are compacted to attributed blocks and deleted. Synced worklogs and their
+  Waits on `apps/timetrack` - there is no Rust in the repo yet to put it in.
+- **Retention.** ~~Raw `CollectedEvent`s expire on a configurable window (default ~30 days)
+  after which they are compacted to attributed blocks and deleted.~~ **`planRetention` decides
+  this**, and its one load-bearing rule was not in the plan: the cutoff is clamped to how far
+  compaction has got, because blocks are what outlive the events and deleting an uncompacted day
+  destroys it. Nothing compacted yet means nothing is deletable. Synced worklogs and their
   evidence summaries persist.
-- **Exclusion rules.** Deny by app id or window-title regex, evaluated before persistence.
+- **Exclusion rules.** ~~Deny by app id or window-title regex, evaluated before persistence.
   Ship sensible defaults (password managers, banking, private-browsing windows) and make the
-  list visible and editable in settings.
+  list visible and editable in settings.~~ **`applyExclusionRules` + `DEFAULT_EXCLUSION_RULES`.**
+  Two things it settled: an excluded event's summary carries its timestamp, source and the rule
+  that fired but never its title or app id, so a denied window title cannot reach the database by
+  the back door; and a rule whose regex will not compile is reported in `invalidRules` rather than
+  thrown - a typo in settings must not stop collection - which means the settings screen has to
+  show them, or the user trusts a rule that is protecting nothing. The defaults are not composed
+  in for you: `rules` is required, and the host decides whether the user's list replaces or extends
+  them.
 - **Hard pause.** One click stops all collection, visibly, until resumed. Not a filter - the
   collectors stop.
 - **Own OAuth clients.** Per provider, registered by the user, PKCE + loopback redirect on a
@@ -675,8 +693,9 @@ silently discard a row you touched. Mark edited proposals and merge around them.
 pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `propose`, and
 `correlateDay` over all of them), with no network, filesystem or Angular in it, the read-only
 Jira provider on top, and the whole Tempo integration - work-attribute discovery, foreign-time
-subtraction, the sync diff and the write half that executes it (232 tests).
-Remaining: encrypted store,
+subtraction, the sync diff and the write half that executes it, and the store's core half -
+persistence ports, exclusion rules, retention, ledger writer (254 tests).
+Remaining: the encrypted database itself (host-side, needs `apps/timetrack`),
 the window/idle collector (wlr protocol + niri enrichment + X11 fallback), the git
 watcher, Claude Code session logs, Google Calendar, the day-review UI, tray. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real

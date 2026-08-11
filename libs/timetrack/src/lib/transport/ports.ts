@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { CollectedEvent } from '../model';
+import { TimetrackEventStore, TimetrackLedgerStore } from '../store/ports';
 
 export type TimetrackRequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -30,10 +30,6 @@ export type TimetrackSecretStore = {
   write$(key: string, value: string): Observable<void>;
 };
 
-export type TimetrackEventStore = {
-  eventsBetween$(from: Date, to: Date): Observable<CollectedEvent[]>;
-};
-
 export type ProcessSpec = {
   command: string;
   args: string[];
@@ -57,5 +53,6 @@ export type TimetrackPorts = {
   transport: TimetrackTransport;
   secrets: TimetrackSecretStore;
   events: TimetrackEventStore;
+  ledger: TimetrackLedgerStore;
   processes: TimetrackProcessRunner;
 };
