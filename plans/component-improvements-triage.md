@@ -17,11 +17,11 @@ decision before any code · `X` blocked.
 
 Ranked by value per unit of risk, not by size.
 
-**The user's two picks, named 2026-08-11 and to be taken first:** the **form field warning mode**
-(`Forms: a warning validity state`, in the `L` table) and the **button surface theming variants**
-(`Surface-coloured button`, under "Decide before building"). Naming them settles the "is this worth
-building" half of each; the shape questions in their rows are still open and are the first thing to
-answer. The tile below stays #1 of what was already ranked, but it is parked behind those two.
+**The user's pick, named 2026-08-11 and to be taken first:** the **button surface theming
+variants** (`Surface-coloured button`, under "Decide before building"). Naming it settles the "is this
+worth building" half; the shape questions in its row are still open and are the first thing to answer.
+The other pick, the form field warning mode, shipped 2026-08-11 as the `warn()` schema rule. The tile
+below stays #1 of what was already ranked, but it is parked behind the button.
 
 1. **Selection list `variant="tile"`** - `M` now, `A`,`D`.
    Was an `L`; the selection-card dedupe turned it into a single edit on one shared sheet. Settle
@@ -64,7 +64,6 @@ answer. The tile below stays #1 of what was already ranked, but it is parked beh
 | Command palette                              | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                             |
 | Stat tile                                    | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                        |
 | Test harnesses                               | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                         |
-| Forms: a `warning` validity state            | `A`,`D` | **User pick, 2026-08-11.** Raised 2026-08-10. Colour language exists; the open call is whether a warning is a signal, a validator severity, or presentation-only - and how it shares the error slot. Must never block submit                                                   |
 | Forms: time-zone handling / local-time UX    | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, range and scheduler together |
 | Query devtools: the mock API export          | `A`,`D` | User-raised 2026-08-10. Serving and the designer both shipped that day; what is left is handing a designed route to the API team as an OpenAPI path item. It reads and writes the same document `query-devtools-schema.ts` already parses - do not write a second parser       |
 

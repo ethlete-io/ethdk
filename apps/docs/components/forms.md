@@ -249,9 +249,10 @@ The field chrome handles error display and aria wiring uniformly:
   inputs) is surfaced the same way once touched: its `parseErrorMessage` renders
   as an error, with matching `aria-invalid` and `aria-describedby` - no more
   silent invalid state.
-- `aria-describedby` on the control automatically points at the active error (or
-  hint), `aria-labelledby` at the `et-label`; the label renders a `*` marker when
-  the control is `required`.
+- `aria-describedby` on the control automatically points at the active error
+  (else a [warning](#warnings-valid-but-worth-a-look), else the hint),
+  `aria-labelledby` at the `et-label`; the label renders a `*` marker when the
+  control is `required`.
 - The `et-label` is **optional**, but every control needs an accessible name.
   When you omit the label, give the control its own `aria-label` or
   `aria-labelledby` (the text-field controls - `et-input`, `et-number-input`,
@@ -270,6 +271,64 @@ The field chrome handles error display and aria wiring uniformly:
   ([`ET2200`](/components/error-codes#form-field-et22xx)) or a control with no
   accessible name - no `et-label` and no `aria-label`/`aria-labelledby`
   ([`ET2201`](/components/error-codes#form-field-et22xx)).
+
+### Warnings: valid, but worth a look
+
+Validity is binary, and some values are neither. A password that meets every rule
+yet appears in a leak list, a date far enough out to be a likely typo, a quantity
+above what you normally stock: all accepted, all worth a sentence under the field.
+That sentence is a **warning** - a `warn()` rule in the schema, next to the
+validators:
+
+```ts
+import { warn } from '@ethlete/components';
+
+form(model, (s) => {
+  required(s.password);
+  minLength(s.password, 8);
+
+  warn(s.password, ({ value }) => (isLeaked(value()) ? 'This password appears in a known leak.' : null));
+  warn(s.quantity, ({ value }) =>
+    value() > stock() ? { kind: 'aboveStock', message: 'More than we usually have in stock.' } : null,
+  );
+});
+```
+
+<StoryEmbed id="components-forms-warning--default" height="420px" />
+
+A `warn()` callback runs like a validator's - same `FieldContext`, so it can read
+the value, the field's state, or any signal outside the form - but its result never
+reaches validity. Return `null` for no warning, a string (which becomes
+`kind: 'etWarning'`), a `{ kind, message }` object, or an array of either;
+several `warn()` rules on one field concatenate.
+
+What the field does with them:
+
+| Aspect         | Behavior                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Validity       | Untouched. The field stays valid, `submit()` proceeds, `aria-invalid` stays `false`                                |
+| Display        | Immediately, without waiting for `touched` - a warning is about the value, not about the user not having filled it |
+| The error slot | An error wins outright: while one shows, the warning is hidden and returns once the error is fixed                 |
+| The hint       | A warning replaces it, with the same animated swap the error uses                                                  |
+| Color          | The app's `type: 'warning'` theme, on the message only - the control frame keeps its normal border                 |
+| Announcement   | `aria-live="polite"`, and `aria-describedby` points at it while it is the visible message                          |
+
+The app only needs a `type: 'warning'` color theme registered if something
+actually warns - the theme is resolved on first render of a warning, not on field
+creation.
+
+Controls that render their own support region (`et-slider`, `et-rating`,
+`et-otp-input`, the selection groups, `et-dropzone`, `et-choice-field`) show
+warnings in the same place, from the same rule.
+
+Warning texts localize like error texts, through their own resolver keyed by
+`kind`:
+
+```ts
+import { provideFormWarningMessageResolver } from '@ethlete/components';
+
+provideFormWarningMessageResolver((warning) => (warning.kind === 'aboveStock' ? t('stock.above') : null));
+```
 
 ### Validators the library ships
 
@@ -362,15 +421,15 @@ provideFormErrorMessageResolver((error) => {
 
 The field shell declares public design tokens; override them in your CSS scope:
 
-| Component       | Tokens                                                                                                                                                                                                                                                                                                               |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-hint-font-size`, `-support-duration`, `-support-offset` |
+| Component       | Tokens                                                                                                                                                                                                                                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration`, `-support-offset` |
 
 Per-control tokens live in each control guide:
 [text inputs](/components/text-inputs#theming),
 [choice & rating](/components/choice-inputs#theming). All colors resolve through
 the [surface/color theme systems](/core/theming) (the error state forces the
-theme registered with `type: 'error'`).
+theme registered with `type: 'error'`, a warning message uses `type: 'warning'`).
 
 ## Error codes
 

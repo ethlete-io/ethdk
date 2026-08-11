@@ -60,6 +60,12 @@
     initial-value: 12px;
   }
 
+  @property --et-slider-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-slider-hint-font-size {
     syntax: '<length>';
     inherits: true;
@@ -255,6 +261,15 @@
       gap: 2px;
       padding-block-start: 4px;
       font-size: var(--et-slider-error-font-size);
+      color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-range-slider-warnings {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-block-start: 4px;
+      font-size: var(--et-slider-warning-font-size);
       color: var(--et-theme-color-primary-solid, currentColor);
     }
 

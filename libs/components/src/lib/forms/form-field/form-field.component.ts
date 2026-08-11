@@ -5,14 +5,15 @@ import {
   effect,
   ElementRef,
   inject,
+  Injector,
   input,
+  runInInjectionContext,
   signal,
   untracked,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import {
   AnimatableDirective,
@@ -21,15 +22,16 @@ import {
   createCanAnimateSignal,
   injectErrorTheme,
   injectSurfaceThemes,
+  injectWarningTheme,
   ProvideColorDirective,
   ProvideSurfaceDirective,
   resolveSurfaceByElevation,
   signalElementDimensions,
   SURFACE_PROVIDER,
 } from '@ethlete/core';
-import { EMPTY, filter, switchMap, tap } from 'rxjs';
 import { SpinnerComponent } from '../../loader';
 import { FormErrorComponent } from './form-error.component';
+import { FormWarningComponent } from './form-warning.component';
 import {
   FORM_FIELD_APPEARANCES,
   FORM_FIELD_FILLS,
@@ -41,6 +43,7 @@ import {
   FormFieldSize,
 } from './form-field.variants';
 import {
+  clearLeavingSupportStateOnExit,
   FormFieldDirective,
   INITIAL_SUPPORT_PRESENTATION_STATE,
   isInteractiveElement,
@@ -59,6 +62,7 @@ import {
     AnimatableDirective,
     ColorInteractiveExcludeDirective,
     FormErrorComponent,
+    FormWarningComponent,
     NgTemplateOutlet,
     ProvideColorDirective,
     SpinnerComponent,
@@ -77,6 +81,7 @@ import {
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-control-type]': 'formFieldDir.controlType()',
     '[attr.data-error]': 'displaysError() || null',
+    '[attr.data-warning]': 'displaysWarning() || null',
     '[attr.aria-busy]': 'isBusy() ? "true" : null',
     '[attr.data-busy]': 'isBusy() || null',
     '[attr.data-expanded]': 'formFieldDir.usesTextFieldShell() && formFieldDir.expanded() ? "" : null',
@@ -100,6 +105,7 @@ export class FormFieldComponent {
   private provideColor = inject(ProvideColorDirective);
   private provideSurface = inject(ProvideSurfaceDirective);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private injector = inject(Injector);
 
   protected formFieldDir = inject(FormFieldDirective);
 
@@ -118,17 +124,20 @@ export class FormFieldComponent {
   public busy = input(false, { transform: booleanAttribute });
 
   protected errorContent = viewChild<ElementRef<HTMLElement>>('errorContent');
+  protected warningContent = viewChild<ElementRef<HTMLElement>>('warningContent');
   protected hintContent = viewChild<ElementRef<HTMLElement>>('hintContent');
   public counterContent = viewChild<ElementRef<HTMLElement>>('counterContent');
   private controlFrame = viewChild<ElementRef<HTMLElement>>('controlFrame');
   public prefixEl = viewChild<ElementRef<HTMLElement>>('prefixEl');
   protected errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
+  protected warningAnimatable = viewChild<AnimatableDirective>('warningAnimatable');
   protected hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
 
   /** Whether the field is showing its busy affordance - a pending async validator, or `[busy]`. */
   public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());
 
   private errorDimensions = signalElementDimensions(this.errorContent);
+  private warningDimensions = signalElementDimensions(this.warningContent);
   private hintDimensions = signalElementDimensions(this.hintContent);
   private counterDimensions = signalElementDimensions(this.counterContent);
   private prefixDimensions = signalElementDimensions(this.prefixEl);
@@ -174,6 +183,10 @@ export class FormFieldComponent {
       return SUPPORT_CONTENT_STATE.ERROR;
     }
 
+    if (this.formFieldDir.warnings().length > 0) {
+      return SUPPORT_CONTENT_STATE.WARNING;
+    }
+
     if (this.formFieldDir.registeredHint()) {
       return SUPPORT_CONTENT_STATE.HINT;
     }
@@ -182,6 +195,8 @@ export class FormFieldComponent {
   });
 
   protected displaysError = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
+
+  protected displaysWarning = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING);
 
   protected hasFloatingTextLabel = computed(
     () =>
@@ -225,6 +240,15 @@ export class FormFieldComponent {
     );
   });
 
+  protected shouldRenderWarning = computed(() => {
+    const presentation = this.supportPresentation();
+
+    return (
+      presentation.renderedState === SUPPORT_CONTENT_STATE.WARNING ||
+      presentation.leavingState === SUPPORT_CONTENT_STATE.WARNING
+    );
+  });
+
   protected shouldRenderHint = computed(() => {
     const presentation = this.supportPresentation();
 
@@ -234,14 +258,30 @@ export class FormFieldComponent {
     );
   });
 
+  // Resolved only once a warning actually renders: a field that never warns shouldn't force the app
+  // to register a `type: 'warning'` theme. It colors the message and nothing else - the control frame
+  // keeps its normal styling, because a warned field is not an invalid one.
+  protected warningColorTheme = computed(() =>
+    this.shouldRenderWarning() ? runInInjectionContext(this.injector, injectWarningTheme) : null,
+  );
+
   protected errorActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
   protected errorState = computed(() => {
     const presentation = this.supportPresentation();
 
     return presentation.leavingState === SUPPORT_CONTENT_STATE.ERROR ? 'leaving' : 'active';
   });
-  protected errorDirection = computed(() => this.supportPresentation().errorDirection);
+  protected errorDirection = computed(() => this.supportPresentation().directions.error);
   protected visibleErrors = computed(() => this.supportPresentation().renderedErrors);
+
+  protected warningActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.WARNING);
+  protected warningState = computed(() => {
+    const presentation = this.supportPresentation();
+
+    return presentation.leavingState === SUPPORT_CONTENT_STATE.WARNING ? 'leaving' : 'active';
+  });
+  protected warningDirection = computed(() => this.supportPresentation().directions.warning);
+  protected visibleWarnings = computed(() => this.supportPresentation().renderedWarnings);
 
   protected hintActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.HINT);
   protected hintState = computed(() => {
@@ -249,13 +289,15 @@ export class FormFieldComponent {
 
     return presentation.leavingState === SUPPORT_CONTENT_STATE.HINT ? 'leaving' : 'active';
   });
-  protected hintDirection = computed(() => this.supportPresentation().hintDirection);
+  protected hintDirection = computed(() => this.supportPresentation().directions.hint);
 
   protected supportHeight = computed(() => {
     const stackHeight = (() => {
       switch (this.semanticSupportState()) {
         case SUPPORT_CONTENT_STATE.ERROR:
           return this.errorDimensions().offset?.height ?? 0;
+        case SUPPORT_CONTENT_STATE.WARNING:
+          return this.warningDimensions().offset?.height ?? 0;
         case SUPPORT_CONTENT_STATE.HINT:
           return this.hintDimensions().offset?.height ?? 0;
         default:
@@ -277,74 +319,30 @@ export class FormFieldComponent {
       untracked(() => this.formFieldDir.controlFrameElement.set(element));
     });
 
-    toObservable(this.errorAnimatable)
-      .pipe(
-        switchMap((animatable) => {
-          if (!animatable) {
-            return EMPTY;
-          }
-
-          return animatable.animationEnd$;
-        }),
-        filter(() => {
-          const presentation = this.supportPresentation();
-
-          return (
-            presentation.leavingState === SUPPORT_CONTENT_STATE.ERROR &&
-            this.semanticSupportState() !== SUPPORT_CONTENT_STATE.ERROR
-          );
-        }),
-        tap(() => {
-          this.supportPresentation.update((presentation) => ({
-            ...presentation,
-            leavingState: SUPPORT_CONTENT_STATE.NONE,
-            renderedErrors: [],
-            frozenErrorColor: null,
-          }));
-        }),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-
-    toObservable(this.hintAnimatable)
-      .pipe(
-        switchMap((animatable) => {
-          if (!animatable) {
-            return EMPTY;
-          }
-
-          return animatable.animationEnd$;
-        }),
-        filter(() => {
-          const presentation = this.supportPresentation();
-
-          return (
-            presentation.leavingState === SUPPORT_CONTENT_STATE.HINT &&
-            this.semanticSupportState() !== SUPPORT_CONTENT_STATE.HINT
-          );
-        }),
-        tap(() => {
-          this.supportPresentation.update((presentation) => ({
-            ...presentation,
-            leavingState: SUPPORT_CONTENT_STATE.NONE,
-          }));
-        }),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
+    for (const [state, animatable] of [
+      [SUPPORT_CONTENT_STATE.ERROR, this.errorAnimatable],
+      [SUPPORT_CONTENT_STATE.WARNING, this.warningAnimatable],
+      [SUPPORT_CONTENT_STATE.HINT, this.hintAnimatable],
+    ] as const) {
+      clearLeavingSupportStateOnExit({
+        state,
+        animatable,
+        presentation: this.supportPresentation,
+        semanticSupportState: this.semanticSupportState,
+      });
+    }
 
     effect(() => {
       const semanticSupportState = this.semanticSupportState();
       const errors = this.effectiveErrors();
-      const errorContent = this.errorContent()?.nativeElement;
-      const currentErrorColor = errorContent ? getComputedStyle(errorContent).color : null;
+      const warnings = this.formFieldDir.warnings();
 
       this.supportPresentation.update((presentation) =>
         reduceSupportPresentation({
           presentation,
           semanticSupportState,
           errors,
-          currentErrorColor,
+          warnings,
         }),
       );
     });

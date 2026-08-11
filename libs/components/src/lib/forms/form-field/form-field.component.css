@@ -77,6 +77,12 @@
     initial-value: 12px;
   }
 
+  @property --et-form-field-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-form-field-hint-font-size {
     syntax: '<length>';
     inherits: true;
@@ -319,6 +325,17 @@
       flex-direction: column;
       gap: 2px;
       font-size: var(--et-form-field-error-font-size);
+      color: var(--et-theme-color-primary-solid);
+      padding-inline-start: calc(
+        var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width)
+      );
+    }
+
+    .et-form-field-warnings {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: var(--et-form-field-warning-font-size);
       color: var(--et-theme-color-primary-solid);
       padding-inline-start: calc(
         var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width)

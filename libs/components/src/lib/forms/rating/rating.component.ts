@@ -20,6 +20,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { tap } from 'rxjs';
 import { STAR_ICON, IconDirective, provideIcons } from '../../icon';
 import { FormErrorComponent } from '../form-field/form-error.component';
+import { FormWarningComponent } from '../form-field/form-warning.component';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { RatingDirective, RatingIconContext } from './headless';
 
@@ -28,7 +29,14 @@ import { RatingDirective, RatingIconContext } from './headless';
   templateUrl: './rating.component.html',
   styleUrl: './rating.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [AnimatableDirective, FormErrorComponent, IconDirective, NgTemplateOutlet, ProvideColorDirective],
+  imports: [
+    AnimatableDirective,
+    FormErrorComponent,
+    FormWarningComponent,
+    IconDirective,
+    NgTemplateOutlet,
+    ProvideColorDirective,
+  ],
   providers: [provideFormSupport(), provideIcons(STAR_ICON)],
   hostDirectives: [
     FormFieldDirective,
@@ -56,6 +64,7 @@ import { RatingDirective, RatingIconContext } from './headless';
     class: 'et-rating',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
+    '[attr.data-warning]': 'support.displaysWarning() || null',
   },
 })
 export class RatingComponent {
@@ -66,8 +75,10 @@ export class RatingComponent {
   private baseIcons = viewChildren<ElementRef<HTMLElement>>('baseIcon');
 
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
+  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
+  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
   public canAnimate = createCanAnimateSignal();
 
@@ -84,8 +95,10 @@ export class RatingComponent {
   constructor() {
     wireFormSupport(this.support, {
       errorContent: this.errorContentRef,
+      warningContent: this.warningContentRef,
       hintContent: this.hintContentRef,
       errorAnimatable: this.errorAnimatableRef,
+      warningAnimatable: this.warningAnimatableRef,
       hintAnimatable: this.hintAnimatableRef,
     });
   }

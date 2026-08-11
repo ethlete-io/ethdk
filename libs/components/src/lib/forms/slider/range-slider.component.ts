@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, ElementRef, inject, input, viewChild, ViewEncapsulation } from '@angular/core';
 import { AnimatableDirective, ProvideColorDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FormErrorComponent } from '../form-field/form-error.component';
+import { FormWarningComponent } from '../form-field/form-warning.component';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { RangeSliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderTrackDirective } from './headless';
 import { injectSliderLabels } from '../../forms/slider/slider-labels';
@@ -14,6 +15,7 @@ import { injectSliderLabels } from '../../forms/slider/slider-labels';
   imports: [
     AnimatableDirective,
     FormErrorComponent,
+    FormWarningComponent,
     NgTemplateOutlet,
     ProvideColorDirective,
     SliderThumbDirective,
@@ -51,6 +53,7 @@ import { injectSliderLabels } from '../../forms/slider/slider-labels';
     class: 'et-range-slider',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
+    '[attr.data-warning]': 'support.displaysWarning() || null',
     '[attr.data-disabled]': 'slider.disabled() || null',
     '[attr.data-readonly]': 'slider.readonly() || null',
     '[attr.data-dragging]': 'slider.draggingThumbIndex() !== null || null',
@@ -70,8 +73,10 @@ export class RangeSliderComponent {
   public endLabel = input<string | null>(null);
 
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
+  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
+  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
 
   /** The string in effect: this instance's `startLabel`, else the domain's label set. */
@@ -87,8 +92,10 @@ export class RangeSliderComponent {
   constructor() {
     wireFormSupport(this.support, {
       errorContent: this.errorContentRef,
+      warningContent: this.warningContentRef,
       hintContent: this.hintContentRef,
       errorAnimatable: this.errorAnimatableRef,
+      warningAnimatable: this.warningAnimatableRef,
       hintAnimatable: this.hintAnimatableRef,
     });
   }

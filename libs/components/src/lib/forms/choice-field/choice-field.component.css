@@ -29,6 +29,12 @@
     initial-value: 12px;
   }
 
+  @property --et-choice-field-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-choice-field-hint-font-size {
     syntax: '<length>';
     inherits: true;
@@ -162,6 +168,16 @@
       flex-direction: column;
       gap: 2px;
       font-size: var(--et-choice-field-error-font-size);
+      color: var(--et-theme-color-primary-solid);
+      padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
+      transform: translateY(var(--et-choice-field-support-offset));
+    }
+
+    .et-choice-field-warnings {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: var(--et-choice-field-warning-font-size);
       color: var(--et-theme-color-primary-solid);
       padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
       transform: translateY(var(--et-choice-field-support-offset));

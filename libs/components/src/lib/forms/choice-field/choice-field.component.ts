@@ -11,6 +11,7 @@ import {
 import { ChoiceFieldCardStylesComponent } from './choice-field-card-styles.component';
 import { SelectionCardStylesComponent } from '../selection-card-styles.component';
 import { FormErrorComponent } from '../form-field/form-error.component';
+import { FormWarningComponent } from '../form-field/form-warning.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 
@@ -33,6 +34,7 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
     ColorInteractiveDirective,
     ColorInteractiveExcludeDirective,
     FormErrorComponent,
+    FormWarningComponent,
     ProvideColorDirective,
   ],
   providers: [provideFormSupport()],
@@ -43,6 +45,7 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
     '[attr.data-variant]': 'variant()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
+    '[attr.data-warning]': 'support.displaysWarning() || null',
   },
 })
 export class ChoiceFieldComponent {
@@ -58,8 +61,10 @@ export class ChoiceFieldComponent {
    */
   public variant = input<ChoiceFieldVariant>(CHOICE_FIELD_VARIANTS.PLAIN);
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
+  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
+  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
   public canAnimate = createCanAnimateSignal();
 
@@ -73,8 +78,10 @@ export class ChoiceFieldComponent {
 
     wireFormSupport(this.support, {
       errorContent: this.errorContentRef,
+      warningContent: this.warningContentRef,
       hintContent: this.hintContentRef,
       errorAnimatable: this.errorAnimatableRef,
+      warningAnimatable: this.warningAnimatableRef,
       hintAnimatable: this.hintAnimatableRef,
     });
   }

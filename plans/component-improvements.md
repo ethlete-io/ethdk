@@ -1605,28 +1605,6 @@ The tile lands as a second sheet mounted the same way as `SelectionCardStylesCom
 consumer who never writes `variant="tile"` never injects it. It needs its own story in both the
 checkbox-group and radio-group story files.
 
-## Forms: validity is binary, and there is no warning state
-
-Raised by the user 2026-08-10; not yet researched against the source.
-
-A control is valid or invalid, and nothing in between. The missing middle is a **warning**: a value
-that is accepted and submittable, but that the user should look at anyway - a password that meets the
-rules yet is weak, a date far enough in the future to be a likely typo, a quantity above what is
-normally in stock. Today the only way to say that is to render your own text under the field, which
-means it neither reads like the field's own message nor takes the error styling's place in the layout.
-
-The colour language exists already (`injectWarningTheme()`, `BANNER_TYPES.WARNING`, and now progress
-steps' `warning` state), so this is not a theming question. The open questions are on the form side:
-
-- **Where does the state come from?** Signal forms model validity, not advisories. Is a warning a
-  separate signal the consumer sets on the control, a validator that returns a distinct severity, or
-  purely a presentational input on `et-form-field`?
-- **What happens to the error slot?** A field can be invalid _and_ warned. Do the two messages stack,
-  does the error win outright, and does a warning survive submit the way an error does?
-- **Does it block anything?** It must not - the point is that the form still submits. Worth stating
-  in the guide, since `aria-invalid` must stay `false` and the message wants `role="status"` rather
-  than the error's assertive announcement.
-
 ## Forms: time-zone handling and local-time UX
 
 Raised by the user 2026-08-10; not yet researched against the source.

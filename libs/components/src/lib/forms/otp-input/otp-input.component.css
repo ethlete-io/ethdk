@@ -51,6 +51,12 @@
     initial-value: 12px;
   }
 
+  @property --et-otp-input-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-otp-input-hint-font-size {
     syntax: '<length>';
     inherits: true;
@@ -179,6 +185,15 @@
       gap: 2px;
       padding-block-start: 4px;
       font-size: var(--et-otp-input-error-font-size);
+      color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-otp-input-warnings {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-block-start: 4px;
+      font-size: var(--et-otp-input-warning-font-size);
       color: var(--et-theme-color-primary-solid, currentColor);
     }
 

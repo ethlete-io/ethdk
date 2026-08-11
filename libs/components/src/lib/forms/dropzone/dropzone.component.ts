@@ -30,6 +30,7 @@ import {
 } from '../../icon/headless';
 import { ProgressBarComponent } from '../../loader/progress-bar/progress-bar.component';
 import { FormErrorComponent } from '../form-field/form-error.component';
+import { FormWarningComponent } from '../form-field/form-warning.component';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
@@ -43,6 +44,7 @@ import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
   imports: [
     AnimatableDirective,
     FormErrorComponent,
+    FormWarningComponent,
     ProvideColorDirective,
     ProgressBarComponent,
     FocusRingDirective,
@@ -70,6 +72,7 @@ import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
   host: {
     class: 'et-dropzone',
     '[attr.data-error]': 'support.displaysError() || null',
+    '[attr.data-warning]': 'support.displaysWarning() || null',
     '[attr.data-multiple]': 'dropzoneDir.multiple() || null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
@@ -101,8 +104,10 @@ export class DropzoneComponent {
   private fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
   private browseButton = viewChild<ElementRef<HTMLButtonElement>>('browseButton');
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
+  private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
+  private warningAnimatableRef = viewChild<AnimatableDirective>('warningAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
   private entryElements = viewChildren<ElementRef<HTMLElement>>('entryEl');
 
@@ -154,8 +159,10 @@ export class DropzoneComponent {
   constructor() {
     wireFormSupport(this.support, {
       errorContent: this.errorContentRef,
+      warningContent: this.warningContentRef,
       hintContent: this.hintContentRef,
       errorAnimatable: this.errorAnimatableRef,
+      warningAnimatable: this.warningAnimatableRef,
       hintAnimatable: this.hintAnimatableRef,
     });
 

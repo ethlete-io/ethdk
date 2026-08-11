@@ -17,6 +17,12 @@
     initial-value: 12px;
   }
 
+  @property --et-radio-group-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-radio-group-hint-font-size {
     syntax: '<length>';
     inherits: true;
@@ -131,6 +137,15 @@
       gap: 2px;
       padding-block-start: 4px;
       font-size: var(--et-radio-group-error-font-size);
+      color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-radio-group-warnings {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-block-start: 4px;
+      font-size: var(--et-radio-group-warning-font-size);
       color: var(--et-theme-color-primary-solid, currentColor);
     }
 

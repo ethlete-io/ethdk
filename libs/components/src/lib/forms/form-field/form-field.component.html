@@ -61,6 +61,27 @@
           </div>
         }
 
+        @if (shouldRenderWarning()) {
+          <div
+            #warningContent
+            #warningAnimatable="etAnimatable"
+            [id]="formFieldDir.warningId()"
+            [attr.aria-atomic]="warningActive() ? 'true' : null"
+            [attr.aria-hidden]="!warningActive() ? 'true' : null"
+            [attr.aria-live]="warningActive() ? 'polite' : null"
+            [attr.data-active]="warningActive() || null"
+            [attr.data-direction]="warningDirection()"
+            [attr.data-state]="warningState()"
+            [etProvideColor]="warningColorTheme()"
+            class="et-form-field-support-content et-form-field-warnings"
+            etAnimatable
+          >
+            @for (warning of visibleWarnings(); track $index) {
+              <et-form-warning [warning]="warning" />
+            }
+          </div>
+        }
+
         @if (shouldRenderHint()) {
           <div
             #hintContent

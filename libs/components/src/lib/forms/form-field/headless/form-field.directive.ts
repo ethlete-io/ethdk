@@ -1,5 +1,7 @@
-import { afterNextRender, computed, Directive, effect, signal } from '@angular/core';
+import { afterNextRender, computed, contentChildren, Directive, effect, inject, signal } from '@angular/core';
+import { FORM_FIELD, FormField } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
+import { FIELD_WARNINGS, FieldWarning } from './field-warnings';
 import { FORM_FIELD_ERROR_CODES } from './form-field-errors';
 import {
   ControlSuffixBase,
@@ -20,6 +22,13 @@ let uniqueIdCounter = 0;
 })
 export class FormFieldDirective implements FormFieldDirectiveBase {
   private readonly hostElement = injectHostElement();
+
+  // the `warn()` rules live on the signal-forms field, so the warnings come from wherever
+  // `[formField]` is bound: on the control this field wraps (`et-form-field`), or on this very host
+  // when the control renders its own support region (`et-slider`, `et-rating`, …). Reading both here
+  // means no control has to forward them. `self` matters - without it an outer binding would leak in.
+  private ownFieldBinding = inject(FORM_FIELD, { optional: true, self: true });
+  private wrappedFieldBindings = contentChildren(FormField, { descendants: true });
 
   /** @internal */
   public registeredControl = signal<FormFieldControl | null>(null);
@@ -53,6 +62,25 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
     const name = ctrl?.name();
 
     return name ? `et-form-field-hint-${name}` : `et-form-field-hint-${this.FALLBACK_ID}`;
+  });
+
+  public warningId = computed(() => {
+    const ctrl = this.registeredControl();
+    const name = ctrl?.name();
+
+    return name ? `et-form-field-warning-${name}` : `et-form-field-warning-${this.FALLBACK_ID}`;
+  });
+
+  /**
+   * The non-blocking advisories the bound field's `warn()` rules produced. They never touch
+   * validity - the field stays valid and submittable while one is shown.
+   */
+  public warnings = computed<readonly FieldWarning[]>(() => {
+    const bindings = this.ownFieldBinding
+      ? [this.ownFieldBinding, ...this.wrappedFieldBindings()]
+      : this.wrappedFieldBindings();
+
+    return bindings.flatMap((binding) => binding.state().metadata(FIELD_WARNINGS)?.() ?? []);
   });
 
   public shouldDisplayError = computed(() => {
@@ -121,9 +149,21 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   public shouldFloatLabel = computed(() => this.focused() || this.expanded() || this.hasValue());
 
+  /** Whether the field is showing an error message - which a warning gives the slot up to. */
+  public displaysErrorMessage = computed(
+    () => this.shouldDisplayError() && (this.errors().length > 0 || this.parseError()),
+  );
+
+  /** Whether a warning is the message the field shows: it has one, and no error is taking the slot. */
+  public displaysWarning = computed(() => !this.displaysErrorMessage() && this.warnings().length > 0);
+
   public describedById = computed(() => {
-    if (this.shouldDisplayError() && (this.errors().length > 0 || this.parseError())) {
+    if (this.displaysErrorMessage()) {
       return this.errorId();
+    }
+
+    if (this.displaysWarning()) {
+      return this.warningId();
     }
 
     if (this.registeredHint()) {

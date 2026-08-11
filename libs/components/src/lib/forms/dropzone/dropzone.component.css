@@ -65,6 +65,12 @@
     initial-value: 12px;
   }
 
+  @property --et-dropzone-warning-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-dropzone-hint-font-size {
     syntax: '<length>';
     inherits: true;
@@ -365,6 +371,15 @@
       gap: 2px;
       padding-block-start: 4px;
       font-size: var(--et-dropzone-error-font-size);
+      color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-dropzone-warnings {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-block-start: 4px;
+      font-size: var(--et-dropzone-warning-font-size);
       color: var(--et-theme-color-primary-solid, currentColor);
     }
 

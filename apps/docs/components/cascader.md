@@ -230,7 +230,7 @@ With a [flat search](#flat-search) active, the panel reports itself as a `role="
 
 Panel chrome uses the [surface theme](/core/theming); the selected chain and branch chevrons use the color theme's ink (`--et-theme-color-ink-solid`), and the error state resolves the app's `type: 'error'` theme.
 
-The clear button and the trigger chevron render in the form field's [suffix slot](/components/form-field), on the shared `.et-input-clear` / `.et-input-picker-trigger` presentation every control's in-field affordances use, so their size tracks the field's `size` like every other control.
+The clear button and the trigger chevron render in the form field's [suffix slot](/components/forms#one-suffix-stack), on the shared `.et-input-clear` / `.et-input-picker-trigger` presentation every control's in-field affordances use, so their size tracks the field's `size` like every other control.
 
 Public design tokens:
 
