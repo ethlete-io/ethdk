@@ -1,4 +1,4 @@
-import { buildBanner } from '../render';
+import { BANNER } from '../render';
 import { body, document, EmitContext, EmittedFile, makeLinks, skillBundle } from './shared';
 
 const skillDir = (name: string) => `.claude/skills/ethlete-${name}`;
@@ -13,7 +13,7 @@ const quoteList = (values: string[]) => values.map((value) => `  - '${value}'`).
  * rules directory is skipped entirely rather than loading everything twice.
  */
 export const emitClaude = (context: EmitContext): EmittedFile[] => {
-  const banner = buildBanner(context.version);
+  const banner = BANNER;
   const links = makeLinks({
     context,
     skill: (name) => `the **\`ethlete-${name}\`** skill`,

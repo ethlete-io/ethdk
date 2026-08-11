@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { ContentItem } from '../load-content';
-import { buildBanner, LinkResolver, renderBody, renderDescription, substituteVars } from '../render';
+import { BANNER, LinkResolver, renderBody, renderDescription, substituteVars } from '../render';
 
 export type EmittedFile = {
   /** Path relative to the consumer repo root, always with forward slashes. */
@@ -14,7 +14,6 @@ export type EmitContext = {
   /** Names of the skills that actually survived filtering, so links can't point at a missing file. */
   emittedSkills: Set<string>;
   vars: Record<string, string | string[]>;
-  version: string;
   /**
    * The repo's `CLAUDE.md` is an `@AGENTS.md` import (or symlink), so Claude already receives the
    * rules through the `AGENTS.md` marker block and must not get a second copy in `.claude/rules/`.
@@ -92,7 +91,7 @@ export const skillBundle = (options: {
   return [
     {
       path: `${dir}/SKILL.md`,
-      contents: document([frontmatter, buildBanner(context.version), body({ item, context, links })]),
+      contents: document([frontmatter, BANNER, body({ item, context, links })]),
     },
     ...resourceFiles({ item, context, pathFor: (fileName) => `${dir}/${fileName}` }),
   ];

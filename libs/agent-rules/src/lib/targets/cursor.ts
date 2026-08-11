@@ -1,4 +1,4 @@
-import { buildBanner } from '../render';
+import { BANNER } from '../render';
 import { agentsSkillsLinks, body, description, document, EmitContext, EmittedFile, yamlString } from './shared';
 
 /**
@@ -7,7 +7,7 @@ import { agentsSkillsLinks, body, description, document, EmitContext, EmittedFil
  * agentskills.io-aware tool.
  */
 export const emitCursor = (context: EmitContext): EmittedFile[] => {
-  const banner = buildBanner(context.version);
+  const banner = BANNER;
   const links = agentsSkillsLinks(context);
 
   return context.rules.map((item) => {

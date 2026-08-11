@@ -1,4 +1,4 @@
-import { buildBanner, replaceMarkedBlock } from '../render';
+import { BANNER, replaceMarkedBlock } from '../render';
 import { agentsSkillsLinks, body, document, EmitContext, EmittedFile } from './shared';
 
 export const COPILOT_FILE = '.github/copilot-instructions.md';
@@ -10,7 +10,7 @@ export const COPILOT_FILE = '.github/copilot-instructions.md';
  */
 export const emitCopilot = (options: { context: EmitContext; existing: string }): EmittedFile[] => {
   const { context, existing } = options;
-  const banner = buildBanner(context.version);
+  const banner = BANNER;
   const sections = context.rules.map((item) => body({ item, context, links: agentsSkillsLinks(context) }));
   const block = document([banner, ...sections]).trimEnd();
 

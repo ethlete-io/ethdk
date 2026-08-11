@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { AGENT_TARGETS, AgentTarget, CONFIG_FILE_NAME, detectTargets } from './lib/config';
 import { gitFlowCommand } from './lib/git-flow-command';
@@ -40,12 +40,6 @@ const parseTargets = (args: string[]) => {
   return raw.split(',').map((entry) => entry.trim()) as AgentTarget[];
 };
 
-const readVersion = () => {
-  const manifest = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8')) as { version: string };
-
-  return manifest.version;
-};
-
 const init = (root: string) => {
   const path = join(root, CONFIG_FILE_NAME);
 
@@ -71,7 +65,7 @@ const init = (root: string) => {
 const run = (argv: string[]): number | Promise<number> => {
   const command = argv[0];
   const root = readFlag(argv, '--root') ?? process.cwd();
-  const options = { root, version: readVersion(), targets: parseTargets(argv) };
+  const options = { root, targets: parseTargets(argv) };
 
   switch (command) {
     case 'sync':

@@ -6,7 +6,6 @@ import { buildPlan } from './plan';
 
 export type RunOptions = {
   root: string;
-  version: string;
   targets?: AgentTarget[];
   dryRun?: boolean;
 };
@@ -58,7 +57,7 @@ const describe = (change: Change) => {
 
 export const sync = (options: RunOptions) => {
   const config = loadConfig({ root: options.root, targetOverride: options.targets });
-  const { files, skipped, danglingLinks, warnings } = buildPlan({ config, version: options.version });
+  const { files, skipped, danglingLinks, warnings } = buildPlan({ config });
   const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
 
   console.log(`Targets: ${config.targets.join(', ')}`);
@@ -112,7 +111,7 @@ export const sync = (options: RunOptions) => {
 
 export const check = (options: RunOptions) => {
   const config = loadConfig({ root: options.root, targetOverride: options.targets });
-  const { files, warnings } = buildPlan({ config, version: options.version });
+  const { files, warnings } = buildPlan({ config });
   const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
 
   for (const warning of warnings) {

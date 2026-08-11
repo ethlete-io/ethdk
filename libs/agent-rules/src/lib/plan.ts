@@ -163,8 +163,8 @@ const collectWarnings = (config: SyncConfig) => {
  * Resolves the full set of files a sync would write, without touching disk — `sync` writes the
  * result and `check` diffs it.
  */
-export const buildPlan = (options: { config: SyncConfig; version: string }): SyncPlan => {
-  const { config, version } = options;
+export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
+  const { config } = options;
 
   assertKnownHooks(config.hooks);
   assertKnownGitHooks(config.gitHooks);
@@ -179,7 +179,6 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
     skills,
     emittedSkills,
     vars: config.vars,
-    version,
     claudeMdImportsAgentsMd: config.claudeMdImportsAgentsMd,
     hooks: config.hooks,
   };
@@ -215,7 +214,6 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
     }),
     ...emitGitHooks({
       gitHooks: config.gitHooks,
-      version,
       huskyExists: existsSync(join(config.root, HUSKY_DIR)),
       existing: Object.fromEntries(
         Object.keys(KNOWN_GIT_HOOKS).map((name) => [name, readExisting(config.root, huskyHookPath(name))]),

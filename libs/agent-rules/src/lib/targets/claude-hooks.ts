@@ -20,7 +20,7 @@ export const emitClaudeHooks = (options: {
   const hooks = claudeTarget ? context.hooks : [];
 
   return [
-    ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR, version: context.version }),
+    ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR }),
     ...emitHookSettings({
       path: CLAUDE_SETTINGS_FILE,
       existing: existingSettings,
