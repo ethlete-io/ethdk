@@ -365,8 +365,10 @@ Driven headlessly against the real story with dispatched `KeyboardEvent`s carryi
 `modifierCapsLock` (`components-forms-password-input--caps-lock-warning`): all nine
 steps behave as designed. That is not the same as a hardware toggle - Playwright
 cannot produce one, since CDP has no Caps Lock modifier bit and
-`keyboard.down('CapsLock')` leaves `getModifierState('CapsLock')` false - so **the
-macOS hardware case still needs a hand check.**
+`keyboard.down('CapsLock')` leaves `getModifierState('CapsLock')` false. **Hand-checked
+on a real Mac keyboard 2026-08-11 (user): correct - the warning clears the moment Caps
+Lock goes off.** The default label was then hedged to `'Caps Lock might be on'`, which is
+option (3) applied to the one case that still lags rather than to all of them.
 
 No duplication elsewhere - `otp-input` and every other password-adjacent
 control have no caps-lock logic of their own; `password-input` owns this
