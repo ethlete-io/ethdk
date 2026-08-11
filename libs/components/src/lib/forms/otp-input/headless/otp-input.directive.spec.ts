@@ -5,43 +5,7 @@ import '../../../../test-helpers';
 import { LabelDirective } from '../../form-field/headless';
 import { OTP_INPUT_IMPORTS } from '../otp-input.imports';
 import { OtpInputCharset } from './otp-input.directive';
-
-const TEST_COLOR_THEMES = [
-  {
-    name: 'default',
-    isDefault: true,
-    primary: {
-      color: {
-        default: '0 255 161',
-        hover: '76 247 184',
-        focus: '76 247 184',
-        active: '0 198 126',
-        disabled: '0 122 77',
-      },
-      onColor: {
-        default: '0 0 0',
-        disabled: '0 36 23',
-      },
-    },
-  },
-  {
-    name: 'red',
-    type: 'error' as const,
-    primary: {
-      color: {
-        default: '255 0 0',
-        hover: '255 76 76',
-        focus: '255 76 76',
-        active: '198 0 0',
-        disabled: '128 32 32',
-      },
-      onColor: {
-        default: '0 0 0',
-        disabled: '48 0 0',
-      },
-    },
-  },
-] as const;
+import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `

@@ -6,26 +6,7 @@ import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { PHONE_INPUT_IMPORTS } from '../phone-input.imports';
 import { PhoneInputDirective } from './phone-input.directive';
 import { matchCountryByDialCode, phoneCountryFlag } from './phone-countries';
-
-const TEST_COLOR_THEMES = [
-  {
-    name: 'default',
-    isDefault: true,
-    primary: {
-      color: {
-        default: '0 255 161',
-        hover: '76 247 184',
-        focus: '76 247 184',
-        active: '0 198 126',
-        disabled: '0 122 77',
-      },
-      onColor: {
-        default: '0 0 0',
-        disabled: '0 36 23',
-      },
-    },
-  },
-] as const;
+import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `

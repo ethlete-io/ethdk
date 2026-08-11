@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ColorTheme, provideColorPalette, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
 import { SchedulerEditColorComponent } from './scheduler-edit-color.component';
+import { testColorSwatch } from '../testing/color-themes';
 import { Appointment } from './scheduler.types';
 
 const appointment = (colorToken?: string): Appointment => ({
@@ -23,16 +24,11 @@ class EditColorHostComponent {
   public draft: WritableSignal<Appointment> = signal(appointment('brand'));
 }
 
-const swatch = (color: string) => ({
-  color: { default: color, hover: color, active: color, disabled: color },
-  onColor: { default: '0 0 0' },
-});
-
-// the form-field support layer resolves the error theme by type, so a spec rendering any control needs one
-const TEST_COLOR_THEMES: ColorTheme[] = [
-  { name: 'brand', isDefault: true, primary: swatch('0 255 161') },
-  { name: 'success', primary: swatch('22 163 74') },
-  { name: 'danger', type: 'error', primary: swatch('220 38 38') },
+// the palette's tokens are theme names, so this spec needs its own set rather than TEST_COLOR_THEMES
+const TEST_PALETTE_THEMES: ColorTheme[] = [
+  { name: 'brand', isDefault: true, primary: testColorSwatch('0 255 161') },
+  { name: 'success', primary: testColorSwatch('22 163 74') },
+  { name: 'danger', type: 'error', primary: testColorSwatch('220 38 38') },
 ];
 
 const PALETTE = [
@@ -42,7 +38,10 @@ const PALETTE = [
 
 const createFixture = (palette?: typeof PALETTE) => {
   TestBed.configureTestingModule({
-    providers: [provideColorThemesWithTailwind4(TEST_COLOR_THEMES), ...(palette ? [provideColorPalette(palette)] : [])],
+    providers: [
+      provideColorThemesWithTailwind4(TEST_PALETTE_THEMES),
+      ...(palette ? [provideColorPalette(palette)] : []),
+    ],
   });
 
   const fixture = TestBed.createComponent(EditColorHostComponent);

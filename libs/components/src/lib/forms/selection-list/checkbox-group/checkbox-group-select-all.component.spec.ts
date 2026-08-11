@@ -8,6 +8,7 @@ import { SelectionListOrientation } from '../selection-list.types';
 import { CheckboxGroupSelectAllComponent } from './checkbox-group-select-all.component';
 import { CheckboxGroupComponent } from './checkbox-group.component';
 import { CheckboxOptionComponent } from './checkbox-option.component';
+import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `
@@ -28,19 +29,6 @@ class HostComponent {
   public orientation = signal<SelectionListOrientation>('vertical');
   public disabled = signal(false);
 }
-
-// The option row and this control both take `etColorInteractive`, and the group resolves an error
-// theme for its validation state - so a test needs a default theme and one typed `error`.
-const COLOR = {
-  color: { default: '0 255 161', hover: '76 247 184', focus: '76 247 184', active: '0 198 126', disabled: '0 122 77' },
-  onColor: { default: '0 0 0', disabled: '0 36 23' },
-};
-
-const TEST_COLOR_THEMES = [
-  { name: 'default', isDefault: true, primary: COLOR },
-  { name: 'red', type: 'error' as const, primary: COLOR },
-];
-
 beforeEach(() => {
   TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
 });
