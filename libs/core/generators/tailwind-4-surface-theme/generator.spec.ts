@@ -221,6 +221,88 @@ describe('tailwind-4-surface-theme generator', () => {
     expect(content).toContain('--custom-surface-background: 255 255 255;');
   });
 
+  describe('interactionColor swatch', () => {
+    const withInteractionColor = (interactionColor: string) => `
+      export const CARD = {
+        name: 'card',
+        type: 'light',
+        elevation: 1,
+        isDefault: true,
+        interactionColor: ${interactionColor},
+        background: '255 255 255',
+        color: '0 0 0',
+        colorMuted: '100 100 100',
+        colorSubtle: '200 200 200',
+        border: '220 220 220',
+      } as const;
+
+      export const SURFACE_THEMES = [CARD] satisfies SurfaceTheme[];
+    `;
+
+    const COLOR_MAP = `{ default: '115 115 115', hover: '64 64 64', focus: '60 60 60', active: '23 23 23', disabled: '180 180 180' }`;
+
+    it('emits the tint ladder from the swatch color map', async () => {
+      tree.write('src/surface-themes.ts', withInteractionColor(`{ color: ${COLOR_MAP} }`));
+
+      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain('--et-surface-interaction: 115 115 115;');
+      expect(content).toContain('--et-surface-interaction-active: 23 23 23;');
+      expect(content).toContain('--color-et-surface-card-interaction-hover: rgb(64 64 64);');
+      expect(content).not.toContain('--et-surface-on-interaction:');
+    });
+
+    it('emits on-interaction and ink variables, filling the states left out', async () => {
+      tree.write(
+        'src/surface-themes.ts',
+        withInteractionColor(
+          `{ color: ${COLOR_MAP}, onColor: { default: '255 255 255', hover: '250 250 250' }, inkColor: { default: '23 23 23' } }`,
+        ),
+      );
+
+      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain('--et-surface-on-interaction: 255 255 255;');
+      expect(content).toContain('--et-surface-on-interaction-hover: 250 250 250;');
+      // focus falls back to hover, active and disabled to default
+      expect(content).toContain('--et-surface-on-interaction-focus: 250 250 250;');
+      expect(content).toContain('--et-surface-on-interaction-active: 255 255 255;');
+      expect(content).toContain('--et-surface-interaction-ink-disabled: 23 23 23;');
+    });
+
+    it('emits the reserved surface color scope, following the runtime prefix', async () => {
+      tree.write('src/surface-themes.ts', withInteractionColor(`{ color: ${COLOR_MAP} }`));
+
+      await migrate(tree, {
+        themesPath: 'src/surface-themes.ts',
+        outputPath: 'src/styles/tw.css',
+        prefix: 'fut',
+        runtimePrefix: 'et',
+        skipFormat: true,
+      });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain('.et-color--surface {');
+      expect(content).toContain('--et-color-primary: var(--et-surface-interaction, var(--et-surface-color));');
+      expect(content).toContain(
+        '--et-color-on-primary: var(--et-surface-on-interaction, var(--et-surface-background));',
+      );
+      expect(content).toContain('--et-color-primary-ink: var(--et-surface-interaction-ink, var(--et-surface-color));');
+      expect(content).not.toContain('.fut-color--surface');
+    });
+
+    it('points at the migration when a theme still uses the flat map', async () => {
+      tree.write('src/surface-themes.ts', withInteractionColor(COLOR_MAP));
+
+      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('migrate-surface-interaction-swatch'));
+      expect(tree.exists('src/styles/tw.css')).toBe(false);
+    });
+  });
+
   describe('defaultLightTheme / defaultDarkTheme options', () => {
     const TWO_PER_TYPE = `
     export const CARD = {

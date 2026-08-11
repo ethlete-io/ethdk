@@ -43,20 +43,41 @@ For code that needs to know the currently active surface (e.g. pickers rendering
 
 A `SurfaceTheme` - all colors are `"R G B"` channel strings:
 
-| Field              | Type                | Required | Description                                                 |
-| ------------------ | ------------------- | -------- | ----------------------------------------------------------- |
-| `name`             | `string`            | yes      | Becomes the scope class `et-surface--<name>`.               |
-| `type`             | `'light' \| 'dark'` | yes      | The elevation family.                                       |
-| `elevation`        | `number`            | yes      | Integer; auto-surface resolves `elevation + 1`.             |
-| `isDefault`        | `boolean`           | no       | Exactly one default per `type`.                             |
-| `background`       | `"R G B"`           | yes      | Surface background.                                         |
-| `color`            | `"R G B"`           | yes      | Primary text.                                               |
-| `colorMuted`       | `"R G B"`           | yes      | Secondary text.                                             |
-| `colorSubtle`      | `"R G B"`           | yes      | Tertiary text.                                              |
-| `border`           | `"R G B"`           | yes      | Border color.                                               |
-| `interactionColor` | interaction map     | no       | `{ default, hover, focus, active, disabled }` neutral tint. |
+| Field              | Type                | Required | Description                                     |
+| ------------------ | ------------------- | -------- | ----------------------------------------------- |
+| `name`             | `string`            | yes      | Becomes the scope class `et-surface--<name>`.   |
+| `type`             | `'light' \| 'dark'` | yes      | The elevation family.                           |
+| `elevation`        | `number`            | yes      | Integer; auto-surface resolves `elevation + 1`. |
+| `isDefault`        | `boolean`           | no       | Exactly one default per `type`.                 |
+| `background`       | `"R G B"`           | yes      | Surface background.                             |
+| `color`            | `"R G B"`           | yes      | Primary text.                                   |
+| `colorMuted`       | `"R G B"`           | yes      | Secondary text.                                 |
+| `colorSubtle`      | `"R G B"`           | yes      | Tertiary text.                                  |
+| `border`           | `"R G B"`           | yes      | Border color.                                   |
+| `interactionColor` | swatch              | no       | The surface's neutral swatch - see below.       |
 
 As an example, this repo's Storybook registers `light` (elevation 0), `light-elevated` (1), `dark` (0), `dark-elevated` (1) and `dark-elevated-2` (2).
+
+`interactionColor` is shaped like a color theme's swatch and does two jobs:
+
+```ts
+interactionColor: {
+  color: { default: '115 115 115', hover: '64 64 64', focus: '64 64 64', active: '23 23 23', disabled: '180 180 180' },
+  onColor: { default: '255 255 255' },   // optional, defaults to `background`
+  inkColor: { default: '23 23 23' },     // optional, defaults to `color`
+}
+```
+
+`color` is the neutral tint `[etSurfaceInteractive]` mixes for hover/active feedback, and the swatch as
+a whole is the palette that [`etProvideColor="surface"`](#the-surface-color) resolves - so `onColor`
+is the text on a filled neutral button and `inkColor` the text and borders on a tinted one. Its ladder
+should escalate towards the surface's text color, the way the tint does.
+
+::: tip Upgrading
+`interactionColor` used to be the flat `{ default, hover, … }` map that is now nested under `color`.
+Run `nx g @ethlete/core:migrate-surface-interaction-swatch` to convert your definitions, then
+regenerate the CSS.
+:::
 
 Inside any surface scope (and on `:root`, resolved from the default surfaces per `prefers-color-scheme`), these tokens are available - each as `-rgb` (raw channels) and `-solid` (ready-to-use color):
 
@@ -64,6 +85,10 @@ Inside any surface scope (and on `:root`, resolved from the default surfaces per
 - `--et-surface-color-{rgb,solid}`, `--et-surface-color-muted-{rgb,solid}`, `--et-surface-color-subtle-{rgb,solid}`
 - `--et-surface-border-{rgb,solid}`
 - `--et-surface-interaction-{,hover-,focus-,active-,disabled-}{rgb,solid}`
+
+The swatch's `onColor` and `inkColor` are not exposed as component tokens - they reach components
+through the [`surface` color scope](#the-surface-color) - but they do generate the Tailwind utilities
+`text-et-surface-on-interaction` and `text-et-surface-interaction-ink`.
 
 ### Surface directives
 
@@ -107,6 +132,25 @@ Inside a color scope these tokens resolve (the un-suffixed variant is opacity-aw
 | `ColorInteractiveContainerDirective` | `[etColorInteractiveContainer]` | Cascades hover/active state down to descendant `etColorInteractive` elements.                                                                                                                 |
 | `ColorInteractiveExcludeDirective`   | `[etColorInteractiveExclude]`   | Marks a descendant as not triggering an ancestor's interactive reaction.                                                                                                                      |
 | `ColorInteractiveHasFocusDirective`  | `[etColorInteractiveHasFocus]`  | Tints tokens to the **base** accent while the host contains a `:focus-visible` element - never on hover/active, and not the `-focus` variant (that is for an element that is itself focused). |
+
+### The `surface` color
+
+`surface` is a reserved color name, not a registered theme:
+
+```html
+<button et-button color="surface">Cancel</button>
+<div etProvideColor="surface">…</div>
+```
+
+Inside that scope the color tokens resolve from the ambient surface's
+[`interactionColor` swatch](#surface-themes) instead of an accent, so a secondary action reads as
+chrome - and follows the surface it sits on, which a registered neutral theme cannot do. Every
+component keeps its own structural signature; only the palette changes. Apps must not register a
+color theme named `surface`.
+
+The scope is emitted by the **surface** generator (it is the surface exposing itself as a color), so
+an app needs to have run `nx g @ethlete/core:tailwind-4-surface-theme` since upgrading for
+`color="surface"` to resolve.
 
 ## Semantic themes
 

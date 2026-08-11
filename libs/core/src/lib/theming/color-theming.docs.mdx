@@ -108,6 +108,23 @@ Pass the theme name or a `ColorTheme` object to any component that accepts a `co
 
 ---
 
+## The `surface` color
+
+`surface` is a reserved name rather than a registered theme:
+
+```html
+<button color="surface" et-button>Cancel</button>
+```
+
+Inside that scope the tokens below resolve from the ambient surface's `interactionColor` swatch instead of
+an accent, so a secondary action reads as chrome and follows the surface it sits on — which a registered
+neutral theme cannot do. Apps must not register a theme named `surface`.
+
+The scope itself is emitted by the surface theme generator, so it needs `tailwind-4-surface-theme` to have
+been run since upgrading.
+
+---
+
 ## CSS tokens generated
 
 When a color theme is active, these custom properties are available on the element and its descendants:

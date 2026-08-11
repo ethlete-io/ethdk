@@ -6,8 +6,8 @@ import { SurfaceInteractiveStylesComponent } from './surface-interactive-styles.
  * Same shape as `ColorInteractiveDirective` - reacts to its own `:hover`/`:focus-visible`/
  * `:active`/`[disabled]` - but drives `--et-surface-interaction-*`, a neutral/muted tint, instead
  * of the ambient color theme. Use it for chrome-level interaction feedback that shouldn't borrow
- * the page's brand color (a tab trigger's hover state, a toggle button that should look neutral
- * until it's actually active - see `ButtonDirective`'s `mutedUntilPressed`).
+ * the page's brand color (a tab trigger's hover state, a row's hover fill). For a whole component
+ * that should render neutral rather than accented, provide the `surface` color instead.
  *
  * Has no container/exclude/has-focus variants: it has no descendant-cascading CSS at all, so
  * applying it to a wrapper with independently-interactive children is safe by construction -

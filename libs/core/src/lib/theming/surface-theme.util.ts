@@ -9,12 +9,34 @@ export type SurfaceType = (typeof SURFACE_TYPE)[keyof typeof SURFACE_TYPE];
 
 export type SurfaceThemeColor = `${number} ${number} ${number}`;
 
-export type SurfaceInteractionColor = {
+export type SurfaceInteractionColorMap = {
   default: SurfaceThemeColor;
   hover: SurfaceThemeColor;
   focus: SurfaceThemeColor;
   active: SurfaceThemeColor;
   disabled: SurfaceThemeColor;
+};
+
+export type SurfaceOnInteractionColorMap = {
+  default: SurfaceThemeColor;
+  hover?: SurfaceThemeColor;
+  focus?: SurfaceThemeColor;
+  active?: SurfaceThemeColor;
+  disabled?: SurfaceThemeColor;
+};
+
+/**
+ * The surface's neutral color, shaped like a color theme's swatch. It serves both roles: `color`
+ * is the tint source `[etSurfaceInteractive]` mixes for hover/active feedback, and the whole
+ * swatch is the palette a component picks up from `[etProvideColor]="'surface'"`.
+ *
+ * `onColor` (text on a filled neutral) defaults to the surface background, `inkColor` (text and
+ * borders on a tinted or transparent neutral) to the surface color.
+ */
+export type SurfaceInteractionColor = {
+  color: SurfaceInteractionColorMap;
+  onColor?: SurfaceOnInteractionColorMap;
+  inkColor?: SurfaceOnInteractionColorMap;
 };
 
 export type SurfaceTheme = {
