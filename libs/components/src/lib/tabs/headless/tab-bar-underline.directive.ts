@@ -37,12 +37,16 @@ export class TabBarUnderlineDirective {
         return;
       }
 
+      untracked(() => this.tabBar.runningUnderlineFlip())?.cancel();
+
       const flip = createFlipAnimation({
         element: underlineEl,
         originElement: previousOriginEl,
         duration: 250,
         easing: 'cubic-bezier(0.35, 0.25, 0.2, 1)',
       });
+
+      this.tabBar.runningUnderlineFlip.set(flip);
 
       flip.play();
     });

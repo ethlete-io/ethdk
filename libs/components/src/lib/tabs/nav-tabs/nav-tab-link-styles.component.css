@@ -1,0 +1,137 @@
+@layer components {
+  @property --et-nav-tab-link-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-nav-tab-link-padding-block {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  .et-nav-tab-link {
+    --et-nav-tab-link-padding-inline: var(--et-tab-padding-inline);
+    --et-nav-tab-link-padding-block: var(--et-tab-padding-block);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding-inline: var(--et-nav-tab-link-padding-inline);
+    padding-block: var(--et-nav-tab-link-padding-block);
+    text-decoration: none;
+    color: var(--et-surface-interaction-solid, inherit);
+    font-size: var(--et-nav-tabs-font-size, inherit);
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+    user-select: none;
+    transition:
+      color 150ms ease,
+      background 150ms ease;
+    outline: none;
+    border-radius: 0.5rem;
+
+    &.et-tab-bar-trigger--no-initial-transition {
+      transition: none;
+    }
+
+    @media (hover: hover) {
+      &.et-nav-tab-link--active:not(.et-tab-bar-trigger--just-activated):hover {
+        background: rgb(var(--et-color-primary, 0 0 0) / 0.08);
+      }
+    }
+
+    &.et-nav-tab-link--active:not(.et-tab-bar-trigger--just-activated):focus-visible {
+      background: rgb(var(--et-color-primary, 0 0 0) / 0.12);
+    }
+
+    &.et-nav-tab-link--active:not(.et-tab-bar-trigger--just-activated):active {
+      background: rgb(var(--et-color-primary, 0 0 0) / 0.16);
+    }
+
+    [data-variant='primary'] & {
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    [etIcon] {
+      width: 1.2em;
+      height: 1.2em;
+    }
+
+    &.et-nav-tab-link--active {
+      color: var(--et-surface-color-solid, inherit);
+    }
+
+    &.et-nav-tab-link--disabled {
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .et-nav-tab-link__content {
+      display: inline-flex;
+      align-items: center;
+      gap: inherit;
+      border-radius: 0.5rem;
+      padding: 4px 8px;
+      margin: -4px -8px;
+    }
+
+    &:focus-visible .et-nav-tab-link__content {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: 2px;
+    }
+
+    .et-tab-bar-underline {
+      position: absolute;
+      z-index: 1;
+      background: var(--et-theme-color-ink-solid, currentColor);
+      border-radius: var(--et-nav-tabs-underline-radius, 1px);
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .et-tab-bar-underline--active {
+      opacity: 1;
+    }
+  }
+
+  [data-orientation='horizontal'] .et-nav-tab-link .et-tab-bar-underline {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--et-nav-tabs-underline-size, 2px);
+    transform-origin: left;
+  }
+
+  [data-variant='primary'][data-orientation='horizontal'] .et-nav-tab-link .et-tab-bar-underline {
+    left: 25%;
+    right: 25%;
+    height: var(--et-nav-tabs-underline-size, 3px);
+    border-radius: var(--et-nav-tabs-underline-size, 3px) var(--et-nav-tabs-underline-size, 3px) 0 0;
+  }
+
+  /* A filled vertical tab spans the column, so centering its label would leave it floating away from
+     the underline that marks it. */
+  [data-orientation='vertical'][data-fit='fill'] .et-nav-tab-link {
+    justify-content: start;
+  }
+
+  [data-orientation='vertical'] .et-nav-tab-link .et-tab-bar-underline {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--et-nav-tabs-underline-size, 2px);
+    transform-origin: top;
+  }
+
+  [data-variant='primary'][data-orientation='vertical'] .et-nav-tab-link .et-tab-bar-underline {
+    top: 25%;
+    bottom: 25%;
+    width: var(--et-nav-tabs-underline-size, 3px);
+    border-radius: 0 var(--et-nav-tabs-underline-size, 3px) var(--et-nav-tabs-underline-size, 3px) 0;
+  }
+}

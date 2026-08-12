@@ -52,6 +52,13 @@ export class TabBarDirective {
   /** @internal */
   public lastActiveUnderlineElement = signal<HTMLElement | null>(null);
 
+  /**
+   * @internal The underline transition still in flight, if any. It has to be cancelled before the
+   * next one measures its origin - a `getBoundingClientRect()` taken mid-flight reports the
+   * animated position, leaving the new transition with nothing left to travel.
+   */
+  public runningUnderlineFlip = signal<{ cancel: () => void } | null>(null);
+
   /** @internal */
   public animationsReady = signal(false);
 

@@ -121,6 +121,13 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
           justify-items: start;
         }
 
+        /* Horizontal filling is the scrollable's job; on a vertical bar it has to mean spanning the
+           column, or every tab shrinks to its label and the active background stops short of the
+           bar's edge. */
+        [data-orientation='vertical'][data-fit='fill'] & {
+          justify-items: stretch;
+        }
+
         [data-orientation='vertical'] &::after {
           left: 0;
           top: 0;

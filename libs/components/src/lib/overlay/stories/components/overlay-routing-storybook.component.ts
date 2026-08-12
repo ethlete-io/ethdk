@@ -1,5 +1,6 @@
 import { Component, ViewEncapsulation, signal } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
+import { NAV_TAB_IMPORTS } from '../../../tabs/tabs.imports';
 import { OverlayBodyComponent } from '../../overlay-body.component';
 import { OverlayCloseDirective } from '../../overlay-close.directive';
 import { OverlayFooterDirective } from '../../overlay-footer.directive';
@@ -424,11 +425,11 @@ export class SidebarDemoPage3Component {
     <et-overlay-sidebar>
       <ng-template etOverlayHeaderTemplate>Settings</ng-template>
       <p class="mb-3 text-small font-semibold uppercase tracking-widest text-white/50">Settings</p>
-      <nav class="mb-auto flex flex-col gap-1">
-        <button et-button etOverlayRouterLink="/" size="sm" variant="transparent">General</button>
-        <button et-button etOverlayRouterLink="/notifications" size="sm" variant="transparent">Notifications</button>
-        <button et-button etOverlayRouterLink="/about" size="sm" variant="transparent">About</button>
-      </nav>
+      <et-nav-tabs class="mb-auto" fit="fill" orientation="vertical">
+        <button et-overlay-nav-tab-link="/">General</button>
+        <button et-overlay-nav-tab-link="/notifications">Notifications</button>
+        <button et-overlay-nav-tab-link="/about">About</button>
+      </et-nav-tabs>
       <button class="mt-4" et-button etOverlayClose size="sm" variant="outline">Close</button>
     </et-overlay-sidebar>
 
@@ -437,37 +438,15 @@ export class SidebarDemoPage3Component {
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
+    NAV_TAB_IMPORTS,
     OverlaySidebarComponent,
     OverlayRouterOutletComponent,
-    OverlayRouterLinkDirective,
     OverlayHeaderTemplateDirective,
     OverlayCloseDirective,
   ],
   styles: `
-    /* !important overrides the overlay container's single-column grid so the sidebar and outlet sit side by side */
     et-sb-sb-overlay {
-      display: flex !important;
-      min-height: 100%;
-    }
-
-    /* the sidebar host only occupies a column when it is actually rendering (wide viewports);
-       on mobile it collapses and the menu is reached via the /sidebar page */
-    et-sb-sb-overlay .et-overlay-sidebar-host {
-      display: none;
-    }
-
-    et-sb-sb-overlay .et-overlay-sidebar-host.et-overlay-sidebar--visible {
-      display: flex;
-      flex: 0 0 auto;
-      inline-size: 200px;
-      flex-direction: column;
-      border-right: 1px solid rgb(255 255 255 / 0.1);
-      padding: 16px;
-    }
-
-    et-sb-sb-overlay et-overlay-router-outlet {
-      flex: 1 1 auto;
-      min-inline-size: 0;
+      --et-overlay-sidebar-inline-size: 200px;
     }
   `,
 })
