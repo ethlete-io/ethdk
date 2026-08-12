@@ -1,4 +1,7 @@
 mod db;
+mod decorations;
+#[cfg(target_os = "linux")]
+mod decorations_wayland;
 mod error;
 mod http;
 mod keychain;
@@ -32,6 +35,7 @@ pub fn run() {
 
             window::start(&windows);
             app.manage(windows);
+            app.manage(decorations::detect());
 
             tray::attach(app.handle())?;
 
@@ -39,6 +43,7 @@ pub fn run() {
         })
         .on_window_event(tray::hide_instead_of_closing)
         .invoke_handler(tauri::generate_handler![
+            decorations::window_capabilities,
             http::http_request,
             logs::agent_log_lines,
             logs::agent_logs,

@@ -6,4 +6,5 @@ export * from './ports';
 export * from './process-runner';
 export * from './secrets';
 export * from './transport';
+export * from './window-controls';
 export * from './window-source';

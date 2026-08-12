@@ -1,7 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "What the app window may reach. Every provider call goes through this app's own commands, so no HTTP or shell plugin permission belongs here.",
+  "description": "What the app window may reach. Every provider call goes through this app's own commands, so no HTTP or shell plugin permission belongs here. The window permissions are what the titlebar the app draws itself needs, since turning decorations off leaves no other way to move or close the window.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-start-dragging",
+    "core:window:allow-toggle-maximize"
+  ]
 }

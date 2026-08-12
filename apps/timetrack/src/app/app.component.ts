@@ -10,6 +10,7 @@ import {
 import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { injectAgentSessionCollector, injectWindowCollector } from '../collectors';
 import { injectHostPorts } from '../host';
+import { WindowControlsComponent } from './window-controls.component';
 
 type HostStatus =
   | { state: 'checking' }
@@ -20,13 +21,17 @@ type HostStatus =
   selector: 'ethlete-root',
   template: `
     <main class="mx-auto flex max-w-[76rem] flex-col gap-8 p-10">
-      <header class="flex flex-wrap items-baseline justify-between gap-4">
+      <header class="flex flex-wrap items-start justify-between gap-4" data-tauri-drag-region="deep">
         <div class="flex flex-col gap-1">
           <h1 class="text-h1">Timetrack</h1>
           <p class="text-small text-et-surface-muted">Local-first Jira and Tempo worklogs, rebuilt from evidence.</p>
         </div>
 
-        <button (click)="recheck()" et-button variant="outline" size="sm">Re-check host</button>
+        <div class="flex items-center gap-3">
+          <button (click)="recheck()" et-button variant="outline" size="sm">Re-check host</button>
+
+          <ethlete-window-controls />
+        </div>
       </header>
 
       <et-card variant="outlined">
@@ -114,7 +119,14 @@ type HostStatus =
     </main>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, CARD_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent],
+  imports: [
+    BANNER_IMPORTS,
+    BUTTON_IMPORTS,
+    CARD_IMPORTS,
+    DESCRIPTION_LIST_IMPORTS,
+    SpinnerComponent,
+    WindowControlsComponent,
+  ],
 })
 export class AppComponent {
   private ports = injectHostPorts();
