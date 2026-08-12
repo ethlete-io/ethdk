@@ -110,6 +110,8 @@ Breakpoints resolve against the **container width** (not the viewport) and each 
 
 Override via the `breakpoints` input. `rowHeight` (default `100`) and `gap` (default `16`) control the cell geometry; `readOnly` disables all editing.
 
+If the items come from a backend, declare the breakpoints in the adapter instead and bind `adapter.breakpoints` - see [Backend integration](#backend-integration).
+
 ## Interaction
 
 - **Pointer** (mouse and touch): drag items to move, drag edges/corners to resize - neighbors that fit in the vacated space swap into it, everything else is pushed down, and the layout compacts. (The gestures are built on the core [drag & resize primitives](/core/drag-resize), if you need the same behavior outside the grid.)
@@ -127,34 +129,46 @@ The accessibility strings live in `GRID_LABELS`, not in `GridConfig` - `interact
 
 ## Backend integration
 
-`layoutChange` emits a `GridSerializedState` on every edit. If your backend uses a different position shape, bridge it with `createGridAdapter` - two functions, one per direction, each mapping a single item:
+`layoutChange` emits a `GridSerializedState` on every edit. If your backend uses a different position shape, bridge it with `createGridAdapter` - one mapper per direction, each mapping a single item, both typed against the breakpoints you declare:
 
 ```ts
-import { createGridAdapter, fromGridPosition, toGridPosition } from '@ethlete/components';
+import { createGridAdapter, fromGridPosition, mapGridLayout, toGridPosition } from '@ethlete/components';
 
-const FALLBACK_POSITION = { col: 0, row: 0, colSpan: 1, rowSpan: 1 };
-
-const adapter = createGridAdapter<BackendWidget, BackendWidget>(
-  (w) => ({ id: w.uuid, type: w.kind, data: w, layout: { lg: toGridPosition(w) } }),
-  (item) => ({ ...item.data, ...fromGridPosition(item.layout['lg'] ?? FALLBACK_POSITION) }),
-);
+const adapter = createGridAdapter({
+  breakpoints: {
+    lg: { columns: 12, minWidth: 1200 },
+    md: { columns: 6, minWidth: 768 },
+    sm: { columns: 2, minWidth: 0 },
+  },
+  fromExternal: (w: BackendWidget) => ({
+    id: w.uuid,
+    type: w.kind,
+    data: { title: w.title },
+    layout: mapGridLayout(w.layout, toGridPosition),
+  }),
+  toExternal: (item) => ({
+    uuid: item.id,
+    kind: item.type,
+    title: item.data.title,
+    layout: mapGridLayout(item.layout, fromGridPosition),
+  }),
+});
 
 const items = adapter.fromExternal(widgets);
 const widgetsToSave = adapter.toExternal(state.items);
 ```
 
-The adapter's second type argument is the item payload - name it and both directions are typed, including the `data` the reverse mapper reads. The adapter maps one position per item, so a layout with several breakpoints has to pick which one round-trips (or map `item.layout` yourself).
+`breakpoints` is keyed by breakpoint name, and those names are the single source of truth for the whole round trip:
 
-A `layout` is expected to hold one position per configured breakpoint. An omitted one is not an error - the item is auto-placed there, in item order - but that arrangement ignores the positions the layout _does_ carry, so a layout covering only some breakpoints reads as the grid having lost the others. The grid warns about that in dev mode, naming the item and the breakpoints it is missing; the single-breakpoint adapter above trips exactly that. Spread the position across every breakpoint (or store all three) to silence it:
+- Bind `adapter.breakpoints` into the grid's `breakpoints` input - it is the same declaration, already in the `{ name, columns, minWidth }` shape - so the names the adapter maps and the names the grid resolves cannot drift.
+- Both mappers' `layout` is a **total** record over them. A breakpoint the mapping forgets is a compile error, and so is an unknown one - so neither direction needs a fallback position for a key that might not be there.
+- `mapGridLayout` maps a whole layout record through one function, keeping the keys - use it in either direction instead of repeating the position mapping per breakpoint. `toGridPosition` / `fromGridPosition` convert a backend `{ x, y, cols, rows }` to a `GridItemPosition` and back.
 
-```ts
-(w) => {
-  const position = toGridPosition(w);
-  return { id: w.uuid, type: w.kind, data: w, layout: { sm: position, md: position, lg: position } };
-};
-```
+The item payload type is inferred from what `fromExternal` returns as `data`, so `item.data` is typed in the reverse mapper without naming it anywhere. `toExternal` takes what `layoutChange` hands you (`state.items`) as-is.
 
-An empty `layout: {}` says "place this for me" and never warns - it is what `addItem` itself passes.
+A `layout` is expected to hold one position per configured breakpoint. An omitted one is not an error - the item is auto-placed there, in item order - but that arrangement ignores the positions the layout _does_ carry, so a layout covering only some breakpoints reads as the grid having lost the others. The grid warns about that in dev mode, naming the item and the breakpoints it is missing. An adapter cannot produce such an item, and neither can the grid: every item it places gets a position on every breakpoint.
+
+An empty `layout: {}` says "place this for me" and never warns - it is what `addItem` itself passes. It is also why `mapGridLayout` is the mapper to reach for over reading `item.layout.lg` yourself: an item you just added and have not saved a placement for yet maps to an empty layout rather than to an invented position.
 
 The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` component visualizes the underlying cells while developing - it lives in its own `GRID_DEBUG_IMPORTS` barrel so it never reaches a production bundle.
 

@@ -16,15 +16,19 @@ export type GridItemConstraints = {
   maxRowSpan: number;
 };
 
-export type GridItemConfig<TType extends string = string, TData = unknown> = {
+export type GridItemConfig<
+  TType extends string = string,
+  TData = unknown,
+  TBp extends GridBreakpointName = GridBreakpointName,
+> = {
   id: string;
   type: TType;
   data: TData;
-  layout: Record<GridBreakpointName, GridItemPosition>;
+  layout: Record<TBp, GridItemPosition>;
 };
 
-export type GridBreakpointConfig = {
-  name: GridBreakpointName;
+export type GridBreakpointConfig<TBp extends GridBreakpointName = GridBreakpointName> = {
+  name: TBp;
   columns: number;
   minWidth: number;
 };

@@ -2,7 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { GridItemComponent } from '../../grid-item.component';
 import { GridComponent } from '../../grid.component';
-import { createGridAdapter, fromGridPosition, toGridPosition } from '../../headless/grid-adapter';
+import { createGridAdapter, fromGridPosition, mapGridLayout, toGridPosition } from '../../headless/grid-adapter';
 import { GridItemConfig, GridSerializedState } from '../../headless/grid.types';
 
 // ---------------------------------------------------------------------------
@@ -36,13 +36,15 @@ export type NotesData = {
 
 type BreakpointLayout = { x: number; y: number; cols: number; rows: number };
 
+type MockWidgetData = KpiData | ChartData | NotesData;
+
 type MockWidgetView = {
   uuid: string;
   type: string;
   layout: { sm: BreakpointLayout; md: BreakpointLayout; lg: BreakpointLayout };
   // In reality, widget-specific data is managed by separate PUT endpoints.
   // We inline it here to keep the demo self-contained.
-  data: KpiData | ChartData | NotesData;
+  data: MockWidgetData;
 };
 
 // ---------------------------------------------------------------------------
@@ -50,28 +52,25 @@ type MockWidgetView = {
 // In a real app this lives next to the component that talks to the API.
 // ---------------------------------------------------------------------------
 
-const adapter = createGridAdapter<MockWidgetView>(
-  (widget) => ({
+const adapter = createGridAdapter({
+  breakpoints: {
+    lg: { columns: 12, minWidth: 1200 },
+    md: { columns: 6, minWidth: 768 },
+    sm: { columns: 2, minWidth: 0 },
+  },
+  fromExternal: (widget: MockWidgetView) => ({
     id: widget.uuid,
     type: widget.type,
     data: widget.data,
-    layout: {
-      sm: toGridPosition(widget.layout.sm),
-      md: toGridPosition(widget.layout.md),
-      lg: toGridPosition(widget.layout.lg),
-    },
+    layout: mapGridLayout(widget.layout, toGridPosition),
   }),
-  (item) => ({
+  toExternal: (item) => ({
     uuid: item.id,
     type: item.type,
-    layout: {
-      sm: fromGridPosition(item.layout['sm'] ?? { col: 0, row: 0, colSpan: 2, rowSpan: 1 }),
-      md: fromGridPosition(item.layout['md'] ?? { col: 0, row: 0, colSpan: 2, rowSpan: 1 }),
-      lg: fromGridPosition(item.layout['lg'] ?? { col: 0, row: 0, colSpan: 3, rowSpan: 1 }),
-    },
-    data: item.data as KpiData | ChartData | NotesData,
+    layout: mapGridLayout(item.layout, fromGridPosition),
+    data: item.data,
   }),
-);
+});
 
 // ---------------------------------------------------------------------------
 // KPI widget
@@ -178,7 +177,7 @@ export class NotesWidgetComponent {
 // Initial grid items (internal GridItemConfig format)
 // ---------------------------------------------------------------------------
 
-const INITIAL_ITEMS: GridItemConfig[] = [
+const INITIAL_ITEMS: GridItemConfig<string, MockWidgetData>[] = [
   {
     id: 'kpi-revenue',
     type: 'kpi',
@@ -470,13 +469,9 @@ const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxR
 export class GridDataStorybookComponent {
   public rowHeight = input(110);
   public gap = input(16);
-  public breakpoints = input([
-    { name: 'lg', columns: 12, minWidth: 1200 },
-    { name: 'md', columns: 6, minWidth: 768 },
-    { name: 'sm', columns: 2, minWidth: 0 },
-  ]);
+  public breakpoints = input(adapter.breakpoints);
 
-  public gridItems = signal<GridItemConfig[]>(INITIAL_ITEMS);
+  public gridItems = signal<GridItemConfig<string, MockWidgetData>[]>(INITIAL_ITEMS);
   public selectedId = signal<string | null>(null);
   public apiPayloadJson = signal<string | null>(null);
 
@@ -513,7 +508,7 @@ export class GridDataStorybookComponent {
   // Keep gridItems in sync with positions after drag/resize/add/remove.
   // The grid emits the full updated layout; we merge new positions into our signal
   // while preserving each item's data (which the grid doesn't touch).
-  public syncGridItemsWithLayout(state: GridSerializedState) {
+  public syncGridItemsWithLayout(state: GridSerializedState<MockWidgetData>) {
     this.gridItems.update((current) =>
       current.map((item) => {
         const updated = state.items.find((s) => s.id === item.id);
@@ -552,7 +547,7 @@ export class GridDataStorybookComponent {
   public addWidget(type: (typeof this.WIDGET_TYPES)[number]) {
     const id = `${type}-${this.nextIndex++}`;
 
-    const defaultData: Record<string, unknown> = {
+    const defaultData: Record<(typeof this.WIDGET_TYPES)[number], MockWidgetData> = {
       kpi: { label: 'New Metric', value: 0, unit: '', delta: 0 } satisfies KpiData,
       chart: {
         title: 'New Chart',

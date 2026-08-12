@@ -270,6 +270,46 @@ a widget set known where the template is written. What shipped:
   the item and the second removes it - a mount/unmount flash plus the entering animation. A dev-mode
   error is the cheaper contract: exactly one mechanism per item.
 
+**Grid: `createGridAdapter` maps every breakpoint** (2026-08-12, a "Decide before building" row) - the
+signature question this file asked ("one position per item cannot express the per-breakpoint mapping
+apps write") turned out to be the wrong diagnosis. The arity was never the problem: both stories
+_could_ map three breakpoints, they just repeated `toGridPosition` per breakpoint and invented a
+fallback position per breakpoint in the reverse direction, because `layout` was
+`Record<string, GridItemPosition>` - untyped keys, so nothing was total and every read needed a `??`.
+What shipped:
+
+- **`GridItemConfig` gained a third parameter, `TBp extends GridBreakpointName`**, defaulting to
+  `string` so every existing usage still compiles, with `layout: Record<TBp, GridItemPosition>`.
+  `GridBreakpointConfig<TBp>` gained the same. Nothing was threaded into `GridComponent` /
+  `GridDirective`: `Record<'sm'|'md'|'lg', P>` is assignable to `Record<string, P>` (a mapped type
+  gets an implicit index signature), so a typed config array binds to `[items]` untouched.
+- **`createGridAdapter` takes one options object** - `{ breakpoints, fromExternal, toExternal }` -
+  where `breakpoints` is the single source of truth for the names, `NoInfer<TBp>` keeps the mappers
+  from widening it, and `adapter.breakpoints` hands back the `{ name, columns, minWidth }[]` for the
+  grid's input so the two cannot drift. Breaking, no alias - changeset
+  `grid-adapter-per-breakpoint.md`.
+- **`breakpoints` is a record keyed by name, not the config array.** With an array,
+  `const TBp` only preserves literals for an array written _at the call site_ - the moment an app
+  hoists `const BREAKPOINTS = [...]` (which is what the partner dashboard does, since it also binds
+  it), `TBp` silently widens to `string`, the totality guarantee evaporates, and the only symptom is
+  an obscure error in the reverse mapper. Object _keys_ always infer as literals, wherever the record
+  is declared. Verified both ways before switching.
+- **New `mapGridLayout(layout, map)`** maps a whole layout record through one function, keeping the
+  keys - the per-breakpoint repetition in both stories collapsed to one line per direction.
+- **Rejected: a dev-mode throw when `toExternal` gets an incomplete layout** (it was written, as
+  `ET1906`, then removed). `layout: {}` is the documented "place this for me", the `items`
+  reconciliation places such an item _silently_, so a host that adds a widget and then serializes its
+  own array legitimately holds one unplaced item - driving `Grid → Backend Integration` headlessly
+  showed exactly that, and the throw fired on a blessed flow. `mapGridLayout` carries the gap through
+  as an empty layout instead of inventing a position, and the grid's existing
+  `warnAboutUncoveredBreakpoints` still covers the genuinely suspicious case (some breakpoints but
+  not all). The `as` cast in `toExternal` is the one place the types outrun the runtime; it is
+  commented there.
+- **Still open: nothing links `[breakpoints]` to `[items]` at the `et-grid` level.** An app that
+  writes its items by hand rather than through an adapter gets the runtime warning, not a compile
+  error. Doing better needs `GridComponent<TData, TBp>` plus template-inference across two inputs -
+  a bigger, separate call.
+
 **Grid: `initialItems` renamed to `items`** (2026-08-12, the first "Decide before building" row) -
 the input was already a live, reconciling one; only the name still said otherwise, and it is what
 talked the partner dashboard into re-keying the whole grid on every save. Two calls settled the
@@ -1263,15 +1303,11 @@ The rest of the partner dashboard's friction is one theme - `et-grid` already ha
 app needs, and every piece of it is either misnamed, undocumented, or subtly wrong at the edge
 the app hits.
 
-**`createGridAdapter` maps one position per item.** The doc snippet that did not compile is
-fixed, but the signature is still worth reconsidering: the app's mapping is per-breakpoint
-(`sm`/`md`/`lg` at once), which a single-position adapter shape does not express - which is why
-it hand-rolls `toGridItems`/`toWidgetPayload` off `toGridPosition`/`fromGridPosition` instead.
-
-**Nothing ties an item's layout keys to the configured breakpoints at the type level.**
-`GridItemConfig.layout` is `Record<string, GridItemPosition>`, so a missing breakpoint entry is
-only caught at runtime. What it wants is a `TBp extends string` parameter on `GridItemConfig` so
-`[breakpoints]` and the items have to agree before the app compiles.
+**`createGridAdapter` and the untyped layout keys - fixed 2026-08-12**, see "Already fixed, do not
+re-report". The adapter now declares its breakpoints and types both directions against them, and
+`GridItemConfig` takes a `TBp` parameter. What that fix does _not_ reach is the `et-grid` level: an
+app writing items by hand still gets a runtime warning rather than a compile error when `[items]`
+and `[breakpoints]` disagree.
 
 **The `ET1904` dev check assumed registrations were the only composition** - fixed 2026-08-12, see
 "Already fixed, do not re-report".

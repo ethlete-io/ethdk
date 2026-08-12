@@ -117,7 +117,9 @@ export const BackendIntegration: StoryObj<GridDataStorybookComponent> = {
           "a different shape from the grid's internal `{col, row, colSpan, rowSpan}`. " +
           '`createGridAdapter()` bridges the two: `fromExternal` maps backend widgets to ' +
           '`GridItemConfig[]` for the grid to render, and `toExternal` converts back to ' +
-          'the API shape for `PATCH /partners/dashboard/:uuid`. ' +
+          'the API shape for `PATCH /partners/dashboard/:uuid`. Both directions map every ' +
+          'breakpoint the adapter declares, and the grid renders those same breakpoints via ' +
+          '`adapter.breakpoints`. ' +
           'Click **Show API Payload** after dragging, resizing, or adding widgets to inspect ' +
           'the exact JSON the adapter produces.',
       },

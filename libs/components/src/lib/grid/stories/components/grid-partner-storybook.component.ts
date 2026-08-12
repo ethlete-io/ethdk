@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, computed, signal, viewChild } from '@angular/core';
 import { GridItemComponent } from '../../grid-item.component';
 import { GridComponent } from '../../grid.component';
-import { createGridAdapter, fromGridPosition, toGridPosition } from '../../headless/grid-adapter';
+import { createGridAdapter, fromGridPosition, mapGridLayout, toGridPosition } from '../../headless/grid-adapter';
 import { GridItemConfig, GridItemPosition, GridSerializedState } from '../../headless/grid.types';
 import { posEq, posLabel } from './grid-partner-storybook.data';
 
@@ -21,29 +21,26 @@ type PartnerWidgetView = {
   items: unknown[];
 };
 
-const adapter = createGridAdapter<PartnerWidgetView, PartnerWidgetData>(
-  (widget) => ({
+const adapter = createGridAdapter({
+  breakpoints: {
+    lg: { columns: 12, minWidth: 1200 },
+    md: { columns: 6, minWidth: 768 },
+    sm: { columns: 2, minWidth: 0 },
+  },
+  fromExternal: (widget: PartnerWidgetView) => ({
     id: widget.uuid,
     type: widget.type,
-    data: { title: widget.title, items: widget.items },
-    layout: {
-      sm: toGridPosition(widget.layout.sm),
-      md: toGridPosition(widget.layout.md),
-      lg: toGridPosition(widget.layout.lg),
-    },
+    data: { title: widget.title, items: widget.items } satisfies PartnerWidgetData,
+    layout: mapGridLayout(widget.layout, toGridPosition),
   }),
-  (item) => ({
+  toExternal: (item) => ({
     uuid: item.id,
     title: item.data.title,
     type: item.type,
-    layout: {
-      sm: fromGridPosition(item.layout['sm'] ?? { col: 0, row: 0, colSpan: 2, rowSpan: 1 }),
-      md: fromGridPosition(item.layout['md'] ?? { col: 0, row: 0, colSpan: 2, rowSpan: 1 }),
-      lg: fromGridPosition(item.layout['lg'] ?? { col: 0, row: 0, colSpan: 3, rowSpan: 1 }),
-    },
-    items: item.data.items ?? [],
+    layout: mapGridLayout(item.layout, fromGridPosition),
+    items: item.data.items,
   }),
-);
+});
 
 const BACKEND_WIDGETS: PartnerWidgetView[] = [
   {
@@ -114,7 +111,7 @@ const BACKEND_WIDGETS: PartnerWidgetView[] = [
   },
 ];
 
-const BREAKPOINT_NAMES = ['sm', 'md', 'lg'] as const;
+const BREAKPOINT_NAMES = adapter.breakpoints.map((bp) => bp.name);
 
 type LayoutRow = {
   id: string;
@@ -271,11 +268,7 @@ type LayoutRow = {
 export class GridPartnerStorybookComponent {
   protected gridRef = viewChild<GridComponent<PartnerWidgetData>>(GridComponent);
 
-  public readonly BREAKPOINTS = [
-    { name: 'lg', columns: 12, minWidth: 1200 },
-    { name: 'md', columns: 6, minWidth: 768 },
-    { name: 'sm', columns: 2, minWidth: 0 },
-  ];
+  public readonly BREAKPOINTS = adapter.breakpoints;
 
   public readonly BREAKPOINT_NAMES = BREAKPOINT_NAMES;
 
