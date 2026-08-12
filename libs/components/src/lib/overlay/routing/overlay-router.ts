@@ -85,6 +85,16 @@ export type OverlayRouterNavigateConfig = {
   navigationDirection?: OverlayRouterNavigationDirection;
 };
 
+export type OverlayRouterNavigationGuardContext = {
+  /** The route being left. */
+  from: string;
+
+  /** The resolved route being navigated to. */
+  to: string;
+};
+
+export type OverlayRouterNavigationGuard = (context: OverlayRouterNavigationGuardContext) => boolean | Promise<boolean>;
+
 export type OverlayRouterTransitionType = 'slide' | 'fade' | 'overlay' | 'vertical' | 'none';
 
 export type OverlayRouterResolvedPath = {
@@ -108,6 +118,13 @@ export type OverlayRouter = {
   /** Whether an in-memory history entry exists to go back to. */
   canGoBack: Signal<boolean>;
 
+  /**
+   * Whether a navigation is waiting on a navigation guard. UI that moves ahead of the router - a
+   * tab bar selecting the clicked tab optimistically - must not undo itself while this is `true`,
+   * or it fights the navigation that is still in flight.
+   */
+  navigationPending: Signal<boolean>;
+
   /** All navigable routes (configured + extra) with signal inputs unwrapped. */
   routes: Signal<OverlayRoute[]>;
 
@@ -115,6 +132,16 @@ export type OverlayRouter = {
   currentPage: Signal<OverlayRoute | null>;
 
   navigate: (route: string | (string | number)[], config?: OverlayRouterNavigateConfig) => void;
+
+  /**
+   * Registers a check run before every route change, including the ones the browser's back and
+   * forward buttons trigger. Resolving `false` cancels the navigation. Returns a function that
+   * unregisters the check again.
+   *
+   * @example
+   * inject(DestroyRef).onDestroy(router.registerNavigationGuard(() => confirmDiscard()));
+   */
+  registerNavigationGuard: (guard: OverlayRouterNavigationGuard) => () => void;
 
   back: () => boolean;
 
@@ -149,6 +176,8 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     /** In-memory navigation history, used to power `back()`/`canGoBack()` independently of the browser. */
     const history = signal<string[]>([]);
     const nativeBrowserBackStack = signal<string[]>([]);
+    const pendingNavigations = signal(0);
+    const navigationPending = computed(() => pendingNavigations() > 0);
 
     // The current route, but delayed by one frame to ensure that the needed animation classes are applied.
     const currentRoute = toSignal(
@@ -255,9 +284,58 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       };
     };
 
-    const navigate = (r: string | (string | number)[], navigateConfig?: OverlayRouterNavigateConfig) => {
-      const resolvedRoute = resolvePath(r);
-      const from = syncCurrentRoute();
+    const navigationGuards = new Set<OverlayRouterNavigationGuard>();
+
+    const registerNavigationGuard = (guard: OverlayRouterNavigationGuard) => {
+      navigationGuards.add(guard);
+
+      return () => {
+        navigationGuards.delete(guard);
+      };
+    };
+
+    /**
+     * Returns `true` synchronously while nothing is registered, so an unguarded router keeps
+     * navigating within the same task - a route change deferred by a microtask lands after the
+     * frame the outlet measured for its transition.
+     */
+    const canLeave = (from: string, to: string): boolean | Promise<boolean> => {
+      const guards = [...navigationGuards];
+
+      if (!guards.length) {
+        return true;
+      }
+
+      return guards.reduce<Promise<boolean>>(
+        (mayLeave, guard) => mayLeave.then((allowed) => (allowed ? guard({ from, to }) : false)),
+        Promise.resolve(true),
+      );
+    };
+
+    const whenAllowed = (attempt: { from: string; to: string; allowed: () => void; blocked?: () => void }) => {
+      const result = canLeave(attempt.from, attempt.to);
+
+      if (result === true) {
+        attempt.allowed();
+
+        return;
+      }
+
+      pendingNavigations.update((count) => count + 1);
+
+      void Promise.resolve(result).then((mayLeave) => {
+        pendingNavigations.update((count) => count - 1);
+
+        return mayLeave ? attempt.allowed() : attempt.blocked?.();
+      });
+    };
+
+    const commitNavigation = (commit: {
+      resolvedRoute: OverlayRouterResolvedPath;
+      from: string;
+      navigateConfig?: OverlayRouterNavigateConfig;
+    }) => {
+      const { resolvedRoute, from, navigateConfig } = commit;
 
       const allRoutes = routes();
       const targetDirectionHint = allRoutes.find((rt) => rt.path === resolvedRoute.route)?.navigationDirection?.to;
@@ -276,6 +354,21 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       if (updateCurrentRoute(resolvedRoute.route)) {
         history.update((h) => (historyDirection === 'backward' ? h.slice(0, -1) : [...h, from]));
       }
+    };
+
+    const navigate = (r: string | (string | number)[], navigateConfig?: OverlayRouterNavigateConfig) => {
+      const resolvedRoute = resolvePath(r);
+      const from = syncCurrentRoute();
+
+      if (resolvedRoute.route === from) {
+        return;
+      }
+
+      whenAllowed({
+        from,
+        to: resolvedRoute.route,
+        allowed: () => commitNavigation({ resolvedRoute, from, navigateConfig }),
+      });
     };
 
     const back = () => {
@@ -350,23 +443,27 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
             const navStack = nativeBrowserBackStack();
             const curr = syncCurrentRoute();
 
-            if (!navStack.length) {
-              // If the nav stack is empty the only way to navigate is back.
-              navigate(r, { navigationDirection: 'backward' });
-              nativeBrowserBackStack.set([curr]);
-            } else {
-              const lastItem = navStack[navStack.length - 1];
+            // An empty nav stack means the only way to have got here is back.
+            const isForward = navStack.length > 0 && r === navStack[navStack.length - 1];
+            const nextStack = !navStack.length ? [curr] : isForward ? navStack.slice(0, -1) : [...navStack, curr];
 
-              if (r === lastItem) {
-                // Going forward again.
-                navigate(r, { navigationDirection: 'forward' });
-                nativeBrowserBackStack.set(navStack.slice(0, -1));
-              } else {
-                // Going back.
-                navigate(r, { navigationDirection: 'backward' });
-                nativeBrowserBackStack.set([...navStack, curr]);
-              }
-            }
+            const resolvedRoute = resolvePath(r);
+
+            whenAllowed({
+              from: curr,
+              to: resolvedRoute.route,
+              allowed: () => {
+                commitNavigation({
+                  resolvedRoute,
+                  from: curr,
+                  navigateConfig: { navigationDirection: isForward ? 'forward' : 'backward' },
+                });
+                nativeBrowserBackStack.set(nextStack);
+              },
+              // The browser moved before anyone could veto, so a cancelled navigation has to put the
+              // param back on the route still being rendered - otherwise the URL names another page.
+              blocked: () => updateBrowserUrl(curr),
+            });
           } else {
             // The navigation was triggered by ui interaction. Clear the back nav stack.
             nativeBrowserBackStack.set([]);
@@ -392,9 +489,11 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       transitionType,
       navigationDirection,
       canGoBack,
+      navigationPending,
       routes,
       currentPage,
       navigate,
+      registerNavigationGuard,
       back,
       resolvePath,
       addRoute,
