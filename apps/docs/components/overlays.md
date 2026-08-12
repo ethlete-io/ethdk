@@ -364,6 +364,19 @@ Inside the overlay:
 
 `provideSidebarOverlay(config?)` (requires the overlay router) adds a responsive sidebar: above `renderSidebarFrom` (default `'md'`, measured against the **pane** width) the `<et-overlay-sidebar>` renders inline next to the outlet (with each nav target as an `<et-overlay-sidebar-page>`); below it, the sidebar collapses into a navigable route of its own.
 
+The overlay content only has to place the two pieces - the layout is the library's:
+
+```html
+<et-overlay-sidebar>
+  <ng-template etOverlayHeaderTemplate>Settings</ng-template>
+  <nav>…</nav>
+</et-overlay-sidebar>
+
+<et-overlay-router-outlet />
+```
+
+While it renders inline the sidebar is the content grid's first column and a flex column itself, so `margin-block-start: auto` on a child pushes it to the bottom. Collapsed, it leaves the grid entirely and the outlet is the only column - nothing to toggle by hand. Set `--et-overlay-sidebar-inline-size` (default `240px`) to change its width; its padding follows `--et-overlay-padding-inline` / `--et-overlay-padding-block` and its divider `--et-overlay-body-divider-color`.
+
 ## Accessibility
 
 - **Role**: modal overlays default to `role="dialog"` (`config.role` accepts `'dialog' | 'alertdialog'`); non-modal overlays get no role unless you set one.

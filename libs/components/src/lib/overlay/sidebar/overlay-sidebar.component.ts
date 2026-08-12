@@ -16,6 +16,7 @@ import { injectSidebarOverlay } from './sidebar-overlay';
       <ng-container *ngTemplateOutlet="sidebarContent()" />
     }
   `,
+  styleUrl: './overlay-sidebar.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet],
   host: {
