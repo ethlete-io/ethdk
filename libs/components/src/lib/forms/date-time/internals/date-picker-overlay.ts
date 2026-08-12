@@ -11,6 +11,15 @@ import { DatePickerSurfaceBase, DatePickerSurfaceContext } from '../picker/date-
 
 export type DatePickerOverlayCloseInfo = AnchoredPanelCloseInfo;
 
+/**
+ * The space a side must offer before the picker takes it, in px - the tallest state any picker panel
+ * reaches (a six-week month grid, 333px). It has to stay at or above that, and it has to stay a
+ * constant: any threshold the shorter views clear - and `flip`, which compares the panel's own
+ * height - lets a picker that opened above the field drop below it the moment a drill into the month
+ * grid makes it shorter.
+ */
+const PICKER_MIN_AVAILABLE_SPACE = 340;
+
 export type CreateDatePickerOverlayOptions = {
   interactive: Signal<boolean>;
   pickerOpen: ModelSignal<boolean>;
@@ -60,13 +69,10 @@ export const createDatePickerOverlay = (options: CreateDatePickerOverlayOptions)
         ...anchoredOverlayStrategy({
           containerClass: ['et-overlay--anchored', 'et-overlay--date-picker'],
           placement: 'bottom-start',
-          // prefer flipping the alignment on the same side (right-align under the field) before
-          // flipping up, so a field near the right viewport edge opens bottom-end, not shifted
-          fallbackPlacements: ['bottom-end', 'top-start', 'top-end'],
           offset: 4,
           viewportPadding: 8,
           autoResize: true,
-          shift: { crossAxis: true },
+          minAvailableSpace: PICKER_MIN_AVAILABLE_SPACE,
         })().map((entry) => ({ ...entry, breakpoint: 'md' as const })),
       ],
     }),

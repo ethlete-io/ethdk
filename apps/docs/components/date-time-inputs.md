@@ -61,6 +61,14 @@ scalar - see below) shares one design:
   it follows the field's `size`. Each control's threshold is the width its default
   `displayFormat` needs (`P`, `p`, `Pp`) - a much longer custom format can still
   clip before it stacks. See the `Narrow` story of each range control.
+- **A picker that never changes sides while open.** The panel opens below the
+  field and only above it when less than `340px` are left below - the tallest a
+  picker panel gets, so every one of its views fits on the side it picked. The
+  decision reads the space around the field, never the panel's own height
+  ([`minAvailableSpace`](/components/overlays#anchored-overlays-and-the-arrow)),
+  so drilling from the day grid to the month or year grid resizes the panel in
+  place instead of dropping it to the other side of the field. If neither side has
+  `340px`, the roomier one wins and the panel shrinks into it.
 
 The wire defaults come from injectable tokens so an app can set them once, and
 `date-fns` (v4) is a peer dependency (`yarn add date-fns`):
