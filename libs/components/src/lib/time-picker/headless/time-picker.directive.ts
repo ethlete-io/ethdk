@@ -151,12 +151,13 @@ export class TimePickerDirective {
   public endLabel = input<string | null>(null);
 
   /**
-   * The selected time of day, carried on a `Date`. Stays `null` until every column the format shows
-   * has been picked - parts arriving before that are held. `single` mode.
+   * The selected time of day, carried on a `Date`. Stays `null` until an hour and a minute (and a
+   * second, where the format shows one) have been picked - parts arriving before that are held.
+   * `single` mode.
    */
   public value = model<Date | null>(null);
 
-  /** `range` mode: the two selected times. An end stays `null` until all of its parts are picked. */
+  /** `range` mode: the two selected times. An end stays `null` until its parts add up to a time. */
   public rangeValue = model<TimeRange>({ start: null, end: null });
 
   /** `range` mode: the end the columns show, and the one a pick writes. */
@@ -228,21 +229,13 @@ export class TimePickerDirective {
     ];
   });
 
-  /** The units a whole time needs, given the columns the format puts in play. */
-  private requiredUnits = computed<readonly TimePickerUnit[]>(() => {
-    const spec = this.formatSpec();
-    const units: TimePickerUnit[] = ['hour', 'minute'];
-
-    if (spec.showSeconds) {
-      units.push('second');
-    }
-
-    if (spec.hourCycle === 12) {
-      units.push('period');
-    }
-
-    return units;
-  });
+  /**
+   * The units a whole time needs. AM/PM is deliberately not one of them: every hour already sits in
+   * a half-day, so an unpicked column follows the anchor rather than leaving the time incomplete.
+   */
+  private requiredUnits = computed<readonly TimePickerUnit[]>(() =>
+    this.formatSpec().showSeconds ? ['hour', 'minute', 'second'] : ['hour', 'minute'],
+  );
 
   /** The parts held for the end the columns edit, empty once that end holds a value. */
   private activePending = computed<PendingTimeParts>(() =>
@@ -453,7 +446,8 @@ export class TimePickerDirective {
    * Takes one column's pick. While the end being edited is still empty the pick
    * is *held*, not committed - a lone hour is no more a time than a lone AM is,
    * and committing one would put a minute nobody chose into the value. The pick
-   * that fills the last empty column commits all of them at once.
+   * that supplies the last missing unit commits them all at once; an AM/PM pick
+   * never is that one, since an unpicked half-day still follows the anchor.
    *
    * Once a value exists every pick edits it directly. Bounds and filters keep
    * the result selectable: the picked part stays put and the finer units move to

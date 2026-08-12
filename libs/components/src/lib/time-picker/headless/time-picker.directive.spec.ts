@@ -160,6 +160,20 @@ describe('TimePickerDirective', () => {
     expect(selectedIn('minute')).toBeNull();
   });
 
+  it('commits without an AM/PM pick, in the half-day the anchor already sits in', () => {
+    host.format.set('h:mm a');
+    tick();
+
+    optionButton('hour', 9)?.click();
+    optionButton('minute', 30)?.click();
+    tick();
+
+    // an hour is always in some half-day, so an untouched AM/PM column holds nothing up
+    expect(host.value()?.getHours()).toBe(new Date().getHours() < 12 ? 9 : 21);
+    expect(host.value()?.getMinutes()).toBe(30);
+    expect(selectedIn('period')).not.toBeNull();
+  });
+
   it('completes a held AM/PM into the half-day the later picks land in', () => {
     host.format.set('h:mm a');
     tick();

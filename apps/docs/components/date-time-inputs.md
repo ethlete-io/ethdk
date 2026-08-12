@@ -369,7 +369,7 @@ A held half survives an unedited blur, and is dropped by an edit to the field or
 clearing the control.
 
 The time pane holds its parts the same way: an hour with no minute is not a time either, so
-nothing reaches the field until every column of the picker has been picked. See
+nothing reaches the field until an hour and a minute are both picked. See
 [the time picker](/components/time-picker#held-picks).
 
 The date bounds (`minDate`/`maxDate`/`dateFilter`) and the time bounds

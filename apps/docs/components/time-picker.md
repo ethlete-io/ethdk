@@ -40,7 +40,9 @@ While no value is set, the columns anchor their focus and scroll position to "no
 
 ### Held picks {#held-picks}
 
-**From an empty picker, picks are held until they add up to a whole time.** A lone hour is not a time, and neither is a lone `PM` - so each pick marks its column and moves the anchor, but `value` stays `null` until every column the format shows has been picked. The pick that fills the last one commits them all together. Without that, tapping `6` would commit whatever minute "now" happened to sit on, and a value nobody chose is worse than no value.
+**From an empty picker, picks are held until they add up to a whole time.** A lone hour is not a time, and neither is a lone `PM` - so each pick marks its column and moves the anchor, but `value` stays `null` until an **hour** and a **minute** (and a **second**, where the format shows one) have all been picked. The pick that supplies the last of them commits them together. Without that, tapping `6` would commit whatever minute "now" happened to sit on, and a value nobody chose is worse than no value.
+
+**AM/PM is not one of the units a time waits for.** Every hour already sits in a half-day, so an untouched AM/PM column follows the anchor rather than blocking the value - picking `9` and `:30` alone commits 9:30 in whichever half-day the columns are showing. Picking it _is_ still held, though: `PM` says nothing about which hour, so it waits for the hour and minute to land on it instead of committing a time of its own.
 
 Once a whole time exists the columns edit it directly: every later pick rewrites that part and leaves the rest alone.
 
