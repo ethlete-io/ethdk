@@ -535,8 +535,16 @@ What the write half settled:
 - **A required attribute with no value blocks its row** (`missingRequiredAttributes`) instead of being
   guessed, and the row goes into `retry` for once the reviewer supplies it.
 
-Not built here: nothing of the sync itself. What remains is choosing the marker scheme against a real
-instance (open question 4) - both are implemented, so it is a config value, not code.
+- `preview.ts` - `previewTempoSync$()`, the read-only first phase: the account lookup, then the issue
+  ids, the day's remote worklogs and the ledger, folded into a `TempoSyncPlan`. It resolves the issue
+  **keys** for the ids only the remote worklogs mention (`fetchJiraIssueKeysByIds$`) too, because
+  Tempo names an issue by a numeric id and a foreign list nobody can read is a foreign list nobody
+  checks. `fetchJiraMyself$` in `jira/myself.ts` is where the account id comes from - Jira's own UI
+  never shows it, so it cannot be a setting.
+
+Not built here: the confirm step. `executeTempoSync$` is written and tested but nothing in the app
+calls it yet - the app plans and shows, and a write to production Tempo is a separate, deliberate
+change. The marker scheme is a config value (open question 4, now answered).
 
 ### Google Calendar (phase 1)
 
@@ -983,15 +991,31 @@ JSON document per local calendar day, keyed by `localDayKey`). What building it 
   provides `SCHEDULER_FEATURE_HOST`. Rows paint in their confidence's theme via `colorToken`;
   unattributed blocks sit behind them in neutral, because the time was still spent.
 - **Still owed here:** dragging a boundary (the headless grid has no drag - that lives in
-  `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now), the sync
-  diff preview, the end-of-day nudge and the week view. The day target is now a setting, and the
-  footer and the tray read the same one.
-- **A control inside `<et-form-field>` needs a projected `<et-label>` or the `aria-label` _input_.**
-  `[attr.aria-label]` sets the attribute on the wrapper, not on the native control the directive
-  renders, so the row still has no accessible name and `ET2201` is thrown in dev mode. The review
-  rows do exactly that and need fixing - and `et-duration-input` has no way out of it at all, because
-  it is the one control that does not re-expose `aria-label`/`aria-labelledby` from its host
-  directive.
+  `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now), the
+  end-of-day nudge and the week view. The day target is now a setting, and the footer and the tray
+  read the same one.
+- ~~**A control inside `<et-form-field>` needs a projected `<et-label>` or the `aria-label` _input_.**~~
+  **Fixed.** `[attr.aria-label]` sets the attribute on the wrapper, not on the native control the
+  directive renders, so the row had no accessible name and `ET2201` threw in dev mode. The review rows
+  now bind the `aria-label` _input_, and `et-duration-input` - the one control that did not re-expose
+  `aria-label`/`aria-labelledby` from its host directive - now does.
+
+### The shell: a sidebar and one view per route
+
+The single scrolling page stopped working once the sync preview joined it, so the app is now a
+routed shell: a sticky rail beside `<router-outlet />`, one lazy view per route
+(`day`, `sync`, `sources`, `settings`, `host`), each still one `et-card`. Routing is
+**hash**-based - the bundle is served as static files off `tauri://localhost`, and a path route
+would 404 the moment the webview reloads on it. The stores are `defineRootProvider`s, so day
+state, settings and the tray readout all survive navigation; only the views are lazy.
+
+The **sync view** (`apps/timetrack/src/app/sync/`) plans on demand and never writes. It is
+deliberately not reactive to the day's rows: a plan is a statement about a moment, and one that
+re-planned itself while the reviewer edited would read as if Tempo were changing. Stepping to
+another day drops the plan rather than showing yesterday's under today's date. What it cannot yet
+see: a ledger entry whose proposal the day no longer produces - `entriesFor$` is keyed by the
+proposal ids under review, so such a worklog reads as `foreign` instead of as a delete. Closing that
+needs either a day-scoped ledger read or a marker scheme plus `recoverLedgerFromMarkers()`.
 
 ## Storage, privacy, secrets
 
@@ -1169,14 +1193,17 @@ alongside and only affects how much of a day arrives pre-labelled.
    full path stays inside the child's name - so Story-level roll-up is safe. What is still open is
    adoption, not shape: the 2026-08-11 baseline in `plans/git-flow-system.md` has 3 of 125
    fut-frontend branches conforming, so the no-key path carries most of the day for now.
-4. **Tempo attribute writability** - whether a custom attribute can hold the app's worklog id, or
-   whether the marker has to live in the description. **No longer blocks anything**: both schemes are
-   implemented behind `TempoMarkerScheme`, and `fetchTempoWorkAttributes$` + `findMarkerAttribute()`
-   report whether the instance offers a non-required `INPUT_TEXT` attribute to use. What is left is
-   one write against a real instance to see whether the attribute is accepted, and then a config
-   value: `attribute` if it is, `description-suffix` if it is not. Until it is answered, run `none`
-   and the ledger carries ownership on its own - the cost is that losing the ledger makes every
-   worklog the app wrote foreign for good.
+4. ~~**Tempo attribute writability** - whether a custom attribute can hold the app's worklog id~~
+   **Answered against the real instance (2026-08-12): it cannot, because there are none.**
+   `GET /4/work-attributes` on `braune-digital` returns `count: 0` - the instance defines no work
+   attributes at all, so `findMarkerAttribute()` has nothing to find and the `attribute` scheme is
+   unavailable without an admin creating one. That leaves `description-suffix` (a visible
+   `[et:<proposalId>]` tag on every worklog the app writes) or `none` (the local ledger is the only
+   ownership record, and losing it makes every worklog the app wrote foreign for good). Both are
+   implemented; the preview currently runs `none`, and the choice is a config value, not code.
+   Also measured: the instance is EU-hosted, so `api.tempo.io` answers with `api.eu.tempo.io` URLs
+   in `self` and `metadata.next` - which is why `tempoPaged$` following an **absolute** next URL is
+   load-bearing, not a nicety.
 5. **Working-hours and billability policy** - is time outside configured hours proposed at
    all, and does the day target vary by person or contract.
 6. ~~**`ai-title` stability** in Claude Code's session logs - it is an internal field and a

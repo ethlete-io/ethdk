@@ -117,7 +117,7 @@ import { WorklogRowComponent } from './worklog-row.component';
     WorklogRowComponent,
   ],
 })
-export class DayReviewComponent {
+export class DayReviewViewComponent {
   protected store = injectDayReview();
 
   protected readonly WARNING_HEADINGS: Record<DayWarningKind, string> = {

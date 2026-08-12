@@ -3,6 +3,7 @@ export * from './client';
 export * from './diff';
 export * from './execute';
 export * from './marker';
+export * from './preview';
 export * from './subtract';
 export * from './wall-clock';
 export * from './worklogs';

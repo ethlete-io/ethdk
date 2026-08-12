@@ -148,7 +148,7 @@ import { TokenFieldComponent } from './token-field.component';
     TokenFieldComponent,
   ],
 })
-export class SettingsComponent {
+export class SettingsViewComponent {
   protected store = injectTimetrackSettings();
 
   private git = injectGitCollector();

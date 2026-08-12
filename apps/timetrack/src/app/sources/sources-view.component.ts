@@ -103,7 +103,7 @@ type SourceRow = {
   encapsulation: ViewEncapsulation.None,
   imports: [BADGE_IMPORTS, BANNER_IMPORTS, CARD_IMPORTS],
 })
-export class SourcesComponent {
+export class SourcesViewComponent {
   private ports = injectHostPorts();
   private windows = injectWindowCollector();
   private agentSessions = injectAgentSessionCollector();

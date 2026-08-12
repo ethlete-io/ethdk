@@ -30,7 +30,7 @@ export type TimerRunLabel = { id: string; issueKey: string; note: string };
           <et-form-field class="w-30 shrink-0" appearance="underline" size="sm">
             <et-input
               [value]="run.issueKey"
-              [attr.aria-label]="'Issue for the run at ' + run.clock"
+              [aria-label]="'Issue for the run at ' + run.clock"
               (valueChange)="label.emit({ id: run.id, issueKey: $event, note: run.note })"
               placeholder="Issue"
             />
@@ -39,7 +39,7 @@ export type TimerRunLabel = { id: string; issueKey: string; note: string };
           <et-form-field class="min-w-50 grow" appearance="underline" size="sm">
             <et-input
               [value]="run.note"
-              [attr.aria-label]="'Note for the run at ' + run.clock"
+              [aria-label]="'Note for the run at ' + run.clock"
               (valueChange)="label.emit({ id: run.id, issueKey: run.issueKey, note: $event })"
               placeholder="What it was for"
             />

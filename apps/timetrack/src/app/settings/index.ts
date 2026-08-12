@@ -1,2 +1,2 @@
 export * from './settings';
-export * from './settings.component';
+export * from './settings-view.component';

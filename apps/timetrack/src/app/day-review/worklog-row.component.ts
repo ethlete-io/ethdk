@@ -45,7 +45,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
         <et-form-field class="w-30 shrink-0" appearance="underline" size="sm">
           <et-input
             [value]="row().issueKey"
-            [attr.aria-label]="'Issue for ' + row().issueKey"
+            [aria-label]="'Issue for ' + row().issueKey"
             (valueChange)="issueChange.emit($event)"
           />
         </et-form-field>
@@ -53,7 +53,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
         <et-form-field class="w-22 shrink-0" appearance="underline" size="sm">
           <et-duration-input
             [value]="row().durationMs"
-            [attr.aria-label]="'Duration for ' + row().issueKey"
+            [aria-label]="'Duration for ' + row().issueKey"
             (valueChange)="durationChange.emit($event ?? 0)"
             durationFormat="hh:mm"
           />
@@ -62,7 +62,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
         <et-form-field class="min-w-50 grow" appearance="underline" size="sm">
           <et-input
             [value]="row().description"
-            [attr.aria-label]="'Description for ' + row().issueKey"
+            [aria-label]="'Description for ' + row().issueKey"
             (valueChange)="descriptionChange.emit($event)"
           />
         </et-form-field>
