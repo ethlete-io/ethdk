@@ -128,7 +128,11 @@ export abstract class DatePickerInputDirective
   public registeredSurface = signal<DatePickerSurfaceBase | null>(null);
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
-  public hasValue = computed(() => this.mixed() || this.value() !== null || this.inputText().length > 0);
+  // `displayValue` is what the field actually renders, which outlives the value itself: the
+  // date-time input draws a half-pick there while its value is still null
+  public hasValue = computed(
+    () => this.mixed() || this.value() !== null || this.inputText().length > 0 || this.displayValue().length > 0,
+  );
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
 
   /** What the field renders as its placeholder - `mixedLabel` while mixed masks the value. */

@@ -184,13 +184,37 @@ describe('DateTimeRangeInputDirective', () => {
     expect(rangeInput.touched()).toBe(true);
   });
 
-  it('starts an empty range at midnight on both ends', async () => {
+  it('holds both days picked from an empty range until their times arrive', async () => {
     await openPicker();
 
     paneButton('.pick-both-days')?.click();
     tick();
 
-    expect(host.value()).toEqual({ start: '2026-07-08 00:00', end: '2026-07-23 00:00' });
+    expect(host.value()).toEqual({ start: null, end: null });
+    expect(rangeInput.hasValue()).toBe(true);
+    expect(rangeInput.displayValue('start')).toBe('07/08/2026, __:__');
+    expect(rangeInput.displayValue('end')).toBe('07/23/2026, __:__');
+    expect(rangeInput.pickerDateRange()).toEqual({ start: host.pickStartDay, end: host.pickEndDay });
+    expect(rangeInput.pickerTimeRange()).toEqual({ start: null, end: null });
+
+    paneButton('.pick-start-time')?.click();
+    tick();
+
+    expect(host.value()).toEqual({ start: '2026-07-08 21:45', end: null });
+    expect(rangeInput.displayValue('end')).toBe('07/23/2026, __:__');
+  });
+
+  it('clears held halves with the range', async () => {
+    await openPicker();
+
+    paneButton('.pick-both-days')?.click();
+    tick();
+
+    rangeInput.clearRange();
+    tick();
+
+    expect(rangeInput.displayValue('start')).toBe('');
+    expect(rangeInput.hasValue()).toBe(false);
   });
 
   it('drops the end while the calendar reopens the range', async () => {
@@ -234,13 +258,22 @@ describe('DateTimeRangeInputDirective', () => {
     expect(host.value()).toEqual({ start: '2026-07-08 09:00', end: '2026-07-08 21:45' });
   });
 
-  it("uses the picked time's own day while the range is empty", async () => {
+  it('holds a time picked while the range is empty until a day arrives', async () => {
     await openPicker();
 
     paneButton('.pick-start-time')?.click();
     tick();
 
-    expect(host.value()).toEqual({ start: '2026-01-01 21:45', end: null });
+    expect(host.value()).toEqual({ start: null, end: null });
+    expect(rangeInput.displayValue('start')).toBe('__/__/____, 21:45');
+    expect(rangeInput.pickerTimeRange()).toEqual({ start: host.pickTime, end: null });
+
+    paneButton('.pick-both-days')?.click();
+    tick();
+
+    // the held start time completes on the day it was waiting for; the end has none yet
+    expect(host.value()).toEqual({ start: '2026-07-08 21:45', end: null });
+    expect(rangeInput.displayValue('end')).toBe('07/23/2026, __:__');
   });
 
   it('clears both sides', () => {
@@ -322,10 +355,12 @@ describe('DateTimeRangeInputDirective', () => {
 
       expect(host.mixed()).toBe(false);
       // neither the hidden 2026-03-01 nor the hidden end may survive the fresh pick
-      expect(host.value()).toEqual({ start: '2026-01-01 21:45', end: null });
+      expect(host.value()).toEqual({ start: null, end: null });
+      expect(rangeInput.displayValue('start')).toBe('__/__/____, 21:45');
+      expect(rangeInput.displayValue('end')).toBe('');
     });
 
-    it('replaces on a picked day range: midnight on both ends', async () => {
+    it('replaces on a picked day range: both days held, the hidden range gone', async () => {
       enterMixed();
       await openPicker();
 
@@ -333,7 +368,9 @@ describe('DateTimeRangeInputDirective', () => {
       tick();
 
       expect(host.mixed()).toBe(false);
-      expect(host.value()).toEqual({ start: '2026-07-08 00:00', end: '2026-07-23 00:00' });
+      expect(host.value()).toEqual({ start: null, end: null });
+      expect(rangeInput.displayValue('start')).toBe('07/08/2026, __:__');
+      expect(rangeInput.displayValue('end')).toBe('07/23/2026, __:__');
     });
   });
 });

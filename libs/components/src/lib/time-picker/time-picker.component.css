@@ -166,14 +166,16 @@
         display: block;
       }
 
-      /* the band's own ends stop at the option's center, so it starts and finishes under a value
-         rather than past it — the column runs top to bottom, so these are vertical cuts */
-      &:where([data-band='start'])::before {
-        inset-block-start: 50%;
+      /* the strip runs through its outer options rather than stopping at their centers, and rounds
+         off there — the column runs top to bottom, so those are its first and last rows */
+      &:where([data-band='start'], [data-band='single'])::before {
+        border-start-start-radius: 8px;
+        border-start-end-radius: 8px;
       }
 
-      &:where([data-band='end'])::before {
-        inset-block-end: 50%;
+      &:where([data-band='end'], [data-band='single'])::before {
+        border-end-start-radius: 8px;
+        border-end-end-radius: 8px;
       }
 
       /* the roving target ("now" while empty) reads as the current position */

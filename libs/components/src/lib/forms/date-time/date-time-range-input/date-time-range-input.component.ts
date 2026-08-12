@@ -153,12 +153,15 @@ export class DateTimeRangeInputComponent {
    */
   protected paneNav = signal<'forward' | 'backward' | null>(null);
 
+  private paneAdvanceSpent = signal(false);
+
   constructor() {
     // every picker open starts back on the calendar pane, without a slide
     effect(() => {
       if (this.rangeInput.pickerOpen()) {
         this.activePane.set('dates');
         this.paneNav.set(null);
+        this.paneAdvanceSpent.set(false);
       }
     });
   }
@@ -169,8 +172,29 @@ export class DateTimeRangeInputComponent {
     this.rangeInput.clearRange();
   }
 
+  /**
+   * Two days are only half of a date & time range, so completing them carries the tabs on to the
+   * times pane - the bottom sheet's version of the desktop panel showing both at once. Once only:
+   * after that the tabs stay where they are put, so going back to correct the days is never
+   * interrupted.
+   */
+  protected handleRangeSelect(range: { start: Date | null; end: Date | null }) {
+    this.rangeInput.selectCalendarRange(range);
+
+    if (range.start === null || range.end === null || this.paneAdvanceSpent()) {
+      return;
+    }
+
+    this.paneAdvanceSpent.set(true);
+    this.showPane('times');
+  }
+
   protected setActivePane(pane: unknown) {
-    const next = PANE_ORDER.find((candidate) => candidate === pane) ?? 'dates';
+    this.paneAdvanceSpent.set(true);
+    this.showPane(PANE_ORDER.find((candidate) => candidate === pane) ?? 'dates');
+  }
+
+  private showPane(next: DateTimeRangePane) {
     const current = this.activePane();
 
     if (next === current) {

@@ -174,7 +174,14 @@ export abstract class DateRangePickerInputDirective
     const { start, end } = this.value();
 
     return (
-      start !== null || end !== null || this.sides.start.inputText().length > 0 || this.sides.end.inputText().length > 0
+      start !== null ||
+      end !== null ||
+      this.sides.start.inputText().length > 0 ||
+      this.sides.end.inputText().length > 0 ||
+      // what a field renders outlives the value itself: the date-time range input draws a
+      // half-pick there while that side's value is still null
+      this.displayValue('start') !== '' ||
+      this.displayValue('end') !== ''
     );
   });
 
@@ -317,6 +324,12 @@ export abstract class DateRangePickerInputDirective
 
   /** @internal Commits one side's typed text, with the subclass's parse rules. */
   public commitSide(side: DateRangeSide, raw: string) {
+    // blurring a field nobody typed in is not an edit - and while a half-pick is on screen its
+    // placeholder text is not something to parse
+    if (raw === this.displayValue(side)) {
+      return;
+    }
+
     const state = this.sides[side];
 
     if (!raw.trim()) {

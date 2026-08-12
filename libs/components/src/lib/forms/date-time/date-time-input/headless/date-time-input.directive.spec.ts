@@ -187,27 +187,85 @@ describe('DateTimeInputDirective', () => {
     expect(dateTimeInput.pickerOpen()).toBe(true);
   });
 
-  it('starts an empty value from the picked day at midnight, then completes it with a time', async () => {
+  it('holds a day picked from empty until a time completes it', async () => {
     await openPicker();
 
     paneButton('.pick-date')?.click();
     tick();
 
-    expect(host.value()).toBe('2026-07-16 00:00');
+    expect(host.value()).toBeNull();
+    expect(dateTimeInput.hasValue()).toBe(true);
+    expect(dateTimeInput.displayValue()).toBe('07/16/2026, __:__');
+    expect(dateTimeInput.pickerDate()).toEqual(host.pickDate);
+    expect(dateTimeInput.pickerTime()).toBeNull();
 
     paneButton('.pick-time')?.click();
     tick();
 
     expect(host.value()).toBe('2026-07-16 21:45');
+    expect(field.value).toBe('07/16/2026, 21:45');
   });
 
-  it("uses the picked time's own day while no date is committed", async () => {
+  it('holds a time picked from empty until a day completes it', async () => {
     await openPicker();
 
     paneButton('.pick-time')?.click();
     tick();
 
-    expect(host.value()).toBe('2026-01-01 21:45');
+    expect(host.value()).toBeNull();
+    expect(dateTimeInput.displayValue()).toBe('__/__/____, 21:45');
+    expect(dateTimeInput.pickerDate()).toBeNull();
+    expect(dateTimeInput.pickerTime()).toEqual(host.pickTime);
+
+    paneButton('.pick-date')?.click();
+    tick();
+
+    expect(host.value()).toBe('2026-07-16 21:45');
+  });
+
+  it('keeps a held half across an unedited blur', async () => {
+    await openPicker();
+
+    paneButton('.pick-date')?.click();
+    tick();
+
+    field.focus();
+    field.blur();
+    field.dispatchEvent(new Event('blur'));
+    tick();
+
+    expect(dateTimeInput.parseError()).toBe(false);
+    expect(dateTimeInput.displayValue()).toBe('07/16/2026, __:__');
+  });
+
+  it('drops a held half once the field is typed into', async () => {
+    await openPicker();
+
+    paneButton('.pick-date')?.click();
+    tick();
+
+    typeAndBlur('12/24/2026, 08:00');
+
+    expect(host.value()).toBe('2026-12-24 08:00');
+
+    paneButton('.pick-time')?.click();
+    tick();
+
+    // the typed day won, so the time lands on it rather than completing the dropped half
+    expect(host.value()).toBe('2026-12-24 21:45');
+  });
+
+  it('clears a held half with the value', async () => {
+    await openPicker();
+
+    paneButton('.pick-date')?.click();
+    tick();
+
+    dateTimeInput.clearValue();
+    tick();
+
+    expect(dateTimeInput.displayValue()).toBe('');
+    expect(dateTimeInput.hasValue()).toBe(false);
   });
 
   it('closes the picker on an outside pointerdown', async () => {
@@ -276,7 +334,7 @@ describe('DateTimeInputDirective', () => {
       expect(host.value()).toBe('2026-03-05 08:15');
     });
 
-    it('replaces on a picked day: midnight, no merge with the hidden time of day', async () => {
+    it('replaces on a picked day: the hidden value goes, the day is held', async () => {
       enterMixed();
       await openPicker();
 
@@ -287,11 +345,17 @@ describe('DateTimeInputDirective', () => {
 
       expect(host.mixed()).toBe(false);
       // the hidden 08:15 must not leak into the fresh pick - replace semantics
-      expect(host.value()).toBe('2026-07-16 00:00');
+      expect(host.value()).toBeNull();
+      expect(dateTimeInput.displayValue()).toBe('07/16/2026, __:__');
       expect(dateTimeInput.pickerOpen()).toBe(true);
+
+      paneButton('.pick-time')?.click();
+      tick();
+
+      expect(host.value()).toBe('2026-07-16 21:45');
     });
 
-    it("replaces on a picked time: the picked time's own day, no merge with the hidden date", async () => {
+    it('replaces on a picked time: the hidden value goes, the time is held', async () => {
       enterMixed();
       await openPicker();
 
@@ -300,7 +364,8 @@ describe('DateTimeInputDirective', () => {
 
       expect(host.mixed()).toBe(false);
       // the hidden 2026-03-05 must not leak into the fresh pick - replace semantics
-      expect(host.value()).toBe('2026-01-01 21:45');
+      expect(host.value()).toBeNull();
+      expect(dateTimeInput.displayValue()).toBe('__/__/____, 21:45');
     });
   });
 });

@@ -47,7 +47,7 @@
         etDateTimePickerPanes
       >
         <et-calendar
-          [value]="dateTimeInput.dateTime()"
+          [value]="dateTimeInput.pickerDate()"
           [min]="dateTimeInput.minDate()"
           [max]="dateTimeInput.maxDate()"
           [dateFilter]="dateTimeInput.dateFilter()"
@@ -56,11 +56,11 @@
           [dateClass]="dateTimeInput.dateClass()"
           [weekNumbers]="dateTimeInput.weekNumbers()"
           [locale]="dateTimeInput.effectiveLocale()"
-          (valueChange)="dateTimeInput.selectDate($event)"
+          (valueChange)="handleDateSelect($event)"
         />
         <div class="et-date-time-input-panel-time-pane">
           <et-time-picker
-            [value]="dateTimeInput.dateTime()"
+            [value]="dateTimeInput.pickerTime()"
             [format]="dateTimeInput.displayFormat()"
             [locale]="dateTimeInput.effectiveLocale()"
             [minuteStep]="minuteStep()"

@@ -1,6 +1,5 @@
 import { booleanAttribute, computed, input, signal, Directive } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
 import { injectDateFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
@@ -8,6 +7,7 @@ import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { withTimeOfDay } from '../../internals/date-time-merge';
 import { parseDateTimeText } from '../../internals/date-time-parse';
+import { createPendingDateTime, renderPartialDateTime } from '../../internals/pending-date-time';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
 
@@ -19,6 +19,10 @@ import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless
  * picker overlay hosts a calendar and a time picker side by side and stays open
  * across picks. String↔`Date` conversion happens exclusively here - calendar
  * and time picker only ever see `Date` objects.
+ *
+ * Picking is two half-picks: whichever half lands first is held (the field renders it against
+ * placeholders for the other) and the value stays `null` until the second one arrives, so a day
+ * never invents a midnight nobody chose.
  */
 @Directive({
   selector: '[etDateTimeInput]',
@@ -90,15 +94,36 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     return parseDateValue(value, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() });
   });
 
-  /** The committed value rendered in `displayFormat`. */
+  private halfPick = createPendingDateTime();
+
+  /** The day the picker calendar highlights - the committed one, else a day picked with no time yet. */
+  public pickerDate = computed(() => this.dateTime() ?? this.halfPick.day());
+
+  /** The time the picker's columns mark as selected - the committed one, else a time picked with no day yet. */
+  public pickerTime = computed(() => this.dateTime() ?? this.halfPick.time());
+
+  /** The committed value rendered in `displayFormat`, or a half-pick rendered against placeholders. */
   public displayValue = computed(() => {
     const dateTime = this.dateTime();
 
-    if (dateTime === null) {
+    if (dateTime !== null) {
+      return formatDateValue(dateTime, { format: this.displayFormat(), locale: this.effectiveLocale() }) ?? '';
+    }
+
+    // a typing mask owns the field text and draws its own guides - a second set of placeholders
+    // would not survive its reconciliation anyway
+    if (this.maskPattern() !== null) {
       return '';
     }
 
-    return formatDateValue(dateTime, { format: this.displayFormat(), locale: this.effectiveLocale() }) ?? '';
+    return (
+      renderPartialDateTime({
+        day: this.halfPick.day(),
+        time: this.halfPick.time(),
+        format: this.displayFormat(),
+        locale: this.effectiveLocale(),
+      }) ?? ''
+    );
   });
 
   /**
@@ -107,6 +132,14 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
    * `parseError` (the value stays `null`).
    */
   public commitInput(raw: string) {
+    // blurring a field nobody typed in is not an edit - and while a half-pick is on screen its
+    // placeholder text is not something to parse
+    if (raw === this.displayValue()) {
+      return;
+    }
+
+    this.halfPick.clear();
+
     if (!raw.trim()) {
       this.inputText.set('');
       this.parseError.set(false);
@@ -142,9 +175,8 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   }
 
   /**
-   * Commits a calendar-picked day, keeping the committed time of day (midnight
-   * while there is none yet). The picker stays open - the user likely still
-   * wants to pick a time.
+   * Commits a calendar-picked day onto the committed time of day, or holds it until a time is
+   * picked. The picker stays open - the user likely still wants to pick that time.
    */
   public selectDate(date: Date | null) {
     if (date === null || !this.interactive()) {
@@ -153,14 +185,12 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
     const current = this.dateTime();
 
-    this.commitDateTime(current === null ? startOfDay(date) : withTimeOfDay(date, current));
-    this.touched.set(true);
+    this.resolvePick(current === null ? this.halfPick.holdDay(date) : withTimeOfDay(date, current));
   }
 
   /**
-   * Commits a picker-selected time onto the committed day (the picked time's
-   * own day - today - while there is none yet). The picker stays open - a time
-   * takes one selection per column.
+   * Commits a picker-selected time onto the committed day, or holds it until a day is picked. The
+   * picker stays open - a time takes one selection per column.
    */
   public selectTime(time: Date | null) {
     if (time === null || !this.interactive()) {
@@ -169,11 +199,31 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
     const current = this.dateTime();
 
-    this.commitDateTime(withTimeOfDay(current ?? time, time));
+    this.resolvePick(current === null ? this.halfPick.holdTime(time) : withTimeOfDay(current, time));
+  }
+
+  /** Drops a held half along with the value - the two are one control state. */
+  public override clearValue() {
+    super.clearValue();
+    this.halfPick.clear();
+  }
+
+  /** Commits a completed pick, or settles the control around a half that is still waiting. */
+  private resolvePick(dateTime: Date | null) {
+    if (dateTime !== null) {
+      this.commitDateTime(dateTime);
+    } else if (this.mixed()) {
+      // a half-pick resolves the bulk-edit mask like any other pick: replace, never merge into
+      // the hidden raw value
+      this.value.set(null);
+      this.mixed.set(false);
+    }
+
     this.touched.set(true);
   }
 
   private commitDateTime(dateTime: Date) {
+    this.halfPick.clear();
     this.inputText.set('');
     this.parseError.set(false);
     this.value.set(formatDateValue(dateTime, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));

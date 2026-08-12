@@ -318,7 +318,10 @@ A combined date & time control (default wire format: the `DATE_FORMAT` token, IS
 format; the anchored picker overlay hosts a [calendar](/components/calendar) and
 a [time picker](/components/time-picker) **side by side** and stays open across
 picks. Below the `md` breakpoint the picker opens as a bottom sheet with **Date /
-Time tabs** switching between the two panes.
+Time tabs** switching between the two panes; picking a day carries the tabs on to
+the time pane, the bottom sheet's version of the panel showing both at once. That
+happens **once** - after it, the tabs stay where they are put, so going back to
+correct the day is never interrupted.
 
 ```html
 <et-form-field>
@@ -354,9 +357,20 @@ locale's short `P` format, the time with the time input's lenient rules -
 
 In the picker, selections **merge**: picking a day keeps the committed time of
 day, picking a time keeps the committed day - and neither closes the overlay.
-While the value is still empty, a first day pick commits the day **at midnight**
-(the time never defaults to the current wall-clock time); a first time pick
-completes with today as the day.
+
+From **empty**, one pick is only half a value, so it is **held** rather than committed:
+the field renders the picked half against placeholders (`08/13/2026, __:__ __`), the
+picker marks it, and the form value stays `null` until the other half lands. Neither
+half is ever invented - a day does not commit at a midnight nobody chose, and a time
+does not commit on a today nobody chose. Typing is unaffected: the lenient parser still
+commits a bare date at midnight, because there the reader wrote the whole entry.
+
+A held half survives an unedited blur, and is dropped by an edit to the field or by
+clearing the control.
+
+The time pane holds its parts the same way: an hour with no minute is not a time either, so
+nothing reaches the field until every column of the picker has been picked. See
+[the time picker](/components/time-picker#held-picks).
 
 The date bounds (`minDate`/`maxDate`/`dateFilter`) and the time bounds
 (`minTime`/`maxTime`/`timeFilter`) are independent: the first gate the calendar pane, the
@@ -413,14 +427,17 @@ only half the value here:
 - **The picker never closes on its own.** Completing the day range leaves it open,
   because the two times are still to come. The reader closes it (Escape, outside
   click, the trigger).
-- **A picked day range keeps each side's committed time of day**, midnight where
-  there is none yet - the same merge the single date-time input does, once per
-  side. Picking a time writes only its own side; while that side has no day yet,
-  the **other** side's day is used (the end of an appointment whose start day is
-  known is on that day, not today), and today only while the range is empty.
+- **A picked day range keeps each side's committed time of day** - the same merge the
+  single date-time input does, once per side, with the same half-picks: a side whose
+  time is still missing holds its day and stays `null` in the value until that time
+  arrives. Picking a time writes only its own side; while that side has no day yet the
+  **other** side's is used (the end of an appointment whose start day is known is on
+  that day), and only with no day anywhere is the time held instead.
 
 Below the `md` breakpoint the picker opens as a bottom sheet with **Dates / Times
 tabs**; on the anchored panel the calendar and the time picker sit side by side.
+Completing the two days carries the tabs on to the times pane - **once**, so going
+back to correct them is never interrupted.
 `datesTabLabel`/`timesTabLabel` relabel the two tabs, and
 `startTimeLabel`/`endTimeLabel` the time picker's own start/end switch.
 

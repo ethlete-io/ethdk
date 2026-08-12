@@ -36,7 +36,13 @@ The component also takes `hoursLabel` / `minutesLabel` / `secondsLabel` / `perio
 
 The format decides the columns, not just their labels: `HH:mm` renders hour + minute columns, `HH:mm:ss` adds seconds, `h:mm a` switches to a 12-hour cycle with an AM/PM column. Localized tokens work too - `p` resolves per locale (12-hour in en-US, 24-hour in de).
 
-While no value is set, the columns anchor their focus and scroll position to "now" (snapped to the steps); the first pick completes that anchor time with the picked part, so a single click on an hour already yields a full time.
+While no value is set, the columns anchor their focus and scroll position to "now" (snapped to the steps).
+
+### Held picks {#held-picks}
+
+**From an empty picker, picks are held until they add up to a whole time.** A lone hour is not a time, and neither is a lone `PM` - so each pick marks its column and moves the anchor, but `value` stays `null` until every column the format shows has been picked. The pick that fills the last one commits them all together. Without that, tapping `6` would commit whatever minute "now" happened to sit on, and a value nobody chose is worse than no value.
+
+Once a whole time exists the columns edit it directly: every later pick rewrites that part and leaves the rest alone.
 
 ## 12-hour cycle
 
@@ -129,7 +135,9 @@ Each `TimePickerOption` carries `selected` / `focused` / `disabled` flags the op
 
 The columns edit one end at a time because a column can only show one value. A day is one click, but a time is two to four, so a range cannot be built by "first pick opens, second closes" the way the calendar's is - the side switch is what makes the current end explicit.
 
-It hops **once**, on its own: the first committed start moves the columns to the end, which is the calendar's "first pick opens the range" translated into clicks. After that the switch stays where it is put, so going back to correct a start is never interrupted mid-edit. Keyboard browsing never hops at all - arrows commit as they move, so a hop there would strand you on the other end halfway through the column.
+It hops **once**, on its own: the pick that _completes_ the start moves the columns to the end, which is the calendar's "first pick opens the range" translated into clicks. Held parts move nothing, so the columns stay put until the start really is a time - the hop can never land mid-pick. After that the switch stays where it is put, so going back to correct a start is never interrupted mid-edit. Keyboard browsing never hops at all - arrows commit as they move, so a hop there would strand you on the other end halfway through the column.
+
+Each end holds its own parts, so switching sides mid-pick and coming back finds them where they were.
 
 **Ordering is not enforced**, exactly as in the calendar and the range inputs: an end before its start is a [validator's](/components/forms#validation) job. The hook for pushing that rule into the picker instead is `timeFilter`'s side argument - "the end must be after the start" is not expressible as a `min`/`max` bound, because the bound differs per end and moves with the value.
 
@@ -140,19 +148,17 @@ const endAfterStart = (candidate: Date, side: 'start' | 'end') =>
 
 <StoryEmbed id="components-date-time-time-picker--range-end-after-start" height="440px" />
 
-### The band, and where it can't go
+### The band
 
-A calendar bands a range because a month grid shows every day at once. Time columns don't: they are independent lists, and only some of them can place both ends at all.
+Every column marks **both** ends, and bands the options that are **inside** the range: an option is banded when the time picking it would produce - itself, with every other column left where it stands - falls between the two ends. So the band answers "does picking this stay inside the range", and it moves as the other columns do.
 
-The rule is that **a column bands between the two ends when every coarser unit of both agrees**, and stays plain otherwise:
+Editing the end of a 12:00 AM – 3:40 PM range, that puts the columns on 3:40 PM: the hours band 12 through 3, because 12:40 PM to 3:40 PM are inside the range while 4:40 PM is not; the minutes band 00 through 40, because 3:00 PM to 3:40 PM are; and AM and PM both band, because 3:40 AM and 3:40 PM both are. Switch to the start and the same rule redraws every column around 12:00 AM instead.
 
-- 09:00 – 17:30 bands the **hours** column from 9 to 17 (there is no unit above it), and leaves **minutes** plain - minute 30 is not "between" anything while the two ends sit in different hours.
-- 09:15 – 09:45 bands the **minutes** from 15 to 45, because both ends share hour 9.
-- In a 12-hour cycle the **hours** column is only chronological inside one half-day, so a range crossing noon bands the **AM/PM** column instead and leaves the hours alone.
+Only the time of day is compared, never the date - the two ends of a [date-time range](/components/date-time-inputs#date-time-range-input) may sit on different days, and the columns show clock positions.
 
-<StoryEmbed id="components-date-time-time-picker--range-within-one-hour" height="440px" />
+The end that is **not** being edited is outlined rather than filled, so both stay readable while only one of them moves.
 
-Wherever a column can place an end, it draws it - the end that is **not** being edited is outlined rather than filled, so both stay readable while only one of them moves.
+<StoryEmbed id="components-date-time-time-picker--range-twelve-hour" height="440px" />
 
 ## Accessibility
 

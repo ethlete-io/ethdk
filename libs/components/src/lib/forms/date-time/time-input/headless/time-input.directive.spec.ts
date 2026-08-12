@@ -180,8 +180,8 @@ describe('TimeInputDirective', () => {
     pickerOption('hour', 9)?.click();
     tick();
 
-    expect(host.value()).not.toBeNull();
-    expect(host.value()?.startsWith('09:')).toBe(true);
+    // the hour alone is held by the picker - no minute nobody picked reaches the field
+    expect(host.value()).toBeNull();
     expect(timeInput.pickerOpen()).toBe(true);
 
     pickerOption('minute', 30)?.click();
@@ -283,11 +283,12 @@ describe('TimeInputDirective', () => {
       expect(host.mixed()).toBe(true);
 
       pickerOption('hour', 9)?.click();
+      pickerOption('minute', 30)?.click();
       tick();
 
       expect(host.mixed()).toBe(false);
       // replace semantics: the hidden 14:20 does not leak into the picked time
-      expect(host.value()?.startsWith('09:')).toBe(true);
+      expect(host.value()).toBe('09:30');
     });
   });
 });

@@ -63,4 +63,76 @@ if (!globalThis.IntersectionObserver) {
   });
 }
 
+// jsdom has no matchMedia - anything reading a media query (the animation utils' reduced-motion
+// check, the overlay's breakpoint strategies) needs this. Nothing ever matches: jsdom has no
+// viewport to match against, so query-derived state stays at its "no match" default.
+if (!globalThis.matchMedia) {
+  const mediaQueryListMock = (query: string): MediaQueryList => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  });
+
+  Object.defineProperty(globalThis, 'matchMedia', {
+    configurable: true,
+    value: mediaQueryListMock,
+    writable: true,
+  });
+}
+
+// jsdom has no Web Animations API - anything running a FLIP or an element transition (the segmented
+// button's moving indicator, the picker panel's resize) needs this to render at all. There is no
+// compositor to drive frames, so the animation reports finished right away and callers waiting on
+// `finish` still get their cleanup.
+if (!Element.prototype.animate) {
+  class AnimationMock extends EventTarget {
+    public finished: Promise<AnimationMock>;
+    public currentTime: number | null = 0;
+    public playState = 'finished';
+    public onfinish: (() => void) | null = null;
+    public oncancel: (() => void) | null = null;
+
+    constructor() {
+      super();
+      this.finished = Promise.resolve(this);
+      queueMicrotask(() => this.dispatchEvent(new Event('finish')));
+    }
+
+    cancel() {
+      this.dispatchEvent(new Event('cancel'));
+    }
+
+    finish() {
+      this.dispatchEvent(new Event('finish'));
+    }
+
+    play() {
+      return undefined;
+    }
+
+    pause() {
+      return undefined;
+    }
+
+    reverse() {
+      return undefined;
+    }
+
+    commitStyles() {
+      return undefined;
+    }
+  }
+
+  Object.defineProperty(Element.prototype, 'animate', {
+    configurable: true,
+    value: () => new AnimationMock() as unknown as Animation,
+    writable: true,
+  });
+}
+
 export {};

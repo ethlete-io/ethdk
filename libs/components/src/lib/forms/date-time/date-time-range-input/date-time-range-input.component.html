@@ -61,7 +61,7 @@
         etDateTimePickerPanes
       >
         <et-calendar
-          [rangeValue]="rangeInput.calendarRange()"
+          [rangeValue]="rangeInput.pickerDateRange()"
           [min]="rangeInput.minDate()"
           [max]="rangeInput.maxDate()"
           [dateFilter]="rangeInput.dateFilter()"
@@ -70,12 +70,12 @@
           [dateClass]="rangeInput.dateClass()"
           [weekNumbers]="rangeInput.weekNumbers()"
           [locale]="rangeInput.effectiveLocale()"
-          (rangeValueChange)="rangeInput.selectCalendarRange($event)"
+          (rangeValueChange)="handleRangeSelect($event)"
           mode="range"
         />
 
         <et-time-picker
-          [rangeValue]="rangeInput.calendarRange()"
+          [rangeValue]="rangeInput.pickerTimeRange()"
           [format]="rangeInput.effectiveDisplayFormat()"
           [locale]="rangeInput.effectiveLocale()"
           [minuteStep]="minuteStep()"

@@ -81,12 +81,14 @@ describe('TimePickerDirective', () => {
     expect(optionButton('hour', 0)?.textContent?.trim()).toBe('12');
   });
 
-  it('completes the anchor time on the first pick and updates parts on later picks', () => {
+  it('holds the picks made while empty and commits once every column has one', () => {
     optionButton('minute', 30)?.click();
     tick();
 
-    expect(host.value()).not.toBeNull();
-    expect(host.value()?.getMinutes()).toBe(30);
+    // a minute alone is not a time; committing one would invent the hour
+    expect(host.value()).toBeNull();
+    expect(selectedIn('minute')?.dataset['value']).toBe('30');
+    expect(selectedIn('hour')).toBeNull();
 
     optionButton('hour', 9)?.click();
     tick();
@@ -95,6 +97,18 @@ describe('TimePickerDirective', () => {
     expect(host.value()?.getMinutes()).toBe(30);
     expect(selectedIn('hour')?.dataset['value']).toBe('9');
     expect(selectedIn('hour')?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('edits the value directly once it is whole', () => {
+    optionButton('minute', 30)?.click();
+    optionButton('hour', 9)?.click();
+    tick();
+
+    optionButton('hour', 11)?.click();
+    tick();
+
+    expect(host.value()?.getHours()).toBe(11);
+    expect(host.value()?.getMinutes()).toBe(30);
   });
 
   it('keeps an off-step selection visible in its column', async () => {
@@ -130,6 +144,42 @@ describe('TimePickerDirective', () => {
     tick();
 
     expect(host.value()?.getHours()).toBe(9);
+  });
+
+  it('holds an AM/PM pick made while empty instead of committing a time nobody chose', () => {
+    host.format.set('h:mm a');
+    tick();
+
+    optionButton('period', 1)?.click();
+    tick();
+
+    expect(host.value()).toBeNull();
+    // the half-day still reads as picked, and no other column claims a value
+    expect(selectedIn('period')?.dataset['value']).toBe('1');
+    expect(selectedIn('hour')).toBeNull();
+    expect(selectedIn('minute')).toBeNull();
+  });
+
+  it('completes a held AM/PM into the half-day the later picks land in', () => {
+    host.format.set('h:mm a');
+    tick();
+
+    optionButton('period', 1)?.click();
+    tick();
+
+    optionButton('hour', 9)?.click();
+    tick();
+
+    // an hour on top of a half-day is still not a time - the minute is nobody's pick yet
+    expect(host.value()).toBeNull();
+    expect(selectedIn('hour')?.dataset['value']).toBe('9');
+    expect(selectedIn('minute')).toBeNull();
+
+    optionButton('minute', 30)?.click();
+    tick();
+
+    expect(host.value()?.getHours()).toBe(21);
+    expect(host.value()?.getMinutes()).toBe(30);
   });
 
   it('moves the selection with arrows, wrapping at the edges', async () => {

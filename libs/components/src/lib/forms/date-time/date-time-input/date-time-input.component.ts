@@ -136,12 +136,15 @@ export class DateTimeInputComponent {
    */
   protected paneNav = signal<'forward' | 'backward' | null>(null);
 
+  private paneAdvanceSpent = signal(false);
+
   constructor() {
     // every picker open starts back on the calendar pane, without a slide
     effect(() => {
       if (this.dateTimeInput.pickerOpen()) {
         this.activePane.set('date');
         this.paneNav.set(null);
+        this.paneAdvanceSpent.set(false);
       }
     });
   }
@@ -152,9 +155,28 @@ export class DateTimeInputComponent {
     this.dateTimeInput.clearValue();
   }
 
-  protected setActivePane(pane: unknown) {
-    const next = pane === 'time' ? 'time' : 'date';
+  /**
+   * A day is only half of a date & time, so the first one picked carries the tabs on to the time
+   * pane - the bottom sheet's version of the desktop panel showing both at once. Once only: after
+   * that the tabs stay where they are put, so going back to correct the day is never interrupted.
+   */
+  protected handleDateSelect(date: Date | null) {
+    this.dateTimeInput.selectDate(date);
 
+    if (date === null || this.paneAdvanceSpent()) {
+      return;
+    }
+
+    this.paneAdvanceSpent.set(true);
+    this.showPane('time');
+  }
+
+  protected setActivePane(pane: unknown) {
+    this.paneAdvanceSpent.set(true);
+    this.showPane(pane === 'time' ? 'time' : 'date');
+  }
+
+  private showPane(next: 'date' | 'time') {
     if (next === this.activePane()) {
       return;
     }
