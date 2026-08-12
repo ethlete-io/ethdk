@@ -1,5 +1,30 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.3
+
+### Minor Changes
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`4d39606`](https://github.com/ethlete-io/ethdk/commit/4d396066840f10f124d0db53e2fc570a7b60f087) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `currentActivity`, which reads a day's events and blocks as one present-tense statement for a tray
+  or status readout, reporting idle over a stale block.
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`056feed`](https://github.com/ethlete-io/ethdk/commit/056feedd6b1498c426e4ea7b9c1a3909e43767d7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `dedupeKeyOf`, the identity a re-collected event is recognised by, so a git scan can re-read a
+  window of history without appending the same commit or branch switch a second time.
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`58fd1e4`](https://github.com/ethlete-io/ethdk/commit/58fd1e455981cb516e380d949138f0098ed86dbc) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add timer runs — `TimerRun`, `matchTimerRuns` and `correlateDay`'s `timerRuns`. A run displaces the
+  reconstruction underneath it, so a timed hour is never proposed twice.
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`7715bf9`](https://github.com/ethlete-io/ethdk/commit/7715bf9bad85b5e3fc828fd28771eb93e589d965) Thanks [@github-actions](https://github.com/apps/github-actions)! - `sessionize` now follows the focused window's repository, so with several editor windows open on
+  different checkouts a title naming one re-points the block instead of leaving it on the branch last
+  committed to.
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`49aa421`](https://github.com/ethlete-io/ethdk/commit/49aa421abe46ee3005e0c2b163a664caddffee26) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the settings layer — `TimetrackSettings`, `parseTimetrackSettings`, `effectiveExclusionRules` and
+  the `TimetrackSettingsStore` port, plus `readJiraCredentials$`/`readTempoCredentials$` and `has$` and
+  `delete$` on `TimetrackSecretStore`.
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`a132fc8`](https://github.com/ethlete-io/ethdk/commit/a132fc861f997850977edf57ccc9911007816754) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the read-only half of a Tempo sync — `previewTempoSync$` resolves the account, the issue ids and
+  the day's remote worklogs into a `TempoSyncPlan`, and `fetchJiraMyself$` reads the account id every
+  Tempo call is scoped to.
+
 ## 0.1.0-next.2
 
 ### Minor Changes

@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.0.0-next.48
+
+### Minor Changes
+
+- [`15d88c6`](https://github.com/ethlete-io/ethdk/commit/15d88c6abb6ead4596357705b9c899e1f6474567) Thanks [@TomTomB](https://github.com/TomTomB)! - Loading indicators wait before they show and hold once shown, so a fast response leaves no flicker - via the new `signalDeferredLoading` from `@ethlete/core`, applied across form field, select, cascader, menu and table.
+
+- [`2c5d867`](https://github.com/ethlete-io/ethdk/commit/2c5d867ac6700549e17883ce4fb1d825f91d3e90) Thanks [@TomTomB](https://github.com/TomTomB)! - Form field: the clear button and busy spinner overlay the value behind a background fade instead of claiming space; a focused or end-aligned control stops short of them so its caret and tail stay visible.
+
+- [`47f0649`](https://github.com/ethlete-io/ethdk/commit/47f0649888eda9a69c757912d06bdc24223fe180) Thanks [@TomTomB](https://github.com/TomTomB)! - Nav tabs: the underline no longer jumps to the clicked tab and snaps back when the overlay router has a navigation guard. The router now exposes `navigationPending`.
+
+- [`47f0649`](https://github.com/ethlete-io/ethdk/commit/47f0649888eda9a69c757912d06bdc24223fe180) Thanks [@TomTomB](https://github.com/TomTomB)! - Added `button[et-overlay-nav-tab-link]`, a nav tab link driven by the overlay router, so `<et-nav-tabs>` can drive tabbed navigation inside an overlay.
+
+- [`c1abd8c`](https://github.com/ethlete-io/ethdk/commit/c1abd8cf246a71f4ebfd548cdccd215883c29f52) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay router: the transition direction now follows where the two routes sit relative to each other, so navigating to an earlier page plays in reverse. Explicit directions and per-route hints still win.
+
+- [`b94ce92`](https://github.com/ethlete-io/ethdk/commit/b94ce92a6aeeaddf5e33b5fe8111f46a7f7340e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay router: added `registerNavigationGuard(guard)`. It runs before every route change, including browser back and forward, and cancels the navigation when it resolves `false`.
+
+- [`2c5d867`](https://github.com/ethlete-io/ethdk/commit/2c5d867ac6700549e17883ce4fb1d825f91d3e90) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: options already on screen stay put under an indeterminate busy bar instead of being replaced by a spinner, and load-more becomes a loading row in its own place.
+
+### Patch Changes
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`3090aaf`](https://github.com/ethlete-io/ethdk/commit/3090aaf84840642f038e96a88d792bbcd19d0ee3) Thanks [@github-actions](https://github.com/apps/github-actions)! - The date/time picker panels no longer change sides while open: drilling from the day grid to the
+  month or year grid resizes the panel in place instead of dropping a picker that opened above the
+  field back below it.
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`350c9b7`](https://github.com/ethlete-io/ethdk/commit/350c9b712d57304a026586e7b32070ae4161ef29) Thanks [@github-actions](https://github.com/apps/github-actions)! - Date-time inputs and the time picker no longer commit a value nobody chose: a lone day, hour, minute or AM/PM pick is held until the rest lands. The time picker's range band now marks the options inside the range.
+
+- [#3059](https://github.com/ethlete-io/ethdk/pull/3059) [`4d91f8b`](https://github.com/ethlete-io/ethdk/commit/4d91f8b2a8fd93fb6d27a14f0a86b8e1b06ec4d6) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-duration-input` now accepts `aria-label` and `aria-labelledby` and forwards them onto its field,
+  so a duration field with no projected `et-label` can be named instead of throwing `ET2201`.
+
+- [`efcc723`](https://github.com/ethlete-io/ethdk/commit/efcc723c15c64314e42cbfa7bb3bb8113a0c6df5) Thanks [@TomTomB](https://github.com/TomTomB)! - An inline `<et-overlay-sidebar>` now lays itself out as the routed content's first grid column, and leaves the grid once it collapses into its page. Width: `--et-overlay-sidebar-inline-size` (default `240px`).
+
+- [`2c5d867`](https://github.com/ethlete-io/ethdk/commit/2c5d867ac6700549e17883ce4fb1d825f91d3e90) Thanks [@TomTomB](https://github.com/TomTomB)! - Progress bar: `--et-progress-bar-height` and `--et-progress-bar-border-radius` now take effect when set on the element or an ancestor - they were registered as non-inheriting and silently kept their defaults.
+
+- [`f66776c`](https://github.com/ethlete-io/ethdk/commit/f66776c8b30cc9ba0c5e3178d64a1c36b4e96f7b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix the select panel opening too tall (and animating down) when a consumer adds block padding to `.et-select-option` - the offscreen placeholder size no longer stacks on top of the row height.
+
 ## 1.0.0-next.47
 
 ### Minor Changes
