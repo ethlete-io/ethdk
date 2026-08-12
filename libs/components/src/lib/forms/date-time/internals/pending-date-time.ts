@@ -66,6 +66,8 @@ export type PendingDateTime = {
   holdDay: (day: Date) => Date | null;
   /** Takes a picked time: the completed date-time when a day was already held, else `null`. */
   holdTime: (time: Date) => Date | null;
+  /** Drops a held day on its own. A time held for the same slot is a separate pick and survives. */
+  clearDay: () => void;
   clear: () => void;
 };
 
@@ -108,6 +110,7 @@ export const createPendingDateTime = (): PendingDateTime => {
 
       return withTimeOfDay(held, picked);
     },
+    clearDay: () => day.set(null),
     clear,
   };
 };

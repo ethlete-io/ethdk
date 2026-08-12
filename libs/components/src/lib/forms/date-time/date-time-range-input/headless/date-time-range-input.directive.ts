@@ -194,8 +194,10 @@ export class DateTimeRangeInputDirective
   private mergeDay(day: Date | null, side: DateRangeSide) {
     const held = this.halfPicks[side];
 
+    // the calendar reports `end: null` for its whole first click, so dropping the held *time* here
+    // would delete a time the reader picked before the days
     if (day === null) {
-      held.clear();
+      held.clearDay();
 
       return null;
     }

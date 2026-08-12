@@ -1,6 +1,6 @@
 import { de } from 'date-fns/locale/de';
 import { splitDateTimeFormat } from './date-time-format-split';
-import { renderPartialDateTime } from './pending-date-time';
+import { createPendingDateTime, renderPartialDateTime } from './pending-date-time';
 
 const day = new Date(2026, 7, 13);
 const time = new Date(2026, 0, 1, 15, 40);
@@ -66,5 +66,30 @@ describe('renderPartialDateTime', () => {
 
   it('has nothing to render for a format it cannot split', () => {
     expect(render({ day, time: null }, 'P')).toBeNull();
+  });
+});
+
+describe('createPendingDateTime', () => {
+  it('completes a held time with the day that arrives after it', () => {
+    const pending = createPendingDateTime();
+
+    expect(pending.holdTime(time)).toBeNull();
+    expect(pending.holdDay(day)).toEqual(new Date(2026, 7, 13, 15, 40));
+    expect(pending.active()).toBe(false);
+  });
+
+  it('drops a held day on its own, leaving a held time standing', () => {
+    const pending = createPendingDateTime();
+
+    pending.holdDay(day);
+    pending.clearDay();
+
+    expect(pending.day()).toBeNull();
+
+    pending.holdTime(time);
+    pending.clearDay();
+
+    expect(pending.time()).toEqual(time);
+    expect(pending.active()).toBe(true);
   });
 });

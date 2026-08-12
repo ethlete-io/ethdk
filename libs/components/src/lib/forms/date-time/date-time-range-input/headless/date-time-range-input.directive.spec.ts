@@ -276,6 +276,24 @@ describe('DateTimeRangeInputDirective', () => {
     expect(rangeInput.displayValue('end')).toBe('07/23/2026, __:__');
   });
 
+  it('keeps a time held for the end while the calendar has only its first day', async () => {
+    await openPicker();
+
+    paneButton('.pick-end-time')?.click();
+    tick();
+
+    // the calendar reports `end: null` for its whole first click - that says nothing about the time
+    paneButton('.pick-start-day')?.click();
+    tick();
+
+    expect(rangeInput.displayValue('end')).toBe('__/__/____, 21:45');
+
+    paneButton('.pick-both-days')?.click();
+    tick();
+
+    expect(host.value()).toEqual({ start: null, end: '2026-07-23 21:45' });
+  });
+
   it('clears both sides', () => {
     typeAndBlur(startField, '07/08/2026, 09:00');
     typeAndBlur(endField, '07/23/2026, 17:30');
