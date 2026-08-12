@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.0-next.47
+
+### Minor Changes
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`9a3a38d`](https://github.com/ethlete-io/ethdk/commit/9a3a38d4e6694997353acc47af25607304631856) Thanks [@github-actions](https://github.com/apps/github-actions)! - Forms: add `colorContrast(path, { against })`, which validates a color field against another field of
+  the same form, plus the `getColorContrastRatio()` helper and `WCAG_CONTRAST_RATIOS`.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`4a3a3cf`](https://github.com/ethlete-io/ethdk/commit/4a3a3cf50d8ffd59a1331b7e3afe8485e813e673) Thanks [@github-actions](https://github.com/apps/github-actions)! - The component generator takes a `--category`, filing the new story under `Components/<Category>/<Name>` and matching the generated docs page's `<StoryEmbed>` id to it.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`2dc1ada`](https://github.com/ethlete-io/ethdk/commit/2dc1ada857e507852d8ca5fbe3dd3dd2c589ec9e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-date-time-range-input`, a start/end control whose picker pairs a range calendar with `et-time-picker`'s new `mode="range"` - one set of columns holding both times.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`99e4f02`](https://github.com/ethlete-io/ethdk/commit/99e4f02accefecf2ef62bfaabb7f32e994893fcc) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: **breaking** - `createGridAdapter` now takes one options object and declares the breakpoints it
+  maps, so both directions are typed per breakpoint. New `mapGridLayout` and `adapter.breakpoints`.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`acdbd60`](https://github.com/ethlete-io/ethdk/commit/acdbd607a3f3250600b48d72ca0c20fa9e0bbd63) Thanks [@github-actions](https://github.com/apps/github-actions)! - Progress steps: project `[etProgressStepDescription]` into a step for a second, muted line under the label, sized by the new `--et-progress-step-description-font-size` token.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`24545d0`](https://github.com/ethlete-io/ethdk/commit/24545d0751f77d7863f58e9c20448732112612de) Thanks [@github-actions](https://github.com/apps/github-actions)! - Selection card: project a mark and a price into the ends with `[etSelectionCardLeading]` / `[etSelectionCardTrailing]`, and move the control with `controlPosition`.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`bb766d5`](https://github.com/ethlete-io/ethdk/commit/bb766d59ac271f541286822adc0aebae86fbbcbc) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et-time-range-input`, a start/end time control whose picker is one range-mode `et-time-picker`, plus a `dialogLabel` input on every date/time picker control. All three range controls now stack their two fields when the field is too narrow to show both values.
+
+### Patch Changes
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`33d6ba8`](https://github.com/ethlete-io/ethdk/commit/33d6ba87a1c1cc39875a5b2aa869f3b1d38bcbc1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: projecting your own `et-grid-item` no longer trips the dev check for an unregistered type, and an item rendered by both a registration and a projected item now reports `ET1905`.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`0e5e789`](https://github.com/ethlete-io/ethdk/commit/0e5e789a7ac6b7d157a6dcec60341243434b2ede) Thanks [@github-actions](https://github.com/apps/github-actions)! - Select: a content-sized panel (`[mirrorPanelWidth]="false"`) no longer resizes while scrolling a virtualized option list - it keeps the widest width it has needed until the search query changes.
+
 ## 1.0.0-next.46
 
 ### Minor Changes

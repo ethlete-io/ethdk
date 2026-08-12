@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.2
+
+### Minor Changes
+
+- [`890baea`](https://github.com/ethlete-io/ethdk/commit/890baea0b301288f2a9a41a68a795e47181a7cdb) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools: a docked panel now takes its room out of the page instead of covering it, so a long page still scrolls to its last row. Toggle it in the layout menu.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`b6c106e`](https://github.com/ethlete-io/ethdk/commit/b6c106e17d8925fd881eb94974782e94ae03686d) Thanks [@github-actions](https://github.com/apps/github-actions)! - The Mocks tab seeds a body in a placeholder, realistic or stress value style, and `provideQueryDevtools({ schema })` takes one API description per query client.
+
+### Patch Changes
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`d3e7a0b`](https://github.com/ethlete-io/ethdk/commit/d3e7a0bae48081d5eefc2f76ccd77ccae9c2e284) Thanks [@github-actions](https://github.com/apps/github-actions)! - The Mocks tab's mock form now keeps a bounded width instead of stretching to the panel, and each seed picker sits next to the button that acts on it.
+
 ## 1.0.0-next.1
 
 ### Minor Changes

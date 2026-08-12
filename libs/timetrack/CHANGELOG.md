@@ -1,5 +1,15 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.2
+
+### Minor Changes
+
+- [`eed8060`](https://github.com/ethlete-io/ethdk/commit/eed80604a2b9b5a2e68fec3b7f56f02060021388) Thanks [@TomTomB](https://github.com/TomTomB)! - Add the day-review layer: `reviewDay()` applies a day's local edits over a freshly correlated day, so
+  re-correlating never discards a row a reviewer has already touched.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`0fcbab9`](https://github.com/ethlete-io/ethdk/commit/0fcbab92b0da0061ce2d5fcea411ebba0b293d80) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the Google Calendar provider and `matchMeetings()`, which turns an accepted event whose conference
+  a window title names into a worklog row of its own.
+
 ## 0.1.0-next.1
 
 ### Minor Changes
