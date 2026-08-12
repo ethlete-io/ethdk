@@ -40,6 +40,16 @@ const presence = (minute: number, kind: 'idle-start' | 'idle-end'): CollectedEve
   kind,
 });
 
+const calendar = (options: { minute: number; minutes: number; title: string; accepted?: boolean }): CollectedEvent => ({
+  at: AT(options.minute),
+  source: 'calendar',
+  kind: 'calendar-event',
+  until: AT(options.minute + options.minutes),
+  title: options.title,
+  accepted: options.accepted ?? true,
+  conferenceUrl: 'https://meet.google.com/abc-defg-hij',
+});
+
 const STORY = 'feat/FIP-2177-user-management';
 
 const DAY: CollectedEvent[] = [
@@ -105,6 +115,41 @@ describe('correlateDay', () => {
     expect(day.unattributed).toHaveLength(1);
     expect(day.check.unattributedMs).toBe(30 * MINUTE);
     expect(day.check.warnings.map((warning) => warning.kind)).toContain('unattributed-time');
+  });
+
+  it('places a meeting in the day as its own row, in clock order', () => {
+    const day = correlateDay({
+      events: [...DAY, calendar({ minute: 150, minutes: 60, title: 'FIP-2222 refinement' })],
+      config: FIP,
+      resolveBase: () => STORY,
+    });
+
+    expect(day.meetings).toHaveLength(1);
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-2177', 'FIP-2177', 'FIP-2222']);
+    expect(day.proposals[2]?.description).toBe('FIP-2222 refinement');
+    expect(day.proposals[2]?.durationMs).toBe(60 * MINUTE);
+  });
+
+  it('warns when a meeting and observed activity claim the same time', () => {
+    const day = correlateDay({
+      events: [...DAY, calendar({ minute: 0, minutes: 60, title: 'FIP-2222 refinement' })],
+      config: FIP,
+      resolveBase: () => STORY,
+    });
+
+    expect(day.meetings[0]?.overlapMs).toBe(60 * MINUTE);
+    expect(day.check.warnings.map((warning) => warning.kind)).toContain('meeting-overlap');
+  });
+
+  it('leaves a meeting no rule can name in the unattributed groups', () => {
+    const day = correlateDay({
+      events: [...DAY, calendar({ minute: 150, minutes: 30, title: 'Braune Digital Weekly' })],
+      config: FIP,
+      resolveBase: () => STORY,
+    });
+
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-2177', 'FIP-2177']);
+    expect(day.unattributed.map((group) => group.evidence[0]?.summary)).toEqual(['Braune Digital Weekly']);
   });
 
   it('proposes nothing for an empty window', () => {

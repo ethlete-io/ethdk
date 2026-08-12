@@ -131,6 +131,15 @@ describe('checkDay', () => {
     expect(check.warnings.map((warning) => warning.kind)).toEqual(['too-many-rows']);
   });
 
+  it('reports time a meeting and observed activity both claim, above a minute of noise', () => {
+    const proposals = [proposal({ issueKey: 'FIP-2177', durationMinutes: 240 })];
+
+    expect(
+      checkDay({ proposals, options: { meetingOverlapMs: 30 * MINUTE } }).warnings.map((warning) => warning.kind),
+    ).toEqual(['meeting-overlap']);
+    expect(checkDay({ proposals, options: { meetingOverlapMs: MINUTE } }).warnings).toEqual([]);
+  });
+
   it('names the rows that rounded to nothing', () => {
     const check = checkDay({ proposals: [proposal({ issueKey: 'FIP-2222', durationMinutes: 0 })] });
 
