@@ -2,6 +2,7 @@ mod db;
 mod error;
 mod http;
 mod keychain;
+mod logs;
 mod process;
 mod secrets;
 mod state;
@@ -27,6 +28,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             http::http_request,
+            logs::agent_log_lines,
+            logs::agent_logs,
             process::run_process,
             secrets::secret_read,
             secrets::secret_write,

@@ -294,11 +294,23 @@ What building it settled:
 seam Codex plugs into, and `parseClaudeCodeSessionLog` implements it. `collectAgentSessions$` drives
 it over every log the host lists, one after another, and hands back a cursor per log.
 
-**What the host still owes**: `AgentSessionLogReader` - enumerating `~/.claude/projects/**/*.jsonl`
-with their mtimes and reading a log from a line offset - and persisting the cursors the collector
-returns. Persist them with the events in one transaction: a cursor that goes missing re-reads its log
-from the top and appends every sample in it twice. The reader must not hand over a line with no
-terminating newline; the agent is appending while it reads.
+**The host half is built too** - `apps/timetrack/src-tauri/src/logs.rs` behind the `agent_logs` and
+`agent_log_lines` commands, with `createTauriAgentSessionLogReader` as the adapter on
+`HostPorts.agentLogs`. Cursor persistence was already done (`events_append` takes them in the same
+transaction, because a cursor that goes missing re-reads its log from the top and appends every
+sample in it twice). Three things the plan did not say:
+
+- **The root has to be a parameter, not a constant.** Confining reads to `~/.claude/projects` is what
+  keeps a `path` arriving from the webview from reading any file the user can - the same reasoning as
+  `run_process`'s allowlist - but a fixed root would also make the reader untestable, so the command
+  takes the root and validates containment against it after canonicalising both.
+- **A missing root is not an error.** A machine that never installed the agent has no
+  `~/.claude`, and the collector has to see an empty list rather than a failure.
+- **A cursor pointing past the end of a log means the log was replaced, not appended to**, and
+  leaving it there strands that log for good. The read falls back to the top; the cursor's _instant_
+  is what keeps the samples already seen from being appended twice.
+
+Eight tests cover it, the last reading this machine's real logs.
 
 Verified: Claude Code writes `~/.claude/projects/<cwd-slug>/<sessionId>.jsonl`, where the
 directory name is the working directory (`-home-tom-dev-fut-frontend`), and `user` /
@@ -811,10 +823,13 @@ so the core holds the seam and the policy the host runs around it - nothing that
   - **`PRAGMA key` must be the first statement on the connection.** Anything before it runs against
     an unkeyed database and permanently confuses SQLCipher about the file's header. The open path
     then reads `sqlite_master` purely to make a wrong key fail loudly instead of at the first query.
-  - **The `bundled-sqlcipher-vendored-openssl` feature needs perl's `FindBin`**, which Fedora ships
-    separately as `perl-FindBin`; without it OpenSSL's `Configure` fails and the error names perl,
-    not the missing module. Vendoring is still right - linking the system OpenSSL means every
-    machine needs its own `OPENSSL_DIR`, macOS worst of all.
+  - **The `bundled-sqlcipher-vendored-openssl` feature needs the full `perl` package**, not the
+    `perl-FindBin` the first failure names. Fedora may only have `perl-interpreter`, its minimal perl,
+    and OpenSSL's `Configure` reaches all over the standard library - `FindBin`, then `IPC::Cmd`, then
+    `Time::Piece`, and on. It aborts on the first module it misses, so installing them individually
+    costs one full build per module and never converges; install `perl` and be done. (`perl-core` is
+    not a Fedora 44 package.) Vendoring is still right - linking the system OpenSSL means every
+    machine needs its own `OPENSSL_DIR`, macOS worst of all, where there are no headers to point it at.
   - **`keyring` v4 renamed every backend feature** (`zbus-secret-service-keyring-store`,
     `apple-native-keyring-store`, …) and enables the Linux and Windows ones by default, so the
     backends have to be selected per `[target.'cfg(target_os = …)']` or a macOS build drags in dbus.
@@ -857,18 +872,27 @@ provider, and the store's core half - persistence ports, exclusion rules, retent
 plus the Claude Code session-log parser with its cursor-driven collector, and the git reconcile pass
 (358 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
 keychain key, all five ports wired over `invoke`, and the theming and Tailwind foundation the review
-UI will sit on. Remaining: the window/idle collector, the file reader behind `AgentSessionLogReader`
-(cursor persistence is done, the reader is not), the inotify watch on `.git/HEAD`, Google's OAuth
-dance (still the last thing standing between the calendar provider and a real day), the day-review
-UI, tray. No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a
+UI will sit on, plus the file reader behind `AgentSessionLogReader`. Remaining: the window/idle
+collector, the timer that drives `collectAgentSessions$` and persists what it returns, the inotify
+watch on `.git/HEAD`, Google's OAuth dance (still the last thing standing between the calendar
+provider and a real day), the day-review UI, tray. No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a
 real day.
 
-**Nothing Rust has been compiled yet.** The webview and OpenSSL build dependencies are not installed
-on the Linux box this was written on, so `db.rs`, `keychain.rs` and the schema were verified by
-compiling them into a throwaway crate against plain bundled SQLite - every statement, the cursor
-upsert, the `IN` placeholder lists and the retention delete all run - but the SQLCipher path itself,
-the keychain round-trip and everything touching `tauri::` are unverified. First job on a machine with
-the prerequisites: `yarn timetrack`.
+**All of the Rust type-checks, and the log reader's tests pass; nothing else has run.** With the
+webview dependencies installed and `cargo` on the path, every module - including `lib.rs`'s `setup`
+closure and the sixteen commands in `generate_handler!` - checks clean against the real `tauri` 2.11,
+`keyring` 4.1, `reqwest` 0.13 and `rusqlite` 0.40. Nothing had to change to get there, which retires
+the errors this plan expected around `keyring` v4's API, `State<'_, T>` in an `async` command, and
+`AsyncWriteExt` (tokio's `process` feature pulls in `io-util` on its own).
+
+Both the check and `cargo test` run through a scratch crate whose `[lib] path` points at the real
+`src/lib.rs` and which depends on `rusqlite`'s plain `bundled` feature, so neither waits on the
+vendored OpenSSL build - the trick to reuse whenever perl or OpenSSL is in the way. The path has to
+be the crate root rather than a `#[path]`-included submodule, or every `crate::…` in these files
+resolves against the wrong root. What remains genuinely unverified is everything that needs the
+built app: the SQLCipher `PRAGMA key` round-trip, the keychain, and every command reached over IPC
+rather than called directly. First job once `bundled-sqlcipher-vendored-openssl` builds:
+`yarn timetrack`.
 
 **The dev machine is now macOS, not the Wayland box this plan was written on.** The design is
 unaffected - the window source was always meant to be pluggable - but it re-ranks the work:

@@ -15,15 +15,22 @@ Fedora:
 
 ```bash
 sudo dnf install -y webkit2gtk4.1-devel libsoup3-devel librsvg2-devel \
-  libayatana-appindicator-gtk3-devel gtk3-devel patchelf perl-FindBin
+  libayatana-appindicator-gtk3-devel gtk3-devel patchelf perl
 ```
 
-`perl-FindBin` is needed because `rusqlite`'s `bundled-sqlcipher-vendored-openssl` feature builds
-OpenSSL from source, and its `Configure` script needs that module. Building OpenSSL rather than
-linking the system one is deliberate: it is the difference between a clean checkout building
-everywhere and every machine needing its own `OPENSSL_DIR`.
+`perl` is the whole point of that last entry: Fedora may only have `perl-interpreter`, its minimal
+perl, and `rusqlite`'s `bundled-sqlcipher-vendored-openssl` feature builds OpenSSL from source with a
+`Configure` script that reaches all over perl's standard library — `FindBin`, `IPC::Cmd`,
+`File::Compare`, `File::Copy`, `Pod::Html`, `Time::Piece` and more. Install the full `perl`
+metapackage. Do **not** add them one at a time: `Configure` aborts on the first module it misses, so
+each install reveals exactly one more and the whole exercise takes as many rounds as there are
+modules. (`perl-core` is not a Fedora 44 package.)
 
-macOS needs only Xcode's command line tools — perl there already ships `FindBin`.
+Building OpenSSL rather than linking the system one is deliberate: it is the difference between a
+clean checkout building everywhere and every machine needing its own `OPENSSL_DIR` — Fedora has
+`openssl-devel`, but macOS ships LibreSSL with no headers.
+
+macOS needs only Xcode's command line tools — perl there already ships all of these.
 
 ## Running it
 

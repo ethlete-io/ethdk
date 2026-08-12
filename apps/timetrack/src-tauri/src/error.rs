@@ -10,6 +10,8 @@ pub enum TimetrackError {
     Request(#[from] reqwest::Error),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("host error: {0}")]
+    Host(#[from] tauri::Error),
     #[error("serialization error: {0}")]
     Serde(#[from] serde_json::Error),
     #[error("{0}")]

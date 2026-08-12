@@ -1,3 +1,4 @@
+export * from './agent-session-log-reader';
 export * from './event-store';
 export * from './invoke';
 export * from './ledger-store';
