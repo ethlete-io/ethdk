@@ -34,6 +34,7 @@ import {
   injectRenderer,
   injectStyleManager,
   randomId,
+  signalElementDimensions,
 } from '@ethlete/core';
 import {
   AnyBearerAuthProvider,
@@ -111,11 +112,13 @@ import {
 } from 'rxjs';
 import {
   COMPONENTS_VERSION,
+  MenuCheckboxItemComponent,
   MenuComponent,
   MenuDirective,
   MenuItemComponent,
   MenuRadioGroupComponent,
   MenuRadioItemComponent,
+  MenuSeparatorComponent,
   MenuSurfaceDirective,
   MenuTriggerDirective,
 } from '@ethlete/components';
@@ -216,6 +219,7 @@ type PersistedState = {
   listHeight?: number | null;
   drawerHeight?: number | null;
   dock?: DevtoolsDock;
+  reservesSpace?: boolean;
   floatRect?: FloatRect;
   floatParked?: boolean;
   activeTab?: DevtoolsTab;
@@ -294,6 +298,17 @@ const DEVTOOLS_LAYOUTS = [
 ] as const satisfies readonly { id: DevtoolsLayout; glyph: string; label: string; hint: string }[];
 
 const layoutFor = (dock: DevtoolsDock) => DEVTOOLS_LAYOUTS.find((layout) => layout.id === dock) ?? DEVTOOLS_LAYOUTS[0];
+
+/**
+ * The padding a dock takes out of the page, per edge. Logical properties, because the panel's own
+ * placement is: `bottom` is pinned with `inset-block-end`, `right` with `inset-inline-start: auto`.
+ */
+const DOCK_PADDING = {
+  bottom: 'paddingBlockEnd',
+  top: 'paddingBlockStart',
+  left: 'paddingInlineStart',
+  right: 'paddingInlineEnd',
+} as const satisfies Record<Exclude<DevtoolsDock, 'float'>, keyof CSSStyleDeclaration>;
 
 const noop = () => undefined;
 
@@ -680,11 +695,13 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     QueryDevtoolsTimelineTabComponent,
     QueryDevtoolsToggleComponent,
     DragHandleDirective,
+    MenuCheckboxItemComponent,
     MenuComponent,
     MenuDirective,
     MenuItemComponent,
     MenuRadioGroupComponent,
     MenuRadioItemComponent,
+    MenuSeparatorComponent,
     MenuSurfaceDirective,
     MenuTriggerDirective,
     ResizeHandlesComponent,
@@ -775,6 +792,12 @@ export class QueryDevtoolsComponent implements OnInit {
   /** The entry the layout button shows, so it names where the panel is rather than where it could go. */
   protected currentLayout = computed(() => layoutFor(this.dock()));
 
+  /**
+   * Whether a docked panel takes its size out of the page instead of covering it - so the last rows of a
+   * long page can still be scrolled to. Only docks can: a float sits wherever it was dragged.
+   */
+  protected reservesSpace = signal(this.persisted.reservesSpace ?? true);
+
   /** Where the floating panel sits and how big it is. Kept while docked, so a return to float restores it. */
   private floatRect = signal<FloatRect>(this.persisted.floatRect ?? DEFAULT_FLOAT_RECT);
 
@@ -842,6 +865,25 @@ export class QueryDevtoolsComponent implements OnInit {
   /** The floating panel's offset from the viewport's top-left, or `null` while it is docked. */
   protected panelInsetBlock = computed(() => (this.floating() ? this.floatRect().y : null));
   protected panelInsetInline = computed(() => (this.floating() ? this.floatRect().x : null));
+
+  /**
+   * The panel's rendered size, not its dragged one - the stylesheet clamps a dock (`min-block-size`,
+   * `max-block-size: 90vh`) and it is the clamped size the page has to give up.
+   */
+  private panelSize = signalElementDimensions(this.panelEl);
+
+  /** Which padding a docked panel asks of the page and how much, or `null` when it asks for none. */
+  private pageReservation = computed(() => {
+    const dock = this.dock();
+
+    if (dock === 'float' || this.poppedOut() || !this.open() || !this.reservesSpace()) return null;
+
+    const size = this.panelSize().offset;
+
+    if (!size) return null;
+
+    return { padding: DOCK_PADDING[dock], px: this.sideDocked() ? size.width : size.height };
+  });
 
   /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */
   public detailTab = signal<DetailTab>(this.persisted.detailTab ?? 'overview');
@@ -1393,6 +1435,7 @@ export class QueryDevtoolsComponent implements OnInit {
         listHeight: this.listHeight(),
         drawerHeight: this.drawerHeight(),
         dock: this.dock(),
+        reservesSpace: this.reservesSpace(),
         floatRect: this.floatRect(),
         floatParked: this.floatParked(),
         activeTab: this.activeTab(),
@@ -1422,6 +1465,21 @@ export class QueryDevtoolsComponent implements OnInit {
       }
 
       writeQueryDevtoolsStore(scope, STORAGE_KEY, state);
+    });
+
+    // `border-box` is what makes the padding eat into a `height: 100%` shell instead of pushing it past
+    // the edge of the window; with the root's default `auto` height it changes nothing. The cleanup runs
+    // before each re-run, so the edge a dock switch left behind is always given back.
+    effect((onCleanup) => {
+      const reservation = this.pageReservation();
+
+      if (!reservation) return;
+
+      const root = this.document.documentElement;
+
+      this.renderer.setStyle(root, { boxSizing: 'border-box', [reservation.padding]: `${reservation.px}px` });
+
+      onCleanup(() => this.renderer.removeStyles(root, 'boxSizing', reservation.padding));
     });
 
     // A window that shrinks below the floating panel would otherwise leave it half (or wholly) off
@@ -1605,6 +1663,7 @@ export class QueryDevtoolsComponent implements OnInit {
     clearQueryDevtoolsMockStore();
 
     this.dock.set('bottom');
+    this.reservesSpace.set(true);
     this.panelHeight.set(DEFAULT_HEIGHT);
     this.panelWidth.set(DEFAULT_WIDTH);
     this.floatRect.set(DEFAULT_FLOAT_RECT);

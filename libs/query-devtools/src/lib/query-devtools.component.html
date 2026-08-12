@@ -172,6 +172,15 @@
                     </et-menu-radio-item>
                   }
                 </et-menu-radio-group>
+                <et-menu-separator />
+                <et-menu-checkbox-item
+                  [checked]="reservesSpace()"
+                  [disabled]="floating()"
+                  (checkedChange)="reservesSpace.set($event)"
+                  title="The page gives up the room the panel covers, so its last rows can still be scrolled to. Docks only - a float sits wherever it was dragged."
+                >
+                  Reserve page space
+                </et-menu-checkbox-item>
               </et-menu>
             </ng-template>
           </div>

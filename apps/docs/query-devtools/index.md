@@ -140,6 +140,27 @@ the panel currently is - lists every alternative:
 Either side dock stacks the master/detail and split views vertically rather than
 side by side, so neither pane is squeezed below what it needs.
 
+### Reserve page space
+
+A dock covers the edge it sits on, and what it covers on a long page is the part
+you scrolled to the bottom to read. **Reserve page space** - the checkbox under the
+layouts in the same menu, on by default - takes that room out of the page instead:
+the panel's rendered size becomes padding on the document element, on whichever
+edge it is docked to, so the page can still be scrolled to its last row and nothing
+ends up behind the panel. The padding follows the drag handle, so resizing the panel
+resizes the page with it, and it is given back the moment the panel is closed,
+floated or popped out.
+
+The padding is applied with `box-sizing: border-box` on the root, so an app whose
+shell is `height: 100%` gives up the room from its own height rather than growing
+past the bottom of the window. A shell sized in viewport units (`100dvh`) or laid
+out with `position: fixed` is not reachable this way - it is measured against the
+window, not the document - so there the panel still covers what it sits on. Turn
+the checkbox off if the reflow is what you are debugging; the choice is
+[persisted](#persistence) with the rest of the view state. It is disabled while the
+panel floats: a float sits wherever it was dragged, over the page rather than on an
+edge of it.
+
 A **pop-out** is the _same_ live panel, not a second one, so every signal in it
 keeps updating from the app you are inspecting, and **Inspect** still highlights
 components in the app window. **⧈ Dock back** (or closing the window) brings it
