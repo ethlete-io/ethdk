@@ -1,5 +1,5 @@
 {
-  "tailwindCSS.experimental.configFile": "apps/playground/src/styles/storybook.css",
+  "tailwindCSS.experimental.configFile": "apps/storybook/src/styles/storybook.css",
   "tailwindCSS.rootFontSize": 10,
   "cSpell.words": [
     "autofilled",

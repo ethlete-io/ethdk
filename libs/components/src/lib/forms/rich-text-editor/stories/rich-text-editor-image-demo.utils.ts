@@ -6,7 +6,7 @@ import { RichTextEditorImageFailure } from '../tools/rich-text-editor-image-uplo
 
 const DEMO_API_URL = 'https://rich-text-editor-image-demo.ethlete.local';
 
-/** Served by Storybook from `apps/playground/src/assets` - a real URL, which is what the value needs
+/** Served by Storybook from `apps/storybook/src/assets` - a real URL, which is what the value needs
  *  (core's markdown pipeline deliberately refuses `data:` URLs, so a data URI would not round-trip). */
 const UPLOADED_IMAGE_URL = '/assets/rich-text-editor-image.svg';
 

@@ -12,7 +12,7 @@ import { SelectionListOrientation } from '../../selection-list.types';
 @Component({
   selector: 'et-sb-checkbox-group',
   template: `
-    <!-- Frame width in px, not Tailwind's rem-based max-w-* scale: this playground runs a 62.5% root
+    <!-- Frame width in px, not Tailwind's rem-based max-w-* scale: Storybook runs a 62.5% root
          font, which shrinks max-w-md to ~280px and would make the horizontal row wrap after two
          options regardless of how much room a real app has. -->
     <div

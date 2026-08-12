@@ -21,7 +21,7 @@ module.exports = {
         'cli',
         'contentful',
         'eslint-plugin',
-        'playground',
+        'storybook',
         'docs',
         'deps',
         'ci',

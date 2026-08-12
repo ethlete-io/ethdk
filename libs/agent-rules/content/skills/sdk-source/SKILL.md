@@ -94,7 +94,7 @@ Paths are relative to the checkout root:
 | `libs/cdk/`                         | The predecessor UI toolkit, maintenance mode - only for code still on it    |
 | `libs/eslint-plugin/src/`           | The lint rules, including the message text explaining each one              |
 | `apps/docs/`                        | The markdown behind {%docsBaseUrl%}                                         |
-| `apps/playground/`                  | The Storybook app - stories also live next to each component                |
+| `apps/storybook/`                   | The Storybook app - stories also live next to each component                |
 
 Inside a component domain: `<name>.component.ts` with its `.css` next to it,
 `<name>.imports.ts` (the imports array to spread into a consumer component),

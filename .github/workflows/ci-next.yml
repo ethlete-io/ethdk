@@ -56,7 +56,7 @@ jobs:
       # Accept a real change with `nx run treeshake:bundle-goldens:update` and commit goldens.json.
       - run: yarn nx run treeshake:bundle-goldens
 
-      - run: yarn nx run playground:build-storybook:ci
+      - run: yarn nx run storybook:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@e2eda2e106cfa35cdbcf4ac9ddaf6c4756df2c8c # v0
         with:

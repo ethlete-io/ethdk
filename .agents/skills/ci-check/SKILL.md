@@ -32,7 +32,7 @@ yarn nx run-many -t lint                  # 4. ESLint, incl. @nx/dependency-chec
 yarn nx run-many -t test                  # 5. all unit tests
 yarn nx run-many -t build                 # 6. all libs + apps (docs build fails on dead links)
 yarn nx run treeshake:bundle-goldens      # 7. bundle-size goldens
-yarn nx run playground:build-storybook:ci # 8. Storybook production build
+yarn nx run storybook:build-storybook:ci # 8. Storybook production build
 ```
 
 Step 8 is the slowest by far. Skip it only when the change touches no component source

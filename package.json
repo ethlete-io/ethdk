@@ -18,8 +18,7 @@
     "prepare": "husky",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
-    "start": "nx serve playground",
-    "storybook": "nx run playground:storybook:network",
+    "storybook": "nx run storybook:storybook:network",
     "timetrack": "nx tauri:dev timetrack-app",
     "timetrack:build": "nx tauri:build timetrack-app",
     "update-nx": "rm -f migrations.json && yarn dlx nx migrate latest && yarn dlx nx migrate --run-migrations --if-exists"

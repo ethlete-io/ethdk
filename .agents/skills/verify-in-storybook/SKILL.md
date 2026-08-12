@@ -21,7 +21,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:4400/
 - `200` → it's up, proceed.
 - anything else → start it in the background and wait for the port:
   ```bash
-  npm run storybook   # = nx run playground:storybook --no-open, serves on :4400
+  npm run storybook   # = nx run storybook:storybook --no-open, serves on :4400
   ```
   Run it with `run_in_background: true` and poll the curl above until it returns `200`
   (first cold start can take 30–60s).

@@ -60,7 +60,7 @@ const injectDemoSocket = toInjectFn(devtoolsDemoSocket);
 
 type QdState = 'idle' | 'loading' | 'ok' | 'error';
 
-/** Color themes the playground registers - a story may name them, library code may not. */
+/** Color themes Storybook registers - a story may name them, library code may not. */
 const STATE_THEMES: Record<QdState, string> = {
   idle: 'neutral',
   loading: 'warning',

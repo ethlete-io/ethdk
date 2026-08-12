@@ -55,7 +55,7 @@ jobs:
       - run: yarn nx run treeshake:bundle-goldens
 
       - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
-        run: yarn nx run playground:build-storybook:ci
+        run: yarn nx run storybook:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@e2eda2e106cfa35cdbcf4ac9ddaf6c4756df2c8c # v0
         if: "${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"

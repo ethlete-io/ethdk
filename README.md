@@ -198,10 +198,9 @@ Now all that's left is to create a PR and make sure that all workflows pass.
 
 ### Useful scripts
 
-| Script       | Description                                 |
-| ------------ | ------------------------------------------- |
-| `change`     | Run the changeset assistant                 |
-| `start`      | Run the playground (test) app in serve mode |
-| `storybook`  | Run the storybook instance                  |
-| `nx:update`  | Run nx update                               |
-| `nx:migrate` | Apply migrations created by `nx:update`     |
+| Script       | Description                             |
+| ------------ | --------------------------------------- |
+| `change`     | Run the changeset assistant             |
+| `storybook`  | Run the storybook instance              |
+| `nx:update`  | Run nx update                           |
+| `nx:migrate` | Apply migrations created by `nx:update` |

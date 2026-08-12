@@ -13,7 +13,7 @@ Commits in this repo are **lean** and follow the **commitlint rules**
     `build`, `ci`, `chore`, `revert`
   - `scope` is **required**, ∈ `core`, `cdk`, `agent-rules`, `components`,
     `query`, `query-devtools`, `eslint-plugin`, `types`, `cli`, `contentful`,
-    `playground`, `docs`, `deps`, `ci`, `release`, `repo` (lib scopes for
+    `storybook`, `docs`, `deps`, `ci`, `release`, `repo` (lib scopes for
     `libs/*`, `repo` for repo-level things like `.claude/`, tooling, root
     configs)
   - Subject is **sentence-case** ("Add git-commit skill", not

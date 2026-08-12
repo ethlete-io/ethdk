@@ -1,6 +1,6 @@
 ---
 name: storybook-styling
-description: How to style Storybook story files in this repo - where Tailwind is (and isn't) allowed, and which utilities actually exist in the playground's trimmed Tailwind theme (most of the default palette and text scale do not). Read BEFORE writing or editing any `*.stories.ts` / `stories/` component, or when a class in a story renders with no visible effect.
+description: How to style Storybook story files in this repo - where Tailwind is (and isn't) allowed, and which utilities actually exist in Storybook's trimmed Tailwind theme (most of the default palette and text scale do not). Read BEFORE writing or editing any `*.stories.ts` / `stories/` component, or when a class in a story renders with no visible effect.
 ---
 
 # Styling story files
@@ -14,12 +14,12 @@ Two separate rules, often confused:
    folder) for demo layout only - the frame around the component, not the
    component's own look.
 
-The trap is rule 2's small print: the playground ships a **trimmed** Tailwind
+The trap is rule 2's small print: Storybook ships a **trimmed** Tailwind
 theme, so a large part of what you'd type from muscle memory silently does
 nothing. Tailwind emits no class for an unknown token; there is no error, the
 element just renders unstyled.
 
-## The theme: `apps/playground/src/styles/storybook.css`
+## The theme: `apps/storybook/src/styles/storybook.css`
 
 That file is the whole story-side design system: it imports Tailwind, sets the
 `@theme`, then pulls in `themes.css` / `surface-themes.css` (the generated theme
@@ -43,7 +43,7 @@ vars). Read it before reaching for an unfamiliar utility. What it does:
 Check before you guess - if `@theme` doesn't define the token, the class doesn't exist:
 
 ```bash
-grep -nE -- '--(color|text|font)-' apps/playground/src/styles/storybook.css
+grep -nE -- '--(color|text|font)-' apps/storybook/src/styles/storybook.css
 ```
 
 ## Colors in a story come from theming, not utilities
@@ -58,8 +58,8 @@ token names).
   story's expanded-row panel and its nested sub-table are painted.
 - An accent: scope it with `[etProvideColor]="'brand'"` and read
   `--et-theme-color-primary-solid` / `--et-theme-color-ink-solid`. Theme names
-  (`brand`, `danger`, `success`, `neutral`) are what **the playground** registers
-  (`apps/playground/src/themes.ts`) - fine to name in a story, never in library code.
+  (`brand`, `danger`, `success`, `neutral`) are what **Storybook** registers
+  (`apps/storybook/src/themes.ts`) - fine to name in a story, never in library code.
 - Better still: don't hand-paint. Compose the library component that already does it
   (`<et-chip>` for a badge cell, `<et-button>` for an action) - that's also what a
   consumer would write.

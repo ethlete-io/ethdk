@@ -91,11 +91,11 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:4400/
 `200` → proceed. Otherwise start it in the background and poll until `200`:
 
 ```bash
-npm run storybook   # nx run playground:storybook --no-open, serves on :4400
+npm run storybook   # nx run storybook:storybook --no-open, serves on :4400
 ```
 
 For a **physical device** on your LAN (not needed for emulators) bind all
-interfaces instead: `nx run playground:storybook --no-open -c network` (host
+interfaces instead: `nx run storybook:storybook --no-open -c network` (host
 `0.0.0.0`), then use the host machine's LAN IP in the URL.
 
 Get the story id exactly as in `verify-in-storybook` step 2 (from

@@ -202,7 +202,7 @@ readable - to see the zoom itself, open the bare story via `sim-open` and tap.
 
 ## The probe page
 
-`apps/playground/src/assets/viewport-probe.html`, served by Storybook at
+`apps/storybook/src/assets/viewport-probe.html`, served by Storybook at
 `/assets/viewport-probe.html?story=<story-id>`. Loads the story iframe full-size
 and overlays a HUD pinned to the **visual** viewport (plain `position: fixed`
 scrolls out of view when the keyboard pans the layout viewport - itself one of

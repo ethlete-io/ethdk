@@ -23,7 +23,7 @@ classes (plus `:root` defaults) and derives the public tokens below on `:root`
 and every scope class - so the tokens are **always resolvable**; components just
 read them.
 
-Storybook (`apps/playground`) registers both systems globally
+Storybook (`apps/storybook`) registers both systems globally
 (`.storybook/preview.ts`, themes in `src/themes.ts` / `src/surface-themes.ts`),
 including a `danger` theme with `type: 'error'`.
 
@@ -125,6 +125,6 @@ theme structure).
 
 Styling a **story** file rather than a component? The same colour rule applies (no
 hardcoded colours, no `dark:` - a story sits inside a surface theme too), but the
-Tailwind side has its own traps: the playground's theme resets `--color-*` and
+Tailwind side has its own traps: Storybook's theme resets `--color-*` and
 `--text-*`, so most utilities you'd reach for don't exist. See the
 **`storybook-styling`** skill.

@@ -70,7 +70,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
 @Component({
   selector: 'et-sb-table',
   template: `
-    <!-- Frame width in px, not Tailwind's rem-based max-w-* scale: this playground runs a 62.5% root
+    <!-- Frame width in px, not Tailwind's rem-based max-w-* scale: Storybook runs a 62.5% root
          font (1rem = 10px), which would shrink max-w-3xl to 480px and truncate every column. The sticky
          demo gets a deliberately narrower frame than its columns need, so the table scrolls horizontally
          and the pinned columns have something to pin against (narrow the viewport further to watch them
@@ -181,7 +181,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
              typed from that column - no viewChild, and the column definitions stay plain data.
              A cell composes the library's own components rather than restyling text: et-chip already
              draws its pill from the surface tokens, so the cell needs no colors of its own (the
-             playground's Tailwind theme resets --color-*, so a bg-blue-500 would do nothing anyway -
+             Storybook's Tailwind theme resets --color-*, so a bg-blue-500 would do nothing anyway -
              see the storybook-styling skill). -->
         <ng-template [etTableCell]="columns().role" let-value="value">
           <et-chip>{{ value }}</et-chip>

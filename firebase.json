@@ -2,7 +2,7 @@
   "hosting": [
     {
       "target": "storybook-prod",
-      "public": "dist/storybook/playground",
+      "public": "dist/storybook",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
@@ -13,7 +13,7 @@
     },
     {
       "target": "storybook-next",
-      "public": "dist/storybook/playground",
+      "public": "dist/storybook",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {

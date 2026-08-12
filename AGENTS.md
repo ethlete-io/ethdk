@@ -28,8 +28,8 @@ All under `libs/<name>`, published as `@ethlete/<name>`:
 | `agent-rules`    | Portable agent rules + skills, compiled for Claude Code / Codex / Cursor / Copilot. See below.                                             | -                             |
 
 Rough layering: `types` → `core` → `query` → `components` → `contentful` /
-`query-devtools`. No published lib depends on `cdk` any more - it is a leaf in the lib
-graph (only the playground's `cdk/*` demo pages still import it).
+`query-devtools`. Nothing depends on `cdk` any more - it is a leaf in the lib graph,
+reachable only through its own stories.
 
 ### query-devtools: why three entry points
 
@@ -63,7 +63,7 @@ front and the rest on first open. `tools/treeshake` guards both numbers.
 Component styles are plain CSS (global `et-`-prefixed classes,
 `ViewEncapsulation.None`) - see the `.css` files next to each component. **Do not
 use Tailwind in component source.** Tailwind utility classes are allowed **only in
-story files** (`*.stories.ts` and `stories/`), for demo layout - and the playground's
+story files** (`*.stories.ts` and `stories/`), for demo layout - and Storybook's
 Tailwind theme is trimmed (no default color palette, no `text-sm`-style scale), so
 read the **`storybook-styling`** skill (`.agents/skills/storybook-styling/`) before
 styling a story. An unknown utility emits nothing and fails silently.

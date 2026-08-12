@@ -17,9 +17,6 @@
   "include": [],
   "references": [
     {
-      "path": "./tsconfig.app.json"
-    },
-    {
       "path": "./.storybook/tsconfig.json"
     }
   ],

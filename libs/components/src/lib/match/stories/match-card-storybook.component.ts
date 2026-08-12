@@ -20,7 +20,7 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
           stacking and face each other. <code>size</code> pins any one of them.
         </p>
 
-        <!-- px, not a max-w-* class: the playground's root font is 62.5%, so the rem container scale is 62.5% of
+        <!-- px, not a max-w-* class: Storybook's root font is 62.5%, so the rem container scale is 62.5% of
              what its name says - and here the exact width is the thing being demonstrated. -->
         <div [style.inline-size.px]="width()">
           @if (interactive()) {

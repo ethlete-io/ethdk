@@ -8,7 +8,7 @@
     "storybookUrl": "http://localhost:4400",
     "storybookStartCommand": "npm run storybook",
     "handoffDir": ".claude/handoffs",
-    "themeStylesheet": "apps/playground/src/styles/storybook.css",
+    "themeStylesheet": "apps/storybook/src/styles/storybook.css",
     "commitScopes": [
       "core",
       "cdk",
@@ -20,7 +20,7 @@
       "types",
       "cli",
       "contentful",
-      "playground",
+      "storybook",
       "docs",
       "deps",
       "ci",
