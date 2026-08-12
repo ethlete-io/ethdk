@@ -11,7 +11,11 @@ import { CalendarPrecision } from '../../../../calendar/headless';
 @Component({
   selector: 'et-sb-date-range-input',
   template: `
-    <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
+    <div
+      [etProvideColor]="color()"
+      [style.max-inline-size.px]="maxInlineSize()"
+      class="flex flex-col gap-4 p-8 font-sans"
+    >
       <et-form-field>
         <et-label>{{ label() }}</et-label>
         <et-date-range-input
@@ -58,6 +62,7 @@ export class DateRangeInputStorybookComponent {
   public disabled = input(false);
   public readonly = input(false);
   public color = input('brand');
+  public maxInlineSize = input(480);
 
   public mixedState = linkedSignal(() => this.mixed());
 

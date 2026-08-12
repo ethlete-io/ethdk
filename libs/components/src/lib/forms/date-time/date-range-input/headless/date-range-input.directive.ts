@@ -1,9 +1,16 @@
-import { Directive, computed, input, signal } from '@angular/core';
+import { Directive, booleanAttribute, computed, input, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { startOfDay } from 'date-fns';
-import { CalendarPrecision, CalendarRangeSelectionStrategy, startOfCalendarUnit } from '../../../../calendar/headless';
+import {
+  CalendarDateClassFn,
+  CalendarPrecision,
+  CalendarRangeSelectionStrategy,
+  CalendarView,
+  startOfCalendarUnit,
+} from '../../../../calendar/headless';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
+import { injectDateFormat } from '../../date-time-formats';
 import { DateRangePickerInputDirective, DateRangeValue } from '../../internals/date-range-picker-input.directive';
 import { parseDateValue } from '../../internals/date-value';
 import { displayFormatForPrecision } from '../../internals/precision-format';
@@ -24,6 +31,8 @@ export type { DateRangeSide, DateRangeValue } from '../../internals/date-range-p
 })
 export class DateRangeInputDirective extends DateRangePickerInputDirective implements FormValueControl<DateRangeValue> {
   private dateTimeLabels = injectDateTimeLabels();
+
+  public defaultValueFormat = injectDateFormat();
 
   /** Message the form field shows when either side's typed text can't be parsed as a date. */
   public parseErrorMessage = input<string | null>(null);
@@ -54,6 +63,22 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
    */
   public comparisonStart = input<Date | null>(null);
   public comparisonEnd = input<Date | null>(null);
+
+  /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
+  public minDate = input<Date | null>(null);
+  public maxDate = input<Date | null>(null);
+  public dateFilter = input<((date: Date) => boolean) | null>(null);
+  /** Month the picker calendar opens at while the range is empty. */
+  public startAt = input<Date | null>(null);
+
+  /** Which grid the picker calendar opens on - `'year'` to pick a month first, `'multiYear'` a year. */
+  public startView = input<CalendarView>('month');
+
+  /** Per-cell classes for the picker calendar - busy days, holidays, markers of your own. */
+  public dateClass = input<CalendarDateClassFn | null>(null);
+
+  /** Renders the picker calendar's week-number column. */
+  public weekNumbers = input(false, { transform: booleanAttribute });
 
   /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateRange);

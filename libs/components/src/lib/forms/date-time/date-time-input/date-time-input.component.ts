@@ -90,6 +90,7 @@ export class DateTimeInputComponent {
   protected dateTimeInput = inject(DateTimeInputDirective);
 
   public pickerTriggerLabel = input<string | null>(null);
+  public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: numberAttribute });
   public secondStep = input(1, { transform: numberAttribute });
   /** Labels of the pane tabs shown when the picker mounts as a bottom sheet. */
@@ -109,6 +110,9 @@ export class DateTimeInputComponent {
 
   /** The string in effect: this instance's `timeTabLabel`, else the domain's label set. */
   protected resolvedTimeTabLabel = computed(() => this.timeTabLabel() ?? this.dateTimeLabels().timeTab);
+
+  /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
+  protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDateTime);
 
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);

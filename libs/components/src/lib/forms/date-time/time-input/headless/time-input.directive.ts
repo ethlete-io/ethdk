@@ -6,7 +6,7 @@ import { injectTimeFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
 import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
-import { parseTimeText } from './internals/time-parse';
+import { parseTimeText } from '../../internals/time-parse';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 
 /**

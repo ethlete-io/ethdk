@@ -79,6 +79,7 @@ export class DateRangeInputComponent {
   public startAriaLabel = input<string | null>(null);
   public endAriaLabel = input<string | null>(null);
   public pickerTriggerLabel = input<string | null>(null);
+  public dialogLabel = input<string | null>(null);
 
   /** Shows a clear (×) control while a value is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
@@ -94,6 +95,9 @@ export class DateRangeInputComponent {
   protected resolvedPickerTriggerLabel = computed(
     () => this.pickerTriggerLabel() ?? this.dateTimeLabels().openCalendar,
   );
+
+  /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
+  protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDateRange);
 
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);

@@ -98,7 +98,7 @@ Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web so
 
 ## Date & time inputs (ET30xx)
 
-The date input, date range input, [time picker](/components/time-picker), time input and date-time input share this block (the picker trigger/surface pieces work with any of the input hosts).
+The date input, date range input, [time picker](/components/time-picker), time input, time range input and date-time input share this block (the picker trigger/surface pieces work with any of the input hosts).
 
 | Code     | Cause                                                                          | Fix                                                                                                     |
 | -------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
@@ -113,6 +113,7 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | `ET3040` | `etDateTimeInputField` is not inside an `[etDateTimeInput]` element.           | Move the field inside the date-time input root.                                                         |
 | `ET3050` | `etDurationInputField` is not inside an `[etDurationInput]` element.           | Move the field inside the duration input root.                                                          |
 | `ET3060` | `etDateTimeRangeInputField` is not inside an `[etDateTimeRangeInput]` element. | Move the field inside the date-time range input root.                                                   |
+| `ET3070` | `etTimeRangeInputField` is not inside an `[etTimeRangeInput]` element.         | Move the field inside the time range input root.                                                        |
 
 ## Slider (ET31xx)
 

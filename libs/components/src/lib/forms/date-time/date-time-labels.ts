@@ -14,8 +14,16 @@ export type DateTimeLabels = {
   openTimePicker: string;
   /** Accessible label for the control that opens a combined date & time picker. */
   openDateTimePicker: string;
-  /** Accessible label for the picker's dialog. */
+  /** Accessible label for the date picker's dialog. */
   chooseDate: string;
+  /** Accessible label for the time picker's dialog. */
+  chooseTime: string;
+  /** Accessible label for the combined date & time picker's dialog. */
+  chooseDateTime: string;
+  /** Accessible label for the date range picker's dialog. */
+  chooseDateRange: string;
+  /** Accessible label for the time range picker's dialog. */
+  chooseTimeRange: string;
   /** Accessible label for the date & time range picker's dialog. */
   chooseDateTimeRange: string;
 
@@ -23,6 +31,10 @@ export type DateTimeLabels = {
   startDate: string;
   /** Accessible label for a range's end field. */
   endDate: string;
+  /** Accessible label for a time range's start field. */
+  startTime: string;
+  /** Accessible label for a time range's end field. */
+  endTime: string;
   /** Accessible label for a date & time range's start field. */
   startDateTime: string;
   /** Accessible label for a date & time range's end field. */
@@ -46,6 +58,8 @@ export type DateTimeLabels = {
   invalidDateTime: string;
   /** Validation message for text that isn't a date range. */
   invalidDateRange: string;
+  /** Validation message for text that isn't a time range. */
+  invalidTimeRange: string;
   /** Validation message for text that isn't a date & time range. */
   invalidDateTimeRange: string;
   /** Validation message for text that isn't a duration. */
@@ -58,10 +72,16 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   openTimePicker: 'Open time picker',
   openDateTimePicker: 'Open date & time picker',
   chooseDate: 'Choose a date',
+  chooseTime: 'Choose a time',
+  chooseDateTime: 'Choose a date and time',
+  chooseDateRange: 'Choose a date range',
+  chooseTimeRange: 'Choose a time range',
   chooseDateTimeRange: 'Choose a date and time range',
 
   startDate: 'Start date',
   endDate: 'End date',
+  startTime: 'Start time',
+  endTime: 'End time',
   startDateTime: 'Start date and time',
   endDateTime: 'End date and time',
 
@@ -74,6 +94,7 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   invalidTime: 'Please enter a valid time',
   invalidDateTime: 'Please enter a valid date and time',
   invalidDateRange: 'Please enter a valid date range',
+  invalidTimeRange: 'Please enter a valid time range',
   invalidDateTimeRange: 'Please enter a valid date and time range',
   invalidDuration: 'Please enter a valid duration',
 };

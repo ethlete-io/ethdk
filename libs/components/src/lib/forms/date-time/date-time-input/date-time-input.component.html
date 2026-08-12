@@ -31,7 +31,7 @@
 </ng-template>
 
 <ng-template etDatePickerSurface>
-  <et-date-picker-panel dialogLabel="Choose a date and time">
+  <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
     <div class="et-date-time-input-panel">
       <div class="et-date-time-input-panel-tabs">
         <et-segmented-button-group [value]="activePane()" (valueChange)="setActivePane($event)">

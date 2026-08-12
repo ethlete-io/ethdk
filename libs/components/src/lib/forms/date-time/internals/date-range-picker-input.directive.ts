@@ -14,12 +14,11 @@ import {
 } from '@angular/core';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
 import { Locale } from 'date-fns';
-import { CalendarDateClassFn, CalendarView } from '../../../calendar/headless';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from '../../form-field/headless';
 import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
-import { injectDateFormat, injectDateLocale } from '../date-time-formats';
+import { injectDateLocale } from '../date-time-formats';
 import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '../picker/date-picker-host';
 import { DatePickerInputFieldBase } from './date-picker-input.directive';
 import { createDatePickerOverlay } from './date-picker-overlay';
@@ -44,12 +43,12 @@ type SideState = {
 };
 
 /**
- * Shared host for the two-sided range picker inputs (`et-date-range-input`,
+ * Shared host for the two-sided range picker inputs (`et-date-range-input`, `et-time-range-input`,
  * `et-date-time-range-input`): one registered field-control containing two text inputs that share a
- * single range-mode calendar picker. Owns the per-side text/parse state, the field registration, the
- * standard control inputs, the calendar-forwarding inputs, the picker overlay, the typing mask and
- * the form-field registration. Subclasses add their own `displayFormat`, `controlType`, parse
- * normalization (`parseSideCommit`) and picker-selection semantics.
+ * single range-mode picker. Owns the per-side text/parse state, the field registration, the standard
+ * control inputs, the picker overlay, the typing mask and the form-field registration. Subclasses add
+ * their own `displayFormat`, `controlType`, `defaultValueFormat`, parse normalization
+ * (`parseSideCommit`), picker-selection semantics and (date + date-time) the calendar bounds.
  *
  * Must be extended by an `@Directive` - Angular only surfaces inherited inputs from a decorated base.
  */
@@ -68,11 +67,12 @@ export abstract class DateRangePickerInputDirective
   private ngFormField = inject(FORM_FIELD, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
-  private defaultValueFormat = injectDateFormat();
 
   public defaultLocale = injectDateLocale();
 
-  /** The form-field control-type tag (date-range-input / date-time-range-input). */
+  /** date-fns wire format used when `valueFormat` is unset - the token differs per control. */
+  protected abstract defaultValueFormat: string;
+  /** The form-field control-type tag (date-range-input / time-range-input / date-time-range-input). */
   public abstract controlType: Signal<FormFieldControlType>;
   /**
    * The date-fns format in effect for both fields - declared per control. Usually its own
@@ -126,22 +126,6 @@ export abstract class DateRangePickerInputDirective
    */
   public mask = input(false, { transform: booleanAttribute });
 
-  /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
-  public minDate = input<Date | null>(null);
-  public maxDate = input<Date | null>(null);
-  public dateFilter = input<((date: Date) => boolean) | null>(null);
-  /** Month the picker calendar opens at while the range is empty. */
-  public startAt = input<Date | null>(null);
-
-  /** Which grid the picker calendar opens on - `'year'` to pick a month first, `'multiYear'` a year. */
-  public startView = input<CalendarView>('month');
-
-  /** Per-cell classes for the picker calendar - busy days, holidays, markers of your own. */
-  public dateClass = input<CalendarDateClassFn | null>(null);
-
-  /** Renders the picker calendar's week-number column. */
-  public weekNumbers = input(false, { transform: booleanAttribute });
-
   public pickerOpen = model(false);
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
@@ -163,7 +147,7 @@ export abstract class DateRangePickerInputDirective
   public startDate = computed(() => (this.mixed() ? null : this.parseSide(this.value().start)));
   public endDate = computed(() => (this.mixed() ? null : this.parseSide(this.value().end)));
 
-  /** What the picker calendar binds to (`Date` objects, day-granular use). */
+  /** The two committed ends as `Date` objects - what the picker's calendar and time picker bind to. */
   public calendarRange = computed(() => ({ start: this.startDate(), end: this.endDate() }));
 
   public startParseError: Signal<boolean> = this.sides.start.parseError.asReadonly();

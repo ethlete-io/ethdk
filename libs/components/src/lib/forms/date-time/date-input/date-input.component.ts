@@ -71,6 +71,7 @@ export class DateInputComponent {
   protected dateInput = inject(DateInputDirective);
 
   public pickerTriggerLabel = input<string | null>(null);
+  public dialogLabel = input<string | null>(null);
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
@@ -79,6 +80,9 @@ export class DateInputComponent {
   protected resolvedPickerTriggerLabel = computed(
     () => this.pickerTriggerLabel() ?? this.dateTimeLabels().openCalendar,
   );
+
+  /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
+  protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDate);
 
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);

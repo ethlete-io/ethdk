@@ -1,11 +1,12 @@
 # Date & time inputs
 
-Six form controls for dates, times and durations, all sitting inside the shared
+Seven form controls for dates, times and durations, all sitting inside the shared
 [`et-form-field` shell](/components/forms#the-field-shell) and binding via signal
 forms: [date](#date-input), [date range](#date-range-input), [time](#time-input),
-[date-time](#date-time-input), [date-time range](#date-time-range-input) and
-[duration](#duration-input). See the [Forms overview](/components/forms) for the
-field chrome, validation and mixed-state contracts they inherit.
+[time range](#time-range-input), [date-time](#date-time-input),
+[date-time range](#date-time-range-input) and [duration](#duration-input). See the
+[Forms overview](/components/forms) for the field chrome, validation and
+mixed-state contracts they inherit.
 
 ```ts
 import { FORM_FIELD_IMPORTS, DATE_INPUT_IMPORTS } from '@ethlete/components';
@@ -16,6 +17,7 @@ import { FORM_FIELD_IMPORTS, DATE_INPUT_IMPORTS } from '@ethlete/components';
 | `DATE_INPUT_IMPORTS`            | `et-date-input`            |
 | `DATE_RANGE_INPUT_IMPORTS`      | `et-date-range-input`      |
 | `TIME_INPUT_IMPORTS`            | `et-time-input`            |
+| `TIME_RANGE_INPUT_IMPORTS`      | `et-time-range-input`      |
 | `DATE_TIME_INPUT_IMPORTS`       | `et-date-time-input`       |
 | `DATE_TIME_RANGE_INPUT_IMPORTS` | `et-date-time-range-input` |
 | `DURATION_INPUT_IMPORTS`        | `et-duration-input`        |
@@ -51,6 +53,14 @@ scalar - see below) shares one design:
 - **Bottom sheet on mobile.** Below the `md` breakpoint (768px) the picker opens
   as a bottom sheet (backdrop, drag-to-dismiss, touch-sized cells) instead of an
   anchored panel.
+- **Range controls stack when the field gets narrow.** The three range controls
+  put their two fields side by side, and switch to one per line - start above end,
+  the `–` separator dropped - once the control is too narrow to show both formatted
+  values at once. It keys off the control's own inline size, not the viewport, so a
+  field in a narrow column stacks on a wide screen too; the threshold is in `em`, so
+  it follows the field's `size`. Each control's threshold is the width its default
+  `displayFormat` needs (`P`, `p`, `Pp`) - a much longer custom format can still
+  clip before it stacks. See the `Narrow` story of each range control.
 
 The wire defaults come from injectable tokens so an app can set them once, and
 `date-fns` (v4) is a peer dependency (`yarn add date-fns`):
@@ -232,6 +242,67 @@ out-of-range times.
 
 <StoryEmbed id="components-forms-time-input--opening-hours" height="560px" />
 
+## Time range input - `et-time-range-input` {#time-range-input}
+
+One registered form control containing two text inputs (start – end) that share a
+single range-mode [**time picker**](/components/time-picker#range-picker) - one set of
+columns holding both ends, switched between by name. The value shape is the date range
+input's `{ start: string | null; end: string | null }`, both strings in the time
+`valueFormat`; each side commits exactly like the single time input. Reach for it
+wherever an opening hour and a closing hour belong together - a shift, a slot, a
+daily window - instead of pairing two `et-time-input`s.
+
+```html
+<et-form-field>
+  <et-label>Opening hours</et-label>
+  <et-time-range-input [formField]="demoForm.hours" />
+</et-form-field>
+```
+
+<StoryEmbed id="components-forms-time-range-input--prefilled" height="560px" />
+
+| Input                                 | Type                                                        | Default             | Description                                                            |
+| ------------------------------------- | ----------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------- |
+| `valueFormat`                         | `string`                                                    | `TIME_FORMAT` token | date-fns format of both string values (token default: `HH:mm`).        |
+| `displayFormat`                       | `string`                                                    | `'p'`               | date-fns format shown in and parsed from both fields (locale-aware).   |
+| `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the picker's 12/24-hour layout).    |
+| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the picker columns.                                       |
+| `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the picker's time of day, for both ends.                         |
+| `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the end being filled.               |
+| `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                        |
+| `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start time'` / `'End time'`).       |
+| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ³            | Names of the two ends on the picker's own side switch.                 |
+| `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                       |
+| `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix clock button.                               |
+| `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed. |
+| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).      |
+| `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `HH:mm`. |
+
+Each side parses **leniently**, with the single time input's rules (`930` → 09:30,
+`930pm` → 21:30). The picker **never closes on its own**: filling one end still leaves
+the other to set, so the reader closes it (Escape, outside click, the trigger). Picking
+a part writes only the active end - which one that is, is the side switch's job, and it
+auto-advances to the end exactly once, after the first activation of a start option.
+
+The host is a `role="group"` labelled by the field label. There is no calendar here,
+so the picker has no panes and no tabs: the bottom sheet below the `md` breakpoint
+shows the same single set of columns.
+
+**Ordering is not enforced.** The control never reorders or clamps the two ends - same
+contract as the other two ranges - so an end before the start is a
+[validator's](/components/forms#validation) job. What the picker _can_ express is the
+same rule as a bound, because `timeFilter` receives the side it is filling:
+
+```ts
+const endAfterStart = (candidate: Date, side: 'start' | 'end') => {
+  const start = hours().start; // the committed `HH:mm` wire value
+
+  return side === 'start' || start === null || format(candidate, 'HH:mm') > start;
+};
+```
+
+<StoryEmbed id="components-forms-time-range-input--end-after-start" height="560px" />
+
 ## Date-time input - `et-date-time-input` {#date-time-input}
 
 A combined date & time control (default wire format: the `DATE_FORMAT` token, ISO
@@ -410,7 +481,7 @@ _smallest_ unit up (`130` → `01:30`) while a mask fills slots left-to-right
 
 ## Bulk editing
 
-All six controls implement the SDK-wide
+All seven controls implement the SDK-wide
 [mixed state contract](/components/mixed-state) and take a `mixedLabel` (default
 unset → [`FORM_FIELD_LABELS.mixed`](/components/localization)) shown in place of the value while mixed. See the
 [Forms overview](/components/forms#mixed-values-bulk-editing) for the wiring
@@ -425,7 +496,10 @@ the overview. Notes specific to this family:
 - A **parse error** (unparseable typed text) is surfaced like any validation
   error once touched: `parseErrorMessage` renders as an `et-form-error` with
   matching `aria-invalid` and `aria-describedby` - no silent invalid state.
-- The picker overlay is a named `role="dialog"`; both range hosts are a
+- The picker overlay is a named `role="dialog"` - its name is the control's
+  `dialogLabel`, falling through to [`DATE_TIME_LABELS`](/components/localization)
+  (`chooseDate`, `chooseTime`, `chooseDateRange`, `chooseTimeRange`,
+  `chooseDateTime`, `chooseDateTimeRange`). All three range hosts are a
   `role="group"` labelled by the field label. Inside the date-time range picker,
   which of the two times the columns are editing is announced by the time picker's
   own `aria-pressed` side switch.

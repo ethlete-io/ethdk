@@ -8,7 +8,7 @@ theming. Each control family has its own guide:
 | Guide                                              | Controls                                                                     |
 | -------------------------------------------------- | ---------------------------------------------------------------------------- |
 | [Text inputs](/components/text-inputs)             | text field, number, password, textarea, color, masked input, OTP, tag, phone |
-| [Date & time inputs](/components/date-time-inputs) | date, date range, time, date-time, date-time range, duration                 |
+| [Date & time inputs](/components/date-time-inputs) | date, date range, time, time range, date-time, date-time range, duration     |
 | [Choice & rating](/components/choice-inputs)       | checkbox, switch, radio / checkbox / segmented selection lists, rating       |
 | [Select](/components/select)                       | single/multi dropdown, searchable combobox, custom values                    |
 | [Cascader](/components/cascader)                   | hierarchical multi-level select                                              |
@@ -63,6 +63,7 @@ control:
 | `DATE_INPUT_IMPORTS`            | `et-date-input`                                                                         |
 | `DATE_RANGE_INPUT_IMPORTS`      | `et-date-range-input`                                                                   |
 | `TIME_INPUT_IMPORTS`            | `et-time-input`                                                                         |
+| `TIME_RANGE_INPUT_IMPORTS`      | `et-time-range-input`                                                                   |
 | `DATE_TIME_INPUT_IMPORTS`       | `et-date-time-input`                                                                    |
 | `DATE_TIME_RANGE_INPUT_IMPORTS` | `et-date-time-range-input`                                                              |
 | `DURATION_INPUT_IMPORTS`        | `et-duration-input`                                                                     |
@@ -219,8 +220,8 @@ for the full contract, wiring recipe, and per-control presentation table.
   of the value while mixed: `et-input`, `et-number-input`, `et-password-input`,
   `et-textarea` (placeholder), `et-color-input`, `et-tag-input`,
   `et-phone-input`, and the date/time family (`et-date-input`,
-  `et-date-range-input`, `et-time-input`, `et-date-time-input`,
-  `et-date-time-range-input`, `et-duration-input`).
+  `et-date-range-input`, `et-time-input`, `et-time-range-input`,
+  `et-date-time-input`, `et-date-time-range-input`, `et-duration-input`).
 - **Controls without a text slot** express it through ARIA/visual masking only -
   no `mixedLabel`: `et-rating` (`aria-valuetext`), and the selection groups
   `et-radio-group`, `et-checkbox-group`, `et-segmented-button-group` (nothing

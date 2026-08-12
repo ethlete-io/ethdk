@@ -1,5 +1,5 @@
 import { setHours, setMinutes, setSeconds, startOfDay } from 'date-fns';
-import { ParseDateValueOptions, parseDateValue } from '../../../internals/date-value';
+import { ParseDateValueOptions, parseDateValue } from './date-value';
 
 type LenientTimeParts = {
   hour: number;

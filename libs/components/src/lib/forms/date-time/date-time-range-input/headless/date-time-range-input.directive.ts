@@ -1,8 +1,10 @@
-import { Directive, computed, input, signal } from '@angular/core';
+import { Directive, booleanAttribute, computed, input, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { startOfDay } from 'date-fns';
+import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
+import { injectDateFormat } from '../../date-time-formats';
 import {
   DateRangePickerInputDirective,
   DateRangeSide,
@@ -42,11 +44,29 @@ export class DateTimeRangeInputDirective
 {
   private dateTimeLabels = injectDateTimeLabels();
 
+  public defaultValueFormat = injectDateFormat();
+
   /** Message the form field shows when either side's typed text can't be parsed as a date & time. */
   public parseErrorMessage = input<string | null>(null);
 
   /** Combined date-fns format shown in (and parsed from) both fields. Locale-aware by default. */
   public displayFormat = input('Pp');
+
+  /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
+  public minDate = input<Date | null>(null);
+  public maxDate = input<Date | null>(null);
+  public dateFilter = input<((date: Date) => boolean) | null>(null);
+  /** Month the picker calendar opens at while the range is empty. */
+  public startAt = input<Date | null>(null);
+
+  /** Which grid the picker calendar opens on - `'year'` to pick a month first, `'multiYear'` a year. */
+  public startView = input<CalendarView>('month');
+
+  /** Per-cell classes for the picker calendar - busy days, holidays, markers of your own. */
+  public dateClass = input<CalendarDateClassFn | null>(null);
+
+  /** Renders the picker calendar's week-number column. */
+  public weekNumbers = input(false, { transform: booleanAttribute });
 
   /**
    * Forwarded to both of the picker's time pickers. Only the time of day of `minTime`/`maxTime` is

@@ -123,7 +123,7 @@ Each `TimePickerOption` carries `selected` / `focused` / `disabled` flags the op
 
 ¹ `null` falls through to [`TIME_PICKER_LABELS`](/components/localization) (`startTime` / `endTime`: `'Start time'` / `'End time'`).
 
-`format`, `locale`, `minuteStep`/`secondStep` and `min`/`max` mean the same as above and apply to both ends. The side switch always renders a **bare** time, even where the columns derive from a combined date & time format - which is what lets the [date-time range input](/components/date-time-inputs#date-time-range-input) hand the picker its `Pp`.
+`format`, `locale`, `minuteStep`/`secondStep` and `min`/`max` mean the same as above and apply to both ends. The side switch always renders a **bare** time, even where the columns derive from a combined date & time format - which is what lets the [date-time range input](/components/date-time-inputs#date-time-range-input) hand the picker its `Pp`. The [time range input](/components/date-time-inputs#time-range-input) is the plain-time control built on this mode.
 
 ### Which end a pick fills
 

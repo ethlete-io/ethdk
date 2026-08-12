@@ -1,10 +1,10 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
-import { DateTimeRangeInputStorybookComponent } from './date-time-range-input-storybook.component';
+import { TimeRangeInputStorybookComponent } from './time-range-input-storybook.component';
 
 export default {
-  title: 'Components/Forms/Date Time Range Input',
-  component: DateTimeRangeInputStorybookComponent,
-  decorators: [moduleMetadata({ imports: [DateTimeRangeInputStorybookComponent] })],
+  title: 'Components/Forms/Time Range Input',
+  component: TimeRangeInputStorybookComponent,
+  decorators: [moduleMetadata({ imports: [TimeRangeInputStorybookComponent] })],
   argTypes: {
     label: { control: 'text' },
     startPlaceholder: { control: 'text' },
@@ -30,7 +30,7 @@ export default {
     maxInlineSize: { control: 'number' },
   },
   args: {
-    label: 'Date & time range',
+    label: 'Time range',
     startPlaceholder: 'Start',
     endPlaceholder: 'End',
     hint: '',
@@ -40,7 +40,7 @@ export default {
     mixedLabel: 'Mixed',
     showMixedState: false,
     valueFormat: undefined,
-    displayFormat: 'Pp',
+    displayFormat: 'p',
     mask: false,
     minuteStep: 5,
     secondStep: 1,
@@ -53,32 +53,41 @@ export default {
     color: 'brand',
     maxInlineSize: 480,
   },
-} as Meta<DateTimeRangeInputStorybookComponent>;
+} as Meta<TimeRangeInputStorybookComponent>;
 
-type Story = StoryObj<DateTimeRangeInputStorybookComponent>;
+type Story = StoryObj<TimeRangeInputStorybookComponent>;
 
 export const Default: Story = {};
 
 export const Prefilled: Story = {
   args: {
-    start: '2026-07-16T09:00:00+02:00',
-    end: '2026-07-16T17:30:00+02:00',
-    hint: 'A same-day range: pick the day once, then a time per side',
+    start: '09:00',
+    end: '17:30',
+    hint: 'One set of columns holds both ends - the side switch says which one a pick fills',
   },
 };
 
 export const Narrow: Story = {
   args: {
-    start: '2026-07-16T09:00:00+02:00',
-    end: '2026-07-16T17:30:00+02:00',
-    maxInlineSize: 260,
-    hint: 'Too narrow for both timestamps on one line, so they stack - start above end, and the separator goes with the line',
+    start: '09:00',
+    end: '17:30',
+    maxInlineSize: 240,
+    hint: 'Too narrow for both times on one line, so they stack - start above end, and the separator goes with the line',
+  },
+};
+
+export const TwelveHour: Story = {
+  args: {
+    start: '09:00',
+    end: '17:30',
+    displayFormat: 'h:mm a',
+    hint: 'A 12-hour display format adds the AM/PM column to the picker',
   },
 };
 
 export const Masked: Story = {
   args: {
-    displayFormat: 'dd.MM.yyyy HH:mm',
+    displayFormat: 'HH:mm',
     mask: true,
     startPlaceholder: '',
     endPlaceholder: '',
@@ -86,31 +95,30 @@ export const Masked: Story = {
   },
 };
 
-export const EndAfterStart: Story = {
+export const Bounded: Story = {
   args: {
-    start: '2026-07-16T09:00:00+02:00',
-    filter: 'endAfterStart',
-    hint: 'The time filter knows which side it is filling, so the end pane can reject everything up to the committed start',
+    minTime: '08:00',
+    maxTime: '18:00',
+    hint: 'Both ends stay inside opening hours; typed entry outside them is a validator concern',
   },
 };
 
-export const OpeningHours: Story = {
+export const EndAfterStart: Story = {
   args: {
-    start: '2026-07-16T10:00:00+02:00',
-    end: '2026-07-17T13:00:00+02:00',
-    filter: 'weekdayHours',
-    hint: 'Both panes see the picked day: 09:00–17:00 on weekdays, 10:00–14:00 on weekends',
+    start: '09:00',
+    filter: 'endAfterStart',
+    hint: 'The time filter knows which end it is filling, so the end rejects everything up to the committed start',
   },
 };
 
 export const German: Story = {
-  args: { locale: 'de', hint: '24-Stunden-Anzeige (Pp mit de-Locale)' },
+  args: { locale: 'de', start: '09:00', end: '17:30', hint: '24-Stunden-Anzeige (p mit de-Locale)' },
 };
 
 export const Mixed: Story = {
   args: {
-    start: '2026-07-16T09:00:00+02:00',
-    end: '2026-07-16T17:30:00+02:00',
+    start: '09:00',
+    end: '17:30',
     mixed: true,
     mixedLabel: 'Mixed values',
     showMixedState: true,

@@ -1,10 +1,17 @@
 @layer components {
   et-date-time-range-input {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
-    flex: 1;
+    gap: 2px 8px;
+    flex: 1 1 auto;
+    /* Two `Pp`-formatted timestamps plus the separator and gaps, in `em` so it tracks the field's
+       size variant. Doubles as the width the control asks a shrink-to-fit parent for -
+       `container-type` leaves it no intrinsic width of its own - so it has to stay an `inline-size`,
+       not a `min-inline-size`, which would stop the fields shrinking below it. */
+    inline-size: 22em;
     min-inline-size: 0;
+    container: et-date-time-range-input / inline-size;
     color: inherit;
 
     .et-date-time-range-input-field {
@@ -38,6 +45,18 @@
 
     .et-date-time-range-input-separator {
       color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    /* Too narrow to show both timestamps: one per row, top to bottom, instead of clipping both. The
+       separator reads as "between two things on a line" and goes with the line. */
+    @container et-date-time-range-input (inline-size < 22em) {
+      .et-date-time-range-input-field {
+        flex-basis: 100%;
+      }
+
+      .et-date-time-range-input-separator {
+        display: none;
+      }
     }
   }
 

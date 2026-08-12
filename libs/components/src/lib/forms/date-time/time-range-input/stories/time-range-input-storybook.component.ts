@@ -2,21 +2,20 @@ import { JsonPipe } from '@angular/common';
 import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@angular/core';
 import { FormField, disabled, form, readonly, validate } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
-import { parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { parseTimeOfDay, resolveTimeFilterPreset } from '../../../../time-picker/stories/time-filter-presets';
 import { FORM_FIELD_IMPORTS } from '../../../form-field';
-import { DATE_TIME_RANGE_INPUT_IMPORTS } from '../date-time-range-input.imports';
-import { DateTimeRangeTimeFilterFn, DateTimeRangeValue } from '../headless';
+import { TimeRangeTimeFilterFn, TimeRangeValue } from '../headless';
+import { TIME_RANGE_INPUT_IMPORTS } from '../time-range-input.imports';
 
 /**
  * `'endAfterStart'` is the one only a range can express: it reads the committed start and rejects
  * every end time at or before it. The others come from the shared time-picker presets.
  */
-export type DateTimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours' | 'endAfterStart';
+export type TimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours' | 'endAfterStart';
 
 @Component({
-  selector: 'et-sb-date-time-range-input',
+  selector: 'et-sb-time-range-input',
   template: `
     <div
       [etProvideColor]="color()"
@@ -25,7 +24,7 @@ export type DateTimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours'
     >
       <et-form-field>
         <et-label>{{ label() }}</et-label>
-        <et-date-time-range-input
+        <et-time-range-input
           [(mixed)]="mixedState"
           [formField]="demoForm.range"
           [mixedLabel]="mixedLabel()"
@@ -53,10 +52,10 @@ export type DateTimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours'
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...FORM_FIELD_IMPORTS, ...DATE_TIME_RANGE_INPUT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+  imports: [...FORM_FIELD_IMPORTS, ...TIME_RANGE_INPUT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
 })
-export class DateTimeRangeInputStorybookComponent {
-  public label = input('Date & time range');
+export class TimeRangeInputStorybookComponent {
+  public label = input('Time range');
   public startPlaceholder = input('Start');
   public endPlaceholder = input('End');
   public hint = input('');
@@ -66,14 +65,14 @@ export class DateTimeRangeInputStorybookComponent {
   public mixedLabel = input('Mixed');
   public showMixedState = input(false);
   public valueFormat = input<string | undefined>(undefined);
-  public displayFormat = input('Pp');
+  public displayFormat = input('p');
   public mask = input(false);
   public minuteStep = input(5);
   public secondStep = input(1);
   /** `HH:mm` bounds - the story turns them into the `Date`s the input takes. */
   public minTime = input<string | null>(null);
   public maxTime = input<string | null>(null);
-  public filter = input<DateTimeRangeFilterPreset>('none');
+  public filter = input<TimeRangeFilterPreset>('none');
   public locale = input<'default' | 'de'>('default');
   public disabled = input(false);
   public readonly = input(false);
@@ -88,7 +87,7 @@ export class DateTimeRangeInputStorybookComponent {
   protected maxTimeDate = computed(() => parseTimeOfDay(this.maxTime()));
 
   private formModel = linkedSignal(() => ({
-    range: { start: this.start(), end: this.end() } as DateTimeRangeValue,
+    range: { start: this.start(), end: this.end() } as TimeRangeValue,
   }));
 
   public demoForm = form(this.formModel, (s) => {
@@ -105,7 +104,7 @@ export class DateTimeRangeInputStorybookComponent {
     });
   });
 
-  protected filterFn = computed<DateTimeRangeTimeFilterFn | null>(() => {
+  protected filterFn = computed<TimeRangeTimeFilterFn | null>(() => {
     const preset = this.filter();
 
     if (preset === 'endAfterStart') {
@@ -115,9 +114,9 @@ export class DateTimeRangeInputStorybookComponent {
         }
 
         // read inside the closure, so the picker re-filters when the start moves
-        const start = this.demoForm.range().value().start;
+        const start = parseTimeOfDay(this.demoForm.range().value().start);
 
-        return start === null || candidate > parseISO(start);
+        return start === null || candidate > start;
       };
     }
 

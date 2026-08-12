@@ -31,7 +31,7 @@
 </ng-template>
 
 <ng-template etDatePickerSurface>
-  <et-date-picker-panel dialogLabel="Choose a date">
+  <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
     <et-calendar
       [value]="dateInput.date()"
       [min]="dateInput.minDate()"

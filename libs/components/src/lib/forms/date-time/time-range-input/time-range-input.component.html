@@ -1,9 +1,23 @@
 <input
-  [etInputMask]="timeInput.maskPattern()"
-  class="et-time-input-field"
-  etTimeInputField
+  [attr.aria-label]="resolvedStartAriaLabel()"
+  [etInputMask]="rangeInput.maskPattern()"
+  class="et-time-range-input-field"
+  etTimeRangeInputField
   maskValueMode="masked"
   placeholderChar="_"
+  side="start"
+/>
+
+<span class="et-time-range-input-separator" aria-hidden="true">–</span>
+
+<input
+  [attr.aria-label]="resolvedEndAriaLabel()"
+  [etInputMask]="rangeInput.maskPattern()"
+  class="et-time-range-input-field"
+  etTimeRangeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+  side="end"
 />
 
 <ng-template etControlSuffix>
@@ -33,15 +47,18 @@
 <ng-template etDatePickerSurface>
   <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
     <et-time-picker
-      [value]="timeInput.time()"
-      [format]="timeInput.displayFormat()"
-      [locale]="timeInput.effectiveLocale()"
+      [rangeValue]="rangeInput.calendarRange()"
+      [format]="rangeInput.effectiveDisplayFormat()"
+      [locale]="rangeInput.effectiveLocale()"
       [minuteStep]="minuteStep()"
       [secondStep]="secondStep()"
-      [min]="timeInput.minTime()"
-      [max]="timeInput.maxTime()"
-      [timeFilter]="timeInput.timeFilter()"
-      (valueChange)="timeInput.selectTime($event)"
+      [min]="rangeInput.minTime()"
+      [max]="rangeInput.maxTime()"
+      [timeFilter]="rangeInput.timeFilter()"
+      [startLabel]="startTimeLabel()"
+      [endLabel]="endTimeLabel()"
+      (timeSelect)="rangeInput.selectTime($event.side, $event.time)"
+      mode="range"
     />
   </et-date-picker-panel>
 </ng-template>

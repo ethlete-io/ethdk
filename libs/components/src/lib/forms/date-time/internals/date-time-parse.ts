@@ -1,6 +1,6 @@
 import { startOfDay } from 'date-fns';
 import { ParseDateValueOptions, parseDateValue } from './date-value';
-import { parseTimeText } from '../time-input/headless/internals/time-parse';
+import { parseTimeText } from './time-parse';
 
 // every run of whitespace and/or commas is a candidate date|time boundary
 const SEPARATOR_PATTERN = /[,\s]+/g;

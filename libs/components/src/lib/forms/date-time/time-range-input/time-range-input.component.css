@@ -1,20 +1,20 @@
 @layer components {
-  et-date-range-input {
+  et-time-range-input {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 2px 8px;
     flex: 1 1 auto;
-    /* Two `P`-formatted dates plus the separator and gaps, in `em` so it tracks the field's size
+    /* Two `p`-formatted times plus the separator and gaps, in `em` so it tracks the field's size
        variant. Doubles as the width the control asks a shrink-to-fit parent for - `container-type`
        leaves it no intrinsic width of its own - so it has to stay an `inline-size`, not a
        `min-inline-size`, which would stop the fields shrinking below it. */
-    inline-size: 13em;
+    inline-size: 11em;
     min-inline-size: 0;
-    container: et-date-range-input / inline-size;
+    container: et-time-range-input / inline-size;
     color: inherit;
 
-    .et-date-range-input-field {
+    .et-time-range-input-field {
       flex: 1;
       min-inline-size: 0;
       border: none;
@@ -38,23 +38,23 @@
     /* an unresolved bulk-edit range reads as provisional: both fields stay empty and the
        mixed label shows through their placeholders — stronger than a regular hint (72% vs
        46%). Consumers restyle via [data-mixed]. */
-    &[data-mixed] .et-date-range-input-field::placeholder {
+    &[data-mixed] .et-time-range-input-field::placeholder {
       font-style: italic;
       color: color-mix(in srgb, currentColor 72%, transparent);
     }
 
-    .et-date-range-input-separator {
+    .et-time-range-input-separator {
       color: var(--et-surface-color-muted-solid, currentColor);
     }
 
-    /* Too narrow to show both dates: one per row, top to bottom, instead of clipping both. The
+    /* Too narrow to show both times: one per row, top to bottom, instead of clipping both. The
        separator reads as "between two things on a line" and goes with the line. */
-    @container et-date-range-input (inline-size < 13em) {
-      .et-date-range-input-field {
+    @container et-time-range-input (inline-size < 11em) {
+      .et-time-range-input-field {
         flex-basis: 100%;
       }
 
-      .et-date-range-input-separator {
+      .et-time-range-input-separator {
         display: none;
       }
     }

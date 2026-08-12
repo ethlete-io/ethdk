@@ -8,3 +8,4 @@ export * from './date-time-range-input';
 export * from './duration-input';
 export * from './picker';
 export * from './time-input';
+export * from './time-range-input';

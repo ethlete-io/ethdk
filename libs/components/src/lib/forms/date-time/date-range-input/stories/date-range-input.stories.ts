@@ -23,6 +23,7 @@ export default {
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
+    maxInlineSize: { control: 'number' },
   },
   args: {
     label: 'Date range',
@@ -42,6 +43,7 @@ export default {
     disabled: false,
     readonly: false,
     color: 'brand',
+    maxInlineSize: 480,
   },
 } as Meta<DateRangeInputStorybookComponent>;
 
@@ -75,6 +77,15 @@ export const Mixed: Story = {
     mixedLabel: 'Mixed',
     showMixedState: true,
     hint: 'The hidden range stays intact and unshown; the mixed label is the placeholder in both fields. Committing either end starts a fresh range.',
+  },
+};
+
+export const Narrow: Story = {
+  args: {
+    start: '2026-07-08',
+    end: '2026-07-23',
+    maxInlineSize: 260,
+    hint: 'Too narrow for both dates on one line, so they stack - start above end, and the separator goes with the line',
   },
 };
 
