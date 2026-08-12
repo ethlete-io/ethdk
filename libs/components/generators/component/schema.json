@@ -29,6 +29,41 @@
         ]
       }
     },
+    "category": {
+      "type": "string",
+      "description": "Storybook category the story sits under, below 'Components'. Also decides the story id prefix used by the docs page's <StoryEmbed>.",
+      "enum": [
+        "Actions",
+        "Data display",
+        "Date & time",
+        "Dev tools",
+        "Feedback",
+        "Forms",
+        "Layout",
+        "Media",
+        "Navigation",
+        "Overlays",
+        "Sports"
+      ],
+      "default": "Layout",
+      "x-prompt": {
+        "message": "Which Storybook category does the domain belong to?",
+        "type": "list",
+        "items": [
+          { "value": "Actions", "label": "Actions - buttons and the things you press" },
+          { "value": "Data display", "label": "Data display - showing values and records" },
+          { "value": "Date & time", "label": "Date & time - calendars, schedulers, pickers" },
+          { "value": "Dev tools", "label": "Dev tools - developer-facing panels" },
+          { "value": "Feedback", "label": "Feedback - status, loading, errors, tips" },
+          { "value": "Forms", "label": "Forms - controls that carry a value" },
+          { "value": "Layout", "label": "Layout - containers and arrangement" },
+          { "value": "Media", "label": "Media - images, video, carousels" },
+          { "value": "Navigation", "label": "Navigation - moving between places" },
+          { "value": "Overlays", "label": "Overlays - things that float above the page" },
+          { "value": "Sports", "label": "Sports - brackets, standings, matches" }
+        ]
+      }
+    },
     "project": {
       "type": "string",
       "description": "Nx project to scaffold into. The domain lands in its '<sourceRoot>/lib/<name>'.",

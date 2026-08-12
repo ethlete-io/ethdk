@@ -25,7 +25,7 @@ hand-built masonry behaves identically to the snippet above.
 
 ## Live demo
 
-<StoryEmbed id="components-masonry--default" height="560px" />
+<StoryEmbed id="components-layout-masonry--default" height="560px" />
 
 ## How the layout works
 
@@ -66,7 +66,7 @@ Every item observes its own size, so content that arrives or changes after layou
 loads late, a description that expands on click, text that reflows when a translation swaps in. The items below
 it move down.
 
-<StoryEmbed id="components-masonry--appending-items" height="560px" />
+<StoryEmbed id="components-layout-masonry--appending-items" height="560px" />
 
 ### A card changing height doesn't rearrange the grid
 

@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { ChipStorybookComponent, FilterChipsStorybookComponent } from './chip-storybook.component';
 
 export default {
-  title: 'Components/Chip',
+  title: 'Components/Data display/Chip',
   component: ChipStorybookComponent,
   decorators: [moduleMetadata({ imports: [ChipStorybookComponent] })],
   argTypes: {

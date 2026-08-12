@@ -5,7 +5,7 @@ import {
 } from './sport-recipes-storybook.component';
 
 export default {
-  title: 'Components/Sport recipes',
+  title: 'Components/Sports/Sport recipes',
   component: SportRecipesMatchRailStorybookComponent,
   decorators: [
     moduleMetadata({

@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { IconStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Icon',
+  title: 'Components/Data display/Icon',
   component: IconStorybookComponent,
   decorators: [moduleMetadata({ imports: [IconStorybookComponent] })],
 } as Meta<IconStorybookComponent>;

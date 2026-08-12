@@ -4,7 +4,7 @@ import { SchedulerInfiniteAgendaStorybookComponent } from './scheduler-infinite-
 import { SchedulerStorybookComponent } from './scheduler-storybook.component';
 
 export default {
-  title: 'Components/Scheduler',
+  title: 'Components/Date & time/Scheduler',
   component: SchedulerStorybookComponent,
   decorators: [moduleMetadata({ imports: [SchedulerStorybookComponent] })],
 } as Meta<SchedulerStorybookComponent>;

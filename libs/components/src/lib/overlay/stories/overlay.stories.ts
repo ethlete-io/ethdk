@@ -3,7 +3,7 @@ import { provideOverlay } from '../overlay.imports';
 import { OverlayStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Overlay',
+  title: 'Components/Overlays/Overlay',
   component: OverlayStorybookComponent,
   decorators: [
     moduleMetadata({ imports: [OverlayStorybookComponent] }),

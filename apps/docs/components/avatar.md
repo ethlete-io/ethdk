@@ -14,7 +14,7 @@ import { AVATAR_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-avatar--default" height="220px" />
+<StoryEmbed id="components-data-display-avatar--default" height="220px" />
 
 ## Options
 

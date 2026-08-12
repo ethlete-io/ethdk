@@ -200,7 +200,7 @@ class OverlayUnsavedChangesStorybookComponent {
 }
 
 export default {
-  title: 'Components/Overlay/Unsaved Changes',
+  title: 'Components/Overlays/Overlay/Unsaved Changes',
   component: OverlayUnsavedChangesStorybookComponent,
   decorators: [
     moduleMetadata({ imports: [OverlayUnsavedChangesStorybookComponent] }),

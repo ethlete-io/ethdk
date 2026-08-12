@@ -34,9 +34,9 @@ import { BrandLoaderComponent, ProgressBarComponent, SpinnerComponent } from '@e
 button or a tinted text block still matches the text next to it. Set `--et-spinner-color` directly
 when the color isn't a registered theme.
 
-<StoryEmbed id="components-loader-spinner--determinate" height="240px" />
+<StoryEmbed id="components-feedback-loader-spinner--determinate" height="240px" />
 
-<StoryEmbed id="components-loader-spinner--themed" height="240px" />
+<StoryEmbed id="components-feedback-loader-spinner--themed" height="240px" />
 
 ::: info Coming from the CDK
 The cdk `et-progress-spinner` defaulted `--et-progress-spinner-color` to a themed blue (`#1e88e5`), so
@@ -53,7 +53,7 @@ chips and inputs are usually better off inheriting.
 
 `value` (0–100, clamped) drives the determinate bar; `indeterminate` switches to the sweeping animation and drops the aria value attributes.
 
-<StoryEmbed id="components-loader-progress-bar--indeterminate" height="200px" />
+<StoryEmbed id="components-feedback-loader-progress-bar--indeterminate" height="200px" />
 
 ## Brand loader
 
@@ -63,7 +63,7 @@ The animated Ethlete "E" for full-page or initial loading states. No inputs - dr
 <et-brand-loader class="size-16 text-et-brand" />
 ```
 
-<StoryEmbed id="components-loader-brand-loader--default" height="240px" />
+<StoryEmbed id="components-feedback-loader-brand-loader--default" height="240px" />
 
 ## Motion
 

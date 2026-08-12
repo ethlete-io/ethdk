@@ -25,12 +25,12 @@ export class ResultsComponent {
 }
 ```
 
-<StoryEmbed id="components-pagination--default" height="200px" />
+<StoryEmbed id="components-navigation-pagination--default" height="200px" />
 
 For large counts, far pages collapse behind ellipses around the current page and
 each edge (`1 … 45 46 47 … 200`):
 
-<StoryEmbed id="components-pagination--many-pages" height="200px" />
+<StoryEmbed id="components-navigation-pagination--many-pages" height="200px" />
 
 ## Range readout & jump-to-page
 
@@ -42,7 +42,7 @@ large result sets.
 <et-pagination [(page)]="page" [totalPages]="totalPages()" [totalItems]="total()" [pageSize]="20" showJumpTo />
 ```
 
-<StoryEmbed id="components-pagination--with-range-and-jump" height="220px" />
+<StoryEmbed id="components-navigation-pagination--with-range-and-jump" height="220px" />
 
 Both readouts (this one and the compact pager's) **reserve the width of the widest
 text they can ever produce** and use tabular figures, so stepping 9 → 10 doesn't
@@ -60,7 +60,7 @@ controls row. Import `PAGE_SIZE_SELECT_IMPORTS`:
 </div>
 ```
 
-<StoryEmbed id="components-pagination--page-size-select" height="220px" />
+<StoryEmbed id="components-navigation-pagination--page-size-select" height="220px" />
 
 It is a **native `<select>`**. A handful of numbers doesn't justify dragging the overlay
 runtime and [`et-select`](/components/select)'s panel into every footer that shows one, and
@@ -127,7 +127,7 @@ one-off wording, not for translation:
 <et-pagination [(page)]="page" [totalPages]="totalPages()" [labels]="{ next: 'Weiter' }" />
 ```
 
-<StoryEmbed id="components-pagination--localized" height="240px" />
+<StoryEmbed id="components-navigation-pagination--localized" height="240px" />
 
 The label keys, all optional:
 
@@ -169,7 +169,7 @@ browser normally would.
 urlForPage = (page: number) => `/results?page=${page}`;
 ```
 
-<StoryEmbed id="components-pagination--links" height="200px" />
+<StoryEmbed id="components-navigation-pagination--links" height="200px" />
 
 For paged SEO - a per-page canonical link plus `rel="prev"`/`rel="next"` - add the
 opt-in `etPaginationSeo` directive. It's a separate import (the base paginator never

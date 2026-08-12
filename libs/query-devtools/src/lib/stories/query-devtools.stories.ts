@@ -6,7 +6,7 @@ import { QueryDevtoolsStorybookComponent } from './components/query-devtools-sto
 import { QUERY_DEVTOOLS_DEMO_SCHEMA, queryDevtoolsDemoInterceptor } from './query-devtools-demo.utils';
 
 export default {
-  title: 'Components/Query Devtools',
+  title: 'Components/Dev tools/Query Devtools',
   component: QueryDevtoolsStorybookComponent,
   decorators: [
     applicationConfig({

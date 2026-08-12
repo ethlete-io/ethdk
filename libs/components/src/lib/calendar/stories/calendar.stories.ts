@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { CalendarStorybookComponent } from './calendar-storybook.component';
 
 export default {
-  title: 'Components/Calendar',
+  title: 'Components/Date & time/Calendar',
   component: CalendarStorybookComponent,
   decorators: [moduleMetadata({ imports: [CalendarStorybookComponent] })],
   argTypes: {

@@ -6,7 +6,7 @@ const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral', 'neut
 const PRESSED_COLOR_OPTIONS = [...COLOR_OPTIONS, 'inherit'] as const;
 
 export default {
-  title: 'Components/Button/Surface',
+  title: 'Components/Actions/Button/Surface',
   component: ButtonSurfaceStorybookComponent,
   decorators: [moduleMetadata({ imports: [ButtonSurfaceStorybookComponent] })],
   argTypes: {

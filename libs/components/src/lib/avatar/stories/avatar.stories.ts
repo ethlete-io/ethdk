@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { AvatarStorybookComponent } from './avatar-storybook.component';
 
 export default {
-  title: 'Components/Avatar',
+  title: 'Components/Data display/Avatar',
   component: AvatarStorybookComponent,
   decorators: [moduleMetadata({ imports: [AvatarStorybookComponent] })],
   args: { size: 'md', shape: 'circle', maxVisible: 3 },

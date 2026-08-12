@@ -48,7 +48,7 @@ The two generics on `defineOverlay<TComponent, TResult>` are the overlay compone
 
 ## Live demo
 
-<StoryEmbed id="components-overlay-using-openers--default" height="420px" />
+<StoryEmbed id="components-overlays-overlay-using-openers--default" height="420px" />
 
 ## Passing data into the overlay
 

@@ -136,7 +136,7 @@ save() {
 
 Declaring `progress` in the `loading` content (as above) opts the toast into following the request's **upload progress**; without it the notification shows no bar even when the request reports progress. Execute and call `promise()` in the same turn - a query that already carries a response settles the notification immediately.
 
-<StoryEmbed id="components-notification--promise-api" height="420px" />
+<StoryEmbed id="components-feedback-notification--promise-api" height="420px" />
 
 ### Live-updating a toast
 
@@ -156,7 +156,7 @@ The ref also offers `dismiss()`, `pauseTimer()` / `resumeTimer()` (hover and foc
 
 ## Live demo
 
-<StoryEmbed id="components-notification--bottom-end" height="480px" />
+<StoryEmbed id="components-feedback-notification--bottom-end" height="480px" />
 
 ## Swipe to dismiss
 
@@ -168,7 +168,7 @@ Turn it off with `provideNotificationManager({ swipeToDismiss: false })`. A cust
 
 `start` and `end` in the position names are **logical**: the stack docks to the inline-start/inline-end edge and follows the writing direction, so `bottom-end` sits bottom-left under `dir="rtl"`. The toast's slide-in offset and its status accent border flip with it. Because the stack renders into `document.body` it inherits the direction from the document root - setting `dir` on a subtree of your app does not affect it.
 
-<StoryEmbed id="components-notification--bottom-end-right-to-left" height="480px" />
+<StoryEmbed id="components-feedback-notification--bottom-end-right-to-left" height="480px" />
 
 The `center` positions are unaffected - centering has no inline side.
 

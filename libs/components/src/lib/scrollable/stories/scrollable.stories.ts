@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ScrollableStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Scrollable',
+  title: 'Components/Layout/Scrollable',
   component: ScrollableStorybookComponent,
   decorators: [moduleMetadata({ imports: [ScrollableStorybookComponent] })],
   argTypes: {

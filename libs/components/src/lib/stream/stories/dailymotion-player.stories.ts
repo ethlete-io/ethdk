@@ -2,7 +2,7 @@ import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { DailymotionPlayerSlotStorybookComponent, DailymotionPlayerStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Stream/Dailymotion',
+  title: 'Components/Media/Stream/Dailymotion',
   component: DailymotionPlayerStorybookComponent,
   argTypes: {
     videoId: { control: { type: 'text' } },

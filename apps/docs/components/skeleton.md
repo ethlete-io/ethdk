@@ -9,7 +9,7 @@ sized by their `shape` or by your own CSS, and every colour comes from the
 import { SKELETON_IMPORTS } from '@ethlete/components';
 ```
 
-<StoryEmbed id="components-skeleton--default" height="420px" />
+<StoryEmbed id="components-feedback-skeleton--default" height="420px" />
 
 ## Usage
 
@@ -74,7 +74,7 @@ placeholder still says "loading" without anything moving. `animated="false"` is 
 independent off-switch, for a placeholder inside something that already animates or a long
 list where a sweep per row is noise.
 
-<StoryEmbed id="components-skeleton--static" height="420px" />
+<StoryEmbed id="components-feedback-skeleton--static" height="420px" />
 
 ## In a table
 

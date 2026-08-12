@@ -6,7 +6,7 @@ import { ET_DUMMY_DATA_SWISS } from './dummy-data';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './generate-bracket';
 
 export default {
-  title: 'Components/Bracket Rounds List',
+  title: 'Components/Sports/Bracket Rounds List',
   component: StorybookBracketRoundsListComponent,
   argTypes: {
     maxWidth: { control: { type: 'number' } },

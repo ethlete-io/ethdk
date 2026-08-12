@@ -7,7 +7,7 @@ import {
 } from './carousel-storybook.component';
 
 export default {
-  title: 'Components/Carousel',
+  title: 'Components/Media/Carousel',
   component: CarouselStorybookComponent,
   decorators: [
     moduleMetadata({

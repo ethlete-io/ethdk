@@ -17,7 +17,7 @@ import { CHEVRON_ICON, ICON_IMPORTS, TIMES_ICON, provideIcons } from '@ethlete/c
 
 ## Live demo
 
-<StoryEmbed id="components-icon--default" height="320px" />
+<StoryEmbed id="components-data-display-icon--default" height="320px" />
 
 ## How it works
 

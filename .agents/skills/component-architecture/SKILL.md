@@ -21,13 +21,21 @@ detail, examples, and rationale.
 A new domain is scaffolded, not hand-assembled:
 
 ```bash
-nx g @ethlete/components:component stat-tile   # --tier=component|headless, --errors, --dry-run
+nx g @ethlete/components:component stat-tile --category="Data display"
+# also: --tier=component|headless, --errors, --dry-run
 ```
 
 It lays out the folder, the headless + default split, the `@layer components` stylesheet, the
 imports barrel, a spec and a story, then wires the lib barrel, the docs page + sidebar entry and
 (with `--errors`) the code range table in `docs/COMPONENT-ARCHITECTURE.md`. Everything it writes is
 a placeholder you replace - it buys the wiring, not the design.
+
+**`--category` is not cosmetic.** Every story lives under `Components/<Category>/<Name>`, and the
+category is part of the story id the generated docs page embeds
+(`components-data-display-stat-tile--default`). It prompts if you omit it and defaults to `Layout`;
+the eleven categories are listed in `COMPONENT_CATEGORIES`
+(`libs/components/generators/component/component-names.ts`), which is the single source of truth -
+adding a twelfth means updating that array and `schema.json`'s enum together.
 
 ## The three-tier model
 

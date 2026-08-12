@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { CardStorybookComponent } from './card-storybook.component';
 
 export default {
-  title: 'Components/Card',
+  title: 'Components/Layout/Card',
   component: CardStorybookComponent,
   decorators: [moduleMetadata({ imports: [CardStorybookComponent] })],
   args: { variant: 'outlined' },

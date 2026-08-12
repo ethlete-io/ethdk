@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { TimelineStorybookComponent } from './timeline-storybook.component';
 
 export default {
-  title: 'Components/Timeline',
+  title: 'Components/Data display/Timeline',
   component: TimelineStorybookComponent,
   decorators: [moduleMetadata({ imports: [TimelineStorybookComponent] })],
   args: {

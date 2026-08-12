@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { MatchCardStatesStorybookComponent, MatchCardStorybookComponent } from './match-card-storybook.component';
 
 export default {
-  title: 'Components/Match',
+  title: 'Components/Sports/Match',
   component: MatchCardStorybookComponent,
   decorators: [moduleMetadata({ imports: [MatchCardStorybookComponent, MatchCardStatesStorybookComponent] })],
   args: {

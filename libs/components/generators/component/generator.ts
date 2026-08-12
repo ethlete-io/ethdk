@@ -1,6 +1,6 @@
 import { formatFiles, logger, readProjectConfiguration, Tree, visitNotIgnoredFiles } from '@nx/devkit';
 import { join } from 'node:path';
-import { ComponentNames, componentNames } from './component-names';
+import { ComponentCategory, ComponentNames, componentNames } from './component-names';
 import {
   barrelFile,
   componentFile,
@@ -27,6 +27,7 @@ import {
 type GeneratorSchema = {
   name: string;
   project?: string;
+  category?: ComponentCategory;
   tier?: Tier;
   errors?: boolean;
   stories?: boolean;
@@ -56,7 +57,7 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
 
   let names: ComponentNames;
   try {
-    names = componentNames(schema.name);
+    names = componentNames(schema.name, schema.category);
   } catch (error) {
     logger.error(`❌ ${error instanceof Error ? error.message : String(error)}`);
 

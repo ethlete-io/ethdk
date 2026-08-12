@@ -12,7 +12,7 @@ import { BADGE_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-badge--default" height="120px" />
+<StoryEmbed id="components-data-display-badge--default" height="120px" />
 
 ## Options
 

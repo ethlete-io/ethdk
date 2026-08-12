@@ -29,7 +29,7 @@ import { TAB_IMPORTS } from '@ethlete/components';
 - `sessionMemoryKey` persists the selected tab across navigation in session storage.
 - The tab bar lives inside a [scrollable](/components/scrollable), so overflowing tabs scroll with the active one centered. Tabs opt into that scrollable's prev/next buttons for you; they carry none of its other optional chrome.
 
-<StoryEmbed id="components-tabs-tabs--default" height="380px" />
+<StoryEmbed id="components-navigation-tabs-tabs--default" height="380px" />
 
 ## Nav tabs
 
@@ -52,7 +52,7 @@ import { NAV_TAB_IMPORTS } from '@ethlete/components';
 
 `a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics - place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.
 
-<StoryEmbed id="components-tabs-nav-tabs--default" height="380px" />
+<StoryEmbed id="components-navigation-tabs-nav-tabs--default" height="380px" />
 
 ## Appearance
 

@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ToggletipStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Toggletip',
+  title: 'Components/Feedback/Toggletip',
   component: ToggletipStorybookComponent,
   decorators: [moduleMetadata({ imports: [ToggletipStorybookComponent] })],
   args: {

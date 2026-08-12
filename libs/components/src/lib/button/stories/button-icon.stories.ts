@@ -6,7 +6,7 @@ const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral', 'surf
 const PRESSED_COLOR_OPTIONS = [...COLOR_OPTIONS, 'inherit'] as const;
 
 export default {
-  title: 'Components/Button/Icon',
+  title: 'Components/Actions/Button/Icon',
   component: ButtonIconStorybookComponent,
   decorators: [moduleMetadata({ imports: [ButtonIconStorybookComponent] })],
   argTypes: {

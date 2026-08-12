@@ -196,7 +196,7 @@ export function storiesFile(n: ComponentNames): string {
 import { ${n.className}StorybookComponent } from './${n.fileName}-storybook.component';
 
 export default {
-  title: 'Components/${n.title}',
+  title: 'Components/${n.category}/${n.title}',
   component: ${n.className}StorybookComponent,
   decorators: [moduleMetadata({ imports: [${n.className}StorybookComponent] })],
 } as Meta<${n.className}StorybookComponent>;

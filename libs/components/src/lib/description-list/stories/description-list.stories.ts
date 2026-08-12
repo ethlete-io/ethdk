@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { DescriptionListStorybookComponent } from './description-list-storybook.component';
 
 export default {
-  title: 'Components/Description list',
+  title: 'Components/Data display/Description list',
   component: DescriptionListStorybookComponent,
   decorators: [moduleMetadata({ imports: [DescriptionListStorybookComponent] })],
   args: { variant: 'inline' },

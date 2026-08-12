@@ -32,7 +32,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-button-surface--default" height="400px" />
+<StoryEmbed id="components-actions-button-surface--default" height="400px" />
 
 ## Variants, sizes, color
 
@@ -113,7 +113,7 @@ Every flavor works on `<a>` for navigation with identical styling:
 </div>
 ```
 
-<StoryEmbed id="components-button-split--default" height="500px" />
+<StoryEmbed id="components-actions-button-split--default" height="500px" />
 
 - Give both segments the **same `variant`, `size` and `color`** - the container aligns their heights and outer corner radius, but the segment inputs stay yours to set.
 - Both segments are **required**; a missing one throws in dev mode (see [error codes](#error-codes)).
@@ -154,7 +154,7 @@ Most of them are set **per size** by the component (`--et-button-padding`, the t
 }
 ```
 
-Full per-flavor design specs (anatomy, exact paddings per size, pressed-state variant maps, the complete CSS custom property override API) live in Storybook's docs pages: [Surface](https://next-ethlete-sdk.web.app/?path=/docs/components-button-surface--docs), [Text](https://next-ethlete-sdk.web.app/?path=/docs/components-button-text--docs), [Icon](https://next-ethlete-sdk.web.app/?path=/docs/components-button-icon--docs), [FAB](https://next-ethlete-sdk.web.app/?path=/docs/components-button-fab--docs), [Window Control](https://next-ethlete-sdk.web.app/?path=/docs/components-button-window-control--docs), [Split](https://next-ethlete-sdk.web.app/?path=/docs/components-button-split--docs).
+Full per-flavor design specs (anatomy, exact paddings per size, pressed-state variant maps, the complete CSS custom property override API) live in Storybook's docs pages: [Surface](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-surface--docs), [Text](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-text--docs), [Icon](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-icon--docs), [FAB](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-fab--docs), [Window Control](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-window-control--docs), [Split](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-split--docs).
 
 ## Error codes
 

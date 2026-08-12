@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { TimePickerStorybookComponent } from './time-picker-storybook.component';
 
 export default {
-  title: 'Components/Time Picker',
+  title: 'Components/Date & time/Time Picker',
   component: TimePickerStorybookComponent,
   decorators: [moduleMetadata({ imports: [TimePickerStorybookComponent] })],
   argTypes: {

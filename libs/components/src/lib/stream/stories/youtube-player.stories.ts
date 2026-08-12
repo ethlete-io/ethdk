@@ -6,7 +6,7 @@ import {
 } from './components';
 
 export default {
-  title: 'Components/Stream/YouTube',
+  title: 'Components/Media/Stream/YouTube',
   component: YoutubePlayerStorybookComponent,
   argTypes: {
     videoId: {

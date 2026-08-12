@@ -4,7 +4,7 @@ import { ButtonTextIconStorybookComponent, ButtonTextStorybookComponent } from '
 const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
 
 export default {
-  title: 'Components/Button/Text',
+  title: 'Components/Actions/Button/Text',
   component: ButtonTextStorybookComponent,
   decorators: [moduleMetadata({ imports: [ButtonTextStorybookComponent] })],
   argTypes: {

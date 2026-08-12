@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { SkeletonStorybookComponent } from './skeleton-storybook.component';
 
 export default {
-  title: 'Components/Skeleton',
+  title: 'Components/Feedback/Skeleton',
   component: SkeletonStorybookComponent,
   decorators: [moduleMetadata({ imports: [SkeletonStorybookComponent] })],
   args: { animated: true, surface: 'dark' },

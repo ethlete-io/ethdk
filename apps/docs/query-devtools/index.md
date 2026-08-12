@@ -107,7 +107,7 @@ it on arrival rather than waiting for a second click:
 
 ## Live demo
 
-<StoryEmbed id="components-query-devtools--default" height="520px" />
+<StoryEmbed id="components-dev-tools-query-devtools--default" height="520px" />
 
 Open the panel with the floating **Query** button (bottom-right) or the
 <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> shortcut, then use

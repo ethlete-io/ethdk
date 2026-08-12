@@ -4,7 +4,7 @@ import { ButtonWindowControlStorybookComponent } from './components';
 const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
 
 export default {
-  title: 'Components/Button/Window Control',
+  title: 'Components/Actions/Button/Window Control',
   component: ButtonWindowControlStorybookComponent,
   decorators: [moduleMetadata({ imports: [ButtonWindowControlStorybookComponent] })],
   argTypes: {

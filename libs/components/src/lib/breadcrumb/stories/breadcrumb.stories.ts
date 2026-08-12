@@ -12,7 +12,7 @@ import {
 import { BreadcrumbStorybookComponent } from './breadcrumb-storybook.component';
 
 export default {
-  title: 'Components/Breadcrumb',
+  title: 'Components/Navigation/Breadcrumb',
   component: BreadcrumbStorybookComponent,
   decorators: [
     moduleMetadata({ imports: [BreadcrumbStorybookComponent, BreadcrumbRoutedStorybookComponent] }),

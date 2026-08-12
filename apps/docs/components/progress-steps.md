@@ -17,7 +17,7 @@ import { PROGRESS_STEPS_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-progress-steps--default" height="140px" />
+<StoryEmbed id="components-navigation-progress-steps--default" height="140px" />
 
 ## `state` is yours to set, per step
 
@@ -47,7 +47,7 @@ Only the theme a rendered step actually uses is resolved, so a flow that never f
 the app to register a `type: 'error'` theme. A step that does use one and finds it unregistered
 throws - the same contract `et-banner` has.
 
-<StoryEmbed id="components-progress-steps--outcomes" height="140px" />
+<StoryEmbed id="components-navigation-progress-steps--outcomes" height="140px" />
 
 ## The marker number and connector are pure CSS
 
@@ -73,7 +73,7 @@ because in a column the gap _is_ the connector's length.
 </et-progress-steps>
 ```
 
-<StoryEmbed id="components-progress-steps--vertical" height="220px" />
+<StoryEmbed id="components-navigation-progress-steps--vertical" height="220px" />
 
 ## A second line under the label
 
@@ -94,7 +94,7 @@ link, emphasis, or an interpolated value the same way the label does:
 </et-progress-steps>
 ```
 
-<StoryEmbed id="components-progress-steps--vertical-descriptions" height="280px" />
+<StoryEmbed id="components-navigation-progress-steps--vertical-descriptions" height="280px" />
 
 The description is smaller and muted, and it stays neutral in the three outcome states - the same
 call `et-banner` makes for its own description, so the outcome reads off the marker and the label

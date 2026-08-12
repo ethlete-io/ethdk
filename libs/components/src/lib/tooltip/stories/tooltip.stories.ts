@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { TooltipStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Tooltip',
+  title: 'Components/Feedback/Tooltip',
   component: TooltipStorybookComponent,
   decorators: [moduleMetadata({ imports: [TooltipStorybookComponent] })],
   args: {

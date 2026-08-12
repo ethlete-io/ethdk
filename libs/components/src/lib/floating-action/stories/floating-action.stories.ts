@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { FloatingActionStorybookComponent } from './floating-action-storybook.component';
 
 export default {
-  title: 'Components/Floating action',
+  title: 'Components/Actions/Floating action',
   component: FloatingActionStorybookComponent,
   decorators: [moduleMetadata({ imports: [FloatingActionStorybookComponent] })],
   args: { surface: 'dark', disabled: false },

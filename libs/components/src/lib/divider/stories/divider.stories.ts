@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { DividerStorybookComponent } from './divider-storybook.component';
 
 export default {
-  title: 'Components/Divider',
+  title: 'Components/Layout/Divider',
   component: DividerStorybookComponent,
   decorators: [moduleMetadata({ imports: [DividerStorybookComponent] })],
   args: { orientation: 'horizontal', decorative: false },

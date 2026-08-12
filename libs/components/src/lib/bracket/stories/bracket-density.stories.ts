@@ -4,7 +4,7 @@ import { StorybookBracketDensityComponent } from './bracket-storybook.component'
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './generate-bracket';
 
 export default {
-  title: 'Components/Bracket Density',
+  title: 'Components/Sports/Bracket Density',
   component: StorybookBracketDensityComponent,
   argTypes: {
     density: {

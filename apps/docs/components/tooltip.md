@@ -29,7 +29,7 @@ import { TOOLTIP_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-tooltip--default" height="360px" />
+<StoryEmbed id="components-feedback-tooltip--default" height="360px" />
 
 ## Behavior
 

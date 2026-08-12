@@ -19,7 +19,7 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-carousel--default" height="460px" />
+<StoryEmbed id="components-media-carousel--default" height="460px" />
 
 ## Slides are data and a template
 
@@ -99,7 +99,7 @@ currently holds:
 <et-carousel [itemSize]="{ default: 'full', md: 'half', lg: 'third' }">…</et-carousel>
 ```
 
-The [Multiple items](https://ethlete-sdk.web.app/?path=/story/components-carousel--multiple-items) story
+The [Multiple items](https://ethlete-sdk.web.app/?path=/story/components-media-carousel--multiple-items) story
 shows it live (four embeds per page is the practical limit here, so this one stays a link).
 
 ### Alignment
@@ -145,7 +145,7 @@ What this means in practice:
 - Clones are `aria-hidden` and `inert`, and carry no `N of M` label, so a screen reader user never
   meets the same slide twice. They are marked `data-clone` if you need to see them in the DOM.
 
-<StoryEmbed id="components-carousel--loop" height="440px" />
+<StoryEmbed id="components-media-carousel--loop" height="440px" />
 
 Seamless looping needs rendered clones, so it applies where the carousel renders the slides. In two
 cases `loop` stays a wrapping _jump_ back to the other end instead:
@@ -156,7 +156,7 @@ cases `loop` stays a wrapping _jump_ back to the other end instead:
 
 `isLooping()` says which of the two a carousel is doing, and the host reports `data-looping` when the
 loop is seamless. `itemSize="auto"` is covered by the
-[Variable widths](https://ethlete-sdk.web.app/?path=/story/components-carousel--variable-widths) story.
+[Variable widths](https://ethlete-sdk.web.app/?path=/story/components-media-carousel--variable-widths) story.
 
 ### Navigation is always one step
 
@@ -205,7 +205,7 @@ It applies only where the track shows one slide per view. With the content pinne
 whose box is partly on screen at rest would have its content outside that box and show as blank - so a
 peeking layout wants `dim`.
 
-<StoryEmbed id="components-carousel--wipe-transition" height="440px" />
+<StoryEmbed id="components-media-carousel--wipe-transition" height="440px" />
 
 ### Two drivers
 
@@ -222,7 +222,7 @@ Under `'scroll-timeline'` the built-in effects are keyframes over `opacity`, `sc
 browser can hand to the compositor. Under `'js'` they are `calc()` over `--et-carousel-slide-progress`, which
 the driver writes each frame - the same numbers over the same range, so the two are indistinguishable to look
 at, but only the first can be composited. The
-[JS transition driver](https://ethlete-sdk.web.app/?path=/story/components-carousel--js-transition-driver)
+[JS transition driver](https://ethlete-sdk.web.app/?path=/story/components-media-carousel--js-transition-driver)
 story runs them side by side.
 
 The JS driver measures the slides once per layout change, so a frame costs one scroll-offset read for
@@ -305,7 +305,7 @@ pause control for you, and the headless `etCarouselAutoplay` throws in dev mode 
 focus pause: it lives inside the carousel, so pressing play would otherwise be cancelled by the pointer
 still resting on the button that was just pressed, and autoplay could never be restarted. Hovering a
 _slide_ pauses as it should. The
-[Autoplay](https://ethlete-sdk.web.app/?path=/story/components-carousel--autoplay) story shows it live.
+[Autoplay](https://ethlete-sdk.web.app/?path=/story/components-media-carousel--autoplay) story shows it live.
 
 On the headless `etCarouselAutoplay`, `enabled` defaults to `true` - putting the directive on an element
 _is_ the opt-in there - so read `isEnabled()` for what is actually in effect. `<et-carousel>` always carries
@@ -349,7 +349,7 @@ A hand-built carousel renders its own children, so it gets no clones and `loop` 
 jump. It does still get the transition system: `transition` mounts the progress property and the
 effects, and `.et-carousel-item` is the element they apply to.
 
-<StoryEmbed id="components-carousel--headless" height="360px" />
+<StoryEmbed id="components-media-carousel--headless" height="360px" />
 
 ## Accessibility
 

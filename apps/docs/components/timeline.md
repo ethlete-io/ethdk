@@ -22,7 +22,7 @@ import { TIMELINE_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-timeline--default" height="280px" />
+<StoryEmbed id="components-data-display-timeline--default" height="280px" />
 
 ## Anatomy
 
@@ -54,7 +54,7 @@ With nothing projected into the marker slot, an item renders the default dot, si
 
 A projected marker sits on the surface background rather than on the line, so an icon stays legible where the rail passes behind it. Mixing dot items and icon items in one timeline is fine - both are centered on the same rail.
 
-<StoryEmbed id="components-timeline--with-markers" height="280px" />
+<StoryEmbed id="components-data-display-timeline--with-markers" height="280px" />
 
 ## Density
 
@@ -69,7 +69,7 @@ Every token inherits, so one declaration on the timeline re-sizes every item ins
 }
 ```
 
-<StoryEmbed id="components-timeline--compact" height="240px" />
+<StoryEmbed id="components-data-display-timeline--compact" height="240px" />
 
 ## Accessibility
 

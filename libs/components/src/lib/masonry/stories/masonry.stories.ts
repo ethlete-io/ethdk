@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { MasonryStorybookComponent } from './masonry-storybook.component';
 
 export default {
-  title: 'Components/Masonry',
+  title: 'Components/Layout/Masonry',
   component: MasonryStorybookComponent,
   decorators: [moduleMetadata({ imports: [MasonryStorybookComponent] })],
   args: { columnWidth: 240, gap: 16, itemCount: 18, loadMore: false, surface: 'dark' },

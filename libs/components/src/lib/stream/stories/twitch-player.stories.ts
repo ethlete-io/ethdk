@@ -2,7 +2,7 @@ import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { TwitchPlayerSlotStorybookComponent, TwitchPlayerStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Stream/Twitch',
+  title: 'Components/Media/Stream/Twitch',
   component: TwitchPlayerStorybookComponent,
   argTypes: {
     src: {
