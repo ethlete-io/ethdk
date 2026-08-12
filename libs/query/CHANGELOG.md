@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.37
+
+### Minor Changes
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`b6c106e`](https://github.com/ethlete-io/ethdk/commit/b6c106e17d8925fd881eb94974782e94ae03686d) Thanks [@github-actions](https://github.com/apps/github-actions)! - The Mocks tab seeds a body in a placeholder, realistic or stress value style, and `provideQueryDevtools({ schema })` takes one API description per query client.
+
 ## 6.0.0-next.36
 
 ### Patch Changes
