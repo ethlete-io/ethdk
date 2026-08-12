@@ -8,7 +8,7 @@ theming. Each control family has its own guide:
 | Guide                                              | Controls                                                                     |
 | -------------------------------------------------- | ---------------------------------------------------------------------------- |
 | [Text inputs](/components/text-inputs)             | text field, number, password, textarea, color, masked input, OTP, tag, phone |
-| [Date & time inputs](/components/date-time-inputs) | date, date range, time, date-time, duration                                  |
+| [Date & time inputs](/components/date-time-inputs) | date, date range, time, date-time, date-time range, duration                 |
 | [Choice & rating](/components/choice-inputs)       | checkbox, switch, radio / checkbox / segmented selection lists, rating       |
 | [Select](/components/select)                       | single/multi dropdown, searchable combobox, custom values                    |
 | [Cascader](/components/cascader)                   | hierarchical multi-level select                                              |
@@ -39,32 +39,33 @@ Each control family ships its own imports array - combine the field shell with
 the controls you use. The field-shell array is shared by every text-based
 control:
 
-| Array                      | Contains                                                                                |
-| -------------------------- | --------------------------------------------------------------------------------------- |
-| `FORM_FIELD_IMPORTS`       | `et-form-field`, `et-label`, `et-hint`, `et-counter`, `etInputPrefix` / `etInputSuffix` |
-| `INPUT_IMPORTS`            | `et-input`                                                                              |
-| `NUMBER_INPUT_IMPORTS`     | `et-number-input`                                                                       |
-| `PASSWORD_INPUT_IMPORTS`   | `et-password-input`                                                                     |
-| `TEXTAREA_IMPORTS`         | `et-textarea`                                                                           |
-| `COLOR_INPUT_IMPORTS`      | `et-color-input`                                                                        |
-| `MASKED_INPUT_IMPORTS`     | `etInputMask` (layers onto `et-input`)                                                  |
-| `CHECKBOX_IMPORTS`         | `et-checkbox`                                                                           |
-| `SWITCH_IMPORTS`           | `et-switch`                                                                             |
-| `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                                   |
-| `RATING_IMPORTS`           | `et-rating`                                                                             |
-| `CHECKBOX_GROUP_IMPORTS`   | `et-checkbox-group`, `et-checkbox-option`, `et-checkbox-group-select-all`               |
-| `RADIO_GROUP_IMPORTS`      | `et-radio-group`, `et-radio`                                                            |
-| `SEGMENTED_BUTTON_IMPORTS` | `et-segmented-button-group`, `et-segmented-button`                                      |
-| `SELECTION_LIST_IMPORTS`   | the headless engine: `etSelectionList`, `etSelectionOption`, `etSelectionListControl`   |
-| `DESCRIPTION_IMPORTS`      | `et-description`                                                                        |
-| `OTP_INPUT_IMPORTS`        | `et-otp-input`                                                                          |
-| `TAG_INPUT_IMPORTS`        | `et-tag-input`                                                                          |
-| `PHONE_INPUT_IMPORTS`      | `et-phone-input`                                                                        |
-| `DATE_INPUT_IMPORTS`       | `et-date-input`                                                                         |
-| `DATE_RANGE_INPUT_IMPORTS` | `et-date-range-input`                                                                   |
-| `TIME_INPUT_IMPORTS`       | `et-time-input`                                                                         |
-| `DATE_TIME_INPUT_IMPORTS`  | `et-date-time-input`                                                                    |
-| `DURATION_INPUT_IMPORTS`   | `et-duration-input`                                                                     |
+| Array                           | Contains                                                                                |
+| ------------------------------- | --------------------------------------------------------------------------------------- |
+| `FORM_FIELD_IMPORTS`            | `et-form-field`, `et-label`, `et-hint`, `et-counter`, `etInputPrefix` / `etInputSuffix` |
+| `INPUT_IMPORTS`                 | `et-input`                                                                              |
+| `NUMBER_INPUT_IMPORTS`          | `et-number-input`                                                                       |
+| `PASSWORD_INPUT_IMPORTS`        | `et-password-input`                                                                     |
+| `TEXTAREA_IMPORTS`              | `et-textarea`                                                                           |
+| `COLOR_INPUT_IMPORTS`           | `et-color-input`                                                                        |
+| `MASKED_INPUT_IMPORTS`          | `etInputMask` (layers onto `et-input`)                                                  |
+| `CHECKBOX_IMPORTS`              | `et-checkbox`                                                                           |
+| `SWITCH_IMPORTS`                | `et-switch`                                                                             |
+| `CHOICE_FIELD_IMPORTS`          | `et-choice-field` + label/hint chrome                                                   |
+| `RATING_IMPORTS`                | `et-rating`                                                                             |
+| `CHECKBOX_GROUP_IMPORTS`        | `et-checkbox-group`, `et-checkbox-option`, `et-checkbox-group-select-all`               |
+| `RADIO_GROUP_IMPORTS`           | `et-radio-group`, `et-radio`                                                            |
+| `SEGMENTED_BUTTON_IMPORTS`      | `et-segmented-button-group`, `et-segmented-button`                                      |
+| `SELECTION_LIST_IMPORTS`        | the headless engine: `etSelectionList`, `etSelectionOption`, `etSelectionListControl`   |
+| `DESCRIPTION_IMPORTS`           | `et-description`                                                                        |
+| `OTP_INPUT_IMPORTS`             | `et-otp-input`                                                                          |
+| `TAG_INPUT_IMPORTS`             | `et-tag-input`                                                                          |
+| `PHONE_INPUT_IMPORTS`           | `et-phone-input`                                                                        |
+| `DATE_INPUT_IMPORTS`            | `et-date-input`                                                                         |
+| `DATE_RANGE_INPUT_IMPORTS`      | `et-date-range-input`                                                                   |
+| `TIME_INPUT_IMPORTS`            | `et-time-input`                                                                         |
+| `DATE_TIME_INPUT_IMPORTS`       | `et-date-time-input`                                                                    |
+| `DATE_TIME_RANGE_INPUT_IMPORTS` | `et-date-time-range-input`                                                              |
+| `DURATION_INPUT_IMPORTS`        | `et-duration-input`                                                                     |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -219,7 +220,7 @@ for the full contract, wiring recipe, and per-control presentation table.
   `et-textarea` (placeholder), `et-color-input`, `et-tag-input`,
   `et-phone-input`, and the date/time family (`et-date-input`,
   `et-date-range-input`, `et-time-input`, `et-date-time-input`,
-  `et-duration-input`).
+  `et-date-time-range-input`, `et-duration-input`).
 - **Controls without a text slot** express it through ARIA/visual masking only -
   no `mixedLabel`: `et-rating` (`aria-valuetext`), and the selection groups
   `et-radio-group`, `et-checkbox-group`, `et-segmented-button-group` (nothing

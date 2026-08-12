@@ -1,0 +1,39 @@
+<div [attr.aria-label]="resolvedStartLabel()" class="et-time-range-picker-side" data-side="start" role="group">
+  <span class="et-time-range-picker-caption" aria-hidden="true">{{ resolvedStartLabel() }}</span>
+
+  <et-time-picker
+    [value]="rangeValue().start"
+    [format]="format()"
+    [locale]="locale()"
+    [minuteStep]="minuteStep()"
+    [secondStep]="secondStep()"
+    [min]="min()"
+    [max]="max()"
+    [timeFilter]="startTimeFilter()"
+    [hoursLabel]="hoursLabel()"
+    [minutesLabel]="minutesLabel()"
+    [secondsLabel]="secondsLabel()"
+    [periodLabel]="periodLabel()"
+    (valueChange)="selectSide('start', $event)"
+  />
+</div>
+
+<div [attr.aria-label]="resolvedEndLabel()" class="et-time-range-picker-side" data-side="end" role="group">
+  <span class="et-time-range-picker-caption" aria-hidden="true">{{ resolvedEndLabel() }}</span>
+
+  <et-time-picker
+    [value]="rangeValue().end"
+    [format]="format()"
+    [locale]="locale()"
+    [minuteStep]="minuteStep()"
+    [secondStep]="secondStep()"
+    [min]="min()"
+    [max]="max()"
+    [timeFilter]="endTimeFilter()"
+    [hoursLabel]="hoursLabel()"
+    [minutesLabel]="minutesLabel()"
+    [secondsLabel]="secondsLabel()"
+    [periodLabel]="periodLabel()"
+    (valueChange)="selectSide('end', $event)"
+  />
+</div>

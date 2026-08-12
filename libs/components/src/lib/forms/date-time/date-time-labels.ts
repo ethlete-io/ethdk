@@ -16,16 +16,25 @@ export type DateTimeLabels = {
   openDateTimePicker: string;
   /** Accessible label for the picker's dialog. */
   chooseDate: string;
+  /** Accessible label for the date & time range picker's dialog. */
+  chooseDateTimeRange: string;
 
   /** Accessible label for a range's start field. */
   startDate: string;
   /** Accessible label for a range's end field. */
   endDate: string;
+  /** Accessible label for a date & time range's start field. */
+  startDateTime: string;
+  /** Accessible label for a date & time range's end field. */
+  endDateTime: string;
 
   /** The date & time picker's tab showing the calendar. */
   dateTab: string;
   /** The date & time picker's tab showing the clock. */
   timeTab: string;
+  /** The date & time range picker's tab showing the calendar. (Its two time tabs are named by
+   * `TIME_PICKER_LABELS.startTime`/`endTime`, the same strings the time range picker heads them with.) */
+  datesTab: string;
 
   /** Validation message for text that isn't a date. */
   invalidDate: string;
@@ -35,6 +44,8 @@ export type DateTimeLabels = {
   invalidDateTime: string;
   /** Validation message for text that isn't a date range. */
   invalidDateRange: string;
+  /** Validation message for text that isn't a date & time range. */
+  invalidDateTimeRange: string;
   /** Validation message for text that isn't a duration. */
   invalidDuration: string;
 };
@@ -45,17 +56,22 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   openTimePicker: 'Open time picker',
   openDateTimePicker: 'Open date & time picker',
   chooseDate: 'Choose a date',
+  chooseDateTimeRange: 'Choose a date and time range',
 
   startDate: 'Start date',
   endDate: 'End date',
+  startDateTime: 'Start date and time',
+  endDateTime: 'End date and time',
 
   dateTab: 'Date',
   timeTab: 'Time',
+  datesTab: 'Dates',
 
   invalidDate: 'Please enter a valid date',
   invalidTime: 'Please enter a valid time',
   invalidDateTime: 'Please enter a valid date and time',
   invalidDateRange: 'Please enter a valid date range',
+  invalidDateTimeRange: 'Please enter a valid date and time range',
   invalidDuration: 'Please enter a valid duration',
 };
 

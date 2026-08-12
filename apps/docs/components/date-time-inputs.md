@@ -1,23 +1,24 @@
 # Date & time inputs
 
-Five form controls for dates, times and durations, all sitting inside the shared
+Six form controls for dates, times and durations, all sitting inside the shared
 [`et-form-field` shell](/components/forms#the-field-shell) and binding via signal
 forms: [date](#date-input), [date range](#date-range-input), [time](#time-input),
-[date-time](#date-time-input) and [duration](#duration-input). See the
-[Forms overview](/components/forms) for the field chrome, validation and
-mixed-state contracts they inherit.
+[date-time](#date-time-input), [date-time range](#date-time-range-input) and
+[duration](#duration-input). See the [Forms overview](/components/forms) for the
+field chrome, validation and mixed-state contracts they inherit.
 
 ```ts
 import { FORM_FIELD_IMPORTS, DATE_INPUT_IMPORTS } from '@ethlete/components';
 ```
 
-| Array                      | Contains              |
-| -------------------------- | --------------------- |
-| `DATE_INPUT_IMPORTS`       | `et-date-input`       |
-| `DATE_RANGE_INPUT_IMPORTS` | `et-date-range-input` |
-| `TIME_INPUT_IMPORTS`       | `et-time-input`       |
-| `DATE_TIME_INPUT_IMPORTS`  | `et-date-time-input`  |
-| `DURATION_INPUT_IMPORTS`   | `et-duration-input`   |
+| Array                           | Contains                   |
+| ------------------------------- | -------------------------- |
+| `DATE_INPUT_IMPORTS`            | `et-date-input`            |
+| `DATE_RANGE_INPUT_IMPORTS`      | `et-date-range-input`      |
+| `TIME_INPUT_IMPORTS`            | `et-time-input`            |
+| `DATE_TIME_INPUT_IMPORTS`       | `et-date-time-input`       |
+| `DATE_TIME_RANGE_INPUT_IMPORTS` | `et-date-time-range-input` |
+| `DURATION_INPUT_IMPORTS`        | `et-duration-input`        |
 
 ## Shared behavior
 
@@ -94,8 +95,8 @@ A date control combining typed entry with an anchored
 | `mask`                | `boolean`                                    | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.       |
 
 ¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls).
-² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidDuration` for the other controls.
-³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Date'` / `'Time'`).
+² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidDateTimeRange` / `invalidDuration` for the other controls.
+³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Date'` / `'Time'`, and `'Dates'` / `'Start time'` / `'End time'` on the range picker).
 ⁴ `null` derives the format from `precision`: the locale's short date (`'P'`) at day precision, that same pattern without its day at month precision, `'yyyy'` at year precision.
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Picking
@@ -119,7 +120,7 @@ drilling only navigates, so the field commits on the day pick as always.
 
 <StoryEmbed id="components-forms-date-input--month-precision" height="360px" />
 
-Naming a `displayFormat` yourself still wins over the derived one. The range input takes `precision` the same way, for month ranges like `07/2025 – 03/2026`; see [the calendar's precision](/components/calendar#month-and-year-pickers) for how the picker behaves there. The date-time input has none - its value carries a time.
+Naming a `displayFormat` yourself still wins over the derived one. The range input takes `precision` the same way, for month ranges like `07/2025 – 03/2026`; see [the calendar's precision](/components/calendar#month-and-year-pickers) for how the picker behaves there. The two date-time controls have none - their values carry a time.
 
 ### Time zones {#time-zones}
 
@@ -270,7 +271,14 @@ Time tabs** switching between the two panes.
 Typed text is parsed **strictly** against `displayFormat` first, then leniently:
 the entry is split into a date and a time at any separator (the date against the
 locale's short `P` format, the time with the time input's lenient rules -
-`7/16/2026 930pm` commits), and a **bare date commits at midnight**. In the
+`7/16/2026 930pm` commits), and a **bare date commits at midnight**.
+
+In the picker, selections **merge**: picking a day keeps the committed time of
+day, picking a time keeps the committed day - and neither closes the overlay.
+While the value is still empty, a first day pick commits the day **at midnight**
+(the time never defaults to the current wall-clock time); a first time pick
+completes with today as the day.
+
 The date bounds (`minDate`/`maxDate`/`dateFilter`) and the time bounds
 (`minTime`/`maxTime`/`timeFilter`) are independent: the first gate the calendar pane, the
 second the time pane. Because `timeFilter` receives the full candidate timestamp - the
@@ -288,12 +296,82 @@ const openingHours = (candidate: Date) => {
 
 <StoryEmbed id="components-forms-date-time-input--opening-hours" height="560px" />
 
-In the
-picker, selections **merge**: picking a day keeps the committed time of day,
-picking a time keeps the committed day - and neither closes the overlay. While
-the value is still empty, a first day pick commits the day **at midnight** (the
-time never defaults to the current wall-clock time); a first time pick completes
-with today as the day.
+## Date-time range input - `et-date-time-range-input` {#date-time-range-input}
+
+The two controls above, combined: one registered form control containing two
+text inputs (start – end) that share a single picker holding a range-mode
+[calendar](/components/calendar) plus a
+[**time range picker**](/components/time-picker#range-picker) - one set of time
+columns per side, mounted once. The value shape is the date range input's
+`{ start: string | null; end: string | null }` in `valueFormat`, except both
+strings carry a time; each side commits exactly like the single date-time input.
+Reach for it wherever a start and an end belong together - a booking, a shift, an
+appointment - instead of pairing two `et-date-time-input`s.
+
+```html
+<et-form-field>
+  <et-label>When</et-label>
+  <et-date-time-range-input [formField]="demoForm.slot" />
+</et-form-field>
+```
+
+<StoryEmbed id="components-forms-date-time-range-input--prefilled" height="620px" />
+
+Options are the union of the two: everything the date range input forwards to the
+calendar (`minDate`/`maxDate`/`dateFilter`, `startAt`, `startView`, `dateClass`,
+`weekNumbers`) plus everything the date-time input forwards to a time picker
+(`minuteStep`, `secondStep`, `minTime`, `maxTime`, `timeFilter`), with
+`startPlaceholder`/`endPlaceholder` and `startAriaLabel`/`endAriaLabel` (defaults
+`'Start date and time'`/`'End date and time'`; the host is a `role="group"`
+labelled by the field label). `precision` is absent, as on the single date-time
+input - both ends carry a time. It does **not** take the date range input's
+`rangeSelectionStrategy` or `comparisonStart`/`comparisonEnd`: week snapping and
+comparison bands belong to reporting filters, not to appointments.
+
+Two behaviors differ from the plain date range input, both because a day range is
+only half the value here:
+
+- **The picker never closes on its own.** Completing the day range leaves it open,
+  because the two times are still to come. The reader closes it (Escape, outside
+  click, the trigger).
+- **A picked day range keeps each side's committed time of day**, midnight where
+  there is none yet - the same merge the single date-time input does, once per
+  side. Picking a time writes only its own side; while that side has no day yet,
+  the **other** side's day is used (the end of an appointment whose start day is
+  known is on that day, not today), and today only while the range is empty.
+
+Below the `md` breakpoint the picker opens as a bottom sheet with **Dates / Start
+time / End time tabs**; on the anchored panel the calendar and both time sides sit
+side by side under their headings (`datesTabLabel`, `startTimeLabel`,
+`endTimeLabel` relabel tab and heading together).
+
+Because two `Pp` values are long, give the field room - roughly twice a date
+range's width - or name a compact `displayFormat` such as `dd.MM.yy HH:mm`.
+
+**Ordering is not enforced.** The control never reorders or clamps the two ends -
+same contract as the date range input - so an end before the start is a
+[validator's](/components/forms#validation) job:
+
+```ts
+validate(s.slot, ({ value }) => {
+  const { start, end } = value();
+
+  return start !== null && end !== null && start > end
+    ? { kind: 'range-order', message: 'The start must be before the end' }
+    : null;
+});
+```
+
+What the picker _can_ express is the same rule as a bound, because `timeFilter`
+receives the side it is filling alongside the candidate timestamp - the one thing
+a single-value bound cannot say:
+
+```ts
+const endAfterStart = (candidate: Date, side: 'start' | 'end') =>
+  side === 'start' || slot().start === null || candidate > parseISO(slot().start);
+```
+
+<StoryEmbed id="components-forms-date-time-range-input--end-after-start" height="620px" />
 
 ## Duration input - `et-duration-input` {#duration-input}
 
@@ -332,7 +410,7 @@ _smallest_ unit up (`130` → `01:30`) while a mask fills slots left-to-right
 
 ## Bulk editing
 
-All five controls implement the SDK-wide
+All six controls implement the SDK-wide
 [mixed state contract](/components/mixed-state) and take a `mixedLabel` (default
 unset → [`FORM_FIELD_LABELS.mixed`](/components/localization)) shown in place of the value while mixed. See the
 [Forms overview](/components/forms#mixed-values-bulk-editing) for the wiring
@@ -347,8 +425,10 @@ the overview. Notes specific to this family:
 - A **parse error** (unparseable typed text) is surfaced like any validation
   error once touched: `parseErrorMessage` renders as an `et-form-error` with
   matching `aria-invalid` and `aria-describedby` - no silent invalid state.
-- The picker overlay is a named `role="dialog"`; the date range host is a
-  `role="group"` labelled by the field label.
+- The picker overlay is a named `role="dialog"`; both range hosts are a
+  `role="group"` labelled by the field label, and the date-time range picker's two
+  time panes are `role="group"`s named after their headings (two unnamed "Hours"
+  listboxes side by side would be ambiguous).
 - <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the picker from the field.
 
 ## Theming

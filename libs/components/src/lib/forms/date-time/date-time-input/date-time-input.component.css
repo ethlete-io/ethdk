@@ -51,7 +51,7 @@
     }
 
     /* stretch wrapper that absorbs the time picker's animated block-size
-       (etDateTimeInputPanes): while the animation makes the time picker
+       (etDateTimePickerPanes): while the animation makes the time picker
        taller than the row, the overflow stays out of layout — the panel body
        snaps once and the panel's own resize animation runs in sync, instead
        of chasing a frame-by-frame moving target */

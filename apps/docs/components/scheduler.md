@@ -291,13 +291,13 @@ Like the badge, the surface is built from self-registering feature directives bu
 
 ### Fields
 
-| Directive                    | Edits         | Control                                                   | Default order |
-| ---------------------------- | ------------- | --------------------------------------------------------- | ------------- |
-| `etSchedulerEditTitle`       | `title`       | [`et-input`](/components/text-inputs#text-field)          | `0`           |
-| `etSchedulerEditTimeRange`   | `start`/`end` | Two [`et-date-time-input`](/components/date-time-inputs)s | `10`          |
-| `etSchedulerEditLocation`    | `location`    | `et-input`                                                | `20`          |
-| `etSchedulerEditDescription` | `description` | [`et-textarea`](/components/text-inputs#textarea)         | `30`          |
-| `etSchedulerEditColor`       | `colorToken`  | Swatch picker, or `et-input` - see below                  | `40`          |
+| Directive                    | Edits         | Control                                                                              | Default order |
+| ---------------------------- | ------------- | ------------------------------------------------------------------------------------ | ------------- |
+| `etSchedulerEditTitle`       | `title`       | [`et-input`](/components/text-inputs#text-field)                                     | `0`           |
+| `etSchedulerEditTimeRange`   | `start`/`end` | One [`et-date-time-range-input`](/components/date-time-inputs#date-time-range-input) | `10`          |
+| `etSchedulerEditLocation`    | `location`    | `et-input`                                                                           | `20`          |
+| `etSchedulerEditDescription` | `description` | [`et-textarea`](/components/text-inputs#textarea)                                    | `30`          |
+| `etSchedulerEditColor`       | `colorToken`  | Swatch picker, or `et-input` - see below                                             | `40`          |
 
 The title field is required - the Save button disables while it's blank. The time-range field is invalid while `end` is before `start`. Both gate the surface's save button; a custom field can do the same by including a `valid: Signal<boolean>` in its registration.
 

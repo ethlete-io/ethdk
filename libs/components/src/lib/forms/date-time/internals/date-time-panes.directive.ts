@@ -10,17 +10,16 @@ import {
 } from '@angular/core';
 import { injectPrefersReducedMotion } from '@ethlete/core';
 import { CalendarComponent } from '../../../calendar';
-import { TimePickerComponent } from '../../../time-picker';
 
 const COMPENSATION_DURATION = 160;
 const COMPENSATION_EASING = 'ease';
 
 /**
- * @internal Applied to the pane row of the date-time picker panel: when month
- * navigation changes the calendar height, the stretched time picker follows
- * instantly and its vertically centered columns jump by half the delta. This
- * slides the columns from their old visual position to the new one with a
- * `translateY` compensation.
+ * @internal Applied to the pane row of a date-time picker panel (one time picker in the date-time
+ * input, one per side in the range input): when month navigation changes the calendar height, the
+ * stretched time pickers follow instantly and their vertically centered columns jump by half the
+ * delta. This slides the columns from their old visual position to the new one with a `translateY`
+ * compensation.
  *
  * Deliberately a transform, never an animated `block-size`: transforms stay
  * out of layout, so the panel body still changes in a single snap and the
@@ -31,16 +30,14 @@ const COMPENSATION_EASING = 'ease';
  * after the columns settled.
  */
 @Directive({
-  selector: '[etDateTimeInputPanes]',
+  selector: '[etDateTimePickerPanes]',
 })
-export class DateTimeInputPanesDirective {
+export class DateTimePickerPanesDirective {
   private destroyRef = inject(DestroyRef);
   private prefersReducedMotion = injectPrefersReducedMotion();
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private calendar = contentChild<CalendarComponent, ElementRef<HTMLElement>>(CalendarComponent, {
-    read: ElementRef,
-  });
-  private timePicker = contentChild<TimePickerComponent, ElementRef<HTMLElement>>(TimePickerComponent, {
     read: ElementRef,
   });
 
@@ -74,7 +71,7 @@ export class DateTimeInputPanesDirective {
 
     // the settled first-render height is the baseline - opening never animates
     afterNextRender(() => {
-      this.lastBlockSize = this.timePicker()?.nativeElement.getBoundingClientRect().height ?? null;
+      this.lastBlockSize = this.measure();
       this.ready = true;
     });
 
@@ -85,16 +82,10 @@ export class DateTimeInputPanesDirective {
   }
 
   private compensate() {
-    const timePicker = this.timePicker()?.nativeElement;
-
-    if (!timePicker) {
-      return;
-    }
-
-    const blockSize = timePicker.getBoundingClientRect().height;
+    const blockSize = this.measure();
 
     // never record or compensate a zero / pre-layout height
-    if (blockSize === 0) {
+    if (blockSize === null || blockSize === 0) {
       return;
     }
 
@@ -106,8 +97,8 @@ export class DateTimeInputPanesDirective {
       return;
     }
 
-    // eslint-disable-next-line ethlete/no-dom-query -- the columns live inside the time picker's own view; no directive token or content query from out here can reach them
-    const columns = Array.from(timePicker.querySelectorAll<HTMLElement>('.et-time-picker-column'));
+    // eslint-disable-next-line ethlete/no-dom-query -- both the pickers (nested inside et-time-range-picker's own view) and their columns are out of reach of a content query from here
+    const columns = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>('.et-time-picker-column'));
     const firstColumn = columns[0];
 
     if (!firstColumn) {
@@ -126,6 +117,14 @@ export class DateTimeInputPanesDirective {
         easing: COMPENSATION_EASING,
       }),
     );
+  }
+
+  // the panes are stretched to one row, so every time picker has the same height
+  private measure() {
+    // eslint-disable-next-line ethlete/no-dom-query -- see compensate()
+    const timePicker = this.host.nativeElement.querySelector('.et-time-picker');
+
+    return timePicker?.getBoundingClientRect().height ?? null;
   }
 
   private currentOffset(column: HTMLElement) {

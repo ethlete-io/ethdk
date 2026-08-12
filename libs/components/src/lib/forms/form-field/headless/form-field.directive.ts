@@ -144,6 +144,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
       this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_RANGE_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TIME_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_TIME_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_TIME_RANGE_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.DURATION_INPUT,
   );
 
