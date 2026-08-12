@@ -17,6 +17,12 @@
     initial-value: 1px;
   }
 
+  @property --et-selection-card-icon-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 20px;
+  }
+
   @property --et-selection-card-transition-duration {
     syntax: '<time>';
     inherits: true;
@@ -38,7 +44,6 @@
      control, so it can only read those off a descendant. Every state guard below therefore tests both, and the
      branch that does not apply to a given host is inert rather than wrong. */
   .et-selection-card {
-    flex-direction: row-reverse;
     justify-content: space-between;
     align-items: center;
     padding: var(--et-selection-card-padding);
@@ -81,6 +86,25 @@
       min-inline-size: 0;
     }
 
+    /* Source order is control, leading, content, trailing — so the plain variant needs no ordering of its own and
+       the card moves only the control. This is `order` rather than the `row-reverse` it replaced because reversing
+       the line would also swap the two slots onto the ends they are not named for. */
+    .et-selection-card-control {
+      order: 1;
+    }
+
+    [etSelectionCardLeading],
+    [etSelectionCardTrailing] {
+      flex-shrink: 0;
+    }
+
+    /* An `.et-icon` carries no size of its own, so an unsized one in a slot grows to whatever the row has left
+       and starves the label. */
+    > .et-icon {
+      inline-size: var(--et-selection-card-icon-size);
+      block-size: var(--et-selection-card-icon-size);
+    }
+
     /* Same trade as the border: the panel is large enough that the label can carry selection, so a list of cards is
        scannable without reading every control. 500 keeps the label above its `<et-description>` now that an
        unchosen card's label shares the description's muted colour. */
@@ -107,8 +131,13 @@
     }
   }
 
-  /* `data-can-animate` sits on the host, which is the card itself for the two options and an ancestor of it for
-     the choice field. */
+  /* `data-control-position` and `data-can-animate` sit on the host, which is the card itself for the two options
+     and an ancestor of it for the choice field. */
+  .et-selection-card:where([data-control-position='start']) .et-selection-card-control,
+  :where([data-control-position='start']) .et-selection-card .et-selection-card-control {
+    order: 0;
+  }
+
   .et-selection-card:where([data-can-animate]),
   :where([data-can-animate]) .et-selection-card {
     transition:

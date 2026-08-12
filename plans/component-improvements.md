@@ -247,6 +247,29 @@ path.
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
 
+**Selection card: leading/trailing slots** (2026-08-12, a "Decide before building" row) - shipped as
+`[etSelectionCardLeading]` / `[etSelectionCardTrailing]` plus a `controlPosition` input on all three
+card components (`et-radio`, `et-checkbox-option`, `et-choice-field`). The calls:
+
+- **`row-reverse` became `order`, not a `flex-direction` toggle.** Source order is control, leading,
+  content, trailing, and only the control is moved (`order: 1` by default). Reversing the line would
+  have put the two slots on the ends they are not named for, and this way the plain variant needs no
+  ordering rule at all. `et-choice-field`'s control slot got the `.et-selection-card-control` class so
+  the same rule keeps its existing layout.
+- **`controlPosition` is card-only**, `'end'` by default, so nothing about an existing card changes.
+  The attribute is not emitted at all in the plain variant, where the control already leads.
+- **All three components got it**, not just the two options - the docs page treats the card as one
+  preset shared by three components, and an exception would have needed a paragraph of its own.
+- **The card sizes a projected `.et-icon`** via a new `--et-selection-card-icon-size` (`20px`). An
+  `.et-icon` carries no size of its own, so the first headless run had a 300px-wide star and a
+  zero-width label; `et-banner` and `et-empty-state` size their icon slots the same way.
+
+Slots are plain projection selectors with no directive class behind them, as `[etBannerHeading]` and
+`[etTimelineMarker]` already are. Tests live in `libs/components/src/lib/forms/selection-card.spec.ts`
+(one file over all three components); story `components-forms-selection-list-radio-group--card-slots`.
+`apps/docs/components/choice-inputs.md` gained an "Ends of the card" subsection - **no new embed**,
+that page already carries 8 against a cap of ~4.
+
 **Color input: contrast validator** (2026-08-12, a "Decide before building" row) - the row's premise
 was wrong: `validate`'s field context already carries `valueOf(path)`, and our own `warn()` gets the
 same context, so a cross-field read needed no new mechanism. What was actually open was the API
@@ -1434,12 +1457,6 @@ does for the card.
 variants of its own, while the selection card's chrome is driven by the option's `aria-checked`
 and interaction state; reusing it would mean nesting an element inside the option and moving the
 focus ring and the border onto a child. Stating it here so the question is not re-opened.
-
-Leading and trailing slots (`[etSelectionCardLeading]`, `[etSelectionCardTrailing]`) for the plan
-icon and the price that a "choose your plan" row is actually made of are still unbuilt - they force
-`row-reverse` to become a decision rather than a constant (a `controlPosition` input, or accepting
-that leading media and a leading control cannot coexist), which is why they sit in the triage's
-"decide before building" table.
 
 The tile lands as a second sheet mounted the same way as `SelectionCardStylesComponent`, so a
 consumer who never writes `variant="tile"` never injects it. It needs its own story in both the

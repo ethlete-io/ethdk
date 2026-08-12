@@ -18,6 +18,8 @@ export default {
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     orientation: { control: 'inline-radio', options: ['vertical', 'horizontal'] },
     variant: { control: 'radio', options: ['plain', 'card'] },
+    controlPosition: { control: 'inline-radio', options: ['start', 'end'] },
+    options: { control: false, table: { disable: true } },
   },
   args: {
     label: 'Favorite color',
@@ -32,6 +34,7 @@ export default {
     size: 'md',
     orientation: 'vertical',
     variant: 'plain',
+    controlPosition: 'end',
   },
 } as Meta<RadioGroupStorybookComponent>;
 
@@ -61,6 +64,47 @@ export const Card: Story = {
           'The card preset: the whole panel is the target, label leading and control trailing, with room for an ' +
           '`<et-description>` under each label. For a short list of consequential choices - a plan, a shipping ' +
           'speed - where a 20px circle is a small thing to aim at.',
+      },
+    },
+  },
+};
+
+export const CardSlots: Story = {
+  args: {
+    variant: 'card',
+    label: 'Plan',
+    value: 'team',
+    options: [
+      {
+        value: 'solo',
+        label: 'Solo',
+        description: 'One seat, everything you need to ship.',
+        icon: 'et-star',
+        price: '$9',
+      },
+      {
+        value: 'team',
+        label: 'Team',
+        description: 'Everything in Solo, plus shared workspaces.',
+        icon: 'et-circle-check',
+        price: '$29',
+      },
+      {
+        value: 'business',
+        label: 'Business',
+        description: 'SSO, audit logs and a support SLA.',
+        icon: 'et-trophy',
+        price: '$99',
+      },
+    ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`[etSelectionCardLeading]` and `[etSelectionCardTrailing]` project into the ends of the card - the plan ' +
+          'icon and the price a "choose your plan" row is made of. Switch `controlPosition` to `\'start\'` to put ' +
+          'the control ahead of the leading icon.',
       },
     },
   },

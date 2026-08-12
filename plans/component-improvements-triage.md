@@ -24,9 +24,9 @@ the per-tab inactivity logout, the description list's `variant`, the scheduler's
 query long polling, scheduler move/resize (the largest `L` row there was) plus its all-day-strip
 follow-up, the scheduler's infinite agenda, the query devtools' Web Locks inspector - which was
 the last query devtools row - the grid's `initialItems` → `items` rename, the grid's `ET1904`
-check vs projected items, `createGridAdapter`'s per-breakpoint signature, and the colour input's
-contrast validator. Each one's design calls and traps are recorded in
-`component-improvements.md`'s "Already fixed, do not re-report".
+check vs projected items, `createGridAdapter`'s per-breakpoint signature, the colour input's
+contrast validator, and the selection card's leading/trailing slots. Each one's design calls and
+traps are recorded in `component-improvements.md`'s "Already fixed, do not re-report".
 The selection list's `variant="tile"` was dropped on 2026-08-12 rather than shipped - do not
 re-add it.
 
@@ -49,11 +49,10 @@ any of them can start, so the next pick is a scoping call rather than a queue po
 
 ### Decide before building
 
-| Item                                   | Why it's stuck                                                                                                                               |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Storybook top-level categories         | High blast radius - moves every story id the docs site embeds. The two concrete misplacements already shipped; this is the open, bigger call |
-| Progress steps: sub-steps              | Least defined ask in the file - projected slot vs description input, and whether it means anything outside vertical                          |
-| Selection card: leading/trailing slots | Forces `row-reverse` to become a `controlPosition` decision rather than a constant                                                           |
+| Item                           | Why it's stuck                                                                                                                               |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Storybook top-level categories | High blast radius - moves every story id the docs site embeds. The two concrete misplacements already shipped; this is the open, bigger call |
+| Progress steps: sub-steps      | Least defined ask in the file - projected slot vs description input, and whether it means anything outside vertical                          |
 
 ### Watchlist - gated on browsers, not on us
 

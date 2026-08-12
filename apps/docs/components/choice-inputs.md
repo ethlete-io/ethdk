@@ -188,6 +188,40 @@ thing to aim at; a card is a large one.
 `et-checkbox-group` above and a multi-select list of cards renders identically
 (see the `Checkbox group / Card` story).
 
+#### Ends of the card {#card-slots}
+
+A plan row is rarely just a label: it has a mark on one end and a price on the
+other. Project them with `[etSelectionCardLeading]` and
+`[etSelectionCardTrailing]`. Both sit outside the label block, so an
+`et-description` still wraps under the label instead of around them, and neither
+slot shrinks - only the label block flexes.
+
+```html
+<et-radio value="team" variant="card">
+  <i etIcon="et-circle-check" etSelectionCardLeading></i>
+  Team
+  <et-description>Everything in Solo, plus shared workspaces.</et-description>
+  <span etSelectionCardTrailing>$29</span>
+</et-radio>
+```
+
+An `.et-icon` carries no size of its own, so one projected directly into a slot
+is sized by `--et-selection-card-icon-size` (`20px`) rather than growing into
+whatever the row has left.
+
+That leaves where the control goes, which is what `controlPosition` decides:
+`'end'` (the default) keeps the label leading and the control trailing, exactly
+as the cards above; `'start'` puts the control first, ahead of the leading slot,
+for a list that reads control-first. `variant="plain"` ignores it - the control
+already leads there.
+
+```html
+<et-radio value="team" variant="card" controlPosition="start">…</et-radio>
+```
+
+All three card components take both slots and the input. See the
+`Radio group / Card Slots` story for the two positions side by side.
+
 For a checkbox or switch the preset lives on the **wrapper**, `et-choice-field`,
 because that is what holds the label - so both controls get it from one place.
 The wrapper learns the control's checked state with `:has()`.
@@ -211,8 +245,9 @@ dims as a unit and shows `not-allowed`) behavior.
 
 All three components share **one** token set, so a card radius is set once and
 every card follows: `--et-selection-card-padding` (`16px`), `-border-radius`
-(`10px`), `-border-width` (`1px`), `-transition-duration` (`150ms`) and
-`-disabled-opacity` (`0.5`, the choice field's one-unit dim).
+(`10px`), `-border-width` (`1px`), `-icon-size` (`20px`, an icon projected into
+either slot), `-transition-duration` (`150ms`) and `-disabled-opacity` (`0.5`,
+the choice field's one-unit dim).
 
 ::: warning Renamed in favour of one set
 These replace `--et-radio-card-*`, `--et-checkbox-option-card-*` and

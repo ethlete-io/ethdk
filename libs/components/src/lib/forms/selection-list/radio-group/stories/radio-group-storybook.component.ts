@@ -2,8 +2,17 @@ import { JsonPipe } from '@angular/common';
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
+import {
+  CIRCLE_CHECK_ICON,
+  ICON_IMPORTS,
+  provideIcons,
+  RegisteredIconName,
+  STAR_ICON,
+  TROPHY_ICON,
+} from '../../../../icon';
 import { DescriptionComponent } from '../../../description';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
+import { SelectionCardControlPosition } from '../../../selection-card.types';
 import { SelectionListOrientation } from '../../selection-list.types';
 import { RadioGroupComponent } from '../radio-group.component';
 import { RadioComponent, RadioVariant } from '../radio.component';
@@ -23,10 +32,19 @@ import { RadioComponent, RadioVariant } from '../radio.component';
         <et-label>{{ label() }}</et-label>
 
         @for (option of options(); track option.value) {
-          <et-radio [value]="option.value" [variant]="variant()">
+          <et-radio [value]="option.value" [variant]="variant()" [controlPosition]="controlPosition()">
+            @if (variant() === 'card' && option.icon) {
+              <i [etIcon]="option.icon" etSelectionCardLeading></i>
+            }
+
             {{ option.label }}
+
             @if (variant() === 'card' && option.description) {
               <et-description>{{ option.description }}</et-description>
+            }
+
+            @if (variant() === 'card' && option.price) {
+              <span class="text-medium" etSelectionCardTrailing>{{ option.price }}</span>
             }
           </et-radio>
         }
@@ -53,7 +71,9 @@ import { RadioComponent, RadioVariant } from '../radio.component';
     HintComponent,
     LabelDirective,
     DescriptionComponent,
+    ...ICON_IMPORTS,
   ],
+  providers: [provideIcons(STAR_ICON, CIRCLE_CHECK_ICON, TROPHY_ICON)],
 })
 export class RadioGroupStorybookComponent {
   public label = input('Favorite color');
@@ -68,8 +88,11 @@ export class RadioGroupStorybookComponent {
   public color = input('brand');
   public size = input<FormFieldSize>('md');
   public variant = input<RadioVariant>('plain');
+  public controlPosition = input<SelectionCardControlPosition>('end');
 
-  public options = input<{ value: string; label: string; description?: string }[]>([
+  public options = input<
+    { value: string; label: string; description?: string; icon?: RegisteredIconName; price?: string }[]
+  >([
     { value: 'red', label: 'Red', description: 'Warm, and hard to miss.' },
     { value: 'green', label: 'Green', description: 'Calm, and easy on the eyes.' },
     { value: 'blue', label: 'Blue', description: 'Cool, and the default nearly everywhere.' },

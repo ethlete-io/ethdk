@@ -10,6 +10,7 @@ import {
 } from '@ethlete/core';
 import { ChoiceFieldCardStylesComponent } from './choice-field-card-styles.component';
 import { SelectionCardStylesComponent } from '../selection-card-styles.component';
+import { SELECTION_CARD_CONTROL_POSITIONS, SelectionCardControlPosition } from '../selection-card.types';
 import { FormErrorComponent } from '../form-field/form-error.component';
 import { FormWarningComponent } from '../form-field/form-warning.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../form-field/form-field.variants';
@@ -43,6 +44,7 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
     class: 'et-choice-field',
     '[attr.data-size]': 'size()',
     '[attr.data-variant]': 'variant()',
+    '[attr.data-control-position]': "variant() === 'card' ? controlPosition() : null",
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',
@@ -60,6 +62,14 @@ export class ChoiceFieldComponent {
    * projected, so a checkbox and a switch get the same preset. @default 'plain'
    */
   public variant = input<ChoiceFieldVariant>(CHOICE_FIELD_VARIANTS.PLAIN);
+
+  /**
+   * Which end of the card the control sits at. `'end'` keeps the label leading and the control trailing;
+   * `'start'` puts the control first, ahead of any `[etSelectionCardLeading]` media. Only `variant="card"`
+   * reads it. @default 'end'
+   */
+  public controlPosition = input<SelectionCardControlPosition>(SELECTION_CARD_CONTROL_POSITIONS.END);
+
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
   private warningContentRef = viewChild<ElementRef<HTMLElement>>('warningContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');

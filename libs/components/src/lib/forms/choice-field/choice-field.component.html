@@ -4,13 +4,17 @@
   etColorInteractive
   etColorInteractiveContainer
 >
-  <div class="et-choice-field-control-slot">
+  <div class="et-choice-field-control-slot et-selection-card-control">
     <ng-content />
   </div>
+
+  <ng-content select="[etSelectionCardLeading]" />
 
   <div class="et-choice-field-label-area et-selection-card-content">
     <ng-content select="et-label" />
   </div>
+
+  <ng-content select="[etSelectionCardTrailing]" />
 </div>
 
 @if (support.shouldRenderSupport()) {

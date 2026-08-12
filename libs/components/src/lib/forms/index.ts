@@ -14,6 +14,7 @@ export * from './phone-input';
 export * from './rating';
 export * from './rich-text-editor';
 export * from './select';
+export * from './selection-card.types';
 export * from './selection-list';
 export * from './slider';
 export * from './switch';
