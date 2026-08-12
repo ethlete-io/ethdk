@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.48
+
+### Minor Changes
+
+- [`15d88c6`](https://github.com/ethlete-io/ethdk/commit/15d88c6abb6ead4596357705b9c899e1f6474567) Thanks [@TomTomB](https://github.com/TomTomB)! - Loading indicators wait before they show and hold once shown, so a fast response leaves no flicker - via the new `signalDeferredLoading` from `@ethlete/core`, applied across form field, select, cascader, menu and table.
+
 ## 5.0.0-next.47
 
 ### Patch Changes
