@@ -837,6 +837,22 @@ exits, and a desktop whose bar has no SNI host would otherwise leave the app run
 bring it back. The `timetrack open` CLI above is still owed for exactly that case. The activity
 readout and the start/stop timer are not built yet.
 
+**The window draws its own controls** (`decorations: false`, `src/app/window-controls.component.ts`).
+They sit in the app header rather than in a titlebar band of their own, so there is one surface
+instead of a GTK-grey strip above a dark app, and the header itself is the drag region
+(`data-tauri-drag-region="deep"`, which excludes buttons and maximises on double-click). What
+building it settled:
+
+- **Ask the compositor which controls to draw.** `src-tauri/src/decorations_wayland.rs` creates an
+  `xdg_toplevel`, reads its `wm_capabilities` and destroys it without ever attaching a buffer, so it
+  is never mapped and never flashes on screen. niri advertises maximise and fullscreen but not
+  minimise - and GTK was drawing a minimise button regardless, which is the argument for asking.
+- **Silence means everything, not nothing.** `wm_capabilities` only exists from xdg-shell 5; a
+  compositor below that, or no Wayland socket at all, has to fall back to all capabilities.
+- **`core:default` is not enough.** It grants the window reads and `internal_toggle_maximize` (so
+  double-click works on its own), but `close`, `minimize`, `toggle_maximize` and `start_dragging` are
+  each an explicit `core:window:allow-*` in `capabilities/default.json`.
+
 The day view is a timeline of blocks beside an editable worklog list. Each row shows issue,
 duration, description, confidence and an expandable evidence chain; weak rows are visually
 distinct and unchecked. Editing is local and immediate - change the issue, split a row, merge
