@@ -43,8 +43,15 @@ Component domains under `/components/`:
 `tabs` `text-inputs` `time-picker` `toggletip` `tooltip`
 
 So the table guide is `{%docsBaseUrl%}/components/table`, the menu guide
-`{%docsBaseUrl%}/components/menu`, and so on. When a name isn't in that list, start at
-`{%docsBaseUrl%}/components/` and follow the sidebar rather than guessing a URL.
+`{%docsBaseUrl%}/components/menu`, and so on.
+
+That list is a snapshot. The site itself is machine-readable, so fetch rather than guess:
+
+- `{%docsBaseUrl%}/llms.txt` - every page's title and path as of the last deploy. Use it
+  when a name isn't in the list above, or to check the list hasn't drifted.
+- Append `.md` to any page URL - `{%docsBaseUrl%}/components/button.md` - to get raw
+  markdown instead of the rendered page. Prefer this over `/llms-full.txt`, which is the
+  entire site in one ~1 MB file.
 
 ## How to use them
 
