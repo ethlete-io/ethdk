@@ -7,7 +7,8 @@ export type EvidenceKind =
   | 'issue-view'
   | 'tempo-history'
   | 'window-title'
-  | 'calendar';
+  | 'calendar'
+  | 'timer';
 
 /**
  * One concrete observation behind a block or a proposal. `detail` is shown verbatim in the review

@@ -2,11 +2,14 @@ import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  ClosedTimerRun,
   CollectedEvent,
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   ReviewedRow,
   SyncedWorklog,
+  TimerRun,
+  closeTimerRun,
   correlateDay,
   localDayKey,
   localDayRange,
@@ -24,6 +27,7 @@ import {
   Observable,
   Subject,
   catchError,
+  combineLatest,
   concatMap,
   debounceTime,
   groupBy,
@@ -35,6 +39,7 @@ import {
 } from 'rxjs';
 import { injectAgentSessionCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
+import { injectTimer } from '../timer';
 
 export const DEFAULT_DAY_TARGET_MS = 8 * 60 * 60_000;
 
@@ -43,6 +48,22 @@ const SAVE_DEBOUNCE_MS = 300;
 
 /** A load tagged with the day it was asked for, so a stale answer is recognised rather than shown. */
 type Loaded<T> = { key: string; value: T | null; failure: string | null };
+
+/** One day's raw inputs, loaded together so a half-loaded day is never correlated. */
+type DayEvidence = { events: CollectedEvent[]; runs: ClosedTimerRun[] };
+
+/**
+ * Cuts an open run off at now, or at the end of the day being read, whichever comes first.
+ *
+ * Closing it at the day's end would hand a timer that is still going every hour left until midnight.
+ * On a past day the end *is* the honest maximum - and a run left open across midnight lands in the
+ * unobserved-timer warning, which is where a forgotten timer belongs.
+ */
+const closedThrough = (runs: TimerRun[], dayEnd: Date): ClosedTimerRun[] => {
+  const at = new Date(Math.min(Date.now(), dayEnd.getTime()));
+
+  return runs.map((run) => closeTimerRun(run, at));
+};
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -64,6 +85,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const destroyRef = inject(DestroyRef);
   const windows = injectWindowCollector();
   const agentSessions = injectAgentSessionCollector();
+  const timers = injectTimer();
 
   const day = signal(localDayKey(new Date()));
   const targetMs = signal(DEFAULT_DAY_TARGET_MS);
@@ -78,14 +100,21 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     reload: reload(),
     windows: windows.lastRun(),
     sessions: agentSessions.lastRun(),
+    timers: timers.revision(),
   }));
 
-  const loadedEvents = toSignal(
+  const loadedDay = toSignal(
     toObservable(probe).pipe(
       switchMap(({ key }) => {
         const { from, to } = localDayRange(key);
 
-        return loadedFor<CollectedEvent[]>({ key, load$: ports.events.eventsBetween$(from, to) });
+        return loadedFor<DayEvidence>({
+          key,
+          load$: combineLatest({
+            events: ports.events.eventsBetween$(from, to),
+            runs: ports.timers.runsBetween$(from, to).pipe(map((runs) => closedThrough(runs, to))),
+          }),
+        });
       }),
       startWith(null),
     ),
@@ -100,8 +129,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     { initialValue: null },
   );
 
-  const eventsLoad = computed(() => {
-    const loaded = loadedEvents();
+  const evidenceLoad = computed(() => {
+    const loaded = loadedDay();
 
     return loaded?.key === day() ? loaded : null;
   });
@@ -112,13 +141,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return loaded?.key === day() ? loaded : null;
   });
 
-  const events = computed(() => eventsLoad()?.value ?? null);
+  const evidence = computed(() => evidenceLoad()?.value ?? null);
   const edits = computed(() => local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS);
 
   const correlation = computed(() => {
-    const collected = events();
+    const collected = evidence();
 
-    return collected ? correlateDay({ events: collected }) : null;
+    return collected ? correlateDay({ events: collected.events, timerRuns: collected.runs }) : null;
   });
 
   const review = computed(() => {
@@ -183,8 +212,11 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     review,
     /** The sessionized day behind the rows, for the timeline. */
     correlation,
-    isLoading: computed(() => !eventsLoad()),
-    failure: computed(() => eventsLoad()?.failure ?? editsLoad()?.failure ?? null),
+    /** The day's timed runs, so an unnamed one can be named rather than only warned about. */
+    timerRuns: computed(() => evidence()?.runs ?? []),
+    openRunId: computed(() => timers.running()?.id ?? null),
+    isLoading: computed(() => !evidenceLoad()),
+    failure: computed(() => evidenceLoad()?.failure ?? editsLoad()?.failure ?? null),
     /** Rows this app has already written to Tempo, by proposal id. */
     syncedIds: computed(() => new Set(ledger().map((entry) => entry.proposalId))),
     expanded: expanded.asReadonly(),
@@ -222,6 +254,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       selection.update((ids) => (ids.includes(id) ? ids.filter((entry) => entry !== id) : [...ids, id])),
 
     clearSelection: () => selection.set([]),
+
+    labelRun: (id: string, label: { issueKey: string; note: string }) => timers.label(id, label),
   };
 });
 

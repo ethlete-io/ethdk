@@ -152,6 +152,60 @@ describe('correlateDay', () => {
     expect(day.unattributed.map((group) => group.evidence[0]?.summary)).toEqual(['Braune Digital Weekly']);
   });
 
+  it('lets a timer run displace the reconstruction underneath it', () => {
+    const day = correlateDay({
+      events: DAY,
+      config: FIP,
+      resolveBase: () => STORY,
+      timerRuns: [{ id: 'run-1', from: AT(0), to: AT(60), issueKey: 'FIP-3000' }],
+    });
+
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-3000', 'FIP-2177']);
+    expect(day.proposals.map((proposal) => proposal.durationMs / MINUTE)).toEqual([60, 30]);
+    expect(day.check.proposedMs).toBe(90 * MINUTE);
+  });
+
+  it('splits a block a timer run falls inside of rather than dropping it', () => {
+    const day = correlateDay({
+      events: DAY,
+      config: FIP,
+      resolveBase: () => STORY,
+      timerRuns: [{ id: 'run-1', from: AT(20), to: AT(40), issueKey: 'FIP-3000' }],
+    });
+
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual([
+      'FIP-2177',
+      'FIP-3000',
+      'FIP-2177',
+      'FIP-2177',
+    ]);
+    expect(day.check.proposedMs).toBe(90 * MINUTE);
+  });
+
+  it('warns about a timer that ran with nothing observed inside it', () => {
+    const day = correlateDay({
+      events: DAY,
+      config: FIP,
+      resolveBase: () => STORY,
+      timerRuns: [{ id: 'run-1', from: AT(300), to: AT(420), issueKey: 'FIP-3000' }],
+    });
+
+    expect(day.timers[0]?.observedMs).toBe(0);
+    expect(day.check.warnings.map((warning) => warning.kind)).toContain('timer-unobserved');
+  });
+
+  it('leaves a run nobody named in the unattributed groups', () => {
+    const day = correlateDay({
+      events: DAY,
+      config: FIP,
+      resolveBase: () => STORY,
+      timerRuns: [{ id: 'run-1', from: AT(300), to: AT(360) }],
+    });
+
+    expect(day.proposals.map((proposal) => proposal.issueKey)).toEqual(['FIP-2177', 'FIP-2177']);
+    expect(day.unattributed.map((group) => group.observedMs / MINUTE)).toEqual([60]);
+  });
+
   it('proposes nothing for an empty window', () => {
     const day = correlateDay({ events: [], config: FIP });
 

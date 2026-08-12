@@ -4,6 +4,7 @@ import { CalendarOccurrenceEvent, CollectedEvent } from '../model/event';
 import { Confidence, Evidence } from '../model/evidence';
 import { issueKeyInText } from './attribute';
 import { WorkGroup } from './merge';
+import { overlapMs } from './overlap';
 import { RecurringPattern, patternAt } from './recurrence';
 
 /**
@@ -40,14 +41,6 @@ export type MeetingOptions = {
 const pad = (value: number) => String(value).padStart(2, '0');
 
 const timeOfDay = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-
-const overlapOf = (options: { block: ActivityBlock; from: Date; to: Date }) => {
-  const { block, from, to } = options;
-  const start = Math.max(block.from.getTime(), from.getTime());
-  const end = Math.min(block.to.getTime(), to.getTime());
-
-  return Math.max(0, end - start);
-};
 
 /**
  * The conference's own identifier — `abc-defg-hij` for Meet, the numeric id for Zoom. It is what a
@@ -165,8 +158,9 @@ const matchOne = (options: {
 }): MeetingMatch => {
   const { event, blocks, meetings } = options;
   const config = meetings.config ?? DEFAULT_GIT_FLOW_CONFIG;
-  const overlapMs = blocks.reduce((sum, block) => sum + overlapOf({ block, from: event.at, to: event.until }), 0);
-  const { attendance, evidence } = attendanceOf({ blocks, event, overlapMs });
+  const window = { from: event.at, to: event.until };
+  const observed = blocks.reduce((sum, block) => sum + overlapMs({ block, window }), 0);
+  const { attendance, evidence } = attendanceOf({ blocks, event, overlapMs: observed });
   const key = resolveKey({ event, config, meetings });
   const evidenceChain = [
     calendarEvidence(event),
@@ -178,7 +172,7 @@ const matchOne = (options: {
     event,
     attendance,
     keySource: key?.keySource,
-    overlapMs,
+    overlapMs: observed,
     group: {
       issueKey: key?.issueKey,
       from: event.at,

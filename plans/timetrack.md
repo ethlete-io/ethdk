@@ -896,7 +896,33 @@ Runtime` cannot infer `R` from a `State<'_, Readout<R>>` alone; it needs an `App
 and then `try_state` rather than `state` - a desktop that gave us no tray icon has no readout to
 write, which is not an error the webview can act on.
 
-The start/stop timer is not built yet.
+**The start/stop timer is the explicit half of the hybrid model**, and the thing that made it a design
+question rather than a button is what a run does to the reconstruction under it. Starting a timer and
+then working means the collectors see the same hour the run already claims, so the two together
+propose it twice. A run therefore **displaces** what is underneath: `clipBlocks` cuts the run's window
+out of the sessionized blocks before anything is attributed from them, splitting a block the run falls
+inside of and leaving each piece only the evidence observed in it. What survives:
+
+- **A run's duration is its own, never the time observed inside it.** The machine sees nothing during
+  an hour at a whiteboard, and that hour is exactly what a timer is for. The observed time is kept
+  anyway, as `TimerMatch.observedMs`, and a run with almost none of it raises `timer-unobserved` —
+  a forgotten timer is the one way an explicit timer invents time.
+- **A run carries no issue key until the user names one**, which leaves its row unattributed. That is
+  why the review has a `Timed by hand` list (`day-review/timer-runs.component.ts`): a run nobody has
+  named proposes nothing, so it would otherwise be visible only as a warning about time it cannot
+  account for. Naming it there is what turns it into a worklog.
+- **An open run is closed at now, or at the end of the day being read, whichever comes first.** Closing
+  it at the day's end would hand a timer that is still going every hour left until midnight.
+- **At most one run is open, and the database is what enforces it** — `CREATE UNIQUE INDEX … ON
+timer_run (stopped_at_ms IS NULL) WHERE stopped_at_ms IS NULL`. The index has to be over the
+  expression: SQLite counts NULLs as distinct, so a unique index on the column itself constrains
+  nothing. Starting a run closes the open one first, so a forgotten timer cannot overlap its successor.
+- **The tray entry emits; the webview acts.** `tray.rs` emits `timer-toggle` and `src/app/timer.ts`
+  owns the run, because the webview is what knows the store and the day. The whole loop can be driven
+  without touching the screen: `busctl --user call <conn> <menu path> com.canonical.dbusmenu
+AboutToShow i 0` followed by `… Event isvu 5 clicked s "" $(date +%s)` picks the entry and the next
+  `GetLayout` shows the label flipped. A bare `Event` with timestamp `0` is ignored — send `AboutToShow`
+  first.
 
 **The window draws its own controls** (`decorations: false`, `src/app/window-controls.component.ts`).
 They sit in a titlebar band of their own at the top of the shell, sticky and opaque, which is also
@@ -1046,13 +1072,12 @@ Jira provider on top, the whole Tempo integration - work-attribute discovery, fo
 subtraction, the sync diff and the write half that executes it - the read-only Google Calendar
 provider, and the store's core half - persistence ports, exclusion rules, retention, ledger writer -
 plus the Claude Code session-log parser with its cursor-driven collector, and the git reconcile pass
-(404 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
+(427 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
 keychain key, all five ports wired over `invoke`, and the theming and Tailwind foundation the review
 UI will sit on, plus the file reader behind `AgentSessionLogReader` and the timer that drives
 `collectAgentSessions$` and persists what it returns. Remaining: Google's OAuth dance - now the last
-thing standing between the calendar provider and a real day, and the last unbuilt phase-1 collector -
-and the tray's start/stop timer. No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to
-reconstruct and sync a real day.
+thing standing between the calendar provider and a real day, and the last unbuilt phase-1 collector.
+No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
 
 **The app runs.** `yarn timetrack` builds and starts, the keychain hands back the key it generated on
 first run, SQLCipher opens the database with it (the file's header is random bytes, and a plain

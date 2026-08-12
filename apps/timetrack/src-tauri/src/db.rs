@@ -51,6 +51,25 @@ ALTER TABLE collected_event ADD COLUMN dedupe_key TEXT;
 CREATE UNIQUE INDEX collected_event_dedupe_key ON collected_event (dedupe_key);
 ";
 
+/// The runs the user timed by hand. `stopped_at_ms IS NULL` is the one open run, and the index is what
+/// makes "at most one" an invariant the database enforces rather than one the commands remember: two
+/// open timers would each claim the same wall clock.
+///
+/// The index has to be over the expression rather than over `stopped_at_ms` itself. SQLite counts NULLs
+/// as distinct from one another, so a unique index on a column that is NULL in every open row
+/// constrains nothing at all.
+const SCHEMA_V4: &str = "
+CREATE TABLE timer_run (
+  id TEXT PRIMARY KEY,
+  started_at_ms INTEGER NOT NULL,
+  stopped_at_ms INTEGER,
+  issue_key TEXT,
+  note TEXT
+);
+CREATE INDEX timer_run_started_at_ms ON timer_run (started_at_ms);
+CREATE UNIQUE INDEX timer_run_open ON timer_run (stopped_at_ms IS NULL) WHERE stopped_at_ms IS NULL;
+";
+
 /// Opens the encrypted database at `path`, creating and migrating it on first run.
 ///
 /// `key` is the 64 hex chars from the keychain. `PRAGMA key` has to be the first statement on the
@@ -78,7 +97,7 @@ pub fn open(path: &Path, key: &str) -> TimetrackResult<Connection> {
     Ok(connection)
 }
 
-fn migrate(connection: &Connection) -> TimetrackResult<()> {
+pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
     let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
 
     if version < 1 {
@@ -94,6 +113,11 @@ fn migrate(connection: &Connection) -> TimetrackResult<()> {
     if version < 3 {
         connection.execute_batch(SCHEMA_V3)?;
         connection.pragma_update(None, "user_version", 3)?;
+    }
+
+    if version < 4 {
+        connection.execute_batch(SCHEMA_V4)?;
+        connection.pragma_update(None, "user_version", 4)?;
     }
 
     Ok(())
@@ -119,6 +143,10 @@ mod tests {
             connection.execute_batch(SCHEMA_V2).unwrap();
         }
 
+        if version >= 3 {
+            connection.execute_batch(SCHEMA_V3).unwrap();
+        }
+
         connection.pragma_update(None, "user_version", version).unwrap();
         migrate(&connection).unwrap();
 
@@ -139,9 +167,51 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            3
+            4
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
+    }
+
+    #[test]
+    fn migrates_a_database_that_predates_the_timer() {
+        let connection = migrated_from(3);
+
+        connection
+            .execute("INSERT INTO timer_run (id, started_at_ms) VALUES ('a', 1)", [])
+            .unwrap();
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM timer_run", [], |row| row.get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+    }
+
+    #[test]
+    fn refuses_a_second_open_timer_run() {
+        let connection = migrated_from(0);
+
+        connection
+            .execute("INSERT INTO timer_run (id, started_at_ms) VALUES ('a', 1)", [])
+            .unwrap();
+        assert!(connection
+            .execute("INSERT INTO timer_run (id, started_at_ms) VALUES ('b', 2)", [])
+            .is_err());
+    }
+
+    #[test]
+    fn takes_a_second_run_once_the_first_one_stopped() {
+        let connection = migrated_from(0);
+
+        connection
+            .execute("INSERT INTO timer_run (id, started_at_ms, stopped_at_ms) VALUES ('a', 1, 2)", [])
+            .unwrap();
+        connection
+            .execute("INSERT INTO timer_run (id, started_at_ms, stopped_at_ms) VALUES ('b', 3, 4)", [])
+            .unwrap();
+        connection
+            .execute("INSERT INTO timer_run (id, started_at_ms) VALUES ('c', 5)", [])
+            .unwrap();
     }
 
     #[test]

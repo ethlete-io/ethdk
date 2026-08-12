@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { TimetrackEventStore, TimetrackLedgerStore, TimetrackReviewStore } from '../store/ports';
+import { TimetrackEventStore, TimetrackLedgerStore, TimetrackReviewStore, TimetrackTimerStore } from '../store/ports';
 
 export type TimetrackRequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -55,5 +55,6 @@ export type TimetrackPorts = {
   events: TimetrackEventStore;
   ledger: TimetrackLedgerStore;
   review: TimetrackReviewStore;
+  timers: TimetrackTimerStore;
   processes: TimetrackProcessRunner;
 };

@@ -11,6 +11,7 @@ mod process;
 mod secrets;
 mod state;
 mod store;
+mod timer;
 mod tray;
 mod window;
 #[cfg(target_os = "linux")]
@@ -73,6 +74,11 @@ pub fn run() {
             store::ledger_upsert,
             store::set_compacted_through,
             store::set_day_review_edits,
+            timer::timer_label,
+            timer::timer_running,
+            timer::timer_runs_between,
+            timer::timer_start,
+            timer::timer_stop,
             tray::tray_set_readout,
             window::window_events,
             window::window_source_status,

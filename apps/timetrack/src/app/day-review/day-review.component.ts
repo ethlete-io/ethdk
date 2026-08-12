@@ -10,6 +10,7 @@ import { DayWarningKind, ReviewedRow, formatDurationMs, localDayRange } from '@e
 import { injectDayReview } from './day-review';
 import { DayTimelineComponent } from './day-timeline.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
+import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
 import { WorklogRowComponent } from './worklog-row.component';
 
 @Component({
@@ -89,6 +90,10 @@ import { WorklogRowComponent } from './worklog-row.component';
           </div>
         </div>
 
+        @if (store.timerRuns().length) {
+          <ethlete-timer-runs [runs]="store.timerRuns()" [openRunId]="store.openRunId()" (label)="labelRun($event)" />
+        }
+
         <footer class="flex flex-wrap items-baseline gap-x-8 gap-y-2 border-t border-et-surface-border pt-3">
           <span class="text-large">{{ proposed() }}</span>
           <span class="text-small text-et-surface-muted">of a {{ target() }} target ({{ delta() }})</span>
@@ -108,6 +113,7 @@ import { WorklogRowComponent } from './worklog-row.component';
     DayTimelineComponent,
     EMPTY_STATE_IMPORTS,
     SpinnerComponent,
+    TimerRunsComponent,
     WorklogRowComponent,
   ],
 })
@@ -121,6 +127,7 @@ export class DayReviewComponent {
     'too-many-rows': 'This day fragmented',
     'zero-duration': 'A row rounded away to nothing',
     'meeting-overlap': 'A meeting and observed work claim the same time',
+    'timer-unobserved': 'A timer ran while nothing was observed',
     'edited-row-drift': 'New evidence landed under a row you edited',
   };
 
@@ -136,6 +143,10 @@ export class DayReviewComponent {
   protected target = computed(() => formatDurationMs(this.store.targetMs()));
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
+
+  protected labelRun(label: TimerRunLabel) {
+    this.store.labelRun(label.id, { issueKey: label.issueKey, note: label.note });
+  }
 
   protected splitInHalf(row: ReviewedRow) {
     this.store.split(row, new Date((row.from.getTime() + row.to.getTime()) / 2));

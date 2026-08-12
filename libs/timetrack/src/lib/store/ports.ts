@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 import { CollectedEvent } from '../model/event';
 import { SyncedWorklog } from '../model/proposal';
+import { TimerRun } from '../model/timer';
 import { DayReviewEdits } from '../review/model';
 
 /**
@@ -36,4 +37,20 @@ export type TimetrackReviewStore = {
   editsFor$(day: string): Observable<DayReviewEdits | null>;
   save$(day: string, edits: DayReviewEdits): Observable<void>;
   clear$(day: string): Observable<void>;
+};
+
+/**
+ * The runs the user timed by hand. At most one is open, and the store is what enforces it: starting a
+ * run closes whichever one was still going, so a forgotten timer cannot silently overlap its successor.
+ */
+export type TimetrackTimerStore = {
+  /** Runs overlapping the range, open ones included. */
+  runsBetween$(from: Date, to: Date): Observable<TimerRun[]>;
+  /** The open run, or `null` when no timer is going. */
+  running$(): Observable<TimerRun | null>;
+  start$(at: Date): Observable<TimerRun>;
+  /** The run that was closed, or `null` when nothing was going. */
+  stop$(at: Date): Observable<TimerRun | null>;
+  /** Names what a run was for, after the fact. An empty string clears the field. */
+  label$(id: string, label: { issueKey: string; note: string }): Observable<void>;
 };

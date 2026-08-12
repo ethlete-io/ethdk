@@ -5,6 +5,8 @@ import {
   CurrentActivity,
   DayCheck,
   EMPTY_DAY_REVIEW_EDITS,
+  TimerRun,
+  closeTimerRun,
   correlateDay,
   currentActivity,
   formatDurationMs,
@@ -17,6 +19,7 @@ import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector 
 import { TrayReadout, injectHostPorts } from '../host';
 import { DEFAULT_DAY_TARGET_MS } from './day-review/day-review';
 import { formatBlockLabel, formatClockTime } from './day-review/format';
+import { injectTimer } from './timer';
 
 /**
  * How often the readout is rebuilt even though nothing was collected.
@@ -48,6 +51,10 @@ const formatTotal = (check: DayCheck) => {
   return check.unattributedMs > 0 ? `${against}, ${formatDurationMs(check.unattributedMs)} unattributed` : against;
 };
 
+/** The timer entry is the one menu item that acts, so it has to read as the action it will perform. */
+const formatTimer = (options: { running: TimerRun | null; elapsedMs: number }) =>
+  options.running ? `Stop timer — ${formatDurationMs(options.elapsedMs)}` : 'Start timer';
+
 /**
  * Keeps the tray menu saying what today looks like, whether or not the window is open.
  *
@@ -59,12 +66,15 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const windows = injectWindowCollector();
   const git = injectGitCollector();
   const agentSessions = injectAgentSessionCollector();
+  const timers = injectTimer();
   const readout = signal<TrayReadout | null>(null);
 
   const collected = computed(() => ({
     windows: windows.lastRun(),
     git: git.lastRun(),
     sessions: agentSessions.lastRun(),
+    timer: timers.revision(),
+    elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
   }));
 
   const read$ = (): Observable<TrayReadout> => {
@@ -74,9 +84,11 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return combineLatest({
       events: ports.events.eventsBetween$(from, to),
       edits: ports.review.editsFor$(key),
+      runs: ports.timers.runsBetween$(from, to),
     }).pipe(
-      map(({ events, edits }) => {
-        const correlation = correlateDay({ events });
+      map(({ events, edits, runs }) => {
+        const at = new Date(Math.min(Date.now(), to.getTime()));
+        const correlation = correlateDay({ events, timerRuns: runs.map((run) => closeTimerRun(run, at)) });
         const day = reviewDay({
           correlation,
           edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
@@ -86,6 +98,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return {
           activity: formatActivity(currentActivity({ events, blocks: correlation.blocks })),
           total: formatTotal(day.check),
+          timer: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
         };
       }),
     );
@@ -94,7 +107,10 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   merge(toObservable(collected), timer(0, TRAY_READOUT_INTERVAL_MS))
     .pipe(
       concatMap(() => read$().pipe(catchError(() => EMPTY))),
-      distinctUntilChanged((before, after) => before.activity === after.activity && before.total === after.total),
+      distinctUntilChanged(
+        (before, after) =>
+          before.activity === after.activity && before.total === after.total && before.timer === after.timer,
+      ),
       concatMap((next) => {
         readout.set(next);
 

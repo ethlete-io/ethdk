@@ -66,6 +66,8 @@ export type DayWarningKind =
   | 'too-many-rows'
   | 'zero-duration'
   | 'meeting-overlap'
+  /** A timer ran while the machine saw almost nothing, which is what a forgotten timer looks like. */
+  | 'timer-unobserved'
   /** Raised by `reviewDay`, not here: new evidence under a row a reviewer had already edited. */
   | 'edited-row-drift';
 
@@ -92,6 +94,8 @@ export type CheckDayOptions = {
   maxRowsPerDay?: number;
   /** Time a meeting and observed activity both claim, from `matchMeetings`. */
   meetingOverlapMs?: number;
+  /** Time a timer claimed with no activity observed inside it, from `matchTimerRuns`. */
+  timerUnobservedMs?: number;
 };
 
 /**
@@ -104,7 +108,7 @@ export const checkDay = (options: {
   unattributed?: WorkGroup[];
   options?: CheckDayOptions;
 }): DayCheck => {
-  const { targetMs, toleranceMs, maxRowsPerDay, meetingOverlapMs } = options.options ?? {};
+  const { targetMs, toleranceMs, maxRowsPerDay, meetingOverlapMs, timerUnobservedMs } = options.options ?? {};
   const unattributed = options.unattributed ?? [];
   const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const unattributedMs = unattributed.reduce((sum, group) => sum + group.observedMs, 0);
@@ -136,6 +140,13 @@ export const checkDay = (options: {
     warnings.push({
       kind: 'meeting-overlap',
       detail: `${formatDurationMs(meetingOverlapMs)} is claimed by a meeting and by observed activity at the same time`,
+    });
+  }
+
+  if (timerUnobservedMs !== undefined && timerUnobservedMs >= tolerance) {
+    warnings.push({
+      kind: 'timer-unobserved',
+      detail: `${formatDurationMs(timerUnobservedMs)} of timer time has no observed activity behind it`,
     });
   }
 

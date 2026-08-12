@@ -1,22 +1,30 @@
 use crate::error::TimetrackResult;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconEvent};
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 const ACTIVITY: &str = "activity";
 const TOTAL: &str = "total";
+const TIMER: &str = "timer";
 const SHOW: &str = "show";
 const QUIT: &str = "quit";
 
-/// The two menu entries the webview writes the readout into.
+/// What the tray asks the webview to do when the timer entry is picked.
+///
+/// The webview owns the timer, not the tray: it is what knows whether a run is going, and it is where
+/// the store and the day the run belongs to already live.
+pub const TIMER_TOGGLE_EVENT: &str = "timer-toggle";
+
+/// The menu entries the webview writes, so the tray reflects a day it does not itself reconstruct.
 ///
 /// The readout has to live in the menu rather than in the tooltip or the icon's title: a tooltip is
 /// unsupported on Linux, and a title is drawn into the panel itself, where it costs every other tray
-/// icon the space it takes. Both entries reveal the window, because on Linux a left click opens the
-/// menu instead of the app, which makes the top entry the shortest way in.
+/// icon the space it takes. The two readout entries reveal the window, because on Linux a left click
+/// opens the menu instead of the app, which makes the top entry the shortest way in.
 pub struct Readout<R: Runtime> {
     activity: MenuItem<R>,
     total: MenuItem<R>,
+    timer: MenuItem<R>,
 }
 
 /// Brings the window back from hidden, minimised or unfocused, whichever of those it is.
@@ -36,13 +44,19 @@ pub fn reveal<R: Runtime>(app: &AppHandle<R>) {
 /// by the core the review UI uses, and a second implementation here would drift from it. A desktop
 /// that gave us no tray icon has no readout to write, which is not an error the webview can act on.
 #[tauri::command]
-pub async fn tray_set_readout<R: Runtime>(app: AppHandle<R>, activity: String, total: String) -> TimetrackResult<()> {
+pub async fn tray_set_readout<R: Runtime>(
+    app: AppHandle<R>,
+    activity: String,
+    total: String,
+    timer: String,
+) -> TimetrackResult<()> {
     let Some(readout) = app.try_state::<Readout<R>>() else {
         return Ok(());
     };
 
     readout.activity.set_text(activity)?;
     readout.total.set_text(total)?;
+    readout.timer.set_text(timer)?;
 
     Ok(())
 }
@@ -58,18 +72,22 @@ pub fn attach<R: Runtime>(app: &AppHandle<R>) -> TimetrackResult<()> {
 
     let activity = MenuItem::with_id(app, ACTIVITY, "Starting up…", true, None::<&str>)?;
     let total = MenuItem::with_id(app, TOTAL, "No time reconstructed yet", true, None::<&str>)?;
+    let timer = MenuItem::with_id(app, TIMER, "Start timer", true, None::<&str>)?;
     let show = MenuItem::with_id(app, SHOW, "Show Timetrack", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, QUIT, "Quit", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
 
     tray.set_menu(Some(Menu::with_items(
         app,
-        &[&activity, &total, &separator, &show, &quit],
+        &[&activity, &total, &separator, &timer, &show, &quit],
     )?))?;
-    app.manage(Readout { activity, total });
+    app.manage(Readout { activity, total, timer });
 
     tray.on_menu_event(|app, event| match event.id.as_ref() {
         QUIT => app.exit(0),
+        TIMER => {
+            let _ = app.emit(TIMER_TOGGLE_EVENT, ());
+        }
         ACTIVITY | TOTAL | SHOW => reveal(app),
         _ => {}
     });

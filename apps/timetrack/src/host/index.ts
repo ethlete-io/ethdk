@@ -1,5 +1,6 @@
 export * from './agent-session-log-reader';
 export * from './event-store';
+export * from './events';
 export * from './git-source';
 export * from './invoke';
 export * from './ledger-store';
@@ -7,6 +8,7 @@ export * from './ports';
 export * from './process-runner';
 export * from './review-store';
 export * from './secrets';
+export * from './timer-store';
 export * from './transport';
 export * from './tray';
 export * from './window-controls';

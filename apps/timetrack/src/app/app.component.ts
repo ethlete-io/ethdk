@@ -12,6 +12,7 @@ import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector 
 import { injectHostPorts } from '../host';
 import { DayReviewComponent } from './day-review';
 import { SourcesComponent } from './sources';
+import { TimerControlComponent } from './timer-control.component';
 import { injectTrayReadout } from './tray-readout';
 import { WindowControlsComponent } from './window-controls.component';
 
@@ -28,9 +29,10 @@ type HostStatus =
       window, so it has to stay reachable however far the day is scrolled.
     -->
     <div
-      class="sticky top-0 z-10 flex items-center justify-end border-b border-et-surface-border bg-et-surface-bg px-3 py-2"
+      class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-et-surface-border bg-et-surface-bg px-3 py-2"
       data-tauri-drag-region="deep"
     >
+      <ethlete-timer-control />
       <ethlete-window-controls />
     </div>
 
@@ -86,6 +88,7 @@ type HostStatus =
     DESCRIPTION_LIST_IMPORTS,
     SourcesComponent,
     SpinnerComponent,
+    TimerControlComponent,
     WindowControlsComponent,
   ],
 })

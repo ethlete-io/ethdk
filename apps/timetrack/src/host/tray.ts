@@ -1,10 +1,12 @@
 import { Observable } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
-/** Both lines arrive worded, so the tray never formats a duration the review UI formats differently. */
+/** Every line arrives worded, so the tray never formats a duration the review UI formats differently. */
 export type TrayReadout = {
   activity: string;
   total: string;
+  /** What the timer entry should say, which is the action picking it performs. */
+  timer: string;
 };
 
 export type TauriTray = {
