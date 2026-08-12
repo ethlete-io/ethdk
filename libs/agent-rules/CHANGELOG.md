@@ -1,5 +1,13 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.8
+
+### Patch Changes
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`7074ffc`](https://github.com/ethlete-io/ethdk/commit/7074ffcb99812faed82a4e32fa3f8a1a43fcaf9d) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `sdk-docs` skill points agents at the docs site's `llms.txt` index and the `.md` suffix on any page URL, so a page can be found and read without guessing a URL from the hardcoded domain list.
+
+- [#3058](https://github.com/ethlete-io/ethdk/pull/3058) [`86fce5b`](https://github.com/ethlete-io/ethdk/commit/86fce5b87770ef4d5b069e59fec745eae93fda7b) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `sdk-source` skill points at `apps/storybook/`, the SDK repo's renamed Storybook host.
+
 ## 0.1.0-next.7
 
 ### Minor Changes
