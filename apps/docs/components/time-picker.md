@@ -12,7 +12,7 @@ import { TIME_PICKER_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-time-picker--default" height="360px" />
+<StoryEmbed id="components-date-time-time-picker--default" height="360px" />
 
 ## Options
 
@@ -40,7 +40,7 @@ While no value is set, the columns anchor their focus and scroll position to "no
 
 ## 12-hour cycle
 
-<StoryEmbed id="components-time-picker--twelve-hour" height="360px" />
+<StoryEmbed id="components-date-time-time-picker--twelve-hour" height="360px" />
 
 ## Bounds and filtering
 
@@ -54,7 +54,7 @@ While no value is set, the columns anchor their focus and scroll position to "no
 const notDuringLunch = (candidate: Date) => candidate.getHours() !== 12;
 ```
 
-<StoryEmbed id="components-time-picker--opening-hours" height="360px" />
+<StoryEmbed id="components-date-time-time-picker--opening-hours" height="360px" />
 
 Availability is computed per column, not per leaf option:
 

@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { QueryErrorStorybookComponent } from './query-error-storybook.component';
 
 export default {
-  title: 'Components/Query error',
+  title: 'Components/Feedback/Query error',
   component: QueryErrorStorybookComponent,
   decorators: [moduleMetadata({ imports: [QueryErrorStorybookComponent] })],
   args: { surface: 'dark', shape: 'message', alwaysAllowRetry: false, withSlots: false },

@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { BadgeStorybookComponent } from './badge-storybook.component';
 
 export default {
-  title: 'Components/Badge',
+  title: 'Components/Data display/Badge',
   component: BadgeStorybookComponent,
   decorators: [moduleMetadata({ imports: [BadgeStorybookComponent] })],
   args: { variant: 'tonal', size: 'md', iconAlignment: 'start' },

@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { PaginationStorybookComponent } from './pagination-storybook.component';
 
 export default {
-  title: 'Components/Pagination',
+  title: 'Components/Navigation/Pagination',
   component: PaginationStorybookComponent,
   decorators: [moduleMetadata({ imports: [PaginationStorybookComponent] })],
   args: {

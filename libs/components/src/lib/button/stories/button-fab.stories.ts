@@ -4,7 +4,7 @@ import { ButtonFabStorybookComponent } from './components';
 const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
 
 export default {
-  title: 'Components/Button/FAB',
+  title: 'Components/Actions/Button/FAB',
   component: ButtonFabStorybookComponent,
   decorators: [moduleMetadata({ imports: [ButtonFabStorybookComponent] })],
   argTypes: {

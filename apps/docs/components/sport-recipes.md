@@ -16,7 +16,7 @@ The horizontal "what's on today" strip. This is the one recipe that was scoped a
 sizes children per breakpoint and scrolls the active child into view, so the component would have been
 pass-through inputs and nothing else.
 
-<StoryEmbed id="components-sport-recipes--match-rail" height="360px" />
+<StoryEmbed id="components-sports-sport-recipes--match-rail" height="360px" />
 
 ```html
 <div class="rail-header">
@@ -55,7 +55,7 @@ Four details worth keeping:
 All four are the same shape: an image, a name, some metadata, and a link around the whole thing. A nation
 card is a team card with a flag in the emblem slot; a squad list is a column of player cards.
 
-<StoryEmbed id="components-sport-recipes--entity-cards" height="520px" />
+<StoryEmbed id="components-sports-sport-recipes--entity-cards" height="520px" />
 
 ```html
 <!-- competition -->

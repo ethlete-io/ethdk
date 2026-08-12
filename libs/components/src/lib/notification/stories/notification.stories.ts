@@ -14,7 +14,7 @@ import {
 } from './components';
 
 export default {
-  title: 'Components/Notification',
+  title: 'Components/Feedback/Notification',
   component: NotificationStorybookComponent,
   decorators: [
     // The stack renders from the manager's own (root) injector, so a per-notification `icon` name has

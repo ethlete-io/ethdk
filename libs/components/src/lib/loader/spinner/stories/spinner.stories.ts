@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { SpinnerStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Loader/Spinner',
+  title: 'Components/Feedback/Loader/Spinner',
   component: SpinnerStorybookComponent,
   decorators: [moduleMetadata({ imports: [SpinnerStorybookComponent] })],
   args: {

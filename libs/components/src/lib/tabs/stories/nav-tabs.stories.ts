@@ -11,7 +11,7 @@ import {
 const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
 
 export default {
-  title: 'Components/Tabs/Nav Tabs',
+  title: 'Components/Navigation/Tabs/Nav Tabs',
   component: NavTabsStorybookComponent,
   decorators: [
     moduleMetadata({ imports: [NavTabsStorybookComponent] }),

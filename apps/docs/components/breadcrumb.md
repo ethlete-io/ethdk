@@ -26,7 +26,7 @@ import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from '@ethlete/compon
 
 ## Live demo
 
-<StoryEmbed id="components-breadcrumb--default" height="320px" />
+<StoryEmbed id="components-navigation-breadcrumb--default" height="320px" />
 
 ## Anatomy
 
@@ -90,7 +90,7 @@ trail holds its space without painting, which is what removes the flash if it ca
 (the element isn't laid out yet, for instance). Nothing to do for it; it only applies while `collapse`
 is on and there are enough crumbs to collapse.
 
-<StoryEmbed id="components-breadcrumb--collapsed" height="320px" />
+<StoryEmbed id="components-navigation-breadcrumb--collapsed" height="320px" />
 
 ## Trails from routed views
 
@@ -211,7 +211,7 @@ it lands inside - which is how a shell-wide separator is set:
 </et-breadcrumb-outlet>
 ```
 
-<StoryEmbed id="components-breadcrumb--routed-outlet" height="360px" />
+<StoryEmbed id="components-navigation-breadcrumb--routed-outlet" height="360px" />
 
 ## SEO: structured data
 
@@ -234,7 +234,7 @@ A breadcrumb is one of the few components with a direct search-result payoff: `s
 </et-breadcrumb>
 ```
 
-<StoryEmbed id="components-breadcrumb--structured-data" height="420px" />
+<StoryEmbed id="components-navigation-breadcrumb--structured-data" height="420px" />
 
 **The crumbs state their `name` and `url`; nothing is scraped from the DOM.** A crumb's content is a
 template - it may be an icon, a chip, or markup with no single text form - and its `routerLink` is a

@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { CopyButtonStorybookComponent } from './copy-button-storybook.component';
 
 export default {
-  title: 'Components/Button/Copy',
+  title: 'Components/Actions/Button/Copy',
   component: CopyButtonStorybookComponent,
   decorators: [moduleMetadata({ imports: [CopyButtonStorybookComponent] })],
   args: {

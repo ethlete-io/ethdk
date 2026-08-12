@@ -3,7 +3,7 @@ import { PictureFitStorybookComponent } from './picture-fit-storybook.component'
 import { PictureStorybookComponent } from './picture-storybook.component';
 
 export default {
-  title: 'Components/Picture',
+  title: 'Components/Media/Picture',
   component: PictureStorybookComponent,
   decorators: [moduleMetadata({ imports: [PictureStorybookComponent] })],
   args: { surface: 'dark', showCaption: true, ratio: '16 / 9' },

@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { TreeStorybookComponent } from './tree-storybook.component';
 
 export default {
-  title: 'Components/Tree',
+  title: 'Components/Data display/Tree',
   component: TreeStorybookComponent,
   decorators: [moduleMetadata({ imports: [TreeStorybookComponent] })],
   args: { selectionMode: 'single', disabled: false, async: false, customRows: false },

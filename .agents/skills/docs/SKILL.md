@@ -67,7 +67,7 @@ reviewing one.
 ## Story embeds
 
 ```md
-<StoryEmbed id="components-menu--default" height="420px" />
+<StoryEmbed id="components-overlays-menu--default" height="420px" />
 ```
 
 - `id` is the Storybook story id. List them from a running Storybook (`:4400`):

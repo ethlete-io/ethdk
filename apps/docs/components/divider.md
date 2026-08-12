@@ -14,7 +14,7 @@ import { DIVIDER_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-divider--default" height="240px" />
+<StoryEmbed id="components-layout-divider--default" height="240px" />
 
 ## Options
 
@@ -35,7 +35,7 @@ A horizontal divider fills its container's inline size on its own. A vertical on
 </div>
 ```
 
-<StoryEmbed id="components-divider--vertical" height="200px" />
+<StoryEmbed id="components-layout-divider--vertical" height="200px" />
 
 ## Spacing
 

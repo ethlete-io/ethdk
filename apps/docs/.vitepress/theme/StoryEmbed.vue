@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
-    /** Storybook story id, e.g. `components-overlay-using-openers--default`. */
+    /** Storybook story id, e.g. `components-overlays-overlay-using-openers--default`. */
     id: string;
     height?: string;
     /** Storybook base URL. Auto-detected from the docs host when omitted. */

@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ProgressBarStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Loader/Progress Bar',
+  title: 'Components/Feedback/Loader/Progress Bar',
   component: ProgressBarStorybookComponent,
   decorators: [moduleMetadata({ imports: [ProgressBarStorybookComponent] })],
   args: {

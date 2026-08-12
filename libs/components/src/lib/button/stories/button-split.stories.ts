@@ -4,7 +4,7 @@ import { SplitButtonStorybookComponent } from './components';
 const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral', 'neutral-dark'] as const;
 
 export default {
-  title: 'Components/Button/Split',
+  title: 'Components/Actions/Button/Split',
   component: SplitButtonStorybookComponent,
   decorators: [moduleMetadata({ imports: [SplitButtonStorybookComponent] })],
   argTypes: {

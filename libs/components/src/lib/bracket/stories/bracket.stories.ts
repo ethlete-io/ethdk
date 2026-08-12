@@ -7,7 +7,7 @@ import { ET_DUMMY_DATA_SWISS } from './dummy-data';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './generate-bracket';
 
 export default {
-  title: 'Components/Bracket',
+  title: 'Components/Sports/Bracket',
   component: StorybookBracketComponent,
   argTypes: {
     columnGap: { control: { type: 'number' } },

@@ -37,7 +37,7 @@ import { MENU_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-menu--default" height="420px" />
+<StoryEmbed id="components-overlays-menu--default" height="420px" />
 
 ## Items
 
@@ -74,7 +74,7 @@ Swap the click trigger for `[etMenuContextTrigger]` on the area that should reac
 </div>
 ```
 
-<StoryEmbed id="components-menu--context-menu" height="380px" />
+<StoryEmbed id="components-overlays-menu--context-menu" height="380px" />
 
 ## Selection
 
@@ -106,7 +106,7 @@ Both item kinds take an optional `icon` input (a `provideIcons`-registered icon 
 
 Groups and standalone items carry the usual signal-forms surface alongside `[(value)]` / `[formField]`: `disabled`, `invalid`, `errors`, `required`, `name` and a `touched` model (groups additionally take `multiple`). The underlying headless directives are `etMenuSelectionGroup` and `etMenuSelectionItem` if you're building custom selection rows.
 
-<StoryEmbed id="components-menu-with-selection--default" height="440px" />
+<StoryEmbed id="components-overlays-menu-with-selection--default" height="440px" />
 
 ## Search
 
@@ -128,7 +128,7 @@ Groups and standalone items carry the usual signal-forms surface alongside `[(va
 
 For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]` (inline `role="alert"` line) on the search input while your request runs. Typing while the menu is focused forwards characters into the search field; <kbd>Escape</kbd> clears a non-empty query before closing the menu - the same reset is available programmatically via `clear()` (`#search="etMenuSearch"`).
 
-<StoryEmbed id="components-menu-with-search--async" height="440px" />
+<StoryEmbed id="components-overlays-menu-with-search--async" height="440px" />
 
 ## Positioning & behavior
 

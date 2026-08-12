@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ProgressStepsStorybookComponent, ProgressStepsStorybookStep } from './progress-steps-storybook.component';
 
 export default {
-  title: 'Components/Progress steps',
+  title: 'Components/Navigation/Progress steps',
   component: ProgressStepsStorybookComponent,
   decorators: [moduleMetadata({ imports: [ProgressStepsStorybookComponent] })],
   argTypes: {

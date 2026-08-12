@@ -3,7 +3,7 @@ import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/an
 import { FilterOverlayStorybookComponent } from './filter-overlay-storybook.component';
 
 export default {
-  title: 'Components/Filter overlay',
+  title: 'Components/Overlays/Filter overlay',
   component: FilterOverlayStorybookComponent,
   decorators: [
     moduleMetadata({ imports: [FilterOverlayStorybookComponent] }),

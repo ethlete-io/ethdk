@@ -7,7 +7,7 @@ import {
 } from './accordion-storybook.component';
 
 export default {
-  title: 'Components/Accordion',
+  title: 'Components/Layout/Accordion',
   component: AccordionStorybookComponent,
   decorators: [
     moduleMetadata({

@@ -20,7 +20,7 @@ Import `PICTURE_IMPORTS`. `providePictureConfig({ baseUrl })` is optional.
 
 ## Live demo
 
-<StoryEmbed id="components-picture--default" height="620px" />
+<StoryEmbed id="components-media-picture--default" height="620px" />
 
 ## Three jobs, three mechanisms
 
@@ -103,7 +103,7 @@ full-width, intrinsic-ratio height and `object-fit` has nothing left to do. Give
 `object-fit: none` paints outside the box it was given; add `overflow: hidden` if you don't want that.
 :::
 
-<StoryEmbed id="components-picture--fit" height="640px" />
+<StoryEmbed id="components-media-picture--fit" height="640px" />
 
 `aspectRatio` counts as a definite box here: with `fit` set, the image takes the host's inline size and its own
 ratio decides the height, so `[fit]="'cover'" [aspectRatio]="1"` crops a 16:9 source into a square.

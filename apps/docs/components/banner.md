@@ -15,7 +15,7 @@ import { BANNER_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-banner--info" height="200px" />
+<StoryEmbed id="components-feedback-banner--info" height="200px" />
 
 ## Anatomy
 
@@ -48,7 +48,7 @@ A dismiss button renders after all of it when `dismissible` is set, and emits `d
 
 This is exactly how [query-error](/components/query-error) is built: it is an `et-banner` of `type="error"` with the query's title, message or violation list projected into these slots.
 
-<StoryEmbed id="components-banner--warning" height="200px" />
+<StoryEmbed id="components-feedback-banner--warning" height="200px" />
 
 ## Semantic coloring
 
@@ -62,7 +62,7 @@ This is exactly how [query-error](/components/query-error) is built: it is an `e
 
 `color` overrides the type-driven default for any type, the same escape hatch [query-error](/components/query-error) offers for its error theme.
 
-<StoryEmbed id="components-banner--error" height="200px" />
+<StoryEmbed id="components-feedback-banner--error" height="200px" />
 
 ## Options
 

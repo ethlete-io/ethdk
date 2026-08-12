@@ -68,14 +68,15 @@ const read = (tree: Tree, path: string) => tree.read(path, 'utf-8') ?? '';
 
 describe('componentNames', () => {
   it('derives every naming form from a kebab-case domain', () => {
-    expect(componentNames('stat-tile')).toEqual({
+    expect(componentNames('stat-tile', 'Data display')).toEqual({
       fileName: 'stat-tile',
       className: 'StatTile',
       constantName: 'STAT_TILE',
       elementSelector: 'et-stat-tile',
       attributeSelector: 'etStatTile',
       title: 'Stat tile',
-      storyIdPrefix: 'components-stat-tile',
+      category: 'Data display',
+      storyIdPrefix: 'components-data-display-stat-tile',
     });
   });
 
@@ -85,6 +86,14 @@ describe('componentNames', () => {
 
   it('rejects a name that cannot be a selector', () => {
     expect(() => componentNames('1tile')).toThrow(/kebab-case/);
+  });
+
+  it('slugifies a category the way Storybook does', () => {
+    expect(componentNames('range', 'Date & time').storyIdPrefix).toBe('components-date-time-range');
+  });
+
+  it('rejects a category that is not one of the Storybook groups', () => {
+    expect(() => componentNames('stat-tile', 'Widgets' as never)).toThrow(/not a Storybook category/);
   });
 });
 
@@ -189,9 +198,22 @@ describe('component generator', () => {
   it('writes the docs page and its sidebar entry', async () => {
     await generate(tree, { name: 'stat-tile' });
 
-    expect(read(tree, 'apps/docs/components/stat-tile.md')).toContain('<StoryEmbed id="components-stat-tile--default"');
+    expect(read(tree, 'apps/docs/components/stat-tile.md')).toContain(
+      '<StoryEmbed id="components-layout-stat-tile--default"',
+    );
     expect(read(tree, 'apps/docs/.vitepress/config.mts')).toContain(
       `{ text: 'Stat tile', link: '/components/stat-tile' },`,
+    );
+  });
+
+  it('files the story under its Storybook category, and the embed id follows', async () => {
+    await generate(tree, { name: 'stat-tile', category: 'Data display' });
+
+    expect(read(tree, 'libs/components/src/lib/stat-tile/stories/stat-tile.stories.ts')).toContain(
+      `title: 'Components/Data display/Stat tile',`,
+    );
+    expect(read(tree, 'apps/docs/components/stat-tile.md')).toContain(
+      '<StoryEmbed id="components-data-display-stat-tile--default"',
     );
   });
 

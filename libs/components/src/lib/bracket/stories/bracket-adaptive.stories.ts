@@ -3,7 +3,7 @@ import { StorybookBracketAdaptiveComponent } from './bracket-rounds-list-storybo
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './generate-bracket';
 
 export default {
-  title: 'Components/Bracket Adaptive',
+  title: 'Components/Sports/Bracket Adaptive',
   component: StorybookBracketAdaptiveComponent,
   argTypes: {
     containerWidth: { control: { type: 'range', min: 320, max: 1400, step: 20 } },

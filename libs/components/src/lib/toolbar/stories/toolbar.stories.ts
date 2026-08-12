@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ToolbarStorybookComponent } from './toolbar-storybook.component';
 
 export default {
-  title: 'Components/Toolbar',
+  title: 'Components/Layout/Toolbar',
   component: ToolbarStorybookComponent,
   decorators: [moduleMetadata({ imports: [ToolbarStorybookComponent] })],
   args: { orientation: 'horizontal', disableItalic: false },

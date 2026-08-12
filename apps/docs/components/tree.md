@@ -19,7 +19,7 @@ const files: TreeDataSource<string> = {
 
 ## Live demo
 
-<StoryEmbed id="components-tree--default" height="520px" />
+<StoryEmbed id="components-data-display-tree--default" height="520px" />
 
 ## The data source
 
@@ -92,7 +92,7 @@ Activating a branch selects **and** expands it (a folder click is both), so `sel
 
 The two modes look different on purpose. `single` fills the one selected row with the accent and tints its label to match. `multiple` never fills a selected row at all - a run of adjacent selections would merge into one accent block - so it states the selection through a leading check box instead, the way [select](/components/select) and [cascader](/components/cascader) do, and keeps the fill for hover and press. The box renders on every row whether or not it is selected, so ticking one never shifts its label.
 
-<StoryEmbed id="components-tree--multi-select" height="520px" />
+<StoryEmbed id="components-data-display-tree--multi-select" height="520px" />
 
 ## Lazy loading, and what happens when it fails
 
@@ -100,7 +100,7 @@ While a branch loads, its chevron becomes a spinner and the row is `aria-busy`. 
 
 If a load fails, the branch keeps its place and shows the message from `toErrorMessage` alongside `retryLabel`. **Activating that row again reloads it** rather than collapsing it, which is why there is no separate retry button to reach for - the row is the control, and it works with the pointer and with <kbd>Enter</kbd> alike. A failed root load becomes a single row that behaves the same way. `retry(node)` (or `retry(null)` for the root) does it programmatically, and doubles as "refresh this branch" for a level that loaded fine.
 
-<StoryEmbed id="components-tree--lazy-loading" height="520px" />
+<StoryEmbed id="components-data-display-tree--lazy-loading" height="520px" />
 
 ## Custom rows
 
@@ -119,7 +119,7 @@ By default a row shows `node.label`. Project an `<ng-template etTreeNodeDef>` to
 
 The template is rendered with the DI of the place it was written, so an `etIcon` in it resolves against your own `provideIcons()` - not the tree's.
 
-<StoryEmbed id="components-tree--custom-rows" height="520px" />
+<StoryEmbed id="components-data-display-tree--custom-rows" height="520px" />
 
 ## Headless
 

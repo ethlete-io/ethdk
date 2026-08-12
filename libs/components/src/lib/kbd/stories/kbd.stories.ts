@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { KbdStorybookComponent } from './kbd-storybook.component';
 
 export default {
-  title: 'Components/Kbd',
+  title: 'Components/Data display/Kbd',
   component: KbdStorybookComponent,
   decorators: [moduleMetadata({ imports: [KbdStorybookComponent] })],
   args: { keys: 'mod+k', platform: undefined },

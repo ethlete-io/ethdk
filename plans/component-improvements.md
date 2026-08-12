@@ -211,13 +211,9 @@ lifecycle.directive.ts` are class-driven CSS-transition directives typed
 
 ## Storybook structure
 
-Every story sits under a flat `Components/<Name>` (or `Components/<Domain>/
-<Name>`) - nothing groups categories like Forms/Overlays/Data-display as
-siblings above `Components`, which is the likely source of the "big dump"
-feeling. The two misplaced titles found this pass are fixed (see "Already
-fixed"). Whether `Components/*` should gain real top-level categories at
-all is the part still open - a bigger, separate call, and one that moves
-every story id the docs site embeds.
+Both halves of this shipped: the two misplaced titles on 2026-08-06, and the
+eleven categories on 2026-08-12 - see "Already fixed" for the scheme and the
+id-mapping method. **Nothing is open here.**
 
 ## Auth: `excludeRoutes` invites string matching - fixed 2026-08-10
 
@@ -243,6 +239,32 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Storybook top-level categories** (2026-08-12, the last "Decide before building" row) - `Components/*`
+now has eleven categories: Actions, Data display, Date & time, Dev tools, Feedback, Forms, Layout,
+Media, Navigation, Overlays, Sports. The calls the user settled first:
+
+- **The category level sits _inside_ `Components`**, not in place of it: `Components/Data display/Table`,
+  with `CDK` and `Query` still the top-level siblings. Promoting categories to the top level was
+  rejected - the first level would stop saying which library a story belongs to, and `Forms/` would
+  sit next to `CDK/`.
+- **The seven families that were already grouped got re-parented too** (`Components/Actions/Button/*`,
+  `Components/Media/Stream/*`, `Components/Feedback/Loader/*`, `Components/Overlays/Menu/*` and
+  `/Overlay/*`, `Components/Navigation/Tabs/*`), so every story sits under exactly one category rather
+  than the tree being mixed-depth. **`Forms` is the exception on purpose** - it already _is_ a category,
+  so its 32 stories and their 54 docs embeds did not move at all.
+- 69 `*.stories.ts` titles plus **7 `*.docs.mdx` `<Meta title=…>`** moved. The mdx companions are easy
+  to miss: they carry their own title and a `.stories.ts`-only sweep leaves them behind, which shows up
+  as a phantom leftover category in the built index rather than as an error.
+- **363 story ids changed; 162 references were rewritten** across 53 files - 155 `<StoryEmbed>` ids in
+  `apps/docs`, plus `.agents/skills/docs/SKILL.md`, a comment in
+  `table-keyboard-nav.directive.spec.ts` and two headless-verification notes in this file. The mapping
+  was derived by matching Storybook's own `index.json` before and after on
+  (`importPath`, `exportName`) - 716/716 entries matched, so no id was guessed from slug rules.
+- **The generator now takes `--category`** (`libs/components/generators/component/`): `COMPONENT_CATEGORIES`
+  is the source of truth, `schema.json` prompts for it, and `storyIdPrefix` became
+  `components-<category-slug>-<name>` so a generated docs page embeds an id that actually exists. A
+  twelfth category means editing that array **and** the schema enum together.
 
 **Progress steps: detailed sub-steps** (2026-08-12, the last "Decide before building" row that was not
 Storybook categories) - shipped as `[etProgressStepDescription]`, a second muted line under the label.
@@ -473,7 +495,7 @@ this was one method, one template block and one CSS rule:
   are laid out by the grid; the month view's own `dateAt` still divides and is still LTR-only.
 - The click-suppression flag is the same view-local `hasDragged` the timed blocks use, which is safe for
   the same reason - a `pointerdown` always precedes its click. Verified headlessly on
-  `components-scheduler--week`: a move lands one column across, a resize-end grows by exactly one column,
+  `components-date-time-scheduler--week`: a move lands one column across, a resize-end grows by exactly one column,
   a resize-start dragged far past the end clamps to a single day, a plain click still opens the surface,
   the feature off renders no handles and a 300px drag moves nothing, and a 600ms touch long press then a
   drag moves exactly one day. Changeset `scheduler-all-day-move-and-resize.md`.

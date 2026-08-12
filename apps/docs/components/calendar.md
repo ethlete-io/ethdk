@@ -12,7 +12,7 @@ import { CALENDAR_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-calendar--default" height="420px" />
+<StoryEmbed id="components-date-time-calendar--default" height="420px" />
 
 ## Options
 
@@ -47,7 +47,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 
 `et-calendar` also takes **`weekNumbers`**, which renders a leading column of week numbers in the day grid. It is presentation, so it lives on the component rather than the headless directive - which exposes the numbers themselves as `calendar.weekNumbers()`, one per row of `weeks()`. They are localized, not always ISO: the row boundaries follow `firstDayOfWeek` and which week counts as the year's first follows the locale's `firstWeekContainsDate`, so the numbering always names the rows actually on screen. The column is a `rowheader` per row (`aria-label` `"Week 31"`) under a named-but-blank `columnheader`, and the three date inputs forward `weekNumbers` to their picker.
 
-<StoryEmbed id="components-calendar--week-numbers" height="420px" />
+<StoryEmbed id="components-date-time-calendar--week-numbers" height="420px" />
 
 The component also takes `previousMonthLabel` / `nextMonthLabel` for the nav buttons' `aria-label`s while the day grid is showing; unset - and in the coarser views, which have their own - they read [`CALENDAR_LABELS`](/components/localization).
 
@@ -55,7 +55,7 @@ Values are day-granular: the calendar writes dates at midnight local time and co
 
 `startAt` decides where an **empty** calendar opens - e.g. next month for a booking form - and which day takes the initial roving focus. A selection always wins over it, as does an explicit `activeMonth`; without any of the three, the calendar opens on today. The date inputs forward it as `startAt` too.
 
-<StoryEmbed id="components-calendar--start-at" height="420px" />
+<StoryEmbed id="components-date-time-calendar--start-at" height="420px" />
 
 ## View drilling
 
@@ -66,11 +66,11 @@ The header label is a button that zooms the grid out: **day grid → month grid 
 <et-calendar [(value)]="date" startView="year" />
 ```
 
-<StoryEmbed id="components-calendar--month-view" height="420px" />
+<StoryEmbed id="components-date-time-calendar--month-view" height="420px" />
 
 A coarse cell is disabled when **no** day inside it is selectable, so `min`/`max` and `dateFilter` reach the month and year grids as well - a month whose every day the filter rejects cannot be drilled into. The step buttons move by the unit on show (a month, a year, a 24-year page) and stop at the bounds the same way.
 
-<StoryEmbed id="components-calendar--year-view" height="420px" />
+<StoryEmbed id="components-date-time-calendar--year-view" height="420px" />
 
 In a date picker's **bottom sheet** the panel reserves the day grid's tallest case (six week rows), so neither paging a month nor drilling a view moves it: a sheet grows upwards, so a height change would slide its top edge under the reader's thumb. The month and year grids centre in that reserved height. The anchored panel on wider screens, and a bare `<et-calendar>`, size themselves to whichever grid is showing.
 
@@ -85,11 +85,11 @@ Selection and today's marker carry over unchanged: a coarse cell reads as select
 <et-calendar [(value)]="month" precision="month" />
 ```
 
-<StoryEmbed id="components-calendar--month-precision" height="420px" />
+<StoryEmbed id="components-date-time-calendar--month-precision" height="420px" />
 
 Everything else follows the precision rather than the day: `startView` cannot open a grid finer than it, the header zooms back to the selecting grid rather than the day grid, and a range bands, previews and completes at that unit - so `03/2026 – 06/2026` is a four-cell band in the month grid, and picking the start month twice is a one-month range.
 
-<StoryEmbed id="components-calendar--month-range" height="420px" />
+<StoryEmbed id="components-date-time-calendar--month-range" height="420px" />
 
 `min`/`max`/`dateFilter` keep their day-level meaning: a month cell is selectable when _some_ day inside it is, which is the same rule that disables coarse cells while drilling. The date inputs take `precision` too, and derive their text format from it - see [date & time inputs](/components/date-time-inputs#precision).
 
@@ -104,13 +104,13 @@ protected dateClass: CalendarDateClassFn = (date, view) =>
 
 The returned classes are **your** CSS, which is unlayered and therefore wins over the component's own styles without `!important` (see [cascade layers](/core/theming)). The cell keeps its own classes and `data-*` attributes; a class the hook stops returning is taken back off.
 
-<StoryEmbed id="components-calendar--date-class" height="420px" />
+<StoryEmbed id="components-date-time-calendar--date-class" height="420px" />
 
 ## Range selection
 
 The first click starts the range, a later-or-equal second click completes it, and an earlier one restarts it. While the end is pending, hovering (or moving keyboard focus) previews the band.
 
-<StoryEmbed id="components-calendar--range" height="420px" />
+<StoryEmbed id="components-date-time-calendar--range" height="420px" />
 
 ## Several months at once
 
@@ -120,7 +120,7 @@ The first click starts the range, a later-or-equal second click completes it, an
 <et-calendar [(rangeValue)]="range" [monthsShown]="2" mode="range" />
 ```
 
-<StoryEmbed id="components-calendar--two-months" height="480px" />
+<StoryEmbed id="components-date-time-calendar--two-months" height="480px" />
 
 Everything is shared across the span rather than repeated: one keyboard scope with a single roving cell, one selection, and a band that runs on through the seam. The header names the whole span (`July – August 2026`, or both years once it crosses one), each column says which month it is, and stepping moves by **one** month so the window slides rather than paging - which is what makes a range across the seam reachable in the first place.
 
@@ -145,11 +145,11 @@ protected sevenDays = createFixedLengthRangeStrategy({ days: 7 });
 | `createWeekRangeStrategy({ weekStartsOn })` | Open at the start of that week, close at the end of the second pick's week.    |
 | `createFixedLengthRangeStrategy({ days })`  | A complete range of `days` days from wherever it landed - one pick, no second. |
 
-<StoryEmbed id="components-calendar--week-range" height="420px" />
+<StoryEmbed id="components-date-time-calendar--week-range" height="420px" />
 
 A strategy is two pure functions of `(date, currentRange)`: `select` returns the range a pick produces (an open `end: null` leaves it half-built), and the optional `preview` returns what to band while the reader is only hovering or has moved keyboard focus there. Leaving `preview` out means the band promises exactly what the pick would do, which is usually right; the week strategy overrides it so hovering bands whole weeks from the start, making the snap visible _before_ it happens rather than surprising after. The result is normalized to the calendar's [`precision`](#month-and-year-pickers), so a strategy can work in days without knowing about coarser calendars. The date range input forwards the input.
 
-<StoryEmbed id="components-calendar--fixed-length-range" height="420px" />
+<StoryEmbed id="components-date-time-calendar--fixed-length-range" height="420px" />
 
 ## Multiple dates
 
@@ -159,7 +159,7 @@ A strategy is two pure functions of `(date, currentRange)`: `select` returns the
 <et-calendar [(multipleValue)]="dates" mode="multiple" />
 ```
 
-<StoryEmbed id="components-calendar--multiple" height="420px" />
+<StoryEmbed id="components-date-time-calendar--multiple" height="420px" />
 
 Nothing bands or previews here - the dates have no relationship to each other - and the grid carries `aria-multiselectable="true"` so assistive tech announces that more than one cell can be picked. It combines with `precision`: at `'month'` each pick toggles a whole month. The date inputs have no `multiple` equivalent; their value is one wire string, so a set of dates is the calendar's own surface.
 
@@ -176,7 +176,7 @@ Nothing bands or previews here - the dates have no relationship to each other - 
 />
 ```
 
-<StoryEmbed id="components-calendar--comparison-range" height="420px" />
+<StoryEmbed id="components-date-time-calendar--comparison-range" height="420px" />
 
 It is drawn as a bar under the cells rather than a second band behind them, so where the two periods overlap the bar simply runs under the selection's band - which is the case the pattern exists to show. Cells carry `data-comparison-band` (`start` / `middle` / `end` / `single`, the last for a one-day period) next to the selection's own `data-band`, so a custom template can draw it differently. The band is visual: pair it with a legend if the comparison needs naming for assistive tech. The date range input forwards both inputs to its picker.
 
@@ -184,7 +184,7 @@ It is drawn as a bar under the cells rather than a second band behind them, so w
 
 `min`/`max` and `dateFilter` combine; disabled days stay focusable (per the ARIA grid pattern) but cannot be selected.
 
-<StoryEmbed id="components-calendar--disabled-dates" height="420px" />
+<StoryEmbed id="components-date-time-calendar--disabled-dates" height="420px" />
 
 ## Keyboard
 
@@ -217,7 +217,7 @@ Stepping (buttons or keyboard) slides the new grid in from the travel direction;
 </et-calendar>
 ```
 
-<StoryEmbed id="components-calendar--custom-header" height="420px" />
+<StoryEmbed id="components-date-time-calendar--custom-header" height="420px" />
 
 `headerLabel()`, `view`, `zoomOut()` / `canZoomOut()`, `previous()` / `next()`, `canGoPrev()` / `canGoNext()` and the models are all on it - see [headless usage](#headless-usage) for the full surface. The component also exposes the same directive as **`headless`** (`<et-calendar #cal>` then `cal.headless`), for chrome that sits _outside_ the calendar. Replacing the header means owning its accessibility too: the default one is a named `aria-live` region, so keep the label announced.
 

@@ -46,7 +46,7 @@ A directive cannot be applied conditionally, so each takes a value to switch it 
 
 ## Live demo
 
-<StoryEmbed id="components-scrollable--default" height="360px" />
+<StoryEmbed id="components-layout-scrollable--default" height="360px" />
 
 ## Options
 
@@ -116,7 +116,7 @@ Helper directives: `[etScrollableActiveChild]` marks a child as active so it's a
 - `(intersectionChange)` emits per-child visibility ratios (debounced), which is what powers the dots and darkening.
 - On the headless `ScrollableDirective` (exported as `etScrollable`): `scrollToElement(...)`, `scrollToElementByIndex({ index })`, and `scrollToStartDirection()` / `scrollToEndDirection()` - one container or item step back/forward, which is what the prev/next buttons call. `getActiveChildren()` and `getScrollContainerRef()` expose the tracked children and the container element as readonly signals.
 
-<StoryEmbed id="components-scrollable--with-snap" height="360px" />
+<StoryEmbed id="components-layout-scrollable--with-snap" height="360px" />
 
 ## Accessibility
 

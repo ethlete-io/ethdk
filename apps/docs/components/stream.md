@@ -57,7 +57,7 @@ Every slot additionally accepts `width` / `height` (iframe sizing - usually leav
 
 ## Live demo
 
-<StoryEmbed id="components-stream-youtube--default" height="480px" />
+<StoryEmbed id="components-media-stream-youtube--default" height="480px" />
 
 ## Player state & control
 
@@ -90,7 +90,7 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 
 `pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` - `pipChrome` tunes the appearance of the built-in chrome without replacing it. Picture-in-picture is opt-in: add `STREAM_PIP_IMPORTS` for the floating window, the PiP player and the controls. A custom chrome component composes the headless PiP directives from that barrel: `etPipClose`, `etPipBack`, `etPipBringBack` and `etPipGridToggle`. The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
-<StoryEmbed id="components-stream-mixed--mixed-aspect-ratios" height="560px" />
+<StoryEmbed id="components-media-stream-mixed--mixed-aspect-ratios" height="560px" />
 
 ## Localization
 

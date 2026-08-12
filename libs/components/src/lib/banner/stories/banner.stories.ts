@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { BannerStorybookComponent } from './banner-storybook.component';
 
 export default {
-  title: 'Components/Banner',
+  title: 'Components/Feedback/Banner',
   component: BannerStorybookComponent,
   decorators: [moduleMetadata({ imports: [BannerStorybookComponent] })],
   args: {

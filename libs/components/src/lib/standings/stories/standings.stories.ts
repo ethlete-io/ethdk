@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { StandingsStorybookComponent } from './standings-storybook.component';
 
 export default {
-  title: 'Components/Standings',
+  title: 'Components/Sports/Standings',
   component: StandingsStorybookComponent,
   decorators: [moduleMetadata({ imports: [StandingsStorybookComponent] })],
   args: { surface: 'dark', width: 760, showLegend: true, highlight: true, withZones: true, withForm: true },

@@ -121,11 +121,11 @@ export class EditItemOverlayComponent {
 
 For route-level protection (a form on a page rather than in an overlay) use [`createUnsavedChangesGuard`](/core/utilities#unsaved-changes) from `@ethlete/core`, which adds a `canDeactivate` bridge.
 
-<StoryEmbed id="components-overlay-unsaved-changes--default" height="520px" />
+<StoryEmbed id="components-overlays-overlay-unsaved-changes--default" height="520px" />
 
 ## Live demo
 
-<StoryEmbed id="components-overlay--default" height="480px" />
+<StoryEmbed id="components-overlays-overlay--default" height="480px" />
 
 ## Building overlay content
 
@@ -358,7 +358,7 @@ Inside the overlay:
 - `ng-template[etOverlayRouterOutletDisabledTemplate]` provides fallback content shown while the router outlet is disabled.
 - `injectOverlayRouter()` gives programmatic access (`navigate`, `back`, `currentRoute`, …).
 
-<StoryEmbed id="components-overlay-with-routing--default" height="520px" />
+<StoryEmbed id="components-overlays-overlay-with-routing--default" height="520px" />
 
 ### Sidebar layouts
 

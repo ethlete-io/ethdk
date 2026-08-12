@@ -4,7 +4,7 @@ import { GridDataStorybookComponent, GridPartnerStorybookComponent, GridStoryboo
 import { DummyChartComponent, DummyTableComponent, DummyTextComponent } from './components/dummy-components';
 
 export default {
-  title: 'Components/Grid',
+  title: 'Components/Layout/Grid',
   component: GridStorybookComponent,
   decorators: [
     moduleMetadata({

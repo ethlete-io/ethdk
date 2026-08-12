@@ -62,7 +62,7 @@ export class StandingsComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-bracket--single-elimination" height="480px" />
+<StoryEmbed id="components-sports-bracket--single-elimination" height="480px" />
 
 ## Layouts
 
@@ -342,7 +342,7 @@ rounds resolve later than their upper-bracket feeders) are supported and align c
 front-truncated winners bracket whose opening round is played elsewhere. It also
 [folds](#double-elimination-stacks-two-folds).
 
-<StoryEmbed id="components-bracket--double-elimination" height="520px" />
+<StoryEmbed id="components-sports-bracket--double-elimination" height="520px" />
 
 ## Swiss
 
@@ -387,14 +387,14 @@ over the factory's `colors`, per instance. Group geometry (`swissGroupPadding`,
 
 Swiss has no mirrored variant: a stage of standings groups has nothing to fold.
 
-The `components-bracket--swiss` story shows a full stage.
+The `components-sports-bracket--swiss` story shows a full stage.
 
 ## Continue element
 
 When a stage feeds into a later competition phase, set `showContinueElement` to append a trailing
 column whose card receives the matches whose winners advance. Useful for "→ playoffs" hand-offs. It is
 ignored by the [mirrored layouts](#mirrored-layouts), which have no trailing edge to hang it off. The
-`components-bracket--double-elimination-with-continue` story shows one.
+`components-sports-bracket--double-elimination-with-continue` story shows one.
 
 ## Mirrored layouts
 
@@ -419,7 +419,7 @@ broadcast graphic or a page that scrolls badly downwards wants - it is _not_ the
 that is too wide, which is what [density](#density) and the
 [rounds list](/components/bracket-rounds-list) are for.
 
-<StoryEmbed id="components-bracket--mirrored-single-elimination" height="420px" />
+<StoryEmbed id="components-sports-bracket--mirrored-single-elimination" height="420px" />
 
 ### Double elimination stacks two folds
 
@@ -471,7 +471,7 @@ inputs. `density="compact"` with `[columnWidth]="180"` is a compact bracket with
 <et-bracket [source]="source()" density="compact" />
 ```
 
-<StoryEmbed id="components-bracket-density--compact-double-elimination" height="520px" />
+<StoryEmbed id="components-sports-bracket-density--compact-double-elimination" height="520px" />
 
 ## Narrow screens
 
@@ -545,7 +545,7 @@ The bracket drops the pin on <kbd>Escape</kbd> (anywhere on the page, while pinn
 that lands past the cells, writing the `null` back through the model - bind it two-way, or listen
 to `(focusedParticipantIdChange)` for URL sync and analytics.
 
-<StoryEmbed id="components-bracket--participant-focus" height="520px" />
+<StoryEmbed id="components-sports-bracket--participant-focus" height="520px" />
 
 ## Accessibility
 

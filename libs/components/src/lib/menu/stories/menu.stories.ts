@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { MenuContextStorybookComponent, MenuStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Menu',
+  title: 'Components/Overlays/Menu',
   component: MenuStorybookComponent,
   decorators: [moduleMetadata({ imports: [MenuStorybookComponent, MenuContextStorybookComponent] })],
   args: {

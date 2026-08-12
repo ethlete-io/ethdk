@@ -4,7 +4,7 @@ import { TabsStorybookComponent } from './components';
 const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
 
 export default {
-  title: 'Components/Tabs/Tabs',
+  title: 'Components/Navigation/Tabs/Tabs',
   component: TabsStorybookComponent,
   decorators: [moduleMetadata({ imports: [TabsStorybookComponent] })],
   args: {

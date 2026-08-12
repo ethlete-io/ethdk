@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { EmptyStateStorybookComponent } from './empty-state-storybook.component';
 
 export default {
-  title: 'Components/Empty state',
+  title: 'Components/Feedback/Empty state',
   component: EmptyStateStorybookComponent,
   decorators: [moduleMetadata({ imports: [EmptyStateStorybookComponent] })],
   args: {

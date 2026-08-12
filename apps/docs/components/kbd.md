@@ -12,7 +12,7 @@ import { KBD_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-kbd--default" height="420px" />
+<StoryEmbed id="components-data-display-kbd--default" height="420px" />
 
 ## Options
 

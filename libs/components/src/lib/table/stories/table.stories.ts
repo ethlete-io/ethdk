@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { TableStorybookComponent } from './table-storybook.component';
 
 export default {
-  title: 'Components/Table',
+  title: 'Components/Data display/Table',
   component: TableStorybookComponent,
   decorators: [moduleMetadata({ imports: [TableStorybookComponent] })],
   args: {

@@ -45,7 +45,7 @@ export class TeamFiltersOverlayComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-filter-overlay--default" height="620px" />
+<StoryEmbed id="components-overlays-filter-overlay--default" height="620px" />
 
 ## Edit a copy, then commit
 
@@ -90,7 +90,7 @@ the `FilterOverlayPreview` shape yourself: three signals (`loading`, `hasError`,
 
 **Without a preview** the button simply reads "Show results", enabled.
 
-<StoryEmbed id="components-filter-overlay--without-preview" height="420px" />
+<StoryEmbed id="components-overlays-filter-overlay--without-preview" height="420px" />
 
 ::: warning cdk parity note
 cdk's default submit-button resolver returned its _loading_ state when there was no query state and no total -

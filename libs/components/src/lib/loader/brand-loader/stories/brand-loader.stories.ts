@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { BrandSpinnerStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Loader/Brand Loader',
+  title: 'Components/Feedback/Loader/Brand Loader',
   component: BrandSpinnerStorybookComponent,
   decorators: [moduleMetadata({ imports: [BrandSpinnerStorybookComponent] })],
 } as Meta<BrandSpinnerStorybookComponent>;

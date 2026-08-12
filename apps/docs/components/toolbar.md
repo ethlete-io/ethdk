@@ -23,7 +23,7 @@ import { TOOLBAR_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-toolbar--default" height="240px" />
+<StoryEmbed id="components-layout-toolbar--default" height="240px" />
 
 ## Options
 
@@ -33,7 +33,7 @@ import { TOOLBAR_IMPORTS } from '@ethlete/components';
 
 Group related controls with [`et-divider`](/components/divider) - a `vertical` divider in a horizontal toolbar, and the other way round.
 
-<StoryEmbed id="components-toolbar--vertical" height="440px" />
+<StoryEmbed id="components-layout-toolbar--vertical" height="440px" />
 
 ## Which elements become toolbar controls
 
@@ -65,7 +65,7 @@ The host is `role="toolbar"` with `aria-orientation` matching `orientation`. **G
 
 In a horizontal toolbar the left/right keys follow the writing direction, so they swap under `direction: rtl`. The tab stop stays on the control the user last focused, so <kbd>Shift</kbd>+<kbd>Tab</kbd> back into the toolbar re-enters where they left off.
 
-<StoryEmbed id="components-toolbar--disabled-control" height="240px" />
+<StoryEmbed id="components-layout-toolbar--disabled-control" height="240px" />
 
 ## Theming
 
