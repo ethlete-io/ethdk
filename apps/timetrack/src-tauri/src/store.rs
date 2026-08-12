@@ -14,6 +14,10 @@ pub struct StoredEvent {
     pub source: String,
     pub kind: String,
     pub payload: serde_json::Value,
+    /// What the core's `dedupeKeyOf` made of the event, so a rescan of the same history appends
+    /// nothing. `None` for an observation that has no identity beyond having been made.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dedupe_key: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -23,6 +27,14 @@ pub struct AgentSessionCursorRow {
     pub next_line: i64,
     pub after_ms: Option<i64>,
     pub title: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SourceTally {
+    pub source: String,
+    pub count: i64,
+    pub latest_at_ms: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -51,6 +63,7 @@ pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> Time
                 source: row.get(1)?,
                 kind: row.get(2)?,
                 payload: serde_json::from_str(&row.get::<_, String>(3)?).unwrap_or(serde_json::Value::Null),
+                dedupe_key: None,
             })
         })?;
 
@@ -63,26 +76,33 @@ pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> Time
 ///
 /// The two must commit together: a cursor that goes missing re-reads its log from the top and
 /// appends every sample in it a second time.
+///
+/// An event whose `dedupe_key` is already stored is skipped rather than inserted, which is what lets
+/// the git collector rescan a window it has already read. The count that comes back is the rows that
+/// were new, so a collector can report what it actually added instead of what it looked at.
 #[tauri::command]
 pub async fn events_append(
     db: State<'_, Db>,
     events: Vec<StoredEvent>,
     cursors: Vec<AgentSessionCursorRow>,
-) -> TimetrackResult<()> {
+) -> TimetrackResult<i64> {
     db.run(move |connection| {
         let transaction = connection.transaction()?;
+        let mut appended = 0i64;
 
         {
             let mut insert = transaction.prepare(
-                "INSERT INTO collected_event (at_ms, source, kind, payload) VALUES (?1, ?2, ?3, ?4)",
+                "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key) VALUES (?1, ?2, ?3, ?4, ?5)
+                 ON CONFLICT (dedupe_key) DO NOTHING",
             )?;
             for event in &events {
-                insert.execute(params![
+                appended += insert.execute(params![
                     event.at_ms,
                     event.source,
                     event.kind,
-                    serde_json::to_string(&event.payload)?
-                ])?;
+                    serde_json::to_string(&event.payload)?,
+                    event.dedupe_key
+                ])? as i64;
             }
 
             let mut upsert = transaction.prepare(
@@ -97,7 +117,7 @@ pub async fn events_append(
 
         transaction.commit()?;
 
-        Ok(())
+        Ok(appended)
     })
     .await
 }
@@ -108,6 +128,30 @@ pub async fn events_delete_before(db: State<'_, Db>, before_ms: i64) -> Timetrac
         let deleted = connection.execute("DELETE FROM collected_event WHERE at_ms < ?1", params![before_ms])?;
 
         Ok(deleted as i64)
+    })
+    .await
+}
+
+/// What each collector has actually put in the store, and when it last managed to.
+///
+/// This is the only honest answer to "is this source collecting?". A per-session tally reads zero
+/// after every reload, and a collector whose last run stored nothing looks identical to one that has
+/// stopped — a frozen `latest_at_ms` does not.
+#[tauri::command]
+pub async fn events_by_source(db: State<'_, Db>) -> TimetrackResult<Vec<SourceTally>> {
+    db.run(|connection| {
+        let mut statement = connection.prepare(
+            "SELECT source, count(*), max(at_ms) FROM collected_event GROUP BY source ORDER BY source",
+        )?;
+        let rows = statement.query_map([], |row| {
+            Ok(SourceTally {
+                source: row.get(0)?,
+                count: row.get(1)?,
+                latest_at_ms: row.get(2)?,
+            })
+        })?;
+
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
     })
     .await
 }

@@ -3,6 +3,7 @@ mod decorations;
 #[cfg(target_os = "linux")]
 mod decorations_wayland;
 mod error;
+mod git;
 mod http;
 mod keychain;
 mod logs;
@@ -35,6 +36,7 @@ pub fn run() {
 
             window::start(&windows);
             app.manage(windows);
+            app.manage(git::GitWatcher::new());
             app.manage(decorations::detect());
 
             tray::attach(app.handle())?;
@@ -44,6 +46,8 @@ pub fn run() {
         .on_window_event(tray::hide_instead_of_closing)
         .invoke_handler(tauri::generate_handler![
             decorations::window_capabilities,
+            git::git_changes,
+            git::git_repos,
             http::http_request,
             logs::agent_log_lines,
             logs::agent_logs,
@@ -55,6 +59,7 @@ pub fn run() {
             store::day_review_edits,
             store::events_append,
             store::events_between,
+            store::events_by_source,
             store::events_delete_before,
             store::events_oldest_at,
             store::ledger_entries_for,

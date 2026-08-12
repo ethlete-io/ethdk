@@ -1,5 +1,6 @@
 export * from './agent-session-log-reader';
 export * from './event-store';
+export * from './git-source';
 export * from './invoke';
 export * from './ledger-store';
 export * from './ports';

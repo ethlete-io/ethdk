@@ -15,6 +15,7 @@ tauri-build = { version = "2.6.3", features = ["codegen"] }
 [dependencies]
 chrono = "0.4.45"
 keyring = { version = "4.1.6", default-features = false, features = ["v1"] }
+notify = "8.2.0"
 rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["json", "gzip"] }
 rusqlite = { version = "0.40.2", features = ["bundled-sqlcipher-vendored-openssl", "chrono"] }

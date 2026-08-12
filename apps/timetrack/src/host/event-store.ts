@@ -1,4 +1,4 @@
-import { AgentSessionCursor, CollectedEvent, TimetrackEventStore } from '@ethlete/timetrack';
+import { AgentSessionCursor, CollectedEvent, TimetrackEventStore, dedupeKeyOf } from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
@@ -7,7 +7,20 @@ type StoredEvent = {
   source: string;
   kind: string;
   payload: Record<string, unknown>;
+  dedupeKey?: string | null;
 };
+
+/**
+ * What one collector has in the store. The count and the newest instant together are what say a
+ * source is alive: a caught-up collector stores nothing on most runs, but its newest event still moves.
+ */
+export type SourceTally = {
+  source: CollectedEvent['source'];
+  count: number;
+  latestAt: Date | null;
+};
+
+type StoredTally = { source: string; count: number; latestAtMs: number | null };
 
 type StoredCursor = {
   id: string;
@@ -21,6 +34,7 @@ const toStored = (event: CollectedEvent): StoredEvent => ({
   source: event.source,
   kind: event.kind,
   payload: { ...event } as unknown as Record<string, unknown>,
+  dedupeKey: dedupeKeyOf(event),
 });
 
 const reviveEvent = (stored: StoredEvent): CollectedEvent => {
@@ -51,7 +65,9 @@ const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
  * `appendWithCursors$` and never `append$`.
  */
 export type TauriEventStore = TimetrackEventStore & {
-  appendWithCursors$(events: CollectedEvent[], cursors: AgentSessionCursor[]): Observable<void>;
+  /** Resolves with the rows that were new — an event the store already holds under its dedupe key is skipped. */
+  appendWithCursors$(events: CollectedEvent[], cursors: AgentSessionCursor[]): Observable<number>;
+  bySource$(): Observable<SourceTally[]>;
   cursors$(): Observable<AgentSessionCursor[]>;
   compactedThrough$(): Observable<Date | null>;
   setCompactedThrough$(through: Date | null): Observable<void>;
@@ -59,14 +75,14 @@ export type TauriEventStore = TimetrackEventStore & {
 
 export const createTauriEventStore = (): TauriEventStore => {
   const appendWithCursors$ = (events: CollectedEvent[], cursors: AgentSessionCursor[]) =>
-    invokeHost$<void>('events_append', {
+    invokeHost$<number>('events_append', {
       events: events.map(toStored),
       cursors: cursors.map(toStoredCursor),
     });
 
   return {
     appendWithCursors$,
-    append$: (events) => appendWithCursors$(events, []),
+    append$: (events) => appendWithCursors$(events, []).pipe(map(() => undefined)),
     eventsBetween$: (from, to) =>
       invokeHost$<StoredEvent[]>('events_between', { fromMs: from.getTime(), toMs: to.getTime() }).pipe(
         map((stored) => stored.map(reviveEvent)),
@@ -74,6 +90,16 @@ export const createTauriEventStore = (): TauriEventStore => {
     deleteEventsBefore$: (before) => invokeHost$<number>('events_delete_before', { beforeMs: before.getTime() }),
     oldestEventAt$: () =>
       invokeHost$<number | null>('events_oldest_at').pipe(map((atMs) => (atMs === null ? null : new Date(atMs)))),
+    bySource$: () =>
+      invokeHost$<StoredTally[]>('events_by_source').pipe(
+        map((rows) =>
+          rows.map((row): SourceTally => ({
+            source: row.source as CollectedEvent['source'],
+            count: row.count,
+            latestAt: row.latestAtMs === null ? null : new Date(row.latestAtMs),
+          })),
+        ),
+      ),
     cursors$: () => invokeHost$<StoredCursor[]>('agent_session_cursors').pipe(map((rows) => rows.map(reviveCursor))),
     compactedThrough$: () =>
       invokeHost$<number | null>('compacted_through').pipe(map((atMs) => (atMs === null ? null : new Date(atMs)))),
