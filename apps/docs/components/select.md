@@ -302,6 +302,7 @@ Each entry is `{ value, label, disabled? }` (`SelectOptionData`); values must be
 Notes:
 
 - Rows are assumed to share one uniform height (the first rendered row is measured). Wildly varying row heights are not supported.
+- With `[mirrorPanelWidth]="false"` the panel sizes to its content, which windowing would otherwise make it resize on every scroll (only the rows around the scroll offset exist to size it). The viewport keeps the widest width it has needed as a floor, so a scrolling panel only ever grows; a new search query drops the floor so the panel can fit the new rows again.
 - Data-driven options can be combined with projected `et-select-option`s (e.g. a pinned entry), which render normally after the windowed rows and are not virtualized. Option groups are presentational wrappers around _projected_ options and don't apply to the flat `options` data.
 - For unbounded/server-side datasets, the [async options](#async-options) pattern (`filterMode="external"` + `hasMoreItems`/`loadMore`) remains the right tool - `options` composes with it, since you control the array you bind.
 - Headless: mark your scroll container with `[etSelectViewport]`, render `select.virtualizedItems()` with `[etSelectVirtualOption]="item"` rows, and apply `select.virtualWindow.paddingTop()/paddingBottom()` as block paddings around them. Without a registered viewport, every visible option renders (no windowing). `SelectItem.element()` is `null` while a data-driven option is outside the rendered window.
