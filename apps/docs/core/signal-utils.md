@@ -101,6 +101,35 @@ animatedScore = signalAnimatedNumber(this.score).play();
 
 Nothing animates until you call `.play()`; `.stop()` and `.reset()` are also chainable. The RAF loop runs outside the Angular zone. Easing presets ship alongside: `easeLinear`, `easeIn`, `easeOut`, `easeInOut`, `easeElastic`, `easeOutBack`, `easeOutBackStrong`.
 
+## Deferred loading
+
+`signalDeferredLoading(source, options?)` gates a loading **indicator** on a loading **flag**, so work
+that finishes quickly never flashes one. The returned signal turns true only once `source` has been
+true for `delay` ms, and then stays true for at least `minDuration` ms:
+
+```ts
+import { signalDeferredLoading } from '@ethlete/core';
+
+protected showSpinner = signalDeferredLoading(this.loading);
+```
+
+| Option        | Default | Description                                                              |
+| ------------- | ------- | ------------------------------------------------------------------------ |
+| `delay`       | `200`   | How long the source must stay true before the indicator turns on, in ms. |
+| `minDuration` | `300`   | How long it stays on once it turned on, in ms.                           |
+
+Call it in an injection context. Drive off it only what the reader _sees_ - a spinner, a busy bar, a
+skeleton - and keep the raw flag for everything else: `aria-busy` must report the truth from the first
+moment, and any geometry that would otherwise jump (a row that reserves the height its content will
+need) has to be there from the first frame too. Fading the indicator in over content that is already
+laid out beats mounting it, for the same reason.
+
+The two timings work together: the delay swallows a short request entirely, and the minimum duration
+keeps a request that lands just past the delay from blinking an indicator out again. Both defaults are
+what the SDK's own components use - the [form field](/components/forms#busy-state)'s busy spinner, the
+[select](/components/select#how-a-wait-is-reported) and cascader panels, the menu's search spinner and
+the [table](/components/table#loading-error-states)'s busy bar.
+
 ## Signal plumbing
 
 | Helper                                                     | Purpose                                                                                                                                       |

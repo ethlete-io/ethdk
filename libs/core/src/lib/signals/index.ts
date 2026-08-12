@@ -2,6 +2,7 @@ export * from './animated-block-size';
 export * from './animated-number';
 export * from './breakpoint-input';
 export * from './control-value';
+export * from './deferred-loading';
 export * from './element';
 export * from './element-children';
 export * from './element-data-binding';
