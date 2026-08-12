@@ -1,6 +1,6 @@
 # Time picker
 
-`et-time-picker` is an inline column-list time picker operating purely on `Date` objects - one scrollable listbox column per time unit, with the column layout (12/24-hour cycle, optional seconds, AM/PM) derived from a date-fns format string. It is a standalone element (usable outside forms) and the surface the [time input](/components/date-time-inputs#time-input)'s picker overlay hosts. `TIME_PICKER_IMPORTS` also carries [`et-time-range-picker`](#range-picker), the two-sided version.
+`et-time-picker` is an inline column-list time picker operating purely on `Date` objects - one scrollable listbox column per time unit, with the column layout (12/24-hour cycle, optional seconds, AM/PM) derived from a date-fns format string. It is a standalone element (usable outside forms) and the surface the [time input](/components/date-time-inputs#time-input)'s picker overlay hosts. [`mode="range"`](#range-picker) puts a time _range_ on the same columns.
 
 ```ts
 import { TIME_PICKER_IMPORTS } from '@ethlete/components';
@@ -94,44 +94,65 @@ Disabled options are skipped by all of these - arrows walk to the next selectabl
 </div>
 ```
 
-Each `TimePickerOption` carries `selected` / `focused` / `disabled` flags the option directive mirrors as `data-*` attributes for styling; the column keeps the focused option centered in its scrollport.
+Each `TimePickerOption` carries `selected` / `focused` / `disabled` flags the option directive mirrors as `data-*` attributes for styling; the column keeps the focused option centered in its scrollport. In `range` mode it also carries `rangeStart` / `rangeEnd` / `band` (`data-range-start`, `data-range-end`, `data-band`), and `picker.sides()` gives you the two ends - name, formatted value, which is active - to build your own side switch out of.
 
-## Range picker - `et-time-range-picker` {#range-picker}
+## Range mode {#range-picker}
 
-Two time pickers as one range control: a start and an end set of columns under their own headings, sharing one `format`, `minuteStep`/`secondStep`, `min`/`max` and filter. Both sides render at once - a column shows one value, so a start and an end cannot share one - but you mount, label, localize and filter them once. This is the surface the [date-time range input](/components/date-time-inputs#date-time-range-input)'s picker uses for its two time panes.
+`mode="range"` puts a **range** on the same one set of columns, the way `mode="range"` does for the [calendar](/components/calendar). The two ends take turns: a side switch above the columns names them, shows both times, and says which one a pick writes.
 
 ```html
-<et-time-range-picker [(rangeValue)]="slot" />
+<et-time-picker [(rangeValue)]="slot" mode="range" />
 ```
 
-<StoryEmbed id="components-date-time-time-range-picker--prefilled" height="420px" />
+<StoryEmbed id="components-date-time-time-picker--range" height="440px" />
 
 `rangeValue` is a `{ start: Date | null; end: Date | null }` model, so `[(rangeValue)]` is enough on its own. A control whose value is a _pair_ of wire strings needs to know which half moved, so picks are also reported side-tagged:
 
 ```html
-<et-time-range-picker [rangeValue]="slot()" (timeSelect)="commit($event.side, $event.time)" />
+<et-time-picker [rangeValue]="slot()" (timeSelect)="commit($event.side, $event.time)" mode="range" />
 ```
 
-| Input                       | Type                                                 | Default             | Description                                             |
-| --------------------------- | ---------------------------------------------------- | ------------------- | ------------------------------------------------------- |
-| `rangeValue`                | `{ start: Date \| null; end: Date \| null }` (model) | both `null`         | The two selected times.                                 |
-| `format` / `locale`         | as above                                             | `TIME_FORMAT` token | One column layout, both sides.                          |
-| `minuteStep` / `secondStep` | `number`                                             | `5` / `1`           | Forwarded to both sides.                                |
-| `min` / `max`               | `Date \| null`                                       | `null`              | Bound both sides' time of day.                          |
-| `timeFilter`                | `(date, side) => boolean`                            | `null`              | Rejects individual times, told which end it is filling. |
-| `startLabel` / `endLabel`   | `string \| null`                                     | `null` ¹            | Headings, and the two column groups' accessible names.  |
-| `timeSelect` (output)       | `{ side, time }`                                     | -                   | A part was picked on one side.                          |
+| Input                     | Type                                                 | Default     | Description                                             |
+| ------------------------- | ---------------------------------------------------- | ----------- | ------------------------------------------------------- |
+| `mode`                    | `'single' \| 'range'`                                | `'single'`  | Whether the columns hold `value` or `rangeValue`.       |
+| `rangeValue`              | `{ start: Date \| null; end: Date \| null }` (model) | both `null` | The two selected times.                                 |
+| `activeSide`              | `'start' \| 'end'` (model)                           | `'start'`   | The end the columns show, and the one a pick writes.    |
+| `timeFilter`              | `(date, side) => boolean`                            | `null`      | Rejects individual times, told which end it is filling. |
+| `startLabel` / `endLabel` | `string \| null`                                     | `null` ¹    | The two ends' names on the side switch.                 |
+| `timeSelect` (output)     | `{ side, time }`                                     | -           | A part was picked, and which end it filled.             |
 
 ¹ `null` falls through to [`TIME_PICKER_LABELS`](/components/localization) (`startTime` / `endTime`: `'Start time'` / `'End time'`).
 
-The side argument on `timeFilter` is the point of the component: "the end must be after the start" is not expressible as a `min`/`max` bound, because the bound differs per side and moves with the value.
+`format`, `locale`, `minuteStep`/`secondStep` and `min`/`max` mean the same as above and apply to both ends. The side switch always renders a **bare** time, even where the columns derive from a combined date & time format - which is what lets the [date-time range input](/components/date-time-inputs#date-time-range-input) hand the picker its `Pp`.
+
+### Which end a pick fills
+
+The columns edit one end at a time because a column can only show one value. A day is one click, but a time is two to four, so a range cannot be built by "first pick opens, second closes" the way the calendar's is - the side switch is what makes the current end explicit.
+
+It hops **once**, on its own: the first committed start moves the columns to the end, which is the calendar's "first pick opens the range" translated into clicks. After that the switch stays where it is put, so going back to correct a start is never interrupted mid-edit. Keyboard browsing never hops at all - arrows commit as they move, so a hop there would strand you on the other end halfway through the column.
+
+**Ordering is not enforced**, exactly as in the calendar and the range inputs: an end before its start is a [validator's](/components/forms#validation) job. The hook for pushing that rule into the picker instead is `timeFilter`'s side argument - "the end must be after the start" is not expressible as a `min`/`max` bound, because the bound differs per end and moves with the value.
 
 ```ts
 const endAfterStart = (candidate: Date, side: 'start' | 'end') =>
   side === 'start' || slot().start === null || candidate > slot().start;
 ```
 
-<StoryEmbed id="components-date-time-time-range-picker--end-after-start" height="420px" />
+<StoryEmbed id="components-date-time-time-picker--range-end-after-start" height="440px" />
+
+### The band, and where it can't go
+
+A calendar bands a range because a month grid shows every day at once. Time columns don't: they are independent lists, and only some of them can place both ends at all.
+
+The rule is that **a column bands between the two ends when every coarser unit of both agrees**, and stays plain otherwise:
+
+- 09:00 – 17:30 bands the **hours** column from 9 to 17 (there is no unit above it), and leaves **minutes** plain - minute 30 is not "between" anything while the two ends sit in different hours.
+- 09:15 – 09:45 bands the **minutes** from 15 to 45, because both ends share hour 9.
+- In a 12-hour cycle the **hours** column is only chronological inside one half-day, so a range crossing noon bands the **AM/PM** column instead and leaves the hours alone.
+
+<StoryEmbed id="components-date-time-time-picker--range-within-one-hour" height="440px" />
+
+Wherever a column can place an end, it draws it - the end that is **not** being edited is outlined rather than filled, so both stay readable while only one of them moves.
 
 ## Accessibility
 
@@ -139,7 +160,7 @@ const endAfterStart = (candidate: Date, side: 'start' | 'end') =>
 - Arrow selection follows focus, so what's announced is always what's selected.
 - Unselectable options carry `aria-disabled` rather than the `disabled` attribute: the roving tabindex needs them focusable, so they are reachable and announced, just not pickable.
 - Disabled/readonly states belong to the hosting control (e.g. the time input) - the inline picker itself is always interactive.
-- In the range picker each side is a `role="group"` named after its heading: two unnamed "Hours" listboxes side by side would be ambiguous.
+- In `range` mode the side switch is two toggle buttons carrying `aria-pressed`, each named by its label and its current time ("Start time 09:00"), so which end the columns are editing is announced rather than only drawn.
 
 ## Theming
 

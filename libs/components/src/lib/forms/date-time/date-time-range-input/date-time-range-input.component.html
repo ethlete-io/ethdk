@@ -50,8 +50,7 @@
       <div class="et-date-time-range-input-panel-tabs">
         <et-segmented-button-group [value]="activePane()" (valueChange)="setActivePane($event)">
           <et-segmented-button value="dates">{{ resolvedDatesTabLabel() }}</et-segmented-button>
-          <et-segmented-button value="start">{{ resolvedStartTimeLabel() }}</et-segmented-button>
-          <et-segmented-button value="end">{{ resolvedEndTimeLabel() }}</et-segmented-button>
+          <et-segmented-button value="times">{{ resolvedTimesTabLabel() }}</et-segmented-button>
         </et-segmented-button-group>
       </div>
 
@@ -75,7 +74,7 @@
           mode="range"
         />
 
-        <et-time-range-picker
+        <et-time-picker
           [rangeValue]="rangeInput.calendarRange()"
           [format]="rangeInput.effectiveDisplayFormat()"
           [locale]="rangeInput.effectiveLocale()"
@@ -87,6 +86,7 @@
           [startLabel]="startTimeLabel()"
           [endLabel]="endTimeLabel()"
           (timeSelect)="rangeInput.selectTime($event.side, $event.time)"
+          mode="range"
         />
       </div>
     </div>

@@ -32,9 +32,11 @@ export type DateTimeLabels = {
   dateTab: string;
   /** The date & time picker's tab showing the clock. */
   timeTab: string;
-  /** The date & time range picker's tab showing the calendar. (Its two time tabs are named by
-   * `TIME_PICKER_LABELS.startTime`/`endTime`, the same strings the time range picker heads them with.) */
+  /** The date & time range picker's tab showing the calendar. */
   datesTab: string;
+  /** The date & time range picker's tab showing the clock. (Which of the two times the reader is
+   * setting is chosen inside it, by `TIME_PICKER_LABELS.startTime`/`endTime`.) */
+  timesTab: string;
 
   /** Validation message for text that isn't a date. */
   invalidDate: string;
@@ -66,6 +68,7 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   dateTab: 'Date',
   timeTab: 'Time',
   datesTab: 'Dates',
+  timesTab: 'Times',
 
   invalidDate: 'Please enter a valid date',
   invalidTime: 'Please enter a valid time',

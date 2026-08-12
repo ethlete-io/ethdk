@@ -43,7 +43,7 @@
 
   /* the picker panel renders inside a detached overlay pane, not the host */
   .et-date-time-range-input-panel {
-    /* desktop (anchored panel): the calendar and both time panes side by side, no tabs */
+    /* desktop (anchored panel): the calendar and the time pane side by side, no tabs */
     .et-date-time-range-input-panel-tabs {
       display: none;
     }
@@ -55,12 +55,12 @@
       gap: 12px;
     }
 
-    /* stretch wrapper that absorbs the time pickers' animated block-size
-       (etDateTimePickerPanes): while the animation makes them taller than the
+    /* stretch wrapper that absorbs the time picker's animated block-size
+       (etDateTimePickerPanes): while the animation makes it taller than the
        row, the overflow stays out of layout — the panel body snaps once and the
        panel's own resize animation runs in sync, instead of chasing a
        frame-by-frame moving target */
-    > .et-date-time-range-input-panel-panes > et-time-range-picker {
+    > .et-date-time-range-input-panel-panes > et-time-picker {
       align-self: stretch;
       border-inline-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.08));
       padding-inline-start: 12px;
@@ -85,7 +85,7 @@
       }
     }
 
-    /* calendar and time pair stacked in one grid cell: the sheet keeps the taller
+    /* calendar and time picker stacked in one grid cell: the sheet keeps the taller
        one's height across tab switches instead of resizing */
     .et-date-time-range-input-panel-panes {
       display: grid;
@@ -94,38 +94,27 @@
       align-items: center;
 
       > et-calendar,
-      > et-time-range-picker {
+      > et-time-picker {
         grid-area: 1 / 1;
       }
     }
 
-    /* one side at a time, so the divider and the headings the tabs already
-       provide come off */
-    et-time-range-picker {
+    et-time-picker {
       align-self: center;
+      /* the divider belongs to the anchored panel's calendar-then-times row, not to a stacked sheet */
+      border-inline-start: none;
+      padding-inline-start: 0;
 
-      .et-time-range-picker-side + .et-time-range-picker-side {
-        border-inline-start: none;
-        padding-inline-start: 0;
-      }
-
-      .et-time-range-picker-caption {
-        display: none;
-      }
-    }
-
-    .et-time-picker {
       /* touch-sized columns fitting the sheet's reserved calendar height */
       --et-time-picker-column-size: 300px;
+
+      .et-time-picker-columns {
+        justify-content: center;
+      }
     }
 
-    .et-date-time-range-input-panel-panes[data-active-pane='start'] .et-time-range-picker-side[data-side='end'],
-    .et-date-time-range-input-panel-panes[data-active-pane='end'] .et-time-range-picker-side[data-side='start'] {
-      display: none;
-    }
-
-    .et-date-time-range-input-panel-panes:not([data-active-pane='dates']) > et-calendar,
-    .et-date-time-range-input-panel-panes[data-active-pane='dates'] > et-time-range-picker {
+    .et-date-time-range-input-panel-panes[data-active-pane='times'] > et-calendar,
+    .et-date-time-range-input-panel-panes[data-active-pane='dates'] > et-time-picker {
       visibility: hidden;
     }
 
@@ -133,16 +122,11 @@
        calendar's month navigation; `data-nav` is unset on open, so the first
        render does not animate. The selector stops matching while a pane is
        inactive, which restarts the animation on every re-activation. */
-    .et-date-time-range-input-panel-panes[data-nav='forward'][data-active-pane='start']
-      .et-time-range-picker-side[data-side='start'],
-    .et-date-time-range-input-panel-panes[data-nav='forward'][data-active-pane='end']
-      .et-time-range-picker-side[data-side='end'] {
+    .et-date-time-range-input-panel-panes[data-nav='forward'][data-active-pane='times'] > et-time-picker {
       animation: et-date-time-range-input-pane-in-forward 200ms ease;
     }
 
-    .et-date-time-range-input-panel-panes[data-nav='backward'][data-active-pane='dates'] > et-calendar,
-    .et-date-time-range-input-panel-panes[data-nav='backward'][data-active-pane='start']
-      .et-time-range-picker-side[data-side='start'] {
+    .et-date-time-range-input-panel-panes[data-nav='backward'][data-active-pane='dates'] > et-calendar {
       animation: et-date-time-range-input-pane-in-backward 200ms ease;
     }
   }
@@ -163,7 +147,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .et-date-time-range-input-panel-panes > et-calendar,
-    .et-date-time-range-input-panel-panes .et-time-range-picker-side {
+    .et-date-time-range-input-panel-panes > et-time-picker {
       animation: none;
     }
   }

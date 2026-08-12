@@ -11,6 +11,7 @@ import { TimePickerColumnDirective, TimePickerDirective, TimePickerOptionDirecti
     {
       directive: TimePickerDirective,
       inputs: [
+        'mode',
         'format',
         'locale',
         'minuteStep',
@@ -22,13 +23,18 @@ import { TimePickerColumnDirective, TimePickerDirective, TimePickerOptionDirecti
         'minutesLabel',
         'secondsLabel',
         'periodLabel',
+        'startLabel',
+        'endLabel',
         'value',
+        'rangeValue',
+        'activeSide',
       ],
-      outputs: ['valueChange'],
+      outputs: ['valueChange', 'rangeValueChange', 'activeSideChange', 'timeSelect'],
     },
   ],
   host: {
     class: 'et-time-picker',
+    '[attr.data-mode]': 'timePicker.mode()',
   },
 })
 export class TimePickerComponent {

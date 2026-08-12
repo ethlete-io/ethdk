@@ -12,7 +12,6 @@ import {
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { TIME_PICKER_IMPORTS } from '../../../time-picker';
-import { injectTimePickerLabels } from '../../../time-picker/time-picker-labels';
 import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { ControlSuffixDirective } from '../../form-field/partials';
@@ -24,10 +23,10 @@ import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.direct
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { DateTimeRangeInputDirective, DateTimeRangeInputFieldDirective } from './headless';
 
-/** Which pane the bottom-sheet tabs show; the desktop panel renders all three side by side. */
-type DateTimeRangePane = 'dates' | 'start' | 'end';
+/** Which pane the bottom-sheet tabs show; the desktop panel renders both side by side. */
+type DateTimeRangePane = 'dates' | 'times';
 
-const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'start', 'end'];
+const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
 
 @Component({
   selector: 'et-date-time-range-input',
@@ -94,8 +93,6 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'start', 'end'];
 export class DateTimeRangeInputComponent {
   private dateTimeLabels = injectDateTimeLabels();
 
-  private timePickerLabels = injectTimePickerLabels();
-
   private formFieldLabels = injectFormFieldLabels();
 
   protected rangeInput = inject(DateTimeRangeInputDirective);
@@ -106,8 +103,10 @@ export class DateTimeRangeInputComponent {
   public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: numberAttribute });
   public secondStep = input(1, { transform: numberAttribute });
-  /** Headings of the two time panes, and their tab labels in the bottom sheet. */
+  /** The bottom sheet's two tab labels. */
   public datesTabLabel = input<string | null>(null);
+  public timesTabLabel = input<string | null>(null);
+  /** The time picker's two ends, on the control that switches between them. */
   public startTimeLabel = input<string | null>(null);
   public endTimeLabel = input<string | null>(null);
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
@@ -128,16 +127,10 @@ export class DateTimeRangeInputComponent {
   /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
   protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDateTimeRange);
 
-  /** The string in effect: this instance's `datesTabLabel`, else the domain's label set. */
+  /** The strings in effect: this instance's tab labels, else the domain's label set. */
   protected resolvedDatesTabLabel = computed(() => this.datesTabLabel() ?? this.dateTimeLabels().datesTab);
 
-  /**
-   * The tab strings in effect. The two time headings belong to the time range picker, so their
-   * fallbacks come from `TIME_PICKER_LABELS` - the tabs name the same two panes it renders.
-   */
-  protected resolvedStartTimeLabel = computed(() => this.startTimeLabel() ?? this.timePickerLabels().startTime);
-
-  protected resolvedEndTimeLabel = computed(() => this.endTimeLabel() ?? this.timePickerLabels().endTime);
+  protected resolvedTimesTabLabel = computed(() => this.timesTabLabel() ?? this.dateTimeLabels().timesTab);
 
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);

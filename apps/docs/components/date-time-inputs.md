@@ -300,9 +300,9 @@ const openingHours = (candidate: Date) => {
 
 The two controls above, combined: one registered form control containing two
 text inputs (start – end) that share a single picker holding a range-mode
-[calendar](/components/calendar) plus a
-[**time range picker**](/components/time-picker#range-picker) - one set of time
-columns per side, mounted once. The value shape is the date range input's
+[calendar](/components/calendar) plus a range-mode
+[**time picker**](/components/time-picker#range-picker) - one set of time columns
+holding both ends, switched between by name. The value shape is the date range input's
 `{ start: string | null; end: string | null }` in `valueFormat`, except both
 strings carry a time; each side commits exactly like the single date-time input.
 Reach for it wherever a start and an end belong together - a booking, a shift, an
@@ -340,10 +340,10 @@ only half the value here:
   the **other** side's day is used (the end of an appointment whose start day is
   known is on that day, not today), and today only while the range is empty.
 
-Below the `md` breakpoint the picker opens as a bottom sheet with **Dates / Start
-time / End time tabs**; on the anchored panel the calendar and both time sides sit
-side by side under their headings (`datesTabLabel`, `startTimeLabel`,
-`endTimeLabel` relabel tab and heading together).
+Below the `md` breakpoint the picker opens as a bottom sheet with **Dates / Times
+tabs**; on the anchored panel the calendar and the time picker sit side by side.
+`datesTabLabel`/`timesTabLabel` relabel the two tabs, and
+`startTimeLabel`/`endTimeLabel` the time picker's own start/end switch.
 
 Because two `Pp` values are long, give the field room - roughly twice a date
 range's width - or name a compact `displayFormat` such as `dd.MM.yy HH:mm`.
@@ -426,9 +426,9 @@ the overview. Notes specific to this family:
   error once touched: `parseErrorMessage` renders as an `et-form-error` with
   matching `aria-invalid` and `aria-describedby` - no silent invalid state.
 - The picker overlay is a named `role="dialog"`; both range hosts are a
-  `role="group"` labelled by the field label, and the date-time range picker's two
-  time panes are `role="group"`s named after their headings (two unnamed "Hours"
-  listboxes side by side would be ambiguous).
+  `role="group"` labelled by the field label. Inside the date-time range picker,
+  which of the two times the columns are editing is announced by the time picker's
+  own `aria-pressed` side switch.
 - <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the picker from the field.
 
 ## Theming
