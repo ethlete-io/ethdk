@@ -79,7 +79,14 @@ export const SixColumnGrid: Story = {
 };
 
 export const PartnerDashboard: StoryObj<GridPartnerStorybookComponent> = {
-  decorators: [moduleMetadata({ imports: [GridPartnerStorybookComponent] })],
+  // Drops the meta's registrations: this story writes its own et-grid-item for every widget, and an
+  // item covered by both a registration and a projected item renders twice (ET1905).
+  decorators: [
+    moduleMetadata({
+      imports: [GridPartnerStorybookComponent],
+      providers: [...provideGridConfig({ registrations: [] })],
+    }),
+  ],
   render: () => ({ template: '<et-sb-grid-real-world />' }),
   parameters: {
     docs: {
@@ -94,7 +101,12 @@ export const PartnerDashboard: StoryObj<GridPartnerStorybookComponent> = {
 };
 
 export const BackendIntegration: StoryObj<GridDataStorybookComponent> = {
-  decorators: [moduleMetadata({ imports: [GridDataStorybookComponent] })],
+  decorators: [
+    moduleMetadata({
+      imports: [GridDataStorybookComponent],
+      providers: [...provideGridConfig({ registrations: [] })],
+    }),
+  ],
   render: () => ({ template: '<et-sb-grid-data />' }),
   parameters: {
     docs: {

@@ -62,6 +62,26 @@ protected persist(state: GridSerializedState<WidgetData>) {
 
 Reconciliation does **not** emit `layoutChange`. That output fires only for changes made on the grid's side - a drag, a resize, a keyboard move, `addItem()` or `removeItem()` - so it can be read as "the user has unsaved edits".
 
+## Writing the items yourself
+
+A registration renders a widget **by type**, which is what a dashboard whose widget set arrives from a backend needs. When the widgets are known where you write the template, project an `et-grid-item` per item instead and skip registrations entirely - the grid positions, drags, resizes and serializes a projected item exactly like a stamped one:
+
+```html
+<et-grid [items]="widgets()" (layoutChange)="persist($event)">
+  @for (widget of widgets(); track widget.id) {
+  <et-grid-item [itemId]="widget.id" [ariaLabel]="widget.data.title">
+    <app-widget-header [title]="widget.data.title" />
+  </et-grid-item>
+  }
+</et-grid>
+```
+
+The `items` input still owns the layout - projection only supplies the markup, so an item you project but never list in `items` has no position and is never placed. `itemId` is what ties the two together.
+
+**Each item must be rendered by exactly one of the two mechanisms.** An item whose type has a registration _and_ a projected `et-grid-item` renders twice, stacked perfectly so the duplicate is invisible - dev mode throws [`ET1905`](/components/error-codes#grid-et19xx) rather than let it through. Mixing the two in one grid is fine as long as you project only the items whose type is unregistered. An item covered by neither renders nothing, which is [`ET1904`](/components/error-codes#grid-et19xx).
+
+The per-item inputs (`ariaLabel`, `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan`, the `remove` output) are only reachable this way - the grid's own loop binds `itemId` and nothing else, so a registered widget takes its constraints from the registration.
+
 ## Imperative API
 
 Get a handle with a template reference (`<et-grid #grid />`, `exportAs: 'etGrid'`) or by injecting `GRID_TOKEN`:
@@ -150,4 +170,4 @@ One public token: `--et-grid-padding` (default `0px`) pads the grid container. T
 
 ## Error codes
 
-Misplaced pieces, duplicate item ids, unregistered item types and invalid serialized states throw [`ET19xx` errors](/components/error-codes#grid-et19xx) in dev mode.
+Misplaced pieces, duplicate item ids, items nothing renders (or two things render), and invalid serialized states throw [`ET19xx` errors](/components/error-codes#grid-et19xx) in dev mode.

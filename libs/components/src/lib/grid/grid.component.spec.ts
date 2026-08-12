@@ -1,6 +1,7 @@
-import { Component, input } from '@angular/core';
+import { Component, ErrorHandler, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { GridItemComponent } from './grid-item.component';
 import { GridComponent } from './grid.component';
 import { provideGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
@@ -50,6 +51,58 @@ class TestHostComponent {
   rowHeight = 120;
   gap = 8;
   items: GridItemConfig[] = [];
+}
+
+@Component({
+  imports: [GridComponent, GridItemComponent],
+  template: `
+    <et-grid [items]="items">
+      @for (item of projected; track item.id) {
+        <et-grid-item [itemId]="item.id">{{ item.id }}</et-grid-item>
+      }
+    </et-grid>
+  `,
+})
+class ProjectedHostComponent {
+  items: GridItemConfig[] = [
+    {
+      id: 'a',
+      type: 'unregistered',
+      data: undefined,
+      layout: {
+        lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+      },
+    },
+  ];
+
+  projected = this.items;
+}
+
+@Component({
+  imports: [GridComponent, GridItemComponent],
+  template: `
+    <et-grid [items]="items">
+      @for (item of items; track item.id) {
+        <et-grid-item [itemId]="item.id">{{ item.id }}</et-grid-item>
+      }
+    </et-grid>
+  `,
+})
+class DoubleRenderedHostComponent {
+  items: GridItemConfig[] = [
+    {
+      id: 'a',
+      type: 'test',
+      data: undefined,
+      layout: {
+        lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+      },
+    },
+  ];
 }
 
 type WidgetData = { title: string };
@@ -206,6 +259,59 @@ describe('GridComponent', () => {
     const ghost = (fixture.nativeElement as HTMLElement).querySelector('.et-grid-ghost');
     expect(ghost).not.toBeNull();
   });
+  describe('unrendered items', () => {
+    let reportedErrors: unknown[];
+
+    const createHost = <T>(host: new (...args: never[]) => T) => {
+      reportedErrors = [];
+      TestBed.resetTestingModule();
+      Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: ResizeObserverMock });
+      TestBed.configureTestingModule({
+        imports: [host],
+        providers: [
+          ...provideGridConfig({ registrations: [{ type: 'test', component: TestItemComponent }] }),
+          { provide: ErrorHandler, useValue: { handleError: (error: unknown) => reportedErrors.push(error) } },
+        ],
+      });
+
+      return TestBed.createComponent(host);
+    };
+
+    it('reports ET1904 for an item that has neither a registration nor a projected item', () => {
+      const hostFixture = createHost(TestHostComponent);
+      hostFixture.componentInstance.items = [
+        {
+          id: 'a',
+          type: 'unregistered',
+          data: undefined,
+          layout: {
+            lg: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+            md: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+            sm: { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+          },
+        },
+      ];
+      hostFixture.detectChanges();
+
+      expect(reportedErrors.map((error) => `${error}`).join('\n')).toMatch(/ET1904/);
+    });
+
+    it('stays silent when a projected et-grid-item covers the item', () => {
+      const hostFixture = createHost(ProjectedHostComponent);
+      hostFixture.detectChanges();
+
+      expect(reportedErrors).toEqual([]);
+    });
+
+    it('reports ET1905 for an item that is both registered and projected', () => {
+      const hostFixture = createHost(DoubleRenderedHostComponent);
+      hostFixture.detectChanges();
+      TestBed.tick();
+
+      expect(reportedErrors.map((error) => `${error}`).join('\n')).toMatch(/ET1905/);
+    });
+  });
+
   describe('typed items', () => {
     it('hands the item payload type back through layoutChange', () => {
       TestBed.resetTestingModule();

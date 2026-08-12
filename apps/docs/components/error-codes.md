@@ -233,13 +233,14 @@ The date input, date range input, [time picker](/components/time-picker), time i
 
 All grid checks run in dev mode only.
 
-| Code     | Cause                                                                           | Fix                                                                                  |
-| -------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `ET1900` | `etGridItem` is not inside an `[etGrid]` element.                               | Render items inside the grid (e.g. `et-grid`).                                       |
-| `ET1901` | `etGridDrag` / `etGridResize` is used outside an `[etGridItem]` element.        | Place the handle on or inside a grid item.                                           |
-| `ET1902` | Two grid item configs share the same `id`.                                      | Make item ids unique; the offending configs are logged alongside the error.          |
-| `ET1903` | `restoreState()` received a state with breakpoint names that aren't configured. | Align the serialized state's breakpoints with the grid's `breakpoints` input.        |
-| `ET1904` | An item's `type` has no registration (such items render nothing).               | Register the type via `provideGridConfig()`; the message lists the registered types. |
+| Code     | Cause                                                                                                    | Fix                                                                                                                        |
+| -------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `ET1900` | `etGridItem` is not inside an `[etGrid]` element.                                                        | Render items inside the grid (e.g. `et-grid`).                                                                             |
+| `ET1901` | `etGridDrag` / `etGridResize` is used outside an `[etGridItem]` element.                                 | Place the handle on or inside a grid item.                                                                                 |
+| `ET1902` | Two grid item configs share the same `id`.                                                               | Make item ids unique; the offending configs are logged alongside the error.                                                |
+| `ET1903` | `restoreState()` received a state with breakpoint names that aren't configured.                          | Align the serialized state's breakpoints with the grid's `breakpoints` input.                                              |
+| `ET1904` | Nothing renders an item: its `type` has no registration and no projected `et-grid-item` covers it.       | Register the type via `provideGridConfig()` (the message lists the registered types), or project an `et-grid-item` for it. |
+| `ET1905` | An item is rendered twice - its `type` has a registration and a projected `et-grid-item` also covers it. | Project only the items whose type is unregistered; the offending ids are logged alongside the error.                       |
 
 ## Tabs (ET20xx)
 

@@ -248,6 +248,28 @@ path.
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
 
+**Grid: projected items are a supported composition** (2026-08-12, a "Decide before building" row) -
+the decision the row asked for is **projection is supported**, and the check was wrong. It was already
+half-documented: `grid.md` tells consumers to set `ariaLabel` / `minColSpan` / the `remove` output on
+`et-grid-item`, none of which the grid's own loop binds, so you can only reach them by writing the
+item yourself. Registrations render a widget _by type_ (backend-driven dashboards); projection is for
+a widget set known where the template is written. What shipped:
+
+- **The `ET1904` check now asks "does anything render this item"**, not "is its type registered" - a
+  `contentChildren(GridItemDirective)` query supplies the ids a projected item covers. It moved from
+  `effect` to `afterRenderEffect`: a projected item's required `itemId` is not readable during the
+  pass that creates it (`NG0950`).
+- **New `ET1905` for the opposite mistake.** Verifying the fix showed both stories were _also_
+  double-rendering: the meta's `provideGridConfig` registers `chart`/`table`/`text`, so the two
+  `text` widgets in `Grid → Partner Dashboard` and the `chart` one in `→ Backend Integration` were
+  stamped from the registration _and_ projected - two `et-grid-item`s per id, perfectly stacked, both
+  registering constraints. Invisible without counting DOM nodes. Both stories now override the config
+  with empty registrations.
+- **Rejected: making projection win automatically** (skipping the stamped item when a projected one
+  covers the id). `registeredItems` would have to read the content query, so the first pass stamps
+  the item and the second removes it - a mount/unmount flash plus the entering animation. A dev-mode
+  error is the cheaper contract: exactly one mechanism per item.
+
 **Grid: `initialItems` renamed to `items`** (2026-08-12, the first "Decide before building" row) -
 the input was already a live, reconciling one; only the name still said otherwise, and it is what
 talked the partner dashboard into re-keying the whole grid on every save. Two calls settled the
@@ -1251,13 +1273,8 @@ it hand-rolls `toGridItems`/`toWidgetPayload` off `toGridPosition`/`fromGridPosi
 only caught at runtime. What it wants is a `TBp extends string` parameter on `GridItemConfig` so
 `[breakpoints]` and the items have to agree before the app compiles.
 
-**The `ET1904` dev check assumes registrations are the only composition** (found 2026-08-12 while
-verifying the `items` rename). Projecting `<et-grid-item>` children into `<et-grid>` renders fine
-and is what `Grid → Partner Dashboard` and `→ Backend Integration` do, but the `ngDevMode` effect in
-`grid.component.ts` throws `ET1904` for every projected item's `type`, so both stories log a
-`RuntimeError` on load. Either the check has to skip types that a projected item covers, or
-projection is unsupported and the stories are wrong - and it is undocumented either way, `grid.md`
-only describes `provideGridConfig({ registrations })`.
+**The `ET1904` dev check assumed registrations were the only composition** - fixed 2026-08-12, see
+"Already fixed, do not re-report".
 
 ## Grid: per-breakpoint span constraints
 

@@ -23,7 +23,8 @@ field warning mode, the button surface variants, segmented `variant="tabs"`, the
 the per-tab inactivity logout, the description list's `variant`, the scheduler's colour palette,
 query long polling, scheduler move/resize (the largest `L` row there was) plus its all-day-strip
 follow-up, the scheduler's infinite agenda, the query devtools' Web Locks inspector - which was
-the last query devtools row - and the grid's `initialItems` → `items` rename. Each one's design
+the last query devtools row - the grid's `initialItems` → `items` rename, and the grid's `ET1904`
+check vs projected items. Each one's design
 calls and traps are recorded in `component-improvements.md`'s "Already fixed, do not re-report".
 The selection list's `variant="tile"` was dropped on 2026-08-12 rather than shipped - do not
 re-add it.
@@ -51,7 +52,6 @@ any of them can start, so the next pick is a scoping call rather than a queue po
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Storybook top-level categories         | High blast radius - moves every story id the docs site embeds. The two concrete misplacements already shipped; this is the open, bigger call                                                       |
 | Grid: `createGridAdapter` signature    | One position per item can't express the per-breakpoint mapping apps actually write                                                                                                                 |
-| Grid: `ET1904` vs projected items      | The dev check throws for a projected `<et-grid-item>`'s type, which two of the grid's own stories do. Decide whether projection is supported before fixing the check or the stories                |
 | Progress steps: sub-steps              | Least defined ask in the file - projected slot vs description input, and whether it means anything outside vertical                                                                                |
 | Selection card: leading/trailing slots | Forces `row-reverse` to become a `controlPosition` decision rather than a constant                                                                                                                 |
 | Colour input: contrast validator       | Needs to read another control's value, and nothing in `libs/forms` does a cross-field read today - so the shape is the question, not a missing regex. `hexColor()`/`rgbColor()` shipped without it |
