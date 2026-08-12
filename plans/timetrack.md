@@ -869,9 +869,34 @@ discover later:
 **Closing the window hides it** (`src-tauri/src/tray.rs`): the collectors are the point of the app, so
 the window is a view onto a daemon rather than the daemon itself. The tray menu carries `Show
 Timetrack` and `Quit`, and `Quit` has to stay there - it is the only way out once close no longer
-exits, and a desktop whose bar has no SNI host would otherwise leave the app running with nothing to
-bring it back. The `timetrack open` CLI above is still owed for exactly that case. The activity
-readout and the start/stop timer are not built yet.
+exits.
+
+**The readout is two menu entries, not a tooltip or a title.** `tray_set_readout` writes them and
+`src/app/tray-readout.ts` pushes them - the current activity (`review/now.ts`'s `currentActivity`,
+where a presence event newer than the last observation beats the last block, because naming the branch
+someone walked away from as current work would be a lie) and the day's total. Three things this
+settled:
+
+- `TrayIcon::set_tooltip` is **unsupported on Linux**, and `set_title` draws into the panel itself,
+  where it costs every other tray icon the space it takes. The menu is the only portable place a
+  readout fits. Verified without touching the screen: the menu is a `com.canonical.dbusmenu` object,
+  so `busctl --user call <conn> /org/ayatana/NotificationItem/tray_icon_tray_app_main/Menu
+com.canonical.dbusmenu GetLayout iias 0 -- -1 0` prints every label the bar would draw.
+- **The total has to name the unattributed time too.** On a machine whose branches carry no issue key
+  the day proposes nothing, and a tray reading `0m` looks like broken collection rather than like nine
+  hours that matched no ticket.
+- The readout reconstructs today itself instead of reading the day review's, which follows whichever
+  day the reviewer stepped to. A tray reporting last Tuesday is worse than one reporting nothing.
+
+**`timetrack open` is the binary run a second time.** `tauri-plugin-single-instance` - registered
+first, before every other plugin - hands the argv to the running instance and exits, and the callback
+reveals the window. It registers `io.ethlete.timetrack.SingleInstance` on the session bus, which is
+also how to check it is live without focusing anything. A `#[tauri::command]` generic over `R:
+Runtime` cannot infer `R` from a `State<'_, Readout<R>>` alone; it needs an `AppHandle<R>` parameter,
+and then `try_state` rather than `state` - a desktop that gave us no tray icon has no readout to
+write, which is not an error the webview can act on.
+
+The start/stop timer is not built yet.
 
 **The window draws its own controls** (`decorations: false`, `src/app/window-controls.component.ts`).
 They sit in a titlebar band of their own at the top of the shell, sticky and opaque, which is also
@@ -1021,13 +1046,13 @@ Jira provider on top, the whole Tempo integration - work-attribute discovery, fo
 subtraction, the sync diff and the write half that executes it - the read-only Google Calendar
 provider, and the store's core half - persistence ports, exclusion rules, retention, ledger writer -
 plus the Claude Code session-log parser with its cursor-driven collector, and the git reconcile pass
-(398 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
+(404 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
 keychain key, all five ports wired over `invoke`, and the theming and Tailwind foundation the review
 UI will sit on, plus the file reader behind `AgentSessionLogReader` and the timer that drives
 `collectAgentSessions$` and persists what it returns. Remaining: Google's OAuth dance - now the last
 thing standing between the calendar provider and a real day, and the last unbuilt phase-1 collector -
-the tray's activity readout and timer, and the `timetrack open` CLI. No LLM, no GitLab, no
-Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
+and the tray's start/stop timer. No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to
+reconstruct and sync a real day.
 
 **The app runs.** `yarn timetrack` builds and starts, the keychain hands back the key it generated on
 first run, SQLCipher opens the database with it (the file's header is random bytes, and a plain

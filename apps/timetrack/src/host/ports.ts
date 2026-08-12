@@ -8,6 +8,7 @@ import { createTauriProcessRunner } from './process-runner';
 import { createTauriReviewStore } from './review-store';
 import { createTauriSecretStore } from './secrets';
 import { createTauriTransport } from './transport';
+import { TauriTray, createTauriTray } from './tray';
 import { TauriWindowControls, createTauriWindowControls } from './window-controls';
 import { TauriWindowSource, createTauriWindowSource } from './window-source';
 
@@ -15,6 +16,7 @@ export type HostPorts = TimetrackPorts & {
   events: TauriEventStore;
   agentLogs: AgentSessionLogReader;
   git: TauriGitSource;
+  tray: TauriTray;
   windows: TauriWindowSource;
   windowControls: TauriWindowControls;
 };
@@ -28,6 +30,7 @@ export const createHostPorts = (): HostPorts => ({
   processes: createTauriProcessRunner(),
   agentLogs: createTauriAgentSessionLogReader(),
   git: createTauriGitSource(),
+  tray: createTauriTray(),
   windows: createTauriWindowSource(),
   windowControls: createTauriWindowControls(),
 });

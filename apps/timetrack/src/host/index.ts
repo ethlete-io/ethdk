@@ -8,5 +8,6 @@ export * from './process-runner';
 export * from './review-store';
 export * from './secrets';
 export * from './transport';
+export * from './tray';
 export * from './window-controls';
 export * from './window-source';

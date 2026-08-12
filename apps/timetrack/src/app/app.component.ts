@@ -12,6 +12,7 @@ import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector 
 import { injectHostPorts } from '../host';
 import { DayReviewComponent } from './day-review';
 import { SourcesComponent } from './sources';
+import { injectTrayReadout } from './tray-readout';
 import { WindowControlsComponent } from './window-controls.component';
 
 type HostStatus =
@@ -143,6 +144,11 @@ export class AppComponent {
 
     return status.state === 'ready' ? status.cursors : 0;
   });
+
+  constructor() {
+    // The tray readout has no view of its own, so nothing else would ever construct it.
+    injectTrayReadout();
+  }
 
   protected recheck() {
     this.reload.update((count) => count + 1);

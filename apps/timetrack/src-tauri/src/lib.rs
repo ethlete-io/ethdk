@@ -20,6 +20,12 @@ use tauri::Manager;
 
 pub fn run() {
     tauri::Builder::default()
+        // Single-instance has to be the first plugin registered, and it is what makes running the
+        // binary a second time - `timetrack open` - focus the window instead of starting a rival
+        // daemon. That is the only way in on a desktop whose bar hosts no tray.
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            tray::reveal(app);
+        }))
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let key = keychain::database_key()?;
@@ -67,6 +73,7 @@ pub fn run() {
             store::ledger_upsert,
             store::set_compacted_through,
             store::set_day_review_edits,
+            tray::tray_set_readout,
             window::window_events,
             window::window_source_status,
         ])

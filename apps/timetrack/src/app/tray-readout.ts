@@ -1,0 +1,110 @@
+import { computed, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { defineRootProvider, toInjectFn } from '@ethlete/core';
+import {
+  CurrentActivity,
+  DayCheck,
+  EMPTY_DAY_REVIEW_EDITS,
+  correlateDay,
+  currentActivity,
+  formatDurationMs,
+  localDayKey,
+  localDayRange,
+  reviewDay,
+} from '@ethlete/timetrack';
+import { EMPTY, Observable, catchError, combineLatest, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
+import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../collectors';
+import { TrayReadout, injectHostPorts } from '../host';
+import { DEFAULT_DAY_TARGET_MS } from './day-review/day-review';
+import { formatBlockLabel, formatClockTime } from './day-review/format';
+
+/**
+ * How often the readout is rebuilt even though nothing was collected.
+ *
+ * The collectors are what normally move it, but a day that rolls over midnight and a stretch spent
+ * reading in one window both change what the tray should say without producing a single event.
+ */
+const TRAY_READOUT_INTERVAL_MS = 60_000;
+
+const formatActivity = (activity: CurrentActivity) => {
+  if (activity.state === 'idle') return `Idle since ${formatClockTime(activity.since)}`;
+  if (activity.state === 'working') {
+    return `${formatBlockLabel(activity.block)} since ${formatClockTime(activity.since)}`;
+  }
+
+  return 'Nothing observed today';
+};
+
+/**
+ * The unattributed half has to be in the readout, not only in the review.
+ *
+ * A day whose branches carry no issue key proposes nothing at all, and a tray reporting `0m` on such a
+ * day reads as "the collectors are broken" when what happened is that six hours of real work matched
+ * no ticket.
+ */
+const formatTotal = (check: DayCheck) => {
+  const against = `${formatDurationMs(check.proposedMs)} of a ${formatDurationMs(DEFAULT_DAY_TARGET_MS)} target`;
+
+  return check.unattributedMs > 0 ? `${against}, ${formatDurationMs(check.unattributedMs)} unattributed` : against;
+};
+
+/**
+ * Keeps the tray menu saying what today looks like, whether or not the window is open.
+ *
+ * It reconstructs today itself rather than reading the day review's: the review follows whichever day
+ * the reviewer stepped to, and a tray that reports last Tuesday is worse than one that reports nothing.
+ */
+const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
+  const ports = injectHostPorts();
+  const windows = injectWindowCollector();
+  const git = injectGitCollector();
+  const agentSessions = injectAgentSessionCollector();
+  const readout = signal<TrayReadout | null>(null);
+
+  const collected = computed(() => ({
+    windows: windows.lastRun(),
+    git: git.lastRun(),
+    sessions: agentSessions.lastRun(),
+  }));
+
+  const read$ = (): Observable<TrayReadout> => {
+    const key = localDayKey(new Date());
+    const { from, to } = localDayRange(key);
+
+    return combineLatest({
+      events: ports.events.eventsBetween$(from, to),
+      edits: ports.review.editsFor$(key),
+    }).pipe(
+      map(({ events, edits }) => {
+        const correlation = correlateDay({ events });
+        const day = reviewDay({
+          correlation,
+          edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
+          check: { targetMs: DEFAULT_DAY_TARGET_MS },
+        });
+
+        return {
+          activity: formatActivity(currentActivity({ events, blocks: correlation.blocks })),
+          total: formatTotal(day.check),
+        };
+      }),
+    );
+  };
+
+  merge(toObservable(collected), timer(0, TRAY_READOUT_INTERVAL_MS))
+    .pipe(
+      concatMap(() => read$().pipe(catchError(() => EMPTY))),
+      distinctUntilChanged((before, after) => before.activity === after.activity && before.total === after.total),
+      concatMap((next) => {
+        readout.set(next);
+
+        return ports.tray.setReadout$(next).pipe(catchError(() => EMPTY));
+      }),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  return { readout: readout.asReadonly() };
+});
+
+export const injectTrayReadout = /* @__PURE__ */ toInjectFn(TRAY_READOUT_DEF);
