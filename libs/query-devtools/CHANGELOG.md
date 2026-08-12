@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.1
+
+### Minor Changes
+
+- [#3057](https://github.com/ethlete-io/ethdk/pull/3057) [`bb78b37`](https://github.com/ethlete-io/ethdk/commit/bb78b3725ec66ff98bcbd9e2e8d90e190173ecca) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: a **Locks** tab listing every Web Lock held across the origin - the auth and polling elections decoded, how many tabs are in each, and where this tab stands.
+
 ## 1.0.0-next.0
 
 ### Major Changes
