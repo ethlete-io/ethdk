@@ -56,10 +56,9 @@ type="color">` synced underneath, with `readonly`/`disabled`/`mixed`
 handling. A custom picker replaces that native input while keeping the same
 directive/value contract - still open, still an `L`.
 
-The **hex/RGB validators shipped 2026-08-10** (see "Already fixed"). A
-**contrast validator** is the part that did not: it needs to read another
-control's value, and nothing in `libs/forms` does a cross-field read today,
-so its shape is a design question rather than a missing regex. Left open.
+The **hex/RGB validators shipped 2026-08-10** and the **contrast validator
+on 2026-08-12** (both under "Already fixed"). Nothing about validation is
+left open here; only the custom picker is.
 
 ## Progress steps
 
@@ -247,6 +246,31 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Color input: contrast validator** (2026-08-12, a "Decide before building" row) - the row's premise
+was wrong: `validate`'s field context already carries `valueOf(path)`, and our own `warn()` gets the
+same context, so a cross-field read needed no new mechanism. What was actually open was the API
+shape, settled with the user as `colorContrast(path, { against, min, severity, message })` in
+`forms/color-input/color-input-validators.ts`. Four calls worth keeping:
+
+- **`against` takes a path or a plain color string**, discriminated at runtime by `typeof`. The
+  literal form covers a page background the form doesn't own.
+- **`min` is a number (default 4.5), not a `'AA' | 'AAA'` enum**, with `WCAG_CONTRAST_RATIOS`
+  exported to name the five thresholds. It also accepts a `LogicFn` - the shape signal forms' own
+  `min()`/`maxLength()` take - so the requirement can follow another field (a "large text" switch
+  relaxing 4.5 to 3). That reactive form is what the story demos; without it a Storybook arg could
+  not drive it at all, since options are read once at schema-build time.
+- **One function with `severity: 'error' | 'warning'`**, routing to `validate()` or `warn()`, rather
+  than two exported functions. Contrast is often a brand judgment call, and the warning channel
+  already exists; both report `kind: 'colorContrast'`, so one resolver entry localizes either.
+- **Passes when either color is blank _or unparseable_.** A malformed value is `hexColor`'s error to
+  report; failing here too would put two errors on one field. Same reason `getColorContrastRatio()`
+  returns `null` rather than throwing.
+
+`getColorContrastRatio(a, b)` is exported for use outside a form (live previews, palette tooling).
+**Alpha is ignored** by both - compositing needs a backdrop neither is given. Story
+`components-forms-color-input-contrast--default` demos both severities plus the reactive `min`;
+`apps/docs/components/forms.md` gained a "Color contrast, across two fields" section.
 
 **Grid: projected items are a supported composition** (2026-08-12, a "Decide before building" row) -
 the decision the row asked for is **projection is supported**, and the check was wrong. It was already

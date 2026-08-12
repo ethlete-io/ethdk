@@ -194,6 +194,10 @@ picker-opening interactions itself while keeping the field focusable).
 Design tokens: `--et-color-input-swatch-size` (default `20px`),
 `--et-color-input-swatch-radius` (default `4px`).
 
+Two colors that have to be readable together belong to
+[`colorContrast`](/components/forms#color-contrast-across-two-fields), which measures a field
+against another field of the same form.
+
 ## Masked input - `[etInputMask]` {#masked-input}
 
 Masking is a directive layered onto the existing text input, not a separate

@@ -336,10 +336,11 @@ Signal forms bring their own (`required`, `min`, `pattern`, …); these fill gap
 documents a value format that nothing was actually checking. Add them to a `form()` schema like any
 other validator.
 
-| Validator                                      | From                   | Fails unless the value is                                          |
+| Validator                                      | From                   | Reports unless the value is                                        |
 | ---------------------------------------------- | ---------------------- | ------------------------------------------------------------------ |
 | `hexColor(path, options?)`                     | `et-color-input`       | a hex color - strict `#rrggbb` by default                          |
 | `rgbColor(path, options?)`                     | `et-color-input`       | a functional `rgb()` color, comma or space form, channels in 0-255 |
+| `colorContrast(path, { against, … })`          | `et-color-input`       | far enough from another color to be readable on it                 |
 | `requiredLanguages(path, { codes, message? })` | the multi-language RTE | non-empty for every listed language code                           |
 
 ```ts
@@ -359,8 +360,64 @@ additionally accepts `#rrggbbaa`, and both together also accept `#rgba`.
 
 All of them **pass on an empty or `null` value** - emptiness is `required`'s job, and doubling it up
 would report two errors for one blank field. Each takes a `message` to override the generated text,
-and reports its own `kind` (`'hexColor'`, `'rgbColor'`) so a
+and reports its own `kind` (`'hexColor'`, `'rgbColor'`, `'colorContrast'`) so a
 [custom error resolver](#custom-error-messages) can translate it.
+
+### Color contrast, across two fields
+
+`colorContrast` is the one rule here that reads a second field. Point `against` at another path in
+the same `form()` and the two need no wiring beyond that - the field context resolves it, and either
+field changing re-measures:
+
+```ts
+import { colorContrast, WCAG_CONTRAST_RATIOS } from '@ethlete/components';
+
+form(model, (s) => {
+  colorContrast(s.textColor, { against: s.background });
+  colorContrast(s.accent, { against: s.background, min: WCAG_CONTRAST_RATIOS.nonText, severity: 'warning' });
+});
+```
+
+<StoryEmbed id="components-forms-color-input-contrast--default" height="640px" />
+
+| Option     | Default | What it does                                                                                                                       |
+| ---------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `against`  | -       | Another color field's path, or a fixed color string (`'#ffffff'`) when the other side is not editable                              |
+| `min`      | `4.5`   | The ratio to reach, as the `n` in `n:1`. A function instead of a number lets it follow another field - signal forms' `min()` shape |
+| `severity` | `error` | `'error'` blocks `submit()`; `'warning'` reports through [`warn()`](#warnings-valid-but-worth-a-look) and leaves the field valid   |
+| `message`  | -       | Replaces the generated "Contrast is 3.45:1, needs at least 4.5:1"                                                                  |
+
+`WCAG_CONTRAST_RATIOS` names the thresholds so a call site doesn't repeat the numbers: `aaNormal`
+(4.5), `aaLarge` (3), `aaaNormal` (7), `aaaLarge` (4.5) and `nonText` (3, for icons, control borders
+and focus rings). Pass a function for `min` when the requirement is itself a form value - a "large
+text" switch relaxing 4.5 to 3:
+
+```ts
+colorContrast(s.textColor, {
+  against: s.background,
+  min: ({ valueOf }) => (valueOf(s.largeText) ? WCAG_CONTRAST_RATIOS.aaLarge : WCAG_CONTRAST_RATIOS.aaNormal),
+});
+```
+
+Reach for `severity: 'warning'` when the color is a brand decision rather than a rule - the demo
+above uses it for the accent, so it shows the moment the value is bad rather than waiting for the
+field to be touched, and never stops the form submitting.
+
+The same math is exported on its own for anything outside a form - a live preview, a palette
+generator, a test:
+
+```ts
+import { getColorContrastRatio } from '@ethlete/components';
+
+getColorContrastRatio('#767676', '#ffffff'); // 4.54
+getColorContrastRatio('nope', '#ffffff'); // null
+```
+
+It reads hex (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`) and functional `rgb()`/`rgba()` in either
+form, and returns `null` when either color is blank or unparseable - which is also when the validator
+passes, so a malformed value is `hexColor`'s error to report, not two errors at once. **Alpha is
+ignored**: compositing a translucent color needs a backdrop neither the helper nor the validator is
+given, so both measure the colors at full opacity.
 
 ### Server-side violations
 
