@@ -12,27 +12,32 @@ import {
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { TIME_PICKER_IMPORTS } from '../../../time-picker';
+import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { ControlSuffixDirective } from '../../form-field/partials';
 import { InputMaskDirective } from '../../masked-input/headless';
 import { SegmentedButtonComponent, SegmentedButtonGroupComponent } from '../../selection-list/segmented-button-group';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
+import { DateTimePickerPanesDirective } from '../internals/date-time-panes.directive';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
-import { DateTimePickerPanesDirective } from '../internals/date-time-panes.directive';
-import { DateTimeInputDirective, DateTimeInputFieldDirective } from './headless';
-import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
-import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
-import { ControlSuffixDirective } from '../../form-field/partials';
+import { DateTimeRangeInputDirective, DateTimeRangeInputFieldDirective } from './headless';
+
+/** Which pane the bottom-sheet tabs show; the desktop panel renders both side by side. */
+type DateTimeRangePane = 'dates' | 'times';
+
+const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
 
 @Component({
-  selector: 'et-date-time-input',
-  templateUrl: './date-time-input.component.html',
-  styleUrl: './date-time-input.component.css',
+  selector: 'et-date-time-range-input',
+  templateUrl: './date-time-range-input.component.html',
+  styleUrl: './date-time-range-input.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     ControlSuffixDirective,
     ...CALENDAR_IMPORTS,
     ...TIME_PICKER_IMPORTS,
-    DateTimeInputFieldDirective,
+    DateTimeRangeInputFieldDirective,
     DatePickerSurfaceDirective,
     DatePickerTriggerDirective,
     DatePickerPanelComponent,
@@ -45,7 +50,7 @@ import { ControlSuffixDirective } from '../../form-field/partials';
   providers: [provideIcons(CALENDAR_ICON, TIMES_ICON)],
   hostDirectives: [
     {
-      directive: DateTimeInputDirective,
+      directive: DateTimeRangeInputDirective,
       inputs: [
         'value',
         'mixed',
@@ -57,7 +62,8 @@ import { ControlSuffixDirective } from '../../form-field/partials';
         'errors',
         'required',
         'name',
-        'placeholder',
+        'startPlaceholder',
+        'endPlaceholder',
         'parseErrorMessage',
         'valueFormat',
         'displayFormat',
@@ -79,51 +85,66 @@ import { ControlSuffixDirective } from '../../form-field/partials';
     },
   ],
   host: {
-    class: 'et-date-time-input',
+    class: 'et-date-time-range-input',
+    role: 'group',
+    '[attr.aria-labelledby]': 'rangeInput.labelId()',
   },
 })
-export class DateTimeInputComponent {
+export class DateTimeRangeInputComponent {
   private dateTimeLabels = injectDateTimeLabels();
 
   private formFieldLabels = injectFormFieldLabels();
 
-  protected dateTimeInput = inject(DateTimeInputDirective);
+  protected rangeInput = inject(DateTimeRangeInputDirective);
 
+  public startAriaLabel = input<string | null>(null);
+  public endAriaLabel = input<string | null>(null);
   public pickerTriggerLabel = input<string | null>(null);
+  public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: numberAttribute });
   public secondStep = input(1, { transform: numberAttribute });
-  /** Labels of the pane tabs shown when the picker mounts as a bottom sheet. */
-  public dateTabLabel = input<string | null>(null);
-  public timeTabLabel = input<string | null>(null);
+  /** The bottom sheet's two tab labels. */
+  public datesTabLabel = input<string | null>(null);
+  public timesTabLabel = input<string | null>(null);
+  /** The time picker's two ends, on the control that switches between them. */
+  public startTimeLabel = input<string | null>(null);
+  public endTimeLabel = input<string | null>(null);
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `startAriaLabel`, else the domain's label set. */
+  protected resolvedStartAriaLabel = computed(() => this.startAriaLabel() ?? this.dateTimeLabels().startDateTime);
+
+  /** The string in effect: this instance's `endAriaLabel`, else the domain's label set. */
+  protected resolvedEndAriaLabel = computed(() => this.endAriaLabel() ?? this.dateTimeLabels().endDateTime);
 
   /** The string in effect: this instance's `pickerTriggerLabel`, else the domain's label set. */
   protected resolvedPickerTriggerLabel = computed(
     () => this.pickerTriggerLabel() ?? this.dateTimeLabels().openDateTimePicker,
   );
 
-  /** The string in effect: this instance's `dateTabLabel`, else the domain's label set. */
-  protected resolvedDateTabLabel = computed(() => this.dateTabLabel() ?? this.dateTimeLabels().dateTab);
+  /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
+  protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDateTimeRange);
 
-  /** The string in effect: this instance's `timeTabLabel`, else the domain's label set. */
-  protected resolvedTimeTabLabel = computed(() => this.timeTabLabel() ?? this.dateTimeLabels().timeTab);
+  /** The strings in effect: this instance's tab labels, else the domain's label set. */
+  protected resolvedDatesTabLabel = computed(() => this.datesTabLabel() ?? this.dateTimeLabels().datesTab);
+
+  protected resolvedTimesTabLabel = computed(() => this.timesTabLabel() ?? this.dateTimeLabels().timesTab);
 
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  // only while the field is in use - mirrors the select's clear affordance
+  // only while the field is in use - mirrors the date-time input's clear affordance
   protected showClear = computed(
     () =>
       this.clearable() &&
-      this.dateTimeInput.hasValue() &&
-      (this.dateTimeInput.focused() || this.dateTimeInput.pickerOpen()) &&
-      this.dateTimeInput.interactive(),
+      this.rangeInput.hasValue() &&
+      (this.rangeInput.focused() || this.rangeInput.pickerOpen()) &&
+      this.rangeInput.interactive(),
   );
 
-  /** Which pane the bottom-sheet tabs show (both panes render side by side on desktop). */
-  protected activePane = signal<'date' | 'time'>('date');
+  protected activePane = signal<DateTimeRangePane>('dates');
 
   /**
    * Direction of the last pane switch - the incoming pane slides in from the
@@ -135,8 +156,8 @@ export class DateTimeInputComponent {
   constructor() {
     // every picker open starts back on the calendar pane, without a slide
     effect(() => {
-      if (this.dateTimeInput.pickerOpen()) {
-        this.activePane.set('date');
+      if (this.rangeInput.pickerOpen()) {
+        this.activePane.set('dates');
         this.paneNav.set(null);
       }
     });
@@ -145,17 +166,18 @@ export class DateTimeInputComponent {
   protected handleClearClick(event: Event) {
     // clearing must not bubble into the form field's frame-click handling
     event.stopPropagation();
-    this.dateTimeInput.clearValue();
+    this.rangeInput.clearRange();
   }
 
   protected setActivePane(pane: unknown) {
-    const next = pane === 'time' ? 'time' : 'date';
+    const next = PANE_ORDER.find((candidate) => candidate === pane) ?? 'dates';
+    const current = this.activePane();
 
-    if (next === this.activePane()) {
+    if (next === current) {
       return;
     }
 
-    this.paneNav.set(next === 'time' ? 'forward' : 'backward');
+    this.paneNav.set(PANE_ORDER.indexOf(next) > PANE_ORDER.indexOf(current) ? 'forward' : 'backward');
     this.activePane.set(next);
   }
 }

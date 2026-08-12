@@ -25,6 +25,7 @@ export const FORM_FIELD_CONTROL_TYPES = {
   DATE_RANGE_INPUT: 'date-range-input',
   TIME_INPUT: 'time-input',
   DATE_TIME_INPUT: 'date-time-input',
+  DATE_TIME_RANGE_INPUT: 'date-time-range-input',
   DURATION_INPUT: 'duration-input',
   DROPZONE: 'dropzone',
 } as const;

@@ -8,6 +8,11 @@ import { TimePickerOption, TimePickerDirective } from './time-picker.directive';
  * One option (place it on the option's `<button>`): ARIA/data attributes,
  * selection on activation, the roving-tabindex focus pull, and keeping the
  * column scrolled to the focused option.
+ *
+ * In the picker's `range` mode it also mirrors the option's relation to the
+ * range: `data-range-start` / `data-range-end` for the two ends' own options
+ * (the end that is not selected is the one worth drawing differently) and
+ * `data-band` for its position in the band between them.
  */
 @Directive({
   selector: 'button[etTimePickerOption]',
@@ -22,7 +27,10 @@ import { TimePickerOption, TimePickerDirective } from './time-picker.directive';
     '[attr.data-selected]': "option().selected ? '' : null",
     '[attr.data-disabled]': "option().disabled ? '' : null",
     '[attr.data-focused]': "option().focused ? '' : null",
-    '(click)': 'timePicker?.selectPart(option().unit, option().value)',
+    '[attr.data-range-start]': "option().rangeStart ? '' : null",
+    '[attr.data-range-end]': "option().rangeEnd ? '' : null",
+    '[attr.data-band]': 'option().band',
+    '(click)': 'timePicker?.activateOption(option().unit, option().value)',
   },
 })
 export class TimePickerOptionDirective {

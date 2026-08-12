@@ -1,12 +1,13 @@
 import { booleanAttribute, computed, input, signal, Directive } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { setHours, setMinutes, setSeconds, startOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
 import { injectDateFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
 import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
-import { parseDateTimeText } from './internals/date-time-parse';
+import { withTimeOfDay } from '../../internals/date-time-merge';
+import { parseDateTimeText } from '../../internals/date-time-parse';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
 
@@ -151,13 +152,8 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     }
 
     const current = this.dateTime();
-    const day = startOfDay(date);
 
-    this.commitDateTime(
-      current === null
-        ? day
-        : setSeconds(setMinutes(setHours(day, current.getHours()), current.getMinutes()), current.getSeconds()),
-    );
+    this.commitDateTime(current === null ? startOfDay(date) : withTimeOfDay(date, current));
     this.touched.set(true);
   }
 
@@ -172,9 +168,8 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     }
 
     const current = this.dateTime();
-    const day = startOfDay(current ?? time);
 
-    this.commitDateTime(setSeconds(setMinutes(setHours(day, time.getHours()), time.getMinutes()), time.getSeconds()));
+    this.commitDateTime(withTimeOfDay(current ?? time, time));
     this.touched.set(true);
   }
 

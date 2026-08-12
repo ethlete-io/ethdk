@@ -25,11 +25,8 @@ means actually separating these concerns (nav vs. view-switch vs. actions)
 into distinct sections instead of one row that presumably wraps at narrow
 widths.
 
-- **Start/end as a date-time range picker.** `scheduler-edit-time-
-range.component.ts` pairs two independent `et-date-time-input` controls.
-  The SDK's `DateRangeInputComponent` is date-only; no combined date-time-
-  range control exists. This is new `forms/date-time/` surface, not a
-  scheduler-only change.
+- **Start/end as a date-time range picker** shipped 2026-08-12 as
+  `et-date-time-range-input` - see "Already fixed".
 - **Infinite-scrolling agenda** shipped 2026-08-12 - see "Already fixed".
 
 ## Buttons
@@ -239,6 +236,64 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Date-time range picker** (2026-08-12, the scheduler row above) - `et-date-time-range-input`, a
+start/end control with time-bearing wire strings on the date range input's `{ start, end }` shape.
+The four calls the user settled before any code:
+
+- **Panel layout: a range calendar plus one time picker per side**, captioned `Start time` /
+  `End time`, all three panes side by side on the anchored panel and three tabs
+  (`Dates / Start time / End time`) on the bottom sheet. A single side-switched time picker was
+  rejected (which side you are editing becomes one more piece of hidden state, and setting both
+  times costs an extra click); two full tabbed date-time panes were rejected because they throw
+  away the range band, which is the reason to have a range control at all.
+- **The shipped `DateRangeInputDirective` was refactored onto a shared base**,
+  `internals/date-range-picker-input.directive.ts` (+ `-input-field`), mirroring what
+  `internals/date-picker-input.directive.ts` already does for the three single-value controls.
+  Both range controls extend it; the 633-line range spec passed unchanged, which is what made this
+  the cheap option over a ~90% copy. `date-time-parse.ts` and the pane-compensation directive moved
+  to `internals/` for the same reason (the latter now queries `contentChildren`, one time picker per
+  side), and `withTimeOfDay` is one helper both controls use.
+- **Ordering is not enforced** - no swap-on-commit, no implicit clamp of the end picker. Same
+  contract as the date range input: a schema validator's job. What the picker _can_ say is
+  `timeFilter(candidate, side)` - the side is the second argument, which is the only way to express
+  "the end must be after the start" as a picker bound. Auto-bounding the end time picker was
+  rejected as hidden magic that fights `minTime`/`maxTime` and cannot be turned off.
+- **The picker never closes on its own.** A completed day range is only half this value, so
+  completing it leaves the panel open (the plain date range input closes there). A picked day range
+  keeps each side's committed time of day; a picked time writes only its side, falling back to the
+  _other_ side's day when its own has none.
+
+It deliberately does **not** take `rangeSelectionStrategy` or `comparisonStart`/`comparisonEnd` -
+week snapping and comparison bands belong to reporting filters, not appointments - and has no
+`precision`, like the single date-time input. `scheduler-edit-time-range.component.ts` now stamps one
+field instead of two; its label is the new `SchedulerLabels.timeRangeField` (`'When'`), with
+`startField`/`endField` demoted to the two halves' accessible names.
+
+Follow-up the user asked for the same day, also shipped: **`et-time-range-picker`**
+(`time-picker/time-range-picker.component.ts`), two time pickers as one element - a start and an end
+column set under their own headings, sharing one format/step/bound/filter. Both sides still render
+(a column shows one value, so a start and an end cannot share one), but the panel mounts, labels and
+filters them once, and the piece is a general standalone picker in its own right. A true
+`mode="range"` **inside `TimePickerDirective` was rejected**: `value`, `anchorTime`, `selectedParts`,
+`columns`, `selectPart` and the whole availability model are single-value, and `track column.unit`
+plus the roving-focus/keyboard model all assume one column per unit - a rewrite of 412 intricate
+lines for no visual difference. It exposes `rangeValue` as a model (so `[(rangeValue)]` stands alone)
+**plus** a side-tagged `(timeSelect)` output, because a consumer whose value is a pair of wire
+strings cannot infer which half moved. Its two headings live in `TIME_PICKER_LABELS.startTime`/
+`endTime`, which the range input's two time tabs read as well, so the strings are defined once.
+
+**Trap found by driving the story:** a new text-shell control must be added to
+`FormFieldDirective.usesTextFieldShell`'s control-type allowlist. Miss it and nothing errors - the
+label area just stays `position: static` instead of going out of flow, so it sits _in_ the control
+row and squeezed the two fields to 17px each. Two `Pp` values also simply need room: the story had
+to go to `max-w-3xl`, and the playground's Tailwind resolves `max-w-md` to **280px**, not 448px
+(root font-size is 10px there).
+
+Noticed while building it and **not** fixed: the other four picker templates hardcode their
+`dialogLabel` (`"Choose a date"`, …), so those four strings bypass `DATE_TIME_LABELS` entirely - the
+`chooseDate` fallback exists but nothing reaches it. The new control binds
+`chooseDateTimeRange` from the label set instead. Worth a small localization sweep.
 
 **Storybook top-level categories** (2026-08-12, the last "Decide before building" row) - `Components/*`
 now has eleven categories: Actions, Data display, Date & time, Dev tools, Feedback, Forms, Layout,

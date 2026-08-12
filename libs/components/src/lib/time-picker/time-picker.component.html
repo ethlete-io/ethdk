@@ -1,7 +1,26 @@
-@for (column of timePicker.columns(); track column.unit) {
-  <div [column]="column" class="et-time-picker-column" etTimePickerColumn>
-    @for (option of column.options; track option.value) {
-      <button [option]="option" class="et-time-picker-option" etTimePickerOption>{{ option.label }}</button>
+@if (timePicker.mode() === 'range') {
+  <div class="et-time-picker-sides">
+    @for (side of timePicker.sides(); track side.side) {
+      <button
+        [attr.aria-pressed]="side.active"
+        [attr.data-side]="side.side"
+        (click)="timePicker.setActiveSide(side.side)"
+        class="et-time-picker-side"
+        type="button"
+      >
+        <span class="et-time-picker-side-label">{{ side.label }}</span>
+        <span class="et-time-picker-side-value">{{ side.value ?? '—' }}</span>
+      </button>
     }
   </div>
 }
+
+<div class="et-time-picker-columns">
+  @for (column of timePicker.columns(); track column.unit) {
+    <div [column]="column" class="et-time-picker-column" etTimePickerColumn>
+      @for (option of column.options; track option.value) {
+        <button [option]="option" class="et-time-picker-option" etTimePickerOption>{{ option.label }}</button>
+      }
+    </div>
+  }
+</div>

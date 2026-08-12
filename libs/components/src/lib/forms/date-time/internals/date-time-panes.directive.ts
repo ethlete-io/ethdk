@@ -10,17 +10,18 @@ import {
 } from '@angular/core';
 import { injectPrefersReducedMotion } from '@ethlete/core';
 import { CalendarComponent } from '../../../calendar';
-import { TimePickerComponent } from '../../../time-picker';
 
 const COMPENSATION_DURATION = 160;
 const COMPENSATION_EASING = 'ease';
 
+/** The time picker's own rows: its columns, and a range picker's side switch above them. */
+const PICKER_ROWS = '.et-time-picker-sides, .et-time-picker-columns';
+
 /**
- * @internal Applied to the pane row of the date-time picker panel: when month
- * navigation changes the calendar height, the stretched time picker follows
- * instantly and its vertically centered columns jump by half the delta. This
- * slides the columns from their old visual position to the new one with a
- * `translateY` compensation.
+ * @internal Applied to the pane row of a date-time picker panel: when month navigation changes the
+ * calendar height, the stretched time picker follows instantly and its vertically centered content
+ * jumps by half the delta. This slides that content from its old visual position to the new one with
+ * a `translateY` compensation.
  *
  * Deliberately a transform, never an animated `block-size`: transforms stay
  * out of layout, so the panel body still changes in a single snap and the
@@ -31,16 +32,14 @@ const COMPENSATION_EASING = 'ease';
  * after the columns settled.
  */
 @Directive({
-  selector: '[etDateTimeInputPanes]',
+  selector: '[etDateTimePickerPanes]',
 })
-export class DateTimeInputPanesDirective {
+export class DateTimePickerPanesDirective {
   private destroyRef = inject(DestroyRef);
   private prefersReducedMotion = injectPrefersReducedMotion();
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private calendar = contentChild<CalendarComponent, ElementRef<HTMLElement>>(CalendarComponent, {
-    read: ElementRef,
-  });
-  private timePicker = contentChild<TimePickerComponent, ElementRef<HTMLElement>>(TimePickerComponent, {
     read: ElementRef,
   });
 
@@ -74,7 +73,7 @@ export class DateTimeInputPanesDirective {
 
     // the settled first-render height is the baseline - opening never animates
     afterNextRender(() => {
-      this.lastBlockSize = this.timePicker()?.nativeElement.getBoundingClientRect().height ?? null;
+      this.lastBlockSize = this.measure();
       this.ready = true;
     });
 
@@ -85,16 +84,10 @@ export class DateTimeInputPanesDirective {
   }
 
   private compensate() {
-    const timePicker = this.timePicker()?.nativeElement;
-
-    if (!timePicker) {
-      return;
-    }
-
-    const blockSize = timePicker.getBoundingClientRect().height;
+    const blockSize = this.measure();
 
     // never record or compensate a zero / pre-layout height
-    if (blockSize === 0) {
+    if (blockSize === null || blockSize === 0) {
       return;
     }
 
@@ -106,34 +99,42 @@ export class DateTimeInputPanesDirective {
       return;
     }
 
-    // eslint-disable-next-line ethlete/no-dom-query -- the columns live inside the time picker's own view; no directive token or content query from out here can reach them
-    const columns = Array.from(timePicker.querySelectorAll<HTMLElement>('.et-time-picker-column'));
-    const firstColumn = columns[0];
+    // eslint-disable-next-line ethlete/no-dom-query -- the rows live inside et-time-picker's own view, out of reach of a content query from here
+    const rows = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>(PICKER_ROWS));
+    const firstRow = rows[0];
 
-    if (!firstColumn) {
+    if (!firstRow) {
       return;
     }
 
-    // the centered columns moved by half the height delta; continue from the
+    // the centered content moved by half the height delta; continue from the
     // current visual offset when interrupting a running compensation
-    const offset = (previous - blockSize) / 2 + this.currentOffset(firstColumn);
+    const offset = (previous - blockSize) / 2 + this.currentOffset(firstRow);
 
     this.cancelAnimations();
 
-    this.animations = columns.map((column) =>
-      column.animate([{ transform: `translateY(${offset}px)` }, { transform: 'translateY(0)' }], {
+    this.animations = rows.map((row) =>
+      row.animate([{ transform: `translateY(${offset}px)` }, { transform: 'translateY(0)' }], {
         duration: COMPENSATION_DURATION,
         easing: COMPENSATION_EASING,
       }),
     );
   }
 
-  private currentOffset(column: HTMLElement) {
+  // the panes are stretched to one row, so every time picker has the same height
+  private measure() {
+    // eslint-disable-next-line ethlete/no-dom-query -- see compensate()
+    const timePicker = this.host.nativeElement.querySelector('.et-time-picker');
+
+    return timePicker?.getBoundingClientRect().height ?? null;
+  }
+
+  private currentOffset(row: HTMLElement) {
     if (!this.animations.some((animation) => animation.playState === 'running')) {
       return 0;
     }
 
-    const transform = getComputedStyle(column).transform;
+    const transform = getComputedStyle(row).transform;
     const translateY = /matrix\(([^)]+)\)/.exec(transform)?.[1]?.split(',')[5];
     const offset = translateY === undefined ? 0 : Number(translateY);
 

@@ -43,9 +43,11 @@ export type SchedulerLabels = {
   deleteWithDescendants: string;
   /** Label for the built-in title edit field. */
   titleField: string;
-  /** Label for the built-in start-time edit field. */
+  /** Label for the built-in start/end edit field. */
+  timeRangeField: string;
+  /** Accessible name of the start half of the built-in start/end edit field. */
   startField: string;
-  /** Label for the built-in end-time edit field. */
+  /** Accessible name of the end half of the built-in start/end edit field. */
   endField: string;
   /** Label for the built-in location edit field. */
   locationField: string;
@@ -78,6 +80,7 @@ export const DEFAULT_SCHEDULER_LABELS: SchedulerLabels = {
   addSubAppointment: 'Add sub-appointment',
   deleteWithDescendants: 'Delete (with descendants)',
   titleField: 'Title',
+  timeRangeField: 'When',
   startField: 'Starts',
   endField: 'Ends',
   locationField: 'Location',

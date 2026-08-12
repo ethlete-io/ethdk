@@ -1,0 +1,94 @@
+<input
+  [attr.aria-label]="resolvedStartAriaLabel()"
+  [etInputMask]="rangeInput.maskPattern()"
+  class="et-date-time-range-input-field"
+  etDateTimeRangeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+  side="start"
+/>
+
+<span class="et-date-time-range-input-separator" aria-hidden="true">–</span>
+
+<input
+  [attr.aria-label]="resolvedEndAriaLabel()"
+  [etInputMask]="rangeInput.maskPattern()"
+  class="et-date-time-range-input-field"
+  etDateTimeRangeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+  side="end"
+/>
+
+<ng-template etControlSuffix>
+  @if (showClear()) {
+    <!-- pointer-only, out of the tab order — keyboard users clear by erasing the text.
+         mousedown is prevented so the field keeps focus (its blur would unmount this
+         button before the click could land) -->
+    <button
+      [attr.aria-label]="resolvedClearLabel()"
+      (click)="handleClearClick($event)"
+      (mousedown)="$event.preventDefault()"
+      class="et-input-clear"
+      animate.enter="et-input-clear--enter"
+      animate.leave="et-input-clear--leave"
+      tabindex="-1"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  }
+
+  <button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-input-picker-trigger" etDatePickerTrigger>
+    <i etIcon="et-calendar"></i>
+  </button>
+</ng-template>
+
+<ng-template etDatePickerSurface>
+  <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
+    <div class="et-date-time-range-input-panel">
+      <div class="et-date-time-range-input-panel-tabs">
+        <et-segmented-button-group [value]="activePane()" (valueChange)="setActivePane($event)">
+          <et-segmented-button value="dates">{{ resolvedDatesTabLabel() }}</et-segmented-button>
+          <et-segmented-button value="times">{{ resolvedTimesTabLabel() }}</et-segmented-button>
+        </et-segmented-button-group>
+      </div>
+
+      <div
+        [attr.data-active-pane]="activePane()"
+        [attr.data-nav]="paneNav()"
+        class="et-date-time-range-input-panel-panes"
+        etDateTimePickerPanes
+      >
+        <et-calendar
+          [rangeValue]="rangeInput.calendarRange()"
+          [min]="rangeInput.minDate()"
+          [max]="rangeInput.maxDate()"
+          [dateFilter]="rangeInput.dateFilter()"
+          [startAt]="rangeInput.startAt()"
+          [startView]="rangeInput.startView()"
+          [dateClass]="rangeInput.dateClass()"
+          [weekNumbers]="rangeInput.weekNumbers()"
+          [locale]="rangeInput.effectiveLocale()"
+          (rangeValueChange)="rangeInput.selectCalendarRange($event)"
+          mode="range"
+        />
+
+        <et-time-picker
+          [rangeValue]="rangeInput.calendarRange()"
+          [format]="rangeInput.effectiveDisplayFormat()"
+          [locale]="rangeInput.effectiveLocale()"
+          [minuteStep]="minuteStep()"
+          [secondStep]="secondStep()"
+          [min]="rangeInput.minTime()"
+          [max]="rangeInput.maxTime()"
+          [timeFilter]="rangeInput.timeFilter()"
+          [startLabel]="startTimeLabel()"
+          [endLabel]="endTimeLabel()"
+          (timeSelect)="rangeInput.selectTime($event.side, $event.time)"
+          mode="range"
+        />
+      </div>
+    </div>
+  </et-date-picker-panel>
+</ng-template>
