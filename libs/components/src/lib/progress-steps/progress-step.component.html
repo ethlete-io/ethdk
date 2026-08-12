@@ -6,4 +6,8 @@
   }
 </span>
 
-<span class="et-progress-step-label"><ng-content /></span>
+<span class="et-progress-step-text">
+  <span class="et-progress-step-label"><ng-content /></span>
+
+  <ng-content select="[etProgressStepDescription]" />
+</span>

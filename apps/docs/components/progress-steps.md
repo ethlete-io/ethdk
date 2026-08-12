@@ -75,6 +75,35 @@ because in a column the gap _is_ the connector's length.
 
 <StoryEmbed id="components-progress-steps--vertical" height="220px" />
 
+## A second line under the label
+
+Project `[etProgressStepDescription]` for detail the label has no room for - what the step covers,
+what it produced, why it failed. It is a projected slot rather than a string input, so it can hold a
+link, emphasis, or an interpolated value the same way the label does:
+
+```html
+<et-progress-steps orientation="vertical">
+  <et-progress-step state="complete">
+    Account
+    <span etProgressStepDescription>sam&#64;example.com</span>
+  </et-progress-step>
+  <et-progress-step state="current">
+    Payment
+    <span etProgressStepDescription>Card ending 4242</span>
+  </et-progress-step>
+</et-progress-steps>
+```
+
+<StoryEmbed id="components-progress-steps--vertical-descriptions" height="280px" />
+
+The description is smaller and muted, and it stays neutral in the three outcome states - the same
+call `et-banner` makes for its own description, so the outcome reads off the marker and the label
+rather than off every line at once.
+
+It works in a row too, but a horizontal step is only as wide as its share of the row, so anything
+longer than two or three words wraps and the row grows tall. A column is where a description reads;
+in a row, keep it to a few words or leave it off.
+
 ## Steps a user can go back to
 
 A step is interactive when you write it as one. `et-progress-step` is also an attribute selector, so
@@ -108,6 +137,11 @@ normal case: only the steps behind the user are reachable.
 | ------- | ---------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
 | `state` | `'complete' \| 'current' \| 'upcoming' \| 'success' \| 'warning' \| 'error'` | `'upcoming'` | Drives the marker (number vs. icon), the connector tint, the label weight, and the step's color theme. |
 
+| Slot                          | Description                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| _(default)_                   | The step's label.                                                                           |
+| `[etProgressStepDescription]` | A second, muted line under the label. Rendered only when you project it; no reserved space. |
+
 ## Accessibility
 
 A plain step renders `<span>`s with no ARIA role or live region of its own - a static indicator has
@@ -115,14 +149,16 @@ nothing to announce beyond the labels' own text. If a step's completion should b
 changes, wrap the group in your own `aria-live` region.
 
 A step written as an `<a>` or `<button>` is keyboard-reachable and focus-ringed by virtue of being a
-real link or button; nothing is layered on top of it, so its accessible name is the label you
+real link or button; nothing is layered on top of it, so its accessible name is the content you
 projected, and a `disabled` button or `aria-disabled` link is inert exactly as it would be anywhere
-else.
+else. A description projected into such a step is part of that name - "Payment, Card ending 4242" -
+which usually reads well, but keep it short, and give the step an explicit `aria-label` if it does
+not.
 
 ## Theming
 
 Public design tokens: `--et-progress-steps-gap`, `--et-progress-step-marker-size`,
-`--et-progress-step-label-font-size`.
+`--et-progress-step-label-font-size`, `--et-progress-step-description-font-size`.
 
 `current`/`complete` markers, the connector after a resolved step, and the `current` label all read
 from the ambient [color theme](/core/theming) (`--et-theme-color-primary-solid` /

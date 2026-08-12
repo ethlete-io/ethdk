@@ -72,12 +72,9 @@ exists. Every step renders as plain `<span>`s - no `routerLink`, `<a>`, or
 neither `.css` file has any `:hover` rule. Stories are a single `Default`
 story with one hardcoded 4-step example.
 
-Outcome states, vertical orientation and steps-as-links all shipped (see "Already fixed"). One ask
-is left:
-
-- **Detailed sub-steps** - the least defined ask; needs a decision on
-  whether it's a projected slot per step or a fixed description input, and
-  whether it's meaningful outside the vertical orientation at all.
+Outcome states, vertical orientation, steps-as-links and the detailed sub-steps ask (shipped as the
+`[etProgressStepDescription]` slot) are all done - see "Already fixed". **Nothing is open on this
+component.**
 
 ## Segmented button group: two tab divergences left in place on purpose
 
@@ -246,6 +243,35 @@ path.
 
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
+
+**Progress steps: detailed sub-steps** (2026-08-12, the last "Decide before building" row that was not
+Storybook categories) - shipped as `[etProgressStepDescription]`, a second muted line under the label.
+The calls the user settled before any code:
+
+- **A projected slot, not a `description` string input.** Same precedent as `[etBannerHeading]` /
+  `[etTimelineMarker]` / `[etSelectionCardLeading]`: a plain projection selector with **no directive
+  class**, so it can carry a link, emphasis or an interpolated value. A string input would have capped
+  it at text.
+- **Not a nested sub-step _list_.** "Sub-steps" in the original ask meant a step carrying more detail,
+  not a tree. Nesting an `et-progress-steps` inside a step (with `counters(et-progress-step, '.')`
+  numbering children `2.1`, `2.2` for free) was raised as an option and **not taken** - it is a
+  separate, larger build with its own connector geometry, and vertical-only. Not scheduled; do not
+  treat it as owed.
+- **Both orientations, with no code path blocking either.** A horizontal step is only as wide as its
+  share of the row, so a description of more than a few words wraps and grows the row - the docs say
+  so and the `--descriptions` story shows it, rather than a dev-check forbidding it. Vertical-only
+  would have needed an `ET19xx` code and an orientation dependency the step does not have.
+- **The description stays neutral in the outcome states** (`--et-surface-color-muted-solid`, not
+  `--et-theme-color-ink-solid` like the label) - the call `et-banner` already makes for its own
+  description, so an outcome reads off the marker and label rather than off every line at once.
+
+Implementation notes: label and description share a new `.et-progress-step-text` wrapper, so the
+step's 8px marker gap does not also fall between them and the vertical orientation's optical
+centering (`padding-block-start: calc((marker-size - 1lh) / 2)`) shifts the pair together. That
+`padding` moved from the label to the wrapper, and **the wrapper carries
+`font-size: var(--et-progress-step-label-font-size)`** - `1lh` is measured on the element it sits on,
+so without that the padding would be computed from the inherited page font-size and the label would
+sit off-center. New `--et-progress-step-description-font-size` token (12px).
 
 **Selection card: leading/trailing slots** (2026-08-12, a "Decide before building" row) - shipped as
 `[etSelectionCardLeading]` / `[etSelectionCardTrailing]` plus a `controlPosition` input on all three

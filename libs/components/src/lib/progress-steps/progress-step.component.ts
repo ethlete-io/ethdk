@@ -46,6 +46,15 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
  * mark it as done with an outcome and recolor the step in the app's matching semantic theme, each
  * with its own icon so the outcome does not rest on color alone.
  *
+ * Project `[etProgressStepDescription]` for a second, muted line under the label - what the step
+ * covers, what it produced, why it failed:
+ *
+ * @example
+ * <et-progress-step state="current">
+ *   Payment
+ *   <span etProgressStepDescription>Card ending 4242</span>
+ * </et-progress-step>
+ *
  * Write the step as a link or a button to make it interactive - the attribute selector puts the step
  * on the consumer's own element, so `routerLink`, `href` and click handlers all stay where they
  * belong, and the whole step becomes the target:

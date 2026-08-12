@@ -11,6 +11,12 @@
     initial-value: 14px;
   }
 
+  @property --et-progress-step-description-font-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 12px;
+  }
+
   .et-progress-step {
     position: relative;
     display: flex;
@@ -87,10 +93,26 @@
       content: counter(et-progress-step);
     }
 
-    .et-progress-step-label {
+    /* Keep the label's font-size on this element, not on the label: the vertical orientation's
+       optical centering below measures `1lh` here, and inheriting the page's size instead would
+       leave the label sitting off-center against its marker. */
+    .et-progress-step-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-inline-size: 0;
       font-size: var(--et-progress-step-label-font-size);
-      color: var(--et-surface-color-muted-solid, currentColor);
       text-align: center;
+    }
+
+    .et-progress-step-label {
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    [etProgressStepDescription] {
+      margin: 0;
+      font-size: var(--et-progress-step-description-font-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
     }
 
     &[data-state='current'] .et-progress-step-label {
@@ -120,7 +142,7 @@
         block-size: calc(100% - var(--et-progress-step-marker-size) + var(--et-progress-steps-gap, 8px));
       }
 
-      .et-progress-step-label {
+      .et-progress-step-text {
         text-align: start;
         /* Optically centered against the marker rather than its box: the label's own line box is
            shorter than the marker, so aligning the boxes would leave the text sitting high. */

@@ -25,13 +25,14 @@ query long polling, scheduler move/resize (the largest `L` row there was) plus i
 follow-up, the scheduler's infinite agenda, the query devtools' Web Locks inspector - which was
 the last query devtools row - the grid's `initialItems` → `items` rename, the grid's `ET1904`
 check vs projected items, `createGridAdapter`'s per-breakpoint signature, the colour input's
-contrast validator, and the selection card's leading/trailing slots. Each one's design calls and
-traps are recorded in `component-improvements.md`'s "Already fixed, do not re-report".
-The selection list's `variant="tile"` was dropped on 2026-08-12 rather than shipped - do not
-re-add it.
+contrast validator, the selection card's leading/trailing slots, and the progress step's detailed
+sub-steps. Each one's design calls and traps are recorded in `component-improvements.md`'s "Already
+fixed, do not re-report". The selection list's `variant="tile"` was dropped on 2026-08-12 rather than
+shipped - do not re-add it.
 
-Nothing is left at `M`. What remains is the `L` projects and the rows that need a decision before
-any of them can start, so the next pick is a scoping call rather than a queue position.
+Nothing is left at `M`. What remains is the `L` projects plus **one** row that needs a decision
+first - Storybook top-level categories - so the next pick is a scoping call rather than a queue
+position.
 
 ## Everything else, by effort
 
@@ -52,7 +53,6 @@ any of them can start, so the next pick is a scoping call rather than a queue po
 | Item                           | Why it's stuck                                                                                                                               |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Storybook top-level categories | High blast radius - moves every story id the docs site embeds. The two concrete misplacements already shipped; this is the open, bigger call |
-| Progress steps: sub-steps      | Least defined ask in the file - projected slot vs description input, and whether it means anything outside vertical                          |
 
 ### Watchlist - gated on browsers, not on us
 

@@ -1,5 +1,5 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { ProgressStepsStorybookComponent } from './progress-steps-storybook.component';
+import { ProgressStepsStorybookComponent, ProgressStepsStorybookStep } from './progress-steps-storybook.component';
 
 export default {
   title: 'Components/Progress steps',
@@ -43,4 +43,24 @@ export const AsLinks: Story = {
 
 export const VerticalLinks: Story = {
   args: { orientation: 'vertical', asLinks: true },
+};
+
+const DESCRIBED_STEPS: ProgressStepsStorybookStep[] = [
+  { label: 'Account', state: 'complete', description: 'sam@example.com' },
+  { label: 'Shipping', state: 'complete', description: 'Standard, 2-4 days' },
+  { label: 'Payment', state: 'current', description: 'Card ending 4242' },
+  { label: 'Review', state: 'upcoming', description: 'Confirm and place the order' },
+];
+
+/**
+ * A second, muted line under the label - projected as `[etProgressStepDescription]`, so it can hold
+ * a link or emphasis rather than just a string. A column gives it room to read.
+ */
+export const VerticalDescriptions: Story = {
+  args: { orientation: 'vertical', steps: DESCRIBED_STEPS },
+};
+
+/** The same slot in a row. It works, but each description is as narrow as its step. */
+export const Descriptions: Story = {
+  args: { steps: DESCRIBED_STEPS },
 };

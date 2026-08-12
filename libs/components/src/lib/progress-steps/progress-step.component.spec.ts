@@ -17,6 +17,18 @@ class ProgressStepHostComponent {
   public state = signal<ProgressStepState>('upcoming');
 }
 
+@Component({
+  selector: 'et-test-progress-step-description-host',
+  template: `
+    <et-progress-step state="current">
+      Payment
+      <span etProgressStepDescription>Card ending 4242</span>
+    </et-progress-step>
+  `,
+  imports: [PROGRESS_STEPS_IMPORTS],
+})
+class ProgressStepDescriptionHostComponent {}
+
 describe('ProgressStepComponent', () => {
   it('defaults to upcoming and renders no checkmark icon', () => {
     const fixture = TestBed.createComponent(ProgressStepHostComponent);
@@ -96,5 +108,35 @@ describe('ProgressStepComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.et-progress-step-label')?.textContent).toBe('Shipping');
+  });
+
+  it('renders nothing beside the label when no description is projected', () => {
+    const fixture = TestBed.createComponent(ProgressStepHostComponent);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.querySelector('.et-progress-step-text') as HTMLElement;
+
+    expect(text.querySelector('[etProgressStepDescription]')).toBeNull();
+    expect(text.children.length).toBe(1);
+  });
+
+  it('projects a description beside the label, and keeps it out of the label', () => {
+    const fixture = TestBed.createComponent(ProgressStepDescriptionHostComponent);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.querySelector('.et-progress-step-text') as HTMLElement;
+    const description = text.querySelector('[etProgressStepDescription]');
+
+    expect(description?.textContent).toBe('Card ending 4242');
+    expect(fixture.nativeElement.querySelector('.et-progress-step-label')?.textContent?.trim()).toBe('Payment');
+  });
+
+  it('keeps the description out of the marker', () => {
+    const fixture = TestBed.createComponent(ProgressStepDescriptionHostComponent);
+    fixture.detectChanges();
+
+    const marker = fixture.nativeElement.querySelector('.et-progress-step-marker') as HTMLElement;
+
+    expect(marker.querySelector('[etProgressStepDescription]')).toBeNull();
   });
 });

@@ -3,7 +3,7 @@ import { ProgressStepsOrientation } from '../progress-steps.component';
 import { PROGRESS_STEPS_IMPORTS } from '../progress-steps.imports';
 import { ProgressStepState } from '../progress-step.component';
 
-export type ProgressStepsStorybookStep = { label: string; state: ProgressStepState };
+export type ProgressStepsStorybookStep = { label: string; state: ProgressStepState; description?: string };
 
 @Component({
   selector: 'et-sb-progress-steps',
@@ -14,9 +14,21 @@ export type ProgressStepsStorybookStep = { label: string; state: ProgressStepSta
           @if (asLinks()) {
             <!-- The step lives on the consumer's own element, so a real link (or a routerLink) keeps
                  working and the whole step is the target. -->
-            <a [state]="step.state" href="#{{ step.label.toLowerCase() }}" et-progress-step>{{ step.label }}</a>
+            <a [state]="step.state" href="#{{ step.label.toLowerCase() }}" et-progress-step>
+              {{ step.label }}
+
+              @if (step.description; as description) {
+                <span etProgressStepDescription>{{ description }}</span>
+              }
+            </a>
           } @else {
-            <et-progress-step [state]="step.state">{{ step.label }}</et-progress-step>
+            <et-progress-step [state]="step.state">
+              {{ step.label }}
+
+              @if (step.description; as description) {
+                <span etProgressStepDescription>{{ description }}</span>
+              }
+            </et-progress-step>
           }
         }
       </et-progress-steps>
