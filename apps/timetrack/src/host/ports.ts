@@ -6,10 +6,12 @@ import { createTauriLedgerStore } from './ledger-store';
 import { createTauriProcessRunner } from './process-runner';
 import { createTauriSecretStore } from './secrets';
 import { createTauriTransport } from './transport';
+import { TauriWindowSource, createTauriWindowSource } from './window-source';
 
 export type HostPorts = TimetrackPorts & {
   events: TauriEventStore;
   agentLogs: AgentSessionLogReader;
+  windows: TauriWindowSource;
 };
 
 export const createHostPorts = (): HostPorts => ({
@@ -19,6 +21,7 @@ export const createHostPorts = (): HostPorts => ({
   ledger: createTauriLedgerStore(),
   processes: createTauriProcessRunner(),
   agentLogs: createTauriAgentSessionLogReader(),
+  windows: createTauriWindowSource(),
 });
 
 export const HOST_PORTS = new InjectionToken<HostPorts>('HOST_PORTS', {

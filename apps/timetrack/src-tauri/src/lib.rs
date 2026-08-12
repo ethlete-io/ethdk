@@ -7,6 +7,10 @@ mod process;
 mod secrets;
 mod state;
 mod store;
+mod tray;
+mod window;
+#[cfg(target_os = "linux")]
+mod window_wayland;
 
 use tauri::Manager;
 
@@ -24,8 +28,16 @@ pub fn run() {
                     .build()?,
             ));
 
+            let windows = window::WindowSource::new();
+
+            window::start(&windows);
+            app.manage(windows);
+
+            tray::attach(app.handle())?;
+
             Ok(())
         })
+        .on_window_event(tray::hide_instead_of_closing)
         .invoke_handler(tauri::generate_handler![
             http::http_request,
             logs::agent_log_lines,
@@ -43,6 +55,8 @@ pub fn run() {
             store::ledger_remove,
             store::ledger_upsert,
             store::set_compacted_through,
+            window::window_events,
+            window::window_source_status,
         ])
         .run(tauri::generate_context!())
         .expect("timetrack failed to start");

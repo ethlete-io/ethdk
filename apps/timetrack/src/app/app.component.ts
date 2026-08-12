@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   BANNER_IMPORTS,
@@ -8,7 +8,7 @@ import {
   SpinnerComponent,
 } from '@ethlete/components';
 import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
-import { AgentSessionCollector } from '../collectors';
+import { injectAgentSessionCollector, injectWindowCollector } from '../collectors';
 import { injectHostPorts } from '../host';
 
 type HostStatus =
@@ -18,8 +18,6 @@ type HostStatus =
 
 @Component({
   selector: 'ethlete-root',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, CARD_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent],
   template: `
     <main class="mx-auto flex max-w-[76rem] flex-col gap-8 p-10">
       <header class="flex flex-wrap items-baseline justify-between gap-4">
@@ -62,11 +60,11 @@ type HostStatus =
       <et-card variant="outlined">
         <h2 class="text-h3">Agent sessions</h2>
 
-        @if (collectorFailure(); as failure) {
+        @if (agentSessions.failure(); as failure) {
           <et-banner [description]="failure" type="error" heading="The last collection failed" />
         }
 
-        @if (lastRun(); as run) {
+        @if (agentSessions.lastRun(); as run) {
           <dl et-description-list>
             <dt>Last run</dt>
             <dd>{{ run.at.toLocaleTimeString() }}</dd>
@@ -75,37 +73,71 @@ type HostStatus =
             <dt>Unparsed lines</dt>
             <dd>{{ run.unparsedLines }}</dd>
           </dl>
-        } @else if (!isCollecting()) {
+        } @else if (!agentSessions.isCollecting()) {
           <p class="text-small text-et-surface-muted">No run has finished yet.</p>
         }
 
-        @if (isCollecting()) {
+        @if (agentSessions.isCollecting()) {
           <div class="flex items-center gap-3 text-et-surface-muted">
             <et-spinner />
             <span class="text-base">Reading the session logs…</span>
           </div>
         }
       </et-card>
+
+      <et-card variant="outlined">
+        <h2 class="text-h3">Windows and presence</h2>
+
+        @if (windowSourceDetail(); as detail) {
+          <et-banner [description]="detail" type="warning" heading="No window source" />
+        }
+
+        @if (windows.failure(); as failure) {
+          <et-banner [description]="failure" type="error" heading="The last drain failed" />
+        }
+
+        <dl et-description-list>
+          <dt>Source</dt>
+          <dd>{{ windowSourceKind() }}</dd>
+          @if (windows.lastRun(); as run) {
+            <dt>Last drain</dt>
+            <dd>{{ run.at.toLocaleTimeString() }}</dd>
+            <dt>Samples stored</dt>
+            <dd>{{ run.stored }}</dd>
+            <dt>Excluded by a rule</dt>
+            <dd>{{ run.excluded }}</dd>
+            <dt>Dropped</dt>
+            <dd>{{ run.dropped }}</dd>
+          }
+        </dl>
+      </et-card>
     </main>
   `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, CARD_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent],
 })
 export class AppComponent {
-  private readonly _ports = injectHostPorts();
-  private readonly _collector = inject(AgentSessionCollector);
-  private readonly _reload = signal(0);
-  private readonly _probe = computed(() => ({ reload: this._reload(), run: this._collector.lastRun() }));
+  private ports = injectHostPorts();
+  protected agentSessions = injectAgentSessionCollector();
+  protected windows = injectWindowCollector();
 
-  protected readonly lastRun = this._collector.lastRun;
-  protected readonly isCollecting = this._collector.isCollecting;
-  protected readonly collectorFailure = this._collector.failure;
+  private reload = signal(0);
+  private probe = computed(() => ({
+    reload: this.reload(),
+    run: this.agentSessions.lastRun(),
+    windows: this.windows.lastRun(),
+  }));
 
-  protected readonly status = toSignal(
-    toObservable(this._probe).pipe(
+  protected windowSourceKind = computed(() => this.windows.status()?.kind ?? 'checking…');
+  protected windowSourceDetail = computed(() => this.windows.status()?.detail ?? null);
+
+  protected status = toSignal(
+    toObservable(this.probe).pipe(
       switchMap(() =>
         combineLatest({
-          oldestEventAt: this._ports.events.oldestEventAt$(),
-          cursors: this._ports.events.cursors$().pipe(map((cursors) => cursors.length)),
-          compactedThrough: this._ports.events.compactedThrough$(),
+          oldestEventAt: this.ports.events.oldestEventAt$(),
+          cursors: this.ports.events.cursors$().pipe(map((cursors) => cursors.length)),
+          compactedThrough: this.ports.events.compactedThrough$(),
         }).pipe(
           map((health): HostStatus => ({ state: 'ready', ...health })),
           catchError((error: unknown) =>
@@ -117,31 +149,31 @@ export class AppComponent {
     { initialValue: { state: 'checking' } as HostStatus },
   );
 
-  protected readonly failure = computed(() => {
+  protected failure = computed(() => {
     const status = this.status();
 
     return status.state === 'failed' ? status.message : '';
   });
 
-  protected readonly oldestEventAt = computed(() => {
+  protected oldestEventAt = computed(() => {
     const status = this.status();
 
     return status.state === 'ready' ? (status.oldestEventAt?.toLocaleString() ?? null) : null;
   });
 
-  protected readonly compactedThrough = computed(() => {
+  protected compactedThrough = computed(() => {
     const status = this.status();
 
     return status.state === 'ready' ? (status.compactedThrough?.toLocaleString() ?? null) : null;
   });
 
-  protected readonly cursors = computed(() => {
+  protected cursors = computed(() => {
     const status = this.status();
 
     return status.state === 'ready' ? status.cursors : 0;
   });
 
   protected recheck() {
-    this._reload.update((count) => count + 1);
+    this.reload.update((count) => count + 1);
   }
 }

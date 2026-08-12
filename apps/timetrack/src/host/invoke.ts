@@ -12,5 +12,5 @@ const SHELL_MISSING =
  */
 export const invokeHost$ = <T>(command: string, args?: InvokeArgs): Observable<T> =>
   defer(() =>
-    '__TAURI_INTERNALS__' in window ? from(invoke<T>(command, args)) : throwError(() => new Error(SHELL_MISSING)),
+    '__TAURI_INTERNALS__' in globalThis ? from(invoke<T>(command, args)) : throwError(() => new Error(SHELL_MISSING)),
   );

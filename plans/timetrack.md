@@ -257,6 +257,27 @@ version deliberately dropped. So:
 Titles are the most sensitive thing collected. They are matched against the exclusion rules
 _before_ being written, and the sampled title of an excluded app is never persisted at all.
 
+**Built, on Wayland first** - `src-tauri/src/window.rs` holds the buffer and the two commands,
+`window_wayland.rs` the `zwlr_foreign_toplevel_manager_v1` + `ext_idle_notifier_v1` client on its own
+thread, and `src/collectors/window-collector.ts` drains it. What the plan did not say:
+
+- **`event_created_child!` goes _inside_ the `impl Dispatch` block.** Written beside it, it compiles
+  as an unused free function and the client panics on the first toplevel with "Missing
+  event_created_child specialization for event opcode 0". Nothing in the type system catches this.
+- **The samples cross into the webview rather than being written in Rust**, because the exclusion
+  rules are TypeScript and a denied title must never reach the database. That is the whole reason
+  there is a buffer at all.
+- **The buffer is acknowledged, not drained.** `window_events(afterSeq)` releases what was stored and
+  returns the rest, so a webview that reloaded between reading and storing repeats a sample instead
+  of losing one. Repeats are identical and collapse in `sessionize`; a gap reads as absence.
+- **`idled` fires a threshold _after_ input stopped**, so the sample is dated `now - threshold`.
+  Dating it `now` would bill every break its first five minutes.
+- **A panic on that thread is caught** so the status stops claiming `wayland-wlr`. The status is what
+  the UI shows the user; a dead thread behind an "it's running" banner is worse than no source.
+
+Verified on niri: focus samples arrive per switch and per title change, and the idle threshold is
+5 minutes - well under `maxUnobservedMs`, so a real break splits a block and thinking time does not.
+
 ### Local git repos (Rust, phase 1)
 
 **The reconcile pass is built** - `libs/timetrack/src/lib/git/`: `collectGitEvents$` runs two `git`
@@ -808,6 +829,13 @@ discover later:
   `tauri-plugin-single-instance`, so the user can bind it in their compositor config.
 - `tauri-plugin-global-shortcut` does not work on Wayland; there are no global grabs. Do not
   promise a global hotkey - the compositor binding plus the CLI is the answer.
+
+**Closing the window hides it** (`src-tauri/src/tray.rs`): the collectors are the point of the app, so
+the window is a view onto a daemon rather than the daemon itself. The tray menu carries `Show
+Timetrack` and `Quit`, and `Quit` has to stay there - it is the only way out once close no longer
+exits, and a desktop whose bar has no SNI host would otherwise leave the app running with nothing to
+bring it back. The `timetrack open` CLI above is still owed for exactly that case. The activity
+readout and the start/stop timer are not built yet.
 
 The day view is a timeline of blocks beside an editable worklog list. Each row shows issue,
 duration, description, confidence and an expandable evidence chain; weak rows are visually
