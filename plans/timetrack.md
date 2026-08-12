@@ -288,11 +288,13 @@ per-command `failures` list so one stale root cannot cost the day. The host half
 
 What building the host half settled:
 
-- **Discovery has to exist before configuration does.** There is no settings screen yet, so the host
-  walks the home directory to depth 3, skipping hidden and dependency directories and stopping at
-  each repository rather than descending into it - a repository inside a repository is a submodule or
-  a vendored copy whose commits already belong to the parent's history. `git_repos` takes an
-  overridable root, which is the seam settings will replace. This machine yields 4 roots.
+- **Discovery has to exist before configuration does.** With no root configured the host walks the
+  home directory to depth 3, skipping hidden and dependency directories and stopping at each
+  repository rather than descending into it - a repository inside a repository is a submodule or a
+  vendored copy whose commits already belong to the parent's history. This machine yields 4 roots.
+  `git_repos` now takes the settings' `gitScanRoots` (a list, each walked to depth 3, so naming
+  `~/dev` also reaches deeper than the home directory can), and the collector re-discovers as soon as
+  that list changes rather than at the next hourly walk.
 - **Watch the `.git` directory, not `HEAD`.** A checkout writes `HEAD.lock` and renames it over
   `HEAD`, so a watch on the file ends up pointing at the replaced inode. The directory sees the
   rename. `.git/refs` is watched recursively on top, and everything else in there - the index, the
@@ -982,8 +984,14 @@ JSON document per local calendar day, keyed by `localDayKey`). What building it 
   unattributed blocks sit behind them in neutral, because the time was still spent.
 - **Still owed here:** dragging a boundary (the headless grid has no drag - that lives in
   `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now), the sync
-  diff preview, the end-of-day nudge, the week view, and a persisted day target (the footer's 8h is a
-  constant until there is a settings screen).
+  diff preview, the end-of-day nudge and the week view. The day target is now a setting, and the
+  footer and the tray read the same one.
+- **A control inside `<et-form-field>` needs a projected `<et-label>` or the `aria-label` _input_.**
+  `[attr.aria-label]` sets the attribute on the wrapper, not on the native control the directive
+  renders, so the row still has no accessible name and `ET2201` is thrown in dev mode. The review
+  rows do exactly that and need fixing - and `et-duration-input` has no way out of it at all, because
+  it is the one control that does not re-expose `aria-label`/`aria-labelledby` from its host
+  directive.
 
 ## Storage, privacy, secrets
 
@@ -1038,7 +1046,8 @@ commit that later also lives on another branch is not a second piece of work.
   thrown - a typo in settings must not stop collection - which means the settings screen has to
   show them, or the user trusts a rule that is protecting nothing. The defaults are not composed
   in for you: `rules` is required, and the host decides whether the user's list replaces or extends
-  them.
+  them - `effectiveExclusionRules` is where that decision now lives, and `keepDefaultExclusionRules`
+  is the switch. **The editable list is built**; see the settings screen below.
 - **Hard pause.** One click stops all collection, visibly, until resumed. Not a filter - the
   collectors stop.
 - **Own OAuth clients.** Per provider, registered by the user, PKCE + loopback redirect on a
@@ -1061,6 +1070,28 @@ commit that later also lives on another branch is not a second piece of work.
     source has, and the newest one's instant. A count that is large and an instant that stops moving
     are distinguishable; "0 stored" is not. Exclusions and dropped samples stay session-scoped,
     because nothing stores them by design.
+- **The settings themselves.** **Built** - `libs/timetrack/src/lib/settings/` (the model, the tolerant
+  read, `effectiveExclusionRules`, the credential readers) and `src/app/settings/` (the screen), over
+  schema v5's single-row `app_setting` table and `TimetrackSettingsStore`. It carries the day target,
+  the Jira instance, the deny list and the git scan roots. What building it settled:
+  - **A credential is split the way it is stored.** The instance and the account email are in the
+    document, because a screen has to show which Jira it will talk to; the token is a keychain entry.
+    So `TimetrackSecretStore` gained `has$` - the field is write-only and starts empty however long a
+    token has been configured, and the badge is answered without the value ever crossing back.
+  - **A settings document has to survive its own past.** `parseTimetrackSettings` falls back per field
+    and clamps the day target rather than throwing: a document an older version wrote, or one a
+    hand-edit broke, has to leave the app usable, and the fields it does understand still apply.
+  - **An uncompilable rule survives the read** for the same reason `applyExclusionRules` reports it -
+    dropping it silently is what makes a user trust a rule that protects nothing.
+  - **A collector must not run before the settings arrive.** Both the window and the agent-session
+    collectors wait on `ready$` (the first read, failure included) before draining. Otherwise the first
+    batch is filtered with the defaults alone and a title the user's own rule denies reaches the
+    database because the document was still in flight - and that is not a failure a later delete fixes.
+  - **Agent-session titles were bypassing exclusion entirely.** A session is named after the work, so a
+    title pattern has to apply to it exactly as it does to a window. The cursors still move for a
+    denied line: it was read, and re-reading it would only deny it again.
+  - Still owed here: the hard pause, the OAuth client registration, and the three config values that
+    need a real instance - `subjectField`, per-project parenting and the marker scheme.
 
 ## Phasing
 

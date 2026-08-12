@@ -11,6 +11,7 @@ import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../collectors';
 import { injectHostPorts } from '../host';
 import { DayReviewComponent } from './day-review';
+import { SettingsComponent } from './settings';
 import { SourcesComponent } from './sources';
 import { TimerControlComponent } from './timer-control.component';
 import { injectTrayReadout } from './tray-readout';
@@ -77,6 +78,8 @@ type HostStatus =
       </et-card>
 
       <ethlete-sources />
+
+      <ethlete-settings />
     </main>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -86,6 +89,7 @@ type HostStatus =
     CARD_IMPORTS,
     DayReviewComponent,
     DESCRIPTION_LIST_IMPORTS,
+    SettingsComponent,
     SourcesComponent,
     SpinnerComponent,
     TimerControlComponent,

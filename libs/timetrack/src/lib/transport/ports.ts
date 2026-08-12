@@ -1,5 +1,11 @@
 import { Observable } from 'rxjs';
-import { TimetrackEventStore, TimetrackLedgerStore, TimetrackReviewStore, TimetrackTimerStore } from '../store/ports';
+import {
+  TimetrackEventStore,
+  TimetrackLedgerStore,
+  TimetrackReviewStore,
+  TimetrackSettingsStore,
+  TimetrackTimerStore,
+} from '../store/ports';
 
 export type TimetrackRequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -25,9 +31,16 @@ export type TimetrackTransport = {
   request$<T>(req: TimetrackRequest): Observable<TimetrackResponse<T>>;
 };
 
+/**
+ * The OS keychain. `has$` exists so a settings screen can say whether a provider is configured without
+ * pulling the secret into the window to look at it.
+ */
 export type TimetrackSecretStore = {
   read$(key: string): Observable<string | null>;
   write$(key: string, value: string): Observable<void>;
+  /** Whether a non-empty secret is stored under `key`. */
+  has$(key: string): Observable<boolean>;
+  delete$(key: string): Observable<void>;
 };
 
 export type ProcessSpec = {
@@ -55,6 +68,7 @@ export type TimetrackPorts = {
   events: TimetrackEventStore;
   ledger: TimetrackLedgerStore;
   review: TimetrackReviewStore;
+  settings: TimetrackSettingsStore;
   timers: TimetrackTimerStore;
   processes: TimetrackProcessRunner;
 };

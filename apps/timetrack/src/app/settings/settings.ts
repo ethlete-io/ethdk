@@ -1,0 +1,182 @@
+import { DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { defineRootProvider, toInjectFn } from '@ethlete/core';
+import {
+  DEFAULT_TIMETRACK_SETTINGS,
+  TIMETRACK_SECRET_KEYS,
+  TimetrackCredentialStatus,
+  TimetrackExclusionRule,
+  TimetrackJiraSettings,
+  TimetrackSettings,
+  clampDayTargetMs,
+  timetrackCredentialStatus,
+} from '@ethlete/timetrack';
+import {
+  Subject,
+  catchError,
+  combineLatest,
+  concatMap,
+  debounceTime,
+  filter,
+  map,
+  of,
+  switchMap,
+  take,
+  tap,
+} from 'rxjs';
+import { injectHostPorts } from '../../host';
+
+/** How long an edit settles before the settings document is written. */
+const SAVE_DEBOUNCE_MS = 400;
+
+const NOTHING_HELD: TimetrackCredentialStatus = { jira: false, tempo: false };
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+const sameRule = (a: TimetrackExclusionRule, b: TimetrackExclusionRule) =>
+  a.kind === 'app-id' && b.kind === 'app-id'
+    ? a.appId.toLowerCase() === b.appId.toLowerCase()
+    : a.kind === 'title-pattern' && b.kind === 'title-pattern' && a.pattern === b.pattern;
+
+/**
+ * What the user configured, and the only place the app writes it.
+ *
+ * Nothing here holds a token. A token is written straight to the keychain and only ever asked about —
+ * `credentials` says which providers are configured, and there is no path back into the window for the
+ * value itself.
+ */
+const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
+  const ports = injectHostPorts();
+  const destroyRef = inject(DestroyRef);
+
+  const local = signal<TimetrackSettings | null>(null);
+  const secretRevision = signal(0);
+  const failure = signal<string | null>(null);
+  const saves$ = new Subject<TimetrackSettings>();
+
+  const loaded = toSignal(
+    ports.settings.read$().pipe(
+      map((stored) => stored ?? DEFAULT_TIMETRACK_SETTINGS),
+      catchError((error: unknown) => {
+        failure.set(messageOf(error));
+
+        return of(DEFAULT_TIMETRACK_SETTINGS);
+      }),
+    ),
+    { initialValue: null },
+  );
+
+  const settings = computed(() => local() ?? loaded() ?? DEFAULT_TIMETRACK_SETTINGS);
+  const isLoading = computed(() => !loaded());
+
+  const held = toSignal(
+    toObservable(secretRevision).pipe(
+      switchMap(() =>
+        combineLatest({
+          jira: ports.secrets.has$(TIMETRACK_SECRET_KEYS.jiraToken),
+          tempo: ports.secrets.has$(TIMETRACK_SECRET_KEYS.tempoToken),
+        }).pipe(
+          catchError((error: unknown) => {
+            failure.set(messageOf(error));
+
+            return of(NOTHING_HELD);
+          }),
+        ),
+      ),
+    ),
+    { initialValue: NOTHING_HELD },
+  );
+
+  saves$
+    .pipe(
+      debounceTime(SAVE_DEBOUNCE_MS),
+      concatMap((next) =>
+        ports.settings.save$(next).pipe(
+          catchError((error: unknown) => {
+            failure.set(messageOf(error));
+
+            return of(undefined);
+          }),
+        ),
+      ),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  const apply = (next: TimetrackSettings) => {
+    local.set(next);
+    saves$.next(next);
+  };
+
+  const patch = (change: Partial<TimetrackSettings>) => apply({ ...settings(), ...change });
+
+  /** A `null` value removes the entry, which is how a provider is disconnected. */
+  const secretWrites$ = new Subject<{ key: string; value: string | null }>();
+
+  secretWrites$
+    .pipe(
+      concatMap(({ key, value }) =>
+        (value === null ? ports.secrets.delete$(key) : ports.secrets.write$(key, value)).pipe(
+          catchError((error: unknown) => {
+            failure.set(messageOf(error));
+
+            return of(undefined);
+          }),
+        ),
+      ),
+      tap(() => secretRevision.update((count) => count + 1)),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  return {
+    settings,
+    isLoading,
+    failure: failure.asReadonly(),
+    credentials: computed(() => timetrackCredentialStatus({ held: held(), settings: settings() })),
+
+    /**
+     * Emits the settings once they have been read, so a collector never runs with the wrong rules while
+     * the document is still on its way.
+     */
+    ready$: toObservable(computed(() => (isLoading() ? null : settings()))).pipe(
+      filter((current): current is TimetrackSettings => !!current),
+      take(1),
+    ),
+
+    setDayTargetMs: (dayTargetMs: number) => patch({ dayTargetMs: clampDayTargetMs(dayTargetMs) }),
+    setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
+    setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
+
+    addExclusionRule: (rule: TimetrackExclusionRule) => {
+      const rules = settings().exclusionRules;
+
+      if (rules.some((existing) => sameRule(existing, rule))) return;
+
+      patch({ exclusionRules: [...rules, rule] });
+    },
+
+    removeExclusionRule: (rule: TimetrackExclusionRule) =>
+      patch({ exclusionRules: settings().exclusionRules.filter((existing) => !sameRule(existing, rule)) }),
+
+    addGitScanRoot: (root: string) => {
+      const trimmed = root.trim();
+      const roots = settings().gitScanRoots;
+
+      if (!trimmed || roots.includes(trimmed)) return;
+
+      patch({ gitScanRoots: [...roots, trimmed] });
+    },
+
+    removeGitScanRoot: (root: string) =>
+      patch({ gitScanRoots: settings().gitScanRoots.filter((existing) => existing !== root) }),
+
+    saveJiraToken: (token: string) => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: token.trim() }),
+    saveTempoToken: (token: string) =>
+      secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.tempoToken, value: token.trim() }),
+    forgetJiraToken: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: null }),
+    forgetTempoToken: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.tempoToken, value: null }),
+  };
+});
+
+export const injectTimetrackSettings = /* @__PURE__ */ toInjectFn(SETTINGS_DEF);

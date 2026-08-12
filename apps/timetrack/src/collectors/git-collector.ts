@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { GitRepoScan, GitScanFailure, collectGitEvents$ } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, from, map, of, tap, timer, toArray } from 'rxjs';
+import { injectTimetrackSettings } from '../app/settings/settings';
 import { GitRepoDiscovery, injectHostPorts } from '../host';
 
 /**
@@ -53,6 +54,7 @@ type Repo = { path: string; author?: string };
  */
 const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
+  const settings = injectTimetrackSettings();
   const lastRun = signal<GitCollectorRun | null>(null);
   const failure = signal<string | null>(null);
   const discovery = signal<GitRepoDiscovery | null>(null);
@@ -60,6 +62,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   let repos: Repo[] = [];
   let afterSeq = 0;
   let discoveredAt = 0;
+  let discoveredRoots: string | null = null;
   let reconciledAt = 0;
   let scannedOnce = false;
 
@@ -74,7 +77,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   const discover$ = (): Observable<Repo[]> =>
-    ports.git.repos$().pipe(
+    ports.git.repos$(settings.settings().gitScanRoots).pipe(
       tap((found) => discovery.set(found)),
       concatMap((found) => from(found.repos).pipe(concatMap(author$), toArray())),
       tap((found) => (repos = found)),
@@ -112,26 +115,37 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       concatMap((changes) => (changes.repos.length ? scan$(changes.repos) : EMPTY)),
     );
 
+  /**
+   * Nothing is discovered before the settings have been read, and a change to the roots discovers again
+   * rather than waiting for the hourly walk — a directory somebody just named has to be scanned now.
+   */
   const collect$ = (): Observable<unknown> =>
-    defer(() => {
-      const now = Date.now();
-      const discovering = now - discoveredAt >= GIT_DISCOVER_INTERVAL_MS;
-      const reconciling = now - reconciledAt >= GIT_RECONCILE_INTERVAL_MS;
+    defer(() =>
+      settings.ready$.pipe(
+        concatMap(() => {
+          const now = Date.now();
+          const roots = settings.settings().gitScanRoots.join('\n');
+          const discovering = roots !== discoveredRoots || now - discoveredAt >= GIT_DISCOVER_INTERVAL_MS;
+          const reconciling = now - reconciledAt >= GIT_RECONCILE_INTERVAL_MS;
 
-      if (discovering) discoveredAt = now;
-      if (reconciling) reconciledAt = now;
+          if (discovering) {
+            discoveredAt = now;
+            discoveredRoots = roots;
+          }
 
-      const ready$ = discovering ? discover$() : of(repos);
+          if (reconciling) reconciledAt = now;
 
-      return ready$.pipe(
-        concatMap(() => (reconciling ? scan$(repos.map((repo) => repo.path)) : moved$())),
+          const discovered$ = discovering ? discover$() : of(repos);
+
+          return discovered$.pipe(concatMap(() => (reconciling ? scan$(repos.map((repo) => repo.path)) : moved$())));
+        }),
         catchError((error: unknown) => {
           failure.set(error instanceof Error ? error.message : String(error));
 
           return EMPTY;
         }),
-      );
-    });
+      ),
+    );
 
   timer(0, GIT_WATCH_POLL_INTERVAL_MS)
     .pipe(

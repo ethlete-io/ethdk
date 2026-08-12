@@ -70,6 +70,16 @@ CREATE INDEX timer_run_started_at_ms ON timer_run (started_at_ms);
 CREATE UNIQUE INDEX timer_run_open ON timer_run (stopped_at_ms IS NULL) WHERE stopped_at_ms IS NULL;
 ";
 
+/// What the user configured, as one JSON document — the same arrangement as `day_review`, and for the
+/// same reason: the shape belongs to the core, which reads and writes the whole thing. No secret is in
+/// it; a token lives in the OS keychain.
+const SCHEMA_V5: &str = "
+CREATE TABLE app_setting (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  document TEXT NOT NULL
+);
+";
+
 /// Opens the encrypted database at `path`, creating and migrating it on first run.
 ///
 /// `key` is the 64 hex chars from the keychain. `PRAGMA key` has to be the first statement on the
@@ -120,6 +130,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 4)?;
     }
 
+    if version < 5 {
+        connection.execute_batch(SCHEMA_V5)?;
+        connection.pragma_update(None, "user_version", 5)?;
+    }
+
     Ok(())
 }
 
@@ -147,6 +162,10 @@ mod tests {
             connection.execute_batch(SCHEMA_V3).unwrap();
         }
 
+        if version >= 4 {
+            connection.execute_batch(SCHEMA_V4).unwrap();
+        }
+
         connection.pragma_update(None, "user_version", version).unwrap();
         migrate(&connection).unwrap();
 
@@ -167,9 +186,21 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            4
+            5
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
+    }
+
+    #[test]
+    fn migrates_a_database_that_predates_the_settings() {
+        let connection = migrated_from(4);
+
+        connection
+            .execute("INSERT INTO app_setting (id, document) VALUES (1, '{}')", [])
+            .unwrap();
+        assert!(connection
+            .execute("INSERT INTO app_setting (id, document) VALUES (2, '{}')", [])
+            .is_err());
     }
 
     #[test]

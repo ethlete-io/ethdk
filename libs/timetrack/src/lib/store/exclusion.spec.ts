@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
-import { DEFAULT_EXCLUSION_RULES, applyExclusionRules } from './exclusion';
+import { DEFAULT_EXCLUSION_RULES, applyExclusionRules, exclusionRuleError } from './exclusion';
 
 const window = (appId: string, title: string): CollectedEvent => ({
   at: new Date(2026, 7, 11, 9, 30),
@@ -115,6 +115,18 @@ describe('applyExclusionRules', () => {
 
     expect(result.kept).toEqual([]);
     expect(result.invalidRules).toHaveLength(1);
+  });
+});
+
+describe('exclusionRuleError', () => {
+  it('accepts a rule that can match', () => {
+    expect(exclusionRuleError({ kind: 'app-id', appId: 'firefox' })).toBeNull();
+    expect(exclusionRuleError({ kind: 'title-pattern', pattern: 'online banking' })).toBeNull();
+  });
+
+  it('rejects an empty app id and an uncompilable pattern', () => {
+    expect(exclusionRuleError({ kind: 'app-id', appId: '   ' })).toBeTruthy();
+    expect(exclusionRuleError({ kind: 'title-pattern', pattern: '(' })).toBeTruthy();
   });
 });
 

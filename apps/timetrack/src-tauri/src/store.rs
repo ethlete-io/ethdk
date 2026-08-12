@@ -301,6 +301,36 @@ pub async fn day_review_edits(db: State<'_, Db>, day: String) -> TimetrackResult
     .await
 }
 
+/// The settings document, or `None` while nothing has been configured. Passed through untouched: what
+/// a setting means belongs to the core, and the host only has to keep it.
+#[tauri::command]
+pub async fn app_settings(db: State<'_, Db>) -> TimetrackResult<Option<serde_json::Value>> {
+    db.run(move |connection| {
+        let stored = connection
+            .query_row("SELECT document FROM app_setting WHERE id = 1", [], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?;
+
+        Ok(stored.and_then(|document| serde_json::from_str(&document).ok()))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn set_app_settings(db: State<'_, Db>, settings: serde_json::Value) -> TimetrackResult<()> {
+    db.run(move |connection| {
+        connection.execute(
+            "INSERT INTO app_setting (id, document) VALUES (1, ?1)
+             ON CONFLICT (id) DO UPDATE SET document = ?1",
+            params![serde_json::to_string(&settings)?],
+        )?;
+
+        Ok(())
+    })
+    .await
+}
+
 #[tauri::command]
 pub async fn set_day_review_edits(
     db: State<'_, Db>,

@@ -23,12 +23,15 @@ export type GitRepoChanges = {
  * latency, because the reflog and the commit log are durable and the next scan reads them anyway.
  */
 export type TauriGitSource = {
-  /** Discovers the repositories and re-arms the watch over them. */
-  repos$(): Observable<GitRepoDiscovery>;
+  /**
+   * Discovers the repositories under `roots` and re-arms the watch over them. An empty list leaves the
+   * host to decide, which is the home directory.
+   */
+  repos$(roots: string[]): Observable<GitRepoDiscovery>;
   changes$(afterSeq: number): Observable<GitRepoChanges>;
 };
 
 export const createTauriGitSource = (): TauriGitSource => ({
-  repos$: () => invokeHost$<GitRepoDiscovery>('git_repos'),
+  repos$: (roots) => invokeHost$<GitRepoDiscovery>('git_repos', { roots }),
   changes$: (afterSeq) => invokeHost$<GitRepoChanges>('git_changes', { afterSeq }),
 });

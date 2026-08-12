@@ -211,30 +211,43 @@ impl Default for GitWatcher {
     }
 }
 
+/// Walks every root, reporting each repository once however many roots reach it. `MAX_DEPTH` counts
+/// from each root, so naming `~/dev` finds work the home directory alone is too shallow to reach.
+fn discover_all(roots: &[PathBuf]) -> Vec<PathBuf> {
+    let mut found = Vec::new();
+
+    for root in roots {
+        discover(root, 0, &mut found);
+    }
+
+    found.sort();
+    found.dedup();
+
+    found
+}
+
 /// Finds the repositories to scan and arms the watch over them.
 ///
-/// Discovery is what a settings screen will one day replace, so the root is overridable: until then
-/// the home directory is the only honest guess at where a person keeps their work.
+/// `roots` is what settings configures. An empty list falls back to the home directory, which is the
+/// only honest guess at where a person keeps their work when nobody has said.
 #[tauri::command]
 pub async fn git_repos(
     app: tauri::AppHandle,
     watcher: State<'_, GitWatcher>,
-    root: Option<String>,
+    roots: Option<Vec<String>>,
 ) -> TimetrackResult<GitRepos> {
-    let root = match root {
-        Some(root) => PathBuf::from(root),
-        None => app.path().home_dir()?,
+    let roots: Vec<PathBuf> = match roots {
+        Some(roots) if !roots.is_empty() => roots.iter().map(PathBuf::from).collect(),
+        _ => vec![app.path().home_dir()?],
     };
-    let found = tauri::async_runtime::spawn_blocking(move || {
-        let mut found = Vec::new();
-
-        discover(&root, 0, &mut found);
-        found.sort();
-
-        found
-    })
-    .await
-    .map_err(|error| TimetrackError::Rejected(error.to_string()))?;
+    let walked = roots
+        .iter()
+        .map(|root| root.to_string_lossy().into_owned())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let found = tauri::async_runtime::spawn_blocking(move || discover_all(&roots))
+        .await
+        .map_err(|error| TimetrackError::Rejected(error.to_string()))?;
 
     let detail = watcher.watch(&found);
 
@@ -242,7 +255,7 @@ pub async fn git_repos(
         repos: found.iter().map(|repo| repo.to_string_lossy().into_owned()).collect(),
         kind: if found.is_empty() { "none" } else { "watching" }.to_string(),
         detail: if found.is_empty() {
-            Some("no git repository was found under the home directory".to_string())
+            Some(format!("no git repository was found under {walked}"))
         } else {
             detail
         },
@@ -277,12 +290,7 @@ mod tests {
     }
 
     fn found_in(root: &Path) -> Vec<String> {
-        let mut found = Vec::new();
-
-        discover(root, 0, &mut found);
-        found.sort();
-
-        found
+        discover_all(&[root.to_path_buf()])
             .iter()
             .map(|path| path.strip_prefix(root).unwrap().to_string_lossy().into_owned())
             .collect()
@@ -320,6 +328,18 @@ mod tests {
         repo(&root, "sdk/keep");
 
         assert_eq!(found_in(&root), ["sdk/keep"]);
+    }
+
+    #[test]
+    fn reports_a_repository_two_roots_both_reach_once() {
+        let root = temp_root("roots");
+
+        repo(&root, "dev/frontend");
+        repo(&root, "work/api");
+
+        let found = discover_all(&[root.join("dev"), root.join("work"), root.clone()]);
+
+        assert_eq!(found, [root.join("dev/frontend"), root.join("work/api")]);
     }
 
     #[test]

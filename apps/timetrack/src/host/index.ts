@@ -8,6 +8,7 @@ export * from './ports';
 export * from './process-runner';
 export * from './review-store';
 export * from './secrets';
+export * from './settings-store';
 export * from './timer-store';
 export * from './transport';
 export * from './tray';

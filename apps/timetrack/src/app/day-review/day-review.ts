@@ -39,9 +39,8 @@ import {
 } from 'rxjs';
 import { injectAgentSessionCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
+import { injectTimetrackSettings } from '../settings/settings';
 import { injectTimer } from '../timer';
-
-export const DEFAULT_DAY_TARGET_MS = 8 * 60 * 60_000;
 
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
@@ -86,9 +85,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const windows = injectWindowCollector();
   const agentSessions = injectAgentSessionCollector();
   const timers = injectTimer();
+  const settings = injectTimetrackSettings();
 
   const day = signal(localDayKey(new Date()));
-  const targetMs = signal(DEFAULT_DAY_TARGET_MS);
+  const targetMs = computed(() => settings.settings().dayTargetMs);
   const local = signal<Record<string, DayReviewEdits>>({});
   const expanded = signal<ReadonlySet<string>>(new Set());
   const selection = signal<readonly string[]>([]);

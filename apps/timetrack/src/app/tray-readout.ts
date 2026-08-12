@@ -17,8 +17,8 @@ import {
 import { EMPTY, Observable, catchError, combineLatest, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../collectors';
 import { TrayReadout, injectHostPorts } from '../host';
-import { DEFAULT_DAY_TARGET_MS } from './day-review/day-review';
 import { formatBlockLabel, formatClockTime } from './day-review/format';
+import { injectTimetrackSettings } from './settings/settings';
 import { injectTimer } from './timer';
 
 /**
@@ -45,8 +45,9 @@ const formatActivity = (activity: CurrentActivity) => {
  * day reads as "the collectors are broken" when what happened is that six hours of real work matched
  * no ticket.
  */
-const formatTotal = (check: DayCheck) => {
-  const against = `${formatDurationMs(check.proposedMs)} of a ${formatDurationMs(DEFAULT_DAY_TARGET_MS)} target`;
+const formatTotal = (options: { check: DayCheck; targetMs: number }) => {
+  const { check } = options;
+  const against = `${formatDurationMs(check.proposedMs)} of a ${formatDurationMs(options.targetMs)} target`;
 
   return check.unattributedMs > 0 ? `${against}, ${formatDurationMs(check.unattributedMs)} unattributed` : against;
 };
@@ -67,6 +68,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const git = injectGitCollector();
   const agentSessions = injectAgentSessionCollector();
   const timers = injectTimer();
+  const settings = injectTimetrackSettings();
   const readout = signal<TrayReadout | null>(null);
 
   const collected = computed(() => ({
@@ -75,11 +77,13 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     sessions: agentSessions.lastRun(),
     timer: timers.revision(),
     elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
+    targetMs: settings.settings().dayTargetMs,
   }));
 
   const read$ = (): Observable<TrayReadout> => {
     const key = localDayKey(new Date());
     const { from, to } = localDayRange(key);
+    const targetMs = settings.settings().dayTargetMs;
 
     return combineLatest({
       events: ports.events.eventsBetween$(from, to),
@@ -92,12 +96,12 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const day = reviewDay({
           correlation,
           edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
-          check: { targetMs: DEFAULT_DAY_TARGET_MS },
+          check: { targetMs },
         });
 
         return {
           activity: formatActivity(currentActivity({ events, blocks: correlation.blocks })),
-          total: formatTotal(day.check),
+          total: formatTotal({ check: day.check, targetMs }),
           timer: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
         };
       }),

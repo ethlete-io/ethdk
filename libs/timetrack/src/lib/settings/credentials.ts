@@ -1,0 +1,63 @@
+import { Observable, map } from 'rxjs';
+import { JiraCredentials } from '../jira/client';
+import { TempoCredentials } from '../tempo/client';
+import { TimetrackSecretStore } from '../transport/ports';
+import { TimetrackSettings } from './model';
+
+/** The keychain accounts the two API tokens live under. Nothing else in the app names them. */
+export const TIMETRACK_SECRET_KEYS = {
+  jiraToken: 'jira-token',
+  tempoToken: 'tempo-token',
+} as const;
+
+/** Which providers are ready to be called, answered without a token being read back into the window. */
+export type TimetrackCredentialStatus = {
+  jira: boolean;
+  tempo: boolean;
+};
+
+/**
+ * Whether each provider is configured. `held` is what the keychain answered for the two token accounts,
+ * passed in rather than read here so an unrelated settings change does not re-ask the keychain.
+ *
+ * Jira takes all three of host, email and token, which is why holding its token is not enough.
+ */
+export const timetrackCredentialStatus = (options: {
+  held: TimetrackCredentialStatus;
+  settings: TimetrackSettings;
+}): TimetrackCredentialStatus => ({
+  jira: options.held.jira && !!options.settings.jira.host && !!options.settings.jira.email,
+  tempo: options.held.tempo,
+});
+
+/**
+ * The Jira credentials, or `null` when the instance is not configured yet: Basic auth needs all three
+ * of host, email and token, and two of them are settings while the third is a keychain entry.
+ *
+ * A caller treats `null` as not connected rather than as a failure. A day still reviews without Jira —
+ * it resolves no issue ids, which is what stops a sync, not what stops the reconstruction.
+ */
+export const readJiraCredentials$ = (options: {
+  secrets: TimetrackSecretStore;
+  settings: TimetrackSettings;
+}): Observable<JiraCredentials | null> =>
+  options.secrets.read$(TIMETRACK_SECRET_KEYS.jiraToken).pipe(
+    map((stored) => {
+      const token = stored?.trim() ?? '';
+      const { host, email } = options.settings.jira;
+
+      return token && host && email ? { host, email, token } : null;
+    }),
+  );
+
+/** The Tempo bearer token, or `null` when none is stored. A separate secret from Jira's, by design. */
+export const readTempoCredentials$ = (options: {
+  secrets: TimetrackSecretStore;
+}): Observable<TempoCredentials | null> =>
+  options.secrets.read$(TIMETRACK_SECRET_KEYS.tempoToken).pipe(
+    map((stored) => {
+      const token = stored?.trim() ?? '';
+
+      return token ? { token } : null;
+    }),
+  );

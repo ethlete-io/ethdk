@@ -1,12 +1,13 @@
-import { CollectedEventSource } from '@ethlete/timetrack';
+import { CollectedEventSource, TimetrackCredentialStatus } from '@ethlete/timetrack';
 
 /**
  * Whether a source is producing evidence right now.
  *
- * `collecting` is the only state that puts anything in the database. `configured` means the code is
- * there and waiting on credentials the user has not given yet, and `planned` means it is not built.
+ * `collecting` is the only state that puts anything in the database. `ready` has its credentials and
+ * answers when something asks, `configured` means the code is there and waiting on credentials the user
+ * has not given yet, and `planned` means it is not built.
  */
-export type EvidenceSourceState = 'collecting' | 'configured' | 'planned';
+export type EvidenceSourceState = 'collecting' | 'ready' | 'configured' | 'planned';
 
 export type EvidenceSource = {
   id: string;
@@ -19,7 +20,12 @@ export type EvidenceSource = {
    */
   stores: string;
   state: EvidenceSourceState;
-  /** What the source is still waiting on. Only for the states that are not collecting. */
+  /**
+   * The credential this source cannot be read without. A row that names one takes its state from the
+   * keychain instead of from `state`, so storing a token flips the row rather than needing an edit here.
+   */
+  credential?: keyof TimetrackCredentialStatus;
+  /** What the source is still waiting on. Not shown once it has everything it needs. */
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
   collector?: 'window' | 'git' | 'agent-session';
@@ -86,7 +92,8 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     reads: 'The issues behind the keys the grammar found, read-only.',
     stores: 'Nothing. Issue summaries are fetched to label a row and are not persisted as evidence.',
     state: 'configured',
-    detail: 'Waiting on credentials.',
+    credential: 'jira',
+    detail: 'Waiting on a host, an account email and an API token in Settings.',
   },
   {
     id: 'tempo',
@@ -94,7 +101,8 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     reads: "The worklogs already on your account, so a day's sync knows what it owns and what is somebody else's.",
     stores: 'The worklogs this app created, so it never writes the same time twice.',
     state: 'configured',
-    detail: 'Waiting on credentials.',
+    credential: 'tempo',
+    detail: 'Waiting on an API token in Settings.',
   },
   {
     id: 'gitlab',

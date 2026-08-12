@@ -5,6 +5,7 @@ export * from './lib/google-calendar';
 export * from './lib/jira';
 export * from './lib/model';
 export * from './lib/review';
+export * from './lib/settings';
 export * from './lib/store';
 export * from './lib/tempo';
 export * from './lib/transport';

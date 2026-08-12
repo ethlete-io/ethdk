@@ -3,6 +3,7 @@ import { CollectedEvent } from '../model/event';
 import { SyncedWorklog } from '../model/proposal';
 import { TimerRun } from '../model/timer';
 import { DayReviewEdits } from '../review/model';
+import { TimetrackSettings } from '../settings/model';
 
 /**
  * Raw observations, append-only. The host owns the encrypted database; the core only ever asks for a
@@ -37,6 +38,18 @@ export type TimetrackReviewStore = {
   editsFor$(day: string): Observable<DayReviewEdits | null>;
   save$(day: string, edits: DayReviewEdits): Observable<void>;
   clear$(day: string): Observable<void>;
+};
+
+/**
+ * What the user configured, as one document read and written whole. `null` means nothing has been
+ * configured yet, which is not the same as the defaults having been chosen.
+ *
+ * No secret is in here. A token lives in the OS keychain behind `TimetrackSecretStore`; this document
+ * holds only what may be read back into the window and shown.
+ */
+export type TimetrackSettingsStore = {
+  read$(): Observable<TimetrackSettings | null>;
+  save$(settings: TimetrackSettings): Observable<void>;
 };
 
 /**

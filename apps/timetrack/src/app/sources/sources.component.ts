@@ -4,17 +4,20 @@ import { BADGE_IMPORTS, BANNER_IMPORTS, BadgeVariant, CARD_IMPORTS } from '@ethl
 import { catchError, of, switchMap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { SourceTally, injectHostPorts } from '../../host';
-import { formatGitFailures, formatGitScan, formatTally, formatWindowSource } from './format';
+import { injectTimetrackSettings } from '../settings/settings';
+import { formatAgentSessions, formatGitFailures, formatGitScan, formatTally, formatWindowSource } from './format';
 import { EVIDENCE_SOURCES, EvidenceSource, EvidenceSourceState } from './inventory';
 
 const STATE_LABEL: Record<EvidenceSourceState, string> = {
   collecting: 'collecting',
+  ready: 'ready',
   configured: 'not set up',
   planned: 'planned',
 };
 
 const STATE_COLOR: Record<EvidenceSourceState, string> = {
   collecting: 'success',
+  ready: 'brand',
   configured: 'warning',
   planned: 'neutral',
 };
@@ -22,12 +25,15 @@ const STATE_COLOR: Record<EvidenceSourceState, string> = {
 /** Outlined for what is not built: a tonal neutral badge is too faint to read as a label at all. */
 const STATE_VARIANT: Record<EvidenceSourceState, BadgeVariant> = {
   collecting: 'tonal',
+  ready: 'tonal',
   configured: 'tonal',
   planned: 'outline',
 };
 
 type SourceRow = {
   source: EvidenceSource;
+  /** What the source is still waiting on, or `null` once it is not waiting on anything. */
+  detail: string | null;
   label: string;
   color: string;
   variant: BadgeVariant;
@@ -78,8 +84,8 @@ type SourceRow = {
               <p class="text-small text-et-surface-subtle">{{ row.run }}</p>
             }
 
-            @if (row.source.detail) {
-              <p class="text-small text-et-surface-subtle">{{ row.source.detail }}</p>
+            @if (row.detail) {
+              <p class="text-small text-et-surface-subtle">{{ row.detail }}</p>
             }
 
             @if (row.warning) {
@@ -102,6 +108,7 @@ export class SourcesComponent {
   private windows = injectWindowCollector();
   private agentSessions = injectAgentSessionCollector();
   private git = injectGitCollector();
+  private settings = injectTimetrackSettings();
 
   /** Re-counted whenever a collector reports a run, so the tally moves as evidence arrives. */
   private collected = computed(() => ({
@@ -118,17 +125,29 @@ export class SourcesComponent {
   );
 
   protected rows = computed<SourceRow[]>(() =>
-    EVIDENCE_SOURCES.map((source) => ({
-      source,
-      label: STATE_LABEL[source.state],
-      color: STATE_COLOR[source.state],
-      variant: STATE_VARIANT[source.state],
-      stored: this.storedOf(source),
-      run: this.runOf(source),
-      warning: this.warningOf(source),
-      failure: this.failureOf(source),
-    })),
+    EVIDENCE_SOURCES.map((source) => {
+      const state = this.stateOf(source);
+
+      return {
+        source,
+        detail: state === 'ready' ? null : (source.detail ?? null),
+        label: STATE_LABEL[state],
+        color: STATE_COLOR[state],
+        variant: STATE_VARIANT[state],
+        stored: this.storedOf(source),
+        run: this.runOf(source),
+        warning: this.warningOf(source),
+        failure: this.failureOf(source),
+      };
+    }),
   );
+
+  /** A source that names a credential reads its state from the keychain, not from the inventory. */
+  private stateOf(source: EvidenceSource): EvidenceSourceState {
+    if (!source.credential) return source.state;
+
+    return this.settings.credentials()[source.credential] ? 'ready' : 'configured';
+  }
 
   private storedOf(source: EvidenceSource) {
     if (source.state !== 'collecting' || !source.eventSource) return null;
@@ -140,6 +159,8 @@ export class SourcesComponent {
     switch (source.collector) {
       case 'window':
         return formatWindowSource({ status: this.windows.status(), totals: this.windows.totals() }) || null;
+      case 'agent-session':
+        return formatAgentSessions(this.agentSessions.totals()) || null;
       case 'git':
         return formatGitScan({ discovery: this.git.discovery(), scannedAt: this.git.lastRun()?.at ?? null }) || null;
       default:

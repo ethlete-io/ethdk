@@ -1,0 +1,47 @@
+import { TimetrackExclusionRule } from '../store/exclusion';
+
+/** How much time a day is expected to account for when nothing else is configured. */
+export const DEFAULT_DAY_TARGET_MS = 8 * 60 * 60_000;
+
+export const MIN_DAY_TARGET_MS = 15 * 60_000;
+export const MAX_DAY_TARGET_MS = 24 * 60 * 60_000;
+
+/** Holds a day target inside the range a day can hold, whether it came from an input or a document. */
+export const clampDayTargetMs = (value: number) =>
+  Math.min(MAX_DAY_TARGET_MS, Math.max(MIN_DAY_TARGET_MS, Math.round(value)));
+
+/**
+ * The Jira instance issue keys are resolved against. The API token is not here — it lives in the OS
+ * keychain, and this document holds only what may be read back into the window.
+ */
+export type TimetrackJiraSettings = {
+  /** The Cloud host, with or without a scheme. `normalizeJiraHost` is what makes it a base URL. */
+  host: string;
+  email: string;
+};
+
+/**
+ * Everything the user configures that is not a secret, read and written as one document.
+ *
+ * It is deliberately small: a value belongs here only when the app cannot work it out and being wrong
+ * about it costs the user something. Everything derived — a repository's author, the Jira account id —
+ * is read from the source that owns it instead.
+ */
+export type TimetrackSettings = {
+  dayTargetMs: number;
+  jira: TimetrackJiraSettings;
+  /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
+  exclusionRules: TimetrackExclusionRule[];
+  /** Whether the shipped defaults still apply. Turning them off is a deliberate, visible choice. */
+  keepDefaultExclusionRules: boolean;
+  /** Directories the repository discovery walks. Empty means the host decides. */
+  gitScanRoots: string[];
+};
+
+export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
+  dayTargetMs: DEFAULT_DAY_TARGET_MS,
+  jira: { host: '', email: '' },
+  exclusionRules: [],
+  keepDefaultExclusionRules: true,
+  gitScanRoots: [],
+};

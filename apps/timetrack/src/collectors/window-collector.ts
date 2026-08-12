@@ -1,8 +1,9 @@
 import { signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { DEFAULT_EXCLUSION_RULES, applyExclusionRules } from '@ethlete/timetrack';
-import { EMPTY, Observable, catchError, defer, exhaustMap, map, of, switchMap, tap, timer } from 'rxjs';
+import { applyExclusionRules, effectiveExclusionRules } from '@ethlete/timetrack';
+import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, map, of, switchMap, tap, timer } from 'rxjs';
+import { injectTimetrackSettings } from '../app/settings/settings';
 import { WindowBatch, injectHostPorts } from '../host';
 
 export const WINDOW_POLL_INTERVAL_MS = 30_000;
@@ -36,6 +37,7 @@ export type WindowCollectorTotals = {
  */
 const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
+  const settings = injectTimetrackSettings();
   const lastRun = signal<WindowCollectorRun | null>(null);
   const totals = signal<WindowCollectorTotals>({ since: new Date(), stored: 0, excluded: 0, dropped: 0 });
   const failure = signal<string | null>(null);
@@ -44,7 +46,10 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   let throughSeq = 0;
 
   const store$ = (batch: WindowBatch): Observable<unknown> => {
-    const { kept, excluded } = applyExclusionRules({ events: batch.events, rules: DEFAULT_EXCLUSION_RULES });
+    const { kept, excluded } = applyExclusionRules({
+      events: batch.events,
+      rules: effectiveExclusionRules(settings.settings()),
+    });
     const record = () => {
       throughSeq = batch.throughSeq;
       failure.set(null);
@@ -74,9 +79,14 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
+  /**
+   * Nothing is drained before the settings have been read: a sample the user's own rule denies must not
+   * reach the database because the document was still on its way when the first drain ran.
+   */
   const collect$ = (): Observable<unknown> =>
     defer(() =>
-      ports.windows.batch$(throughSeq).pipe(
+      settings.ready$.pipe(
+        concatMap(() => ports.windows.batch$(throughSeq)),
         switchMap((batch) => store$(batch)),
         catchError((error: unknown) => {
           failure.set(error instanceof Error ? error.message : String(error));

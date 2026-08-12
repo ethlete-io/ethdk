@@ -1,5 +1,5 @@
 import { GitScanFailure } from '@ethlete/timetrack';
-import { WindowCollectorTotals } from '../../collectors';
+import { AgentSessionCollectorTotals, WindowCollectorTotals } from '../../collectors';
 import { GitRepoDiscovery, SourceTally, WindowSourceStatus } from '../../host';
 
 const clock = (at: Date) => at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -37,6 +37,9 @@ export const formatWindowSource = (options: { status: WindowSourceStatus | null;
     totals.dropped ? `${totals.dropped} lost because nothing drained them in time.` : null,
   ]);
 };
+
+export const formatAgentSessions = (totals: AgentSessionCollectorTotals) =>
+  totals.excluded ? `${totals.excluded} denied by an exclusion rule since ${clock(totals.since)}.` : '';
 
 /**
  * A scan reads a window of history it has mostly stored already, so a run that adds nothing is what a

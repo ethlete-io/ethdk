@@ -45,6 +45,27 @@ const titleOf = (event: CollectedEvent) =>
 
 const appIdOf = (event: CollectedEvent) => ('appId' in event ? event.appId : undefined);
 
+/** The compiled pattern, or the reason it does not compile. */
+const compiledPattern = (pattern: string): RegExp | string => {
+  try {
+    return new RegExp(pattern, 'i');
+  } catch (error: unknown) {
+    return error instanceof Error ? error.message : String(error);
+  }
+};
+
+/**
+ * Why a rule can never match anything, or `null` when it is sound. A settings screen can reject a typo
+ * with this before it is stored, rather than leaving the user with a rule that protects nothing.
+ */
+export const exclusionRuleError = (rule: TimetrackExclusionRule): string | null => {
+  if (rule.kind === 'app-id') return rule.appId.trim() ? null : 'An app id cannot be empty.';
+
+  const compiled = compiledPattern(rule.pattern);
+
+  return typeof compiled === 'string' ? compiled : null;
+};
+
 const compile = (rules: TimetrackExclusionRule[]) => {
   const compiled: CompiledRule[] = [];
   const invalidRules: ExclusionResult['invalidRules'] = [];
@@ -55,11 +76,14 @@ const compile = (rules: TimetrackExclusionRule[]) => {
       continue;
     }
 
-    try {
-      compiled.push({ rule, title: new RegExp(rule.pattern, 'i') });
-    } catch (error: unknown) {
-      invalidRules.push({ rule, error: error instanceof Error ? error.message : String(error) });
+    const pattern = compiledPattern(rule.pattern);
+
+    if (typeof pattern === 'string') {
+      invalidRules.push({ rule, error: pattern });
+      continue;
     }
+
+    compiled.push({ rule, title: pattern });
   }
 
   return { compiled, invalidRules };
