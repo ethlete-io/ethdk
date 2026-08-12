@@ -344,11 +344,16 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
 
       const defaultDirection = resolvedRoute.type === 'back' ? 'backward' : 'forward';
 
-      // Route hints only affect the played animation. The history bookkeeping below must stay
-      // tied to the actual navigation semantics, or `back()` would misbehave for hinted routes.
+      const fromIndex = allRoutes.findIndex((rt) => rt.path === from);
+      const targetIndex = allRoutes.findIndex((rt) => rt.path === resolvedRoute.route);
+      const routeOrderDirection =
+        fromIndex === -1 || targetIndex === -1 ? defaultDirection : targetIndex < fromIndex ? 'backward' : 'forward';
+
+      // Route hints and route order only affect the played animation. The history bookkeeping below
+      // must stay tied to the actual navigation semantics, or `back()` would misbehave for them.
       const historyDirection = navigateConfig?.navigationDirection ?? defaultDirection;
       const animationDirection =
-        navigateConfig?.navigationDirection ?? targetDirectionHint ?? sourceDirectionHint ?? defaultDirection;
+        navigateConfig?.navigationDirection ?? targetDirectionHint ?? sourceDirectionHint ?? routeOrderDirection;
 
       navigationDirection.set(animationDirection);
 
