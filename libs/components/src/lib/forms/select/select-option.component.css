@@ -51,11 +51,8 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     /* offscreen options skip layout and paint entirely — this is what keeps panels with
-       thousands of options scrollable. The fallback intrinsic size stays 0 so `min-block-size`
-       alone carries the placeholder height: `contain-intrinsic-block-size` sizes the *content*
-       box, so a consumer's block padding would stack on top of the row height and every
-       not-yet-rendered row would measure taller than the same row rendered — the panel would
-       open too tall (and its scroll height overshoot) until the rows render. */
+       thousands of options scrollable. The intrinsic size must stay 0: it sizes the content box, so
+       a row height here stacks on top of a consumer's padding and the panel opens too tall. */
     content-visibility: auto;
     contain-intrinsic-block-size: auto 0;
     transition:

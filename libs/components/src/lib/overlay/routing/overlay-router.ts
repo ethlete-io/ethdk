@@ -86,7 +86,6 @@ export type OverlayRouterNavigateConfig = {
 };
 
 export type OverlayRouterNavigationGuardContext = {
-  /** The route being left. */
   from: string;
 
   /** The resolved route being navigated to. */
@@ -295,9 +294,8 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     };
 
     /**
-     * Returns `true` synchronously while nothing is registered, so an unguarded router keeps
-     * navigating within the same task - a route change deferred by a microtask lands after the
-     * frame the outlet measured for its transition.
+     * Answers synchronously while nothing is registered: a route change deferred by a microtask lands
+     * after the frame the outlet measured for its transition.
      */
     const canLeave = (from: string, to: string): boolean | Promise<boolean> => {
       const guards = [...navigationGuards];
@@ -460,8 +458,8 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
                 });
                 nativeBrowserBackStack.set(nextStack);
               },
-              // The browser moved before anyone could veto, so a cancelled navigation has to put the
-              // param back on the route still being rendered - otherwise the URL names another page.
+              // The browser already moved, so a veto has to put the param back or the URL names a
+              // route that is not being rendered.
               blocked: () => updateBrowserUrl(curr),
             });
           } else {

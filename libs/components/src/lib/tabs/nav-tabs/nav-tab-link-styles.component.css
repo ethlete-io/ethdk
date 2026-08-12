@@ -114,8 +114,6 @@
     border-radius: var(--et-nav-tabs-underline-size, 3px) var(--et-nav-tabs-underline-size, 3px) 0 0;
   }
 
-  /* A filled vertical tab spans the column, so centering its label would leave it floating away from
-     the underline that marks it. */
   [data-orientation='vertical'][data-fit='fill'] .et-nav-tab-link {
     justify-content: start;
   }

@@ -38,12 +38,9 @@ export class NavTabLinkDirective {
       )
       .subscribe();
 
-    // Clicking a trigger selects it optimistically, so a navigation the router refuses (an unsaved
-    // changes guard, a failed resolver) would strand the selection on a link that never became
-    // active. Tracking the bar's own selection lets the active link claim it back.
-    //
-    // While a guard is still deciding, the link being navigated away from is also still the active
-    // one - claiming the selection back then would undo the click and make the bar animate twice.
+    // A click selects the trigger optimistically, so the active link has to claim the selection back
+    // when the router refuses to move. Never while a navigation is in flight: the link being left is
+    // still the active one in there, so claiming it back then undoes the click.
     effect(() => {
       if (this.overlayRouter?.navigationPending()) {
         return;

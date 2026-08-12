@@ -80,7 +80,6 @@ describe('OverlayRouter navigation guards', () => {
     expect(calls).toBe(1);
     expect(router.currentPage()?.path).toBe('/');
 
-    // Proves the veto is what held the route, rather than the navigation never having been attempted.
     unregister();
     router.navigate('/two');
 

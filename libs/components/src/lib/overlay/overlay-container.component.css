@@ -49,8 +49,6 @@
         grid-template-rows: minmax(0, 1fr);
       }
 
-      /* An inline sidebar is the routed content's first column. Guarded on the rendered state, not on
-       the host's presence: collapsed, the sidebar leaves the grid and the outlet is the only column. */
       &:not(.et-overlay-main):has(.et-overlay-sidebar--visible) {
         grid-template-columns: auto minmax(0, 1fr);
       }

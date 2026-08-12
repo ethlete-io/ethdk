@@ -1,6 +1,4 @@
 @layer components {
-  /* Collapsed, the sidebar renders as a route of its own, so the host must leave the content grid
-     entirely - the outlet is then the only column and picks up the single-column template. */
   .et-overlay-sidebar-host {
     display: none;
   }
