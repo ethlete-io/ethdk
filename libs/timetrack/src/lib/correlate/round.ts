@@ -65,7 +65,8 @@ export const roundDurations = (options: { durationsMs: number[]; options?: Parti
   return durations.map((_, index) => (increments.get(index) ?? 0) * incrementMs);
 };
 
-export type DayWarningKind = 'under-target' | 'over-target' | 'unattributed-time' | 'too-many-rows' | 'zero-duration';
+export type DayWarningKind =
+  'under-target' | 'over-target' | 'unattributed-time' | 'too-many-rows' | 'zero-duration' | 'meeting-overlap';
 
 export type DayWarning = {
   kind: DayWarningKind;
@@ -88,6 +89,8 @@ export type CheckDayOptions = {
   /** A day this close to the target is not worth a warning. Defaults to one rounding increment. */
   toleranceMs?: number;
   maxRowsPerDay?: number;
+  /** Time a meeting and observed activity both claim, from `matchMeetings`. */
+  meetingOverlapMs?: number;
 };
 
 /**
@@ -100,7 +103,7 @@ export const checkDay = (options: {
   unattributed?: WorkGroup[];
   options?: CheckDayOptions;
 }): DayCheck => {
-  const { targetMs, toleranceMs, maxRowsPerDay } = options.options ?? {};
+  const { targetMs, toleranceMs, maxRowsPerDay, meetingOverlapMs } = options.options ?? {};
   const unattributed = options.unattributed ?? [];
   const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const unattributedMs = unattributed.reduce((sum, group) => sum + group.observedMs, 0);
@@ -126,6 +129,13 @@ export const checkDay = (options: {
 
   if (maxRowsPerDay !== undefined && rows > maxRowsPerDay) {
     warnings.push({ kind: 'too-many-rows', detail: `${rows} rows to review, above the ${maxRowsPerDay} row cap` });
+  }
+
+  if (meetingOverlapMs !== undefined && meetingOverlapMs >= tolerance) {
+    warnings.push({
+      kind: 'meeting-overlap',
+      detail: `${formatMs(meetingOverlapMs)} is claimed by a meeting and by observed activity at the same time`,
+    });
   }
 
   const zeroed = options.proposals.filter((proposal) => proposal.durationMs === 0);

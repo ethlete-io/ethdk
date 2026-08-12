@@ -50,8 +50,15 @@ export type AttributeOptions = {
   patterns?: RecurringPattern[];
 };
 
-const keyFromTitle = (title: string, config: GitFlowConfig) => {
-  const match = new RegExp(config.keyPattern).exec(title);
+/**
+ * The first issue key in free text — a window title, a calendar event's name — or nothing. A key
+ * whose prefix the grammar does not know is not a key: `SCRUM-2` in a page title is somebody else's
+ * tracker, and attributing time to it is worse than leaving the block unattributed.
+ */
+export const issueKeyInText = (options: { text: string; config: GitFlowConfig }) => {
+  const { text, config } = options;
+  const match = new RegExp(config.keyPattern).exec(text);
+
   if (!match) return undefined;
 
   const key = match[0];
@@ -155,7 +162,7 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
 
   const titleKey = block.evidence
     .filter((entry) => entry.kind === 'window-title')
-    .map((entry) => keyFromTitle(entry.detail, config))
+    .map((entry) => issueKeyInText({ text: entry.detail, config }))
     .find((key) => !!key);
 
   return titleKey

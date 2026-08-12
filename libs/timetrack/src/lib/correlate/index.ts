@@ -1,6 +1,7 @@
 export * from './attribute';
 export * from './correlate-day';
 export * from './describe';
+export * from './meetings';
 export * from './merge';
 export * from './propose';
 export * from './recurrence';

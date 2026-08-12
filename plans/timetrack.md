@@ -454,6 +454,36 @@ Because each user registers their own OAuth client, they will see Google's unver
 screen and must add themselves as a test user. That belongs in the onboarding flow as an
 explicit, documented step, not as a surprise.
 
+**Built** - `libs/timetrack/src/lib/google-calendar/`, all of it through `TimetrackTransport`:
+
+- `client.ts` - bearer auth over the host-supplied access token, `googleCalendarPaged$` following
+  `nextPageToken` under a `maxPages` bound, and `GoogleCalendarRequestError`. **No OAuth in the core.**
+  The host owns PKCE, the loopback redirect, the keychain and the refresh, and hands the core a token
+  that is currently valid - so a 401 is reported as "the host has to refresh", not as a failure.
+- `events.ts` - `fetchGoogleCalendarEvents$` into `CalendarOccurrenceEvent`s.
+- `calendars.ts` - `fetchGoogleCalendarList$`, for the settings picker. A user has a work calendar, a
+  personal one and shared team ones, and which of them count as work is only theirs to say.
+
+What building it settled - four filters that each stop the calendar claiming time nobody spent:
+
+- **An all-day event is dropped.** It has no clock times at all, and `Urlaub` or a company holiday
+  would otherwise swallow the entire day. This is the one filter that would do real damage if missed.
+- **`transparency: 'transparent'` is dropped** - the user marked that event as free themselves.
+- **`eventType` is a deny-list**, not an allow-list: `workingLocation`, `birthday` and `outOfOffice`
+  are never worked time, and anything else - including a type Google adds later - reaches the day.
+- **A declined invitation is dropped; a tentative or unanswered one is kept as `accepted: false`.**
+  Unanswered is the normal state of a meeting people actually attend, so dropping it would lose most
+  of a real calendar - it just cannot be trusted the way an accepted one can.
+- An event with **no attendee list at all** is one the user created for themselves, which counts as
+  accepted. An invitation reaching them through a group alias has attendees but no `self` entry, and
+  that is unanswered, not accepted.
+- **Google answers a quota breach with 403 as often as 429**, distinguished only by
+  `error.errors[0].reason`, so `rateLimited` is computed from both and a genuine scope problem stays
+  distinguishable from a retryable one.
+
+Not built here: the OAuth flow (host-side by design) and multi-calendar fan-out - the host calls the
+fetch once per configured calendar and concatenates, which needs no code here.
+
 ### GitLab CE, self-hosted (phase 2)
 
 PAT with `read_api`. The high-value endpoint is `/api/v4/events` scoped to the user with
@@ -537,7 +567,8 @@ A pipeline of pure functions over an event window, each independently testable:
 4. **Attribute.** Score candidate issues per block: conforming branch key ≫ partial branch
    key > key inherited through the base > MR/issue-view activity > Tempo history for a
    recurring pattern (same weekday, same ticket) > window-title key. Calendar events with a
-   matched Meet title and an accepted response become meeting proposals directly.
+   matched Meet title and an accepted response become meeting proposals directly - see
+   `matchMeetings` below, which is a ladder of its own rather than a rung of this one.
 
    ~~**Steps 2-4 are built**~~ **- the whole ladder now exists.**
    `libs/timetrack/src/lib/correlate/attribute.ts` runs branch key → merge-request/issue-view
@@ -599,8 +630,31 @@ same events always produce the same day.
 Only blocks that reach step 5 with no candidate issue at all go to the reasoning provider - they
 come back from `propose()` as `unattributed`, never forced into a row.
 
-Still not built: turning an accepted calendar event with a matched Meet title into a meeting
-proposal directly.
+**Meetings are built too** - `meetings.ts`. `matchMeetings()` turns each calendar occurrence into a
+row of its own, and `correlateDay` folds those rows in beside the activity groups before rounding, so
+the day is one chronological list. What building it settled:
+
+- **A meeting has two separate questions, and the plan conflated them.** _Did it happen_ is answered
+  by attendance: `confirmed` (a window title inside the interval names the conference id or the event),
+  `observed` (the user was at the machine doing something else) or `unobserved` (nothing was collected -
+  which is exactly what a meeting away from the desk looks like, so it is not evidence of absence).
+  _Which ticket it belongs to_ is answered by a separate ladder: a key in the event's own title, then a
+  recurring Tempo pattern, then a configured `defaultIssueKey`. Confidence is the pair: only a key from
+  the event title plus confirmed attendance is `certain`, and an unanswered invitation never rises above
+  `likely` however distinctive its title.
+- **The conference id is the only string that names _this_ meeting.** Matching the event title as well
+  is worth it, but it needs a length floor (6 characters): an event called `QA` matches a window called
+  `qa-report.ts`, and a false confirmation is a row that syncs without ever being reviewed.
+- **A meeting is logged at the calendar's duration, never at the time the collectors saw.** The
+  collectors are edge-triggered, so sitting in one Meet window for an hour emits a single focus event -
+  clipping the row to observed samples would throw the meeting away. This is the one place in the
+  pipeline where a duration does not come from evidence, and it is deliberate.
+- **A meeting overlapping observed activity is time the day proposes twice**, so `MeetingMatch` reports
+  `overlapMs` and `checkDay` grew a `meeting-overlap` warning. It only reports: subtracting
+  automatically would decide, on the user's behalf, which of the two things they were really doing.
+- A meeting nothing can name an issue for comes back **without** one, which lands it in the day's
+  unattributed groups - the same first-class path a keyless block takes, and the reasoning provider's
+  input rather than a guessed ticket.
 
 ## The reasoning provider (agent CLI, not an API key)
 
@@ -742,16 +796,17 @@ so the core holds the seam and the policy the host runs around it - nothing that
 
 **Phase 1 - the spine.** ~~event model, sessionizing, the branch-grammar parser, correlation~~
 **done** - `libs/timetrack` ships the four-layer model, the host ports and the whole deterministic
-pipeline (`sessionize`, `attribute`, `merge`, `round`/`check`, `describe`, `propose`, and
-`correlateDay` over all of them), with no network, filesystem or Angular in it, the read-only
-Jira provider on top, and the whole Tempo integration - work-attribute discovery, foreign-time
-subtraction, the sync diff and the write half that executes it, and the store's core half -
-persistence ports, exclusion rules, retention, ledger writer - plus the Claude Code
-session-log parser with its cursor-driven collector, and the git reconcile pass (312 tests).
-Remaining: the encrypted database itself (host-side, needs `apps/timetrack`),
+pipeline (`sessionize`, `attribute`, `matchMeetings`, `merge`, `round`/`check`, `describe`, `propose`,
+and `correlateDay` over all of them), with no network, filesystem or Angular in it, the read-only
+Jira provider on top, the whole Tempo integration - work-attribute discovery, foreign-time
+subtraction, the sync diff and the write half that executes it - the read-only Google Calendar
+provider, and the store's core half - persistence ports, exclusion rules, retention, ledger writer -
+plus the Claude Code session-log parser with its cursor-driven collector, and the git reconcile pass
+(358 tests). Remaining: the encrypted database itself (host-side, needs `apps/timetrack`),
 the window/idle collector, the host half of the session-log and git collectors - the file
-reader behind `AgentSessionLogReader`, cursor persistence, and the inotify watch - Google
-Calendar, the day-review UI, tray. No
+reader behind `AgentSessionLogReader`, cursor persistence, and the inotify watch - Google's OAuth
+dance (host-side, and the last thing standing between the calendar provider and a real day), the
+day-review UI, tray. No
 LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
 day.
 

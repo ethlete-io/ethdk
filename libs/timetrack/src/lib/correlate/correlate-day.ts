@@ -4,6 +4,7 @@ import { CollectedEvent } from '../model/event';
 import { WorklogProposal } from '../model/proposal';
 import { AttributeOptions, attribute } from './attribute';
 import { DescribeOptions } from './describe';
+import { MeetingMatch, MeetingOptions, matchMeetings } from './meetings';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { CheckDayOptions, DayCheck, RoundOptions, checkDay } from './round';
 import { propose } from './propose';
@@ -15,6 +16,8 @@ export type CorrelateDayOptions = {
   activity?: AttributeOptions['activity'];
   patterns?: AttributeOptions['patterns'];
   sessionize?: Partial<SessionizeOptions>;
+  /** Meeting handling. `config` and `patterns` are taken from the day's own, not repeated here. */
+  meetings?: Omit<MeetingOptions, 'config' | 'patterns'>;
   merge?: Partial<MergeOptions>;
   round?: Partial<RoundOptions>;
   describe?: Partial<DescribeOptions>;
@@ -26,6 +29,8 @@ export type DayCorrelation = {
   blocks: ActivityBlock[];
   proposals: WorklogProposal[];
   unattributed: WorkGroup[];
+  /** What the calendar contributed, with how much of each meeting the machine actually saw. */
+  meetings: MeetingMatch[];
   check: DayCheck;
 };
 
@@ -45,7 +50,15 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
       patterns: options.patterns,
     }),
   );
-  const groups = mergeBlocks({ blocks: attributed, options: options.merge });
+  const meetings = matchMeetings({
+    events: options.events,
+    blocks,
+    meetings: { ...options.meetings, config: options.config, patterns: options.patterns },
+  });
+  const groups = [
+    ...mergeBlocks({ blocks: attributed, options: options.merge }),
+    ...meetings.map((meeting) => meeting.group),
+  ].sort((a, b) => a.from.getTime() - b.from.getTime());
   const { proposals, unattributed } = propose({
     groups,
     config: options.config,
@@ -57,11 +70,13 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
     blocks,
     proposals,
     unattributed,
+    meetings,
     check: checkDay({
       proposals,
       unattributed,
       options: {
         maxRowsPerDay: options.merge?.maxRowsPerDay ?? DEFAULT_MERGE_OPTIONS.maxRowsPerDay,
+        meetingOverlapMs: meetings.reduce((sum, meeting) => sum + meeting.overlapMs, 0),
         ...options.check,
       },
     }),
