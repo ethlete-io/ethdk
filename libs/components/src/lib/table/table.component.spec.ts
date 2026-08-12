@@ -663,6 +663,12 @@ describe('TableComponent', () => {
       fixture.detectChanges();
     };
 
+    // past signalDeferredLoading's delay, after which the busy bar turns on
+    const settleBusyBar = async (fixture: ComponentFixture<TableComponent<Person>>) => {
+      await new Promise((resolve) => setTimeout(resolve, 260));
+      fixture.detectChanges();
+    };
+
     it('marks the host busy and leaves the body blank while loading with no rows', () => {
       const fixture = create(columns(), []);
       const host = fixture.nativeElement as HTMLElement;
@@ -681,16 +687,23 @@ describe('TableComponent', () => {
       expect(host.querySelector('.et-table-empty-cell')).not.toBeNull();
     });
 
-    it('keeps the rows and shows the busy bar when loading over existing rows', () => {
+    it('keeps the rows and shows the busy bar when loading over existing rows', async () => {
       const fixture = create(columns());
       const host = fixture.nativeElement as HTMLElement;
 
       setStates(fixture, { loading: true });
 
       expect(host.querySelectorAll('.et-table-row:not(.et-table-row--placeholder)').length).toBe(PEOPLE.length);
-      expect(host.querySelector('.et-table-busy-bar')).not.toBeNull();
       expect(host.querySelector('.et-table-row--placeholder')).toBeNull();
+      // the host is busy from the first moment; the bar waits, so a page that lands quickly leaves
+      // no flicker under the header
       expect(host.getAttribute('aria-busy')).toBe('true');
+      expect(host.querySelector('.et-table-busy-bar')).toBeNull();
+
+      await settleBusyBar(fixture);
+
+      expect(host.querySelector('.et-table-busy-bar')).not.toBeNull();
+      expect(host.querySelectorAll('.et-table-row:not(.et-table-row--placeholder)').length).toBe(PEOPLE.length);
     });
 
     it('replaces the body with the error state for any non-nullish error, ahead of loading', () => {

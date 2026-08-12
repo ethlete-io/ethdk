@@ -905,6 +905,12 @@ whatever draws a loading state - `etTableSkeleton` fills it with **placeholder r
 per column, so the layout doesn't jump when the data lands. Either way the host carries
 `aria-busy`, and the placeholder rows are `aria-hidden`.
 
+The bar itself waits ~200ms before it appears and then stays ~300ms
+([`signalDeferredLoading`](/core/signal-utils#deferred-loading)), so a page that arrives quickly leaves
+nothing behind but the new rows. `aria-busy` is not deferred - it reports the request from the first
+moment. Placeholder rows are not deferred either: they are what holds the layout still, so they have to
+be there from the first frame.
+
 Placeholders are **opt-in** because they carry the [skeleton](/components/skeleton) component:
 import `TABLE_SKELETON_IMPORTS` and put `etTableSkeleton` on the table. Its `rows` option
 (default `5`) sets how many to draw, and `enabled` turns it off at runtime. Without it a first

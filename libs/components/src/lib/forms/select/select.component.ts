@@ -126,6 +126,31 @@ export class SelectComponent {
 
   public hasSearch = computed(() => !!this.select.registeredSearch());
 
+  /**
+   * Nothing to show yet, so the state row stands in for the options. Keyed on the raw `loading()`,
+   * not the deferred indicator: the row reserves the height its content will need from the first
+   * frame, and it keeps the empty state from claiming the panel while a first page is on its way.
+   */
+  protected showLoadingRow = computed(() => this.select.loading() && !this.select.visibleItems().length);
+
+  /**
+   * The next page the reader asked for: the control they clicked becomes a loading row in its own
+   * place, at its own height, and the busy bar stays out of it - one wait, reported once, where they
+   * are looking.
+   */
+  protected showLoadMoreLoading = computed(
+    () =>
+      this.select.hasMoreItems() &&
+      !this.showLoadingRow() &&
+      this.select.loadingMore() &&
+      this.select.showLoadingIndicator(),
+  );
+
+  /** Loading over options the reader can already see: they stay, and the busy bar carries the news. */
+  protected showBusyBar = computed(
+    () => this.select.showLoadingIndicator() && this.select.visibleItems().length > 0 && !this.showLoadMoreLoading(),
+  );
+
   // whether the default value/placeholder span renders - never with an inline search
   // input: in single mode the input itself displays the selected label, in multi mode
   // the chips (or the input's placeholder) carry the value display. With a custom value

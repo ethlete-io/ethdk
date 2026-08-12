@@ -26,6 +26,7 @@ import {
   ProvideColorDirective,
   ProvideSurfaceDirective,
   resolveSurfaceByElevation,
+  signalDeferredLoading,
   signalElementDimensions,
   SURFACE_PROVIDER,
 } from '@ethlete/core';
@@ -133,8 +134,14 @@ export class FormFieldComponent {
   protected warningAnimatable = viewChild<AnimatableDirective>('warningAnimatable');
   protected hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
 
-  /** Whether the field is showing its busy affordance - a pending async validator, or `[busy]`. */
+  /** Whether the field is busy - a pending async validator, or `[busy]`. */
   public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());
+
+  /**
+   * The spinner follows `isBusy()` late: a validator that settles in a few dozen milliseconds would
+   * otherwise flash one. `aria-busy` still reports the real state from the first moment.
+   */
+  protected showBusySpinner = signalDeferredLoading(this.isBusy);
 
   private errorDimensions = signalElementDimensions(this.errorContent);
   private warningDimensions = signalElementDimensions(this.warningContent);

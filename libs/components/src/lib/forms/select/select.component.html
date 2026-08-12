@@ -41,9 +41,12 @@
   </div>
 
   <!-- async option state, surfaced in the field itself (mirrors the menu's search spinner) —
-       only while the panel is closed; open, the panel's loading row is the single spinner -->
-  @if (select.loading() && !select.open()) {
-    <et-spinner class="et-select-trigger-spinner" diameter="16" strokeWidth="2" />
+       only while the panel is closed; open, the panel carries the news. Overlays the value's tail
+       behind a fade instead of claiming a column of its own, so the value never re-wraps for it -->
+  @if (select.showLoadingIndicator() && !select.open()) {
+    <div class="et-select-trigger-busy" animate.enter="et-select-trigger-busy--enter">
+      <et-spinner diameter="16" strokeWidth="2" />
+    </div>
   }
 </div>
 
@@ -127,13 +130,33 @@
     <!-- state rows and action buttons are NOT options — projected outside the listbox element
          (display: contents, so they still flow within the scrolling panel) -->
     <div class="et-select-panel-extras" etSelectPanelExtras>
-      @if (select.loading()) {
+      <!-- Refetching over options that are already on screen: they stay put and a 2px indeterminate
+           bar at the panel's top edge carries the news (the table does the same over its rows). Out
+           of flow on purpose — a bar that took a row's worth of space would resize the panel. -->
+      @if (showBusyBar()) {
+        <div class="et-select-busy-bar" role="presentation" aria-hidden="true"></div>
+      }
+
+      @if (showLoadingRow()) {
+        <!-- The row is here from the first frame so the panel opens at the height the options will
+             need, but its content waits for `showLoadingIndicator()`: a response that lands inside
+             that window replaces an empty row rather than a spinner nobody had time to read. -->
         @if (select.registeredLoadingTemplate(); as loadingTemplate) {
-          <ng-template [ngTemplateOutlet]="loadingTemplate.templateRef" />
+          @if (select.showLoadingIndicator()) {
+            <ng-template [ngTemplateOutlet]="loadingTemplate.templateRef" />
+          }
         } @else {
           <div class="et-select-state et-select-state--loading">
-            <et-spinner class="et-select-state-spinner" diameter="16" strokeWidth="2" />
-            {{ selectLabels().loading }}
+            <!-- laid out from the first frame and only faded in later, so the row cannot change
+                 height when the spinner arrives; hidden from assistive tech until it does -->
+            <span
+              [class.et-select-state-content--visible]="select.showLoadingIndicator()"
+              [attr.aria-hidden]="!select.showLoadingIndicator() || null"
+              class="et-select-state-content"
+            >
+              <et-spinner class="et-select-state-spinner" diameter="16" strokeWidth="2" />
+              {{ selectLabels().loading }}
+            </span>
           </div>
         }
       } @else if (select.error(); as error) {
@@ -155,14 +178,31 @@
         }
       }
 
-      @if (select.hasMoreItems() && !select.loading()) {
-        <button (click)="select.requestLoadMore()" class="et-select-load-more" tabindex="-1" type="button">
-          <i class="et-select-load-more-icon" etIcon="et-chevron" aria-hidden="true"></i>
-          {{ resolvedLoadMoreLabel() }}
-        </button>
+      @if (select.hasMoreItems() && !showLoadingRow()) {
+        @if (showLoadMoreLoading()) {
+          <!-- the control's own box, minus the control: same height, same separator, so the page
+               that is on its way is announced without moving anything -->
+          <div class="et-select-load-more et-select-load-more--loading" aria-live="polite">
+            <et-spinner class="et-select-state-spinner" diameter="16" strokeWidth="2" />
+            {{ selectLabels().loading }}
+          </div>
+        } @else {
+          <!-- disabled while its page loads: `requestLoadMore` is a no-op until that settles, and a
+               live-looking control that does nothing reads as broken -->
+          <button
+            [disabled]="select.loading()"
+            (click)="select.requestLoadMore()"
+            class="et-select-load-more"
+            tabindex="-1"
+            type="button"
+          >
+            <i class="et-select-load-more-icon" etIcon="et-chevron" aria-hidden="true"></i>
+            {{ resolvedLoadMoreLabel() }}
+          </button>
+        }
       }
 
-      @if (select.allowAddNew() && !select.loading()) {
+      @if (select.allowAddNew() && !showLoadingRow()) {
         <!-- pointer-only, like the load-more control — keyboard users reach the same flow
              through the consumer's own UI (e.g. a button next to the field) -->
         <button (click)="select.requestAddNew()" class="et-select-add-new" tabindex="-1" type="button">

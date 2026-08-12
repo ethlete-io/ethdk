@@ -29,7 +29,7 @@
 
       <!-- After the consumer's own suffix, never instead of it — a pending async validator must not
        displace a clear button or a reveal toggle. -->
-      @if (isBusy()) {
+      @if (showBusySpinner()) {
         <et-spinner class="et-form-field-busy-spinner" diameter="16" strokeWidth="2" />
       }
     </div>

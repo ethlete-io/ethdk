@@ -133,10 +133,36 @@
       display: contents;
     }
 
-    /* async option loading, surfaced in the field (mirrors the menu's search spinner) */
-    .et-select-trigger-spinner {
+    /* Async option loading, surfaced in the field (mirrors the menu's search spinner). It comes and
+       goes under the reader's hands, so it claims no column of its own: a negative inline margin
+       cancels the space it and its gap would take, and it paints over the value's tail behind a fade
+       of the field's own background - the same treatment the field gives its busy spinner. */
+    .et-select-trigger-busy {
+      --_et-select-trigger-busy-fade: 24px;
+
+      position: relative;
+      display: flex;
+      align-items: center;
+      align-self: stretch;
       flex: none;
+      padding-inline-start: var(--_et-select-trigger-busy-fade);
+      margin-inline-start: calc(-1 * (var(--_et-select-trigger-busy-fade) + 16px + 6px));
+      background: linear-gradient(
+        to right,
+        transparent,
+        var(--et-surface-background-solid, transparent) var(--_et-select-trigger-busy-fade)
+      );
       color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    .et-select-trigger-busy--enter {
+      animation: et-select-busy-in 120ms ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .et-select-trigger-busy--enter {
+        animation: none;
+      }
     }
   }
 
@@ -146,5 +172,11 @@
   .et-select-arrow .et-icon {
     /* the registered chevron icon points up natively - this select always points down */
     rotate: 180deg;
+  }
+
+  @keyframes et-select-busy-in {
+    from {
+      opacity: 0;
+    }
   }
 }

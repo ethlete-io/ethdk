@@ -1,6 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
-import { ColorInteractiveDirective, ProvideColorDirective, injectErrorTheme } from '@ethlete/core';
+import {
+  ColorInteractiveDirective,
+  ProvideColorDirective,
+  injectErrorTheme,
+  signalDeferredLoading,
+} from '@ethlete/core';
 import { TextButtonComponent } from '../../button';
 import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
@@ -105,6 +110,18 @@ export class CascaderComponent {
       !this.cascader.disabled() &&
       !this.cascader.readonly(),
   );
+
+  private columnLoading = computed(() => this.cascader.columns().some((column) => column.status === 'loading'));
+
+  /**
+   * A level's own spinner arrives late, while the state row it sits in is there from the first frame:
+   * a data source that answers in a few dozen milliseconds fills a blank column instead of trading a
+   * spinner for its nodes. One flag covers every column - only the level being drilled into loads.
+   */
+  protected showColumnSpinner = signalDeferredLoading(this.columnLoading);
+
+  /** Same treatment for the search results, which replace the columns while a query is in flight. */
+  protected showSearchSpinner = signalDeferredLoading(() => this.cascader.searchState().status === 'loading');
 
   constructor() {
     mountControlSuffixStyles();

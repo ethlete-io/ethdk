@@ -589,6 +589,26 @@
       }
     }
 
+    /* the loading row is laid out from the first frame, and only becomes visible once the wait is
+       worth reporting (see the template) - fading it in place keeps the column's height fixed */
+    .et-cascader-state-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 120ms ease;
+
+      &.et-cascader-state-content--visible {
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .et-cascader-state-content {
+        transition: none;
+      }
+    }
+
     /* only the message is error-inked (the error theme scope sits on it) — the Retry button
        keeps the ambient color scope so it reads as an action instead of more error text */
     .et-cascader-state-error-message {

@@ -20,7 +20,13 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { injectColorThemes, ProvideColorDirective, RuntimeError, signalHostElementDimensions } from '@ethlete/core';
+import {
+  injectColorThemes,
+  ProvideColorDirective,
+  RuntimeError,
+  signalDeferredLoading,
+  signalHostElementDimensions,
+} from '@ethlete/core';
 import { ARROW_UP_ICON } from '../icon/headless/arrow-up-icon';
 import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
@@ -741,12 +747,15 @@ export class TableComponent<T> {
   /** Loading with nothing to show yet: placeholder rows stand in for the rows that are coming. */
   protected showPlaceholderRows = computed(() => this.resolvedLoading() && !this.hasError() && !this.rows().length);
 
+  private refetchingOverRows = computed(() => this.resolvedLoading() && !this.hasError() && this.rows().length > 0);
+
   /**
    * Loading over rows that are already on screen: they stay, and the busy bar carries the news. This
    * is the case a paged/refetching table is in most of the time, and blanking it there would cost the
-   * user their place for no gain.
+   * user their place for no gain. Deferred, because a page that arrives quickly would otherwise leave
+   * nothing behind but a flicker under the header.
    */
-  protected showBusyBar = computed(() => this.resolvedLoading() && !this.hasError() && this.rows().length > 0);
+  protected showBusyBar = signalDeferredLoading(this.refetchingOverRows);
 
   /** The leading utility cells, with the pinning every row kind applies to them. */
   protected leadCells = computed<TableLeadCellVm[]>(() => {

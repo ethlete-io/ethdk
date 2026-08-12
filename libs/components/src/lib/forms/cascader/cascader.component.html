@@ -171,8 +171,14 @@
     @switch (cascader.searchState().status) {
       @case ('loading') {
         <div class="et-cascader-state et-cascader-state--loading">
-          <et-spinner diameter="16" strokeWidth="2" />
-          Searching…
+          <span
+            [class.et-cascader-state-content--visible]="showSearchSpinner()"
+            [attr.aria-hidden]="!showSearchSpinner() || null"
+            class="et-cascader-state-content"
+          >
+            <et-spinner diameter="16" strokeWidth="2" />
+            Searching…
+          </span>
         </div>
       }
       @case ('error') {
@@ -228,8 +234,16 @@
     @switch (column.status) {
       @case ('loading') {
         <div class="et-cascader-state et-cascader-state--loading">
-          <et-spinner diameter="16" strokeWidth="2" />
-          {{ cascaderLabels().loading }}
+          <!-- laid out from the first frame and only faded in later, so the column cannot change
+               height when the spinner arrives; hidden from assistive tech until it does -->
+          <span
+            [class.et-cascader-state-content--visible]="showColumnSpinner()"
+            [attr.aria-hidden]="!showColumnSpinner() || null"
+            class="et-cascader-state-content"
+          >
+            <et-spinner diameter="16" strokeWidth="2" />
+            {{ cascaderLabels().loading }}
+          </span>
         </div>
       }
       @case ('error') {

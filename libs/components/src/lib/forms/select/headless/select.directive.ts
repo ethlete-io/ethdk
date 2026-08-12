@@ -19,7 +19,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { RuntimeError, createComponentId, injectHostElement, nextFrame } from '@ethlete/core';
+import { RuntimeError, createComponentId, injectHostElement, nextFrame, signalDeferredLoading } from '@ethlete/core';
 import { EMPTY, fromEvent, switchMap, tap } from 'rxjs';
 import { sortByDomOrder } from '../../../internals/dom-order';
 import { createTypeahead } from '../../../internals/typeahead';
@@ -190,6 +190,13 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   );
   /** Async option state - rendered by `et-select` as a loading row. From `[etSelectOptions]` if set. */
   public loading = computed(() => this.asyncOptions()?.loading() ?? this.loadingInput());
+
+  /**
+   * `loading()`, held back so a request that resolves quickly never flashes an indicator. Drive what
+   * the reader *sees* off this - the spinner, the busy bar - and geometry off `loading()`, so the
+   * panel takes its final height from the first frame instead of growing into it.
+   */
+  public showLoadingIndicator = signalDeferredLoading(this.loading);
   /** Async option state - rendered by `et-select` as an error row. From `[etSelectOptions]` if set. */
   public error = computed(() => this.asyncOptions()?.error() ?? this.errorInput());
   /** Async option state - drives the load-more control. From `[etSelectOptions]` if set. */
@@ -372,6 +379,19 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   /** @internal Lower-cased query for option matching. */
   public normalizedQuery = computed(() => this.query().trim().toLowerCase());
+
+  /**
+   * Whether the request in flight is the next page the reader asked for, rather than a refetch of the
+   * list itself. `et-select` reports the two differently: a load-more turns the control the reader
+   * just clicked into a loading row, everything else runs a busy bar over the options.
+   *
+   * Set by `requestLoadMore()` and cleared as soon as `loading()` drops or the query moves on.
+   */
+  public loadingMore = linkedSignal<{ loading: boolean; query: string }, boolean>({
+    source: () => ({ loading: this.loading(), query: this.normalizedQuery() }),
+    computation: (source, previous) =>
+      source.loading && source.query === previous?.source.query && (previous?.value ?? false),
+  });
 
   /**
    * @internal The query the panel filters by. Live while open; frozen at its last value
@@ -807,6 +827,9 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return;
     }
 
+    // marked before the emit: the consumer may turn `loading` on synchronously from the handler,
+    // and the flag has to be set by the time that lands or the panel reports the wrong wait
+    this.loadingMore.set(true);
     this.loadMore.emit();
   }
 

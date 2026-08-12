@@ -37,7 +37,7 @@ protected competitions: CascaderDataSource<string> = {
 | `hasChildren` | `boolean` | `false` makes the node terminal; omit it to discover children by loading them. |
 | `disabled`    | `boolean` | Blocks selecting and expanding.                                                |
 
-A column shows a loading state while its level resolves, an empty state when a branch has no children, and an error row with a **Retry** control when `loadChildren` rejects or errors (`toErrorMessage` maps the failure to text).
+A column shows a loading state while its level resolves, an empty state when a branch has no children, and an error row with a **Retry** control when `loadChildren` rejects or errors (`toErrorMessage` maps the failure to text). The loading row is laid out from the first frame but only fades its spinner in after ~200ms ([`signalDeferredLoading`](/core/signal-utils#deferred-loading)), so a level that resolves quickly fills a blank column instead of trading a spinner for its nodes - and the column's height never changes for it. The panel's search reports its wait the same way.
 
 ### Resolving a programmatic value - `resolvePath`
 

@@ -6,6 +6,7 @@ import {
   createComponentId,
   injectAnimatedBlockSize,
   injectErrorTheme,
+  signalDeferredLoading,
 } from '@ethlete/core';
 import { SpinnerComponent } from '../loader';
 import { MenuDirective, MenuPanelDirective } from './headless';
@@ -35,7 +36,13 @@ export class MenuComponent {
   private bodyContentElement = viewChild<ElementRef<HTMLElement>>('menuBodyContent');
 
   protected search = computed(() => this.menu?.registeredSearch() ?? null);
-  protected searchLoading = computed(() => this.search()?.loading() ?? false);
+  private searchLoading = computed(() => this.search()?.loading() ?? false);
+
+  /**
+   * The spinner (and the room the input gives it) follows the search late: a query that answers
+   * within a keystroke or two would otherwise flash it, and the input's text would shift for it.
+   */
+  protected showSearchSpinner = signalDeferredLoading(this.searchLoading);
   protected searchError = computed(() => this.search()?.error() ?? null);
   protected searchErrorId = createComponentId('et-menu-search-error');
 

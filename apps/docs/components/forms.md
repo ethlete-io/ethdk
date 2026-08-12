@@ -115,6 +115,28 @@ the shell uses between the affixes and the control, so it tracks `size` (6/8/10p
 Projected affix content and the spinner render at `0.78` opacity so they recede; a control's own
 affordances render at full strength, because they are controls rather than decoration.
 
+#### The transient ones take no space
+
+The clear button and the busy spinner come and go while the reader is working in the field, so they
+claim no column of their own: the suffix leaves the flex line by exactly what they add, and they paint
+over the value's tail behind a short gradient of the field's own background
+(`--et-surface-background-solid`, so it matches both fills). The control area keeps its width whether
+they are there or not - a long value never re-ellipsises, and nothing shifts under the pointer when a
+value makes the clear button appear.
+
+Persistent affordances - a picker trigger, a reveal toggle, your `[etInputSuffix]` - stay in the flow
+and keep their space, because they never appear or disappear mid-edit.
+
+A caret still has to stay visible, so the control's own box stops short of that strip **while it has
+focus**: the end of a long value keeps its own room for as long as it is being edited, and since the
+text is start-aligned nothing moves - only the tail that was already fading out is cut. On blur the
+box widens again and the value runs its full length behind the fade.
+
+Alignment is the exception. A value set to `textAlign="end"` or `"center"` (on `et-input` /
+`et-number-input`) would land under the affordance from the first frame, not just when it overflows,
+and its tail is the part that carries the meaning - the least significant digits of a number. Those
+controls keep the room reserved whether or not they have focus.
+
 ::: warning Renamed in this release
 The clear button and picker trigger used to be per-control classes inside the control's own element.
 They are now one shared pair in the field's suffix slot - restyle against the new names:
@@ -204,6 +226,14 @@ A field shows a small spinner after your own suffix, plus `aria-busy`, while an 
 ```
 
 Set `[busy]="true"` on `et-form-field` for work the form doesn't know about (a save, a lookup of your own). It's deliberately subtle - a spinner, no text, and nothing blocks.
+
+The spinner appears ~200ms into the wait and then stays for ~300ms, so a validator that settles in a
+few dozen milliseconds never flashes one; `aria-busy` reports the real state from the first moment, and
+[the spinner takes no space](#the-transient-ones-take-no-space) when it does arrive. The same treatment
+runs across the library - the [select](/components/select#how-a-wait-is-reported) and
+[cascader](/components/cascader) panels, the [menu](/components/menu)'s search spinner, the
+[table](/components/table)'s busy bar - and `signalDeferredLoading` from
+[`@ethlete/core`](/core/signal-utils#deferred-loading) is what your own components can use for it.
 
 ## Mixed values (bulk editing)
 

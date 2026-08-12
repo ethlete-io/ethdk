@@ -691,6 +691,14 @@ describe('SelectDirective (search)', () => {
     Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]:not([data-filtered])') ?? []);
   const activeOption = () => pane()?.querySelector<HTMLElement>('[role="option"][data-active]') ?? null;
   const stateRow = () => pane()?.querySelector<HTMLElement>('.et-select-state') ?? null;
+  const busyBar = () => pane()?.querySelector<HTMLElement>('.et-select-busy-bar') ?? null;
+  const loadingContent = () => pane()?.querySelector<HTMLElement>('.et-select-state-content') ?? null;
+
+  // past signalDeferredLoading's delay, so the indicator the panel defers has turned on
+  const settleIndicator = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 260));
+    tick();
+  };
 
   const openSelect = async () => {
     trigger.click();
@@ -1276,14 +1284,89 @@ describe('SelectDirective (search)', () => {
     expect(searchInput()!.value).toBe('');
   });
 
-  it('renders the loading, error and empty states', async () => {
+  it('holds the loading row empty until the wait is worth reporting', async () => {
+    await openSelect();
+
+    // no option matches, so there is nothing on screen the row would replace
+    typeQuery('zzz');
+    fixture.componentInstance.loading.set(true);
+    fixture.detectChanges();
+
+    // the row is there from the first frame (it reserves the height the options will need) but says
+    // nothing yet, and it keeps the empty state from claiming the panel
+    expect(stateRow()?.classList.contains('et-select-state--loading')).toBe(true);
+    expect(loadingContent()?.classList.contains('et-select-state-content--visible')).toBe(false);
+    expect(loadingContent()?.getAttribute('aria-hidden')).toBe('true');
+
+    await settleIndicator();
+
+    expect(stateRow()?.classList.contains('et-select-state--loading')).toBe(true);
+    expect(loadingContent()?.classList.contains('et-select-state-content--visible')).toBe(true);
+    expect(loadingContent()?.getAttribute('aria-hidden')).toBeNull();
+    expect(loadingContent()?.textContent?.trim()).toBe('Loading…');
+  });
+
+  it('runs a busy bar over options already on screen instead of replacing them', async () => {
     await openSelect();
 
     fixture.componentInstance.loading.set(true);
     fixture.detectChanges();
-    expect(stateRow()?.classList.contains('et-select-state--loading')).toBe(true);
 
-    fixture.componentInstance.loading.set(false);
+    expect(stateRow()).toBeNull();
+    expect(visibleOptions().length).toBe(3);
+    expect(busyBar()).toBeNull();
+
+    await settleIndicator();
+
+    expect(busyBar()).not.toBeNull();
+    expect(stateRow()).toBeNull();
+    expect(visibleOptions().length).toBe(3);
+  });
+
+  it('turns the load-more control into a loading row in its own place, without a busy bar', async () => {
+    fixture.componentInstance.hasMore.set(true);
+    await openSelect();
+
+    const loadMoreButton = () => pane()?.querySelector<HTMLButtonElement>('button.et-select-load-more') ?? null;
+    const loadMoreLoading = () => pane()?.querySelector<HTMLElement>('.et-select-load-more--loading') ?? null;
+
+    expect(loadMoreButton()?.disabled).toBe(false);
+
+    const heightBefore = loadMoreButton()!.getBoundingClientRect().height;
+
+    loadMoreButton()!.click();
+    fixture.componentInstance.loading.set(true);
+    fixture.detectChanges();
+
+    // until the wait is worth reporting the control stays, disabled - a live-looking no-op reads
+    // as broken
+    expect(loadMoreButton()?.disabled).toBe(true);
+    expect(loadMoreLoading()).toBeNull();
+
+    await settleIndicator();
+
+    // the control's own box reports the wait; the busy bar stays out of it
+    expect(loadMoreButton()).toBeNull();
+    expect(loadMoreLoading()?.textContent?.trim()).toBe('Loading…');
+    expect(loadMoreLoading()!.getBoundingClientRect().height).toBe(heightBefore);
+    expect(busyBar()).toBeNull();
+  });
+
+  it('runs the busy bar for a refetch the reader did not ask for by loading more', async () => {
+    fixture.componentInstance.hasMore.set(true);
+    await openSelect();
+
+    fixture.componentInstance.loading.set(true);
+    fixture.detectChanges();
+    await settleIndicator();
+
+    expect(busyBar()).not.toBeNull();
+    expect(pane()?.querySelector('.et-select-load-more--loading')).toBeNull();
+  });
+
+  it('renders the error and empty states', async () => {
+    await openSelect();
+
     fixture.componentInstance.error.set('Something broke');
     fixture.detectChanges();
     expect(stateRow()?.classList.contains('et-select-state--error')).toBe(true);

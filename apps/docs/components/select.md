@@ -38,7 +38,7 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `allowCustomValues` | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                                                                                |
 | `pickOnly`          | `boolean`                            | `false`      | Command picker: committing an option emits `pickOption` and never writes `value`, and the field displays no value of its own. With `multiple` the panel stays open for repeated picks. See [command picker](#command-picker). |
 | `allowAddNew`       | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNew` (label via `addNewLabel`, else [`SELECT_LABELS.addNew`](/components/localization)).                                                               |
-| `loading`           | `boolean`                            | `false`      | Shows a spinner in the field and a loading row in the panel (override the row with `ng-template[etSelectLoading]`).                                                                                                           |
+| `loading`           | `boolean`                            | `false`      | Reports the wait: a spinner in the field while closed, and in the panel a loading row, a busy bar or a loading load-more row depending on what is on screen ([how a wait is reported](#how-a-wait-is-reported)).              |
 | `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                                                                          |
 | `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMore` (label via `loadMoreLabel`, else [`SELECT_LABELS.loadMore`](/components/localization)).                                                                                         |
 | `mirrorPanelWidth`  | `boolean`                            | `true`       | Panel matches the field's width. Set `false` for a compact trigger (page size, country code) whose option rows need more room than the field - the panel then sizes to its content, capped at `min(400px, 100vw - 24px)`.     |
@@ -191,6 +191,28 @@ The factory debounces the query (`debounceTime`, default 300ms), skips requests 
 ::: tip Derive `hasMore` exactly
 Take it from a field that states the end (`res.nextPage !== null`, `res.currentPage < res.totalPageCount`), not from a heuristic like "a full page means there is more" - with the latter, a last page that happens to be full leaves the load-more control up for one page too many. The factory has a backstop for when that happens anyway: a page that comes back **empty**, or that repeats the previous page (which is what an API asked for a page past the end usually serves), is dropped instead of appended and ends the pagination - so the trail of options never duplicates and the control disappears.
 :::
+
+#### How a wait is reported
+
+`loading` is one input, but the panel reports three different waits - the point being that a request
+that answers quickly should leave no trace at all:
+
+| Situation                                                          | What the reader sees                                                                                                             |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Nothing on screen yet (first page, new query with no matches left) | A row the height of an option, empty at first, with the spinner and `SELECT_LABELS.loading` fading in after ~200ms               |
+| Options already on screen                                          | They stay exactly where they are; a 2px indeterminate bar runs along the panel's top edge, like the [table](/components/table)'s |
+| The reader clicked load-more                                       | That control becomes a loading row in its own place, at its own height - no bar, because the wait is already reported there      |
+
+The reserved row is what keeps a fast response from flickering: the panel opens at the height its
+options will need, so a first page that lands inside those ~200ms replaces an empty row rather than a
+spinner nobody had time to read. Every indicator holds for a moment once shown (~300ms), so it cannot
+blink out either. `ng-template[etSelectLoading]` still replaces the row's content wholesale - its own
+height is yours to keep stable.
+
+While a load-more request is in flight the control is disabled (`requestLoadMore` is a no-op until it
+settles), and the panel exposes which wait it is in through `SelectDirective`: `loading()` is the raw
+flag, `showLoadingIndicator()` is the deferred one to paint from, `loadingMore()` says whether the
+reader asked for the next page. A headless composition can read the same three.
 
 Apps still on the [legacy `V2QueryClient`](/query/legacy) use `selectOptionsFromV2Query` instead - same config shape and returned signal bundle, but `queryCreator` takes a legacy creator (from `client.get(...)` or a `createLegacyQueryCreator` interop wrapper) and `args` builds the `prepare()` arguments. Options stay rendered while the next request loads, matching the current-system adapter.
 

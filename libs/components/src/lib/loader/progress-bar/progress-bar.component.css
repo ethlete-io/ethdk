@@ -1,13 +1,16 @@
 @layer components {
+  /* Both are read by the track and the bars, never by the host - registered as inheriting so that
+     setting them on the `et-progress-bar` element (or anywhere above it) reaches those descendants.
+     With `inherits: false` a descendant resolves the initial value no matter what the host says. */
   @property --et-progress-bar-height {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 4px;
   }
 
   @property --et-progress-bar-border-radius {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 9999px;
   }
 

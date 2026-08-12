@@ -68,18 +68,23 @@ describe('TableSkeletonDirective', () => {
     expect(hostOf(fixture).querySelectorAll('.et-table-row--placeholder').length).toBe(2);
   });
 
-  it('stands down once the rows arrive, and once loading ends', () => {
+  it('stands down once the rows arrive, and once loading ends', async () => {
     const fixture = create();
     const host = hostOf(fixture);
 
     fixture.componentInstance.data.set(PEOPLE);
     fixture.detectChanges();
 
-    // Loading over rows that are on screen is the busy bar's job, not the skeleton's.
+    // Loading over rows that are on screen is the busy bar's job, not the skeleton's - and the bar
+    // itself waits out a short request rather than flashing.
     expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(0);
+    await new Promise((resolve) => setTimeout(resolve, 260));
+    fixture.detectChanges();
     expect(host.querySelector('.et-table-busy-bar')).not.toBeNull();
 
     fixture.componentInstance.loading.set(false);
+    // the bar holds for its minimum duration once shown, so that it cannot blink out
+    await new Promise((resolve) => setTimeout(resolve, 320));
     fixture.detectChanges();
     expect(host.querySelector('.et-table-busy-bar')).toBeNull();
   });
