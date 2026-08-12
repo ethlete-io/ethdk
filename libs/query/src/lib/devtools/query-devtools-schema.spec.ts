@@ -9,6 +9,9 @@ import {
   setQueryDevtoolsSchemaLoader,
 } from './query-devtools-schema';
 
+/** Which client is asking. A single loader answers for every one of them, so any name reads the same. */
+const CLIENT = 'apiClient';
+
 const DOC = {
   openapi: '3.1.0',
   paths: {
@@ -60,10 +63,26 @@ const DOC = {
   },
 };
 
+const BOUNDED_DOC = {
+  components: {
+    schemas: {
+      Limits: {
+        type: 'object',
+        properties: {
+          ratio: { type: 'number', minimum: 0, maximum: 5 },
+          code: { type: 'string', maxLength: 4 },
+          slug: { type: 'string', minLength: 20 },
+          tags: { type: 'array', items: { type: 'string' }, maxItems: 1 },
+        },
+      },
+    },
+  },
+};
+
 /** The loader is a promise, so every test has to let the microtask that stores the document run. */
 const install = async (loader: () => unknown) => {
   setQueryDevtoolsSchemaLoader(loader);
-  loadQueryDevtoolsSchema();
+  loadQueryDevtoolsSchema(CLIENT);
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
@@ -76,27 +95,27 @@ describe('query devtools schema', () => {
     it('should be unavailable until an application hands a loader in', () => {
       setQueryDevtoolsSchemaLoader(undefined);
 
-      expect(queryDevtoolsSchemaState()).toEqual({ status: 'unavailable' });
+      expect(queryDevtoolsSchemaState(CLIENT)).toEqual({ status: 'unavailable' });
 
       setQueryDevtoolsSchemaLoader(() => DOC);
 
-      expect(queryDevtoolsSchemaState()).toEqual({ status: 'idle' });
+      expect(queryDevtoolsSchemaState(CLIENT)).toEqual({ status: 'idle' });
     });
 
     it('should load the document once', async () => {
       const loader = vi.fn(() => DOC);
 
       await install(loader);
-      loadQueryDevtoolsSchema();
+      loadQueryDevtoolsSchema(CLIENT);
 
-      expect(queryDevtoolsSchemaState()).toEqual({ status: 'ready' });
+      expect(queryDevtoolsSchemaState(CLIENT)).toEqual({ status: 'ready' });
       expect(loader).toHaveBeenCalledTimes(1);
     });
 
     it('should unwrap the module a dynamic import hands back', async () => {
       await install(() => ({ default: DOC }));
 
-      expect(queryDevtoolsSchemaNames()).toContain('MatchView');
+      expect(queryDevtoolsSchemaNames(CLIENT)).toContain('MatchView');
     });
 
     it('should report a failing loader and retry after it', async () => {
@@ -110,31 +129,88 @@ describe('query devtools schema', () => {
         return DOC;
       });
 
-      expect(queryDevtoolsSchemaState()).toEqual({ status: 'error', message: '404' });
+      expect(queryDevtoolsSchemaState(CLIENT)).toEqual({ status: 'error', message: '404' });
 
-      loadQueryDevtoolsSchema();
+      loadQueryDevtoolsSchema(CLIENT);
       await Promise.resolve();
       await Promise.resolve();
 
-      expect(queryDevtoolsSchemaState()).toEqual({ status: 'ready' });
+      expect(queryDevtoolsSchemaState(CLIENT)).toEqual({ status: 'ready' });
     });
 
     it('should report a loader that does not return a document', async () => {
       await install(() => 'not a document');
 
-      expect(queryDevtoolsSchemaState().status).toBe('error');
+      expect(queryDevtoolsSchemaState(CLIENT).status).toBe('error');
     });
 
     it('should list the named schemas, sorted', async () => {
       await install(() => DOC);
 
-      expect(queryDevtoolsSchemaNames()).toEqual(['MatchId', 'MatchView', 'Score']);
+      expect(queryDevtoolsSchemaNames(CLIENT)).toEqual(['MatchId', 'MatchView', 'Score']);
     });
 
     it('should read named schemas out of a Swagger 2 document', async () => {
       await install(() => ({ swagger: '2.0', definitions: { Legacy: { type: 'object' } } }));
 
-      expect(queryDevtoolsSchemaNames()).toEqual(['Legacy']);
+      expect(queryDevtoolsSchemaNames(CLIENT)).toEqual(['Legacy']);
+    });
+  });
+
+  describe('one description per client', () => {
+    const OTHER_DOC = { components: { schemas: { Ticket: { type: 'object' } } } };
+
+    const installBoth = async () => {
+      setQueryDevtoolsSchemaLoader({ hubClient: () => DOC, shopClient: () => OTHER_DOC });
+      loadQueryDevtoolsSchema('hubClient');
+      loadQueryDevtoolsSchema('shopClient');
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    };
+
+    it('should answer each client from its own document', async () => {
+      await installBoth();
+
+      expect(queryDevtoolsSchemaNames('hubClient')).toEqual(['MatchId', 'MatchView', 'Score']);
+      expect(queryDevtoolsSchemaNames('shopClient')).toEqual(['Ticket']);
+      expect(seedQueryDevtoolsSchemaBody('shopClient', 'MatchView')).toBeNull();
+    });
+
+    it('should offer a client no routes but its own', async () => {
+      await installBoth();
+
+      expect(queryDevtoolsSchemaRoutes('hubClient').length).toBeGreaterThan(0);
+      expect(queryDevtoolsSchemaRoutes('shopClient')).toEqual([]);
+      expect(seedQueryDevtoolsSchemaRoute({ clientName: 'shopClient', method: 'GET', pattern: '/matches' })).toBeNull();
+    });
+
+    it('should leave a client the application declared nothing for unavailable', async () => {
+      await installBoth();
+
+      expect(queryDevtoolsSchemaState('otherClient')).toEqual({ status: 'unavailable' });
+      expect(queryDevtoolsSchemaNames('otherClient')).toEqual([]);
+    });
+
+    it('should load one client description without loading the other', async () => {
+      const hub = vi.fn(() => DOC);
+      const shop = vi.fn(() => OTHER_DOC);
+
+      setQueryDevtoolsSchemaLoader({ hubClient: hub, shopClient: shop });
+      loadQueryDevtoolsSchema('hubClient');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(hub).toHaveBeenCalledTimes(1);
+      expect(shop).not.toHaveBeenCalled();
+      expect(queryDevtoolsSchemaState('shopClient')).toEqual({ status: 'idle' });
+    });
+
+    it('should let one loader answer for every client', async () => {
+      await install(() => DOC);
+
+      expect(queryDevtoolsSchemaNames('anyClient')).toContain('MatchView');
+      expect(queryDevtoolsSchemaNames('someOtherClient')).toContain('MatchView');
     });
   });
 
@@ -142,7 +218,7 @@ describe('query devtools schema', () => {
     beforeEach(() => install(() => DOC));
 
     it('should generate a body from a named schema', () => {
-      const seed = seedQueryDevtoolsSchemaBody('MatchView');
+      const seed = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView');
 
       expect(seed?.body).toEqual({
         id: '00000000-0000-4000-8000-000000000000',
@@ -160,7 +236,7 @@ describe('query devtools schema', () => {
     });
 
     it('should annotate every field with the type it is declared as', () => {
-      const types = seedQueryDevtoolsSchemaBody('MatchView')?.types;
+      const types = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView')?.types;
 
       expect(types?.get('id')).toBe('MatchId');
       expect(types?.get('score')).toBe('Score');
@@ -171,40 +247,111 @@ describe('query devtools schema', () => {
     });
 
     it('should mark a field the schema does not require', () => {
-      const types = seedQueryDevtoolsSchemaBody('MatchView')?.types;
+      const types = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView')?.types;
 
       expect(types?.get('title')).toBe('string?');
       expect(types?.get('tags')).toBe('string[]?');
     });
 
     it('should key an array element on `*`, so one entry annotates every element', () => {
-      const types = seedQueryDevtoolsSchemaBody('MatchView')?.types;
+      const types = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView')?.types;
 
       expect(types?.get('tags.*')).toBe('string');
     });
 
     it('should cut a schema that contains itself, and say so', () => {
-      const seed = seedQueryDevtoolsSchemaBody('MatchView');
+      const seed = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView');
 
       expect(seed?.body).toMatchObject({ parent: null });
       expect(seed?.notes).toContain('MatchView contains itself - the recursion was cut at parent with null.');
     });
 
     it('should say which branch of a union it took', () => {
-      expect(seedQueryDevtoolsSchemaBody('MatchView')?.notes).toContain(
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView')?.notes).toContain(
         'owner is a oneOf - the first branch was taken.',
       );
     });
 
     it('should honour minItems up to a cap, with independent elements', () => {
-      const seed = seedQueryDevtoolsSchemaBody('MatchView');
+      const seed = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView');
       const tags = (seed?.body as { tags: string[] }).tags;
 
       expect(tags).toHaveLength(2);
     });
 
     it('should return null for a schema the document does not name', () => {
-      expect(seedQueryDevtoolsSchemaBody('Nope')).toBeNull();
+      expect(seedQueryDevtoolsSchemaBody(CLIENT, 'Nope')).toBeNull();
+    });
+  });
+
+  describe('seed styles', () => {
+    beforeEach(() => install(() => DOC));
+    afterEach(() => vi.restoreAllMocks());
+
+    it('should fill an unformatted string with a sample value, and leave a declared format alone', () => {
+      const body = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView', 'realistic')?.body as Record<string, string>;
+
+      expect(body['title']).not.toBe('title');
+      expect(body['title'].length).toBeLessThanOrEqual(10);
+      expect(body['id']).toBe('00000000-0000-4000-8000-000000000000');
+      expect(body['startsAt']).toBe('2026-01-01T00:00:00.000Z');
+    });
+
+    it('should stress a body with the values a layout breaks on', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+
+      const body = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView', 'stress')?.body as { title: string; score: number };
+
+      expect(body.title).toHaveLength(80);
+      expect(body.score).toBe(1_000_000_000);
+    });
+
+    it('should generate each array element on its own', () => {
+      const samples = [0.1, 0.9, 0.2, 0.8, 0.3, 0.7];
+      let call = 0;
+
+      vi.spyOn(Math, 'random').mockImplementation(() => samples[call++ % samples.length] as number);
+
+      const tags = (seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView', 'realistic')?.body as { tags: string[] }).tags;
+
+      expect(tags).toHaveLength(2);
+      expect(tags[0]).not.toBe(tags[1]);
+    });
+
+    it('should fill an array the description does not size with more than one element', () => {
+      expect(
+        seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'GET', pattern: '/matches' }, 'realistic')?.body,
+      ).toHaveLength(3);
+    });
+
+    it('should seed the same shape whatever the style is', () => {
+      const placeholder = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView')?.body as Record<string, unknown>;
+      const stressed = seedQueryDevtoolsSchemaBody(CLIENT, 'MatchView', 'stress')?.body as Record<string, unknown>;
+
+      expect(Object.keys(stressed)).toEqual(Object.keys(placeholder));
+    });
+  });
+
+  describe('seed styles against declared bounds', () => {
+    beforeEach(() => install(() => BOUNDED_DOC));
+
+    it('should keep a generated value inside the bounds the description declares', () => {
+      const body = seedQueryDevtoolsSchemaBody(CLIENT, 'Limits', 'stress')?.body as {
+        ratio: number;
+        code: string;
+        tags: string[];
+      };
+
+      expect(body.ratio).toBeGreaterThanOrEqual(0);
+      expect(body.ratio).toBeLessThanOrEqual(5);
+      expect(body.code.length).toBeLessThanOrEqual(4);
+      expect(body.tags).toHaveLength(1);
+    });
+
+    it('should reach the length a string has to have', () => {
+      const body = seedQueryDevtoolsSchemaBody(CLIENT, 'Limits', 'realistic')?.body as { slug: string };
+
+      expect(body.slug.length).toBeGreaterThanOrEqual(20);
     });
   });
 
@@ -212,7 +359,7 @@ describe('query devtools schema', () => {
     beforeEach(() => install(() => DOC));
 
     it('should seed from the route own success response', () => {
-      const seed = seedQueryDevtoolsSchemaRoute({ method: 'GET', pattern: '/api/matches/:id' });
+      const seed = seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'GET', pattern: '/api/matches/:id' });
 
       expect(seed?.schemaName).toBe('MatchView');
       expect(seed?.body).toMatchObject({ id: '00000000-0000-4000-8000-000000000000' });
@@ -220,30 +367,32 @@ describe('query devtools schema', () => {
     });
 
     it('should match a route whose params are named differently', () => {
-      expect(seedQueryDevtoolsSchemaRoute({ method: 'GET', pattern: '/api/matches/:whatever' })).not.toBeNull();
+      expect(
+        seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'GET', pattern: '/api/matches/:whatever' }),
+      ).not.toBeNull();
     });
 
     it('should ignore a base path the document does not have, and say so', () => {
-      const seed = seedQueryDevtoolsSchemaRoute({ method: 'GET', pattern: '/v3/matches' });
+      const seed = seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'GET', pattern: '/v3/matches' });
 
       expect(Array.isArray(seed?.body)).toBe(true);
       expect(seed?.notes).toContain('The document has no /v3 prefix - it was ignored when matching.');
     });
 
     it('should use an example the document ships as-is', () => {
-      const seed = seedQueryDevtoolsSchemaRoute({ method: 'POST', pattern: '/matches' });
+      const seed = seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'POST', pattern: '/matches' });
 
       expect(seed?.body).toEqual({ ok: true });
       expect(seed?.notes).toContain('The document ships an example for this route - it was used as-is.');
     });
 
     it('should return null for a route the document does not declare', () => {
-      expect(seedQueryDevtoolsSchemaRoute({ method: 'GET', pattern: '/nope' })).toBeNull();
-      expect(seedQueryDevtoolsSchemaRoute({ method: 'DELETE', pattern: '/matches' })).toBeNull();
+      expect(seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'GET', pattern: '/nope' })).toBeNull();
+      expect(seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'DELETE', pattern: '/matches' })).toBeNull();
     });
 
     it('should return null for a route that declares no JSON response', () => {
-      expect(seedQueryDevtoolsSchemaRoute({ method: 'GET', pattern: '/health' })).toBeNull();
+      expect(seedQueryDevtoolsSchemaRoute({ clientName: CLIENT, method: 'GET', pattern: '/health' })).toBeNull();
     });
   });
 
@@ -251,14 +400,14 @@ describe('query devtools schema', () => {
     beforeEach(() => install(() => DOC));
 
     it('should bring along everything a named schema transitively refs', () => {
-      const { schemas } = collectQueryDevtoolsSchemaComponents(['MatchView']);
+      const { schemas } = collectQueryDevtoolsSchemaComponents(CLIENT, ['MatchView']);
 
       expect(Object.keys(schemas).sort()).toEqual(['MatchId', 'MatchView', 'Score']);
       expect(schemas['MatchId']).toEqual({ type: 'string', format: 'uuid' });
     });
 
     it('should leave a schema that refs itself resolvable', () => {
-      const { schemas } = collectQueryDevtoolsSchemaComponents(['MatchView']);
+      const { schemas } = collectQueryDevtoolsSchemaComponents(CLIENT, ['MatchView']);
 
       expect((schemas['MatchView'] as { properties: { parent: unknown } }).properties.parent).toEqual({
         $ref: '#/components/schemas/MatchView',
@@ -266,7 +415,7 @@ describe('query devtools schema', () => {
     });
 
     it('should skip a name the description does not declare', () => {
-      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(['Nope']);
+      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(CLIENT, ['Nope']);
 
       expect(schemas).toEqual({});
       expect(notes).toEqual([]);
@@ -281,7 +430,7 @@ describe('query devtools schema', () => {
         },
       }));
 
-      const { schemas } = collectQueryDevtoolsSchemaComponents(['Wrapper']);
+      const { schemas } = collectQueryDevtoolsSchemaComponents(CLIENT, ['Wrapper']);
 
       expect(schemas['Wrapper']).toEqual({
         type: 'object',
@@ -293,7 +442,7 @@ describe('query devtools schema', () => {
     it('should report a ref it cannot resolve', async () => {
       await install(() => ({ components: { schemas: { Broken: { $ref: '#/components/schemas/Gone' } } } }));
 
-      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(['Broken']);
+      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(CLIENT, ['Broken']);
 
       expect(schemas['Gone']).toBeUndefined();
       expect(notes).toEqual(['#/components/schemas/Gone could not be resolved, so Gone is missing from the export.']);
@@ -304,7 +453,7 @@ describe('query devtools schema', () => {
         components: { schemas: { Remote: { $ref: 'https://example.com/common.json#/Thing' } } },
       }));
 
-      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(['Remote']);
+      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(CLIENT, ['Remote']);
 
       expect(schemas['Remote']).toEqual({ $ref: 'https://example.com/common.json#/Thing' });
       expect(notes).toEqual([
@@ -318,7 +467,7 @@ describe('query devtools schema', () => {
         definitions: { Thing: { type: 'number' } },
       }));
 
-      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(['Thing', 'Holder']);
+      const { schemas, notes } = collectQueryDevtoolsSchemaComponents(CLIENT, ['Thing', 'Holder']);
 
       expect(schemas['Thing']).toEqual({ type: 'string' });
       expect(notes).toEqual(['Two different schemas are both called Thing - only the one from named:Thing was kept.']);
@@ -329,7 +478,7 @@ describe('query devtools schema', () => {
     it('should list every declared route with its path params as :name', async () => {
       await install(() => DOC);
 
-      expect(queryDevtoolsSchemaRoutes()).toEqual([
+      expect(queryDevtoolsSchemaRoutes(CLIENT)).toEqual([
         { method: 'GET', pattern: '/api/matches/:matchId', summary: 'One match' },
         { method: 'GET', pattern: '/matches', summary: 'listMatches' },
         { method: 'POST', pattern: '/matches', summary: '' },

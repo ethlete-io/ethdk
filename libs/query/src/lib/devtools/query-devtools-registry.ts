@@ -23,7 +23,7 @@ import {
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
 import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './query-devtools-mocks';
-import { QueryDevtoolsSchemaLoader, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
+import { QueryDevtoolsSchemaLoaders, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
 import { applyQueryDevtoolsTokenTtl } from './query-devtools-token-ttl';
@@ -241,12 +241,13 @@ export type QueryDevtoolsOptions = {
   about?: QueryDevtoolsAppInfo;
 
   /**
-   * The application's OpenAPI (or JSON Schema) document, so the panel's mock designer can seed a
-   * response from the real shape of a route and label each field with the type it is declared as. The
-   * loader runs at most once, and only when the designer first asks for it - see
-   * {@link QueryDevtoolsSchemaLoader}.
+   * The OpenAPI (or JSON Schema) document behind each query client, so the panel's mock designer can
+   * seed a response from the real shape of a route and label each field with the type it is declared as.
+   * One loader describes every client; a record keyed by client name describes an application whose
+   * clients speak to different APIs. Each loader runs at most once, and only when the designer first
+   * asks for it - see {@link QueryDevtoolsSchemaLoaders}.
    */
-  schema?: QueryDevtoolsSchemaLoader;
+  schema?: QueryDevtoolsSchemaLoaders;
 };
 
 /**

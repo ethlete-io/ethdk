@@ -52,7 +52,7 @@ not have a chunk boundary there.
 
 `provideQueryDevtools()` also takes `about` (build info for the
 [About tab](#about-which-build-is-running)), `responseHistory` (how many bodies each query keeps) and
-`schema` (your API description, for
+`schema` (your API description, one loader or one per query client, for
 [seeding a designed mock](#seeding-from-your-api-description)).
 
 Without `provideQueryDevtools()` the registry stays empty and the panel shows
@@ -835,23 +835,54 @@ JSON Schema document (`$defs`). A remote URL is a one-liner too:
 `schema: () => fetch('/openapi.json').then((res) => res.json())`.
 
 TypeScript types are erased at runtime, so "start from the route's declared response type" is not something
-the panel can do from your code - the document those types were generated _from_ is what it reads.
+the panel can do from your code - the document those types were generated _from_ is what it reads. That is
+also why a generated TS models package cannot be pointed at directly: hand in the description it was
+generated from.
+
+An application whose query clients speak to different APIs hands in one description per client, keyed by
+the `name` the client was created with:
+
+```ts
+provideQueryDevtools({
+  schema: {
+    hubApiClient: () => import('../hub-openapi.json'),
+    votingApiClient: () => fetch('/voting/openapi.json').then((res) => res.json()),
+  },
+});
+```
+
+Each loader runs at most once, and only when a mock is being designed against that client - so a
+description you never design against is never fetched. The **Client** picker in the form decides which
+one the **Seed** row reads: a mock designed for one client is never offered another one's routes or types.
 
 With one loaded, the **New mock** form gains a **Seed** row:
 
-| Control            | What it does                                                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **a route…**       | every route the document declares - _including the ones your app has never called_ - and picking one fills the method, path and body |
-| **From this path** | generates a body from the success response the document declares for the path already in the form                                    |
-| **a named type…**  | generates a body from one named schema (`MatchView`), for a route the document does not declare                                      |
+| Control             | What it does                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **the route**       | every route the document declares - _including the ones your app has never called_ - and picking one fills the method, path and body |
+| **From this path**  | generates a body from the success response the document declares for the path already in the form                                    |
+| **the named type**  | generates a body from one named schema (`MatchView`), for a route the document does not declare                                      |
+| **the value style** | how lifelike the generated values are - see below                                                                                    |
 
-Generation is deliberately dull and deterministic: `$ref`s are followed, `allOf` is merged, an `example`
-or `default` the document ships is used as-is, an `enum` takes its first value, a `format` becomes a
-shaped placeholder (`uuid`, `date-time`), a number takes its `minimum`, and a string with nothing to go on
-takes its own field name - so a seeded body reads as obviously unreal while still saying which field you
-are looking at. Everything it had to guess is listed under the body: which branch of a `oneOf` it took,
-where it cut a schema that contains itself, which base path it ignored when matching the route. **A seed is
-a starting point, never a claim about what the API returns.**
+A real description declares hundreds of both, so the route and type pickers are searchable and render only
+the rows in view - typing filters the whole document, not the part currently on screen.
+
+The shape is the document's whatever you pick; only the values change, and changing the style re-rolls the
+body already in the form:
+
+| Style           | What it fills a field with                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Placeholder** | the field's own name, `0`, `false`, one array element - obviously unreal, and it says which field you are looking at               |
+| **Realistic**   | varied short samples, plausible numbers, mixed booleans, and array elements generated one by one rather than cloned                |
+| **Stress**      | long text, unbreakable words (a compound word, a URL, a hex blob), unicode with RTL and emoji, huge numbers - what breaks a layout |
+
+`$ref`s are followed, `allOf` is merged, an `example` or `default` the document ships is used as-is, an
+`enum` takes its first value and a `format` becomes a shaped value (`uuid`, `date-time`) in every style -
+a `date-time` full of lorem is wrong data rather than a stress test. `minimum`, `maximum`, `minLength`,
+`maxLength` and `maxItems` are honoured too, so a seeded body stays valid against the document it came
+from. Everything it had to guess is listed under the body: which branch of a `oneOf` it took, where it cut
+a schema that contains itself, which base path it ignored when matching the route. **A seed is a starting
+point, never a claim about what the API returns.**
 
 Fields the document describes are then labelled in the designer with the type they are declared as -
 `MatchId` rather than `string`, with `?` on the ones the schema does not require. One label covers every

@@ -78,6 +78,34 @@
     max-inline-size: 32rem;
   }
 
+  /* `et-select` ships no frame of its own - it normally borrows a form field's. Inside the panel it wears
+     the same chrome as the native selects it sits next to, so the seed row stays one row of controls. */
+  .et-query-devtools-combobox {
+    flex: 0 1 auto;
+    inline-size: 32rem;
+    min-block-size: var(--_et-qdt-control-h);
+    box-sizing: border-box;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, var(--_et-qdt-bg));
+    color: var(--_et-qdt-fg);
+    border: 1px solid transparent;
+    border-radius: var(--_et-qdt-radius);
+    padding: 0.4rem 0.6rem;
+    font-size: 1.15rem;
+  }
+
+  .et-query-devtools-combobox input {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+  }
+
+  .et-query-devtools-seed-hint {
+    flex-basis: 100%;
+    margin: 0;
+  }
+
   .et-query-devtools-mock-body {
     display: block;
     padding-block-start: 0.4rem;

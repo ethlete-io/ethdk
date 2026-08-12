@@ -1,4 +1,9 @@
-import { computed, Signal, signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
+import {
+  generateQueryDevtoolsNumberPreset,
+  generateQueryDevtoolsSampleNumber,
+  generateQueryDevtoolsStringPreset,
+} from './query-devtools-overrides';
 
 /**
  * How an application hands its API description to the devtools, so a designed mock can start from the
@@ -18,6 +23,24 @@ import { computed, Signal, signal } from '@angular/core';
  * ```
  */
 export type QueryDevtoolsSchemaLoader = () => Promise<unknown> | unknown;
+
+/**
+ * The description each query client is served by. One loader describes every client - which is what a
+ * single-API application wants - and a record keyed by client name (the `name` a client was created
+ * with) describes them one API at a time, so a mock designed against one client never offers another
+ * one's routes.
+ *
+ * @example
+ * ```ts
+ * provideQueryDevtools({
+ *   schema: {
+ *     hubApiClient: () => import('../hub-openapi.json'),
+ *     votingApiClient: () => fetch('/voting/openapi.json').then((res) => res.json()),
+ *   },
+ * })
+ * ```
+ */
+export type QueryDevtoolsSchemaLoaders = QueryDevtoolsSchemaLoader | Record<string, QueryDevtoolsSchemaLoader>;
 
 /**
  * Where the API description stands. `unavailable` means the application never handed one in, which is
@@ -61,36 +84,66 @@ export type QueryDevtoolsSchemaSeed = {
   notes: readonly string[];
 };
 
+/**
+ * How lifelike a seeded body is. `placeholder` names every field after itself, so a seed reads as
+ * obviously unreal; `realistic` fills it with varied sample values, so a list is not three identical
+ * rows; `stress` fills it with what a layout breaks on - long unbreakable words, unicode, huge numbers.
+ */
+export type QueryDevtoolsSeedStyle = 'placeholder' | 'realistic' | 'stress';
+
 /** How deep a schema is expanded before a nested branch is given up on. */
 const MAX_DEPTH = 12;
 
 /** How many elements are generated for an array, whatever its `minItems` says. */
 const MAX_ITEMS = 3;
 
+/**
+ * How many array elements are generated on their own rather than copied from the first. Nested arrays
+ * multiply, so without a ceiling a body of arrays-in-arrays costs `MAX_ITEMS ^ MAX_DEPTH` walks.
+ */
+const VARIED_ITEMS_BUDGET = 200;
+
 const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'];
 
-const loader = /* @__PURE__ */ signal<QueryDevtoolsSchemaLoader | null>(null);
-const state = /* @__PURE__ */ signal<QueryDevtoolsSchemaState>({ status: 'unavailable' });
-const schemaDocument = /* @__PURE__ */ signal<Record<string, unknown> | null>(null);
+/** The key a single loader is filed under, so one description answers for every client. */
+const ANY_CLIENT = '*';
+
+const loaders = /* @__PURE__ */ signal<Record<string, QueryDevtoolsSchemaLoader>>({});
+const states = /* @__PURE__ */ signal<Record<string, QueryDevtoolsSchemaState>>({});
+const documents = /* @__PURE__ */ signal<Record<string, Record<string, unknown>>>({});
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
+/** Which description answers for a client: its own, or the one that answers for all of them. */
+const keyOf = (clientName: string) => {
+  const declared = loaders();
+
+  if (clientName in declared) return clientName;
+
+  return ANY_CLIENT in declared ? ANY_CLIENT : clientName;
+};
+
+const documentOf = (clientName: string) => documents()[keyOf(clientName)] ?? null;
+
 /**
- * Where the API description stands, for the panel's seeding controls.
+ * Where the description of one query client's API stands, for the panel's seeding controls.
  *
  * Part of the devtools contract. **Not part of the general public contract.**
  */
-export const queryDevtoolsSchemaState: Signal<QueryDevtoolsSchemaState> = /* @__PURE__ */ state.asReadonly();
+export const queryDevtoolsSchemaState = (clientName: string): QueryDevtoolsSchemaState =>
+  states()[keyOf(clientName)] ?? { status: 'unavailable' };
 
 /**
- * Installs the application's schema loader. Called by `provideQueryDevtools()`; nothing else may call it.
+ * Installs the application's schema loaders. Called by `provideQueryDevtools()`; nothing else may call it.
  * @internal
  */
-export const setQueryDevtoolsSchemaLoader = (next: QueryDevtoolsSchemaLoader | undefined) => {
-  loader.set(next ?? null);
-  state.set({ status: next ? 'idle' : 'unavailable' });
-  schemaDocument.set(null);
+export const setQueryDevtoolsSchemaLoader = (next: QueryDevtoolsSchemaLoaders | undefined) => {
+  const declared = next === undefined ? {} : typeof next === 'function' ? { [ANY_CLIENT]: next } : { ...next };
+
+  loaders.set(declared);
+  states.set(Object.fromEntries(Object.keys(declared).map((key) => [key, { status: 'idle' } as const])));
+  documents.set({});
 };
 
 /** A `() => import('./openapi.json')` loader hands back the module rather than the document inside it. */
@@ -109,13 +162,16 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
  *
  * Part of the devtools contract. **Not part of the general public contract.**
  */
-export const loadQueryDevtoolsSchema = () => {
-  const load = loader();
-  const status = state().status;
+export const loadQueryDevtoolsSchema = (clientName: string) => {
+  const key = keyOf(clientName);
+  const load = loaders()[key];
+  const status = queryDevtoolsSchemaState(clientName).status;
 
   if (!load || status === 'loading' || status === 'ready') return;
 
-  state.set({ status: 'loading' });
+  const setState = (next: QueryDevtoolsSchemaState) => states.update((current) => ({ ...current, [key]: next }));
+
+  setState({ status: 'loading' });
 
   Promise.resolve()
     .then(() => load())
@@ -124,20 +180,20 @@ export const loadQueryDevtoolsSchema = () => {
 
       if (!isRecord(parsed)) throw new Error('The schema loader did not return an object.');
 
-      schemaDocument.set(parsed);
-      state.set({ status: 'ready' });
+      documents.update((current) => ({ ...current, [key]: parsed }));
+      setState({ status: 'ready' });
     })
     .catch((error: unknown) => {
-      schemaDocument.set(null);
-      state.set({ status: 'error', message: messageOf(error) });
+      documents.update((current) => {
+        const { [key]: _dropped, ...rest } = current;
+
+        return rest;
+      });
+      setState({ status: 'error', message: messageOf(error) });
     });
 };
 
-const namedSchemas = /* @__PURE__ */ computed<Record<string, unknown>>(() => {
-  const doc = schemaDocument();
-
-  if (!doc) return {};
-
+const schemasOf = (doc: Record<string, unknown>): Record<string, unknown> => {
   const components = doc['components'];
 
   return {
@@ -145,27 +201,36 @@ const namedSchemas = /* @__PURE__ */ computed<Record<string, unknown>>(() => {
     ...(isRecord(doc['definitions']) ? doc['definitions'] : null),
     ...(isRecord(components) && isRecord(components['schemas']) ? components['schemas'] : null),
   };
-});
+};
+
+const namedSchemasByKey = /* @__PURE__ */ computed(() =>
+  Object.fromEntries(Object.entries(documents()).map(([key, doc]) => [key, schemasOf(doc)])),
+);
+
+const namedSchemas = (clientName: string) => namedSchemasByKey()[keyOf(clientName)] ?? {};
+
+const schemaNamesByKey = /* @__PURE__ */ computed(() =>
+  Object.fromEntries(Object.entries(namedSchemasByKey()).map(([key, schemas]) => [key, Object.keys(schemas).sort()])),
+);
 
 /**
- * Every schema the description names, sorted - the designer's "seed from a type" list.
+ * Every schema one client's description names, sorted - the designer's "seed from a type" list.
  *
  * Part of the devtools contract. **Not part of the general public contract.**
  */
-export const queryDevtoolsSchemaNames: Signal<readonly string[]> = /* @__PURE__ */ computed(() =>
-  Object.keys(namedSchemas()).sort(),
-);
+export const queryDevtoolsSchemaNames = (clientName: string): readonly string[] =>
+  schemaNamesByKey()[keyOf(clientName)] ?? [];
 
 const decodePointer = (step: string) => decodeURIComponent(step.replace(/~1/g, '/').replace(/~0/g, '~'));
 
 /** The last segment of a `$ref` - `#/components/schemas/MatchId` is what a field's type is called. */
 const refLabel = (ref: string) => decodePointer(ref.split('/').pop() ?? ref);
 
-/** Resolves a local JSON pointer against the loaded document. A remote `$ref` cannot be followed. */
-const resolveRef = (ref: string): unknown => {
+/** Resolves a local JSON pointer against one loaded document. A remote `$ref` cannot be followed. */
+const resolveRef = (ref: string, doc: Record<string, unknown> | null): unknown => {
   if (!ref.startsWith('#/')) return undefined;
 
-  let current: unknown = schemaDocument();
+  let current: unknown = doc;
 
   for (const step of ref.slice(2).split('/')) {
     if (!isRecord(current)) return undefined;
@@ -181,6 +246,9 @@ type SeedContext = {
   types: Map<string, string>;
   notes: Set<string>;
   refs: string[];
+  style: QueryDevtoolsSeedStyle;
+  varied: number;
+  doc: Record<string, unknown> | null;
 };
 
 type SeedNode = {
@@ -288,14 +356,37 @@ const FORMAT_SAMPLES: Record<string, string> = {
   binary: '',
 };
 
+const STRESS_STRING_PRESETS = ['long', 'longWord', 'unicode'] as const;
+
+const finiteNumber = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+
+const pickStressStringPreset = () =>
+  STRESS_STRING_PRESETS[Math.floor(Math.random() * STRESS_STRING_PRESETS.length)] as 'long' | 'longWord' | 'unicode';
+
+/** Keeps a generated string inside `minLength`/`maxLength`, since a seed is exported as a real body. */
+const fitLength = (value: string, schema: Record<string, unknown>) => {
+  const min = finiteNumber(schema['minLength']);
+  const max = finiteNumber(schema['maxLength']);
+
+  let out = value;
+
+  while (min !== null && out.length < min) out += value || 'x';
+
+  return max === null ? out : out.slice(0, max);
+};
+
 /**
- * A placeholder string: the declared format's shape where there is one, otherwise the field's own name -
- * which reads as obviously unreal while still saying which field you are looking at.
+ * The value of a string field. A declared format wins in every style - a `date-time` full of lorem is
+ * wrong data rather than a stress test - and an unformatted string is the field's own name, a short
+ * sample or one of the three shapes that break a layout.
  */
-const stringSample = (node: SeedNode, schema: Record<string, unknown>) => {
+const stringSample = (node: SeedNode, schema: Record<string, unknown>, ctx: SeedContext) => {
   const format = schema['format'];
 
   if (typeof format === 'string' && format in FORMAT_SAMPLES) return FORMAT_SAMPLES[format];
+
+  if (ctx.style === 'realistic') return fitLength(generateQueryDevtoolsStringPreset('short'), schema);
+  if (ctx.style === 'stress') return fitLength(generateQueryDevtoolsStringPreset(pickStressStringPreset()), schema);
 
   const title = schema['title'];
 
@@ -304,15 +395,41 @@ const stringSample = (node: SeedNode, schema: Record<string, unknown>) => {
   return node.key ?? 'string';
 };
 
-const numberSample = (schema: Record<string, unknown>) => {
-  for (const keyword of ['minimum', 'exclusiveMinimum', 'default'] as const) {
-    const value = schema[keyword];
+const boundsOf = (schema: Record<string, unknown>) => {
+  const exclusiveMin = finiteNumber(schema['exclusiveMinimum']);
+  const exclusiveMax = finiteNumber(schema['exclusiveMaximum']);
 
-    if (typeof value === 'number' && Number.isFinite(value)) return keyword === 'exclusiveMinimum' ? value + 1 : value;
+  return {
+    min: finiteNumber(schema['minimum']) ?? (exclusiveMin === null ? null : exclusiveMin + 1),
+    max: finiteNumber(schema['maximum']) ?? (exclusiveMax === null ? null : exclusiveMax - 1),
+  };
+};
+
+const clampToBounds = (value: number, bounds: { min: number | null; max: number | null }) => {
+  if (bounds.min !== null && value < bounds.min) return bounds.min;
+  if (bounds.max !== null && value > bounds.max) return bounds.max;
+
+  return value;
+};
+
+const numberSample = (schema: Record<string, unknown>, ctx: SeedContext) => {
+  const bounds = boundsOf(schema);
+
+  if (ctx.style === 'placeholder') return bounds.min ?? finiteNumber(schema['default']) ?? 0;
+
+  if (ctx.style === 'realistic') {
+    return generateQueryDevtoolsSampleNumber({ ...bounds, fractional: typeOf(schema) === 'number' });
   }
 
-  return 0;
+  const allowsNegative = bounds.min === null || bounds.min < 0;
+
+  return clampToBounds(
+    generateQueryDevtoolsNumberPreset(allowsNegative && Math.random() < 0.5 ? 'negative' : 'huge'),
+    bounds,
+  );
 };
+
+const booleanSample = (ctx: SeedContext) => ctx.style !== 'placeholder' && Math.random() < 0.5;
 
 const childNode = (parent: SeedNode, child: { schema: unknown; key: string }): SeedNode => ({
   schema: child.schema,
@@ -359,15 +476,19 @@ const generateArray = (node: SeedNode, ctx: SeedContext): unknown => {
 
   if (!isRecord(items)) return [];
 
-  const minItems = typeof schema['minItems'] === 'number' ? schema['minItems'] : 1;
-  const count = Math.min(Math.max(1, minItems), MAX_ITEMS);
+  const minItems = finiteNumber(schema['minItems']) ?? (ctx.style === 'placeholder' ? 1 : MAX_ITEMS);
+  const count = Math.min(Math.max(1, minItems), MAX_ITEMS, finiteNumber(schema['maxItems']) ?? MAX_ITEMS);
   const target = { schema: items, path: `${node.path ? `${node.path}.` : ''}*`, depth: node.depth + 1, key: node.key };
 
   ctx.types.set(target.path, describeSchema(items));
 
   const element = generate(target, ctx);
 
-  return Array.from({ length: count }, () => structuredCopy(element));
+  return Array.from({ length: count }, (_, index) =>
+    index && ctx.style !== 'placeholder' && ctx.varied++ < VARIED_ITEMS_BUDGET
+      ? generate(target, ctx)
+      : structuredCopy(element),
+  );
 };
 
 /** Each generated element is its own value, so editing one in the designer does not edit the others. */
@@ -411,7 +532,7 @@ const generate = (node: SeedNode, ctx: SeedContext): unknown => {
       return null;
     }
 
-    const resolved = resolveRef(ref);
+    const resolved = resolveRef(ref, ctx.doc);
 
     if (resolved === undefined) {
       ctx.notes.add(`${ref} could not be resolved - generated as null at ${at(node.path)}.`);
@@ -458,12 +579,12 @@ const generate = (node: SeedNode, ctx: SeedContext): unknown => {
     case 'array':
       return generateArray(node, ctx);
     case 'string':
-      return stringSample(node, schema);
+      return stringSample(node, schema, ctx);
     case 'integer':
     case 'number':
-      return numberSample(schema);
+      return numberSample(schema, ctx);
     case 'boolean':
-      return false;
+      return booleanSample(ctx);
     case 'null':
       return null;
     default:
@@ -477,24 +598,34 @@ const generate = (node: SeedNode, ctx: SeedContext): unknown => {
   return null;
 };
 
-const seedFrom = (schema: unknown, name: string | null): QueryDevtoolsSchemaSeed => {
-  const ctx: SeedContext = { types: new Map(), notes: new Set(), refs: name ? [name] : [] };
+const seedFrom = (
+  schema: unknown,
+  name: string | null,
+  style: QueryDevtoolsSeedStyle,
+  doc: Record<string, unknown> | null,
+): QueryDevtoolsSchemaSeed => {
+  const ctx: SeedContext = { types: new Map(), notes: new Set(), refs: name ? [name] : [], style, varied: 0, doc };
   const body = generate({ schema, path: '', depth: 0, key: null }, ctx);
 
   return { body, schemaName: name, types: ctx.types, notes: [...ctx.notes] };
 };
 
 /**
- * Generates a body from one named schema (`MatchView`), or `null` when the description does not name it.
+ * Generates a body from one schema the client's description names (`MatchView`), or `null` when it names
+ * no such thing. The style decides how lifelike its values are; the shape is the same either way.
  *
  * Part of the devtools contract. **Not part of the general public contract.**
  */
-export const seedQueryDevtoolsSchemaBody = (name: string): QueryDevtoolsSchemaSeed | null => {
-  const schema = namedSchemas()[name];
+export const seedQueryDevtoolsSchemaBody = (
+  clientName: string,
+  name: string,
+  style: QueryDevtoolsSeedStyle = 'placeholder',
+): QueryDevtoolsSchemaSeed | null => {
+  const schema = namedSchemas(clientName)[name];
 
   if (schema === undefined) return null;
 
-  return seedFrom(schema, name);
+  return seedFrom(schema, name, style, documentOf(clientName));
 };
 
 /** Everything a set of named schemas needs to resolve on its own, lifted out of the description. */
@@ -554,8 +685,12 @@ const rewriteRefs = (value: unknown, queue: (request: RefRequest) => void): unkn
  *
  * Part of the devtools contract. **Not part of the general public contract.**
  */
-export const collectQueryDevtoolsSchemaComponents = (names: readonly string[]): QueryDevtoolsSchemaComponents => {
-  const declared = namedSchemas();
+export const collectQueryDevtoolsSchemaComponents = (
+  clientName: string,
+  names: readonly string[],
+): QueryDevtoolsSchemaComponents => {
+  const declared = namedSchemas(clientName);
+  const doc = documentOf(clientName);
   const schemas: Record<string, unknown> = {};
   const notes = new Set<string>();
   const origins = new Map<string, string>();
@@ -574,7 +709,7 @@ export const collectQueryDevtoolsSchemaComponents = (names: readonly string[]): 
       continue;
     }
 
-    const schema = request.pointer === null ? declared[request.label] : resolveRef(request.pointer);
+    const schema = request.pointer === null ? declared[request.label] : resolveRef(request.pointer, doc);
 
     if (schema === undefined) {
       if (request.pointer !== null) {
@@ -637,14 +772,8 @@ const patternsMatch = (a: string, b: string) => {
   });
 };
 
-/**
- * Every route the description declares, as the designer offers them - including the ones no query has
- * ever called, which is the case a mock exists for.
- *
- * Part of the devtools contract. **Not part of the general public contract.**
- */
-export const queryDevtoolsSchemaRoutes: Signal<readonly QueryDevtoolsSchemaRoute[]> = /* @__PURE__ */ computed(() => {
-  const paths = schemaDocument()?.['paths'];
+const routesOf = (doc: Record<string, unknown>): readonly QueryDevtoolsSchemaRoute[] => {
+  const paths = doc['paths'];
 
   if (!isRecord(paths)) return [];
 
@@ -669,7 +798,20 @@ export const queryDevtoolsSchemaRoutes: Signal<readonly QueryDevtoolsSchemaRoute
   }
 
   return routes;
-});
+};
+
+const routesByKey = /* @__PURE__ */ computed(() =>
+  Object.fromEntries(Object.entries(documents()).map(([key, doc]) => [key, routesOf(doc)])),
+);
+
+/**
+ * Every route one client's description declares, as the designer offers them - including the ones no
+ * query has ever called, which is the case a mock exists for.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
+ */
+export const queryDevtoolsSchemaRoutes = (clientName: string): readonly QueryDevtoolsSchemaRoute[] =>
+  routesByKey()[keyOf(clientName)] ?? [];
 
 type OperationMatch = {
   operation: Record<string, unknown>;
@@ -679,8 +821,11 @@ type OperationMatch = {
   droppedPrefix: string;
 };
 
-const findOperation = (target: { method: string; pattern: string }): OperationMatch | null => {
-  const paths = schemaDocument()?.['paths'];
+const findOperation = (
+  target: { method: string; pattern: string },
+  doc: Record<string, unknown> | null,
+): OperationMatch | null => {
+  const paths = doc?.['paths'];
 
   if (!isRecord(paths)) return null;
 
@@ -751,11 +896,12 @@ const jsonSchemaOf = (response: Record<string, unknown>) => {
  *
  * Part of the devtools contract. **Not part of the general public contract.**
  */
-export const seedQueryDevtoolsSchemaRoute = (target: {
-  method: string;
-  pattern: string;
-}): QueryDevtoolsSchemaSeed | null => {
-  const match = findOperation(target);
+export const seedQueryDevtoolsSchemaRoute = (
+  target: { clientName: string; method: string; pattern: string },
+  style: QueryDevtoolsSeedStyle = 'placeholder',
+): QueryDevtoolsSchemaSeed | null => {
+  const doc = documentOf(target.clientName);
+  const match = findOperation(target, doc);
 
   if (!match) return null;
 
@@ -771,13 +917,13 @@ export const seedQueryDevtoolsSchemaRoute = (target: {
   // schema its `name` stands for - otherwise the walk reads the name as one it is already expanding and
   // cuts the whole body as a cycle.
   const ref = isRecord(json.schema) ? json.schema['$ref'] : null;
-  const named = typeof ref === 'string' ? { schema: resolveRef(ref), name: refLabel(ref) } : null;
+  const named = typeof ref === 'string' ? { schema: resolveRef(ref, doc), name: refLabel(ref) } : null;
 
   if (named && named.schema === undefined) return null;
 
   const seed =
     json.example === undefined
-      ? seedFrom(named ? named.schema : json.schema, named ? named.name : null)
+      ? seedFrom(named ? named.schema : json.schema, named ? named.name : null, style, doc)
       : {
           body: json.example,
           schemaName: null,

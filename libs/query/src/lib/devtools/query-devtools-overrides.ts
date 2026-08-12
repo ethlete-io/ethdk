@@ -478,6 +478,24 @@ export const generateQueryDevtoolsNumberPreset = (preset: 'zero' | 'negative' | 
   }
 };
 
+/**
+ * Generates a plausible sample number inside the bounds a caller declares - a small integer, or one with
+ * two decimals when `fractional`. The number presets break a layout on purpose; this one does not.
+ */
+export const generateQueryDevtoolsSampleNumber = (bounds: {
+  min: number | null;
+  max: number | null;
+  fractional: boolean;
+}) => {
+  const min = bounds.min ?? 1;
+  const max = Math.max(min, bounds.max ?? min + 999);
+  const value = randomIntBetween(min, Math.min(max, min + 999));
+
+  if (!bounds.fractional || value >= max) return value;
+
+  return Math.min(max, Math.round((value + Math.random()) * 100) / 100);
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** `invalid` is deliberately unparseable - "the API sent a date my code can't parse" is a real bug class. */

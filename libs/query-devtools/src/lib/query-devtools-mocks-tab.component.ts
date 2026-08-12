@@ -1,4 +1,5 @@
-import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, signal, ViewEncapsulation } from '@angular/core';
+import { SelectComponent, SelectOptionData, SelectSearchDirective } from '@ethlete/components';
 import { copyToClipboard } from '@ethlete/core';
 import {
   armAllQueryDevtoolsMocks,
@@ -17,6 +18,7 @@ import {
   queryDevtoolsSchemaRoutes,
   queryDevtoolsSchemaState,
   QueryDevtoolsSchemaSeed,
+  QueryDevtoolsSeedStyle,
   saveQueryDevtoolsMock,
   seedQueryDevtoolsSchemaBody,
   seedQueryDevtoolsSchemaRoute,
@@ -72,6 +74,27 @@ type MockDraft = {
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
+/** What a seeded body was generated from, so changing the style can re-roll it without asking again. */
+type SeedSource = { kind: 'route'; method: string; pattern: string } | { kind: 'schema'; name: string };
+
+const SEED_STYLES: { value: QueryDevtoolsSeedStyle; label: string; hint: string }[] = [
+  {
+    value: 'placeholder',
+    label: 'Placeholder values',
+    hint: 'Every field named after itself - a body nobody mistakes for real data.',
+  },
+  {
+    value: 'realistic',
+    label: 'Realistic values',
+    hint: 'Varied sample values, and array elements generated one by one - a list of three different rows.',
+  },
+  {
+    value: 'stress',
+    label: 'Stress values',
+    hint: 'Long text, unbreakable words, unicode and huge numbers - what a layout breaks on. Declared formats, enums and bounds are still honoured.',
+  },
+];
+
 /** Which spelling of the exported document is written - the same tree either way. */
 type SpecFormat = 'yaml' | 'json';
 
@@ -113,7 +136,7 @@ const isMockableMethod = (method: string) => !method.includes(' ');
   templateUrl: './query-devtools-mocks-tab.component.html',
   styleUrl: './query-devtools-mocks-tab.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [QueryDevtoolsMockDesignerComponent],
+  imports: [QueryDevtoolsMockDesignerComponent, SelectComponent, SelectSearchDirective],
 })
 export class QueryDevtoolsMocksTabComponent {
   protected host = injectQueryDevtoolsHost();
@@ -122,26 +145,56 @@ export class QueryDevtoolsMocksTabComponent {
   protected readonly DISARM_ALL = clearQueryDevtoolsArmedMocks;
   protected readonly METHODS = METHODS;
   protected readonly SPEC_FORMATS = SPEC_FORMATS;
+  protected readonly SEED_STYLES = SEED_STYLES;
 
-  protected readonly SCHEMA_NAMES = queryDevtoolsSchemaNames;
-  protected readonly SCHEMA_ROUTES = queryDevtoolsSchemaRoutes;
+  /** The new-mock form, or `null` while it is closed. */
+  protected draft = signal<MockDraft | null>(null);
 
-  /** Whether the application handed an API description in at all - nothing below shows without one. */
-  protected hasSchema = computed(() => queryDevtoolsSchemaState().status !== 'unavailable');
-  protected isSchemaReady = computed(() => queryDevtoolsSchemaState().status === 'ready');
+  /** Which client the form is designing for - every description below is that client's, not the app's. */
+  private draftClient = computed(() => this.draft()?.clientName ?? '');
+
+  private schemaNames = computed(() => queryDevtoolsSchemaNames(this.draftClient()));
+  private schemaRoutes = computed(() => queryDevtoolsSchemaRoutes(this.draftClient()));
+
+  /**
+   * A description declares hundreds of routes and named types, so both pickers are handed their options
+   * as data: the select then windows the rows and filters the full set from its own search box.
+   */
+  protected routeOptions = computed<SelectOptionData[]>(() =>
+    this.schemaRoutes().map((route) => {
+      const target = `${route.method} ${route.pattern}`;
+
+      return { value: target, label: route.summary ? `${target} — ${route.summary}` : target };
+    }),
+  );
+
+  protected schemaNameOptions = computed<SelectOptionData[]>(() =>
+    this.schemaNames().map((name) => ({ value: name, label: name })),
+  );
+
+  private schemaState = computed(() => queryDevtoolsSchemaState(this.draftClient()));
+
+  /** Whether the application handed this client's API description in - nothing below shows without one. */
+  protected hasSchema = computed(() => this.schemaState().status !== 'unavailable');
+  protected isSchemaReady = computed(() => this.schemaState().status === 'ready');
 
   protected schemaError = computed(() => {
-    const state = queryDevtoolsSchemaState();
+    const state = this.schemaState();
 
     return state.status === 'error' ? state.message : null;
   });
 
-  /** The new-mock form, or `null` while it is closed. */
-  protected draft = signal<MockDraft | null>(null);
   protected draftError = signal<string | null>(null);
 
   /** What the description said about the draft's body, kept so the designer can label its fields. */
   protected draftSeed = signal<QueryDevtoolsSchemaSeed | null>(null);
+
+  /** How lifelike the next seed comes out. The shape is the description's either way. */
+  protected seedStyle = signal<QueryDevtoolsSeedStyle>('placeholder');
+
+  private seedSource = signal<SeedSource | null>(null);
+
+  protected seedStyleHint = computed(() => SEED_STYLES.find((style) => style.value === this.seedStyle())?.hint ?? '');
 
   /** The named schema picked in the form, which is not the same thing as the one a body came from. */
   protected pickedSchema = signal('');
@@ -198,7 +251,7 @@ export class QueryDevtoolsMocksTabComponent {
 
     const name = row.mock.schemaName;
 
-    return name ? (seedQueryDevtoolsSchemaBody(name)?.types ?? null) : null;
+    return name ? (seedQueryDevtoolsSchemaBody(row.mock.clientName, name)?.types ?? null) : null;
   });
 
   /**
@@ -239,14 +292,19 @@ export class QueryDevtoolsMocksTabComponent {
   });
 
   constructor() {
-    // The description is only worth fetching once someone is designing a mock, which is what opening
-    // this tab means - so an application that hands one in still ships it as its own lazy chunk.
-    loadQueryDevtoolsSchema();
+    // A description is only worth fetching once someone is designing a mock against that client, so an
+    // application that hands several in still ships each as its own lazy chunk, loaded one at a time.
+    effect(() => {
+      const client = this.draftClient() || this.editingRow()?.mock.clientName;
+
+      if (client) loadQueryDevtoolsSchema(client);
+    });
   }
 
   protected openDraft() {
     this.draftError.set(null);
     this.draftSeed.set(null);
+    this.seedSource.set(null);
     this.draft.set({ ...EMPTY_DRAFT, clientName: this.host.clientNames()[0] ?? '' });
   }
 
@@ -254,15 +312,25 @@ export class QueryDevtoolsMocksTabComponent {
     this.draft.set(null);
     this.draftError.set(null);
     this.draftSeed.set(null);
+    this.seedSource.set(null);
   }
 
   protected patchDraft(patch: Partial<MockDraft>) {
     this.draft.update((current) => (current ? { ...current, ...patch } : current));
   }
 
+  /** Switches which API the form is designing against, dropping what the previous one's seed named. */
+  protected pickClient(clientName: string) {
+    this.patchDraft({ clientName });
+    this.pickedSchema.set('');
+    this.seedSource.set(null);
+    this.draftSeed.set(null);
+    this.draftError.set(null);
+  }
+
   /** Fills the form from a route the description declares, whether or not the app has ever called it. */
-  protected pickRoute(value: string) {
-    const [method, pattern] = value.split(' ');
+  protected pickRoute(value: unknown) {
+    const [method, pattern] = typeof value === 'string' ? value.split(' ') : [];
 
     if (!method || !pattern) return;
 
@@ -277,13 +345,30 @@ export class QueryDevtoolsMocksTabComponent {
     if (draft) this.seedFromRoute({ method: draft.method, pattern: draft.pattern.trim() });
   }
 
+  protected pickSchema(value: unknown) {
+    this.pickedSchema.set(typeof value === 'string' ? value : '');
+  }
+
   /** Seeds the body from one named schema, so a route the description does not declare still starts real. */
   protected seedFromSchema() {
     const name = this.pickedSchema();
 
     if (!name) return;
 
-    this.applySeed(seedQueryDevtoolsSchemaBody(name), `The description does not name ${name}.`);
+    this.applySeed({ kind: 'schema', name });
+  }
+
+  /** Re-rolls whatever the body was seeded from, so the picked style is what the form already shows. */
+  protected pickSeedStyle(value: string) {
+    const style = SEED_STYLES.find((entry) => entry.value === value);
+
+    if (!style) return;
+
+    this.seedStyle.set(style.value);
+
+    const source = this.seedSource();
+
+    if (source) this.applySeed(source);
   }
 
   /**
@@ -446,11 +531,49 @@ export class QueryDevtoolsMocksTabComponent {
     this.cancelBody();
   }
 
-  /** The declared schemas the given mocks were seeded from, so their responses can reference them. */
+  /**
+   * The declared schemas the given mocks were seeded from, so their responses can reference them. Each
+   * client is asked its own description, and a name two of them both declare keeps the first - one
+   * exported document cannot hold two `MatchView`s.
+   */
   private schemasFor(mocks: readonly QueryDevtoolsMock[]) {
-    const names = mocks.map((mock) => mock.schemaName).filter((name): name is string => !!name);
+    const byClient = new Map<string, Set<string>>();
 
-    return collectQueryDevtoolsSchemaComponents([...new Set(names)]);
+    for (const mock of mocks) {
+      if (!mock.schemaName) continue;
+
+      const names = byClient.get(mock.clientName) ?? new Set<string>();
+
+      names.add(mock.schemaName);
+      byClient.set(mock.clientName, names);
+    }
+
+    const schemas: Record<string, unknown> = {};
+    const notes = new Set<string>();
+    const owners = new Map<string, string>();
+
+    for (const [clientName, names] of byClient) {
+      const collected = collectQueryDevtoolsSchemaComponents(clientName, [...names]);
+
+      for (const note of collected.notes) notes.add(note);
+
+      for (const [name, schema] of Object.entries(collected.schemas)) {
+        const owner = owners.get(name);
+
+        if (owner !== undefined) {
+          if (JSON.stringify(schemas[name]) !== JSON.stringify(schema)) {
+            notes.add(`${name} is declared by both ${owner} and ${clientName} - the one from ${owner} was kept.`);
+          }
+
+          continue;
+        }
+
+        owners.set(name, clientName);
+        schemas[name] = schema;
+      }
+    }
+
+    return { schemas, notes: [...notes] };
   }
 
   private write(document: unknown) {
@@ -466,20 +589,30 @@ export class QueryDevtoolsMocksTabComponent {
       return;
     }
 
-    this.applySeed(
-      seedQueryDevtoolsSchemaRoute(target),
-      `The description declares no JSON response for ${target.method} ${target.pattern}.`,
-    );
+    this.applySeed({ kind: 'route', ...target });
   }
 
-  private applySeed(seed: QueryDevtoolsSchemaSeed | null, missing: string) {
+  private applySeed(source: SeedSource) {
+    const style = this.seedStyle();
+    const client = this.draftClient();
+    const seed =
+      source.kind === 'schema'
+        ? seedQueryDevtoolsSchemaBody(client, source.name, style)
+        : seedQueryDevtoolsSchemaRoute({ clientName: client, method: source.method, pattern: source.pattern }, style);
+
     if (!seed) {
       this.draftSeed.set(null);
-      this.draftError.set(missing);
+      this.seedSource.set(null);
+      this.draftError.set(
+        source.kind === 'schema'
+          ? `The description does not name ${source.name}.`
+          : `The description declares no JSON response for ${source.method} ${source.pattern}.`,
+      );
 
       return;
     }
 
+    this.seedSource.set(source);
     this.draftSeed.set(seed);
     this.draftError.set(null);
     this.patchDraft({ body: JSON.stringify(seed.body, null, 2) });

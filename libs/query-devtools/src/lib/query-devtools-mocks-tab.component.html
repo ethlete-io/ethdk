@@ -39,11 +39,7 @@
       <div class="et-query-devtools-mock-fields">
         <label class="et-query-devtools-field">
           <span>Client</span>
-          <select
-            #clientSelect
-            (change)="patchDraft({ clientName: clientSelect.value })"
-            class="et-query-devtools-select"
-          >
+          <select #clientSelect (change)="pickClient(clientSelect.value)" class="et-query-devtools-select">
             @for (name of host.clientNames(); track name) {
               <option [value]="name" [selected]="name === form.clientName">{{ name }}</option>
             }
@@ -125,14 +121,15 @@
         <div class="et-query-devtools-seed">
           <span class="et-query-devtools-section">Seed</span>
           @if (isSchemaReady()) {
-            <select #routePick (change)="pickRoute(routePick.value)" class="et-query-devtools-select">
-              <option value="">a route the API description declares…</option>
-              @for (route of SCHEMA_ROUTES(); track route.method + route.pattern) {
-                <option value="{{ route.method }} {{ route.pattern }}">
-                  {{ route.method }} {{ route.pattern }}{{ route.summary ? ' — ' + route.summary : '' }}
-                </option>
-              }
-            </select>
+            <et-select
+              [options]="routeOptions()"
+              (pickOption)="pickRoute($event)"
+              class="et-query-devtools-combobox"
+              mirrorPanelWidth="false"
+              pickOnly
+            >
+              <input etSelectSearch placeholder="search the routes it declares…" />
+            </et-select>
             <button
               (click)="seedFromDraftRoute()"
               class="et-query-devtools-btn"
@@ -141,15 +138,29 @@
             >
               From this path
             </button>
-            <select #schemaPick (change)="pickedSchema.set(schemaPick.value)" class="et-query-devtools-select">
-              <option value="">a named type…</option>
-              @for (name of SCHEMA_NAMES(); track name) {
-                <option [value]="name" [selected]="name === pickedSchema()">{{ name }}</option>
-              }
-            </select>
+            <et-select
+              [value]="pickedSchema()"
+              [options]="schemaNameOptions()"
+              (valueChange)="pickSchema($event)"
+              class="et-query-devtools-combobox"
+              mirrorPanelWidth="false"
+            >
+              <input etSelectSearch placeholder="search its named types…" />
+            </et-select>
             <button [disabled]="!pickedSchema()" (click)="seedFromSchema()" class="et-query-devtools-btn" type="button">
               From this type
             </button>
+            <select
+              #stylePick
+              (change)="pickSeedStyle(stylePick.value)"
+              class="et-query-devtools-select"
+              title="How lifelike the generated values are"
+            >
+              @for (style of SEED_STYLES; track style.value) {
+                <option [value]="style.value" [selected]="style.value === seedStyle()">{{ style.label }}</option>
+              }
+            </select>
+            <small class="et-query-devtools-hint et-query-devtools-seed-hint">{{ seedStyleHint() }}</small>
           } @else if (schemaError(); as error) {
             <span class="et-query-devtools-settings-warn">The API description could not be loaded: {{ error }}</span>
           } @else {
