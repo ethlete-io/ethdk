@@ -118,9 +118,9 @@ export type OverlayRouter = {
   canGoBack: Signal<boolean>;
 
   /**
-   * Whether a navigation is waiting on a navigation guard. UI that moves ahead of the router - a
-   * tab bar selecting the clicked tab optimistically - must not undo itself while this is `true`,
-   * or it fights the navigation that is still in flight.
+   * Whether a navigation is in flight - waiting on a navigation guard, or committed but not yet
+   * observable on `currentRoute`. UI that moves ahead of the router - a tab bar selecting the clicked
+   * tab optimistically - must not undo itself while this is `true`, or it fights that navigation.
    */
   navigationPending: Signal<boolean>;
 
@@ -176,13 +176,16 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     const history = signal<string[]>([]);
     const nativeBrowserBackStack = signal<string[]>([]);
     const pendingNavigations = signal(0);
-    const navigationPending = computed(() => pendingNavigations() > 0);
 
     // The current route, but delayed by one frame to ensure that the needed animation classes are applied.
     const currentRoute = toSignal(
       toObservable(syncCurrentRoute).pipe(switchMap((r) => fromNextFrame().pipe(map(() => r)))),
       { initialValue: getInitialRoute() },
     );
+
+    // A commit stays invisible on `currentRoute` for a frame, so the route being left still reports
+    // itself active in there. Both halves must count as pending, or an optimistic selection is undone.
+    const navigationPending = computed(() => pendingNavigations() > 0 || currentRoute() !== syncCurrentRoute());
 
     const extraRoutes = signal<OverlayRoute[]>([]);
 
