@@ -49,10 +49,10 @@ const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
       </et-form-field>
 
       <!-- The manual override, for work the form knows nothing about. -->
-      <et-form-field [busy]="true">
+      <et-form-field busy>
         <et-label>Manually busy</et-label>
         <et-input [formField]="bioForm.tagline" />
-        <et-hint>busy="true" - for a save or lookup the form knows nothing about.</et-hint>
+        <et-hint>busy - for a save or lookup the form knows nothing about.</et-hint>
       </et-form-field>
     </div>
   `,
