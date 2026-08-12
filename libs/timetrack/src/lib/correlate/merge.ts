@@ -33,7 +33,7 @@ export const DEFAULT_MERGE_OPTIONS: MergeOptions = {
  * must not inherit `certain` from a short one, and a short weak scrap must not drag a well-evidenced
  * row into manual review. Ties go to the weaker tier.
  */
-const dominantConfidence = (groups: WorkGroup[]): Confidence => {
+export const dominantConfidence = (groups: readonly { confidence: Confidence; observedMs: number }[]): Confidence => {
   const totals = new Map<Confidence, number>();
 
   for (const group of groups) totals.set(group.confidence, (totals.get(group.confidence) ?? 0) + group.observedMs);
@@ -43,11 +43,12 @@ const dominantConfidence = (groups: WorkGroup[]): Confidence => {
   return ranked[0]?.[0] ?? 'weak';
 };
 
-const mergeEvidence = (into: Evidence[], next: Evidence[]) => {
-  const merged = [...into];
-  const seen = new Set(merged.map((entry) => `${entry.kind}|${entry.detail}`));
+/** One evidence chain out of several: de-duplicated on kind and detail, oldest observation first. */
+export const mergeEvidence = (chains: readonly Evidence[][]): Evidence[] => {
+  const merged: Evidence[] = [];
+  const seen = new Set<string>();
 
-  for (const entry of next) {
+  for (const entry of chains.flat()) {
     const id = `${entry.kind}|${entry.detail}`;
     if (seen.has(id)) continue;
 
@@ -78,7 +79,7 @@ const join = (into: WorkGroup, next: WorkGroup): WorkGroup => ({
   to: into.to >= next.to ? into.to : next.to,
   observedMs: into.observedMs + next.observedMs,
   confidence: dominantConfidence([into, next]),
-  evidence: mergeEvidence(into.evidence, next.evidence),
+  evidence: mergeEvidence([into.evidence, next.evidence]),
   blocks: [...into.blocks, ...next.blocks],
 });
 

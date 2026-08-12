@@ -1,3 +1,4 @@
+import { formatDurationMs } from '../model/duration';
 import { WorklogProposal } from '../model/proposal';
 import { WorkGroup } from './merge';
 
@@ -8,13 +9,6 @@ export type RoundOptions = {
 
 export const DEFAULT_ROUND_OPTIONS: RoundOptions = {
   incrementMs: 15 * 60_000,
-};
-
-const formatMs = (ms: number) => {
-  const minutes = Math.round(ms / 60_000);
-  const hours = Math.floor(minutes / 60);
-
-  return hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
 };
 
 /**
@@ -66,7 +60,14 @@ export const roundDurations = (options: { durationsMs: number[]; options?: Parti
 };
 
 export type DayWarningKind =
-  'under-target' | 'over-target' | 'unattributed-time' | 'too-many-rows' | 'zero-duration' | 'meeting-overlap';
+  | 'under-target'
+  | 'over-target'
+  | 'unattributed-time'
+  | 'too-many-rows'
+  | 'zero-duration'
+  | 'meeting-overlap'
+  /** Raised by `reviewDay`, not here: new evidence under a row a reviewer had already edited. */
+  | 'edited-row-drift';
 
 export type DayWarning = {
   kind: DayWarningKind;
@@ -112,7 +113,7 @@ export const checkDay = (options: {
 
   if (targetMs !== undefined) {
     const delta = proposedMs - targetMs;
-    const against = `${formatMs(proposedMs)} proposed against a ${formatMs(targetMs)} target`;
+    const against = `${formatDurationMs(proposedMs)} proposed against a ${formatDurationMs(targetMs)} target`;
 
     if (delta < -tolerance) warnings.push({ kind: 'under-target', detail: against });
     else if (delta > tolerance) warnings.push({ kind: 'over-target', detail: against });
@@ -121,7 +122,7 @@ export const checkDay = (options: {
   if (unattributedMs > 0) {
     warnings.push({
       kind: 'unattributed-time',
-      detail: `${formatMs(unattributedMs)} across ${unattributed.length} block(s) matched no issue`,
+      detail: `${formatDurationMs(unattributedMs)} across ${unattributed.length} block(s) matched no issue`,
     });
   }
 
@@ -134,7 +135,7 @@ export const checkDay = (options: {
   if (meetingOverlapMs !== undefined && meetingOverlapMs >= tolerance) {
     warnings.push({
       kind: 'meeting-overlap',
-      detail: `${formatMs(meetingOverlapMs)} is claimed by a meeting and by observed activity at the same time`,
+      detail: `${formatDurationMs(meetingOverlapMs)} is claimed by a meeting and by observed activity at the same time`,
     });
   }
 

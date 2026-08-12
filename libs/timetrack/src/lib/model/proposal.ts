@@ -20,6 +20,13 @@ export type WorklogProposal = {
   state: WorklogProposalState;
 };
 
+/**
+ * Whether a sync writes a proposal in this state. `suggested` is still awaiting review and `rejected`
+ * is a deletion, so neither is written.
+ */
+export const syncsInState = (state: WorklogProposalState) =>
+  state === 'accepted' || state === 'edited' || state === 'synced';
+
 /** A proposal that exists in Tempo. The hash is over the synced content, for change detection. */
 export type SyncedWorklog = {
   proposalId: string;

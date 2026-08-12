@@ -10,6 +10,7 @@ import {
 import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { injectAgentSessionCollector, injectWindowCollector } from '../collectors';
 import { injectHostPorts } from '../host';
+import { DayReviewComponent } from './day-review';
 import { WindowControlsComponent } from './window-controls.component';
 
 type HostStatus =
@@ -33,6 +34,8 @@ type HostStatus =
           <ethlete-window-controls />
         </div>
       </header>
+
+      <ethlete-day-review />
 
       <et-card variant="outlined">
         <h2 class="text-h3">Host</h2>
@@ -123,6 +126,7 @@ type HostStatus =
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
     CARD_IMPORTS,
+    DayReviewComponent,
     DESCRIPTION_LIST_IMPORTS,
     SpinnerComponent,
     WindowControlsComponent,

@@ -1,6 +1,6 @@
 use crate::state::Db;
 use crate::error::TimetrackResult;
-use rusqlite::{params, params_from_iter};
+use rusqlite::{params, params_from_iter, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -235,6 +235,47 @@ pub async fn ledger_remove(db: State<'_, Db>, proposal_ids: Vec<String>) -> Time
             placeholders(proposal_ids.len())
         );
         connection.execute(&sql, params_from_iter(proposal_ids.iter()))?;
+
+        Ok(())
+    })
+    .await
+}
+
+/// A day's review edits as stored, or `None` for a day nobody has edited. The JSON is passed through
+/// untouched: the host has no opinion about what a reviewer changed.
+#[tauri::command]
+pub async fn day_review_edits(db: State<'_, Db>, day: String) -> TimetrackResult<Option<serde_json::Value>> {
+    db.run(move |connection| {
+        let stored = connection
+            .query_row("SELECT edits FROM day_review WHERE day = ?1", params![day], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?;
+
+        Ok(stored.and_then(|edits| serde_json::from_str(&edits).ok()))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn set_day_review_edits(
+    db: State<'_, Db>,
+    day: String,
+    edits: Option<serde_json::Value>,
+) -> TimetrackResult<()> {
+    db.run(move |connection| {
+        match edits {
+            None => {
+                connection.execute("DELETE FROM day_review WHERE day = ?1", params![day])?;
+            }
+            Some(edits) => {
+                connection.execute(
+                    "INSERT INTO day_review (day, edits) VALUES (?1, ?2)
+                     ON CONFLICT (day) DO UPDATE SET edits = ?2",
+                    params![day, serde_json::to_string(&edits)?],
+                )?;
+            }
+        }
 
         Ok(())
     })

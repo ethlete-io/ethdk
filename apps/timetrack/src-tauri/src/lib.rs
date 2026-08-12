@@ -52,6 +52,7 @@ pub fn run() {
             secrets::secret_write,
             store::agent_session_cursors,
             store::compacted_through,
+            store::day_review_edits,
             store::events_append,
             store::events_between,
             store::events_delete_before,
@@ -60,6 +61,7 @@ pub fn run() {
             store::ledger_remove,
             store::ledger_upsert,
             store::set_compacted_through,
+            store::set_day_review_edits,
             window::window_events,
             window::window_source_status,
         ])

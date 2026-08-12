@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 import { CollectedEvent } from '../model/event';
 import { SyncedWorklog } from '../model/proposal';
+import { DayReviewEdits } from '../review/model';
 
 /**
  * Raw observations, append-only. The host owns the encrypted database; the core only ever asks for a
@@ -24,4 +25,15 @@ export type TimetrackLedgerStore = {
   entriesFor$(proposalIds: string[]): Observable<SyncedWorklog[]>;
   upsert$(entries: SyncedWorklog[]): Observable<void>;
   remove$(proposalIds: string[]): Observable<void>;
+};
+
+/**
+ * What a reviewer changed about a day, keyed by its local calendar day (`YYYY-MM-DD`). Only the edits
+ * are stored — the engine's own rows are re-derived from the events on every read, so a day whose
+ * evidence grew still reflects it, and a day nobody touched costs nothing.
+ */
+export type TimetrackReviewStore = {
+  editsFor$(day: string): Observable<DayReviewEdits | null>;
+  save$(day: string, edits: DayReviewEdits): Observable<void>;
+  clear$(day: string): Observable<void>;
 };

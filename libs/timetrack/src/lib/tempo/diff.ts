@@ -1,8 +1,6 @@
-import { SyncedWorklog, WorklogProposal, WorklogProposalState } from '../model/proposal';
+import { SyncedWorklog, WorklogProposal, syncsInState } from '../model/proposal';
 import { TempoMarkerScheme, unmarkedDescription } from './marker';
 import { TempoWorklog } from './worklogs';
-
-const SYNCABLE_STATES: WorklogProposalState[] = ['accepted', 'edited', 'synced'];
 
 /** FNV-1a. Not a security hash — it only has to change when the synced content changes. */
 const fnv1a = (value: string) => {
@@ -123,7 +121,7 @@ export const planTempoSync = (options: {
     const entry = ledgerByProposalId.get(proposal.id);
     const remote = entry ? remoteById.get(entry.tempoWorklogId) : undefined;
 
-    if (!SYNCABLE_STATES.includes(proposal.state)) {
+    if (!syncsInState(proposal.state)) {
       if (proposal.state === 'rejected' && entry && remote) {
         plan.deletes.push({
           proposalId: proposal.id,

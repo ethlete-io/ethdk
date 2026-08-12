@@ -860,8 +860,41 @@ two rows, retype a description, drag a boundary. The footer shows proposed total
 vs already-in-Tempo, and the sync button opens the diff preview. An end-of-day nudge fires if
 a day is unreviewed, and a week view lists unreviewed days for catching up.
 
-Local edits always win over re-correlation: re-running the engine on a day must never
-silently discard a row you touched. Mark edited proposals and merge around them.
+~~Local edits always win over re-correlation: re-running the engine on a day must never
+silently discard a row you touched. Mark edited proposals and merge around them.~~ **Built** -
+`libs/timetrack/src/lib/review/` holds `DayReviewEdits` and `reviewDay`, and
+`apps/timetrack/src/app/day-review/` the view (schema v2's `day_review` table persists the edits, one
+JSON document per local calendar day, keyed by `localDayKey`). What building it settled:
+
+- **Store the edits, never the engine's rows.** Two kinds of edit, because they reconcile
+  differently: a **field override** keyed by proposal id (issue, description, duration, accept/reject),
+  and a **pinned row** for a split or a merge, which records the proposal ids it `replaces` so those
+  are dropped from the next correlation rather than re-appearing beside it. `proposalId` is
+  `issueKey@from`, and a live day only ever grows forward, so the key is stable while the row's `to`
+  moves.
+- **Re-correlation can still find _more_ time under an edited row**, and that surplus is reported as
+  `unreconciledMs` with an `edited-row-drift` warning rather than folded in. Silently absorbing it
+  would move a number the reviewer had already decided; dropping it would lose real time.
+- **A rejection has to survive being restructured.** Splitting or merging a rejected row keeps it
+  rejected (a merge only if _every_ side was), or reshaping a row somebody threw out quietly puts its
+  time back into the sync. Everything else re-reviews as `edited`.
+- **Confidence decides the default checkbox, not a separate flag.** An untouched `certain`/`likely`
+  row reviews as `accepted` and a `weak` one stays `suggested`, which lines up exactly with the states
+  `planTempoSync` writes - so the footer's total and the sync are reading the same rule
+  (`syncsInState`, moved to `model/proposal.ts` and now shared with the Tempo diff).
+- **Reset undoes a whole split, not one half.** The other half still claims the original proposal, so
+  resetting one side alone would hide the row and turn its time into drift.
+- **The timeline is the scheduler's headless time grid** (`[etSchedulerTimeGrid]`), not hand-rolled
+  geometry: it brings the hour axis, the overlap packing that a fragmented morning needs, and
+  `initialScrollHour` so a 24-hour grid does not open on an empty midnight. The full `<et-scheduler>`
+  was wrong here - its toolbar carries a month/week switch, and only one day's events are loaded - and
+  a bare `[etScheduler]` composition cannot render badge content, because only `SchedulerComponent`
+  provides `SCHEDULER_FEATURE_HOST`. Rows paint in their confidence's theme via `colorToken`;
+  unattributed blocks sit behind them in neutral, because the time was still spent.
+- **Still owed here:** dragging a boundary (the headless grid has no drag - that lives in
+  `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now), the sync
+  diff preview, the end-of-day nudge, the week view, and a persisted day target (the footer's 8h is a
+  constant until there is a settings screen).
 
 ## Storage, privacy, secrets
 

@@ -4,6 +4,7 @@ export * from './invoke';
 export * from './ledger-store';
 export * from './ports';
 export * from './process-runner';
+export * from './review-store';
 export * from './secrets';
 export * from './transport';
 export * from './window-controls';

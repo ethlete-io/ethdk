@@ -33,6 +33,15 @@ CREATE TABLE compaction (
 INSERT INTO compaction (id, compacted_through_ms) VALUES (1, NULL);
 ";
 
+/// A day's review edits, keyed by its local calendar day. The whole `DayReviewEdits` is one JSON
+/// document because it is always read and written whole, and its shape belongs to the core, not here.
+const SCHEMA_V2: &str = "
+CREATE TABLE day_review (
+  day TEXT PRIMARY KEY,
+  edits TEXT NOT NULL
+);
+";
+
 /// Opens the encrypted database at `path`, creating and migrating it on first run.
 ///
 /// `key` is the 64 hex chars from the keychain. `PRAGMA key` has to be the first statement on the
@@ -66,6 +75,11 @@ fn migrate(connection: &Connection) -> TimetrackResult<()> {
     if version < 1 {
         connection.execute_batch(SCHEMA)?;
         connection.pragma_update(None, "user_version", 1)?;
+    }
+
+    if version < 2 {
+        connection.execute_batch(SCHEMA_V2)?;
+        connection.pragma_update(None, "user_version", 2)?;
     }
 
     Ok(())

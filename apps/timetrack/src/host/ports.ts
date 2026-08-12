@@ -4,6 +4,7 @@ import { createTauriAgentSessionLogReader } from './agent-session-log-reader';
 import { TauriEventStore, createTauriEventStore } from './event-store';
 import { createTauriLedgerStore } from './ledger-store';
 import { createTauriProcessRunner } from './process-runner';
+import { createTauriReviewStore } from './review-store';
 import { createTauriSecretStore } from './secrets';
 import { createTauriTransport } from './transport';
 import { TauriWindowControls, createTauriWindowControls } from './window-controls';
@@ -21,6 +22,7 @@ export const createHostPorts = (): HostPorts => ({
   secrets: createTauriSecretStore(),
   events: createTauriEventStore(),
   ledger: createTauriLedgerStore(),
+  review: createTauriReviewStore(),
   processes: createTauriProcessRunner(),
   agentLogs: createTauriAgentSessionLogReader(),
   windows: createTauriWindowSource(),

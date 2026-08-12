@@ -4,6 +4,7 @@ export * from './lib/git';
 export * from './lib/google-calendar';
 export * from './lib/jira';
 export * from './lib/model';
+export * from './lib/review';
 export * from './lib/store';
 export * from './lib/tempo';
 export * from './lib/transport';
