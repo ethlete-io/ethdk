@@ -121,35 +121,44 @@
         <div class="et-query-devtools-seed">
           <span class="et-query-devtools-section">Seed</span>
           @if (isSchemaReady()) {
-            <et-select
-              [options]="routeOptions()"
-              (pickOption)="pickRoute($event)"
-              class="et-query-devtools-combobox"
-              mirrorPanelWidth="false"
-              pickOnly
-            >
-              <input etSelectSearch placeholder="search the routes it declares…" />
-            </et-select>
-            <button
-              (click)="seedFromDraftRoute()"
-              class="et-query-devtools-btn"
-              type="button"
-              title="Generate a body from what the description says this path returns"
-            >
-              From this path
-            </button>
-            <et-select
-              [value]="pickedSchema()"
-              [options]="schemaNameOptions()"
-              (valueChange)="pickSchema($event)"
-              class="et-query-devtools-combobox"
-              mirrorPanelWidth="false"
-            >
-              <input etSelectSearch placeholder="search its named types…" />
-            </et-select>
-            <button [disabled]="!pickedSchema()" (click)="seedFromSchema()" class="et-query-devtools-btn" type="button">
-              From this type
-            </button>
+            <div class="et-query-devtools-seed-pick">
+              <et-select
+                [options]="routeOptions()"
+                (pickOption)="pickRoute($event)"
+                class="et-query-devtools-combobox"
+                mirrorPanelWidth="false"
+                pickOnly
+              >
+                <input etSelectSearch placeholder="search the routes it declares…" />
+              </et-select>
+              <button
+                (click)="seedFromDraftRoute()"
+                class="et-query-devtools-btn"
+                type="button"
+                title="Generate a body from what the description says this path returns"
+              >
+                From this path
+              </button>
+            </div>
+            <div class="et-query-devtools-seed-pick">
+              <et-select
+                [value]="pickedSchema()"
+                [options]="schemaNameOptions()"
+                (valueChange)="pickSchema($event)"
+                class="et-query-devtools-combobox"
+                mirrorPanelWidth="false"
+              >
+                <input etSelectSearch placeholder="search its named types…" />
+              </et-select>
+              <button
+                [disabled]="!pickedSchema()"
+                (click)="seedFromSchema()"
+                class="et-query-devtools-btn"
+                type="button"
+              >
+                From this type
+              </button>
+            </div>
             <select
               #stylePick
               (change)="pickSeedStyle(stylePick.value)"
