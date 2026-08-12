@@ -20,6 +20,8 @@
     "release": "yarn prepare:release && yarn changeset publish",
     "start": "nx serve playground",
     "storybook": "nx run playground:storybook:network",
+    "timetrack": "nx tauri:dev timetrack-app",
+    "timetrack:build": "nx tauri:build timetrack-app",
     "update-nx": "rm -f migrations.json && yarn dlx nx migrate latest && yarn dlx nx migrate --run-migrations --if-exists"
   },
   "resolutions": {
@@ -36,6 +38,7 @@
     "@angular/router": "22.0.7",
     "@changesets/cli": "2.31.1",
     "@floating-ui/dom": "1.8.0",
+    "@tauri-apps/api": "2.11.1",
     "date-fns": "4.4.0",
     "rxjs": "7.8.2",
     "socket.io-client": "4.8.3",
@@ -77,6 +80,7 @@
     "@swc/core": "1.15.46",
     "@swc/helpers": "0.5.23",
     "@tailwindcss/postcss": "4.3.3",
+    "@tauri-apps/cli": "2.11.4",
     "@types/mdx": "2.0.14",
     "@types/node": "24.13.3",
     "@typescript-eslint/utils": "8.65.0",

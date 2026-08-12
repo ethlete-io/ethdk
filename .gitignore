@@ -69,3 +69,5 @@ Thumbs.db
 
 .claude/settings.local.json
 ethlete-agents.config.local.json
+apps/timetrack/src-tauri/target
+apps/timetrack/src-tauri/gen

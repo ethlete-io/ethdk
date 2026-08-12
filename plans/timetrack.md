@@ -107,8 +107,16 @@ libs/timetrack/                     @ethlete/timetrack - framework-agnostic TS
     reason/                         the agent-CLI reasoning provider + prompt contract
     transport/                      the HTTP/exec/storage ports the host must supply
 apps/timetrack/                     private Angular app (@ethlete/components UI)
+  src/host/                         the TS adapters that satisfy the ports over Tauri `invoke`
   src-tauri/                        Rust: collectors, storage, keychain, tray, process spawn
+    db.rs  state.rs                 schema + open/migrate; the managed Mutex<Connection>
+    keychain.rs  secrets.rs         the key and the provider tokens
+    http.rs  process.rs  store.rs   the commands behind the five ports
 ```
+
+**The shell is built.** The Nx project is `timetrack-app` — the library already owns the name
+`timetrack` — and `tauri:dev` / `tauri:build` are `nx:run-commands` targets deliberately outside the
+default pipeline. Prerequisites and the command-to-port table are in `apps/timetrack/README.md`.
 
 ### Why the core is framework-agnostic and transport-agnostic
 
@@ -139,6 +147,25 @@ interface TimetrackProcessRunner {
   run$(spec: ProcessSpec): Observable<ProcessResult>;
 }
 ```
+
+**All five are now supplied** — `apps/timetrack/src/host/`, one adapter per port, each a cold
+`defer(() => from(invoke(...)))`. What building them settled:
+
+- **The event store's port cannot express the transaction the cursors need.** `append$(events)` has
+  nowhere to put them, so the host's store adds `appendWithCursors$`, and the agent-session collector
+  must use it — the events and the cursors have to commit together or a lost cursor re-reads its log
+  and appends every sample twice. Same reason `cursors$`, `compactedThrough$` and
+  `setCompactedThrough$` live on the host type rather than the port.
+- **Rust never interprets an event.** A row is `at_ms`, `source`, `kind` and the whole event as
+  opaque JSON; the first three are lifted out only so a range query and a per-source retention pass
+  do not parse it. Exclusion already ran in the core, so the store has no opinion to hold, and adding
+  an event kind needs no Rust change at all.
+- **`run_process` takes an allowlist** (`git`, `claude`, `codex`). "The host spawns the process" left
+  this open, and an open spawn command makes any script that reaches the webview code execution.
+- **A non-2xx response is returned, never raised.** The providers already read status and body to
+  tell a quota breach from a bad token, so raising would destroy what they need.
+- **`db::open` takes the key rather than fetching it.** Reading the keychain inside it would make the
+  whole store untestable without a running secret service; the caller in `lib.rs` fetches the key.
 
 Repo conventions that apply to the lib (see `AGENTS.md` and the `styleguide` /
 `rxjs-signals` skills):
@@ -731,6 +758,21 @@ step in front of it.
 
 Tray presence plus a day view, built with `@ethlete/components`.
 
+**The styling foundation is in place.** The app registers its own colour and surface themes
+(`src/themes.ts`, `src/surface-themes.ts`) through the repo's own Nx generators, so every component
+resolves `--et-surface-*` / `--et-theme-color-*` and the whole app follows `prefers-color-scheme`
+without a line of media-query code. Tailwind is imported in `src/styles.css` with a trimmed `--text-*`
+scale on the 10px rem base; utilities are for app templates only, never component source. Two traps:
+
+- **Do not keep the generators' `.d.ts` output.** It narrows the theme-name registry, which is a
+  nice-to-have for a consumer compiling against built `.d.ts` files, but in this repo the app compiles
+  `libs/components` and `libs/core` from source through tsconfig paths - and neither is written
+  against a narrowed registry, so ~20 files fail, including the app's own theme definitions. Delete
+  the two `.d.ts` files after generating; the playground ships none either.
+- **A surface theme's colours are template-literal types.** Extracting a shared
+  `interactionColor` to a `const` widens it to `string` and stops compiling; annotate it
+  `SurfaceInteractionColor`.
+
 The tray shows current activity and today's total, and carries the start/stop timer for the
 explicit half of the hybrid model. Two Wayland realities to design around rather than
 discover later:
@@ -761,10 +803,21 @@ so the core holds the seam and the policy the host runs around it - nothing that
 `TimetrackEventStore` moved out of `transport/ports.ts` (a store is not a transport) and gained
 `append$`, `deleteEventsBefore$` and `oldestEventAt$`; `TimetrackPorts` gained `ledger`.
 
-- **Encrypted SQLite.** `rusqlite` with bundled SQLCipher, key generated at first run and
-  stored in the OS keychain (`keyring` crate; `tauri-plugin-stronghold` as the alternative).
-  Note that `tauri-plugin-sql` uses sqlx without SQLCipher, so it is the wrong choice here.
-  Waits on `apps/timetrack` - there is no Rust in the repo yet to put it in.
+- **Encrypted SQLite.** ~~`rusqlite` with bundled SQLCipher, key generated at first run and
+  stored in the OS keychain (`keyring` crate; `tauri-plugin-stronghold` as the alternative).~~
+  **Built** - `apps/timetrack/src-tauri/db.rs` holds the schema and `PRAGMA key`, `keychain.rs`
+  generates 32 random bytes into the OS keychain on first run. `tauri-plugin-sql` remains the wrong
+  choice: it uses sqlx without SQLCipher. Three things the plan did not know:
+  - **`PRAGMA key` must be the first statement on the connection.** Anything before it runs against
+    an unkeyed database and permanently confuses SQLCipher about the file's header. The open path
+    then reads `sqlite_master` purely to make a wrong key fail loudly instead of at the first query.
+  - **The `bundled-sqlcipher-vendored-openssl` feature needs perl's `FindBin`**, which Fedora ships
+    separately as `perl-FindBin`; without it OpenSSL's `Configure` fails and the error names perl,
+    not the missing module. Vendoring is still right - linking the system OpenSSL means every
+    machine needs its own `OPENSSL_DIR`, macOS worst of all.
+  - **`keyring` v4 renamed every backend feature** (`zbus-secret-service-keyring-store`,
+    `apple-native-keyring-store`, …) and enables the Linux and Windows ones by default, so the
+    backends have to be selected per `[target.'cfg(target_os = …)']` or a macOS build drags in dbus.
 - **Retention.** ~~Raw `CollectedEvent`s expire on a configurable window (default ~30 days)
   after which they are compacted to attributed blocks and deleted.~~ **`planRetention` decides
   this**, and its one load-bearing rule was not in the plan: the cutoff is clamped to how far
@@ -802,13 +855,20 @@ Jira provider on top, the whole Tempo integration - work-attribute discovery, fo
 subtraction, the sync diff and the write half that executes it - the read-only Google Calendar
 provider, and the store's core half - persistence ports, exclusion rules, retention, ledger writer -
 plus the Claude Code session-log parser with its cursor-driven collector, and the git reconcile pass
-(358 tests). Remaining: the encrypted database itself (host-side, needs `apps/timetrack`),
-the window/idle collector, the host half of the session-log and git collectors - the file
-reader behind `AgentSessionLogReader`, cursor persistence, and the inotify watch - Google's OAuth
-dance (host-side, and the last thing standing between the calendar provider and a real day), the
-day-review UI, tray. No
-LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real
-day.
+(358 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
+keychain key, all five ports wired over `invoke`, and the theming and Tailwind foundation the review
+UI will sit on. Remaining: the window/idle collector, the file reader behind `AgentSessionLogReader`
+(cursor persistence is done, the reader is not), the inotify watch on `.git/HEAD`, Google's OAuth
+dance (still the last thing standing between the calendar provider and a real day), the day-review
+UI, tray. No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a
+real day.
+
+**Nothing Rust has been compiled yet.** The webview and OpenSSL build dependencies are not installed
+on the Linux box this was written on, so `db.rs`, `keychain.rs` and the schema were verified by
+compiling them into a throwaway crate against plain bundled SQLite - every statement, the cursor
+upsert, the `IN` placeholder lists and the retention delete all run - but the SQLCipher path itself,
+the keychain round-trip and everything touching `tauri::` are unverified. First job on a machine with
+the prerequisites: `yarn timetrack`.
 
 **The dev machine is now macOS, not the Wayland box this plan was written on.** The design is
 unaffected - the window source was always meant to be pluggable - but it re-ranks the work:

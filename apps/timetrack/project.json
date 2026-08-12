@@ -1,0 +1,71 @@
+{
+  "name": "timetrack-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/timetrack/src",
+  "prefix": "ethlete",
+  "tags": ["type:app", "scope:timetrack"],
+  "implicitDependencies": ["timetrack"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "browser": "apps/timetrack/src/main.ts",
+        "outputPath": "dist/apps/timetrack",
+        "index": "apps/timetrack/src/index.html",
+        "tsConfig": "apps/timetrack/tsconfig.app.json",
+        "assets": [],
+        "styles": ["apps/timetrack/src/styles.css"]
+      },
+      "configurations": {
+        "production": {
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
+      "continuous": true,
+      "options": {
+        "port": 4210
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "timetrack-app:build:production"
+        },
+        "development": {
+          "buildTarget": "timetrack-app:build:development"
+        }
+      }
+    },
+    "tauri": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tauri",
+        "cwd": "apps/timetrack"
+      }
+    },
+    "tauri:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tauri dev",
+        "cwd": "apps/timetrack"
+      }
+    },
+    "tauri:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tauri build",
+        "cwd": "apps/timetrack"
+      }
+    }
+  }
+}

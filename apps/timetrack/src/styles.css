@@ -1,0 +1,49 @@
+@import 'tailwindcss' source('../');
+
+@import './styles/themes.css';
+@import './styles/surface-themes.css';
+
+@theme {
+  --spacing: 0.4rem;
+
+  --text-*: initial;
+
+  --text-h1: 3.2rem;
+  --text-h1--line-height: 112%;
+  --text-h1--font-weight: 600;
+
+  --text-h2: 2.4rem;
+  --text-h2--line-height: 116%;
+  --text-h2--font-weight: 600;
+
+  --text-h3: 1.8rem;
+  --text-h3--line-height: 124%;
+  --text-h3--font-weight: 600;
+
+  --text-large: 1.8rem;
+  --text-large--line-height: 145%;
+  --text-large--font-weight: 400;
+
+  --text-base: 1.5rem;
+  --text-base--line-height: 150%;
+  --text-base--font-weight: 400;
+
+  --text-small: 1.3rem;
+  --text-small--line-height: 150%;
+  --text-small--font-weight: 400;
+
+  --text-mono: 1.3rem;
+  --text-mono--line-height: 150%;
+}
+
+/* 1rem = 10px, so every rem in the app and in @ethlete/components lines up with the design system. */
+html {
+  font-size: 62.5%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-family: system-ui, sans-serif;
+}
