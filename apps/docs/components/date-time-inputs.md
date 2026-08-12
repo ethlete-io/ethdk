@@ -466,10 +466,12 @@ times, race durations, effort windows), so it stays out of the calendar/time
 </et-form-field>
 ```
 
-| Input            | Type     | Default   | Description                                                        |
-| ---------------- | -------- | --------- | ------------------------------------------------------------------ |
-| `durationFormat` | `string` | `'mm:ss'` | Segment layout - runs of `h`/`m`/`s`/`S` (millis) plus separators. |
-| `placeholder`    | `string` | `''`      | Shown on the empty field.                                          |
+| Input             | Type             | Default   | Description                                                         |
+| ----------------- | ---------------- | --------- | ------------------------------------------------------------------- |
+| `durationFormat`  | `string`         | `'mm:ss'` | Segment layout - runs of `h`/`m`/`s`/`S` (millis) plus separators.  |
+| `placeholder`     | `string`         | `''`      | Shown on the empty field.                                           |
+| `aria-label`      | `string \| null` | `null`    | Names the field when no `et-label` is projected.                    |
+| `aria-labelledby` | `string \| null` | `null`    | Ids naming the field. Takes precedence over a projected `et-label`. |
 
 The format is any arrangement of unit-token runs and separators: `mm:ss`,
 `hh:mm:ss`, `hh:mm:ss.SSS`, `h m`. Typed text commits on blur/Enter with a
@@ -504,6 +506,10 @@ the overview. Notes specific to this family:
 - A **parse error** (unparseable typed text) is surfaced like any validation
   error once touched: `parseErrorMessage` renders as an `et-form-error` with
   matching `aria-invalid` and `aria-describedby` - no silent invalid state.
+- A field in a dense row that cannot carry a visible label takes `aria-label` (or
+  `aria-labelledby`) on the control itself - `[attr.aria-label]` would land on the
+  wrapper and leave the native field unnamed, which throws
+  [`ET2201`](/components/error-codes) in dev mode.
 - The picker overlay is a named `role="dialog"` - its name is the control's
   `dialogLabel`, falling through to [`DATE_TIME_LABELS`](/components/localization)
   (`chooseDate`, `chooseTime`, `chooseDateRange`, `chooseTimeRange`,

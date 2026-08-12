@@ -49,6 +49,12 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   /** Message the form field shows when typed text can't be parsed as a duration. */
   public parseErrorMessage = input<string | null>(null);
 
+  /** Author-supplied `aria-label`, forwarded onto the field. Names a control with no projected label. */
+  public ariaLabel = input<string | null>(null, { alias: 'aria-label' });
+
+  /** Author-supplied `aria-labelledby`, forwarded onto the field. Takes precedence over the projected label. */
+  public ariaLabelledby = input<string | null>(null, { alias: 'aria-labelledby' });
+
   /** The segment layout: `h`/`m`/`s`/`S` token runs plus separators. @default `'mm:ss'` */
   public durationFormat = input('mm:ss');
 
@@ -80,7 +86,9 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DURATION_INPUT);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
+  public labelId = computed(() => this.ariaLabelledby()?.trim() || (this.formField?.registeredLabel()?.id() ?? null));
+
+  public hasCustomAccessibleName = computed(() => !!this.ariaLabel()?.trim() || !!this.ariaLabelledby()?.trim());
 
   /** @internal */
   public registeredField = signal<DurationInputFieldDirective | null>(null);

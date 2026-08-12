@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
+import { FormFieldDirective, LabelDirective } from '../../../form-field/headless';
 import { DURATION_INPUT_IMPORTS } from '../duration-input.imports';
 import { DurationInputDirective } from './duration-input.directive';
 
@@ -26,6 +27,45 @@ class DurationInputTestHost {
   disabled = signal(false);
   durationFormat = signal('mm:ss');
 }
+
+@Component({
+  template: `<et-duration-input aria-label="Time logged" />`,
+  imports: [DURATION_INPUT_IMPORTS],
+})
+class AriaLabelDurationInputTestHost {}
+
+@Component({
+  template: `
+    <div etFormField>
+      <et-label>Projected label</et-label>
+      <et-duration-input aria-labelledby="external-label-id" />
+    </div>
+  `,
+  imports: [DURATION_INPUT_IMPORTS, FormFieldDirective, LabelDirective],
+})
+class AriaLabelledbyOverrideTestHost {}
+
+describe('DurationInputDirective accessible name forwarding', () => {
+  it('forwards a consumer aria-label onto the field', () => {
+    TestBed.configureTestingModule({ imports: [AriaLabelDurationInputTestHost] });
+    const fixture = TestBed.createComponent(AriaLabelDurationInputTestHost);
+    fixture.detectChanges();
+
+    const native = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+
+    expect(native.getAttribute('aria-label')).toBe('Time logged');
+  });
+
+  it('lets a consumer aria-labelledby override the projected label id', () => {
+    TestBed.configureTestingModule({ imports: [AriaLabelledbyOverrideTestHost] });
+    const fixture = TestBed.createComponent(AriaLabelledbyOverrideTestHost);
+    fixture.detectChanges();
+
+    const native = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+
+    expect(native.getAttribute('aria-labelledby')).toBe('external-label-id');
+  });
+});
 
 describe('DurationInputDirective', () => {
   let fixture: ComponentFixture<DurationInputTestHost>;

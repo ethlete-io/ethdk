@@ -27,6 +27,8 @@ import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labe
         'placeholder',
         'parseErrorMessage',
         'durationFormat',
+        'aria-label',
+        'aria-labelledby',
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
