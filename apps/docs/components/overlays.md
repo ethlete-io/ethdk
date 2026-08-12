@@ -357,8 +357,39 @@ Inside the overlay:
 - `ng-template[etOverlaySharedRouteTemplate]` + `<et-overlay-shared-route-template-outlet />` do the same for content shared across **all** routes (rendered wherever the outlet sits).
 - `ng-template[etOverlayRouterOutletDisabledTemplate]` provides fallback content shown while the router outlet is disabled.
 - `injectOverlayRouter()` gives programmatic access (`navigate`, `back`, `currentRoute`, …).
+- `button[et-overlay-nav-tab-link]` inside `<et-nav-tabs>` gives the overlay a tab bar driven by this router instead of Angular's - see [nav tabs in an overlay](/components/tabs#nav-tabs-in-an-overlay).
 
 <StoryEmbed id="components-overlays-overlay-with-routing--default" height="520px" />
+
+### Guarding navigation
+
+`registerNavigationGuard(guard)` registers a check that runs before every route change - `navigate()`, `etOverlayRouterLink`, `back()`, and the ones the browser's back and forward buttons trigger. It returns a function that unregisters the check again:
+
+```ts
+import { DestroyRef, inject } from '@angular/core';
+import { injectOverlayRouter } from '@ethlete/components';
+
+@Component({/* … */})
+export class MembersPageComponent {
+  private router = injectOverlayRouter();
+
+  constructor() {
+    inject(DestroyRef).onDestroy(
+      this.router.registerNavigationGuard(({ from, to }) => (this.hasUnsavedEdits() ? this.confirmDiscard() : true)),
+    );
+  }
+}
+```
+
+- The guard receives `{ from, to }` - both resolved absolute paths - and returns `boolean | Promise<boolean>`. `false` cancels the navigation and leaves the current route rendered.
+- Guards run **in registration order** and stop at the first veto, so a later guard never asks a question the first one already settled.
+- Navigating to the route already showing consults no guard at all.
+- For a **browser-driven** navigation the URL has already moved before anyone can veto, so a cancelled one puts the query param back on the route still being rendered.
+- `router.navigationPending()` is `true` while a guard is deciding, and stays `true` until the committed route is observable on `currentRoute` a frame later. UI that moves ahead of the router - a tab bar selecting the clicked tab optimistically - has to wait on it before reclaiming a selection, or it undoes the click mid-flight.
+- **Registering any guard makes every navigation asynchronous**, even one whose guard answers `true` synchronously. An unguarded router commits within the same task, which is what keeps the outlet's transition measuring the frame it rendered - so don't register a permanently-`true` guard just to have one.
+- With `syncUrl: true`, `back()` delegates to browser history and returns `true` before any guard has run: its return value means "a back step was issued", not "the route changed".
+
+This guards route changes **inside** the overlay. Closing the overlay is a separate veto - use [`createOverlayUnsavedChangesGuard`](#guarding-against-accidental-dismissal) for that, and both together for a routed overlay whose pages hold forms.
 
 ### Sidebar layouts
 

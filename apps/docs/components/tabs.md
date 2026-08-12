@@ -54,6 +54,21 @@ import { NAV_TAB_IMPORTS } from '@ethlete/components';
 
 <StoryEmbed id="components-navigation-tabs-nav-tabs--default" height="380px" />
 
+### Nav tabs in an overlay
+
+Inside an overlay the Angular router is usually not the one moving between pages - the [overlay router](/components/overlays#routing-inside-overlays) is. `button[et-overlay-nav-tab-link]` is the nav tab link for that case: it takes the target overlay route as its selector input and otherwise behaves like `a[et-nav-tab-link]`. It ships in the same `NAV_TAB_IMPORTS`.
+
+```html
+<et-nav-tabs fit="fill" orientation="vertical">
+  <button et-overlay-nav-tab-link="/">General</button>
+  <button et-overlay-nav-tab-link="/notifications">Notifications</button>
+</et-nav-tabs>
+
+<et-overlay-router-outlet />
+```
+
+It is a `button` rather than an anchor - an overlay route is not an address unless the router mirrors it into the URL - so it activates on <kbd>Enter</kbd> and <kbd>Space</kbd>. `disabled` and the router link's `navigationDirection` work as usual, and `orientation="vertical"` is what pairs it with a [sidebar overlay](/components/overlays#sidebar-layouts). Active state comes from the overlay router, so a navigation that router refuses - an [unsaved-changes guard](/components/overlays#guarding-navigation) - leaves the selection on the page that stayed instead of on a tab the outlet never rendered.
+
 ## Appearance
 
 Both flavors accept the shared tab-bar inputs:
