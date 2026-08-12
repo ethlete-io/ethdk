@@ -40,6 +40,10 @@ jobs:
       # drift from libs/agent-rules/content/**.
       - run: yarn agents:check
 
+      # Fails when libs/*/src/lib/version.ts drifts from that lib's package.json version. Must run
+      # before `build`, which regenerates those files as a target dependency and would hide the drift.
+      - run: yarn versions:check
+
       # Changeset notes are capped at one to two sentences / 40 words (see the `changeset` skill).
       # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
       - run: yarn lint:changesets

@@ -27,15 +27,16 @@ an earlier one is broken.
 ```bash
 yarn nx format:check                      # 1. Prettier across the workspace
 yarn agents:check                         # 2. generated agent files vs libs/agent-rules/content
-yarn lint:changesets                      # 3. unreleased changeset notes: ≤40 words, 1 paragraph, ≤3 bullets
-yarn nx run-many -t lint                  # 4. ESLint, incl. @nx/dependency-checks
-yarn nx run-many -t test                  # 5. all unit tests
-yarn nx run-many -t build                 # 6. all libs + apps (docs build fails on dead links)
-yarn nx run treeshake:bundle-goldens      # 7. bundle-size goldens
-yarn nx run storybook:build-storybook:ci # 8. Storybook production build
+yarn versions:check                       # 3. libs/*/src/lib/version.ts vs each package.json
+yarn lint:changesets                      # 4. unreleased changeset notes: ≤40 words, 1 paragraph, ≤3 bullets
+yarn nx run-many -t lint                  # 5. ESLint, incl. @nx/dependency-checks
+yarn nx run-many -t test                  # 6. all unit tests
+yarn nx run-many -t build                 # 7. all libs + apps (docs build fails on dead links)
+yarn nx run treeshake:bundle-goldens      # 8. bundle-size goldens
+yarn nx run storybook:build-storybook:ci # 9. Storybook production build
 ```
 
-Step 8 is the slowest by far. Skip it only when the change touches no component source
+Step 9 is the slowest by far. Skip it only when the change touches no component source
 and no story - and say so rather than reporting a clean run you didn't do.
 
 ## Reading the results
@@ -46,6 +47,11 @@ and no story - and say so rather than reporting a clean run you didn't do.
   Fix with `npx prettier --write libs/agent-rules/content/<file>` **then** `yarn agents:sync`,
   in that order - the generated copies are Prettier-ignored, so formatting after syncing
   leaves them stale and the check still fails.
+- **`versions:check`** - a lib's `src/lib/version.ts` no longer matches its `package.json`
+  version. Fix with `yarn versions:sync` and commit the result. This normally only drifts
+  right after a release bump; because `build` regenerates these files as a target dependency,
+  running build first silently fixes the drift instead of reporting it - which is why the
+  check runs before build.
 - **`lint`** - re-run with `--fix` **scoped to the files you changed**:
   `npx eslint libs/components/src/lib/<domain> --fix`. Never
   `npx nx lint <project> --fix` - a project-wide fix races the user's editor autosave.

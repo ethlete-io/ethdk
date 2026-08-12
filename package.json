@@ -10,8 +10,8 @@
     "agents:check": "nx build agent-rules && node dist/libs/agent-rules/src/index.js check",
     "agents:sync": "nx build agent-rules && node dist/libs/agent-rules/src/index.js sync",
     "amend": "git commit --amend --no-edit",
-    "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
-    "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
+    "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn versions:sync && yarn install --mode=update-lockfile",
+    "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn versions:sync && yarn install --mode=update-lockfile",
     "commit": "yarn dlx @commitlint/prompt-cli",
     "docs": "nx serve docs",
     "lint:changesets": "node ./tools/scripts/lint-changesets.js",
@@ -21,7 +21,9 @@
     "storybook": "nx run storybook:storybook:network",
     "timetrack": "nx tauri:dev timetrack-app",
     "timetrack:build": "nx tauri:build timetrack-app",
-    "update-nx": "rm -f migrations.json && yarn dlx nx migrate latest && yarn dlx nx migrate --run-migrations --if-exists"
+    "update-nx": "rm -f migrations.json && yarn dlx nx migrate latest && yarn dlx nx migrate --run-migrations --if-exists",
+    "versions:check": "node ./tools/scripts/generate-version.js --all --check",
+    "versions:sync": "node ./tools/scripts/generate-version.js --all"
   },
   "resolutions": {
     "webpack": "5.101.2"
