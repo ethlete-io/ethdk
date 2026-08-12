@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   BANNER_IMPORTS,
@@ -7,7 +7,8 @@ import {
   DESCRIPTION_LIST_IMPORTS,
   SpinnerComponent,
 } from '@ethlete/components';
-import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { AgentSessionCollector } from '../collectors';
 import { injectHostPorts } from '../host';
 
 type HostStatus =
@@ -53,10 +54,36 @@ type HostStatus =
               <dd>{{ cursors() }}</dd>
             </dl>
 
-            <p class="text-small text-et-surface-subtle">
-              The keychain answered and the database decrypted. No collector runs yet.
-            </p>
+            <p class="text-small text-et-surface-subtle">The keychain answered and the database decrypted.</p>
           }
+        }
+      </et-card>
+
+      <et-card variant="outlined">
+        <h2 class="text-h3">Agent sessions</h2>
+
+        @if (collectorFailure(); as failure) {
+          <et-banner [description]="failure" type="error" heading="The last collection failed" />
+        }
+
+        @if (lastRun(); as run) {
+          <dl et-description-list>
+            <dt>Last run</dt>
+            <dd>{{ run.at.toLocaleTimeString() }}</dd>
+            <dt>Samples stored</dt>
+            <dd>{{ run.events }}</dd>
+            <dt>Unparsed lines</dt>
+            <dd>{{ run.unparsedLines }}</dd>
+          </dl>
+        } @else if (!isCollecting()) {
+          <p class="text-small text-et-surface-muted">No run has finished yet.</p>
+        }
+
+        @if (isCollecting()) {
+          <div class="flex items-center gap-3 text-et-surface-muted">
+            <et-spinner />
+            <span class="text-base">Reading the session logs…</span>
+          </div>
         }
       </et-card>
     </main>
@@ -64,10 +91,16 @@ type HostStatus =
 })
 export class AppComponent {
   private readonly _ports = injectHostPorts();
+  private readonly _collector = inject(AgentSessionCollector);
   private readonly _reload = signal(0);
+  private readonly _probe = computed(() => ({ reload: this._reload(), run: this._collector.lastRun() }));
+
+  protected readonly lastRun = this._collector.lastRun;
+  protected readonly isCollecting = this._collector.isCollecting;
+  protected readonly collectorFailure = this._collector.failure;
 
   protected readonly status = toSignal(
-    toObservable(this._reload).pipe(
+    toObservable(this._probe).pipe(
       switchMap(() =>
         combineLatest({
           oldestEventAt: this._ports.events.oldestEventAt$(),
@@ -78,7 +111,6 @@ export class AppComponent {
           catchError((error: unknown) =>
             of<HostStatus>({ state: 'failed', message: error instanceof Error ? error.message : String(error) }),
           ),
-          startWith<HostStatus>({ state: 'checking' }),
         ),
       ),
     ),

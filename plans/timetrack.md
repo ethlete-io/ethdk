@@ -312,6 +312,19 @@ sample in it twice). Three things the plan did not say:
 
 Eight tests cover it, the last reading this machine's real logs.
 
+**The timer that drives it is built** - `apps/timetrack/src/collectors/agent-session-collector.ts`,
+polling every 60s. It reads the cursors, collects, and writes the events and the moved cursors back
+through `appendWithCursors$` in one transaction. Two things worth keeping:
+
+- **Ticks arriving mid-run are dropped, not queued** (`exhaustMap`). The first run on a machine reads
+  every log it has ever written, which takes longer than a poll interval; queueing would stack runs
+  up behind it and append the same samples twice.
+- **`modifiedAfter` only moves when a run persisted.** Moving it on a run that failed would skip the
+  logs that run never got to read, and nothing would ever come back for them.
+
+First real run on this machine: 477 logs imported, back to 13 July, 0 unparsed lines. The run a
+minute later found 5 new samples, which is the incremental path working.
+
 Verified: Claude Code writes `~/.claude/projects/<cwd-slug>/<sessionId>.jsonl`, where the
 directory name is the working directory (`-home-tom-dev-fut-frontend`), and `user` /
 `assistant` / `system` / `attachment` records each carry `timestamp`, `cwd`, **`gitBranch`**
@@ -872,27 +885,30 @@ provider, and the store's core half - persistence ports, exclusion rules, retent
 plus the Claude Code session-log parser with its cursor-driven collector, and the git reconcile pass
 (358 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
 keychain key, all five ports wired over `invoke`, and the theming and Tailwind foundation the review
-UI will sit on, plus the file reader behind `AgentSessionLogReader`. Remaining: the window/idle
-collector, the timer that drives `collectAgentSessions$` and persists what it returns, the inotify
-watch on `.git/HEAD`, Google's OAuth dance (still the last thing standing between the calendar
-provider and a real day), the day-review UI, tray. No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a
-real day.
+UI will sit on, plus the file reader behind `AgentSessionLogReader` and the timer that drives
+`collectAgentSessions$` and persists what it returns. Remaining: the window/idle collector, the
+inotify watch on `.git/HEAD`, Google's OAuth dance (still the last thing standing between the
+calendar provider and a real day), the day-review UI, tray. No LLM, no GitLab, no
+Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
 
-**All of the Rust type-checks, and the log reader's tests pass; nothing else has run.** With the
-webview dependencies installed and `cargo` on the path, every module - including `lib.rs`'s `setup`
-closure and the sixteen commands in `generate_handler!` - checks clean against the real `tauri` 2.11,
-`keyring` 4.1, `reqwest` 0.13 and `rusqlite` 0.40. Nothing had to change to get there, which retires
-the errors this plan expected around `keyring` v4's API, `State<'_, T>` in an `async` command, and
-`AsyncWriteExt` (tokio's `process` feature pulls in `io-util` on its own).
+**The app runs.** `yarn timetrack` builds and starts, the keychain hands back the key it generated on
+first run, SQLCipher opens the database with it (the file's header is random bytes, and a plain
+`sqlite3` refuses it), and the commands answer over IPC. The three the shell calls on load came back
+on the first try, as did the four the collector uses. Nothing had to change to get there, which also
+retires the errors this plan expected around `keyring` v4's API, `State<'_, T>` in an `async`
+command, and `AsyncWriteExt` (tokio's `process` feature pulls in `io-util` on its own).
+
+Two things the run turned up, neither in the app: `libayatana-appindicator` warns that it is
+deprecated in favour of `-glib`, which is worth following before the tray is built; and once
+`src-tauri/target` exists, `nx lint timetrack-app` fails on generated `__global-api-script.js`
+files inside it, so the app's `eslint.config.mjs` ignores that directory.
 
 Both the check and `cargo test` run through a scratch crate whose `[lib] path` points at the real
 `src/lib.rs` and which depends on `rusqlite`'s plain `bundled` feature, so neither waits on the
 vendored OpenSSL build - the trick to reuse whenever perl or OpenSSL is in the way. The path has to
 be the crate root rather than a `#[path]`-included submodule, or every `crate::…` in these files
-resolves against the wrong root. What remains genuinely unverified is everything that needs the
-built app: the SQLCipher `PRAGMA key` round-trip, the keychain, and every command reached over IPC
-rather than called directly. First job once `bundled-sqlcipher-vendored-openssl` builds:
-`yarn timetrack`.
+resolves against the wrong root. It is still the fastest way to run a Rust test here, and it cannot
+collide with a `tauri:dev` that is already up.
 
 **The dev machine is now macOS, not the Wayland box this plan was written on.** The design is
 unaffected - the window source was always meant to be pluggable - but it re-ranks the work:
