@@ -280,11 +280,35 @@ Verified on niri: focus samples arrive per switch and per title change, and the 
 
 ### Local git repos (Rust, phase 1)
 
-**The reconcile pass is built** - `libs/timetrack/src/lib/git/`: `collectGitEvents$` runs two `git`
-commands per configured root through `TimetrackProcessRunner` and returns checkout and commit events,
-with a per-command `failures` list so one stale root cannot cost the day. What is left for the host is
-the inotify watch on `.git/HEAD` and `.git/refs`, which only makes a switch show up immediately
-rather than at the next scan - the scan alone already reconstructs a day after the app was closed.
+**Built end to end.** `libs/timetrack/src/lib/git/`: `collectGitEvents$` runs two `git` commands per
+configured root through `TimetrackProcessRunner` and returns checkout and commit events, with a
+per-command `failures` list so one stale root cannot cost the day. The host half is
+`src-tauri/src/git.rs` - repository discovery plus the watch - and the collector is
+`src/collectors/git-collector.ts`. Verified live: the day view's blocks now carry branch labels.
+
+What building the host half settled:
+
+- **Discovery has to exist before configuration does.** There is no settings screen yet, so the host
+  walks the home directory to depth 3, skipping hidden and dependency directories and stopping at
+  each repository rather than descending into it - a repository inside a repository is a submodule or
+  a vendored copy whose commits already belong to the parent's history. `git_repos` takes an
+  overridable root, which is the seam settings will replace. This machine yields 4 roots.
+- **Watch the `.git` directory, not `HEAD`.** A checkout writes `HEAD.lock` and renames it over
+  `HEAD`, so a watch on the file ends up pointing at the replaced inode. The directory sees the
+  rename. `.git/refs` is watched recursively on top, and everything else in there - the index, the
+  object database, a `.lock` still being held - is filtered out, or every `git status` would rescan.
+- **The watch needs no acknowledgement protocol**, unlike the window source: the reflog and the commit
+  log are durable, so a lost notification costs latency and the 10-minute reconcile heals it. That is
+  what lets `git_changes` be a plain counter.
+- **A scan that overlaps itself needs a dedupe key**, and that is a store concern, not a git one. See
+  `dedupeKeyOf` under Storage below. With it the first scan of a session can be 30 days wide - which
+  is what actually delivers "a day still arrives after the app was closed" - and every scan after it
+  26 hours, re-reading freely.
+- **The author is resolved per repository** (`git config --get user.email` once per root at
+  discovery). A work checkout and a personal one are often two different addresses, and one wrong
+  address silently collects nobody's commits.
+- Watches are capped at 128 repositories and the overflow is reported in the panel rather than
+  dropped silently; on this machine `max_user_watches` is 828k, so the cap is nowhere near binding.
 
 Under the grammar this yields the Story/Task keys; the commit subjects yield the worklog description.
 What building it settled:
@@ -626,6 +650,18 @@ A pipeline of pure functions over an event window, each independently testable:
    glancing at Jira mid-task does not end the block; and adjacent same-context blocks merge only
    when they are genuinely contiguous, so resuming the same branch after lunch stays two blocks.
 
+   **A single sticky repo is wrong when several editor windows are open** - which is the normal case
+   here. Focus samples carry only an app id and a title, so alt-tabbing from a window on repo A to one
+   on repo B left the context on A's branch until the stickiness lapsed, and never split the block at
+   all. The branch is now remembered **per repository**, and a focus title whose own segment matches a
+   repository's directory name re-points the current one - `list.ts - fut-frontend - Visual Studio
+Code` says which checkout is in front of you. Consequences worth keeping: a focus only re-points
+   the repository, never invents a branch, because a branch is only ever learned from git or an agent
+   session; matching a whole `-`-separated segment rather than a substring is what stops a page
+   title from claiming a repository whose name merely appears in it; and a directory name two
+   repositories share is dropped rather than resolved, because guessing which `api` an editor is
+   showing would attribute one project's time to another.
+
 2. **Extract keys.** Run the branch-grammar parser over every branch-bearing piece of
    evidence (git checkouts, agent-session `gitBranch`, MR source branches, editor
    heartbeats), then a loose key regex over window titles as a lower-confidence pass.
@@ -838,10 +874,12 @@ bring it back. The `timetrack open` CLI above is still owed for exactly that cas
 readout and the start/stop timer are not built yet.
 
 **The window draws its own controls** (`decorations: false`, `src/app/window-controls.component.ts`).
-They sit in the app header rather than in a titlebar band of their own, so there is one surface
-instead of a GTK-grey strip above a dark app, and the header itself is the drag region
-(`data-tauri-drag-region="deep"`, which excludes buttons and maximises on double-click). What
-building it settled:
+They sit in a titlebar band of their own at the top of the shell, sticky and opaque, which is also
+the drag region (`data-tauri-drag-region="deep"`, which excludes buttons and maximises on
+double-click). The band was first folded into the app header to avoid a GTK-grey strip above a dark
+app; with `decorations: false` that strip is our own markup on the app's own surface tokens, so the
+objection did not survive contact - and a titlebar has to stay reachable however far the day is
+scrolled, which a header does not. What building it settled:
 
 - **Ask the compositor which controls to draw.** `src-tauri/src/decorations_wayland.rs` creates an
   `xdg_toplevel`, reads its `wm_capabilities` and destroys it without ever attaching a buffer, so it
@@ -905,6 +943,17 @@ so the core holds the seam and the policy the host runs around it - nothing that
 `TimetrackEventStore` moved out of `transport/ports.ts` (a store is not a transport) and gained
 `append$`, `deleteEventsBefore$` and `oldestEventAt$`; `TimetrackPorts` gained `ledger`.
 
+**An append is idempotent where the observation has an identity** (schema v3). `dedupeKeyOf`
+(`store/dedupe.ts`) keys a commit by repository and sha and a checkout by repository, reflog instant
+and branch; a unique index on the column and `ON CONFLICT DO NOTHING` drop the repeat, and
+`events_append` reports how many rows were actually new. This is what lets a collector read a window
+of history instead of a stream - the git scan could not otherwise overlap itself, and without
+overlapping scans nothing reconstructs the days the app was closed for. Two rules it rests on:
+SQLite treats NULLs as distinct, so a focus sample - two identical ones a minute apart are two real
+observations - keys to `null` and is always appended; and a commit keys by its sha **alone**, so the
+branch the first scan reported for it stays, because `%S` names whichever ref reached it first and a
+commit that later also lives on another branch is not a second piece of work.
+
 - **Encrypted SQLite.** ~~`rusqlite` with bundled SQLCipher, key generated at first run and
   stored in the OS keychain (`keyring` crate; `tauri-plugin-stronghold` as the alternative).~~
   **Built** - `apps/timetrack/src-tauri/db.rs` holds the schema and `PRAGMA key`, `keychain.rs`
@@ -946,9 +995,21 @@ so the core holds the seam and the policy the host runs around it - nothing that
   Rust. The webview never sees a token. Onboarding needs a real guided flow per provider with
   the exact scopes and console steps, because this is the single biggest friction point in the
   whole product.
-- **A visible data inventory.** One settings screen listing every collector, whether it is
-  on, what it stores, and how long. For a tool that watches your workday, this is the
-  feature that makes it installable by someone who is not its author.
+- **A visible data inventory.** ~~One settings screen listing every collector, whether it is
+  on, what it stores, and how long.~~ **Built** - `src/app/sources/`, and it replaced the per-collector
+  status cards rather than sitting beside them. Two things it settled:
+  - **List the sources that are not built, too.** The question somebody deciding whether to install
+    this asks is about the whole surface it will eventually watch, so GitLab, Slack, Discord, Gmail
+    and the editor extension are on the list as `planned`, each with what it _would_ store. Three
+    states carry it: `collecting`, `configured` (the code is there, the credentials are not) and
+    `planned`.
+  - **Liveness cannot be a per-run or per-session tally.** Every collector here reads on a short
+    interval and stores nothing on most runs - a caught-up git scan re-reads 131 events and appends
+    none - so a run count reads zero while the source is perfectly healthy, and a page reload resets
+    a session count. `events_by_source` answers it out of the database instead: how many events the
+    source has, and the newest one's instant. A count that is large and an instant that stops moving
+    are distinguishable; "0 stored" is not. Exclusions and dropped samples stay session-scoped,
+    because nothing stores them by design.
 
 ## Phasing
 
@@ -960,12 +1021,12 @@ Jira provider on top, the whole Tempo integration - work-attribute discovery, fo
 subtraction, the sync diff and the write half that executes it - the read-only Google Calendar
 provider, and the store's core half - persistence ports, exclusion rules, retention, ledger writer -
 plus the Claude Code session-log parser with its cursor-driven collector, and the git reconcile pass
-(358 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
+(398 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
 keychain key, all five ports wired over `invoke`, and the theming and Tailwind foundation the review
 UI will sit on, plus the file reader behind `AgentSessionLogReader` and the timer that drives
-`collectAgentSessions$` and persists what it returns. Remaining: the window/idle collector, the
-inotify watch on `.git/HEAD`, Google's OAuth dance (still the last thing standing between the
-calendar provider and a real day), the day-review UI, tray. No LLM, no GitLab, no
+`collectAgentSessions$` and persists what it returns. Remaining: Google's OAuth dance - now the last
+thing standing between the calendar provider and a real day, and the last unbuilt phase-1 collector -
+the tray's activity readout and timer, and the `timetrack open` CLI. No LLM, no GitLab, no
 Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
 
 **The app runs.** `yarn timetrack` builds and starts, the keychain hands back the key it generated on

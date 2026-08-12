@@ -15,6 +15,19 @@ export type WindowCollectorRun = {
 };
 
 /**
+ * What the collector has drained since the app started.
+ *
+ * A drain covers half a minute, so the last one is almost always zero even while the source is
+ * perfectly healthy — the running total is the number that says whether anything is arriving.
+ */
+export type WindowCollectorTotals = {
+  since: Date;
+  stored: number;
+  excluded: number;
+  dropped: number;
+};
+
+/**
  * Drains the host's focus and presence samples and stores the ones no exclusion rule denies.
  *
  * The sequence is only acknowledged once a batch is stored, so a failure repeats it rather than
@@ -24,6 +37,7 @@ export type WindowCollectorRun = {
 const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const lastRun = signal<WindowCollectorRun | null>(null);
+  const totals = signal<WindowCollectorTotals>({ since: new Date(), stored: 0, excluded: 0, dropped: 0 });
   const failure = signal<string | null>(null);
   const status = toSignal(ports.windows.status$().pipe(catchError(() => of(null))), { initialValue: null });
 
@@ -40,6 +54,12 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
         excluded: excluded.length,
         dropped: batch.dropped,
       });
+      totals.update((all) => ({
+        since: all.since,
+        stored: all.stored + kept.length,
+        excluded: all.excluded + excluded.length,
+        dropped: all.dropped + batch.dropped,
+      }));
     };
 
     if (!kept.length) {
@@ -73,7 +93,7 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  return { lastRun, failure, status };
+  return { lastRun, totals, failure, status };
 });
 
 export const injectWindowCollector = /* @__PURE__ */ toInjectFn(WINDOW_COLLECTOR_DEF);

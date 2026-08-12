@@ -8,9 +8,10 @@ import {
   SpinnerComponent,
 } from '@ethlete/components';
 import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
-import { injectAgentSessionCollector, injectWindowCollector } from '../collectors';
+import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../collectors';
 import { injectHostPorts } from '../host';
 import { DayReviewComponent } from './day-review';
+import { SourcesComponent } from './sources';
 import { WindowControlsComponent } from './window-controls.component';
 
 type HostStatus =
@@ -21,18 +22,25 @@ type HostStatus =
 @Component({
   selector: 'ethlete-root',
   template: `
+    <!--
+      The titlebar is sticky and opaque: it is the only drag region and the only way to close the
+      window, so it has to stay reachable however far the day is scrolled.
+    -->
+    <div
+      class="sticky top-0 z-10 flex items-center justify-end border-b border-et-surface-border bg-et-surface-bg px-3 py-2"
+      data-tauri-drag-region="deep"
+    >
+      <ethlete-window-controls />
+    </div>
+
     <main class="mx-auto flex max-w-[76rem] flex-col gap-8 p-10">
-      <header class="flex flex-wrap items-start justify-between gap-4" data-tauri-drag-region="deep">
+      <header class="flex flex-wrap items-start justify-between gap-4">
         <div class="flex flex-col gap-1">
           <h1 class="text-h1">Timetrack</h1>
           <p class="text-small text-et-surface-muted">Local-first Jira and Tempo worklogs, rebuilt from evidence.</p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <button (click)="recheck()" et-button variant="outline" size="sm">Re-check host</button>
-
-          <ethlete-window-controls />
-        </div>
+        <button (click)="recheck()" et-button variant="outline" size="sm">Re-check host</button>
       </header>
 
       <ethlete-day-review />
@@ -65,60 +73,7 @@ type HostStatus =
         }
       </et-card>
 
-      <et-card variant="outlined">
-        <h2 class="text-h3">Agent sessions</h2>
-
-        @if (agentSessions.failure(); as failure) {
-          <et-banner [description]="failure" type="error" heading="The last collection failed" />
-        }
-
-        @if (agentSessions.lastRun(); as run) {
-          <dl et-description-list>
-            <dt>Last run</dt>
-            <dd>{{ run.at.toLocaleTimeString() }}</dd>
-            <dt>Samples stored</dt>
-            <dd>{{ run.events }}</dd>
-            <dt>Unparsed lines</dt>
-            <dd>{{ run.unparsedLines }}</dd>
-          </dl>
-        } @else if (!agentSessions.isCollecting()) {
-          <p class="text-small text-et-surface-muted">No run has finished yet.</p>
-        }
-
-        @if (agentSessions.isCollecting()) {
-          <div class="flex items-center gap-3 text-et-surface-muted">
-            <et-spinner />
-            <span class="text-base">Reading the session logs…</span>
-          </div>
-        }
-      </et-card>
-
-      <et-card variant="outlined">
-        <h2 class="text-h3">Windows and presence</h2>
-
-        @if (windowSourceDetail(); as detail) {
-          <et-banner [description]="detail" type="warning" heading="No window source" />
-        }
-
-        @if (windows.failure(); as failure) {
-          <et-banner [description]="failure" type="error" heading="The last drain failed" />
-        }
-
-        <dl et-description-list>
-          <dt>Source</dt>
-          <dd>{{ windowSourceKind() }}</dd>
-          @if (windows.lastRun(); as run) {
-            <dt>Last drain</dt>
-            <dd>{{ run.at.toLocaleTimeString() }}</dd>
-            <dt>Samples stored</dt>
-            <dd>{{ run.stored }}</dd>
-            <dt>Excluded by a rule</dt>
-            <dd>{{ run.excluded }}</dd>
-            <dt>Dropped</dt>
-            <dd>{{ run.dropped }}</dd>
-          }
-        </dl>
-      </et-card>
+      <ethlete-sources />
     </main>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -128,24 +83,24 @@ type HostStatus =
     CARD_IMPORTS,
     DayReviewComponent,
     DESCRIPTION_LIST_IMPORTS,
+    SourcesComponent,
     SpinnerComponent,
     WindowControlsComponent,
   ],
 })
 export class AppComponent {
   private ports = injectHostPorts();
-  protected agentSessions = injectAgentSessionCollector();
-  protected windows = injectWindowCollector();
+  private agentSessions = injectAgentSessionCollector();
+  private windows = injectWindowCollector();
+  private git = injectGitCollector();
 
   private reload = signal(0);
   private probe = computed(() => ({
     reload: this.reload(),
     run: this.agentSessions.lastRun(),
     windows: this.windows.lastRun(),
+    git: this.git.lastRun(),
   }));
-
-  protected windowSourceKind = computed(() => this.windows.status()?.kind ?? 'checking…');
-  protected windowSourceDetail = computed(() => this.windows.status()?.detail ?? null);
 
   protected status = toSignal(
     toObservable(this.probe).pipe(

@@ -148,6 +148,64 @@ describe('sessionize', () => {
     expect(blocks[0].to.getHours()).toBeLessThanOrEqual(17);
   });
 
+  it('follows the editor window that has focus between two checkouts', () => {
+    const blocks = sessionize({
+      events: [
+        checkout(0, 'feat/FIP-2177-user-management'),
+        focus(2, 'code', 'list.ts - fut-frontend - Visual Studio Code'),
+        checkout(4, 'next', '/home/tom/dev/ethlete-sdk'),
+        focus(6, 'code', 'sessionize.ts - ethlete-sdk - Visual Studio Code'),
+        focus(10, 'code', 'list.ts - fut-frontend - Visual Studio Code'),
+        focus(14, 'code', 'list.ts - fut-frontend - Visual Studio Code'),
+      ],
+    });
+
+    expect(blocks.map((block) => block.context.repoPath)).toEqual([
+      '/home/tom/dev/fut-frontend',
+      '/home/tom/dev/ethlete-sdk',
+      '/home/tom/dev/fut-frontend',
+    ]);
+    expect(blocks[2].context.branch).toBe('feat/FIP-2177-user-management');
+  });
+
+  it('keeps a repository alive while its window stays focused', () => {
+    const blocks = sessionize({
+      events: [
+        checkout(0, 'feat/FIP-2177-user-management'),
+        focus(2, 'code', 'list.ts - fut-frontend - Visual Studio Code'),
+        focus(20, 'code', 'list.ts - fut-frontend - Visual Studio Code'),
+      ],
+    });
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].context.repoPath).toBe('/home/tom/dev/fut-frontend');
+  });
+
+  it('does not read a repository name buried inside a page title as a switch', () => {
+    const blocks = sessionize({
+      events: [
+        checkout(0, 'feat/FIP-2177-user-management'),
+        checkout(4, 'next', '/home/tom/dev/ethlete-sdk'),
+        focus(8, 'chrome', 'Why fut-frontend is slow - Stack Overflow'),
+      ],
+    });
+
+    expect(blocks[blocks.length - 1].context.repoPath).toBe('/home/tom/dev/ethlete-sdk');
+  });
+
+  it('refuses to guess which of two repositories a shared directory name means', () => {
+    const blocks = sessionize({
+      events: [
+        checkout(0, 'feat/FIP-2-two', '/home/tom/personal/api'),
+        focus(2, 'code', 'server.ts - api - Visual Studio Code'),
+        checkout(4, 'feat/FIP-1-one', '/home/tom/work/api'),
+        focus(8, 'code', 'server.ts - api - Visual Studio Code'),
+      ],
+    });
+
+    expect(blocks.map((block) => block.context.repoPath)).toEqual(['/home/tom/personal/api', '/home/tom/work/api']);
+  });
+
   it('returns nothing for an empty window', () => {
     expect(sessionize({ events: [] })).toEqual([]);
   });

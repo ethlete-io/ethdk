@@ -32,6 +32,9 @@ export const DEFAULT_SESSIONIZE_OPTIONS: SessionizeOptions = {
 
 type RepoState = { repoPath: string; branch?: string; at: Date };
 
+/** What a window manager puts between the parts of a title. */
+const TITLE_SEGMENTS = /\s[-–—|]\s/;
+
 const evidenceFor = (event: ActivityEvent): Evidence | null => {
   switch (event.kind) {
     case 'window-focus':
@@ -67,6 +70,45 @@ const repoStateFor = (event: ActivityEvent): RepoState | null => {
     default:
       return null;
   }
+};
+
+/**
+ * Which repository a window title names, by the directory the checkout lives in.
+ *
+ * An editor puts the folder in its own title segment — `list.ts - fut-frontend - Visual Studio Code`
+ * — and with several editor windows open on different checkouts that segment is the only thing saying
+ * which of them has focus. Matching a whole segment rather than a substring is what keeps a page title
+ * from claiming a repository whose name merely appears somewhere in it.
+ */
+const repoNamedIn = (options: { title: string; byName: Map<string, string> }) =>
+  options.title
+    .split(TITLE_SEGMENTS)
+    .map((segment) => options.byName.get(segment.trim()))
+    .find((repoPath) => !!repoPath);
+
+/**
+ * Indexes the window's repositories by their directory name.
+ *
+ * A name two of them share is dropped rather than resolved: guessing which `api` an editor is showing
+ * would attribute one project's time to another, and no attribution is the better failure.
+ */
+const reposByName = (samples: ActivityEvent[]) => {
+  const byName = new Map<string, string>();
+  const ambiguous = new Set<string>();
+
+  for (const sample of samples) {
+    const repoPath = repoStateFor(sample)?.repoPath;
+    const name = repoPath?.split('/').filter(Boolean).pop();
+
+    if (!repoPath || !name) continue;
+    if (byName.get(name) !== undefined && byName.get(name) !== repoPath) ambiguous.add(name);
+
+    byName.set(name, repoPath);
+  }
+
+  for (const name of ambiguous) byName.delete(name);
+
+  return byName;
 };
 
 const addEvidence = (into: Evidence[], evidence: Evidence | null) => {
@@ -136,10 +178,13 @@ export const sessionize = (options: {
     .slice()
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 
+  const byName = reposByName(samples);
   const blocks: ActivityBlock[] = [];
+  /** The branch last seen in each repository, and when that repository was last observed at all. */
+  const repos = new Map<string, { branch?: string; at: Date }>();
   let current: ActivityBlock | null = null;
   let appId: string | undefined;
-  let repo: RepoState | null = null;
+  let repoPath: string | undefined;
 
   const close = (at: Date) => {
     if (!current) return;
@@ -157,11 +202,26 @@ export const sessionize = (options: {
     if (current && sample.at.getTime() - current.to.getTime() >= config.maxUnobservedMs) close(current.to);
 
     if (sample.kind === 'window-focus') appId = sample.appId;
-    const sampleRepo = repoStateFor(sample);
-    if (sampleRepo) repo = sampleRepo;
-    if (repo && sample.at.getTime() - repo.at.getTime() > config.repoStickinessMs) repo = null;
 
-    const context: ActivityContext = { appId, repoPath: repo?.repoPath, branch: repo?.branch };
+    const observed = repoStateFor(sample);
+    const focused = sample.kind === 'window-focus' ? repoNamedIn({ title: sample.title, byName }) : undefined;
+    const moved = observed?.repoPath ?? focused;
+
+    if (moved) {
+      // A branch is only ever learned from git or an agent session. Focusing an editor window says
+      // which checkout is in front of you, not what is checked out in it, so it keeps the branch the
+      // repository was last seen on rather than clearing it.
+      repos.set(moved, { branch: observed?.branch ?? repos.get(moved)?.branch, at: sample.at });
+      repoPath = moved;
+    }
+
+    const seen = repoPath ? repos.get(repoPath) : undefined;
+
+    if (repoPath && (!seen || sample.at.getTime() - seen.at.getTime() > config.repoStickinessMs)) {
+      repoPath = undefined;
+    }
+
+    const context: ActivityContext = { appId, repoPath, branch: repoPath ? repos.get(repoPath)?.branch : undefined };
 
     if (current && contextKey(current.context) === contextKey(context)) {
       current.to = sample.at;
