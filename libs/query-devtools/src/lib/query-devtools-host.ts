@@ -2,6 +2,7 @@ import { inject, InjectionToken, Signal, WritableSignal } from '@angular/core';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
+  AnyQueryBatch,
   AnyQuerySnapshot,
   AnyQueryStack,
   QueryClient,
@@ -23,6 +24,7 @@ import { QueryDevtoolsDiff } from './query-devtools-diff';
 import { DevtoolsLockRow } from './query-devtools-locks';
 import {
   AnyQuery,
+  BatchItemView,
   CacheView,
   DetailTab,
   DevtoolsTab,
@@ -63,6 +65,7 @@ export type QueryDevtoolsHost = {
   queryEntries: Signal<QueryDevtoolsEntry[]>;
   stackEntries: Signal<QueryDevtoolsEntry[]>;
   sequenceEntries: Signal<QueryDevtoolsEntry[]>;
+  batchEntries: Signal<QueryDevtoolsEntry[]>;
   formEntries: Signal<QueryDevtoolsEntry[]>;
   authEntries: Signal<QueryDevtoolsEntry[]>;
   wsEntries: Signal<QueryDevtoolsEntry[]>;
@@ -126,6 +129,7 @@ export type QueryDevtoolsHost = {
   asStack(entry: QueryDevtoolsEntry): AnyQueryStack;
   asPagedStack(entry: QueryDevtoolsEntry): AnyPagedQueryStack;
   asSequence(entry: QueryDevtoolsEntry): QuerySequence<unknown[]>;
+  asBatch(entry: QueryDevtoolsEntry): AnyQueryBatch;
   asAuth(entry: QueryDevtoolsEntry): AnyBearerAuthProvider;
   asWs(entry: QueryDevtoolsEntry): WebSocketDevtoolsHandle;
   asForm(entry: QueryDevtoolsEntry): QueryDevtoolsFormHandle;
@@ -170,6 +174,37 @@ export type QueryDevtoolsHost = {
   /** Whether a sequence step's in/out detail (`<entryId>:<stepIndex>`) is expanded - persisted. */
   isStepExpanded(entryId: string, index: number): boolean;
   toggleStep(entryId: string, index: number): void;
+
+  /** A batch's route with its path params left as `:name` - a batch fills them in per item, not once. */
+  batchRouteSegments(entry: QueryDevtoolsEntry): RouteSegment[];
+
+  /**
+   * The batch entry that created a query, or `null` for a query no batch did. What lets the Queries list
+   * fold a bulk run's items under one row instead of listing whatever it has in flight.
+   */
+  batchOf(entry: QueryDevtoolsEntry): QueryDevtoolsEntry | null;
+
+  /**
+   * The item queries a batch has in flight. Only those: a batch destroys each item's query the moment
+   * that item settles, so a settled item is read from {@link batchItems} instead.
+   */
+  queriesForBatch(entry: QueryDevtoolsEntry): QueryLink[];
+
+  /** A batch's settled items, failures first and capped - see {@link BatchItemView}. */
+  batchItems(entry: QueryDevtoolsEntry): BatchItemView;
+
+  /**
+   * The registry entry of one of a batch's items, or `null` once it has fallen out of the batch's capped
+   * tombstone tail - which is what makes an item row openable only while its query is still kept.
+   */
+  batchItemQueryId(entry: QueryDevtoolsEntry, index: number): string | null;
+
+  /** An item's throughput line (`12.4 items/s · ~8s left`), or `null` before there is a rate to show. */
+  batchThroughput(batch: AnyQueryBatch): string | null;
+
+  /** Whether a batch item's args/response detail (`<entryId>:<itemIndex>`) is expanded - persisted. */
+  isBatchItemExpanded(entryId: string, index: number): boolean;
+  toggleBatchItem(entryId: string, index: number): void;
   /** Keys of the Queries-list groups of identical rows the user opened - persisted. */
   expandedQueryGroups: Signal<ReadonlySet<string>>;
   toggleQueryGroup(key: string): void;
@@ -312,6 +347,10 @@ export type QueryDevtoolsHost = {
   stackSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
   sequenceSelectedQueryId: WritableSignal<string | null>;
   sequenceSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
+  batchSelectedQueryId: WritableSignal<string | null>;
+  batchSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
+  eventSelectedQueryId: WritableSignal<string | null>;
+  eventSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
   formSelectedQueryId: WritableSignal<string | null>;
   formSelectedQuery: Signal<{ entry: QueryDevtoolsEntry; query: AnyQuery } | null>;
 

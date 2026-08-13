@@ -1,4 +1,10 @@
 @layer components {
+  /* The divider and the drawer have to be flex items of the tab's own split, the way the Queries tab's
+     pair are - otherwise the pane sizing lands on a box inside this element and the drag moves nothing. */
+  et-query-devtools-drawer {
+    display: contents;
+  }
+
   .et-query-devtools-drawer {
     flex: 0 0 var(--_et-qdt-drawer-width, 42%);
     min-inline-size: var(--_et-qdt-drawer-width, 26rem);

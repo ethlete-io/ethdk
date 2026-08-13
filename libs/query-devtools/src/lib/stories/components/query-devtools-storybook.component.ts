@@ -1,9 +1,11 @@
 import { HttpHeaders } from '@angular/common/http';
-import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, signal, ViewEncapsulation } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField } from '@angular/forms/signals';
 import { AutoSurfaceDirective, ProvideColorDirective, toInjectFn } from '@ethlete/core';
 import {
   createPagedQueryStack,
+  createQueryBatch,
   defineQueryForm,
   createQueryStack,
   ethletePaginationAdapter,
@@ -36,6 +38,7 @@ import {
 import { QUERY_DEVTOOLS_IMPORTS } from '../../query-devtools.imports';
 import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';
 import {
+  archivePost,
   armFlakyEndpoint,
   confirmOrder,
   createOrder,
@@ -566,6 +569,66 @@ export class QdCheckoutCardComponent {
   }
 }
 
+/** A bulk mutation over many items - one query per item, `concurrency` of them alive at a time. */
+@Component({
+  selector: 'et-sb-qd-bulk-archive',
+  template: `
+    <et-sb-qd-card heading="Bulk archive batch">
+      <et-sb-qd-status [state]="state()" qdStatus>
+        {{ archive.status() }} · {{ archive.completed() }} / {{ archive.total() }} · {{ archive.failed() }} failed
+      </et-sb-qd-status>
+
+      <button
+        [loading]="archive.running()"
+        [progress]="archive.progress()"
+        (click)="run()"
+        et-button
+        size="sm"
+        variant="tonal"
+      >
+        <i etIcon="et-play"></i>
+        Archive {{ POST_COUNT }} posts
+      </button>
+      <button [disabled]="!archive.failed() || archive.running()" (click)="retry()" et-button size="sm" variant="tonal">
+        Retry {{ archive.failed() }}
+      </button>
+    </et-sb-qd-card>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [CARD_IMPORTS],
+})
+export class QdBulkArchiveCardComponent {
+  private destroyRef = inject(DestroyRef);
+
+  protected readonly POST_COUNT = 24;
+
+  public readonly posts = Array.from({ length: this.POST_COUNT }, (_, index) => ({ postId: index + 1 }));
+
+  protected readonly archive = createQueryBatch({
+    queryCreator: archivePost,
+    args: (post: { postId: number }) => ({ pathParams: { postId: post.postId }, body: { archived: true } }),
+    concurrency: 4,
+  });
+
+  protected state = computed<QdState>(() => {
+    const status = this.archive.status();
+
+    if (status === 'running') return 'loading';
+    if (status === 'error' || status === 'partial') return 'error';
+
+    return status === 'success' ? 'ok' : 'idle';
+  });
+
+  protected run() {
+    this.archive.reset();
+    this.archive.run(this.posts).pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
+
+  protected retry() {
+    this.archive.retryFailed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
+}
+
 /** A GraphQL query. */
 @Component({
   selector: 'et-sb-qd-gql',
@@ -748,6 +811,7 @@ export class QdUnmountCardComponent {
         <et-sb-qd-invalidate />
         <et-sb-qd-large />
         <et-sb-qd-checkout />
+        <et-sb-qd-bulk-archive />
         <et-sb-qd-auth />
         <et-sb-qd-profile />
         <et-sb-qd-gql />
@@ -772,6 +836,7 @@ export class QdUnmountCardComponent {
     QdExoticArgsCardComponent,
     QdFlakyCardComponent,
     QdDownloadCardComponent,
+    QdBulkArchiveCardComponent,
     QdPostsStackCardComponent,
     QdPagedCardComponent,
     QdFilterFormCardComponent,

@@ -276,7 +276,7 @@
     max-block-size: var(--_et-qdt-list-height, none);
   }
 
-  .et-query-devtools-panel:where([data-pane-axis='block']) .et-query-devtools-split > .et-query-devtools-drawer {
+  .et-query-devtools-panel:where([data-pane-axis='block']) .et-query-devtools-split .et-query-devtools-drawer {
     flex: 0 1 var(--_et-qdt-drawer-height, 50%);
     min-block-size: var(--_et-qdt-drawer-height, 0);
     max-block-size: var(--_et-qdt-drawer-height, none);
@@ -1332,6 +1332,17 @@
     border-collapse: collapse;
   }
 
+  /* A docked panel is narrower than these tables are wide. Squeezed, every cell wraps - a size becomes
+     two lines, a URL a column of single characters - and the card it sits in is what overflows the pane.
+     Given its own box the table keeps its natural width and scrolls inside the card instead. */
+  .et-query-devtools-table-scroll {
+    overflow-x: auto;
+  }
+
+  .et-query-devtools-table-scroll > .et-query-devtools-table {
+    min-inline-size: max-content;
+  }
+
   .et-query-devtools-table th,
   .et-query-devtools-table td {
     text-align: start;
@@ -1357,6 +1368,18 @@
 
   .et-query-devtools-table tr[data-status='error'] td {
     color: var(--_et-qdt-error);
+  }
+
+  /* The one column whose value repeats on every row, and the longest unbreakable token in the table. Left
+     to wrap it takes a character per line in a docked panel and pushes the request - the column the log is
+     read for - off the side. Truncated instead, with the whole value on hover. */
+  .et-query-devtools-table .et-query-devtools-cell-origin {
+    inline-size: 12ch;
+    max-inline-size: 12ch;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
   }
 
   .et-query-devtools-empty {

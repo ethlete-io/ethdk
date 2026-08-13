@@ -1,5 +1,6 @@
 import {
   AnyPagedQueryStack,
+  AnyQueryBatchItemResult,
   AnyQueryStack,
   HttpRequestLoadingProgressState,
   HttpRequestRetryState,
@@ -32,6 +33,7 @@ export type DevtoolsTab =
   | 'queries'
   | 'stacks'
   | 'sequences'
+  | 'batches'
   | 'forms'
   | 'auth'
   | 'ws'
@@ -108,6 +110,15 @@ export type QueryLink = {
   clientBaseUrl: string;
   stats?: QueryDevtoolsStatsHandle;
 };
+
+/** One settled item of a query batch, with the route the args it was sent with resolve to. */
+export type BatchItemRow = { result: AnyQueryBatchItemResult; segments: RouteSegment[] };
+
+/**
+ * A batch's settled items as its card lists them. Capped, and `hidden` says by how much - a bulk run
+ * settles more items than a list can hold, and a truncated one must not read as the whole run.
+ */
+export type BatchItemView = { rows: BatchItemRow[]; total: number; hidden: number };
 
 /**
  * Query stats plus the numbers the panel derives from them rather than storing: an execution that never

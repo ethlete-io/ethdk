@@ -184,7 +184,12 @@
     </ng-template>
 
     <ng-template #queryGroupBlock let-group="group" let-depth="depth" let-trim="trim">
-      @if (group.items.length === 1) {
+      @if (batchEntryOf(group); as batchEntry) {
+        <ng-container
+          [ngTemplateOutlet]="batchGroupBlock"
+          [ngTemplateOutletContext]="{ group, batchEntry, depth, trim }"
+        />
+      } @else if (group.items.length === 1) {
         <ng-container [ngTemplateOutlet]="queryRow" [ngTemplateOutletContext]="{ item: group.head, depth, trim }" />
       } @else {
         @let expanded = isGroupExpanded(group);
@@ -270,7 +275,80 @@
       }
     </ng-template>
 
-    <ng-template #queryRow let-item="item" let-nested="nested" let-ordinal="ordinal" let-depth="depth" let-trim="trim">
+    <!-- A bulk run's items, folded under the run rather than under what a row shows. They only exist
+         while in flight - the batch destroys each item's query as it settles - so this row stands for
+         the whole run, and the Batches tab is where its settled items are. -->
+    <ng-template #batchGroupBlock let-group="group" let-batchEntry="batchEntry" let-depth="depth" let-trim="trim">
+      @let batch = host.asBatch(batchEntry);
+      @let expanded = isGroupExpanded(group);
+      @let toggleLabel =
+        (expanded ? 'Collapse' : 'Expand') + ' the ' + group.items.length + ' requests this batch has in flight';
+      <div
+        [style.--_et-qdt-tree-depth]="depth"
+        [class.et-query-devtools-row--active]="holdsSelection(group)"
+        class="et-query-devtools-row et-query-devtools-row--group"
+      >
+        <button
+          [attr.aria-expanded]="expanded"
+          [attr.aria-label]="toggleLabel"
+          [title]="toggleLabel"
+          (click)="host.toggleQueryGroup(group.key)"
+          class="et-query-devtools-row-caret-btn"
+          type="button"
+        >
+          <span class="et-query-devtools-row-caret" aria-hidden="true">{{ expanded ? '▾' : '▸' }}</span>
+        </button>
+        <button
+          (click)="selectGroup(group)"
+          class="et-query-devtools-row-select"
+          type="button"
+          title="One item of a batch run - {{ batch.completed() }} of {{
+            batch.total()
+          }} settled. The Batches tab has the whole run."
+        >
+          <span
+            [attr.data-status]="groupStatus(group)"
+            [title]="groupStatus(group)"
+            class="et-query-devtools-status"
+          ></span>
+          <span class="et-query-devtools-method">{{ batchEntry.meta.method }}</span>
+          <span class="et-query-devtools-route">
+            <et-query-devtools-route [segments]="host.batchRouteSegments(batchEntry)" [trimPrefix]="trim" />
+          </span>
+          <span
+            class="et-query-devtools-chip"
+            title="Registered by createQueryBatch - inspect the run on the Batches tab"
+          >
+            batch {{ batch.completed() }}/{{ batch.total() }}
+          </span>
+          @if (batch.failed()) {
+            <span class="et-query-devtools-chip et-query-devtools-chip--error">{{ batch.failed() }} failed</span>
+          }
+          <span class="et-query-devtools-row-count" title="Requests this batch has in flight">
+            ×{{ group.items.length }}
+          </span>
+          <span class="et-query-devtools-row-time">{{ host.formatTime(lastExecutedAt(group.head)) }}</span>
+        </button>
+      </div>
+      @if (expanded) {
+        @for (item of group.items; track item.entry.id) {
+          <ng-container
+            [ngTemplateOutlet]="queryRow"
+            [ngTemplateOutletContext]="{ item, nested: true, showRoute: true, depth, trim }"
+          />
+        }
+      }
+    </ng-template>
+
+    <ng-template
+      #queryRow
+      let-item="item"
+      let-nested="nested"
+      let-showRoute="showRoute"
+      let-ordinal="ordinal"
+      let-depth="depth"
+      let-trim="trim"
+    >
       @let isGone = !!item.entry.destroyedAt;
       @let isPinned = host.isQueryPinned(item.entry);
       @let pinLabel = isPinned ? 'Unpin this query' : 'Pin this query to the top of the list';
@@ -290,8 +368,9 @@
           ></span>
           <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
           <!-- Inside a fold the route is the fold's own head, repeated once per consumer. Where the query
-               was created is the only thing that differs, so that is what the row says instead. -->
-          @if (nested) {
+               was created is the only thing that differs, so that is what the row says instead. A batch
+               fold is the exception: its items differ in the route, which is why `showRoute` is set. -->
+          @if (nested && !showRoute) {
             <span class="et-query-devtools-consumer">
               @if (consumerLabel(item); as consumer) {
                 &lt;{{ consumer }}&gt;

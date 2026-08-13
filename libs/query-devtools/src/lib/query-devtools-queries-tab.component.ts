@@ -143,7 +143,7 @@ export class QueryDevtoolsQueriesTabComponent {
   protected queryTree = computed(() =>
     flattenQueryPathTree(
       buildQueryPathTree(
-        this.queryGroups().map((group) => ({ path: queryRoutePathSegments(this.groupRoute(group.head)), item: group })),
+        this.queryGroups().map((group) => ({ path: queryRoutePathSegments(this.groupPathRoute(group)), item: group })),
       ),
       {
         isCollapsed: (key) => this.host.collapsedQueryPaths().has(key),
@@ -236,6 +236,14 @@ export class QueryDevtoolsQueriesTabComponent {
     return this.host.locatableElement(item.entry)?.localName ?? null;
   }
 
+  /**
+   * The batch that created a fold's queries, or `null` for a fold of ordinary ones. Every query in a
+   * batch fold has the same one, so the head answers for all of them.
+   */
+  protected batchEntryOf(group: QueryRowGroup) {
+    return this.host.batchOf(group.head.entry);
+  }
+
   /** The worst state in a folded group, so a collapsed row cannot hide the one instance that is failing. */
   protected groupStatus(group: QueryRowGroup): QueryStatus {
     const statuses = group.items.map((item) => this.host.queryStatus(item.query));
@@ -282,6 +290,11 @@ export class QueryDevtoolsQueriesTabComponent {
    * Gone chip asks for it - or the detail is showing it, so a query dying under the detail keeps its row.
    */
   private listsTombstone(entry: QueryDevtoolsEntry, facets: ReadonlySet<QueryListFacet>) {
+    // A batch's settled items are the exception: the batch destroys each query the moment its item lands,
+    // so every row of a finished run is a tombstone and the fold would vanish the moment it completed.
+    // What the row stands for is the batch - which is still registered - not a query that is gone.
+    if (this.host.batchOf(entry)) return true;
+
     return facets.has('gone') || (!facets.size && entry.id === this.host.selectedQueryId());
   }
 
@@ -337,8 +350,26 @@ export class QueryDevtoolsQueriesTabComponent {
       .join('');
   }
 
+  /**
+   * The route a whole fold sits under in the path tree. A batch's is its route *template*, not the
+   * resolved route of whichever item happens to be the head - the items differ in every path param, so
+   * the head's route would put the run under a different leaf on every re-render.
+   */
+  private groupPathRoute(group: QueryRowGroup) {
+    const batch = this.batchEntryOf(group);
+
+    return batch ? (batch.meta.route ?? '') : this.groupRoute(group.head);
+  }
+
   /** What makes two rows indistinguishable on screen. A tombstone never folds into a live query. */
   private groupKey(item: QueryRow) {
+    const batch = this.host.batchOf(item.entry);
+
+    // A batch's items fold by the run that created them rather than by what the row shows: they differ
+    // in every path param, so nothing else would fold them, and a run only ever has `concurrency` of
+    // them alive at a time - so an unfolded list is a handful of rows churning through the same slot.
+    if (batch) return `batch|${batch.id}`;
+
     return `${item.entry.destroyedAt ? 'gone' : 'live'}|${item.entry.meta.method ?? ''}|${this.groupRoute(item)}`;
   }
 

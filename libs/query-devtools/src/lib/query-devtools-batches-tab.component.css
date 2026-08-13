@@ -1,0 +1,28 @@
+@layer components {
+  .et-query-devtools-batch-bar {
+    block-size: 0.6rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 10%, transparent);
+    overflow: hidden;
+    margin-block-end: 1rem;
+  }
+
+  .et-query-devtools-batch-bar-fill {
+    display: block;
+    block-size: 100%;
+    background: var(--_et-qdt-accent);
+    transition: inline-size 150ms linear;
+  }
+
+  .et-query-devtools-batch-bar-fill[data-status='success'] {
+    background: var(--_et-qdt-success);
+  }
+
+  .et-query-devtools-batch-bar-fill[data-status='error'] {
+    background: var(--_et-qdt-error);
+  }
+
+  .et-query-devtools-batch-failed {
+    color: var(--_et-qdt-error);
+  }
+}

@@ -1,4 +1,5 @@
 import { Component, computed, ViewEncapsulation } from '@angular/core';
+import { QueryDevtoolsDrawerComponent } from './query-devtools-drawer.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { DESTROY_CAUSE_LABELS, EventLogItem } from './query-devtools-types';
 
@@ -7,6 +8,7 @@ import { DESTROY_CAUSE_LABELS, EventLogItem } from './query-devtools-types';
   selector: 'et-query-devtools-events-tab',
   templateUrl: './query-devtools-events-tab.component.html',
   encapsulation: ViewEncapsulation.None,
+  imports: [QueryDevtoolsDrawerComponent],
 })
 export class QueryDevtoolsEventsTabComponent {
   protected host = injectQueryDevtoolsHost();
@@ -49,8 +51,21 @@ export class QueryDevtoolsEventsTabComponent {
     this.host.eventErrorsOnly.set(false);
   }
 
+  /**
+   * Opens the query a row belongs to in this tab's own drawer, rather than jumping to the Queries tab -
+   * the log is read by walking rows, and a jump ends that walk on every click.
+   */
   protected selectEventRow(item: EventLogItem) {
-    if (item.queryId) this.host.selectQuery(item.queryId);
+    if (item.queryId) this.host.eventSelectedQueryId.set(item.queryId);
+  }
+
+  /**
+   * Whether a row's query can still be opened. An id alone does not say so: a query batch destroys each
+   * item's query as that item settles and leaves no tombstone behind, so a bulk run's rows would
+   * otherwise all render as links that open nothing.
+   */
+  protected canOpenEventRow(id: string | null) {
+    return !!id && !!this.host.findQuery(id);
   }
 
   /** Only a request settling is a success or a failure; a teardown or a refresh is neither. */

@@ -39,85 +39,87 @@
       @if (host.clientFeatures(client.client); as features) {
         <et-query-devtools-features [features]="features" />
       }
-      <table class="et-query-devtools-table">
-        <thead>
-          <tr>
-            <th>Request</th>
-            <th>Consumers</th>
-            <th>Size</th>
-            <th>Secure</th>
-            <th>Freshness</th>
-            <th>Sync</th>
-            <th>Disk</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of client.rows; track row.entry.key) {
-            @let cacheEntry = row.entry;
-            @let expanded = host.isCacheValueExpanded(client.name, cacheEntry.key);
+      <div class="et-query-devtools-table-scroll">
+        <table class="et-query-devtools-table">
+          <thead>
             <tr>
-              <td [title]="cacheEntry.request.method + ' ' + cacheEntry.request.url">
-                <span class="et-query-devtools-method">{{ cacheEntry.request.method }}</span>
-                <span class="et-query-devtools-url">{{ host.requestPath(cacheEntry.request.url) }}</span>
-              </td>
-              <td>
-                {{ cacheEntry.consumerCount }}
-                <!-- An entry nothing holds any more is the one row worth explaining: it looks
-                     like a leak and is in fact a keepUnusedFor window running out. -->
-                @if (cacheEntry.isUnused) {
-                  <span
-                    class="et-query-devtools-chip et-query-devtools-chip--muted"
-                    title="No consumer left - kept for its keepUnusedFor window, then collected"
-                  >
-                    collectible
-                  </span>
-                }
-              </td>
-              <td>{{ row.bytes ? host.formatTransferred(row.bytes, row.isEstimatedBytes) : '—' }}</td>
-              <td>{{ cacheEntry.isSecure ? 'yes' : 'no' }}</td>
-              <td>{{ host.cacheFreshness(cacheEntry) }}</td>
-              <td>{{ host.cacheSync(cacheEntry, client.pollStates) }}</td>
-              <td>{{ host.cachePersistence(cacheEntry) }}</td>
-              <td>
-                <span class="et-query-devtools-cell-actions">
-                  <button
-                    [class.et-query-devtools-btn--active]="expanded"
-                    [attr.aria-expanded]="expanded"
-                    (click)="host.toggleCacheValue(client.name, cacheEntry.key)"
-                    class="et-query-devtools-btn"
-                    type="button"
-                    title="Show the response held under this key"
-                  >
-                    Value
-                  </button>
-                  <button (click)="host.refetchCacheEntry(cacheEntry)" class="et-query-devtools-btn" type="button">
-                    Refetch
-                  </button>
-                  <button
-                    (click)="host.evictCacheEntry(client.repository, cacheEntry.key)"
-                    class="et-query-devtools-btn"
-                    type="button"
-                  >
-                    Evict
-                  </button>
-                </span>
-              </td>
+              <th>Request</th>
+              <th>Consumers</th>
+              <th>Size</th>
+              <th>Secure</th>
+              <th>Freshness</th>
+              <th>Sync</th>
+              <th>Disk</th>
+              <th>Actions</th>
             </tr>
-            @if (expanded) {
+          </thead>
+          <tbody>
+            @for (row of client.rows; track row.entry.key) {
+              @let cacheEntry = row.entry;
+              @let expanded = host.isCacheValueExpanded(client.name, cacheEntry.key);
               <tr>
-                <td class="et-query-devtools-cell-value" colspan="8">
-                  <et-query-devtools-json [value]="cacheEntry.request.response()" />
+                <td [title]="cacheEntry.request.method + ' ' + cacheEntry.request.url">
+                  <span class="et-query-devtools-method">{{ cacheEntry.request.method }}</span>
+                  <span class="et-query-devtools-url">{{ host.requestPath(cacheEntry.request.url) }}</span>
+                </td>
+                <td>
+                  {{ cacheEntry.consumerCount }}
+                  <!-- An entry nothing holds any more is the one row worth explaining: it looks
+                     like a leak and is in fact a keepUnusedFor window running out. -->
+                  @if (cacheEntry.isUnused) {
+                    <span
+                      class="et-query-devtools-chip et-query-devtools-chip--muted"
+                      title="No consumer left - kept for its keepUnusedFor window, then collected"
+                    >
+                      collectible
+                    </span>
+                  }
+                </td>
+                <td>{{ row.bytes ? host.formatTransferred(row.bytes, row.isEstimatedBytes) : '—' }}</td>
+                <td>{{ cacheEntry.isSecure ? 'yes' : 'no' }}</td>
+                <td>{{ host.cacheFreshness(cacheEntry) }}</td>
+                <td>{{ host.cacheSync(cacheEntry, client.pollStates) }}</td>
+                <td>{{ host.cachePersistence(cacheEntry) }}</td>
+                <td>
+                  <span class="et-query-devtools-cell-actions">
+                    <button
+                      [class.et-query-devtools-btn--active]="expanded"
+                      [attr.aria-expanded]="expanded"
+                      (click)="host.toggleCacheValue(client.name, cacheEntry.key)"
+                      class="et-query-devtools-btn"
+                      type="button"
+                      title="Show the response held under this key"
+                    >
+                      Value
+                    </button>
+                    <button (click)="host.refetchCacheEntry(cacheEntry)" class="et-query-devtools-btn" type="button">
+                      Refetch
+                    </button>
+                    <button
+                      (click)="host.evictCacheEntry(client.repository, cacheEntry.key)"
+                      class="et-query-devtools-btn"
+                      type="button"
+                    >
+                      Evict
+                    </button>
+                  </span>
                 </td>
               </tr>
+              @if (expanded) {
+                <tr>
+                  <td class="et-query-devtools-cell-value" colspan="8">
+                    <et-query-devtools-json [value]="cacheEntry.request.response()" />
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr>
+                <td class="et-query-devtools-empty" colspan="8">Cache empty.</td>
+              </tr>
             }
-          } @empty {
-            <tr>
-              <td class="et-query-devtools-empty" colspan="8">Cache empty.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
 
       @if (client.dropped.length) {
         <h4 class="et-query-devtools-section">Dropped</h4>

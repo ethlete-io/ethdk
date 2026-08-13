@@ -11,6 +11,7 @@ import {
   createBearerAuthProvider,
   createGetQuery,
   createGqlQueryViaPost,
+  createPatchQuery,
   createPostQuery,
   createQueryClient,
   createSecureGetQuery,
@@ -31,6 +32,12 @@ import { io } from 'socket.io-client';
 export const DEVTOOLS_DEMO_API_URL = 'https://query-devtools-demo.ethlete.local';
 
 const LATENCY_MS = 600;
+
+/** A batch sends one request per item, so its route answers faster than the rest of the demo API. */
+const BATCH_LATENCY_MS = 260;
+
+/** Every seventh item fails, so a batch demo ends `partial` and has something to retry. */
+const BATCH_FAILS_EVERY = 7;
 
 export type PostView = {
   id: number;
@@ -206,6 +213,33 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
   if (postMatch) {
     const id = Number(postMatch[1]);
 
+    if (req.method === 'PATCH') {
+      if (id % BATCH_FAILS_EVERY === 0) {
+        return of(null).pipe(
+          delay(BATCH_LATENCY_MS),
+          mergeMap(() =>
+            throwError(
+              () =>
+                new HttpErrorResponse({
+                  status: 409,
+                  statusText: 'Conflict',
+                  url: req.url,
+                  error: { message: `Post #${id} could not be archived (on purpose)` },
+                }),
+            ),
+          ),
+        );
+      }
+
+      return of(
+        new HttpResponse({
+          status: 200,
+          url: req.url,
+          body: { id, title: `Post #${id}`, publishedAt: publishedAtFor(id) } satisfies PostView,
+        }),
+      ).pipe(delay(BATCH_LATENCY_MS));
+    }
+
     return respond({ id, title: `Post #${id}`, publishedAt: publishedAtFor(id) } satisfies PostView);
   }
 
@@ -240,6 +274,7 @@ export const devtoolsDemoClient = createQueryClient({
 
 const getQuery = createGetQuery(devtoolsDemoClient);
 const postQuery = createPostQuery(devtoolsDemoClient);
+const patchQuery = createPatchQuery(devtoolsDemoClient);
 
 export type GetServerTimeArgs = { response: ServerTimeView; queryParams?: { fail?: boolean } };
 export type GetPostsArgs = {
@@ -258,6 +293,15 @@ export const getFlaky = getQuery<GetFlakyArgs>('/flaky');
 export const getDownload = getQuery<GetDownloadArgs>('/download', { reportProgress: true });
 export const getPosts = getQuery<GetPostsArgs>('/posts');
 export const getPost = getQuery<GetPostArgs>((p) => `/post/${p.postId}`);
+
+export type ArchivePostArgs = {
+  pathParams: { postId: number };
+  body: { archived: boolean };
+  response: PostView;
+};
+
+/** The mutation the bulk-archive batch runs once per post. */
+export const archivePost = patchQuery<ArchivePostArgs>((p) => `/post/${p.postId}`);
 
 export type LoginArgs = {
   body: { username: string; password: string };

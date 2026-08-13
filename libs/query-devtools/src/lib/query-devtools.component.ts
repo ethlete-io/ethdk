@@ -39,6 +39,7 @@ import {
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
+  AnyQueryBatch,
   AnyQuerySnapshot,
   AnyQueryStack,
   applyQueryDevtoolsTokenTtl,
@@ -148,6 +149,7 @@ import { QueryDevtoolsCopyMenuStylesComponent } from './query-devtools-copy-menu
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
 import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';
+import { QueryDevtoolsBatchesTabComponent } from './query-devtools-batches-tab.component';
 import { QueryDevtoolsSequencesTabComponent } from './query-devtools-sequences-tab.component';
 import { QueryDevtoolsSocketsTabComponent } from './query-devtools-sockets-tab.component';
 import { QueryDevtoolsStacksTabComponent } from './query-devtools-stacks-tab.component';
@@ -164,6 +166,7 @@ import {
 import { QueryDevtoolsTimelineStylesComponent } from './query-devtools-timeline-styles.component';
 import {
   AnyQuery,
+  BatchItemView,
   CacheRow,
   DetailTab,
   DevtoolsTab,
@@ -226,6 +229,12 @@ type PersistedState = {
   detailTab?: DetailTab;
   selectedClientName?: string | null;
   selectedQueryId?: string | null;
+  stackSelectedQueryId?: string | null;
+  sequenceSelectedQueryId?: string | null;
+  batchSelectedQueryId?: string | null;
+  eventSelectedQueryId?: string | null;
+  formSelectedQueryId?: string | null;
+  timelineSelectedQueryId?: string | null;
   selectedFormId?: string | null;
   inspectFilterIds?: string[] | null;
   queryFilter?: string;
@@ -238,6 +247,7 @@ type PersistedState = {
   socketFilter?: string;
   jsonSearch?: string;
   expandedSteps?: string[];
+  expandedBatchItems?: string[];
   expandedQueryGroups?: string[];
   jsonExpanded?: string[];
   jsonCollapsed?: string[];
@@ -245,6 +255,12 @@ type PersistedState = {
 
 /** How long a copy button stays ticked after a successful write. */
 const COPIED_RESET_MS = 1200;
+
+/**
+ * How many of a batch's items its card lists. A bulk run settles thousands, and a row per item is a
+ * list nobody scrolls and a render the panel pays for on every settle.
+ */
+const MAX_BATCH_ITEM_ROWS = 100;
 
 /** How long the locate box stays up. Long enough to outlast a smooth scroll and still be read. */
 const LOCATE_HOLD_MS = 2500;
@@ -680,6 +696,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   encapsulation: ViewEncapsulation.None,
   imports: [
     QueryDevtoolsAuthTabComponent,
+    QueryDevtoolsBatchesTabComponent,
     QueryDevtoolsCacheTabComponent,
     QueryDevtoolsEventsTabComponent,
     QueryDevtoolsAboutComponent,
@@ -750,6 +767,7 @@ export class QueryDevtoolsComponent implements OnInit {
     { id: 'queries', label: 'Queries' },
     { id: 'stacks', label: 'Stacks' },
     { id: 'sequences', label: 'Sequences' },
+    { id: 'batches', label: 'Batches' },
     { id: 'forms', label: 'Forms' },
     { id: 'auth', label: 'Auth' },
     { id: 'ws', label: 'Sockets' },
@@ -898,11 +916,14 @@ export class QueryDevtoolsComponent implements OnInit {
   public selectedFormId = signal<string | null>(this.persisted.selectedFormId ?? null);
 
   // Independent per-drawer selection so no drawer shares the Queries tab's selection - or another
-  // drawer's: opening a query from the Timeline must not also change what the Forms drawer shows.
-  public stackSelectedQueryId = signal<string | null>(null);
-  public sequenceSelectedQueryId = signal<string | null>(null);
-  public formSelectedQueryId = signal<string | null>(null);
-  public timelineSelectedQueryId = signal<string | null>(null);
+  // drawer's: opening a query from the Timeline must not also change what the Forms drawer shows. Each
+  // is persisted the way the Queries tab's is, so a reload puts every drawer back on what it was showing.
+  public stackSelectedQueryId = signal<string | null>(this.persisted.stackSelectedQueryId ?? null);
+  public sequenceSelectedQueryId = signal<string | null>(this.persisted.sequenceSelectedQueryId ?? null);
+  public batchSelectedQueryId = signal<string | null>(this.persisted.batchSelectedQueryId ?? null);
+  public eventSelectedQueryId = signal<string | null>(this.persisted.eventSelectedQueryId ?? null);
+  public formSelectedQueryId = signal<string | null>(this.persisted.formSelectedQueryId ?? null);
+  public timelineSelectedQueryId = signal<string | null>(this.persisted.timelineSelectedQueryId ?? null);
 
   /** Free-text narrowing of the Queries list. Every whitespace-separated term has to match. */
   public queryFilter = signal(this.persisted.queryFilter ?? '');
@@ -960,6 +981,9 @@ export class QueryDevtoolsComponent implements OnInit {
 
   /** Keys (`<entryId>:<stepIndex>`) of the sequence steps whose in/out detail is expanded. */
   private expandedSteps = signal<ReadonlySet<string>>(new Set(this.persisted.expandedSteps ?? []));
+
+  /** Keys (`<entryId>:<itemIndex>`) of the batch items whose args/response detail is expanded. */
+  private expandedBatchItems = signal<ReadonlySet<string>>(new Set(this.persisted.expandedBatchItems ?? []));
 
   /** Keys of the Queries-list groups the user opened - the tab is rebuilt on every switch back. */
   public expandedQueryGroups = signal<ReadonlySet<string>>(new Set(this.persisted.expandedQueryGroups ?? []));
@@ -1067,6 +1091,8 @@ export class QueryDevtoolsComponent implements OnInit {
   );
 
   public sequenceEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-sequence'));
+
+  public batchEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-batch'));
 
   public formEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-form'));
 
@@ -1191,6 +1217,7 @@ export class QueryDevtoolsComponent implements OnInit {
     const queries = this.liveQueryEntries();
     const stacks = this.stackEntries();
     const sequences = this.sequenceEntries();
+    const batches = this.batchEntries();
     const events = this.eventLog();
 
     return {
@@ -1209,6 +1236,13 @@ export class QueryDevtoolsComponent implements OnInit {
       sequences: {
         count: sequences.length,
         errors: sequences.filter((entry) => (this.asSequence(entry)?.failedAt() ?? null) !== null).length,
+      },
+      // A batch tolerates a partial failure by design, so the flag counts the runs that lost an item -
+      // the number a bulk edit is judged on - rather than the batches that failed outright.
+      batches: {
+        count: batches.length,
+        errors: batches.filter((entry) => this.asBatch(entry)?.failed() > 0).length,
+        errorNoun: 'partial',
       },
       forms: { count: this.formEntries().length, errors: 0 },
       auth: { count: this.authEntries().length, errors: 0 },
@@ -1245,6 +1279,8 @@ export class QueryDevtoolsComponent implements OnInit {
   public selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
   public stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
   public sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
+  public batchSelectedQuery = computed(() => this.findQuery(this.batchSelectedQueryId()));
+  public eventSelectedQuery = computed(() => this.findQuery(this.eventSelectedQueryId()));
   public formSelectedQuery = computed(() => this.findQuery(this.formSelectedQueryId()));
   public timelineSelectedQuery = computed(() => this.findQuery(this.timelineSelectedQueryId()));
 
@@ -1446,6 +1482,12 @@ export class QueryDevtoolsComponent implements OnInit {
         detailTab: this.detailTab(),
         selectedClientName: this.selectedClientName(),
         selectedQueryId: this.selectedQueryId(),
+        stackSelectedQueryId: this.stackSelectedQueryId(),
+        sequenceSelectedQueryId: this.sequenceSelectedQueryId(),
+        batchSelectedQueryId: this.batchSelectedQueryId(),
+        eventSelectedQueryId: this.eventSelectedQueryId(),
+        formSelectedQueryId: this.formSelectedQueryId(),
+        timelineSelectedQueryId: this.timelineSelectedQueryId(),
         selectedFormId: this.selectedFormId(),
         inspectFilterIds: this.inspectFilterIds(),
         queryFilter: this.queryFilter(),
@@ -1458,6 +1500,7 @@ export class QueryDevtoolsComponent implements OnInit {
         socketFilter: this.socketFilter(),
         jsonSearch: this.jsonSearch(),
         expandedSteps: [...this.expandedSteps()],
+        expandedBatchItems: [...this.expandedBatchItems()],
         expandedQueryGroups: [...this.expandedQueryGroups()],
         jsonExpanded: [...this.jsonExpandedPaths()],
         jsonCollapsed: [...this.jsonCollapsedPaths()],
@@ -1687,6 +1730,8 @@ export class QueryDevtoolsComponent implements OnInit {
     this.selectedFormId.set(null);
     this.stackSelectedQueryId.set(null);
     this.sequenceSelectedQueryId.set(null);
+    this.batchSelectedQueryId.set(null);
+    this.eventSelectedQueryId.set(null);
     this.formSelectedQueryId.set(null);
     this.timelineSelectedQueryId.set(null);
 
@@ -1696,6 +1741,8 @@ export class QueryDevtoolsComponent implements OnInit {
     this.queryTreeView.set(false);
     this.collapsedQueryPaths.set(new Set());
     this.expandedQueryGroups.set(new Set());
+    this.expandedSteps.set(new Set());
+    this.expandedBatchItems.set(new Set());
     this.eventClient.set(null);
     this.eventErrorsOnly.set(false);
     this.socketFilter.set('');
@@ -1909,25 +1956,12 @@ export class QueryDevtoolsComponent implements OnInit {
    * request that ran - which is what tells two requests to the same endpoint apart.
    */
   public routeSegments(entry: QueryDevtoolsEntry | undefined, query: AnyQuery): RouteSegment[] {
-    const parts = entry?.meta.routeParts;
+    const path = this.renderRoute(entry, this.queryArgs(query));
     const search = query.subtle.request()?.url.split('?')[1];
-    const querySegment: RouteSegment[] = search ? [{ text: `?${search}`, kind: 'query' }] : [];
 
-    if (!parts?.length) {
-      return entry?.meta.route ? [{ text: entry.meta.route, kind: 'static' }, ...querySegment] : [];
-    }
-
-    const pathParams = this.queryArgs(query)?.['pathParams'] as Record<string, unknown> | undefined;
-
-    const pathSegments = parts.map(({ text, param }): RouteSegment => {
-      if (!param) return { text, kind: 'static' };
-
-      const value = pathParams?.[param];
-
-      return { text: value === undefined || value === null ? `:${param}` : String(value), kind: 'param', name: param };
-    });
-
-    return [...pathSegments, ...querySegment];
+    // Only onto a route that rendered: an entry with no route at all reads as no route, not as a bare
+    // query string.
+    return search && path.length ? [...path, { text: `?${search}`, kind: 'query' }] : path;
   }
 
   /** The full URL of the request a query last made, or `null` while it has not executed. */
@@ -2606,6 +2640,10 @@ export class QueryDevtoolsComponent implements OnInit {
     return (entry.handle as { current: QuerySequence<unknown[]> }).current;
   }
 
+  public asBatch(entry: QueryDevtoolsEntry): AnyQueryBatch {
+    return (entry.handle as { current: AnyQueryBatch }).current;
+  }
+
   public asAuth(entry: QueryDevtoolsEntry): AnyBearerAuthProvider {
     return entry.handle as AnyBearerAuthProvider;
   }
@@ -2881,6 +2919,79 @@ export class QueryDevtoolsComponent implements OnInit {
     this.expandedSteps.set(next);
   }
 
+  /** A batch's route with its path params left as `:name` - a batch fills them in per item, not once. */
+  public batchRouteSegments(entry: QueryDevtoolsEntry): RouteSegment[] {
+    return this.renderRoute(entry, null);
+  }
+
+  public batchOf(entry: QueryDevtoolsEntry): QueryDevtoolsEntry | null {
+    const handle = entry.meta.batch;
+
+    return handle ? (this.batchEntries().find((e) => e.handle === handle) ?? null) : null;
+  }
+
+  public queriesForBatch(entry: QueryDevtoolsEntry): QueryLink[] {
+    return this.queryEntries()
+      .filter((e) => e.meta.batch === entry.handle && !e.destroyedAt)
+      .map((e) => this.queryLinkFor(e, e.handle as AnyQuery));
+  }
+
+  /**
+   * The registry entry of one of a batch's items, or `null` once it has fallen out of the batch's capped
+   * tombstone tail - which is what makes an item row openable only while its query is still kept.
+   */
+  public batchItemQueryId(entry: QueryDevtoolsEntry, index: number): string | null {
+    const item = this.queryEntries().find((e) => e.meta.batch === entry.handle && e.meta.batchItemIndex === index);
+
+    return item?.id ?? null;
+  }
+
+  public batchItems(entry: QueryDevtoolsEntry): BatchItemView {
+    const results = this.asBatch(entry).results();
+
+    // Failures first: a bulk edit is read for the items it could not apply, and those are the ones a
+    // cap must never be what drops. Everything else keeps input order.
+    const ordered = [
+      ...results.filter((result) => result.status === 'error'),
+      ...results.filter((result) => result.status !== 'error'),
+    ];
+
+    return {
+      rows: ordered.slice(0, MAX_BATCH_ITEM_ROWS).map((result) => ({
+        result,
+        segments: this.argsRouteSegments(entry, 'args' in result ? result.args : null),
+      })),
+      total: results.length,
+      hidden: Math.max(0, results.length - MAX_BATCH_ITEM_ROWS),
+    };
+  }
+
+  public batchThroughput(batch: AnyQueryBatch): string | null {
+    const rate = batch.itemsPerSecond();
+
+    if (rate === null) return null;
+
+    const remaining = batch.remainingTime();
+    const perSecond = `${rate.toFixed(rate < 10 ? 1 : 0)} items/s`;
+
+    return remaining === null ? perSecond : `${perSecond} · ~${this.formatDuration(remaining)} left`;
+  }
+
+  public isBatchItemExpanded(entryId: string, index: number) {
+    return this.expandedBatchItems().has(this.stepKey(entryId, index));
+  }
+
+  public toggleBatchItem(entryId: string, index: number) {
+    const key = this.stepKey(entryId, index);
+    const next = new Set(this.expandedBatchItems());
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    this.expandedBatchItems.set(next);
+  }
+
   /** Dedents a GraphQL document (template-literal indentation) for readable display. */
   public gqlDocument(doc: string) {
     const lines = doc.replace(/\t/g, '  ').split('\n');
@@ -2954,6 +3065,35 @@ export class QueryDevtoolsComponent implements OnInit {
   /** Downloads a file a tab generated. @see QueryDevtoolsHost.downloadTextFile */
   public downloadTextFile(file: { name: string; content: string; type: string }) {
     this.download({ content: file.content, filename: file.name, type: file.type });
+  }
+
+  /**
+   * The same route rendered from a set of args rather than from a query, which is what a batch item leaves
+   * behind: the batch destroys its query the moment the item settles.
+   */
+  private argsRouteSegments(entry: QueryDevtoolsEntry, args: unknown): RouteSegment[] {
+    return this.renderRoute(entry, args as Record<string, unknown> | null);
+  }
+
+  private renderRoute(
+    entry: QueryDevtoolsEntry | undefined,
+    args: Record<string, unknown> | null | undefined,
+  ): RouteSegment[] {
+    const parts = entry?.meta.routeParts;
+
+    if (!parts?.length) {
+      return entry?.meta.route ? [{ text: entry.meta.route, kind: 'static' }] : [];
+    }
+
+    const pathParams = args?.['pathParams'] as Record<string, unknown> | undefined;
+
+    return parts.map(({ text, param }): RouteSegment => {
+      if (!param) return { text, kind: 'static' };
+
+      const value = pathParams?.[param];
+
+      return { text: value === undefined || value === null ? `:${param}` : String(value), kind: 'param', name: param };
+    });
   }
 
   /**
@@ -3364,6 +3504,8 @@ export class QueryDevtoolsComponent implements OnInit {
         return { ...base, activity: this.sessionActivity(this.stackActivity(stack)) };
       }
       if (entry.kind === 'query-sequence') return { ...base, detail: this.sessionSequence(entry) };
+      if (entry.kind === 'query-batch')
+        return { ...base, method: entry.meta.method ?? null, detail: this.sessionBatch(entry) };
       if (entry.kind === 'query-form') return { ...base, detail: this.sessionForm(entry) };
       if (entry.kind === 'auth-provider') return { ...base, detail: this.sessionAuth(entry) };
       if (entry.kind === 'ws-client') return { ...base, detail: this.sessionSocket(entry) };
@@ -3418,6 +3560,41 @@ export class QueryDevtoolsComponent implements OnInit {
         args: sequence.stepArgs()[index] ?? null,
         response: this.stepSnapshot(sequence, index)?.response() ?? null,
       })),
+    };
+  }
+
+  private sessionBatch(entry: QueryDevtoolsEntry): Record<string, unknown> {
+    const batch = this.asBatch(entry);
+    const items = this.batchItems(entry);
+
+    return {
+      route: entry.meta.route ?? null,
+      status: batch.status(),
+      concurrency: entry.meta.concurrency ?? null,
+      stopOnError: entry.meta.stopOnError ?? null,
+      total: batch.total(),
+      completed: batch.completed(),
+      inFlight: batch.inFlight(),
+      succeeded: batch.succeeded(),
+      failed: batch.failed(),
+      skipped: batch.skipped(),
+      itemsPerSecond: batch.itemsPerSecond(),
+      remainingTimeMs: batch.remainingTime(),
+      // Capped the way the card is, and reported the same way, so an export cannot read as the whole run.
+      listedItems: items.rows.length,
+      hiddenItems: items.hidden,
+      items: items.rows.map((row) => {
+        const error = row.result.status === 'error' ? row.result.error : null;
+
+        return {
+          index: row.result.index,
+          status: row.result.status,
+          route: row.segments.map((segment) => segment.text).join(''),
+          error: error
+            ? { status: error.raw.status, body: slimForReport(error.isList ? error.errors : error.error) }
+            : null,
+        };
+      }),
     };
   }
 
@@ -3638,6 +3815,8 @@ export class QueryDevtoolsComponent implements OnInit {
       this.selectedQueryId(),
       this.stackSelectedQueryId(),
       this.sequenceSelectedQueryId(),
+      this.batchSelectedQueryId(),
+      this.eventSelectedQueryId(),
       this.formSelectedQueryId(),
       this.timelineSelectedQueryId(),
     ].join('|');

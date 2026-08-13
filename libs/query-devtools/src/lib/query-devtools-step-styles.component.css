@@ -27,6 +27,7 @@
     border: none;
     border-radius: 0;
     flex: 1 1 auto;
+    min-inline-size: 0;
   }
 
   .et-query-devtools-step-caret-btn {

@@ -1,151 +1,167 @@
-<div class="et-query-devtools-pane">
-  <div class="et-query-devtools-toolbar">
-    <div class="et-query-devtools-toolbar-row">
-      @if (eventClients().length > 1) {
-        <label class="et-query-devtools-field">
-          <span>Client</span>
-          <select
-            #eventClientSelect
-            [value]="host.eventClient() ?? ''"
-            (change)="host.eventClient.set(eventClientSelect.value || null)"
-            class="et-query-devtools-select"
-          >
-            <option value="">All clients</option>
-            @for (name of eventClients(); track name) {
-              <option [value]="name">{{ name }}</option>
-            }
-          </select>
-        </label>
-      }
-      @let errorsOnly = host.eventErrorsOnly();
-      <button
-        [class.et-query-devtools-facet--active]="errorsOnly"
-        [attr.aria-pressed]="errorsOnly"
-        (click)="toggleEventErrorsOnly()"
-        class="et-query-devtools-chip et-query-devtools-facet"
-        type="button"
-        title="Show only the requests that failed"
-      >
-        Errors only
-        <span class="et-query-devtools-facet-count">{{ host.tabBadges().events.errors }}</span>
-      </button>
-      <span class="et-query-devtools-count">
-        @if (isEventLogNarrowed()) {
-          {{ filteredEvents().length }} of {{ host.eventLog().length }} events
-        } @else {
-          {{ host.eventLog().length }} events
+<div #panes class="et-query-devtools-split">
+  <div class="et-query-devtools-pane">
+    <div class="et-query-devtools-toolbar">
+      <div class="et-query-devtools-toolbar-row">
+        @if (eventClients().length > 1) {
+          <label class="et-query-devtools-field">
+            <span>Client</span>
+            <select
+              #eventClientSelect
+              [value]="host.eventClient() ?? ''"
+              (change)="host.eventClient.set(eventClientSelect.value || null)"
+              class="et-query-devtools-select"
+            >
+              <option value="">All clients</option>
+              @for (name of eventClients(); track name) {
+                <option [value]="name">{{ name }}</option>
+              }
+            </select>
+          </label>
         }
-      </span>
-      @if (isEventLogNarrowed()) {
+        @let errorsOnly = host.eventErrorsOnly();
         <button
-          (click)="clearEventFilters()"
-          class="et-query-devtools-filter-clear"
+          [class.et-query-devtools-facet--active]="errorsOnly"
+          [attr.aria-pressed]="errorsOnly"
+          (click)="toggleEventErrorsOnly()"
+          class="et-query-devtools-chip et-query-devtools-facet"
           type="button"
-          title="Clear the client scope and the errors-only toggle"
-          aria-label="Clear filters"
+          title="Show only the requests that failed"
         >
-          <span aria-hidden="true">✕</span>
+          Errors only
+          <span class="et-query-devtools-facet-count">{{ host.tabBadges().events.errors }}</span>
         </button>
-      }
-      <button (click)="clearEvents()" class="et-query-devtools-btn et-query-devtools-toolbar-btn" type="button">
-        Clear
-      </button>
+        <span class="et-query-devtools-count">
+          @if (isEventLogNarrowed()) {
+            {{ filteredEvents().length }} of {{ host.eventLog().length }} events
+          } @else {
+            {{ host.eventLog().length }} events
+          }
+        </span>
+        @if (isEventLogNarrowed()) {
+          <button
+            (click)="clearEventFilters()"
+            class="et-query-devtools-filter-clear"
+            type="button"
+            title="Clear the client scope and the errors-only toggle"
+            aria-label="Clear filters"
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        }
+        <button (click)="clearEvents()" class="et-query-devtools-btn et-query-devtools-toolbar-btn" type="button">
+          Clear
+        </button>
+      </div>
+    </div>
+    <div class="et-query-devtools-scroll">
+      <table class="et-query-devtools-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th class="et-query-devtools-cell-origin">Base URL</th>
+            <th>Type</th>
+            <th>Request</th>
+            <th>Duration</th>
+            <th>Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (event of filteredEvents(); track event.id) {
+            <tr
+              [attr.data-status]="eventRowStatus(event)"
+              [class.et-query-devtools-row--active]="!!event.queryId && host.eventSelectedQueryId() === event.queryId"
+            >
+              <td>{{ host.formatTime(event.timestamp) }}</td>
+              <td [title]="event.client" class="et-query-devtools-mono et-query-devtools-cell-origin">
+                {{ event.client }}
+              </td>
+              <td>
+                {{ eventTypeLabel(event) }}
+                @if (event.isSecure) {
+                  <span class="et-query-devtools-chip et-query-devtools-chip--muted">secure</span>
+                }
+              </td>
+              @if (event.cause; as cause) {
+                <td>
+                  <span class="et-query-devtools-url">{{ host.causeLabel(cause) }}</span>
+                  @if (event.refreshed?.length) {
+                    <div class="et-query-devtools-chips">
+                      @for (refreshed of event.refreshed; track $index) {
+                        @if (
+                          canOpenEventRow(refreshed.queryIds[0] ?? null) ? refreshed.queryIds[0] : null;
+                          as queryId
+                        ) {
+                          <button
+                            (click)="host.eventSelectedQueryId.set(queryId)"
+                            class="et-query-devtools-chip et-query-devtools-chip--button"
+                            type="button"
+                            title="Open {{ refreshed.method }} {{ refreshed.path }}"
+                          >
+                            {{ refreshed.method }} {{ refreshed.path }}
+                            <!-- One request, several queries on the same cache key. Spelling the count
+                             out beats repeating an identical row per consumer. -->
+                            @if (refreshed.queryIds.length > 1) {
+                              <small>×{{ refreshed.queryIds.length }}</small>
+                            }
+                          </button>
+                        } @else {
+                          <span
+                            class="et-query-devtools-chip et-query-devtools-chip--muted"
+                            title="No registered query holds this cache entry any more"
+                          >
+                            {{ refreshed.method }} {{ refreshed.path }}
+                          </span>
+                        }
+                      }
+                    </div>
+                  } @else {
+                    <span class="et-query-devtools-hint">matched no query in use</span>
+                  }
+                </td>
+              } @else if (event.url; as url) {
+                <td>
+                  @if (canOpenEventRow(event.queryId)) {
+                    <button
+                      (click)="selectEventRow(event)"
+                      class="et-query-devtools-row-link"
+                      type="button"
+                      title="Open {{ event.method }} {{ url }}"
+                    >
+                      <span class="et-query-devtools-method">{{ event.method }}</span>
+                      <span class="et-query-devtools-url">{{ host.requestPath(url) }}</span>
+                    </button>
+                  } @else {
+                    <span [title]="event.method + ' ' + url">
+                      <span class="et-query-devtools-method">{{ event.method }}</span>
+                      <span class="et-query-devtools-url">{{ host.requestPath(url) }}</span>
+                    </span>
+                  }
+                </td>
+              } @else {
+                <td class="et-query-devtools-url">all secure entries dropped</td>
+              }
+              <td>{{ host.formatDuration(event.durationMs) }}</td>
+              <td>{{ event.bytes === null ? '—' : host.formatTransferred(event.bytes, event.isEstimatedBytes) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              @if (host.eventLog().length) {
+                <td class="et-query-devtools-empty" colspan="6">
+                  No event matches the filter · {{ host.eventLog().length }} in the log.
+                </td>
+              } @else {
+                <td class="et-query-devtools-empty" colspan="6">No events captured yet.</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
-  <div class="et-query-devtools-scroll">
-    <table class="et-query-devtools-table">
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Base URL</th>
-          <th>Type</th>
-          <th>Request</th>
-          <th>Duration</th>
-          <th>Size</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (event of filteredEvents(); track event.id) {
-          <tr [attr.data-status]="eventRowStatus(event)">
-            <td>{{ host.formatTime(event.timestamp) }}</td>
-            <td class="et-query-devtools-mono">{{ event.client }}</td>
-            <td>
-              {{ eventTypeLabel(event) }}
-              @if (event.isSecure) {
-                <span class="et-query-devtools-chip et-query-devtools-chip--muted">secure</span>
-              }
-            </td>
-            @if (event.cause; as cause) {
-              <td>
-                <span class="et-query-devtools-url">{{ host.causeLabel(cause) }}</span>
-                @if (event.refreshed?.length) {
-                  <div class="et-query-devtools-chips">
-                    @for (refreshed of event.refreshed; track $index) {
-                      @if (refreshed.queryIds[0]; as queryId) {
-                        <button
-                          (click)="host.selectQuery(queryId)"
-                          class="et-query-devtools-chip et-query-devtools-chip--button"
-                          type="button"
-                          title="Open {{ refreshed.method }} {{ refreshed.path }}"
-                        >
-                          {{ refreshed.method }} {{ refreshed.path }}
-                          <!-- One request, several queries on the same cache key. Spelling the count
-                             out beats repeating an identical row per consumer. -->
-                          @if (refreshed.queryIds.length > 1) {
-                            <small>×{{ refreshed.queryIds.length }}</small>
-                          }
-                        </button>
-                      } @else {
-                        <span
-                          class="et-query-devtools-chip et-query-devtools-chip--muted"
-                          title="No registered query holds this cache entry any more"
-                        >
-                          {{ refreshed.method }} {{ refreshed.path }}
-                        </span>
-                      }
-                    }
-                  </div>
-                } @else {
-                  <span class="et-query-devtools-hint">matched no query in use</span>
-                }
-              </td>
-            } @else if (event.url; as url) {
-              <td>
-                @if (event.queryId) {
-                  <button
-                    (click)="selectEventRow(event)"
-                    class="et-query-devtools-row-link"
-                    type="button"
-                    title="Open {{ event.method }} {{ url }}"
-                  >
-                    <span class="et-query-devtools-method">{{ event.method }}</span>
-                    <span class="et-query-devtools-url">{{ host.requestPath(url) }}</span>
-                  </button>
-                } @else {
-                  <span [title]="event.method + ' ' + url">
-                    <span class="et-query-devtools-method">{{ event.method }}</span>
-                    <span class="et-query-devtools-url">{{ host.requestPath(url) }}</span>
-                  </span>
-                }
-              </td>
-            } @else {
-              <td class="et-query-devtools-url">all secure entries dropped</td>
-            }
-            <td>{{ host.formatDuration(event.durationMs) }}</td>
-            <td>{{ event.bytes === null ? '—' : host.formatTransferred(event.bytes, event.isEstimatedBytes) }}</td>
-          </tr>
-        } @empty {
-          <tr>
-            @if (host.eventLog().length) {
-              <td class="et-query-devtools-empty" colspan="6">
-                No event matches the filter · {{ host.eventLog().length }} in the log.
-              </td>
-            } @else {
-              <td class="et-query-devtools-empty" colspan="6">No events captured yet.</td>
-            }
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+
+  <et-query-devtools-drawer
+    [sel]="host.eventSelectedQuery()"
+    [container]="panes"
+    (dismiss)="host.eventSelectedQueryId.set(null)"
+  />
 </div>

@@ -1,0 +1,202 @@
+<div #panes class="et-query-devtools-split">
+  <div class="et-query-devtools-scroll">
+    @for (entry of host.batchEntries(); track entry.id) {
+      @let batch = host.asBatch(entry);
+      @if (batch) {
+        <div class="et-query-devtools-card">
+          <div class="et-query-devtools-card-head">
+            <span class="et-query-devtools-chip">batch</span>
+            <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ batch.status() }}</span>
+            <span class="et-query-devtools-method">{{ entry.meta.method }}</span>
+            <span class="et-query-devtools-route">
+              <et-query-devtools-route [segments]="host.batchRouteSegments(entry)" fallback="no route" />
+            </span>
+            <span class="et-query-devtools-count">{{ batch.completed() }} / {{ batch.total() }}</span>
+          </div>
+
+          <div class="et-query-devtools-batch-bar" role="presentation">
+            <!-- Coloured by the run, not by whether an item failed: a bar filled red end to end reads as
+                 "nothing landed", which is the opposite of what a partial run means. -->
+            <span
+              [style.inline-size.%]="batch.progress()"
+              [attr.data-status]="batch.status()"
+              class="et-query-devtools-batch-bar-fill"
+            ></span>
+          </div>
+
+          <dl class="et-query-devtools-meta">
+            <dt>Outcomes</dt>
+            <dd>
+              @if (batch.total()) {
+                {{ batch.succeeded() }} ok
+                @if (batch.failed()) {
+                  · <span class="et-query-devtools-batch-failed">{{ batch.failed() }} failed</span>
+                }
+                @if (batch.skipped()) {
+                  · {{ batch.skipped() }} skipped
+                }
+                @let notAttempted = batch.total() - batch.completed();
+                @if (!batch.running() && notAttempted) {
+                  · {{ notAttempted }} not attempted
+                }
+              } @else {
+                — never run
+              }
+            </dd>
+
+            <dt>Throughput</dt>
+            <dd>
+              @if (host.batchThroughput(batch); as throughput) {
+                {{ throughput }}
+              } @else if (batch.running()) {
+                measuring…
+              } @else if (batch.total()) {
+                <span title="A rate needs the first `concurrency` items and a couple of seconds of run time">
+                  run too short to measure
+                </span>
+              } @else {
+                —
+              }
+            </dd>
+
+            <dt>In flight</dt>
+            <dd>
+              {{ batch.inFlight() }} of {{ entry.meta.concurrency }} concurrent
+              @if (entry.meta.stopOnError) {
+                · stops on the first failure
+              }
+            </dd>
+          </dl>
+
+          <!-- Only what is in flight: the batch destroys an item's query the moment it settles, so a
+               settled item is in the list below instead of here. -->
+          @let inFlight = host.queriesForBatch(entry);
+          @if (inFlight.length) {
+            <h5 class="et-query-devtools-section">In flight</h5>
+            <ul class="et-query-devtools-step-list">
+              @for (link of inFlight; track link.id) {
+                <li>
+                  <button
+                    [class.et-query-devtools-inner-row--active]="host.batchSelectedQueryId() === link.id"
+                    (click)="host.batchSelectedQueryId.set(link.id)"
+                    class="et-query-devtools-inner-row"
+                    type="button"
+                  >
+                    <span class="et-query-devtools-status" data-status="loading"></span>
+                    <span class="et-query-devtools-method">{{ link.method }}</span>
+                    <span class="et-query-devtools-route">
+                      <et-query-devtools-route [segments]="link.segments" fallback="in flight" />
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          @let items = host.batchItems(entry);
+          @if (items.rows.length) {
+            <h5 class="et-query-devtools-section">
+              Items
+              @if (items.hidden) {
+                <span class="et-query-devtools-count" title="Failures are listed first, so the cap never drops one">
+                  {{ items.rows.length }} of {{ items.total }} · {{ items.hidden }} not listed
+                </span>
+              } @else {
+                <span class="et-query-devtools-count">{{ items.total }}</span>
+              }
+            </h5>
+
+            <ol class="et-query-devtools-step-list">
+              @for (row of items.rows; track row.result.index) {
+                @let result = row.result;
+                @let expanded = host.isBatchItemExpanded(entry.id, result.index);
+                @let itemQueryId = host.batchItemQueryId(entry, result.index);
+                <li [attr.data-status]="itemStatus(result)" class="et-query-devtools-step-item">
+                  <div class="et-query-devtools-step-head">
+                    <!-- The row opens the item's own query in the drawer, the way a sequence step does.
+                         Disabled once that query has fallen out of the batch's capped tombstone tail -
+                         the caret below still has this item's args and outcome either way. -->
+                    <button
+                      [class.et-query-devtools-inner-row--active]="
+                        !!itemQueryId && host.batchSelectedQueryId() === itemQueryId
+                      "
+                      [disabled]="!itemQueryId"
+                      [title]="
+                        itemQueryId
+                          ? 'Inspect this item\'s request'
+                          : 'This item\'s query is no longer kept - open the row for its args and outcome'
+                      "
+                      (click)="host.batchSelectedQueryId.set(itemQueryId)"
+                      class="et-query-devtools-inner-row"
+                      type="button"
+                    >
+                      <span
+                        [attr.data-status]="itemStatus(result)"
+                        [title]="result.status"
+                        class="et-query-devtools-status"
+                      ></span>
+                      <span class="et-query-devtools-method">#{{ result.index }}</span>
+                      <span class="et-query-devtools-route">
+                        <et-query-devtools-route [segments]="row.segments" fallback="not sent" />
+                      </span>
+                      <!-- The dot already says success or error; only an item that never went out needs
+                           a word, since a neutral dot alone cannot tell the two reasons apart. -->
+                      @if (!wasSent(result)) {
+                        <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ result.status }}</span>
+                      }
+                    </button>
+                    <button
+                      [attr.aria-expanded]="expanded"
+                      (click)="host.toggleBatchItem(entry.id, result.index)"
+                      class="et-query-devtools-step-caret-btn"
+                      type="button"
+                      title="Toggle in / out"
+                    >
+                      {{ expanded ? '▾' : '▸' }}
+                    </button>
+                  </div>
+
+                  @if (expanded) {
+                    <div class="et-query-devtools-step-io">
+                      <h5 class="et-query-devtools-section">Item</h5>
+                      <et-query-devtools-json [value]="result.item" />
+
+                      @if (wasSent(result)) {
+                        <h5 class="et-query-devtools-section">In · args</h5>
+                        <et-query-devtools-json [value]="itemArgs(result)" />
+
+                        @if (itemError(result); as error) {
+                          <h5 class="et-query-devtools-section">Out · error ({{ error.status }})</h5>
+                          <et-query-devtools-json [value]="error.body" />
+                        } @else {
+                          <h5 class="et-query-devtools-section">Out · response</h5>
+                          <et-query-devtools-json [value]="itemResponse(result)" />
+                        }
+                      } @else {
+                        <p class="et-query-devtools-empty">
+                          @if (result.status === 'skipped') {
+                            The args function returned null, so nothing was sent.
+                          } @else {
+                            Still queued when the run stopped - nothing was sent.
+                          }
+                        </p>
+                      }
+                    </div>
+                  }
+                </li>
+              }
+            </ol>
+          }
+        </div>
+      }
+    } @empty {
+      <p class="et-query-devtools-empty">No batches registered.</p>
+    }
+  </div>
+
+  <et-query-devtools-drawer
+    [sel]="host.batchSelectedQuery()"
+    [container]="panes"
+    (dismiss)="host.batchSelectedQueryId.set(null)"
+  />
+</div>
