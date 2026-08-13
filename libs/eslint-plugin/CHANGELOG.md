@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.21
+
+### Minor Changes
+
+- [`3d44765`](https://github.com/ethlete-io/ethdk/commit/3d44765647e6d47b558c1395fe5ebcb20ed3ef83) Thanks [@TomTomB](https://github.com/TomTomB)! - New rule `ethlete/no-async-await`, replacing the `no-restricted-syntax` selectors that could not be
+  toggled on their own. It also catches bare `await` and `for await…of`.
+
 ## 1.0.0-next.20
 
 ### Patch Changes

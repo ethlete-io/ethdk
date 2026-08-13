@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0-next.50
+
+### Minor Changes
+
+- [`4c322ab`](https://github.com/ethlete-io/ethdk/commit/4c322ab07f2f5cdfb2ef72bc94044eab434dee3c) Thanks [@TomTomB](https://github.com/TomTomB)! - Buttons take an optional `progress` input (`0`-`100`) that makes the loading spinner determinate.
+
+- [#3061](https://github.com/ethlete-io/ethdk/pull/3061) [`7cd3da8`](https://github.com/ethlete-io/ethdk/commit/7cd3da8342d0d619f06154d4155cfafedbed28f4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlays: `data-et-overlay-layer` (or a per-open `zIndex`) puts an overlay above the default stacking level, which is how the query devtools panel and its toggle now stay visible over an app's own modals and tooltips.
+
+### Patch Changes
+
+- [`0b67ec5`](https://github.com/ethlete-io/ethdk/commit/0b67ec598b899c4c4716588a15a8c3cdd3335d87) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix the spinner's `track` never painting: `--et-spinner-track-color` was registered with an
+  `initial-value`, so its default could not apply. It now defaults to `currentColor` at 24%, and a
+  button's determinate loading spinner shows its track.
+
 ## 1.0.0-next.49
 
 ### Minor Changes

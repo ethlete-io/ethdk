@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.49
+
+### Minor Changes
+
+- [#3061](https://github.com/ethlete-io/ethdk/pull/3061) [`7cd3da8`](https://github.com/ethlete-io/ethdk/commit/7cd3da8342d0d619f06154d4155cfafedbed28f4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlays: `data-et-overlay-layer` (or a per-open `zIndex`) puts an overlay above the default stacking level, which is how the query devtools panel and its toggle now stay visible over an app's own modals and tooltips.
+
 ## 5.0.0-next.48
 
 ### Minor Changes
