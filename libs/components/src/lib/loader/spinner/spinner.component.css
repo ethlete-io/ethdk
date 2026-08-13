@@ -17,12 +17,6 @@
     initial-value: currentColor;
   }
 
-  @property --et-spinner-track-color {
-    syntax: '<color>';
-    inherits: true;
-    initial-value: transparent;
-  }
-
   @property --et-spinner-duration {
     syntax: '<time>';
     inherits: false;
@@ -134,8 +128,10 @@
       stroke: currentColor;
     }
 
+    /* `--et-spinner-track-color` must stay unregistered: an `@property` with an `initial-value` always has a
+       value, so this `var()` fallback would never apply and `track` would paint nothing. */
     .et-spinner-track-circle {
-      stroke: var(--et-spinner-track-color, color-mix(in srgb, currentColor 14%, transparent));
+      stroke: var(--et-spinner-track-color, color-mix(in srgb, currentColor 24%, transparent));
       stroke-linecap: round;
     }
 
