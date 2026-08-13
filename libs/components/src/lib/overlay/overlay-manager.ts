@@ -4,6 +4,7 @@ import {
   defineRootProvider,
   injectOverlayRuntime,
   OverlayRuntimeRef,
+  resolveOverlayLayer,
   toInjectFn,
   toProvideFn,
 } from '@ethlete/core';
@@ -56,6 +57,21 @@ const resolveOriginDocument = (origin: HTMLElement | Event | undefined, fallback
   return fallback;
 };
 
+/**
+ * The stacking level an overlay opened from `origin` mounts at: whatever the nearest ancestor
+ * declaring `data-et-overlay-layer` says, so an overlay opened from inside an always-on-top surface
+ * (the query devtools panel, say) is not painted behind it.
+ */
+const resolveZIndex = (origin: HTMLElement | Event | undefined, document: Document) => {
+  const resolved = resolveOrigin(origin, document);
+
+  if (resolved instanceof HTMLElement) {
+    return resolveOverlayLayer(resolved);
+  }
+
+  return resolveOverlayLayer(resolved?.target instanceof Element ? resolved.target : null);
+};
+
 const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): OverlayManager => {
     const overlayRuntime = injectOverlayRuntime();
@@ -93,6 +109,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         id,
         component,
         document: resolveOriginDocument(config.origin, document),
+        zIndex: config.zIndex ?? resolveZIndex(config.origin, document),
         viewContainerRef: config.viewContainerRef,
         injector: config.injector,
         providers: [{ provide: OVERLAY_REF, useValue: overlayRef }, ...(config.providers ?? [])],
@@ -143,6 +160,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         id,
         component: OverlayContainerComponent,
         document: resolveOriginDocument(resolvedConfig.origin, document),
+        zIndex: resolvedConfig.zIndex ?? resolveZIndex(resolvedConfig.origin, document),
         viewContainerRef: resolvedConfig.viewContainerRef,
         injector: resolvedConfig.injector,
         providers: [{ provide: OVERLAY_REF, useValue: overlayRef }, ...(resolvedConfig.providers ?? [])],

@@ -24,7 +24,10 @@
     position: fixed;
     inset-inline: 0;
     inset-block-end: 0;
-    z-index: 2147483000;
+    /* Above `DEFAULT_OVERLAY_LAYER` (2147483003) in `@ethlete/core`, so an application's own modals,
+       tooltips and menus never cover the devtools. The panel's own overlays get out from under it via
+       the `data-et-overlay-layer` on the host element - keep the two in step. */
+    z-index: 2147483010;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
     font-size: 1.2rem;
     line-height: 1.4;

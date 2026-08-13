@@ -14,6 +14,7 @@ import { ANIMATED_LIFECYCLE_TOKEN, animationDebugLog, nextFrame } from '../anima
 import { injectRenderer } from '../providers';
 import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyInitialFocus, isHTMLElement, setupFocusTrap } from './overlay-focus';
+import { DEFAULT_OVERLAY_LAYER, OVERLAY_LAYER_ATTRIBUTE } from './overlay-layer';
 import { resetPositioningStyles, setBackdropStyles, setBaseElementStyles, setupPositioning } from './overlay-position';
 import { OverlayRuntimeRef, createOverlayRuntimeRef } from './overlay-runtime-ref';
 import {
@@ -40,28 +41,41 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
     const openEntriesState = signal<OverlayRuntimeRef<object, unknown>[]>([]);
     const openEntries = computed(() => openEntriesState());
 
-    // One runtime root per document: overlays usually all mount into the app's document, but an
-    // overlay anchored inside a same-origin pop-up window (config.document) needs a root over there.
-    const rootElements = new Map<Document, HTMLElement>();
+    // One runtime root per document and stacking level: overlays usually all mount into the app's
+    // document at the default level, but an overlay anchored inside a same-origin pop-up window
+    // (config.document) needs a root over there, and one opened from inside something that paints
+    // above the default level (config.zIndex) needs a root of its own to stack above it.
+    const rootElements = new Map<Document, Map<number, HTMLElement>>();
 
     // Synchronous teardown for each currently-mounted overlay, run when the runtime's injector is
     // destroyed (app teardown). Registered on mount, removed once the overlay is destroyed normally.
     const mountedTeardowns = new Set<() => void>();
 
-    const getRootElement = (targetDocument: Document) => {
-      const existingRoot = rootElements.get(targetDocument);
+    const getRootElement = (targetDocument: Document, zIndex: number) => {
+      let documentRoots = rootElements.get(targetDocument);
+
+      if (!documentRoots) {
+        // A previous Angular app (e.g. the one that existed before a Storybook HMR update or story
+        // switch) may have left its runtime root orphaned in <body> if it was torn down mid-animation.
+        // Such a node keeps a backdrop/pane on screen and blocks pointer events, so clear any stragglers
+        // before creating ours. Only on the document's first root - a second level must not remove the
+        // first one's still-mounted overlays.
+        targetDocument.querySelectorAll('.et-overlay-runtime-root').forEach((el) => el.remove());
+
+        documentRoots = new Map<number, HTMLElement>();
+        rootElements.set(targetDocument, documentRoots);
+      }
+
+      const existingRoot = documentRoots.get(zIndex);
       if (existingRoot) {
         return existingRoot;
       }
 
-      // A previous Angular app (e.g. the one that existed before a Storybook HMR update or story
-      // switch) may have left its runtime root orphaned in <body> if it was torn down mid-animation.
-      // Such a node keeps a backdrop/pane on screen and blocks pointer events, so clear any stragglers
-      // before creating ours.
-      targetDocument.querySelectorAll('.et-overlay-runtime-root').forEach((el) => el.remove());
-
       const rootElement = renderer.createElement('div');
       renderer.addClass(rootElement, 'et-overlay-runtime-root');
+      // So an overlay opened from inside this root's own content resolves back to the same level
+      // instead of dropping to the default one.
+      renderer.setAttribute(rootElement, OVERLAY_LAYER_ATTRIBUTE, `${zIndex}`);
       renderer.setStyle(rootElement, {
         position: 'fixed',
         top: '0',
@@ -69,30 +83,37 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         right: '0',
         bottom: '0',
         pointerEvents: 'none',
-        // Above the query devtools panel's own near-int32-max z-index (it must outrank an arbitrary
-        // host app), so an overlay opened from inside the devtools - e.g. its override menu - isn't
-        // rendered behind the panel that triggered it.
-        zIndex: '2147483003',
+        zIndex: `${zIndex}`,
       });
       renderer.appendChild(targetDocument.body, rootElement);
-      rootElements.set(targetDocument, rootElement);
+      documentRoots.set(zIndex, rootElement);
 
       return rootElement;
     };
 
-    const maybeDestroyRootElement = (targetDocument: Document) => {
-      const rootElement = rootElements.get(targetDocument);
+    const maybeDestroyRootElements = (targetDocument: Document) => {
+      const documentRoots = rootElements.get(targetDocument);
 
-      if (!rootElement || openEntriesState().some((entry) => entry.elements.rootElement === rootElement)) {
+      if (!documentRoots) {
         return;
       }
 
-      const parentNode = renderer.parentNode(rootElement);
-      if (parentNode) {
-        renderer.removeChild(parentNode, rootElement);
-      }
+      documentRoots.forEach((rootElement, zIndex) => {
+        if (openEntriesState().some((entry) => entry.elements.rootElement === rootElement)) {
+          return;
+        }
 
-      rootElements.delete(targetDocument);
+        const parentNode = renderer.parentNode(rootElement);
+        if (parentNode) {
+          renderer.removeChild(parentNode, rootElement);
+        }
+
+        documentRoots.delete(zIndex);
+      });
+
+      if (!documentRoots.size) {
+        rootElements.delete(targetDocument);
+      }
     };
 
     const isTopMost = (overlayRef: OverlayRuntimeRef<object, unknown>) => {
@@ -111,7 +132,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
     const mount = <TComponent extends object, TResult = unknown>(config: OverlayRuntimeMountConfig<TComponent>) => {
       const targetDocument = config.document ?? document;
-      const root = getRootElement(targetDocument);
+      const root = getRootElement(targetDocument, config.zIndex ?? DEFAULT_OVERLAY_LAYER);
       const hostElement = renderer.createElement('div');
       const paneElement = renderer.createElement('div');
       const backdropElement = config.hasBackdrop === false ? null : renderer.createElement('div');
@@ -226,7 +247,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         }
 
         openEntriesState.update((entries) => entries.filter((entry) => entry !== overlayRef));
-        maybeDestroyRootElement(targetDocument);
+        maybeDestroyRootElements(targetDocument);
 
         if (config.restoreFocus !== false && previousFocusedElement?.isConnected) {
           previousFocusedElement.focus({ preventScroll: true });
@@ -400,7 +421,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
     destroyRef.onDestroy(() => {
       [...mountedTeardowns].forEach((teardown) => teardown());
-      [...rootElements.keys()].forEach((targetDocument) => maybeDestroyRootElement(targetDocument));
+      [...rootElements.keys()].forEach((targetDocument) => maybeDestroyRootElements(targetDocument));
     });
 
     return {

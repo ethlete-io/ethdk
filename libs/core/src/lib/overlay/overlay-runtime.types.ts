@@ -149,4 +149,11 @@ export type OverlayRuntimeMountConfig<TComponent extends object> = {
    * close listeners and all focus handling follow this document.
    */
   document?: Document;
+  /**
+   * The stacking level of the runtime root this overlay mounts into. Overlays sharing a level share
+   * a root and stack in open order; a higher level always paints over a lower one. Defaults to
+   * `DEFAULT_OVERLAY_LAYER` - raise it only for an overlay opened from something that itself paints
+   * above that level, and prefer declaring it once on that element with `data-et-overlay-layer`.
+   */
+  zIndex?: number;
 };

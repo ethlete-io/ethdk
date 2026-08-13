@@ -32,7 +32,9 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
       position: fixed;
       inset-block-end: 16px;
       inset-inline-end: 16px;
-      z-index: 2147483001;
+      /* Above DEFAULT_OVERLAY_LAYER (2147483003) in @ethlete/core: rendered by the lazy shell, the
+         button is a sibling of the application's content, so anything less puts an open modal over it. */
+      z-index: 2147483010;
     }
 
     button {

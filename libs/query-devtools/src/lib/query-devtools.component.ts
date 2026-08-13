@@ -710,6 +710,10 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   host: {
     class: 'et-query-devtools-host',
     '[attr.data-dock]': 'dock()',
+    // Every overlay opened from inside the panel - its menus, its tooltips - mounts one level above
+    // the panel's own z-index, which is itself above the default overlay layer. Both numbers live in
+    // query-devtools.component.css; keep them in step.
+    'data-et-overlay-layer': '2147483020',
   },
 })
 export class QueryDevtoolsComponent implements OnInit {

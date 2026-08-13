@@ -24,6 +24,14 @@ export type OverlayConfig = {
   disableClose?: boolean;
 
   /**
+   * The stacking level the overlay mounts at. Defaults to the level declared by the nearest
+   * `data-et-overlay-layer` ancestor of `origin`, and to `DEFAULT_OVERLAY_LAYER` when there is none -
+   * declaring it on the element is what makes every overlay opened inside it (menus, tooltips, nested
+   * dialogs) follow, so set this only for a one-off.
+   */
+  zIndex?: number;
+
+  /**
    * Bindings applied to the overlay component, using Angular's native binding API
    * (`inputBinding`, `outputBinding`, `twoWayBinding`).
    */

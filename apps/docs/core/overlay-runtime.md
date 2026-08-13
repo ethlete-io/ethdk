@@ -19,7 +19,7 @@ ref.afterClosed().subscribe(({ result, source }) => {
 });
 ```
 
-`injectOverlayRuntime()` is root-provided. It lazily creates a shared `et-overlay-runtime-root` container on `<body>`; each overlay gets a host element, an optional backdrop and a pane that your component renders into. `runtime.openEntries` is a signal of all currently open overlays.
+`injectOverlayRuntime()` is root-provided. It lazily creates an `et-overlay-runtime-root` container on `<body>`, shared by every overlay on the same [stacking level](#stacking-levels); each overlay gets a host element, an optional backdrop and a pane that your component renders into. `runtime.openEntries` is a signal of all currently open overlays.
 
 ## Mount config
 
@@ -39,8 +39,24 @@ ref.afterClosed().subscribe(({ result, source }) => {
 | `hostClass` / `backdropClass` / `paneClass`                | -                    | Extra classes on the scaffold elements.                                           |
 | `providers` / `injector` / `viewContainerRef` / `bindings` | -                    | DI and input bindings for the mounted component.                                  |
 | `animationDelegate`                                        | -                    | Custom `enter`/`leave` drivers (must settle the lifecycle).                       |
+| `zIndex`                                                   | `2147483003`         | The stacking level to mount at - see [stacking levels](#stacking-levels).         |
 
 If the mounted component exposes an `animatedLifecycle` signal (an [`AnimatedLifecycleDirective`](/core/animations)), the runtime drives its enter/leave transitions and waits for `'left'` before tearing down; otherwise open/close is synchronous.
+
+## Stacking levels
+
+Overlays mount at `DEFAULT_OVERLAY_LAYER` (`2147483003`, near int32 max so an overlay outranks an application's own stacking). Overlays sharing a level share one root container and stack in open order, which is all a normal app ever needs.
+
+A level above that exists for the one case order cannot solve: something that must paint over every overlay - a devtools panel, an always-on-top widget - and still be able to open a menu, a tooltip or a dialog of its own. Declare the level once on that element:
+
+```html
+<!-- the panel itself sits at 2147483010 in CSS; its overlays go one level above it -->
+<div class="my-panel" data-et-overlay-layer="2147483020">…</div>
+```
+
+Every overlay opened from inside it - including nested ones, because the runtime stamps the same attribute on each root it creates - mounts into a root at that level instead of the default one. `resolveOverlayLayer(element)` reads the level an element resolves to, and the [components overlay system](/components/overlays) applies it automatically from the overlay's `origin`. Set `zIndex` on a single `mount()` (or `open()`) call only for a one-off that no element declares.
+
+This is how the [query devtools](/query-devtools/) stay visible while an application's own modal is open.
 
 ## Position strategies
 

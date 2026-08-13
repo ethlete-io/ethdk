@@ -170,9 +170,21 @@ home, to whichever layout it left from.
 covered by the app and can go to a second monitor, but needs pop-up permission and
 dies with the tab that opened it. A float needs no permission and no window
 management, and it is the only one of the two a reload can restore - but it is an
-element in your page, so it stacks by `z-index` like any other overlay in this
-library. (The native top layer is deliberately not used anywhere in the SDK: it
+element in your page, and an element can be covered by a `z-index` your app
+picked. (The native top layer is deliberately not used anywhere in the SDK: it
 would break apps that rely on `z-index` layering.)
+
+### It stays on top
+
+The panel, the closed toggle button and the inspect highlight all sit above
+`DEFAULT_OVERLAY_LAYER`, the level every overlay in this library mounts at, so an
+open dialog, sheet, menu or tooltip in the app you are inspecting never covers the
+devtools. The panel's own menus in turn mount one
+[stacking level](/core/overlay-runtime#stacking-levels) above the panel, which is
+what the `data-et-overlay-layer` on its host element declares.
+
+An app that paints something over the panel is using a `z-index` above
+`2147483010` - almost always an accident.
 
 A float is moved and resized on the same `@ethlete/core` primitives the stream
 [picture-in-picture window](/components/stream) uses - `[etDragHandle]` and

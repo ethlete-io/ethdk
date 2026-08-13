@@ -58,10 +58,13 @@ Defaults worth knowing:
 | Position                                 | Anchored to `origin` when it's an element, otherwise centered                                                              |
 | `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too)                                                 |
 | `customAnimated`                         | `false` - set `true` to disable the built-in animations and drive your own via the [animation lifecycle](/core/animations) |
+| `zIndex`                                 | The level declared by the nearest `data-et-overlay-layer` ancestor of `origin`, else `2147483003`                          |
 
 Data goes in via `bindings` (Angular's `inputBinding` / `outputBinding` / `twoWayBinding`) and `providers` - see [passing data](/components/overlay-openers#passing-data-into-the-overlay).
 
 Popovers stack safely: a pane opened from **inside** another overlay (a select body, menu or tooltip within a dialog or anchored panel) renders as a sibling in the overlay root, but the parent still treats a pointer interaction with it as "inside". Clicking a nested popover never dismisses the overlay that opened it - dismissal is resolved against the whole nested tree, anchored by each pane's `origin`.
+
+Open order decides what paints on top, and one stacking level is all an app needs. Something that must sit above _every_ overlay - a devtools panel, an always-on-top widget - declares its own level with `data-et-overlay-layer` and every overlay opened from inside it follows, resolved from `origin`. `zIndex` on a single `open()` does it for a one-off. See [stacking levels](/core/overlay-runtime#stacking-levels).
 
 ### The overlay ref
 

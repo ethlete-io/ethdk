@@ -1,4 +1,5 @@
 export * from './overlay-focus';
+export * from './overlay-layer';
 export * from './overlay-position';
 export * from './overlay-position-anchored';
 export * from './overlay-position-anchored-extras';

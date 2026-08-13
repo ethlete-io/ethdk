@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { AnimatedLifecycleDirective, AnimatedLifecycleState } from '../animations';
+import { DEFAULT_OVERLAY_LAYER, OVERLAY_LAYER_ATTRIBUTE } from './overlay-layer';
 import { anchoredOverlayPosition } from './overlay-position-anchored';
 import { injectOverlayRuntime } from './overlay-runtime';
 
@@ -226,6 +227,45 @@ describe('overlay runtime', () => {
       unregister();
       ref.close();
       expect(ref.state()).toBe('closed');
+    });
+  });
+
+  describe('stacking levels', () => {
+    it('mounts into a root at the default level', () => {
+      const ref = mount();
+
+      expect(ref.elements.rootElement.style.zIndex).toBe(`${DEFAULT_OVERLAY_LAYER}`);
+      expect(ref.elements.rootElement.getAttribute(OVERLAY_LAYER_ATTRIBUTE)).toBe(`${DEFAULT_OVERLAY_LAYER}`);
+
+      ref.close();
+    });
+
+    it('gives each level its own root and keeps a lower one mounted', () => {
+      const base = mount();
+      const raised = mount({ zIndex: DEFAULT_OVERLAY_LAYER + 10 });
+
+      expect(raised.elements.rootElement).not.toBe(base.elements.rootElement);
+      expect(raised.elements.rootElement.style.zIndex).toBe(`${DEFAULT_OVERLAY_LAYER + 10}`);
+      expect(document.querySelectorAll('.et-overlay-runtime-root')).toHaveLength(2);
+
+      raised.close();
+
+      expect(base.elements.rootElement.isConnected).toBe(true);
+      expect(raised.elements.rootElement.isConnected).toBe(false);
+
+      base.close();
+
+      expect(base.elements.rootElement.isConnected).toBe(false);
+    });
+
+    it('shares one root between overlays on the same level', () => {
+      const first = mount({ zIndex: DEFAULT_OVERLAY_LAYER + 10 });
+      const second = mount({ zIndex: DEFAULT_OVERLAY_LAYER + 10 });
+
+      expect(second.elements.rootElement).toBe(first.elements.rootElement);
+
+      first.close();
+      second.close();
     });
   });
 
