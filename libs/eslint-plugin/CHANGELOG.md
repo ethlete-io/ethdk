@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-next.20
+
+### Patch Changes
+
+- [`085c95e`](https://github.com/ethlete-io/ethdk/commit/085c95ebe1ecb8489b00b042066997a7a9dc8e5e) Thanks [@TomTomB](https://github.com/TomTomB)! - `require-form-submit` accepts `[etForm]` and `[formRoot]` as a form's submit handling.
+
+- [`4350d8e`](https://github.com/ethlete-io/ethdk/commit/4350d8e1eca00447ba130ec5a0ce43a64cfc4496) Thanks [@TomTomB](https://github.com/TomTomB)! - `no-trivial-wrapper-method` no longer flags `focus`, `blur` or `reset` on a component or directive - Angular resolves those by name on the instance.
+
 ## 1.0.0-next.19
 
 ### Minor Changes
