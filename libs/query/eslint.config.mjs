@@ -49,6 +49,12 @@ export default [
       'no-restricted-globals': 'off',
       'ethlete/no-angular-router-api': 'off',
 
+      // TODO(styleguide): 48 violations. 36 of them are the IndexedDB persistence engine wrapping a
+      // Promise-based browser API; the rest (`executeUntilSettled`, `querySequence.run`,
+      // `validateWithQuery`, `createQuerySubmission.action`) are published Promise signatures, so
+      // re-enabling means a breaking change. New code here should still return Observables.
+      'ethlete/no-async-await': 'off',
+
       // TODO(styleguide): each of these has a manual backlog too large to land safely in one
       // pass (~450 violations combined, most of them renames or signature changes on published
       // API). Re-enable one rule at a time.

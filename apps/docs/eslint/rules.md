@@ -102,6 +102,7 @@ export class ProfileAvatarComponent {
 | `require-dollar-suffix`    | Observable variables and class properties end with `$`                                                           |     | error   |
 | `no-subscribe-with-body`   | `subscribe()` is called with an empty body - side effects go into `tap()` inside the pipe                        |     | error   |
 | `no-subscribe-in-pipe`     | No `.subscribe()` calls inside `.pipe()` callbacks                                                               |     | error   |
+| `no-async-await`           | No `async` / `await` - asynchronous work returns a cold Observable                                               |     | error   |
 | `no-rxjs-in-effect`        | No `.subscribe()` inside `effect()` or `computed()` - bridge with `toObservable()` instead                       |     | error   |
 | `no-effect-cleanup-return` | No cleanup function returned from `effect()` - Angular ignores it; use the `onCleanup` parameter or `DestroyRef` | 🔧  | error   |
 | `no-readonly-signal`       | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …)    | 🔧  | error   |

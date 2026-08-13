@@ -121,11 +121,11 @@ test('no-restricted-syntax: enum is flagged', () => {
   expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('enum'))).toBe(true);
 });
 
-// ── no-restricted-syntax: async/await ─────────────────────────────────────────
+// ── no-async-await ────────────────────────────────────────────────────────────
 
-test('no-restricted-syntax: async arrow is flagged', () => {
+test('no-async-await: async arrow is flagged', () => {
   const msgs = lint(`const fn = async () => {};`);
-  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('async'))).toBe(true);
+  expect(ruleIds(msgs)).toContain('ethlete/no-async-await');
 });
 
 // ── explicit public opt-in ───────────────────────────────────────────────────

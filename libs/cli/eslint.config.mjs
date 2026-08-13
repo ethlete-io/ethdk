@@ -32,6 +32,7 @@ export default [
       // Same reason: the banned-syntax list is written for Angular library code. A Node release
       // script legitimately awaits child processes and the registry.
       'no-restricted-syntax': 'off',
+      'ethlete/no-async-await': 'off',
     },
   },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)

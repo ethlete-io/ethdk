@@ -39,6 +39,7 @@ export default [
       // Same reason: the banned-syntax list is written for Angular library code. A Node CLI
       // legitimately reads and writes files synchronously and uses `function` declarations.
       'no-restricted-syntax': 'off',
+      'ethlete/no-async-await': 'off',
     },
   },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)

@@ -62,6 +62,11 @@ export default [
       'ethlete/prefer-element-dimensions': 'off',
       'ethlete/prefer-scroll-state': 'off',
 
+      // Two call sites, both bound to a foreign contract: Floating UI's `Middleware.fn` is declared
+      // async, and the favicon renderer waits on `HTMLImageElement`'s load event. Neither is an SDK
+      // API being designed - new async surfaces here must still be Observables.
+      'ethlete/no-async-await': 'off',
+
       // TODO(styleguide): the autofix rewrites `get config()` into `get public config()` and
       // narrows members that are part of the published surface. Re-enable once the fixer is
       // safe for accessors, then land the visibility changes as a breaking change.

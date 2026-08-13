@@ -58,6 +58,7 @@ const noLegacyPrepareWithoutInjector = require('./rules/no-legacy-prepare-withou
 const requireFormSubmit = require('./rules/require-form-submit');
 const noCdkImport = require('./rules/no-cdk-import');
 const noLegacyQueryImport = require('./rules/no-legacy-query-import');
+const noAsyncAwait = require('./rules/no-async-await');
 const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -124,6 +125,7 @@ const plugin = {
     'require-form-submit': requireFormSubmit,
     'no-cdk-import': noCdkImport,
     'no-legacy-query-import': noLegacyQueryImport,
+    'no-async-await': noAsyncAwait,
   },
 };
 

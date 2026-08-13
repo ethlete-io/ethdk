@@ -126,19 +126,8 @@ const recommendedTs = {
         selector: 'PropertyDefinition > ArrowFunctionExpression',
         message: 'No arrow function properties in classes. Use regular methods.',
       },
-      // No async/await — use RxJS
-      {
-        selector: 'FunctionDeclaration[async=true]',
-        message: 'No async/await. Use RxJS for all async operations.',
-      },
-      {
-        selector: 'ArrowFunctionExpression[async=true]',
-        message: 'No async/await. Use RxJS for all async operations.',
-      },
-      {
-        selector: 'FunctionExpression[async=true]',
-        message: 'No async/await. Use RxJS for all async operations.',
-      },
+      // async/await is owned by ethlete/no-async-await, so a lib can keep it on while it works
+      // through the rest of this rule's backlog.
       // No static class members — except ngTemplateContextGuard, which Angular's template
       // type checker requires to be static (it types a structural directive's `let-` bindings)
       {
@@ -252,6 +241,9 @@ const recommendedTs = {
 
     // No .subscribe() inside a .pipe() callback
     'ethlete/no-subscribe-in-pipe': 'error',
+
+    // No async/await — asynchronous work is modelled as cold Observables
+    'ethlete/no-async-await': 'error',
 
     // No .subscribe() inside effect() or computed()
     'ethlete/no-rxjs-in-effect': 'error',
