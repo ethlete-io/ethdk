@@ -1,5 +1,24 @@
 # @ethlete/query
 
+## 6.0.0-next.38
+
+### Minor Changes
+
+- [`9c64031`](https://github.com/ethlete-io/ethdk/commit/9c64031cb39f6ac9f5932cb32b31ab98742a9391) Thanks [@TomTomB](https://github.com/TomTomB)! - A query batch registers itself with the devtools, and each item's query is attributed to the run that
+  created it. Batch tombstones are capped per batch, so a bulk run cannot evict the others.
+
+- [`9c64031`](https://github.com/ethlete-io/ethdk/commit/9c64031cb39f6ac9f5932cb32b31ab98742a9391) Thanks [@TomTomB](https://github.com/TomTomB)! - A query batch reports `itemsPerSecond()` and `remainingTime()`, so a long bulk edit can show an ETA
+  next to its progress. Both are `null` until the run has settled enough items to measure.
+
+- [`9c64031`](https://github.com/ethlete-io/ethdk/commit/9c64031cb39f6ac9f5932cb32b31ab98742a9391) Thanks [@TomTomB](https://github.com/TomTomB)! - `createQueryBatch` runs one mutation over a list of items with bounded concurrency, a per-item
+  outcome and a `retryFailed()` that resends only what did not succeed.
+
+- [`3bc10d1`](https://github.com/ethlete-io/ethdk/commit/3bc10d12430def3315a17a3051b14624edc591cc) Thanks [@TomTomB](https://github.com/TomTomB)! - `createQuerySubmission` submits a signal form through a mutation, mapping a failed request's
+  violations back onto the fields that caused them.
+
+- [`5cb3e5e`](https://github.com/ethlete-io/ethdk/commit/5cb3e5e6ff61aea87dbca0481fbf48b8634183f6) Thanks [@TomTomB](https://github.com/TomTomB)! - `querySequence` now reports `completed()` and `progress()` (`0`-`100`), so a waterfall can drive a
+  progress bar or a determinate button spinner without deriving it from `currentStep()`.
+
 ## 6.0.0-next.37
 
 ### Minor Changes

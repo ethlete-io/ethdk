@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.0-next.3
+
+### Minor Changes
+
+- [`398f7a2`](https://github.com/ethlete-io/ethdk/commit/398f7a22f2694cc5627a95cbd2e8d05cd084a03c) Thanks [@TomTomB](https://github.com/TomTomB)! - A Batches tab inspects a `createQueryBatch` run - progress, throughput, time remaining and every
+  item's args and outcome - and the Queries list folds a run's items under one row.
+
+- [`398f7a2`](https://github.com/ethlete-io/ethdk/commit/398f7a22f2694cc5627a95cbd2e8d05cd084a03c) Thanks [@TomTomB](https://github.com/TomTomB)! - Clicking an Events row opens its query in a drawer on the Events tab instead of jumping to Queries.
+  Each drawer's selection now survives a reload.
+
+### Patch Changes
+
+- [`398f7a2`](https://github.com/ethlete-io/ethdk/commit/398f7a22f2694cc5627a95cbd2e8d05cd084a03c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fixes the layout of a narrow panel: the Cache table scrolls in its own box, the Events base URL no
+  longer wraps one character per line, and every drawer tab's divider resizes its panes.
+
+- [#3061](https://github.com/ethlete-io/ethdk/pull/3061) [`7cd3da8`](https://github.com/ethlete-io/ethdk/commit/7cd3da8342d0d619f06154d4155cfafedbed28f4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlays: `data-et-overlay-layer` (or a per-open `zIndex`) puts an overlay above the default stacking level, which is how the query devtools panel and its toggle now stay visible over an app's own modals and tooltips.
+
 ## 1.0.0-next.2
 
 ### Minor Changes
