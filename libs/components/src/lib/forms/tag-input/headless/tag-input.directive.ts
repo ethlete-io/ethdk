@@ -108,11 +108,15 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.registeredField()?.focus();
+    this.registeredField()?.focus(options);
   }
 
   /**

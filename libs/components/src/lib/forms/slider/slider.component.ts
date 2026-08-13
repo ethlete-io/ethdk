@@ -87,4 +87,8 @@ export class SliderComponent {
   protected thumbLabelContext(index: number): SliderThumbLabelContext {
     return { $implicit: this.slider.thumbValues()[index] ?? 0, index };
   }
+
+  public focus(options?: FocusOptions) {
+    this.slider.focus(options);
+  }
 }

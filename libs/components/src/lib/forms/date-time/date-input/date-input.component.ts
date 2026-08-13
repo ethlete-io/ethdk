@@ -101,4 +101,8 @@ export class DateInputComponent {
     event.stopPropagation();
     this.dateInput.clearValue();
   }
+
+  public focus(options?: FocusOptions) {
+    this.dateInput.focus(options);
+  }
 }

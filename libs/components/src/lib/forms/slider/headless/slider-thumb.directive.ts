@@ -79,8 +79,8 @@ export class SliderThumbDirective implements SliderThumbBase {
     }
   }
 
-  public focus() {
-    this.elementRef.nativeElement.focus({ preventScroll: true });
+  public focus(options?: FocusOptions) {
+    this.elementRef.nativeElement.focus(options ?? { preventScroll: true });
   }
 
   protected handleBlur() {

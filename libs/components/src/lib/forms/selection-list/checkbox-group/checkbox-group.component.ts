@@ -1,4 +1,4 @@
-import { Component, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, inject, input, viewChild, ViewEncapsulation } from '@angular/core';
 import { AnimatableDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FormErrorComponent } from '../../form-field/form-error.component';
 import { FormWarningComponent } from '../../form-field/form-warning.component';
@@ -45,6 +45,7 @@ import { SelectionListOrientation } from '../selection-list.types';
   },
 })
 export class CheckboxGroupComponent {
+  private list = inject(SelectionListDirective);
   public support = injectFormSupport();
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
 
@@ -75,5 +76,9 @@ export class CheckboxGroupComponent {
       warningAnimatable: this.warningAnimatableRef,
       hintAnimatable: this.hintAnimatableRef,
     });
+  }
+
+  public focus(options?: FocusOptions) {
+    this.list.focus(options);
   }
 }

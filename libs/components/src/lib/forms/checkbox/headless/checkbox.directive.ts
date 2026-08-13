@@ -88,6 +88,12 @@ export class CheckboxDirective implements FormCheckboxControl, FormFieldControl 
 
     // readonly stays focusable (view-only), it just cannot toggle
     this.toggle();
-    this.el.nativeElement.focus({ focusVisible: false } as unknown as FocusOptions);
+    this.focus({ focusVisible: false } as unknown as FocusOptions);
+  }
+
+  public focus(options?: FocusOptions) {
+    if (this.disabled()) return;
+
+    this.el.nativeElement.focus(options);
   }
 }

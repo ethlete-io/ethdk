@@ -1,13 +1,15 @@
 import { Component, Injector, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { form, FormField, required } from '@angular/forms/signals';
+import { form, FormField, required, requiredError, validate } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import { vi } from 'vitest';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { FormFieldComponent } from '../form-field/form-field.component';
 import { LabelDirective } from '../form-field/headless';
+import { CheckboxComponent } from '../checkbox/checkbox.component';
 import { InputDirective } from '../input/headless';
+import { InputComponent } from '../input/input.component';
 import { focusFirstInvalidField } from './focus-first-invalid-field';
 
 @Component({
@@ -32,6 +34,33 @@ class NameFormTestHost {
     (s) => {
       required(s.firstName, { message: 'First name is required' });
       required(s.lastName, { message: 'Last name is required' });
+    },
+    { injector: TestBed.inject(Injector) },
+  );
+}
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Nickname</et-label>
+      <et-input [formField]="nameForm.nickname" />
+    </et-form-field>
+
+    <et-form-field>
+      <et-label>Terms</et-label>
+      <et-checkbox [formField]="nameForm.terms" />
+    </et-form-field>
+  `,
+  imports: [FormFieldComponent, LabelDirective, InputComponent, CheckboxComponent, FormField],
+})
+class WrappedFormTestHost {
+  public model = signal({ nickname: '', terms: false });
+
+  public nameForm = form(
+    this.model,
+    (s) => {
+      required(s.nickname);
+      validate(s.terms, ({ value }) => (value() ? null : requiredError()));
     },
     { injector: TestBed.inject(Injector) },
   );
@@ -111,5 +140,52 @@ describe('focusFirstInvalidField', () => {
 
     expect(focusFirstInvalidField(fixture.componentInstance.nameForm)).toBe(false);
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+});
+
+describe('focusFirstInvalidField with wrapped controls', () => {
+  let fixture: ComponentFixture<WrappedFormTestHost>;
+
+  beforeEach(() => {
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: vi.fn(),
+      writable: true,
+    });
+    Object.defineProperty(Element.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => [new DOMRect(0, 0, 100, 20)] as unknown as DOMRectList,
+      writable: true,
+    });
+
+    TestBed.configureTestingModule({
+      imports: [WrappedFormTestHost],
+      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+    });
+
+    fixture = TestBed.createComponent(WrappedFormTestHost);
+    fixture.detectChanges();
+  });
+
+  it('reaches the native input inside `<et-input>` rather than the unfocusable host', () => {
+    expect(focusFirstInvalidField(fixture.componentInstance.nameForm)).toBe(true);
+
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('et-input input'));
+  });
+
+  it('focuses a checkbox without toggling it', () => {
+    fixture.componentInstance.model.set({ nickname: 'Ada', terms: false });
+    fixture.detectChanges();
+
+    focusFirstInvalidField(fixture.componentInstance.nameForm);
+
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('et-checkbox'));
+    expect(fixture.componentInstance.model().terms).toBe(false);
+  });
+
+  it('is what `focusBoundControl()` reaches, so signal forms can focus a wrapped control', () => {
+    fixture.componentInstance.nameForm.nickname().focusBoundControl();
+
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('et-input input'));
   });
 });

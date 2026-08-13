@@ -106,4 +106,8 @@ export class TimeInputComponent {
     event.stopPropagation();
     this.timeInput.clearValue();
   }
+
+  public focus(options?: FocusOptions) {
+    this.timeInput.focus(options);
+  }
 }

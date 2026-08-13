@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { SwitchDirective } from './headless';
 
@@ -21,5 +21,10 @@ import { SwitchDirective } from './headless';
   },
 })
 export class SwitchComponent {
+  private switchDir = inject(SwitchDirective);
   public canAnimate = createCanAnimateSignal();
+
+  public focus(options?: FocusOptions) {
+    this.switchDir.focus(options);
+  }
 }

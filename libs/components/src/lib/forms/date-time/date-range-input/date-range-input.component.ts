@@ -112,4 +112,8 @@ export class DateRangeInputComponent {
     event.stopPropagation();
     this.rangeInput.clearRange();
   }
+
+  public focus(options?: FocusOptions) {
+    this.rangeInput.focus(options);
+  }
 }

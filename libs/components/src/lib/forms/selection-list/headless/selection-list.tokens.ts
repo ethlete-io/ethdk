@@ -20,6 +20,6 @@ export type SelectionListDirectiveBase<TValue = unknown> = {
   required: Signal<boolean>;
   name: Signal<string>;
   selection: SelectionState<TValue, SelectionListItem<TValue>>;
-  focusItem(item: SelectionListItem<TValue>): void;
+  focusItem(item: SelectionListItem<TValue>, options?: FocusOptions): void;
   markTouched(): void;
 };

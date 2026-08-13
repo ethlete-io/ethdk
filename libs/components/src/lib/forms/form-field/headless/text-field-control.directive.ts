@@ -9,7 +9,7 @@ import { mountTextFieldShellStyles } from '../form-field-text-shell-styles.compo
  * (`et-input`, `et-number-input`, `et-password-input`, `et-color-input`, `et-textarea`). It owns
  * the pieces those directives copy-pasted verbatim: the standard form-control inputs, the
  * form-field registration, the `describedBy`/`focused`/`focusTarget`/`labelId` plumbing, the
- * `touched && invalid` error gate, and the focus-target `activate()`.
+ * `touched && invalid` error gate, and the focus-target `focus()`/`activate()`.
  *
  * Subclasses add their own `value` model, `controlType`, `hasValue`, and any control-specific
  * surface (placeholder, native element wiring, etc.). Must be extended by an `@Directive` - Angular
@@ -81,7 +81,7 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public describedBy = signal<string | null>(null);
   public focused = signal(false);
 
-  /** @internal The element `activate()` focuses - the native control by default. */
+  /** @internal The element `focus()` targets - the native control by default. */
   public focusTarget = signal<HTMLElement | null>(null);
 
   private registeredLabelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
@@ -107,10 +107,14 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.focusTarget()?.focus();
+    this.focusTarget()?.focus(options);
   }
 }

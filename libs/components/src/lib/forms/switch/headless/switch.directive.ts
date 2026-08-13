@@ -86,6 +86,12 @@ export class SwitchDirective implements FormFieldControl {
 
     // readonly stays focusable (view-only), it just cannot toggle
     this.toggle();
-    this.el.nativeElement.focus();
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
+    if (this.disabled()) return;
+
+    this.el.nativeElement.focus(options);
   }
 }

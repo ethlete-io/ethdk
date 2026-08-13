@@ -1,4 +1,14 @@
-import { Component, computed, effect, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { AnimatableDirective, createCanAnimateSignal, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import { TabScaleStylesComponent } from '../../../tabs/tab-scale-styles.component';
 import { FormErrorComponent } from '../../form-field/form-error.component';
@@ -55,6 +65,7 @@ export type SegmentedButtonGroupVariant =
   },
 })
 export class SegmentedButtonGroupComponent {
+  private list = inject(SelectionListDirective);
   public support = injectFormSupport();
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
 
@@ -98,5 +109,9 @@ export class SegmentedButtonGroupComponent {
       warningAnimatable: this.warningAnimatableRef,
       hintAnimatable: this.hintAnimatableRef,
     });
+  }
+
+  public focus(options?: FocusOptions) {
+    this.list.focus(options);
   }
 }

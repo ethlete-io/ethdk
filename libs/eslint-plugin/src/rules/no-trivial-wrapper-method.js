@@ -16,13 +16,40 @@
  * GOOD:
  *   // Call this.value.set(val) directly at the call sites.
  *   // If the method wraps something non-trivially (transforms args, adds logic), it is fine.
+ *   // `focus`/`blur`/`reset` on a @Component/@Directive are exempt - see CONTRACT_METHOD_NAMES.
  */
+
+/**
+ * Imperative members Angular and the DOM look up **by name on the instance**. A component that
+ * wraps a control in a host directive has to re-expose them itself: signal forms resolves a custom
+ * control to the wrapper component, not to its host directives, so a `focus()` that only forwards
+ * is the whole contract - there is no call site to inline it into.
+ */
+const CONTRACT_METHOD_NAMES = new Set(['focus', 'blur', 'reset']);
 
 /**
  * Returns true when the param is a plain identifier (no default, no destructuring, no rest).
  * @param {import('@typescript-eslint/types').TSESTree.Parameter} param
  */
 const isSimpleParam = (param) => param.type === 'Identifier';
+
+/**
+ * Whether the class holding this method is an Angular component or directive.
+ * @param {import('eslint').Rule.Node} methodNode MethodDefinition node
+ */
+const isInAngularClass = (methodNode) => {
+  const classNode = methodNode.parent?.parent;
+  const decorators = classNode && 'decorators' in classNode ? classNode.decorators : null;
+
+  if (!decorators) return false;
+
+  return decorators.some((decorator) => {
+    const expression = decorator.expression;
+    const callee = expression.type === 'CallExpression' ? expression.callee : expression;
+
+    return callee.type === 'Identifier' && (callee.name === 'Component' || callee.name === 'Directive');
+  });
+};
 
 /**
  * Returns the single CallExpression in the method body when the method is a
@@ -96,6 +123,8 @@ const noTrivialWrapperMethod = {
 
         const methodName = node.key.type === 'Identifier' ? node.key.name : null;
         if (!methodName) return;
+
+        if (CONTRACT_METHOD_NAMES.has(methodName) && isInAngularClass(node)) return;
 
         const callee = callExpr.callee;
         const targetName =

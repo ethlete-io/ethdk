@@ -66,9 +66,18 @@ export const focusFirstInvalidField = <T>(field: FieldTree<T>, options?: FocusFi
   });
 
   if (options?.focus !== false) {
-    focusElement(
-      isFocusable(element, ownerDocument) ? element : (getFocusableElements(element, ownerDocument)[0] ?? null),
-    );
+    const activeBefore = ownerDocument.activeElement;
+
+    binding.focus({ preventScroll: true });
+
+    // Angular falls back to focusing the `[formField]` element itself for a control that implements
+    // no `focus()` - a no-op on a wrapper like `<et-input>`. Nothing moved and nothing was already
+    // focused inside, so go looking for the focusable descendant ourselves.
+    if (ownerDocument.activeElement === activeBefore && !element.contains(ownerDocument.activeElement)) {
+      focusElement(
+        isFocusable(element, ownerDocument) ? element : (getFocusableElements(element, ownerDocument)[0] ?? null),
+      );
+    }
   }
 
   return true;

@@ -24,7 +24,10 @@ import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shel
 import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
 
 /** The registered text field a date-picker input focuses and anchors to. */
-export type DatePickerInputFieldBase = { focus(): void; elementRef: ElementRef<HTMLInputElement> };
+export type DatePickerInputFieldBase = {
+  focus(options?: FocusOptions): void;
+  elementRef: ElementRef<HTMLInputElement>;
+};
 
 /**
  * Shared host for the three `Date`-string picker inputs (`et-date-input`, `et-time-input`,
@@ -183,11 +186,15 @@ export abstract class DatePickerInputDirective
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.registeredField()?.focus();
+    this.registeredField()?.focus(options);
   }
 
   /** Clears the value and any uncommitted field text - wired to the styled inputs' clear button. */

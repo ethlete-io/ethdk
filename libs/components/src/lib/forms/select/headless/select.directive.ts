@@ -750,6 +750,10 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   }
 
   public activate() {
+    this.focus({ preventScroll: true });
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
@@ -757,12 +761,12 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     const search = this.registeredSearch();
 
     if (search) {
-      search.focus();
+      search.focus(options);
 
       return;
     }
 
-    this.registeredTrigger()?.elementRef.nativeElement.focus({ preventScroll: true });
+    this.registeredTrigger()?.elementRef.nativeElement.focus(options);
   }
 
   /** @internal Commits an option as the (or a) selected value. Single select closes afterwards. */

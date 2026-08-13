@@ -194,6 +194,10 @@ export class DateTimeRangeInputComponent {
     this.showPane(PANE_ORDER.find((candidate) => candidate === pane) ?? 'dates');
   }
 
+  public focus(options?: FocusOptions) {
+    this.rangeInput.focus(options);
+  }
+
   private showPane(next: DateTimeRangePane) {
     const current = this.activePane();
 

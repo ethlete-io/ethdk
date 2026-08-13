@@ -57,4 +57,8 @@ export class InputComponent {
   public syncNativeValue(event: Event) {
     this.inputDir.syncFromNativeInput(event.target as HTMLInputElement);
   }
+
+  public focus(options?: FocusOptions) {
+    this.inputDir.focus(options);
+  }
 }

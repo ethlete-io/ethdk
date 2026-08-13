@@ -648,11 +648,15 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   }
 
   public activate() {
+    this.focus({ preventScroll: true });
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.registeredTrigger()?.elementRef.nativeElement.focus({ preventScroll: true });
+    this.registeredTrigger()?.elementRef.nativeElement.focus(options);
   }
 
   /**

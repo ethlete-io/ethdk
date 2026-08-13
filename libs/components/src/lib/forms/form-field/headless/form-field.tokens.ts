@@ -87,6 +87,15 @@ export type FormFieldControl = {
    */
   pending?: Signal<boolean>;
   activate(): void;
+  /**
+   * Moves focus into the control's focusable element - the native input, the trigger, the first
+   * thumb, whatever the control actually focuses. Implements the optional `focus` member of signal
+   * forms' `FormUiControl`, so `field().focusBoundControl()` reaches a wrapped control instead of
+   * the (unfocusable) element carrying `[formField]`.
+   *
+   * Unlike {@link activate}, this only focuses - it never toggles, opens a panel, or selects.
+   */
+  focus?(options?: FocusOptions): void;
 };
 
 export type HintComponentBase = object;

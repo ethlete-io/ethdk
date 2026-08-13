@@ -99,11 +99,15 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
   }
 
   public activate() {
+    this.focus({ preventScroll: true });
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.nativeControl()?.focus({ preventScroll: true });
+    this.nativeControl()?.focus(options);
   }
 
   /** Strips characters outside the charset and truncates to `length` - pastes included. */

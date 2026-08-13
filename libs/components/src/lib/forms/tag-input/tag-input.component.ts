@@ -43,4 +43,8 @@ import { TagInputDirective, TagInputFieldDirective } from './headless';
 })
 export class TagInputComponent {
   protected tagInput = inject(TagInputDirective);
+
+  public focus(options?: FocusOptions) {
+    this.tagInput.focus(options);
+  }
 }

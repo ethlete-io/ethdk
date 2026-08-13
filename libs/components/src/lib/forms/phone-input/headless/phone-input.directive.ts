@@ -134,11 +134,15 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.registeredField()?.focus();
+    this.registeredField()?.focus(options);
   }
 
   /** Clears the number (the selected country stays) - wired to the styled input's clear button. */

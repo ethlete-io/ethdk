@@ -7,14 +7,14 @@ Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used w
 
 ## TypeScript & code style
 
-| Rule                                | What it enforces                                                                                           | Fix | Default |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-trivial-return-type`            | No explicit return types TypeScript can infer (`void`, `boolean`, `string`, `number`, `undefined`, `null`) | 🔧  | error   |
-| `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                             | 🔧  | error   |
-| `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call                                         |     | error   |
-| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies - locals are camelCase                             |     | error   |
-| `guard-return-newline`              | Empty line before a `return` in a multi-statement if-block (guard clause)                                  | 🔧  | error   |
-| `no-empty-newlines-between-imports` | No blank lines between consecutive import declarations                                                     | 🔧  | error   |
+| Rule                                | What it enforces                                                                                                                   | Fix | Default |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-trivial-return-type`            | No explicit return types TypeScript can infer (`void`, `boolean`, `string`, `number`, `undefined`, `null`)                         | 🔧  | error   |
+| `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                                                     | 🔧  | error   |
+| `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call (`focus`/`blur`/`reset` on a component or directive are exempt) |     | error   |
+| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies - locals are camelCase                                                     |     | error   |
+| `guard-return-newline`              | Empty line before a `return` in a multi-statement if-block (guard clause)                                                          | 🔧  | error   |
+| `no-empty-newlines-between-imports` | No blank lines between consecutive import declarations                                                                             | 🔧  | error   |
 
 ```ts
 // ❌

@@ -158,6 +158,10 @@ export class NumberInputComponent {
     this.repeatSub = null;
   }
 
+  public focus(options?: FocusOptions) {
+    this.numberInputDir.focus(options);
+  }
+
   /**
    * Drag the stepper sideways to run the value, Figma-style. The press has already stepped once and
    * armed the auto-repeat by the time this can tell a drag from a click, so committing to the scrub

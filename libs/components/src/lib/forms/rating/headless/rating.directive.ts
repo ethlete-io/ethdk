@@ -117,11 +117,15 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
   }
 
   public activate() {
+    this.focus({ preventScroll: true });
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.elementRef.nativeElement.focus({ preventScroll: true });
+    this.elementRef.nativeElement.focus(options);
   }
 
   /** The state icon `index` (1-based) renders for a given display value. */

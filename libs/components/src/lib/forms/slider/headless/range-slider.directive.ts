@@ -160,11 +160,15 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.thumbs()[0]?.focus();
+    this.thumbs()[0]?.focus(options);
   }
 
   public thumbAriaBounds(index: number) {

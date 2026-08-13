@@ -386,6 +386,10 @@ export class RichTextEditorComponent {
     }
   }
 
+  public focus(options?: FocusOptions) {
+    this.dir.focus(options);
+  }
+
   /** Track the visual viewport so the docked (fixed) toolbar sits right above the on-screen
    *  keyboard: the inset is the gap from where `position: fixed; bottom: 0` actually renders (a
    *  measured probe - see below) down past the keyboard's top edge

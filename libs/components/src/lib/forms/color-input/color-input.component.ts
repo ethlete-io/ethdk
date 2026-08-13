@@ -70,4 +70,8 @@ export class ColorInputComponent {
 
     event.preventDefault();
   }
+
+  public focus(options?: FocusOptions) {
+    this.colorInputDir.focus(options);
+  }
 }

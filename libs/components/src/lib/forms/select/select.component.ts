@@ -223,4 +223,8 @@ export class SelectComponent {
     this.select.toggle();
     this.select.activate();
   }
+
+  public focus(options?: FocusOptions) {
+    this.select.focus(options);
+  }
 }

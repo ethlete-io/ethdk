@@ -1,5 +1,10 @@
-import { booleanAttribute, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { DEFAULT_RICH_TEXT_EDITOR_TOOLS, RICH_TEXT_EDITOR_IMPORTS, RichTextEditorTool } from '../rich-text-editor';
+import { booleanAttribute, Component, computed, inject, input, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  DEFAULT_RICH_TEXT_EDITOR_TOOLS,
+  RICH_TEXT_EDITOR_IMPORTS,
+  RichTextEditorComponent,
+  RichTextEditorTool,
+} from '../rich-text-editor';
 import { MultiLanguageRichTextEditorDirective } from './headless/multi-language-rich-text-editor.directive';
 import {
   provideRichTextEditorLanguageTool,
@@ -32,10 +37,16 @@ export class MultiLanguageRichTextEditorComponent {
    *  `null` uses the default toolbar. */
   public tools = input<readonly RichTextEditorTool[] | null>(null);
 
+  private editor = viewChild(RichTextEditorComponent);
+
   /** The embedded editor's tools with the language switcher prepended, so it always leads the bar. */
   protected innerTools = computed<readonly RichTextEditorTool[]>(() => [
     RICH_TEXT_EDITOR_LANGUAGE_TOOL,
     'divider',
     ...(this.tools() ?? DEFAULT_RICH_TEXT_EDITOR_TOOLS),
   ]);
+
+  public focus(options?: FocusOptions) {
+    this.editor()?.focus(options);
+  }
 }

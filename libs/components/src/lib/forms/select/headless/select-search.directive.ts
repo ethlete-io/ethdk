@@ -137,8 +137,8 @@ export class SelectSearchDirective {
   }
 
   /** @internal */
-  public focus() {
-    this.elementRef.nativeElement.focus({ preventScroll: true });
+  public focus(options?: FocusOptions) {
+    this.elementRef.nativeElement.focus(options ?? { preventScroll: true });
   }
 
   /** @internal Selects a displayed value label on open, so typing replaces it (single select). */

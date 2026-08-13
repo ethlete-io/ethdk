@@ -98,8 +98,8 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
   }
 
   /** @internal */
-  public focus() {
-    this.elementRef.nativeElement.focus({ preventScroll: true });
+  public focus(options?: FocusOptions) {
+    this.elementRef.nativeElement.focus(options ?? { preventScroll: true });
   }
 
   /** @internal `InputMaskHost` - an attached mask owns value-sync; our input/mirror handling stands down. */

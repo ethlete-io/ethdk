@@ -122,4 +122,8 @@ export class PhoneInputComponent {
       this.phone.activate();
     }
   }
+
+  public focus(options?: FocusOptions) {
+    this.phone.focus(options);
+  }
 }

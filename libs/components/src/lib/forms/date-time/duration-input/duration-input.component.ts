@@ -65,4 +65,8 @@ export class DurationInputComponent {
     event.stopPropagation();
     this.durationInput.clearValue();
   }
+
+  public focus(options?: FocusOptions) {
+    this.durationInput.focus(options);
+  }
 }

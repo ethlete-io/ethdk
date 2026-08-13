@@ -176,6 +176,10 @@ export class DateTimeInputComponent {
     this.showPane(pane === 'time' ? 'time' : 'date');
   }
 
+  public focus(options?: FocusOptions) {
+    this.dateTimeInput.focus(options);
+  }
+
   private showPane(next: 'date' | 'time') {
     if (next === this.activePane()) {
       return;

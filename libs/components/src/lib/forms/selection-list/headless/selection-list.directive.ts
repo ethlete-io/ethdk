@@ -94,8 +94,22 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
     this.touched.set(true);
   }
 
-  public focusItem(item: SelectionListItem) {
-    item.elementRef.nativeElement.focus();
+  public focusItem(item: SelectionListItem, options?: FocusOptions) {
+    item.elementRef.nativeElement.focus(options);
+  }
+
+  /** Mirrors the group's roving tabindex: the checked option, else the first enabled one. */
+  public focus(options?: FocusOptions) {
+    if (this.disabled()) {
+      return;
+    }
+
+    const items = this.selection.items();
+    const target = items.find((item) => item.checked() && !item.disabled()) ?? items.find((item) => !item.disabled());
+
+    if (target) {
+      this.focusItem(target, options);
+    }
   }
 
   public activate() {

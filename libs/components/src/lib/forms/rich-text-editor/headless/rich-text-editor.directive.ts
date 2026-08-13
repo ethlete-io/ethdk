@@ -240,6 +240,10 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) return;
 
     const el = this.editorDom.root();
@@ -248,7 +252,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     // start, so only focus when the editor isn't already focused (e.g. a click on the frame padding).
     if (!el || el.ownerDocument.activeElement === el) return;
 
-    el.focus();
+    el.focus(options);
   }
 
   /**

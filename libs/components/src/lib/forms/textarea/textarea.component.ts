@@ -60,4 +60,8 @@ export class TextareaComponent {
   public syncNativeValue(event: Event) {
     this.textareaDir.syncFromNativeInput(event.target as HTMLTextAreaElement);
   }
+
+  public focus(options?: FocusOptions) {
+    this.textareaDir.focus(options);
+  }
 }

@@ -108,4 +108,8 @@ export class PasswordInputComponent {
     this.passwordDir.touched.set(true);
     this.passwordDir.syncCapsLock(event);
   }
+
+  public focus(options?: FocusOptions) {
+    this.passwordDir.focus(options);
+  }
 }

@@ -162,6 +162,10 @@ export class RatingComponent {
     this.rating.commitPointer(event.clientX - rect.left < rect.width / 2 ? index - 0.5 : index);
   }
 
+  public focus(options?: FocusOptions) {
+    this.rating.focus(options);
+  }
+
   private applyGesture(gesture: DragGestureEvent, press: { pressX: number; touch: boolean }) {
     switch (gesture.type) {
       case 'start':

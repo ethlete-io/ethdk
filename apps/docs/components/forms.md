@@ -595,6 +595,20 @@ fields that are not currently rendered - a collapsed section, another wizard ste
 | `behavior` | `'smooth'`, `'auto'` under reduced motion | Scroll behavior                                |
 | `focus`    | `true`                                    | Whether to move focus into the field's control |
 
+#### Focusing one control
+
+Every control implements signal forms' optional `focus()`, so Angular's own
+`field().focusBoundControl()` reaches the focusable element inside the wrapper -
+the `<input>` in an `<et-input>`, the trigger of an `<et-select>`, the checked
+option of a `<et-radio-group>`:
+
+```ts
+this.form.email().focusBoundControl();
+```
+
+It only focuses. Unlike clicking the field's label, it never toggles a checkbox,
+opens a picker, or selects an option.
+
 ## Theming
 
 The field shell declares public design tokens; override them in your CSS scope:

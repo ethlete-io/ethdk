@@ -72,4 +72,8 @@ export class CheckboxComponent {
       });
     });
   }
+
+  public focus(options?: FocusOptions) {
+    this.checkboxDir.focus(options);
+  }
 }

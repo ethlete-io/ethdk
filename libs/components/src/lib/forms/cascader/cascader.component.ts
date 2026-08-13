@@ -159,4 +159,8 @@ export class CascaderComponent {
   protected isCrumbCurrent(columnIndex: number) {
     return !this.isColumnOffstage(columnIndex);
   }
+
+  public focus(options?: FocusOptions) {
+    this.cascader.focus(options);
+  }
 }

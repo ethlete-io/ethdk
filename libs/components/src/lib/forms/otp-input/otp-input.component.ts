@@ -71,4 +71,8 @@ export class OtpInputComponent {
       hintAnimatable: this.hintAnimatableRef,
     });
   }
+
+  public focus(options?: FocusOptions) {
+    this.otp.focus(options);
+  }
 }

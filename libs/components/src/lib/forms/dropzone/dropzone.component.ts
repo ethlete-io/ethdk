@@ -257,6 +257,10 @@ export class DropzoneComponent {
       });
   }
 
+  public focus(options?: FocusOptions) {
+    this.dropzoneDir.focus(options);
+  }
+
   private defaultUploadErrorMessage(entry: DropzoneEntry) {
     const serverMessage = entry.errorMessage();
 

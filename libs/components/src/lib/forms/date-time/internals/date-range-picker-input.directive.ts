@@ -282,6 +282,10 @@ export abstract class DateRangePickerInputDirective
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
@@ -290,7 +294,7 @@ export abstract class DateRangePickerInputDirective
     // While mixed both fields read as empty, so a fresh entry starts at the start side
     const target = this.mixed() || this.value().start === null || this.value().end !== null ? 'start' : 'end';
 
-    this.sides[target].field()?.focus();
+    this.sides[target].field()?.focus(options);
   }
 
   public openPicker() {

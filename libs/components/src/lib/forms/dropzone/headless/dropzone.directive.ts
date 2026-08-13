@@ -306,11 +306,15 @@ export class DropzoneDirective<TValue = unknown>
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.focusTarget()?.focus();
+    this.focusTarget()?.focus(options);
   }
 
   protected handleDragEnter(event: DragEvent) {

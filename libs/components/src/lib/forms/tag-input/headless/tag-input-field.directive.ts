@@ -47,8 +47,8 @@ export class TagInputFieldDirective {
   }
 
   /** @internal */
-  public focus() {
-    this.elementRef.nativeElement.focus({ preventScroll: true });
+  public focus(options?: FocusOptions) {
+    this.elementRef.nativeElement.focus(options ?? { preventScroll: true });
   }
 
   /** Commits the pending text as a tag (if any) and clears the field. */

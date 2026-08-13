@@ -101,11 +101,15 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   }
 
   public activate() {
+    this.focus();
+  }
+
+  public focus(options?: FocusOptions) {
     if (this.disabled()) {
       return;
     }
 
-    this.registeredField()?.focus();
+    this.registeredField()?.focus(options);
   }
 
   /** Clears the value and any uncommitted field text - wired to the styled input's clear button. */
