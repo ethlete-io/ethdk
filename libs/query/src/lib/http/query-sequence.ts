@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DestroyRef, inject, Signal, signal, WritableSignal } from '@angular/core';
+import { computed, DestroyRef, inject, Signal, signal, WritableSignal } from '@angular/core';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { AnyNewQuery, AnyQuerySnapshot, Query, QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
@@ -58,6 +58,15 @@ export type QuerySequence<TResponses extends unknown[]> = {
 
   /** The 1-based index of the in-flight step, or `0` when idle. */
   currentStep: Signal<number>;
+
+  /** How many steps have settled - the successful ones plus the failing one. */
+  completed: Signal<number>;
+
+  /**
+   * How far the waterfall has got, as a percentage (`0`-`100`) so it can be bound straight to
+   * `<et-progress-bar [value]>` or a button's `[progress]`. A run that fails stops where it stopped.
+   */
+  progress: Signal<number>;
 
   /** The static number of steps in the sequence. */
   total: number;
@@ -188,6 +197,8 @@ const buildSequence = <TResponses extends unknown[]>(
     return { ok: true, responses: responses as TResponses, snapshots };
   };
 
+  const completed = computed(() => state.snapshots().length);
+
   const sequence: QuerySequence<TResponses> = {
     then: (query, mapArgs) =>
       buildSequence(
@@ -201,6 +212,8 @@ const buildSequence = <TResponses extends unknown[]>(
     status: state.status.asReadonly(),
     running: state.running.asReadonly(),
     currentStep: state.currentStep.asReadonly(),
+    completed,
+    progress: computed(() => (steps.length === 0 ? 0 : (completed() / steps.length) * 100)),
     total: steps.length,
     queries: steps.map((s) => s.query),
     error: state.error.asReadonly(),

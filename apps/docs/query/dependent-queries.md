@@ -105,9 +105,15 @@ The sequence also exposes signals mirroring [`createQueryStack`](/query/stacks),
 }
 ```
 
+`completed()` counts the settled steps and `progress()` turns that into a `0`-`100` percentage, so the same run can drive a bar or a determinate button spinner without any arithmetic in the template:
+
+```html
+<button [loading]="checkout.running()" [progress]="checkout.progress()" et-button type="button">Place order</button>
+```
+
 ### Notes
 
 - **Re-runnable.** Calling `run()` again resets the progress signals and replays the chain (e.g. behind a retry button). Calling it while a run is already in flight throws.
-- **Abort only.** The first error stops the waterfall - dependent steps can't run without their upstream data anyway. There is no continue-on-error mode.
+- **Abort only.** The first error stops the waterfall - dependent steps can't run without their upstream data anyway. There is no continue-on-error mode. For _independent_ calls that should tolerate a partial failure, use a [query batch](/query/batching) instead.
 - **No rollback.** A mid-chain failure leaves earlier steps' server effects in place; `failedAt` and `snapshots` tell you exactly how far it got, and any compensation is up to you.
 - **Cancellation caveat** (inherited from `executeUntilSettled`): if the host scope is destroyed mid-flight, the in-flight query is torn down and the `run()` promise never settles.
