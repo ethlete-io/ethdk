@@ -9,6 +9,7 @@ export * from './persistence/query-persistence-config';
 export * from './persistence/query-persistence-engine';
 export * from './persistence/query-persistence-indexed-db';
 export * from './query';
+export * from './query-batch';
 export * from './query-cache-utils';
 export * from './query-client';
 export * from './query-client-features';

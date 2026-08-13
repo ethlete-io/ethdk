@@ -136,6 +136,7 @@ export default defineConfig({
             { text: 'Queries & creators', link: '/query/queries' },
             { text: 'Query features', link: '/query/features' },
             { text: 'Dependent queries', link: '/query/dependent-queries' },
+            { text: 'Batching & bulk edits', link: '/query/batching' },
             { text: 'Caching & deduplication', link: '/query/caching' },
             { text: 'Multi-tab sync', link: '/query/multi-tab' },
             { text: 'Persisted responses', link: '/query/persistence' },

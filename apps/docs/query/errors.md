@@ -214,13 +214,13 @@ A request retries only while something is bound to it. When the last consumer of
 
 Misuse throws dev-mode `RuntimeError`s with numeric codes, grouped by area:
 
-| Range     | Area                                                                                                                                          |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0–199     | Query core - e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`, circular query dependencies.          |
-| 200–299   | [Auth](/query/auth#error-codes) - missing token properties, an auth feature used twice.                                                       |
-| 400–499   | [Paged query stacks](/query/stacks#paged-queries) - e.g. fetching past the last page.                                                         |
-| 500–599   | [Query stacks](/query/stacks#query-stacks) - e.g. `withArgs` passed as a stack feature.                                                       |
-| 900–999   | Query sequences and [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - e.g. `prepare()` called with no injection context. |
-| 1000–1999 | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined, malformed messages.                                               |
+| Range     | Area                                                                                                                                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0–199     | Query core - e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`, circular query dependencies.                                                                                      |
+| 200–299   | [Auth](/query/auth#error-codes) - missing token properties, an auth feature used twice.                                                                                                                                   |
+| 400–499   | [Paged query stacks](/query/stacks#paged-queries) - e.g. fetching past the last page.                                                                                                                                     |
+| 500–599   | [Query stacks](/query/stacks#query-stacks) - e.g. `withArgs` passed as a stack feature.                                                                                                                                   |
+| 900–999   | [Query sequences and batches](/query/batching) plus [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - e.g. a second `run()` while one is in flight, or `prepare()` called with no injection context. |
+| 1000–1999 | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined, malformed messages.                                                                                                                           |
 
 The error message names the problem and the fix; the codes exist so you can grep for them.

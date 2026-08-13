@@ -5,6 +5,7 @@ import {
   createQueryDevtoolsFormLinksRecorder,
   createQueryDevtoolsOverridesRecorder,
   createQueryDevtoolsStatsRecorder,
+  currentQueryDevtoolsBatch,
   registerQueryDevtoolsEntry,
 } from '../devtools/query-devtools-hook';
 import { CreateGqlQueryOptions } from '../gql/gql-query';
@@ -202,6 +203,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
   });
 
   return runInInjectionContext(deps.injector, () => {
+    const batchOwner = currentQueryDevtoolsBatch();
     const devtoolsStats = createQueryDevtoolsStatsRecorder();
     const devtoolsFormLinks = createQueryDevtoolsFormLinksRecorder();
     const devtoolsOverrides = createQueryDevtoolsOverridesRecorder();
@@ -279,6 +281,8 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
           client: deps.client,
           element: deps.hostElement,
           gqlQuery: (options.creatorInternals as { query?: string }).query,
+          batch: batchOwner?.batch,
+          batchItemIndex: batchOwner?.index,
         },
       });
 

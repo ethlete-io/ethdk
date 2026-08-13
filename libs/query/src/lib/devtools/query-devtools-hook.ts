@@ -1,3 +1,4 @@
+import { QueryBatchDevtoolsHandle } from '../http/query-batch';
 import { AnyCreateQueryClientResult, QueryClient } from '../http/query-client';
 import { CreateQueryCreatorOptions, QueryConfig } from '../http/query-creator';
 import { QueryRepository } from '../http/query-repository';
@@ -11,7 +12,14 @@ import { QueryDevtoolsStatsHandle, QueryDevtoolsStatsRecorder } from './query-de
  * by `<et-query-devtools>` - not a general-purpose query API.
  */
 export type QueryDevtoolsEntryKind =
-  'query' | 'query-stack' | 'paged-query-stack' | 'query-sequence' | 'auth-provider' | 'ws-client' | 'query-form';
+  | 'query'
+  | 'query-stack'
+  | 'paged-query-stack'
+  | 'query-sequence'
+  | 'query-batch'
+  | 'auth-provider'
+  | 'ws-client'
+  | 'query-form';
 
 /**
  * One chunk of a parsed query route: either literal text (`param: null`) or a path param, whose name
@@ -82,6 +90,22 @@ export type QueryDevtoolsEntryMeta = {
 
   /** The provider's own queries, for auth providers. */
   authQueries?: QueryDevtoolsAuthQuery[];
+
+  /**
+   * The batch that created a query, for the one query `createQueryBatch` runs per item. The panel folds
+   * such queries under their batch's own entry instead of listing a row per item, and the registry caps
+   * their tombstones per batch so a bulk run cannot evict everything else it kept.
+   */
+  batch?: QueryBatchDevtoolsHandle;
+
+  /** Which of the batch's items the query was created for, for a batch's item query. */
+  batchItemIndex?: number;
+
+  /** How many of a batch's requests may be in flight at once, for batches. */
+  concurrency?: number;
+
+  /** Whether a batch's first failure stops the rest of the run, for batches. */
+  stopOnError?: boolean;
 
   /** The query config passed at creation, for queries. */
   queryConfig?: QueryConfig;
@@ -401,6 +425,33 @@ export const patchQueryDevtoolsTokenPayload = <T>(options: {
   providerName: string;
   expiresInPropertyName: string;
 }): T => (tokenPayloadPatcher ? (tokenPayloadPatcher(options) as T) : options.payload);
+
+/** The batch item a query is being created for. @internal */
+export type QueryDevtoolsBatchOwner = { batch: QueryBatchDevtoolsHandle; index: number };
+
+/** The batch item being created right now, or `null` outside one. */
+let batchOwner: QueryDevtoolsBatchOwner | null = null;
+
+/**
+ * Runs `create` with every query it creates attributed to `owner`'s batch and item. The attribution has
+ * to be ambient: a batch's item query is built by the query creator the caller handed it, which takes no
+ * devtools argument - so there is nothing to thread the owner through. Nested runs restore the outer one.
+ * @internal
+ */
+export const runInQueryDevtoolsBatch = <T>(owner: QueryDevtoolsBatchOwner, create: () => T): T => {
+  const outer = batchOwner;
+
+  batchOwner = owner;
+
+  try {
+    return create();
+  } finally {
+    batchOwner = outer;
+  }
+};
+
+/** The batch item a query being created belongs to, or `null` for one created outside a batch. @internal */
+export const currentQueryDevtoolsBatch = () => batchOwner;
 
 let suppressStackRegistration = false;
 

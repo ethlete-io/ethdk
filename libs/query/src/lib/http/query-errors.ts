@@ -51,6 +51,10 @@ export const QueryRuntimeErrorCode = {
   // Query Sequence
   QUERY_SEQUENCE_ALREADY_RUNNING: 900,
 
+  // Query Batch
+  QUERY_BATCH_ALREADY_RUNNING: 910,
+  QUERY_BATCH_WITH_ARGS_USED: 911,
+
   // Legacy interop
   LEGACY_PREPARE_WITHOUT_INJECTION_CONTEXT: 950,
   LEGACY_QUERY_STATE_ALREADY_HAS_KEY: 951,
@@ -262,5 +266,19 @@ export const querySequenceAlreadyRunning = () => {
   return new RuntimeError(
     QueryRuntimeErrorCode.QUERY_SEQUENCE_ALREADY_RUNNING,
     `run() was called on a query sequence that is already running. Wait for the current run to settle before starting another.`,
+  );
+};
+
+export const queryBatchAlreadyRunning = () => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.QUERY_BATCH_ALREADY_RUNNING,
+    `run() or retryFailed() was called on a query batch that is already running. Await the current run, or call cancel() first.`,
+  );
+};
+
+export const queryBatchWithArgsUsed = () => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.QUERY_BATCH_WITH_ARGS_USED,
+    `The "withArgs()" feature cannot be used inside a query batch. Each item's args come from the batch's "args" option.`,
   );
 };

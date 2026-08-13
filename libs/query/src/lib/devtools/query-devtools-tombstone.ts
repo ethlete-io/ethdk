@@ -6,6 +6,13 @@ import { QueryDevtoolsEntry } from './query-devtools-hook';
  */
 export const MAX_QUERY_DEVTOOLS_TOMBSTONES = 50;
 
+/**
+ * How many of its settled items' queries one batch keeps. Counted per batch rather than against
+ * {@link MAX_QUERY_DEVTOOLS_TOMBSTONES}, so a bulk run cannot evict the tombstones the panel is read
+ * for - and low, because the batch's own entry already holds every item's args, response and error.
+ */
+export const MAX_QUERY_BATCH_TOMBSTONES = 20;
+
 const frozen =
   <T>(value: T) =>
   () =>

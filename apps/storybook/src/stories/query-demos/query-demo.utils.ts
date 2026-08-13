@@ -64,6 +64,34 @@ export const queryDemoApiInterceptor: HttpInterceptorFn = (req, next) => {
       }),
     ).pipe(delay(LATENCY_MS));
 
+  const archivePost = url.pathname.match(/^\/posts\/(\d+)$/);
+
+  if (archivePost && req.method === 'PATCH') {
+    const id = Number(archivePost[1]);
+
+    // Uneven per-item cost, so a batch's remaining-time estimate has something to move around on.
+    const latency = LATENCY_MS * (0.4 + (id % 5) * 0.2);
+
+    if (id % 7 === 0) {
+      return of(null).pipe(
+        delay(latency),
+        mergeMap(() =>
+          throwError(
+            () =>
+              new HttpErrorResponse({
+                status: 500,
+                statusText: 'Internal Server Error',
+                url: req.url,
+                error: { message: `Post ${id} could not be archived` },
+              }),
+          ),
+        ),
+      );
+    }
+
+    return of(new HttpResponse({ status: 200, url: req.url, body: { id, archived: true } })).pipe(delay(latency));
+  }
+
   switch (url.pathname) {
     case '/server-time': {
       const body: ServerTimeView = { requestNumber: ++requestNumber, serverTime: new Date().toLocaleTimeString() };

@@ -27,7 +27,7 @@ import { QueryDevtoolsSchemaLoaders, setQueryDevtoolsSchemaLoader } from './quer
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
 import { applyQueryDevtoolsTokenTtl } from './query-devtools-token-ttl';
-import { MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
+import { MAX_QUERY_BATCH_TOMBSTONES, MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
 
@@ -182,8 +182,8 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
 
       const next = list.slice();
 
-      // Only queries leave a tombstone. A stack, sequence, form or auth provider is a container whose
-      // interesting state is the queries it owns - each of which tombstones on its own.
+      // Only queries leave a tombstone. A stack, sequence, batch, form or auth provider is a container
+      // whose interesting state is the queries it owns - each of which tombstones on its own.
       if (fullEntry.kind !== 'query') {
         next.splice(index, 1);
 
@@ -196,20 +196,45 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
     });
 };
 
-/** Drops the oldest tombstones once there are more than {@link MAX_QUERY_DEVTOOLS_TOMBSTONES} of them. */
+/** The oldest `count` entries of a bucket, which is what a cap drops when the bucket is over it. */
+const oldestOver = (bucket: QueryDevtoolsEntry[], cap: number) =>
+  bucket.length <= cap
+    ? []
+    : bucket.sort((a, b) => (a.destroyedAt ?? 0) - (b.destroyedAt ?? 0)).slice(0, bucket.length - cap);
+
+/**
+ * Caps the tombstones the registry holds. A batch's items are counted per batch rather than against the
+ * shared budget: a batch destroys one query per item as it settles, so a single 500-item run would
+ * otherwise fill the whole buffer and evict every tombstone the panel is actually read for - the `401`
+ * that took its component down with it. Each batch keeps its own recent tail instead.
+ */
 const capTombstones = (list: QueryDevtoolsEntry[]) => {
-  const excess = list.filter((e) => e.destroyedAt).length - MAX_QUERY_DEVTOOLS_TOMBSTONES;
+  const shared: QueryDevtoolsEntry[] = [];
+  const perBatch = new Map<object, QueryDevtoolsEntry[]>();
 
-  if (excess <= 0) return list;
+  for (const entry of list) {
+    if (!entry.destroyedAt) continue;
 
-  const doomed = new Set(
-    list
-      .filter((e) => e.destroyedAt)
-      .sort((a, b) => (a.destroyedAt ?? 0) - (b.destroyedAt ?? 0))
-      .slice(0, excess),
-  );
+    const batch = entry.meta.batch;
 
-  return list.filter((e) => !doomed.has(e));
+    if (!batch) {
+      shared.push(entry);
+      continue;
+    }
+
+    const bucket = perBatch.get(batch);
+
+    if (bucket) bucket.push(entry);
+    else perBatch.set(batch, [entry]);
+  }
+
+  const doomed = new Set(oldestOver(shared, MAX_QUERY_DEVTOOLS_TOMBSTONES));
+
+  for (const bucket of perBatch.values()) {
+    for (const entry of oldestOver(bucket, MAX_QUERY_BATCH_TOMBSTONES)) doomed.add(entry);
+  }
+
+  return doomed.size ? list.filter((e) => !doomed.has(e)) : list;
 };
 
 /**
