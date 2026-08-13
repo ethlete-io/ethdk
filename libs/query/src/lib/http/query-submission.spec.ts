@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, required, submit } from '@angular/forms/signals';
-import { createQuerySubmission } from './create-query-submission';
+import { createQuerySubmission } from './query-submission';
 import { createQueryClient } from './query-client';
 import { createPostQuery } from './query-creator-templates';
 
