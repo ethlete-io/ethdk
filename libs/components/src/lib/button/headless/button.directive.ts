@@ -1,4 +1,4 @@
-import { Directive, ElementRef, booleanAttribute, computed, inject, input } from '@angular/core';
+import { Directive, ElementRef, booleanAttribute, computed, inject, input, numberAttribute } from '@angular/core';
 import { SurfaceInteractiveDirective } from '@ethlete/core';
 
 export const BUTTON_TYPES = {
@@ -33,8 +33,18 @@ export class ButtonDirective {
   public pressed = input(false, { transform: booleanAttribute });
   public emitAriaPressed = input(true, { transform: booleanAttribute });
 
+  /**
+   * How far along the work behind `loading` is, as a percentage (`0`-`100`). Leave it unset for work
+   * of unknown length - the loading spinner then stays indeterminate.
+   */
+  public progress = input<number | null, number | string | null | undefined>(null, {
+    transform: (value) => (value === null || value === undefined || value === '' ? null : numberAttribute(value)),
+  });
+
   public readonly IS_BUTTON = this.elementRef.nativeElement.tagName === 'BUTTON';
   public readonly IS_ANCHOR = this.elementRef.nativeElement.tagName === 'A';
 
   public isInactive = computed(() => this.disabled() || this.loading());
+
+  public hasProgress = computed(() => this.progress() !== null);
 }

@@ -64,7 +64,6 @@
 
     .et-button-loader-spinner {
       --et-spinner-color: currentColor;
-      --et-spinner-track-color: transparent;
       --et-spinner-duration: 700ms;
     }
   }

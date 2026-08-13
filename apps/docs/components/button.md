@@ -78,6 +78,14 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 
 - `disabled` and `loading` both make the button **inactive**: native `disabled` on `<button>`, `tabindex="-1"` on `<a>`, plus `aria-disabled`.
 - `loading` additionally overlays a size-matched spinner (`aria-busy`) on top of the hidden label.
+- `progress` (`0`-`100`) turns that spinner from an indeterminate ring into a determinate arc with a track. Leave it unset for work of unknown length. It pairs directly with a [query batch](/query/batching) or a [query sequence](/query/dependent-queries#imperative-waterfalls-dependent-mutations), whose `progress()` signals use the same scale:
+
+  ```html
+  <button [loading]="archive.running()" [progress]="archive.progress()" et-button type="button">
+    Archive selected
+  </button>
+  ```
+
 - `pressed` (surface / icon / window-control buttons) marks toggle state - `aria-pressed` is emitted by default, and the visual **variant swaps** while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance. The `emitAriaPressed` opt-out is bindable on the raw headless `[etButton]` and on icon buttons (for pressed-styled triggers that already announce state via `aria-expanded`), but not on the other styled flavors.
 - `pressedColor` (surface / icon buttons) re-themes the button while pressed - see [neutral until pressed](#neutral-until-pressed).
 - `type` defaults to `'button'`, so forms don't submit accidentally.

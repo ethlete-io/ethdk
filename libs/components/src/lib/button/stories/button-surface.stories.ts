@@ -13,10 +13,18 @@ export default {
     color: { control: 'select', options: COLOR_OPTIONS },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
+    progress: { control: { type: 'number', min: 0, max: 100, step: 1 } },
     pressed: { control: 'boolean' },
     pressedColor: { control: 'select', options: PRESSED_COLOR_OPTIONS },
   },
-  args: { color: 'brand', disabled: false, loading: false, pressed: false, pressedColor: undefined },
+  args: {
+    color: 'brand',
+    disabled: false,
+    loading: false,
+    progress: undefined,
+    pressed: false,
+    pressedColor: undefined,
+  },
 } as Meta<ButtonSurfaceStorybookComponent>;
 
 type Story = StoryObj<ButtonSurfaceStorybookComponent>;
@@ -40,6 +48,21 @@ export const NeutralUntilPressed: Story = {
   args: { color: 'surface', pressedColor: 'inherit', pressed: true },
 };
 
+/**
+ * `loading` alone overlays an indeterminate spinner - the right thing for work of unknown length.
+ */
+export const Loading: Story = {
+  args: { loading: true },
+};
+
+/**
+ * `progress` (`0`-`100`) turns that spinner into a determinate arc with a track, so a long action
+ * shows how far along it is. Clear the control to go back to the indeterminate ring.
+ */
+export const LoadingWithProgress: Story = {
+  args: { loading: true, progress: 65 },
+};
+
 export const WithIcon: StoryObj<ButtonSurfaceIconStorybookComponent> = {
   decorators: [moduleMetadata({ imports: [ButtonSurfaceIconStorybookComponent] })],
   render: (args) => ({
@@ -49,6 +72,7 @@ export const WithIcon: StoryObj<ButtonSurfaceIconStorybookComponent> = {
         [color]="color"
         [disabled]="disabled"
         [loading]="loading"
+        [progress]="progress"
         [pressedColor]="pressedColor"
       />
     `,

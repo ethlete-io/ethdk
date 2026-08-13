@@ -36,6 +36,7 @@ const SURFACE_VARIANTS = [
                     [color]="color()"
                     [disabled]="disabled()"
                     [loading]="loading()"
+                    [progress]="progress()"
                     (click)="lastAction.set('Save (' + example.size + ')')"
                     et-button
                     etSplitButtonAction
@@ -88,6 +89,7 @@ export class SplitButtonStorybookComponent {
   public color = input('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public progress = input<number | null | undefined>(undefined);
 
   public lastAction = signal<string | null>(null);
 

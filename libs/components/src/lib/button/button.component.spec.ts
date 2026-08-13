@@ -62,6 +62,35 @@ describe('ButtonComponent', () => {
       fixture.detectChanges();
       expect(host.querySelector('et-spinner')).not.toBeNull();
     });
+
+    it('keeps the spinner indeterminate while no progress is given', () => {
+      fixture.componentRef.setInput('loading', true);
+      fixture.detectChanges();
+
+      const spinner = host.querySelector('et-spinner');
+
+      expect(spinner?.classList.contains('et-spinner--determinate')).toBe(false);
+      expect(spinner?.getAttribute('aria-valuenow')).toBeNull();
+    });
+
+    it('switches the spinner to determinate when progress is given', () => {
+      fixture.componentRef.setInput('loading', true);
+      fixture.componentRef.setInput('progress', 42);
+      fixture.detectChanges();
+
+      const spinner = host.querySelector('et-spinner');
+
+      expect(spinner?.classList.contains('et-spinner--determinate')).toBe(true);
+      expect(spinner?.getAttribute('aria-valuenow')).toBe('42');
+    });
+
+    it('treats progress 0 as determinate', () => {
+      fixture.componentRef.setInput('loading', true);
+      fixture.componentRef.setInput('progress', 0);
+      fixture.detectChanges();
+
+      expect(host.querySelector('et-spinner')?.classList.contains('et-spinner--determinate')).toBe(true);
+    });
   });
 
   describe('pressed variant', () => {

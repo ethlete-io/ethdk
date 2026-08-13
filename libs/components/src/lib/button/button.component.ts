@@ -71,6 +71,9 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
         <et-spinner
           [diameter]="spinnerConfig().diameter"
           [strokeWidth]="spinnerConfig().strokeWidth"
+          [determinate]="buttonDir.hasProgress()"
+          [track]="buttonDir.hasProgress()"
+          [value]="buttonDir.progress() ?? 0"
           class="et-button-loader-spinner"
         />
       </div>
@@ -86,7 +89,7 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
   hostDirectives: [
     {
       directive: ButtonDirective,
-      inputs: ['disabled', 'loading', 'type', 'pressed'],
+      inputs: ['disabled', 'loading', 'progress', 'type', 'pressed'],
     },
     ButtonStylesDirective,
     ColorInteractiveDirective,

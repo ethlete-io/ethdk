@@ -37,6 +37,9 @@ import { ButtonDirective } from './headless';
         <et-spinner
           [diameter]="spinnerConfig().diameter"
           [strokeWidth]="spinnerConfig().strokeWidth"
+          [determinate]="buttonDir.hasProgress()"
+          [track]="buttonDir.hasProgress()"
+          [value]="buttonDir.progress() ?? 0"
           class="et-button-loader-spinner"
         />
       </div>
@@ -52,7 +55,7 @@ import { ButtonDirective } from './headless';
   hostDirectives: [
     {
       directive: ButtonDirective,
-      inputs: ['disabled', 'loading', 'type'],
+      inputs: ['disabled', 'loading', 'progress', 'type'],
     },
     ButtonStylesDirective,
     ColorInteractiveDirective,

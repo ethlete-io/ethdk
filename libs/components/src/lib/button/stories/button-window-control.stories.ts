@@ -11,9 +11,10 @@ export default {
     color: { control: 'select', options: COLOR_OPTIONS },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
+    progress: { control: { type: 'number', min: 0, max: 100, step: 1 } },
     pressed: { control: 'boolean' },
   },
-  args: { color: 'brand', disabled: false, loading: false, pressed: false },
+  args: { color: 'brand', disabled: false, loading: false, progress: undefined, pressed: false },
 } as Meta<ButtonWindowControlStorybookComponent>;
 
 type Story = StoryObj<ButtonWindowControlStorybookComponent>;

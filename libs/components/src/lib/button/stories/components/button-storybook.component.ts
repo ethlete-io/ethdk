@@ -98,6 +98,7 @@ const WINDOW_CONTROL_BUTTON_EXAMPLES = [
             [color]="color()"
             [disabled]="disabled()"
             [loading]="loading()"
+            [progress]="progress()"
             et-text-button
             type="button"
           >
@@ -114,6 +115,7 @@ export class ButtonTextStorybookComponent {
   public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public progress = input<number | null | undefined>(undefined);
 
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 }
@@ -133,6 +135,7 @@ export class ButtonTextStorybookComponent {
                 [color]="color()"
                 [disabled]="disabled()"
                 [loading]="loading()"
+                [progress]="progress()"
                 [pressed]="pressed()"
                 [pressedColor]="pressedColor()"
                 et-button
@@ -153,6 +156,7 @@ export class ButtonSurfaceStorybookComponent {
   public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public progress = input<number | null | undefined>(undefined);
   public pressed = input(false, { transform: booleanAttribute });
   public pressedColor = input<ButtonColor | undefined>(undefined);
 
@@ -175,6 +179,7 @@ export class ButtonSurfaceStorybookComponent {
                 [color]="color()"
                 [disabled]="disabled()"
                 [loading]="loading()"
+                [progress]="progress()"
                 [pressed]="pressed()"
                 [attr.aria-label]="buttonExample.iconLabel"
                 [pressedColor]="pressedColor()"
@@ -197,6 +202,7 @@ export class ButtonIconStorybookComponent {
   public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public progress = input<number | null | undefined>(undefined);
   public pressed = input(false, { transform: booleanAttribute });
   public pressedColor = input<ButtonColor | undefined>(undefined);
 
@@ -219,6 +225,7 @@ export class ButtonIconStorybookComponent {
                 [color]="color()"
                 [disabled]="disabled()"
                 [loading]="loading()"
+                [progress]="progress()"
                 [attr.aria-label]="buttonExample.iconLabel"
                 et-fab
                 type="button"
@@ -239,6 +246,7 @@ export class ButtonIconStorybookComponent {
               [color]="color()"
               [disabled]="disabled()"
               [loading]="loading()"
+              [progress]="progress()"
               [expanded]="expandedSize() === buttonExample.size"
               (click)="toggleExpanded(buttonExample.size)"
               et-fab
@@ -260,6 +268,7 @@ export class ButtonFabStorybookComponent {
   public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public progress = input<number | null | undefined>(undefined);
 
   public readonly VARIANTS = SURFACE_VARIANTS;
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
@@ -284,6 +293,7 @@ export class ButtonFabStorybookComponent {
               [color]="color()"
               [disabled]="disabled()"
               [loading]="loading()"
+              [progress]="progress()"
               [pressed]="pressed()"
               [attr.aria-label]="buttonExample.label"
               et-window-control-button
@@ -305,6 +315,7 @@ export class ButtonFabStorybookComponent {
               [color]="color()"
               [disabled]="disabled()"
               [loading]="loading()"
+              [progress]="progress()"
               [pressed]="pressed()"
               [attr.aria-label]="'Close'"
               et-window-control-button
@@ -325,6 +336,7 @@ export class ButtonWindowControlStorybookComponent {
   public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public progress = input<number | null | undefined>(undefined);
   public pressed = input(false, { transform: booleanAttribute });
 
   public readonly BUTTON_EXAMPLES = WINDOW_CONTROL_BUTTON_EXAMPLES;
@@ -349,6 +361,7 @@ export class ButtonWindowControlStorybookComponent {
                     [color]="color()"
                     [disabled]="disabled()"
                     [loading]="loading()"
+                    [progress]="progress()"
                     [iconAlignment]="iconAlignment"
                     [pressedColor]="pressedColor()"
                     et-button
@@ -373,6 +386,7 @@ export class ButtonSurfaceIconStorybookComponent {
   public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public progress = input<number | null | undefined>(undefined);
   public pressedColor = input<ButtonColor | undefined>(undefined);
 
   public readonly VARIANTS = SURFACE_VARIANTS;
@@ -394,6 +408,7 @@ export class ButtonSurfaceIconStorybookComponent {
                 [color]="color()"
                 [disabled]="disabled()"
                 [loading]="loading()"
+                [progress]="progress()"
                 [iconAlignment]="iconAlignment"
                 et-text-button
                 type="button"
@@ -415,6 +430,7 @@ export class ButtonTextIconStorybookComponent {
   public color = input<ButtonColor>('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public progress = input<number | null | undefined>(undefined);
 
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
   public readonly ICON_ALIGNMENTS = ICON_ALIGNMENTS;

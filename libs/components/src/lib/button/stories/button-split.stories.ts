@@ -11,8 +11,9 @@ export default {
     color: { control: 'select', options: COLOR_OPTIONS },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
+    progress: { control: { type: 'number', min: 0, max: 100, step: 1 } },
   },
-  args: { color: 'brand', disabled: false, loading: false },
+  args: { color: 'brand', disabled: false, loading: false, progress: undefined },
 } as Meta<SplitButtonStorybookComponent>;
 
 type Story = StoryObj<SplitButtonStorybookComponent>;
