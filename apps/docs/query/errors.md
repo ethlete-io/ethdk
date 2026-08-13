@@ -58,9 +58,47 @@ The single/list split exists because that is how APIs answer; UI almost never wa
 
 Keep the `QueryErrorResponse` itself for anything that needs the status code (`code`), the retry state, or the raw `HttpErrorResponse`.
 
+## Submitting a form through a mutation
+
+`createQuerySubmission` is the whole submit path in one call: it creates the mutation, builds a signal form's `submission.action` around it, and maps a failed request's violations back onto the fields that caused them.
+
+```ts
+import { form } from '@angular/forms/signals';
+import { createQuerySubmission } from '@ethlete/query';
+
+private model = signal({ name: '', email: '' });
+
+protected createUser = createQuerySubmission({
+  queryCreator: createUser, // a createPostQuery creator, see the HTTP guide
+  args: (value) => ({ body: value }),
+  onSuccess: (user) => this.router.navigate(['/users', user.id]),
+});
+
+protected form = form(this.model, createUserSchema(), {
+  submission: { action: this.createUser.action },
+});
+```
+
+```html
+<form [etForm]="form">…</form>
+<et-query-error [error]="createUser.query.error()" [query]="createUser.query" />
+```
+
+Submitting executes the query, waits for it to settle, and only then resolves - so `form().submitting()` covers the whole round trip, and `[etForm]` keeps a second submit out while it does. The request's args come from the submitted value rather than a `withArgs()` feature, which means no derivation runs per keystroke and the query no longer reads the form it belongs to (declare it above the form, not below).
+
+| Option          | What it does                                                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `queryCreator`  | The mutation. Created once, here - a function route needs no `silenceMissingWithArgsFeatureError` of your own.                |
+| `args`          | Builds the request args from the submitted value. Return `null` to abort without a request; omit for a route that takes none. |
+| `onSuccess`     | Runs after the request succeeded, before the action resolves - notify, close the overlay, navigate.                           |
+| `rewritePath`   | Rewrites a violation's property path before it is resolved against the field tree.                                            |
+| `mapViolations` | Replaces the default violation → error mapping entirely.                                                                      |
+
+It returns `{ query, action }`: hand `action` to the form and keep `query` for an error banner - never execute it yourself, or the form's submitting state stops matching what the query is doing.
+
 ## Mapping violations onto signal forms
 
-When a mutation fails with a violation list (Symfony-style `{ violations: [{ propertyPath, message }] }`), `mapViolationsToFormErrors` turns it into signal-forms validation errors, resolved against your form's field tree - return its result from a [`submit()`](https://angular.dev/guide/forms) action and each violation lands on the field its `propertyPath` names:
+`createQuerySubmission` does this for you; reach for the pieces below when you submit through your own handler. When a mutation fails with a violation list (Symfony-style `{ violations: [{ propertyPath, message }] }`), `mapViolationsToFormErrors` turns it into signal-forms validation errors, resolved against your form's field tree - return its result from a [`submit()`](https://angular.dev/guide/forms) action and each violation lands on the field its `propertyPath` names:
 
 ```ts
 import { form, submit } from '@angular/forms/signals';

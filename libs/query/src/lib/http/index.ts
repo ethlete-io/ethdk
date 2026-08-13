@@ -1,5 +1,6 @@
 export * from './base-query-creator-factory';
 export * from './base-query-factory';
+export * from './create-query-submission';
 export * from './http-request';
 export * from './observable-signal';
 export * from './paged-query-stack';
