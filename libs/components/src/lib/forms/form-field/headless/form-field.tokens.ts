@@ -125,6 +125,8 @@ export type FormFieldDirectiveBase = {
   controlMaxLength: Signal<number | undefined>;
   /** The field's visible control frame - the box overlay-based controls anchor their panels to. */
   controlFrameElement: WritableSignal<HTMLElement | null>;
+  /** The field's own element, chrome included - what scrolling to this field targets. */
+  element: HTMLElement;
   activate(): void;
 };
 

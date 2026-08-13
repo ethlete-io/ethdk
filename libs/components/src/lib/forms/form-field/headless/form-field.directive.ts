@@ -21,7 +21,8 @@ let uniqueIdCounter = 0;
   providers: [{ provide: FORM_FIELD_TOKEN, useExisting: FormFieldDirective }],
 })
 export class FormFieldDirective implements FormFieldDirectiveBase {
-  private readonly hostElement = injectHostElement();
+  /** The field's own element, chrome included - what scrolling to this field targets. */
+  public readonly element = injectHostElement();
 
   // the `warn()` rules live on the signal-forms field, so the warnings come from wherever
   // `[formField]` is bound: on the control this field wraps (`et-form-field`), or on this very host
@@ -194,7 +195,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
           throw new RuntimeError(
             FORM_FIELD_ERROR_CODES.MISSING_CONTROL,
             '[FormFieldDirective] No form control found. Add <et-input> or <et-checkbox> inside <et-form-field>.',
-            { element: this.hostElement },
+            { element: this.element },
           );
         }
 
@@ -204,7 +205,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
             '[FormFieldDirective] The control has no accessible name. Project an <et-label> into the ' +
               '<et-form-field>, or set aria-label / aria-labelledby on the control. A placeholder is not ' +
               'an accessible name.',
-            { element: this.hostElement },
+            { element: this.element },
           );
         }
       });

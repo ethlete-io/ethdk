@@ -5,6 +5,7 @@ export * from './color-input';
 export * from './date-time';
 export * from './description';
 export * from './dropzone';
+export * from './form';
 export * from './form-field';
 export * from './input';
 export * from './masked-input';

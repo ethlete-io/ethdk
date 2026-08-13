@@ -41,6 +41,7 @@ control:
 
 | Array                           | Contains                                                                                |
 | ------------------------------- | --------------------------------------------------------------------------------------- |
+| `FORM_IMPORTS`                  | `[etForm]` - the `<form>` element's [submission wiring](#submitting)                    |
 | `FORM_FIELD_IMPORTS`            | `et-form-field`, `et-label`, `et-hint`, `et-counter`, `etInputPrefix` / `etInputSuffix` |
 | `INPUT_IMPORTS`                 | `et-input`                                                                              |
 | `NUMBER_INPUT_IMPORTS`          | `et-number-input`                                                                       |
@@ -272,7 +273,9 @@ demonstrates the masking and the first-commit-replaces behavior.
 
 The field chrome handles error display and aria wiring uniformly:
 
-- Errors show once a control is **touched and invalid** - each signal-forms
+- Errors show once a control is **touched and invalid** - by a blur, or by
+  anything that marks the field touched programmatically, which is what a
+  [submit attempt](#submitting) does to the whole tree. Each signal-forms
   `ValidationError` renders as an `et-form-error` in the support region
   (`aria-live="polite"`), replacing the hint with an animated transition. While
   erroring, the field forces the app's error color theme (the theme registered
@@ -505,6 +508,92 @@ provideFormErrorMessageResolver((error) => {
   }
 });
 ```
+
+## Submitting
+
+`[etForm]` connects a `<form>` to the signal form it edits. It sets `novalidate`,
+calls `preventDefault()` on the submit event, submits through the form's own
+`submission.action`, and - when the attempt does not go through - scrolls the
+first invalid field into view and focuses its control.
+
+```ts
+import { FORM_IMPORTS } from '@ethlete/components';
+
+protected form = form(this.model, createUserSchema(), {
+  submission: {
+    action: async (field) => {
+      const snapshot = await executeUntilSettled(this.createUserQuery, { args: { body: field().value() } });
+      const error = snapshot.error();
+
+      return error ? mapViolationsToFormErrors({ fieldTree: field, error }) : undefined;
+    },
+  },
+});
+```
+
+```html
+<form [etForm]="form" id="create-user">
+  <et-form-field>
+    <et-label>Email</et-label>
+    <et-input [formField]="form.email" type="email" />
+  </et-form-field>
+
+  <button [loading]="form().submitting()" et-button type="submit">Create user</button>
+</form>
+```
+
+Because the form declares what submitting means, the template needs no submit
+handler and no `$event.preventDefault()`. A submit control outside the form
+(a button in an `et-overlay-footer`, say) still reaches it through
+`form="create-user"`.
+
+The `Components/Forms/Submission` story in Storybook demonstrates the whole flow.
+
+### Leave the submit button enabled
+
+**Do not disable a submit button because the form is invalid.** Submitting marks
+every field touched - which is exactly what makes the errors appear - and lands
+the user on the first one. A disabled button says "no" without ever saying why,
+and on a long form it says it from a screen where no error is visible.
+
+| State                  | What to bind                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| Form invalid           | nothing - the button stays enabled and the submit attempt reports what is missing |
+| Submission in flight   | `[loading]="form().submitting()"` (`submit()` also ignores a second attempt)      |
+| Not submittable at all | `disabled` - a missing permission, options still loading, nothing edited yet      |
+
+### Landing on the first error
+
+`focusFirstInvalidField(field, options?)` is what `[etForm]` calls, and it is
+exported for forms that submit through their own handler or want it in a
+`submission.onInvalid` hook:
+
+```ts
+import { focusFirstInvalidField } from '@ethlete/components';
+
+protected async save() {
+  const success = await submit(this.form, async (field) => saveUser(field().value()));
+
+  if (!success) {
+    focusFirstInvalidField(this.form);
+  }
+}
+```
+
+"First" is the first invalid field in **DOM order**, not in field-tree order, and
+fields that are not currently rendered - a collapsed section, another wizard step
+
+- are skipped, so the target is always an error the user can see. The scroll
+  target is the whole `et-form-field` (label and message included) rather than the
+  bare control, and focus goes to the control itself. It returns `false` when no
+  rendered field owns any of the errors, which is the case for a form-level error
+  from [server-side violations](#server-side-violations).
+
+| Option     | Default                                   | What it does                                   |
+| ---------- | ----------------------------------------- | ---------------------------------------------- |
+| `block`    | `'center'`                                | Where the field lands in its scroll container  |
+| `behavior` | `'smooth'`, `'auto'` under reduced motion | Scroll behavior                                |
+| `focus`    | `true`                                    | Whether to move focus into the field's control |
 
 ## Theming
 
