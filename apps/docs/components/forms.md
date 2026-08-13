@@ -119,11 +119,12 @@ affordances render at full strength, because they are controls rather than decor
 #### The transient ones take no space
 
 The clear button and the busy spinner come and go while the reader is working in the field, so they
-claim no column of their own: the suffix leaves the flex line by exactly what they add, and they paint
-over the value's tail behind a short gradient of the field's own background
-(`--et-surface-background-solid`, so it matches both fills). The control area keeps its width whether
-they are there or not - a long value never re-ellipsises, and nothing shifts under the pointer when a
-value makes the clear button appear.
+claim no column of their own: the suffix leaves the flex line by exactly what they add, and they sit
+over the value's tail, which the control slot fades out with an alpha mask over the same short strip.
+A mask rather than a ramp painted in a background colour, because a `transparent` fill shows whatever
+you painted behind the field - not necessarily the surface scope's background. The control area keeps
+its width whether the affordances are there or not - a long value never re-ellipsises, and nothing
+shifts under the pointer when a value makes the clear button appear.
 
 Persistent affordances - a picker trigger, a reveal toggle, your `[etInputSuffix]` - stay in the flow
 and keep their space, because they never appear or disappear mid-edit.

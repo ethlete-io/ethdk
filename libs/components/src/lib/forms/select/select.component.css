@@ -1,5 +1,9 @@
 @layer components {
   et-select {
+    --_et-select-trigger-busy-fade: 24px;
+    --_et-select-trigger-busy-cover: 16px;
+    --_et-select-trigger-busy-mask-direction: to right;
+
     /* a flex row, not a block: without a form field to hand them to, the control's own suffix
        affordances render at the end of the host rather than in the field's suffix slot */
     display: flex;
@@ -135,24 +139,33 @@
 
     /* Async option loading, surfaced in the field (mirrors the menu's search spinner). It comes and
        goes under the reader's hands, so it claims no column of its own: a negative inline margin
-       cancels the space it and its gap would take, and it paints over the value's tail behind a fade
-       of the field's own background - the same treatment the field gives its busy spinner. */
+       cancels the space it and its gap would take, and it sits over the value's tail, which the
+       trigger content masks away - the same treatment the field gives its busy spinner. */
     .et-select-trigger-busy {
-      --_et-select-trigger-busy-fade: 24px;
-
       position: relative;
       display: flex;
       align-items: center;
       align-self: stretch;
       flex: none;
       padding-inline-start: var(--_et-select-trigger-busy-fade);
-      margin-inline-start: calc(-1 * (var(--_et-select-trigger-busy-fade) + 16px + 6px));
-      background: linear-gradient(
-        to right,
-        transparent,
-        var(--et-surface-background-solid, transparent) var(--_et-select-trigger-busy-fade)
+      margin-inline-start: calc(
+        -1 * (var(--_et-select-trigger-busy-fade) + var(--_et-select-trigger-busy-cover) + 6px)
       );
       color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    &:dir(rtl) {
+      --_et-select-trigger-busy-mask-direction: to left;
+    }
+
+    /* An alpha mask, not a gradient in a background colour: a transparent field fill shows whatever
+       the consumer painted behind it, which a painted ramp would have to guess. */
+    .et-select-trigger:has(> .et-select-trigger-busy) .et-select-trigger-content {
+      mask-image: linear-gradient(
+        var(--_et-select-trigger-busy-mask-direction),
+        black calc(100% - var(--_et-select-trigger-busy-cover) - var(--_et-select-trigger-busy-fade)),
+        transparent calc(100% - var(--_et-select-trigger-busy-cover))
+      );
     }
 
     .et-select-trigger-busy--enter {
