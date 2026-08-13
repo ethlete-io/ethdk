@@ -58,6 +58,11 @@ export const SELECT_FILTER_MODES = {
 
 export type SelectFilterMode = (typeof SELECT_FILTER_MODES)[keyof typeof SELECT_FILTER_MODES];
 
+// Above this many visible data-driven rows the select windows their rendering. Comfortably past
+// what a panel shows at once (its default max height over the row estimate, plus overscan on
+// both sides), so a list that windowing would render in full anyway stays unwindowed.
+const VIRTUALIZATION_MIN_ITEMS = 40;
+
 /**
  * The async option state a source (e.g. the bundle from `selectOptionsFromQuery`) pushes into a
  * select via `[etSelectOptions]`. While one is set it overrides the `loading`/`error`/`hasMoreItems`
@@ -109,10 +114,11 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   /**
    * Data-driven options: the select owns the option rows instead of the consumer projecting
-   * `et-select-option`s, and windows their rendering (virtualization) - only rows near the
-   * viewport exist in the DOM, so lists with thousands of entries stay cheap. Renders via
-   * `virtualizedItems()` between the `virtualWindow` block paddings; row content is the
-   * plain `label` or an `etSelectOptionTemplate`. Values must be unique. Can be combined
+   * `et-select-option`s. Long lists have their rendering windowed (virtualization) - only rows
+   * near the viewport exist in the DOM, so lists with thousands of entries stay cheap; short
+   * ones render in full. Renders via `virtualizedItems()` between the `virtualWindow` block
+   * paddings; row content is the plain `label` or an `etSelectOptionTemplate`. Values must be
+   * unique. Can be combined
    * with projected options (e.g. a pinned row), which render normally and are not windowed.
    */
   public options = input<readonly SelectOptionData[] | null>(null);
@@ -427,22 +433,32 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public visibleDataItems = computed(() => this.visibleItems().filter((item) => !!item.data));
 
   /**
+   * @internal Whether the data-driven rows are windowed. A list that stays near a panel's
+   * worth of rows renders in full: windowing it would render all of them anyway (viewport
+   * plus overscan) while still costing a scroll listener, per-row mount churn and the
+   * viewport's width floor.
+   */
+  public windowsOptions = computed(() => this.visibleDataItems().length > VIRTUALIZATION_MIN_ITEMS);
+
+  /**
    * The window over the data-driven rows: `paddingTop()`/`paddingBottom()` stand in for the
    * scroll height of everything outside `virtualizedItems()` - apply them as block paddings
    * around the rendered rows.
    */
   public virtualWindow = createVirtualWindow({
-    // only meaningful with data-driven options - without them, don't track the viewport at all
-    container: computed(() => (this.options() ? (this.registeredViewport()?.elementRef.nativeElement ?? null) : null)),
+    // only meaningful with enough data-driven options - otherwise don't track the viewport at all
+    container: computed(() =>
+      this.windowsOptions() ? (this.registeredViewport()?.elementRef.nativeElement ?? null) : null,
+    ),
     itemCount: computed(() => this.visibleDataItems().length),
     estimateItemHeight: 36,
     overscan: 5,
   });
 
   /**
-   * The windowed slice of data-driven options to render - every visible one while no
-   * `etSelectViewport` is registered. Render with `etSelectVirtualOption` rows between the
-   * `virtualWindow` block paddings.
+   * The windowed slice of data-driven options to render - every visible one while the list is
+   * short enough to render in full or no `etSelectViewport` is registered. Render with
+   * `etSelectVirtualOption` rows between the `virtualWindow` block paddings.
    */
   public virtualizedItems = computed(() => {
     const items = this.visibleDataItems();

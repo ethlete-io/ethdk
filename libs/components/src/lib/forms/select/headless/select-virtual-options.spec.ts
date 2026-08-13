@@ -132,6 +132,22 @@ describe('SelectDirective (data-driven options)', () => {
     expect(parseFloat(body.style.paddingBlockEnd)).toBeGreaterThan(0);
   });
 
+  it('leaves a short list unwindowed: every row rendered, no paddings', async () => {
+    fixture.componentInstance.options.set(makeOptions(8));
+    fixture.detectChanges();
+    tick();
+
+    await openSelect();
+
+    expect(select.windowsOptions()).toBe(false);
+    expect(options().length).toBe(8);
+
+    const body = virtualBody()!;
+
+    expect(parseFloat(body.style.paddingBlockStart)).toBe(0);
+    expect(parseFloat(body.style.paddingBlockEnd)).toBe(0);
+  });
+
   it('keyboard-navigates the full data set, not just the rendered window', async () => {
     await openSelect();
 

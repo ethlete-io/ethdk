@@ -32,7 +32,7 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `mixed`             | `boolean`                            | `false`      | Presents an unresolved bulk-edit selection independently of `value`. Two-way bindable; a user commit or clear resolves it to `false`.                                                                                         |
 | `mixedLabel`        | `string \| null`                     | `null` ¹     | Value text shown while `mixed` is true.                                                                                                                                                                                       |
 | `placeholder`       | `string`                             | `''`         | Shown in the trigger while nothing is selected.                                                                                                                                                                               |
-| `options`           | `SelectOptionData[] \| null`         | `null`       | Data-driven options (`{ value, label, disabled? }`) - the select renders and virtualizes the rows itself. See [large option lists](#large-option-lists-virtualization).                                                       |
+| `options`           | `SelectOptionData[] \| null`         | `null`       | Data-driven options (`{ value, label, disabled? }`) - the select renders the rows itself, virtualizing long lists. See [large option lists](#large-option-lists-virtualization).                                              |
 | `multiple`          | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                                                                             |
 | `filterMode`        | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters.                                                                   |
 | `allowCustomValues` | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                                                                                |
@@ -301,6 +301,8 @@ Each group is a `role="group"` with `aria-labelledby` pointing at its header. Wi
 
 For big client-side lists, pass the options as data instead of projecting `et-select-option`s - the select renders the rows itself and **virtualizes** them: only the rows near the panel's viewport exist in the DOM (2000 options ≈ 15 rendered nodes), with block paddings standing in for the rest of the scroll height. Keyboard navigation, typeahead, internal filtering and label resolution still work across the **full** data set, because every entry registers as an option - only the rendering is windowed.
 
+Windowing turns itself on **only past ~40 visible rows** - more than a panel shows at once. A shorter list (or a long one filtered down to a handful of matches) renders in full, so `options` is also the right input for small static lists: it costs nothing extra there, and no scroll listener, row churn or width floor is set up for it.
+
 ```html
 <et-select [formField]="form.item" [options]="items" placeholder="Pick an item">
   <input etSelectSearch placeholder="Search 2000 items" />
@@ -324,10 +326,10 @@ Each entry is `{ value, label, disabled? }` (`SelectOptionData`); values must be
 Notes:
 
 - Rows are assumed to share one uniform height (the first rendered row is measured). Wildly varying row heights are not supported.
-- With `[mirrorPanelWidth]="false"` the panel sizes to its content, which windowing would otherwise make it resize on every scroll (only the rows around the scroll offset exist to size it). The viewport keeps the widest width it has needed as a floor, so a scrolling panel only ever grows; a new search query drops the floor so the panel can fit the new rows again.
+- With `[mirrorPanelWidth]="false"` the panel sizes to its content, which windowing would otherwise make it resize on every scroll (only the rows around the scroll offset exist to size it). While a list is windowed the viewport therefore keeps the widest width it has needed as a floor, so a scrolling panel only ever grows; a new search query drops the floor so the panel can fit the new rows again. An unwindowed (short) list needs none of that and sizes to its rows normally.
 - Data-driven options can be combined with projected `et-select-option`s (e.g. a pinned entry), which render normally after the windowed rows and are not virtualized. Option groups are presentational wrappers around _projected_ options and don't apply to the flat `options` data.
 - For unbounded/server-side datasets, the [async options](#async-options) pattern (`filterMode="external"` + `hasMoreItems`/`loadMore`) remains the right tool - `options` composes with it, since you control the array you bind.
-- Headless: mark your scroll container with `[etSelectViewport]`, render `select.virtualizedItems()` with `[etSelectVirtualOption]="item"` rows, and apply `select.virtualWindow.paddingTop()/paddingBottom()` as block paddings around them. Without a registered viewport, every visible option renders (no windowing). `SelectItem.element()` is `null` while a data-driven option is outside the rendered window.
+- Headless: mark your scroll container with `[etSelectViewport]`, render `select.virtualizedItems()` with `[etSelectVirtualOption]="item"` rows, and apply `select.virtualWindow.paddingTop()/paddingBottom()` as block paddings around them. Without a registered viewport - or below the windowing threshold - every visible option renders (no windowing). `SelectItem.element()` is `null` while a data-driven option is outside the rendered window.
 
 ## Panel placement
 

@@ -38,7 +38,7 @@ export class SelectViewportDirective {
   private locksWidth = computed(() => {
     const select = this.select;
 
-    return !!select?.options() && !select.mirrorPanelWidth();
+    return !!select?.windowsOptions() && !select.mirrorPanelWidth();
   });
 
   private widthFloor = linkedSignal<string, number>({

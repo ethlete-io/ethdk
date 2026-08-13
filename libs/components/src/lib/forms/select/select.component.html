@@ -99,9 +99,9 @@
 <ng-template etSelectSurface>
   <et-select-panel>
     @if (select.options()) {
-      <!-- data-driven mode: the select owns the option rows and windows their rendering —
-           only rows near the viewport exist in the DOM; the block paddings stand in for the
-           scroll height of everything outside the window -->
+      <!-- data-driven mode: the select owns the option rows and windows the rendering of a long
+           list — only rows near the viewport exist in the DOM; the block paddings stand in for
+           the scroll height of everything outside the window -->
       <div
         [style.padding-block-start.px]="select.virtualWindow.paddingTop()"
         [style.padding-block-end.px]="select.virtualWindow.paddingBottom()"
