@@ -63,6 +63,58 @@ describe('OverlayRouter navigation guards', () => {
     expect(router.currentPage()?.path).toBe('/two');
   });
 
+  it('navigates synchronously while every registered guard answers synchronously', async () => {
+    const router = await open();
+
+    router.registerNavigationGuard(() => true);
+
+    router.navigate('/two');
+
+    expect(router.currentPage()?.path).toBe('/two');
+  });
+
+  it('cancels synchronously when a synchronous guard vetoes', async () => {
+    const router = await open();
+
+    router.registerNavigationGuard(() => false);
+
+    router.navigate('/two');
+
+    expect(router.currentPage()?.path).toBe('/');
+  });
+
+  it('goes async only from the first guard that returns a promise', async () => {
+    const router = await open();
+    const order: string[] = [];
+
+    router.registerNavigationGuard(() => {
+      order.push('sync');
+
+      return true;
+    });
+    router.registerNavigationGuard(() => {
+      order.push('async');
+
+      return Promise.resolve(true);
+    });
+    router.registerNavigationGuard(() => {
+      order.push('after');
+
+      return true;
+    });
+
+    router.navigate('/two');
+
+    expect(order).toEqual(['sync', 'async']);
+    expect(router.currentPage()?.path).toBe('/');
+
+    await flushMicrotasks();
+    tick();
+
+    expect(order).toEqual(['sync', 'async', 'after']);
+    expect(router.currentPage()?.path).toBe('/two');
+  });
+
   it('cancels the navigation when a guard resolves false', async () => {
     const router = await open();
     let calls = 0;

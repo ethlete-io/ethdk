@@ -4,6 +4,7 @@ import { form, FieldTree } from '@angular/forms/signals';
 import '../../../test-helpers';
 import { injectOverlayManager } from '../overlay-manager';
 import { OverlayRef } from '../overlay-ref';
+import { OverlayRouter, injectOverlayRouter, provideOverlayRouter } from '../routing/overlay-router';
 import { createOverlayUnsavedChangesGuard, OverlayUnsavedChangesGuardRef } from './overlay-unsaved-changes-guard';
 
 type Model = { name: string };
@@ -34,10 +35,42 @@ class GuardedOverlayComponent {
   static nextDismissSources: Record<string, boolean> | undefined = undefined;
 }
 
+@Component({ template: 'page one' })
+class RoutedPageOneComponent {}
+
+@Component({ template: 'page two' })
+class RoutedPageTwoComponent {}
+
+@Component({ template: 'routed guarded overlay' })
+class RoutedGuardedOverlayComponent {
+  router: OverlayRouter = injectOverlayRouter();
+
+  model = signal<Model>({ name: 'Ada' });
+  form = form(this.model);
+
+  confirmResult = signal(true);
+  confirmCalls = 0;
+
+  guard: OverlayUnsavedChangesGuardRef<Model> = createOverlayUnsavedChangesGuard<Model>({
+    source: this.form as FieldTree<Model>,
+    confirm: () => {
+      this.confirmCalls++;
+
+      return this.confirmResult();
+    },
+    guardRouteChanges: RoutedGuardedOverlayComponent.nextGuardRouteChanges,
+  });
+
+  static nextGuardRouteChanges: boolean | undefined = undefined;
+}
+
 const flushFrames = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
 const microtask = () => Promise.resolve();
+
+/** A guard chain resolves over several microtasks, so a fixed number of them would be a flaky wait. */
+const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 describe('createOverlayUnsavedChangesGuard', () => {
   const tick = () => TestBed.inject(ApplicationRef).tick();
@@ -48,6 +81,7 @@ describe('createOverlayUnsavedChangesGuard', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
     GuardedOverlayComponent.nextDismissSources = undefined;
+    RoutedGuardedOverlayComponent.nextGuardRouteChanges = undefined;
   });
 
   const open = async () => {
@@ -147,5 +181,87 @@ describe('createOverlayUnsavedChangesGuard', () => {
 
     expect(instance.confirmCalls).toBe(0);
     expect(paneCount()).toBe(0);
+  });
+
+  describe('in a routed overlay', () => {
+    let routedRef: OverlayRef<RoutedGuardedOverlayComponent>;
+
+    const openRouted = async () => {
+      const manager = TestBed.runInInjectionContext(() => injectOverlayManager());
+
+      routedRef = manager.open<RoutedGuardedOverlayComponent>(RoutedGuardedOverlayComponent, {
+        providers: [
+          provideOverlayRouter({
+            routes: [
+              { path: '/', component: RoutedPageOneComponent },
+              { path: '/two', component: RoutedPageTwoComponent },
+            ],
+          }),
+        ],
+      });
+
+      await flushFrames();
+
+      return routedRef.componentInstance() as RoutedGuardedOverlayComponent;
+    };
+
+    afterEach(async () => {
+      routedRef?.forceClose();
+      await flushFrames();
+    });
+
+    it('lets a clean navigation commit synchronously', async () => {
+      const instance = await openRouted();
+
+      instance.router.navigate('/two');
+
+      expect(instance.router.currentPage()?.path).toBe('/two');
+      expect(instance.confirmCalls).toBe(0);
+    });
+
+    it('vetoes a dirty navigation and commits it once the discard is confirmed', async () => {
+      const instance = await openRouted();
+
+      instance.form().value.set({ name: 'Grace' });
+      tick();
+
+      instance.router.navigate('/two');
+
+      expect(instance.router.currentPage()?.path).toBe('/');
+
+      await flushMicrotasks();
+      tick();
+
+      expect(instance.confirmCalls).toBe(1);
+      expect(instance.router.currentPage()?.path).toBe('/two');
+    });
+
+    it('keeps the current route when the user cancels the discard', async () => {
+      const instance = await openRouted();
+      instance.confirmResult.set(false);
+
+      instance.form().value.set({ name: 'Grace' });
+      tick();
+
+      instance.router.navigate('/two');
+      await flushMicrotasks();
+      tick();
+
+      expect(instance.confirmCalls).toBe(1);
+      expect(instance.router.currentPage()?.path).toBe('/');
+    });
+
+    it('leaves navigation alone when guardRouteChanges is false', async () => {
+      RoutedGuardedOverlayComponent.nextGuardRouteChanges = false;
+      const instance = await openRouted();
+
+      instance.form().value.set({ name: 'Grace' });
+      tick();
+
+      instance.router.navigate('/two');
+
+      expect(instance.confirmCalls).toBe(0);
+      expect(instance.router.currentPage()?.path).toBe('/two');
+    });
   });
 });

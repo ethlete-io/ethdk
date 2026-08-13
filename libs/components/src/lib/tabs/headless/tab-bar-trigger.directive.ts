@@ -45,6 +45,12 @@ export class TabBarTriggerDirective {
 
   public justActivated = signal(false);
 
+  /**
+   * @internal Set when something else owns the selection - a router link, where a click only asks to
+   * navigate and the selection has to wait until that navigation is actually committed.
+   */
+  public deferSelection = signal(false);
+
   public isSelected = computed(() => {
     const tabBar = this.tabBar;
 
@@ -123,7 +129,9 @@ export class TabBarTriggerDirective {
     if (!this.disabled()) {
       const wasSelected = this.isSelected();
 
-      this.tabBar?.selectTrigger(this);
+      if (!this.deferSelection()) {
+        this.tabBar?.selectTrigger(this);
+      }
 
       if (!wasSelected) {
         this.justActivated.set(true);

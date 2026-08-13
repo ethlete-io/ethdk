@@ -4,7 +4,6 @@ import { RouterLinkActive } from '@angular/router';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { OVERLAY_ROUTER_LINK_TOKEN } from '../../../overlay/routing/overlay-router-link.directive';
-import { OVERLAY_ROUTER_TOKEN } from '../../../overlay/routing/overlay-router';
 import { TabBarTriggerDirective } from '../../headless/tab-bar-trigger.directive';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
 import { TAB_ERROR_CODES } from '../../tab-errors';
@@ -16,7 +15,6 @@ import { NAV_TABS_TOKEN } from './nav-tabs.tokens';
 export class NavTabLinkDirective {
   private routerLinkActive = inject(RouterLinkActive, { self: true, optional: true });
   private overlayRouterLink = inject(OVERLAY_ROUTER_LINK_TOKEN, { self: true, optional: true });
-  private overlayRouter = inject(OVERLAY_ROUTER_TOKEN, { optional: true });
   private navTabs = inject(NAV_TABS_TOKEN, { optional: true });
   private tabBar = inject(TabBarDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
@@ -29,6 +27,10 @@ export class NavTabLinkDirective {
   public isActive = computed(() => this.overlayRouterLink?.isActive() ?? this.routerLinkIsActive());
 
   constructor() {
+    // The router owns the selection: a click only asks to navigate, so a guard that vetoes or stalls
+    // the navigation leaves the tab bar where it is.
+    this.trigger.deferSelection.set(true);
+
     this.routerLinkActive?.isActiveChange
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -38,14 +40,7 @@ export class NavTabLinkDirective {
       )
       .subscribe();
 
-    // A click selects the trigger optimistically, so the active link has to claim the selection back
-    // when the router refuses to move. Never while a navigation is in flight: the link being left is
-    // still the active one in there, so claiming it back then undoes the click.
     effect(() => {
-      if (this.overlayRouter?.navigationPending()) {
-        return;
-      }
-
       if (this.isActive() && this.tabBar?.activeTrigger() !== this.trigger) {
         this.tabBar?.selectTrigger(this.trigger);
       }

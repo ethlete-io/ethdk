@@ -119,8 +119,7 @@ export type OverlayRouter = {
 
   /**
    * Whether a navigation is in flight - waiting on a navigation guard, or committed but not yet
-   * observable on `currentRoute`. UI that moves ahead of the router - a tab bar selecting the clicked
-   * tab optimistically - must not undo itself while this is `true`, or it fights that navigation.
+   * observable on `currentRoute`.
    */
   navigationPending: Signal<boolean>;
 
@@ -183,8 +182,6 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       { initialValue: getInitialRoute() },
     );
 
-    // A commit stays invisible on `currentRoute` for a frame, so the route being left still reports
-    // itself active in there. Both halves must count as pending, or an optimistic selection is undone.
     const navigationPending = computed(() => pendingNavigations() > 0 || currentRoute() !== syncCurrentRoute());
 
     const extraRoutes = signal<OverlayRoute[]>([]);
@@ -297,20 +294,30 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     };
 
     /**
-     * Answers synchronously while nothing is registered: a route change deferred by a microtask lands
-     * after the frame the outlet measured for its transition.
+     * Answers synchronously for as long as the guards do, and only goes async from the first one that
+     * returns a promise: a route change deferred by a microtask lands after the frame the outlet
+     * measured for its transition.
      */
     const canLeave = (from: string, to: string): boolean | Promise<boolean> => {
       const guards = [...navigationGuards];
 
-      if (!guards.length) {
-        return true;
-      }
+      const runFrom = (index: number): boolean | Promise<boolean> => {
+        for (let i = index; i < guards.length; i++) {
+          const mayLeave = guards[i]?.({ from, to }) ?? true;
 
-      return guards.reduce<Promise<boolean>>(
-        (mayLeave, guard) => mayLeave.then((allowed) => (allowed ? guard({ from, to }) : false)),
-        Promise.resolve(true),
-      );
+          if (mayLeave === false) {
+            return false;
+          }
+
+          if (mayLeave !== true) {
+            return mayLeave.then((allowed) => (allowed ? runFrom(i + 1) : false));
+          }
+        }
+
+        return true;
+      };
+
+      return runFrom(0);
     };
 
     const whenAllowed = (attempt: { from: string; to: string; allowed: () => void; blocked?: () => void }) => {

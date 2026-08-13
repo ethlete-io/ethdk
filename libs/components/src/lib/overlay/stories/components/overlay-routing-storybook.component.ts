@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, signal } from '@angular/core';
+import { Component, ViewEncapsulation, inject, signal } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { NAV_TAB_IMPORTS } from '../../../tabs/tabs.imports';
 import { OverlayBodyComponent } from '../../overlay-body.component';
@@ -8,6 +8,7 @@ import { OverlayHeaderTemplateDirective } from '../../overlay-header-template.di
 import { OverlayHeaderDirective } from '../../overlay-header.directive';
 import { OverlayMainDirective } from '../../overlay-main.directive';
 import { injectOverlayManager } from '../../overlay-manager';
+import { OVERLAY_REF } from '../../overlay-ref';
 import { OverlayTitleDirective } from '../../overlay-title.directive';
 import {
   OverlayBackOrCloseDirective,
@@ -19,6 +20,7 @@ import {
 } from '../../routing';
 import { OverlaySidebarComponent, injectSidebarOverlay, provideSidebarOverlay } from '../../sidebar';
 import { dialogOverlayStrategy, transformingFullScreenDialogToDialogOverlayStrategy } from '../../strategies';
+import { createOverlayUnsavedChangesGuard } from '../../utils/overlay-unsaved-changes-guard';
 
 // ─── Multi-step routing demo: pages ──────────────────────────────────────────
 
@@ -264,6 +266,38 @@ export class NestedRoutingDemoOverlayComponent {}
 // ─── Sidebar navigation demo: pages ──────────────────────────────────────────
 
 @Component({
+  selector: 'et-sb-sb-confirm-discard',
+  template: `
+    <div class="font-sans" etOverlayMain>
+      <div etOverlayHeader>
+        <h2 class="text-h6 font-title" etOverlayTitle>Discard changes?</h2>
+      </div>
+
+      <et-overlay-body>
+        <p class="max-w-sm text-base text-white/70">Leaving this page now will lose your unsaved edits.</p>
+      </et-overlay-body>
+
+      <div class="flex justify-end gap-2" etOverlayFooter>
+        <button (click)="ref.close(false)" et-button size="sm" variant="outline">Keep editing</button>
+        <button (click)="ref.close(true)" color="danger" et-button size="sm" variant="filled">Discard</button>
+      </div>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    BUTTON_IMPORTS,
+    OverlayMainDirective,
+    OverlayHeaderDirective,
+    OverlayBodyComponent,
+    OverlayFooterDirective,
+    OverlayTitleDirective,
+  ],
+})
+export class SidebarDemoConfirmDiscardComponent {
+  protected ref = inject(OVERLAY_REF);
+}
+
+@Component({
   selector: 'et-sb-sb-page-1',
   template: `
     <et-overlay-header>
@@ -279,9 +313,14 @@ export class NestedRoutingDemoOverlayComponent {}
         <div class="flex items-center justify-between gap-4 py-3">
           <span class="flex flex-col">
             <span class="text-base">Workspace name</span>
-            <span class="text-small text-white/50">Shown in invites and notifications</span>
+            <span class="text-small text-white/50">Edit me, then pick another tab</span>
           </span>
-          <span class="text-base text-white/70">Ethlete HQ</span>
+          <input
+            #nameInput
+            [value]="name()"
+            (input)="name.set(nameInput.value)"
+            class="rounded border border-white/20 bg-transparent px-3 py-2 text-base text-white outline-none focus:border-white/60"
+          />
         </div>
         <div class="flex items-center justify-between gap-4 py-3">
           <span class="flex flex-col">
@@ -298,6 +337,11 @@ export class NestedRoutingDemoOverlayComponent {}
           <span class="text-base text-white/70">Europe/Berlin</span>
         </div>
       </div>
+      <p class="mt-4 text-small text-white/50">
+        Status: <strong>{{ guard.hasChanges() ? 'unsaved changes' : 'clean' }}</strong> - one
+        <code>createOverlayUnsavedChangesGuard</code> covers both exits: picking another tab asks first (the sidebar
+        underline stays put until you discard), and so do Escape, an outside click and the Close button.
+      </p>
     </et-overlay-body>
     @if (!sidebar.renderSidebar()) {
       <et-overlay-footer>
@@ -317,7 +361,23 @@ export class NestedRoutingDemoOverlayComponent {}
   hostDirectives: [OverlayMainDirective],
 })
 export class SidebarDemoPage1Component {
+  private overlayManager = injectOverlayManager();
+
   protected sidebar = injectSidebarOverlay();
+
+  protected name = signal('Ethlete HQ');
+
+  protected guard = createOverlayUnsavedChangesGuard({
+    source: this.name,
+    confirm: () =>
+      this.overlayManager
+        .open<SidebarDemoConfirmDiscardComponent, boolean>(SidebarDemoConfirmDiscardComponent, {
+          strategies: dialogOverlayStrategy({ width: 360 }),
+          panelClass: 'et-sb-routing-panel',
+        })
+        .afterClosed(),
+    tab: false,
+  });
 }
 
 @Component({

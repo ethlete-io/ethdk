@@ -5,6 +5,7 @@ import {
   UnsavedChangesTrackerRef,
 } from '@ethlete/core';
 import { OVERLAY_REF } from '../overlay-ref';
+import { OVERLAY_ROUTER_TOKEN } from '../routing/overlay-router';
 
 /**
  * Which close sources the guard should intercept. All default to `true`.
@@ -21,6 +22,15 @@ export type OverlayUnsavedChangesDismissSources = {
 export type CreateOverlayUnsavedChangesGuardConfig<T> = CreateUnsavedChangesTrackerConfig<T> & {
   /** The close sources to guard. All enabled by default. */
   dismissSources?: OverlayUnsavedChangesDismissSources;
+
+  /**
+   * Also veto [overlay router](../routing/overlay-router) navigations away from the page holding the
+   * guard, so moving between routes prompts the same way dismissing the overlay does. Has no effect
+   * when the overlay has no router.
+   *
+   * @default true
+   */
+  guardRouteChanges?: boolean;
 };
 
 export type OverlayUnsavedChangesGuardRef<T> = UnsavedChangesTrackerRef<T> & {
@@ -33,6 +43,9 @@ export type OverlayUnsavedChangesGuardRef<T> = UnsavedChangesTrackerRef<T> & {
  * dismissal (outside pointer, escape, drag, or a programmatic `close()`) while the watched form has
  * unsaved changes: it runs the `confirm` and only then re-issues the close. Call from an overlay
  * content component's injection context.
+ *
+ * In a routed overlay it guards route changes away from the page too, so a single call covers both
+ * ways the edits can be lost - see `guardRouteChanges`.
  *
  * Being a tracker, it also locks the browser tab while there are changes (`beforeunload`) - configure
  * or disable that via the inherited `tab` option.
@@ -55,6 +68,7 @@ export const createOverlayUnsavedChangesGuard = <T>(
   assertInInjectionContext(createOverlayUnsavedChangesGuard);
 
   const overlayRef = inject(OVERLAY_REF);
+  const overlayRouter = inject(OVERLAY_ROUTER_TOKEN, { optional: true });
   const destroyRef = inject(DestroyRef);
   const tracker = createUnsavedChangesTracker(config);
 
@@ -114,7 +128,18 @@ export const createOverlayUnsavedChangesGuard = <T>(
     return false;
   });
 
-  const destroy = () => unregister();
+  // `runCheck` passes on its own when there is nothing to discard, but answering `true` synchronously
+  // keeps an unguarded navigation committing in the same task - a promise costs the outlet its
+  // transition origin.
+  const unregisterRouteGuard =
+    overlayRouter && (config.guardRouteChanges ?? true)
+      ? overlayRouter.registerNavigationGuard(() => (tracker.hasChanges() ? tracker.runCheck() : true))
+      : null;
+
+  const destroy = () => {
+    unregister();
+    unregisterRouteGuard?.();
+  };
 
   destroyRef.onDestroy(destroy);
 

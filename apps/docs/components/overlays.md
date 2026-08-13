@@ -81,7 +81,7 @@ The manager also exposes an `openOverlays` computed with every currently open re
 
 ## Guarding against accidental dismissal
 
-An overlay that hosts a form should not silently throw away unsaved edits when the user clicks the backdrop, hits <kbd>Escape</kbd>, drags the sheet away, or a programmatic `close()` runs. `createOverlayUnsavedChangesGuard` (the overlay flavor of the [`unsavedChanges` family](/core/utilities#unsaved-changes)) handles exactly this: called from the overlay content component's injection context, it injects the current `OVERLAY_REF`, and while the watched form differs from its baseline it **vetoes** the close, runs your async `confirm`, and only re-issues the close if the user agrees.
+An overlay that hosts a form should not silently throw away unsaved edits when the user clicks the backdrop, hits <kbd>Escape</kbd>, drags the sheet away, or a programmatic `close()` runs. `createOverlayUnsavedChangesGuard` (the overlay flavor of the [`unsavedChanges` family](/core/utilities#unsaved-changes)) handles exactly this: called from the overlay content component's injection context, it injects the current `OVERLAY_REF`, and while the watched form differs from its baseline it **vetoes** the close, runs your async `confirm`, and only re-issues the close if the user agrees. In a [routed overlay](#routing-inside-overlays) it guards route changes away from the page the same way, so a form on a route needs no separate navigation guard.
 
 ```ts
 import { createOverlayUnsavedChangesGuard, injectOverlayManager, OVERLAY_REF } from '@ethlete/components';
@@ -115,6 +115,7 @@ export class EditItemOverlayComponent {
 - **`confirm`** is required per call site and runs **only** when there are actual changes. Return a boolean, `Promise`, or `Observable` - a truthy result allows the discard.
 - **`refreshDefaultValue()`** re-baselines to the current value; call it after a save that keeps the overlay open. **`restoreDefaultValue()`** reverts the form to the baseline.
 - **`dismissSources`** opts individual sources out (`{ outsidePointer, escape, closeCall, drag }`, all `true` by default). With `disableClose`, only a programmatic `close()` can reach the guard.
+- **`guardRouteChanges`** (default `true`) additionally vetoes [overlay router](#guarding-navigation) navigations away from the page holding the guard, so in a routed overlay one call covers both ways the edits can be lost - moving to another route and dismissing the overlay - and both go through the same `confirm`. Set it to `false` for a page whose edits survive a route change. It does nothing when the overlay has no router.
 - **`tab`** - while the form is dirty the guard also locks the **browser tab** (`beforeunload`), since closing or reloading the tab bypasses the overlay runtime entirely. Opt into a tab title marker, a blinking marker, a favicon dot or an app badge, or disable it with `tab: false` - see [Guarding the browser tab](/core/utilities#unsaved-changes-tab).
 - **Only one confirm shows at a time**, app-wide, and a logout releases the guard instead of stranding the dialog over the login page - wire `confirm`'s `signal` to close your dialog, see [Sessions ending underneath a guard](/core/utilities#unsaved-changes-coordinator).
 - The guard auto-cleans up on injector destroy; call `guard.destroy()` to stop guarding earlier.
@@ -387,11 +388,12 @@ export class MembersPageComponent {
 - Guards run **in registration order** and stop at the first veto, so a later guard never asks a question the first one already settled.
 - Navigating to the route already showing consults no guard at all.
 - For a **browser-driven** navigation the URL has already moved before anyone can veto, so a cancelled one puts the query param back on the route still being rendered.
-- `router.navigationPending()` is `true` while a guard is deciding, and stays `true` until the committed route is observable on `currentRoute` a frame later. UI that moves ahead of the router - a tab bar selecting the clicked tab optimistically - has to wait on it before reclaiming a selection, or it undoes the click mid-flight.
-- **Registering any guard makes every navigation asynchronous**, even one whose guard answers `true` synchronously. An unguarded router commits within the same task, which is what keeps the outlet's transition measuring the frame it rendered - so don't register a permanently-`true` guard just to have one.
+- `router.navigationPending()` is `true` while a guard is deciding, and stays `true` until the committed route is observable on `currentRoute` a frame later. Use it to show progress or disable further navigation while a guard is asking its question.
+- A nav tab link's selection follows the router rather than the click, so the underline stays on the current tab until the guard lets the navigation through - and never moves at all when one vetoes.
+- A navigation stays **synchronous for as long as the guards do**, and goes async from the first one that returns a promise - a route change deferred by a microtask lands after the frame the outlet measured for its transition. Answer `true` synchronously on the paths that have nothing to ask about, rather than wrapping every answer in a promise.
 - With `syncUrl: true`, `back()` delegates to browser history and returns `true` before any guard has run: its return value means "a back step was issued", not "the route changed".
 
-This guards route changes **inside** the overlay. Closing the overlay is a separate veto - use [`createOverlayUnsavedChangesGuard`](#guarding-against-accidental-dismissal) for that, and both together for a routed overlay whose pages hold forms.
+**For a form that must not lose its edits, you usually want [`createOverlayUnsavedChangesGuard`](#guarding-against-accidental-dismissal) instead of registering this by hand** - in a routed overlay it registers a navigation guard alongside its close guard, so one call covers both ways out. Reach for `registerNavigationGuard` directly when the check is not about unsaved changes.
 
 ### Sidebar layouts
 

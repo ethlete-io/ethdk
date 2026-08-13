@@ -50,17 +50,23 @@ describe('OverlayNavTabLinkComponent', () => {
 
   let originalMatchMedia: typeof window.matchMedia;
   let originalAnimate: PropertyDescriptor | undefined;
+  let underlineFlips = 0;
 
   beforeEach(() => {
+    underlineFlips = 0;
     originalAnimate = Object.getOwnPropertyDescriptor(Element.prototype, 'animate');
     Object.defineProperty(Element.prototype, 'animate', {
       configurable: true,
-      value: () => ({
-        cancel: () => undefined,
-        finish: () => undefined,
-        addEventListener: () => undefined,
-        removeEventListener: () => undefined,
-      }),
+      value: () => {
+        underlineFlips++;
+
+        return {
+          cancel: () => undefined,
+          finish: () => undefined,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        };
+      },
     });
 
     // The underline plays a FLIP animation whenever the active tab moves, which reads reduced-motion.
@@ -126,6 +132,32 @@ describe('OverlayNavTabLinkComponent', () => {
 
     expect(router.currentPage()?.path).toBe('/two');
     expect(activeLabels()).toEqual(['Two']);
+  });
+
+  it('leaves the underline on the active link while a guard is still deciding', async () => {
+    const router = await open();
+
+    let allow!: (mayLeave: boolean) => void;
+    router.registerNavigationGuard(() => new Promise<boolean>((resolve) => (allow = resolve)));
+
+    underlineFlips = 0;
+
+    links()[1]?.click();
+    await flushMicrotasks();
+    await flushFrames();
+    tick();
+
+    expect(selectedLabels()).toEqual(['One']);
+    expect(underlineFlips).toBe(0);
+
+    allow(true);
+    await flushMicrotasks();
+    await flushFrames();
+    tick();
+
+    expect(router.currentPage()?.path).toBe('/two');
+    expect(selectedLabels()).toEqual(['Two']);
+    expect(underlineFlips).toBe(1);
   });
 
   it('leaves the selection on the active link when a guard vetoes the navigation', async () => {

@@ -67,7 +67,7 @@ Inside an overlay the Angular router is usually not the one moving between pages
 <et-overlay-router-outlet />
 ```
 
-It is a `button` rather than an anchor - an overlay route is not an address unless the router mirrors it into the URL - so it activates on <kbd>Enter</kbd> and <kbd>Space</kbd>. `disabled` and the router link's `navigationDirection` work as usual, and `orientation="vertical"` is what pairs it with a [sidebar overlay](/components/overlays#sidebar-layouts). Active state comes from the overlay router, so a navigation that router refuses - an [unsaved-changes guard](/components/overlays#guarding-navigation) - leaves the selection on the page that stayed instead of on a tab the outlet never rendered.
+It is a `button` rather than an anchor - an overlay route is not an address unless the router mirrors it into the URL - so it activates on <kbd>Enter</kbd> and <kbd>Space</kbd>. `disabled` and the router link's `navigationDirection` work as usual, and `orientation="vertical"` is what pairs it with a [sidebar overlay](/components/overlays#sidebar-layouts). Active state comes from the overlay router rather than from the click, so a navigation an [unsaved-changes guard](/components/overlays#guarding-navigation) is still deciding on leaves the underline on the page currently rendered - it moves once the guard lets the navigation through, and not at all when one refuses.
 
 ## Appearance
 
