@@ -84,6 +84,7 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
       directive: RichTextEditorDirective,
       inputs: [
         'value',
+        'touched',
         'disabled',
         'readonly',
         'hidden',

@@ -31,6 +31,7 @@ import { ControlSuffixDirective } from '../form-field/partials';
         'autocomplete',
         'value',
         'mixed',
+        'touched',
         'mixedLabel',
         'revealed',
         'disabled',

@@ -13,6 +13,7 @@ import { ColorInputDirective } from './headless';
       inputs: [
         'value',
         'mixed',
+        'touched',
         'mixedLabel',
         'disabled',
         'readonly',

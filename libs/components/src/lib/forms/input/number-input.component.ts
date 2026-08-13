@@ -49,6 +49,7 @@ const SCRUB_ACTIVE_CLASS = 'et-number-input-scrubbing';
         'textAlign',
         'value',
         'mixed',
+        'touched',
         'mixedLabel',
         'disabled',
         'readonly',

@@ -20,6 +20,7 @@ import { TextareaDirective } from './headless';
         'resize',
         'value',
         'mixed',
+        'touched',
         'mixedLabel',
         'disabled',
         'readonly',

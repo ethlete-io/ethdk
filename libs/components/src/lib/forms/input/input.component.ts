@@ -17,6 +17,7 @@ import { InputDirective } from './headless';
         'textAlign',
         'value',
         'mixed',
+        'touched',
         'mixedLabel',
         'disabled',
         'readonly',

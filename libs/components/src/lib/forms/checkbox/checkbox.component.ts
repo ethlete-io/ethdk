@@ -21,7 +21,7 @@ import { CheckboxDirective } from './headless';
   hostDirectives: [
     {
       directive: CheckboxDirective,
-      inputs: ['checked', 'indeterminate', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
+      inputs: ['checked', 'indeterminate', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
       outputs: ['checkedChange', 'indeterminateChange', 'touchedChange'],
     },
     ColorInteractiveDirective,

@@ -10,7 +10,7 @@ import { SwitchDirective } from './headless';
   hostDirectives: [
     {
       directive: SwitchDirective,
-      inputs: ['checked', 'indeterminate', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
+      inputs: ['checked', 'indeterminate', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
       outputs: ['checkedChange', 'indeterminateChange', 'touchedChange'],
     },
     ColorInteractiveDirective,

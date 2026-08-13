@@ -16,7 +16,7 @@ import {
   hostDirectives: [
     {
       directive: MultiLanguageRichTextEditorDirective,
-      inputs: ['value', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name', 'languages'],
+      inputs: ['value', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name', 'languages'],
       outputs: ['valueChange', 'touchedChange'],
     },
   ],
