@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.0.0-next.49
+
+### Minor Changes
+
+- [`78c5152`](https://github.com/ethlete-io/ethdk/commit/78c51528ec11540e64a6c508eda97b789295c6b2) Thanks [@TomTomB](https://github.com/TomTomB)! - Forms: `[etForm]` submits a `<form>` through its signal form - no submit handler, no
+  `preventDefault()` - and an invalid attempt now lands the user on the first error via
+  `focusFirstInvalidField()`.
+
+- [`56ff41a`](https://github.com/ethlete-io/ethdk/commit/56ff41aaaec7bfa313d750da98fae984188ec5c2) Thanks [@TomTomB](https://github.com/TomTomB)! - Nav tabs: a router-driven tab link no longer selects itself on click. The underline stays on the page currently rendered while a navigation guard is deciding, moves once the guard lets the navigation through, and never moves when one refuses.
+
+- [`56ff41a`](https://github.com/ethlete-io/ethdk/commit/56ff41aaaec7bfa313d750da98fae984188ec5c2) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay router navigations stay synchronous for as long as their guards answer synchronously, instead of going async as soon as any guard is registered.
+
+- [`56ff41a`](https://github.com/ethlete-io/ethdk/commit/56ff41aaaec7bfa313d750da98fae984188ec5c2) Thanks [@TomTomB](https://github.com/TomTomB)! - `createOverlayUnsavedChangesGuard` now guards overlay router navigations too, so a form on an overlay route needs no separate navigation guard.
+
+### Patch Changes
+
+- [`4350d8e`](https://github.com/ethlete-io/ethdk/commit/4350d8e1eca00447ba130ec5a0ce43a64cfc4496) Thanks [@TomTomB](https://github.com/TomTomB)! - Form controls implement signal forms' `focus()`, so `field().focusBoundControl()` reaches the control inside a wrapper like `<et-input>` instead of doing nothing.
+
+- [`ae2349f`](https://github.com/ethlete-io/ethdk/commit/ae2349f9f00ccf1d4a2d038343b651d29a0f4cf3) Thanks [@TomTomB](https://github.com/TomTomB)! - Forms: marking a field touched programmatically (a `submit()` attempt, `markAsTouched()`) now shows
+  the error on `et-input`, `et-textarea`, `et-checkbox`, `et-switch` and the other wrapped controls.
+
+- [`71c680d`](https://github.com/ethlete-io/ethdk/commit/71c680df153cd982c440d655436424976c8fec82) Thanks [@TomTomB](https://github.com/TomTomB)! - Form field: fade the value under the clear button, busy spinner and select loading indicator with a
+  mask, so it no longer paints a block of the surface background over a differently coloured field.
+
+- [`8b14f9e`](https://github.com/ethlete-io/ethdk/commit/8b14f9e8bd9ceaaada9da7e55e048484404e62a6) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: a projected `etSelectSearch` input without a placeholder of its own now shows the select's `placeholder`, and stops offering a caret and text cursor while the field is readonly.
+
+- [`bcaa5a7`](https://github.com/ethlete-io/ethdk/commit/bcaa5a7ddaa8535d3eb366bcd05fa7fe570ea818) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: only virtualize data-driven `options` past ~40 visible rows - short lists render in full, without a scroll listener or the panel's width floor.
+
 ## 1.0.0-next.48
 
 ### Minor Changes
