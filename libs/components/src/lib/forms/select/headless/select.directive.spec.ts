@@ -180,11 +180,25 @@ class SearchSelectTestHost {
 
 @Component({
   template: `
-    <div [value]="value()" (valueChange)="value.set($event)" etSelect>
+    <et-select [value]="value()" (valueChange)="value.set($event)" class="select" placeholder="Pick a country">
+      <input etSelectSearch />
+      <et-select-option value="de">Germany</et-select-option>
+      <et-select-option value="fr">France</et-select-option>
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class SearchPlaceholderTestHost {
+  value = signal<unknown>(null);
+}
+
+@Component({
+  template: `
+    <div [value]="value()" (valueChange)="value.set($event)" etSelect placeholder="Pick a fruit">
       <button etSelectTrigger type="button">Open</button>
       <ng-template etSelectSurface>
         <et-select-panel>
-          <input etSelectSearch placeholder="Search" />
+          <input etSelectSearch />
           <div etSelectOption value="apple">Apple</div>
           <div etSelectOption value="banana">Banana</div>
         </et-select-panel>
@@ -1426,6 +1440,54 @@ describe('SelectDirective (search)', () => {
   });
 });
 
+describe('SelectDirective (search placeholder)', () => {
+  const tick = () => TestBed.inject(ApplicationRef).tick();
+
+  beforeEach(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+  });
+
+  it('carries the select placeholder on an inline search without one of its own', () => {
+    TestBed.configureTestingModule({
+      imports: [SearchPlaceholderTestHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(SearchPlaceholderTestHost);
+
+    fixture.detectChanges();
+    tick();
+
+    const input = fixture.nativeElement.querySelector('input[etselectsearch]') as HTMLInputElement;
+
+    expect(input.placeholder).toBe('Pick a country');
+
+    fixture.componentInstance.value.set('de');
+    fixture.detectChanges();
+    tick();
+
+    // the input now displays the selected label - a placeholder behind it would be dead weight
+    expect(input.value).toBe('Germany');
+    expect(input.placeholder).toBe('');
+  });
+
+  it('leaves a search input that brings its own placeholder alone', () => {
+    TestBed.configureTestingModule({
+      imports: [SearchSelectTestHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(SearchSelectTestHost);
+
+    fixture.detectChanges();
+    tick();
+
+    const input = fixture.nativeElement.querySelector('input[etselectsearch]') as HTMLInputElement;
+
+    expect(input.placeholder).toBe('Search');
+  });
+});
+
 describe('SelectDirective (panel-hosted search)', () => {
   let fixture: ComponentFixture<PanelSearchTestHost>;
   let select: SelectDirective;
@@ -1462,6 +1524,8 @@ describe('SelectDirective (panel-hosted search)', () => {
 
     // a trigger-inline search would show "Apple" here (value display); the panel search must not
     expect(input.value).toBe('');
+    // and it does not take over the select's placeholder either - that belongs to the trigger
+    expect(input.placeholder).toBe('');
 
     input.value = 'ban';
     input.dispatchEvent(new Event('input', { bubbles: true }));

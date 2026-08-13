@@ -78,8 +78,36 @@ export class SelectSearchDirective {
     return ids.filter((id): id is string => !!id).join(' ') || null;
   });
 
+  // the last placeholder this directive wrote - anything else on the element came from the
+  // consumer (a static attribute or their own binding) and owns it from then on
+  private writtenPlaceholder: string | null = null;
+
+  // an inline input replaces the trigger's value display, so it also has to carry the select's
+  // placeholder - the trigger renders none while a search is registered
+  private fallbackPlaceholder = computed(() => {
+    const select = this.select;
+
+    if (!select || !this.isInlineInTrigger() || select.hasValue()) {
+      return '';
+    }
+
+    return select.placeholder();
+  });
+
   constructor() {
     registerSingleton(this.select?.registeredSearch, this);
+
+    effect(() => {
+      const placeholder = this.fallbackPlaceholder();
+      const element = this.elementRef.nativeElement;
+
+      if (element.placeholder && element.placeholder !== this.writtenPlaceholder) {
+        return;
+      }
+
+      this.writtenPlaceholder = placeholder;
+      element.placeholder = placeholder;
+    });
 
     effect(() => {
       const element = this.elementRef.nativeElement;

@@ -81,6 +81,14 @@
           color: color-mix(in srgb, currentColor 46%, transparent);
         }
 
+        /* nothing can be typed here (readonly, or a full multi selection) - a caret and an
+           I-beam would promise editing. Before the disabled rule: a disabled input is
+           :read-only too, and there not-allowed must win. */
+        &:read-only {
+          cursor: default;
+          caret-color: transparent;
+        }
+
         &:disabled {
           cursor: not-allowed;
         }
