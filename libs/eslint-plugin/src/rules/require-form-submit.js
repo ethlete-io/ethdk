@@ -6,6 +6,7 @@
  * submit control reaches a form at all.
  *
  *   <form (ngSubmit)="save()">          ✔
+ *   <form [etForm]="form">              ✔ signal forms - the directive submits the field tree
  *   <form>                              ✘ pressing Enter in a field does nothing, or reloads the page
  *
  *   <form …><button type="submit">      ✔
@@ -26,7 +27,9 @@ const hasBinding = (node, name) =>
 
 /** @param {any} node */
 const handlesSubmit = (node) =>
-  node.outputs?.some(/** @param {any} o */ (o) => o.name === 'submit' || o.name === 'ngSubmit');
+  node.outputs?.some(/** @param {any} o */ (o) => o.name === 'submit' || o.name === 'ngSubmit') ||
+  hasBinding(node, 'etForm') ||
+  hasBinding(node, 'formRoot');
 
 /** @param {any} node */
 const submitsNatively = (node) =>
@@ -46,7 +49,7 @@ const requireFormSubmit = {
     schema: [],
     messages: {
       missingSubmitHandler:
-        'This `<form>` handles no submission - pressing Enter in a field either does nothing or reloads the page. Bind `(ngSubmit)` (reactive forms) or `(submit)`, or use a plain element if this is not a form.',
+        'This `<form>` handles no submission - pressing Enter in a field either does nothing or reloads the page. Bind `[etForm]` (signal forms), `(ngSubmit)` (reactive forms) or `(submit)`, or use a plain element if this is not a form.',
       submitOutsideForm:
         'A `type="submit"` control outside a `<form>` submits nothing. Put it inside the form, or associate it with one by id: `form="the-form-id"`.',
     },

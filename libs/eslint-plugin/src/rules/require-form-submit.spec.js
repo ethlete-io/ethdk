@@ -21,6 +21,15 @@ tester.run('require-form-submit', rule, {
       code: `<form (submit)="save($event)"></form>`,
       filename: 'test.html',
     },
+    // Signal forms: the directive on the form is what submits it
+    {
+      code: `<form [etForm]="form"><button type="submit">Save</button></form>`,
+      filename: 'test.html',
+    },
+    {
+      code: `<form [formRoot]="form"></form>`,
+      filename: 'test.html',
+    },
     // Native submission, handled by the platform rather than by a handler
     {
       code: `<form action="/search"></form>`,

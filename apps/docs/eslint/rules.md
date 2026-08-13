@@ -207,7 +207,7 @@ The rewrite is only equivalent when the input declares a `booleanAttribute` tran
 <my-cmp isReadonly showHeader="false" />
 ```
 
-`require-form-submit` checks the two ends of the same wire, because either half missing is silent: a `<form>` with no handler does nothing when the user presses Enter in a field (or reloads the page, without an Angular form directive to call `preventDefault`), and a `type="submit"` control outside a form submits nothing at all - it just looks like a button that does not work.
+`require-form-submit` checks the two ends of the same wire, because either half missing is silent: a `<form>` with no handler does nothing when the user presses Enter in a field (or reloads the page, without an Angular form directive to call `preventDefault`), and a `type="submit"` control outside a form submits nothing at all - it just looks like a button that does not work. A `[etForm]` or `[formRoot]` binding counts as handling submission: both directives submit the signal form themselves.
 
 ```html
 <!-- ❌ nothing handles submission; the button submits nothing -->
@@ -216,6 +216,11 @@ The rewrite is only equivalent when the input declares a `booleanAttribute` tran
 
 <!-- ✅ handled, and the control reaches the form -->
 <form (ngSubmit)="save()">
+  <button type="submit">Save</button>
+</form>
+
+<!-- ✅ signal forms: the directive submits the field tree -->
+<form [etForm]="form">
   <button type="submit">Save</button>
 </form>
 
