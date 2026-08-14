@@ -1,4 +1,5 @@
 export * from './lib/animations';
+export * from './lib/app-update';
 export * from './lib/directives';
 export * from './lib/drag-handle';
 export * from './lib/notifications';

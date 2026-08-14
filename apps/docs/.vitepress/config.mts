@@ -202,6 +202,7 @@ export default defineConfig({
             { text: 'Providers', link: '/core/providers' },
             { text: 'SEO', link: '/core/seo' },
             { text: 'Notifications', link: '/core/notifications' },
+            { text: 'App updates', link: '/core/app-updates' },
           ],
         },
         {

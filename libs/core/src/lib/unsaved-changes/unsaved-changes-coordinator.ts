@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { computed, signal, Signal } from '@angular/core';
 import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 
 /**
@@ -28,12 +28,21 @@ export type UnsavedChangesConfirmContext = {
 /** @internal A live tracker, as seen by the coordinator. */
 export type UnsavedChangesRegistration = {
   abandon: (reason: UnsavedChangesAbandonReason) => void;
+
+  /**
+   * Changes the coordinator should still act on - so a tracker folds its own abandoned state in here
+   * rather than reporting a raw comparison. An abandoned tracker's edits cannot be saved anymore, and
+   * counting them would block a reload nobody can act on.
+   */
+  hasChanges: Signal<boolean>;
 };
 
 const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
-    const registrations = new Set<UnsavedChangesRegistration>();
+    const _registrations = signal<readonly UnsavedChangesRegistration[]>([]);
     const _isCheckPending = signal(false);
+
+    const hasUnsavedChanges = computed(() => _registrations().some((registration) => registration.hasChanges()));
 
     let pending: {
       promise: Promise<boolean>;
@@ -79,9 +88,9 @@ const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
 
     /** @internal */
     const register = (registration: UnsavedChangesRegistration) => {
-      registrations.add(registration);
+      _registrations.update((current) => [...current, registration]);
 
-      return () => registrations.delete(registration);
+      return () => _registrations.update((current) => current.filter((entry) => entry !== registration));
     };
 
     const abandonAll = (reason: UnsavedChangesAbandonReason = 'session-end') => {
@@ -92,7 +101,7 @@ const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
         pending.settle(true);
       }
 
-      for (const registration of Array.from(registrations)) {
+      for (const registration of _registrations()) {
         registration.abandon(reason);
       }
     };
@@ -100,6 +109,13 @@ const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
     return {
       /** Whether a confirm is currently on screen. */
       isCheckPending: _isCheckPending.asReadonly(),
+
+      /**
+       * Whether any live tracker currently holds changes worth confirming - the app-wide "is it safe to
+       * throw this page away?" question, for callers that need the answer without asking the user
+       * (see `provideAppUpdates`). Abandoned trackers do not count.
+       */
+      hasUnsavedChanges,
       abandonAll,
       runCheck,
       register,

@@ -191,6 +191,7 @@ export const createUnsavedChangesTracker = <T>(
       // The session is gone: stop holding the tab hostage over edits that can no longer be saved.
       tab?.destroy();
     },
+    hasChanges: computed(() => !_isAbandoned() && hasChanges()),
   });
 
   inject(DestroyRef).onDestroy(unregister);
