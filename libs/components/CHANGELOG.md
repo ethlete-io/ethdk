@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.52
+
+### Patch Changes
+
+- [`5c1190a`](https://github.com/ethlete-io/ethdk/commit/5c1190ac76c244ff1c293b390dd599ed016d26de) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlays: a press on a surface stacked above them no longer counts as an outside press, so working in the query devtools leaves an open dialog, sheet, menu, select or tooltip alone.
+
 ## 1.0.0-next.51
 
 ### Patch Changes
