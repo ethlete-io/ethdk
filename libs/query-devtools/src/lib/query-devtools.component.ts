@@ -917,22 +917,26 @@ export class QueryDevtoolsComponent implements OnInit {
 
   /**
    * The viewport edge a docked panel covers, reserved for overlays whatever {@link reservesSpace} says:
-   * page content can be scrolled out from under the panel, a dialog or a menu cannot. The side comes
-   * from the rendered rect, because a dock edge is logical and its physical side flips in RTL.
+   * page content can be scrolled out from under the panel, a dialog or a menu cannot. A dock edge is
+   * logical, so which physical edge a side dock covers flips in RTL - read from the panel, since the
+   * writing direction cannot change under a dock switch.
    */
   private overlayReservation = computed<OverlayViewportReservation | null>(() => {
     const dock = this.dock();
 
     if (dock === 'float' || this.poppedOut() || !this.open()) return null;
 
-    const rect = this.panelSize().rect?.();
+    const panel = this.panelEl()?.nativeElement;
+    const size = this.panelSize().offset;
 
-    if (!rect) return null;
+    if (!panel || !size) return null;
 
-    if (dock === 'top') return { top: rect.height, layer: PANEL_LAYER };
-    if (dock === 'bottom') return { bottom: rect.height, layer: PANEL_LAYER };
+    if (dock === 'top') return { top: size.height, layer: PANEL_LAYER };
+    if (dock === 'bottom') return { bottom: size.height, layer: PANEL_LAYER };
 
-    return rect.left <= 0 ? { left: rect.width, layer: PANEL_LAYER } : { right: rect.width, layer: PANEL_LAYER };
+    const coversLeft = (dock === 'left') !== (getComputedStyle(panel).direction === 'rtl');
+
+    return coversLeft ? { left: size.width, layer: PANEL_LAYER } : { right: size.width, layer: PANEL_LAYER };
   });
 
   /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */

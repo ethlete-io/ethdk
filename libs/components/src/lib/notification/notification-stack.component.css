@@ -6,72 +6,88 @@
      the physical form is the idiom. */
   .et-notification-stack {
     /* Plus whatever a surface above the page has reserved on that edge - a docked devtools panel, an
-       app's own always-on-top chrome - so a toast is never stacked under it. @see reserveOverlayViewportSpace */
+       app's own always-on-top chrome - so a toast is never stacked under it. The reserved edges are
+       physical, so the inline pair swaps under `dir="rtl"`. @see reserveOverlayViewportSpace */
     --_et-notification-inset-block-start: calc(1rem + var(--et-viewport-inset-top, 0px));
     --_et-notification-inset-block-end: calc(1rem + var(--et-viewport-inset-bottom, 0px));
+    --_et-notification-inset-inline-start: calc(1rem + var(--et-viewport-inset-left, 0px));
+    --_et-notification-inset-inline-end: calc(1rem + var(--et-viewport-inset-right, 0px));
+
+    /* Half the difference of the two reserved inline edges: centers the stack in the space that is
+       left rather than in the whole viewport. */
+    --_et-notification-center-shift: calc(
+      (var(--et-viewport-inset-left, 0px) - var(--et-viewport-inset-right, 0px)) / 2
+    );
 
     position: fixed;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: var(--et-notification-stack-gap, 0.5rem);
-    z-index: var(--et-notification-stack-z-index, 1000);
+    /* The level is set inline by the stack directive, above the one overlays mount at.
+       @see NOTIFICATION_STACK_OVERLAY_LAYER */
+    z-index: var(--et-notification-stack-z-index, var(--_et-notification-stack-layer));
     pointer-events: none;
 
-    /* default: bottom-end */
+    /* Both block insets on every position, so a stack that grows past the opposite edge stops at the
+       space reserved there instead of sliding under it. The docked edge is the one the toasts sit on,
+       which is what `justify-content` picks. */
+    top: var(--_et-notification-inset-block-start);
     bottom: var(--_et-notification-inset-block-end);
-    inset-inline-end: 1rem;
+
+    /* default: bottom-end */
+    justify-content: flex-end;
+    inset-inline-end: var(--_et-notification-inset-inline-end);
+
+    &:dir(rtl) {
+      --_et-notification-inset-inline-start: calc(1rem + var(--et-viewport-inset-right, 0px));
+      --_et-notification-inset-inline-end: calc(1rem + var(--et-viewport-inset-left, 0px));
+    }
 
     &[data-position='bottom-center'] {
-      bottom: var(--_et-notification-inset-block-end);
-      top: auto;
+      justify-content: flex-end;
       inset-inline: auto;
-      left: 50%;
+      left: calc(50% + var(--_et-notification-center-shift));
       align-items: center;
       transform: translateX(-50%);
     }
 
     &[data-position='bottom-start'] {
-      bottom: var(--_et-notification-inset-block-end);
-      top: auto;
-      inset-inline-start: 1rem;
+      justify-content: flex-end;
+      inset-inline-start: var(--_et-notification-inset-inline-start);
       inset-inline-end: auto;
       align-items: flex-start;
       transform: none;
     }
 
     &[data-position='bottom-end'] {
-      bottom: var(--_et-notification-inset-block-end);
-      top: auto;
+      justify-content: flex-end;
       inset-inline-start: auto;
-      inset-inline-end: 1rem;
+      inset-inline-end: var(--_et-notification-inset-inline-end);
       align-items: flex-end;
       transform: none;
     }
 
     &[data-position='top-center'] {
-      top: var(--_et-notification-inset-block-start);
-      bottom: auto;
+      justify-content: flex-start;
       inset-inline: auto;
-      left: 50%;
+      left: calc(50% + var(--_et-notification-center-shift));
       align-items: center;
       transform: translateX(-50%);
     }
 
     &[data-position='top-start'] {
-      top: var(--_et-notification-inset-block-start);
-      bottom: auto;
-      inset-inline-start: 1rem;
+      justify-content: flex-start;
+      inset-inline-start: var(--_et-notification-inset-inline-start);
       inset-inline-end: auto;
       align-items: flex-start;
       transform: none;
     }
 
     &[data-position='top-end'] {
-      top: var(--_et-notification-inset-block-start);
-      bottom: auto;
+      justify-content: flex-start;
       inset-inline-start: auto;
-      inset-inline-end: 1rem;
+      inset-inline-end: var(--_et-notification-inset-inline-end);
       align-items: flex-end;
       transform: none;
     }
@@ -85,8 +101,8 @@
   @media (max-width: 480px) {
     .et-notification-stack,
     .et-notification-stack[data-position] {
-      left: 1rem;
-      right: 1rem;
+      left: calc(1rem + var(--et-viewport-inset-left, 0px));
+      right: calc(1rem + var(--et-viewport-inset-right, 0px));
       align-items: stretch;
       transform: none;
     }

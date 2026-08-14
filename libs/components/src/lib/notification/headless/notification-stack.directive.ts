@@ -1,8 +1,16 @@
 import { DestroyRef, Directive, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { injectRenderer } from '@ethlete/core';
+import { DEFAULT_OVERLAY_LAYER, injectRenderer } from '@ethlete/core';
 import { animationFrameScheduler, take, tap, timer } from 'rxjs';
 import { NOTIFICATION_STACK_CONTEXT_TOKEN } from '../notification-stack-context.token';
+
+/**
+ * The stacking level the notification stack paints at: one above the level app overlays mount at, so
+ * a toast stays visible over a dialog, a sheet and their backdrops. Declared as the stack's
+ * `data-et-overlay-layer` too, so a press on a toast does not read as a press outside an overlay
+ * below it, and an overlay opened from a toast action mounts above the stack.
+ */
+export const NOTIFICATION_STACK_OVERLAY_LAYER = DEFAULT_OVERLAY_LAYER + 1;
 
 type PendingAnimation = {
   el: HTMLElement;
@@ -22,6 +30,8 @@ type RegisteredNotificationItem = { id: string; el: HTMLElement };
   exportAs: 'etNotificationStack',
   host: {
     '[attr.data-position]': 'context.position',
+    '[attr.data-et-overlay-layer]': 'OVERLAY_LAYER',
+    '[style.--_et-notification-stack-layer]': 'OVERLAY_LAYER',
   },
 })
 export class NotificationStackDirective {
@@ -29,6 +39,8 @@ export class NotificationStackDirective {
   private destroyRef = inject(DestroyRef);
   private injector = inject(Injector);
   private renderer = injectRenderer();
+
+  protected readonly OVERLAY_LAYER = NOTIFICATION_STACK_OVERLAY_LAYER;
 
   /** @internal */
   public registeredItems = signal<RegisteredNotificationItem[]>([]);

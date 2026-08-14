@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DEFAULT_OVERLAY_LAYER } from '@ethlete/core';
 import '../../test-helpers';
 import { provideNotificationManagerConfig } from './notification-config';
 import { createNotificationRef, NotificationRef } from './notification-ref';
@@ -64,6 +65,13 @@ describe('NotificationStackComponent', () => {
   it('has aria-relevant="additions"', () => {
     fixture.detectChanges();
     expect(host.getAttribute('aria-relevant')).toBe('additions');
+  });
+
+  it('paints one level above the overlay layer, and declares it', () => {
+    fixture.detectChanges();
+
+    expect(host.getAttribute('data-et-overlay-layer')).toBe(`${DEFAULT_OVERLAY_LAYER + 1}`);
+    expect(host.style.getPropertyValue('--_et-notification-stack-layer')).toBe(`${DEFAULT_OVERLAY_LAYER + 1}`);
   });
 
   it('renders the visible notifications in context order for bottom stacks', () => {

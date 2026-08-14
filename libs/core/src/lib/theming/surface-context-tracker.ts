@@ -1,4 +1,4 @@
-import { computed, Signal, signal } from '@angular/core';
+import { signal } from '@angular/core';
 import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { SurfaceType } from './surface-theme.util';
 
@@ -15,8 +15,6 @@ export type SurfaceContextSurface = {
 };
 
 export type SurfaceContextTracker = {
-  topType: Signal<SurfaceType | null>;
-  topElevation: Signal<number>;
   register: (type: SurfaceType, elevation: number, element: HTMLElement) => () => void;
   /**
    * The surface of the innermost registered overlay whose pane actually contains `host` in the DOM,
@@ -31,14 +29,6 @@ let uniqueId = 0;
 const SURFACE_CONTEXT_TRACKER_DEF = /* @__PURE__ */ defineRootProvider(
   (): SurfaceContextTracker => {
     const entries = signal<SurfaceContextEntry[]>([]);
-
-    const topEntry = computed(() => {
-      const stack = entries();
-      return stack.length > 0 ? (stack[stack.length - 1] ?? null) : null;
-    });
-
-    const topType = computed(() => topEntry()?.type ?? null);
-    const topElevation = computed(() => topEntry()?.elevation ?? 0);
 
     const register = (type: SurfaceType, elevation: number, element: HTMLElement) => {
       const id = `surface-ctx-${uniqueId++}`;
@@ -65,7 +55,7 @@ const SURFACE_CONTEXT_TRACKER_DEF = /* @__PURE__ */ defineRootProvider(
       return null;
     };
 
-    return { topType, topElevation, register, surfaceForElement };
+    return { register, surfaceForElement };
   },
   { name: 'SurfaceContextTracker' },
 );

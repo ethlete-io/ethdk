@@ -196,7 +196,9 @@ At `480px` and below the stack spans both edges and every toast fills it, which 
 - Error toasts get `role="alert"`, all others `role="status"`; the stack itself is a polite `role="log"` live region.
 - <kbd>Escape</kbd> dismisses a focused toast; hover/focus pause its auto-dismiss timer, as does holding it under a finger.
 - Status icons are decorative (`aria-hidden`) - the status is already carried by the role and the wording.
-- The stack's block-axis inset composes `--et-viewport-inset-top` / `--et-viewport-inset-bottom`, so a toast is never stacked under a surface that [reserved that edge](/core/overlay-runtime#page-chrome-reads-the-css-custom-properties) - a docked devtools panel, for example.
+- A toast paints one surface elevation above the page - the level a dialog resolves to - whatever is open underneath it. Opening or closing an overlay never re-shades a visible toast.
+- The stack paints one stacking level above the level overlays mount at (`DEFAULT_OVERLAY_LAYER`), so a toast stays visible over a dialog, a sheet and their backdrops. It declares that level as its own `data-et-overlay-layer`, so pressing a toast does not close an overlay below it, and an overlay opened from a toast action mounts above the stack. Override the level with `--et-notification-stack-z-index` for chrome that must stay on top of a toast.
+- The stack's insets compose all four `--et-viewport-inset-*` edges, so a toast is never stacked under a surface that [reserved one](/core/overlay-runtime#page-chrome-reads-the-css-custom-properties) - a devtools panel docked to any edge, for example. A `center` position centers in the space that is left, and the stack spans both block edges, so it stops growing at the opposite one instead of sliding under it.
 
 ## Custom notification UI
 

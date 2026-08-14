@@ -37,7 +37,7 @@ When several apps share one theme definition set (a monorepo) but need different
 
 Both provider factories and generators accept a custom prefix (default `'et'`); the provider `prefix` argument must match the generator's `runtimePrefix`.
 
-For code that needs to know the currently active surface (e.g. pickers rendering into overlays), `provideSurfaceContextTracker()` / `injectSurfaceContextTracker()` maintain a registration stack of surface `type` + `elevation` - each open overlay registers its own surface together with its pane element. The top entry is exposed as signals (`topType` / `topElevation`, the innermost overlay), and `surfaceForElement(host)` returns the surface of the innermost overlay whose pane actually **contains** `host` in the DOM (or `null` when `host` sits outside every open overlay). `AutoSurfaceDirective` uses the latter so opening an overlay only affects auto-surfaces rendered inside it - see below.
+For code that needs to know the currently active surface (e.g. pickers rendering into overlays), `provideSurfaceContextTracker()` / `injectSurfaceContextTracker()` maintain a registration stack of surface `type` + `elevation` - each open overlay registers its own surface together with its pane element. `surfaceForElement(host)` returns the surface of the innermost overlay whose pane actually **contains** `host` in the DOM, or `null` when `host` sits outside every open overlay. `AutoSurfaceDirective` uses it so opening an overlay only affects auto-surfaces rendered inside it - see below. A layer that renders outside every pane (the notification stack) resolves its own surface instead of following what is open, so it never re-shades while it is on screen.
 
 ## Surface themes
 

@@ -4,8 +4,8 @@ import {
   AnimatedLifecycleDirective,
   ProvideColorDirective,
   ProvideSurfaceDirective,
-  injectSurfaceContextTracker,
   injectSurfaceThemes,
+  injectSurfaceType,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
 import { IconButtonComponent } from '../button/icon-button.component';
@@ -73,7 +73,7 @@ export class NotificationComponent {
   private managerConfig = injectNotificationManagerConfig();
   private labels = injectNotificationLabels();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private surfaceContextTracker = injectSurfaceContextTracker();
+  private surfaceType = injectSurfaceType();
 
   private resolvedColor = computed(() => {
     const mapping = this.managerConfig.statusColorMapping;
@@ -87,9 +87,10 @@ export class NotificationComponent {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.surfaceContextTracker.topType() ?? 'dark';
-    const elevation = this.surfaceContextTracker.topElevation() + 1;
-    return resolveSurfaceByElevation(themes, type, elevation);
+    // The stack is appended to <body> and paints above every overlay, so a toast is a layer on the
+    // page - elevation 1, the same level a dialog resolves to. It must not follow what is open
+    // underneath it: that re-shaded every visible toast whenever an overlay came or went.
+    return resolveSurfaceByElevation(themes, this.surfaceType(), 1);
   });
 
   protected controlsColor = computed(() => {
