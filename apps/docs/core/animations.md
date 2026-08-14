@@ -67,8 +67,15 @@ import { AnimatedIfDirective } from '@ethlete/core';
 | `animationStart$`                             | Emits once per animation batch start.                        |
 | `animationEnd$`                               | Emits `{ cancelled, transitionId? }` when the batch settles. |
 | `isAnimating$` / `totalActiveAnimationCount$` | Live activity state including children.                      |
+| `getRunningAnimations()`                      | The animations running on the host element right now.        |
 
 Typical use: defer cleanup until a leave animation actually finished (the form field does this for error messages).
+
+The observables above are event-driven, so they turn true only once the browser has dispatched
+`transitionrun` - a frame after it commits the style change. To decide whether a class change you
+just made started an animation, use `getRunningAnimations()`: reading it flushes the pending style,
+so the answer holds even when the browser has not committed yet. `AnimatedLifecycleDirective` ends
+its transitions on that reading.
 
 ## FLIP animations
 

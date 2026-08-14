@@ -181,4 +181,11 @@ Current number of active animations including children.
 ### Methods
 
 **`setTransitionId(id: string): void`**
-Tag the next animation batch with an identifier.
+Tag the next animation batch with an identifier. Only the most recent id is kept, so a call whose
+animations never start leaves no id behind for a later batch.
+
+**`getRunningAnimations(): Animation[]`**
+The animations running on the host element right now, without the endless and pseudo-element ones.
+Reading this flushes pending style changes, so an animation that a class change started in the same
+task is already listed - unlike `isAnimating$`, which turns true a frame later. Use it to find out
+whether a class change you just made started an animation at all.

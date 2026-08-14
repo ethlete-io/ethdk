@@ -1,8 +1,8 @@
 import { AfterViewInit, DestroyRef, Directive, ElementRef, inject, InjectionToken, model } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, filter, map, of, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, defer, filter, from, Observable, of, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
 import { injectRenderer } from '../providers';
-import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
+import { ANIMATABLE_TOKEN, AnimatableDirective } from './animatable.directive';
 import { animationDebugLog } from './animation-debug';
 import { forceReflow, fromNextFrame } from './animation-utils';
 
@@ -329,55 +329,9 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
             this.addClass(toClass);
           }
         }),
-        switchMap(() => this.animatable.isAnimating$),
-        take(1),
-        switchMap((isAnimating) => {
-          if (isAnimating) return of(true);
-
-          // Nothing started yet on the first check - give a transition with a delay one more
-          // frame before concluding none is coming (mirrors handleInterruptedTransition).
-          return fromNextFrame().pipe(
-            switchMap(() => this.animatable.isAnimating$),
-            take(1),
-          );
-        }),
-        switchMap((isAnimating) => {
-          if (!isAnimating) {
-            // No transition ever started - e.g. `prefers-reduced-motion` collapsed every
-            // transition-duration to 0, which per spec never fires transitionrun/transitionend.
-            // Waiting on animationEnd$ here would hang forever, so treat it as settled.
-            this.debugLog(`${transitionId}: completes via fallback (no transition started)`);
-
-            return of(true);
-          }
-
-          return this.animatable.animationEnd$.pipe(
-            filter(() => this.state$.value === expectedState),
-            switchMap((e) => {
-              if (!e.cancelled && e.transitionId === transitionId) {
-                return of(true);
-              }
-
-              // The batch ended cancelled or under a different id - e.g. the browser cancelled and
-              // restarted a running transition mid-flight (an anchored overlay whose ancestor pane got
-              // destroyed) or a foreign transition on the same element finished. If nothing is
-              // animating anymore the expected end event can never arrive, so treat the transition as
-              // settled instead of waiting forever (mirrors the fallback in handleInterruptedTransition).
-              return this.animatable.isAnimating$.pipe(
-                take(1),
-                tap((stillAnimating) => {
-                  if (!stillAnimating) {
-                    this.debugLog(
-                      `${transitionId}: completes via fallback (batch id "${e.transitionId ?? 'none'}", cancelled ${e.cancelled})`,
-                    );
-                  }
-                }),
-                map((stillAnimating) => !stillAnimating),
-              );
-            }),
-          );
-        }),
-        filter((settled) => settled && this.state$.value === expectedState),
+        switchMap(() => this.whenAnimationsSettled()),
+        tap(() => this.debugLog(`${transitionId}: settled`)),
+        filter(() => this.state$.value === expectedState),
         tap(onComplete),
         take(1),
         takeUntil(cancelSignal),
@@ -399,67 +353,43 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     this.removeClasses(...removeClasses);
     addClasses.forEach((cls) => this.addClass(cls));
 
-    fromNextFrame()
+    this.whenAnimationsSettled()
       .pipe(
-        switchMap(() => this.animatable.isAnimating$),
-        take(1),
-        switchMap((isAnimating) => {
-          if (isAnimating) {
-            return of(true);
-          }
-
-          this.debugLog(`${transitionId}: interrupt found no running transition, re-checking next frame`);
-
-          return fromNextFrame().pipe(
-            switchMap(() => this.animatable.isAnimating$),
-            take(1),
-          );
-        }),
-        take(1),
-        switchMap((isAnimating) => {
-          if (!isAnimating && this.state$.value === expectedState) {
-            this.debugLog(`${transitionId}: interrupt completes INSTANTLY (no transition running after class swap)`);
-
-            return of({ cancelled: false, transitionId } as AnimationEndEvent);
-          }
-
-          this.debugLog(`${transitionId}: interrupt waiting for animation end`, { isAnimating });
-
-          return this.animatable.animationEnd$.pipe(
-            switchMap((e) => {
-              if (e.transitionId === transitionId) {
-                return of(e);
-              }
-
-              return this.animatable.isAnimating$.pipe(
-                take(1),
-                switchMap((stillAnimating) => {
-                  if (!stillAnimating && this.state$.value === expectedState) {
-                    this.debugLog(
-                      `${transitionId}: interrupt completes via foreign animation end (batch id was "${e.transitionId}")`,
-                      { stillAnimating },
-                    );
-
-                    return of({ cancelled: false, transitionId } as AnimationEndEvent);
-                  }
-
-                  return of(null);
-                }),
-              );
-            }),
-            filter((e): e is AnimationEndEvent => e !== null && e.transitionId === transitionId),
-          );
-        }),
-        filter((e) => this.state$.value === expectedState && !e.cancelled),
-        tap(() => {
-          this.debugLog(`${transitionId}: interrupt complete`);
-          onComplete();
-        }),
+        tap(() => this.debugLog(`${transitionId}: interrupt settled`)),
+        filter(() => this.state$.value === expectedState),
+        tap(onComplete),
         take(1),
         takeUntil(cancelSignal),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  /**
+   * Emits once every animation the class change started on this element has finished, or right away
+   * when the change starts none - a `transition-duration` of 0 (`prefers-reduced-motion`) or a
+   * property whose value did not change.
+   *
+   * `isAnimating$` cannot replace the reading here: it turns true a frame after the browser commits
+   * the style change, so a slow commit reads as "nothing will animate" and ends the transition
+   * before its animation starts.
+   */
+  private whenAnimationsSettled(isFirstRead = true): Observable<void> {
+    return defer(() => {
+      const running = this.animatable.getRunningAnimations();
+
+      if (!running.length) {
+        // Settling on the first read means nothing was ever awaited, so emitting here would reenter
+        // the enter()/leave() call still on the stack. Every later read already runs off a promise.
+        return isFirstRead ? fromNextFrame() : of(undefined);
+      }
+
+      // A running animation may be replaced rather than finished - the browser retargets a transition
+      // whose end value changes - so re-read instead of settling on the first batch.
+      return from(Promise.allSettled(running.map((animation) => animation.finished))).pipe(
+        switchMap(() => this.whenAnimationsSettled(false)),
+      );
+    });
   }
 
   private addClass(className: string) {
