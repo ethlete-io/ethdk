@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0-next.5
+
+### Patch Changes
+
+- [`4044a00`](https://github.com/ethlete-io/ethdk/commit/4044a0007de55d25b5a697c6e4190e21d68d022f) Thanks [@TomTomB](https://github.com/TomTomB)! - - Notifications: a toast keeps one elevation, paints above overlays, and keeps out of every reserved viewport edge.
+  - Query devtools: a side dock reserves the edge it covers.
+  - `SurfaceContextTracker` drops `topType` / `topElevation`.
+
+- [`3122607`](https://github.com/ethlete-io/ethdk/commit/3122607d1727844a2d987032f45ad631f678c2ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlays and floating chrome now keep out of space a surface above the page reserved with `reserveOverlayViewportSpace()` - so a dialog, menu or toast is no longer stacked under the docked query devtools panel.
+
 ## 1.0.0-next.4
 
 ### Patch Changes

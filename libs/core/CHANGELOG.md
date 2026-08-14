@@ -1,5 +1,26 @@
 # @ethlete/core
 
+## 5.0.0-next.52
+
+### Major Changes
+
+- [`4044a00`](https://github.com/ethlete-io/ethdk/commit/4044a0007de55d25b5a697c6e4190e21d68d022f) Thanks [@TomTomB](https://github.com/TomTomB)! - - Notifications: a toast keeps one elevation, paints above overlays, and keeps out of every reserved viewport edge.
+  - Query devtools: a side dock reserves the edge it covers.
+  - `SurfaceContextTracker` drops `topType` / `topElevation`.
+
+### Minor Changes
+
+- [`3122607`](https://github.com/ethlete-io/ethdk/commit/3122607d1727844a2d987032f45ad631f678c2ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlays and floating chrome now keep out of space a surface above the page reserved with `reserveOverlayViewportSpace()` - so a dialog, menu or toast is no longer stacked under the docked query devtools panel.
+
+### Patch Changes
+
+- [`0116464`](https://github.com/ethlete-io/ethdk/commit/0116464f3efc92bfa7dc094a2b20ae9d813a8c45) Thanks [@TomTomB](https://github.com/TomTomB)! - - `etAnimatedLifecycle` no longer ends an enter or leave before its animation started, which destroyed a routed overlay page without playing its exit animation.
+  - Adds `AnimatableDirective.getRunningAnimations()`.
+
+- [`68db91f`](https://github.com/ethlete-io/ethdk/commit/68db91fb975378cccebc4ad99f59365eba90fb43) Thanks [@TomTomB](https://github.com/TomTomB)! - - `etAutoSurface`, `et-grid-item` and `et-form-field` elevate above an app's root surface, instead of staying inherited.
+  - An unset `etProvideSurface` reports the surface it inherits, so content below it no longer resolves one elevation too low.
+  - Adds `injectParentSurface()`.
+
 ## 5.0.0-next.51
 
 ### Minor Changes
