@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ProvideSurfaceDirective,
+  injectSurfaceType,
   SURFACE_PROVIDER,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
@@ -152,6 +153,7 @@ let nextHeadingId = 0;
 })
 export class StreamConsentComponent {
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private surfaceType = injectSurfaceType();
   private config = injectStreamConsentConfig();
   private labels = injectStreamLabels();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
@@ -161,7 +163,7 @@ export class StreamConsentComponent {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+    const type = this.surfaceType();
     const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
 
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;

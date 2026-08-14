@@ -130,6 +130,7 @@
       --et-surface-border: 229 229 229;
       --et-surface-type: light;
       --et-surface-elevation: 0;
+      color-scheme: light;
     }
   }
 
@@ -142,6 +143,7 @@
       --et-surface-border: 45 55 68;
       --et-surface-type: dark;
       --et-surface-elevation: 0;
+      color-scheme: dark;
     }
   }
 }

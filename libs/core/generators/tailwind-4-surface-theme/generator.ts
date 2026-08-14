@@ -558,24 +558,18 @@ function generateSurfaceThemeCss(
     themeVars.push('}\n');
   }
 
-  // Media query defaults - apply surface vars to :root based on prefers-color-scheme
+  // Root defaults - apply the default surface vars to :root
   const defaultLight = themes.find((t) => t.isDefault && t.type === 'light');
   const defaultDark = themes.find((t) => t.isDefault && t.type === 'dark');
 
-  if (defaultLight) {
-    themeVars.push(`@media (prefers-color-scheme: light) {`);
-    themeVars.push(`  :root {`);
-    pushSurfaceVars(themeVars, runtimePrefix, defaultLight, '    ');
-    themeVars.push(`  }`);
-    themeVars.push(`}\n`);
-  }
-
-  if (defaultDark) {
-    themeVars.push(`@media (prefers-color-scheme: dark) {`);
-    themeVars.push(`  :root {`);
-    pushSurfaceVars(themeVars, runtimePrefix, defaultDark, '    ');
-    themeVars.push(`  }`);
-    themeVars.push(`}\n`);
+  if (defaultLight && defaultDark) {
+    pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight);
+    pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark);
+  } else {
+    // A single registered surface type has no other scheme to switch to, so its default must
+    // land on :root unconditionally - behind prefers-color-scheme it would leave every surface
+    // variable undefined for users whose OS asks for the scheme the app lacks.
+    pushRootSurfaceVars(themeVars, runtimePrefix, defaultLight ?? defaultDark);
   }
 
   // Convenience var aliases - available on any element with a surface class or :root (via media queries)
@@ -727,6 +721,24 @@ function pushRuntimeInteractionVars(
   for (const suffix of INTERACTION_STATE_SUFFIXES) {
     vars.push(`${indent}${name}${suffix}: ${states[suffix]};`);
   }
+}
+
+function pushRootSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme | undefined): void {
+  if (!theme) return;
+
+  vars.push(`:root {`);
+  pushSurfaceVars(vars, runtimePrefix, theme, '  ');
+  vars.push(`  color-scheme: ${theme.type};`);
+  vars.push(`}\n`);
+}
+
+function pushSchemeSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme): void {
+  vars.push(`@media (prefers-color-scheme: ${theme.type}) {`);
+  vars.push(`  :root {`);
+  pushSurfaceVars(vars, runtimePrefix, theme, '    ');
+  vars.push(`    color-scheme: ${theme.type};`);
+  vars.push(`  }`);
+  vars.push(`}\n`);
 }
 
 function pushSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme, indent: string): void {
