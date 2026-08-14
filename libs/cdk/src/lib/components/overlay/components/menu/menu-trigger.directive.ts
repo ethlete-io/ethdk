@@ -11,7 +11,15 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { COLOR_PROVIDER, fromNextFrame, setInputSignal, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import {
+  COLOR_PROVIDER,
+  fromNextFrame,
+  isOnHigherOverlayLayer,
+  resolveOverlayLayer,
+  setInputSignal,
+  signalHostAttributes,
+  signalHostClasses,
+} from '@ethlete/core';
 import { AnimatedOverlayDirective } from '../../directives/animated-overlay';
 import { Placement } from '@floating-ui/dom';
 import { Subscription, filter, fromEvent, switchMap, tap } from 'rxjs';
@@ -205,6 +213,10 @@ export class MenuTriggerDirective implements OnDestroy {
       .subscribe((e) => {
         const targetElement = e.target as HTMLElement;
         const isInside = this.animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
+
+        if (isOnHigherOverlayLayer(targetElement, resolveOverlayLayer(this.elementRef.nativeElement))) {
+          return;
+        }
 
         if (!isInside) {
           this.unmount();

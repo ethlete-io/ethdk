@@ -10,7 +10,14 @@ import {
   inject,
   output,
 } from '@angular/core';
-import { COLOR_PROVIDER, createDestroy, nextFrame, setInputSignal } from '@ethlete/core';
+import {
+  COLOR_PROVIDER,
+  createDestroy,
+  isOnHigherOverlayLayer,
+  nextFrame,
+  resolveOverlayLayer,
+  setInputSignal,
+} from '@ethlete/core';
 import { AnimatedOverlayDirective } from '../../../../directives/animated-overlay';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
@@ -118,7 +125,12 @@ export class ToggletipDirective implements OnInit, OnDestroy {
 
     const clickOutsideSub = fromEvent<MouseEvent>(this.document.documentElement, 'click').subscribe((e) => {
       const targetElement = e.target as HTMLElement;
-      const isInside = this.animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
+      const overlayElement = this.animatedOverlay.componentRef?.location.nativeElement as HTMLElement | undefined;
+      const isInside = overlayElement?.contains(targetElement);
+
+      if (isOnHigherOverlayLayer(targetElement, resolveOverlayLayer(overlayElement))) {
+        return;
+      }
 
       if (!isInside) {
         this.animatedOverlay.unmount();

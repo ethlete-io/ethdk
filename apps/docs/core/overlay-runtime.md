@@ -58,6 +58,19 @@ Every overlay opened from inside it - including nested ones, because the runtime
 
 This is how the [query devtools](/query-devtools/) stay visible while an application's own modal is open.
 
+### A press on a level above never closes what is below
+
+The declared level also decides which pointer presses count as "outside". Every outside-pointer close in the SDK - the runtime's own `closeOnOutsidePointer`, the components' menus, tooltips and anchored panels, `[etClickOutside]` - first asks `isOnHigherOverlayLayer(target, ownLayer)`. A press that lands on a surface painting above the overlay is aimed at that surface, not at the content the overlay covers, so it leaves the overlay open.
+
+```ts
+import { isOnHigherOverlayLayer, resolveOverlayLayer } from '@ethlete/core';
+
+// inside your own outside-pointer handler
+if (isOnHigherOverlayLayer(event.target, resolveOverlayLayer(myTriggerElement))) return;
+```
+
+A press on the same level still closes as before, so an overlay opened from inside such a surface (a panel's own menu) closes when the user presses elsewhere in that panel. This is why working in the query devtools leaves an open select, menu or sheet in the inspected app alone.
+
 ## Position strategies
 
 - `{ kind: 'center' }` - centered with a 16px viewport padding (the default).

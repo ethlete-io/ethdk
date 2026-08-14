@@ -66,6 +66,8 @@ Popovers stack safely: a pane opened from **inside** another overlay (a select b
 
 Open order decides what paints on top, and one stacking level is all an app needs. Something that must sit above _every_ overlay - a devtools panel, an always-on-top widget - declares its own level with `data-et-overlay-layer` and every overlay opened from inside it follows, resolved from `origin`. `zIndex` on a single `open()` does it for a one-off. See [stacking levels](/core/overlay-runtime#stacking-levels).
 
+A press on such a higher level is never an outside press either: working in a devtools panel leaves an open dialog, sheet, menu or select alone. See [a press on a level above](/core/overlay-runtime#a-press-on-a-level-above-never-closes-what-is-below).
+
 ### The overlay ref
 
 The `OverlayRef` is returned by `open` and injectable inside the overlay via the `OVERLAY_REF` token (or, with openers, via `definition.injectRef()`):

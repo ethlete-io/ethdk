@@ -186,6 +186,13 @@ what the `data-et-overlay-layer` on its host element declares.
 An app that paints something over the panel is using a `z-index` above
 `2147483010` - almost always an accident.
 
+Working in the panel also leaves the app's overlays open. A press on a level above
+an overlay never counts as
+[a press outside it](/core/overlay-runtime#a-press-on-a-level-above-never-closes-what-is-below),
+so switching tabs, opening the toggle or dragging the panel keeps the select, menu,
+tooltip or sheet you are inspecting on screen. A press in your page closes it as
+usual, and the panel's own menus still close on a press elsewhere in the panel.
+
 A float is moved and resized on the same `@ethlete/core` primitives the stream
 [picture-in-picture window](/components/stream) uses - `[etDragHandle]` and
 `<et-resize-handles>` - so the two behave the same way under the hand, including

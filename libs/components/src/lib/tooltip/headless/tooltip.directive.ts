@@ -14,7 +14,14 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { COLOR_PROVIDER, RuntimeError, injectFocusVisibleTracker, injectRenderer } from '@ethlete/core';
+import {
+  COLOR_PROVIDER,
+  RuntimeError,
+  injectFocusVisibleTracker,
+  injectRenderer,
+  isOnHigherOverlayLayer,
+  resolveOverlayLayer,
+} from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { filter, fromEvent, map, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
@@ -245,6 +252,7 @@ export class TooltipDirective {
         takeUntil(overlayRef.afterClosed()),
         takeUntilDestroyed(this.destroyRef),
         filter((event) => !(event.target instanceof Node) || !hostElement.contains(event.target)),
+        filter((event) => !isOnHigherOverlayLayer(event.target, resolveOverlayLayer(hostElement))),
         tap(() => {
           this.hasHover.set(false);
           this.hasFocus.set(false);

@@ -267,6 +267,32 @@ describe('overlay runtime', () => {
       first.close();
       second.close();
     });
+
+    it('keeps a non-modal overlay open on a press landing on a level above it', async () => {
+      const raisedSurface = document.createElement('div');
+      raisedSurface.setAttribute(OVERLAY_LAYER_ATTRIBUTE, `${DEFAULT_OVERLAY_LAYER + 10}`);
+
+      const raisedTarget = document.createElement('button');
+      const plainTarget = document.createElement('button');
+
+      raisedSurface.append(raisedTarget);
+      document.body.append(raisedSurface, plainTarget);
+
+      const ref = mount({ modal: false });
+
+      await flushFrames();
+
+      raisedTarget.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+
+      expect(ref.state()).toBe('mounted');
+
+      plainTarget.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+
+      expect(ref.state()).toBe('closed');
+
+      raisedSurface.remove();
+      plainTarget.remove();
+    });
   });
 
   it('tears down synchronously without a leave animation when the reference detaches', async () => {
