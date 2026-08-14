@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.51
+
+### Patch Changes
+
+- [#3063](https://github.com/ethlete-io/ethdk/pull/3063) [`37067ce`](https://github.com/ethlete-io/ethdk/commit/37067cee67c5cd360360a5f59c29f58afc08e62c) Thanks [@TomTomB](https://github.com/TomTomB)! - A single-scheme app no longer needs a root `etProvideSurface`: its default surface paints `:root` unconditionally once the surface CSS is regenerated, and the outermost provider resolves it through the new `injectDefaultSurfaceTheme()` / `injectSurfaceType()`.
+
 ## 1.0.0-next.50
 
 ### Minor Changes
