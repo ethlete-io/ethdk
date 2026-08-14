@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, effect, inject, Signal, untracked, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { isOnHigherOverlayLayer, resolveOverlayLayer } from '@ethlete/core';
 import { fromEvent, Subscription, take, tap } from 'rxjs';
 import { isTargetInsideOverlayTree } from '../../../overlay/get-closest-overlay';
 import { OverlayConfig } from '../../../overlay/overlay-config';
@@ -95,6 +96,10 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
       }
 
       if (options.anchor()?.contains(target)) {
+        return;
+      }
+
+      if (isOnHigherOverlayLayer(target, resolveOverlayLayer(pane ?? options.anchor()))) {
         return;
       }
 

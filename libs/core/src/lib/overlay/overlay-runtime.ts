@@ -14,7 +14,7 @@ import { ANIMATED_LIFECYCLE_TOKEN, animationDebugLog, nextFrame } from '../anima
 import { injectRenderer } from '../providers';
 import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyInitialFocus, isHTMLElement, setupFocusTrap } from './overlay-focus';
-import { DEFAULT_OVERLAY_LAYER, OVERLAY_LAYER_ATTRIBUTE } from './overlay-layer';
+import { DEFAULT_OVERLAY_LAYER, OVERLAY_LAYER_ATTRIBUTE, isOnHigherOverlayLayer } from './overlay-layer';
 import { resetPositioningStyles, setBackdropStyles, setBaseElementStyles, setupPositioning } from './overlay-position';
 import { OverlayRuntimeRef, createOverlayRuntimeRef } from './overlay-runtime-ref';
 import {
@@ -132,7 +132,8 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
     const mount = <TComponent extends object, TResult = unknown>(config: OverlayRuntimeMountConfig<TComponent>) => {
       const targetDocument = config.document ?? document;
-      const root = getRootElement(targetDocument, config.zIndex ?? DEFAULT_OVERLAY_LAYER);
+      const layer = config.zIndex ?? DEFAULT_OVERLAY_LAYER;
+      const root = getRootElement(targetDocument, layer);
       const hostElement = renderer.createElement('div');
       const paneElement = renderer.createElement('div');
       const backdropElement = config.hasBackdrop === false ? null : renderer.createElement('div');
@@ -328,6 +329,10 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
           const target = event.target;
           if (!isHTMLElement(target) || paneElement.contains(target)) {
+            return;
+          }
+
+          if (isOnHigherOverlayLayer(target, layer)) {
             return;
           }
 

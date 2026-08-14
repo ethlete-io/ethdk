@@ -20,8 +20,10 @@ import {
   anchoredOverlayPosition,
   enableAnchoredOverlayPositionExtras,
   injectHostElement,
+  isOnHigherOverlayLayer,
   nextFrame,
   randomId,
+  resolveOverlayLayer,
 } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement, VirtualElement } from '@floating-ui/dom';
 import { fromEvent, take, tap } from 'rxjs';
@@ -717,6 +719,10 @@ export class MenuDirective {
       .pipe(
         tap((event) => {
           if (this.isTargetInsideTree(event.target)) {
+            return;
+          }
+
+          if (isOnHigherOverlayLayer(event.target, resolveOverlayLayer(this.hostElement))) {
             return;
           }
 

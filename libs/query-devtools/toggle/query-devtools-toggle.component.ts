@@ -27,6 +27,12 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
   // host app's global CSS (resets, Tailwind, button styles), which the rest of the panel can't be.
   // eslint-disable-next-line ethlete/require-view-encapsulation-none
   encapsulation: ViewEncapsulation.ShadowDom,
+  host: {
+    // The level this button paints at - the same number as the `z-index` below; keep the two in step.
+    // It tells @ethlete/core that a press here lands on a surface above an application overlay, so
+    // opening the devtools does not read as an outside press and close it.
+    'data-et-overlay-layer': '2147483010',
+  },
   styles: `
     :host {
       position: fixed;
