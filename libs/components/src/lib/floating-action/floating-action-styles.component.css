@@ -32,8 +32,12 @@
     &:where([data-state='hidden']) .et-floating-action-trigger {
       position: fixed;
       inset-inline-end: var(--et-floating-action-inset-inline-end);
-      /* Plus the home-bar inset on a phone, when there is one, so the button never sits under it. */
-      inset-block-end: calc(var(--et-floating-action-inset-block-end) + env(safe-area-inset-bottom, 0px));
+      /* Plus the home-bar inset on a phone, when there is one, and whatever a surface above the page has
+         reserved on that edge - a docked devtools panel - so the button never sits under either. */
+      inset-block-end: calc(
+        var(--et-floating-action-inset-block-end) + env(safe-area-inset-bottom, 0px) +
+          var(--et-viewport-inset-bottom, 0px)
+      );
       z-index: var(--et-floating-action-z-index);
     }
 

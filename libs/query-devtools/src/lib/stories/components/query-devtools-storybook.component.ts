@@ -23,11 +23,18 @@ import {
   BUTTON_IMPORTS,
   CHECKBOX_IMPORTS,
   CHOICE_FIELD_IMPORTS,
+  createOverlayOpener,
+  defineOverlay,
+  dialogOverlayStrategy,
   FILE_ICON,
   FORM_FIELD_IMPORTS,
   ICON_IMPORTS,
+  injectNotificationManager,
   INPUT_IMPORTS,
   LOCK_ICON,
+  MENU_IMPORTS,
+  OVERLAY_CONTENT_IMPORTS,
+  OverlayMainDirective,
   PLAY_ICON,
   PLUS_ICON,
   provideIcons,
@@ -785,6 +792,84 @@ export class QdUnmountCardComponent {
   protected mounted = signal(false);
 }
 
+/** The application's own dialog - centered in what the docked panel leaves of the window. */
+@Component({
+  selector: 'et-sb-qd-dialog',
+  template: `
+    <div etOverlayHeader>
+      <h2 class="text-h6" etOverlayTitle>App dialog</h2>
+    </div>
+
+    <et-overlay-body>
+      <p class="text-medium">
+        Dock the panel to any edge and drag its handle. This pane is laid out inside the space that is left, so it never
+        ends up behind the panel.
+      </p>
+    </et-overlay-body>
+
+    <div class="flex justify-end" etOverlayFooter>
+      <button et-button etOverlayClose size="sm" variant="outline">Close</button>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS, OVERLAY_CONTENT_IMPORTS],
+  hostDirectives: [OverlayMainDirective],
+})
+export class QdDialogComponent {}
+
+const qdDialog = defineOverlay({
+  component: QdDialogComponent,
+  strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
+});
+
+/**
+ * Page chrome the overlay runtime does not position. It stays clear of the panel by composing the
+ * published `--et-viewport-inset-bottom` into its own sticky offset.
+ */
+@Component({
+  selector: 'et-sb-qd-overlay-bar',
+  template: `
+    <span class="text-small">Open these while the panel is docked:</span>
+
+    <button (click)="dialog.open()" et-button size="sm" variant="tonal">Dialog</button>
+
+    <div etMenu>
+      <button etMenuTrigger et-button size="sm" variant="tonal" type="button">Menu</button>
+
+      <ng-template etMenuSurface>
+        <et-menu>
+          @for (item of ITEMS; track item) {
+            <button et-menu-item type="button">{{ item }}</button>
+          }
+        </et-menu>
+      </ng-template>
+    </div>
+
+    <button (click)="toast()" et-button size="sm" variant="tonal">Toast</button>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS, MENU_IMPORTS],
+  hostDirectives: [AutoSurfaceDirective],
+  host: {
+    class: 'et-sb-qd-overlay-bar',
+  },
+})
+export class QdOverlayBarComponent {
+  private readonly notifications = injectNotificationManager();
+
+  protected readonly ITEMS = ['Copy request', 'Copy as cURL', 'Open in a new tab', 'Report an issue'];
+
+  protected dialog = createOverlayOpener(qdDialog);
+
+  protected toast() {
+    this.notifications.open({
+      status: 'info',
+      title: 'The stack sits above the dock',
+      message: 'It offsets itself by the same reserved space.',
+    });
+  }
+}
+
 @Component({
   selector: 'et-sb-query-devtools',
   template: `
@@ -818,6 +903,8 @@ export class QdUnmountCardComponent {
         <et-sb-qd-ws />
         <et-sb-qd-unmount />
       </div>
+
+      <et-sb-qd-overlay-bar />
     </div>
 
     @if (lazy()) {
@@ -848,6 +935,7 @@ export class QdUnmountCardComponent {
     QdProfileCardComponent,
     QdGqlCardComponent,
     QdWsCardComponent,
+    QdOverlayBarComponent,
   ],
   providers: [
     provideIcons(
@@ -885,6 +973,22 @@ export class QdUnmountCardComponent {
           display: flex;
           flex-direction: column;
         }
+      }
+
+      .et-sb-qd-overlay-bar {
+        position: sticky;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        inset-block-end: calc(12px + var(--et-viewport-inset-bottom, 0px));
+        max-inline-size: 1160px;
+        padding: 10px 14px;
+        border: 1px solid var(--et-surface-border-solid);
+        border-radius: 12px;
+        background: var(--et-surface-background-solid);
+        color: var(--et-surface-color-solid);
       }
 
       .et-sb-qd-card {

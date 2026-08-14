@@ -71,6 +71,47 @@ if (isOnHigherOverlayLayer(event.target, resolveOverlayLayer(myTriggerElement)))
 
 A press on the same level still closes as before, so an overlay opened from inside such a surface (a panel's own menu) closes when the user presses elsewhere in that panel. This is why working in the query devtools leaves an open select, menu or sheet in the inspected app alone.
 
+## Reserved viewport space
+
+A surface that paints over the page - a docked devtools panel, an always-on-top widget - covers whatever an overlay is centered in. Page content can be scrolled out from under it; a dialog, a menu or a sheet cannot. Reserve the edge it sits on and every overlay below it keeps out:
+
+```ts
+import { reserveOverlayViewportSpace } from '@ethlete/core';
+
+// the panel is 360px tall, docked to the bottom, and paints at z-index 2147483010
+const release = reserveOverlayViewportSpace({ bottom: 360, layer: 2147483010 });
+
+// give the space back when the panel closes
+release();
+```
+
+What each position strategy does with it:
+
+| Strategy   | Effect                                                                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `center`   | The host box shrinks to what is left of the viewport, so the pane is centered in that.                                                                              |
+| `global`   | Same, so an `end`-aligned sheet sits on the reserved edge instead of under it.                                                                                      |
+| `anchored` | The reserved edge is added to `viewportPadding`, so the pane flips, shifts and (with `autoResize`) shrinks against it exactly as it does against the viewport edge. |
+
+The reservation is scoped by `layer` (default one above `DEFAULT_OVERLAY_LAYER`): only overlays **below** that level keep out of it. The reserving surface's own overlays declare a level above it - see [Stacking levels](#stacking-levels) - so a menu opened inside the panel may still use the panel's space. An open overlay is laid out again whenever a reservation is made, resized or released, so dragging a panel's edge moves the overlay with it.
+
+`overlayViewportInsets(layer?)` reads the current reservation as `{ top, right, bottom, left }`, and `overlayViewportInsetsFor(element)` does the same for the level an element resolves to. Reservations stack by taking the **largest** value per edge, not the sum.
+
+### Page chrome reads the CSS custom properties
+
+The runtime can only move what it positions itself. Anything else that floats over the page - a sticky action bar, an app's own floating button - reads the same reservation from four custom properties published on the document root while it is held:
+
+```css
+.my-sticky-action-bar {
+  position: sticky;
+  inset-block-end: calc(1.6rem + var(--et-viewport-inset-bottom, 0px));
+}
+```
+
+`--et-viewport-inset-top`, `--et-viewport-inset-right`, `--et-viewport-inset-bottom` and `--et-viewport-inset-left` are set while anything is reserved and removed again when nothing is - so always give the `var()` a `0px` fallback. Unlike the overlay insets they ignore `layer`: page content paints below every reserving surface. The SDK's own floating chrome - [notifications](/components/notification) and the [floating action](/components/floating-action) - already composes them.
+
+This is how the [query devtools](/query-devtools/#reserve-page-space) keep an application's dialogs, menus and toasts out of the docked panel.
+
 ## Position strategies
 
 - `{ kind: 'center' }` - centered with a 16px viewport padding (the default).

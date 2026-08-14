@@ -151,6 +151,22 @@ ends up behind the panel. The padding follows the drag handle, so resizing the p
 resizes the page with it, and it is given back the moment the panel is closed,
 floated or popped out.
 
+**Overlays keep out of a dock whether the checkbox is on or off.** A page can be
+scrolled out from under the panel; a dialog, a menu, a select or a sheet cannot, so
+a docked panel always [reserves its edge](/core/overlay-runtime#reserved-viewport-space)
+for them. An application's modal is centered in what is left of the window and a
+dropdown flips or shrinks against the panel's top edge, both following the drag
+handle as you resize. The panel's own menus are unaffected - they paint a level
+above it and may use its space. Sticky chrome the runtime does not position - your
+own action bar, a floating button - reads the published
+`--et-viewport-inset-*` custom properties to do the same.
+
+The [demo above](#live-demo) has all four: its **Dialog**, **Menu** and **Toast**
+buttons sit in a sticky action bar whose offset is
+`calc(12px + var(--et-viewport-inset-bottom, 0px))`, so dock the panel to the
+bottom and the bar, the dialog, the dropdown and the toast stack all move up with
+the drag handle - while the panel's own layout menu keeps opening over the panel.
+
 The padding is applied with `box-sizing: border-box` on the root, so an app whose
 shell is `height: 100%` gives up the room from its own height rather than growing
 past the bottom of the window. A shell sized in viewport units (`100dvh`) or laid

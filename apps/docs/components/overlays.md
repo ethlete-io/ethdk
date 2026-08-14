@@ -208,7 +208,7 @@ A strategy controls the overlay's position, sizing, classes and animation. Pass 
 
 | Factory                                                  | Shape                                                             |
 | -------------------------------------------------------- | ----------------------------------------------------------------- |
-| `dialogOverlayStrategy`                                  | Centered dialog (`width: min(512px, 80vw)` by default)            |
+| `dialogOverlayStrategy`                                  | Centered dialog (`width: min(512px, 80%)` by default)             |
 | `fullScreenDialogOverlayStrategy`                        | Full-screen, animates from the origin element                     |
 | `bottomSheetOverlayStrategy`                             | Bottom sheet, drag-to-dismiss downwards                           |
 | `topSheetOverlayStrategy`                                | Top sheet, drag-to-dismiss upwards                                |
@@ -217,6 +217,8 @@ A strategy controls the overlay's position, sizing, classes and animation. Pass 
 | `centeredOverlayStrategy`                                | Plain centered pane with size overrides                           |
 
 Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `dragToDismiss`, `hasBackdrop`, `arrow`, …).
+
+Size a non-anchored overlay in percentages rather than viewport units (`80%`, not `80vh`). The pane fills a cell that spans the space an overlay may use, which is the viewport minus whatever [reserved it](/core/overlay-runtime#reserved-viewport-space) - a docked devtools panel, for example. `vh` and `vw` measure the whole window instead, so a pane sized that way can reach under such a surface. This is why the dialog and sheet defaults are percentages.
 
 ### Strategy stylesheets
 
@@ -341,7 +343,7 @@ Multi-step overlays (wizards, settings dialogs) use the overlay router - an inte
 import { provideOverlayRouter } from '@ethlete/components';
 
 this.overlayManager.open(SettingsOverlayComponent, {
-  strategies: dialogOverlayStrategy({ width: 480, height: 'min(520px, 80vh)' }),
+  strategies: dialogOverlayStrategy({ width: 480, height: 'min(520px, 80%)' }),
   providers: [
     provideOverlayRouter({
       routes: [

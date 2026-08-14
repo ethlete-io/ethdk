@@ -7,6 +7,22 @@ import {
   OverlayRuntimeGlobalPosition,
   OverlayRuntimeMountConfig,
 } from './overlay-runtime.types';
+import { onOverlayViewportInsetsChange, overlayViewportInsetsFor } from './overlay-viewport-inset';
+
+/**
+ * Shrinks the host box to the part of the viewport nothing above this overlay has reserved, so a
+ * centered or globally placed pane is laid out inside it instead of under a docked panel.
+ */
+const applyViewportInsets = (hostElement: HTMLElement, renderer: AngularRenderer) => {
+  const insets = overlayViewportInsetsFor(hostElement);
+
+  renderer.setStyle(hostElement, {
+    top: `${insets.top}px`,
+    right: `${insets.right}px`,
+    bottom: `${insets.bottom}px`,
+    left: `${insets.left}px`,
+  });
+};
 
 export const setBaseElementStyles = (
   config: OverlayRuntimeMountConfig<object>,
@@ -53,6 +69,8 @@ export const applyCenteredPosition = (
     overflow: 'auto',
   });
 
+  applyViewportInsets(hostElement, renderer);
+
   renderer.setStyle(paneElement, {
     position: 'relative',
   });
@@ -73,6 +91,8 @@ export const applyGlobalPosition = (
     placeItems: `${config.vertical ?? 'center'} ${config.horizontal ?? 'center'}`,
     padding: config.padding ?? '0',
   });
+
+  applyViewportInsets(hostElement, renderer);
 
   renderer.setStyle(paneElement, {
     position: 'relative',
@@ -174,10 +194,10 @@ export const setupPositioning = (
   if (strategy.kind === 'global') {
     applyGlobalPosition(hostElement, paneElement, renderer, strategy);
 
-    return () => undefined;
+    return onOverlayViewportInsetsChange(() => applyViewportInsets(hostElement, renderer));
   }
 
   applyCenteredPosition(hostElement, paneElement, renderer, strategy);
 
-  return () => undefined;
+  return onOverlayViewportInsetsChange(() => applyViewportInsets(hostElement, renderer));
 };

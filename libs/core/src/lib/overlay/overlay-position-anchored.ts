@@ -9,12 +9,18 @@ import {
   Padding,
   Placement,
   shift,
+  SideObject,
 } from '@floating-ui/dom';
 import { AngularRenderer } from '../providers';
 import { isHTMLElement } from './overlay-focus';
 import { registerAnchoredPositionSetup } from './overlay-position';
 import { OverlayRuntimeRef } from './overlay-runtime-ref';
 import { OverlayRuntimeAnchoredPosition } from './overlay-runtime.types';
+import {
+  onOverlayViewportInsetsChange,
+  OverlayViewportInset,
+  overlayViewportInsetsFor,
+} from './overlay-viewport-inset';
 
 /**
  * The floating-ui middleware only a subset of anchored overlays needs. Installed by
@@ -123,6 +129,31 @@ const preferredSide = (options: {
   },
 });
 
+const toSideObject = (padding: Padding): SideObject =>
+  typeof padding === 'number'
+    ? { top: padding, right: padding, bottom: padding, left: padding }
+    : {
+        top: padding.top ?? 0,
+        right: padding.right ?? 0,
+        bottom: padding.bottom ?? 0,
+        left: padding.left ?? 0,
+      };
+
+/**
+ * The strategy's own viewport padding plus the space reserved on each edge. Every middleware that
+ * measures overflow gets it, so an edge a docked panel covers is as unavailable as the viewport edge.
+ */
+const paddingWithInsets = (padding: Padding, insets: OverlayViewportInset): SideObject => {
+  const own = toSideObject(padding);
+
+  return {
+    top: own.top + insets.top,
+    right: own.right + insets.right,
+    bottom: own.bottom + insets.bottom,
+    left: own.left + insets.left,
+  };
+};
+
 export const createAnchoredPositionCleanup = (
   strategy: OverlayRuntimeAnchoredPosition,
   paneElement: HTMLElement,
@@ -164,7 +195,7 @@ export const createAnchoredPositionCleanup = (
     }
   };
 
-  const cleanup = autoUpdate(strategy.referenceElement, paneElement, () => {
+  const update = () => {
     // Checked here rather than left to the `hide` middleware, which is only in the list when `autoHide`
     // or `autoCloseIfReferenceHidden` asked for it: a trigger destroyed while its overlay is open (a
     // menu item that removes the button it was opened from) would otherwise fly to the corner for the
@@ -176,6 +207,8 @@ export const createAnchoredPositionCleanup = (
     }
 
     const arrowElement = paneElement.querySelector<HTMLElement>('[et-floating-arrow]');
+    const insets = overlayViewportInsetsFor(paneElement);
+    const viewportPadding = paddingWithInsets(strategy.viewportPadding ?? 8, insets);
     const middleware = [];
 
     middleware.push(offset(strategy.offset ?? 8));
@@ -184,13 +217,14 @@ export const createAnchoredPositionCleanup = (
         ? flip({
             fallbackPlacements: strategy.fallbackPlacements ?? undefined,
             fallbackAxisSideDirection: 'start',
+            padding: insets,
             boundary: strategy.boundary,
           })
         : preferredSide({
             minAvailableSpace: strategy.minAvailableSpace,
             // must stay the padding `size` measures with: the threshold is then compared against the
             // very height the pane ends up capped to
-            padding: strategy.viewportPadding ?? 8,
+            padding: viewportPadding,
             boundary: strategy.boundary,
           }),
     );
@@ -205,7 +239,7 @@ export const createAnchoredPositionCleanup = (
             strategy.minAvailableSpace === undefined &&
             (typeof strategy.shift === 'object' ? (strategy.shift.crossAxis ?? false) : false),
           limiter: limitShift(),
-          padding: strategy.viewportPadding ?? 8,
+          padding: viewportPadding,
           boundary: strategy.boundary,
         }),
       );
@@ -219,7 +253,7 @@ export const createAnchoredPositionCleanup = (
       if (extras) {
         middleware.push(
           extras.size({
-            padding: strategy.viewportPadding ?? 8,
+            padding: viewportPadding,
             apply({ availableHeight, availableWidth }) {
               renderer.setCssProperties(paneElement, {
                 '--et-overlay-max-width': `${availableWidth}px`,
@@ -290,10 +324,16 @@ export const createAnchoredPositionCleanup = (
         );
       }
     });
-  });
+  };
+
+  const cleanup = autoUpdate(strategy.referenceElement, paneElement, update);
+  // A panel docked over the page changes how much room the pane has without moving, resizing or
+  // scrolling anything `autoUpdate` watches.
+  const stopInsetUpdates = onOverlayViewportInsetsChange(update);
 
   return () => {
     cleanup();
+    stopInsetUpdates();
   };
 };
 

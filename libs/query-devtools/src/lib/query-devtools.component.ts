@@ -33,7 +33,9 @@ import {
   injectIsDocumentVisible,
   injectRenderer,
   injectStyleManager,
+  OverlayViewportReservation,
   randomId,
+  reserveOverlayViewportSpace,
   signalElementDimensions,
 } from '@ethlete/core';
 import {
@@ -325,6 +327,12 @@ const DOCK_PADDING = {
   left: 'paddingInlineStart',
   right: 'paddingInlineEnd',
 } as const satisfies Record<Exclude<DevtoolsDock, 'float'>, keyof CSSStyleDeclaration>;
+
+/**
+ * The panel's own z-index, mirrored from `query-devtools.component.css`. An overlay below it keeps out
+ * of the space a docked panel covers; the panel's own overlays paint a level above it and may use it.
+ */
+const PANEL_LAYER = 2147483010;
 
 const noop = () => undefined;
 
@@ -905,6 +913,26 @@ export class QueryDevtoolsComponent implements OnInit {
     if (!size) return null;
 
     return { padding: DOCK_PADDING[dock], px: this.sideDocked() ? size.width : size.height };
+  });
+
+  /**
+   * The viewport edge a docked panel covers, reserved for overlays whatever {@link reservesSpace} says:
+   * page content can be scrolled out from under the panel, a dialog or a menu cannot. The side comes
+   * from the rendered rect, because a dock edge is logical and its physical side flips in RTL.
+   */
+  private overlayReservation = computed<OverlayViewportReservation | null>(() => {
+    const dock = this.dock();
+
+    if (dock === 'float' || this.poppedOut() || !this.open()) return null;
+
+    const rect = this.panelSize().rect?.();
+
+    if (!rect) return null;
+
+    if (dock === 'top') return { top: rect.height, layer: PANEL_LAYER };
+    if (dock === 'bottom') return { bottom: rect.height, layer: PANEL_LAYER };
+
+    return rect.left <= 0 ? { left: rect.width, layer: PANEL_LAYER } : { right: rect.width, layer: PANEL_LAYER };
   });
 
   /** Which section of the query detail is showing. Shared by the Queries tab and both drawers. */
@@ -1527,6 +1555,14 @@ export class QueryDevtoolsComponent implements OnInit {
       this.renderer.setStyle(root, { boxSizing: 'border-box', [reservation.padding]: `${reservation.px}px` });
 
       onCleanup(() => this.renderer.removeStyles(root, 'boxSizing', reservation.padding));
+    });
+
+    effect((onCleanup) => {
+      const reservation = this.overlayReservation();
+
+      if (!reservation) return;
+
+      onCleanup(reserveOverlayViewportSpace(reservation));
     });
 
     // A window that shrinks below the floating panel would otherwise leave it half (or wholly) off

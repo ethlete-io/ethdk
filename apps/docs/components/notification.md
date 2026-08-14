@@ -196,6 +196,7 @@ At `480px` and below the stack spans both edges and every toast fills it, which 
 - Error toasts get `role="alert"`, all others `role="status"`; the stack itself is a polite `role="log"` live region.
 - <kbd>Escape</kbd> dismisses a focused toast; hover/focus pause its auto-dismiss timer, as does holding it under a finger.
 - Status icons are decorative (`aria-hidden`) - the status is already carried by the role and the wording.
+- The stack's block-axis inset composes `--et-viewport-inset-top` / `--et-viewport-inset-bottom`, so a toast is never stacked under a surface that [reserved that edge](/core/overlay-runtime#page-chrome-reads-the-css-custom-properties) - a docked devtools panel, for example.
 
 ## Custom notification UI
 

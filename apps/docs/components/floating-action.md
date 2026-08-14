@@ -117,15 +117,17 @@ for less motion gets the position change without the animation.
 Nothing is painted here - the trigger is your button (usually [`et-button`](/components/button) or its FAB
 variant), and this domain only changes where it sits.
 
-| Token                                   | Default | Purpose                                                 |
-| --------------------------------------- | ------- | ------------------------------------------------------- |
-| `--et-floating-action-inset-inline-end` | `24px`  | Distance from the inline edge while floating.           |
-| `--et-floating-action-inset-block-end`  | `24px`  | Distance from the bottom, **plus** the safe-area inset. |
-| `--et-floating-action-z-index`          | `10`    | Stacking order of the floating trigger.                 |
-| `--et-floating-action-duration`         | `200ms` | Scale in/out duration.                                  |
+| Token                                   | Default | Purpose                                              |
+| --------------------------------------- | ------- | ---------------------------------------------------- |
+| `--et-floating-action-inset-inline-end` | `24px`  | Distance from the inline edge while floating.        |
+| `--et-floating-action-inset-block-end`  | `24px`  | Distance from the bottom, **plus** the insets below. |
+| `--et-floating-action-z-index`          | `10`    | Stacking order of the floating trigger.              |
+| `--et-floating-action-duration`         | `200ms` | Scale in/out duration.                               |
 
 The bottom offset adds `env(safe-area-inset-bottom)`, so the trigger clears a phone's home bar without
-per-platform configuration.
+per-platform configuration, and `--et-viewport-inset-bottom`, so it also clears a surface that
+[reserved that edge](/core/overlay-runtime#page-chrome-reads-the-css-custom-properties) - a docked devtools
+panel, for example.
 
 ## Error codes
 

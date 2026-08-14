@@ -5,6 +5,7 @@ import { AnimatedLifecycleDirective, AnimatedLifecycleState } from '../animation
 import { DEFAULT_OVERLAY_LAYER, OVERLAY_LAYER_ATTRIBUTE } from './overlay-layer';
 import { anchoredOverlayPosition } from './overlay-position-anchored';
 import { injectOverlayRuntime } from './overlay-runtime';
+import { reserveOverlayViewportSpace } from './overlay-viewport-inset';
 
 const createFakeLifecycle = () => {
   const state$ = new BehaviorSubject<AnimatedLifecycleState>('init');
@@ -57,6 +58,29 @@ describe('overlay runtime', () => {
     expect(ref.elements.paneElement.style.position).toBe('relative');
 
     ref.close();
+  });
+
+  it('lays a centered overlay out inside the reserved viewport space', () => {
+    const release = reserveOverlayViewportSpace({ bottom: 360 });
+    const ref = mount({ positionStrategy: { kind: 'center' } });
+
+    expect(ref.elements.hostElement.style.bottom).toBe('360px');
+
+    release();
+
+    expect(ref.elements.hostElement.style.bottom).toBe('0px');
+
+    ref.close();
+  });
+
+  it('lets an overlay above the reserving surface use the reserved space', () => {
+    const release = reserveOverlayViewportSpace({ bottom: 360, layer: DEFAULT_OVERLAY_LAYER + 1 });
+    const ref = mount({ positionStrategy: { kind: 'center' }, zIndex: DEFAULT_OVERLAY_LAYER + 2 });
+
+    expect(ref.elements.hostElement.style.bottom).toBe('0px');
+
+    ref.close();
+    release();
   });
 
   it('re-positions in place via updatePositionStrategy', () => {

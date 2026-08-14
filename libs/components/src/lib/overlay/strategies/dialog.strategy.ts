@@ -5,9 +5,11 @@ import { DialogStylesComponent } from './dialog-styles.component';
 
 const DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
   {
-    maxHeight: '80vh',
-    maxWidth: '80vw',
-    width: 'min(512px, 80vw)',
+    // Percentages, not viewport units: the pane is the item of a full-size grid cell, and that cell is
+    // what a reservation shrinks. `80vh` would size a dialog against space a docked panel covers.
+    maxHeight: '80%',
+    maxWidth: '80%',
+    width: 'min(512px, 80%)',
     containerClass: 'et-overlay--dialog',
     stylesComponent: DialogStylesComponent,
     positionStrategy: () => ({ kind: 'global' }),

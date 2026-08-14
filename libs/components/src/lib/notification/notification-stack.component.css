@@ -5,6 +5,11 @@
      positions stay on physical `left` + a symmetric translate: centering is direction-agnostic and
      the physical form is the idiom. */
   .et-notification-stack {
+    /* Plus whatever a surface above the page has reserved on that edge - a docked devtools panel, an
+       app's own always-on-top chrome - so a toast is never stacked under it. @see reserveOverlayViewportSpace */
+    --_et-notification-inset-block-start: calc(1rem + var(--et-viewport-inset-top, 0px));
+    --_et-notification-inset-block-end: calc(1rem + var(--et-viewport-inset-bottom, 0px));
+
     position: fixed;
     display: flex;
     flex-direction: column;
@@ -14,11 +19,11 @@
     pointer-events: none;
 
     /* default: bottom-end */
-    bottom: 1rem;
+    bottom: var(--_et-notification-inset-block-end);
     inset-inline-end: 1rem;
 
     &[data-position='bottom-center'] {
-      bottom: 1rem;
+      bottom: var(--_et-notification-inset-block-end);
       top: auto;
       inset-inline: auto;
       left: 50%;
@@ -27,7 +32,7 @@
     }
 
     &[data-position='bottom-start'] {
-      bottom: 1rem;
+      bottom: var(--_et-notification-inset-block-end);
       top: auto;
       inset-inline-start: 1rem;
       inset-inline-end: auto;
@@ -36,7 +41,7 @@
     }
 
     &[data-position='bottom-end'] {
-      bottom: 1rem;
+      bottom: var(--_et-notification-inset-block-end);
       top: auto;
       inset-inline-start: auto;
       inset-inline-end: 1rem;
@@ -45,7 +50,7 @@
     }
 
     &[data-position='top-center'] {
-      top: 1rem;
+      top: var(--_et-notification-inset-block-start);
       bottom: auto;
       inset-inline: auto;
       left: 50%;
@@ -54,7 +59,7 @@
     }
 
     &[data-position='top-start'] {
-      top: 1rem;
+      top: var(--_et-notification-inset-block-start);
       bottom: auto;
       inset-inline-start: 1rem;
       inset-inline-end: auto;
@@ -63,7 +68,7 @@
     }
 
     &[data-position='top-end'] {
-      top: 1rem;
+      top: var(--_et-notification-inset-block-start);
       bottom: auto;
       inset-inline-start: auto;
       inset-inline-end: 1rem;
