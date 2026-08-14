@@ -404,6 +404,7 @@
     "overlay-detached-reference-keeps-position",
     "overlay-fullscreen-clone-size",
     "overlay-guard-abandoned-and-tab",
+    "overlay-higher-layer-press-not-outside",
     "overlay-insecure-context-random-id",
     "overlay-native-bindings",
     "overlay-nav-tab-link",
