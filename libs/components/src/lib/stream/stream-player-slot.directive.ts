@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import {
   ProvideSurfaceDirective,
+  injectSurfaceType,
   SURFACE_PROVIDER,
   injectStyleManager,
   injectSurfaceThemes,
@@ -61,6 +62,7 @@ export class StreamPlayerSlotDirective {
   private playerComponent = inject(STREAM_PLAYER_COMPONENT_TOKEN);
   private provideSurface = inject(ProvideSurfaceDirective);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private surfaceType = injectSurfaceType();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private styleManager = injectStyleManager();
 
@@ -71,7 +73,7 @@ export class StreamPlayerSlotDirective {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+    const type = this.surfaceType();
     const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
     return resolveSurfaceByElevation(themes, type, elevation);
   });

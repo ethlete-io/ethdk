@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, computed, effect, inject, untracked, viewChild } from '@angular/core';
 import {
   ProvideSurfaceDirective,
+  injectSurfaceType,
   SURFACE_PROVIDER,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
@@ -120,6 +121,7 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
 export class PipSlotPlaceholderComponent {
   private slotPlayerId = inject(STREAM_SLOT_PLAYER_ID_TOKEN);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private surfaceType = injectSurfaceType();
   private pipManager = injectPipManager();
   private config = injectPipSlotPlaceholderConfig();
   private labels = injectStreamLabels();
@@ -130,7 +132,7 @@ export class PipSlotPlaceholderComponent {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+    const type = this.surfaceType();
     const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
 
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;

@@ -48,7 +48,7 @@ A `SurfaceTheme` - all colors are `"R G B"` channel strings:
 | `name`             | `string`            | yes      | Becomes the scope class `et-surface--<name>`.   |
 | `type`             | `'light' \| 'dark'` | yes      | The elevation family.                           |
 | `elevation`        | `number`            | yes      | Integer; auto-surface resolves `elevation + 1`. |
-| `isDefault`        | `boolean`           | no       | Exactly one default per `type`.                 |
+| `isDefault`        | `boolean`           | no       | Exactly one per `type`; paints `:root`.         |
 | `background`       | `"R G B"`           | yes      | Surface background.                             |
 | `color`            | `"R G B"`           | yes      | Primary text.                                   |
 | `colorMuted`       | `"R G B"`           | yes      | Secondary text.                                 |
@@ -79,7 +79,7 @@ Run `nx g @ethlete/core:migrate-surface-interaction-swatch` to convert your defi
 regenerate the CSS.
 :::
 
-Inside any surface scope (and on `:root`, resolved from the default surfaces per `prefers-color-scheme`), these tokens are available - each as `-rgb` (raw channels) and `-solid` (ready-to-use color):
+Inside any surface scope (and on `:root` - see [The root surface](#the-root-surface)), these tokens are available - each as `-rgb` (raw channels) and `-solid` (ready-to-use color):
 
 - `--et-surface-background-{rgb,solid}`
 - `--et-surface-color-{rgb,solid}`, `--et-surface-color-muted-{rgb,solid}`, `--et-surface-color-subtle-{rgb,solid}`
@@ -89,6 +89,27 @@ Inside any surface scope (and on `:root`, resolved from the default surfaces per
 The swatch's `onColor` and `inkColor` are not exposed as component tokens - they reach components
 through the [`surface` color scope](#the-surface-color) - but they do generate the Tailwind utilities
 `text-et-surface-on-interaction` and `text-et-surface-interaction-ink`.
+
+### The root surface
+
+The `isDefault` themes paint `:root`, so an app renders on its default surface without scoping one.
+How that lands depends on what the app registers:
+
+- **Both types** - the light default sits behind `@media (prefers-color-scheme: light)`, the dark one
+  behind `dark`, and the root follows the user's OS preference.
+- **One type** (a dark-only app) - the sole default lands on plain `:root`. There is no other scheme
+  to switch to, and behind a media query the surface variables would be undefined for everyone whose
+  OS asks for the scheme the app doesn't have.
+
+Either way the block also sets `color-scheme`, so scrollbars and native controls match the surface.
+
+The runtime knows the same default: `injectDefaultSurfaceTheme(type?)` returns the registered
+`isDefault` theme - of the only type the app registers, or of the `type` you name (an app with both
+has to say which, since `:root` picks between them by `prefers-color-scheme`). `injectSurfaceType()`
+returns a signal with the `'light' | 'dark'` a subtree renders on: the surrounding provider's type,
+or the default's where nothing provides one. A `ProvideSurfaceDirective` with nothing above it and
+no surface set resolves that default too, so a single-scheme app's `elevation()` and `surfaceType()`
+describe its real root surface. Nested providers left unset keep inheriting.
 
 ### Surface directives
 

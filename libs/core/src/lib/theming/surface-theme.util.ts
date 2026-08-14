@@ -102,3 +102,17 @@ export const provideSurfaceThemesWithTailwind4 = (themes: SurfaceTheme[], prefix
   ɵProvideSurfaceThemes(themes),
   ɵProvideSurfaceThemesPrefix(prefix),
 ];
+
+/**
+ * Inject the registered `isDefault` surface theme of a `type` - the surface an app renders on
+ * where nothing scopes one. Without a `type`, resolves the default of the only surface type the
+ * app registers; an app registering both must name the one it means, since which of the two
+ * `:root` paints is a `prefers-color-scheme` decision. `null` when neither applies.
+ */
+export const injectDefaultSurfaceTheme = (type?: SurfaceType) => {
+  const defaults = injectSurfaceThemes({ optional: true })?.filter((theme) => theme.isDefault) ?? [];
+
+  if (type) return defaults.find((theme) => theme.type === type) ?? null;
+
+  return defaults.length === 1 ? (defaults[0] ?? null) : null;
+};

@@ -15,9 +15,11 @@ import {
 } from '@angular/core';
 import {
   createCssSurfaceName,
+  injectDefaultSurfaceTheme,
   injectSurfaceThemes,
   injectSurfaceThemesPrefix,
   RegisteredSurfaceThemeName,
+  SURFACE_TYPE,
   SurfaceTheme,
 } from './surface-theme.util';
 
@@ -38,6 +40,8 @@ export class ProvideSurfaceDirective {
   private themes = injectSurfaceThemes({ optional: true });
   private prefix = injectSurfaceThemesPrefix({ optional: true });
   private injector = inject(Injector);
+  private parentProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private defaultTheme = injectDefaultSurfaceTheme();
 
   private currentProviderSync: EffectRef | null = null;
   private forcedSurface = signal<ForcedSurfaceState>(FORCED_SURFACE_UNSET);
@@ -60,11 +64,15 @@ export class ProvideSurfaceDirective {
   resolvedTheme = computed<SurfaceTheme | null>(() => {
     const value = this.effectiveSurface();
 
-    if (!this.themes || !value) return null;
+    if (!this.themes) return null;
+
+    // Only the outermost provider adopts the app default. A nested one left unset must keep
+    // resolving to `null` so it reports the surface it inherits instead of resetting elevation.
+    if (!value) return this.parentProvider ? null : this.defaultTheme;
 
     const theme = this.themes.find((t) => t.name === value) ?? null;
 
-    if (isDevMode() && !theme && value !== null) {
+    if (isDevMode() && !theme) {
       console.error(
         `Surface theme ${value} does not exist. Please make sure to add it to provideSurfaceThemesWithTailwind4()`,
       );
@@ -140,3 +148,14 @@ export class ProvideSurfaceDirective {
     this.forcedSurface.set(FORCED_SURFACE_UNSET);
   }
 }
+
+/**
+ * Inject a signal containing the surface type the current subtree renders on - the type of the
+ * surrounding surface provider, or of the app's default surface where nothing provides one.
+ */
+export const injectSurfaceType = () => {
+  const provider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  const defaultType = injectDefaultSurfaceTheme()?.type ?? SURFACE_TYPE.DARK;
+
+  return computed(() => provider?.surfaceType() ?? defaultType);
+};

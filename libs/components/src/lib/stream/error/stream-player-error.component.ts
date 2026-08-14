@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ProvideSurfaceDirective,
+  injectSurfaceType,
   SURFACE_PROVIDER,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
@@ -150,6 +151,7 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
 export class StreamPlayerErrorComponent {
   private errorDirective = inject(STREAM_PLAYER_ERROR_TOKEN);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private surfaceType = injectSurfaceType();
   private config = injectStreamPlayerErrorConfig();
   private labels = injectStreamLabels();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
@@ -158,7 +160,7 @@ export class StreamPlayerErrorComponent {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+    const type = this.surfaceType();
     const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
 
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;

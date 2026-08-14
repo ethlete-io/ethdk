@@ -420,4 +420,53 @@ describe('tailwind-4-surface-theme generator', () => {
       expect(tree.exists('src/styles/tw.css')).toBe(false);
     });
   });
+
+  describe('root defaults', () => {
+    const DARK_ONLY = `
+    export const NIGHT = {
+      name: 'night',
+      type: 'dark',
+      elevation: 0,
+      isDefault: true,
+      background: '10 10 10',
+      color: '255 255 255',
+      colorMuted: '180 180 180',
+      colorSubtle: '80 80 80',
+      border: '40 40 40',
+    } as const;
+
+    export const SURFACE_THEMES = [NIGHT] satisfies SurfaceTheme[];
+  `;
+
+    it('should switch the root default per prefers-color-scheme when both schemes are registered', async () => {
+      tree.write('src/surface-themes.ts', CARD_AND_SHEET);
+
+      await migrate(tree, {
+        themesPath: 'src/surface-themes.ts',
+        outputPath: 'src/styles/tw.css',
+        skipFormat: true,
+      });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain('@media (prefers-color-scheme: light) {\n  :root {');
+      expect(content).toContain('@media (prefers-color-scheme: dark) {\n  :root {');
+      expect(content).toContain('    color-scheme: light;');
+      expect(content).toContain('    color-scheme: dark;');
+    });
+
+    it('should paint the root unconditionally when a single scheme is registered', async () => {
+      tree.write('src/surface-themes.ts', DARK_ONLY);
+
+      await migrate(tree, {
+        themesPath: 'src/surface-themes.ts',
+        outputPath: 'src/styles/tw.css',
+        skipFormat: true,
+      });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).not.toContain('prefers-color-scheme');
+      expect(content).toContain(':root {\n  --et-surface-background: 10 10 10;');
+      expect(content).toContain('  color-scheme: dark;');
+    });
+  });
 });
