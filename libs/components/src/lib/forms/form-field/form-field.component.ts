@@ -21,6 +21,7 @@ import {
   ColorInteractiveHasFocusDirective,
   createCanAnimateSignal,
   injectErrorTheme,
+  injectParentSurface,
   injectSurfaceThemes,
   injectWarningTheme,
   ProvideColorDirective,
@@ -28,7 +29,6 @@ import {
   resolveSurfaceByElevation,
   signalDeferredLoading,
   signalElementDimensions,
-  SURFACE_PROVIDER,
 } from '@ethlete/core';
 import { SpinnerComponent } from '../../loader';
 import { FormErrorComponent } from './form-error.component';
@@ -105,7 +105,7 @@ import {
 export class FormFieldComponent {
   private provideColor = inject(ProvideColorDirective);
   private provideSurface = inject(ProvideSurfaceDirective);
-  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private parentSurface = injectParentSurface();
   private injector = inject(Injector);
 
   protected formFieldDir = inject(FormFieldDirective);
@@ -153,9 +153,9 @@ export class FormFieldComponent {
 
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
-    const parentSurfaceProvider = this.parentSurfaceProvider;
+    const parentSurface = this.parentSurface();
 
-    if (!themes || !parentSurfaceProvider) {
+    if (!themes || !parentSurface) {
       return null;
     }
 
@@ -163,8 +163,8 @@ export class FormFieldComponent {
 
     return resolveSurfaceByElevation(
       themes,
-      parentSurfaceProvider.surfaceType() ?? 'dark',
-      parentSurfaceProvider.elevation() + (paintsElevatedFill ? 1 : 0),
+      parentSurface.type,
+      parentSurface.elevation + (paintsElevatedFill ? 1 : 0),
     );
   });
 

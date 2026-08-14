@@ -109,15 +109,41 @@ has to say which, since `:root` picks between them by `prefers-color-scheme`). `
 returns a signal with the `'light' | 'dark'` a subtree renders on: the surrounding provider's type,
 or the default's where nothing provides one. A `ProvideSurfaceDirective` with nothing above it and
 no surface set resolves that default too, so a single-scheme app's `elevation()` and `surfaceType()`
-describe its real root surface. Nested providers left unset keep inheriting.
+describe its real root surface.
+
+A nested provider left unset still paints nothing - it keeps the inherited surface on screen - but it
+reports what it inherits: `activeTheme()` walks up to the closest provider that resolves a surface,
+and `elevation()` and `surfaceType()` read from it. Content below an unset provider therefore
+elevates above the surface it really sits on.
+
+`injectParentSurface()` returns a signal with the whole `SurfaceTheme` a subtree renders on - the
+surrounding provider's `activeTheme()`, or the app default where nothing provides one. Use it to
+derive an elevation relative to the surrounding surface:
+
+```ts
+private parentSurface = injectParentSurface();
+private themes = injectSurfaceThemes({ optional: true });
+
+private mySurface = computed(() => {
+  const parent = this.parentSurface();
+
+  if (!this.themes || !parent) return null;
+
+  return resolveSurfaceByElevation(this.themes, parent.type, parent.elevation + 1);
+});
+```
+
+It returns `null` for an app that registers a default per surface type. `prefers-color-scheme`
+decides which of the two `:root` paints, so the root surface of such an app cannot be resolved at
+runtime. Scope a surface explicitly with `etProvideSurface` where a subtree must elevate anyway.
 
 ### Surface directives
 
-| Directive                     | Selector                 | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ----------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ProvideSurfaceDirective`     | `[etProvideSurface]`     | Sets the surface for the subtree: `<div etProvideSurface="dark">`. Without a value, inherits the parent surface.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `AutoSurfaceDirective`        | `[etAutoSurface]`        | Picks the registered surface with the parent's `elevation + 1` in the same `type` - nested panels elevate themselves. Content rendered inside an overlay also consults the surface-context tracker (matched by DOM containment), so it elevates above the overlay's surface even though its injector points back at the trigger location - while auto-surfaces on the base page are unaffected when an overlay opens. Overlay panels that _are_ the overlay's own surface call `matchOverlaySurface()` to paint the overlay's registered elevation from the tracker exactly, instead of stacking above it. |
-| `SurfaceInteractiveDirective` | `[etSurfaceInteractive]` | Makes the surface tokens react to the host's `:hover` / `:focus-visible` / `:active` / `[disabled]` state using the neutral interaction tint.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Directive                     | Selector                 | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProvideSurfaceDirective`     | `[etProvideSurface]`     | Sets the surface for the subtree: `<div etProvideSurface="dark">`. Without a value, inherits the parent surface.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `AutoSurfaceDirective`        | `[etAutoSurface]`        | Picks the registered surface with the parent's `elevation + 1` in the same `type` - nested panels elevate themselves. With no provider above it, the parent is the app's [root surface](#the-root-surface), so it elevates above that. Content rendered inside an overlay also consults the surface-context tracker (matched by DOM containment), so it elevates above the overlay's surface even though its injector points back at the trigger location - while auto-surfaces on the base page are unaffected when an overlay opens. Overlay panels that _are_ the overlay's own surface call `matchOverlaySurface()` to paint the overlay's registered elevation from the tracker exactly, instead of stacking above it. |
+| `SurfaceInteractiveDirective` | `[etSurfaceInteractive]` | Makes the surface tokens react to the host's `:hover` / `:focus-visible` / `:active` / `[disabled]` state using the neutral interaction tint.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ## Color themes
 

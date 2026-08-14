@@ -11,6 +11,7 @@ import {
   isDevMode,
   runInInjectionContext,
   signal,
+  Signal,
   untracked,
 } from '@angular/core';
 import {
@@ -81,9 +82,18 @@ export class ProvideSurfaceDirective {
     return theme;
   });
 
-  elevation = computed(() => this.resolvedTheme()?.elevation ?? 0);
+  /**
+   * The surface theme in effect on this element - the theme this provider resolves itself, or,
+   * where it is left unset, the one it inherits from the closest ancestor provider. The outermost
+   * provider resolves the app default, so the chain ends there.
+   */
+  activeTheme: Signal<SurfaceTheme | null> = computed(
+    () => this.resolvedTheme() ?? this.parentProvider?.activeTheme() ?? null,
+  );
 
-  surfaceType = computed(() => this.resolvedTheme()?.type ?? null);
+  elevation = computed(() => this.activeTheme()?.elevation ?? 0);
+
+  surfaceType = computed(() => this.activeTheme()?.type ?? null);
 
   surfaceName = computed(() => {
     const value = this.effectiveSurface();
@@ -158,4 +168,20 @@ export const injectSurfaceType = () => {
   const defaultType = injectDefaultSurfaceTheme()?.type ?? SURFACE_TYPE.DARK;
 
   return computed(() => provider?.surfaceType() ?? defaultType);
+};
+
+/**
+ * Inject a signal containing the surface theme the current subtree renders on - the theme in
+ * effect on the surrounding surface provider, or the app's default surface where nothing provides
+ * one. Use it to derive an elevation relative to the surrounding surface.
+ *
+ * `null` where the app registers no surface themes, or registers a default per surface type -
+ * which of those two `:root` paints is a `prefers-color-scheme` decision, so it cannot be
+ * resolved at runtime.
+ */
+export const injectParentSurface = () => {
+  const provider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  const defaultTheme = injectDefaultSurfaceTheme();
+
+  return computed(() => provider?.activeTheme() ?? defaultTheme);
 };

@@ -10,7 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { setInputSignal } from '../utils';
-import { ProvideSurfaceDirective, SURFACE_PROVIDER } from './provide-surface.directive';
+import { injectParentSurface, ProvideSurfaceDirective } from './provide-surface.directive';
 import { injectSurfaceContextTracker } from './surface-context-tracker';
 import { injectSurfaceThemes, resolveSurfaceByElevation, SurfaceType } from './surface-theme.util';
 
@@ -20,9 +20,9 @@ import { injectSurfaceThemes, resolveSurfaceByElevation, SurfaceType } from './s
 })
 export class AutoSurfaceDirective {
   private ownSurfaceProvider = inject(ProvideSurfaceDirective);
-  private contextSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private surfaceContextTracker = injectSurfaceContextTracker();
+  private parentSurface = injectParentSurface();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /**
@@ -53,9 +53,10 @@ export class AutoSurfaceDirective {
     // is re-evaluated after the element is grafted into its final overlay pane.
     this.domSettleTick();
 
-    const contextProvider = this.surfaceProvider() ?? this.contextSurfaceProvider ?? null;
-    const contextElevation = contextProvider?.elevation() ?? null;
-    const contextType = contextProvider?.surfaceType() ?? null;
+    const explicitProvider = this.surfaceProvider();
+    const contextTheme = explicitProvider ? explicitProvider.activeTheme() : this.parentSurface();
+    const contextElevation = contextTheme?.elevation ?? null;
+    const contextType = contextTheme?.type ?? null;
 
     // An overlay's projected/portaled content keeps the injector of where it was
     // *declared* (the trigger location), not the pane it renders into - so the

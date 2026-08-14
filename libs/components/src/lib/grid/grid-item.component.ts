@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed, effect, inject, input, output }
 import {
   ProvideSurfaceDirective,
   ResizeHandlesComponent,
-  SURFACE_PROVIDER,
+  injectParentSurface,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
@@ -223,7 +223,7 @@ export class GridItemComponent {
   private grid = inject(GRID_TOKEN, { optional: true });
   private gridItem = inject(GridItemDirective);
   private provideSurface = inject(ProvideSurfaceDirective);
-  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private parentSurface = injectParentSurface();
   public gridDrag = inject(GridDragDirective);
   public gridResize = inject(GridResizeDirective);
 
@@ -236,9 +236,9 @@ export class GridItemComponent {
   protected isReadOnly = computed(() => this.grid?.readOnly() ?? false);
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
-    const parent = this.parentSurfaceProvider;
+    const parent = this.parentSurface();
     if (!themes || !parent) return null;
-    return resolveSurfaceByElevation(themes, parent.surfaceType() ?? 'dark', parent.elevation() + 1);
+    return resolveSurfaceByElevation(themes, parent.type, parent.elevation + 1);
   });
 
   constructor() {

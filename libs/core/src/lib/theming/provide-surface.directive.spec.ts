@@ -57,7 +57,16 @@ describe('ProvideSurfaceDirective', () => {
     const { nested } = setup([NIGHT, NIGHT_ELEVATED]);
 
     expect(nested.resolvedTheme()).toBeNull();
-    expect(nested.surfaceType()).toBeNull();
+  });
+
+  it('reports the surface an unset nested provider inherits', () => {
+    const { root, nested } = setup([NIGHT, NIGHT_ELEVATED]);
+
+    root.forceSurface('night-elevated');
+
+    expect(nested.activeTheme()).toBe(NIGHT_ELEVATED);
+    expect(nested.elevation()).toBe(1);
+    expect(nested.surfaceType()).toBe('dark');
   });
 
   it('leaves the painted class inherited so the root surface comes from the stylesheet', () => {
