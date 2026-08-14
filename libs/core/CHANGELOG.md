@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 5.0.0-next.50
+
+### Minor Changes
+
+- [#3062](https://github.com/ethlete-io/ethdk/pull/3062) [`79cb555`](https://github.com/ethlete-io/ethdk/commit/79cb5551c987c4584aabeae3c39d1415c3e79d6e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `provideAppUpdates()`, which stops a tab that was open across a deploy from breaking on a lazy chunk that no longer exists - reloading on its own when no form would lose changes.
+
+- [#3063](https://github.com/ethlete-io/ethdk/pull/3063) [`37067ce`](https://github.com/ethlete-io/ethdk/commit/37067cee67c5cd360360a5f59c29f58afc08e62c) Thanks [@TomTomB](https://github.com/TomTomB)! - A single-scheme app no longer needs a root `etProvideSurface`: its default surface paints `:root` unconditionally once the surface CSS is regenerated, and the outermost provider resolves it through the new `injectDefaultSurfaceTheme()` / `injectSurfaceType()`.
+
 ## 5.0.0-next.49
 
 ### Minor Changes
