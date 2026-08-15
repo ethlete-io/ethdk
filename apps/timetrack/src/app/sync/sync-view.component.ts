@@ -3,7 +3,6 @@ import {
   BADGE_IMPORTS,
   BANNER_IMPORTS,
   BUTTON_IMPORTS,
-  CARD_IMPORTS,
   EMPTY_STATE_IMPORTS,
   SpinnerComponent,
 } from '@ethlete/components';
@@ -77,7 +76,7 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
 @Component({
   selector: 'ethlete-sync',
   template: `
-    <et-card variant="outlined">
+    <div class="flex w-full max-w-7xl flex-col gap-3 p-6">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-col gap-1">
           <h2 class="text-h3">Sync</h2>
@@ -210,10 +209,10 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
           }
         </div>
       }
-    </et-card>
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, CARD_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent],
+  imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent],
 })
 export class SyncViewComponent {
   protected store = injectTempoSync();

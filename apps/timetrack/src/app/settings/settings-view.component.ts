@@ -2,7 +2,6 @@ import { Component, ViewEncapsulation, computed, linkedSignal } from '@angular/c
 import {
   BADGE_IMPORTS,
   BANNER_IMPORTS,
-  CARD_IMPORTS,
   DURATION_INPUT_IMPORTS,
   FORM_FIELD_IMPORTS,
   INPUT_IMPORTS,
@@ -26,7 +25,7 @@ import { TokenFieldComponent } from './token-field.component';
 @Component({
   selector: 'ethlete-settings',
   template: `
-    <et-card variant="outlined">
+    <div class="flex w-full max-w-7xl flex-col gap-3 p-6">
       <h2 class="text-h3">Settings</h2>
 
       @if (store.failure(); as failure) {
@@ -157,14 +156,13 @@ import { TokenFieldComponent } from './token-field.component';
           />
         </div>
       }
-    </et-card>
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
     AttributionRulesComponent,
     BADGE_IMPORTS,
     BANNER_IMPORTS,
-    CARD_IMPORTS,
     DURATION_INPUT_IMPORTS,
     ExclusionRulesComponent,
     FORM_FIELD_IMPORTS,

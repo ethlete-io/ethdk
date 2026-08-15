@@ -1,12 +1,6 @@
 import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import {
-  BANNER_IMPORTS,
-  BUTTON_IMPORTS,
-  CARD_IMPORTS,
-  DESCRIPTION_LIST_IMPORTS,
-  SpinnerComponent,
-} from '@ethlete/components';
+import { BANNER_IMPORTS, BUTTON_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
@@ -20,7 +14,7 @@ type HostStatus =
 @Component({
   selector: 'ethlete-host-status',
   template: `
-    <et-card variant="outlined">
+    <div class="flex w-full max-w-7xl flex-col gap-3 p-6">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-h3">Host</h2>
         <button (click)="recheck()" et-button variant="outline" size="sm">Re-check host</button>
@@ -49,10 +43,10 @@ type HostStatus =
           <p class="text-small text-et-surface-subtle">The keychain answered and the database decrypted.</p>
         }
       }
-    </et-card>
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, CARD_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent],
+  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, DESCRIPTION_LIST_IMPORTS, SpinnerComponent],
 })
 export class HostStatusViewComponent {
   private ports = injectHostPorts();

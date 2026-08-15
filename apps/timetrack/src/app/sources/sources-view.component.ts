@@ -1,6 +1,6 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant, CARD_IMPORTS } from '@ethlete/components';
+import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant } from '@ethlete/components';
 import { catchError, of, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
@@ -70,7 +70,7 @@ type SourceRow = {
 @Component({
   selector: 'ethlete-sources',
   template: `
-    <et-card variant="outlined">
+    <div class="flex w-full max-w-7xl flex-col gap-3 p-6">
       <h2 class="text-h3">Where the day comes from</h2>
 
       <p class="text-small text-et-surface-muted">
@@ -120,10 +120,10 @@ type SourceRow = {
           </li>
         }
       </ul>
-    </et-card>
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, CARD_IMPORTS],
+  imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS],
 })
 export class SourcesViewComponent {
   private destroyRef = inject(DestroyRef);

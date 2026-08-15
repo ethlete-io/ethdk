@@ -36,11 +36,20 @@ const HOUR_REM = 8;
 /** A block shorter than one line of text renders as a bare bar; its hover title is where it reads. */
 const LABEL_MIN_REM = 2.2;
 
+/** Two lines of text plus the block's own padding. Below this the description would clip mid-line. */
+const DETAIL_MIN_REM = 5;
+
 @Component({
   selector: 'ethlete-day-timeline',
   template: `
-    <div [appointments]="appointments()" [focusedDate]="focusedDate()" etScheduler view="day">
-      <div #body #grid="etSchedulerTimeGrid" class="max-h-160 overflow-y-auto" etSchedulerTimeGrid>
+    <div
+      [appointments]="appointments()"
+      [focusedDate]="focusedDate()"
+      class="flex min-h-0 grow flex-col"
+      etScheduler
+      view="day"
+    >
+      <div #body #grid="etSchedulerTimeGrid" class="min-h-0 grow overflow-y-auto pb-6" etSchedulerTimeGrid>
         @for (day of grid.days(); track day.date.getTime()) {
           <div [style.height.rem]="24 * HOUR_REM" class="relative">
             @for (hour of HOURS; track hour) {
@@ -61,11 +70,14 @@ const LABEL_MIN_REM = 2.2;
                   [style.width.%]="block.inlineSize"
                   [title]="block.node.appointment.title"
                   (click)="select(block.node.appointment)"
-                  class="absolute overflow-hidden rounded-sm border-l-2 border-l-et-theme px-2 py-px text-left text-small data-[kind=block]:bg-et-surface-interaction/8 data-[kind=row]:bg-et-theme/15"
+                  class="absolute flex flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme px-2 py-1 text-left text-small data-[kind=block]:bg-et-surface-interaction/8 data-[kind=row]:bg-et-theme/15"
                   type="button"
                 >
                   @if (labelled(block.span)) {
                     <span class="block truncate">{{ block.node.appointment.title }}</span>
+                  }
+                  @if (detailed(block.span) && descriptionOf(block.node.appointment); as description) {
+                    <span class="block truncate text-et-surface-muted">{{ description }}</span>
                   }
                 </button>
               }
@@ -77,6 +89,7 @@ const LABEL_MIN_REM = 2.2;
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [ProvideColorDirective, SCHEDULER_IMPORTS],
+  host: { class: 'flex min-h-0 flex-col' },
 })
 export class DayTimelineComponent {
   public focusedDate = input.required<Date>();
@@ -132,6 +145,16 @@ export class DayTimelineComponent {
   /** `span` is a percentage of the day, so this is the height the block actually renders at. */
   protected labelled(span: number) {
     return (span / 100) * 24 * HOUR_REM >= LABEL_MIN_REM;
+  }
+
+  protected detailed(span: number) {
+    return (span / 100) * 24 * HOUR_REM >= DETAIL_MIN_REM;
+  }
+
+  protected descriptionOf(appointment: Appointment<TimelineEntry>) {
+    const entry = appointment.extra;
+
+    return entry?.kind === 'row' ? entry.row.description : null;
   }
 
   protected labelFor(hour: number) {
