@@ -22,6 +22,12 @@ export type SessionizeOptions = {
   repoStickinessMs: number;
   /** When set, blocks are clipped to these local hours and anything outside is dropped. */
   workingHours?: WorkingHours;
+  /**
+   * The repository roots the host discovered. An agent session reports the directory it was started
+   * in, which is often a subdirectory of a checkout, and without these each subdirectory becomes a
+   * context of its own — the day fragments and a rule written for the repository matches none of it.
+   */
+  repoRoots?: readonly string[];
 };
 
 export const DEFAULT_SESSIONIZE_OPTIONS: SessionizeOptions = {
@@ -60,13 +66,33 @@ const evidenceFor = (event: ActivityEvent): Evidence | null => {
   }
 };
 
-const repoStateFor = (event: ActivityEvent): RepoState | null => {
+/**
+ * The checkout a directory belongs to, or the directory itself when no known root contains it.
+ *
+ * Longest root wins, so a repository checked out inside another one keeps its own identity. Keeping
+ * the directory when nothing matches is deliberate: an agent session run somewhere the discovery never
+ * walked is still context, and dropping it would lose the branch it reported with it.
+ */
+const repoRootOf = (options: { path: string; roots: readonly string[] }) => {
+  let found: string | undefined;
+
+  for (const root of options.roots) {
+    if (options.path !== root && !options.path.startsWith(`${root}/`)) continue;
+    if (found && found.length >= root.length) continue;
+
+    found = root;
+  }
+
+  return found ?? options.path;
+};
+
+const repoStateFor = (event: ActivityEvent, roots: readonly string[]): RepoState | null => {
   switch (event.kind) {
     case 'git-checkout':
     case 'git-commit':
       return { repoPath: event.repoPath, branch: event.branch, at: event.at };
     case 'agent-session':
-      return { repoPath: event.cwd, branch: event.gitBranch, at: event.at };
+      return { repoPath: repoRootOf({ path: event.cwd, roots }), branch: event.gitBranch, at: event.at };
     default:
       return null;
   }
@@ -92,12 +118,12 @@ const repoNamedIn = (options: { title: string; byName: Map<string, string> }) =>
  * A name two of them share is dropped rather than resolved: guessing which `api` an editor is showing
  * would attribute one project's time to another, and no attribution is the better failure.
  */
-const reposByName = (samples: ActivityEvent[]) => {
+const reposByName = (samples: ActivityEvent[], roots: readonly string[]) => {
   const byName = new Map<string, string>();
   const ambiguous = new Set<string>();
 
   for (const sample of samples) {
-    const repoPath = repoStateFor(sample)?.repoPath;
+    const repoPath = repoStateFor(sample, roots)?.repoPath;
     const name = repoPath?.split('/').filter(Boolean).pop();
 
     if (!repoPath || !name) continue;
@@ -178,7 +204,8 @@ export const sessionize = (options: {
     .slice()
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  const byName = reposByName(samples);
+  const roots = config.repoRoots ?? [];
+  const byName = reposByName(samples, roots);
   const blocks: ActivityBlock[] = [];
   /** The branch last seen in each repository, and when that repository was last observed at all. */
   const repos = new Map<string, { branch?: string; at: Date }>();
@@ -203,7 +230,7 @@ export const sessionize = (options: {
 
     if (sample.kind === 'window-focus') appId = sample.appId;
 
-    const observed = repoStateFor(sample);
+    const observed = repoStateFor(sample, roots);
     const focused = sample.kind === 'window-focus' ? repoNamedIn({ title: sample.title, byName }) : undefined;
     const moved = observed?.repoPath ?? focused;
 

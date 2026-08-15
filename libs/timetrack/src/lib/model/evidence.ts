@@ -5,6 +5,7 @@ export type EvidenceKind =
   | 'agent-session'
   | 'merge-request'
   | 'issue-view'
+  | 'attribution-rule'
   | 'tempo-history'
   | 'window-title'
   | 'calendar'

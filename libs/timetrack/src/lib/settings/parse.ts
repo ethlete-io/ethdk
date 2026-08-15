@@ -1,3 +1,4 @@
+import { AttributionRule, AttributionTarget } from '../correlate/rules';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import { DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings, clampDayTargetMs } from './model';
 
@@ -36,6 +37,46 @@ const asRule = (value: unknown): TimetrackExclusionRule | null => {
 
 const asRules = (value: unknown) => (Array.isArray(value) ? value.flatMap((entry) => asRule(entry) ?? []) : []);
 
+/**
+ * An attribution rule that names neither a repository nor an application matches nothing, and one that
+ * names neither an issue nor a donation has nothing to say, so both are dropped. `createdAt` only
+ * orders two equally specific rules, so a document that lost it falls back to the epoch rather than to
+ * the whole rule being discarded.
+ */
+const asAttributionRule = (value: unknown, index: number): AttributionRule | null => {
+  const raw = asRecord(value);
+  const target = asAttributionTarget(raw['target']);
+  const repoPath = asText(raw['repoPath']);
+  const appId = asText(raw['appId']);
+  const branch = asText(raw['branch']);
+
+  if (!target || (!repoPath && !appId)) return null;
+
+  const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
+
+  return {
+    id: asText(raw['id']) || `rule-${index}`,
+    repoPath: repoPath || undefined,
+    branch: repoPath && branch ? branch : undefined,
+    appId: repoPath ? undefined : appId,
+    target,
+    createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
+  };
+};
+
+const asAttributionTarget = (value: unknown): AttributionTarget | null => {
+  const raw = asRecord(value);
+
+  if (raw['kind'] === 'donate') return { kind: 'donate' };
+
+  const issueKey = asText(raw['issueKey']);
+
+  return issueKey ? { kind: 'issue', issueKey } : null;
+};
+
+const asAttributionRules = (value: unknown) =>
+  Array.isArray(value) ? value.flatMap((entry, index) => asAttributionRule(entry, index) ?? []) : [];
+
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
@@ -56,5 +97,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     exclusionRules: asRules(document['exclusionRules']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
+    issueKeyPrefixes: asTextList(document['issueKeyPrefixes']).map((prefix) => prefix.toUpperCase()),
+    attributionRules: asAttributionRules(document['attributionRules']),
   };
 };

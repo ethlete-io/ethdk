@@ -10,6 +10,7 @@ import {
   correlateDay,
   currentActivity,
   formatDurationMs,
+  gitFlowConfigFor,
   localDayKey,
   localDayRange,
   reviewDay,
@@ -85,12 +86,15 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     timer: timers.revision(),
     elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
     targetMs: settings.settings().dayTargetMs,
+    /** A rule named a context the day could not, so the total it reports changes with it. */
+    rules: settings.settings().attributionRules.length,
   }));
 
   const read$ = (): Observable<TrayReadout> => {
     const key = localDayKey(new Date());
     const { from, to } = localDayRange(key);
-    const targetMs = settings.settings().dayTargetMs;
+    const current = settings.settings();
+    const targetMs = current.dayTargetMs;
 
     return combineLatest({
       events: ports.events.eventsBetween$(from, to),
@@ -99,7 +103,13 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }).pipe(
       map(({ events, edits, runs }) => {
         const at = new Date(Math.min(Date.now(), to.getTime()));
-        const correlation = correlateDay({ events, timerRuns: runs.map((run) => closeTimerRun(run, at)) });
+        const correlation = correlateDay({
+          events,
+          timerRuns: runs.map((run) => closeTimerRun(run, at)),
+          config: gitFlowConfigFor(current),
+          rules: current.attributionRules,
+          sessionize: { repoRoots: git.discovery()?.repos ?? [] },
+        });
         const day = reviewDay({
           correlation,
           edits: edits ?? EMPTY_DAY_REVIEW_EDITS,

@@ -2,6 +2,7 @@ import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  AttributionRule,
   DEFAULT_TIMETRACK_SETTINGS,
   TIMETRACK_SECRET_KEYS,
   TimetrackCredentialStatus,
@@ -11,6 +12,8 @@ import {
   TimetrackSettings,
   clampDayTargetMs,
   timetrackCredentialStatus,
+  withAttributionRule,
+  withoutAttributionRule,
 } from '@ethlete/timetrack';
 import {
   Subject,
@@ -184,6 +187,21 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     removeGitScanRoot: (root: string) =>
       patch({ gitScanRoots: settings().gitScanRoots.filter((existing) => existing !== root) }),
+
+    setIssueKeyPrefixes: (typed: string) =>
+      patch({
+        issueKeyPrefixes: [
+          ...new Set(
+            typed
+              .split(/[\s,]+/)
+              .map((prefix) => prefix.trim().toUpperCase())
+              .filter((prefix) => !!prefix),
+          ),
+        ],
+      }),
+
+    addAttributionRule: (rule: AttributionRule) => apply(withAttributionRule({ settings: settings(), rule })),
+    removeAttributionRule: (id: string) => apply(withoutAttributionRule({ settings: settings(), id })),
 
     saveJiraToken: (token: string) => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: token.trim() }),
     saveTempoToken: (token: string) =>

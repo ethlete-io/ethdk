@@ -7,10 +7,13 @@ import {
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   ReviewedRow,
+  AttributionTarget,
   SyncedWorklog,
   TimerRun,
+  UnnamedContext,
   closeTimerRun,
   correlateDay,
+  gitFlowConfigFor,
   localDayKey,
   localDayRange,
   mergeRows,
@@ -22,6 +25,7 @@ import {
   setRowState,
   shiftDayKey,
   splitRow,
+  unnamedContexts,
 } from '@ethlete/timetrack';
 import {
   Observable,
@@ -37,7 +41,7 @@ import {
   startWith,
   switchMap,
 } from 'rxjs';
-import { injectAgentSessionCollector, injectWindowCollector } from '../../collectors';
+import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectTimer } from '../timer';
@@ -84,6 +88,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const destroyRef = inject(DestroyRef);
   const windows = injectWindowCollector();
   const agentSessions = injectAgentSessionCollector();
+  const git = injectGitCollector();
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
 
@@ -100,6 +105,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     reload: reload(),
     windows: windows.lastRun(),
     sessions: agentSessions.lastRun(),
+    git: git.lastRun(),
     timers: timers.revision(),
   }));
 
@@ -147,7 +153,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const correlation = computed(() => {
     const collected = evidence();
 
-    return collected ? correlateDay({ events: collected.events, timerRuns: collected.runs }) : null;
+    return collected
+      ? correlateDay({
+          events: collected.events,
+          timerRuns: collected.runs,
+          config: gitFlowConfigFor(settings.settings()),
+          rules: settings.settings().attributionRules,
+          sessionize: { repoRoots: git.discovery()?.repos ?? [] },
+        })
+      : null;
   });
 
   const review = computed(() => {
@@ -212,6 +226,12 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     review,
     /** The sessionized day behind the rows, for the timeline. */
     correlation,
+    /**
+     * The contexts the day could not name an issue for, widest first. In a repository the branch
+     * grammar cannot read, this is most of the day, and naming one of them is what turns it into
+     * worklogs — here and on every later day the context appears in.
+     */
+    unnamed: computed(() => unnamedContexts({ unattributed: correlation()?.unattributed ?? [] })),
     /** The day's timed runs, so an unnamed one can be named rather than only warned about. */
     timerRuns: computed(() => evidence()?.runs ?? []),
     openRunId: computed(() => timers.running()?.id ?? null),
@@ -256,6 +276,18 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     clearSelection: () => selection.set([]),
 
     labelRun: (id: string, label: { issueKey: string; note: string }) => timers.label(id, label),
+
+    /**
+     * Writes the rule that names a context. It is a setting rather than an edit on this day: the same
+     * branch comes back tomorrow, and answering for it once is the whole point.
+     */
+    nameContext: (context: UnnamedContext, target: AttributionTarget) =>
+      settings.addAttributionRule({
+        ...context.suggestion,
+        id: `${context.id}#${Date.now()}`,
+        target: target.kind === 'issue' ? { kind: 'issue', issueKey: target.issueKey.trim().toUpperCase() } : target,
+        createdAt: new Date(),
+      }),
   };
 });
 

@@ -20,6 +20,8 @@ describe('parseTimetrackSettings', () => {
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/tom/dev'],
+      issueKeyPrefixes: [],
+      attributionRules: [],
     });
   });
 
@@ -31,6 +33,8 @@ describe('parseTimetrackSettings', () => {
       exclusionRules: [],
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
+      issueKeyPrefixes: [],
+      attributionRules: [],
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
   });
@@ -51,6 +55,43 @@ describe('parseTimetrackSettings', () => {
     });
 
     expect(settings.exclusionRules).toEqual([{ kind: 'title-pattern', pattern: '(' }]);
+  });
+
+  it('reads an attribution rule and revives the instant it was written', () => {
+    const settings = parseTimetrackSettings({
+      attributionRules: [
+        {
+          id: 'rule-1',
+          repoPath: '/home/tom/dev/ea-frontend',
+          branch: 'next',
+          target: { kind: 'issue', issueKey: 'FIP-100' },
+          createdAt: '2026-08-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(settings.attributionRules).toEqual([
+      {
+        id: 'rule-1',
+        repoPath: '/home/tom/dev/ea-frontend',
+        branch: 'next',
+        appId: undefined,
+        target: { kind: 'issue', issueKey: 'FIP-100' },
+        createdAt: new Date('2026-08-01T00:00:00.000Z'),
+      },
+    ]);
+  });
+
+  it('drops an attribution rule that names no context or no issue', () => {
+    const settings = parseTimetrackSettings({
+      attributionRules: [
+        { target: { kind: 'issue', issueKey: 'FIP-100' } },
+        { repoPath: '/home/tom/dev/ea-frontend' },
+        {},
+      ],
+    });
+
+    expect(settings.attributionRules).toEqual([]);
   });
 
   it('trims and de-duplicates the scan roots', () => {

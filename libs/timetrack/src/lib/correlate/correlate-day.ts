@@ -5,6 +5,7 @@ import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
 import { AttributeOptions, attribute } from './attribute';
 import { DescribeOptions } from './describe';
+import { DonateOptions, donateBlocks } from './donate';
 import { MeetingMatch, MeetingOptions, matchMeetings } from './meetings';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { clipBlocks } from './overlap';
@@ -18,6 +19,9 @@ export type CorrelateDayOptions = {
   resolveBase?: AttributeOptions['resolveBase'];
   activity?: AttributeOptions['activity'];
   patterns?: AttributeOptions['patterns'];
+  rules?: AttributeOptions['rules'];
+  /** How far a donating repository's time looks for the work it was done for. */
+  donate?: Partial<DonateOptions>;
   sessionize?: Partial<SessionizeOptions>;
   /** Meeting handling. `config` and `patterns` are taken from the day's own, not repeated here. */
   meetings?: Omit<MeetingOptions, 'config' | 'patterns'>;
@@ -61,15 +65,17 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
       resolveBase: options.resolveBase,
       activity: options.activity,
       patterns: options.patterns,
+      rules: options.rules,
     }),
   );
+  const donated = donateBlocks({ blocks: attributed, rules: options.rules, options: options.donate });
   const meetings = matchMeetings({
     events: options.events,
     blocks,
     meetings: { ...options.meetings, config: options.config, patterns: options.patterns },
   });
   const groups = [
-    ...mergeBlocks({ blocks: attributed, options: options.merge }),
+    ...mergeBlocks({ blocks: donated, options: options.merge }),
     ...meetings.map((meeting) => meeting.group),
     ...timers.map((timer) => timer.group),
   ].sort((a, b) => a.from.getTime() - b.from.getTime());

@@ -90,7 +90,24 @@ Two hard caveats:
    keyless branches stay common, and the share of the day that reaches the reasoning provider or
    simply stays unattributed is higher early on than it will be later. Build the
    no-key-anywhere path as a first-class case, not an edge case.
-2. **Commit subjects never carry the key.** They are strict conventional commits
+2. **Most projects will never adopt the grammar at all, and one measured day is the proof.**
+   Counted over 90 days in `ea-frontend`: 336 authored commits across 9 branches, of which 23
+   (7%) sit on a branch that carries an issue key - and **253 (75%) were committed straight onto
+   `next`**. Base resolution cannot help there, because `next` _is_ the base. So the whole ladder
+   above - branch key, inherited key, MR activity - names nothing at all, and a day that is
+   entirely real work proposes entirely nothing.
+
+   This is not a transitional state to wait out. It is what a project without a ticket-writing
+   habit looks like, and the app has to reconstruct a day there. See **Projects without the
+   grammar** below, which is the answer and is built.
+
+   One thing that measurement retired: `%S` does **not** hand a merged commit to the integration
+   branch. `git log --branches` reaches a commit through the alphabetically earlier ref, so a
+   commit made on `feat/fip-2883-…` still reports that branch long after it merged into `next`
+   (verified with `merge-base --is-ancestor` on three merged branches). The 253 are genuinely
+   commits made on `next` itself.
+
+3. **Commit subjects never carry the key.** They are strict conventional commits
    (`feat(platform): Prefer a player's common name over their last name`). Do not build the
    key extractor around commit messages; use them as _description_ material for the worklog
    text, which is exactly what they are good for.
@@ -736,6 +753,91 @@ of scope regardless of how convenient it looks.
 Whatever the mechanism, Discord output is always `weak`: proposed as an unchecked
 gap-filler, never synced without an explicit accept, and only inside the configured guild.
 
+## Projects without the grammar
+
+**Built** - `libs/timetrack/src/lib/correlate/rules.ts` and `donate.ts`, plus the two settings
+fields and the review UI that writes them. The whole feature is three ideas, and each one exists
+because the measured reality above leaves nothing else standing.
+
+**1. An attribution rule is a standing answer, not a learned one.** `AttributionRule` names a
+context - a repository, one branch of it, or an application id - and says what work there belongs
+to. It is only ever created by the user, and it is visible and removable in settings: a rule keeps
+attributing time long after the branch it was written for is gone, and a wrong one nobody can find
+is a wrong worklog every day. What building it settled:
+
+- **The rules are two rungs of the ladder, not one.** A rule naming one branch is as good a
+  statement about that work as the branch name would have been, so it sits above merge-request
+  activity at `likely`. A rule naming a whole repository says only which project the time belongs
+  to, which a merge request opened for _this_ branch beats, so it sits below activity at `weak` -
+  and `weak` is what keeps a project-wide rule out of a sync nobody reviewed. Collapsing them into
+  one rung makes either the narrow rule too weak or the broad one too strong.
+- **Naming is per context, never per block.** A day in such a repository fragments into a dozen
+  blocks that are all the same work; asking about each is how a reviewer stops reviewing.
+  `unnamedContexts()` folds the day's unattributed groups into the contexts behind them, widest
+  first, and the review's `Not yet named` list is that. Answering one turns every block in it into a
+  worklog - **on this day and on every later one**, because the answer is a setting rather than an
+  edit to a day. That is also why no new edit kind was needed: once the context is named the blocks
+  become ordinary proposals, and every existing row edit already applies to them.
+- **A rule lives in the settings document**, not in a table of its own. It is a handful of
+  statements the user wrote, read and written whole exactly like the day target and the deny list.
+  `withAttributionRule()` replaces the rule that named the same context rather than adding beside
+  it, or which of two rules wins would be their creation order and the user would have no way to
+  see which had.
+
+**2. A project with no tickets donates its time.** This repository is the case: real hours, no
+tracker, and the work exists _for_ the projects that consume it. A rule can therefore target
+`donate` instead of an issue, and `donateBlocks()` hands each such block the issue of the nearest
+attributed block in the day. What that settled:
+
+- **It runs after attribution, over the whole day** - which work profited is not a question a
+  per-block function can answer, so `attribute` ignores a donating rule entirely and the pipeline
+  gains a step between attribute and merge.
+- **Nearest in either direction, ties to the later block.** A library is changed _for_ something and
+  that something is usually what comes next, but the same afternoon often runs the other way - the
+  consumer's work is what turned up the gap in the library. Measured on 2026-08-13: the SDK's
+  `createQueryBatch` commits at 16:19 are adopted by `ea-frontend` at 17:23.
+- **It is always `weak`.** Which work profited is an inference, and it must not sync unreviewed.
+- **A donor with nothing within four hours stays unattributed** rather than being forced somewhere.
+  A day that was only library work then reads as unaccounted time, which is true, instead of quietly
+  landing on an unrelated ticket. Verified: 2026-08-15 donates nothing, because no consuming project
+  was touched that day.
+
+**3. The project keys are a setting.** `issueKeyPrefixes` feeds `gitFlowConfigFor()`, which is the
+grammar config the whole pipeline now runs with. Without it anything shaped like a key counts, and a
+branch called `chore/angular-22` logs time against issue ANGULAR-22 - the exact failure
+`keyPrefixes` exists to prevent, left open for as long as the app passed no config at all.
+
+### The multi-repository day
+
+Working in two checkouts at once is the normal case here, and replaying four real days through the
+pipeline found the thing that broke it: **an agent session reports the directory it was started in,
+not the repository.** A session opened in `apps/timetrack/src-tauri` became a context called
+`src-tauri`, distinct from `ethlete-sdk`, so the day fragmented and a rule for the repository matched
+none of it. `sessionize` now takes `repoRoots` - the host's own discovery - and folds a working
+directory into the checkout that contains it, longest root first so a repository vendored inside
+another keeps its own identity. A directory no known root contains is kept as it is: a session run
+somewhere the discovery never walked is still context, and dropping it would lose the branch with it.
+
+Measured on 2026-08-12, before and after: **48 blocks → 21**. The rest of the multi-repository case
+needed nothing new - the sessionizer already remembers a branch per repository, and rules are per
+repository by construction.
+
+### What four real days look like
+
+Replayed straight out of `git` and `~/.claude/projects` for 2026-08-12 to 2026-08-15, over both
+checkouts, with two rules - `ea-frontend` named, `ethlete-sdk` donating:
+
+| Day   | Before               | After                                              |
+| ----- | -------------------- | -------------------------------------------------- |
+| 08-12 | 21 rows, 14h21m none | 4 rows, all filed                                  |
+| 08-13 | 6 rows, 6h08m none   | 3 rows filed, 18m left (nothing within four hours) |
+| 08-14 | 4 rows, 6h11m none   | 3 rows filed                                       |
+| 08-15 | 4 rows, 1h58m none   | unchanged - no consuming project was touched       |
+
+Two rules turned four unlabelled days into reviewable worklogs, described from the user's own commit
+subjects. The replay harness is not committed - it reads this machine's history, so it asserts
+nothing - but it is the way to check a change against a real day rather than a fixture.
+
 ## Correlation
 
 A pipeline of pure functions over an event window, each independently testable:
@@ -778,8 +880,10 @@ Code` says which checkout is in front of you. Consequences worth keeping: a focu
    valuable long after the naming settles, because it also covers a conforming sub-feature
    whose local branch was never pushed.
 4. **Attribute.** Score candidate issues per block: conforming branch key ≫ partial branch
-   key > key inherited through the base > MR/issue-view activity > Tempo history for a
-   recurring pattern (same weekday, same ticket) > window-title key. Calendar events with a
+   key > key inherited through the base > a branch-scoped attribution rule > MR/issue-view
+   activity > a repository-wide attribution rule > Tempo history for a recurring pattern (same
+   weekday, same ticket) > window-title key. The two rule rungs are the answer for a project
+   without the grammar - see **Projects without the grammar** above. Calendar events with a
    matched Meet title and an accepted response become meeting proposals directly - see
    `matchMeetings` below, which is a ladder of its own rather than a rung of this one.
 
@@ -1103,11 +1207,12 @@ routed shell: a sticky rail beside `<router-outlet />`, one lazy view per route
 would 404 the moment the webview reloads on it. The stores are `defineRootProvider`s, so day
 state, settings and the tray readout all survive navigation; only the views are lazy.
 
-The **sync view** (`apps/timetrack/src/app/sync/`) plans on demand and never writes. It is
-deliberately not reactive to the day's rows: a plan is a statement about a moment, and one that
-re-planned itself while the reviewer edited would read as if Tempo were changing. Stepping to
-another day drops the plan rather than showing yesterday's under today's date. What it cannot yet
-see: a ledger entry whose proposal the day no longer produces - `entriesFor$` is keyed by the
+The **sync view** (`apps/timetrack/src/app/sync/`) plans on demand, and writes only when the reviewer
+presses the write button. It is deliberately not reactive to the day's rows: a plan is a statement
+about a moment, and one that re-planned itself while the reviewer edited would read as if Tempo were
+changing. Stepping to another day drops the plan and the run rather than showing yesterday's under
+today's date. The write half is one `submit()` for both the confirm and the retry, so the
+spent-plan rule cannot be bypassed by the retry path. What it cannot yet see: a ledger entry whose proposal the day no longer produces - `entriesFor$` is keyed by the
 proposal ids under review, so such a worklog reads as `foreign` instead of as a delete. Closing that
 needs either a day-scoped ledger read or a marker scheme plus `recoverLedgerFromMarkers()`.
 
@@ -1226,8 +1331,10 @@ keychain key, all five ports wired over `invoke`, and the theming and Tailwind f
 UI will sit on, plus the file reader behind `AgentSessionLogReader` and the timer that drives
 `collectAgentSessions$` and persists what it returns. ~~Remaining: Google's OAuth dance~~ **- built**,
 along with the calendar collector it was the last thing standing in front of, so every phase-1
-collector now exists. Remaining: the confirm step that executes a Tempo sync, and the hard pause.
-No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
+collector now exists. ~~Remaining: the confirm step that executes a Tempo sync~~ **- built**, so the
+app now reconstructs a day and writes it. Remaining: the hard pause, and a first run against the real
+instance - nothing here has written a production worklog yet. No LLM, no GitLab, no
+Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
 
 **The app runs.** `yarn timetrack` builds and starts, the keychain hands back the key it generated on
 first run, SQLCipher opens the database with it (the file's header is random bytes, and a plain

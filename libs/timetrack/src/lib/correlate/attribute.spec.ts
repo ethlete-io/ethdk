@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { IssueActivity, attribute } from './attribute';
 import { RecurringPattern } from './recurrence';
+import { AttributionRule } from './rules';
 
 const block = (context: ActivityBlock['context'], evidence: ActivityBlock['evidence'] = []): ActivityBlock => ({
   from: new Date('2026-08-11T08:00:00Z'),
@@ -38,6 +39,20 @@ const TUESDAY_PATTERN: RecurringPattern = {
 };
 
 const FIP = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
+
+const REPO_RULE: AttributionRule = {
+  id: 'rule-repo',
+  repoPath: '/Users/tom/dev/ea-frontend',
+  target: { kind: 'issue', issueKey: 'FIP-100' },
+  createdAt: new Date('2026-08-01T00:00:00Z'),
+};
+
+const BRANCH_RULE: AttributionRule = {
+  ...REPO_RULE,
+  id: 'rule-branch',
+  branch: 'refactor/hub-query-v3',
+  target: { kind: 'issue', issueKey: 'FIP-2904' },
+};
 
 describe('attribute', () => {
   it('is certain about a conforming main feature branch', () => {
@@ -198,5 +213,63 @@ describe('attribute', () => {
     });
 
     expect(result.issueKey).toBe('FIP-9000');
+  });
+
+  it('attributes a keyless branch through the rule the user wrote for it', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      config: FIP,
+      rules: [BRANCH_RULE],
+    });
+
+    expect(result.issueKey).toBe('FIP-2904');
+    expect(result.confidence).toBe('likely');
+    expect(result.evidence.at(-1)?.detail).toBe('you assigned `ea-frontend @ refactor/hub-query-v3` to FIP-2904');
+  });
+
+  it('lets a conforming branch outrank a rule for the same repository', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/FIP-2177-user-management' }),
+      config: FIP,
+      rules: [REPO_RULE],
+    });
+
+    expect(result.issueKey).toBe('FIP-2177');
+    expect(result.confidence).toBe('certain');
+  });
+
+  it('lets a branch rule outrank a merge request naming another issue', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+      config: FIP,
+      rules: [BRANCH_RULE],
+      activity: [mergeRequest({ branch: 'refactor/hub-query-v3' })],
+    });
+
+    expect(result.issueKey).toBe('FIP-2904');
+  });
+
+  /** A rule about a whole project says only which project, so an MR for this very branch beats it. */
+  it('lets a merge request outrank a repository-wide rule', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'fix/logout-confirmation' }),
+      config: FIP,
+      rules: [REPO_RULE],
+      activity: [mergeRequest()],
+    });
+
+    expect(result.issueKey).toBe('FIP-3010');
+  });
+
+  it('takes a repository-wide rule weakly, and above a recurring pattern', () => {
+    const result = attribute({
+      block: localBlock({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'next' }),
+      config: FIP,
+      rules: [REPO_RULE],
+      patterns: [TUESDAY_PATTERN],
+    });
+
+    expect(result.issueKey).toBe('FIP-100');
+    expect(result.confidence).toBe('weak');
   });
 });

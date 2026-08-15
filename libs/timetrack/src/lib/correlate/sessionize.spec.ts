@@ -31,6 +31,15 @@ const commit = (minutes: number, sha: string, subject: string, branch: string): 
   subject,
 });
 
+const session = (minutes: number, cwd: string, gitBranch = 'next'): CollectedEvent => ({
+  at: AT(minutes),
+  source: 'agent-session',
+  kind: 'agent-session',
+  sessionId: `session-${minutes}`,
+  cwd,
+  gitBranch,
+});
+
 const presence = (minutes: number, kind: 'idle-start' | 'idle-end' | 'lock' | 'unlock'): CollectedEvent => ({
   at: AT(minutes),
   source: 'idle',
@@ -204,6 +213,38 @@ describe('sessionize', () => {
     });
 
     expect(blocks.map((block) => block.context.repoPath)).toEqual(['/home/tom/personal/api', '/home/tom/work/api']);
+  });
+
+  it('folds an agent session started in a subdirectory into its checkout', () => {
+    const blocks = sessionize({
+      events: [
+        session(0, '/home/tom/dev/ethlete-sdk/libs/components'),
+        session(3, '/home/tom/dev/ethlete-sdk/apps/timetrack/src-tauri'),
+      ],
+      options: { repoRoots: ['/home/tom/dev/ethlete-sdk', '/home/tom/dev/ea-frontend'] },
+    });
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]?.context.repoPath).toBe('/home/tom/dev/ethlete-sdk');
+  });
+
+  it('keeps a directory no known root contains', () => {
+    const blocks = sessionize({
+      events: [session(0, '/home/tom/scratch'), session(3, '/home/tom/scratch')],
+      options: { repoRoots: ['/home/tom/dev/ethlete-sdk'] },
+    });
+
+    expect(blocks[0]?.context.repoPath).toBe('/home/tom/scratch');
+  });
+
+  /** A checkout inside another one is its own project, so the longest matching root has to win. */
+  it('prefers the innermost root when one repository sits inside another', () => {
+    const blocks = sessionize({
+      events: [session(0, '/home/tom/dev/outer/vendor/inner/src'), session(3, '/home/tom/dev/outer/vendor/inner/src')],
+      options: { repoRoots: ['/home/tom/dev/outer', '/home/tom/dev/outer/vendor/inner'] },
+    });
+
+    expect(blocks[0]?.context.repoPath).toBe('/home/tom/dev/outer/vendor/inner');
   });
 
   it('returns nothing for an empty window', () => {

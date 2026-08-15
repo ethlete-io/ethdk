@@ -1,3 +1,4 @@
+import { AttributionRule } from '../correlate/rules';
 import { TimetrackExclusionRule } from '../store/exclusion';
 
 /** How much time a day is expected to account for when nothing else is configured. */
@@ -51,6 +52,18 @@ export type TimetrackSettings = {
   keepDefaultExclusionRules: boolean;
   /** Directories the repository discovery walks. Empty means the host decides. */
   gitScanRoots: string[];
+  /**
+   * The Jira project keys a branch name or a window title may name, such as `FIP`. Empty accepts
+   * anything shaped like a key, which also reads `chore/angular-22` as issue ANGULAR-22 — so a
+   * repository whose branch subjects can start with a word and a number needs this set.
+   */
+  issueKeyPrefixes: string[];
+  /**
+   * What the user decided a context belongs to, for repositories the branch grammar cannot name an
+   * issue in. A setting rather than a table of its own: it is a handful of statements the user wrote,
+   * and it is read and written whole exactly like the rest of this document.
+   */
+  attributionRules: AttributionRule[];
 };
 
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
@@ -60,4 +73,6 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   exclusionRules: [],
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
+  issueKeyPrefixes: [],
+  attributionRules: [],
 };

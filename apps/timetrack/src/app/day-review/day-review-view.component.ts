@@ -11,6 +11,7 @@ import { injectDayReview } from './day-review';
 import { DayTimelineComponent } from './day-timeline.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
 import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
+import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
 import { WorklogRowComponent } from './worklog-row.component';
 
 @Component({
@@ -90,6 +91,10 @@ import { WorklogRowComponent } from './worklog-row.component';
           </div>
         </div>
 
+        @if (store.unnamed().length) {
+          <ethlete-unnamed-work [contexts]="store.unnamed()" (name)="nameContext($event)" />
+        }
+
         @if (store.timerRuns().length) {
           <ethlete-timer-runs [runs]="store.timerRuns()" [openRunId]="store.openRunId()" (label)="labelRun($event)" />
         }
@@ -114,6 +119,7 @@ import { WorklogRowComponent } from './worklog-row.component';
     EMPTY_STATE_IMPORTS,
     SpinnerComponent,
     TimerRunsComponent,
+    UnnamedWorkComponent,
     WorklogRowComponent,
   ],
 })
@@ -143,6 +149,10 @@ export class DayReviewViewComponent {
   protected target = computed(() => formatDurationMs(this.store.targetMs()));
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
+
+  protected nameContext(naming: ContextNaming) {
+    this.store.nameContext(naming.context, naming.target);
+  }
 
   protected labelRun(label: TimerRunLabel) {
     this.store.labelRun(label.id, { issueKey: label.issueKey, note: label.note });

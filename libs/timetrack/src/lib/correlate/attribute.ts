@@ -9,6 +9,7 @@ import {
 import { ActivityBlock } from '../model/block';
 import { Confidence, Evidence } from '../model/evidence';
 import { RecurringPattern, patternAt } from './recurrence';
+import { AttributionRule, AttributionRuleMatch, describeAttributionRule, matchAttributionRule } from './rules';
 
 export type AttributedBlock = {
   block: ActivityBlock;
@@ -48,6 +49,11 @@ export type AttributeOptions = {
   activity?: IssueActivity[];
   /** Standing commitments read out of Tempo history by `detectRecurringPatterns`. */
   patterns?: RecurringPattern[];
+  /**
+   * The user's own context-to-issue rules. This is the ladder a repository that does not follow the
+   * branch grammar rests on: nothing else in it can name an issue for `refactor/hub-query-v3`.
+   */
+  rules?: AttributionRule[];
 };
 
 /**
@@ -103,17 +109,56 @@ const activityFor = (options: { block: ActivityBlock; activity: IssueActivity[] 
   return during ? { entry: during, confidence: 'weak' as const } : undefined;
 };
 
+const ruleAttribution = (options: {
+  block: ActivityBlock;
+  match: AttributionRuleMatch;
+  issueKey: string;
+  evidence: Evidence[];
+  confidence: Confidence;
+}): AttributedBlock => {
+  const { block, match, issueKey, confidence } = options;
+
+  return {
+    block,
+    issueKey,
+    confidence,
+    evidence: [
+      ...options.evidence,
+      {
+        kind: 'attribution-rule',
+        at: block.from,
+        detail: `you assigned \`${describeAttributionRule(match.rule)}\` to ${issueKey}`,
+      },
+    ],
+  };
+};
+
 /**
- * Scores one block against the attribution ladder — branch grammar, then merge request and
- * issue-view activity, then a recurring Tempo pattern, then a key in a window title. Deterministic
- * by design: a conforming branch name already states both keys, so nothing here guesses. A block
- * that reaches the end without an `issueKey` is what the reasoning provider is for — it is a
- * first-class outcome, not a failure.
+ * Scores one block against the attribution ladder — branch grammar, a branch-scoped rule of the
+ * user's own, merge request and issue-view activity, a project-wide rule, a recurring Tempo pattern,
+ * then a key in a window title. Deterministic by design: a conforming branch name already states
+ * both keys, so nothing here guesses. A block that reaches the end without an `issueKey` is what the
+ * reasoning provider is for — it is a first-class outcome, not a failure.
+ *
+ * The two rule rungs sit apart on purpose. A rule naming one branch is as good a statement about that
+ * work as the branch name would have been, so it outranks activity; a rule naming a whole repository
+ * says only which project the time belongs to, which a merge request opened for this very branch
+ * beats. Collapsing them into one rung would make either the narrow rule too weak or the broad one
+ * too strong.
  */
 export const attribute = (options: { block: ActivityBlock } & AttributeOptions): AttributedBlock => {
   const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
   const { block } = options;
   const evidence = [...block.evidence];
+  const match = options.rules?.length
+    ? matchAttributionRule({ context: block.context, rules: options.rules })
+    : undefined;
+  /**
+   * A donating rule is not read here at all — which work it joins is a question about the whole day,
+   * so `donateBlocks` answers it once everything else has been attributed.
+   */
+  const rule =
+    match && match.rule.target.kind === 'issue' ? { ...match, issueKey: match.rule.target.issueKey } : undefined;
 
   if (block.context.branch) {
     const parsed = resolveBranch({ branch: block.context.branch, config, resolveBase: options.resolveBase });
@@ -138,6 +183,9 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
     }
   }
 
+  if (rule?.scope === 'branch')
+    return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
+
   const activity = options.activity?.length ? activityFor({ block, activity: options.activity }) : undefined;
 
   if (activity) {
@@ -147,6 +195,8 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
 
     return { block, issueKey: entry.issueKey, confidence: activity.confidence, evidence };
   }
+
+  if (rule) return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'weak' });
 
   const pattern = options.patterns?.length ? patternAt({ patterns: options.patterns, at: block.from }) : undefined;
 

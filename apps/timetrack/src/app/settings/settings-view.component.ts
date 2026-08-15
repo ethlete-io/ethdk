@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed } from '@angular/core';
+import { Component, ViewEncapsulation, computed, linkedSignal } from '@angular/core';
 import {
   BADGE_IMPORTS,
   BANNER_IMPORTS,
@@ -9,6 +9,7 @@ import {
   SpinnerComponent,
 } from '@ethlete/components';
 import { injectGitCollector } from '../../collectors';
+import { AttributionRulesComponent } from './attribution-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { GoogleConnectionComponent } from './google-connection.component';
 import { ScanRootsComponent } from './scan-roots.component';
@@ -88,6 +89,15 @@ import { TokenFieldComponent } from './token-field.component';
               </et-form-field>
             </div>
 
+            <et-form-field class="min-w-60" appearance="underline" size="sm">
+              <et-label>Project keys</et-label>
+              <et-input [(value)]="typedPrefixes" (blur)="commitPrefixes()" placeholder="FIP, ETH" />
+              <et-hint>
+                Which keys a branch name may carry. Without them anything shaped like a key counts, so a branch called
+                chore/angular-22 is read as issue ANGULAR-22.
+              </et-hint>
+            </et-form-field>
+
             <ethlete-token-field
               [connected]="store.credentials().jira"
               (save)="store.saveJiraToken($event)"
@@ -140,12 +150,18 @@ import { TokenFieldComponent } from './token-field.component';
             (add)="store.addGitScanRoot($event)"
             (remove)="store.removeGitScanRoot($event)"
           />
+
+          <ethlete-attribution-rules
+            [rules]="store.settings().attributionRules"
+            (remove)="store.removeAttributionRule($event)"
+          />
         </div>
       }
     </et-card>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    AttributionRulesComponent,
     BADGE_IMPORTS,
     BANNER_IMPORTS,
     CARD_IMPORTS,
@@ -165,6 +181,16 @@ export class SettingsViewComponent {
   private git = injectGitCollector();
 
   protected repos = computed(() => this.git.discovery()?.repos.length ?? 0);
+
+  /**
+   * Held as the text the user typed until they leave the field. Normalising each keystroke back into the
+   * document would eat the separator the moment it is typed.
+   */
+  protected typedPrefixes = linkedSignal(() => this.store.settings().issueKeyPrefixes.join(', '));
+
+  protected commitPrefixes() {
+    this.store.setIssueKeyPrefixes(this.typedPrefixes());
+  }
 
   protected setHost(host: string) {
     this.store.setJira({ ...this.store.settings().jira, host });
