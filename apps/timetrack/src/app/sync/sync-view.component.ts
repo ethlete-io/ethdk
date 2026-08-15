@@ -11,12 +11,15 @@ import {
   ReviewedRow,
   TempoSyncCreateReason,
   TempoSyncDeleteReason,
+  TempoSyncRow,
+  TempoSyncRowKind,
+  TempoSyncRowStatus,
   TempoSyncUpdateReason,
   TempoWorklog,
   formatDurationMs,
 } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
-import { injectTempoSyncPreview } from './sync';
+import { injectTempoSync } from './sync';
 
 type SyncEntryKind = 'create' | 'update' | 'delete';
 
@@ -45,8 +48,28 @@ const REASONS: Record<TempoSyncCreateReason | TempoSyncUpdateReason | TempoSyncD
 
 const BADGE_COLORS: Record<SyncEntryKind, string> = { create: 'success', update: 'brand', delete: 'danger' };
 
+type SyncResult = {
+  id: string;
+  kind: TempoSyncRowKind;
+  status: TempoSyncRowStatus;
+  color: string;
+  issueKey: string;
+  description: string;
+  detail: string;
+};
+
+const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
+  written: 'success',
+  blocked: 'warning',
+  skipped: 'warning',
+  failed: 'danger',
+};
+
 /**
- * What a sync of the reviewed day would do, and nothing more — this view never writes to Tempo.
+ * What a sync of the reviewed day would do, and the confirm that carries it out.
+ *
+ * Nothing is written until the reviewer presses the write button, and a plan can only be written once —
+ * reading a fresh one is how a second attempt is made, so a row that landed is never sent twice.
  *
  * The foreign list is the half that matters most: it is time already logged against the account,
  * whoever wrote it, and the app will neither touch it nor propose it a second time.
@@ -58,12 +81,25 @@ const BADGE_COLORS: Record<SyncEntryKind, string> = { create: 'success', update:
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-col gap-1">
           <h2 class="text-h3">Sync</h2>
-          <p class="text-small text-et-surface-muted">{{ dayLabel() }} — a preview only, nothing is written.</p>
+          <p class="text-small text-et-surface-muted">{{ dayLabel() }} — plan this day, then write it to Tempo.</p>
         </div>
 
-        <button [disabled]="!connected() || store.isLoading()" (click)="store.refresh()" et-button variant="filled">
-          {{ store.plan() ? 'Plan again' : 'Plan this day' }}
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            [disabled]="!connected() || store.isLoading() || store.isWriting()"
+            (click)="store.refresh()"
+            et-button
+            variant="outline"
+          >
+            {{ store.plan() ? 'Plan again' : 'Plan this day' }}
+          </button>
+
+          @if (store.writeCount()) {
+            <button [disabled]="!store.canSync()" (click)="store.sync()" et-button variant="filled">
+              {{ writeLabel() }}
+            </button>
+          }
+        </div>
       </div>
 
       @if (!connected()) {
@@ -135,13 +171,52 @@ const BADGE_COLORS: Record<SyncEntryKind, string> = { create: 'success', update:
           heading="No plan yet"
         />
       }
+
+      @if (store.isWriting()) {
+        <div class="flex items-center gap-3 text-et-surface-muted">
+          <et-spinner />
+          <span class="text-base">Writing to Tempo…</span>
+        </div>
+      }
+
+      @if (store.runFailure(); as failure) {
+        <et-banner [description]="failure" type="error" heading="Nothing was written" />
+      }
+
+      @if (store.unrecorded()) {
+        <et-banner [description]="unrecorded()" type="error" heading="Written, but not recorded" />
+      }
+
+      @if (results().length) {
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h3 class="text-large">Last write</h3>
+
+            @if (store.retryCount()) {
+              <button [disabled]="store.isWriting()" (click)="store.retry()" et-button variant="outline" size="sm">
+                {{ retryLabel() }}
+              </button>
+            }
+          </div>
+
+          @for (result of results(); track result.id) {
+            <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
+              <et-badge [color]="result.color" size="sm">{{ result.status }}</et-badge>
+              <span class="w-24 shrink-0 text-small">{{ result.issueKey }}</span>
+              <span class="w-14 shrink-0 text-small text-et-surface-subtle">{{ result.kind }}</span>
+              <span class="min-w-50 grow text-small">{{ result.description }}</span>
+              <span class="text-small text-et-surface-subtle">{{ result.detail }}</span>
+            </div>
+          }
+        </div>
+      }
     </et-card>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, CARD_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent],
 })
 export class SyncViewComponent {
-  protected store = injectTempoSyncPreview();
+  protected store = injectTempoSync();
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
   protected connected = computed(() => this.store.credentials().jira && this.store.credentials().tempo);
@@ -176,6 +251,40 @@ export class SyncViewComponent {
         this.entryOf({ id: entry.proposal.id, kind: 'update', reason: REASONS[entry.reason], row: entry.proposal }),
       ),
     ];
+  });
+
+  protected writeLabel = computed(() => {
+    const count = this.store.writeCount();
+
+    return `Write ${count} ${count === 1 ? 'change' : 'changes'} to Tempo`;
+  });
+
+  protected retryLabel = computed(() => {
+    const count = this.store.retryCount();
+
+    return `Retry ${count} ${count === 1 ? 'row' : 'rows'}`;
+  });
+
+  protected unrecorded = computed(() => {
+    const message = this.store.unrecorded();
+
+    return message
+      ? `${message} — Tempo holds these worklogs but this app no longer owns them. Delete them in Tempo before writing this day again, or the same time is logged twice.`
+      : '';
+  });
+
+  protected results = computed((): SyncResult[] => {
+    const rows = new Map(this.store.rows().map((row) => [row.id, row]));
+
+    return this.store.runRows().map((row) => ({
+      id: `${row.kind}:${row.proposalId}`,
+      kind: row.kind,
+      status: row.status,
+      color: STATUS_COLORS[row.status],
+      issueKey: rows.get(row.proposalId)?.issueKey ?? row.proposalId,
+      description: rows.get(row.proposalId)?.description || '(no description)',
+      detail: this.detailOf(row),
+    }));
   });
 
   protected unresolved = computed(() => {
@@ -215,5 +324,12 @@ export class SyncViewComponent {
       duration: row ? formatDurationMs(row.durationMs) : '—',
       description: row?.description || '(no description)',
     };
+  }
+
+  private detailOf(row: TempoSyncRow) {
+    if (row.status === 'written') return row.tempoWorklogId ? `worklog ${row.tempoWorklogId}` : 'done';
+    if (row.status === 'blocked') return `needs ${(row.missing ?? []).map((attribute) => attribute.name).join(', ')}`;
+
+    return row.error?.message ?? 'did not land';
   }
 }

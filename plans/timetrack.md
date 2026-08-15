@@ -577,9 +577,28 @@ What the write half settled:
   checks. `fetchJiraMyself$` in `jira/myself.ts` is where the account id comes from - Jira's own UI
   never shows it, so it cannot be a setting.
 
-Not built here: the confirm step. `executeTempoSync$` is written and tested but nothing in the app
-calls it yet - the app plans and shows, and a write to production Tempo is a separate, deliberate
-change. The marker scheme is a config value (open question 4, now answered).
+**The confirm step is now wired** - `apps/timetrack/src/app/sync/` calls `executeTempoSync$` behind an
+explicit button, records what landed in the ledger, and lists every row's outcome. What wiring it
+settled, all of it about the same hazard - the same hour logged twice:
+
+- **A plan is spent once it is submitted**, and the write button stays disabled until a fresh plan is
+  read. The plan carries the ownership decision for each row, so re-sending one after the writes
+  landed would create what it already created.
+- **The app never re-plans on its own initiative after a write.** Tempo is eventually consistent, so a
+  plan read straight after a write can report a worklog it just accepted as missing - which reads as
+  `recreated-after-remote-delete` and invites exactly the second write the ledger exists to prevent.
+  Re-planning is the reviewer's own action.
+- **A retry runs the outcome's `retry` plan, never a fresh read.** It holds only the rows that provably
+  did not land, so retrying cannot resend one that did.
+- **The run is `exhaustMap`, not `switchMap`.** Cancelling writes that Tempo has already taken would
+  leave them unowned, which is the one failure the ledger cannot recover from.
+- **A ledger write that fails is its own error state**, not a row status: the worklogs exist in Tempo
+  and nothing local points at them. The view says so, names what to delete by hand, and the day must
+  not be written again until it is fixed.
+- The work-attribute schema is read as part of the run, so a required attribute **blocks** its row
+  locally rather than being reported by a Tempo 400.
+- The plan and the writes must read the **same marker scheme** or every synced worklog compares as
+  edited in Tempo forever. Both run `none` (open question 4); they are changed together.
 
 ### Google Calendar (phase 1)
 
