@@ -140,6 +140,7 @@ export class DayReviewViewComponent {
     'zero-duration': 'A row rounded away to nothing',
     'meeting-overlap': 'A meeting and observed work claim the same time',
     'timer-unobserved': 'A timer ran while nothing was observed',
+    'filled-time': 'Short pauses were logged as the work around them',
     'edited-row-drift': 'New evidence landed under a row you edited',
   };
 

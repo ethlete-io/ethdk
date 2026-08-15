@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_DAY_TARGET_MS, MAX_DAY_TARGET_MS, MIN_DAY_TARGET_MS } from './model';
+import {
+  DEFAULT_DAY_TARGET_MS,
+  DEFAULT_GAP_FILL_MS,
+  MAX_DAY_TARGET_MS,
+  MAX_GAP_FILL_MS,
+  MIN_DAY_TARGET_MS,
+} from './model';
 import { parseTimetrackSettings } from './parse';
 
 describe('parseTimetrackSettings', () => {
   it('reads a document the app wrote', () => {
     const settings = parseTimetrackSettings({
       dayTargetMs: 7 * 60 * 60_000,
+      gapFillMs: 10 * 60_000,
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
@@ -15,6 +22,7 @@ describe('parseTimetrackSettings', () => {
 
     expect(settings).toEqual({
       dayTargetMs: 7 * 60 * 60_000,
+      gapFillMs: 10 * 60_000,
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
@@ -28,6 +36,7 @@ describe('parseTimetrackSettings', () => {
   it('falls back to the defaults for anything it cannot make sense of', () => {
     expect(parseTimetrackSettings(null)).toEqual({
       dayTargetMs: DEFAULT_DAY_TARGET_MS,
+      gapFillMs: DEFAULT_GAP_FILL_MS,
       jira: { host: '', email: '' },
       google: { clientId: '', calendarIds: [] },
       exclusionRules: [],
@@ -42,6 +51,13 @@ describe('parseTimetrackSettings', () => {
   it('clamps a day target nobody could work', () => {
     expect(parseTimetrackSettings({ dayTargetMs: 0 }).dayTargetMs).toBe(MIN_DAY_TARGET_MS);
     expect(parseTimetrackSettings({ dayTargetMs: 40 * 60 * 60_000 }).dayTargetMs).toBe(MAX_DAY_TARGET_MS);
+  });
+
+  it('keeps a gap-fill threshold under the point where a gap stops being a pause', () => {
+    expect(parseTimetrackSettings({ gapFillMs: 0 }).gapFillMs).toBe(0);
+    expect(parseTimetrackSettings({ gapFillMs: -5 }).gapFillMs).toBe(0);
+    expect(parseTimetrackSettings({ gapFillMs: 2 * 60 * 60_000 }).gapFillMs).toBe(MAX_GAP_FILL_MS);
+    expect(parseTimetrackSettings({ gapFillMs: 'a while' }).gapFillMs).toBe(DEFAULT_GAP_FILL_MS);
   });
 
   it('drops a rule with no value but keeps one whose pattern does not compile', () => {

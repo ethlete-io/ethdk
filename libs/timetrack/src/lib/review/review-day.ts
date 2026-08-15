@@ -77,7 +77,7 @@ export const reviewDay = (options: {
   const check = checkDay({
     proposals: rows.filter((row) => syncsInState(row.state)),
     unattributed: options.correlation.unattributed,
-    options: options.check,
+    options: { filledMs: options.correlation.filledMs, ...options.check },
   });
 
   return { rows, check: withDrift({ check, unreconciledMs, options: options.check }), unreconciledMs };

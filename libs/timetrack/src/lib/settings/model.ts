@@ -11,6 +11,19 @@ export const MAX_DAY_TARGET_MS = 24 * 60 * 60_000;
 export const clampDayTargetMs = (value: number) =>
   Math.min(MAX_DAY_TARGET_MS, Math.max(MIN_DAY_TARGET_MS, Math.round(value)));
 
+/** How long an idle gap may be and still count as the work around it. */
+export const DEFAULT_GAP_FILL_MS = 15 * 60_000;
+
+/**
+ * A cap rather than a preference. The sessionizer ends a block after 30 unobserved minutes, so a
+ * longer gap is a stretch nothing watched at all — and claiming it would be inventing time, not
+ * reading evidence.
+ */
+export const MAX_GAP_FILL_MS = 30 * 60_000;
+
+/** Holds a gap-fill threshold inside its range. Zero is meaningful: it fills nothing. */
+export const clampGapFillMs = (value: number) => Math.min(MAX_GAP_FILL_MS, Math.max(0, Math.round(value)));
+
 /**
  * The Jira instance issue keys are resolved against. The API token is not here — it lives in the OS
  * keychain, and this document holds only what may be read back into the window.
@@ -44,6 +57,11 @@ export type TimetrackGoogleSettings = {
  */
 export type TimetrackSettings = {
   dayTargetMs: number;
+  /**
+   * The longest idle gap that is logged as the work around it. Five minutes without a keystroke is
+   * reading a diff rather than a break, and a day is short by the sum of them. Zero fills nothing.
+   */
+  gapFillMs: number;
   jira: TimetrackJiraSettings;
   google: TimetrackGoogleSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
@@ -68,6 +86,7 @@ export type TimetrackSettings = {
 
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   dayTargetMs: DEFAULT_DAY_TARGET_MS,
+  gapFillMs: DEFAULT_GAP_FILL_MS,
   jira: { host: '', email: '' },
   google: { clientId: '', calendarIds: [] },
   exclusionRules: [],

@@ -1,6 +1,6 @@
 import { AttributionRule, AttributionTarget } from '../correlate/rules';
 import { TimetrackExclusionRule } from '../store/exclusion';
-import { DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings, clampDayTargetMs } from './model';
+import { DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings, clampDayTargetMs, clampGapFillMs } from './model';
 
 const asRecord = (value: unknown) =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -11,6 +11,9 @@ const asTarget = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value)
     ? clampDayTargetMs(value)
     : DEFAULT_TIMETRACK_SETTINGS.dayTargetMs;
+
+const asGapFill = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) ? clampGapFillMs(value) : DEFAULT_TIMETRACK_SETTINGS.gapFillMs;
 
 /**
  * A rule whose regular expression does not compile survives the read on purpose: `applyExclusionRules`
@@ -92,6 +95,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
 
   return {
     dayTargetMs: asTarget(document['dayTargetMs']),
+    gapFillMs: asGapFill(document['gapFillMs']),
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
     google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
     exclusionRules: asRules(document['exclusionRules']),

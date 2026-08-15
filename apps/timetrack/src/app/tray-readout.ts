@@ -109,6 +109,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           config: gitFlowConfigFor(current),
           rules: current.attributionRules,
           sessionize: { repoRoots: git.discovery()?.repos ?? [] },
+          fill: { maxFillGapMs: current.gapFillMs },
         });
         const day = reviewDay({
           correlation,

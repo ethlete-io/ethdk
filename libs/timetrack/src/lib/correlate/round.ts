@@ -68,6 +68,8 @@ export type DayWarningKind =
   | 'meeting-overlap'
   /** A timer ran while the machine saw almost nothing, which is what a forgotten timer looks like. */
   | 'timer-unobserved'
+  /** The day claims idle gaps that `fillGaps` joined to the work around them. */
+  | 'filled-time'
   /** Raised by `reviewDay`, not here: new evidence under a row a reviewer had already edited. */
   | 'edited-row-drift';
 
@@ -96,6 +98,8 @@ export type CheckDayOptions = {
   meetingOverlapMs?: number;
   /** Time a timer claimed with no activity observed inside it, from `matchTimerRuns`. */
   timerUnobservedMs?: number;
+  /** Idle time joined to the work around it, from `fillGaps`. */
+  filledMs?: number;
 };
 
 /**
@@ -108,7 +112,7 @@ export const checkDay = (options: {
   unattributed?: WorkGroup[];
   options?: CheckDayOptions;
 }): DayCheck => {
-  const { targetMs, toleranceMs, maxRowsPerDay, meetingOverlapMs, timerUnobservedMs } = options.options ?? {};
+  const { targetMs, toleranceMs, maxRowsPerDay, meetingOverlapMs, timerUnobservedMs, filledMs } = options.options ?? {};
   const unattributed = options.unattributed ?? [];
   const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const unattributedMs = unattributed.reduce((sum, group) => sum + group.observedMs, 0);
@@ -147,6 +151,13 @@ export const checkDay = (options: {
     warnings.push({
       kind: 'timer-unobserved',
       detail: `${formatDurationMs(timerUnobservedMs)} of timer time has no observed activity behind it`,
+    });
+  }
+
+  if (filledMs !== undefined && filledMs >= tolerance) {
+    warnings.push({
+      kind: 'filled-time',
+      detail: `${formatDurationMs(filledMs)} of idle time was joined to the work around it`,
     });
   }
 

@@ -42,14 +42,30 @@ import { TokenFieldComponent } from './token-field.component';
           <div class="flex flex-col gap-3">
             <h3 class="text-h4">The day</h3>
 
-            <et-form-field class="w-30" appearance="underline" size="sm">
-              <et-label>Target</et-label>
-              <et-duration-input
-                [value]="store.settings().dayTargetMs"
-                (valueChange)="store.setDayTargetMs($event ?? 0)"
-                durationFormat="hh:mm"
-              />
-            </et-form-field>
+            <div class="flex flex-wrap gap-3">
+              <et-form-field class="w-30" appearance="underline" size="sm">
+                <et-label>Target</et-label>
+                <et-duration-input
+                  [value]="store.settings().dayTargetMs"
+                  (valueChange)="store.setDayTargetMs($event ?? 0)"
+                  durationFormat="hh:mm"
+                />
+              </et-form-field>
+
+              <et-form-field class="w-30" appearance="underline" size="sm">
+                <et-label>Fill idle up to</et-label>
+                <et-duration-input
+                  [value]="store.settings().gapFillMs"
+                  (valueChange)="store.setGapFillMs($event ?? 0)"
+                  durationFormat="hh:mm"
+                />
+              </et-form-field>
+            </div>
+
+            <p class="text-small text-et-surface-muted">
+              A pause shorter than this is logged as the work around it: five minutes without a keystroke is reading a
+              diff, not a break. Anything longer stays off the timesheet. Set it to zero to fill nothing.
+            </p>
           </div>
 
           <div class="flex flex-col gap-3">

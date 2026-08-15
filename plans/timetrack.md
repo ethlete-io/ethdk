@@ -973,6 +973,68 @@ the day is one chronological list. What building it settled:
   unattributed groups - the same first-class path a keyless block takes, and the reasoning provider's
   input rather than a guessed ticket.
 
+### Filling the gaps
+
+**Built** - `fill.ts`, a step between `donateBlocks` and `mergeBlocks`. A day comes up short of its
+target across a run of small holes, and the ask was to give a short hole to the work around it.
+
+**What a hole between two blocks actually is.** Measured before writing anything, and it is not what
+the ask assumed. The sessionizer closes a block **at the next sample's time** on a context switch, and
+a quiet stretch under `maxUnobservedMs` (30 min) never splits a block at all - so a hole cannot be a
+few unobserved minutes between two sittings. Replaying 2026-08-12 to 08-15 out of git and the agent
+logs confirms it: every gap measured 45 minutes or more, and nothing at all landed under 30. Two
+things open a hole, and only two:
+
+1. A stretch of **30 minutes or more with no sample of any kind**, which on a day the window collector
+   watched means the machine was untouched.
+2. A **presence transition**. The macOS source polls every second and dates `idle-start` at the moment
+   input stopped, so the hole runs from the last keystroke to the next one.
+
+So in the running app a gap is a **measured idle period**, never an unobserved one - and the idle
+threshold is five minutes. That is what makes the ask right: five minutes without a keystroke is
+reading a diff, thinking, or answering the person at your desk, and the work either side of it is the
+work it belongs to. Filling holes of the first kind would be inventing time; filling short ones of the
+second kind is reading the evidence correctly.
+
+The rule, therefore: **a gap the idle notifier dated, shorter than `maxFillGapMs`, between two
+attributed blocks, joins the block before it.** Everything in that sentence is load-bearing:
+
+- **The idle notifier has to have dated it.** Without an `idle-start` inside the gap nothing says
+  anybody was at the machine, and the day may simply have run with no window collector - which is
+  exactly the replayed case above. The feature then fills nothing, which is the honest outcome rather
+  than a failure.
+- **A `lock` is never filled**, however short. Locking the screen is a person saying they are leaving;
+  going idle is the machine guessing they might be.
+- **The block before it, not a split down the middle.** The gap starts at the instant input stopped,
+  which is a moment inside the earlier work rather than between the two. Splitting a 12-minute gap
+  also produces two six-minute slivers that rounding then has to fight over.
+- **Both neighbours attributed.** A gap beside work nothing could name has no ticket to join, and
+  handing it to an unattributed block would only inflate `unattributedMs`.
+- **Never time another row already claims.** A timer run and a matched meeting each hold a window the
+  reconstruction has a hole in - `clipBlocks` cut the timer's out - so a gap overlapping either is
+  skipped. Without this the day proposes the same hour twice, and neither `meeting-overlap` nor
+  `timer-unobserved` would notice, because both are computed from observed blocks.
+- **`maxFillGapMs` defaults to 15 minutes** and is a setting, capped at 30. It is deliberately the
+  same number as `maxMergeGapMs`: the gap that merges two rows is the gap that gets filled, which is
+  one rule for a reviewer to hold rather than two. It also keeps lunch visible - every real break
+  measured on this machine ran 45 minutes or longer.
+
+Where it sits is forced from both sides. It runs **after `donateBlocks`**, because a donating block
+only learns its issue there and a gap beside it is not fillable until it has one; and **before
+`mergeBlocks`**, because a filled gap is contiguous with the block it joined, so two rows either side
+of it collapse into the single row a reviewer wants instead of three.
+
+Two consequences worth stating:
+
+- **Rounding cannot compound it.** `roundDurations` apportions the whole day rather than rounding each
+  row, so a filled gap adds its own increments and no more.
+- **A filled block is `weak`, and the day says so.** The block carries one `gap-fill` evidence entry
+  and the weakest confidence, so a row that is mostly filled becomes weak through the existing
+  dominance rule and never syncs unreviewed, while a row carrying a sliver of it keeps the confidence
+  its evidence earned. The day-level answer is a `filled-time` warning once the total reaches one
+  rounding increment - the same reporting-not-deciding treatment `meeting-overlap` and
+  `timer-unobserved` already get.
+
 ## The reasoning provider (agent CLI, not an API key)
 
 Locked decision: use the user's existing Claude or Codex **subscription** by invoking the

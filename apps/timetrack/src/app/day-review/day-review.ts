@@ -160,6 +160,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           config: gitFlowConfigFor(settings.settings()),
           rules: settings.settings().attributionRules,
           sessionize: { repoRoots: git.discovery()?.repos ?? [] },
+          fill: { maxFillGapMs: settings.settings().gapFillMs },
         })
       : null;
   });

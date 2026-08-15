@@ -11,6 +11,7 @@ import {
   TimetrackJiraSettings,
   TimetrackSettings,
   clampDayTargetMs,
+  clampGapFillMs,
   timetrackCredentialStatus,
   withAttributionRule,
   withoutAttributionRule,
@@ -161,6 +162,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     recheckCredentials: () => secretRevision.update((count) => count + 1),
 
     setDayTargetMs: (dayTargetMs: number) => patch({ dayTargetMs: clampDayTargetMs(dayTargetMs) }),
+    setGapFillMs: (gapFillMs: number) => patch({ gapFillMs: clampGapFillMs(gapFillMs) }),
     setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
     setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),

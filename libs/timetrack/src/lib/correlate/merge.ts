@@ -9,7 +9,10 @@ export type WorkGroup = {
   taskKey?: string;
   from: Date;
   to: Date;
-  /** Time actually observed, which is less than `to - from` once a merge spans a gap between blocks. */
+  /**
+   * The time behind the row, which is less than `to - from` once a merge spans a gap between blocks.
+   * An idle gap `fillGaps` joined to the work counts here too, and says so in the evidence chain.
+   */
   observedMs: number;
   confidence: Confidence;
   evidence: Evidence[];

@@ -65,6 +65,22 @@ const DAY: CollectedEvent[] = [
   presence(120, 'idle-start'),
 ];
 
+/** One ticket all morning, twice interrupted by a pause too short to be a break. */
+const THINKING_DAY: CollectedEvent[] = [
+  checkout(0, STORY),
+  focus(1, 'code'),
+  commit(20, 'a1b2c3d', 'feat(user): Add the invite form', STORY),
+  presence(30, 'idle-start'),
+  presence(42, 'idle-end'),
+  checkout(42, STORY),
+  commit(50, 'e4f5g6h', 'fix(user): Trim the invite email', STORY),
+  presence(60, 'idle-start'),
+  presence(72, 'idle-end'),
+  checkout(72, STORY),
+  commit(80, 'i7j8k9l', 'fix(user): Sort the invite list', STORY),
+  presence(90, 'idle-start'),
+];
+
 describe('correlateDay', () => {
   it('reconstructs a day of worklogs from raw events', () => {
     const day = correlateDay({ events: DAY, config: FIP, resolveBase: () => STORY });
@@ -87,6 +103,28 @@ describe('correlateDay', () => {
 
     expect(day.proposals[0]?.to).toEqual(AT(60));
     expect(day.proposals[1]?.from).toEqual(AT(90));
+  });
+
+  it('joins short idle gaps to the work before them, as one row', () => {
+    const day = correlateDay({ events: THINKING_DAY, config: FIP });
+
+    expect(day.filledMs).toBe(24 * MINUTE);
+    expect(day.proposals).toHaveLength(1);
+    expect(day.proposals[0]?.durationMs / MINUTE).toBe(90);
+    expect(day.proposals[0]?.evidence.some((entry) => entry.kind === 'gap-fill')).toBe(true);
+  });
+
+  it('reports filled time rather than hiding it in the total', () => {
+    const day = correlateDay({ events: THINKING_DAY, config: FIP });
+
+    expect(day.check.warnings.map((warning) => warning.kind)).toContain('filled-time');
+  });
+
+  it('fills nothing when the threshold is zero', () => {
+    const day = correlateDay({ events: THINKING_DAY, config: FIP, fill: { maxFillGapMs: 0 } });
+
+    expect(day.filledMs).toBe(0);
+    expect(day.proposals[0]?.durationMs / MINUTE).toBe(60);
   });
 
   it('rates a conforming branch above one that only inherited its key', () => {

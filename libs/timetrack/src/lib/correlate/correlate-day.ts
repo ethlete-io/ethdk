@@ -6,6 +6,7 @@ import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
 import { AttributeOptions, attribute } from './attribute';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
+import { FillOptions, fillGaps } from './fill';
 import { MeetingMatch, MeetingOptions, matchMeetings } from './meetings';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { clipBlocks } from './overlap';
@@ -22,6 +23,8 @@ export type CorrelateDayOptions = {
   rules?: AttributeOptions['rules'];
   /** How far a donating repository's time looks for the work it was done for. */
   donate?: Partial<DonateOptions>;
+  /** The longest idle gap that joins the work before it. `maxFillGapMs: 0` fills nothing. */
+  fill?: Partial<FillOptions>;
   sessionize?: Partial<SessionizeOptions>;
   /** Meeting handling. `config` and `patterns` are taken from the day's own, not repeated here. */
   meetings?: Omit<MeetingOptions, 'config' | 'patterns'>;
@@ -42,6 +45,8 @@ export type DayCorrelation = {
   meetings: MeetingMatch[];
   /** What the user timed by hand, with how much activity was observed inside each run. */
   timers: TimerMatch[];
+  /** Idle time `fillGaps` joined to the work around it, which the day claims with nothing behind it. */
+  filledMs: number;
   check: DayCheck;
 };
 
@@ -74,8 +79,14 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
     blocks,
     meetings: { ...options.meetings, config: options.config, patterns: options.patterns },
   });
+  const filled = fillGaps({
+    blocks: donated,
+    events: options.events,
+    claimed: [...timers.map((timer) => timer.run), ...meetings.map((meeting) => meeting.group)],
+    options: options.fill,
+  });
   const groups = [
-    ...mergeBlocks({ blocks: donated, options: options.merge }),
+    ...mergeBlocks({ blocks: filled.blocks, options: options.merge }),
     ...meetings.map((meeting) => meeting.group),
     ...timers.map((timer) => timer.group),
   ].sort((a, b) => a.from.getTime() - b.from.getTime());
@@ -92,6 +103,7 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
     unattributed,
     meetings,
     timers,
+    filledMs: filled.filledMs,
     check: checkDay({
       proposals,
       unattributed,
@@ -102,6 +114,7 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
           (sum, timer) => sum + Math.max(0, timerRunDurationMs(timer.run) - timer.observedMs),
           0,
         ),
+        filledMs: filled.filledMs,
         ...options.check,
       },
     }),
