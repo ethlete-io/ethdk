@@ -4,6 +4,9 @@ import { EMPTY, Observable } from 'rxjs';
 /** What the tray asks for when its timer entry is picked. Matches `TIMER_TOGGLE_EVENT` in `tray.rs`. */
 export const TIMER_TOGGLE_EVENT = 'timer-toggle';
 
+/** The tray's pause entry. Matches `COLLECTION_PAUSE_TOGGLE_EVENT` in `tray.rs`. */
+export const COLLECTION_PAUSE_TOGGLE_EVENT = 'collection-pause-toggle';
+
 /**
  * An event the host emits, as a cold Observable that unlistens when the last subscriber leaves.
  *

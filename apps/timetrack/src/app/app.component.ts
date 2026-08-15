@@ -1,5 +1,7 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { injectCollectionPause } from './collection-pause';
+import { PauseControlComponent } from './pause-control.component';
 import { SidebarComponent } from './shell';
 import { TimerControlComponent } from './timer-control.component';
 import { injectTrayReadout } from './tray-readout';
@@ -14,11 +16,20 @@ import { WindowControlsComponent } from './window-controls.component';
       close the window, so it must never leave the screen.
     -->
     <div class="flex h-dvh flex-col">
+      <!--
+        The band changes colour rather than only carrying a button: an app that has stopped watching
+        must not look like one that is watching, from across the room and at a glance.
+      -->
       <div
+        [class]="pause.isPaused() ? 'bg-et-warning/10' : ''"
         class="flex shrink-0 items-center justify-between gap-3 border-b border-et-surface-border px-3 py-2"
         data-tauri-drag-region="deep"
       >
-        <ethlete-timer-control />
+        <div class="flex items-center gap-3">
+          <ethlete-timer-control />
+          <ethlete-pause-control />
+        </div>
+
         <ethlete-window-controls />
       </div>
 
@@ -39,9 +50,11 @@ import { WindowControlsComponent } from './window-controls.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [RouterOutlet, SidebarComponent, TimerControlComponent, WindowControlsComponent],
+  imports: [RouterOutlet, SidebarComponent, TimerControlComponent, PauseControlComponent, WindowControlsComponent],
 })
 export class AppComponent {
+  protected pause = injectCollectionPause();
+
   constructor() {
     // The tray readout has no view of its own, so nothing else would ever construct it.
     injectTrayReadout();

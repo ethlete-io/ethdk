@@ -1,6 +1,6 @@
 use crate::state::Db;
 use crate::error::TimetrackResult;
-use rusqlite::{params, params_from_iter, OptionalExtension};
+use rusqlite::{params, params_from_iter, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -80,46 +80,61 @@ pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> Time
 /// An event whose `dedupe_key` is already stored is skipped rather than inserted, which is what lets
 /// the git collector rescan a window it has already read. The count that comes back is the rows that
 /// were new, so a collector can report what it actually added instead of what it looked at.
+///
+/// An observation dated inside a pause is refused here rather than by each collector. The collectors
+/// that watch the machine are stopped while it is paused, but the ones that read history are not
+/// bounded by when they run - a git scan reaches a day or a month back - so this is what keeps a
+/// resume from collecting exactly the stretch the pause was taken to keep out.
 #[tauri::command]
 pub async fn events_append(
     db: State<'_, Db>,
     events: Vec<StoredEvent>,
     cursors: Vec<AgentSessionCursorRow>,
 ) -> TimetrackResult<i64> {
-    db.run(move |connection| {
-        let transaction = connection.transaction()?;
-        let mut appended = 0i64;
+    db.run(move |connection| append(connection, &events, &cursors)).await
+}
 
-        {
-            let mut insert = transaction.prepare(
-                "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key) VALUES (?1, ?2, ?3, ?4, ?5)
-                 ON CONFLICT (dedupe_key) DO NOTHING",
-            )?;
-            for event in &events {
-                appended += insert.execute(params![
-                    event.at_ms,
-                    event.source,
-                    event.kind,
-                    serde_json::to_string(&event.payload)?,
-                    event.dedupe_key
-                ])? as i64;
+fn append(
+    connection: &mut Connection,
+    events: &[StoredEvent],
+    cursors: &[AgentSessionCursorRow],
+) -> TimetrackResult<i64> {
+    let transaction = connection.transaction()?;
+    let paused = crate::pause::pause_ranges(&transaction)?;
+    let mut appended = 0i64;
+
+    {
+        let mut insert = transaction.prepare(
+            "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key) VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT (dedupe_key) DO NOTHING",
+        )?;
+        for event in events {
+            if crate::pause::is_paused_at(&paused, event.at_ms) {
+                continue;
             }
 
-            let mut upsert = transaction.prepare(
-                "INSERT INTO agent_session_cursor (id, next_line, after_ms, title)
-                 VALUES (?1, ?2, ?3, ?4)
-                 ON CONFLICT (id) DO UPDATE SET next_line = ?2, after_ms = ?3, title = ?4",
-            )?;
-            for cursor in &cursors {
-                upsert.execute(params![cursor.id, cursor.next_line, cursor.after_ms, cursor.title])?;
-            }
+            appended += insert.execute(params![
+                event.at_ms,
+                event.source,
+                event.kind,
+                serde_json::to_string(&event.payload)?,
+                event.dedupe_key
+            ])? as i64;
         }
 
-        transaction.commit()?;
+        let mut upsert = transaction.prepare(
+            "INSERT INTO agent_session_cursor (id, next_line, after_ms, title)
+             VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT (id) DO UPDATE SET next_line = ?2, after_ms = ?3, title = ?4",
+        )?;
+        for cursor in cursors {
+            upsert.execute(params![cursor.id, cursor.next_line, cursor.after_ms, cursor.title])?;
+        }
+    }
 
-        Ok(appended)
-    })
-    .await
+    transaction.commit()?;
+
+    Ok(appended)
 }
 
 #[tauri::command]
@@ -356,3 +371,77 @@ pub async fn set_day_review_edits(
     .await
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db;
+
+    fn store() -> Connection {
+        let connection = Connection::open_in_memory().unwrap();
+
+        db::migrate(&connection).unwrap();
+
+        connection
+    }
+
+    fn commit(at_ms: i64) -> StoredEvent {
+        StoredEvent {
+            at_ms,
+            source: "git".to_string(),
+            kind: "git-commit".to_string(),
+            payload: serde_json::json!({ "sha": format!("sha-{at_ms}") }),
+            dedupe_key: Some(format!("git-commit:{at_ms}")),
+        }
+    }
+
+    fn stored_at(connection: &Connection) -> Vec<i64> {
+        let mut statement = connection
+            .prepare("SELECT at_ms FROM collected_event WHERE source = 'git' ORDER BY at_ms")
+            .unwrap();
+        let rows = statement.query_map([], |row| row.get(0)).unwrap();
+
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    }
+
+    #[test]
+    fn refuses_history_a_later_scan_read_out_of_a_pause() {
+        let mut connection = store();
+
+        crate::pause::write(&mut connection, true, 1_000).unwrap();
+        crate::pause::write(&mut connection, false, 2_000).unwrap();
+
+        let appended = append(&mut connection, &[commit(500), commit(1_500), commit(3_000)], &[]).unwrap();
+
+        assert_eq!(appended, 2);
+        assert_eq!(stored_at(&connection), vec![500, 3_000]);
+    }
+
+    #[test]
+    fn keeps_moving_the_cursors_of_a_collector_whose_lines_a_pause_refused() {
+        let mut connection = store();
+
+        crate::pause::write(&mut connection, true, 1_000).unwrap();
+
+        append(
+            &mut connection,
+            &[commit(1_500)],
+            &[AgentSessionCursorRow {
+                id: "session-a".to_string(),
+                next_line: 42,
+                after_ms: None,
+                title: None,
+            }],
+        )
+        .unwrap();
+
+        assert_eq!(stored_at(&connection), Vec::<i64>::new());
+        assert_eq!(
+            connection
+                .query_row("SELECT next_line FROM agent_session_cursor WHERE id = 'session-a'", [], |row| row
+                    .get::<_, i64>(0))
+                .unwrap(),
+            42
+        );
+    }
+}

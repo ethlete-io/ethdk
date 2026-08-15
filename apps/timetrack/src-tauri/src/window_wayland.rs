@@ -39,7 +39,18 @@ struct WaylandState {
 impl WaylandState {
     /// Emits when the activated window changes, and when the activated window's own title changes —
     /// a browser tab switch is a context switch, and the title is all this protocol says about it.
+    ///
+    /// The compositor pushes at us rather than being polled, so a pause here can only refuse what
+    /// arrives; it cannot stop it being sent, which is the one thing the macOS source can do. What it
+    /// can do is forget what it last emitted, so the first event after a resume re-establishes the
+    /// window instead of comparing equal to the one the pause started in.
     fn commit(&mut self, id: ObjectId) {
+        if self.sink.is_paused() {
+            self.emitted = None;
+
+            return;
+        }
+
         let Some(toplevel) = self.pending.get(&id).cloned() else {
             return;
         };

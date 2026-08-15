@@ -12,7 +12,10 @@ const block = (options: { from: Date; to: Date; branch?: string }): ActivityBloc
   evidence: [],
 });
 
-const presence = (kind: 'idle-start' | 'idle-end' | 'lock' | 'unlock', when: Date): CollectedEvent => ({
+const presence = (
+  kind: 'idle-start' | 'idle-end' | 'lock' | 'unlock' | 'pause-start' | 'pause-end',
+  when: Date,
+): CollectedEvent => ({
   at: when,
   source: 'idle',
   kind,
@@ -62,6 +65,26 @@ describe('currentActivity', () => {
       state: 'idle',
       since: at(9),
     });
+  });
+
+  it('says paused rather than naming the work that was running when collection stopped', () => {
+    expect(
+      currentActivity({
+        events: [focus(at(14)), presence('pause-start', at(15))],
+        blocks: [block({ from: at(14), to: at(15) })],
+      }),
+    ).toEqual({ state: 'paused', since: at(15) });
+  });
+
+  it('goes back to the work once collection is resumed', () => {
+    const newest = block({ from: at(16), to: at(17) });
+
+    expect(
+      currentActivity({
+        events: [presence('pause-start', at(15)), presence('pause-end', at(16))],
+        blocks: [newest],
+      }),
+    ).toEqual({ state: 'working', since: at(16), block: newest });
   });
 
   it('says nothing when the day has produced no evidence', () => {

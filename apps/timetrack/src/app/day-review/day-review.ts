@@ -9,6 +9,7 @@ import {
   ReviewedRow,
   AttributionTarget,
   SyncedWorklog,
+  TimeWindow,
   TimerRun,
   UnnamedContext,
   closeTimerRun,
@@ -17,6 +18,7 @@ import {
   localDayKey,
   localDayRange,
   mergeRows,
+  pauseWindows,
   resetRow,
   reviewDay,
   setRowDescription,
@@ -53,7 +55,7 @@ const SAVE_DEBOUNCE_MS = 300;
 type Loaded<T> = { key: string; value: T | null; failure: string | null };
 
 /** One day's raw inputs, loaded together so a half-loaded day is never correlated. */
-type DayEvidence = { events: CollectedEvent[]; runs: ClosedTimerRun[] };
+type DayEvidence = { events: CollectedEvent[]; runs: ClosedTimerRun[]; pauses: TimeWindow[] };
 
 /**
  * Cuts an open run off at now, or at the end of the day being read, whichever comes first.
@@ -113,13 +115,21 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     toObservable(probe).pipe(
       switchMap(({ key }) => {
         const { from, to } = localDayRange(key);
+        const through = new Date(Math.min(Date.now(), to.getTime()));
 
         return loadedFor<DayEvidence>({
           key,
           load$: combineLatest({
             events: ports.events.eventsBetween$(from, to),
             runs: ports.timers.runsBetween$(from, to).pipe(map((runs) => closedThrough(runs, to))),
-          }),
+          }).pipe(
+            map((loaded) => ({
+              ...loaded,
+              // The same rule as an open timer run, for the same reason: a pause taken this morning
+              // must not claim every hour left until midnight.
+              pauses: pauseWindows({ events: loaded.events, window: { from, to }, through }),
+            })),
+          ),
         });
       }),
       startWith(null),
@@ -157,6 +167,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ? correlateDay({
           events: collected.events,
           timerRuns: collected.runs,
+          pauses: collected.pauses,
           config: gitFlowConfigFor(settings.settings()),
           rules: settings.settings().attributionRules,
           sessionize: { repoRoots: git.discovery()?.repos ?? [] },

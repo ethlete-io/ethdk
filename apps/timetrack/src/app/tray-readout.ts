@@ -13,6 +13,7 @@ import {
   gitFlowConfigFor,
   localDayKey,
   localDayRange,
+  pauseWindows,
   reviewDay,
 } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, combineLatest, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
@@ -23,6 +24,7 @@ import {
   injectWindowCollector,
 } from '../collectors';
 import { TrayReadout, injectHostPorts } from '../host';
+import { injectCollectionPause } from './collection-pause';
 import { formatBlockLabel, formatClockTime } from './day-review/format';
 import { injectTimetrackSettings } from './settings/settings';
 import { injectTimer } from './timer';
@@ -36,6 +38,7 @@ import { injectTimer } from './timer';
 const TRAY_READOUT_INTERVAL_MS = 60_000;
 
 const formatActivity = (activity: CurrentActivity) => {
+  if (activity.state === 'paused') return `Paused since ${formatClockTime(activity.since)}`;
   if (activity.state === 'idle') return `Idle since ${formatClockTime(activity.since)}`;
   if (activity.state === 'working') {
     return `${formatBlockLabel(activity.block)} since ${formatClockTime(activity.since)}`;
@@ -62,6 +65,10 @@ const formatTotal = (options: { check: DayCheck; targetMs: number }) => {
 const formatTimer = (options: { running: TimerRun | null; elapsedMs: number }) =>
   options.running ? `Stop timer — ${formatDurationMs(options.elapsedMs)}` : 'Start timer';
 
+/** The same for the pause entry, and the same rule: the label is the action, not the state. */
+const formatPause = (options: { isPaused: boolean; pausedForMs: number }) =>
+  options.isPaused ? `Resume collection — paused ${formatDurationMs(options.pausedForMs)}` : 'Pause collection';
+
 /**
  * Keeps the tray menu saying what today looks like, whether or not the window is open.
  *
@@ -75,6 +82,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const agentSessions = injectAgentSessionCollector();
   const calendar = injectCalendarCollector();
   const timers = injectTimer();
+  const pause = injectCollectionPause();
   const settings = injectTimetrackSettings();
   const readout = signal<TrayReadout | null>(null);
 
@@ -85,6 +93,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     calendar: calendar.lastRun(),
     timer: timers.revision(),
     elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
+    pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),
     targetMs: settings.settings().dayTargetMs,
     /** A rule named a context the day could not, so the total it reports changes with it. */
     rules: settings.settings().attributionRules.length,
@@ -106,6 +115,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const correlation = correlateDay({
           events,
           timerRuns: runs.map((run) => closeTimerRun(run, at)),
+          pauses: pauseWindows({ events, window: { from, to }, through: at }),
           config: gitFlowConfigFor(current),
           rules: current.attributionRules,
           sessionize: { repoRoots: git.discovery()?.repos ?? [] },
@@ -121,6 +131,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           activity: formatActivity(currentActivity({ events, blocks: correlation.blocks })),
           total: formatTotal({ check: day.check, targetMs }),
           timer: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
+          pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),
         };
       }),
     );
@@ -131,7 +142,10 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       concatMap(() => read$().pipe(catchError(() => EMPTY))),
       distinctUntilChanged(
         (before, after) =>
-          before.activity === after.activity && before.total === after.total && before.timer === after.timer,
+          before.activity === after.activity &&
+          before.total === after.total &&
+          before.timer === after.timer &&
+          before.pause === after.pause,
       ),
       concatMap((next) => {
         readout.set(next);

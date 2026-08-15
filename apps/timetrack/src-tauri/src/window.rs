@@ -1,6 +1,7 @@
 use crate::error::{TimetrackError, TimetrackResult};
 use serde::Serialize;
 use std::collections::VecDeque;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::State;
 
@@ -57,6 +58,7 @@ struct Buffer {
 struct Inner {
     buffer: Mutex<Buffer>,
     status: Mutex<WindowSourceStatus>,
+    paused: AtomicBool,
 }
 
 /// The window and presence samples the platform source has produced but nothing has stored yet.
@@ -79,10 +81,25 @@ impl WindowSource {
                 kind: "none".to_string(),
                 detail: Some("the window source has not started yet".to_string()),
             }),
+            paused: AtomicBool::new(false),
         }))
     }
 
+    /// Stops and starts collection. A platform source reads this to stop looking at the machine at
+    /// all; the sink enforces it regardless, so a source that forgets to ask still collects nothing.
+    pub fn set_paused(&self, paused: bool) {
+        self.0.paused.store(paused, Ordering::SeqCst);
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.0.paused.load(Ordering::SeqCst)
+    }
+
     pub fn push(&self, at_ms: i64, payload: WindowEventPayload) {
+        if self.is_paused() {
+            return;
+        }
+
         let Ok(mut buffer) = self.0.buffer.lock() else {
             return;
         };
@@ -238,6 +255,31 @@ mod tests {
         assert_eq!(batch.dropped, 5);
         assert_eq!(batch.events[0].seq, 6);
         assert_eq!(source.drain_after(0).unwrap().dropped, 0);
+    }
+
+    #[test]
+    fn takes_no_sample_at_all_while_collection_is_paused() {
+        let source = WindowSource::new();
+
+        source.set_paused(true);
+        source.push(10, focus("code", "a"));
+
+        assert!(source.drain_after(0).unwrap().events.is_empty());
+    }
+
+    #[test]
+    fn keeps_what_it_collected_before_the_pause() {
+        let source = WindowSource::new();
+
+        source.push(10, focus("code", "a"));
+        source.set_paused(true);
+        source.push(20, focus("firefox", "b"));
+        source.set_paused(false);
+
+        let batch = source.drain_after(0).unwrap();
+
+        assert_eq!(batch.events.len(), 1);
+        assert_eq!(batch.events[0].at_ms, 10);
     }
 
     #[test]

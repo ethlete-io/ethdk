@@ -1,4 +1,5 @@
 export * from './agent-session-log-reader';
+export * from './collection-pause';
 export * from './event-store';
 export * from './events';
 export * from './git-source';

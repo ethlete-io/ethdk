@@ -21,6 +21,7 @@ import {
   tap,
   timer,
 } from 'rxjs';
+import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { injectHostPorts } from '../host';
 
@@ -51,6 +52,7 @@ export type AgentSessionCollectorTotals = {
 const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const pause = injectCollectionPause();
   const lastRun = signal<AgentSessionCollectorRun | null>(null);
   const totals = signal<AgentSessionCollectorTotals>({ since: new Date(), excluded: 0 });
   const failure = signal<string | null>(null);
@@ -111,9 +113,10 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       );
     });
 
+  /** A paused collector reads no log at all: the session titles are the work, and the work is private. */
   timer(0, AGENT_SESSION_POLL_INTERVAL_MS)
     .pipe(
-      exhaustMap(() => collect$()),
+      exhaustMap(() => (pause.isPaused() ? EMPTY : collect$())),
       takeUntilDestroyed(),
     )
     .subscribe();

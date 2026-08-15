@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { GitRepoScan, GitScanFailure, collectGitEvents$ } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, from, map, of, tap, timer, toArray } from 'rxjs';
+import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { GitRepoDiscovery, injectHostPorts } from '../host';
 
@@ -55,6 +56,7 @@ type Repo = { path: string; author?: string };
 const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const pause = injectCollectionPause();
   const lastRun = signal<GitCollectorRun | null>(null);
   const failure = signal<string | null>(null);
   const discovery = signal<GitRepoDiscovery | null>(null);
@@ -147,9 +149,13 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
+  /**
+   * A paused collector walks no repository. What it would have found is refused by the store as well:
+   * a scan reads a window of history, so the first one after a resume reaches back over the pause.
+   */
   timer(0, GIT_WATCH_POLL_INTERVAL_MS)
     .pipe(
-      exhaustMap(() => collect$()),
+      exhaustMap(() => (pause.isPaused() ? EMPTY : collect$())),
       takeUntilDestroyed(),
     )
     .subscribe();

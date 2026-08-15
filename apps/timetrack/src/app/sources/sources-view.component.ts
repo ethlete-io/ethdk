@@ -1,6 +1,7 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant } from '@ethlete/components';
+import { formatDurationMs } from '@ethlete/timetrack';
 import { catchError, of, switchMap } from 'rxjs';
 import {
   injectAgentSessionCollector,
@@ -9,6 +10,7 @@ import {
   injectWindowCollector,
 } from '../../collectors';
 import { SourceTally, WINDOW_SOURCE_NEEDS_ACCESSIBILITY, injectHostPorts } from '../../host';
+import { injectCollectionPause } from '../collection-pause';
 import { injectTimetrackSettings } from '../settings/settings';
 import {
   formatAgentSessions,
@@ -19,6 +21,9 @@ import {
   formatWindowSource,
 } from './format';
 import { EVIDENCE_SOURCES, EvidenceSource, EvidenceSourceState } from './inventory';
+
+/** What every built source reads as while the hard pause is on, whatever its own state would be. */
+const PAUSED_LABEL = 'paused';
 
 const STATE_LABEL: Record<EvidenceSourceState, string> = {
   collecting: 'collecting',
@@ -77,6 +82,18 @@ type SourceRow = {
         Everything is read on this machine and stored encrypted. Nothing leaves it except a worklog you accept.
       </p>
 
+      @if (pause.isPaused()) {
+        <et-banner
+          [description]="'Nothing below is reading anything. Paused ' + pausedFor() + ' ago.'"
+          type="warning"
+          heading="Collection is paused"
+        >
+          <button (click)="pause.toggle()" et-button etBannerAction variant="filled" size="sm">
+            Resume collection
+          </button>
+        </et-banner>
+      }
+
       <ul class="mt-4 flex flex-col gap-2">
         @for (row of rows(); track row.source.id) {
           <li class="flex flex-col gap-1 rounded-md border border-et-surface-border p-3">
@@ -128,6 +145,7 @@ type SourceRow = {
 export class SourcesViewComponent {
   private destroyRef = inject(DestroyRef);
   private ports = injectHostPorts();
+  protected pause = injectCollectionPause();
   private windows = injectWindowCollector();
   private agentSessions = injectAgentSessionCollector();
   private git = injectGitCollector();
@@ -149,15 +167,20 @@ export class SourcesViewComponent {
     { initialValue: [] as SourceTally[] },
   );
 
+  protected pausedFor = computed(() => formatDurationMs(this.pause.pausedForMs()));
+
   protected rows = computed<SourceRow[]>(() =>
     EVIDENCE_SOURCES.map((source) => {
       const state = this.stateOf(source);
+      // A source that is running is the only claim the pause contradicts. One that is not set up, or
+      // not built, is still not set up and still not built.
+      const paused = this.pause.isPaused() && state === 'collecting';
 
       return {
         source,
         detail: state === 'ready' || state === 'collecting' ? null : (source.detail ?? null),
-        label: STATE_LABEL[state],
-        color: STATE_COLOR[state],
+        label: paused ? PAUSED_LABEL : STATE_LABEL[state],
+        color: paused ? 'warning' : STATE_COLOR[state],
         variant: STATE_VARIANT[state],
         stored: this.storedOf({ source, state }),
         run: this.runOf(source),

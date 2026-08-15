@@ -9,7 +9,8 @@ import { DonateOptions, donateBlocks } from './donate';
 import { FillOptions, fillGaps } from './fill';
 import { MeetingMatch, MeetingOptions, matchMeetings } from './meetings';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
-import { clipBlocks } from './overlap';
+import { TimeWindow, clipBlocks } from './overlap';
+import { pausedMs } from './pauses';
 import { propose } from './propose';
 import { CheckDayOptions, DayCheck, RoundOptions, checkDay } from './round';
 import { SessionizeOptions, sessionize } from './sessionize';
@@ -34,6 +35,11 @@ export type CorrelateDayOptions = {
   check?: CheckDayOptions;
   /** Runs the user started and stopped by hand. Close an open one first — this takes no clock. */
   timerRuns?: readonly ClosedTimerRun[];
+  /**
+   * The stretches the user had stopped collection for, from `pauseWindows`. Close an open one first —
+   * this takes no clock either.
+   */
+  pauses?: readonly TimeWindow[];
 };
 
 export type DayCorrelation = {
@@ -47,6 +53,10 @@ export type DayCorrelation = {
   timers: TimerMatch[];
   /** Idle time `fillGaps` joined to the work around it, which the day claims with nothing behind it. */
   filledMs: number;
+  /** The stretches collection was stopped for, for the timeline to draw as the holes they are. */
+  pauses: readonly TimeWindow[];
+  /** How much of the day those stretches cover. */
+  pausedMs: number;
   check: DayCheck;
 };
 
@@ -58,11 +68,15 @@ export type DayCorrelation = {
  * A timer run displaces the reconstruction underneath it. Whatever the collectors saw while it ran
  * describes the work the run already claims, so those blocks are cut out before anything is proposed
  * from them — the alternative is a day that proposes the same hour twice.
+ *
+ * A pause is cut out for the opposite reason: nothing watched it, and the samples on either side are
+ * close enough together that the sessionizer would otherwise bridge the hole and bill it.
  */
 export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDayOptions): DayCorrelation => {
   const blocks = sessionize({ events: options.events, options: options.sessionize });
   const timers = matchTimerRuns({ runs: options.timerRuns ?? [], blocks });
-  const reconstructed = clipBlocks({ blocks, windows: timers.map((timer) => timer.run) });
+  const pauses = options.pauses ?? [];
+  const reconstructed = clipBlocks({ blocks, windows: [...timers.map((timer) => timer.run), ...pauses] });
   const attributed = reconstructed.map((block) =>
     attribute({
       block,
@@ -82,7 +96,7 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
   const filled = fillGaps({
     blocks: donated,
     events: options.events,
-    claimed: [...timers.map((timer) => timer.run), ...meetings.map((meeting) => meeting.group)],
+    claimed: [...timers.map((timer) => timer.run), ...meetings.map((meeting) => meeting.group), ...pauses],
     options: options.fill,
   });
   const groups = [
@@ -104,6 +118,8 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
     meetings,
     timers,
     filledMs: filled.filledMs,
+    pauses,
+    pausedMs: pausedMs(pauses),
     check: checkDay({
       proposals,
       unattributed,
@@ -115,6 +131,7 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
           0,
         ),
         filledMs: filled.filledMs,
+        pausedMs: pausedMs(pauses),
         ...options.check,
       },
     }),

@@ -121,7 +121,20 @@ impl Sampler {
         }
     }
 
+    /// Reads nothing at all while collection is paused — not the frontmost window, not the idle
+    /// timer. That is what makes the pause a pause rather than a filter: the Accessibility read is
+    /// IPC into whatever application is in front, and a paused Timetrack must not be making it.
+    ///
+    /// The last emitted sample is forgotten on the way out, because a focus sample is only pushed
+    /// when it differs from the last one. Without this, resuming in the window the pause started in
+    /// would emit nothing until the next context switch, and the block would not restart.
     fn tick(&mut self) {
+        if self.sink.is_paused() {
+            self.emitted = None;
+
+            return;
+        }
+
         self.apply(now_ms(), idle_ms(), trusted(), frontmost);
     }
 
@@ -276,6 +289,32 @@ mod tests {
 
         assert_eq!(events.len(), 2);
         assert_eq!(events[1].at_ms, 2000);
+    }
+
+    #[test]
+    fn collects_nothing_while_collection_is_paused() {
+        let mut sampler = sampler();
+
+        sampler.sink.set_paused(true);
+        sampler.apply(60 * MINUTE, 7 * MINUTE, true, || sample("com.microsoft.VSCode", "lib.rs"));
+
+        assert!(pushed(&sampler).is_empty());
+    }
+
+    #[test]
+    fn re_establishes_the_window_after_a_resume() {
+        let mut sampler = sampler();
+
+        sampler.apply(0, 0, true, || sample("com.microsoft.VSCode", "lib.rs - timetrack"));
+        sampler.sink.set_paused(true);
+        sampler.tick();
+        sampler.sink.set_paused(false);
+        sampler.apply(60_000, 0, true, || sample("com.microsoft.VSCode", "lib.rs - timetrack"));
+
+        let events = pushed(&sampler);
+
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[1].at_ms, 60_000);
     }
 
     #[test]

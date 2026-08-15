@@ -7,6 +7,8 @@ export type TrayReadout = {
   total: string;
   /** What the timer entry should say, which is the action picking it performs. */
   timer: string;
+  /** The same for the pause entry. */
+  pause: string;
 };
 
 export type TauriTray = {

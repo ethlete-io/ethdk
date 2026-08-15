@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { applyExclusionRules, effectiveExclusionRules } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, map, switchMap, tap, timer } from 'rxjs';
+import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { WindowBatch, WindowSourceStatus, injectHostPorts } from '../host';
 
@@ -38,6 +39,7 @@ export type WindowCollectorTotals = {
 const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const pause = injectCollectionPause();
   const lastRun = signal<WindowCollectorRun | null>(null);
   const totals = signal<WindowCollectorTotals>({ since: new Date(), stored: 0, excluded: 0, dropped: 0 });
   const failure = signal<string | null>(null);
@@ -107,9 +109,14 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
+  /**
+   * A paused collector does nothing at all, the host's own buffer included. The host stopped sampling
+   * when the pause was recorded, so what is left in the buffer was observed before it and lands at the
+   * resume, with the timestamps it was observed at.
+   */
   timer(0, WINDOW_POLL_INTERVAL_MS)
     .pipe(
-      exhaustMap(() => concat(status$(), collect$())),
+      exhaustMap(() => (pause.isPaused() ? EMPTY : concat(status$(), collect$()))),
       takeUntilDestroyed(),
     )
     .subscribe();

@@ -141,6 +141,7 @@ export class DayReviewViewComponent {
     'meeting-overlap': 'A meeting and observed work claim the same time',
     'timer-unobserved': 'A timer ran while nothing was observed',
     'filled-time': 'Short pauses were logged as the work around them',
+    'paused-time': 'You stopped collection for part of this day',
     'edited-row-drift': 'New evidence landed under a row you edited',
   };
 

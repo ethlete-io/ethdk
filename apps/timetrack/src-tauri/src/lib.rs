@@ -8,6 +8,7 @@ mod http;
 mod keychain;
 mod logs;
 mod oauth;
+mod pause;
 mod process;
 mod secrets;
 mod state;
@@ -34,6 +35,7 @@ pub fn run() {
             let data_dir = app.path().app_data_dir()?;
             let key = keychain::database_key()?;
             let connection = db::open(&data_dir.join("timetrack.db"), &key)?;
+            let paused = pause::paused_at(&connection)?.is_some();
 
             app.manage(state::Db::new(connection));
             app.manage(http::Http(
@@ -44,6 +46,9 @@ pub fn run() {
 
             let windows = window::WindowSource::new();
 
+            // Before the source starts, not after the webview has loaded and told us: a pause the
+            // user took yesterday must not collect the first seconds of today's start.
+            windows.set_paused(paused);
             window::start(&windows);
             app.manage(windows);
             app.manage(git::GitWatcher::new());
@@ -62,6 +67,8 @@ pub fn run() {
             logs::agent_log_lines,
             logs::agent_logs,
             oauth::oauth_authorize,
+            pause::collection_set_paused,
+            pause::collection_state,
             process::run_process,
             secrets::secret_delete,
             secrets::secret_has,

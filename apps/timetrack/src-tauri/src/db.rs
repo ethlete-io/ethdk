@@ -80,6 +80,19 @@ CREATE TABLE app_setting (
 );
 ";
 
+/// Whether the user has stopped collection, and since when.
+///
+/// It is a row rather than a field of the settings document because the host has to read it before the
+/// webview exists: the samplers start during `setup`, and a pause that only took effect once the
+/// window had loaded would collect the first seconds of every restart.
+const SCHEMA_V6: &str = "
+CREATE TABLE collection_pause (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  paused_at_ms INTEGER
+);
+INSERT INTO collection_pause (id, paused_at_ms) VALUES (1, NULL);
+";
+
 /// Opens the encrypted database at `path`, creating and migrating it on first run.
 ///
 /// `key` is the 64 hex chars from the keychain. `PRAGMA key` has to be the first statement on the
@@ -135,6 +148,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 5)?;
     }
 
+    if version < 6 {
+        connection.execute_batch(SCHEMA_V6)?;
+        connection.pragma_update(None, "user_version", 6)?;
+    }
+
     Ok(())
 }
 
@@ -166,6 +184,10 @@ mod tests {
             connection.execute_batch(SCHEMA_V4).unwrap();
         }
 
+        if version >= 5 {
+            connection.execute_batch(SCHEMA_V5).unwrap();
+        }
+
         connection.pragma_update(None, "user_version", version).unwrap();
         migrate(&connection).unwrap();
 
@@ -186,9 +208,22 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            5
+            6
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
+    }
+
+    #[test]
+    fn migrates_a_database_that_predates_the_pause() {
+        let connection = migrated_from(5);
+
+        assert_eq!(
+            connection
+                .query_row("SELECT paused_at_ms FROM collection_pause WHERE id = 1", [], |row| row
+                    .get::<_, Option<i64>>(0))
+                .unwrap(),
+            None
+        );
     }
 
     #[test]

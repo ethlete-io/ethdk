@@ -12,8 +12,15 @@ export type WindowFocusEvent = CollectedEventBase<'window', 'window-focus'> & {
   title: string;
 };
 
-/** A presence transition. `idle-start` and `lock` both end the block that was running. */
-export type PresenceEvent = CollectedEventBase<'idle', 'idle-start' | 'idle-end' | 'lock' | 'unlock'>;
+/**
+ * A transition in whether the machine was being watched at all. `idle-start` and `lock` both end the
+ * block that was running, and so does `pause-start` — the difference is who decided: the idle timer
+ * guesses, the lock is the user leaving, and the pause is the user asking not to be watched.
+ */
+export type PresenceEvent = CollectedEventBase<
+  'idle',
+  'idle-start' | 'idle-end' | 'lock' | 'unlock' | 'pause-start' | 'pause-end'
+>;
 
 export type GitCheckoutEvent = CollectedEventBase<'git', 'git-checkout'> & {
   repoPath: string;

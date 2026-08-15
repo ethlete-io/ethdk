@@ -1333,8 +1333,36 @@ commit that later also lives on another branch is not a second piece of work.
   in for you: `rules` is required, and the host decides whether the user's list replaces or extends
   them - `effectiveExclusionRules` is where that decision now lives, and `keepDefaultExclusionRules`
   is the switch. **The editable list is built**; see the settings screen below.
-- **Hard pause.** One click stops all collection, visibly, until resumed. Not a filter - the
-  collectors stop.
+- ~~**Hard pause.** One click stops all collection, visibly, until resumed. Not a filter - the
+  collectors stop.~~ **Built** - `src-tauri/src/pause.rs`, `src/app/collection-pause.ts` and the
+  core's `pauseWindows()`. What building it settled:
+  - **The state is host-side and read before the samplers start** (schema v6's `collection_pause`).
+    A pause the webview had to load in order to apply would collect the first seconds of every
+    restart, which is the one thing a pause promised not to do.
+  - **The source stops before the pause is recorded, and starts after the resume is recorded**, and a
+    write that fails puts it back. Either order the other way round leaves a sample dated inside a
+    stretch the record claims nothing watched.
+  - **The transition is an ordinary presence event** (`pause-start` / `pause-end`, source `idle`),
+    written in the same transaction as the state row. That is what makes a pause reconstructible: the
+    day is rebuilt from events, so a pause only the collectors knew about would be a hole the
+    sessionizer bridges and the day bills. The core reads them back with `pauseWindows()`, which
+    closes an open pause at a caller-supplied `through` exactly as an open timer run is closed.
+  - **The pause displaces the reconstruction, like a timer run**: `clipBlocks` cuts the window out
+    before anything is attributed, and the windows join `fillGaps`' `claimed` so no gap a pause
+    reaches into is filled. `checkDay` reports `pausedMs` as a `paused-time` warning - a day that is
+    short has to say why, or the reviewer hunts for time that was never collected.
+  - **A history reader would otherwise undo the whole thing.** A git scan reads 26 hours back (30 days
+    on the first run of a session), so the first scan after a resume would collect the very commits
+    the pause was taken to keep out. `events_append` refuses any observation dated inside a pause,
+    which is one rule in one place rather than four collectors each remembering it. Cursors still
+    move for a refused line, as they do for an excluded one.
+  - **Resuming has to forget what was last emitted.** A focus sample is only pushed when it differs
+    from the previous one, so a resume in the window the pause started in would emit nothing until
+    the next context switch, and the block would never restart.
+  - macOS stops reading the machine outright - no `frontmost()`, no Accessibility IPC, no idle timer.
+    Wayland cannot: the compositor pushes at us unsolicited, so there the pause refuses the samples at
+    the sink. `WindowSource::push` enforces it on every platform, so a source that forgets to ask
+    still collects nothing.
 - **Own OAuth clients.** Per provider, registered by the user, PKCE + loopback redirect on a
   random localhost port. Client id/secret and tokens live in the keychain; refresh happens in
   Rust. The webview never sees a token. Onboarding needs a real guided flow per provider with
@@ -1444,6 +1472,27 @@ the parser and `check`/`explain` - come before phase 1 here~~ **- satisfied.** T
 `@ethlete/agent-rules/git-flow`, and `planStart` is the seam the prospective ticket → branch flow
 plugs into. Phase 1 is unblocked; the rest of that plan's rollout (adoption, gating) runs
 alongside and only affects how much of a day arrives pre-labelled.
+
+## Ideas not yet scheduled
+
+Raised 2026-08-16, in no order and none of them designed yet.
+
+- **Work versus private use of the same application.** VS Code is VS Code whether the checkout is a
+  client's or a side project, so the window title alone cannot separate them. The likely shape is an
+  explicit link between a repository (or a directory root) and a Jira project, which the attribution
+  rules already half express - a repository with no link is private time and proposes nothing, rather
+  than unattributed work the reviewer has to reject every day.
+- **A Windows collector.** The window source was always meant to be pluggable and macOS proved it;
+  Windows is the third source. Focus and idle both have plain Win32 answers
+  (`GetForegroundWindow`, `GetLastInputInfo`).
+- **A floating mini widget.** Always on top, small: what is being recorded right now, which issue it
+  is going to, the confidence of that guess, and the pause button. It is the honest answer to "is this
+  thing watching me and does it understand what I am doing", which today needs the window open.
+- **Auto-resume, and auto-pause on standby.** Resuming when work is noticed again - VS Code activity,
+  a meeting starting - and pausing when the machine suspends. **This is in tension with the hard
+  pause, which is a promise that nothing collects until the user says so.** If both ship, they have
+  to be two different things: an _automatic_ pause may resume itself, a _hard_ pause may not, and the
+  UI must never present them as one control.
 
 ## Open questions
 

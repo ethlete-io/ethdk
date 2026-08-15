@@ -70,6 +70,8 @@ export type DayWarningKind =
   | 'timer-unobserved'
   /** The day claims idle gaps that `fillGaps` joined to the work around them. */
   | 'filled-time'
+  /** Collection was stopped for part of the day, so the day is short by design. */
+  | 'paused-time'
   /** Raised by `reviewDay`, not here: new evidence under a row a reviewer had already edited. */
   | 'edited-row-drift';
 
@@ -100,6 +102,8 @@ export type CheckDayOptions = {
   timerUnobservedMs?: number;
   /** Idle time joined to the work around it, from `fillGaps`. */
   filledMs?: number;
+  /** Time the user had stopped collection for, from `pauseWindows`. */
+  pausedMs?: number;
 };
 
 /**
@@ -112,7 +116,8 @@ export const checkDay = (options: {
   unattributed?: WorkGroup[];
   options?: CheckDayOptions;
 }): DayCheck => {
-  const { targetMs, toleranceMs, maxRowsPerDay, meetingOverlapMs, timerUnobservedMs, filledMs } = options.options ?? {};
+  const { targetMs, toleranceMs, maxRowsPerDay, meetingOverlapMs, timerUnobservedMs, filledMs, pausedMs } =
+    options.options ?? {};
   const unattributed = options.unattributed ?? [];
   const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const unattributedMs = unattributed.reduce((sum, group) => sum + group.observedMs, 0);
@@ -158,6 +163,13 @@ export const checkDay = (options: {
     warnings.push({
       kind: 'filled-time',
       detail: `${formatDurationMs(filledMs)} of idle time was joined to the work around it`,
+    });
+  }
+
+  if (pausedMs !== undefined && pausedMs >= tolerance) {
+    warnings.push({
+      kind: 'paused-time',
+      detail: `${formatDurationMs(pausedMs)} was not collected because you paused it`,
     });
   }
 

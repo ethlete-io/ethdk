@@ -244,6 +244,37 @@ describe('correlateDay', () => {
     expect(day.unattributed.map((group) => group.observedMs / MINUTE)).toEqual([60]);
   });
 
+  it('cuts a pause out of the block that would otherwise bridge it', () => {
+    const day = correlateDay({
+      events: DAY,
+      config: FIP,
+      resolveBase: () => STORY,
+      pauses: [{ from: AT(20), to: AT(40) }],
+    });
+
+    expect(day.pausedMs).toBe(20 * MINUTE);
+    expect(day.check.proposedMs).toBeLessThan(
+      correlateDay({ events: DAY, config: FIP, resolveBase: () => STORY }).check.proposedMs,
+    );
+  });
+
+  it('never fills a gap a pause reaches into', () => {
+    const day = correlateDay({ events: THINKING_DAY, config: FIP, pauses: [{ from: AT(30), to: AT(42) }] });
+
+    expect(day.filledMs).toBe(12 * MINUTE);
+  });
+
+  it('reports paused time, so a short day says why it is short', () => {
+    const day = correlateDay({
+      events: DAY,
+      config: FIP,
+      resolveBase: () => STORY,
+      pauses: [{ from: AT(20), to: AT(40) }],
+    });
+
+    expect(day.check.warnings.map((warning) => warning.kind)).toContain('paused-time');
+  });
+
   it('proposes nothing for an empty window', () => {
     const day = correlateDay({ events: [], config: FIP });
 

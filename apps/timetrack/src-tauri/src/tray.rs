@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 const ACTIVITY: &str = "activity";
 const TOTAL: &str = "total";
 const TIMER: &str = "timer";
+const PAUSE: &str = "pause";
 const SHOW: &str = "show";
 const QUIT: &str = "quit";
 
@@ -14,6 +15,11 @@ const QUIT: &str = "quit";
 /// The webview owns the timer, not the tray: it is what knows whether a run is going, and it is where
 /// the store and the day the run belongs to already live.
 pub const TIMER_TOGGLE_EVENT: &str = "timer-toggle";
+
+/// The same arrangement for the pause: the tray asks, the webview acts. It is in the menu because the
+/// tray is the one surface that is there whether or not the window is, and a pause you have to go
+/// looking for is one you take too late.
+pub const COLLECTION_PAUSE_TOGGLE_EVENT: &str = "collection-pause-toggle";
 
 /// The menu entries the webview writes, so the tray reflects a day it does not itself reconstruct.
 ///
@@ -25,6 +31,7 @@ pub struct Readout<R: Runtime> {
     activity: MenuItem<R>,
     total: MenuItem<R>,
     timer: MenuItem<R>,
+    pause: MenuItem<R>,
 }
 
 /// Brings the window back from hidden, minimised or unfocused, whichever of those it is.
@@ -49,6 +56,7 @@ pub async fn tray_set_readout<R: Runtime>(
     activity: String,
     total: String,
     timer: String,
+    pause: String,
 ) -> TimetrackResult<()> {
     let Some(readout) = app.try_state::<Readout<R>>() else {
         return Ok(());
@@ -57,6 +65,7 @@ pub async fn tray_set_readout<R: Runtime>(
     readout.activity.set_text(activity)?;
     readout.total.set_text(total)?;
     readout.timer.set_text(timer)?;
+    readout.pause.set_text(pause)?;
 
     Ok(())
 }
@@ -73,20 +82,29 @@ pub fn attach<R: Runtime>(app: &AppHandle<R>) -> TimetrackResult<()> {
     let activity = MenuItem::with_id(app, ACTIVITY, "Starting up…", true, None::<&str>)?;
     let total = MenuItem::with_id(app, TOTAL, "No time reconstructed yet", true, None::<&str>)?;
     let timer = MenuItem::with_id(app, TIMER, "Start timer", true, None::<&str>)?;
+    let pause = MenuItem::with_id(app, PAUSE, "Pause collection", true, None::<&str>)?;
     let show = MenuItem::with_id(app, SHOW, "Show Timetrack", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, QUIT, "Quit", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
 
     tray.set_menu(Some(Menu::with_items(
         app,
-        &[&activity, &total, &separator, &timer, &show, &quit],
+        &[&activity, &total, &separator, &timer, &pause, &show, &quit],
     )?))?;
-    app.manage(Readout { activity, total, timer });
+    app.manage(Readout {
+        activity,
+        total,
+        timer,
+        pause,
+    });
 
     tray.on_menu_event(|app, event| match event.id.as_ref() {
         QUIT => app.exit(0),
         TIMER => {
             let _ = app.emit(TIMER_TOGGLE_EVENT, ());
+        }
+        PAUSE => {
+            let _ = app.emit(COLLECTION_PAUSE_TOGGLE_EVENT, ());
         }
         ACTIVITY | TOTAL | SHOW => reveal(app),
         _ => {}

@@ -16,6 +16,7 @@ import {
   timer,
   toArray,
 } from 'rxjs';
+import { injectCollectionPause } from '../app/collection-pause';
 import { injectGoogleAccount } from '../app/google';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { injectHostPorts } from '../host';
@@ -48,6 +49,7 @@ export type CalendarCollectorRun = {
 const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const pause = injectCollectionPause();
   const account = injectGoogleAccount();
   const lastRun = signal<CalendarCollectorRun | null>(null);
   const failure = signal<string | null>(null);
@@ -101,9 +103,13 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
+  /**
+   * A paused collector asks Google nothing. A read reaches over a day either way, so the store refuses
+   * the meetings that fall inside the pause once collection comes back.
+   */
   timer(0, CALENDAR_POLL_INTERVAL_MS)
     .pipe(
-      exhaustMap(() => collect$()),
+      exhaustMap(() => (pause.isPaused() ? EMPTY : collect$())),
       takeUntilDestroyed(),
     )
     .subscribe();

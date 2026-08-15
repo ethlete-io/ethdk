@@ -6,6 +6,7 @@ export * from './fill';
 export * from './meetings';
 export * from './merge';
 export * from './overlap';
+export * from './pauses';
 export * from './propose';
 export * from './recurrence';
 export * from './round';
