@@ -6,6 +6,7 @@ import {
   TIMETRACK_SECRET_KEYS,
   TimetrackCredentialStatus,
   TimetrackExclusionRule,
+  TimetrackGoogleSettings,
   TimetrackJiraSettings,
   TimetrackSettings,
   clampDayTargetMs,
@@ -29,7 +30,13 @@ import { injectHostPorts } from '../../host';
 /** How long an edit settles before the settings document is written. */
 const SAVE_DEBOUNCE_MS = 400;
 
-const NOTHING_HELD: TimetrackCredentialStatus = { jira: false, tempo: false };
+/**
+ * The keychain accounts the screen asks about. The client secret is not a credential in its own right —
+ * it is half of one — so it is held here rather than in the provider status.
+ */
+type HeldSecrets = TimetrackCredentialStatus & { googleClientSecret: boolean };
+
+const NOTHING_HELD: HeldSecrets = { jira: false, tempo: false, google: false, googleClientSecret: false };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -75,6 +82,8 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
         combineLatest({
           jira: ports.secrets.has$(TIMETRACK_SECRET_KEYS.jiraToken),
           tempo: ports.secrets.has$(TIMETRACK_SECRET_KEYS.tempoToken),
+          google: ports.secrets.has$(TIMETRACK_SECRET_KEYS.googleRefreshToken),
+          googleClientSecret: ports.secrets.has$(TIMETRACK_SECRET_KEYS.googleClientSecret),
         }).pipe(
           catchError((error: unknown) => {
             failure.set(messageOf(error));
@@ -134,6 +143,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     isLoading,
     failure: failure.asReadonly(),
     credentials: computed(() => timetrackCredentialStatus({ held: held(), settings: settings() })),
+    hasGoogleClientSecret: computed(() => held().googleClientSecret),
 
     /**
      * Emits the settings once they have been read, so a collector never runs with the wrong rules while
@@ -144,8 +154,12 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       take(1),
     ),
 
+    /** Asks the keychain again, for a caller that stored or removed a secret through another route. */
+    recheckCredentials: () => secretRevision.update((count) => count + 1),
+
     setDayTargetMs: (dayTargetMs: number) => patch({ dayTargetMs: clampDayTargetMs(dayTargetMs) }),
     setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
+    setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
 
     addExclusionRule: (rule: TimetrackExclusionRule) => {
@@ -176,6 +190,9 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.tempoToken, value: token.trim() }),
     forgetJiraToken: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: null }),
     forgetTempoToken: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.tempoToken, value: null }),
+    saveGoogleClientSecret: (secret: string) =>
+      secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.googleClientSecret, value: secret.trim() }),
+    forgetGoogleClientSecret: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.googleClientSecret, value: null }),
   };
 });
 

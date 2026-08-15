@@ -21,6 +21,20 @@ export type TimetrackJiraSettings = {
 };
 
 /**
+ * The Google account meetings are read from. The client secret and the refresh token are keychain
+ * entries; the client id is not one, and the settings screen has to show it to be editable at all.
+ */
+export type TimetrackGoogleSettings = {
+  /** The OAuth desktop client the user registered themselves, as `…apps.googleusercontent.com`. */
+  clientId: string;
+  /**
+   * The calendars that count as work. Empty reads nothing: a personal calendar is on the same account,
+   * and guessing which one is work would put someone's private appointments in a worklog.
+   */
+  calendarIds: string[];
+};
+
+/**
  * Everything the user configures that is not a secret, read and written as one document.
  *
  * It is deliberately small: a value belongs here only when the app cannot work it out and being wrong
@@ -30,6 +44,7 @@ export type TimetrackJiraSettings = {
 export type TimetrackSettings = {
   dayTargetMs: number;
   jira: TimetrackJiraSettings;
+  google: TimetrackGoogleSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
   exclusionRules: TimetrackExclusionRule[];
   /** Whether the shipped defaults still apply. Turning them off is a deliberate, visible choice. */
@@ -41,6 +56,7 @@ export type TimetrackSettings = {
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   dayTargetMs: DEFAULT_DAY_TARGET_MS,
   jira: { host: '', email: '' },
+  google: { clientId: '', calendarIds: [] },
   exclusionRules: [],
   keepDefaultExclusionRules: true,
   gitScanRoots: [],

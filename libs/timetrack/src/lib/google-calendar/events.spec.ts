@@ -84,12 +84,19 @@ describe('fetchGoogleCalendarEvents$', () => {
         at: new Date('2026-08-11T10:00:00+02:00'),
         source: 'calendar',
         kind: 'calendar-event',
+        occurrenceId: 'evt1',
         until: new Date('2026-08-11T11:00:00+02:00'),
         title: 'Sprint Planning',
         accepted: true,
         conferenceUrl: 'https://meet.google.com/abc-defg-hij',
       },
     ]);
+  });
+
+  it('keys an occurrence google gave no id by its start, so a re-read still recognises it', () => {
+    const { transport } = eventTransport([{ items: [{ ...MEETING, id: undefined }] }]);
+
+    expect(collect(transport)[0]?.occurrenceId).toBe('2026-08-11T08:00:00.000Z|Sprint Planning');
   });
 
   it('falls back to the legacy hangout link', () => {

@@ -15,7 +15,12 @@ import {
   reviewDay,
 } from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, combineLatest, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
-import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../collectors';
+import {
+  injectAgentSessionCollector,
+  injectCalendarCollector,
+  injectGitCollector,
+  injectWindowCollector,
+} from '../collectors';
 import { TrayReadout, injectHostPorts } from '../host';
 import { formatBlockLabel, formatClockTime } from './day-review/format';
 import { injectTimetrackSettings } from './settings/settings';
@@ -67,6 +72,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const windows = injectWindowCollector();
   const git = injectGitCollector();
   const agentSessions = injectAgentSessionCollector();
+  const calendar = injectCalendarCollector();
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
   const readout = signal<TrayReadout | null>(null);
@@ -75,6 +81,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     windows: windows.lastRun(),
     git: git.lastRun(),
     sessions: agentSessions.lastRun(),
+    calendar: calendar.lastRun(),
     timer: timers.revision(),
     elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
     targetMs: settings.settings().dayTargetMs,

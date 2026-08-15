@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CollectedEvent, GitCheckoutEvent, GitCommitEvent } from '../model/event';
+import { CalendarOccurrenceEvent, CollectedEvent, GitCheckoutEvent, GitCommitEvent } from '../model/event';
 import { dedupeKeyOf } from './dedupe';
 
 const commit = (overrides: Partial<GitCommitEvent> = {}): GitCommitEvent => ({
@@ -19,6 +19,17 @@ const checkout = (overrides: Partial<GitCheckoutEvent> = {}): GitCheckoutEvent =
   kind: 'git-checkout',
   repoPath: '/home/tom/dev/fut-frontend',
   branch: 'feat/FIP-2177-user-management',
+  ...overrides,
+});
+
+const meeting = (overrides: Partial<CalendarOccurrenceEvent> = {}): CalendarOccurrenceEvent => ({
+  at: new Date(2026, 7, 11, 10, 0),
+  source: 'calendar',
+  kind: 'calendar-event',
+  occurrenceId: 'evt1_20260811T080000Z',
+  until: new Date(2026, 7, 11, 11, 0),
+  title: 'Sprint Planning',
+  accepted: true,
   ...overrides,
 });
 
@@ -43,6 +54,20 @@ describe('dedupeKeyOf', () => {
     expect(dedupeKeyOf(checkout())).toBe(dedupeKeyOf(checkout()));
     expect(dedupeKeyOf(checkout({ branch: 'next' }))).not.toBe(dedupeKeyOf(checkout()));
     expect(dedupeKeyOf(checkout({ at: new Date(2026, 7, 11, 9, 16) }))).not.toBe(dedupeKeyOf(checkout()));
+  });
+
+  it('keys the same occurrence the same way on every overlapping read', () => {
+    expect(dedupeKeyOf(meeting())).toBe(dedupeKeyOf(meeting()));
+    expect(dedupeKeyOf(meeting({ title: 'Sprint Planning (moved room)' }))).toBe(dedupeKeyOf(meeting()));
+  });
+
+  it('keys a meeting somebody moved as a new occurrence, not as the one it used to be', () => {
+    expect(dedupeKeyOf(meeting({ at: new Date(2026, 7, 11, 14, 0) }))).not.toBe(dedupeKeyOf(meeting()));
+    expect(dedupeKeyOf(meeting({ until: new Date(2026, 7, 11, 12, 0) }))).not.toBe(dedupeKeyOf(meeting()));
+  });
+
+  it('separates two occurrences of one series', () => {
+    expect(dedupeKeyOf(meeting({ occurrenceId: 'evt1_20260812T080000Z' }))).not.toBe(dedupeKeyOf(meeting()));
   });
 
   it('never keys a commit and a checkout alike', () => {

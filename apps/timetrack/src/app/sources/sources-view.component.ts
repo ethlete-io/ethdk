@@ -1,11 +1,23 @@
-import { Component, ViewEncapsulation, computed } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BADGE_IMPORTS, BANNER_IMPORTS, BadgeVariant, CARD_IMPORTS } from '@ethlete/components';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, BadgeVariant, CARD_IMPORTS } from '@ethlete/components';
 import { catchError, of, switchMap } from 'rxjs';
-import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
-import { SourceTally, injectHostPorts } from '../../host';
+import {
+  injectAgentSessionCollector,
+  injectCalendarCollector,
+  injectGitCollector,
+  injectWindowCollector,
+} from '../../collectors';
+import { SourceTally, WINDOW_SOURCE_NEEDS_ACCESSIBILITY, injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
-import { formatAgentSessions, formatGitFailures, formatGitScan, formatTally, formatWindowSource } from './format';
+import {
+  formatAgentSessions,
+  formatCalendarRead,
+  formatGitFailures,
+  formatGitScan,
+  formatTally,
+  formatWindowSource,
+} from './format';
 import { EVIDENCE_SOURCES, EvidenceSource, EvidenceSourceState } from './inventory';
 
 const STATE_LABEL: Record<EvidenceSourceState, string> = {
@@ -43,6 +55,8 @@ type SourceRow = {
   run: string | null;
   /** Something degraded that still leaves the source working. */
   warning: string | null;
+  /** Whether the degradation is a permission the user can grant from here. */
+  grant: boolean;
   failure: string | null;
 };
 
@@ -92,6 +106,14 @@ type SourceRow = {
               <et-banner [description]="row.warning" type="warning" heading="Degraded" />
             }
 
+            @if (row.grant) {
+              <div>
+                <button (click)="grantAccessibility()" et-button variant="outline" size="sm">
+                  Allow window titles
+                </button>
+              </div>
+            }
+
             @if (row.failure) {
               <et-banner [description]="row.failure" type="error" heading="The last run failed" />
             }
@@ -101,13 +123,15 @@ type SourceRow = {
     </et-card>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BADGE_IMPORTS, BANNER_IMPORTS, CARD_IMPORTS],
+  imports: [BADGE_IMPORTS, BANNER_IMPORTS, BUTTON_IMPORTS, CARD_IMPORTS],
 })
 export class SourcesViewComponent {
+  private destroyRef = inject(DestroyRef);
   private ports = injectHostPorts();
   private windows = injectWindowCollector();
   private agentSessions = injectAgentSessionCollector();
   private git = injectGitCollector();
+  private calendar = injectCalendarCollector();
   private settings = injectTimetrackSettings();
 
   /** Re-counted whenever a collector reports a run, so the tally moves as evidence arrives. */
@@ -115,6 +139,7 @@ export class SourcesViewComponent {
     windows: this.windows.lastRun(),
     agentSessions: this.agentSessions.lastRun(),
     git: this.git.lastRun(),
+    calendar: this.calendar.lastRun(),
   }));
 
   private tallies = toSignal(
@@ -130,29 +155,34 @@ export class SourcesViewComponent {
 
       return {
         source,
-        detail: state === 'ready' ? null : (source.detail ?? null),
+        detail: state === 'ready' || state === 'collecting' ? null : (source.detail ?? null),
         label: STATE_LABEL[state],
         color: STATE_COLOR[state],
         variant: STATE_VARIANT[state],
-        stored: this.storedOf(source),
+        stored: this.storedOf({ source, state }),
         run: this.runOf(source),
         warning: this.warningOf(source),
+        grant: source.collector === 'window' && this.windows.status()?.kind === WINDOW_SOURCE_NEEDS_ACCESSIBILITY,
         failure: this.failureOf(source),
       };
     }),
   );
 
-  /** A source that names a credential reads its state from the keychain, not from the inventory. */
+  protected grantAccessibility() {
+    this.windows.requestAccessibility$().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
+
+  /** A source that names a credential is waiting on the keychain, whatever the inventory says it does. */
   private stateOf(source: EvidenceSource): EvidenceSourceState {
     if (!source.credential) return source.state;
 
-    return this.settings.credentials()[source.credential] ? 'ready' : 'configured';
+    return this.settings.credentials()[source.credential] ? source.state : 'configured';
   }
 
-  private storedOf(source: EvidenceSource) {
-    if (source.state !== 'collecting' || !source.eventSource) return null;
+  private storedOf(row: { source: EvidenceSource; state: EvidenceSourceState }) {
+    if (row.state !== 'collecting' || !row.source.eventSource) return null;
 
-    return formatTally(this.tallies().find((tally) => tally.source === source.eventSource));
+    return formatTally(this.tallies().find((tally) => tally.source === row.source.eventSource));
   }
 
   private runOf(source: EvidenceSource) {
@@ -163,6 +193,13 @@ export class SourcesViewComponent {
         return formatAgentSessions(this.agentSessions.totals()) || null;
       case 'git':
         return formatGitScan({ discovery: this.git.discovery(), scannedAt: this.git.lastRun()?.at ?? null }) || null;
+      case 'calendar':
+        return (
+          formatCalendarRead({
+            calendarIds: this.settings.settings().google.calendarIds,
+            readAt: this.calendar.lastRun()?.at ?? null,
+          }) || null
+        );
       default:
         return null;
     }
@@ -186,6 +223,8 @@ export class SourcesViewComponent {
         return this.agentSessions.failure();
       case 'git':
         return this.git.failure();
+      case 'calendar':
+        return this.calendar.failure();
       default:
         return null;
     }

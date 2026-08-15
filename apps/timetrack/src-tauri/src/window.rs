@@ -32,7 +32,8 @@ pub struct WindowEvent {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowSourceStatus {
-    /// `wayland-wlr` once the toplevel protocol is live, `none` when no source could start.
+    /// `wayland-wlr` once the toplevel protocol is live, `macos-ax` when the Accessibility permission
+    /// grants titles, `macos-app-only` when it does not, `none` when no source could start.
     pub kind: String,
     /// Why there is no source, for the banner naming what is degraded.
     pub detail: Option<String>,
@@ -106,7 +107,7 @@ impl WindowSource {
         }
     }
 
-    fn drain_after(&self, after_seq: u64) -> TimetrackResult<WindowEventBatch> {
+    pub(crate) fn drain_after(&self, after_seq: u64) -> TimetrackResult<WindowEventBatch> {
         let mut buffer = self.0.buffer.lock().map_err(|_| TimetrackError::Poisoned)?;
 
         while buffer.events.front().is_some_and(|event| event.seq <= after_seq) {
@@ -122,7 +123,7 @@ impl WindowSource {
         })
     }
 
-    fn status(&self) -> TimetrackResult<WindowSourceStatus> {
+    pub(crate) fn status(&self) -> TimetrackResult<WindowSourceStatus> {
         Ok(self.0.status.lock().map_err(|_| TimetrackError::Poisoned)?.clone())
     }
 }
@@ -147,11 +148,33 @@ pub async fn window_source_status(source: State<'_, WindowSource>) -> TimetrackR
     source.status()
 }
 
+/// Asks the platform for whatever permission window titles need, and answers the state after asking.
+///
+/// A platform that needs no permission answers `true`, so the caller never has to ask which one it is
+/// on: the status is where a source that is missing something says so.
+#[tauri::command]
+pub async fn window_request_accessibility() -> TimetrackResult<bool> {
+    Ok(request_accessibility())
+}
+
+#[cfg(target_os = "macos")]
+fn request_accessibility() -> bool {
+    crate::window_macos::request_accessibility()
+}
+
+#[cfg(not(target_os = "macos"))]
+fn request_accessibility() -> bool {
+    true
+}
+
 pub fn start(source: &WindowSource) {
     #[cfg(target_os = "linux")]
     crate::window_wayland::start(source.clone());
 
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "macos")]
+    crate::window_macos::start(source.clone());
+
+    #[cfg(not(any(target_os = "linux", target_os = "macos")))]
     source.set_status(
         "none",
         Some("no window source is implemented for this platform yet".to_string()),

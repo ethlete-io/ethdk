@@ -73,6 +73,7 @@ const toOccurrence = (resource: GoogleCalendarEventResource): CalendarOccurrence
     at,
     source: 'calendar',
     kind: 'calendar-event',
+    occurrenceId: resource.id ?? `${at.toISOString()}|${resource.summary ?? ''}`,
     until,
     title: resource.summary?.trim() || 'untitled event',
     accepted: acceptedBySelf(resource),

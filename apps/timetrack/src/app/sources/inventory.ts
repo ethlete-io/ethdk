@@ -19,16 +19,18 @@ export type EvidenceSource = {
    * watches a workday has to be able to say exactly what it kept.
    */
   stores: string;
+  /** What the source does once it has everything it needs. A row without its credential reads as
+   * `configured` whatever this says. */
   state: EvidenceSourceState;
   /**
-   * The credential this source cannot be read without. A row that names one takes its state from the
-   * keychain instead of from `state`, so storing a token flips the row rather than needing an edit here.
+   * The credential this source cannot be read without, so storing a token flips the row rather than
+   * needing an edit here.
    */
   credential?: keyof TimetrackCredentialStatus;
   /** What the source is still waiting on. Not shown once it has everything it needs. */
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
-  collector?: 'window' | 'git' | 'agent-session';
+  collector?: 'window' | 'git' | 'agent-session' | 'calendar';
   /** The `source` its events carry in the store, for counting what it has actually put there. */
   eventSource?: CollectedEventSource;
 };
@@ -82,7 +84,9 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     name: 'Google Calendar',
     reads: 'The events of the calendars you pick, read-only.',
     stores: 'The event title, its span, whether you accepted, and a conference link when there is one.',
-    state: 'configured',
+    state: 'collecting',
+    credential: 'google',
+    collector: 'calendar',
     eventSource: 'calendar',
     detail: 'Waiting on the OAuth client — nothing is fetched until you register one and grant calendar access.',
   },
@@ -91,7 +95,7 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     name: 'Jira',
     reads: 'The issues behind the keys the grammar found, read-only.',
     stores: 'Nothing. Issue summaries are fetched to label a row and are not persisted as evidence.',
-    state: 'configured',
+    state: 'ready',
     credential: 'jira',
     detail: 'Waiting on a host, an account email and an API token in Settings.',
   },
@@ -100,7 +104,7 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     name: 'Tempo',
     reads: "The worklogs already on your account, so a day's sync knows what it owns and what is somebody else's.",
     stores: 'The worklogs this app created, so it never writes the same time twice.',
-    state: 'configured',
+    state: 'ready',
     credential: 'tempo',
     detail: 'Waiting on an API token in Settings.',
   },

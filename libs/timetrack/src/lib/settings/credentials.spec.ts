@@ -29,6 +29,7 @@ const secretsHolding = (held: Record<string, string>): TimetrackSecretStore => (
 const configured: TimetrackSettings = {
   ...DEFAULT_TIMETRACK_SETTINGS,
   jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
+  google: { clientId: 'client.apps.googleusercontent.com', calendarIds: [] },
 };
 
 describe('readJiraCredentials$', () => {
@@ -72,20 +73,28 @@ describe('readTempoCredentials$', () => {
 });
 
 describe('timetrackCredentialStatus', () => {
-  it('reports Jira as configured only once the settings name an instance too', () => {
-    const held = { jira: true, tempo: true };
+  it('reports Jira and Google as configured only once the settings name them too', () => {
+    const held = { jira: true, tempo: true, google: true };
 
     expect(timetrackCredentialStatus({ held, settings: DEFAULT_TIMETRACK_SETTINGS })).toEqual({
       jira: false,
       tempo: true,
+      google: false,
     });
-    expect(timetrackCredentialStatus({ held, settings: configured })).toEqual({ jira: true, tempo: true });
+    expect(timetrackCredentialStatus({ held, settings: configured })).toEqual({
+      jira: true,
+      tempo: true,
+      google: true,
+    });
   });
 
   it('reports nothing as configured while the keychain holds no token', () => {
-    expect(timetrackCredentialStatus({ held: { jira: false, tempo: false }, settings: configured })).toEqual({
+    const held = { jira: false, tempo: false, google: false };
+
+    expect(timetrackCredentialStatus({ held, settings: configured })).toEqual({
       jira: false,
       tempo: false,
+      google: false,
     });
   });
 });

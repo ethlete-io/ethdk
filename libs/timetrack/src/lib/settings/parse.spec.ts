@@ -7,6 +7,7 @@ describe('parseTimetrackSettings', () => {
     const settings = parseTimetrackSettings({
       dayTargetMs: 7 * 60 * 60_000,
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
+      google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/tom/dev'],
@@ -15,6 +16,7 @@ describe('parseTimetrackSettings', () => {
     expect(settings).toEqual({
       dayTargetMs: 7 * 60 * 60_000,
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
+      google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/tom/dev'],
@@ -25,6 +27,7 @@ describe('parseTimetrackSettings', () => {
     expect(parseTimetrackSettings(null)).toEqual({
       dayTargetMs: DEFAULT_DAY_TARGET_MS,
       jira: { host: '', email: '' },
+      google: { clientId: '', calendarIds: [] },
       exclusionRules: [],
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
@@ -54,6 +57,12 @@ describe('parseTimetrackSettings', () => {
     expect(parseTimetrackSettings({ gitScanRoots: [' /home/tom/dev ', '/home/tom/dev', '', 7] }).gitScanRoots).toEqual([
       '/home/tom/dev',
     ]);
+  });
+
+  it('trims and de-duplicates the calendar ids the same way', () => {
+    const google = { calendarIds: [' work@example.com ', 'work@example.com', '', 7] };
+
+    expect(parseTimetrackSettings({ google }).google.calendarIds).toEqual(['work@example.com']);
   });
 
   it('keeps the shipped rules unless the document says otherwise', () => {

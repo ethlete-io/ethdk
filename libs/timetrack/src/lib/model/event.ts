@@ -37,6 +37,11 @@ export type AgentSessionEvent = CollectedEventBase<'agent-session', 'agent-sessi
 };
 
 export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-event'> & {
+  /**
+   * The provider's id for this one occurrence, not for the series. A collector reads overlapping
+   * windows, so this is what keeps the same meeting from being stored on every run.
+   */
+  occurrenceId: string;
   until: Date;
   title: string;
   accepted: boolean;

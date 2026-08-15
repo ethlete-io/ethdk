@@ -30,7 +30,16 @@ Building OpenSSL rather than linking the system one is deliberate: it is the dif
 clean checkout building everywhere and every machine needing its own `OPENSSL_DIR` — Fedora has
 `openssl-devel`, but macOS ships LibreSSL with no headers.
 
-macOS needs only Xcode's command line tools — perl there already ships all of these.
+macOS needs only Xcode's command line tools — perl there already ships all of these. Install the
+toolchain with Homebrew (`brew install rustup && rustup toolchain install stable`); `sh.rustup.rs`
+does not resolve on every network, and the formula installs `rustup` without `rustup-init`.
+
+### The Accessibility permission, on macOS
+
+The window source collects idle time and the frontmost application without any permission, and the
+**window title** only with Accessibility. Until it is granted the source reports `macos-app-only`
+and the sources screen offers the button that asks for it; granting it needs no restart. Expect to
+grant it again after a rebuild, because macOS keys the grant to the binary it saw.
 
 ## Running it
 
@@ -55,6 +64,7 @@ skill: they need a Rust toolchain and a per-OS matrix that the Angular libraries
 | `events_*`, `agent_session_cursors`, `compacted_through` | `TimetrackEventStore`    |
 | `ledger_*`                                               | `TimetrackLedgerStore`   |
 | `run_process`                                            | `TimetrackProcessRunner` |
+| `oauth_authorize`                                        | The Google connect flow  |
 
 The TypeScript adapters are in `src/host/`; `injectHostPorts()` hands the core a `TimetrackPorts`.
 
@@ -64,9 +74,23 @@ Two constraints the code depends on:
   quota breach from a bad token, so `http_request` reports every response it gets.
 - **`run_process` runs an allowlist.** The webview may ask for `git` and the agent CLIs and nothing
   else — an open spawn command would turn any script that reaches the webview into code execution.
+- **`oauth_authorize` owns the redirect.** It binds the loopback port, so it is what builds the
+  `redirect_uri`, the PKCE challenge and the `state`. It reports the redirect and the verifier back
+  with the code, because the token exchange is rejected unless it repeats the same pair.
+
+## Connecting Google Calendar
+
+Each user registers their own OAuth client, so there is a one-time setup in the Google Cloud console:
+
+1. Create a project, then enable the **Google Calendar API** in it.
+2. Configure the OAuth consent screen as **External**, and add your own address under **Test users**.
+   Google shows an unverified-app warning until you do.
+3. Create an OAuth client of type **Desktop app**. No redirect URI has to be registered — Google
+   allows any `127.0.0.1` port for an installed application.
+4. Paste the client id and the client secret into Settings, press **Connect**, then pick the
+   calendars that count as work. Nothing is read until a calendar is picked.
 
 ## Still to build
 
-The collectors (window and idle, the inotify watch on `.git/HEAD`, the reader behind
-`AgentSessionLogReader`), Google's OAuth dance, the day-review UI, and the tray. See the phase 1
-list in `plans/timetrack.md`.
+The confirm step that executes a Tempo sync, and the hard pause. See the phase 1 list in
+`plans/timetrack.md`.

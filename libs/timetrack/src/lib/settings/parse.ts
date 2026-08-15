@@ -36,8 +36,8 @@ const asRule = (value: unknown): TimetrackExclusionRule | null => {
 
 const asRules = (value: unknown) => (Array.isArray(value) ? value.flatMap((entry) => asRule(entry) ?? []) : []);
 
-const asRoots = (value: unknown) =>
-  Array.isArray(value) ? [...new Set(value.map(asText).filter((root) => !!root))] : [];
+const asTextList = (value: unknown) =>
+  Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
 /**
  * Reads a stored settings document, falling back to the default for every field it cannot make sense
@@ -47,12 +47,14 @@ const asRoots = (value: unknown) =>
 export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
   const document = asRecord(raw);
   const jira = asRecord(document['jira']);
+  const google = asRecord(document['google']);
 
   return {
     dayTargetMs: asTarget(document['dayTargetMs']),
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
+    google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
     exclusionRules: asRules(document['exclusionRules']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
-    gitScanRoots: asRoots(document['gitScanRoots']),
+    gitScanRoots: asTextList(document['gitScanRoots']),
   };
 };

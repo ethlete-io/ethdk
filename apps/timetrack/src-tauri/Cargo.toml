@@ -13,18 +13,20 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.6.3", features = ["codegen"] }
 
 [dependencies]
+base64 = "0.22.1"
 chrono = "0.4.45"
 keyring = { version = "4.1.6", default-features = false, features = ["v1"] }
 notify = "8.2.0"
 rand = "0.10.2"
-reqwest = { version = "0.13.4", features = ["json", "gzip"] }
+reqwest = { version = "0.13.4", features = ["json", "form", "gzip"] }
 rusqlite = { version = "0.40.2", features = ["bundled-sqlcipher-vendored-openssl", "chrono"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
+sha2 = "0.10.9"
 tauri = { version = "2.11.5", features = ["tray-icon"] }
 tauri-plugin-single-instance = "2.4.1"
 thiserror = "2.0.20"
-tokio = { version = "1.53.1", features = ["process", "time", "rt-multi-thread", "macros"] }
+tokio = { version = "1.53.1", features = ["process", "time", "net", "rt-multi-thread", "macros"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["zbus-secret-service-keyring-store"] }
@@ -34,6 +36,11 @@ wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["apple-native-keyring-store"] }
+libc = "0.2.189"
+objc2-app-kit = { version = "0.3.2", features = ["NSRunningApplication", "NSWorkspace"] }
+objc2-application-services = { version = "0.3.2", features = ["AXError", "AXUIElement", "libc"] }
+objc2-core-foundation = { version = "0.3.2", features = ["CFDictionary", "CFNumber", "CFString"] }
+objc2-core-graphics = { version = "0.3.2", features = ["CGEventSource", "CGEventTypes"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["windows-native-keyring-store"] }

@@ -10,6 +10,7 @@ pub struct HostRequest {
     pub url: String,
     pub headers: Option<HashMap<String, String>>,
     pub body: Option<serde_json::Value>,
+    pub form: Option<HashMap<String, String>>,
 }
 
 #[derive(Serialize)]
@@ -26,6 +27,8 @@ pub struct Http(pub reqwest::Client);
 ///
 /// A non-2xx is data, not a failure: the providers read the status and the error body to tell a
 /// quota breach from a bad token, and Google answers a breach with 403 as often as 429.
+///
+/// A `form` wins over a `body`, because an OAuth token endpoint takes only the form encoding.
 #[tauri::command]
 pub async fn http_request(http: State<'_, Http>, request: HostRequest) -> TimetrackResult<HostResponse> {
     let method = reqwest::Method::from_bytes(request.method.as_bytes())
@@ -35,7 +38,9 @@ pub async fn http_request(http: State<'_, Http>, request: HostRequest) -> Timetr
     for (name, value) in request.headers.unwrap_or_default() {
         builder = builder.header(name, value);
     }
-    if let Some(body) = request.body {
+    if let Some(form) = request.form {
+        builder = builder.form(&form);
+    } else if let Some(body) = request.body {
         builder = builder.json(&body);
     }
 

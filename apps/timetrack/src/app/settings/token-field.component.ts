@@ -24,7 +24,7 @@ import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/comp
       <button [disabled]="!typed().trim()" (click)="store()" et-button variant="filled" size="sm">Save</button>
 
       @if (connected()) {
-        <button (click)="forget.emit()" et-button variant="transparent" size="sm">Disconnect</button>
+        <button (click)="forget.emit()" et-button variant="transparent" size="sm">{{ forgetLabel() }}</button>
       }
     </div>
   `,
@@ -34,6 +34,7 @@ import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/comp
 export class TokenFieldComponent {
   public provider = input.required<string>();
   public connected = input(false);
+  public forgetLabel = input('Disconnect');
 
   public save = output<string>();
   public forget = output<void>();

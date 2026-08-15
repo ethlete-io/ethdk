@@ -1,10 +1,10 @@
 import { signal } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { applyExclusionRules, effectiveExclusionRules } from '@ethlete/timetrack';
-import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, map, of, switchMap, tap, timer } from 'rxjs';
+import { EMPTY, Observable, catchError, concat, concatMap, defer, exhaustMap, map, switchMap, tap, timer } from 'rxjs';
 import { injectTimetrackSettings } from '../app/settings/settings';
-import { WindowBatch, injectHostPorts } from '../host';
+import { WindowBatch, WindowSourceStatus, injectHostPorts } from '../host';
 
 export const WINDOW_POLL_INTERVAL_MS = 30_000;
 
@@ -41,7 +41,7 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const lastRun = signal<WindowCollectorRun | null>(null);
   const totals = signal<WindowCollectorTotals>({ since: new Date(), stored: 0, excluded: 0, dropped: 0 });
   const failure = signal<string | null>(null);
-  const status = toSignal(ports.windows.status$().pipe(catchError(() => of(null))), { initialValue: null });
+  const status = signal<WindowSourceStatus | null>(null);
 
   let throughSeq = 0;
 
@@ -80,6 +80,17 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   /**
+   * The status is re-read on every drain rather than once at startup: a permission the user grants
+   * while the app runs turns titles on without a restart, and a banner that still names it as missing
+   * would send them back to look for a setting they already changed.
+   */
+  const status$ = (): Observable<unknown> =>
+    ports.windows.status$().pipe(
+      tap((next) => status.set(next)),
+      catchError(() => EMPTY),
+    );
+
+  /**
    * Nothing is drained before the settings have been read: a sample the user's own rule denies must not
    * reach the database because the document was still on its way when the first drain ran.
    */
@@ -98,12 +109,26 @@ const WINDOW_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   timer(0, WINDOW_POLL_INTERVAL_MS)
     .pipe(
-      exhaustMap(() => collect$()),
+      exhaustMap(() => concat(status$(), collect$())),
       takeUntilDestroyed(),
     )
     .subscribe();
 
-  return { lastRun, totals, failure, status };
+  /**
+   * Asks for the permission window titles need and reads the status back, so the banner clears as soon
+   * as it is granted rather than at the next drain.
+   */
+  const requestAccessibility$ = () =>
+    ports.windows.requestAccessibility$().pipe(
+      concatMap(() => status$()),
+      catchError((error: unknown) => {
+        failure.set(error instanceof Error ? error.message : String(error));
+
+        return EMPTY;
+      }),
+    );
+
+  return { lastRun, totals, failure, status, requestAccessibility$ };
 });
 
 export const injectWindowCollector = /* @__PURE__ */ toInjectFn(WINDOW_COLLECTOR_DEF);

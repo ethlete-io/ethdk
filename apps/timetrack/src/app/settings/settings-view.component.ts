@@ -10,6 +10,7 @@ import {
 } from '@ethlete/components';
 import { injectGitCollector } from '../../collectors';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
+import { GoogleConnectionComponent } from './google-connection.component';
 import { ScanRootsComponent } from './scan-roots.component';
 import { injectTimetrackSettings } from './settings';
 import { TokenFieldComponent } from './token-field.component';
@@ -116,6 +117,15 @@ import { TokenFieldComponent } from './token-field.component';
             />
           </div>
 
+          <ethlete-google-connection
+            [settings]="store.settings().google"
+            [connected]="store.credentials().google"
+            [hasClientSecret]="store.hasGoogleClientSecret()"
+            (settingsChange)="store.setGoogle($event)"
+            (saveClientSecret)="store.saveGoogleClientSecret($event)"
+            (forgetClientSecret)="store.forgetGoogleClientSecret()"
+          />
+
           <ethlete-exclusion-rules
             [rules]="store.settings().exclusionRules"
             [keepDefaults]="store.settings().keepDefaultExclusionRules"
@@ -142,6 +152,7 @@ import { TokenFieldComponent } from './token-field.component';
     DURATION_INPUT_IMPORTS,
     ExclusionRulesComponent,
     FORM_FIELD_IMPORTS,
+    GoogleConnectionComponent,
     INPUT_IMPORTS,
     ScanRootsComponent,
     SpinnerComponent,

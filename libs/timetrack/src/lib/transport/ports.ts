@@ -14,6 +14,12 @@ export type TimetrackRequest = {
   url: string;
   headers?: Record<string, string>;
   body?: unknown;
+  /**
+   * A form-encoded body, sent instead of `body`. OAuth token endpoints take
+   * `application/x-www-form-urlencoded` and reject JSON, so a provider that talks to one has no other
+   * way to ask for a token.
+   */
+  form?: Record<string, string>;
 };
 
 export type TimetrackResponse<T> = {

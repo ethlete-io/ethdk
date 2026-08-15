@@ -250,9 +250,8 @@ version deliberately dropped. So:
   and receive idle/resume notifications rather than polling. Fall back to logind's
   `IdleHint` and the session `Lock`/`Unlock`/`PrepareForSleep` signals, which also give
   laptop-lid and suspend boundaries for free.
-- **macOS/Windows**, if they arrive: `NSWorkspace.frontmostApplication` plus the AX API for
-  the title (needs the user to grant Accessibility permission - a real onboarding step), and
-  `GetForegroundWindow` + `GetWindowText` (trivial by comparison).
+- **macOS** is built - see below. **Windows**, if it arrives: `GetForegroundWindow` +
+  `GetWindowText` (trivial by comparison).
 
 Titles are the most sensitive thing collected. They are matched against the exclusion rules
 _before_ being written, and the sampled title of an excluded app is never persisted at all.
@@ -277,6 +276,42 @@ thread, and `src/collectors/window-collector.ts` drains it. What the plan did no
 
 Verified on niri: focus samples arrive per switch and per title change, and the idle threshold is
 5 minutes - well under `maxUnobservedMs`, so a real break splits a block and thinking time does not.
+
+**Built on macOS too** - `window_macos.rs`, behind the same buffer and the same status, so nothing
+above it knows which platform it is on. What building it settled:
+
+- **The permission splits the source in two, and only one half needs it.** Idle comes from
+  `CGEventSourceSecondsSinceLastEventType`, and the frontmost application from
+  `NSWorkspace.frontmostApplication` - neither asks for anything. Only the window _title_ needs
+  Accessibility, through `AXUIElementCreateApplication(pid)` → `AXFocusedWindow` → `AXTitle`. So an
+  ungranted machine is `macos-app-only` rather than `none`: it still says which application was in
+  front and when the user was there, and it says so in the status. Measured with no permission at
+  all, on a locked screen: `com.apple.loginwindow`, and the idle timer running for 79 minutes.
+- **Titles need a poll; nothing pushes them.** macOS pushes application activations, but a browser
+  tab switch changes only the title, so the window is read once a second and emitted on change - the
+  same emit-on-change rule the Wayland `commit` uses, and the reason a poll is affordable at all.
+- **Polling reads the true gap, so both presence transitions are dated when they happened.** The
+  idle timer says how long ago input stopped, so an idle start is dated `now - idle` rather than
+  `now - threshold`, and an idle end is dated when input returned rather than when the poll noticed.
+- **An Accessibility read is IPC into the target application**, and an unresponsive one would hold
+  the sampler thread for as long as it likes. `AXUIElementSetMessagingTimeout` bounds it at a second.
+- **The permission is re-read every tick, and the webview re-reads the status on every drain**, so
+  granting it turns titles on without a restart. `window_request_accessibility` is what the sources
+  screen's button calls; macOS shows its dialog once per binary and only ever opens Settings after
+  that, so the command answers the state rather than the user's decision.
+- **The window is not sampled while idle.** Nobody is at the machine, and the sample taken when they
+  come back re-establishes the context anyway.
+- **The bindings carry neither `kCGAnyInputEventType` nor the AX attribute names**, because all of
+  them are C header macros rather than enum members. They are spelled out in the source.
+
+The rules themselves - the two datings, the emit-on-change, not looking while idle, the permission
+arriving mid-run - are unit-tested through `Sampler::apply`, which takes the readings rather than
+taking them. The platform calls around it were driven from a scratch crate that `#[path]`-includes
+`window_macos.rs` beside a printing stand-in for `WindowSource`: it needs no tauri, so it compiles in
+seconds and prints real samples off this machine.
+
+Still unverified: everything behind a granted Accessibility permission. The screen was locked while
+this was built, so the title path has run only in its ungranted form.
 
 ### Local git repos (Rust, phase 1)
 
@@ -588,8 +623,48 @@ What building it settled - four filters that each stop the calendar claiming tim
   `error.errors[0].reason`, so `rateLimited` is computed from both and a genuine scope problem stays
   distinguishable from a retryable one.
 
-Not built here: the OAuth flow (host-side by design) and multi-calendar fan-out - the host calls the
-fetch once per configured calendar and concatenates, which needs no code here.
+**The OAuth flow is built too**, split the way the plan said: `libs/timetrack/src/lib/google-auth/`
+holds everything deterministic - the authorization query, `exchangeGoogleAuthCode$`,
+`refreshGoogleAccessToken$`, `revokeGoogleToken$` and `createGoogleTokenSource`, which holds one
+access token in memory and renews it two minutes before it expires - and `oauth.rs` holds the two
+things a webview cannot do. What building it settled:
+
+- **The loopback listener has to build the redirect itself.** The port is only known once the socket
+  is bound, so `oauth_authorize` binds `127.0.0.1:0`, generates the PKCE verifier and the `state`,
+  appends `redirect_uri`, `code_challenge` and `state` to whatever query the caller passed, opens the
+  browser, and reports the code **with the redirect and the verifier** - the token exchange is
+  rejected unless it repeats the same pair. Google's own rules for an installed application allow any
+  loopback port without it being registered, which is what makes an OS-picked port workable.
+- **A browser asks for `/favicon.ico` on its own.** A listener that answers the first request it gets
+  ends the flow before the user has consented, so the loop lets any request with neither `code` nor
+  `error` pass, and checks `state` before it accepts one that has.
+- **`access_type=offline` alone is not enough - it takes `prompt=consent` too.** Google issues a
+  refresh token on the first consent for a client and never again, so a re-connect without the prompt
+  returns an access token and nothing to renew it with. That reads as a working connection that dies
+  within the hour, so the connect flow fails outright on a grant with no refresh token.
+- **The token endpoint takes `application/x-www-form-urlencoded` and rejects JSON**, so
+  `TimetrackRequest` grew a `form` and `http_request` prefers it over `body`. In reqwest 0.13
+  `RequestBuilder::form` is behind a `form` feature, which 0.12 did not have.
+- **Disconnecting revokes rather than forgets.** Deleting the stored token would leave the grant
+  standing in the user's Google account, which is not what the button says. Revoking a refresh token
+  takes the whole grant with it, and a token Google has already forgotten answers 400 - the state the
+  call asks for - so the local delete happens either way.
+- **Each user registers their own OAuth client**, so the client id is a settings field and the client
+  secret is a keychain entry. Google calls the latter a secret; in an installed application it ships
+  inside every copy and PKCE is what actually protects the exchange.
+
+The whole browser half is unit-tested through the pieces it is made of - the request-line parse, the
+percent codec, and the S256 challenge against RFC 7636's own vector.
+
+Multi-calendar fan-out needed no code here either: `calendar-collector.ts` calls the fetch once per
+picked calendar and concatenates. It reads a wide overlapping window every quarter of an hour, so
+`CalendarOccurrenceEvent` grew an `occurrenceId` and `dedupeKeyOf` keys an occurrence by it **plus its
+times** - a meeting somebody moved is then stored at the hour it moved to rather than keeping the one
+it was first read at.
+
+Still unverified: everything past `oauth_authorize` opening a browser. The flow has not been run
+against a real Google client yet, so the exchange, the refresh and the revoke have only been driven
+against fakes.
 
 ### GitLab CE, self-hosted (phase 2)
 
@@ -1127,11 +1202,12 @@ Jira provider on top, the whole Tempo integration - work-attribute discovery, fo
 subtraction, the sync diff and the write half that executes it - the read-only Google Calendar
 provider, and the store's core half - persistence ports, exclusion rules, retention, ledger writer -
 plus the Claude Code session-log parser with its cursor-driven collector, and the git reconcile pass
-(427 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
+(478 tests). The host shell now exists too: `apps/timetrack` with the encrypted database, the
 keychain key, all five ports wired over `invoke`, and the theming and Tailwind foundation the review
 UI will sit on, plus the file reader behind `AgentSessionLogReader` and the timer that drives
-`collectAgentSessions$` and persists what it returns. Remaining: Google's OAuth dance - now the last
-thing standing between the calendar provider and a real day, and the last unbuilt phase-1 collector.
+`collectAgentSessions$` and persists what it returns. ~~Remaining: Google's OAuth dance~~ **- built**,
+along with the calendar collector it was the last thing standing in front of, so every phase-1
+collector now exists. Remaining: the confirm step that executes a Tempo sync, and the hard pause.
 No LLM, no GitLab, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
 
 **The app runs.** `yarn timetrack` builds and starts, the keychain hands back the key it generated on
@@ -1153,13 +1229,15 @@ be the crate root rather than a `#[path]`-included submodule, or every `crate::�
 resolves against the wrong root. It is still the fastest way to run a Rust test here, and it cannot
 collide with a `tauri:dev` that is already up.
 
-**The dev machine is now macOS, not the Wayland box this plan was written on.** The design is
-unaffected - the window source was always meant to be pluggable - but it re-ranks the work:
-the wlr/niri/X11 sources described above are not the ones this machine can test, so
-`NSWorkspace.frontmostApplication` + the AX API (with its Accessibility permission prompt, a
-real onboarding step) moves from "if they arrive" to the first window source to build. The
-Wayland notes stay - they are verified, and the app is cross-platform - but nothing in phase 1
-should now be sequenced behind them. Everything else in the phase is portable.
+**The dev machine is now macOS, not the Wayland box this plan was written on.** The design was
+unaffected - the window source was always meant to be pluggable - and the macOS source is now
+built, so this machine collects focus and presence again. The Wayland notes stay: they are
+verified, and the app is cross-platform. Everything else in the phase is portable.
+
+**The Mac had no Rust toolchain.** It is `rustup` from Homebrew (`brew install rustup`, then
+`rustup toolchain install stable`), and `rustup-init` is not on the path - the formula installs
+`rustup` alone. `sh.rustup.rs` does not resolve on this network, so the official script is not the
+way in here.
 
 **Phase 2 - closing the code-work gaps.** GitLab CE events and MR review time, the VS Code
 extension and the generic ingest endpoint, the reasoning provider, both ticket-creation

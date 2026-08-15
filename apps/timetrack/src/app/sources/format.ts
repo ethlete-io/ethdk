@@ -58,6 +58,17 @@ export const formatGitScan = (options: { discovery: GitRepoDiscovery | null; sca
   ]);
 };
 
+/** Which calendars are being read, and when. No calendar picked is a configuration state, not a fault. */
+export const formatCalendarRead = (options: { calendarIds: readonly string[]; readAt: Date | null }) => {
+  const { calendarIds, readAt } = options;
+  const count = calendarIds.length;
+
+  return sentences([
+    count ? `Reading ${count} ${count === 1 ? 'calendar' : 'calendars'}.` : 'No calendar is picked yet.',
+    readAt ? `Last read at ${clock(readAt)}.` : null,
+  ]);
+};
+
 /** The repositories a scan could not read, named — a moved or deleted one must not fail silently. */
 export const formatGitFailures = (failures: GitScanFailure[]) => {
   const paths = [...new Set(failures.map((failure) => failure.repoPath))];

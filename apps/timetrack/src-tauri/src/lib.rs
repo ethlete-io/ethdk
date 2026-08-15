@@ -7,6 +7,7 @@ mod git;
 mod http;
 mod keychain;
 mod logs;
+mod oauth;
 mod process;
 mod secrets;
 mod state;
@@ -14,6 +15,8 @@ mod store;
 mod timer;
 mod tray;
 mod window;
+#[cfg(target_os = "macos")]
+mod window_macos;
 #[cfg(target_os = "linux")]
 mod window_wayland;
 
@@ -58,6 +61,7 @@ pub fn run() {
             http::http_request,
             logs::agent_log_lines,
             logs::agent_logs,
+            oauth::oauth_authorize,
             process::run_process,
             secrets::secret_delete,
             secrets::secret_has,
@@ -85,6 +89,7 @@ pub fn run() {
             timer::timer_stop,
             tray::tray_set_readout,
             window::window_events,
+            window::window_request_accessibility,
             window::window_source_status,
         ])
         .run(tauri::generate_context!())

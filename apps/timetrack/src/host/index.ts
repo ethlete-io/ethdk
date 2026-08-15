@@ -4,6 +4,7 @@ export * from './events';
 export * from './git-source';
 export * from './invoke';
 export * from './ledger-store';
+export * from './oauth';
 export * from './ports';
 export * from './process-runner';
 export * from './review-store';

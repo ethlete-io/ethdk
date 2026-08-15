@@ -13,10 +13,16 @@ type HostWindowBatch = {
 };
 
 export type WindowSourceStatus = {
-  /** `wayland-wlr` while the compositor is reporting, `none` when nothing is watching. */
+  /**
+   * `wayland-wlr` while the compositor is reporting, `macos-ax` while the Accessibility permission
+   * grants titles, `macos-app-only` while it does not, `none` when nothing is watching.
+   */
   kind: string;
   detail: string | null;
 };
+
+/** The status a macOS source reports until the Accessibility permission is granted. */
+export const WINDOW_SOURCE_NEEDS_ACCESSIBILITY = 'macos-app-only';
 
 export type WindowBatch = {
   events: CollectedEvent[];
@@ -49,6 +55,13 @@ const reviveEvent = (event: HostWindowEvent): CollectedEvent => {
 export type TauriWindowSource = {
   batch$(afterSeq: number): Observable<WindowBatch>;
   status$(): Observable<WindowSourceStatus>;
+  /**
+   * Asks the platform for the permission window titles need, and answers the state after asking.
+   *
+   * macOS shows its dialog once per binary and only ever opens Settings afterwards, so a `false`
+   * answer means the user has not granted it yet, not that they refused just now.
+   */
+  requestAccessibility$(): Observable<boolean>;
 };
 
 export const createTauriWindowSource = (): TauriWindowSource => ({
@@ -61,4 +74,5 @@ export const createTauriWindowSource = (): TauriWindowSource => ({
       })),
     ),
   status$: () => invokeHost$<WindowSourceStatus>('window_source_status'),
+  requestAccessibility$: () => invokeHost$<boolean>('window_request_accessibility'),
 });

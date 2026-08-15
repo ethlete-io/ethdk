@@ -18,6 +18,9 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  * A commit keys by its sha alone, so the branch the first scan reported for it is the one that stays.
  * `%S` names whichever ref reached the commit first, and a commit that later also lives on another
  * branch must not turn into a second observation of the same work.
+ *
+ * A calendar occurrence keys by its times as well as its id, so a meeting somebody moved is stored
+ * again at the hour it moved to rather than keeping the one it was first read at.
  */
 export const dedupeKeyOf = (event: CollectedEvent): string | null => {
   switch (event.kind) {
@@ -25,6 +28,8 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
       return keyOf([event.kind, event.repoPath, event.sha]);
     case 'git-checkout':
       return keyOf([event.kind, event.repoPath, event.at.toISOString(), event.branch]);
+    case 'calendar-event':
+      return keyOf([event.kind, event.occurrenceId, event.at.toISOString(), event.until.toISOString()]);
     default:
       return null;
   }

@@ -4,23 +4,28 @@ import { TempoCredentials } from '../tempo/client';
 import { TimetrackSecretStore } from '../transport/ports';
 import { TimetrackSettings } from './model';
 
-/** The keychain accounts the two API tokens live under. Nothing else in the app names them. */
+/** The keychain accounts the credentials live under. Nothing else in the app names them. */
 export const TIMETRACK_SECRET_KEYS = {
   jiraToken: 'jira-token',
   tempoToken: 'tempo-token',
+  googleClientSecret: 'google-client-secret',
+  /** What survives a restart. The access token is held in memory and never written anywhere. */
+  googleRefreshToken: 'google-refresh-token',
 } as const;
 
 /** Which providers are ready to be called, answered without a token being read back into the window. */
 export type TimetrackCredentialStatus = {
   jira: boolean;
   tempo: boolean;
+  google: boolean;
 };
 
 /**
  * Whether each provider is configured. `held` is what the keychain answered for the two token accounts,
  * passed in rather than read here so an unrelated settings change does not re-ask the keychain.
  *
- * Jira takes all three of host, email and token, which is why holding its token is not enough.
+ * Jira takes all three of host, email and token, which is why holding its token is not enough. Google
+ * takes the client id as well as the refresh token, for the same reason.
  */
 export const timetrackCredentialStatus = (options: {
   held: TimetrackCredentialStatus;
@@ -28,6 +33,7 @@ export const timetrackCredentialStatus = (options: {
 }): TimetrackCredentialStatus => ({
   jira: options.held.jira && !!options.settings.jira.host && !!options.settings.jira.email,
   tempo: options.held.tempo,
+  google: options.held.google && !!options.settings.google.clientId,
 });
 
 /**
