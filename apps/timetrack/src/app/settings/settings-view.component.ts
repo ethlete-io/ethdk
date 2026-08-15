@@ -1,13 +1,18 @@
-import { Component, ViewEncapsulation, computed, linkedSignal } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject, linkedSignal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   BADGE_IMPORTS,
   BANNER_IMPORTS,
+  BUTTON_IMPORTS,
+  CHOICE_FIELD_IMPORTS,
   DURATION_INPUT_IMPORTS,
   FORM_FIELD_IMPORTS,
   INPUT_IMPORTS,
+  SWITCH_IMPORTS,
   SpinnerComponent,
 } from '@ethlete/components';
 import { injectGitCollector } from '../../collectors';
+import { injectDayNudge } from '../day-nudge';
 import { AttributionRulesComponent } from './attribution-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { GoogleConnectionComponent } from './google-connection.component';
@@ -65,6 +70,34 @@ import { TokenFieldComponent } from './token-field.component';
             <p class="text-small text-et-surface-muted">
               A pause shorter than this is logged as the work around it: five minutes without a keystroke is reading a
               diff, not a break. Anything longer stays off the timesheet. Set it to zero to fill nothing.
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <h3 class="text-h4">The end-of-day reminder</h3>
+
+            <et-choice-field>
+              <et-switch [checked]="store.settings().nudge.enabled" (checkedChange)="store.setNudgeEnabled($event)" />
+              <et-label>Say when today is not finished</et-label>
+              <et-hint>Only about today, and only while something is still owed.</et-hint>
+            </et-choice-field>
+
+            <div class="flex flex-wrap items-end gap-3">
+              <et-form-field class="w-30" appearance="underline" size="sm">
+                <et-label>Remind at</et-label>
+                <et-duration-input
+                  [value]="nudgeAtMs()"
+                  (valueChange)="store.setNudgeAtMinute(($event ?? 0) / 60_000)"
+                  durationFormat="hh:mm"
+                />
+              </et-form-field>
+
+              <button (click)="sendTestNudge()" et-button variant="outline" size="sm">Send a test reminder</button>
+            </div>
+
+            <p class="text-small text-et-surface-muted">
+              The reminder arrives as a desktop notification and as a banner in the window. A development build posts
+              under the terminal, because an unbundled binary has no identity of its own to post under.
             </p>
           </div>
 
@@ -179,12 +212,15 @@ import { TokenFieldComponent } from './token-field.component';
     AttributionRulesComponent,
     BADGE_IMPORTS,
     BANNER_IMPORTS,
+    BUTTON_IMPORTS,
+    CHOICE_FIELD_IMPORTS,
     DURATION_INPUT_IMPORTS,
     ExclusionRulesComponent,
     FORM_FIELD_IMPORTS,
     GoogleConnectionComponent,
     INPUT_IMPORTS,
     ScanRootsComponent,
+    SWITCH_IMPORTS,
     SpinnerComponent,
     TokenFieldComponent,
   ],
@@ -193,14 +229,23 @@ export class SettingsViewComponent {
   protected store = injectTimetrackSettings();
 
   private git = injectGitCollector();
+  private dayNudge = injectDayNudge();
+  private destroyRef = inject(DestroyRef);
 
   protected repos = computed(() => this.git.discovery()?.repos.length ?? 0);
+
+  /** The reminder is configured as a time of day, and the control it is typed into holds a duration. */
+  protected nudgeAtMs = computed(() => this.store.settings().nudge.atMinute * 60_000);
 
   /**
    * Held as the text the user typed until they leave the field. Normalising each keystroke back into the
    * document would eat the separator the moment it is typed.
    */
   protected typedPrefixes = linkedSignal(() => this.store.settings().issueKeyPrefixes.join(', '));
+
+  protected sendTestNudge() {
+    this.dayNudge.sendTest$().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
 
   protected commitPrefixes() {
     this.store.setIssueKeyPrefixes(this.typedPrefixes());

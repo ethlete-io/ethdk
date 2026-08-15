@@ -24,6 +24,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha2 = "0.10.9"
 tauri = { version = "2.11.5", features = ["tray-icon"] }
+tauri-plugin-notification = "2.3.3"
 tauri-plugin-single-instance = "2.4.1"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["process", "time", "net", "rt-multi-thread", "macros"] }

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_DAY_TARGET_MS,
   DEFAULT_GAP_FILL_MS,
+  DEFAULT_NUDGE_AT_MINUTE,
   MAX_DAY_TARGET_MS,
   MAX_GAP_FILL_MS,
+  MAX_MINUTE_OF_DAY,
   MIN_DAY_TARGET_MS,
 } from './model';
 import { parseTimetrackSettings } from './parse';
@@ -15,6 +17,7 @@ describe('parseTimetrackSettings', () => {
       gapFillMs: 10 * 60_000,
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
+      nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/tom/dev'],
@@ -25,6 +28,7 @@ describe('parseTimetrackSettings', () => {
       gapFillMs: 10 * 60_000,
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
+      nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/tom/dev'],
@@ -39,6 +43,7 @@ describe('parseTimetrackSettings', () => {
       gapFillMs: DEFAULT_GAP_FILL_MS,
       jira: { host: '', email: '' },
       google: { clientId: '', calendarIds: [] },
+      nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
       exclusionRules: [],
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
@@ -46,6 +51,12 @@ describe('parseTimetrackSettings', () => {
       attributionRules: [],
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
+  });
+
+  it('keeps a reminder time inside the day, and reminds unless the document turned it off', () => {
+    expect(parseTimetrackSettings({ nudge: { atMinute: -30 } }).nudge).toEqual({ enabled: true, atMinute: 0 });
+    expect(parseTimetrackSettings({ nudge: { atMinute: 5_000 } }).nudge.atMinute).toBe(MAX_MINUTE_OF_DAY);
+    expect(parseTimetrackSettings({ nudge: { enabled: false } }).nudge.atMinute).toBe(DEFAULT_NUDGE_AT_MINUTE);
   });
 
   it('clamps a day target nobody could work', () => {

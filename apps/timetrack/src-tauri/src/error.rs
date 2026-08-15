@@ -14,6 +14,8 @@ pub enum TimetrackError {
     Host(#[from] tauri::Error),
     #[error("serialization error: {0}")]
     Serde(#[from] serde_json::Error),
+    #[error("notification error: {0}")]
+    Notification(#[from] tauri_plugin_notification::Error),
     #[error("{0}")]
     Rejected(String),
     #[error("the database lock was poisoned, so the app can no longer trust it; restart")]

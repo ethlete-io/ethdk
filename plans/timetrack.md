@@ -1219,6 +1219,10 @@ two rows, retype a description, drag a boundary. The footer shows proposed total
 vs already-in-Tempo, and the sync button opens the diff preview. An end-of-day nudge fires if
 a day is unreviewed, and a week view lists unreviewed days for catching up.
 
+The **settings screen** carries the reminder: whether it runs at all, and the local time it is due
+(17:30 by default). It also sends a test one, which is the only way to find out whether this desktop
+shows notifications at all.
+
 ~~Local edits always win over re-correlation: re-running the engine on a day must never
 silently discard a row you touched. Mark edited proposals and merge around them.~~ **Built** -
 `libs/timetrack/src/lib/review/` holds `DayReviewEdits` and `reviewDay`, and
@@ -1251,9 +1255,36 @@ JSON document per local calendar day, keyed by `localDayKey`). What building it 
   provides `SCHEDULER_FEATURE_HOST`. Rows paint in their confidence's theme via `colorToken`;
   unattributed blocks sit behind them in neutral, because the time was still spent.
 - **Still owed here:** dragging a boundary (the headless grid has no drag - that lives in
-  `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now), the
-  end-of-day nudge and the week view. The day target is now a setting, and the footer and the tray
-  read the same one.
+  `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now) and the week
+  view. The day target is now a setting, and the footer and the tray read the same one.
+- ~~**An end-of-day nudge fires if a day is unreviewed.**~~ **Built** - the core's
+  `dayReviewGap()` / `dayNudge()` (`libs/timetrack/src/lib/review/nudge.ts`), the host's `notify`
+  command over schema v7's `day_nudge` table (`src-tauri/src/nudge.rs`), and
+  `apps/timetrack/src/app/day-nudge.ts`
+  with the banner beside it. What building it settled:
+  - **"Unreviewed" is answered against the local ledger, never against Tempo.** The ledger holds the
+    `contentHashOf` every worklog this app wrote, so a row it does not hold - or holds under a
+    different hash - is a row Tempo is behind on. That is what lets the reminder work on a train, with
+    no token and no request, and it is the same hash `planTempoSync` diffs with, so the two can never
+    disagree about what is written. A day also owes something while a row waits for a yes or a no, or
+    while observed time matched no issue.
+  - **The reminder and the notification are two questions, not one.** `isNudgeDue` asks whether the
+    day may be reported at all (the configured minute has passed, and no "later" is running); the
+    repeat window is a second question that only the desktop notification asks. A banner that blinked
+    out for an hour after firing would tell a user who is looking at the app that the day is finished.
+  - **The record is written before the notification is sent.** A failed write would otherwise leave the
+    day looking un-reminded, and the next tick would send the same notification a minute later, and
+    every minute after that - the same ordering argument as the pause, for the same reason.
+  - **A pause does not silence it.** A hard pause is a promise that nothing is _collected_; a day that
+    was paused at 16:00 still has a morning nobody has logged, and the two controls must not be wired
+    into each other.
+  - **The reminder is only ever about today.** A past day is caught up in the week view, and a machine
+    that was asleep at the configured minute has nothing to be told at 03:00.
+  - **Today is now read in one place** (`apps/timetrack/src/app/today.ts`): the tray readout and the
+    reminder both have to report today whatever day the review is on, and a third copy of the
+    correlate-and-review call would have been the one that drifted.
+  - macOS delivers it under the terminal while the app runs unbundled, because a binary with no bundle
+    has no identity to post under. The plugin does that itself; a packaged build posts as the app.
 - ~~**A control inside `<et-form-field>` needs a projected `<et-label>` or the `aria-label` _input_.**~~
   **Fixed.** `[attr.aria-label]` sets the attribute on the wrapper, not on the native control the
   directive renders, so the row had no accessible name and `ET2201` threw in dev mode. The review rows
@@ -1422,7 +1453,8 @@ UI will sit on, plus the file reader behind `AgentSessionLogReader` and the time
 `collectAgentSessions$` and persists what it returns. ~~Remaining: Google's OAuth dance~~ **- built**,
 along with the calendar collector it was the last thing standing in front of, so every phase-1
 collector now exists. ~~Remaining: the confirm step that executes a Tempo sync~~ **- built**, so the
-app now reconstructs a day and writes it. Remaining: the hard pause, and a first run against the real
+app now reconstructs a day and writes it. ~~Remaining: the hard pause~~ **- built**, and so is the
+end-of-day reminder that tells the user a day is still owed. Remaining: a first run against the real
 instance - nothing here has written a production worklog yet. No LLM, no GitLab, no
 Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
 

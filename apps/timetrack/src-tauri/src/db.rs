@@ -93,6 +93,19 @@ CREATE TABLE collection_pause (
 INSERT INTO collection_pause (id, paused_at_ms) VALUES (1, NULL);
 ";
 
+/// What a day has already been reminded about, so one unfinished day is reported once rather than at
+/// every tick, and so "later" and "not today" survive a restart.
+///
+/// A row exists only for a day that was reminded about, and the retention pass never needs to reach it:
+/// it is one short row per working day.
+const SCHEMA_V7: &str = "
+CREATE TABLE day_nudge (
+  day TEXT PRIMARY KEY,
+  last_nudged_at_ms INTEGER,
+  silenced_until_ms INTEGER
+);
+";
+
 /// Opens the encrypted database at `path`, creating and migrating it on first run.
 ///
 /// `key` is the 64 hex chars from the keychain. `PRAGMA key` has to be the first statement on the
@@ -153,6 +166,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 6)?;
     }
 
+    if version < 7 {
+        connection.execute_batch(SCHEMA_V7)?;
+        connection.pragma_update(None, "user_version", 7)?;
+    }
+
     Ok(())
 }
 
@@ -188,6 +206,10 @@ mod tests {
             connection.execute_batch(SCHEMA_V5).unwrap();
         }
 
+        if version >= 6 {
+            connection.execute_batch(SCHEMA_V6).unwrap();
+        }
+
         connection.pragma_update(None, "user_version", version).unwrap();
         migrate(&connection).unwrap();
 
@@ -208,7 +230,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            6
+            7
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -235,6 +257,18 @@ mod tests {
             .unwrap();
         assert!(connection
             .execute("INSERT INTO app_setting (id, document) VALUES (2, '{}')", [])
+            .is_err());
+    }
+
+    #[test]
+    fn migrates_a_database_that_predates_the_reminder() {
+        let connection = migrated_from(6);
+
+        connection
+            .execute("INSERT INTO day_nudge (day, last_nudged_at_ms) VALUES ('2026-08-16', 1)", [])
+            .unwrap();
+        assert!(connection
+            .execute("INSERT INTO day_nudge (day, last_nudged_at_ms) VALUES ('2026-08-16', 2)", [])
             .is_err());
     }
 

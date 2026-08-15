@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { injectCollectionPause } from './collection-pause';
+import { NudgeBannerComponent } from './nudge-banner.component';
 import { PauseControlComponent } from './pause-control.component';
 import { SidebarComponent } from './shell';
 import { TimerControlComponent } from './timer-control.component';
@@ -33,6 +34,8 @@ import { WindowControlsComponent } from './window-controls.component';
         <ethlete-window-controls />
       </div>
 
+      <ethlete-nudge-banner />
+
       <div class="flex min-h-0 grow">
         <div class="flex w-56 shrink-0 flex-col gap-6 overflow-y-auto border-r border-et-surface-border py-6 pr-4 pl-3">
           <div class="flex flex-col gap-1 px-3">
@@ -50,7 +53,14 @@ import { WindowControlsComponent } from './window-controls.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [RouterOutlet, SidebarComponent, TimerControlComponent, PauseControlComponent, WindowControlsComponent],
+  imports: [
+    RouterOutlet,
+    SidebarComponent,
+    TimerControlComponent,
+    PauseControlComponent,
+    NudgeBannerComponent,
+    WindowControlsComponent,
+  ],
 })
 export class AppComponent {
   protected pause = injectCollectionPause();

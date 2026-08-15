@@ -49,6 +49,25 @@ export type TimetrackGoogleSettings = {
 };
 
 /**
+ * When the app says a day is not finished yet.
+ *
+ * The minute is local and the reminder is only ever about today: a past day is caught up in the week
+ * view, and a machine that was off at the configured minute has nothing to be reminded about at 03:00.
+ */
+export type TimetrackNudgeSettings = {
+  enabled: boolean;
+  /** The local minute of day the day's review is due. */
+  atMinute: number;
+};
+
+export const DEFAULT_NUDGE_AT_MINUTE = 17 * 60 + 30;
+
+export const MAX_MINUTE_OF_DAY = 24 * 60 - 1;
+
+/** Holds a reminder time inside a day, whether it came from a control or from a stored document. */
+export const clampMinuteOfDay = (value: number) => Math.min(MAX_MINUTE_OF_DAY, Math.max(0, Math.round(value)));
+
+/**
  * Everything the user configures that is not a secret, read and written as one document.
  *
  * It is deliberately small: a value belongs here only when the app cannot work it out and being wrong
@@ -64,6 +83,7 @@ export type TimetrackSettings = {
   gapFillMs: number;
   jira: TimetrackJiraSettings;
   google: TimetrackGoogleSettings;
+  nudge: TimetrackNudgeSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
   exclusionRules: TimetrackExclusionRule[];
   /** Whether the shipped defaults still apply. Turning them off is a deliberate, visible choice. */
@@ -89,6 +109,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   gapFillMs: DEFAULT_GAP_FILL_MS,
   jira: { host: '', email: '' },
   google: { clientId: '', calendarIds: [] },
+  nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   exclusionRules: [],
   keepDefaultExclusionRules: true,
   gitScanRoots: [],

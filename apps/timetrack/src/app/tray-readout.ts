@@ -1,22 +1,8 @@
 import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import {
-  CurrentActivity,
-  DayCheck,
-  EMPTY_DAY_REVIEW_EDITS,
-  TimerRun,
-  closeTimerRun,
-  correlateDay,
-  currentActivity,
-  formatDurationMs,
-  gitFlowConfigFor,
-  localDayKey,
-  localDayRange,
-  pauseWindows,
-  reviewDay,
-} from '@ethlete/timetrack';
-import { EMPTY, Observable, catchError, combineLatest, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
+import { CurrentActivity, DayCheck, TimerRun, currentActivity, formatDurationMs } from '@ethlete/timetrack';
+import { EMPTY, Observable, catchError, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
 import {
   injectAgentSessionCollector,
   injectCalendarCollector,
@@ -28,6 +14,7 @@ import { injectCollectionPause } from './collection-pause';
 import { formatBlockLabel, formatClockTime } from './day-review/format';
 import { injectTimetrackSettings } from './settings/settings';
 import { injectTimer } from './timer';
+import { readToday$ } from './today';
 
 /**
  * How often the readout is rebuilt even though nothing was collected.
@@ -100,40 +87,15 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   }));
 
   const read$ = (): Observable<TrayReadout> => {
-    const key = localDayKey(new Date());
-    const { from, to } = localDayRange(key);
     const current = settings.settings();
-    const targetMs = current.dayTargetMs;
 
-    return combineLatest({
-      events: ports.events.eventsBetween$(from, to),
-      edits: ports.review.editsFor$(key),
-      runs: ports.timers.runsBetween$(from, to),
-    }).pipe(
-      map(({ events, edits, runs }) => {
-        const at = new Date(Math.min(Date.now(), to.getTime()));
-        const correlation = correlateDay({
-          events,
-          timerRuns: runs.map((run) => closeTimerRun(run, at)),
-          pauses: pauseWindows({ events, window: { from, to }, through: at }),
-          config: gitFlowConfigFor(current),
-          rules: current.attributionRules,
-          sessionize: { repoRoots: git.discovery()?.repos ?? [] },
-          fill: { maxFillGapMs: current.gapFillMs },
-        });
-        const day = reviewDay({
-          correlation,
-          edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
-          check: { targetMs },
-        });
-
-        return {
-          activity: formatActivity(currentActivity({ events, blocks: correlation.blocks })),
-          total: formatTotal({ check: day.check, targetMs }),
-          timer: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
-          pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),
-        };
-      }),
+    return readToday$({ ports, settings: current, repoRoots: git.discovery()?.repos ?? [] }).pipe(
+      map(({ events, correlation, review }) => ({
+        activity: formatActivity(currentActivity({ events, blocks: correlation.blocks })),
+        total: formatTotal({ check: review.check, targetMs: current.dayTargetMs }),
+        timer: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
+        pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),
+      })),
     );
   };
 

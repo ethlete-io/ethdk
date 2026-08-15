@@ -7,6 +7,7 @@ mod git;
 mod http;
 mod keychain;
 mod logs;
+mod nudge;
 mod oauth;
 mod pause;
 mod process;
@@ -31,6 +32,7 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             tray::reveal(app);
         }))
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let key = keychain::database_key()?;
@@ -66,6 +68,9 @@ pub fn run() {
             http::http_request,
             logs::agent_log_lines,
             logs::agent_logs,
+            nudge::day_nudge_record,
+            nudge::notify,
+            nudge::set_day_nudge_record,
             oauth::oauth_authorize,
             pause::collection_set_paused,
             pause::collection_state,

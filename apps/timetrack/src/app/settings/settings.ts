@@ -12,6 +12,7 @@ import {
   TimetrackSettings,
   clampDayTargetMs,
   clampGapFillMs,
+  clampMinuteOfDay,
   timetrackCredentialStatus,
   withAttributionRule,
   withoutAttributionRule,
@@ -163,6 +164,9 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     setDayTargetMs: (dayTargetMs: number) => patch({ dayTargetMs: clampDayTargetMs(dayTargetMs) }),
     setGapFillMs: (gapFillMs: number) => patch({ gapFillMs: clampGapFillMs(gapFillMs) }),
+    setNudgeEnabled: (enabled: boolean) => patch({ nudge: { ...settings().nudge, enabled } }),
+    setNudgeAtMinute: (atMinute: number) =>
+      patch({ nudge: { ...settings().nudge, atMinute: clampMinuteOfDay(atMinute) } }),
     setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
     setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),

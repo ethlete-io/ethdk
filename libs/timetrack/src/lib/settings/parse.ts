@@ -1,6 +1,13 @@
 import { AttributionRule, AttributionTarget } from '../correlate/rules';
 import { TimetrackExclusionRule } from '../store/exclusion';
-import { DEFAULT_TIMETRACK_SETTINGS, TimetrackSettings, clampDayTargetMs, clampGapFillMs } from './model';
+import {
+  DEFAULT_TIMETRACK_SETTINGS,
+  TimetrackNudgeSettings,
+  TimetrackSettings,
+  clampDayTargetMs,
+  clampGapFillMs,
+  clampMinuteOfDay,
+} from './model';
 
 const asRecord = (value: unknown) =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -80,6 +87,19 @@ const asAttributionTarget = (value: unknown): AttributionTarget | null => {
 const asAttributionRules = (value: unknown) =>
   Array.isArray(value) ? value.flatMap((entry, index) => asAttributionRule(entry, index) ?? []) : [];
 
+const asNudge = (value: unknown): TimetrackNudgeSettings => {
+  const raw = asRecord(value);
+  const atMinute = raw['atMinute'];
+
+  return {
+    enabled: raw['enabled'] !== false,
+    atMinute:
+      typeof atMinute === 'number' && Number.isFinite(atMinute)
+        ? clampMinuteOfDay(atMinute)
+        : DEFAULT_TIMETRACK_SETTINGS.nudge.atMinute,
+  };
+};
+
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
@@ -98,6 +118,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     gapFillMs: asGapFill(document['gapFillMs']),
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
     google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
+    nudge: asNudge(document['nudge']),
     exclusionRules: asRules(document['exclusionRules']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
