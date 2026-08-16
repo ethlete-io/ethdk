@@ -139,6 +139,12 @@ const WORDING: Record<DayNudgeReason, (gap: DayReviewGap) => string> = {
 };
 
 /**
+ * What a day still owes, in words. Every surface that reports a gap says it with this — the desktop
+ * notification, the banner behind it and the week view's list of days to catch up on.
+ */
+export const describeDayReviewGap = (gap: DayReviewGap) => gap.reasons.map((reason) => WORDING[reason](gap)).join(', ');
+
+/**
  * The one reminder a day gets, already worded, or `null` while the day is finished or the moment is
  * wrong. The words are here rather than in the app because the same sentence has to read the same in a
  * desktop notification and in the banner behind it.
@@ -164,7 +170,7 @@ export const dayNudge = (options: {
     day: options.day,
     gap,
     title: gap.reasons[0] === 'unsynced' ? 'Your day is not logged yet' : 'Your day still needs a review',
-    body: gap.reasons.map((reason) => WORDING[reason](gap)).join(', '),
+    body: describeDayReviewGap(gap),
     notify: hasNudgeRepeatElapsed(options),
   };
 };

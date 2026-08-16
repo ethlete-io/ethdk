@@ -15,30 +15,31 @@ import {
 import { Observable, combineLatest, map } from 'rxjs';
 import { HostPorts } from '../host';
 
-export type TodayReview = {
+export type DayRead = {
   key: string;
-  /** The instant the day is read through: now, or midnight once the day has rolled over. */
+  /** The instant the day is read through: now, or the day's end once it is over. */
   at: Date;
   events: CollectedEvent[];
   correlation: DayCorrelation;
   review: DayReview;
 };
 
-/**
- * Today, reconstructed from the store, for the surfaces that must report today whatever day the review
- * is on: the tray menu and the end-of-day reminder both do, and the review follows whichever day the
- * reviewer stepped to.
- *
- * A read rather than a store. Both callers already own a clock of their own, and one shared
- * subscription would make each of them wait for the other's tick.
- */
-export const readToday$ = (options: {
+export type DayReadOptions = {
   ports: HostPorts;
   settings: TimetrackSettings;
   repoRoots: readonly string[];
-}): Observable<TodayReview> => {
-  const { ports, settings } = options;
-  const key = localDayKey(new Date());
+};
+
+/**
+ * One day, reconstructed from the store, for every surface that reads a day it does not own: the tray
+ * menu, the end-of-day reminder and the week view all do. The day review has its own reader because it
+ * also carries the reviewer's unsaved edits.
+ *
+ * A read rather than a store. Each caller already owns a clock or an anchor of its own, and one shared
+ * subscription would make each of them wait for the others.
+ */
+export const readDay$ = (options: DayReadOptions & { day: string }): Observable<DayRead> => {
+  const { ports, settings, day: key } = options;
   const { from, to } = localDayRange(key);
 
   return combineLatest({
@@ -72,3 +73,10 @@ export const readToday$ = (options: {
     }),
   );
 };
+
+/**
+ * Today, for the two surfaces that must report today whatever day the review is on: the tray readout
+ * and the end-of-day reminder both do, and the review follows whichever day the reviewer stepped to.
+ */
+export const readToday$ = (options: DayReadOptions): Observable<DayRead> =>
+  readDay$({ ...options, day: localDayKey(new Date()) });

@@ -14,7 +14,7 @@ import { injectCollectionPause } from './collection-pause';
 import { formatBlockLabel, formatClockTime } from './day-review/format';
 import { injectTimetrackSettings } from './settings/settings';
 import { injectTimer } from './timer';
-import { readToday$ } from './today';
+import { readToday$ } from './read-day';
 
 /**
  * How often the readout is rebuilt even though nothing was collected.

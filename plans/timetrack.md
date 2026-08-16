@@ -1255,8 +1255,8 @@ JSON document per local calendar day, keyed by `localDayKey`). What building it 
   provides `SCHEDULER_FEATURE_HOST`. Rows paint in their confidence's theme via `colorToken`;
   unattributed blocks sit behind them in neutral, because the time was still spent.
 - **Still owed here:** dragging a boundary (the headless grid has no drag - that lives in
-  `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now) and the week
-  view. The day target is now a setting, and the footer and the tray read the same one.
+  `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now). The day
+  target is now a setting, and the footer and the tray read the same one.
 - ~~**An end-of-day nudge fires if a day is unreviewed.**~~ **Built** - the core's
   `dayReviewGap()` / `dayNudge()` (`libs/timetrack/src/lib/review/nudge.ts`), the host's `notify`
   command over schema v7's `day_nudge` table (`src-tauri/src/nudge.rs`), and
@@ -1280,11 +1280,31 @@ JSON document per local calendar day, keyed by `localDayKey`). What building it 
     into each other.
   - **The reminder is only ever about today.** A past day is caught up in the week view, and a machine
     that was asleep at the configured minute has nothing to be told at 03:00.
-  - **Today is now read in one place** (`apps/timetrack/src/app/today.ts`): the tray readout and the
-    reminder both have to report today whatever day the review is on, and a third copy of the
-    correlate-and-review call would have been the one that drifted.
+  - **A day is now read in one place** (`apps/timetrack/src/app/read-day.ts`): the tray readout, the
+    reminder and the week view all read a day they do not own, and a second copy of the
+    correlate-and-review call would have been the one that drifted. `readToday$` is `readDay$` on
+    today's key.
   - macOS delivers it under the terminal while the app runs unbundled, because a binary with no bundle
     has no identity to post under. The plugin does that itself; a packaged build posts as the app.
+- ~~**A week view lists unreviewed days for catching up.**~~ **Built** - the core's `reviewWeek()`
+  (`libs/timetrack/src/lib/review/week.ts`) and the `week` route
+  (`apps/timetrack/src/app/week-review/`). It reads each of the seven days through the same
+  `dayReviewGap` the reminder reads today through, so the two can never disagree about which days are
+  finished. What building it settled:
+  - **The week targets only the days that saw work.** A weekend nobody worked is not a shortfall, and
+    a week target of five fixed days would report every holiday as one. `worked` is true when the day
+    proposed something, observed time nothing could attribute, or holds a row at all - a day whose
+    rows all await a yes or a no proposes nothing yet and is still a day that was worked.
+  - **A week nothing was collected in is not a finished week.** The list would otherwise read as green
+    for a week a collector was dead in, so the empty week says so and points at the Sources view.
+  - **The wording of a gap lives in the core** (`describeDayReviewGap`), because a day now says what it
+    owes in three places - the notification, the banner and this list - and one sentence in three
+    places is one sentence that drifts twice.
+  - **Scoped to its view, not to the root.** Seven correlations are worth running while somebody is
+    looking at them and not on every app start, which is why this is the app's one `defineProvider`
+    rather than another `defineRootProvider`.
+  - **A row's Review link steps the day review and then navigates.** The day store is a root provider,
+    so the day view is already on the right day when it loads.
 - ~~**A control inside `<et-form-field>` needs a projected `<et-label>` or the `aria-label` _input_.**~~
   **Fixed.** `[attr.aria-label]` sets the attribute on the wrapper, not on the native control the
   directive renders, so the row had no accessible name and `ET2201` threw in dev mode. The review rows
@@ -1489,7 +1509,7 @@ way in here.
 
 **Phase 2 - closing the code-work gaps.** GitLab CE events and MR review time, the VS Code
 extension and the generic ingest endpoint, the reasoning provider, both ticket-creation
-flows, MR → ticket repair, week view.
+flows, MR → ticket repair.
 
 **Phase 3 - the noisy tail.** Slack huddle polling, Discord (bot mechanism, guild-scoped,
 `weak`), Gmail notification parsing, Codex session logs, and a Chrome extension if window

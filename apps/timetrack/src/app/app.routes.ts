@@ -8,6 +8,12 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./day-review/day-review-view.component').then((entry) => entry.DayReviewViewComponent),
   },
   {
+    path: 'week',
+    title: 'Week',
+    loadComponent: () =>
+      import('./week-review/week-review-view.component').then((entry) => entry.WeekReviewViewComponent),
+  },
+  {
     path: 'sync',
     title: 'Sync',
     loadComponent: () => import('./sync/sync-view.component').then((entry) => entry.SyncViewComponent),

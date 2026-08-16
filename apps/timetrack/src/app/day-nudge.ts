@@ -26,7 +26,7 @@ import {
 import { injectGitCollector } from '../collectors';
 import { injectHostPorts } from '../host';
 import { injectTimetrackSettings } from './settings/settings';
-import { readToday$ } from './today';
+import { readToday$ } from './read-day';
 
 /** How often the day is asked whether it is finished. The reminder is due to the minute, not sooner. */
 const NUDGE_INTERVAL_MS = 60_000;
