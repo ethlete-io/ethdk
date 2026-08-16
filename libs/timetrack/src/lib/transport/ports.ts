@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import {
+  TimetrackCoverageStore,
   TimetrackEventStore,
   TimetrackLedgerStore,
   TimetrackReviewStore,
@@ -73,6 +74,7 @@ export type TimetrackPorts = {
   secrets: TimetrackSecretStore;
   events: TimetrackEventStore;
   ledger: TimetrackLedgerStore;
+  coverage: TimetrackCoverageStore;
   review: TimetrackReviewStore;
   settings: TimetrackSettingsStore;
   timers: TimetrackTimerStore;

@@ -92,6 +92,14 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
           day,
         });
       }),
+      // Recording what Tempo holds is the whole reason the week view and the reminder can answer
+      // offline, but it is not what the reviewer asked for. A failed write must never fail the preview.
+      switchMap((preview) =>
+        ports.coverage.save$(preview.coverage).pipe(
+          catchError(() => of(undefined)),
+          map(() => preview),
+        ),
+      ),
       map((preview): SyncPreviewStatus => ({ kind: 'ready', day, preview })),
       catchError((error: unknown) => of<SyncPreviewStatus>({ kind: 'failed', day, message: messageOf(error) })),
     );

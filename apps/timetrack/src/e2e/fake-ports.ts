@@ -5,6 +5,7 @@ import {
   ProcessSpec,
   SyncedWorklog,
   TIMETRACK_SECRET_KEYS,
+  TempoDayCoverage,
   TimerRun,
   TimetrackRequest,
   TimetrackResponse,
@@ -28,6 +29,7 @@ export const createFakePorts = (): HostPorts => {
   const events = [...e2eEvents()];
   const ledger = new Map<string, SyncedWorklog[]>();
   const edits = new Map<string, DayReviewEdits>();
+  const coverage = new Map<string, TempoDayCoverage>();
   const secrets = new Map<string, string>([
     [TIMETRACK_SECRET_KEYS.jiraToken, 'e2e-jira-token'],
     [TIMETRACK_SECRET_KEYS.tempoToken, 'e2e-tempo-token'],
@@ -96,6 +98,15 @@ export const createFakePorts = (): HostPorts => {
             entries.filter((entry) => !dropped.has(entry.proposalId)),
           );
         }
+
+        return done();
+      },
+    },
+
+    coverage: {
+      forDay$: (day) => ok(coverage.get(day) ?? null),
+      save$: (next) => {
+        coverage.set(next.day, next);
 
         return done();
       },

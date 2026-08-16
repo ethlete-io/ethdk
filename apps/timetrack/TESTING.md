@@ -1,6 +1,6 @@
 # Testing timetrack
 
-Sections 1 to 11 are the manual check. A person works through them from the top. Each step has one
+Sections 1 to 12 are the manual check. A person works through them from the top. Each step has one
 action and one pass condition. Write down the number of any step that fails, and what you saw.
 
 Section 0 is the automated check. Run it first — it is faster, and it catches what it covers.
@@ -20,11 +20,11 @@ in-memory fakes. There is no Tauri, no network and no keychain in that run. Ever
 To look at the fake app yourself, run `npx nx serve timetrack-app --configuration=e2e` and open
 `http://localhost:4211`.
 
-**Pass:** 662 unit tests and 7 e2e tests pass.
+**Pass:** 676 unit tests and 9 e2e tests pass.
 
-The e2e suite covers the day reconstruction, the unnamed-work card, the create-ticket draft, and the
-sync preview against time already in Tempo. It does not cover the boundary drag or the agent call.
-Those still need sections 5 and 6.
+The e2e suite covers the day reconstruction, the unnamed-work card, the create-ticket draft, the sync
+preview against time already in Tempo, and the week view reading that time back. It does not cover the
+boundary drag or the agent call. Those still need sections 5 and 6.
 
 ## 1. Start the app
 
@@ -128,17 +128,23 @@ Two questions to answer against your instance while the form is open:
 
 **Pass:** seven days appear. Each day that saw work shows a duration.
 
-**Known to fail:** see section 9.
+A day whose time you logged in Tempo by hand needs section 12, not this step.
 
-## 9. Known defects — do not report these again
+## 9. Defects already found — do not report these again
 
-### 9.1 A day logged in Tempo by hand still reads as unfinished
+Both are fixed. They are kept here so a report of the same symptom can be matched against them.
 
-The week view says a day needs work, although Tempo already holds that day's time.
+### 9.1 A day logged in Tempo by hand still read as unfinished — fixed
 
-Cause: `dayReviewGap` in `libs/timetrack/src/lib/review/nudge.ts` reads the local ledger alone. The
-ledger records what **this app** wrote. Time you logged in Tempo directly is not in it, so every
-proposed row reads as unsynced.
+The week view said a day needed work, although Tempo already held that day's time. `dayReviewGap`
+read the local ledger alone, and the ledger records only what **this app** wrote.
+
+The Sync preview now writes down what Tempo holds for the day, per issue. The week view and the
+end-of-day reminder reduce every row by that record before they say a day is behind, which is the same
+reduction a sync plans. Neither view asks Tempo, so both still work with no token and no network.
+
+The record is only as fresh as the last preview. A day you have never opened Sync on has no record,
+and still reads as unsynced. Check it in section 12.
 
 ### 9.2 A sync logged the same hour twice — fixed
 
@@ -174,6 +180,21 @@ This is the check for the fix in section 9.2. Read the plan before you press Syn
 2. Open Host. Read the store and its cursors.
 
 **Pass:** each collector reports a state, and the cursors carry a recent time.
+
+## 12. The week view reads what Tempo already holds
+
+This is the check for the fix in section 9.1. It writes nothing.
+
+1. Pick a day whose time you logged in Tempo by hand, and open it in Day.
+2. Open Week.
+
+**Pass:** the day reports that its time is not in Tempo yet.
+
+3. Open Sync and read the preview for that same day.
+4. Open Week again.
+
+**Pass:** the day no longer reports time missing from Tempo. Time no issue claimed is still reported,
+which is correct — Tempo cannot hold it.
 
 ## How to report a failure
 

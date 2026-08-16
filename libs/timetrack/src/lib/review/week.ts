@@ -1,4 +1,5 @@
 import { SyncedWorklog } from '../model/proposal';
+import { TempoDayCoverage } from '../tempo/coverage';
 import { shiftDayKey } from './day';
 import { DayReview } from './model';
 import { DayReviewGap, dayReviewGap } from './nudge';
@@ -47,6 +48,8 @@ export type WeekReviewDayInput = {
   day: string;
   review: DayReview;
   ledger: readonly SyncedWorklog[];
+  /** What Tempo already held for the day when the Sync preview last read it. */
+  coverage?: TempoDayCoverage | null;
   /** The same attribute values the sync would write, or the hash reads every synced row as changed. */
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
 };
@@ -86,6 +89,7 @@ export const reviewWeek = (options: {
         gap: dayReviewGap({
           review: entry.review,
           ledger: entry.ledger,
+          coverage: entry.coverage,
           attributesByProposalId: entry.attributesByProposalId,
           toleranceMs: options.toleranceMs,
         }),

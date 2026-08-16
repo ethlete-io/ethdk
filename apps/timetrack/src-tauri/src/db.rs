@@ -117,6 +117,20 @@ ALTER TABLE synced_worklog ADD COLUMN day TEXT NOT NULL DEFAULT '';
 CREATE INDEX synced_worklog_day ON synced_worklog (day);
 ";
 
+/// What Tempo already held for a day, as the Sync preview last read it — one JSON document per day,
+/// the same arrangement as `day_review` and for the same reason: it is read and written whole, and its
+/// shape belongs to the core.
+///
+/// The ledger records only what this app wrote, so without this row a day the user logged in Tempo by
+/// hand reads as a day nobody logged. The week view and the reminder have no token, so the preview is
+/// the only thing that can ever fill it in.
+const SCHEMA_V9: &str = "
+CREATE TABLE tempo_coverage (
+  day TEXT PRIMARY KEY,
+  coverage TEXT NOT NULL
+);
+";
+
 /// Gives every ledger entry written before schema v8 its day.
 ///
 /// A proposal id is `<issueKey>@<ISO instant>`, so the day is in the row already; a row whose id does
@@ -228,6 +242,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 8)?;
     }
 
+    if version < 9 {
+        connection.execute_batch(SCHEMA_V9)?;
+        connection.pragma_update(None, "user_version", 9)?;
+    }
+
     Ok(())
 }
 
@@ -271,6 +290,10 @@ mod tests {
             connection.execute_batch(SCHEMA_V7).unwrap();
         }
 
+        if version >= 8 {
+            connection.execute_batch(SCHEMA_V8).unwrap();
+        }
+
         connection.pragma_update(None, "user_version", version).unwrap();
         migrate(&connection).unwrap();
 
@@ -291,9 +314,30 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            8
+            9
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
+    }
+
+    #[test]
+    fn gives_a_database_that_predates_the_coverage_table_one() {
+        let connection = migrated_from(8);
+
+        connection
+            .execute(
+                "INSERT INTO tempo_coverage (day, coverage) VALUES ('2026-08-11', '{}')",
+                [],
+            )
+            .unwrap();
+
+        assert_eq!(
+            connection
+                .query_row("SELECT coverage FROM tempo_coverage WHERE day = '2026-08-11'", [], |row| {
+                    row.get::<_, String>(0)
+                })
+                .unwrap(),
+            "{}"
+        );
     }
 
     /// A database that stops at v7, so the row is inserted into the ledger as it was before the day.

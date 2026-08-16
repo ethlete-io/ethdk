@@ -4,6 +4,7 @@ import { SyncedWorklog } from '../model/proposal';
 import { TimerRun } from '../model/timer';
 import { DayReviewEdits } from '../review/model';
 import { TimetrackSettings } from '../settings/model';
+import { TempoDayCoverage } from '../tempo/coverage';
 
 /**
  * Raw observations, append-only. The host owns the encrypted database; the core only ever asks for a
@@ -32,6 +33,18 @@ export type TimetrackLedgerStore = {
   entriesForDay$(day: string): Observable<SyncedWorklog[]>;
   upsert$(entries: SyncedWorklog[]): Observable<void>;
   remove$(proposalIds: string[]): Observable<void>;
+};
+
+/**
+ * What Tempo already held for a day, one document per local calendar day.
+ *
+ * The Sync preview is the only thing that writes here, because it is the only thing that reads Tempo.
+ * Everything else reads the stored answer, which is what lets the week view and the reminder tell a day
+ * logged by hand from a day nobody logged, without a token.
+ */
+export type TimetrackCoverageStore = {
+  forDay$(day: string): Observable<TempoDayCoverage | null>;
+  save$(coverage: TempoDayCoverage): Observable<void>;
 };
 
 /**

@@ -208,6 +208,21 @@ default CI pipeline and out of the `ci-check` skill's flow. Desktop releases get
 workflow, triggered by tag, with its own matrix. The `tools/treeshake` bundle goldens do not
 apply to either project. Nx Cloud stays off per `AGENTS.md` (`NX_NO_CLOUD=true`).
 
+**The window runs in a plain browser for the e2e suite.** `apps/timetrack/src/main.e2e.ts` bootstraps
+the same `AppComponent` with `HOST_PORTS` swapped for in-memory fakes, so `apps/timetrack-e2e/` drives
+real views under Playwright with no Tauri, no network and no keychain. What building it settled:
+
+- **One seam carries the whole harness.** Every host capability already hangs off `HOST_PORTS`, so the
+  fake is one provider override rather than a parallel application. A capability that grows its own
+  import path would break this before it broke anything else.
+- **`tauri-driver` is Linux and Windows only**, so the real window cannot be driven on macOS at all.
+  The browser run is not a lesser substitute for a desktop run here; it is the only automated run
+  there is, and sections 1 to 12 of `apps/timetrack/TESTING.md` are what covers the rest.
+- **A fixture cannot be seeded through the URL.** The router uses `withHashLocation()`, which drops the
+  query string on the first navigation, so a test seeds `localStorage` with `page.addInitScript`.
+- **A proposal starts as `suggested` and does not sync**, so any test about the subtraction has to
+  accept the row first. The suite asserts the wiring between views; the arithmetic stays unit-tested.
+
 ## Data model
 
 Four layers, each derived from the one before, each kept so the chain is auditable:
@@ -618,6 +633,28 @@ settled, all of it about the same hazard - the same hour logged twice:
   locally rather than being reported by a Tempo 400.
 - The plan and the writes must read the **same marker scheme** or every synced worklog compares as
   edited in Tempo forever. Both run `none` (open question 4); they are changed together.
+
+**Foreign time is now subtracted, and what it covers is written down.** A Monday already logged in
+Tempo by hand read as unfinished and planned a second copy of every hour - two defects, one cause.
+`subtractForeignTime()` had been written and never called, and nothing outside the Sync view could see
+Tempo at all. `planTempoSync()` now reduces every syncable proposal by it, and `previewTempoSync$()`
+returns a `TempoDayCoverage` the app stores per day (`TimetrackCoverageStore`, schema v9's
+`tempo_coverage`). What building it settled:
+
+- **A reduction to zero on an app-owned row is a delete, not a skip.** Tempo holds the hour twice
+  otherwise - once by hand and once by this app - and the day's total is what has to come out right.
+- **The record is keyed by issue and not by proposal.** Rows are re-derived from the evidence on every
+  read, so a proposal id is not a name that survives; the issue key is, and it is already the unit
+  `subtractForeignTime()` matches on. That is what lets the week view reuse the function rather than
+  imitate it, so the two can never disagree about which days are finished.
+- **The preview returns the record; the app stores it.** A function called `preview` that writes is a
+  function nobody trusts to be read-only, and the write must never fail the preview - the reviewer
+  asked for a plan, not for a record.
+- **Only the Sync view can ever fill it in**, so a day nobody has previewed still reads as unsynced,
+  and a day whose foreign time was deleted in Tempo reads as covered until the next preview. Both are
+  the price of answering with no token, which is the constraint `dayReviewGap` was built under.
+- **`ForeignWorklog.from` is optional**, because the matching never used it. A caller holding a day's
+  totals per issue can now pass them without inventing a start time the rule would ignore.
 
 ### Google Calendar (phase 1)
 

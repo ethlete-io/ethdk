@@ -132,6 +132,25 @@ describe('reviewWeek', () => {
     expect(week.days[1]?.gap?.reasons).toEqual(['unsynced']);
   });
 
+  it('reads a day the user logged in Tempo by hand as finished, from the recorded coverage', () => {
+    const day = unlogged('2026-08-11', 480);
+    const week = reviewWeek({
+      days: [
+        {
+          ...day,
+          coverage: {
+            day: day.day,
+            issues: [{ issueKey: 'FIP-1', coveredMs: 480 * MINUTE }],
+            observedAt: new Date('2026-08-11T18:00:00'),
+          },
+        },
+      ],
+      dayTargetMs: 8 * HOUR,
+    });
+
+    expect(week.owingDays).toBe(0);
+  });
+
   it('orders the days oldest first however they arrive', () => {
     const week = reviewWeek({
       days: [logged('2026-08-12', 60), logged('2026-08-10', 60), logged('2026-08-11', 60)],

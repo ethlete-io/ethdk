@@ -94,6 +94,8 @@ pub fn run() {
             store::set_app_settings,
             store::set_compacted_through,
             store::set_day_review_edits,
+            store::set_tempo_coverage,
+            store::tempo_coverage_for_day,
             timer::timer_label,
             timer::timer_running,
             timer::timer_runs_between,

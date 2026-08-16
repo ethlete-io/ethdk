@@ -47,7 +47,10 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
       weekDayKeys(options.start).map((day) =>
         readDay$({ ...options, day }).pipe(
           switchMap(({ review }) =>
-            ports.ledger.entriesForDay$(day).pipe(map((ledger): WeekReviewDayInput => ({ day, review, ledger }))),
+            combineLatest({
+              ledger: ports.ledger.entriesForDay$(day),
+              coverage: ports.coverage.forDay$(day),
+            }).pipe(map(({ ledger, coverage }): WeekReviewDayInput => ({ day, review, ledger, coverage }))),
           ),
         ),
       ),

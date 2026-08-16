@@ -1,9 +1,12 @@
 import { WorklogProposal } from '../model/proposal';
 
-/** A worklog already in Tempo that this app did not write, with its issue key resolved. */
+/**
+ * Time already in Tempo that this app did not write, with its issue key resolved. `from` is optional
+ * because matching does not use it, so a caller holding only a day's totals per issue can pass those.
+ */
 export type ForeignWorklog = {
   issueKey: string;
-  from: Date;
+  from?: Date;
   durationMs: number;
 };
 

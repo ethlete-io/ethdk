@@ -368,6 +368,35 @@ pub async fn set_day_review_edits(
     .await
 }
 
+/// What Tempo held for a day when the Sync preview last read it, or `None` for a day no preview has
+/// covered. Passed through untouched, like the review edits: the host has no opinion about it.
+#[tauri::command]
+pub async fn tempo_coverage_for_day(db: State<'_, Db>, day: String) -> TimetrackResult<Option<serde_json::Value>> {
+    db.run(move |connection| {
+        let stored = connection
+            .query_row("SELECT coverage FROM tempo_coverage WHERE day = ?1", params![day], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?;
+
+        Ok(stored.and_then(|coverage| serde_json::from_str(&coverage).ok()))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn set_tempo_coverage(db: State<'_, Db>, day: String, coverage: serde_json::Value) -> TimetrackResult<()> {
+    db.run(move |connection| {
+        connection.execute(
+            "INSERT INTO tempo_coverage (day, coverage) VALUES (?1, ?2)
+             ON CONFLICT (day) DO UPDATE SET coverage = ?2",
+            params![day, serde_json::to_string(&coverage)?],
+        )?;
+
+        Ok(())
+    })
+    .await
+}
 
 #[cfg(test)]
 mod tests {

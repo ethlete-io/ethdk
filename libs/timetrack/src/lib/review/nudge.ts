@@ -1,7 +1,9 @@
 import { DEFAULT_ROUND_OPTIONS } from '../correlate/round';
 import { formatDurationMs } from '../model/duration';
 import { SyncedWorklog, syncsInState } from '../model/proposal';
+import { TempoDayCoverage, coverageAsForeignTime } from '../tempo/coverage';
 import { contentHashOf } from '../tempo/diff';
+import { subtractForeignTime } from '../tempo/subtract';
 import { DayReview } from './model';
 
 /** What a day still owes the person who worked it. */
@@ -23,11 +25,15 @@ export type DayReviewGap = {
 };
 
 /**
- * What a day would still change if the reviewer went back to it, read from the local ledger alone.
+ * What a day would still change if the reviewer went back to it, read from local records alone.
  *
  * Tempo is never asked. The ledger holds the hash of everything this app wrote, so a row it does not
  * hold, or holds under a different hash, is a row Tempo is behind on — and answering the question
  * locally is what lets the reminder fire on a train, and without a token in it.
+ *
+ * The ledger knows nothing about time the user logged in Tempo by hand, which is what `coverage` is
+ * for. Every syncable row is reduced by it first, exactly as `planTempoSync` reduces the same row, so
+ * this and the sync can never disagree about which days are finished.
  */
 export const dayReviewGap = (options: {
   review: DayReview;
@@ -36,6 +42,8 @@ export const dayReviewGap = (options: {
    * day has to delete, and reading by row id is how such a day reads as finished.
    */
   ledger: readonly SyncedWorklog[];
+  /** What Tempo already held for the day when the Sync preview last read it. */
+  coverage?: TempoDayCoverage | null;
   /** The same attribute values the sync would write, or the hash reads every synced row as changed. */
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
   /** Under this, a gap is not worth a reminder. Defaults to one rounding increment. */
@@ -43,12 +51,18 @@ export const dayReviewGap = (options: {
 }): DayReviewGap | null => {
   const tolerance = options.toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
   const entries = new Map(options.ledger.map((entry) => [entry.proposalId, entry]));
+  const reduced = subtractForeignTime({
+    proposals: options.review.rows.filter((row) => syncsInState(row.state) && row.durationMs > 0),
+    foreign: coverageAsForeignTime(options.coverage),
+  });
+  const reducedById = new Map(reduced.proposals.map((proposal) => [proposal.id, proposal]));
   const reasons: DayNudgeReason[] = [];
   let unsyncedMs = 0;
   let undecidedMs = 0;
   let pendingDelete = false;
 
-  for (const row of options.review.rows) {
+  for (const original of options.review.rows) {
+    const row = reducedById.get(original.id) ?? original;
     const entry = entries.get(row.id);
 
     if (row.state === 'suggested') {
@@ -61,7 +75,12 @@ export const dayReviewGap = (options: {
       continue;
     }
 
-    if (!syncsInState(row.state) || row.durationMs <= 0) continue;
+    if (!syncsInState(row.state)) continue;
+
+    if (row.durationMs <= 0) {
+      pendingDelete ||= !!entry;
+      continue;
+    }
 
     const hash = contentHashOf({ proposal: row, attributes: options.attributesByProposalId?.[row.id] });
 
@@ -163,6 +182,7 @@ export const dayNudge = (options: {
   day: string;
   review: DayReview;
   ledger: readonly SyncedWorklog[];
+  coverage?: TempoDayCoverage | null;
   now: Date;
   atMinute: number;
   record?: DayNudgeRecord | null;

@@ -1,5 +1,6 @@
 export * from './attributes';
 export * from './client';
+export * from './coverage';
 export * from './diff';
 export * from './execute';
 export * from './marker';

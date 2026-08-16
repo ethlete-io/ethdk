@@ -1,5 +1,6 @@
 export * from './agent-session-log-reader';
 export * from './collection-pause';
+export * from './coverage-store';
 export * from './event-store';
 export * from './events';
 export * from './git-source';

@@ -7,6 +7,7 @@ import { localDayRange } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
+import { TempoDayCoverage, tempoDayCoverageOf } from './coverage';
 import { TempoSyncPlan, planTempoSync } from './diff';
 import { TempoMarkerScheme } from './marker';
 import { TempoWorklog, fetchTempoWorklogs$ } from './worklogs';
@@ -19,6 +20,11 @@ export type TempoSyncPreview = {
   remote: TempoWorklog[];
   /** Issue keys for the ids the remote worklogs reference. Tempo names only the numeric id. */
   keysByIssueId: Map<string, string>;
+  /**
+   * What the foreign worklogs cover, for the caller to store. This is the only place in the app that
+   * asks Tempo, so it is the only place that can answer the question for a surface with no token.
+   */
+  coverage: TempoDayCoverage;
 };
 
 /**
@@ -43,6 +49,8 @@ export const previewTempoSync$ = (options: {
   day: string;
   marker?: TempoMarkerScheme;
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
+  /** Stamped on the coverage. Defaults to the moment the preview is built. */
+  observedAt?: Date;
 }): Observable<TempoSyncPreview> => {
   // Tempo's range is by date and inclusive, so both ends are the day itself: passing the range's `to`
   // — midnight of the day after — would read the next day's worklogs into this day's foreign list.
@@ -74,19 +82,33 @@ export const previewTempoSync$ = (options: {
             credentials: options.jira,
             ids: unknown,
           }).pipe(
-            map((resolved): TempoSyncPreview => ({
-              account,
-              remote,
-              keysByIssueId: new Map([...known, ...resolved]),
-              plan: planTempoSync({
+            map((resolved): TempoSyncPreview => {
+              const keysByIssueId = new Map([...known, ...resolved]);
+              const plan = planTempoSync({
                 proposals: options.proposals,
                 ledger,
                 remote,
                 issueIdsByKey,
                 marker: options.marker,
                 attributesByProposalId: options.attributesByProposalId,
-              }),
-            })),
+              });
+
+              return {
+                account,
+                remote,
+                keysByIssueId,
+                plan,
+                coverage: tempoDayCoverageOf({
+                  day: options.day,
+                  observedAt: options.observedAt,
+                  foreign: plan.foreign.flatMap((worklog) => {
+                    const issueKey = keysByIssueId.get(worklog.issueId);
+
+                    return issueKey ? [{ issueKey, durationMs: worklog.durationMs }] : [];
+                  }),
+                }),
+              };
+            }),
           );
         }),
       ),

@@ -53,13 +53,15 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       switchMap(({ key, review }) =>
         combineLatest({
           ledger: ports.ledger.entriesForDay$(key),
+          coverage: ports.coverage.forDay$(key),
           record: ports.nudge.recordFor$(key),
         }).pipe(
-          map(({ ledger, record }) =>
+          map(({ ledger, coverage, record }) =>
             dayNudge({
               day: key,
               review,
               ledger,
+              coverage,
               record,
               now: new Date(),
               atMinute: current.nudge.atMinute,

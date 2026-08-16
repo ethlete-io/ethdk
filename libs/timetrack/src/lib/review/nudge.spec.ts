@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposalState } from '../model/proposal';
+import { TempoDayCoverage } from '../tempo/coverage';
 import { contentHashOf } from '../tempo/diff';
 import { localDayKey } from './day';
 import { DayReview, ReviewedRow } from './model';
@@ -46,6 +47,12 @@ const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayR
     warnings: [],
   },
   unreconciledMs: 0,
+});
+
+const coverage = (coveredMsByIssueKey: Record<string, number>): TempoDayCoverage => ({
+  day: '2026-08-11',
+  issues: Object.entries(coveredMsByIssueKey).map(([issueKey, coveredMs]) => ({ issueKey, coveredMs })),
+  observedAt: at('18:00'),
 });
 
 const ledgerFor = (entry: ReviewedRow): SyncedWorklog => ({
@@ -134,6 +141,78 @@ describe('dayReviewGap', () => {
 
     expect(dayReviewGap({ review: review({ rows: [logged] }), ledger: [entry] })?.reasons).toEqual(['unsynced']);
     expect(dayReviewGap({ review: review({ rows: [logged] }), ledger: [entry], attributesByProposalId })).toBeNull();
+  });
+
+  it('reads a day the user logged in Tempo by hand as finished, although the ledger holds nothing', () => {
+    const byHand = row({ issueKey: 'FIP-1', from: '09:00', minutes: 120, state: 'accepted' });
+
+    expect(dayReviewGap({ review: review({ rows: [byHand] }), ledger: [] })?.reasons).toEqual(['unsynced']);
+    expect(
+      dayReviewGap({
+        review: review({ rows: [byHand] }),
+        ledger: [],
+        coverage: coverage({ 'FIP-1': 120 * MINUTE }),
+      }),
+    ).toBeNull();
+  });
+
+  it('counts only what the recorded coverage leaves over', () => {
+    const partly = row({ issueKey: 'FIP-1', from: '09:00', minutes: 120, state: 'accepted' });
+    const gap = dayReviewGap({
+      review: review({ rows: [partly] }),
+      ledger: [],
+      coverage: coverage({ 'FIP-1': 30 * MINUTE }),
+    });
+
+    expect(gap?.reasons).toEqual(['unsynced']);
+    expect(gap?.unsyncedMs).toBe(90 * MINUTE);
+  });
+
+  it('matches per issue and not per row, the same as the sync does', () => {
+    const morning = row({ issueKey: 'FIP-1', from: '09:00', minutes: 60, state: 'accepted' });
+    const afternoon = row({ issueKey: 'FIP-1', from: '14:00', minutes: 60, state: 'accepted' });
+    const gap = dayReviewGap({
+      review: review({ rows: [morning, afternoon] }),
+      ledger: [],
+      coverage: coverage({ 'FIP-1': 90 * MINUTE }),
+    });
+
+    expect(gap?.unsyncedMs).toBe(30 * MINUTE);
+  });
+
+  it('leaves a row on an issue the coverage says nothing about alone', () => {
+    const other = row({ issueKey: 'FIP-2', from: '09:00', minutes: 120, state: 'accepted' });
+    const gap = dayReviewGap({
+      review: review({ rows: [other] }),
+      ledger: [],
+      coverage: coverage({ 'FIP-1': 120 * MINUTE }),
+    });
+
+    expect(gap?.unsyncedMs).toBe(120 * MINUTE);
+  });
+
+  it('reads an app-owned row the coverage swallows as work owed, because the sync deletes it', () => {
+    const owned = row({ issueKey: 'FIP-1', from: '09:00', minutes: 120, state: 'accepted' });
+    const gap = dayReviewGap({
+      review: review({ rows: [owned] }),
+      ledger: [ledgerFor(owned)],
+      coverage: coverage({ 'FIP-1': 120 * MINUTE }),
+    });
+
+    expect(gap?.reasons).toEqual(['unsynced']);
+    expect(gap?.unsyncedMs).toBe(0);
+  });
+
+  it('never lets the coverage silence a row still waiting for a yes or a no', () => {
+    const weak = row({ issueKey: 'FIP-1', from: '09:00', minutes: 45, state: 'suggested' });
+    const gap = dayReviewGap({
+      review: review({ rows: [weak] }),
+      ledger: [],
+      coverage: coverage({ 'FIP-1': 45 * MINUTE }),
+    });
+
+    expect(gap?.reasons).toEqual(['undecided']);
+    expect(gap?.undecidedMs).toBe(45 * MINUTE);
   });
 });
 

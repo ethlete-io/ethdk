@@ -78,6 +78,8 @@ const ledgerStore = (entries: SyncedWorklog[] = []) => {
   return { store, asked };
 };
 
+const OBSERVED_AT = new Date(2026, 7, 11, 18, 0);
+
 const preview = (options: {
   transport: TimetrackTransport;
   ledger: TimetrackLedgerStore;
@@ -90,6 +92,7 @@ const preview = (options: {
     ledger: options.ledger,
     proposals: options.proposals ?? [proposal()],
     day: '2026-08-11',
+    observedAt: OBSERVED_AT,
   });
 
 describe('previewTempoSync$', () => {
@@ -171,6 +174,42 @@ describe('previewTempoSync$', () => {
     expect(requests.filter(byIdQuery)).toHaveLength(1);
     expect(requests.filter(byKeyQuery)).toHaveLength(1);
     expect(seen.mock.calls[0]?.[0].keysByIssueId.get('10200')).toBe('FIP-4020');
+  });
+
+  it('records what the foreign worklogs cover, so a surface with no token can read it back', () => {
+    const { transport } = previewTransport({ worklogs: [WORKLOG_RESOURCE] });
+    const { store } = ledgerStore();
+    const seen = vi.fn();
+
+    preview({ transport, ledger: store }).subscribe(seen);
+
+    expect(seen.mock.calls[0]?.[0].coverage).toEqual({
+      day: '2026-08-11',
+      issues: [{ issueKey: 'FIP-3010', coveredMs: HOUR }],
+      observedAt: OBSERVED_AT,
+    });
+  });
+
+  it('records an empty coverage for a day tempo holds nothing on', () => {
+    const { transport } = previewTransport();
+    const { store } = ledgerStore();
+    const seen = vi.fn();
+
+    preview({ transport, ledger: store }).subscribe(seen);
+
+    expect(seen.mock.calls[0]?.[0].coverage.issues).toEqual([]);
+  });
+
+  it('leaves an app-owned worklog out of the coverage, or the day would cover itself', () => {
+    const { transport } = previewTransport({ worklogs: [WORKLOG_RESOURCE] });
+    const { store } = ledgerStore([
+      { proposalId: 'p1', day: '2026-08-11', tempoWorklogId: '98765', contentHash: 'h', syncedAt: new Date() },
+    ]);
+    const seen = vi.fn();
+
+    preview({ transport, ledger: store }).subscribe(seen);
+
+    expect(seen.mock.calls[0]?.[0].coverage.issues).toEqual([]);
   });
 
   it('does not ask jira again when the proposals already resolved every remote issue id', () => {
