@@ -12,6 +12,7 @@ import { mergeRequestActivity } from './merge-request-activity';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { TimeWindow, clipBlocks } from './overlap';
 import { pausedMs } from './pauses';
+import { PrivateTime, privateTime } from './project-link';
 import { propose } from './propose';
 import { CheckDayOptions, DayCheck, RoundOptions, checkDay } from './round';
 import { SessionizeOptions, sessionize } from './sessionize';
@@ -23,6 +24,8 @@ export type CorrelateDayOptions = {
   activity?: AttributeOptions['activity'];
   patterns?: AttributeOptions['patterns'];
   rules?: AttributeOptions['rules'];
+  /** The user's path-to-project links. A private one takes its context out of the day entirely. */
+  links?: AttributeOptions['links'];
   /**
    * What the reasoning provider proposed, from a run over this day's own unattributed contexts.
    * Passing none is the deterministic day, and is what the provider's input is read from.
@@ -63,6 +66,10 @@ export type DayCorrelation = {
   pauses: readonly TimeWindow[];
   /** How much of the day those stretches cover. */
   pausedMs: number;
+  /** Time in a path the user marked private, for the day to label rather than bill. */
+  private: PrivateTime[];
+  /** How much of the day that time covers. It is owed to nobody and counts against no target. */
+  privateMs: number;
   check: DayCheck;
 };
 
@@ -97,10 +104,17 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
       activity,
       patterns: options.patterns,
       rules: options.rules,
+      links: options.links,
       inferred: options.inferred,
     }),
   );
-  const donated = donateBlocks({ blocks: attributed, rules: options.rules, options: options.donate });
+  // Private blocks leave before donation rather than after proposal: a repository the user took out
+  // of their working day must not lend its time to the work beside it either.
+  const secluded = attributed.flatMap((entry) =>
+    entry.privateLink ? [{ block: entry.block, link: entry.privateLink }] : [],
+  );
+  const working = attributed.filter((entry) => !entry.privateLink);
+  const donated = donateBlocks({ blocks: working, rules: options.rules, options: options.donate });
   const meetings = matchMeetings({
     events: options.events,
     blocks,
@@ -123,6 +137,7 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
     round: options.round,
     describe: options.describe,
   });
+  const secludedTime = privateTime({ blocks: secluded });
 
   return {
     blocks,
@@ -133,6 +148,8 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
     filledMs: filled.filledMs,
     pauses,
     pausedMs: pausedMs(pauses),
+    private: secludedTime,
+    privateMs: secludedTime.reduce((sum, entry) => sum + entry.observedMs, 0),
     check: checkDay({
       proposals,
       unattributed,

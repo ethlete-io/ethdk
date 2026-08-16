@@ -2,6 +2,8 @@ import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { correlateDay } from './correlate-day';
+import { TimetrackProjectLink } from './project-link';
+import { AttributionRule } from './rules';
 
 const MINUTE = 60_000;
 const AT = (minute: number) => new Date(new Date(2026, 7, 11, 8, 0, 0).getTime() + minute * MINUTE);
@@ -273,6 +275,56 @@ describe('correlateDay', () => {
     });
 
     expect(day.check.warnings.map((warning) => warning.kind)).toContain('paused-time');
+  });
+
+  describe('a private link', () => {
+    const SIDE = '/home/tom/dev/private/game';
+    const LINK: TimetrackProjectLink = {
+      id: 'link-private',
+      path: '/home/tom/dev/private',
+      target: { kind: 'private' },
+      createdAt: new Date('2026-08-01T00:00:00Z'),
+    };
+    const SIDE_DAY: CollectedEvent[] = [
+      { at: AT(0), source: 'git', kind: 'git-checkout', repoPath: SIDE, branch: 'main' },
+      focus(1, 'code'),
+      { at: AT(20), source: 'git', kind: 'git-commit', repoPath: SIDE, branch: 'main', sha: 'aaa', subject: 'wip' },
+      presence(30, 'idle-start'),
+    ];
+
+    it('proposes nothing and asks nothing about the time it covers', () => {
+      const day = correlateDay({ events: SIDE_DAY, config: FIP, links: [LINK] });
+
+      expect(day.proposals).toEqual([]);
+      expect(day.unattributed).toEqual([]);
+      expect(day.check.unattributedMs).toBe(0);
+    });
+
+    it('reports the time so the day can show it', () => {
+      const day = correlateDay({ events: SIDE_DAY, config: FIP, links: [LINK] });
+
+      expect(day.private.map((entry) => entry.link.id)).toEqual(['link-private']);
+      expect(day.privateMs).toBe(30 * MINUTE);
+    });
+
+    it('offers the context to be named when no link covers it', () => {
+      const day = correlateDay({ events: SIDE_DAY, config: FIP });
+
+      expect(day.unattributed).toHaveLength(1);
+      expect(day.private).toEqual([]);
+      expect(day.privateMs).toBe(0);
+    });
+
+    it('lends its time to nothing, so a donating repository beside it stays as short as it was', () => {
+      const rules: AttributionRule[] = [
+        { id: 'donates', repoPath: SIDE, target: { kind: 'donate' }, createdAt: new Date('2026-08-01T00:00:00Z') },
+      ];
+      const events = [...DAY, ...SIDE_DAY];
+      const withLink = correlateDay({ events, config: FIP, resolveBase: () => STORY, rules, links: [LINK] });
+      const withoutLink = correlateDay({ events, config: FIP, resolveBase: () => STORY, rules });
+
+      expect(withLink.check.proposedMs).toBeLessThan(withoutLink.check.proposedMs);
+    });
   });
 
   it('proposes nothing for an empty window', () => {

@@ -300,6 +300,36 @@ Cases worth checking separately:
 - **A rule.** Add a title-pattern exclusion rule matching a checkout's name, then edit in it. Nothing
   is stored for that checkout, and the row counts the denial.
 
+## 16. Work versus private use
+
+This writes nothing outside this machine. It needs a git checkout you do not bill for.
+
+1. Work in that checkout for a few minutes, then open Day.
+
+**Pass:** the checkout appears under **Not yet named**, with a **Not work** button beside it.
+
+2. Press **Not work**, then open Settings and read **What counts as work**.
+
+**Pass:** the list holds the checkout's path, badged `private`, and says `never logged`.
+
+3. Go back to Day and re-read it.
+
+**Pass:** the checkout is gone from **Not yet named**. A row below the list names its path and how
+long it covered, and says `private — never logged`. The day's unattributed total dropped by that much.
+
+Cases worth checking separately:
+
+- **A directory root.** Add a link on the directory your side projects sit in, marked private. Every
+  checkout under it goes private at once, and one you link to a project by its own path stays work —
+  the longer path wins.
+- **A conforming branch.** Check out a branch named like `feat/FIP-1-thing` inside a private
+  checkout. It still proposes nothing: a private link is read before the branch grammar.
+- **A project link.** Link a checkout to a project key, then press **Create a ticket** on any unnamed
+  work in it. The project field is already filled in. The Start view fills it in the same way when you
+  pick that repository.
+- **Undo.** Remove the link in Settings and re-read the day. The time comes back as unnamed work —
+  nothing was deleted, only left out.
+
 ## How to report a failure
 
 Give the section number, what you did, and what you saw. A screenshot of the window helps more than

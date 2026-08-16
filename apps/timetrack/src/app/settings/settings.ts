@@ -4,6 +4,7 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AttributionRule,
   DEFAULT_TIMETRACK_SETTINGS,
+  ProjectLinkTarget,
   TIMETRACK_SECRET_KEYS,
   TimetrackCredentialStatus,
   TimetrackExclusionRule,
@@ -18,7 +19,9 @@ import {
   clampMinuteOfDay,
   timetrackCredentialStatus,
   withAttributionRule,
+  withProjectLink,
   withoutAttributionRule,
+  withoutProjectLink,
 } from '@ethlete/timetrack';
 import {
   Subject,
@@ -221,6 +224,21 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     addAttributionRule: (rule: AttributionRule) => apply(withAttributionRule({ settings: settings(), rule })),
     removeAttributionRule: (id: string) => apply(withoutAttributionRule({ settings: settings(), id })),
+
+    addProjectLink: (options: { path: string; target: ProjectLinkTarget }) => {
+      const path = options.path.trim();
+
+      if (!path) return;
+
+      apply(
+        withProjectLink({
+          settings: settings(),
+          link: { id: `link-${path}#${Date.now()}`, path, target: options.target, createdAt: new Date() },
+        }),
+      );
+    },
+
+    removeProjectLink: (id: string) => apply(withoutProjectLink({ settings: settings(), id })),
 
     saveJiraToken: (token: string) => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: token.trim() }),
     saveTempoToken: (token: string) =>

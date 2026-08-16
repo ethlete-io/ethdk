@@ -8,6 +8,7 @@ import {
 } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock } from '../model/block';
 import { Confidence, Evidence } from '../model/evidence';
+import { TimetrackProjectLink, describeProjectLink, matchProjectLink } from './project-link';
 import { RecurringPattern, patternAt } from './recurrence';
 import {
   AttributionRule,
@@ -27,6 +28,11 @@ export type AttributedBlock = {
   confidence: Confidence;
   /** The block's own evidence plus whatever attribution added, in the order it was found. */
   evidence: Evidence[];
+  /**
+   * The link that says this context is not work. A block carrying one is never proposed, never
+   * donated and never offered to be named — it is reported so the day can show it, and no further.
+   */
+  privateLink?: TimetrackProjectLink;
 };
 
 /**
@@ -61,6 +67,12 @@ export type AttributeOptions = {
    * branch grammar rests on: nothing else in it can name an issue for `refactor/hub-query-v3`.
    */
   rules?: AttributionRule[];
+  /**
+   * The user's path-to-project links. A private one is read before every rung below, because it is
+   * the user saying the time is not work — and no evidence can outrank that, least of all a branch
+   * name a side project happens to share with a client's.
+   */
+  links?: readonly TimetrackProjectLink[];
   /**
    * What the reasoning provider proposed for contexts nothing deterministic could name. Read at the
    * last rung and never above one, so a model answer can only fill a hole — it cannot overrule the
@@ -147,7 +159,9 @@ const ruleAttribution = (options: {
 };
 
 /**
- * Scores one block against the attribution ladder — branch grammar, a branch-scoped rule of the
+ * Scores one block against the attribution ladder. A private link is read first and answers on its
+ * own: it is the user saying the time is not work, and a rung that could overrule it would make the
+ * statement worthless. Everything else follows in order — branch grammar, a branch-scoped rule of the
  * user's own, merge request and issue-view activity, a project-wide rule, a recurring Tempo pattern,
  * then a key in a window title, and last of all what the reasoning provider proposed for this exact
  * context. Deterministic down to that final rung: a conforming branch name already states both keys,
@@ -165,6 +179,20 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
   const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
   const { block } = options;
   const evidence = [...block.evidence];
+  const link = options.links?.length ? matchProjectLink({ context: block.context, links: options.links }) : undefined;
+
+  if (link?.target.kind === 'private') {
+    return {
+      block,
+      confidence: 'certain',
+      privateLink: link,
+      evidence: [
+        ...evidence,
+        { kind: 'project-link', at: block.from, detail: `you marked \`${describeProjectLink(link)}\` private` },
+      ],
+    };
+  }
+
   const match = options.rules?.length
     ? matchAttributionRule({ context: block.context, rules: options.rules })
     : undefined;

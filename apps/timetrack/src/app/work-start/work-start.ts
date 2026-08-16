@@ -13,6 +13,7 @@ import {
   normalizeGitLabHost,
   parseGitLabRemoteUrl,
   planWorkStart,
+  projectKeyFor,
   rankParentCandidates,
   readGitLabCredentials$,
   readGitBranchState$,
@@ -269,9 +270,15 @@ const WORK_START_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
 
     setRepoPath: (repoPath: string) => {
-      update({ repoPath });
+      // A link is the user's own statement about this checkout, so picking the repository answers the
+      // project field too. Without one the field keeps whatever was typed for the previous choice.
+      const linked = projectKeyFor({ context: { repoPath }, links: settings.settings().projectLinks });
+
+      update(linked ? { repoPath, projectKey: linked } : { repoPath });
       runStatus.set(IDLE);
       reads$.next(repoPath);
+
+      if (linked) searches$.next(linked);
     },
     setProjectKey: (projectKey: string) => {
       const trimmed = projectKey.trim().toUpperCase();

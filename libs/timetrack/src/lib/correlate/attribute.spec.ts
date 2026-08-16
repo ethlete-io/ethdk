@@ -2,6 +2,7 @@ import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { IssueActivity, attribute } from './attribute';
+import { TimetrackProjectLink } from './project-link';
 import { RecurringPattern } from './recurrence';
 import { AttributionRule } from './rules';
 
@@ -52,6 +53,20 @@ const BRANCH_RULE: AttributionRule = {
   id: 'rule-branch',
   branch: 'refactor/hub-query-v3',
   target: { kind: 'issue', issueKey: 'FIP-2904' },
+};
+
+const PRIVATE_LINK: TimetrackProjectLink = {
+  id: 'link-private',
+  path: '/Users/tom/dev/private',
+  target: { kind: 'private' },
+  createdAt: new Date('2026-08-01T00:00:00Z'),
+};
+
+const PROJECT_LINK: TimetrackProjectLink = {
+  id: 'link-ea',
+  path: '/Users/tom/dev/ea-frontend',
+  target: { kind: 'project', projectKey: 'FIP' },
+  createdAt: new Date('2026-08-01T00:00:00Z'),
 };
 
 describe('attribute', () => {
@@ -317,6 +332,60 @@ describe('attribute', () => {
 
       expect(result.issueKey).toBe('FIP-100');
       expect(result.evidence.some((entry) => entry.kind === 'model')).toBe(false);
+    });
+  });
+
+  describe('a private link', () => {
+    it('answers before the branch grammar, so a side project keeps no key it happens to spell', () => {
+      const result = attribute({
+        block: block({ repoPath: '/Users/tom/dev/private/game', branch: 'feat/FIP-2177-user-management' }),
+        config: FIP,
+        links: [PRIVATE_LINK],
+      });
+
+      expect(result.issueKey).toBeUndefined();
+      expect(result.privateLink).toBe(PRIVATE_LINK);
+      expect(result.evidence.at(-1)).toEqual({
+        kind: 'project-link',
+        at: result.block.from,
+        detail: 'you marked `private` private',
+      });
+    });
+
+    it('answers before a rule the user wrote for the same repository', () => {
+      const rule: AttributionRule = { ...REPO_RULE, repoPath: '/Users/tom/dev/private/game' };
+      const result = attribute({
+        block: block({ repoPath: '/Users/tom/dev/private/game' }),
+        config: FIP,
+        rules: [rule],
+        links: [PRIVATE_LINK],
+      });
+
+      expect(result.issueKey).toBeUndefined();
+      expect(result.privateLink).toBe(PRIVATE_LINK);
+    });
+
+    it('leaves a repository the same root links to a project alone', () => {
+      const result = attribute({
+        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/FIP-2177-user-management' }),
+        config: FIP,
+        links: [PRIVATE_LINK, PROJECT_LINK],
+      });
+
+      expect(result.issueKey).toBe('FIP-2177');
+      expect(result.privateLink).toBeUndefined();
+    });
+
+    it('changes nothing for a link that only names a project', () => {
+      const result = attribute({
+        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+        config: FIP,
+        links: [PROJECT_LINK],
+      });
+
+      expect(result.issueKey).toBeUndefined();
+      expect(result.privateLink).toBeUndefined();
+      expect(result.evidence.some((entry) => entry.kind === 'project-link')).toBe(false);
     });
   });
 });

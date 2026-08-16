@@ -53,6 +53,7 @@ describe('parseTimetrackSettings', () => {
       gitScanRoots: ['/home/tom/dev'],
       issueKeyPrefixes: [],
       attributionRules: [],
+      projectLinks: [],
     });
   });
 
@@ -71,6 +72,7 @@ describe('parseTimetrackSettings', () => {
       gitScanRoots: [],
       issueKeyPrefixes: [],
       attributionRules: [],
+      projectLinks: [],
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
   });
@@ -161,6 +163,43 @@ describe('parseTimetrackSettings', () => {
     });
 
     expect(settings.attributionRules).toEqual([]);
+  });
+
+  it('reads a project link and upper-cases the key it names', () => {
+    const settings = parseTimetrackSettings({
+      projectLinks: [
+        {
+          id: 'link-1',
+          path: '/home/tom/dev/ea-frontend',
+          target: { kind: 'project', projectKey: 'fip' },
+          createdAt: '2026-08-01T00:00:00.000Z',
+        },
+        { id: 'link-2', path: '/home/tom/dev/private', target: { kind: 'private' } },
+      ],
+    });
+
+    expect(settings.projectLinks).toEqual([
+      {
+        id: 'link-1',
+        path: '/home/tom/dev/ea-frontend',
+        target: { kind: 'project', projectKey: 'FIP' },
+        createdAt: new Date('2026-08-01T00:00:00.000Z'),
+      },
+      { id: 'link-2', path: '/home/tom/dev/private', target: { kind: 'private' }, createdAt: new Date(0) },
+    ]);
+  });
+
+  it('drops a project link that names no path or no target', () => {
+    const settings = parseTimetrackSettings({
+      projectLinks: [
+        { target: { kind: 'private' } },
+        { path: '/home/tom/dev/x' },
+        { path: '/home/tom/dev/x', target: { kind: 'project', projectKey: '' } },
+        {},
+      ],
+    });
+
+    expect(settings.projectLinks).toEqual([]);
   });
 
   it('trims and de-duplicates the scan roots', () => {

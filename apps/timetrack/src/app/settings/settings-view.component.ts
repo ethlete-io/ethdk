@@ -16,6 +16,7 @@ import { injectDayNudge } from '../day-nudge';
 import { AttributionRulesComponent } from './attribution-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { GoogleConnectionComponent } from './google-connection.component';
+import { ProjectLinksComponent } from './project-links.component';
 import { ScanRootsComponent } from './scan-roots.component';
 import { injectTimetrackSettings } from './settings';
 import { TicketSettingsComponent } from './ticket-settings.component';
@@ -258,6 +259,12 @@ import { TokenFieldComponent } from './token-field.component';
             (remove)="store.removeGitScanRoot($event)"
           />
 
+          <ethlete-project-links
+            [links]="store.settings().projectLinks"
+            (add)="store.addProjectLink($event)"
+            (remove)="store.removeProjectLink($event)"
+          />
+
           <ethlete-attribution-rules
             [rules]="store.settings().attributionRules"
             (remove)="store.removeAttributionRule($event)"
@@ -278,6 +285,7 @@ import { TokenFieldComponent } from './token-field.component';
     FORM_FIELD_IMPORTS,
     GoogleConnectionComponent,
     INPUT_IMPORTS,
+    ProjectLinksComponent,
     ScanRootsComponent,
     SWITCH_IMPORTS,
     SpinnerComponent,

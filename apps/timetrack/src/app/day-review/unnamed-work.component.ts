@@ -85,6 +85,10 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
           </button>
 
           <button (click)="donate(entry.id)" et-button variant="transparent" size="sm">No tickets here</button>
+
+          @if (entry.path; as path) {
+            <button (click)="markPrivate.emit(path)" et-button variant="transparent" size="sm">Not work</button>
+          }
         </div>
       }
     </div>
@@ -106,6 +110,11 @@ export class UnnamedWorkComponent {
   public ask = output<void>();
   /** For work no issue covers at all: the answer is a new ticket rather than a key to type. */
   public createTicket = output<UnnamedContext>();
+  /**
+   * The repository path a context sits in, to be marked private. Only a context that has one can be:
+   * a browser and a chat client are named by the exclusion rules, which read an app rather than a path.
+   */
+  public markPrivate = output<string>();
 
   private drafts = signal<Record<string, string>>({});
 
@@ -118,6 +127,7 @@ export class UnnamedWorkComponent {
       clock: `${formatClockTime(context.from)} – ${formatClockTime(context.to)}`,
       duration: formatDurationMs(context.observedMs),
       label: describeAttributionRule(context.suggestion),
+      path: context.suggestion.repoPath,
       suggestion: suggestions.get(context.id),
     }));
   });

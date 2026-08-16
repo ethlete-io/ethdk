@@ -1,3 +1,4 @@
+import { TimetrackProjectLink } from '../correlate/project-link';
 import { AttributionRule } from '../correlate/rules';
 import { JiraParenting } from '../jira/hierarchy';
 import { DEFAULT_REASONING_OPTIONS } from '../reason/model';
@@ -155,6 +156,12 @@ export type TimetrackSettings = {
    * and it is read and written whole exactly like the rest of this document.
    */
   attributionRules: AttributionRule[];
+  /**
+   * Which paths are work, and which project each files its tickets in. A path nobody linked keeps
+   * behaving as it always has — it becomes a context the review offers to name, because a checkout
+   * that vanished from the day without being asked about is worse than one row too many.
+   */
+  projectLinks: TimetrackProjectLink[];
 };
 
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
@@ -177,4 +184,5 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   gitScanRoots: [],
   issueKeyPrefixes: [],
   attributionRules: [],
+  projectLinks: [],
 };

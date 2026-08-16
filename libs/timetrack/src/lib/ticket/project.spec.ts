@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TimetrackProjectLink } from '../correlate/project-link';
 import { AttributionRule } from '../correlate/rules';
 import { WorklogProposal } from '../model/proposal';
 import { inferTicketProjectKey, projectKeyOf } from './project';
@@ -25,17 +26,26 @@ const proposal = (issueKey: string): WorklogProposal => ({
   state: 'suggested',
 });
 
+const link = (options: { path: string; projectKey: string }): TimetrackProjectLink => ({
+  id: options.path,
+  path: options.path,
+  target: { kind: 'project', projectKey: options.projectKey },
+  createdAt: new Date('2026-08-01T00:00:00Z'),
+});
+
 const infer = (options: {
   rules?: AttributionRule[];
   proposals?: WorklogProposal[];
   prefixes?: string[];
   repoPath?: string;
+  links?: TimetrackProjectLink[];
 }) =>
   inferTicketProjectKey({
     context: { repoPath: options.repoPath ?? REPO },
     rules: options.rules ?? [],
     proposals: options.proposals ?? [],
     prefixes: options.prefixes ?? [],
+    links: options.links ?? [],
   });
 
 describe('projectKeyOf', () => {
@@ -69,6 +79,20 @@ describe('inferTicketProjectKey', () => {
 
   it("falls back to the day's own work when it all sits in one project", () => {
     expect(infer({ proposals: [proposal('FIP-1'), proposal('FIP-2')] })).toBe('FIP');
+  });
+
+  it('reads a link before every other rung, including a rule about the same repository', () => {
+    expect(
+      infer({
+        links: [link({ path: REPO, projectKey: 'ETH' })],
+        rules: [rule({ repoPath: REPO, issueKey: 'FIP-100' })],
+        prefixes: ['FIP'],
+      }),
+    ).toBe('ETH');
+  });
+
+  it('reads a link on the directory root the repository sits in', () => {
+    expect(infer({ links: [link({ path: '/Users/tom/dev', projectKey: 'ETH' })] })).toBe('ETH');
   });
 
   it('names nothing rather than choosing between two projects', () => {

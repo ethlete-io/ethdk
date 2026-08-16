@@ -94,7 +94,16 @@ import { WorklogRowComponent } from './worklog-row.component';
                 (name)="nameContext($event)"
                 (ask)="store.ask()"
                 (createTicket)="tickets.open($event)"
+                (markPrivate)="store.markPathPrivate($event)"
               />
+            }
+
+            @for (entry of privateTime(); track entry.id) {
+              <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
+                <span class="w-14 shrink-0 text-small">{{ entry.duration }}</span>
+                <span class="grow break-all text-mono text-small text-et-surface-muted">{{ entry.path }}</span>
+                <span class="text-small text-et-surface-subtle">private — never logged</span>
+              </div>
             }
 
             @if (tickets.context(); as drafting) {
@@ -243,6 +252,14 @@ export class DayReviewViewComponent {
   protected target = computed(() => formatDurationMs(this.store.targetMs()));
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
+
+  protected privateTime = computed(() =>
+    this.store.privateTime().map((entry) => ({
+      id: entry.link.id,
+      path: entry.link.path,
+      duration: formatDurationMs(entry.observedMs),
+    })),
+  );
 
   protected nameContext(naming: ContextNaming) {
     this.store.nameContext(naming.context, naming.target);

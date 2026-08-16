@@ -170,6 +170,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const correlateOptions = computed((): CorrelateDayOptions => ({
     config: gitFlowConfigFor(settings.settings()),
     rules: settings.settings().attributionRules,
+    links: settings.settings().projectLinks,
     sessionize: { repoRoots: git.discovery()?.repos ?? [] },
     fill: { maxFillGapMs: settings.settings().gapFillMs },
   }));
@@ -331,6 +332,11 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * asking again tomorrow.
      */
     unnamed,
+    /**
+     * Time in a path the user marked private. The day reports it rather than hiding it: a reviewer who
+     * cannot see that the app watched has no way to tell a working link from a broken one.
+     */
+    privateTime: computed(() => correlation()?.private ?? []),
     /** Exactly what a reasoning run would send, for the UI to show before anything leaves the machine. */
     reasoningPayload: computed(() => plan()?.request ?? null),
     /** What the provider proposed, by context id, for the naming card to offer as an answer. */
@@ -396,6 +402,12 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * Writes the rule that names a context. It is a setting rather than an edit on this day: the same
      * branch comes back tomorrow, and answering for it once is the whole point.
      */
+    /**
+     * Takes a path out of the working day for good. It is the answer for a side project the collectors
+     * cannot tell from a client's checkout, and the day stops asking about it from here on.
+     */
+    markPathPrivate: (path: string) => settings.addProjectLink({ path, target: { kind: 'private' } }),
+
     nameContext: (context: UnnamedContext, target: AttributionTarget) =>
       settings.addAttributionRule({
         ...context.suggestion,

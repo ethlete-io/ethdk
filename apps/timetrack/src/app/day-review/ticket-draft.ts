@@ -187,6 +187,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           rules: settings.settings().attributionRules,
           proposals: dayReview.deterministic()?.proposals ?? [],
           prefixes: settings.settings().issueKeyPrefixes,
+          links: settings.settings().projectLinks,
         }) ?? '';
 
       context.set(unnamed);

@@ -944,6 +944,39 @@ Two rules turned four unlabelled days into reviewable worklogs, described from t
 subjects. The replay harness is not committed - it reads this machine's history, so it asserts
 nothing - but it is the way to check a change against a real day rather than a fixture.
 
+### Work versus private use
+
+**Built** - `libs/timetrack/src/lib/correlate/project-link.ts`, the `projectLinks` settings field, and
+the settings and day-review surfaces that write it. A `TimetrackProjectLink` maps a path to a Jira
+project or to `private`. The same editor writes a client's code and a side project's, and no window
+title separates them; a path does. What building it settled:
+
+- **A link is not an attribution rule, and the two are separate lists.** A rule says which issue a
+  context's time is logged against; a link says whether the time is work at all and which project it
+  would be filed in. One repository wants both - linked to `FIP`, and still carrying a branch rule
+  naming one issue - which folding them into one list would have made mutually exclusive, because
+  `withAttributionRule` replaces whatever named the same context.
+- **A private link answers before every rung, including the branch grammar.** It is the user saying
+  the time is not work, and a rung above it would make the statement worthless. A side project whose
+  branch happens to spell a conforming name is the case that decides this.
+- **Private blocks leave before donation, not after proposal.** A repository taken out of the working
+  day must not lend its time to the work beside it either, so `correlateDay` splits them out between
+  `attribute` and `donateBlocks`.
+- **An unlinked path keeps behaving exactly as it did.** The plan's original wording had no link mean
+  private, which would silently drop a new client checkout until somebody noticed. Unlinked stays an
+  unnamed context the review offers to name; a checkout that vanished without being asked about is
+  worse than one row too many.
+- **Private time is reported, not hidden.** `DayCorrelation` carries `private` and `privateMs`, and
+  the day view names each private path and how long it covered. A reviewer who cannot see that the
+  app watched has no way to tell a working link from a broken one - the same promise the pause button
+  makes. It counts against no target and reaches no proposal.
+- **Longest path wins.** A link on one repository beats the root it sits in, which is what lets `~/dev`
+  be private while two client checkouts inside it stay work. Matching stops at a separator, so `dev`
+  does not reach `dev-old`.
+- **The link is the top rung of `inferTicketProjectKey`.** Both ticket flows made the user type a
+  project key that the link already states, so a linked repository now fills the field in the
+  retroactive flow and in the Start view.
+
 ## Correlation
 
 A pipeline of pure functions over an event window, each independently testable:
@@ -1797,11 +1830,7 @@ alongside and only affects how much of a day arrives pre-labelled.
 
 Raised 2026-08-16, in no order and none of them designed yet.
 
-- **Work versus private use of the same application.** VS Code is VS Code whether the checkout is a
-  client's or a side project, so the window title alone cannot separate them. The likely shape is an
-  explicit link between a repository (or a directory root) and a Jira project, which the attribution
-  rules already half express - a repository with no link is private time and proposes nothing, rather
-  than unattributed work the reviewer has to reject every day.
+- ~~**Work versus private use of the same application.**~~ **- built**, see below.
 - **A Windows collector.** The window source was always meant to be pluggable and macOS proved it;
   Windows is the third source. Focus and idle both have plain Win32 answers
   (`GetForegroundWindow`, `GetLastInputInfo`).

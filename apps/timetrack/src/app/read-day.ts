@@ -55,6 +55,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         pauses: pauseWindows({ events, window: { from, to }, through: at }),
         config: gitFlowConfigFor(settings),
         rules: settings.attributionRules,
+        links: settings.projectLinks,
         sessionize: { repoRoots: [...options.repoRoots] },
         fill: { maxFillGapMs: settings.gapFillMs },
       });

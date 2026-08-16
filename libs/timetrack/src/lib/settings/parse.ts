@@ -1,3 +1,4 @@
+import { ProjectLinkTarget, TimetrackProjectLink } from '../correlate/project-link';
 import { AttributionRule, AttributionTarget } from '../correlate/rules';
 import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
@@ -90,6 +91,40 @@ const asAttributionTarget = (value: unknown): AttributionTarget | null => {
 const asAttributionRules = (value: unknown) =>
   Array.isArray(value) ? value.flatMap((entry, index) => asAttributionRule(entry, index) ?? []) : [];
 
+const asProjectLinkTarget = (value: unknown): ProjectLinkTarget | null => {
+  const raw = asRecord(value);
+
+  if (raw['kind'] === 'private') return { kind: 'private' };
+
+  const projectKey = asText(raw['projectKey']).toUpperCase();
+
+  return projectKey ? { kind: 'project', projectKey } : null;
+};
+
+/**
+ * A link with no path matches every repository on the machine, so a document that lost one is dropped
+ * rather than read as a statement about everything.
+ */
+const asProjectLink = (value: unknown, index: number): TimetrackProjectLink | null => {
+  const raw = asRecord(value);
+  const path = asText(raw['path']);
+  const target = asProjectLinkTarget(raw['target']);
+
+  if (!path || !target) return null;
+
+  const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
+
+  return {
+    id: asText(raw['id']) || `link-${index}`,
+    path,
+    target,
+    createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
+  };
+};
+
+const asProjectLinks = (value: unknown) =>
+  Array.isArray(value) ? value.flatMap((entry, index) => asProjectLink(entry, index) ?? []) : [];
+
 const asNudge = (value: unknown): TimetrackNudgeSettings => {
   const raw = asRecord(value);
   const atMinute = raw['atMinute'];
@@ -167,5 +202,6 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     gitScanRoots: asTextList(document['gitScanRoots']),
     issueKeyPrefixes: asTextList(document['issueKeyPrefixes']).map((prefix) => prefix.toUpperCase()),
     attributionRules: asAttributionRules(document['attributionRules']),
+    projectLinks: asProjectLinks(document['projectLinks']),
   };
 };
