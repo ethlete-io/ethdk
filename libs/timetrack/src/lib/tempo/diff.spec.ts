@@ -177,7 +177,7 @@ describe('planTempoSync', () => {
 
   it('never touches a worklog no ledger entry points at, however much it looks like ours', () => {
     const target = proposal();
-    const foreign = remoteFor(target, { id: 'w-foreign' });
+    const foreign = remoteFor(target, { id: 'w-foreign', issueId: '90900' });
     const result = plan({ proposals: [target], remote: [foreign] });
 
     expect(result.foreign).toEqual([foreign]);
@@ -238,5 +238,62 @@ describe('planTempoSync', () => {
 
     expect(result.unresolved).toEqual([target]);
     expect(result.creates).toEqual([]);
+  });
+
+  describe('time somebody already logged by hand', () => {
+    it('writes nothing for a proposal tempo already holds in full', () => {
+      const target = proposal();
+      const result = plan({ proposals: [target], remote: [remoteFor(target, { id: 'w-hand' })] });
+
+      expect(result.creates).toEqual([]);
+      expect(result.foreignSubtractions).toEqual([
+        { proposalId: 'p1', issueKey: 'FIP-3010', subtractedMs: HOUR, remainingMs: 0 },
+      ]);
+    });
+
+    it('writes only the time foreign worklogs leave over', () => {
+      const target = proposal({ durationMs: 2 * HOUR });
+      const result = plan({
+        proposals: [target],
+        remote: [remoteFor(target, { id: 'w-hand', durationMs: HOUR })],
+      });
+
+      expect(result.creates.map((entry) => entry.proposal.durationMs)).toEqual([HOUR]);
+    });
+
+    it('ignores foreign time on an issue the day proposes nothing for', () => {
+      const target = proposal();
+      const result = plan({
+        proposals: [target],
+        remote: [remoteFor(target, { id: 'w-other', issueId: '90900' })],
+      });
+
+      expect(result.foreignSubtractions).toEqual([]);
+      expect(result.creates.map((entry) => entry.reason)).toEqual(['new']);
+    });
+
+    it('deletes its own worklog once time logged by hand covers the row', () => {
+      const target = proposal();
+      const result = plan({
+        proposals: [target],
+        ledger: [ledgerFor(target)],
+        remote: [remoteFor(target), remoteFor(target, { id: 'w-hand' })],
+      });
+
+      expect(result.deletes).toEqual([{ proposalId: 'p1', tempoWorklogId: 'w1', reason: 'no-time-left' }]);
+    });
+
+    it('leaves an unreviewed proposal out of the subtraction, so the accepted row keeps the cover', () => {
+      const undecided = proposal({ state: 'suggested' });
+      const accepted = proposal({ id: 'p2' });
+      const result = plan({
+        proposals: [undecided, accepted],
+        remote: [remoteFor(accepted, { id: 'w-hand' })],
+      });
+
+      expect(result.skipped).toEqual(['p1']);
+      expect(result.creates).toEqual([]);
+      expect(result.foreignSubtractions.map((entry) => entry.proposalId)).toEqual(['p2']);
+    });
   });
 });

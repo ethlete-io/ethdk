@@ -152,6 +152,10 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
               Written outside this app. It is never edited or deleted here.
             </p>
 
+            @if (covered(); as note) {
+              <et-banner [description]="note" type="info" heading="Counted against this day" />
+            }
+
             @for (worklog of foreign(); track worklog.id) {
               <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
                 <span class="w-24 shrink-0 text-small">{{ worklog.issueKey }}</span>
@@ -303,6 +307,13 @@ export class SyncViewComponent {
       duration: formatDurationMs(worklog.durationMs),
       description: worklog.description || '(no description)',
     }));
+  });
+
+  protected covered = computed(() => {
+    const subtractions = this.store.plan()?.foreignSubtractions ?? [];
+    const total = subtractions.reduce((sum, entry) => sum + entry.subtractedMs, 0);
+
+    return total ? `${formatDurationMs(total)} of this day is already logged, so the sync leaves it out.` : null;
   });
 
   private entryOf(options: {

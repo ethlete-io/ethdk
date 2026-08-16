@@ -59,6 +59,7 @@ const emptyPlan = (): TempoSyncPlan => ({
   unresolved: [],
   staleLedgerProposalIds: [],
   foreign: [],
+  foreignSubtractions: [],
 });
 
 const planWith = (parts: Partial<TempoSyncPlan>): TempoSyncPlan => ({ ...emptyPlan(), ...parts });

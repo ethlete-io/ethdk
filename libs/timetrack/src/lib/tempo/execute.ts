@@ -212,6 +212,7 @@ const retryOf = (plan: TempoSyncPlan, executed: ExecutedRow[]): TempoSyncPlan =>
     unresolved: [],
     staleLedgerProposalIds: [],
     foreign: [],
+    foreignSubtractions: [],
   };
 };
 

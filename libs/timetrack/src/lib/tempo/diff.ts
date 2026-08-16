@@ -1,5 +1,6 @@
 import { SyncedWorklog, WorklogProposal, syncsInState } from '../model/proposal';
 import { TempoMarkerScheme, unmarkedDescription } from './marker';
+import { ForeignSubtraction, subtractForeignTime } from './subtract';
 import { TempoWorklog } from './worklogs';
 
 /** FNV-1a. Not a security hash — it only has to change when the synced content changes. */
@@ -75,6 +76,11 @@ export type TempoSyncPlan = {
   staleLedgerProposalIds: string[];
   /** Worklogs in Tempo this app does not own. Reported for the preview; never written or deleted. */
   foreign: TempoWorklog[];
+  /**
+   * What the foreign worklogs already account for, per proposal. An entry with `remainingMs` of zero
+   * is a row Tempo holds in full, which is why the plan writes nothing for it.
+   */
+  foreignSubtractions: ForeignSubtraction[];
 };
 
 /**
@@ -84,6 +90,10 @@ export type TempoSyncPlan = {
  * Ownership comes from the ledger and nothing else: a worklog in Tempo that no ledger entry points at
  * is foreign, and stays untouched however much it looks like something this app would have written.
  * That is the rule that makes the app safe to run against a Tempo instance people also use by hand.
+ *
+ * Foreign time still counts against the day. Every syncable proposal is reduced by what Tempo already
+ * holds for the same issue, so a day somebody logged by hand plans nothing rather than a second copy
+ * of every hour. A reduction to zero on an app-owned row plans the delete that keeps the total right.
  *
  * Pass the same `marker` the sync writes with: a description-suffix marker is part of the remote text
  * and not of the proposal's, so without it every synced worklog reads as edited in Tempo forever.
@@ -102,6 +112,20 @@ export const planTempoSync = (options: {
     options.ledger.map((entry) => entry.tempoWorklogId).filter((id) => remoteById.has(id)),
   );
 
+  const foreign = options.remote.filter((worklog) => !ownedRemoteIds.has(worklog.id));
+  const keysByIssueId = new Map([...options.issueIdsByKey].map(([key, id]) => [id, key]));
+  const subtraction = subtractForeignTime({
+    proposals: options.proposals.filter((proposal) => syncsInState(proposal.state) && proposal.durationMs > 0),
+    // A foreign worklog on an issue the key map does not name can match no proposal, so dropping it
+    // changes nothing but saves the preview a Jira round trip for every unrelated issue of the day.
+    foreign: foreign.flatMap((worklog) => {
+      const issueKey = keysByIssueId.get(worklog.issueId);
+
+      return issueKey ? [{ issueKey, from: worklog.from, durationMs: worklog.durationMs }] : [];
+    }),
+  });
+  const reducedById = new Map(subtraction.proposals.map((proposal) => [proposal.id, proposal]));
+
   const plan: TempoSyncPlan = {
     creates: [],
     updates: [],
@@ -110,12 +134,15 @@ export const planTempoSync = (options: {
     skipped: [],
     unresolved: [],
     staleLedgerProposalIds: [],
-    foreign: options.remote.filter((worklog) => !ownedRemoteIds.has(worklog.id)),
+    foreign,
+    foreignSubtractions: subtraction.subtractions,
   };
 
   const seenProposalIds = new Set<string>();
 
-  for (const proposal of options.proposals) {
+  for (const original of options.proposals) {
+    const proposal = reducedById.get(original.id) ?? original;
+
     seenProposalIds.add(proposal.id);
 
     const entry = ledgerByProposalId.get(proposal.id);
