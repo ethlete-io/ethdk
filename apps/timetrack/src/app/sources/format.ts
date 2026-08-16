@@ -69,6 +69,13 @@ export const formatCalendarRead = (options: { calendarIds: readonly string[]; re
   ]);
 };
 
+/** Which instance is being read, and when. The failures name merge requests, not repositories. */
+export const formatGitLabRead = (options: { host: string; readAt: Date | null }) =>
+  sentences([
+    options.host ? `Reading ${options.host}.` : 'No instance is configured yet.',
+    options.readAt ? `Last read at ${clock(options.readAt)}.` : null,
+  ]);
+
 /** The repositories a scan could not read, named — a moved or deleted one must not fail silently. */
 export const formatGitFailures = (failures: GitScanFailure[]) => {
   const paths = [...new Set(failures.map((failure) => failure.repoPath))];

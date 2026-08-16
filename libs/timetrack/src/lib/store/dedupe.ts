@@ -21,6 +21,9 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  *
  * A calendar occurrence keys by its times as well as its id, so a meeting somebody moved is stored
  * again at the hour it moved to rather than keeping the one it was first read at.
+ *
+ * A GitLab event keys by GitLab's own id, which is unique inside one instance — a second instance
+ * would have to put its host in the key.
  */
 export const dedupeKeyOf = (event: CollectedEvent): string | null => {
   switch (event.kind) {
@@ -30,6 +33,8 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
       return keyOf([event.kind, event.repoPath, event.at.toISOString(), event.branch]);
     case 'calendar-event':
       return keyOf([event.kind, event.occurrenceId, event.at.toISOString(), event.until.toISOString()]);
+    case 'merge-request-activity':
+      return keyOf([event.kind, event.eventId]);
     default:
       return null;
   }

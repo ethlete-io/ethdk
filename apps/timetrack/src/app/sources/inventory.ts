@@ -30,7 +30,7 @@ export type EvidenceSource = {
   /** What the source is still waiting on. Not shown once it has everything it needs. */
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
-  collector?: 'window' | 'git' | 'agent-session' | 'calendar';
+  collector?: 'window' | 'git' | 'agent-session' | 'calendar' | 'gitlab';
   /** The `source` its events carry in the store, for counting what it has actually put there. */
   eventSource?: CollectedEventSource;
 };
@@ -111,10 +111,13 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
   {
     id: 'gitlab',
     name: 'GitLab',
-    reads: 'Your own push, comment, approval and merge events, and the merge requests awaiting your review.',
-    stores: 'Review work that leaves no local trace, attributed through the merge request’s source branch.',
-    state: 'planned',
-    detail: 'Phase 2.',
+    reads: 'Your own push, comment, approval and merge events, and the branch of each merge request they name.',
+    stores: 'That you acted on a merge request, when, and which branch it is on. No comment text.',
+    state: 'collecting',
+    credential: 'gitlab',
+    collector: 'gitlab',
+    eventSource: 'gitlab',
+    detail: 'Waiting on an instance and a personal access token with `read_api` in Settings.',
   },
   {
     id: 'vscode',

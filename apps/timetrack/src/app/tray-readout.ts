@@ -7,6 +7,7 @@ import {
   injectAgentSessionCollector,
   injectCalendarCollector,
   injectGitCollector,
+  injectGitLabCollector,
   injectWindowCollector,
 } from '../collectors';
 import { TrayReadout, injectHostPorts } from '../host';
@@ -68,6 +69,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const git = injectGitCollector();
   const agentSessions = injectAgentSessionCollector();
   const calendar = injectCalendarCollector();
+  const gitlab = injectGitLabCollector();
   const timers = injectTimer();
   const pause = injectCollectionPause();
   const settings = injectTimetrackSettings();
@@ -78,6 +80,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     git: git.lastRun(),
     sessions: agentSessions.lastRun(),
     calendar: calendar.lastRun(),
+    gitlab: gitlab.lastRun(),
     timer: timers.revision(),
     elapsed: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
     pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),

@@ -112,12 +112,14 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
   const document = asRecord(raw);
   const jira = asRecord(document['jira']);
   const google = asRecord(document['google']);
+  const gitlab = asRecord(document['gitlab']);
 
   return {
     dayTargetMs: asTarget(document['dayTargetMs']),
     gapFillMs: asGapFill(document['gapFillMs']),
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
     google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
+    gitlab: { host: asText(gitlab['host']) },
     nudge: asNudge(document['nudge']),
     exclusionRules: asRules(document['exclusionRules']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,

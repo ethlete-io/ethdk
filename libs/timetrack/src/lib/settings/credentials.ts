@@ -1,4 +1,5 @@
 import { Observable, map } from 'rxjs';
+import { GitLabCredentials } from '../gitlab/client';
 import { JiraCredentials } from '../jira/client';
 import { TempoCredentials } from '../tempo/client';
 import { TimetrackSecretStore } from '../transport/ports';
@@ -11,6 +12,7 @@ export const TIMETRACK_SECRET_KEYS = {
   googleClientSecret: 'google-client-secret',
   /** What survives a restart. The access token is held in memory and never written anywhere. */
   googleRefreshToken: 'google-refresh-token',
+  gitlabToken: 'gitlab-token',
 } as const;
 
 /** Which providers are ready to be called, answered without a token being read back into the window. */
@@ -18,14 +20,15 @@ export type TimetrackCredentialStatus = {
   jira: boolean;
   tempo: boolean;
   google: boolean;
+  gitlab: boolean;
 };
 
 /**
- * Whether each provider is configured. `held` is what the keychain answered for the two token accounts,
+ * Whether each provider is configured. `held` is what the keychain answered for the token accounts,
  * passed in rather than read here so an unrelated settings change does not re-ask the keychain.
  *
  * Jira takes all three of host, email and token, which is why holding its token is not enough. Google
- * takes the client id as well as the refresh token, for the same reason.
+ * takes the client id as well as the refresh token, and GitLab its host, for the same reason.
  */
 export const timetrackCredentialStatus = (options: {
   held: TimetrackCredentialStatus;
@@ -34,6 +37,7 @@ export const timetrackCredentialStatus = (options: {
   jira: options.held.jira && !!options.settings.jira.host && !!options.settings.jira.email,
   tempo: options.held.tempo,
   google: options.held.google && !!options.settings.google.clientId,
+  gitlab: options.held.gitlab && !!options.settings.gitlab.host,
 });
 
 /**
@@ -65,5 +69,22 @@ export const readTempoCredentials$ = (options: {
       const token = stored?.trim() ?? '';
 
       return token ? { token } : null;
+    }),
+  );
+
+/**
+ * The GitLab credentials, or `null` while the instance is not configured. The host is a setting and the
+ * personal access token is a keychain entry, so both have to be there before a call can be made.
+ */
+export const readGitLabCredentials$ = (options: {
+  secrets: TimetrackSecretStore;
+  settings: TimetrackSettings;
+}): Observable<GitLabCredentials | null> =>
+  options.secrets.read$(TIMETRACK_SECRET_KEYS.gitlabToken).pipe(
+    map((stored) => {
+      const token = stored?.trim() ?? '';
+      const { host } = options.settings.gitlab;
+
+      return token && host ? { host, token } : null;
     }),
   );

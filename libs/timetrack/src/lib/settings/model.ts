@@ -49,6 +49,15 @@ export type TimetrackGoogleSettings = {
 };
 
 /**
+ * The GitLab instance review activity is read from. The personal access token is a keychain entry;
+ * the host is not one, and the settings screen has to show which instance it will call.
+ */
+export type TimetrackGitLabSettings = {
+  /** The instance, with or without a scheme. `normalizeGitLabHost` is what makes it a base URL. */
+  host: string;
+};
+
+/**
  * When the app says a day is not finished yet.
  *
  * The minute is local and the reminder is only ever about today: a past day is caught up in the week
@@ -83,6 +92,7 @@ export type TimetrackSettings = {
   gapFillMs: number;
   jira: TimetrackJiraSettings;
   google: TimetrackGoogleSettings;
+  gitlab: TimetrackGitLabSettings;
   nudge: TimetrackNudgeSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
   exclusionRules: TimetrackExclusionRule[];
@@ -109,6 +119,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   gapFillMs: DEFAULT_GAP_FILL_MS,
   jira: { host: '', email: '' },
   google: { clientId: '', calendarIds: [] },
+  gitlab: { host: '' },
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   exclusionRules: [],
   keepDefaultExclusionRules: true,

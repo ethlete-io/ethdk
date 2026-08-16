@@ -709,13 +709,44 @@ against fakes.
 PAT with `read_api`. The high-value endpoint is `/api/v4/events` scoped to the user with
 `after`/`before` - it returns `action_name` and `created_at` for pushes, comments,
 approvals and merges, which is a genuine retroactive record of review work that leaves no
-local trace. Complement with `/api/v4/merge_requests?scope=all&reviewer_id=…` for MRs
-awaiting you, and MR notes for the actual review comments.
+local trace.
 
 Review time matters more than usual here: the draft mandates that every sub-feature MR is
 reviewed by another developer, so a meaningful share of the day is spent in other people's
 MRs. That time currently has no ticket - it belongs on the reviewed Task, and the MR's
 source branch name gives that key straight from the grammar.
+
+**Built** - `libs/timetrack/src/lib/gitlab/` (the provider), `correlate/merge-request-activity.ts` (the
+rung), `src/collectors/gitlab-collector.ts` (the timer), plus the settings section, the credential and
+the sources row. What building it settled:
+
+- **A GitLab event is evidence, never time.** It carries an instant and no duration, so
+  `isActivityEvent` excludes it exactly as it excludes a calendar occurrence: letting an approval at
+  10:02 open a block would invent the duration, and letting it set the sticky repository context would
+  take the real work around it with it. What it does instead is name the issue for the block that _was_
+  observed - the browser the review happened in. A review nothing local saw at all stays unbilled,
+  which is the honest answer and the same rule as "never silent fill".
+- **The activity rung is derived from the stored events, not fetched at read time.** `correlateDay`
+  already has the day's events, so it builds the rung itself. That keeps a day read offline - the
+  reminder still works on a train - and gives the week view seven days without seven round trips. It
+  also retires the wiring the Jira `issue-view` rung never got: the same seam now has a caller.
+- **`after` and `before` are exclusive dates.** A query that names the day itself comes back empty, so
+  both ends are moved a day out and the instants are filtered afterwards.
+- **Only a push says which branch it moved.** A note or an approval names the merge request and
+  nothing else, so the branch - which is the whole issue key - needs `/merge_requests/:iid`. It is read
+  once per merge request rather than once per event, and the per-run cap is reported rather than
+  silently applied.
+- **A merge request the token cannot read keeps its events.** They store without a branch and attribute
+  nothing, which is strictly better than losing the record that the day was spent somewhere.
+- **A merge request title is title-matched like a window title**, for the same reason an agent session's
+  is: it is named after the work, and the work is sometimes what a rule exists to keep out.
+- **The dedupe key is GitLab's own event id**, so a run may re-read as wide a window as it likes - and
+  the first run of a session reads 30 days, which is what makes a week the app was closed arrive.
+- **The reviewer list was deliberately not used.** `/merge_requests?scope=all&reviewer_id=…` says what
+  is _awaiting_ you and carries no instant, so it can no more place a block than Jira's
+  `issueHistory()` can. Both are left out for the same reason.
+
+Still unverified: everything past the request builder. Nothing has run against a real instance yet.
 
 ### Gmail (phase 3)
 
@@ -1447,8 +1478,8 @@ commit that later also lives on another branch is not a second piece of work.
   on, what it stores, and how long.~~ **Built** - `src/app/sources/`, and it replaced the per-collector
   status cards rather than sitting beside them. Two things it settled:
   - **List the sources that are not built, too.** The question somebody deciding whether to install
-    this asks is about the whole surface it will eventually watch, so GitLab, Slack, Discord, Gmail
-    and the editor extension are on the list as `planned`, each with what it _would_ store. Three
+    this asks is about the whole surface it will eventually watch, so Slack, Discord, Gmail and the
+    editor extension are on the list as `planned`, each with what it _would_ store. Three
     states carry it: `collecting`, `configured` (the code is there, the credentials are not) and
     `planned`.
   - **Liveness cannot be a per-run or per-session tally.** Every collector here reads on a short
@@ -1499,8 +1530,7 @@ along with the calendar collector it was the last thing standing in front of, so
 collector now exists. ~~Remaining: the confirm step that executes a Tempo sync~~ **- built**, so the
 app now reconstructs a day and writes it. ~~Remaining: the hard pause~~ **- built**, and so is the
 end-of-day reminder that tells the user a day is still owed. Remaining: a first run against the real
-instance - nothing here has written a production worklog yet. No LLM, no GitLab, no
-Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
+instance - nothing here has written a production worklog yet. No LLM, no Slack/Discord/Gmail. Ends the phase able to reconstruct and sync a real day.
 
 **The app runs.** `yarn timetrack` builds and starts, the keychain hands back the key it generated on
 first run, SQLCipher opens the database with it (the file's header is random bytes, and a plain
@@ -1531,9 +1561,9 @@ verified, and the app is cross-platform. Everything else in the phase is portabl
 `rustup` alone. `sh.rustup.rs` does not resolve on this network, so the official script is not the
 way in here.
 
-**Phase 2 - closing the code-work gaps.** GitLab CE events and MR review time, the VS Code
-extension and the generic ingest endpoint, the reasoning provider, both ticket-creation
-flows, MR → ticket repair.
+**Phase 2 - closing the code-work gaps.** ~~GitLab CE events and MR review time~~ **- built**, so a
+review that left no local trace now names the Task it was for. Remaining: the VS Code extension and the
+generic ingest endpoint, the reasoning provider, both ticket-creation flows, MR → ticket repair.
 
 **Phase 3 - the noisy tail.** Slack huddle polling, Discord (bot mechanism, guild-scoped,
 `weak`), Gmail notification parsing, Codex session logs, and a Chrome extension if window

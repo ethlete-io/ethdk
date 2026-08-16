@@ -5,6 +5,7 @@ export * from './donate';
 export * from './fill';
 export * from './meetings';
 export * from './merge';
+export * from './merge-request-activity';
 export * from './overlap';
 export * from './pauses';
 export * from './propose';

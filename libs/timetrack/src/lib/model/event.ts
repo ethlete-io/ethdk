@@ -1,5 +1,5 @@
 /** The collector a raw observation came from. Retention and exclusion rules are applied per source. */
-export type CollectedEventSource = 'window' | 'idle' | 'git' | 'agent-session' | 'calendar';
+export type CollectedEventSource = 'window' | 'idle' | 'git' | 'agent-session' | 'calendar' | 'gitlab';
 
 type CollectedEventBase<TSource extends CollectedEventSource, TKind extends string> = {
   at: Date;
@@ -55,10 +55,42 @@ export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-e
   conferenceUrl?: string;
 };
 
-export type CollectedEvent =
-  WindowFocusEvent | PresenceEvent | GitCheckoutEvent | GitCommitEvent | AgentSessionEvent | CalendarOccurrenceEvent;
+/**
+ * Something the user did in GitLab: pushed, opened, commented on or approved a merge request.
+ *
+ * It carries an instant and no duration, so it never becomes time on its own — a comment at 10:02
+ * says what the reviewer was doing, and the local collectors say how long they were at it. What it
+ * does carry is the merge request's source branch, which under the branch grammar names the issue,
+ * and that is how time spent in somebody else's merge request reaches the Task being reviewed.
+ */
+export type MergeRequestActivityEvent = CollectedEventBase<'gitlab', 'merge-request-activity'> & {
+  /** GitLab's own event id. Unique inside one instance, which is what the dedupe key rests on. */
+  eventId: string;
+  /** GitLab's wording for what happened — `approved`, `commented on`, `pushed to`. */
+  action: string;
+  projectPath?: string;
+  mergeRequestIid?: string;
+  branch?: string;
+  title?: string;
+  url?: string;
+};
 
-/** Events that describe what the machine was doing, as opposed to what a calendar claims. */
+export type CollectedEvent =
+  | WindowFocusEvent
+  | PresenceEvent
+  | GitCheckoutEvent
+  | GitCommitEvent
+  | AgentSessionEvent
+  | CalendarOccurrenceEvent
+  | MergeRequestActivityEvent;
+
+/** Events that describe what the machine was doing, as opposed to what a calendar or an API claims. */
 export type ActivityEvent = WindowFocusEvent | PresenceEvent | GitCheckoutEvent | GitCommitEvent | AgentSessionEvent;
 
-export const isActivityEvent = (event: CollectedEvent): event is ActivityEvent => event.source !== 'calendar';
+/**
+ * Whether the event is one the day is reconstructed from. A calendar occurrence and a GitLab event
+ * both describe work without observing it, so neither may open or extend a block: an instant with no
+ * duration would otherwise invent one, and a stale sticky context would take real work with it.
+ */
+export const isActivityEvent = (event: CollectedEvent): event is ActivityEvent =>
+  event.source !== 'calendar' && event.source !== 'gitlab';

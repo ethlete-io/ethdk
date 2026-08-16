@@ -7,6 +7,7 @@ import {
   injectAgentSessionCollector,
   injectCalendarCollector,
   injectGitCollector,
+  injectGitLabCollector,
   injectWindowCollector,
 } from '../../collectors';
 import { SourceTally, WINDOW_SOURCE_NEEDS_ACCESSIBILITY, injectHostPorts } from '../../host';
@@ -16,6 +17,7 @@ import {
   formatAgentSessions,
   formatCalendarRead,
   formatGitFailures,
+  formatGitLabRead,
   formatGitScan,
   formatTally,
   formatWindowSource,
@@ -150,6 +152,7 @@ export class SourcesViewComponent {
   private agentSessions = injectAgentSessionCollector();
   private git = injectGitCollector();
   private calendar = injectCalendarCollector();
+  private gitlab = injectGitLabCollector();
   private settings = injectTimetrackSettings();
 
   /** Re-counted whenever a collector reports a run, so the tally moves as evidence arrives. */
@@ -158,6 +161,7 @@ export class SourcesViewComponent {
     agentSessions: this.agentSessions.lastRun(),
     git: this.git.lastRun(),
     calendar: this.calendar.lastRun(),
+    gitlab: this.gitlab.lastRun(),
   }));
 
   private tallies = toSignal(
@@ -223,6 +227,13 @@ export class SourcesViewComponent {
             readAt: this.calendar.lastRun()?.at ?? null,
           }) || null
         );
+      case 'gitlab':
+        return (
+          formatGitLabRead({
+            host: this.settings.settings().gitlab.host,
+            readAt: this.gitlab.lastRun()?.at ?? null,
+          }) || null
+        );
       default:
         return null;
     }
@@ -230,6 +241,8 @@ export class SourcesViewComponent {
 
   private warningOf(source: EvidenceSource) {
     if (source.collector === 'window') return this.windows.status()?.detail ?? null;
+
+    if (source.collector === 'gitlab') return this.gitlab.lastRun()?.failures.join(' ') || null;
 
     if (source.collector !== 'git') return null;
 
@@ -248,6 +261,8 @@ export class SourcesViewComponent {
         return this.git.failure();
       case 'calendar':
         return this.calendar.failure();
+      case 'gitlab':
+        return this.gitlab.failure();
       default:
         return null;
     }

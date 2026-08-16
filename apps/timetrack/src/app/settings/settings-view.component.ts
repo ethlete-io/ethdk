@@ -175,6 +175,38 @@ import { TokenFieldComponent } from './token-field.component';
             />
           </div>
 
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <h3 class="text-h4">GitLab</h3>
+
+              <et-badge [color]="store.credentials().gitlab ? 'success' : 'warning'" size="sm">
+                {{ store.credentials().gitlab ? 'connected' : 'not connected' }}
+              </et-badge>
+            </div>
+
+            <p class="text-small text-et-surface-muted">
+              Your own merge-request activity is read here, which is how reviewing somebody else's branch becomes time
+              on the issue being reviewed. The token is a personal access token with the read_api scope.
+            </p>
+
+            <et-form-field class="min-w-60" appearance="underline" size="sm">
+              <et-label>Instance</et-label>
+              <et-input
+                [value]="store.settings().gitlab.host"
+                (valueChange)="setGitLabHost($event)"
+                placeholder="git.example.com"
+                type="url"
+              />
+            </et-form-field>
+
+            <ethlete-token-field
+              [connected]="store.credentials().gitlab"
+              (save)="store.saveGitLabToken($event)"
+              (forget)="store.forgetGitLabToken()"
+              provider="GitLab"
+            />
+          </div>
+
           <ethlete-google-connection
             [settings]="store.settings().google"
             [connected]="store.credentials().google"
@@ -228,7 +260,7 @@ import { TokenFieldComponent } from './token-field.component';
 export class SettingsViewComponent {
   protected store = injectTimetrackSettings();
 
-  private git = injectGitCollector();
+  public git = injectGitCollector();
   private dayNudge = injectDayNudge();
   private destroyRef = inject(DestroyRef);
 
@@ -257,5 +289,9 @@ export class SettingsViewComponent {
 
   protected setEmail(email: string) {
     this.store.setJira({ ...this.store.settings().jira, email });
+  }
+
+  protected setGitLabHost(host: string) {
+    this.store.setGitLab({ host });
   }
 }

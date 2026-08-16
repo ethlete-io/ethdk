@@ -8,6 +8,7 @@ import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { FillOptions, fillGaps } from './fill';
 import { MeetingMatch, MeetingOptions, matchMeetings } from './meetings';
+import { mergeRequestActivity } from './merge-request-activity';
 import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
 import { TimeWindow, clipBlocks } from './overlap';
 import { pausedMs } from './pauses';
@@ -77,12 +78,18 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
   const timers = matchTimerRuns({ runs: options.timerRuns ?? [], blocks });
   const pauses = options.pauses ?? [];
   const reconstructed = clipBlocks({ blocks, windows: [...timers.map((timer) => timer.run), ...pauses] });
+  // The GitLab rung is derived here rather than passed in: the day's events already hold it, and a
+  // caller that had to remember to fetch it would be a caller that forgets on one of the four screens.
+  const activity = [
+    ...(options.activity ?? []),
+    ...mergeRequestActivity({ events: options.events, config: options.config }),
+  ];
   const attributed = reconstructed.map((block) =>
     attribute({
       block,
       config: options.config,
       resolveBase: options.resolveBase,
-      activity: options.activity,
+      activity,
       patterns: options.patterns,
       rules: options.rules,
     }),

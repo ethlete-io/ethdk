@@ -7,6 +7,7 @@ import {
   TIMETRACK_SECRET_KEYS,
   TimetrackCredentialStatus,
   TimetrackExclusionRule,
+  TimetrackGitLabSettings,
   TimetrackGoogleSettings,
   TimetrackJiraSettings,
   TimetrackSettings,
@@ -41,7 +42,13 @@ const SAVE_DEBOUNCE_MS = 400;
  */
 type HeldSecrets = TimetrackCredentialStatus & { googleClientSecret: boolean };
 
-const NOTHING_HELD: HeldSecrets = { jira: false, tempo: false, google: false, googleClientSecret: false };
+const NOTHING_HELD: HeldSecrets = {
+  jira: false,
+  tempo: false,
+  google: false,
+  gitlab: false,
+  googleClientSecret: false,
+};
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -88,6 +95,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
           jira: ports.secrets.has$(TIMETRACK_SECRET_KEYS.jiraToken),
           tempo: ports.secrets.has$(TIMETRACK_SECRET_KEYS.tempoToken),
           google: ports.secrets.has$(TIMETRACK_SECRET_KEYS.googleRefreshToken),
+          gitlab: ports.secrets.has$(TIMETRACK_SECRET_KEYS.gitlabToken),
           googleClientSecret: ports.secrets.has$(TIMETRACK_SECRET_KEYS.googleClientSecret),
         }).pipe(
           catchError((error: unknown) => {
@@ -169,6 +177,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       patch({ nudge: { ...settings().nudge, atMinute: clampMinuteOfDay(atMinute) } }),
     setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
     setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
+    setGitLab: (gitlab: TimetrackGitLabSettings) => patch({ gitlab }),
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
 
     addExclusionRule: (rule: TimetrackExclusionRule) => {
@@ -217,6 +226,9 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     saveGoogleClientSecret: (secret: string) =>
       secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.googleClientSecret, value: secret.trim() }),
     forgetGoogleClientSecret: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.googleClientSecret, value: null }),
+    saveGitLabToken: (token: string) =>
+      secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.gitlabToken, value: token.trim() }),
+    forgetGitLabToken: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.gitlabToken, value: null }),
   };
 });
 
