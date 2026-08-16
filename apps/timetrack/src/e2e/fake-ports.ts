@@ -13,7 +13,15 @@ import {
 } from '@ethlete/timetrack';
 import { Observable, of } from 'rxjs';
 import { HostPorts } from '../host/ports';
-import { E2E_ISSUE_KEY, E2E_KEYLESS_BRANCH, e2eEvents, e2eRespond, e2eSettings } from './world';
+import {
+  E2E_ISSUE_KEY,
+  E2E_KEYLESS_BRANCH,
+  E2E_PARENT_BRANCH,
+  E2E_REPO,
+  e2eEvents,
+  e2eRespond,
+  e2eSettings,
+} from './world';
 
 const ok = <T>(value: T): Observable<T> => of(value);
 const done = (): Observable<void> => of(undefined);
@@ -175,7 +183,7 @@ export const createFakePorts = (): HostPorts => {
     },
 
     git: {
-      repos$: () => ok({ repos: [], kind: 'none', detail: null }),
+      repos$: () => ok({ repos: [E2E_REPO], kind: 'watching', detail: null }),
       changes$: (afterSeq) => ok({ repos: [], seq: afterSeq }),
     },
 
@@ -219,10 +227,10 @@ const EMPTY_AGENT_ANSWER = '{"structured_output":{"answers":[]}}';
  */
 const FAKE_GIT: Record<string, string> = {
   'status --porcelain': '',
-  'for-each-ref --format=%(refname:short) refs/heads': `next\n${E2E_KEYLESS_BRANCH}\nfeat/${E2E_ISSUE_KEY}-user-management\n`,
+  'for-each-ref --format=%(refname:short) refs/heads': `next\n${E2E_KEYLESS_BRANCH}\nfeat/${E2E_ISSUE_KEY}-user-management\n${E2E_PARENT_BRANCH}\n`,
   remote: 'origin',
   'remote get-url origin': 'git@gitlab.example.com:braune-digital/fut-frontend.git',
-  'for-each-ref --format=%(refname:strip=3) refs/remotes/origin': `HEAD\nnext\n${E2E_KEYLESS_BRANCH}\n`,
+  'for-each-ref --format=%(refname:strip=3) refs/remotes/origin': `HEAD\nnext\n${E2E_KEYLESS_BRANCH}\n${E2E_PARENT_BRANCH}\n`,
 };
 
 const fakeStdout = (spec: ProcessSpec) => {
@@ -230,5 +238,7 @@ const fakeStdout = (spec: ProcessSpec) => {
 
   const key = spec.args.join(' ');
 
-  return FAKE_GIT[key] ?? (key.startsWith('branch ') || key.startsWith('push ') ? '' : 'e2e@example.com\n');
+  const mutating = ['branch ', 'push ', 'switch ', 'fetch '].some((prefix) => key.startsWith(prefix));
+
+  return FAKE_GIT[key] ?? (mutating ? '' : 'e2e@example.com\n');
 };

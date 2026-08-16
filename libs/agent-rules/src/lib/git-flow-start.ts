@@ -8,7 +8,7 @@ import {
   localBranchExists,
   remoteBranchExists,
 } from './git';
-import { BranchNameSpec, GitFlowConfig, parseBranch, planStart, StartPlan } from './git-flow';
+import { BranchNameSpec, featureBranchesFor, GitFlowConfig, nestedSpecFor, planStart, StartPlan } from './git-flow';
 import { fetchJiraIssue, JiraIssue, resolveJiraCredentials } from './jira';
 import { confirm } from './prompt';
 
@@ -35,11 +35,7 @@ type Resolved = { spec: BranchNameSpec; issue?: JiraIssue; subjectSource: string
  */
 const findParentBranch = (options: { root: string; storyKey: string; config: GitFlowConfig }) => {
   const { root, storyKey, config } = options;
-  const matches = allBranches(root).filter((branch) => {
-    const parse = parseBranch({ branch, config });
-
-    return parse.kind === 'main-feature' && !parse.deprecated && parse.storyKey === storyKey;
-  });
+  const matches = featureBranchesFor({ branches: allBranches(root), storyKey, config });
 
   if (matches.length === 0) {
     throw new Error(
@@ -56,13 +52,6 @@ const findParentBranch = (options: { root: string; storyKey: string; config: Git
   }
 
   return matches[0] as string;
-};
-
-const specForParent = (options: { parent: string; key: string; subject: string; config: GitFlowConfig }) => {
-  const { parent, key, subject, config } = options;
-  const kind = parseBranch({ branch: parent, config }).kind === 'release' ? 'release-fix' : 'sub-feature';
-
-  return { kind, parent, key, subject } as BranchNameSpec;
 };
 
 const resolveSubject = (options: { issue: JiraIssue; settings: SyncConfig['jira'] }) => {
@@ -91,7 +80,7 @@ const resolve = async (request: StartRequest): Promise<Resolved> => {
     if (hotfix) return { spec: { kind: 'hotfix', key, subject }, subjectSource: '--subject' };
 
     if (parent) {
-      return { spec: specForParent({ parent, key, subject, config: config.gitFlow }), subjectSource: '--subject' };
+      return { spec: nestedSpecFor({ parent, key, subject, config: config.gitFlow }), subjectSource: '--subject' };
     }
 
     return { spec: { kind: 'main-feature', type, key, subject }, subjectSource: '--subject' };
@@ -114,7 +103,7 @@ const resolve = async (request: StartRequest): Promise<Resolved> => {
 
   if (parentBranch) {
     return {
-      spec: specForParent({ parent: parentBranch, ...shared, config: config.gitFlow }),
+      spec: nestedSpecFor({ parent: parentBranch, ...shared, config: config.gitFlow }),
       issue,
       subjectSource: resolvedSubject.subjectSource,
     };

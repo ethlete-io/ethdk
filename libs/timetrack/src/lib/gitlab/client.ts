@@ -3,8 +3,9 @@ import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackResponse, TimetrackTransport } from '../transport/ports';
 
 /**
- * A personal access token for the user's own GitLab, self-hosted or not. `read_api` is enough — the
- * app only ever reads — and the token is a keychain entry, never part of the settings document.
+ * A personal access token for the user's own GitLab, self-hosted or not. Collection needs `read_api`
+ * alone, but repairing a branch and starting one write merge requests, so those need `api`. The token
+ * is a keychain entry, never part of the settings document.
  */
 export type GitLabCredentials = {
   host: string;

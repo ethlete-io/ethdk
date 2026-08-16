@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
 import { CollectedEvent, DEFAULT_TIMETRACK_SETTINGS, TimetrackRequest, TimetrackSettings } from '@ethlete/timetrack';
 
 export const E2E_JIRA_HOST = 'https://e2e.atlassian.net';
@@ -8,6 +9,8 @@ export const E2E_PARENT_KEY = 'FIP-2000';
 export const E2E_REPO = '/Users/e2e/dev/fut-frontend';
 /** A branch the grammar can spell but which names no issue — the case branch repair exists for. */
 export const E2E_KEYLESS_BRANCH = 'feat/pdf-export';
+/** The Story branch a prospectively started Task nests under. */
+export const E2E_PARENT_BRANCH = `feat/${E2E_PARENT_KEY}-member-onboarding`;
 
 /** The day the fixture describes, so a test can drive the view straight to it. */
 export const e2eDay = () => {
@@ -117,6 +120,17 @@ const body = (request: TimetrackRequest): unknown => {
   }
 
   if (url.includes('/rest/api/3/issue')) return { id: '10999', key: 'FIP-9999' };
+
+  // Method-specific: a start opens one merge request, a repair lists the open ones for a branch.
+  if (url.includes('/merge_requests')) {
+    return request.method === 'POST'
+      ? {
+          iid: 42,
+          project_id: 1,
+          web_url: 'https://gitlab.example.com/braune-digital/fut-frontend/-/merge_requests/42',
+        }
+      : [];
+  }
 
   if (url.includes('/work-attributes')) return { results: [] };
 

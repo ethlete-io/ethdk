@@ -123,6 +123,54 @@ export const fetchGitLabMergeRequestsForBranch$ = (options: {
 };
 
 /**
+ * Opens a merge request for a branch that was just pushed.
+ *
+ * GitLab has no `draft` field on the create call — the `Draft:` prefix in the title is the whole
+ * mechanism, so a caller that drops it opens a merge request somebody can merge. Build the title
+ * with `draftMergeRequestTitle`. The source branch is removed on merge, because the grammar makes
+ * the name reconstructible and a stale branch is a collision the next start has to refuse.
+ */
+export const createGitLabMergeRequest$ = (options: {
+  transport: TimetrackTransport;
+  credentials: GitLabCredentials;
+  projectId: string;
+  sourceBranch: string;
+  targetBranch: string;
+  title: string;
+  description: string;
+}): Observable<GitLabMergeRequest> =>
+  gitlabRequest$<GitLabMergeRequestResource>({
+    transport: options.transport,
+    credentials: options.credentials,
+    path: `/projects/${encodeURIComponent(options.projectId)}/merge_requests`,
+    describe: `a merge request from ${options.sourceBranch} into ${options.targetBranch}`,
+    method: 'POST',
+    body: {
+      source_branch: options.sourceBranch,
+      target_branch: options.targetBranch,
+      title: options.title,
+      description: options.description,
+      remove_source_branch: true,
+    },
+  }).pipe(
+    map(({ body }) => {
+      if (!body?.iid) {
+        throw new Error(`GitLab accepted the merge request from ${options.sourceBranch} but returned no iid.`);
+      }
+
+      return {
+        projectId: String(body.project_id ?? options.projectId),
+        iid: String(body.iid),
+        title: body.title ?? options.title,
+        sourceBranch: body.source_branch ?? options.sourceBranch,
+        targetBranch: body.target_branch ?? options.targetBranch,
+        webUrl: body.web_url,
+        projectPath: projectPathOf(body),
+      };
+    }),
+  );
+
+/**
  * Changes a merge request's title, its target branch, or both.
  *
  * The two are one call because a rename needs both and GitLab applies the whole `PUT` at once, so a

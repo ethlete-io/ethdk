@@ -232,6 +232,43 @@ Two cases worth checking separately:
 - **An open merge request.** Open one from the branch, then repair. The branch must keep its name,
   only the merge request title gains the key, and the reason must say why.
 
+## 14. Start a piece of work
+
+This section files a real ticket, creates a real branch and opens a real merge request. Read it
+before you start.
+
+**Do not run this in a repository you care about.** Use a throwaway clone, or be ready to delete
+what it creates. The plan names everything it will do before anything runs.
+
+1. Open **Start**.
+2. Pick a repository from the list.
+3. Type the project key. The parent stories load a moment after you stop typing.
+4. Type a summary.
+
+**Pass:**
+
+- The branch reads `feat/<KEY>-<your-summary>`, with `<KEY>` still a placeholder.
+- **from** names the remote's copy of the development branch, such as `origin/next`.
+- **merges to** names the development branch.
+- Every step shows its exact command, and an **Undo** line beside the ones that write something.
+- Nothing has run yet.
+
+5. Pick a parent story that already has a feature branch.
+
+**Pass:** the branch is now nested under the parent's full path, and **merges to** is the parent
+branch rather than the development branch.
+
+6. Press **Run these steps**.
+
+**Pass:** the banner names the issue that was filed and the branch you are now on. `git branch`
+agrees, and the merge request opens in GitLab as a **draft** with the issue linked.
+
+Cases worth checking separately:
+
+- **A dirty working tree.** Change a file, then reload the view. It must refuse and offer no button.
+- **A story with no feature branch.** Pick one. It must refuse and say to start the story first.
+- **A parent branch that was never pushed.** It must refuse and say to push the parent first.
+
 ## How to report a failure
 
 Give the section number, what you did, and what you saw. A screenshot of the window helps more than

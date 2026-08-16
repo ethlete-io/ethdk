@@ -8,6 +8,11 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./day-review/day-review-view.component').then((entry) => entry.DayReviewViewComponent),
   },
   {
+    path: 'start',
+    title: 'Start',
+    loadComponent: () => import('./work-start/work-start-view.component').then((entry) => entry.WorkStartViewComponent),
+  },
+  {
     path: 'week',
     title: 'Week',
     loadComponent: () =>

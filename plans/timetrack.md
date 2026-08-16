@@ -1216,6 +1216,45 @@ target) and require confirmation; refuse when the working tree is dirty; refuse 
 `main`; refuse when the parent's feature branch cannot be found on the remote; always draft,
 never ready; and make every step individually undoable with the exact commands shown.
 
+**It is built**, as the **Start** view. `planWorkStart` names the branch and decides every refusal;
+`executeWorkStart$` files the issue, asks the grammar again with the key it got back, and then runs
+the remaining steps in order. What building it settled:
+
+- **The plan has to be shown before the key exists, and the key is what names the branch.** So the
+  plan carries `<KEY>` where the key will go, and the grammar is checked against a probe key built
+  from the project (`FIP-0`) — the same trick `conformingNameFor` already used, for the same reason:
+  a probe with the real project's prefix is not rejected by `keyPrefixes` for a reason the real key
+  would never hit. Every refusal that does not need the key is decided up front.
+- **The executor re-plans in the middle rather than substituting a string.** `planWorkStart` is a
+  pure function of one `WorkStartRequest`, so the form shows `planWorkStart(request)` and the run
+  derives the same plan from the same request — what was confirmed and what happens cannot come
+  apart. After Jira answers, it asks again with the real key, which is the only place a collision on
+  the real name is knowable. A collision there stops the run with the issue filed and nothing local
+  touched, which is the cheapest failure available.
+- **A Task's parent is resolved by the planner, not the view.** The form picks a parent _issue_, but
+  the branch nests under a parent _branch_. Resolving that in the provider would have created a
+  second refusal channel beside the plan's, so `featureBranchesFor` moved into
+  `@ethlete/agent-rules/git-flow` and the planner calls it: no branch for the story, two branches for
+  the story, and a branch that was never pushed are all ordinary refusals now. `git-flow start`'s
+  `findParentBranch` calls the same function, as does `nestedSpecFor` for the kind.
+- **A parent that only exists locally is refused, not merely warned about.** A sub-feature's base is
+  also its merge request target, so an unpushed parent gives GitLab nothing to target and the branch
+  would be unreviewable the moment it is created.
+- **`Draft:` in the title is the whole draft mechanism.** GitLab's create call has no `draft` field,
+  so `draftMergeRequestTitle` owns the prefix and nothing else builds that title. The source branch
+  is set to be removed on merge: the grammar makes the name reconstructible, and a stale branch is a
+  collision the next start has to refuse.
+- **The GitLab token needs `api`, not `read_api`.** Collection only ever read; repair and start both
+  write merge requests. The type's doc comment said otherwise and was already wrong when repair
+  shipped.
+- **An `et-select` bound to `''` reads as a selected value.** `hasValue()` is true for an empty
+  string, so the trigger renders an empty label instead of the placeholder and collapses to zero
+  height. Bind `null` for "nothing picked".
+- **`(blur)` on `et-input` never fires** — blur does not bubble, and the binding sits on the
+  component host rather than the inner `input`. The parent search is driven by the typed project key
+  through `debounceTime` instead. `create-ticket.component.ts` has the same dead binding; it is
+  harmless there only because `open()` searches once.
+
 **MR → ticket repair is built.** A branch with no key gets an issue created, and the branch
 and its merge request are then made to conform. It is entered from the day view against a
 branch the day observed, right after the create-ticket form reports the new key - the key is
@@ -1699,8 +1738,9 @@ way in here.
 **Phase 2 - closing the code-work gaps.** ~~GitLab CE events and MR review time~~ **- built**, so a
 review that left no local trace now names the Task it was for. ~~The reasoning provider~~ **- built**,
 and ~~the retroactive ticket-creation flow~~ **- built**, so work nothing could name can now become a
-ticket rather than a row the reviewer rejects every day. Remaining: the VS Code extension and the
-generic ingest endpoint, the prospective ticket → branch → draft MR flow, MR → ticket repair.
+ticket rather than a row the reviewer rejects every day. ~~The prospective
+ticket → branch → draft MR flow~~ **- built**, and ~~MR → ticket repair~~ **- built**. Remaining: the
+VS Code extension and the generic ingest endpoint.
 
 **Phase 3 - the noisy tail.** Slack huddle polling, Discord (bot mechanism, guild-scoped,
 `weak`), Gmail notification parsing, Codex session logs, and a Chrome extension if window
