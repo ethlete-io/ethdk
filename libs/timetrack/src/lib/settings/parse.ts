@@ -6,6 +6,7 @@ import {
   TimetrackNudgeSettings,
   TimetrackReasoningSettings,
   TimetrackSettings,
+  TimetrackTicketSettings,
   clampDayTargetMs,
   clampGapFillMs,
   clampMinuteOfDay,
@@ -121,6 +122,27 @@ const asTextList = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
 /**
+ * The parenting mode is read back against the two the create call can execute. A document naming a
+ * third would otherwise reach `createJiraIssue$`, which would then file every ticket with no parent
+ * at all and report nothing.
+ */
+const asTicket = (value: unknown): TimetrackTicketSettings => {
+  const raw = asRecord(value);
+  const { ticket } = DEFAULT_TIMETRACK_SETTINGS;
+  const parentIssueTypeNames = asTextList(raw['parentIssueTypeNames']);
+
+  return {
+    issueTypeName: asText(raw['issueTypeName']) || ticket.issueTypeName,
+    parentIssueTypeNames: Array.isArray(raw['parentIssueTypeNames'])
+      ? parentIssueTypeNames
+      : ticket.parentIssueTypeNames,
+    parenting: raw['parenting'] === 'issue-link' ? 'issue-link' : 'parent-field',
+    parentLinkType: asText(raw['parentLinkType']) || ticket.parentLinkType,
+    subjectField: asText(raw['subjectField']),
+  };
+};
+
+/**
  * Reads a stored settings document, falling back to the default for every field it cannot make sense
  * of. Nothing here throws: a document written by an older version, or one a hand-edit broke, must leave
  * the app usable rather than refusing to start — and the fields it does understand still apply.
@@ -137,6 +159,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
     google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
     gitlab: { host: asText(gitlab['host']) },
+    ticket: asTicket(document['ticket']),
     reasoning: asReasoning(document['reasoning']),
     nudge: asNudge(document['nudge']),
     exclusionRules: asRules(document['exclusionRules']),

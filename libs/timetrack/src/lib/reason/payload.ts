@@ -1,7 +1,7 @@
 import { WorkGroup } from '../correlate/merge';
 import { UnnamedContext } from '../correlate/rules';
 import { contextKey } from '../model/block';
-import { EvidenceKind } from '../model/evidence';
+import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
 import {
   DEFAULT_MAX_NOTES_PER_CONTEXT,
@@ -10,13 +10,6 @@ import {
   ReasoningContext,
   ReasoningPlan,
 } from './model';
-
-/**
- * The evidence a note may quote. This is the redaction rule, and it is an allowlist because the
- * alternative fails open: `window-title` details are raw window titles, which carry document names,
- * customer names and private browsing, and a kind added later would join the payload unnoticed.
- */
-const SENDABLE: readonly EvidenceKind[] = ['commit', 'agent-session', 'merge-request', 'issue-view', 'calendar'];
 
 /** The repository's name. The absolute path the collectors report never leaves the machine. */
 const repoNameOf = (path: string) => path.split('/').filter(Boolean).pop() ?? path;
@@ -30,7 +23,7 @@ const notesFor = (options: { groups: readonly WorkGroup[]; contextId: string; ma
       if (contextKey(block.context) !== options.contextId) continue;
 
       for (const entry of block.evidence) {
-        if (!SENDABLE.includes(entry.kind)) continue;
+        if (!QUOTABLE_EVIDENCE_KINDS.includes(entry.kind)) continue;
 
         const note = entry.summary ?? entry.detail;
 

@@ -80,6 +80,10 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
             Always log here
           </button>
 
+          <button (click)="createTicket.emit(entry.context)" et-button variant="transparent" size="sm">
+            Create a ticket
+          </button>
+
           <button (click)="donate(entry.id)" et-button variant="transparent" size="sm">No tickets here</button>
         </div>
       }
@@ -100,6 +104,8 @@ export class UnnamedWorkComponent {
 
   public name = output<ContextNaming>();
   public ask = output<void>();
+  /** For work no issue covers at all: the answer is a new ticket rather than a key to type. */
+  public createTicket = output<UnnamedContext>();
 
   private drafts = signal<Record<string, string>>({});
 

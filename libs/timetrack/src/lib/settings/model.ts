@@ -1,4 +1,5 @@
 import { AttributionRule } from '../correlate/rules';
+import { JiraParenting } from '../jira/hierarchy';
 import { DEFAULT_REASONING_OPTIONS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 
@@ -74,6 +75,30 @@ export type TimetrackReasoningSettings = {
 };
 
 /**
+ * How this instance wants a ticket filed, for the work a day found that no issue covers.
+ *
+ * Every value here is instance-specific and none of it can be worked out from the outside: Jira's
+ * default hierarchy puts Story and Task on the same level, so whether a parent is even expressible
+ * through the parent field depends on the levels the instance defines. `describeJiraHierarchy$`
+ * reports what it can express; this is where the answer is written down.
+ */
+export type TimetrackTicketSettings = {
+  /** The type a created ticket gets, by name — the name Jira shows, such as `Task`. */
+  issueTypeName: string;
+  /** The types a parent may be, by name. Empty offers every open issue in the project. */
+  parentIssueTypeNames: string[];
+  /** How the instance expresses the relation to a parent. */
+  parenting: JiraParenting;
+  /** The link type used when `parenting` is `issue-link`, by name, such as `Relates`. */
+  parentLinkType: string;
+  /**
+   * The field holding a branch subject, such as `customfield_10057`. It is a field id rather than a
+   * name because that is what the REST API writes to. Empty writes no subject at all.
+   */
+  subjectField: string;
+};
+
+/**
  * When the app says a day is not finished yet.
  *
  * The minute is local and the reminder is only ever about today: a past day is caught up in the week
@@ -109,6 +134,7 @@ export type TimetrackSettings = {
   jira: TimetrackJiraSettings;
   google: TimetrackGoogleSettings;
   gitlab: TimetrackGitLabSettings;
+  ticket: TimetrackTicketSettings;
   reasoning: TimetrackReasoningSettings;
   nudge: TimetrackNudgeSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
@@ -137,6 +163,13 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   jira: { host: '', email: '' },
   google: { clientId: '', calendarIds: [] },
   gitlab: { host: '' },
+  ticket: {
+    issueTypeName: 'Task',
+    parentIssueTypeNames: ['Story', 'Epic'],
+    parenting: 'parent-field',
+    parentLinkType: 'Relates',
+    subjectField: '',
+  },
   reasoning: { enabled: false, command: DEFAULT_REASONING_OPTIONS.command, model: DEFAULT_REASONING_OPTIONS.model },
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   exclusionRules: [],

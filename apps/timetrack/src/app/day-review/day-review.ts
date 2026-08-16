@@ -316,6 +316,12 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** The sessionized day behind the rows, for the timeline. */
     correlation: reasoned,
     /**
+     * The day with no model answer in it, which is what a ticket draft quotes — the same input the
+     * unnamed-work card and the reasoning payload are built from. Drafting off `reasoned` would leave
+     * a context the provider already named with no evidence to quote at all.
+     */
+    deterministic: correlation,
+    /**
      * The contexts the day could not name an issue for, widest first. In a repository the branch
      * grammar cannot read, this is most of the day, and naming one of them is what turns it into
      * worklogs — here and on every later day the context appears in.

@@ -12,6 +12,7 @@ import {
   TimetrackGoogleSettings,
   TimetrackJiraSettings,
   TimetrackSettings,
+  TimetrackTicketSettings,
   clampDayTargetMs,
   clampGapFillMs,
   clampMinuteOfDay,
@@ -180,6 +181,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
     setGitLab: (gitlab: TimetrackGitLabSettings) => patch({ gitlab }),
     setReasoning: (reasoning: TimetrackReasoningSettings) => patch({ reasoning }),
+    setTicket: (ticket: TimetrackTicketSettings) => patch({ ticket }),
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
 
     addExclusionRule: (rule: TimetrackExclusionRule) => {

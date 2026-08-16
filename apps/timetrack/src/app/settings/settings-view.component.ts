@@ -18,6 +18,7 @@ import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { GoogleConnectionComponent } from './google-connection.component';
 import { ScanRootsComponent } from './scan-roots.component';
 import { injectTimetrackSettings } from './settings';
+import { TicketSettingsComponent } from './ticket-settings.component';
 import { TokenFieldComponent } from './token-field.component';
 
 /**
@@ -154,6 +155,8 @@ import { TokenFieldComponent } from './token-field.component';
             />
           </div>
 
+          <ethlete-ticket-settings [settings]="store.settings().ticket" (settingsChange)="store.setTicket($event)" />
+
           <div class="flex flex-col gap-3">
             <div class="flex items-center gap-3">
               <h3 class="text-h4">Tempo</h3>
@@ -278,6 +281,7 @@ import { TokenFieldComponent } from './token-field.component';
     ScanRootsComponent,
     SWITCH_IMPORTS,
     SpinnerComponent,
+    TicketSettingsComponent,
     TokenFieldComponent,
   ],
 })

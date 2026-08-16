@@ -33,7 +33,11 @@ const readSubjectField = (fields: JiraIssueFields, field: string | undefined) =>
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 };
 
-const toIssue = (resource: JiraIssueResource, subjectField: string | undefined): JiraIssue | undefined =>
+/**
+ * Reads one search result into the app's shape, or nothing when Jira returned neither a key nor an
+ * id. `subjectField` names the instance's branch-subject field, which every caller reads differently.
+ */
+export const toJiraIssue = (resource: JiraIssueResource, subjectField?: string): JiraIssue | undefined =>
   resource.key && resource.id
     ? {
         key: resource.key,
@@ -72,7 +76,7 @@ export const fetchJiraIssues$ = (options: {
         describe: `issues ${batch[0]}…`,
       }),
     ),
-    map((resources) => resources.flatMap((resource) => toIssue(resource, options.subjectField) ?? [])),
+    map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])),
     reduce((all: JiraIssue[], issues) => [...all, ...issues], []),
   );
 };

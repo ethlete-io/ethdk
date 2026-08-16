@@ -1,10 +1,12 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { DayWarningKind, ReviewedRow, formatDurationMs, localDayRange } from '@ethlete/timetrack';
+import { CreateTicketComponent } from './create-ticket.component';
 import { injectDayReview } from './day-review';
 import { DayTimelineComponent } from './day-timeline.component';
 import { formatDayLabel, formatSignedDurationMs } from './format';
 import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
+import { injectTicketDraft } from './ticket-draft';
 import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
 import { WorklogRowComponent } from './worklog-row.component';
 
@@ -89,6 +91,28 @@ import { WorklogRowComponent } from './worklog-row.component';
                 [hasAsked]="store.hasAsked()"
                 (name)="nameContext($event)"
                 (ask)="store.ask()"
+                (createTicket)="tickets.open($event)"
+              />
+            }
+
+            @if (tickets.context(); as drafting) {
+              <ethlete-create-ticket
+                [context]="drafting"
+                [form]="tickets.form()"
+                [candidates]="tickets.candidates()"
+                [isSearching]="tickets.isSearching()"
+                [isCreating]="tickets.isCreating()"
+                [canCreate]="tickets.canCreate()"
+                [createdKey]="tickets.createdKey()"
+                [searchFailure]="tickets.searchFailure()"
+                [createFailure]="tickets.createFailure()"
+                (projectKeyChange)="tickets.setProjectKey($event)"
+                (summaryChange)="tickets.setSummary($event)"
+                (descriptionChange)="tickets.setDescription($event)"
+                (parentKeyChange)="tickets.setParentKey($event)"
+                (findParents)="tickets.findParents()"
+                (create)="tickets.create()"
+                (dismiss)="tickets.close()"
               />
             }
 
@@ -130,6 +154,7 @@ import { WorklogRowComponent } from './worklog-row.component';
   imports: [
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
+    CreateTicketComponent,
     DayTimelineComponent,
     EMPTY_STATE_IMPORTS,
     SpinnerComponent,
@@ -141,6 +166,7 @@ import { WorklogRowComponent } from './worklog-row.component';
 })
 export class DayReviewViewComponent {
   protected store = injectDayReview();
+  protected tickets = injectTicketDraft();
 
   protected readonly WARNING_HEADINGS: Record<DayWarningKind, string> = {
     'under-target': 'The day is short of its target',

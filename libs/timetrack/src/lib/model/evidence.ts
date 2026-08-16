@@ -30,6 +30,22 @@ export type Evidence = {
   summary?: string;
 };
 
+/**
+ * The evidence whose wording may be quoted off this machine — in a prompt to an agent CLI, in the
+ * description of a ticket this app files.
+ *
+ * It is an allowlist because the alternative fails open: `window-title` details are raw window titles,
+ * which carry document names, customer names and private browsing, and a kind added later would join
+ * every payload unnoticed.
+ */
+export const QUOTABLE_EVIDENCE_KINDS: readonly EvidenceKind[] = [
+  'commit',
+  'agent-session',
+  'merge-request',
+  'issue-view',
+  'calendar',
+];
+
 export type Confidence = 'certain' | 'likely' | 'weak';
 
 const CONFIDENCE_RANK: Record<Confidence, number> = { weak: 0, likely: 1, certain: 2 };

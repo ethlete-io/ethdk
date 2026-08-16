@@ -19,6 +19,13 @@ describe('parseTimetrackSettings', () => {
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       gitlab: { host: 'git.braune-digital.com' },
+      ticket: {
+        issueTypeName: 'Aufgabe',
+        parentIssueTypeNames: ['Story'],
+        parenting: 'issue-link',
+        parentLinkType: 'Blocks',
+        subjectField: 'customfield_10057',
+      },
       reasoning: { enabled: true, command: 'codex', model: 'gpt-5' },
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
@@ -32,6 +39,13 @@ describe('parseTimetrackSettings', () => {
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       gitlab: { host: 'git.braune-digital.com' },
+      ticket: {
+        issueTypeName: 'Aufgabe',
+        parentIssueTypeNames: ['Story'],
+        parenting: 'issue-link',
+        parentLinkType: 'Blocks',
+        subjectField: 'customfield_10057',
+      },
       reasoning: { enabled: true, command: 'codex', model: 'gpt-5' },
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
@@ -49,6 +63,7 @@ describe('parseTimetrackSettings', () => {
       jira: { host: '', email: '' },
       google: { clientId: '', calendarIds: [] },
       gitlab: { host: '' },
+      ticket: DEFAULT_TIMETRACK_SETTINGS.ticket,
       reasoning: DEFAULT_TIMETRACK_SETTINGS.reasoning,
       nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
       exclusionRules: [],
@@ -73,6 +88,17 @@ describe('parseTimetrackSettings', () => {
       model: '',
     });
     expect(parseTimetrackSettings({ reasoning: { command: 'claude' } }).reasoning.enabled).toBe(false);
+  });
+
+  it('refuses a parenting mode the create call cannot execute', () => {
+    expect(parseTimetrackSettings({ ticket: { parenting: 'epic-link' } }).ticket.parenting).toBe('parent-field');
+  });
+
+  it('tells an empty parent-type list apart from an absent one', () => {
+    expect(parseTimetrackSettings({ ticket: { parentIssueTypeNames: [] } }).ticket.parentIssueTypeNames).toEqual([]);
+    expect(parseTimetrackSettings({ ticket: {} }).ticket.parentIssueTypeNames).toEqual(
+      DEFAULT_TIMETRACK_SETTINGS.ticket.parentIssueTypeNames,
+    );
   });
 
   it('clamps a day target nobody could work', () => {

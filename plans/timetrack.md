@@ -1120,14 +1120,43 @@ What building it settled:
 
 ### Retroactive: work → ticket
 
-A block with no candidate issue. The app drafts a summary and description from its evidence
+~~A block with no candidate issue. The app drafts a summary and description from its evidence
 (commit subjects, changed paths, repo, agent-session title), searches open issues for
 plausible parents - text similarity against summaries, restricted to the project inferred
 from the repo, ordered by recent activity - and presents a create form with the parent
 pre-selected and editable. On confirm: create the issue in Jira (correct parenting per the
 discovered hierarchy), set the story-subject meta field, and attribute the block to the new
 key. The Jira field holding that subject is instance-specific and must be configurable; the
-draft names the concept but not the field.
+draft names the concept but not the field.~~ **- built.** `libs/timetrack/src/lib/ticket/`
+(`draft.ts`, `project.ts`, `parents.ts`), the write half in `jira/` (`adf.ts`, `create.ts`,
+`candidates.ts`), `TimetrackTicketSettings`, and the form in `src/app/day-review/`
+(`ticket-draft.ts`, `create-ticket.component.ts`) behind a Create a ticket button on the
+unnamed-work card. 657 core tests. What building it settled:
+
+- **The branch is the best summary there is, even when it carries no key.** `parseBranch` reports the
+  subject of a non-conforming name too, so `feat/user-management-screen` drafts as "User management
+  screen" - which is what the user called the work while doing it. The ladder falls back to the
+  strongest observation, then to the repository, so a draft always has a summary to edit.
+- **A parent is offered, never pre-selected.** The plan said pre-selected; it is wrong. The ranking is
+  a word overlap, and when nothing overlaps - the usual case - the list is just recency order, so
+  pre-selecting would file most tickets under whatever was touched last. The form opens on "No parent".
+- **The redaction allowlist is now shared.** A ticket description leaves the machine exactly as a
+  prompt does, so `SENDABLE` moved out of `reason/payload.ts` and became
+  `QUOTABLE_EVIDENCE_KINDS` in `model/evidence.ts`. Two copies of an allowlist is the failure the
+  original comment warns about.
+- **A draft quotes the deterministic day, not the reasoned one.** Drafting off `reasoned` would leave
+  a context the provider already named with no evidence to quote at all, so `day-review` exports
+  `deterministic` beside `correlation`.
+- **The project is inferred by a ladder that refuses to guess** - a rule the user wrote about this very
+  repository, the single configured key, then the day's own work when all of it sits in one project.
+  Two candidates yield an empty field: a ticket cannot be moved by the person who has to explain it.
+- **`exhaustMap`, not `switchMap`, on the create.** Jira has no idempotency key, so a second press
+  during the call is a second ticket.
+- **Description has to be ADF**, and a blank line must be a paragraph with no content: Jira rejects a
+  text node whose `text` is empty and fails the whole call with it.
+- **Both parenting modes are implemented** (`parent-field`, and an issue link for an instance whose
+  levels cannot express the relation), because which one is right is a config value this repo cannot
+  answer - see open question 1.
 
 ### Prospective: ticket → branch → draft MR
 
@@ -1545,8 +1574,9 @@ commit that later also lives on another branch is not a second piece of work.
   - **Agent-session titles were bypassing exclusion entirely.** A session is named after the work, so a
     title pattern has to apply to it exactly as it does to a window. The cursors still move for a
     denied line: it was read, and re-reading it would only deny it again.
-  - Still owed here: the hard pause, the OAuth client registration, and the three config values that
-    need a real instance - `subjectField`, per-project parenting and the marker scheme.
+  - Still owed here: the hard pause, the OAuth client registration, and the marker scheme. The two
+    ticket-creation config values - `subjectField` and parenting - now have fields to hold them
+    (`TimetrackTicketSettings`, the New tickets section); what is missing is the answer, not the seam.
 
 ## Phasing
 
@@ -1598,8 +1628,10 @@ verified, and the app is cross-platform. Everything else in the phase is portabl
 way in here.
 
 **Phase 2 - closing the code-work gaps.** ~~GitLab CE events and MR review time~~ **- built**, so a
-review that left no local trace now names the Task it was for. Remaining: the VS Code extension and the
-generic ingest endpoint, the reasoning provider, both ticket-creation flows, MR → ticket repair.
+review that left no local trace now names the Task it was for. ~~The reasoning provider~~ **- built**,
+and ~~the retroactive ticket-creation flow~~ **- built**, so work nothing could name can now become a
+ticket rather than a row the reviewer rejects every day. Remaining: the VS Code extension and the
+generic ingest endpoint, the prospective ticket → branch → draft MR flow, MR → ticket repair.
 
 **Phase 3 - the noisy tail.** Slack huddle polling, Discord (bot mechanism, guild-scoped,
 `weak`), Gmail notification parsing, Codex session logs, and a Chrome extension if window
@@ -1639,12 +1671,15 @@ Raised 2026-08-16, in no order and none of them designed yet.
 ## Open questions
 
 1. **The Jira hierarchy** (Story → Task) - **the reader exists**; `describeJiraHierarchy$` reports
-   the instance's levels and whether the parent field can express the relation at all. What is
-   left is running it against the real instance and writing the answer into settings. Blocks
-   phase 2, not phase 1.
+   the instance's levels and whether the parent field can express the relation at all. **The field
+   now exists too** (`ticket.parenting`), and both modes it can hold are implemented. What is left is
+   running the reader against the real instance and writing the answer down. It no longer blocks the
+   retroactive flow - that flow ships on the `parent-field` default - only its correctness.
 2. **The story-subject meta field** - which Jira field holds `user-management` in
-   `feat/FIP-2177-user-management`. Needs a real instance to name. Now a one-line config change
-   on both sides: `fetchJiraIssues$` takes `subjectField`, as `git-flow start` already does.
+   `feat/FIP-2177-user-management`. Needs a real instance to name. **Both sides now read and write
+   it**: `fetchJiraIssues$` and `fetchJiraParentCandidates$` take `subjectField`, `createJiraIssue$`
+   writes it, and `ticket.subjectField` holds the id. Empty writes no subject, which is what an
+   unanswered instance does today.
 3. ~~**Whether `git-flow-draft.md` lands as written**, especially nested sub-feature branches~~
    **Resolved for the load-bearing part.** Nesting stays, under a `sub/` prefix, and the parent's
    full path stays inside the child's name - so Story-level roll-up is safe. What is still open is
