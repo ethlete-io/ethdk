@@ -139,6 +139,31 @@ export const unnamedContexts = (options: { unattributed: readonly WorkGroup[] })
   return [...found.values()].sort((a, b) => b.observedMs - a.observedMs);
 };
 
+/**
+ * What the reasoning provider proposes one unnamed context belongs to.
+ *
+ * It is not an `AttributionRule` and must never be stored as one: a rule is a standing statement the
+ * user made, and this is a guess about one context on one day. It matches by `contextId` alone rather
+ * than by scope, so an answer can only ever reach the exact context the provider was shown.
+ */
+export type InferredAttribution = {
+  /** The `UnnamedContext.id` — a `contextKey` — this answers. */
+  contextId: string;
+  issueKey: string;
+  /** One sentence in the user's own terms, shown verbatim in the evidence chain and on the card. */
+  reason: string;
+};
+
+/** The answer for exactly this context, or nothing. */
+export const matchInferredAttribution = (options: {
+  context: ActivityContext;
+  inferred: readonly InferredAttribution[];
+}) => {
+  const id = contextKey(options.context);
+
+  return options.inferred.find((entry) => entry.contextId === id);
+};
+
 /** Reads as a context the user can recognise, in a list or an evidence chain: `ea-frontend @ next`. */
 export const describeAttributionRule = (rule: Pick<AttributionRule, 'repoPath' | 'branch' | 'appId'>) => {
   if (rule.appId) return rule.appId;

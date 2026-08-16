@@ -23,6 +23,11 @@ export type CorrelateDayOptions = {
   activity?: AttributeOptions['activity'];
   patterns?: AttributeOptions['patterns'];
   rules?: AttributeOptions['rules'];
+  /**
+   * What the reasoning provider proposed, from a run over this day's own unattributed contexts.
+   * Passing none is the deterministic day, and is what the provider's input is read from.
+   */
+  inferred?: AttributeOptions['inferred'];
   /** How far a donating repository's time looks for the work it was done for. */
   donate?: Partial<DonateOptions>;
   /** The longest idle gap that joins the work before it. `maxFillGapMs: 0` fills nothing. */
@@ -92,6 +97,7 @@ export const correlateDay = (options: { events: CollectedEvent[] } & CorrelateDa
       activity,
       patterns: options.patterns,
       rules: options.rules,
+      inferred: options.inferred,
     }),
   );
   const donated = donateBlocks({ blocks: attributed, rules: options.rules, options: options.donate });

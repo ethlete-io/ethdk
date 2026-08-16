@@ -1,8 +1,10 @@
 import { AttributionRule, AttributionTarget } from '../correlate/rules';
+import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import {
   DEFAULT_TIMETRACK_SETTINGS,
   TimetrackNudgeSettings,
+  TimetrackReasoningSettings,
   TimetrackSettings,
   clampDayTargetMs,
   clampGapFillMs,
@@ -100,6 +102,21 @@ const asNudge = (value: unknown): TimetrackNudgeSettings => {
   };
 };
 
+/**
+ * The command is read back against the allowlist rather than taken as written. A settings document is
+ * a file on disk, and the host would otherwise be asked to spawn whatever a hand-edit put here.
+ */
+const asReasoning = (value: unknown): TimetrackReasoningSettings => {
+  const raw = asRecord(value);
+  const command = asText(raw['command']);
+
+  return {
+    enabled: raw['enabled'] === true,
+    command: REASONING_COMMANDS.includes(command) ? command : DEFAULT_TIMETRACK_SETTINGS.reasoning.command,
+    model: asText(raw['model']),
+  };
+};
+
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
@@ -120,6 +137,7 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     jira: { host: asText(jira['host']), email: asText(jira['email']) },
     google: { clientId: asText(google['clientId']), calendarIds: asTextList(google['calendarIds']) },
     gitlab: { host: asText(gitlab['host']) },
+    reasoning: asReasoning(document['reasoning']),
     nudge: asNudge(document['nudge']),
     exclusionRules: asRules(document['exclusionRules']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,

@@ -4,8 +4,10 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   ClosedTimerRun,
   CollectedEvent,
+  CorrelateDayOptions,
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
+  InferredAttribution,
   ReviewedRow,
   AttributionTarget,
   SyncedWorklog,
@@ -20,8 +22,11 @@ import {
   mergeRows,
   moveRowBoundary,
   pauseWindows,
+  reasoningCandidates,
+  reasoningPlan,
   resetRow,
   reviewDay,
+  runReasoning$,
   setRowDescription,
   setRowDuration,
   setRowIssue,
@@ -43,6 +48,7 @@ import {
   of,
   startWith,
   switchMap,
+  tap,
 } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
@@ -161,6 +167,18 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const evidence = computed(() => evidenceLoad()?.value ?? null);
   const edits = computed(() => local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS);
 
+  const correlateOptions = computed((): CorrelateDayOptions => ({
+    config: gitFlowConfigFor(settings.settings()),
+    rules: settings.settings().attributionRules,
+    sessionize: { repoRoots: git.discovery()?.repos ?? [] },
+    fill: { maxFillGapMs: settings.settings().gapFillMs },
+  }));
+
+  /**
+   * The day as the deterministic pipeline reads it, with no model answer in it. This is what the
+   * unnamed-work card and the provider's own payload are derived from, so asking a second time asks
+   * the same question — an answer that fed back into its own input would narrow every later run.
+   */
   const correlation = computed(() => {
     const collected = evidence();
 
@@ -169,16 +187,48 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           events: collected.events,
           timerRuns: collected.runs,
           pauses: collected.pauses,
-          config: gitFlowConfigFor(settings.settings()),
-          rules: settings.settings().attributionRules,
-          sessionize: { repoRoots: git.discovery()?.repos ?? [] },
-          fill: { maxFillGapMs: settings.settings().gapFillMs },
+          ...correlateOptions(),
         })
       : null;
   });
 
-  const review = computed(() => {
+  const unnamed = computed(() => unnamedContexts({ unattributed: correlation()?.unattributed ?? [] }));
+
+  const plan = computed(() => {
     const correlated = correlation();
+
+    return correlated
+      ? reasoningPlan({
+          contexts: unnamed(),
+          unattributed: correlated.unattributed,
+          candidates: reasoningCandidates({ proposals: correlated.proposals }),
+        })
+      : null;
+  });
+
+  const answers = signal<Record<string, InferredAttribution[]>>({});
+  const asking = signal(false);
+
+  /** Keyed by payload rather than by day: a day whose evidence grew is a new question, and only then. */
+  const inferred = computed(() => answers()[plan()?.hash ?? ''] ?? []);
+
+  const reasoned = computed(() => {
+    const collected = evidence();
+    const proposed = inferred();
+
+    return collected && proposed.length
+      ? correlateDay({
+          events: collected.events,
+          timerRuns: collected.runs,
+          pauses: collected.pauses,
+          inferred: proposed,
+          ...correlateOptions(),
+        })
+      : correlation();
+  });
+
+  const review = computed(() => {
+    const correlated = reasoned();
 
     return correlated ? reviewDay({ correlation: correlated, edits: edits(), check: { targetMs: targetMs() } }) : null;
   });
@@ -217,6 +267,33 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     saves$.next({ key, edits: next });
   };
 
+  /**
+   * Asks the local agent CLI about the contexts nothing could name. One run per payload: the answer
+   * is kept against the payload's own hash, so re-opening the day, or a collector tick that changed
+   * nothing about the question, reads the answer back instead of spawning the CLI again.
+   */
+  const ask = () => {
+    const current = plan();
+
+    if (!current || asking() || current.hash in answers()) return;
+
+    asking.set(true);
+
+    runReasoning$({
+      runner: ports.processes,
+      plan: current,
+      options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
+    })
+      .pipe(
+        tap((proposed) => {
+          answers.update((all) => ({ ...all, [current.hash]: proposed }));
+          asking.set(false);
+        }),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe();
+  };
+
   const goToDay = (key: string) => {
     day.set(key);
     selection.set([]);
@@ -237,13 +314,29 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     rows,
     review,
     /** The sessionized day behind the rows, for the timeline. */
-    correlation,
+    correlation: reasoned,
     /**
      * The contexts the day could not name an issue for, widest first. In a repository the branch
      * grammar cannot read, this is most of the day, and naming one of them is what turns it into
      * worklogs — here and on every later day the context appears in.
+     *
+     * A context the provider proposed an issue for stays on this list. Its rows carry the proposal,
+     * but the standing answer is still missing, and writing that one down is what stops the day from
+     * asking again tomorrow.
      */
-    unnamed: computed(() => unnamedContexts({ unattributed: correlation()?.unattributed ?? [] })),
+    unnamed,
+    /** Exactly what a reasoning run would send, for the UI to show before anything leaves the machine. */
+    reasoningPayload: computed(() => plan()?.request ?? null),
+    /** What the provider proposed, by context id, for the naming card to offer as an answer. */
+    inferredByContext: computed(() => new Map(inferred().map((entry) => [entry.contextId, entry]))),
+    isAsking: asking.asReadonly(),
+    hasAsked: computed(() => {
+      const current = plan();
+
+      return !!current && current.hash in answers();
+    }),
+    canAsk: computed(() => settings.settings().reasoning.enabled && (plan()?.request.contexts.length ?? 0) > 0),
+    ask,
     /** The day's timed runs, so an unnamed one can be named rather than only warned about. */
     timerRuns: computed(() => evidence()?.runs ?? []),
     openRunId: computed(() => timers.running()?.id ?? null),

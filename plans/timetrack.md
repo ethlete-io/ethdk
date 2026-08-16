@@ -978,7 +978,8 @@ unattributed groups and the day check. Still pure - no clock, no network, no fil
 same events always produce the same day.
 
 Only blocks that reach step 5 with no candidate issue at all go to the reasoning provider - they
-come back from `propose()` as `unattributed`, never forced into a row.
+come back from `propose()` as `unattributed`, never forced into a row. `unnamedContexts()` compacts
+that set into one question per context, which is what the provider is actually asked.
 
 **Meetings are built too** - `meetings.ts`. `matchMeetings()` turns each calendar occurrence into a
 row of its own, and `correlateDay` folds those rows in beside the activity groups before rounding, so
@@ -1070,34 +1071,50 @@ Two consequences worth stating:
 
 ## The reasoning provider (agent CLI, not an API key)
 
-Locked decision: use the user's existing Claude or Codex **subscription** by invoking the
-CLI they already have installed, rather than requiring an Anthropic API key.
+**Built** - `libs/timetrack/src/lib/reason/`, the last rung of `attribute.ts`, and the ask control on
+the unnamed-work card. Locked decision: use the user's existing Claude or Codex **subscription** by
+invoking the CLI they already have installed, rather than requiring an Anthropic API key.
 
-Verified locally: `claude` is at `~/.local/bin/claude` and supports `-p/--print`,
-`--output-format json`, `--model`, `--append-system-prompt`, `--allowed-tools`,
-`--permission-mode` and `--bare` (which skips hooks, LSP, plugin sync, auto-memory,
-keychain reads and `CLAUDE.md` auto-discovery - exactly right for a one-shot, context-free
-call). `codex` is not installed here, so treat it as a second implementation of the same
-interface, unverified.
+The contract held, with two corrections the flags forced:
 
-Contract:
+- ~~**One call per day-review**~~ - one run per _payload_, keyed by a hash of the redacted request
+  itself rather than by the day. A collector tick that changes nothing about the question reads the
+  answer back; a day whose evidence grew is a new question and asks again.
+- ~~**No tools, no filesystem.** Run with `--bare`.~~ - `--tools ""` for the tools, `--safe-mode`
+  instead of `--bare`. See below: `--bare` would have broken the locked decision.
+- ~~**Redacted payload.**~~ `reasoningPlan()`, with the allowlist in `payload.ts`.
+- ~~**Structured output.**~~ `--json-schema` validates the shape in the CLI, and `structured_output`
+  comes back already parsed. `parse.ts` still validates, because the schema cannot know which issue
+  keys were offered.
+- ~~at most `likely`~~ - **`weak`**, so it never syncs unreviewed. See below.
 
-- **One call per day-review**, not per gap. Spawning the CLI costs seconds; batch every
-  ambiguous block of the day into a single request. Cache the result against a hash of the
-  input so re-opening a day does not re-spawn anything.
-- **No tools, no filesystem.** Run with tools disabled, in an empty working directory, with
-  `--bare`. The prompt is entirely self-contained. The provider must not be able to wander
-  the disk.
-- **Redacted payload.** Only compacted blocks go out: durations, candidate issue keys and
-  summaries, branch names, repo names, calendar event titles, agent-session titles. Never
-  raw window titles, never file paths, never message bodies. The exact payload is
-  inspectable in the UI before it is sent, and the feature is off until enabled.
-- **Structured output.** Request JSON in the prompt, parse `.result` from
-  `--output-format json`, validate with a schema, retry once on a parse failure, then fall
-  back to leaving the block unattributed. A model that cannot answer must degrade to an
-  empty gap, never to a guess.
-- Anything the provider proposes is at most `likely`, and is marked as model-inferred in the
-  evidence chain so it is visibly distinguishable from a deterministic match.
+What building it settled:
+
+- **`--bare` cannot be used, and choosing it would have quietly broken the locked decision.** Its own
+  help says authentication is "strictly `ANTHROPIC_API_KEY` or `apiKeyHelper` - OAuth and keychain are
+  never read", which is exactly the API key this feature exists to avoid. `--safe-mode` is the flag
+  that was wanted: it drops hooks, skills, plugins, MCP, custom agents and `CLAUDE.md` discovery, and
+  says outright that "auth, model selection, built-in tools and permissions work normally".
+- **`likely` would have auto-synced the model's answers.** `syncsWithoutReview` treats everything
+  above `weak` as fit to write without a click, so the plan's own cap was one tier too generous. A
+  model answer is `weak`, which lands the row in `suggested` and puts it in front of the reviewer -
+  no new rule, and no second reason for a row not to auto-accept.
+- **A `contextKey` for a repository _is_ its absolute path**, so the payload addresses contexts by
+  token (`c1`, `c2`) and maps back locally. Sending the key would have put `/Users/<name>/dev/…` in a
+  prompt while the redaction rule two lines above forbade file paths.
+- **The redaction is an allowlist of evidence kinds, not a denylist.** A denylist fails open: a kind
+  added later joins the payload unnoticed, and `window-title` details are raw window titles.
+- **The answer is a rule suggestion _and_ today's attribution.** It enters the pipeline as an
+  `InferredAttribution` matched on `contextId` alone - never by scope, so an answer cannot reach a
+  context the provider was never shown - and the context stays on the unnamed-work card with the
+  suggestion pre-filled. One click turns it into an ordinary user-written `AttributionRule`, which is
+  what stops the day from asking again tomorrow. A rule is still only ever created by the user.
+- **The day is correlated twice when, and only when, there is an answer.** The provider's own input
+  has to come from the deterministic day, or each run would narrow the next one's question.
+- **`retry` needs `defer`.** `runner.run$(spec)` is called once when the observable is built, so
+  retrying re-subscribed to the first spawn's result and replayed the failure it was meant to escape.
+- **The model declines when it should.** Given a 40-minute Slack context with no notes it answers
+  `null` with "no notes or branch saying what was discussed", rather than reaching for a candidate.
 
 ## Ticket creation
 

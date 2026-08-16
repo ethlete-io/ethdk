@@ -80,7 +80,16 @@ import { WorklogRowComponent } from './worklog-row.component';
             }
 
             @if (store.unnamed().length) {
-              <ethlete-unnamed-work [contexts]="store.unnamed()" (name)="nameContext($event)" />
+              <ethlete-unnamed-work
+                [contexts]="store.unnamed()"
+                [suggestions]="store.inferredByContext()"
+                [payload]="store.reasoningPayload()"
+                [canAsk]="store.canAsk()"
+                [isAsking]="store.isAsking()"
+                [hasAsked]="store.hasAsked()"
+                (name)="nameContext($event)"
+                (ask)="store.ask()"
+              />
             }
 
             @if (store.timerRuns().length) {

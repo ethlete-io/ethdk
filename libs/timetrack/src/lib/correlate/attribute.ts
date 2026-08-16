@@ -9,7 +9,14 @@ import {
 import { ActivityBlock } from '../model/block';
 import { Confidence, Evidence } from '../model/evidence';
 import { RecurringPattern, patternAt } from './recurrence';
-import { AttributionRule, AttributionRuleMatch, describeAttributionRule, matchAttributionRule } from './rules';
+import {
+  AttributionRule,
+  AttributionRuleMatch,
+  InferredAttribution,
+  describeAttributionRule,
+  matchAttributionRule,
+  matchInferredAttribution,
+} from './rules';
 
 export type AttributedBlock = {
   block: ActivityBlock;
@@ -54,6 +61,12 @@ export type AttributeOptions = {
    * branch grammar rests on: nothing else in it can name an issue for `refactor/hub-query-v3`.
    */
   rules?: AttributionRule[];
+  /**
+   * What the reasoning provider proposed for contexts nothing deterministic could name. Read at the
+   * last rung and never above one, so a model answer can only fill a hole — it cannot overrule the
+   * branch grammar, a rule the user wrote, or a merge request that was actually observed.
+   */
+  inferred?: readonly InferredAttribution[];
 };
 
 /**
@@ -136,9 +149,11 @@ const ruleAttribution = (options: {
 /**
  * Scores one block against the attribution ladder — branch grammar, a branch-scoped rule of the
  * user's own, merge request and issue-view activity, a project-wide rule, a recurring Tempo pattern,
- * then a key in a window title. Deterministic by design: a conforming branch name already states
- * both keys, so nothing here guesses. A block that reaches the end without an `issueKey` is what the
- * reasoning provider is for — it is a first-class outcome, not a failure.
+ * then a key in a window title, and last of all what the reasoning provider proposed for this exact
+ * context. Deterministic down to that final rung: a conforming branch name already states both keys,
+ * so nothing above it guesses. A block that reaches the end without an `issueKey` is a first-class
+ * outcome, not a failure — it is what the provider is offered, and what it leaves behind when it has
+ * no answer either.
  *
  * The two rule rungs sit apart on purpose. A rule naming one branch is as good a statement about that
  * work as the branch name would have been, so it outranks activity; a rule naming a whole repository
@@ -215,7 +230,21 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
     .map((entry) => issueKeyInText({ text: entry.detail, config }))
     .find((key) => !!key);
 
-  return titleKey
-    ? { block, issueKey: titleKey, confidence: 'weak', evidence }
-    : { block, confidence: 'weak', evidence };
+  if (titleKey) return { block, issueKey: titleKey, confidence: 'weak', evidence };
+
+  const inference = options.inferred?.length
+    ? matchInferredAttribution({ context: block.context, inferred: options.inferred })
+    : undefined;
+
+  if (inference) {
+    evidence.push({
+      kind: 'model',
+      at: block.from,
+      detail: `suggested ${inference.issueKey} — ${inference.reason}`,
+    });
+
+    return { block, issueKey: inference.issueKey, confidence: 'weak', evidence };
+  }
+
+  return { block, confidence: 'weak', evidence };
 };

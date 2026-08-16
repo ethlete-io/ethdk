@@ -272,4 +272,51 @@ describe('attribute', () => {
     expect(result.issueKey).toBe('FIP-100');
     expect(result.confidence).toBe('weak');
   });
+
+  describe('an inferred attribution', () => {
+    const INFERRED = [
+      {
+        contextId: 'repo:/Users/tom/dev/ea-frontend@refactor/hub-query-v3',
+        issueKey: 'FIP-2201',
+        reason: 'the branch and the commits both name the query rewrite',
+      },
+    ];
+
+    it('names a context nothing else could, weakly and with its reason in the chain', () => {
+      const result = attribute({
+        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+        config: FIP,
+        inferred: INFERRED,
+      });
+
+      expect(result.issueKey).toBe('FIP-2201');
+      expect(result.confidence).toBe('weak');
+      expect(result.evidence.at(-1)).toMatchObject({
+        kind: 'model',
+        detail: 'suggested FIP-2201 — the branch and the commits both name the query rewrite',
+      });
+    });
+
+    it('never reaches a context the provider was not shown', () => {
+      const result = attribute({
+        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v4' }),
+        config: FIP,
+        inferred: INFERRED,
+      });
+
+      expect(result.issueKey).toBeUndefined();
+    });
+
+    it('loses to every deterministic rung, including a repository-wide rule', () => {
+      const result = attribute({
+        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
+        config: FIP,
+        rules: [REPO_RULE],
+        inferred: INFERRED,
+      });
+
+      expect(result.issueKey).toBe('FIP-100');
+      expect(result.evidence.some((entry) => entry.kind === 'model')).toBe(false);
+    });
+  });
 });

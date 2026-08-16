@@ -6,6 +6,7 @@ export type EvidenceKind =
   | 'merge-request'
   | 'issue-view'
   | 'attribution-rule'
+  | 'model'
   | 'gap-fill'
   | 'tempo-history'
   | 'window-title'

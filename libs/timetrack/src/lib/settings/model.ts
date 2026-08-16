@@ -1,4 +1,5 @@
 import { AttributionRule } from '../correlate/rules';
+import { DEFAULT_REASONING_OPTIONS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 
 /** How much time a day is expected to account for when nothing else is configured. */
@@ -58,6 +59,21 @@ export type TimetrackGitLabSettings = {
 };
 
 /**
+ * The local agent CLI that proposes an issue for a context nothing deterministic could name.
+ *
+ * Off until the user turns it on, and it is the one part of the app that sends anything about the
+ * day anywhere but Jira and Tempo. There is no API key here or in the keychain: the call runs as the
+ * user's own CLI and uses whatever subscription that CLI is already signed in to.
+ */
+export type TimetrackReasoningSettings = {
+  enabled: boolean;
+  /** `claude` or `codex`. The host runs no other binary. */
+  command: string;
+  /** A model alias such as `sonnet`. Empty uses the CLI's own default, which is the usual answer. */
+  model: string;
+};
+
+/**
  * When the app says a day is not finished yet.
  *
  * The minute is local and the reminder is only ever about today: a past day is caught up in the week
@@ -93,6 +109,7 @@ export type TimetrackSettings = {
   jira: TimetrackJiraSettings;
   google: TimetrackGoogleSettings;
   gitlab: TimetrackGitLabSettings;
+  reasoning: TimetrackReasoningSettings;
   nudge: TimetrackNudgeSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
   exclusionRules: TimetrackExclusionRule[];
@@ -120,6 +137,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   jira: { host: '', email: '' },
   google: { clientId: '', calendarIds: [] },
   gitlab: { host: '' },
+  reasoning: { enabled: false, command: DEFAULT_REASONING_OPTIONS.command, model: DEFAULT_REASONING_OPTIONS.model },
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   exclusionRules: [],
   keepDefaultExclusionRules: true,

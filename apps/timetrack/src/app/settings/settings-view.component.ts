@@ -207,6 +207,30 @@ import { TokenFieldComponent } from './token-field.component';
             />
           </div>
 
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <h3 class="text-h4">Suggestions</h3>
+
+              <et-switch [checked]="store.settings().reasoning.enabled" (checkedChange)="setReasoningEnabled($event)" />
+            </div>
+
+            <p class="text-small text-et-surface-muted">
+              For work no branch name, rule or merge request could name an issue for, the review can ask the agent CLI
+              you already have signed in. It runs with every tool disabled and sees only what the review shows you
+              before you ask: repository and branch names, durations, commit subjects and the issues the rest of the day
+              already reached. Never a window title, never a file path. A suggestion never syncs on its own.
+            </p>
+
+            <et-form-field class="w-40" appearance="underline" size="sm">
+              <et-label>Model</et-label>
+              <et-input
+                [value]="store.settings().reasoning.model"
+                (valueChange)="setReasoningModel($event)"
+                placeholder="the CLI decides"
+              />
+            </et-form-field>
+          </div>
+
           <ethlete-google-connection
             [settings]="store.settings().google"
             [connected]="store.credentials().google"
@@ -293,5 +317,13 @@ export class SettingsViewComponent {
 
   protected setGitLabHost(host: string) {
     this.store.setGitLab({ host });
+  }
+
+  protected setReasoningEnabled(enabled: boolean) {
+    this.store.setReasoning({ ...this.store.settings().reasoning, enabled });
+  }
+
+  protected setReasoningModel(model: string) {
+    this.store.setReasoning({ ...this.store.settings().reasoning, model: model.trim() });
   }
 }

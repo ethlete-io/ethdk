@@ -1,6 +1,13 @@
 import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
-import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
-import { AttributionTarget, UnnamedContext, describeAttributionRule, formatDurationMs } from '@ethlete/timetrack';
+import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SpinnerComponent } from '@ethlete/components';
+import {
+  AttributionTarget,
+  InferredAttribution,
+  ReasoningRequest,
+  UnnamedContext,
+  describeAttributionRule,
+  formatDurationMs,
+} from '@ethlete/timetrack';
 import { formatClockTime } from './format';
 
 export type ContextNaming = { context: UnnamedContext; target: AttributionTarget };
@@ -16,18 +23,48 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
   selector: 'ethlete-unnamed-work',
   template: `
     <div class="flex flex-col gap-2">
-      <div class="flex flex-col gap-1">
-        <h3 class="text-h4">Not yet named</h3>
-        <p class="text-small text-et-surface-muted">
-          Naming one of these logs it against that issue here and on every later day it appears in.
-        </p>
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex grow flex-col gap-1">
+          <h3 class="text-h4">Not yet named</h3>
+          <p class="text-small text-et-surface-muted">
+            Naming one of these logs it against that issue here and on every later day it appears in.
+          </p>
+        </div>
+
+        @if (canAsk()) {
+          <button [disabled]="isAsking()" (click)="ask.emit()" et-button variant="outline" size="sm">
+            @if (isAsking()) {
+              <et-spinner size="sm" />
+            }
+            {{ hasAsked() ? 'Ask again' : 'Ask for suggestions' }}
+          </button>
+        }
       </div>
+
+      @if (payload(); as request) {
+        @if (canAsk()) {
+          <details class="rounded-md border border-et-surface-border p-3">
+            <summary class="cursor-pointer text-small text-et-surface-muted">
+              What gets sent — {{ request.contexts.length }} context(s), {{ request.candidates.length }} candidate(s)
+            </summary>
+            <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printed() }}</pre>
+          </details>
+        }
+      }
 
       @for (entry of listed(); track entry.id) {
         <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
           <span class="w-28 shrink-0 text-mono text-small text-et-surface-muted">{{ entry.clock }}</span>
           <span class="w-14 shrink-0 text-small">{{ entry.duration }}</span>
-          <span class="min-w-50 grow text-small">{{ entry.label }}</span>
+
+          <span class="flex min-w-50 grow flex-col">
+            <span class="text-small">{{ entry.label }}</span>
+            @if (entry.suggestion; as suggestion) {
+              <span class="text-small text-et-surface-muted">
+                Suggested {{ suggestion.issueKey }} — {{ suggestion.reason }}
+              </span>
+            }
+          </span>
 
           <et-form-field class="w-30 shrink-0" appearance="underline" size="sm">
             <et-input
@@ -49,27 +86,41 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS],
+  imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SpinnerComponent],
 })
 export class UnnamedWorkComponent {
   public contexts = input.required<readonly UnnamedContext[]>();
+  /** What the reasoning provider proposed, by context id. Empty until the user asks for it. */
+  public suggestions = input<ReadonlyMap<string, InferredAttribution>>(new Map());
+  /** Exactly what a run would send, shown here so it can be read before it leaves the machine. */
+  public payload = input<ReasoningRequest | null>(null);
+  public canAsk = input(false);
+  public isAsking = input(false);
+  public hasAsked = input(false);
 
   public name = output<ContextNaming>();
+  public ask = output<void>();
 
   private drafts = signal<Record<string, string>>({});
 
-  protected listed = computed(() =>
-    this.contexts().map((context) => ({
+  protected listed = computed(() => {
+    const suggestions = this.suggestions();
+
+    return this.contexts().map((context) => ({
       id: context.id,
       context,
       clock: `${formatClockTime(context.from)} – ${formatClockTime(context.to)}`,
       duration: formatDurationMs(context.observedMs),
       label: describeAttributionRule(context.suggestion),
-    })),
-  );
+      suggestion: suggestions.get(context.id),
+    }));
+  });
 
+  protected printed = computed(() => JSON.stringify(this.payload(), null, 2));
+
+  /** A suggestion fills the field rather than being applied, so saving the rule stays a decision. */
   protected draftFor(id: string) {
-    return this.drafts()[id] ?? '';
+    return this.drafts()[id] ?? this.suggestions().get(id)?.issueKey ?? '';
   }
 
   protected setDraft(id: string, issueKey: string) {
@@ -79,7 +130,7 @@ export class UnnamedWorkComponent {
   protected submit(id: string) {
     const issueKey = this.draftFor(id).trim();
 
-    if (issueKey) this.emit(id, { kind: 'issue', issueKey });
+    if (issueKey) this.emitNaming(id, { kind: 'issue', issueKey });
   }
 
   /**
@@ -87,10 +138,10 @@ export class UnnamedWorkComponent {
    * rather than becoming a row with no issue to put it on.
    */
   protected donate(id: string) {
-    this.emit(id, { kind: 'donate' });
+    this.emitNaming(id, { kind: 'donate' });
   }
 
-  private emit(id: string, target: AttributionTarget) {
+  private emitNaming(id: string, target: AttributionTarget) {
     const entry = this.listed().find((candidate) => candidate.id === id);
 
     if (!entry) return;

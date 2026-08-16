@@ -8,6 +8,7 @@ import {
   TimetrackCredentialStatus,
   TimetrackExclusionRule,
   TimetrackGitLabSettings,
+  TimetrackReasoningSettings,
   TimetrackGoogleSettings,
   TimetrackJiraSettings,
   TimetrackSettings,
@@ -178,6 +179,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setJira: (jira: TimetrackJiraSettings) => patch({ jira }),
     setGoogle: (google: TimetrackGoogleSettings) => patch({ google }),
     setGitLab: (gitlab: TimetrackGitLabSettings) => patch({ gitlab }),
+    setReasoning: (reasoning: TimetrackReasoningSettings) => patch({ reasoning }),
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
 
     addExclusionRule: (rule: TimetrackExclusionRule) => {
