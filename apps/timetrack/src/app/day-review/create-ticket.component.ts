@@ -77,7 +77,7 @@ import { TicketForm } from './ticket-draft';
 
           <div class="flex max-h-60 flex-col gap-1 overflow-y-auto">
             <button
-              [attr.aria-pressed]="!draft.parentKey"
+              [pressed]="!draft.parentKey"
               (click)="parentKeyChange.emit(null)"
               et-button
               variant="transparent"
@@ -88,7 +88,7 @@ import { TicketForm } from './ticket-draft';
 
             @for (candidate of candidates(); track candidate.issue.key) {
               <button
-                [attr.aria-pressed]="draft.parentKey === candidate.issue.key"
+                [pressed]="draft.parentKey === candidate.issue.key"
                 [variant]="draft.parentKey === candidate.issue.key ? 'filled' : 'transparent'"
                 (click)="parentKeyChange.emit(candidate.issue.key)"
                 et-button
