@@ -71,3 +71,5 @@ Thumbs.db
 ethlete-agents.config.local.json
 apps/timetrack/src-tauri/target
 apps/timetrack/src-tauri/gen
+test-results
+playwright-report

@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "es2022",
+    "moduleResolution": "bundler",
+    "module": "preserve",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "sourceMap": false,
+    "outDir": "../../dist/out-tsc/apps/timetrack-e2e",
+    "types": ["node"],
+    "lib": ["dom", "es2022"]
+  },
+  "include": ["**/*.ts"]
+}

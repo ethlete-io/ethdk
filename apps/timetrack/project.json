@@ -27,6 +27,12 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
+        },
+        "e2e": {
+          "browser": "apps/timetrack/src/main.e2e.ts",
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
         }
       }
     },
@@ -43,6 +49,10 @@
         },
         "development": {
           "buildTarget": "timetrack-app:build:development"
+        },
+        "e2e": {
+          "buildTarget": "timetrack-app:build:e2e",
+          "port": 4211
         }
       }
     },
