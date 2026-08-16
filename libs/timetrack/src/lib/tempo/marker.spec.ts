@@ -138,7 +138,7 @@ describe('recoverLedgerFromMarkers', () => {
     });
 
     expect(recovery.recovered).toEqual<SyncedWorklog[]>([
-      { proposalId: 'p1', tempoWorklogId: 'w9', contentHash: '', syncedAt: SYNCED_AT },
+      { proposalId: 'p1', day: '2026-08-11', tempoWorklogId: 'w9', contentHash: '', syncedAt: SYNCED_AT },
     ]);
   });
 
@@ -155,7 +155,7 @@ describe('recoverLedgerFromMarkers', () => {
     const recovery = recoverLedgerFromMarkers({
       worklogs: [worklog({ attributes: { _TimetrackId_: 'p1' } })],
       scheme: ATTRIBUTE,
-      ledger: [{ proposalId: 'p1', tempoWorklogId: 'w1', contentHash: 'abc', syncedAt: SYNCED_AT }],
+      ledger: [{ proposalId: 'p1', day: '2026-08-11', tempoWorklogId: 'w1', contentHash: 'abc', syncedAt: SYNCED_AT }],
     });
 
     expect(recovery.recovered).toEqual([]);

@@ -24,7 +24,12 @@ export type TimetrackEventStore = {
  * back, and only when the worklogs carry a marker.
  */
 export type TimetrackLedgerStore = {
-  entriesFor$(proposalIds: string[]): Observable<SyncedWorklog[]>;
+  /**
+   * Everything this app owns on one local calendar day, whether the day still proposes it or not. The
+   * read is by day rather than by proposal id because a worklog the day stopped producing is exactly
+   * the one that has to be deleted, and a caller asking by id can never name it.
+   */
+  entriesForDay$(day: string): Observable<SyncedWorklog[]>;
   upsert$(entries: SyncedWorklog[]): Observable<void>;
   remove$(proposalIds: string[]): Observable<void>;
 };

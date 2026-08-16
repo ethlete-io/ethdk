@@ -183,19 +183,18 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const rows = computed(() => review()?.rows ?? []);
-  const rowIds = computed(() =>
-    rows()
-      .map((row) => row.id)
-      .join(' '),
-  );
 
+  // The whole day's ledger, not the rows': an entry no row claims is a worklog the sync has to delete,
+  // and a read by row id can never return it. The failure stays inside the switch, or one failed read
+  // would end the subscription and no later day would be read at all.
   const ledger = toSignal(
-    toObservable(rowIds).pipe(
-      switchMap((ids) => (ids ? ports.ledger.entriesFor$(ids.split(' ')) : of<SyncedWorklog[]>([]))),
-      catchError(() => of<SyncedWorklog[]>([])),
+    toObservable(day).pipe(
+      switchMap((key) => ports.ledger.entriesForDay$(key).pipe(catchError(() => of<SyncedWorklog[]>([])))),
     ),
     { initialValue: [] as SyncedWorklog[] },
   );
+
+  const syncedIds = computed(() => new Set(ledger().map((entry) => entry.proposalId)));
 
   saves$
     .pipe(
@@ -250,7 +249,9 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     isLoading: computed(() => !evidenceLoad()),
     failure: computed(() => evidenceLoad()?.failure ?? editsLoad()?.failure ?? null),
     /** Rows this app has already written to Tempo, by proposal id. */
-    syncedIds: computed(() => new Set(ledger().map((entry) => entry.proposalId))),
+    syncedIds,
+    /** How many of the day's rows Tempo holds. An entry no row claims is not one — the sync deletes it. */
+    syncedRowCount: computed(() => rows().filter((row) => syncedIds().has(row.id)).length),
     expanded: expanded.asReadonly(),
     selection: selection.asReadonly(),
     selectedRows,

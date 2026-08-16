@@ -219,8 +219,9 @@ Four layers, each derived from the one before, each kept so the chain is auditab
 3. **`WorklogProposal`** - a block or set of merged blocks attributed to an issue, with a
    duration, a description, a confidence, an evidence chain, and a state
    (`suggested` | `accepted` | `rejected` | `edited` | `synced`).
-4. **`SyncedWorklog`** - a proposal that exists in Tempo, holding the Tempo worklog id and a
-   content hash for change detection.
+4. **`SyncedWorklog`** - a proposal that exists in Tempo, holding the Tempo worklog id, the local day
+   it sits on and a content hash for change detection. The day is what makes ownership readable
+   without the proposal that produced it.
 
 `Evidence` is the load-bearing type. Every proposal must be explainable in the UI as a list
 of concrete observations ("branch `sub/feat/FIP-2177-user-management/FIP-2178-…` checked out
@@ -588,7 +589,8 @@ What the write half settled:
   guessed, and the row goes into `retry` for once the reviewer supplies it.
 
 - `preview.ts` - `previewTempoSync$()`, the read-only first phase: the account lookup, then the issue
-  ids, the day's remote worklogs and the ledger, folded into a `TempoSyncPlan`. It resolves the issue
+  ids, the day's remote worklogs and the day's whole ledger, folded into a `TempoSyncPlan`. It takes
+  the day rather than a range, so the two cannot disagree - see the sync view below. It resolves the issue
   **keys** for the ids only the remote worklogs mention (`fetchJiraIssueKeysByIds$`) too, because
   Tempo names an issue by a numeric id and a foreign list nobody can read is a foreign list nobody
   checks. `fetchJiraMyself$` in `jira/myself.ts` is where the account id comes from - Jira's own UI
@@ -1266,8 +1268,9 @@ JSON document per local calendar day, keyed by `localDayKey`). What building it 
     `contentHashOf` every worklog this app wrote, so a row it does not hold - or holds under a
     different hash - is a row Tempo is behind on. That is what lets the reminder work on a train, with
     no token and no request, and it is the same hash `planTempoSync` diffs with, so the two can never
-    disagree about what is written. A day also owes something while a row waits for a yes or a no, or
-    while observed time matched no issue.
+    disagree about what is written. A day also owes something while a row waits for a yes or a no,
+    while observed time matched no issue, or while the ledger holds a worklog no row claims any more -
+    that last one is a delete the day owes Tempo, and reading the ledger per day is what surfaces it.
   - **The reminder and the notification are two questions, not one.** `isNudgeDue` asks whether the
     day may be reported at all (the configured minute has passed, and no "later" is running); the
     repeat window is a second question that only the desktop notification asks. A banner that blinked
@@ -1325,9 +1328,30 @@ presses the write button. It is deliberately not reactive to the day's rows: a p
 about a moment, and one that re-planned itself while the reviewer edited would read as if Tempo were
 changing. Stepping to another day drops the plan and the run rather than showing yesterday's under
 today's date. The write half is one `submit()` for both the confirm and the retry, so the
-spent-plan rule cannot be bypassed by the retry path. What it cannot yet see: a ledger entry whose proposal the day no longer produces - `entriesFor$` is keyed by the
-proposal ids under review, so such a worklog reads as `foreign` instead of as a delete. Closing that
-needs either a day-scoped ledger read or a marker scheme plus `recoverLedgerFromMarkers()`.
+spent-plan rule cannot be bypassed by the retry path.
+
+~~What it cannot yet see: a ledger entry whose proposal the day no longer produces - `entriesFor$` is
+keyed by the proposal ids under review, so such a worklog reads as `foreign` instead of as a delete.~~
+**Closed - the ledger is now read by day** (`entriesForDay$`, schema v8's `day` column). A worklog
+whose proposal the day stopped producing - a row somebody rejected and then reset, a block whose start
+moved, a rule that renamed the issue - was written by this app, is still in Tempo, and nothing could
+ever name it again. `planTempoSync` already planned it as a `proposal-removed` delete; the read was
+what never handed it over. What closing it settled:
+
+- **The day is the ledger's key, not the proposal.** Every surface that asks the ledger anything asks
+  about one day, and the id-scoped read could only ever answer with what the day still proposes -
+  which is the one set of worklogs that needs no rescuing. `entriesFor$` is gone rather than kept
+  beside it, so the question that caused this cannot be asked again.
+- **The day has to be stored, because it cannot be derived on the host.** A proposal id carries a UTC
+  instant and the day is local, so v8 adds the column and back-fills it in Rust, from the instant in
+  the id and, failing that, from when the row was synced. An entry left without a day would be
+  invisible to the very read that was added to find it.
+- **The reminder and the week view were blind to it too.** `dayReviewGap` walked the rows, so a day
+  whose only remaining work was a delete read as finished. It now reports a ledger entry no row
+  claims, which is the same question `planTempoSync` asks, and the wording covers both cases.
+- **The preview was reading two days.** `localDayRange(day).to` is midnight of the day _after_, and
+  Tempo's range is inclusive by date, so the next day's worklogs arrived in this day's foreign list.
+  Taking the day itself rather than a range removed the chance to disagree.
 
 ## Storage, privacy, secrets
 

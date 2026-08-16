@@ -41,6 +41,7 @@ pub struct SourceTally {
 #[serde(rename_all = "camelCase")]
 pub struct SyncedWorklogRow {
     pub proposal_id: String,
+    pub day: String,
     pub tempo_worklog_id: String,
     pub content_hash: String,
     pub synced_at_ms: i64,
@@ -223,28 +224,23 @@ pub async fn set_compacted_through(db: State<'_, Db>, through_ms: Option<i64>) -
     .await
 }
 
+/// Everything this app owns on one local calendar day. By day rather than by proposal id: a worklog
+/// whose proposal the day stopped producing is the one that has to be deleted, and no caller can name
+/// it by id.
 #[tauri::command]
-pub async fn ledger_entries_for(
-    db: State<'_, Db>,
-    proposal_ids: Vec<String>,
-) -> TimetrackResult<Vec<SyncedWorklogRow>> {
-    if proposal_ids.is_empty() {
-        return Ok(Vec::new());
-    }
-
+pub async fn ledger_entries_for_day(db: State<'_, Db>, day: String) -> TimetrackResult<Vec<SyncedWorklogRow>> {
     db.run(move |connection| {
-        let sql = format!(
-            "SELECT proposal_id, tempo_worklog_id, content_hash, synced_at_ms FROM synced_worklog
-             WHERE proposal_id IN ({})",
-            placeholders(proposal_ids.len())
-        );
-        let mut statement = connection.prepare(&sql)?;
-        let rows = statement.query_map(params_from_iter(proposal_ids.iter()), |row| {
+        let mut statement = connection.prepare(
+            "SELECT proposal_id, day, tempo_worklog_id, content_hash, synced_at_ms FROM synced_worklog
+             WHERE day = ?1",
+        )?;
+        let rows = statement.query_map(params![day], |row| {
             Ok(SyncedWorklogRow {
                 proposal_id: row.get(0)?,
-                tempo_worklog_id: row.get(1)?,
-                content_hash: row.get(2)?,
-                synced_at_ms: row.get(3)?,
+                day: row.get(1)?,
+                tempo_worklog_id: row.get(2)?,
+                content_hash: row.get(3)?,
+                synced_at_ms: row.get(4)?,
             })
         })?;
 
@@ -260,14 +256,15 @@ pub async fn ledger_upsert(db: State<'_, Db>, entries: Vec<SyncedWorklogRow>) ->
 
         {
             let mut upsert = transaction.prepare(
-                "INSERT INTO synced_worklog (proposal_id, tempo_worklog_id, content_hash, synced_at_ms)
-                 VALUES (?1, ?2, ?3, ?4)
+                "INSERT INTO synced_worklog (proposal_id, day, tempo_worklog_id, content_hash, synced_at_ms)
+                 VALUES (?1, ?2, ?3, ?4, ?5)
                  ON CONFLICT (proposal_id) DO UPDATE SET
-                   tempo_worklog_id = ?2, content_hash = ?3, synced_at_ms = ?4",
+                   day = ?2, tempo_worklog_id = ?3, content_hash = ?4, synced_at_ms = ?5",
             )?;
             for entry in &entries {
                 upsert.execute(params![
                     entry.proposal_id,
+                    entry.day,
                     entry.tempo_worklog_id,
                     entry.content_hash,
                     entry.synced_at_ms

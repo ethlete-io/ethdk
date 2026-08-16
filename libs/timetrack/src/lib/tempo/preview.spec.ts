@@ -64,10 +64,10 @@ const previewTransport = (options: { worklogs?: unknown[]; issues?: unknown[]; i
 };
 
 const ledgerStore = (entries: SyncedWorklog[] = []) => {
-  const asked: string[][] = [];
+  const asked: string[] = [];
   const store: TimetrackLedgerStore = {
-    entriesFor$: (proposalIds) => {
-      asked.push(proposalIds);
+    entriesForDay$: (day) => {
+      asked.push(day);
 
       return of(entries) as Observable<SyncedWorklog[]>;
     },
@@ -89,8 +89,7 @@ const preview = (options: {
     tempo: TEMPO,
     ledger: options.ledger,
     proposals: options.proposals ?? [proposal()],
-    from: new Date(2026, 7, 11, 0, 0),
-    to: new Date(2026, 7, 11, 23, 59),
+    day: '2026-08-11',
   });
 
 describe('previewTempoSync$', () => {
@@ -104,6 +103,32 @@ describe('previewTempoSync$', () => {
     expect(requests.some((request) => request.url.includes('/worklogs/user/acc%3A123'))).toBe(true);
   });
 
+  it('reads the day itself at both ends, so the next day is not read into this day', () => {
+    const { transport, requests } = previewTransport();
+    const { store } = ledgerStore();
+
+    preview({ transport, ledger: store }).subscribe();
+
+    const worklogs = requests.find((request) => request.url.includes('/worklogs/user/'));
+
+    expect(worklogs?.url).toContain('from=2026-08-11&to=2026-08-11');
+  });
+
+  it('plans a delete for a worklog whose proposal the day no longer produces', () => {
+    const { transport } = previewTransport({ worklogs: [WORKLOG_RESOURCE] });
+    const { store } = ledgerStore([
+      { proposalId: 'gone', day: '2026-08-11', tempoWorklogId: '98765', contentHash: 'h', syncedAt: new Date() },
+    ]);
+    const seen = vi.fn();
+
+    preview({ transport, ledger: store }).subscribe(seen);
+
+    const result = seen.mock.calls[0]?.[0];
+
+    expect(result.plan.deletes).toEqual([{ proposalId: 'gone', tempoWorklogId: '98765', reason: 'proposal-removed' }]);
+    expect(result.plan.foreign).toEqual([]);
+  });
+
   it('plans a create for a proposal nothing in tempo covers', () => {
     const { transport } = previewTransport();
     const { store, asked } = ledgerStore();
@@ -113,7 +138,7 @@ describe('previewTempoSync$', () => {
 
     const result = seen.mock.calls[0]?.[0];
 
-    expect(asked[0]).toEqual(['p1']);
+    expect(asked[0]).toBe('2026-08-11');
     expect(result.account).toEqual({ accountId: 'acc:123', displayName: 'Tom', emailAddress: undefined });
     expect(result.plan.creates).toHaveLength(1);
     expect(result.plan.creates[0]).toMatchObject({ issueId: '10100', reason: 'new' });

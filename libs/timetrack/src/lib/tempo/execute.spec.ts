@@ -147,7 +147,13 @@ describe('executeTempoSync$', () => {
     expect(requests[0]?.method).toBe('POST');
     expect(outcome.rows).toEqual([{ kind: 'create', proposalId: 'p1', status: 'written', tempoWorklogId: '555' }]);
     expect(outcome.ledger).toEqual([
-      { proposalId: 'p1', tempoWorklogId: '555', contentHash: entry.contentHash, syncedAt: SYNCED_AT },
+      {
+        proposalId: 'p1',
+        day: '2026-08-11',
+        tempoWorklogId: '555',
+        contentHash: entry.contentHash,
+        syncedAt: SYNCED_AT,
+      },
     ]);
     expect(outcome.retry).toEqual(emptyPlan());
   });
@@ -183,7 +189,13 @@ describe('executeTempoSync$', () => {
 
     expect(requests[0]?.method).toBe('PUT');
     expect(outcome.ledger).toEqual([
-      { proposalId: 'p1', tempoWorklogId: 'w1', contentHash: entry.contentHash, syncedAt: SYNCED_AT },
+      {
+        proposalId: 'p1',
+        day: '2026-08-11',
+        tempoWorklogId: 'w1',
+        contentHash: entry.contentHash,
+        syncedAt: SYNCED_AT,
+      },
     ]);
   });
 
@@ -233,7 +245,13 @@ describe('executeTempoSync$', () => {
 
     expect(requests.map((request) => request.method)).toEqual(['DELETE', 'POST']);
     expect(outcome.ledger).toEqual([
-      { proposalId: 'p1', tempoWorklogId: '556', contentHash: createOf().contentHash, syncedAt: SYNCED_AT },
+      {
+        proposalId: 'p1',
+        day: '2026-08-11',
+        tempoWorklogId: '556',
+        contentHash: createOf().contentHash,
+        syncedAt: SYNCED_AT,
+      },
     ]);
     expect(outcome.prunedProposalIds).toEqual([]);
   });

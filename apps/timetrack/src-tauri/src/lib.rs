@@ -88,7 +88,7 @@ pub fn run() {
             store::events_by_source,
             store::events_delete_before,
             store::events_oldest_at,
-            store::ledger_entries_for,
+            store::ledger_entries_for_day,
             store::ledger_remove,
             store::ledger_upsert,
             store::set_app_settings,

@@ -3,6 +3,7 @@ import { JiraCredentials } from '../jira/client';
 import { fetchJiraIssueIds$, fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { JiraMyself, fetchJiraMyself$ } from '../jira/myself';
 import { WorklogProposal } from '../model/proposal';
+import { localDayRange } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
@@ -24,9 +25,9 @@ export type TempoSyncPreview = {
  * Reads everything a {@link planTempoSync} needs and returns the plan, without writing anything.
  *
  * The account lookup comes first and on its own: both of the other reads are scoped to an account id,
- * and Jira is the only place it can be had. The ledger is read for exactly the proposals under review,
- * so a worklog this app wrote for a proposal the day no longer produces reads as `foreign` rather than
- * as a delete — see the note in the sync view.
+ * and Jira is the only place it can be had. The ledger is read for the whole day rather than for the
+ * proposals under review, so a worklog this app wrote for a proposal the day stopped producing is
+ * planned as a delete instead of reading as somebody else's.
  *
  * `keysByIssueId` costs a second Jira round trip, for the issue ids only the remote worklogs mention.
  * Without it the foreign list — the whole point of which is to be recognised as your own already-logged
@@ -38,13 +39,16 @@ export const previewTempoSync$ = (options: {
   tempo: TempoCredentials;
   ledger: TimetrackLedgerStore;
   proposals: WorklogProposal[];
-  /** The day being reviewed. Tempo's range is by date, so any instant inside the day will do. */
-  from: Date;
-  to: Date;
+  /** The local calendar day under review. Both the remote range and the ledger read come from it. */
+  day: string;
   marker?: TempoMarkerScheme;
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
-}): Observable<TempoSyncPreview> =>
-  fetchJiraMyself$({ transport: options.transport, credentials: options.jira }).pipe(
+}): Observable<TempoSyncPreview> => {
+  // Tempo's range is by date and inclusive, so both ends are the day itself: passing the range's `to`
+  // — midnight of the day after — would read the next day's worklogs into this day's foreign list.
+  const at = localDayRange(options.day).from;
+
+  return fetchJiraMyself$({ transport: options.transport, credentials: options.jira }).pipe(
     switchMap((account) =>
       combineLatest({
         issueIdsByKey: fetchJiraIssueIds$({
@@ -56,10 +60,10 @@ export const previewTempoSync$ = (options: {
           transport: options.transport,
           credentials: options.tempo,
           accountId: account.accountId,
-          from: options.from,
-          to: options.to,
+          from: at,
+          to: at,
         }),
-        ledger: options.ledger.entriesFor$(options.proposals.map((proposal) => proposal.id)),
+        ledger: options.ledger.entriesForDay$(options.day),
       }).pipe(
         switchMap(({ issueIdsByKey, remote, ledger }) => {
           const known = new Map([...issueIdsByKey].map(([key, id]) => [id, key]));
@@ -88,3 +92,4 @@ export const previewTempoSync$ = (options: {
       ),
     ),
   );
+};

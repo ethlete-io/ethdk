@@ -1,4 +1,5 @@
 use crate::error::{TimetrackError, TimetrackResult};
+use chrono::{DateTime, Local, TimeZone};
 use rusqlite::Connection;
 use std::path::Path;
 
@@ -106,6 +107,56 @@ CREATE TABLE day_nudge (
 );
 ";
 
+/// The local calendar day a worklog this app owns sits on, so ownership can be read per day.
+///
+/// Reading it by proposal id can only ever return what the day still proposes, and a worklog whose
+/// proposal is gone is exactly the one that has to be deleted from Tempo — so it read as somebody
+/// else's work and stayed there.
+const SCHEMA_V8: &str = "
+ALTER TABLE synced_worklog ADD COLUMN day TEXT NOT NULL DEFAULT '';
+CREATE INDEX synced_worklog_day ON synced_worklog (day);
+";
+
+/// Gives every ledger entry written before schema v8 its day.
+///
+/// A proposal id is `<issueKey>@<ISO instant>`, so the day is in the row already; a row whose id does
+/// not parse falls back to when it was synced, which is the same day for every worklog this app has
+/// ever written. An entry left without a day would be invisible to the per-day read, which is the very
+/// failure v8 exists to close.
+fn backfill_synced_worklog_days(connection: &Connection) -> TimetrackResult<()> {
+    let mut statement = connection.prepare("SELECT proposal_id, synced_at_ms FROM synced_worklog WHERE day = ''")?;
+    let rows = statement
+        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    for (proposal_id, synced_at_ms) in rows {
+        let day = day_of_proposal_id(&proposal_id).unwrap_or_else(|| local_day_of_ms(synced_at_ms));
+
+        connection.execute(
+            "UPDATE synced_worklog SET day = ?1 WHERE proposal_id = ?2",
+            rusqlite::params![day, proposal_id],
+        )?;
+    }
+
+    Ok(())
+}
+
+fn day_of_proposal_id(proposal_id: &str) -> Option<String> {
+    let (_, instant) = proposal_id.rsplit_once('@')?;
+
+    DateTime::parse_from_rfc3339(instant)
+        .ok()
+        .map(|at| at.with_timezone(&Local).format("%Y-%m-%d").to_string())
+}
+
+fn local_day_of_ms(at_ms: i64) -> String {
+    Local
+        .timestamp_millis_opt(at_ms)
+        .single()
+        .map(|at| at.format("%Y-%m-%d").to_string())
+        .unwrap_or_default()
+}
+
 /// Opens the encrypted database at `path`, creating and migrating it on first run.
 ///
 /// `key` is the 64 hex chars from the keychain. `PRAGMA key` has to be the first statement on the
@@ -171,6 +222,12 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 7)?;
     }
 
+    if version < 8 {
+        connection.execute_batch(SCHEMA_V8)?;
+        backfill_synced_worklog_days(connection)?;
+        connection.pragma_update(None, "user_version", 8)?;
+    }
+
     Ok(())
 }
 
@@ -210,6 +267,10 @@ mod tests {
             connection.execute_batch(SCHEMA_V6).unwrap();
         }
 
+        if version >= 7 {
+            connection.execute_batch(SCHEMA_V7).unwrap();
+        }
+
         connection.pragma_update(None, "user_version", version).unwrap();
         migrate(&connection).unwrap();
 
@@ -230,9 +291,46 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            7
+            8
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
+    }
+
+    /// A database that stops at v7, so the row is inserted into the ledger as it was before the day.
+    fn ledger_day_after_migrating(proposal_id: &str, synced_at_ms: i64) -> String {
+        let connection = Connection::open_in_memory().unwrap();
+
+        for schema in [SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7] {
+            connection.execute_batch(schema).unwrap();
+        }
+
+        connection.pragma_update(None, "user_version", 7).unwrap();
+        connection
+            .execute(
+                "INSERT INTO synced_worklog (proposal_id, tempo_worklog_id, content_hash, synced_at_ms)
+                 VALUES (?1, 'w1', 'h', ?2)",
+                params![proposal_id, synced_at_ms],
+            )
+            .unwrap();
+        migrate(&connection).unwrap();
+
+        connection
+            .query_row("SELECT day FROM synced_worklog", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    #[test]
+    fn gives_a_ledger_entry_written_before_the_day_column_the_day_its_proposal_names() {
+        let at = DateTime::parse_from_rfc3339("2026-08-11T07:00:00.000Z").unwrap();
+        let day = ledger_day_after_migrating("FIP-3010@2026-08-11T07:00:00.000Z", 0);
+
+        assert_eq!(day, local_day_of_ms(at.timestamp_millis()));
+        assert_ne!(day, local_day_of_ms(0));
+    }
+
+    #[test]
+    fn falls_back_to_when_a_ledger_entry_was_synced_when_its_proposal_id_says_nothing() {
+        assert_eq!(ledger_day_after_migrating("hand-written", 0), local_day_of_ms(0));
     }
 
     #[test]

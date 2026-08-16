@@ -30,6 +30,11 @@ export const syncsInState = (state: WorklogProposalState) =>
 /** A proposal that exists in Tempo. The hash is over the synced content, for change detection. */
 export type SyncedWorklog = {
   proposalId: string;
+  /**
+   * The local calendar day the worklog sits on. Ownership is read per day, so an entry whose proposal
+   * the day stopped producing is still found — without it, the worklog it points at would be foreign.
+   */
+  day: string;
   tempoWorklogId: string;
   contentHash: string;
   syncedAt: Date;

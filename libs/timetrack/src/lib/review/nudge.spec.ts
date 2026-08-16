@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposalState } from '../model/proposal';
 import { contentHashOf } from '../tempo/diff';
+import { localDayKey } from './day';
 import { DayReview, ReviewedRow } from './model';
 import {
   DEFAULT_NUDGE_REPEAT_MS,
@@ -49,6 +50,7 @@ const review = (options: { rows: ReviewedRow[]; unattributedMs?: number }): DayR
 
 const ledgerFor = (entry: ReviewedRow): SyncedWorklog => ({
   proposalId: entry.id,
+  day: localDayKey(entry.from),
   tempoWorklogId: '900',
   contentHash: contentHashOf({ proposal: entry }),
   syncedAt: at('18:00'),
@@ -83,6 +85,14 @@ describe('dayReviewGap', () => {
   it('reads a rejected row Tempo still holds as work owed, without claiming its time', () => {
     const dropped = row({ issueKey: 'FIP-1', from: '09:00', minutes: 120, state: 'rejected' });
     const gap = dayReviewGap({ review: review({ rows: [dropped] }), ledger: [ledgerFor(dropped)] });
+
+    expect(gap?.reasons).toEqual(['unsynced']);
+    expect(gap?.unsyncedMs).toBe(0);
+  });
+
+  it('reads a worklog no row claims any more as work owed', () => {
+    const gone = row({ issueKey: 'FIP-1', from: '09:00', minutes: 120, state: 'accepted' });
+    const gap = dayReviewGap({ review: review({ rows: [] }), ledger: [ledgerFor(gone)] });
 
     expect(gap?.reasons).toEqual(['unsynced']);
     expect(gap?.unsyncedMs).toBe(0);

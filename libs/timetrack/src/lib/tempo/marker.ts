@@ -1,4 +1,5 @@
 import { SyncedWorklog } from '../model/proposal';
+import { localDayKey } from '../review/day';
 import { TempoWorklog } from './worklogs';
 
 /**
@@ -94,28 +95,34 @@ export const recoverLedgerFromMarkers = (options: {
   syncedAt?: Date;
 }): TempoLedgerRecovery => {
   const known = new Set((options.ledger ?? []).map((entry) => entry.proposalId));
-  const claims = new Map<string, string[]>();
+  const claims = new Map<string, TempoWorklog[]>();
 
   for (const worklog of options.worklogs) {
     const proposalId = markedProposalId({ worklog, scheme: options.scheme });
 
     if (!proposalId || known.has(proposalId)) continue;
 
-    claims.set(proposalId, [...(claims.get(proposalId) ?? []), worklog.id]);
+    claims.set(proposalId, [...(claims.get(proposalId) ?? []), worklog]);
   }
 
   const syncedAt = options.syncedAt ?? new Date();
   const recovery: TempoLedgerRecovery = { recovered: [], ambiguous: [] };
 
-  for (const [proposalId, worklogIds] of claims) {
-    const only = worklogIds.length === 1 ? worklogIds[0] : undefined;
+  for (const [proposalId, worklogs] of claims) {
+    const only = worklogs.length === 1 ? worklogs[0] : undefined;
 
     if (!only) {
       recovery.ambiguous.push(proposalId);
       continue;
     }
 
-    recovery.recovered.push({ proposalId, tempoWorklogId: only, contentHash: '', syncedAt });
+    recovery.recovered.push({
+      proposalId,
+      day: localDayKey(only.from),
+      tempoWorklogId: only.id,
+      contentHash: '',
+      syncedAt,
+    });
   }
 
   return recovery;

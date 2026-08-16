@@ -31,6 +31,10 @@ export type DayReviewGap = {
  */
 export const dayReviewGap = (options: {
   review: DayReview;
+  /**
+   * The whole day's ledger, not the entries the rows name: an entry no row claims is a worklog the
+   * day has to delete, and reading by row id is how such a day reads as finished.
+   */
   ledger: readonly SyncedWorklog[];
   /** The same attribute values the sync would write, or the hash reads every synced row as changed. */
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
@@ -63,6 +67,10 @@ export const dayReviewGap = (options: {
 
     if (!entry || entry.contentHash !== hash) unsyncedMs += row.durationMs;
   }
+
+  const claimed = new Set(options.review.rows.map((row) => row.id));
+
+  pendingDelete ||= options.ledger.some((entry) => !claimed.has(entry.proposalId));
 
   const unattributedMs = options.review.check.unattributedMs;
 
@@ -133,7 +141,9 @@ export type DayNudge = {
 
 const WORDING: Record<DayNudgeReason, (gap: DayReviewGap) => string> = {
   unsynced: (gap) =>
-    gap.unsyncedMs > 0 ? `${formatDurationMs(gap.unsyncedMs)} is not in Tempo yet` : 'a rejected row is still in Tempo',
+    gap.unsyncedMs > 0
+      ? `${formatDurationMs(gap.unsyncedMs)} is not in Tempo yet`
+      : 'Tempo still holds time this day no longer has',
   undecided: (gap) => `${formatDurationMs(gap.undecidedMs)} is waiting for a yes or a no`,
   unattributed: (gap) => `${formatDurationMs(gap.unattributedMs)} matched no issue`,
 };

@@ -5,7 +5,6 @@ import {
   DEFAULT_NUDGE_SNOOZE_MS,
   DayNudge,
   DayNudgeRecord,
-  SyncedWorklog,
   dayNudge,
   localDayKey,
   localDayRange,
@@ -53,10 +52,7 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return readToday$({ ports, settings: current, repoRoots: git.discovery()?.repos ?? [] }).pipe(
       switchMap(({ key, review }) =>
         combineLatest({
-          ledger:
-            review.rows.length > 0
-              ? ports.ledger.entriesFor$(review.rows.map((row) => row.id))
-              : of<SyncedWorklog[]>([]),
+          ledger: ports.ledger.entriesForDay$(key),
           record: ports.nudge.recordFor$(key),
         }).pipe(
           map(({ ledger, record }) =>

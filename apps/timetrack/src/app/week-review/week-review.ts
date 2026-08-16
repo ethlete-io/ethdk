@@ -2,7 +2,6 @@ import { computed, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import {
-  SyncedWorklog,
   WeekReview,
   WeekReviewDayInput,
   localDayKey,
@@ -48,10 +47,7 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
       weekDayKeys(options.start).map((day) =>
         readDay$({ ...options, day }).pipe(
           switchMap(({ review }) =>
-            (review.rows.length > 0
-              ? ports.ledger.entriesFor$(review.rows.map((row) => row.id))
-              : of<SyncedWorklog[]>([])
-            ).pipe(map((ledger): WeekReviewDayInput => ({ day, review, ledger }))),
+            ports.ledger.entriesForDay$(day).pipe(map((ledger): WeekReviewDayInput => ({ day, review, ledger }))),
           ),
         ),
       ),

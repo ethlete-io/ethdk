@@ -7,7 +7,6 @@ import {
   TempoSyncPreview,
   executeTempoSync$,
   fetchTempoWorkAttributes$,
-  localDayRange,
   previewTempoSync$,
   readJiraCredentials$,
   readTempoCredentials$,
@@ -74,7 +73,6 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const load$ = (): Observable<SyncPreviewStatus> => {
     const day = dayReview.dayKey();
-    const { from, to } = localDayRange(day);
     const proposals = dayReview.rows();
 
     return combineLatest({
@@ -91,8 +89,7 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
           tempo,
           ledger: ports.ledger,
           proposals,
-          from,
-          to,
+          day,
         });
       }),
       map((preview): SyncPreviewStatus => ({ kind: 'ready', day, preview })),

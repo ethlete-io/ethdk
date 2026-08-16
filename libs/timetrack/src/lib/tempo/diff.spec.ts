@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposal } from '../model/proposal';
+import { localDayKey } from '../review/day';
 import { contentHashOf, planTempoSync } from './diff';
 import { TempoMarkerScheme } from './marker';
 import { TempoWorklog } from './worklogs';
@@ -35,6 +36,7 @@ const remoteFor = (target: WorklogProposal, overrides: Partial<TempoWorklog> = {
 
 const ledgerFor = (target: WorklogProposal, overrides: Partial<SyncedWorklog> = {}): SyncedWorklog => ({
   proposalId: target.id,
+  day: localDayKey(target.from),
   tempoWorklogId: 'w1',
   contentHash: contentHashOf({ proposal: target }),
   syncedAt: new Date(2026, 7, 11, 18, 0),

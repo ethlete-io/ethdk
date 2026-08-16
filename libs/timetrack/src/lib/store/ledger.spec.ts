@@ -27,6 +27,7 @@ const recordingStore = () => {
 
 const entry = (proposalId: string): SyncedWorklog => ({
   proposalId,
+  day: '2026-08-11',
   tempoWorklogId: `tempo-${proposalId}`,
   contentHash: 'hash',
   syncedAt: new Date(2026, 7, 11, 12, 0),

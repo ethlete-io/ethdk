@@ -108,7 +108,7 @@ import { WorklogRowComponent } from './worklog-row.component';
         >
           <span class="text-large">{{ proposed() }}</span>
           <span class="text-small text-et-surface-muted">of a {{ target() }} target ({{ delta() }})</span>
-          <span class="text-small text-et-surface-muted">{{ store.syncedIds().size }} row(s) already in Tempo</span>
+          <span class="text-small text-et-surface-muted">{{ store.syncedRowCount() }} row(s) already in Tempo</span>
           @if (day.check.unattributedMs > 0) {
             <span class="text-small text-et-warning-ink">{{ unattributed() }} unattributed</span>
           }
