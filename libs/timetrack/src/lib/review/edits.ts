@@ -152,6 +152,75 @@ export const splitRow = (options: {
 };
 
 /**
+ * Moves the instant two adjacent rows meet at, so a cut can be placed exactly rather than only halved.
+ *
+ * The slice between the old boundary and the new one moves from one row to the other and carries the
+ * density of the row it came from, so the pair's clock span, observed time and logged total all stay
+ * put and neither side is flattened by the move. Each row keeps its own issue, description and
+ * decision — this reshapes two rows, it does not merge them.
+ *
+ * Rows that do not share a boundary, or an instant outside the pair, return the edits unchanged.
+ */
+export const moveRowBoundary = (options: {
+  edits: DayReviewEdits;
+  before: ReviewedRow;
+  after: ReviewedRow;
+  at: Date;
+  round?: Partial<RoundOptions>;
+}): DayReviewEdits => {
+  const { edits, before, after, at } = options;
+  const boundary = before.to.getTime();
+  const to = at.getTime();
+
+  if (boundary !== after.from.getTime()) return edits;
+  if (to === boundary || to <= before.from.getTime() || to >= after.to.getTime()) return edits;
+
+  const growsBefore = to > boundary;
+  const donor = growsBefore ? after : before;
+  const donorSpan = donor.to.getTime() - donor.from.getTime();
+
+  if (donorSpan <= 0) return edits;
+
+  const sign = growsBefore ? 1 : -1;
+  const moved = Math.abs(to - boundary) / donorSpan;
+  const movedObservedMs = Math.round(donor.observedMs * moved);
+  const movedDurationMs = donor.durationMs * moved;
+  const [beforeMs, afterMs] = roundDurations({
+    durationsMs: [before.durationMs + sign * movedDurationMs, after.durationMs - sign * movedDurationMs],
+    options: options.round,
+  });
+
+  const chain = mergeEvidence([before.evidence, after.evidence]);
+  const kept = edits.pinned.filter((entry) => entry.id !== before.id && entry.id !== after.id);
+  const taken = new Set(kept.map((entry) => entry.id));
+
+  const left: PinnedRow = {
+    ...asPinned(before, replacedBy(edits, before)),
+    id: pinnedIdFor({ issueKey: before.issueKey, from: before.from, taken }),
+    to: at,
+    durationMs: beforeMs ?? 0,
+    observedMs: before.observedMs + sign * movedObservedMs,
+    evidence: chain.filter((entry) => entry.at < at),
+  };
+
+  taken.add(left.id);
+
+  const right: PinnedRow = {
+    ...asPinned(after, replacedBy(edits, after)),
+    id: pinnedIdFor({ issueKey: after.issueKey, from: at, taken }),
+    from: at,
+    durationMs: afterMs ?? 0,
+    observedMs: after.observedMs - sign * movedObservedMs,
+    evidence: chain.filter((entry) => entry.at >= at),
+  };
+
+  return {
+    overrides: withoutOverrides(edits.overrides, [before.id, after.id, ...left.replaces, ...right.replaces]),
+    pinned: [...kept, left, right],
+  };
+};
+
+/**
  * Combines rows into one. The first row given supplies the issue and the description, so the caller
  * decides which of them the merged row is about; the clock spans all of them and the durations add up.
  *

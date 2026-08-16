@@ -18,6 +18,7 @@ import {
   localDayKey,
   localDayRange,
   mergeRows,
+  moveRowBoundary,
   pauseWindows,
   resetRow,
   reviewDay,
@@ -268,6 +269,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setState: (row: ReviewedRow, state: 'accepted' | 'rejected') => apply(setRowState({ edits: edits(), row, state })),
     reset: (row: ReviewedRow) => apply(resetRow({ edits: edits(), row })),
     split: (row: ReviewedRow, at: Date) => apply(splitRow({ edits: edits(), row, at })),
+    moveBoundary: (move: { before: ReviewedRow; after: ReviewedRow; at: Date }) =>
+      apply(moveRowBoundary({ edits: edits(), ...move })),
 
     mergeSelection: () => {
       apply(mergeRows({ edits: edits(), rows: selectedRows() }));

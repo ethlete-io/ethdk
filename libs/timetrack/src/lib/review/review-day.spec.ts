@@ -3,7 +3,15 @@ import { DayCorrelation } from '../correlate/correlate-day';
 import { WorkGroup } from '../correlate/merge';
 import { Confidence, Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
-import { mergeRows, resetRow, setRowDescription, setRowDuration, setRowState, splitRow } from './edits';
+import {
+  mergeRows,
+  moveRowBoundary,
+  resetRow,
+  setRowDescription,
+  setRowDuration,
+  setRowState,
+  splitRow,
+} from './edits';
 import { DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
 import { reviewDay } from './review-day';
 
@@ -380,5 +388,113 @@ describe('mergeRows', () => {
     const single = reviewDay({ correlation: base }).rows.slice(0, 1);
 
     expect(mergeRows({ edits: EMPTY_DAY_REVIEW_EDITS, rows: single })).toBe(EMPTY_DAY_REVIEW_EDITS);
+  });
+});
+
+describe('moveRowBoundary', () => {
+  const base = correlation({
+    proposals: [
+      proposal({
+        issueKey: 'FIP-1',
+        from: '08:00',
+        to: '10:00',
+        minutes: 120,
+        evidence: [evidence({ time: '08:10', detail: 'early commit' })],
+      }),
+      proposal({
+        issueKey: 'FIP-2',
+        from: '10:00',
+        to: '12:00',
+        minutes: 120,
+        confidence: 'weak',
+        evidence: [evidence({ time: '10:30', detail: 'a window title' })],
+      }),
+    ],
+  });
+
+  const moved = (time: string, edits?: DayReviewEdits) => {
+    const rows = reviewDay({ correlation: base, edits }).rows;
+
+    return moveRowBoundary({ edits: edits ?? EMPTY_DAY_REVIEW_EDITS, before: rows[0]!, after: rows[1]!, at: at(time) });
+  };
+
+  it('moves the shared instant and leaves the pair spanning the same clock', () => {
+    const rows = reviewDay({ correlation: base, edits: moved('11:00') }).rows;
+
+    expect(rows.map((row) => [row.from, row.to])).toEqual([
+      [at('08:00'), at('11:00')],
+      [at('11:00'), at('12:00')],
+    ]);
+  });
+
+  it('keeps each row on its own issue and description', () => {
+    const rows = reviewDay({ correlation: base, edits: moved('11:00') }).rows;
+
+    expect(rows.map((row) => row.issueKey)).toEqual(['FIP-1', 'FIP-2']);
+    expect(rows.map((row) => row.description)).toEqual(['work on FIP-1', 'work on FIP-2']);
+  });
+
+  it('moves the slice at the density of the row it came from, preserving both totals', () => {
+    const rows = reviewDay({ correlation: base, edits: moved('11:00') }).rows;
+
+    expect(rows.map((row) => row.observedMs / MINUTE)).toEqual([180, 60]);
+    expect(rows.map((row) => row.durationMs / MINUTE)).toEqual([180, 60]);
+    expect(rows.reduce((sum, row) => sum + row.durationMs, 0)).toBe(240 * MINUTE);
+  });
+
+  it('hands the evidence to whichever side the instant now puts it on', () => {
+    const rows = reviewDay({ correlation: base, edits: moved('09:00') }).rows;
+
+    expect(rows.map((row) => row.evidence.map((entry) => entry.detail))).toEqual([
+      ['early commit'],
+      ['a window title'],
+    ]);
+    expect(reviewDay({ correlation: base, edits: moved('08:05') }).rows[1]!.evidence).toHaveLength(2);
+  });
+
+  it('reports no drift, because the pair still accounts for what the proposals observed', () => {
+    expect(reviewDay({ correlation: base, edits: moved('11:00') }).unreconciledMs).toBe(0);
+  });
+
+  it('refuses a boundary the rows do not share, and an instant outside the pair', () => {
+    const rows = reviewDay({ correlation: base }).rows;
+    const apart = moveRowBoundary({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      before: rows[1]!,
+      after: rows[0]!,
+      at: at('09:00'),
+    });
+
+    expect(apart).toBe(EMPTY_DAY_REVIEW_EDITS);
+    expect(moved('08:00')).toBe(EMPTY_DAY_REVIEW_EDITS);
+    expect(moved('12:00')).toBe(EMPTY_DAY_REVIEW_EDITS);
+    expect(moved('10:00')).toBe(EMPTY_DAY_REVIEW_EDITS);
+  });
+
+  it('keeps a rejected row rejected while the row beside it stays accepted', () => {
+    const rejected = setRowState({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ correlation: base }).rows[1]!,
+      state: 'rejected',
+    });
+
+    expect(reviewDay({ correlation: base, edits: moved('11:00', rejected) }).rows.map((row) => row.state)).toEqual([
+      'edited',
+      'rejected',
+    ]);
+  });
+
+  it('places the cut of an earlier split exactly, and each side still replaces the proposal', () => {
+    const halved = splitRow({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ correlation: base }).rows[0]!,
+      at: at('09:00'),
+    });
+    const halves = reviewDay({ correlation: base, edits: halved }).rows;
+    const placed = moveRowBoundary({ edits: halved, before: halves[0]!, after: halves[1]!, at: at('08:30') });
+    const rows = reviewDay({ correlation: base, edits: placed }).rows;
+
+    expect(rows.slice(0, 2).map((row) => row.durationMs / MINUTE)).toEqual([30, 90]);
+    expect(placed.pinned.every((pinned) => pinned.replaces.includes('FIP-1@2026-08-11T08:00:00.000Z'))).toBe(true);
   });
 });

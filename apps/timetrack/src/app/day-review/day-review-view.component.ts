@@ -51,6 +51,7 @@ import { WorklogRowComponent } from './worklog-row.component';
             [rows]="store.rows()"
             [unattributed]="unattributedBlocks()"
             (rowSelect)="store.toggleExpanded($event.id)"
+            (boundaryMove)="store.moveBoundary($event)"
           />
 
           <div class="flex min-h-0 flex-col gap-3 overflow-y-auto pb-6">

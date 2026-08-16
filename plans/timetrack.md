@@ -1287,9 +1287,28 @@ JSON document per local calendar day, keyed by `localDayKey`). What building it 
   a bare `[etScheduler]` composition cannot render badge content, because only `SchedulerComponent`
   provides `SCHEDULER_FEATURE_HOST`. Rows paint in their confidence's theme via `colorToken`;
   unattributed blocks sit behind them in neutral, because the time was still spent.
-- **Still owed here:** dragging a boundary (the headless grid has no drag - that lives in
-  `<et-scheduler-time-grid-view>`, so a precise split is a button-driven halving for now). The day
-  target is now a setting, and the footer and the tray read the same one.
+- ~~**Still owed here:** dragging a boundary.~~ **Built** - `moveRowBoundary()` in
+  `libs/timetrack/src/lib/review/edits.ts`, and the handles the day timeline draws between adjacent
+  rows (`apps/timetrack/src/app/day-review/day-timeline.component.ts`). The day target is now a
+  setting, and the footer and the tray read the same one. What building it settled:
+  - **The drag moves a boundary; it does not create one.** Halving a row is still what makes a cut,
+    and dragging is what places it - together they reach any instant, which is the whole gap the
+    halving left. So the handle only ever sits where two rows already meet, and a pair with no shared
+    instant has nothing to drag.
+  - **The slice that crosses carries the density of the row it left.** Re-deriving both sides from the
+    pair's average - the rule `splitRow` uses, because one row is all it has - would flatten a sparse
+    afternoon into a busy morning the moment somebody nudged the boundary between them. The pair's
+    clock span, observed time and logged total are unchanged either way.
+  - **Neither side is merged into the other.** Each keeps its own issue, description and decision, and
+    each replaces its own proposal, so resetting one leaves the other alone. That is the opposite of
+    `mergeRows`, where the first row deliberately supplies both.
+  - **The boundary snaps to the rounding increment, not to the pixel.** A row reading 09:07 whose
+    duration rounded to the quarter hour is claiming a precision it does not have.
+  - **The grid still has no drag, and did not need one.** `dragGestureFrom` from `@ethlete/core` is
+    the primitive under `<et-scheduler-time-grid-view>`'s own drag, and the timeline draws its own
+    blocks, so the handle is a `role="separator"` of ours over the headless grid rather than a reason
+    to adopt the full view. Arrow keys move it by one increment, because a 2px line is not a target
+    everybody can hit.
 - ~~**An end-of-day nudge fires if a day is unreviewed.**~~ **Built** - the core's
   `dayReviewGap()` / `dayNudge()` (`libs/timetrack/src/lib/review/nudge.ts`), the host's `notify`
   command over schema v7's `day_nudge` table (`src-tauri/src/nudge.rs`), and
