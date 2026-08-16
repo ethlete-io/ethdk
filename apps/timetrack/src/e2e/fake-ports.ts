@@ -13,7 +13,7 @@ import {
 } from '@ethlete/timetrack';
 import { Observable, of } from 'rxjs';
 import { HostPorts } from '../host/ports';
-import { e2eEvents, e2eRespond, e2eSettings } from './world';
+import { E2E_ISSUE_KEY, E2E_KEYLESS_BRANCH, e2eEvents, e2eRespond, e2eSettings } from './world';
 
 const ok = <T>(value: T): Observable<T> => of(value);
 const done = (): Observable<void> => of(undefined);
@@ -212,4 +212,23 @@ export const createFakePorts = (): HostPorts => {
 /** The shape the reasoning provider validates. It answers nothing, so no suggestion is ever offered. */
 const EMPTY_AGENT_ANSWER = '{"structured_output":{"answers":[]}}';
 
-const fakeStdout = (spec: ProcessSpec) => (spec.command === 'git' ? 'e2e@example.com\n' : EMPTY_AGENT_ANSWER);
+/**
+ * A repository that is clean, has both fixture branches and pushes to the fixture's GitLab instance.
+ * A mutating command answers with success and changes nothing — the fake has no state to change, and
+ * a repair test is about what the app plans and reports, not about git.
+ */
+const FAKE_GIT: Record<string, string> = {
+  'status --porcelain': '',
+  'for-each-ref --format=%(refname:short) refs/heads': `next\n${E2E_KEYLESS_BRANCH}\nfeat/${E2E_ISSUE_KEY}-user-management\n`,
+  remote: 'origin',
+  'remote get-url origin': 'git@gitlab.example.com:braune-digital/fut-frontend.git',
+  'for-each-ref --format=%(refname:strip=3) refs/remotes/origin': `HEAD\nnext\n${E2E_KEYLESS_BRANCH}\n`,
+};
+
+const fakeStdout = (spec: ProcessSpec) => {
+  if (spec.command !== 'git') return EMPTY_AGENT_ANSWER;
+
+  const key = spec.args.join(' ');
+
+  return FAKE_GIT[key] ?? (key.startsWith('branch ') || key.startsWith('push ') ? '' : 'e2e@example.com\n');
+};

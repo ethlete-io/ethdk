@@ -6,6 +6,8 @@ export const E2E_ISSUE_KEY = 'FIP-3010';
 export const E2E_ISSUE_ID = '10100';
 export const E2E_PARENT_KEY = 'FIP-2000';
 export const E2E_REPO = '/Users/e2e/dev/fut-frontend';
+/** A branch the grammar can spell but which names no issue — the case branch repair exists for. */
+export const E2E_KEYLESS_BRANCH = 'feat/pdf-export';
 
 /** The day the fixture describes, so a test can drive the view straight to it. */
 export const e2eDay = () => {
@@ -29,7 +31,8 @@ const localDay = () => {
 
 /**
  * One reconstructable morning: two hours on a branch that names an issue, then an hour on a branch
- * that names none. The second stretch is what puts a card under "Not yet named".
+ * that names none. The second stretch is what puts a card under "Not yet named", and its branch is
+ * one the grammar can rename, so the same fixture drives branch repair.
  */
 export const e2eEvents = (): CollectedEvent[] => [
   {
@@ -49,14 +52,14 @@ export const e2eEvents = (): CollectedEvent[] => [
     sha: 'a1b2c3d',
     subject: 'feat(users): Invite a member by email',
   },
-  { at: at(11, 0), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: 'spike/pdf-export' },
+  { at: at(11, 0), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_KEYLESS_BRANCH },
   { at: at(11, 1), source: 'window', kind: 'window-focus', appId: 'com.microsoft.VSCode', title: 'pdf-export.ts' },
   {
     at: at(11, 40),
     source: 'git',
     kind: 'git-commit',
     repoPath: E2E_REPO,
-    branch: 'spike/pdf-export',
+    branch: E2E_KEYLESS_BRANCH,
     sha: 'd4e5f6a',
     subject: 'Try pdfkit for the invoice export',
   },

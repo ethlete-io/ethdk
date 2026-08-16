@@ -1,6 +1,6 @@
 import { SyncConfig } from './config';
 import { currentBranch, defaultRemote, git, gitLoud, localBranchExists, remoteBranchExists, remoteUrl } from './git';
-import { parseBranch } from './git-flow';
+import { conformingNameFor, parseBranch } from './git-flow';
 import {
   blockingMergeRequests,
   GitLabMergeRequest,
@@ -23,32 +23,24 @@ export type RepairRequest = {
   dryRun: boolean;
 };
 
-const KEY_PLACEHOLDER = '<KEY>';
-
 const resolveNewName = (options: { branch: string; to?: string; key?: string; config: SyncConfig }) => {
   const { branch, to, key, config } = options;
 
   if (to) return to;
 
-  const parse = parseBranch({ branch, config: config.gitFlow });
+  const resolved = conformingNameFor({ branch, key, config: config.gitFlow });
 
-  if (!parse.suggestedName) {
-    throw new Error(
-      parse.ok
-        ? `${branch} already conforms — nothing to repair.`
-        : `No conforming name can be derived from ${branch}. Pass --to <branch>.`,
-    );
-  }
+  if (resolved.ok) return resolved.name;
 
-  if (!parse.suggestedName.includes(KEY_PLACEHOLDER)) return parse.suggestedName;
+  if (resolved.reason === 'already-conforms') throw new Error(`${branch} already conforms — nothing to repair.`);
 
-  if (!key) {
+  if (resolved.reason === 'needs-key') {
     throw new Error(
       `${branch} carries no issue key, so the new name needs one: \`git-flow repair ${branch} --key FIP-1234\` (or --to <branch>).`,
     );
   }
 
-  return parse.suggestedName.replace(KEY_PLACEHOLDER, key.toUpperCase());
+  throw new Error(`No conforming name can be derived from ${branch}. Pass --to <branch>.`);
 };
 
 type RemoteState =

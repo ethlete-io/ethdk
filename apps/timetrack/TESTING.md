@@ -196,6 +196,42 @@ This is the check for the fix in section 9.1. It writes nothing.
 **Pass:** the day no longer reports time missing from Tempo. Time no issue claimed is still reported,
 which is correct — Tempo cannot hold it.
 
+## 13. Repair a branch that names no issue
+
+This is the only section that renames a branch and writes to GitLab. Read it before you start.
+
+**Do not run this against a branch you care about.** Make a throwaway branch first:
+
+```bash
+git switch -c feat/throwaway-repair-check
+git push -u origin feat/throwaway-repair-check
+```
+
+Work on it for a few minutes, so the day observes it. Then:
+
+1. Open the day in Day.
+2. On the **Not yet named** card for that branch, press **Create a ticket**.
+3. Press **Create in Jira**. This files a real ticket.
+4. Read the offer that appears under the form.
+5. Press **Show me the steps**.
+
+**Pass:**
+
+- The offer names your branch and the key that was just filed.
+- Every step shows the exact command, and an **Undo** line beside it.
+- The last step deletes the old branch from the remote, and it is last.
+- Nothing has run yet.
+
+6. Press **Run these steps**.
+
+**Pass:** the banner reports the new name, and `git branch` shows it locally.
+
+Two cases worth checking separately:
+
+- **A dirty working tree.** Change a file, then open the repair. It must refuse and offer no button.
+- **An open merge request.** Open one from the branch, then repair. The branch must keep its name,
+  only the merge request title gains the key, and the reason must say why.
+
 ## How to report a failure
 
 Give the section number, what you did, and what you saw. A screenshot of the window helps more than

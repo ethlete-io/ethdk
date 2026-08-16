@@ -1,6 +1,8 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import { DayWarningKind, ReviewedRow, formatDurationMs, localDayRange } from '@ethlete/timetrack';
+import { BranchRepairComponent } from './branch-repair.component';
+import { injectBranchRepair } from './branch-repair';
 import { CreateTicketComponent } from './create-ticket.component';
 import { injectDayReview } from './day-review';
 import { DayTimelineComponent } from './day-timeline.component';
@@ -116,6 +118,37 @@ import { WorklogRowComponent } from './worklog-row.component';
               />
             }
 
+            @if (repairOffer(); as offer) {
+              <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
+                <span class="grow text-small">
+                  {{ offer.branch }} still names no issue. It can be renamed to carry {{ offer.issueKey }}.
+                </span>
+                <button (click)="repair.open(offer)" et-button variant="outline" size="sm">Show me the steps</button>
+              </div>
+            }
+
+            @if (repair.isReading()) {
+              <div class="flex items-center gap-3 text-et-surface-muted">
+                <et-spinner size="sm" />
+                <span class="text-small">Reading the repository…</span>
+              </div>
+            }
+
+            @if (repair.readFailure(); as failure) {
+              <et-banner [description]="failure" type="error" heading="The repository could not be read" />
+            }
+
+            @if (repair.plan(); as plan) {
+              <ethlete-branch-repair
+                [plan]="plan"
+                [outcome]="repair.outcome()"
+                [isRunning]="repair.isRunning()"
+                [canRun]="repair.canRun()"
+                (run)="repair.run()"
+                (dismiss)="repair.close()"
+              />
+            }
+
             @if (store.timerRuns().length) {
               <ethlete-timer-runs
                 [runs]="store.timerRuns()"
@@ -154,6 +187,7 @@ import { WorklogRowComponent } from './worklog-row.component';
   imports: [
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
+    BranchRepairComponent,
     CreateTicketComponent,
     DayTimelineComponent,
     EMPTY_STATE_IMPORTS,
@@ -167,6 +201,7 @@ import { WorklogRowComponent } from './worklog-row.component';
 export class DayReviewViewComponent {
   protected store = injectDayReview();
   protected tickets = injectTicketDraft();
+  protected repair = injectBranchRepair();
 
   protected readonly WARNING_HEADINGS: Record<DayWarningKind, string> = {
     'under-target': 'The day is short of its target',
@@ -188,6 +223,21 @@ export class DayReviewViewComponent {
   protected unattributedBlocks = computed(() =>
     (this.store.correlation()?.unattributed ?? []).flatMap((group) => group.blocks),
   );
+
+  /**
+   * The repair a just-filed ticket makes possible. It appears only once the key exists, because the
+   * whole point of repair is to put that key into the branch name.
+   */
+  protected repairOffer = computed(() => {
+    const issueKey = this.tickets.createdKey();
+    const context = this.tickets.context()?.context;
+
+    if (!issueKey || !context?.repoPath || !this.repair.isRepairable(context.branch) || this.repair.target()) {
+      return null;
+    }
+
+    return { repoPath: context.repoPath, branch: context.branch ?? '', issueKey };
+  });
 
   protected proposed = computed(() => formatDurationMs(this.store.review()?.check.proposedMs ?? 0));
   protected target = computed(() => formatDurationMs(this.store.targetMs()));

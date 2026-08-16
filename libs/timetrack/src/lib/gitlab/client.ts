@@ -63,6 +63,7 @@ export const gitlabRequest$ = <T>(options: {
   describe: string;
   method?: TimetrackRequestMethod;
   query?: GitLabQuery;
+  body?: unknown;
 }): Observable<TimetrackResponse<T>> => {
   const { transport, credentials, path, describe } = options;
 
@@ -70,6 +71,7 @@ export const gitlabRequest$ = <T>(options: {
     .request$<T>({
       method: options.method ?? 'GET',
       url: withQuery(`${normalizeGitLabHost(credentials.host)}/api/v4${path}`, options.query),
+      body: options.body,
       headers: {
         // GitLab reads a personal access token from this header. `Authorization: Bearer` is for OAuth
         // tokens only, and a PAT sent that way is rejected as invalid rather than as unauthorized.

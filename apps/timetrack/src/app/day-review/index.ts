@@ -1,3 +1,5 @@
+export * from './branch-repair';
+export * from './branch-repair.component';
 export * from './create-ticket.component';
 export * from './day-review';
 export * from './day-review-view.component';

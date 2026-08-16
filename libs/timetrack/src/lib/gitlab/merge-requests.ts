@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
-import { Observable, map } from 'rxjs';
+import { Observable, forkJoin, map } from 'rxjs';
 import { TimetrackTransport } from '../transport/ports';
-import { GitLabCredentials, gitlabRequest$ } from './client';
+import { GitLabCredentials, gitlabPaged$, gitlabRequest$ } from './client';
 
 /** A merge request, reduced to what attribution and the evidence chain need. */
 export type GitLabMergeRequest = {
@@ -13,6 +13,8 @@ export type GitLabMergeRequest = {
    * what lets time spent in somebody else's merge request land on the issue being reviewed.
    */
   sourceBranch: string;
+  /** The branch it merges into. Empty for a merge request read by iid before this field was needed. */
+  targetBranch: string;
   webUrl?: string;
   /** The path the instance shows, such as `braune-digital/fut-frontend`. */
   projectPath?: string;
@@ -23,6 +25,7 @@ type GitLabMergeRequestResource = {
   project_id?: number | string;
   title?: string;
   source_branch?: string;
+  target_branch?: string;
   web_url?: string;
   references?: { full?: string };
 };
@@ -60,8 +63,87 @@ export const fetchGitLabMergeRequest$ = (options: {
         iid: String(body.iid ?? options.iid),
         title: body.title ?? '',
         sourceBranch: body.source_branch,
+        targetBranch: body.target_branch ?? '',
         webUrl: body.web_url,
         projectPath: projectPathOf(body),
       };
     }),
   );
+
+/**
+ * The open merge requests that touch one branch — the ones from it and the ones into it.
+ *
+ * Both directions matter to a rename and for opposite reasons: a merge request *from* the branch
+ * pins its name, because GitLab cannot move an open merge request to a different source branch, and
+ * one *into* it has to be retargeted before the old name is deleted. GitLab has no way to ask for
+ * either-or, so this is two filtered calls rather than a listing of every open merge request.
+ */
+export const fetchGitLabMergeRequestsForBranch$ = (options: {
+  transport: TimetrackTransport;
+  credentials: GitLabCredentials;
+  projectId: string;
+  branch: string;
+}): Observable<GitLabMergeRequest[]> => {
+  const { transport, credentials, projectId, branch } = options;
+  const page$ = (filter: 'source_branch' | 'target_branch') =>
+    gitlabPaged$<GitLabMergeRequestResource>({
+      transport,
+      credentials,
+      path: `/projects/${encodeURIComponent(projectId)}/merge_requests`,
+      describe: `open merge requests with ${filter} ${branch}`,
+      query: { state: 'opened', [filter]: branch },
+    });
+
+  return forkJoin([page$('source_branch'), page$('target_branch')]).pipe(
+    map(([from, into]) => {
+      const byIid = new Map(
+        [...from, ...into]
+          .filter((resource) => !!resource.source_branch)
+          .map((resource): [string, GitLabMergeRequest] => {
+            const iid = String(resource.iid ?? '');
+
+            return [
+              iid,
+              {
+                projectId: String(resource.project_id ?? projectId),
+                iid,
+                title: resource.title ?? '',
+                sourceBranch: resource.source_branch ?? '',
+                targetBranch: resource.target_branch ?? '',
+                webUrl: resource.web_url,
+                projectPath: projectPathOf(resource),
+              },
+            ];
+          }),
+      );
+
+      return [...byIid.values()].sort((a, b) => Number(a.iid) - Number(b.iid));
+    }),
+  );
+};
+
+/**
+ * Changes a merge request's title, its target branch, or both.
+ *
+ * The two are one call because a rename needs both and GitLab applies the whole `PUT` at once, so a
+ * retarget can never land without the retitle that was planned beside it.
+ */
+export const updateGitLabMergeRequest$ = (options: {
+  transport: TimetrackTransport;
+  credentials: GitLabCredentials;
+  projectId: string;
+  iid: string;
+  title?: string;
+  targetBranch?: string;
+}): Observable<void> =>
+  gitlabRequest$<unknown>({
+    transport: options.transport,
+    credentials: options.credentials,
+    path: `/projects/${encodeURIComponent(options.projectId)}/merge_requests/${encodeURIComponent(options.iid)}`,
+    describe: `merge request !${options.iid}`,
+    method: 'PUT',
+    body: {
+      ...(options.title === undefined ? {} : { title: options.title }),
+      ...(options.targetBranch === undefined ? {} : { target_branch: options.targetBranch }),
+    },
+  }).pipe(map(() => undefined));

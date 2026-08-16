@@ -1216,11 +1216,43 @@ target) and require confirmation; refuse when the working tree is dirty; refuse 
 `main`; refuse when the parent's feature branch cannot be found on the remote; always draft,
 never ready; and make every step individually undoable with the exact commands shown.
 
-Also worth having, cheaply: **MR → ticket repair** - an MR or branch with no key gets an
-issue created and the branch/MR retitled to conform. Given how many non-conforming branches
-exist in `fut-frontend` today, this is the flow that migrates reality toward the grammar. The
-rename half of it is `git-flow repair`; timetrack adds only the "create the missing issue"
-step in front of it.
+**MR → ticket repair is built.** A branch with no key gets an issue created, and the branch
+and its merge request are then made to conform. It is entered from the day view against a
+branch the day observed, right after the create-ticket form reports the new key - the key is
+the whole point, so there is nothing to offer before it exists. `planBranchRepair` decides
+every step and every refusal against the repository as it reads at that moment;
+`executeBranchRepair$` runs the steps in order and stops at the first failure. What building
+it settled:
+
+- **The grammar could not name the branch this flow is for.** `parseBranch` leaves
+  `suggestedName` unset for a keyless `feat/user-management`, so `git-flow repair` refused it
+  and asked for `--to`. The naming step is now `conformingNameFor` in `git-flow/rename.ts`,
+  shared by the CLI and the app: it fills a deprecated shape's `<KEY>` placeholder, and falls
+  back to rebuilding the name from the parsed kind, type and subject. A candidate is returned
+  only after it re-parses as conforming, which also fixes the nested case the CLI would have
+  renamed to something still non-conforming.
+- **A branch under review cannot be renamed at all.** GitLab cannot move an open merge request
+  to a different source branch, and deleting the branch it points at closes it and loses the
+  discussion. So repair has two shapes rather than one: a branch nothing is reviewing is
+  renamed and its merge requests follow, and a branch that is itself under review keeps its
+  name and only its merge request title gains the key. The plan says which shape it is and
+  why, and says to rename after the merge request lands.
+- **Steps carry a typed action, not just a sentence.** The executor switches on
+  `BranchRepairAction`, so changing how a step reads can never change what it runs.
+- **The project id needs no configuration.** It is parsed out of the remote URL
+  (`parseGitLabRemoteUrl`) and used as GitLab's `:id` in URL-encoded path form, so no numeric
+  lookup and no per-repository setting is needed. A remote that is not the configured instance
+  yields no merge requests rather than an error - a repository nobody reviews in GitLab still
+  has a branch worth renaming.
+- **The refusals are decided once, before anything mutates.** A dirty working tree, a
+  protected branch, a name already taken locally or on the remote, a branch that is not
+  checked out, and a name the grammar cannot spell. A plan carrying any refusal runs nothing,
+  and the executor re-checks that rather than trusting the caller.
+- **The e2e fixture's keyless branch changed** from `spike/pdf-export` to `feat/pdf-export`.
+  `spike` is not a known type, so the grammar could not spell it and repair correctly refused
+  it - which made it useless as a fixture for this flow. The two create-ticket assertions that
+  named it moved with it, and the drafted summary is now `Pdf export` (from the branch
+  subject) rather than the commit subject fallback.
 
 ## Review UI
 

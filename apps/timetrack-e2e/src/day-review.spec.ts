@@ -12,7 +12,7 @@ test.describe('the day view', () => {
 
   test('reports the work no issue claims rather than dropping it', async ({ page }) => {
     await expect(page.getByText(/matched no issue/).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'spike/pdf-export · 20m' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'feat/pdf-export · 20m' })).toBeVisible();
   });
 
   test('opens the create-ticket form on no parent, never on a guess', async ({ page }) => {
@@ -26,8 +26,8 @@ test.describe('the day view', () => {
 
     const field = (label: string) => page.locator('et-form-field').filter({ hasText: label });
 
-    await expect(field('Summary').locator('input')).toHaveValue('Try pdfkit for the invoice export');
-    await expect(field('Description').locator('textarea')).toHaveValue(/Reconstructed from .* spike\/pdf-export/);
+    await expect(field('Summary').locator('input')).toHaveValue('Pdf export');
+    await expect(field('Description').locator('textarea')).toHaveValue(/Reconstructed from .* feat\/pdf-export/);
   });
 
   test('quotes only the commit subject, never a window title', async ({ page }) => {
