@@ -1,0 +1,31 @@
+{
+  "name": "timetrack-vscode",
+  "displayName": "Timetrack",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reports the checkout, branch and directory you are editing to the local Timetrack app.",
+  "categories": [
+    "Other"
+  ],
+  "license": "MIT",
+  "publisher": "ethlete",
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Timetrack",
+      "properties": {
+        "timetrack.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report what this window is editing to the local Timetrack app. Set it to false in a workspace to leave that project out entirely."
+        }
+      }
+    }
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  }
+}

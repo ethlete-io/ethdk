@@ -5,12 +5,14 @@ mod decorations_wayland;
 mod error;
 mod git;
 mod http;
+mod ingest;
 mod keychain;
 mod logs;
 mod nudge;
 mod oauth;
 mod pause;
 mod process;
+mod samples;
 mod secrets;
 mod state;
 mod store;
@@ -47,12 +49,16 @@ pub fn run() {
             ));
 
             let windows = window::WindowSource::new();
+            let reporters = ingest::IngestSource::new();
 
-            // Before the source starts, not after the webview has loaded and told us: a pause the
+            // Before the sources start, not after the webview has loaded and told us: a pause the
             // user took yesterday must not collect the first seconds of today's start.
             windows.set_paused(paused);
+            reporters.set_paused(paused);
             window::start(&windows);
+            ingest::start(reporters.clone(), data_dir.clone());
             app.manage(windows);
+            app.manage(reporters);
             app.manage(git::GitWatcher::new());
             app.manage(decorations::detect());
 
@@ -66,6 +72,8 @@ pub fn run() {
             git::git_changes,
             git::git_repos,
             http::http_request,
+            ingest::ingest_events,
+            ingest::ingest_status,
             logs::agent_log_lines,
             logs::agent_logs,
             nudge::day_nudge_record,

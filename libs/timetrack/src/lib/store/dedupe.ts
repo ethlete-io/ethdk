@@ -24,6 +24,10 @@ const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
  *
  * A GitLab event keys by GitLab's own id, which is unique inside one instance — a second instance
  * would have to put its host in the key.
+ *
+ * An editor heartbeat keys by its reporter and its instant, which is what makes a reporter's retry
+ * free: a POST whose response was lost is sent again, and one editor cannot have been in two states
+ * at the same millisecond.
  */
 export const dedupeKeyOf = (event: CollectedEvent): string | null => {
   switch (event.kind) {
@@ -35,6 +39,8 @@ export const dedupeKeyOf = (event: CollectedEvent): string | null => {
       return keyOf([event.kind, event.occurrenceId, event.at.toISOString(), event.until.toISOString()]);
     case 'merge-request-activity':
       return keyOf([event.kind, event.eventId]);
+    case 'editor-heartbeat':
+      return keyOf([event.kind, event.reporter, event.at.toISOString()]);
     default:
       return null;
   }

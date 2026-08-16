@@ -4,6 +4,7 @@ export * from './lib/git';
 export * from './lib/gitlab';
 export * from './lib/google-auth';
 export * from './lib/google-calendar';
+export * from './lib/ingest';
 export * from './lib/jira';
 export * from './lib/model';
 export * from './lib/reason';

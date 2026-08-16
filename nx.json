@@ -89,6 +89,7 @@
         "testMode": "watch"
       },
       "include": [
+        "apps/timetrack-vscode/**/*",
         "libs/agent-rules/**/*",
         "libs/cdk/**/*",
         "libs/components/**/*",

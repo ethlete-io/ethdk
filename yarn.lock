@@ -4456,6 +4456,7 @@ __metadata:
     "@tauri-apps/cli": "npm:2.11.4"
     "@types/mdx": "npm:2.0.14"
     "@types/node": "npm:24.13.3"
+    "@types/vscode": "npm:^1.90.0"
     "@typescript-eslint/utils": "npm:8.65.0"
     "@vitest/coverage-v8": "npm:4.1.10"
     "@vitest/ui": "npm:4.1.10"
@@ -9506,6 +9507,13 @@ __metadata:
   version: 3.0.3
   resolution: "@types/unist@npm:3.0.3"
   checksum: 10c0/2b1e4adcab78388e088fcc3c0ae8700f76619dbcb4741d7d201f87e2cb346bfc29a89003cfea2d76c996e1061452e14fcd737e8b25aacf949c1f2d6b2bc3dd60
+  languageName: node
+  linkType: hard
+
+"@types/vscode@npm:^1.90.0":
+  version: 1.125.0
+  resolution: "@types/vscode@npm:1.125.0"
+  checksum: 10c0/f183f16fd5ae287e1743d06841db78fecdf628ffb36e806eba63b1072a5be40ea310be46bf77ac260269899ddf68fe5c0ecc2a739924e0aa039630f6079fea99
   languageName: node
   linkType: hard
 

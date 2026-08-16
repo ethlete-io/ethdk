@@ -84,6 +84,7 @@
     "@tauri-apps/cli": "2.11.4",
     "@types/mdx": "2.0.14",
     "@types/node": "24.13.3",
+    "@types/vscode": "^1.90.0",
     "@typescript-eslint/utils": "8.65.0",
     "@vitest/coverage-v8": "4.1.10",
     "@vitest/ui": "4.1.10",

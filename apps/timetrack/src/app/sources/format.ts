@@ -1,6 +1,6 @@
 import { GitScanFailure } from '@ethlete/timetrack';
-import { AgentSessionCollectorTotals, WindowCollectorTotals } from '../../collectors';
-import { GitRepoDiscovery, SourceTally, WindowSourceStatus } from '../../host';
+import { AgentSessionCollectorTotals, IngestCollectorTotals, WindowCollectorTotals } from '../../collectors';
+import { GitRepoDiscovery, IngestStatus, SourceTally, WindowSourceStatus } from '../../host';
 
 const clock = (at: Date) => at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -75,6 +75,31 @@ export const formatGitLabRead = (options: { host: string; readAt: Date | null })
     options.host ? `Reading ${options.host}.` : 'No instance is configured yet.',
     options.readAt ? `Last read at ${clock(options.readAt)}.` : null,
   ]);
+
+/**
+ * Which reporters have posted, and where a new one finds the endpoint.
+ *
+ * The endpoint listens whether or not anything is installed, so a row that only said "collecting"
+ * would look identical before and after the extension is set up. Naming the discovery file is what
+ * turns "nothing has connected" into something the user can act on.
+ */
+export const formatIngest = (options: { status: IngestStatus | null; totals: IngestCollectorTotals }) => {
+  const { status, totals } = options;
+  const reporters = status?.reporters ?? [];
+  const connected = reporters
+    .map((reporter) => `${reporter.reporter} last posted at ${clock(new Date(reporter.lastAtMs))}`)
+    .join(', ');
+
+  return sentences([
+    status?.kind === 'listening' ? `Listening on port ${status.port}.` : null,
+    connected ? `${connected}.` : `No reporter has connected yet.`,
+    !reporters.length && status?.discoveryPath ? `A reporter finds it through ${status.discoveryPath}.` : null,
+    status?.refused ? `${status.refused} posts refused for a wrong token.` : null,
+    totals.rejected ? `${totals.rejected} records refused as nothing this app understands.` : null,
+    totals.excluded ? `${totals.excluded} denied by an exclusion rule since ${clock(totals.since)}.` : null,
+    totals.dropped ? `${totals.dropped} lost because nothing drained them in time.` : null,
+  ]);
+};
 
 /** The repositories a scan could not read, named — a moved or deleted one must not fail silently. */
 export const formatGitFailures = (failures: GitScanFailure[]) => {

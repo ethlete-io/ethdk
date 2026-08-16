@@ -251,3 +251,103 @@ describe('sessionize', () => {
     expect(sessionize({ events: [] })).toEqual([]);
   });
 });
+
+describe('sessionize, with editor heartbeats', () => {
+  const heartbeat = (
+    minutes: number,
+    options: { repoPath?: string; branch?: string; directory?: string; editing?: boolean } = {},
+  ): CollectedEvent => ({
+    at: AT(minutes),
+    source: 'editor',
+    kind: 'editor-heartbeat',
+    reporter: 'vscode',
+    editing: options.editing ?? true,
+    ...options,
+  });
+
+  it('names the checkout and the branch a window title could not', () => {
+    const inRepo = { repoPath: '/home/tom/dev/fut-frontend', branch: 'feat/FIP-2177-user-management' };
+    const blocks = sessionize({
+      events: [
+        focus(0, 'code', 'Visual Studio Code'),
+        heartbeat(1, inRepo),
+        heartbeat(10, inRepo),
+        heartbeat(20, inRepo),
+      ],
+    });
+
+    expect(blocks.at(-1)?.context.repoPath).toBe('/home/tom/dev/fut-frontend');
+    expect(blocks.at(-1)?.context.branch).toBe('feat/FIP-2177-user-management');
+  });
+
+  it('folds a workspace opened below the checkout into its root', () => {
+    const blocks = sessionize({
+      events: [
+        heartbeat(0, { repoPath: '/home/tom/dev/ethlete-sdk/libs/components' }),
+        heartbeat(3, { repoPath: '/home/tom/dev/ethlete-sdk/apps/timetrack' }),
+      ],
+      options: { repoRoots: ['/home/tom/dev/ethlete-sdk'] },
+    });
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]?.context.repoPath).toBe('/home/tom/dev/ethlete-sdk');
+  });
+
+  it('splits where the editor moved to another checkout', () => {
+    const blocks = sessionize({
+      events: [
+        heartbeat(0, { repoPath: '/home/tom/dev/fut-frontend' }),
+        heartbeat(3, { repoPath: '/home/tom/dev/fut-frontend' }),
+        heartbeat(6, { repoPath: '/home/tom/dev/ethlete-sdk' }),
+        heartbeat(9, { repoPath: '/home/tom/dev/ethlete-sdk' }),
+      ],
+    });
+
+    expect(blocks.map((block) => block.context.repoPath)).toEqual([
+      '/home/tom/dev/fut-frontend',
+      '/home/tom/dev/ethlete-sdk',
+    ]);
+  });
+
+  it('keeps one evidence entry per directory rather than one per heartbeat', () => {
+    const blocks = sessionize({
+      events: [
+        heartbeat(0, { repoPath: '/home/tom/dev/ethlete-sdk', directory: 'libs/components/src/lib/table' }),
+        heartbeat(3, { repoPath: '/home/tom/dev/ethlete-sdk', directory: 'libs/components/src/lib/table' }),
+        heartbeat(6, { repoPath: '/home/tom/dev/ethlete-sdk', directory: 'libs/components/src/lib/table' }),
+      ],
+    });
+
+    expect(blocks[0]?.evidence).toEqual([
+      { kind: 'editor', at: AT(0), detail: 'edited libs/components/src/lib/table' },
+    ]);
+  });
+
+  it('reports a heartbeat that only read the file as reading it', () => {
+    const blocks = sessionize({
+      events: [
+        heartbeat(0, { repoPath: '/home/tom/dev/ethlete-sdk', directory: 'libs/core', editing: false }),
+        heartbeat(3, { repoPath: '/home/tom/dev/ethlete-sdk', directory: 'libs/core', editing: false }),
+      ],
+    });
+
+    expect(blocks[0]?.evidence[0]?.detail).toBe('read libs/core');
+  });
+
+  /**
+   * A heartbeat with no checkout is still presence — it observes that the machine was worked on — but
+   * it must not clear the repository the block already has.
+   */
+  it('does not drop the repository for a heartbeat outside any checkout', () => {
+    const blocks = sessionize({
+      events: [
+        heartbeat(0, { repoPath: '/home/tom/dev/ethlete-sdk' }),
+        heartbeat(3, { directory: '/home/tom/notes' }),
+        heartbeat(6, { repoPath: '/home/tom/dev/ethlete-sdk' }),
+      ],
+    });
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]?.context.repoPath).toBe('/home/tom/dev/ethlete-sdk');
+  });
+});

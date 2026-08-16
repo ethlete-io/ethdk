@@ -1,4 +1,5 @@
 use crate::error::TimetrackResult;
+use crate::ingest::IngestSource;
 use crate::state::Db;
 use crate::window::WindowSource;
 use chrono::SecondsFormat;
@@ -133,24 +134,30 @@ pub async fn collection_state(db: State<'_, Db>) -> TimetrackResult<CollectionSt
 pub async fn collection_set_paused(
     db: State<'_, Db>,
     windows: State<'_, WindowSource>,
+    reporters: State<'_, IngestSource>,
     paused: bool,
     at_ms: i64,
 ) -> TimetrackResult<CollectionState> {
-    let source = windows.inner().clone();
-    let was = source.is_paused();
+    let windows = windows.inner().clone();
+    let reporters = reporters.inner().clone();
+    let was = windows.is_paused();
+    let apply = |paused: bool| {
+        windows.set_paused(paused);
+        reporters.set_paused(paused);
+    };
 
     if paused {
-        source.set_paused(true);
+        apply(true);
     }
 
     match db.run(move |connection| write(connection, paused, at_ms)).await {
         Ok(paused_at_ms) => {
-            source.set_paused(paused_at_ms.is_some());
+            apply(paused_at_ms.is_some());
 
             Ok(CollectionState { paused_at_ms })
         }
         Err(error) => {
-            source.set_paused(was);
+            apply(was);
 
             Err(error)
         }

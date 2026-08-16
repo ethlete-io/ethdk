@@ -1,0 +1,23 @@
+{
+  "name": "timetrack-vscode",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/timetrack-vscode/src",
+  "tags": ["type:app", "scope:timetrack"],
+  "implicitDependencies": ["timetrack"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/apps/timetrack-vscode/dist"],
+      "options": {
+        "command": "node tools/scripts/build-vscode-extension.mjs"
+      }
+    },
+    "test": {
+      "outputs": ["{workspaceRoot}/coverage/apps/timetrack-vscode"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/apps/timetrack-vscode"
+      }
+    }
+  }
+}

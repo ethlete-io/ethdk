@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CalendarOccurrenceEvent, CollectedEvent, GitCheckoutEvent, GitCommitEvent } from '../model/event';
+import {
+  CalendarOccurrenceEvent,
+  CollectedEvent,
+  EditorHeartbeatEvent,
+  GitCheckoutEvent,
+  GitCommitEvent,
+} from '../model/event';
 import { dedupeKeyOf } from './dedupe';
 
 const commit = (overrides: Partial<GitCommitEvent> = {}): GitCommitEvent => ({
@@ -85,5 +91,22 @@ describe('dedupeKeyOf', () => {
 
     expect(dedupeKeyOf(focus)).toBeNull();
     expect(dedupeKeyOf({ at: new Date(), source: 'idle', kind: 'idle-start' })).toBeNull();
+  });
+
+  it('keys a heartbeat by its reporter and its instant, so a retry stores it once', () => {
+    const heartbeat = (overrides: Partial<EditorHeartbeatEvent> = {}): EditorHeartbeatEvent => ({
+      at: new Date(2026, 7, 11, 9, 30),
+      source: 'editor',
+      kind: 'editor-heartbeat',
+      reporter: 'vscode',
+      repoPath: '/home/tom/dev/fut-frontend',
+      directory: 'src/app',
+      editing: true,
+      ...overrides,
+    });
+
+    expect(dedupeKeyOf(heartbeat({ directory: 'src/lib' }))).toBe(dedupeKeyOf(heartbeat()));
+    expect(dedupeKeyOf(heartbeat({ at: new Date(2026, 7, 11, 9, 31) }))).not.toBe(dedupeKeyOf(heartbeat()));
+    expect(dedupeKeyOf(heartbeat({ reporter: 'chrome' }))).not.toBe(dedupeKeyOf(heartbeat()));
   });
 });

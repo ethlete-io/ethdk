@@ -130,6 +130,47 @@ describe('exclusionRuleError', () => {
   });
 });
 
+describe('applyExclusionRules, for a source with no title', () => {
+  const heartbeat = (repoPath: string, directory?: string): CollectedEvent => ({
+    at: new Date(2026, 7, 11, 14, 0),
+    source: 'editor',
+    kind: 'editor-heartbeat',
+    reporter: 'vscode',
+    repoPath,
+    directory,
+    editing: true,
+  });
+
+  it('denies an editor heartbeat by the checkout it names', () => {
+    const result = applyExclusionRules({
+      events: [heartbeat('/home/tom/dev/tax-return'), heartbeat('/home/tom/dev/fut-frontend')],
+      rules: [{ kind: 'title-pattern', pattern: 'tax-return' }],
+    });
+
+    expect(result.kept).toHaveLength(1);
+    expect(result.excluded).toHaveLength(1);
+  });
+
+  it('denies it by the directory as well as the checkout', () => {
+    const result = applyExclusionRules({
+      events: [heartbeat('/home/tom/dev/fut-frontend', 'src/billing')],
+      rules: [{ kind: 'title-pattern', pattern: 'billing' }],
+    });
+
+    expect(result.kept).toEqual([]);
+  });
+
+  it('keeps no path in the summary of what it denied', () => {
+    const result = applyExclusionRules({
+      events: [heartbeat('/home/tom/dev/tax-return', 'invoices')],
+      rules: [{ kind: 'title-pattern', pattern: 'tax-return' }],
+    });
+
+    expect(Object.keys(result.excluded[0] ?? {}).sort()).toEqual(['at', 'kind', 'rule', 'source']);
+    expect(JSON.stringify(result.excluded)).not.toContain('invoices');
+  });
+});
+
 describe('DEFAULT_EXCLUSION_RULES', () => {
   it('covers password managers, private browsing and banking', () => {
     const result = applyExclusionRules({

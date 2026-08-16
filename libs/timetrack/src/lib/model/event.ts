@@ -1,5 +1,5 @@
 /** The collector a raw observation came from. Retention and exclusion rules are applied per source. */
-export type CollectedEventSource = 'window' | 'idle' | 'git' | 'agent-session' | 'calendar' | 'gitlab';
+export type CollectedEventSource = 'window' | 'idle' | 'git' | 'agent-session' | 'calendar' | 'gitlab' | 'editor';
 
 type CollectedEventBase<TSource extends CollectedEventSource, TKind extends string> = {
   at: Date;
@@ -43,6 +43,32 @@ export type AgentSessionEvent = CollectedEventBase<'agent-session', 'agent-sessi
   title?: string;
 };
 
+/**
+ * What an editor was showing when it last reported, from a reporter the user installed themselves.
+ *
+ * A window title says which application had focus; this says which checkout, which branch and which
+ * file — so a stretch inside one repository is attributable even when every window title reads
+ * `Visual Studio Code`. It is a periodic sample rather than an edge: the reporter posts one every
+ * interval while its window has focus, and the stretch between two of them is the observed time.
+ */
+export type EditorHeartbeatEvent = CollectedEventBase<'editor', 'editor-heartbeat'> & {
+  /** Which reporter observed it, such as `vscode`. One reporter is one editor on this machine. */
+  reporter: string;
+  /** The checkout the editor had open, when it had one. */
+  repoPath?: string;
+  branch?: string;
+  /**
+   * The directory the edited file is in, relative to `repoPath` — the whole path when there is no
+   * checkout. The directory rather than the file: `libs/components/src/lib/table` is what makes a
+   * stretch recognisable, and a file name is one more thing to keep that nothing here reads.
+   */
+  directory?: string;
+  /** The editor's own name for the language, such as `typescript`. */
+  language?: string;
+  /** Whether the file changed during the interval this heartbeat covers, as opposed to being read. */
+  editing: boolean;
+};
+
 export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-event'> & {
   /**
    * The provider's id for this one occurrence, not for the series. A collector reads overlapping
@@ -81,11 +107,13 @@ export type CollectedEvent =
   | GitCheckoutEvent
   | GitCommitEvent
   | AgentSessionEvent
+  | EditorHeartbeatEvent
   | CalendarOccurrenceEvent
   | MergeRequestActivityEvent;
 
 /** Events that describe what the machine was doing, as opposed to what a calendar or an API claims. */
-export type ActivityEvent = WindowFocusEvent | PresenceEvent | GitCheckoutEvent | GitCommitEvent | AgentSessionEvent;
+export type ActivityEvent =
+  WindowFocusEvent | PresenceEvent | GitCheckoutEvent | GitCommitEvent | AgentSessionEvent | EditorHeartbeatEvent;
 
 /**
  * Whether the event is one the day is reconstructed from. A calendar occurrence and a GitLab event

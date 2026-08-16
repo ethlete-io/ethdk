@@ -30,7 +30,7 @@ export type EvidenceSource = {
   /** What the source is still waiting on. Not shown once it has everything it needs. */
   detail?: string;
   /** The collector whose run this row reports. Focus and presence share one drain, so both name it. */
-  collector?: 'window' | 'git' | 'agent-session' | 'calendar' | 'gitlab';
+  collector?: 'window' | 'git' | 'agent-session' | 'calendar' | 'gitlab' | 'ingest';
   /** The `source` its events carry in the store, for counting what it has actually put there. */
   eventSource?: CollectedEventSource;
 };
@@ -122,10 +122,11 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
   {
     id: 'vscode',
     name: 'Editor heartbeats',
-    reads: 'A VS Code extension reporting the file and workspace being edited.',
-    stores: 'Which project was being edited when, for the stretches window titles are too coarse for.',
-    state: 'planned',
-    detail: 'Phase 2, and only if window titles prove insufficient.',
+    reads: 'A VS Code extension posting to a local endpoint every half minute, while its window has focus.',
+    stores: 'The checkout, the branch and the directory being edited. No file names and no file contents.',
+    state: 'collecting',
+    collector: 'ingest',
+    eventSource: 'editor',
   },
   {
     id: 'slack',

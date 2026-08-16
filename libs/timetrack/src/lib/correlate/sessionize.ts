@@ -61,6 +61,12 @@ const evidenceFor = (event: ActivityEvent): Evidence | null => {
         detail: event.title ?? `agent session ${event.sessionId} in ${event.cwd}`,
         summary: event.title,
       };
+    case 'editor-heartbeat':
+      return {
+        kind: 'editor',
+        at: event.at,
+        detail: `${event.editing ? 'edited' : 'read'} ${event.directory ?? event.repoPath ?? event.reporter}`,
+      };
     default:
       return null;
   }
@@ -93,6 +99,10 @@ const repoStateFor = (event: ActivityEvent, roots: readonly string[]): RepoState
       return { repoPath: event.repoPath, branch: event.branch, at: event.at };
     case 'agent-session':
       return { repoPath: repoRootOf({ path: event.cwd, roots }), branch: event.gitBranch, at: event.at };
+    case 'editor-heartbeat':
+      return event.repoPath
+        ? { repoPath: repoRootOf({ path: event.repoPath, roots }), branch: event.branch, at: event.at }
+        : null;
     default:
       return null;
   }

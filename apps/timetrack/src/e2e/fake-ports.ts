@@ -207,6 +207,11 @@ export const createFakePorts = (): HostPorts => {
       requestAccessibility$: () => ok(true),
     },
 
+    ingest: {
+      batch$: (afterSeq) => ok({ records: [], throughSeq: afterSeq, dropped: 0 }),
+      status$: () => ok({ kind: 'none', detail: null, port: null, discoveryPath: null, reporters: [], refused: 0 }),
+    },
+
     windowControls: {
       capabilities$: () => ok({ minimize: false, maximize: false, fullscreen: false }),
       isMaximized$: () => ok(false),

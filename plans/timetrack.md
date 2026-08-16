@@ -478,13 +478,49 @@ machine.
 
 ### Editor heartbeats (phase 2)
 
-A small VS Code extension posting `{file, language, project, repoRoot, branch, isTyping}`
-to the daemon's local ingest endpoint every ~30s. More precise than window titles (real
-file paths, typing vs reading) and it is what makes "you spent 40 minutes in
-`libs/components/src/lib/table`" possible. Design the ingest endpoint generically now - a
-localhost HTTP POST with a shared secret from the keychain, accepting a `source` discriminator
+**Both are built** - the generic ingest endpoint in `apps/timetrack/src-tauri/src/ingest.rs` and the
+VS Code extension in `apps/timetrack-vscode`. The extension posts every 30 seconds while its window
+has focus; the endpoint buffers what arrives, the collector interprets it, and a heartbeat labels a
+block with the checkout and branch that no window title could name. What building it settled:
 
-- so the extension, a future Chrome extension and any other reporter all use one path.
+- **The token is generated per app start and written to a file, not kept in the keychain.** The
+  original sketch said keychain, but a reporter cannot read a keychain, so the secret would have had
+  to reach it some other way - pasted into the editor's settings, where it would sit in plain text
+  and possibly sync. `ingest.json` in the app data directory, mode 0600, holds the port and a token
+  that dies with the run: there is no durable secret to leak, the reporter needs no configuration at
+  all, and a reporter left over from an earlier run is refused rather than trusted.
+- **An ephemeral port, not a fixed one.** The OS picks it and the file records it, so two accounts
+  running the app never collide and nothing has to be registered anywhere - the same arrangement the
+  OAuth loopback already uses.
+- **A request carrying an `Origin` header is refused before its token is even checked.** A reporter
+  is a program, never a page. A site the user happens to have open cannot read a 0600 file, but that
+  is one mistake away from being the only thing stopping it; refusing every browser closes it
+  outright. It is also why a future Chrome extension will need a deliberate change here rather than
+  arriving by accident.
+- **The host interprets nothing.** It lifts `atMs` and `kind` so the buffer can be dated and drained,
+  and passes the rest through as opaque JSON. `parseIngestedRecords` in the core is the only place a
+  posted shape becomes an event, so an unknown `kind` is counted and dropped rather than stored - and
+  a reporter that learns to send something new needs no change in Rust.
+- **The heartbeat reports the directory, not the file.** `libs/components/src/lib/table` is what
+  makes a stretch recognisable; the file name adds nothing anything reads, and one evidence entry per
+  file would bury a block under a hundred of them. It also keeps the promise the Sources row makes
+  small enough to be worth making.
+- **A path is subject to the title-pattern exclusion rules.** A heartbeat carries no title, so
+  without this a rule that hides a client's name from every other source would let it through here.
+  `editor` evidence is deliberately **not** quotable: a path names a private checkout as readily as
+  this one.
+- **The buffer is shared with the window source.** Keep-until-acknowledged, drop-oldest and the
+  pause gate are identical for both, so they became `SampleBuffer<T>` in `samples.rs` rather than the
+  same sixty lines twice.
+- **A pause drops what arrives and still answers the reporter with a success.** Telling it the post
+  failed would only make it hold the same records and offer them again at every interval until the
+  pause ended, which is the opposite of what a pause is for.
+- **The extension holds at most 60 unsent records.** Enough to cover the app restarting under it,
+  far too few to become a log of the day - an editor is the wrong place to keep one, and the parser
+  refuses anything over a day old anyway.
+- **`ethlete/no-async-await` and `ethlete/prefer-rxjs-timer` are off in the extension.** VS Code's
+  API is promise-based and there is no injection context for `takeUntilDestroyed`; obeying them would
+  have put RxJS in a bundle that has no other use for it. The bundle is 3.9 kB.
 
 ### Jira Cloud (phase 1)
 
@@ -1739,8 +1775,9 @@ way in here.
 review that left no local trace now names the Task it was for. ~~The reasoning provider~~ **- built**,
 and ~~the retroactive ticket-creation flow~~ **- built**, so work nothing could name can now become a
 ticket rather than a row the reviewer rejects every day. ~~The prospective
-ticket → branch → draft MR flow~~ **- built**, and ~~MR → ticket repair~~ **- built**. Remaining: the
-VS Code extension and the generic ingest endpoint.
+ticket → branch → draft MR flow~~ **- built**, and ~~MR → ticket repair~~ **- built**. ~~The VS Code
+extension and the generic ingest endpoint~~ **- built**, so an editor now names the checkout and
+branch that a window title reading `Visual Studio Code` never could. **Phase 2 is complete.**
 
 **Phase 3 - the noisy tail.** Slack huddle polling, Discord (bot mechanism, guild-scoped,
 `weak`), Gmail notification parsing, Codex session logs, and a Chrome extension if window

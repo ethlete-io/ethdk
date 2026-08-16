@@ -10,6 +10,7 @@ export type EvidenceKind =
   | 'gap-fill'
   | 'tempo-history'
   | 'window-title'
+  | 'editor'
   | 'calendar'
   | 'timer';
 
@@ -36,7 +37,8 @@ export type Evidence = {
  *
  * It is an allowlist because the alternative fails open: `window-title` details are raw window titles,
  * which carry document names, customer names and private browsing, and a kind added later would join
- * every payload unnoticed.
+ * every payload unnoticed. `editor` is left out for the same reason — a path names a client's
+ * repository as readily as it names this one.
  */
 export const QUOTABLE_EVIDENCE_KINDS: readonly EvidenceKind[] = [
   'commit',

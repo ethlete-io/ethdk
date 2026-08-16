@@ -8,6 +8,7 @@ import {
   injectCalendarCollector,
   injectGitCollector,
   injectGitLabCollector,
+  injectIngestCollector,
   injectWindowCollector,
 } from '../../collectors';
 import { SourceTally, WINDOW_SOURCE_NEEDS_ACCESSIBILITY, injectHostPorts } from '../../host';
@@ -19,6 +20,7 @@ import {
   formatGitFailures,
   formatGitLabRead,
   formatGitScan,
+  formatIngest,
   formatTally,
   formatWindowSource,
 } from './format';
@@ -153,6 +155,7 @@ export class SourcesViewComponent {
   private git = injectGitCollector();
   private calendar = injectCalendarCollector();
   private gitlab = injectGitLabCollector();
+  private ingest = injectIngestCollector();
   private settings = injectTimetrackSettings();
 
   /** Re-counted whenever a collector reports a run, so the tally moves as evidence arrives. */
@@ -162,6 +165,7 @@ export class SourcesViewComponent {
     git: this.git.lastRun(),
     calendar: this.calendar.lastRun(),
     gitlab: this.gitlab.lastRun(),
+    ingest: this.ingest.lastRun(),
   }));
 
   private tallies = toSignal(
@@ -234,6 +238,8 @@ export class SourcesViewComponent {
             readAt: this.gitlab.lastRun()?.at ?? null,
           }) || null
         );
+      case 'ingest':
+        return formatIngest({ status: this.ingest.status(), totals: this.ingest.totals() }) || null;
       default:
         return null;
     }
@@ -243,6 +249,8 @@ export class SourcesViewComponent {
     if (source.collector === 'window') return this.windows.status()?.detail ?? null;
 
     if (source.collector === 'gitlab') return this.gitlab.lastRun()?.failures.join(' ') || null;
+
+    if (source.collector === 'ingest') return this.ingest.status()?.detail ?? null;
 
     if (source.collector !== 'git') return null;
 
@@ -263,6 +271,8 @@ export class SourcesViewComponent {
         return this.calendar.failure();
       case 'gitlab':
         return this.gitlab.failure();
+      case 'ingest':
+        return this.ingest.failure();
       default:
         return null;
     }

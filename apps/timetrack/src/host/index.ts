@@ -4,6 +4,7 @@ export * from './coverage-store';
 export * from './event-store';
 export * from './events';
 export * from './git-source';
+export * from './ingest-source';
 export * from './invoke';
 export * from './ledger-store';
 export * from './nudge';

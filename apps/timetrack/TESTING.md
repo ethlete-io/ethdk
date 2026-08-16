@@ -269,6 +269,37 @@ Cases worth checking separately:
 - **A story with no feature branch.** Pick one. It must refuse and say to start the story first.
 - **A parent branch that was never pushed.** It must refuse and say to push the parent first.
 
+## 15. Editor heartbeats
+
+This writes nothing outside this machine. It needs the VS Code extension built and linked — see
+`apps/timetrack-vscode/README.md`.
+
+1. Start the app, then open Sources and read the **Editor heartbeats** row.
+
+**Pass:** the row says which port it is listening on and names the file a reporter finds it through.
+With no extension installed it says no reporter has connected yet.
+
+2. Build and link the extension, then restart VS Code and open a file in any git checkout.
+3. Wait a minute, then read the row again.
+
+**Pass:** the row names `vscode` and the time it last posted, and the stored count is above zero.
+
+4. Open Day and find the stretch you were editing in.
+
+**Pass:** the block names the checkout and the branch, and its evidence names the directory you were
+editing — not the file.
+
+Cases worth checking separately:
+
+- **Focus.** Move to another application for two minutes with the editor still open. The reporter
+  posts nothing for that stretch: the last-posted time in Sources stops moving.
+- **A restarted app.** Quit the app and start it again, leaving VS Code running. Within a minute the
+  row names `vscode` again — the extension re-reads the file after the refused token.
+- **The pause.** Pause collection, wait a minute, then resume. Nothing is stored for the paused
+  stretch, and Sources reports no refused posts: a pause drops what arrives rather than rejecting it.
+- **A rule.** Add a title-pattern exclusion rule matching a checkout's name, then edit in it. Nothing
+  is stored for that checkout, and the row counts the denial.
+
 ## How to report a failure
 
 Give the section number, what you did, and what you saw. A screenshot of the window helps more than

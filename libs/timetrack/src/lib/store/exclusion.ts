@@ -3,7 +3,8 @@ import { CollectedEvent, CollectedEventSource } from '../model/event';
 /**
  * A deny rule, evaluated before an event is persisted. `app-id` matches a window's application id
  * exactly, case-insensitively; `title-pattern` is a case-insensitive regular expression tested against
- * any event that carries a title — a window, an agent session, or a calendar entry.
+ * any event that carries a title — a window, an agent session, or a calendar entry — and against the
+ * checkout and file an editor heartbeat names.
  */
 export type TimetrackExclusionRule = { kind: 'app-id'; appId: string } | { kind: 'title-pattern'; pattern: string };
 
@@ -42,6 +43,18 @@ type CompiledRule = { rule: TimetrackExclusionRule; appId?: string; title?: RegE
 
 const titleOf = (event: CollectedEvent) =>
   'title' in event && typeof event.title === 'string' ? event.title : undefined;
+
+/**
+ * What a title pattern is tested against for an event that has no title.
+ *
+ * An editor heartbeat names a checkout and a file instead, and both are exactly the kind of thing a
+ * user writes a rule about — a client's repository, a private side project. Without this a rule that
+ * hides a name from every other source would let the same name through here.
+ */
+const pathOf = (event: CollectedEvent) =>
+  event.kind === 'editor-heartbeat'
+    ? [event.repoPath, event.directory].filter(Boolean).join(' ') || undefined
+    : undefined;
 
 const appIdOf = (event: CollectedEvent) => ('appId' in event ? event.appId : undefined);
 
@@ -91,10 +104,10 @@ const compile = (rules: TimetrackExclusionRule[]) => {
 
 const matching = (compiled: CompiledRule[], event: CollectedEvent) => {
   const appId = appIdOf(event)?.toLowerCase();
-  const title = titleOf(event);
+  const text = titleOf(event) ?? pathOf(event);
 
   return compiled.find((entry) =>
-    entry.title ? title !== undefined && entry.title.test(title) : appId !== undefined && entry.appId === appId,
+    entry.title ? text !== undefined && entry.title.test(text) : appId !== undefined && entry.appId === appId,
   )?.rule;
 };
 

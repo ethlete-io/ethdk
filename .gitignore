@@ -4,6 +4,7 @@
 /dist
 /tmp
 /out-tsc
+apps/timetrack-vscode/dist
 
 # dependencies
 node_modules
