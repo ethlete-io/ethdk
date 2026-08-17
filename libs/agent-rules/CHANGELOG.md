@@ -1,5 +1,18 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.9
+
+### Minor Changes
+
+- [`ae165cc`](https://github.com/ethlete-io/ethdk/commit/ae165cc4123e3f2abaa88c5cfd8262b13aac81d1) Thanks [@TomTomB](https://github.com/TomTomB)! - New `api-source` skill reads the API repo of the app you are in, from the local config's new `apiRepoPaths` map (`{ "hub": "../fut-hub-backend" }`).
+
+- [`f132d0b`](https://github.com/ethlete-io/ethdk/commit/f132d0b64e322c5823c9f50adeedecf388c5aa65) Thanks [@TomTomB](https://github.com/TomTomB)! - `ethlete-agents timetrack` reaches Jira through the running Timetrack app, so no repository holds a
+  token any more — the `jira` credentials in the local config and the `JIRA_*` variables are gone.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`fef4586`](https://github.com/ethlete-io/ethdk/commit/fef45868b10b0a0f01efff741958d65d9e405a31) Thanks [@github-actions](https://github.com/apps/github-actions)! - `git-flow`: add `conformingNameFor()`, which names what a non-conforming branch should be renamed to, and `git-flow repair` now handles a keyless branch it previously refused.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`fef4586`](https://github.com/ethlete-io/ethdk/commit/fef45868b10b0a0f01efff741958d65d9e405a31) Thanks [@github-actions](https://github.com/apps/github-actions)! - `git-flow`: export `featureBranchesFor()` and `nestedSpecFor()`, so a host can plan a nested branch without running the CLI.
+
 ## 0.1.0-next.8
 
 ### Patch Changes
