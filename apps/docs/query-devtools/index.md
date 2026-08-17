@@ -551,7 +551,11 @@ editor have their own reader for them.
 `HttpHeaders(2)` holding the headers that were actually set, a repeated header
 joined on `, ` the way the wire format writes it; `FormData`, `Map`, `Set`, `File`
 and `Blob` expand the same way, and a `Date` renders its ISO value instead of an
-empty object. A header **provider** shows as `fn(name)` rather than its source text.
+empty object. A header **provider** is called and shows the headers it hands the
+request, so a secure query's `Authorization` is readable instead of a `fn(name)` row.
+It is called again on every read, so the token shown is the current one rather than
+the one the request went out with. A provider that cannot resolve yet - a secure
+query before its access token arrives - keeps the `fn(name)` row.
 Only the args the call passed are shown - client-level headers are merged in later,
 and headers an interceptor adds are added after the SDK hands the request over, so
 neither is visible here.

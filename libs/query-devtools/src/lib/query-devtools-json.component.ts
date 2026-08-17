@@ -33,10 +33,10 @@ export const kindOf = (value: unknown): JsonKind => {
   return typeof value as JsonKind;
 };
 
-const entriesOf = (value: unknown): JsonEntry[] => {
+const entriesOf = (value: unknown, key?: string | null): JsonEntry[] => {
   if (Array.isArray(value)) return value.map((v, i) => ({ k: String(i), v }));
 
-  const exotic = exoticOf(value);
+  const exotic = exoticOf(value, key);
   if (exotic) return exotic.entries ?? [];
 
   if (value && typeof value === 'object') {
@@ -219,7 +219,7 @@ export class QueryDevtoolsJsonComponent {
   public annotations = input<ReadonlyMap<string, string> | null>(null);
 
   protected kind = computed(() => kindOf(this.value()));
-  private exotic = computed(() => exoticOf(this.value()));
+  private exotic = computed(() => exoticOf(this.value(), this.nodeKey()));
 
   /** One annotation covers every element of an array, so the lookup path forgets which index this is. */
   private shapePath = computed(() =>
@@ -233,14 +233,21 @@ export class QueryDevtoolsJsonComponent {
 
   protected annotationTitle = computed(() => `Declared in the API description as ${this.annotation()}`);
 
-  /** A `Date` or a `File` is object-typed but has nothing to expand into, so it renders as a leaf. */
-  protected isContainer = computed(
-    () => (this.kind() === 'array' || this.kind() === 'object') && !this.exotic()?.display,
-  );
+  /**
+   * A `Date` is object-typed but has nothing to expand into, so it renders as a leaf. A resolved
+   * header provider is the other way round: a function that does expand.
+   */
+  protected isContainer = computed(() => {
+    const exotic = this.exotic();
+
+    if (exotic) return !!exotic.entries;
+
+    return this.kind() === 'array' || this.kind() === 'object';
+  });
 
   /** The entries this node covers: the container's own, or just the window a chunk stands for. */
   public ownEntries = computed<JsonEntry[]>(() => {
-    const entries = entriesOf(this.value());
+    const entries = entriesOf(this.value(), this.nodeKey());
     const chunk = this.chunk();
 
     return chunk ? entries.slice(chunk.start, chunk.end) : entries;
@@ -285,7 +292,9 @@ export class QueryDevtoolsJsonComponent {
   private chunkHasHit = computed(() => {
     const term = this.search();
 
-    return !!term && this.ownEntries().some(({ k, v }) => k.toLowerCase().includes(term) || matchesDeep(v, term));
+    return (
+      !!term && this.ownEntries().some((entry) => entry.k.toLowerCase().includes(term) || matchesDeep(entry, term))
+    );
   });
 
   protected effectiveExpanded = computed(() => {
@@ -339,7 +348,7 @@ export class QueryDevtoolsJsonComponent {
     return count ? `{…} ${count}` : '{}';
   });
 
-  protected display = computed(() => displayOf(this.value()));
+  protected display = computed(() => displayOf(this.value(), this.nodeKey()));
 
   protected keyHit = computed(() => {
     const term = this.search();
@@ -453,8 +462,8 @@ export class QueryDevtoolsJsonComponent {
 // Below the component: an interpolated template literal above an inline template breaks the Angular
 // language service for the whole template (see `ethlete/no-template-literal-before-inline-template`).
 
-const displayOf = (value: unknown) => {
-  const exotic = exoticOf(value);
+const displayOf = (value: unknown, key?: string | null) => {
+  const exotic = exoticOf(value, key);
   if (exotic?.display) return `${exotic.typeName}(${exotic.display})`;
 
   switch (kindOf(value)) {
@@ -487,10 +496,13 @@ const buildChunks = (entries: JsonEntry[], window: { offset: number; isArray: bo
 };
 
 /** Whether a search term appears anywhere in a subtree - used to keep non-matching slices folded. */
-const matchesDeep = (value: unknown, term: string): boolean => {
-  if (!value || typeof value !== 'object' || exoticOf(value)?.display) {
-    return displayOf(value).toLowerCase().includes(term);
+const matchesDeep = (entry: JsonEntry, term: string): boolean => {
+  const { k, v } = entry;
+  const exotic = exoticOf(v, k);
+
+  if (exotic ? !exotic.entries : !v || typeof v !== 'object') {
+    return displayOf(v, k).toLowerCase().includes(term);
   }
 
-  return entriesOf(value).some(({ k, v }) => k.toLowerCase().includes(term) || matchesDeep(v, term));
+  return entriesOf(v, k).some((child) => child.k.toLowerCase().includes(term) || matchesDeep(child, term));
 };

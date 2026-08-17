@@ -49,6 +49,43 @@ describe('exoticOf', () => {
     expect(exoticOf(() => 1)).toEqual({ typeName: 'fn', display: 'anonymous' });
   });
 
+  it('should read the headers a headers provider hands the request', () => {
+    const headerProvider = () => new HttpHeaders({ authorization: 'Bearer abc' });
+
+    expect(exoticOf(headerProvider, 'headers')).toEqual({
+      typeName: 'HttpHeaders',
+      entries: [{ k: 'authorization', v: 'Bearer abc' }],
+    });
+  });
+
+  it('should keep the fn row for a headers provider that cannot resolve yet', () => {
+    const headerProvider = () => {
+      throw new Error('no access token');
+    };
+
+    expect(exoticOf(headerProvider, 'headers')).toEqual({ typeName: 'fn', display: 'headerProvider' });
+  });
+
+  it('should not call a function under any other key', () => {
+    let calls = 0;
+    const transformResponse = () => {
+      calls++;
+
+      return new HttpHeaders({ a: 'b' });
+    };
+
+    expect(exoticOf(transformResponse, 'transformResponse')).toEqual({ typeName: 'fn', display: 'transformResponse' });
+    expect(calls).toBe(0);
+  });
+
+  it('should keep the fn row for a headers function that wants arguments or returns something else', () => {
+    const withArgs = (name: string) => new HttpHeaders({ name });
+    const notHeaders = () => ({ authorization: 'Bearer abc' });
+
+    expect(exoticOf(withArgs, 'headers')).toEqual({ typeName: 'fn', display: 'withArgs' });
+    expect(exoticOf(notHeaders, 'headers')).toEqual({ typeName: 'fn', display: 'notHeaders' });
+  });
+
   it('should expand a File into readable parts', () => {
     const file = new File(['abc'], 'report.pdf', { type: 'application/pdf' });
     const exotic = exoticOf(file);

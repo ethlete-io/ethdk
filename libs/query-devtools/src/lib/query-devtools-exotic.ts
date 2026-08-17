@@ -22,13 +22,22 @@ export const isHeadersValue = (
   typeof value.getAll === 'function' &&
   'lazyInit' in value;
 
+const HEADERS_KEY = 'headers';
+
 /**
  * How to render `value` if it is one of the built-ins the explorer knows, or `null` for anything it
- * should keep treating as a plain object or array.
+ * should keep treating as a plain object or array. `key` is the name the value sits under; a
+ * `headers` function is called so the row shows the headers it hands the request.
  */
-export const exoticOf = (value: unknown): ExoticValue | null => {
-  // A header provider is the case in practice; `String(fn)` would dump its whole source into the row.
-  if (typeof value === 'function') return { typeName: 'fn', display: value.name || 'anonymous' };
+export const exoticOf = (value: unknown, key?: string | null): ExoticValue | null => {
+  if (typeof value === 'function') {
+    const provided = key === HEADERS_KEY && value.length === 0 ? providedHeaders(value as () => unknown) : null;
+
+    if (provided) return { typeName: 'HttpHeaders', entries: headerEntries(provided) };
+
+    // `String(fn)` would dump the whole source of the function into the row.
+    return { typeName: 'fn', display: value.name || 'anonymous' };
+  }
 
   if (!value || typeof value !== 'object') return null;
 
@@ -75,6 +84,21 @@ export const exoticOf = (value: unknown): ExoticValue | null => {
   }
 
   return null;
+};
+
+/**
+ * The headers a `headers` provider hands the request, or `null` if it hands anything else. A secure
+ * query resolves its access token inside such a provider and throws while no token is available yet -
+ * both cases keep the plain `fn` row.
+ */
+const providedHeaders = (provider: () => unknown) => {
+  try {
+    const value = provider();
+
+    return isHeadersValue(value) ? value : null;
+  } catch {
+    return null;
+  }
 };
 
 /**
