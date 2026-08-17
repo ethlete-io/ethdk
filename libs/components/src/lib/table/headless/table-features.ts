@@ -44,6 +44,9 @@ export type TableHeaderAdornment = {
 /** A component stamped into a lead column's body cells. It must declare a `row` input. */
 export type TableLeadCellComponent = Type<{ row: InputSignal<unknown> }>;
 
+/** Which inline edge a utility column sits at - see {@link TableLeadColumn.side}. */
+export type TableColumnSide = 'start' | 'end';
+
 /**
  * A feature's replacement for the mark the table draws in a failed cell (see `cellState`). Stamped
  * only into cells that are actually in the error state, so it costs nothing on a healthy table.
@@ -62,8 +65,8 @@ export type TableCellErrorMark = {
 };
 
 /**
- * A leading utility column: a fixed-width column before the data columns, with a cell in every row
- * kind (group header, header, body, footer). Selection contributes one, row expansion another.
+ * A utility column: a fixed-width column outside the data columns, with a cell in every row kind
+ * (group header, header, body, footer). Selection contributes one, row expansion another.
  *
  * The table owns the chrome - track width, sticky offsets, cell classes, ARIA roles - and stamps the
  * registered components into the body/header cells.
@@ -74,7 +77,19 @@ export type TableLeadColumn = {
   /** The column's `grid-template-columns` track (e.g. `'var(--et-table-select-width, 32px)'`). */
   width: string;
   /**
-   * Lower renders closer to the inline-start edge. The built-in features take `0`
+   * Which inline edge the column sits at: `'start'` before the data columns, `'end'` after them (and
+   * after the trailing slack track, so it ends the row).
+   *
+   * A `'start'` column is pinned along with a start-pinned data column; an `'end'` column is pinned to
+   * the trailing edge whenever pinning is live at all, since moving a utility column to that edge is a
+   * choice to keep it reachable and letting it scroll away would undo it.
+   *
+   * A signal, for the same reason {@link TableHeaderAdornment.enabled} is one: a feature registers once
+   * from its constructor, where its own config input is not bound yet. Omitted means `'start'`.
+   */
+  side?: Signal<TableColumnSide>;
+  /**
+   * Lower renders closer to this column's own edge. The built-in features take `0`
    * (`etTableSelection`) and `100` (`etTableRowExpansion`); pick a number relative to those to place
    * your own column among them.
    *
@@ -132,6 +147,8 @@ export type TableColumnPinning = {
   cellPinning(key: string): TableCellPinning;
   /** Whether the leading utility columns are pinned along with a start-pinned column, and how far in. */
   leadPinning(key: string): { sticky: boolean; offset: number | null };
+  /** Whether the trailing utility columns are pinned to the trailing edge, and how far in. */
+  trailPinning(key: string): { sticky: boolean; offset: number | null };
   /** Total frozen width (px) at each inline edge - where the scroll fades sit. */
   insets(): { start: number; end: number };
   /** Whether any visible column is pinned to the trailing edge, which already owns that edge. */
@@ -146,8 +163,9 @@ export type TableColumnPinning = {
  *
  * The stamped component must be `display: contents` and render one cell per track itself: the table's
  * rows are `display: contents` too, so every cell of every row kind is a grid item of the same grid.
- * {@link TableFeatureHost.leadColumnsMeta} and {@link TableFeatureHost.hasFillerTrack} are what a row
- * needs to cover the tracks that are not data columns.
+ * {@link TableFeatureHost.leadColumnsMeta}, {@link TableFeatureHost.hasFillerTrack} and
+ * {@link TableFeatureHost.trailColumnsMeta} are what a row needs to cover the tracks that are not data
+ * columns.
  */
 export type TableHeaderRow = {
   component: Type<unknown>;
@@ -412,6 +430,33 @@ export type TableFeatureHost = {
   editCell(rowIndex: number, columnIndex: number): boolean;
 
   /**
+   * Total frozen width (px) at each inline edge - what a pinned block covers of the table's own
+   * viewport, and so where the scrolling columns actually start and end. Zero at both edges when
+   * nothing is pinned. A feature that works against the viewport's edges has to work against these
+   * instead, or it aims at a strip the user cannot reach.
+   */
+  frozenInsets(): { start: number; end: number };
+
+  /**
+   * Claim the drag a pointer started, so the other features leave it alone until it ends. Two features
+   * can begin from the same `pointerdown` on this element - column reorder and drag-to-scroll both
+   * delegate from it - and without a claim a header drag reorders the column and pans the table under
+   * it at the same time.
+   *
+   * Claim in the `pointerdown` handler, before the gesture has moved, and read it when your own
+   * gesture commits: the answer is then the same whichever listener the browser ran first. The claim
+   * is released when the pointer is let go or the browser takes the gesture away.
+   */
+  claimPointerGesture(event: PointerEvent, feature: string): void;
+
+  /**
+   * Which feature claimed the drag this pointer started, or `null` while it is unclaimed. Compare it
+   * against your own name - claiming is also how a feature keeps its own gesture. See
+   * {@link claimPointerGesture}.
+   */
+  pointerGestureClaim(event: PointerEvent): string | null;
+
+  /**
    * The table's host element - a feature is a directive on it, so this is also the element it can
    * listen on, measure or mark. `<et-table>`'s own DOM is inside it.
    */
@@ -433,11 +478,26 @@ export type TableFeatureHost = {
   leadColumnsMeta(): { key: string; cellClass: string }[];
 
   /**
+   * The trailing utility columns in render order - the same contract as {@link leadColumnsMeta}, for the
+   * columns that sit after the data columns (see {@link TableLeadColumn.side}). A whole-row feature draws
+   * these after the filler track, so its row ends where every other row does.
+   */
+  trailColumnsMeta(): { key: string; cellClass: string }[];
+
+  /**
    * Whether a trailing slack track is in play - it carries an empty cell in every row so the table's
    * chrome runs to the panel's edge instead of stopping at the last rigid column. A feature rendering a
    * whole row has to cover that track too.
    */
   hasFillerTrack(): boolean;
+
+  /**
+   * Whether rows have a box of their own rather than being layout-transparent - a card row, a row link.
+   * A feature drawing a whole row has to carry that box too, else its row misses the surface, the ring
+   * and the spacing every other row has.
+   */
+  hasRowBox(): boolean;
+
   /**
    * The rendered header cells of the visible columns, in the same order as `visibleColumnsMeta()`.
    * A feature that must attach behavior to cells the table renders (a reorder drag) works from these.
@@ -447,10 +507,20 @@ export type TableFeatureHost = {
   bodyCellElementsFor(key: string): HTMLElement[];
 
   /**
+   * The grid itself - every row and cell of the table, but not the footer bar around it. A feature
+   * measuring the whole of it (how far a pinned header may travel) reads this rather than the host,
+   * which is the scroll viewport and therefore a different box. `null` before the first render.
+   */
+  gridElement(): HTMLElement | null;
+
+  /**
    * The rendered header cells of the leading utility columns, in {@link leadColumnsMeta} order. A feature
    * stacking offsets from the inline-start edge has to measure them before the first data column.
    */
   leadHeaderCellElements(): HTMLElement[];
+
+  /** The rendered header cells of the trailing utility columns, in {@link trailColumnsMeta} order. */
+  trailHeaderCellElements(): HTMLElement[];
 
   /**
    * The user's column width overrides (px), keyed by column key. Reading it in a `computed` or `effect`

@@ -23,6 +23,8 @@ export default {
     virtualScroll: false,
     grouped: false,
     stickyColumns: false,
+    dragScroll: false,
+    pageStickyHeader: false,
     footer: false,
     paginated: false,
     rowInteractive: false,
@@ -30,6 +32,7 @@ export default {
     resizableColumns: false,
     columnMenu: false,
     selectable: false,
+    selectionSide: 'start',
     csvExport: false,
     keyboardNav: false,
     inlineEdit: false,
@@ -54,6 +57,8 @@ export default {
     virtualScroll: { control: 'boolean' },
     grouped: { control: 'boolean' },
     stickyColumns: { control: 'boolean' },
+    dragScroll: { control: 'boolean' },
+    pageStickyHeader: { control: 'boolean' },
     footer: { control: 'boolean' },
     paginated: { control: 'boolean' },
     rowInteractive: { control: 'boolean' },
@@ -61,6 +66,7 @@ export default {
     resizableColumns: { control: 'boolean' },
     columnMenu: { control: 'boolean' },
     selectable: { control: 'boolean' },
+    selectionSide: { control: 'inline-radio', options: ['start', 'end'] },
     csvExport: { control: 'boolean' },
     keyboardNav: { control: 'boolean' },
     inlineEdit: { control: 'boolean' },
@@ -270,6 +276,20 @@ export const StickyColumns: Story = {
   },
 };
 
+export const DragScroll: Story = {
+  args: { dragScroll: true, stickyColumns: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`etTableDragScroll` pans the table by dragging anywhere in it, so a wide table is reachable ' +
+          'without the scrollbar. A press that does not travel is still a click, so rows and header ' +
+          'controls behave as they did; a drag swallows the click it would have ended on.',
+      },
+    },
+  },
+};
+
 export const Selectable: Story = {
   args: { selectable: true },
   parameters: {
@@ -278,6 +298,20 @@ export const Selectable: Story = {
         story:
           'With `selectable`, a leading checkbox column drives a two-way `selection` set of row keys; the ' +
           'header checkbox selects/clears all rows (indeterminate when only some are selected).',
+      },
+    },
+  },
+};
+
+export const SelectableAtTheTrailingEdge: Story = {
+  args: { selectable: true, selectionSide: 'end', stickyColumns: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `side: "end"` the checkbox column ends every row instead of starting it. It pins to that ' +
+          'edge as soon as `etTableStickyColumns` is on - scroll sideways and the checkboxes stay put, ' +
+          'since a column moved there is a column meant to stay reachable.',
       },
     },
   },

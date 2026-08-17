@@ -12,8 +12,7 @@ import { TableGroupHeadersDirective } from './table-group-headers.directive';
 @Component({
   selector: 'et-table-group-header-row',
   template: `
-    <!-- One empty cell per leading utility column (selection, expander), so the band covers their
-         tracks too. -->
+    <!-- One empty cell per utility column (selection, expander), so the band covers their tracks too. -->
     @for (lead of leads(); track $index) {
       <div class="et-table-group-cell" aria-hidden="true"></div>
     }
@@ -33,6 +32,9 @@ import { TableGroupHeadersDirective } from './table-group-headers.directive';
     }
     @if (table.hasFillerTrack()) {
       <div class="et-table-group-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
+    }
+    @for (trail of trails(); track $index) {
+      <div class="et-table-group-cell" aria-hidden="true"></div>
     }
   `,
   styleUrl: './table-group-header-row.component.css',
@@ -54,6 +56,7 @@ export class TableGroupHeaderRowComponent {
   public blockSize = computed(() => this.groupCellDimensions()?.offset?.height ?? 0);
 
   protected leads = computed(() => this.table.leadColumnsMeta());
+  protected trails = computed(() => this.table.trailColumnsMeta());
 
   constructor() {
     this.feature.rowHeight.set(this.blockSize);

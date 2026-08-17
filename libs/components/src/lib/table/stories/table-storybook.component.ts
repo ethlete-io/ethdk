@@ -24,11 +24,13 @@ import {
   TABLE_COLUMN_CHOOSER_IMPORTS,
   TABLE_COLUMN_MENU_IMPORTS,
   TABLE_CSV_EXPORT_IMPORTS,
+  TABLE_DRAG_SCROLL_IMPORTS,
   TABLE_FILTER_IMPORTS,
   TABLE_GROUP_HEADERS_IMPORTS,
   TABLE_IMPORTS,
   TABLE_INLINE_EDIT_IMPORTS,
   TABLE_KEYBOARD_NAV_IMPORTS,
+  TABLE_PAGE_STICKY_HEADER_IMPORTS,
   TABLE_REORDER_IMPORTS,
   TABLE_RESIZE_IMPORTS,
   TABLE_ROW_EXPANSION_IMPORTS,
@@ -169,8 +171,10 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         [etTableInlineEdit]="{ enabled: inlineEdit() }"
         [etTableKeyboardNav]="{ enabled: keyboardNav() || inlineEdit() }"
         [etTableReorder]="{ enabled: reorderable() }"
-        [etTableSelection]="{ selection: selected, enabled: selectable() }"
+        [etTableSelection]="{ selection: selected, enabled: selectable(), side: selectionSide() }"
         [etTableVirtualScroll]="{ enabled: virtualScroll() }"
+        [etTableDragScroll]="{ enabled: dragScroll() }"
+        [etTablePageStickyHeader]="{ enabled: pageStickyHeader() }"
         [labels]="{ empty: 'No people found' }"
         (cellCommit)="saveCell($event)"
         (rowClick)="lastClicked.set($event)"
@@ -360,7 +364,9 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
     TABLE_VIRTUAL_SCROLL_IMPORTS,
     TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
     TABLE_CSV_EXPORT_IMPORTS,
+    TABLE_DRAG_SCROLL_IMPORTS,
     TABLE_KEYBOARD_NAV_IMPORTS,
+    TABLE_PAGE_STICKY_HEADER_IMPORTS,
     TABLE_INLINE_EDIT_IMPORTS,
     INPUT_IMPORTS,
     BUTTON_IMPORTS,
@@ -389,6 +395,8 @@ export class TableStorybookComponent {
   public richFilterOptions = input(false);
   public reorderable = input(false);
   public virtualScroll = input(false);
+  public dragScroll = input(false);
+  public pageStickyHeader = input(false);
   public grouped = input(false);
   public stickyColumns = input(false);
   public footer = input(false);
@@ -398,6 +406,7 @@ export class TableStorybookComponent {
   public resizableColumns = input(false);
   public columnMenu = input(false);
   public selectable = input(false);
+  public selectionSide = input<'start' | 'end'>('start');
   public csvExport = input(false);
   public keyboardNav = input(false);
   public inlineEdit = input(false);

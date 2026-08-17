@@ -1,6 +1,6 @@
 <!-- Every binding below reads a field off a render model (see the `…Vm` types in the component):
      methods belong in event bindings, not in bindings the framework re-evaluates each pass. -->
-<div [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
+<div #grid [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
   <!-- Rows a feature renders above the column headers (etTableGroupHeaders' spanning group row). Each
        is display: contents and lays its own cells into these tracks — see registerHeaderRow. -->
   @for (headerRow of headerRows(); track $index) {
@@ -76,11 +76,17 @@
         }
 
         <!-- UI from opt-in features (filter menu, …), each registered rather than referenced — see
-             registerHeaderAdornment. Renders nothing when no feature is imported. -->
-        @for (adornment of headerAdornments(); track $index) {
-          <ng-container
-            *ngComponentOutlet="adornment.component; inputs: { column: cell.column }; injector: adornment.injector"
-          />
+             registerHeaderAdornment. Renders nothing when no feature is imported.
+
+             Dropped once the column is covered by a pinned one: an adornment's menu is a portal, so it
+             would go on floating over the pinned column, anchored to a cell nobody can see. Unmounting
+             the trigger is what closes it. -->
+        @if (!cell.obscured) {
+          @for (adornment of headerAdornments(); track $index) {
+            <ng-container
+              *ngComponentOutlet="adornment.component; inputs: { column: cell.column }; injector: adornment.injector"
+            />
+          }
         }
       </div>
     }
@@ -89,13 +95,38 @@
     @if (hasFiller()) {
       <div class="et-table-header-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
     }
+    <!-- Trailing utility columns (a selection column moved to this edge). Same chrome as the leading
+         ones, pinned to the trailing edge instead - see TableLeadColumn.side. -->
+    @for (trail of trailCells(); track trail.key) {
+      <div
+        #trailHeaderCell
+        [class]="trail.cellClass"
+        [class.et-table-sticky-end]="trail.sticky"
+        [style.inset-inline-end.px]="trail.offset"
+        [attr.aria-hidden]="trail.lead.headerComponent ? null : 'true'"
+        class="et-table-header-cell"
+        role="columnheader"
+      >
+        @if (trail.lead.headerComponent; as headerComponent) {
+          <ng-container *ngComponentOutlet="headerComponent; injector: trail.lead.injector" />
+        }
+      </div>
+    }
   </div>
 
   <!-- Refetching over rows that are already on screen: a 2px indeterminate bar right under the header,
        so the data stays readable and in place. Drawn here rather than with `et-progress-bar` — the base
        table takes no component dependencies, and this is 2px of chrome, not a control. -->
   @if (showBusyBar()) {
-    <div class="et-table-busy-bar" role="presentation" aria-hidden="true"></div>
+    <!-- Faded in and out: a refetch is often over in a few hundred ms, and a bar that pops in and
+         vanishes reads as a flicker rather than as work happening. -->
+    <div
+      class="et-table-busy-bar"
+      animate.enter="et-table-busy-bar--enter"
+      animate.leave="et-table-busy-bar--leave"
+      role="presentation"
+      aria-hidden="true"
+    ></div>
   }
 
   @if (spacers(); as spacer) {
@@ -161,7 +192,6 @@
             [attr.tabindex]="cellNavigation() ? -1 : null"
             [attr.data-state]="cell.state"
             [attr.id]="cell.linkHost ? rowVm.linkLabelId : null"
-            [class.et-table-cell--link]="cell.linkHost"
             [class.et-table-cell--interactive]="cell.interactive"
             [class.et-table-cell--editing]="cell.edit"
             [class.et-skeleton--animated]="cell.state === 'loading'"
@@ -209,25 +239,46 @@
                 <span class="et-table-cell-text">{{ cell.value }}</span>
               }
             }
-
-            @if (cell.linkHost) {
-              <!-- The row's link: one real anchor, stretched over the row box (see rowBox) rather than
-                   wrapping any content, so the cells stay exactly as a table without links renders them.
-                   It carries no text of its own and is named by this cell instead - `aria-labelledby`
-                   resolves to the cell's content, which is the row's identity. -->
-              <!-- eslint-disable-next-line @angular-eslint/template/elements-content -- the rule's
-                   allowList knows `aria-label` but not `aria-labelledby`, which names it just as well. -->
-              <a
-                [attr.href]="rowVm.href"
-                [attr.aria-labelledby]="rowVm.linkLabelId"
-                (click)="activateRowLink(rowVm.link, $event)"
-                class="et-table-row-link"
-              ></a>
-            }
           </div>
         }
         @if (hasFiller()) {
           <div class="et-table-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
+        }
+        @for (trail of rowVm.trails; track trail.key) {
+          <div
+            [class]="trail.cellClass"
+            [class.et-table-sticky-end]="trail.sticky"
+            [style.inset-inline-end.px]="trail.offset"
+            class="et-table-cell"
+            role="gridcell"
+          >
+            <ng-container
+              *ngComponentOutlet="trail.lead.bodyComponent; inputs: { row: rowVm.row }; injector: trail.lead.injector"
+            />
+          </div>
+        }
+
+        @if (rowVm.href !== null) {
+          <!-- The row's link: one real anchor, stretched over the row box (see rowBox) rather than
+               wrapping any content, so the cells stay exactly as a table without links renders them.
+               It carries no text of its own and is named by the identity cell instead - `aria-labelledby`
+               resolves to that cell's content, which is the row's identity.
+
+               A child of the row, not of a cell: a cell that is pinned is `position: sticky` and would
+               therefore be the anchor's containing block, shrinking the row's hit area to that one
+               column. The row box is the containing block that spans every cell. -->
+          <!-- eslint-disable-next-line @angular-eslint/template/elements-content -- the rule's
+               allowList knows `aria-label` but not `aria-labelledby`, which names it just as well. -->
+          <a
+            [attr.href]="rowVm.href"
+            [attr.aria-labelledby]="rowVm.linkLabelId"
+            (click)="activateRowLink(rowVm.link, $event)"
+            class="et-table-row-link"
+          ></a>
+        }
+
+        @if (appearance() === 'cards') {
+          <div class="et-table-card-corners" role="presentation" aria-hidden="true"></div>
         }
       </div>
 
@@ -253,20 +304,19 @@
     <div [style.block-size.px]="spacer.end" class="et-table-spacer" role="presentation" aria-hidden="true"></div>
   }
 
-  <!-- Edge gradients marking rows scrolled out of view horizontally. The layer is absolutely positioned
-       over the whole grid — the full scroll extent, not just the viewport — which is what lets the two
-       fades inside it hold their place with `position: sticky` for the entire scroll range. Their inline
-       inset clears whatever columns are pinned at that edge, so the fade marks where rows actually
-       disappear (a pinned column's inner edge) rather than the viewport's edge. -->
+  <!-- Edge gradients marking rows scrolled out of view horizontally, on the edges no pinned column
+       already marks (see visibleScrollFades). The layer is absolutely positioned over the whole grid —
+       the full scroll extent, not just the viewport — which is what lets the two fades inside it hold
+       their place with `position: sticky` for the entire scroll range. -->
   <div class="et-table-scroll-fades" role="presentation" aria-hidden="true">
     <div
       [style.inset-inline-start.px]="fadeInset().start"
-      [class.et-table-scroll-fade--visible]="scrollFades().start"
+      [class.et-table-scroll-fade--visible]="visibleScrollFades().start"
       class="et-table-scroll-fade et-table-scroll-fade--start"
     ></div>
     <div
       [style.inset-inline-end.px]="fadeInset().end"
-      [class.et-table-scroll-fade--visible]="scrollFades().end"
+      [class.et-table-scroll-fade--visible]="visibleScrollFades().end"
       class="et-table-scroll-fade et-table-scroll-fade--end"
     ></div>
   </div>
@@ -300,6 +350,16 @@
       }
       @if (hasFiller()) {
         <div class="et-table-footer-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
+      }
+      @for (trail of trailCells(); track trail.key) {
+        <div
+          [class]="trail.cellClass"
+          [class.et-table-sticky-end]="trail.sticky"
+          [style.inset-inline-end.px]="trail.offset"
+          class="et-table-footer-cell"
+          role="gridcell"
+          aria-hidden="true"
+        ></div>
       }
     </div>
   }

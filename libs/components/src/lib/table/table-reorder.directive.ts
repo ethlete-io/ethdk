@@ -14,6 +14,12 @@ const PREVIEW_DURATION_MS = 160;
 /** Dead zone (px) each side of a column's midpoint - see {@link TableReorderDirective.flipThresholdOf}. */
 const FLIP_HYSTERESIS_PX = 12;
 
+/** How near an inline edge a drag has to be held before the table scrolls itself under it. */
+const AUTO_SCROLL_ZONE_PX = 56;
+
+/** Fastest the edge auto-scroll runs, in px per frame - reached with the pointer on the edge itself. */
+const AUTO_SCROLL_MAX_STEP_PX = 18;
+
 /** The column order that dropping `key` next to `overKey` (on the given side) would produce. */
 const landingOrder = (order: readonly string[], move: { key: string; overKey: string; before: boolean }) => {
   const without = order.filter((candidate) => candidate !== move.key);
@@ -87,6 +93,12 @@ export class TableReorderDirective {
   // The last previewed landing order, to skip re-applying identical transforms on every pointer move.
   private previewSignature: string | null = null;
 
+  // The pointer's last x, which the edge auto-scroll re-resolves the drop target against: it moves the
+  // columns while the pointer stands still, so no pointer event says the target changed.
+  private pointerX = 0;
+  private autoScrollFrame: number | null = null;
+  private autoScrollStep = 0;
+
   constructor() {
     this.table.registerLayer({
       component: TableReorderOverlayComponent,
@@ -110,6 +122,11 @@ export class TableReorderDirective {
           const hit = this.headerCellAt(event);
 
           if (!hit) return EMPTY;
+
+          // Claimed here, in the pointerdown itself, so drag-to-scroll reads the claim whichever of
+          // the two listeners the browser ran first. Without it a header drag reorders the column and
+          // pans the table out from under it at the same time.
+          this.table.claimPointerGesture(event, 'etTableReorder');
 
           return dragGestureFrom(event, hit.cell).pipe(
             tap((gesture) => {
@@ -150,6 +167,7 @@ export class TableReorderDirective {
 
     this.dragging.set({ key, header });
     this.pointer.set({ x: at.clientX, y: at.clientY });
+    this.pointerX = at.clientX;
     this.target.set(null);
     this.previewSignature = null;
     this.markDragging(key, true);
@@ -159,8 +177,10 @@ export class TableReorderDirective {
     if (!this.dragging()) return;
 
     this.pointer.set({ x: at.clientX, y: at.clientY });
+    this.pointerX = at.clientX;
     this.resolveDropTarget(at.clientX);
     this.previewLandingOrder();
+    this.syncAutoScroll(at.clientX);
   }
 
   /** The browser took the gesture away, so there is no drop the user chose - slide back and clean up. */
@@ -173,6 +193,8 @@ export class TableReorderDirective {
   private end() {
     const dragging = this.dragging();
     const target = this.target();
+
+    this.stopAutoScroll();
 
     if (dragging) this.markDragging(dragging.key, false);
 
@@ -196,6 +218,63 @@ export class TableReorderDirective {
     // reordered grid has actually rendered - dropping them any earlier flashes the old order for a
     // frame. Cleared in the write phase of that render, which is before it paints.
     afterNextRender({ write: () => this.clearPreview({ animated: false }) }, { injector: this.injector });
+  }
+
+  /**
+   * Scroll the table while the drag is held near an inline edge, so a column can be dropped past the
+   * visible range. A reorder is otherwise limited to what fits the viewport: the pointer is already
+   * down, so neither the wheel nor a drag-to-scroll pan is available to bring the target column in.
+   *
+   * The step grows with how far into the zone the pointer is, so the edge itself runs fastest and a
+   * pointer that only grazes the zone barely moves the table.
+   *
+   * Measured from the inner edge of each pinned block, not from the table's own edges: a pinned column
+   * covers that strip of the viewport, so a zone laid on the viewport edge sits underneath it and the
+   * drag has to travel all the way past the pinned column before the table moves at all.
+   */
+  private syncAutoScroll(clientX: number) {
+    const bounds = this.table.element.getBoundingClientRect();
+    const frozen = this.table.frozenInsets();
+    const intoStart = AUTO_SCROLL_ZONE_PX - (clientX - (bounds.left + frozen.start));
+    const intoEnd = AUTO_SCROLL_ZONE_PX - (bounds.right - frozen.end - clientX);
+    const depth = intoStart > 0 ? -intoStart : intoEnd > 0 ? intoEnd : 0;
+    const ratio = Math.min(Math.abs(depth), AUTO_SCROLL_ZONE_PX) / AUTO_SCROLL_ZONE_PX;
+
+    this.autoScrollStep = Math.sign(depth) * ratio * AUTO_SCROLL_MAX_STEP_PX;
+
+    if (this.autoScrollStep === 0) {
+      this.stopAutoScroll();
+
+      return;
+    }
+
+    if (this.autoScrollFrame === null) this.stepAutoScroll();
+  }
+
+  private stepAutoScroll() {
+    const host = this.table.element;
+    const before = host.scrollLeft;
+
+    host.scrollLeft = before + this.autoScrollStep;
+
+    // The table is already at that end, so stop rather than run a frame per tick doing nothing.
+    if (host.scrollLeft === before) {
+      this.stopAutoScroll();
+
+      return;
+    }
+
+    this.resolveDropTarget(this.pointerX);
+    this.previewLandingOrder();
+
+    this.autoScrollFrame = requestAnimationFrame(() => this.stepAutoScroll());
+  }
+
+  private stopAutoScroll() {
+    if (this.autoScrollFrame !== null) cancelAnimationFrame(this.autoScrollFrame);
+
+    this.autoScrollFrame = null;
+    this.autoScrollStep = 0;
   }
 
   /**

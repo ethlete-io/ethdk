@@ -30,7 +30,7 @@ export const BUTTON_VARIANTS = {
   TRANSPARENT: 'transparent',
 } as const;
 
-type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
+export type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 
 export const BUTTON_SPINNER_CONFIG: Record<ButtonSize, { diameter: number; strokeWidth: number }> = {
   xs: { diameter: 12, strokeWidth: 1.5 },

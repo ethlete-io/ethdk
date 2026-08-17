@@ -26,6 +26,14 @@
     }
   }
 
+  /* The cell clips its overflow like every other one, so the checkbox's own ring - 3px outside it by
+     default - would be cut off on all four sides. Pulled inside instead, and set on the checkbox rather
+     than on the cell: `et-focus-ring` declares the offset on itself, and a property an element declares
+     beats one it inherits. */
+  .et-table-select-cell et-checkbox {
+    --_et-focus-ring-offset: -2px;
+  }
+
   /* Selected rows carry a persistent accent tint (opaque variant on pinned cells, like stripe/hover). */
   .et-table-row--selected .et-table-cell {
     background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 12%, transparent);
@@ -36,7 +44,7 @@
     background: color-mix(
       in srgb,
       var(--et-theme-color-primary-solid, gray) 12%,
-      var(--et-surface-background-solid, Canvas)
+      var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
     );
   }
 
@@ -52,7 +60,7 @@
       background: color-mix(
         in srgb,
         var(--et-theme-color-primary-solid, gray) 18%,
-        var(--et-surface-background-solid, Canvas)
+        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
       );
     }
   }

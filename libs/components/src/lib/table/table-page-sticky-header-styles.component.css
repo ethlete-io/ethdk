@@ -1,0 +1,59 @@
+@layer components {
+  @property --et-table-sticky-header-offset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  /* Written by `etTablePageStickyHeader` whenever the layout changes: how far the header row can travel,
+     and the two page-scroll offsets it travels between. Lengths, so the animation below can read them
+     straight into `animation-range`. */
+  @property --_et-table-page-header-travel {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --_et-table-page-header-from {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --_et-table-page-header-to {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @keyframes et-table-page-header-travel {
+    to {
+      transform: translateY(var(--_et-table-page-header-travel));
+    }
+  }
+
+  /* The header row travels down the grid as the page scrolls past the table. That is the only way it can
+     pin to the viewport: the host is the table's horizontal scroll container, so a `position: sticky`
+     header inside it pins to the host's own top edge and to nothing else.
+
+     Driven by a scroll timeline rather than by a scroll listener, so the travel is the compositor's work
+     and the header cannot fall behind the page. `both` holds the two ends of the range, which is what
+     makes this a clamp: nothing before the table reaches the top of the viewport, no further than the
+     last row. The row keeps its place in the grid throughout, so the tracks, the pinned columns and the
+     resize grips all behave exactly as they do in a bounded table. */
+  @supports (animation-timeline: scroll()) {
+    .et-table-host--page-sticky-header .et-table-header-cell {
+      z-index: 4;
+      animation: et-table-page-header-travel linear both;
+      animation-timeline: scroll(root block);
+      animation-range: var(--_et-table-page-header-from) var(--_et-table-page-header-to);
+    }
+
+    /* Keeps the base sheet's plain-then-pinned order, two steps higher. Raising the whole header on its
+       own leaves a plain cell tied with a pinned one, and a column scrolling away then paints over the
+       pinned column instead of passing behind it. */
+    .et-table-host--page-sticky-header .et-table-header-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+      z-index: 6;
+    }
+  }
+}

@@ -25,7 +25,7 @@ const columns = () =>
       [columns]="cols()"
       [data]="data()"
       [rowKey]="rowKey"
-      [etTableSelection]="{ selection: selection, selectableRow: selectableRow() }"
+      [etTableSelection]="{ selection: selection, selectableRow: selectableRow(), side: side() }"
     />
   `,
   imports: [TABLE_IMPORTS, TABLE_SELECTION_IMPORTS],
@@ -35,6 +35,7 @@ class HostComponent {
   public data = signal<Person[]>(PEOPLE);
   public selection = signal<Set<unknown>>(new Set());
   public selectableRow = signal<((row: Person) => boolean) | undefined>(undefined);
+  public side = signal<'start' | 'end' | undefined>(undefined);
   public feature = viewChild.required<TableSelectionDirective<Person>>(TableSelectionDirective);
 
   public rowKey = (row: Person) => row.id;
@@ -56,6 +57,30 @@ describe('TableSelectionDirective', () => {
 
     expect(host.querySelectorAll('.et-table-select-cell').length).toBe(1 + PEOPLE.length);
     expect(host.querySelectorAll('.et-table-select-cell et-checkbox').length).toBe(1 + PEOPLE.length);
+  });
+
+  it('puts the checkbox column at the leading edge by default', () => {
+    const fixture = create();
+    const row = (fixture.nativeElement as HTMLElement).querySelector('.et-table-row') as HTMLElement;
+
+    expect(row.firstElementChild?.classList.contains('et-table-select-cell')).toBe(true);
+  });
+
+  it('moves the checkbox column to the trailing edge on side: end', () => {
+    const fixture = create();
+
+    fixture.componentInstance.side.set('end');
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const row = host.querySelector('.et-table-row') as HTMLElement;
+    const headerRow = host.querySelector('.et-table-header-row') as HTMLElement;
+
+    // Still one column, now ending every row kind rather than starting it.
+    expect(host.querySelectorAll('.et-table-select-cell').length).toBe(1 + PEOPLE.length);
+    expect(row.firstElementChild?.classList.contains('et-table-select-cell')).toBe(false);
+    expect(row.lastElementChild?.classList.contains('et-table-select-cell')).toBe(true);
+    expect(headerRow.lastElementChild?.classList.contains('et-table-select-cell')).toBe(true);
   });
 
   it('selects and deselects a single row (keyed by rowKey)', () => {

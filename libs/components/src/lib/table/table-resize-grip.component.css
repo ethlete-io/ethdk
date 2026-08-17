@@ -18,13 +18,15 @@
     cursor: col-resize;
   }
 
+  /* On the boundary, not a few pixels inside it: the column rules of `appearance="grid"`, and any rule an
+     app draws at a pinned column's edge, sit at the trailing edge of this same cell. A grip off them by
+     3px reads as a second, misaligned line rather than as the handle of that boundary. */
   .et-table-resize-grip::after {
     content: '';
     position: absolute;
     inset-block: 20%;
-    inset-inline-end: 3px;
-    inline-size: 2px;
-    border-radius: 1px;
+    inset-inline-end: 0;
+    inline-size: 1px;
     background: var(--et-surface-border-solid, rgb(128 128 128 / 0.4));
     transition: background 120ms ease;
   }
@@ -32,6 +34,7 @@
   @media (hover: hover) {
     .et-table-resize-grip:where(:hover)::after {
       inset-block: 0;
+      inline-size: 2px;
       background: var(--et-theme-color-primary-solid, currentColor);
     }
   }
@@ -45,7 +48,7 @@
 
     .et-table-resize-grip::after {
       inset-block: 15%;
-      inline-size: 3px;
+      inline-size: 2px;
     }
   }
 }

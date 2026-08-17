@@ -56,6 +56,7 @@ export class TableStickyColumnsDirective {
 
   private offsets = signal<StickyOffsets>({ start: {}, end: {} });
   private leadOffsets = signal<Record<string, number>>({});
+  private trailOffsets = signal<Record<string, number>>({});
 
   /**
    * True when pinning is measured to crowd the non-pinned columns off-screen. Pinning is then dropped so
@@ -65,6 +66,8 @@ export class TableStickyColumnsDirective {
   public suppressed = signal(false);
 
   private insets = signal({ start: 0, end: 0 });
+
+  private enabled = computed(() => this.config().enabled ?? true);
 
   /** Whether any visible column is pinned to the inline-start edge (which also pins the lead columns). */
   public hasStickyStart = computed(
@@ -77,11 +80,12 @@ export class TableStickyColumnsDirective {
   );
 
   constructor() {
-    const enabled = computed(() => this.config().enabled ?? true);
+    const enabled = this.enabled;
 
     this.table.registerColumnPinning({
       cellPinning: (key) => this.cellPinning(key),
       leadPinning: (key) => this.leadPinning(key),
+      trailPinning: (key) => this.trailPinning(key),
       insets: () => this.insets(),
       hasStickyEnd: () => this.hasStickyEnd(),
       enabled,
@@ -117,6 +121,24 @@ export class TableStickyColumnsDirective {
         leadWidth += leadCells[index]?.getBoundingClientRect().width ?? 0;
       });
 
+      // The trailing utility columns stack from the trailing edge, so they are summed in reverse: the
+      // last one sits at the edge and each one before it clears the ones after it.
+      const trailCells = this.table.trailHeaderCellElements();
+      const trailMeta = this.table.trailColumnsMeta();
+      const trailOffsets: Record<string, number> = {};
+      let trailWidth = 0;
+
+      for (let index = trailMeta.length - 1; index >= 0; index--) {
+        const trail = trailMeta[index];
+
+        if (!trail) continue;
+
+        trailOffsets[trail.key] = trailWidth;
+        // Same as above: a running sum over all trailing cells, not one observable element.
+        // eslint-disable-next-line ethlete/prefer-element-dimensions
+        trailWidth += trailCells[index]?.getBoundingClientRect().width ?? 0;
+      }
+
       const start: Record<string, number> = {};
       let left = leadWidth;
       let pinnedStartWidth = 0;
@@ -136,7 +158,9 @@ export class TableStickyColumnsDirective {
       }
 
       const end: Record<string, number> = {};
-      let right = 0;
+      // The trailing utility columns own that edge, so an end-pinned data column stacks after them -
+      // the mirror of `left` starting at the leading utility columns' width.
+      let right = trailWidth;
 
       for (let index = columns.length - 1; index >= 0; index--) {
         const column = columns[index];
@@ -153,17 +177,19 @@ export class TableStickyColumnsDirective {
       // start pin makes them sticky too) leave the scrollable ones too little room to ever surface. Track
       // widths don't change when we unpin, so this can't oscillate.
       const containerWidth = this.hostDimensions()?.client?.width ?? 0;
-      const pinnedWidth = pinnedStartWidth + pinnedEndWidth + (hasStartPin ? leadWidth : 0);
+      // A trailing utility column is pinned whenever pinning is live, so its width always counts here.
+      const pinnedWidth = pinnedStartWidth + pinnedEndWidth + (hasStartPin ? leadWidth : 0) + trailWidth;
       const hasUnpinned = columns.some((column) => !column?.sticky);
       const suppressed = hasUnpinned && containerWidth > 0 && containerWidth - pinnedWidth < MIN_UNPINNED_SPACE;
 
       this.leadOffsets.set(leadOffsets);
+      this.trailOffsets.set(trailOffsets);
       this.offsets.set({ start, end });
       this.suppressed.set(suppressed);
       this.insets.set(
         suppressed
           ? { start: 0, end: 0 }
-          : { start: hasStartPin ? leadWidth + pinnedStartWidth : 0, end: pinnedEndWidth },
+          : { start: hasStartPin ? leadWidth + pinnedStartWidth : 0, end: pinnedEndWidth + trailWidth },
       );
     });
   }
@@ -188,5 +214,16 @@ export class TableStickyColumnsDirective {
     const pinned = this.hasStickyStart();
 
     return { sticky: pinned, offset: pinned ? (this.leadOffsets()[key] ?? 0) : null };
+  }
+
+  /**
+   * Whether the trailing utility columns are pinned to the trailing edge, and how far in. Unlike the
+   * leading ones, these do not wait for a pinned data column: a feature puts its column at that edge to
+   * keep it reachable, so pinning is live means pinned - see {@link TableLeadColumn.side}.
+   */
+  public trailPinning(key: string) {
+    const pinned = this.enabled() && !this.suppressed();
+
+    return { sticky: pinned, offset: pinned ? (this.trailOffsets()[key] ?? 0) : null };
   }
 }

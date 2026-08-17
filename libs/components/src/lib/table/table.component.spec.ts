@@ -1035,6 +1035,49 @@ describe('TableComponent', () => {
     });
   });
 
+  describe('pointer gesture claims', () => {
+    const pointer = (type: string, pointerId = 1) => new PointerEvent(type, { pointerId, bubbles: true });
+
+    it('reports the feature that claimed a pointer, and nothing for an unclaimed one', () => {
+      const { componentInstance: table } = create(columns());
+      const down = pointer('pointerdown');
+
+      expect(table.pointerGestureClaim(down)).toBeNull();
+
+      table.claimPointerGesture(down, 'etTableReorder');
+
+      expect(table.pointerGestureClaim(down)).toBe('etTableReorder');
+      expect(table.pointerGestureClaim(pointer('pointerdown', 2))).toBeNull();
+    });
+
+    it('releases the claim when the pointer is let go or the gesture is taken away', () => {
+      const { componentInstance: table } = create(columns());
+      const first = pointer('pointerdown');
+
+      table.claimPointerGesture(first, 'etTableReorder');
+      document.dispatchEvent(pointer('pointerup'));
+
+      expect(table.pointerGestureClaim(first)).toBeNull();
+
+      const second = pointer('pointerdown', 3);
+
+      table.claimPointerGesture(second, 'etTableReorder');
+      document.dispatchEvent(pointer('pointercancel', 3));
+
+      expect(table.pointerGestureClaim(second)).toBeNull();
+    });
+
+    it('leaves a claim alone when a different pointer ends', () => {
+      const { componentInstance: table } = create(columns());
+      const down = pointer('pointerdown');
+
+      table.claimPointerGesture(down, 'etTableReorder');
+      document.dispatchEvent(pointer('pointerup', 2));
+
+      expect(table.pointerGestureClaim(down)).toBe('etTableReorder');
+    });
+  });
+
   describe('row interaction', () => {
     @Component({
       template: `
@@ -1135,19 +1178,24 @@ describe('TableComponent', () => {
     const links = (fixture: ComponentFixture<unknown>) =>
       Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('a.et-table-row-link'));
 
-    it('renders one anchor per linked row, named by the cell it sits in', () => {
+    it('renders one anchor per linked row, spanning the row and named by the identity cell', () => {
       const fixture = build();
       const anchors = links(fixture);
 
       expect(anchors.length).toBe(1);
 
       const anchor = anchors[0] as HTMLAnchorElement;
-      const cell = anchor.parentElement as HTMLElement;
+      const row = anchor.parentElement as HTMLElement;
 
       expect(anchor.getAttribute('href')).toBe('/people/1');
-      // The link sits in the first column that holds no controls of its own, and is named by it.
+      // A child of the row, not of a cell: a pinned cell is `position: sticky` and would otherwise be
+      // the anchor's containing block, shrinking the row's hit area to that one column.
+      expect(row.classList.contains('et-table-row')).toBe(true);
+
+      // Named by the first column that holds no controls of its own.
+      const cell = row.querySelector(`[id="${anchor.getAttribute('aria-labelledby')}"]`) as HTMLElement;
+
       expect(cell.dataset['colKey']).toBe('name');
-      expect(anchor.getAttribute('aria-labelledby')).toBe(cell.id);
       expect(cell.textContent).toContain('Ada');
     });
 

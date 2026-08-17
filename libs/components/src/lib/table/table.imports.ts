@@ -2,11 +2,13 @@ import { TableCellErrorTooltipDirective } from './table-cell-error-tooltip.direc
 import { TableColumnChooserComponent } from './table-column-chooser.component';
 import { TableColumnMenuDirective } from './table-column-menu.directive';
 import { TableCsvExportDirective } from './table-csv-export.directive';
+import { TableDragScrollDirective } from './table-drag-scroll.directive';
 import { TableFiltersDirective } from './table-filters.directive';
 import { TableGroupHeadersDirective } from './table-group-headers.directive';
 import { TableFooterDirective } from './headless/table-footer.directive';
 import { TableInlineEditDirective } from './table-inline-edit.directive';
 import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
+import { TablePageStickyHeaderDirective } from './table-page-sticky-header.directive';
 import { TableReorderDirective } from './table-reorder.directive';
 import { TableRowExpansionDirective } from './table-row-expansion.directive';
 import { TableRowRouterLinkDirective } from './table-row-router-link.directive';
@@ -86,6 +88,13 @@ export const TABLE_INLINE_EDIT_IMPORTS = [TableInlineEditDirective, TableCellEdi
 /** Drag-to-resize column widths (`etTableResize`). Pulls in the drag primitives. */
 export const TABLE_RESIZE_IMPORTS = [TableResizeDirective] as const;
 
+/**
+ * Drag-to-scroll (`etTableDragScroll`): pressing in the table and dragging pans it, so a wide table is
+ * reachable without the scrollbar. Pulls in the drag primitives - which it shares with
+ * {@link TABLE_RESIZE_IMPORTS} and {@link TABLE_REORDER_IMPORTS} when those are used too.
+ */
+export const TABLE_DRAG_SCROLL_IMPORTS = [TableDragScrollDirective] as const;
+
 /** Drag-to-reorder columns (`etTableReorder`), with the drag ghost and drop indicator. */
 export const TABLE_REORDER_IMPORTS = [TableReorderDirective] as const;
 
@@ -104,6 +113,12 @@ export const TABLE_GROUP_HEADERS_IMPORTS = [TableGroupHeadersDirective] as const
  * chrome, which is why it is separate - a table that pins nothing measures nothing.
  */
 export const TABLE_STICKY_COLUMNS_IMPORTS = [TableStickyColumnsDirective] as const;
+
+/**
+ * A viewport-pinned header row (`etTablePageStickyHeader`) for a table the page scrolls rather than the
+ * table itself. A table with a height of its own pins its header without any of this.
+ */
+export const TABLE_PAGE_STICKY_HEADER_IMPORTS = [TablePageStickyHeaderDirective] as const;
 
 /**
  * Loading placeholders (`etTableSkeleton`): a block of skeleton rows while loading with no rows yet, a

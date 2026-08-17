@@ -28,11 +28,13 @@ the table. A table that doesn't import a feature never pays for its code.
 | Column chooser       | `TABLE_COLUMN_CHOOSER_IMPORTS`     | `<et-table-column-chooser>` | the [menu](/components/menu) system                  |
 | Column resize        | `TABLE_RESIZE_IMPORTS`             | `etTableResize`             | the drag primitives                                  |
 | Column reorder       | `TABLE_REORDER_IMPORTS`            | `etTableReorder`            | the drag primitives                                  |
+| Drag to scroll       | `TABLE_DRAG_SCROLL_IMPORTS`        | `etTableDragScroll`         | the drag primitives                                  |
 | Row selection        | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
 | Row expansion        | `TABLE_ROW_EXPANSION_IMPORTS`      | `etTableRowExpansion`       | the detail row's chrome + grow-open animation        |
 | Row link routing     | `TABLE_ROW_ROUTER_LINK_IMPORTS`    | `etTableRowRouterLink`      | `@angular/router`                                    |
 | Loading placeholders | `TABLE_SKELETON_IMPORTS`           | `etTableSkeleton`           | the [skeleton](/components/skeleton) component       |
 | Sticky columns       | `TABLE_STICKY_COLUMNS_IMPORTS`     | `etTableStickyColumns`      | the offset measuring (nothing else)                  |
+| Page-sticky header   | `TABLE_PAGE_STICKY_HEADER_IMPORTS` | `etTablePageStickyHeader`   | nothing                                              |
 | Grouped headers      | `TABLE_GROUP_HEADERS_IMPORTS`      | `etTableGroupHeaders`       | the spanning header row + its chrome                 |
 | Virtual scroll       | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
 | Cell error tooltip   | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
@@ -153,12 +155,17 @@ a border, a radius, and a gap to the next row.
 
 <StoryEmbed id="components-data-display-table--card-rows" height="420px" />
 
-Two custom properties tune it:
+Three custom properties tune it:
 
-| Property                | Default | Sets                         |
-| ----------------------- | ------- | ---------------------------- |
-| `--et-table-row-gap`    | `8px`   | The space between two cards. |
-| `--et-table-row-radius` | `10px`  | The card's corner radius.    |
+| Property                      | Default                     | Sets                                                           |
+| ----------------------------- | --------------------------- | -------------------------------------------------------------- |
+| `--et-table-row-gap`          | `8px`                       | The space between two cards.                                   |
+| `--et-table-row-radius`       | `10px`                      | The card's corner radius.                                      |
+| `--et-table-row-border-color` | `--et-surface-border-solid` | The card's 1px ring, and the corner it holds at a pinned edge. |
+
+Set `--et-table-row-border-color: transparent` for cards that read by their tint alone, which is
+what a design whose other cards carry no border wants. The rounded corner survives it: the corner
+a pinned column holds is cut from the page's own background, not drawn from the ring.
 
 The columns still line up with the header, because the row box is a
 [`subgrid`](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout/Subgrid) of the
@@ -166,6 +173,13 @@ table's own column tracks - the same shape the [detail row](#row-expansion) alre
 leading and trailing cell take the row's corner radii, so a cell background (hover, a selected
 row, a pinned column) can't square off a corner, whichever column happens to be first after a
 reorder or a hidden column.
+
+**A card's ends follow its pinned columns.** A card wider than the viewport has its own ends
+off-screen, so a corner layer in the row holds each end at the [pinned](#sticky-columns) edge and
+draws it there: the corner, its border arc, and the leading line between them. The card therefore
+reads as a card at every scroll offset, rather than as a box cut off square at the pinned column.
+The layer is a child of the row rather than of the end cell, because a pinned cell is a stacking
+context and a corner drawn inside one cannot rise over the card's own ring.
 
 The row box is what a [row link](#row-links) stretches over, so `rowLink` turns it on in any
 appearance. Two things it changes, both by design:
@@ -585,6 +599,10 @@ one visit. "Show all columns" resets; it's always present, disabled when nothing
 hidden, so the menu never resizes mid-use. The last visible column's checkbox is
 disabled: a table with no columns has nothing to show.
 
+Its trigger takes a `size` (`sm`) and a `variant` (`transparent`). Both defaults suit the
+table's own chrome; set them to match the other controls when the chooser sits in a toolbar
+of yours, so it reads as one of them rather than as a stray link.
+
 ::: warning Don't put a visibility list inside the header
 This is a separate component, not an entry in the per-column `⋮`, on purpose. A list
 that hides columns cannot hang off a control inside the header it edits: hiding a
@@ -724,7 +742,7 @@ with `exportAs`:
 ## Selection
 
 Selection is **opt-in**: import `TABLE_SELECTION_IMPORTS` and put `etTableSelection` on
-the table to prepend a checkbox column. Its header checkbox selects or clears every
+the table to add a checkbox column. Its header checkbox selects or clears every
 selectable row (indeterminate when only some are). Pass your own signal as `selection`
 and the feature writes the selected row keys into it - set the table's `rowKey` so a
 selection survives sorting, filtering and data changes.
@@ -737,10 +755,16 @@ protected selected = signal<Set<unknown>>(new Set());
 <et-table [data]="users()" [columns]="COLUMNS" [rowKey]="userId" [etTableSelection]="{ selection: selected }" />
 ```
 
-| `etTableSelection` option | Default  | Description                                                       |
-| ------------------------- | -------- | ----------------------------------------------------------------- |
-| `selection`               | internal | The `WritableSignal<Set<unknown>>` the selected row keys live in. |
-| `selectableRow`           | all rows | `(row: T) => boolean` gating which rows can be selected.          |
+| `etTableSelection` option | Default  | Description                                                           |
+| ------------------------- | -------- | --------------------------------------------------------------------- |
+| `selection`               | internal | The `WritableSignal<Set<unknown>>` the selected row keys live in.     |
+| `selectableRow`           | all rows | `(row: T) => boolean` gating which rows can be selected.              |
+| `side`                    | `start`  | Which inline edge the checkbox column sits at - `'start'` or `'end'`. |
+
+`side: 'end'` puts the checkbox column after the data columns, where it ends every row. With
+[`etTableStickyColumns`](#sticky-columns) on it is pinned to that edge and stays put while the
+table scrolls sideways - a column moved there is one meant to stay reachable, so it does not
+wait for a data column to be pinned the way the leading utility columns do.
 
 Its two accessible labels (`selectAllRows`, `selectRow`) come from the table's
 [label set](#localization).
@@ -803,20 +827,19 @@ of your own says so with `interactive: true`:
 actions: { header: '', value: (o) => o, interactive: true, align: 'end', width: '120px' },
 ```
 
-Such a column is also never the one that hosts the link. The anchor goes in the **first visible
-column that isn't `interactive`**, and takes its accessible name from that cell's content - so
-that column should be the one a reader identifies the row by, which the leftmost usually is.
+The anchor takes its accessible name from the **first visible column that isn't `interactive`** -
+so that column should be the one a reader identifies the row by, which the leftmost usually is.
+An `interactive` column is never picked for it.
 
-A [pinned column](#sticky-columns-footer) is positioned too, so its cells sit above the link
-area as well: pinning the identity column shrinks the clickable area to that column. Pin an
-`interactive` column instead where you can.
+The link covers the row whichever columns are [pinned](#sticky-columns-footer): the anchor is a
+child of the row box rather than of a cell, so a pinned cell - which is `position: sticky`, and
+would otherwise be the anchor's containing block - cannot shrink the hit area to its own column.
 
 #### Keyboard and assistive tech
 
 The row is **one** stop in the tab order and **one** link in the accessibility tree: the anchor
 is it, and a linked row is never itself focusable (even with `rowInteractive` set). `role="row"`
-stays on the row and `role="gridcell"` on its cells, so the grid semantics are unchanged - the
-anchor lives inside a cell, which ARIA allows.
+stays on the row and `role="gridcell"` on its cells, so the grid semantics are unchanged.
 
 With [`etTableKeyboardNav`](#keyboard-navigation) the link behaves like any other control in a
 cell: `Enter` drills into it from the focused cell, `Escape` comes back out. Clicking a row
@@ -864,6 +887,51 @@ scrolls:
 <et-table [data]="rows()" [columns]="COLUMNS" style="block-size: 320px" />
 ```
 
+### On a page that scrolls instead
+
+A list that fills a page is often better left unbounded: the table grows to its rows and the
+document scrolls, so there is no box within a box and no second scrollbar. The header then leaves
+with the page - a bounded height is what its `position: sticky` pins against, and the table has
+none.
+
+`etTablePageStickyHeader` pins it to the viewport instead. It travels the header row down the grid
+by the distance the page has scrolled past the table, and stops it at the last row:
+
+```html
+<et-table [data]="rows()" [columns]="COLUMNS" etTablePageStickyHeader />
+```
+
+The row keeps its place in the grid the whole time, so the tracks, the pinned columns and the
+resize grips are untouched, and the header still scrolls sideways with the columns.
+
+Set `--et-table-sticky-header-offset` to stop it lower than the top of the viewport - under a page
+header or a toolbar that is pinned there itself:
+
+```css
+.my-list-table {
+  --et-table-sticky-header-offset: 6.4rem;
+}
+```
+
+Not for a bounded table: one with a height of its own already pins its header, and
+[virtualization](#virtualization) needs that bounded height to work at all.
+
+## Drag to scroll
+
+A wide table is reachable by the scrollbar and by a horizontal wheel, and a mouse user has
+neither close to hand. `etTableDragScroll` adds the third way: press anywhere in the table
+and drag, and it pans.
+
+```html
+<et-table [data]="rows()" [columns]="COLUMNS" etTableDragScroll />
+```
+
+A press that does not travel is still a click, so rows, row links and header controls behave
+exactly as they did. A press that becomes a drag swallows the click it would have ended on, so
+panning off a row link does not also follow it. Dragging inside a text field selects text as
+usual, and a touch pointer keeps the browser's own scrolling - the feature only takes over for
+a mouse or a pen.
+
 ## Sticky columns & footer
 
 Pinning is **opt-in**: import `TABLE_STICKY_COLUMNS_IMPORTS` and put `etTableStickyColumns`
@@ -883,11 +951,28 @@ pinning is **automatically suspended** and every column scrolls normally. It
 resumes once there's room again, so the same table works on desktop and mobile
 without a breakpoint of your own.
 
-Whenever a table scrolls horizontally, a **soft gradient marks each edge that has
-content behind it**. With pinned columns the gradient is inset to sit at the pinned
-column's _inner_ edge - the boundary rows actually disappear under - rather than at
-the viewport's edge on top of the pin. Size it with `--et-table-scroll-fade-size`
-(`28px`).
+A pinned column casts a **shadow at its inner edge** - the boundary rows disappear
+under - so it is obvious where the pinned part ends and the scrolling part begins. Two pinned
+columns at the same edge cast one shadow, at the boundary of the pair, not one each. An
+edge with nothing pinned gets a **soft gradient** instead, on the same boundary and for
+the same reason; the two are never drawn together, since two marks on one boundary read
+as a smear. Size the gradient with `--et-table-scroll-fade-size` (`28px`) and recolour it
+with `--et-table-scroll-fade-color`; the shadow takes `--et-table-pin-shadow-color`, which is
+the same mark the sticky header and the footer bar cast. By default all three mix the surface's
+own `--et-surface-interaction-solid`, so they darken a light table and lighten a dark one.
+
+On `cards` the mark stays beside a pinned cell and never reaches the gaps above and below it,
+so the cards keep their ends.
+
+A table with a bounded height marks its other two edges the same way: while rows are
+passing under the sticky header, or under the footer bar, that bar casts a shadow. A row
+cut off mid-height reads as a row behind a bar rather than as a broken one - which matters
+most on `cards`, where the cut goes straight through a card.
+
+Each axis also takes a colour of its own - `--et-table-pin-shadow-color-inline` for a pinned
+column's edge, `--et-table-pin-shadow-color-block` for the two bars - and both fall back to
+`--et-table-pin-shadow-color`. Take the inline one to `transparent` where your own design
+draws a rule at that edge: a shadow beside a rule reads as a second border.
 
 ```ts
 @Component({
@@ -986,8 +1071,10 @@ the width-driven auto-collapse), see the [pagination guide](/components/paginati
 ## Empty state
 
 When `data` is empty the table renders a single full-width row carrying the `empty`
-label. Replace it with structure - either a template (which gets the row list) or
-projected content:
+label. It is centred on the **scroll viewport**, not on the columns, and stays there while the
+table scrolls sideways - a message centred on the tracks of a wide table sits half a scroll
+extent away from the reader. The error state works the same way. Replace either with structure -
+a template (which gets the row list) or projected content:
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" [emptyTemplate]="nothing">
@@ -1765,12 +1852,23 @@ surface scope - header/body text from `--et-surface-color-*-solid`, separators
 from `--et-surface-border-solid`, and the row hover tint from
 `--et-surface-interaction-solid`. Cell padding is tunable via the
 `--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom
-properties, and the leading utility columns via `--et-table-expander-width`
+properties, and the utility columns via `--et-table-expander-width`
 (`32px`) / `--et-table-select-width` (`44px`, matching the ≥44px touch-target
 guideline the bare label-less checkbox otherwise falls short of) - both sized to
 their control, so the expander button and the checkbox keep their own size even
-if you set these narrower. [Card rows](#card-rows) add `--et-table-row-gap` (`8px`)
-and `--et-table-row-radius` (`10px`).
+if you set these narrower. [Card rows](#card-rows) add `--et-table-row-gap` (`8px`),
+`--et-table-row-radius` (`10px`) and `--et-table-row-border-color`.
+
+`--et-table-header-background-color` paints the two bars rows pass under - the sticky
+header row and the footer bar - over whatever the appearance would have used. Both read
+it, so recolouring one cannot leave the other behind. Reach for it where the appearance's
+own band is too close to the surface under it to read as a header: `cards` on a near-black
+page, for one, where the band and the page are the same near-black.
+
+The header's filter and column-menu triggers are `xs` icon buttons with a 24px floor, so an
+app that scales its own `xs` below the [WCAG 2.2 target size
+minimum](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html) doesn't take
+them with it. Each icon keeps its own size, and an app whose `xs` is larger keeps that.
 
 All of the table's metrics are px, not `rem`, so they don't shift with the host app's
 root font size.

@@ -1,5 +1,5 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { ButtonComponent } from '../button/button.component';
+import { BUTTON_SIZES, BUTTON_VARIANTS, ButtonComponent, ButtonSize, ButtonVariant } from '../button/button.component';
 import { EYE_ICON } from '../icon/headless/eye-icons';
 import { GRID_2X2_ICON } from '../icon/headless/grid-2x2-icon';
 import { provideIcons } from '../icon/headless/icon-provider';
@@ -58,6 +58,18 @@ export type TableColumnVisibilityHost = Pick<
 export class TableColumnChooserComponent {
   /** The table whose columns this toggles - bind a template ref to the `<et-table>`. */
   public table = input.required<TableColumnVisibilityHost>();
+
+  /**
+   * Size of the trigger button. The default suits the chooser sitting in the table's own chrome; match
+   * it to the other controls when you put it in a toolbar of your own.
+   */
+  public size = input<ButtonSize>(BUTTON_SIZES.SM);
+
+  /**
+   * Shape of the trigger button, for the same reason as {@link size}: the default reads as table chrome,
+   * and a chooser standing among an app's own buttons has to read as one of them.
+   */
+  public variant = input<ButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
 
   /**
    * The bound table's wording, so the chooser needs no strings of its own - localize it with

@@ -1,0 +1,17 @@
+@layer components {
+  /* Only where the table can actually be dragged: a table whose columns fit takes no grab cursor, and a
+     touch pointer already scrolls it by dragging without any of this. */
+  @media (hover: hover) and (pointer: fine) {
+    .et-table-host--drag-scrollable {
+      cursor: grab;
+    }
+
+    /* On the host rather than only on the pointer's target: the drag runs under a pointer capture, so
+       the cursor has to hold while it travels over a cell, a link or the header. */
+    .et-table-host--dragging,
+    .et-table-host--dragging * {
+      cursor: grabbing !important;
+      user-select: none;
+    }
+  }
+}

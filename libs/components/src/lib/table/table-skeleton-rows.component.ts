@@ -37,6 +37,7 @@ type SkeletonRowVm = {
     @for (row of rows(); track row.key) {
       <div
         [style.--_et-table-row-h.px]="feature.measuredRowHeight()"
+        [class.et-table-row--box]="table.hasRowBox()"
         class="et-table-row et-table-row--placeholder et-skeleton--animated"
         role="row"
         aria-hidden="true"
@@ -59,6 +60,12 @@ type SkeletonRowVm = {
         }
         @if (table.hasFillerTrack()) {
           <div class="et-table-cell et-table-filler-cell" role="presentation"></div>
+        }
+        @for (trail of table.trailColumnsMeta(); track trail.key) {
+          <div [class]="trail.cellClass" class="et-table-cell" role="gridcell"></div>
+        }
+        @if (table.hasRowBox()) {
+          <div class="et-table-card-corners" role="presentation" aria-hidden="true"></div>
         }
       </div>
     }

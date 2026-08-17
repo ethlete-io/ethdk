@@ -13,6 +13,13 @@ export type TableSelectionConfig<T> = TableFeatureConfig & {
   selection?: WritableSignal<Set<unknown>>;
   /** Gate which rows can be selected. Defaults to all rows. */
   selectableRow?: (row: T) => boolean;
+  /**
+   * Which inline edge the checkbox column sits at. At `'end'` it ends every row and, with
+   * `etTableStickyColumns` on, stays pinned to that edge while the table scrolls sideways.
+   *
+   * @default 'start'
+   */
+  side?: 'start' | 'end';
 };
 
 /**
@@ -86,6 +93,7 @@ export class TableSelectionDirective<T> {
     this.table.registerLeadColumn({
       key: 'et-table-selection',
       width: 'var(--et-table-select-width, 44px)',
+      side: computed(() => this.config().side ?? 'start'),
       // leftmost: before the expander (order 100) and any other feature column
       order: 0,
       cellClass: 'et-table-select-cell',

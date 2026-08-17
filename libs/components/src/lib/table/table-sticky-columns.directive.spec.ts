@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { TableStickyColumnsDirective } from './table-sticky-columns.directive';
 import { TableComponent } from './table.component';
-import { TABLE_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS } from './table.imports';
+import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
 
 type Person = { id: number; name: string; role: string };
@@ -112,5 +112,36 @@ describe('TableStickyColumnsDirective', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     expect(host.querySelectorAll('.et-table-sticky-start, .et-table-sticky-end')).toHaveLength(0);
+  });
+
+  it('pins a trailing utility column to the trailing edge', () => {
+    @Component({
+      template: `
+        <et-table
+          [columns]="cols"
+          [data]="data"
+          [etTableSelection]="{ side: 'end' }"
+          [rowKey]="rowKey"
+          etTableStickyColumns
+        />
+      `,
+      imports: [TABLE_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS, TABLE_SELECTION_IMPORTS],
+    })
+    class TrailingSelectionHost {
+      public cols = pinned();
+      public data = PEOPLE;
+      public rowKey = (row: Person) => row.id;
+    }
+
+    const fixture = TestBed.createComponent(TrailingSelectionHost);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const selectCells = Array.from(host.querySelectorAll('.et-table-select-cell'));
+
+    // A trailing utility column does not wait for an end-pinned data column: pinning is live, so it is
+    // pinned - the header cell and every body cell alike.
+    expect(selectCells).toHaveLength(1 + PEOPLE.length);
+    expect(selectCells.every((cell) => cell.classList.contains('et-table-sticky-end'))).toBe(true);
+    expect(selectCells.some((cell) => cell.classList.contains('et-table-sticky-start'))).toBe(false);
   });
 });

@@ -1,10 +1,11 @@
-import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
   booleanAttribute,
   Component,
   computed,
   contentChild,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -17,9 +18,12 @@ import {
   signal,
   TemplateRef,
   untracked,
+  viewChild,
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter, fromEvent, merge, take, tap } from 'rxjs';
 import {
   injectColorThemes,
   ProvideColorDirective,
@@ -102,12 +106,14 @@ type TableHeaderCellVm<T> = TableCellPinning & {
   sortLabel: string | null;
   direction: TableSortDirection | null;
   template: TemplateRef<unknown> | null;
+  /** Whether the column has scrolled behind a pinned one, which its adornments must not outlive. */
+  obscured: boolean;
 };
 
 type TableBodyCellVm<T> = TableCellPinning & {
   key: string;
   align: string;
-  /** Whether this is the cell that hosts the row's link - at most one per row, and only when it has one. */
+  /** Whether this is the cell that names the row's link - at most one per row, and only when it has one. */
   linkHost: boolean;
   /** Whether the column says it holds its own controls, which a row link's hit area then stays out of. */
   interactive: boolean;
@@ -140,12 +146,13 @@ type TableBodyRowVm<T> = {
   link: TableRowLink | null;
   /** The `href` the row's anchor carries - the link itself, or a navigator's resolution of it. */
   href: string | null;
-  /** Id of the cell hosting the link, which names the (textless) anchor via `aria-labelledby`. */
+  /** Id of the cell naming the link, which names the (textless) anchor via `aria-labelledby`. */
   linkLabelId: string;
   /** The registered detail row to stamp under this row, while it is open. */
   detail: TableRowDetail | null;
   leads: TableLeadCellVm[];
   cells: TableBodyCellVm<T>[];
+  trails: TableLeadCellVm[];
 };
 
 type TableFooterCellVm = TableCellPinning & {
@@ -198,6 +205,7 @@ const NO_PIN: TableCellPinning = { stickyStart: false, stickyEnd: false, offsetS
 /** The same for a leading utility cell, and for the scroll fades' inline offsets. */
 const NO_LEAD_PIN = { sticky: false, offset: null };
 const NO_INSET = { start: 0, end: 0 };
+const EMPTY_COLUMN_KEYS: ReadonlySet<string> = /* @__PURE__ */ new Set();
 
 // Per-table counter, so the ids a row link is named by are unique across every table on the page.
 let uniqueTableId = 0;
@@ -231,12 +239,19 @@ let uniqueTableId = 0;
     '[attr.data-appearance]': 'appearance()',
     '[attr.data-density]': 'density()',
     '[attr.aria-busy]': 'resolvedLoading() ? "true" : null',
-    '(scroll)': 'syncScrollFades()',
+    '[class.et-table-host--scrolled-block-start]': 'blockScrollShadows().blockStart',
+    '[class.et-table-host--scrolled-block-end]': 'blockScrollShadows().blockEnd',
+    '[class.et-table-host--scrolled-inline-start]': 'scrollFades().start',
+    '[class.et-table-host--scrolled-inline-end]': 'scrollFades().end',
+    '[style.--_et-table-viewport-inline-size.px]': 'viewportInlineSize()',
+    '(scroll)': 'syncScrollState()',
   },
 })
 export class TableComponent<T> {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   protected injector = inject(Injector);
+  private destroyRef = inject(DestroyRef);
+  private document = inject(DOCUMENT);
   private injectedLabels = injectTableLabels();
 
   /** The rows to render. */
@@ -403,6 +418,8 @@ export class TableComponent<T> {
   // renders only when there's actually footer content.
   protected footerSlot = contentChild(TableFooterDirective);
 
+  private gridRef = viewChild<ElementRef<HTMLElement>>('grid');
+
   private headerCells = viewChildren<ElementRef<HTMLElement>>('headerCell');
 
   // Every rendered body cell (tagged with `data-col-key`); the first drives virtual-window
@@ -412,6 +429,9 @@ export class TableComponent<T> {
   // The rendered lead-column header cells, in lead-column order - measured so each lead column and
   // the pinned data columns know how far in they start.
   private leadHeaderCells = viewChildren<ElementRef<HTMLElement>>('leadHeaderCell');
+
+  // The same for the trailing utility columns, stacked from the trailing edge instead.
+  private trailHeaderCells = viewChildren<ElementRef<HTMLElement>>('trailHeaderCell');
 
   // Base of the ids a row link is named by - one per table, so two tables on a page can't collide.
   private readonly LINK_ID_PREFIX = `et-table-${uniqueTableId++}-row-link`;
@@ -542,16 +562,44 @@ export class TableComponent<T> {
   // during an `autosizeColumns` pass.
   private autosizing = signal<ReadonlySet<string>>(new Set());
 
+  /** Where content is currently scrolled out of view horizontally. */
+  public scrollFades = signal<{ start: boolean; end: boolean }>({ start: false, end: false });
+
+  /** The columns currently covered by a pinned one - see {@link syncObscuredColumns}. */
+  private obscuredColumns = signal<ReadonlySet<string>>(EMPTY_COLUMN_KEYS);
+
   /**
-   * Where content is currently scrolled out of view horizontally. Drives the edge gradients: they mark
-   * the boundary the rows disappear under, which is *not* the viewport edge when columns are pinned -
-   * a pinned column is the thing they slide beneath, so the fade sits at its inner edge instead. That
-   * offset is what a generic scroll-fade wrapper can't know, so the table draws its own.
+   * Whether rows are currently passing under the sticky header, and whether more follow under the footer
+   * bar. Both edges cut a row off mid-height - on `cards`, mid-card - and a cut with nothing to explain
+   * it reads as a broken box, so each edge casts a shadow while there is something behind it.
    */
-  protected scrollFades = signal<{ start: boolean; end: boolean }>({ start: false, end: false });
+  protected blockScrollShadows = signal<{ blockStart: boolean; blockEnd: boolean }>({
+    blockStart: false,
+    blockEnd: false,
+  });
 
   /** The inline offset (px) each edge gradient is pushed in by, so it clears any pinned columns. */
   protected fadeInset = computed(() => this.columnPinning()?.insets() ?? NO_INSET);
+
+  /**
+   * The scroll viewport's own inline size, published as a custom property for the rules that have to
+   * span it rather than the tracks - the empty and the error message. A row spans every column, which
+   * on a table wider than its viewport is not where the reader is looking.
+   */
+  protected viewportInlineSize = computed(() => this.hostDimensions().client?.width ?? null);
+
+  /**
+   * Which edge gradients actually show. A gradient marks the boundary rows slide out under - so an edge
+   * that pins a column has one already: the pinned cells' own edge shadow, drawn per row. Two marks on
+   * the same boundary read as a smear, and the gradient is the one that has to go: it spans the whole
+   * grid, so on `cards` it paints across the gaps between them as well.
+   */
+  protected visibleScrollFades = computed(() => {
+    const scrolled = this.scrollFades();
+    const inset = this.fadeInset();
+
+    return { start: scrolled.start && inset.start === 0, end: scrolled.end && inset.end === 0 };
+  });
 
   // The declared columns paired with their keys, in declaration order - the form everything else
   // (rendering, features, state) works with. Keys are the record's, so they can't collide.
@@ -644,11 +692,21 @@ export class TableComponent<T> {
     return this.visibleColumns().some((column) => footers.has(column.key));
   });
 
-  /** The leading utility columns in render order - whatever features registered (selection, expansion). */
-  public leadColumns = computed<TableLeadColumn[]>(() =>
+  // Every live utility column, in render order within its own side.
+  private utilityColumns = computed<TableLeadColumn[]>(() =>
     this.leadColumnList()
       .filter((lead) => lead.enabled?.() ?? true)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+  );
+
+  /** The leading utility columns in render order - whatever features registered (selection, expansion). */
+  public leadColumns = computed<TableLeadColumn[]>(() =>
+    this.utilityColumns().filter((column) => (column.side?.() ?? 'start') === 'start'),
+  );
+
+  /** The trailing utility columns in render order - those a feature registered with `side: 'end'`. */
+  public trailColumns = computed<TableLeadColumn[]>(() =>
+    this.utilityColumns().filter((column) => column.side?.() === 'end'),
   );
 
   /**
@@ -682,12 +740,17 @@ export class TableComponent<T> {
       !tracks.some(isFlexibleTrack) &&
       !(this.columnPinning()?.hasStickyEnd() ?? false);
 
-    // Leading utility columns come first, in registration order (see `leadColumns`). Their widths are
-    // px, not rem: they must fit their control (a 24px button / 16px checkbox plus the cell's 4px
-    // inline padding) regardless of the host app's root font size.
+    // Utility columns bracket the data columns, in registration order (see `leadColumns`). Their widths
+    // are px, not rem: they must fit their control (a 24px button / 16px checkbox plus the cell's 4px
+    // inline padding) regardless of the host app's root font size. A trailing one goes after the filler,
+    // so the slack sits between the data and it rather than pushing it off the panel's edge.
     const leads = this.leadColumns().map((lead) => lead.width);
+    const trails = this.trailColumns().map((trail) => trail.width);
 
-    return { template: [...leads, ...tracks, ...(fixed ? [FILLER_TRACK] : [])].join(' '), fixed };
+    return {
+      template: [...leads, ...tracks, ...(fixed ? [FILLER_TRACK] : []), ...trails].join(' '),
+      fixed,
+    };
   });
 
   /** The `grid-template-columns` value for the visible columns (plus a leading expander track when expandable). */
@@ -843,10 +906,23 @@ export class TableComponent<T> {
     }));
   });
 
+  /** The trailing utility cells - the same, pinned to the trailing edge instead. */
+  protected trailCells = computed<TableLeadCellVm[]>(() => {
+    const pinning = this.columnPinning();
+
+    return this.trailColumns().map((trail) => ({
+      key: trail.key,
+      cellClass: trail.cellClass,
+      ...(pinning?.trailPinning(trail.key) ?? NO_LEAD_PIN),
+      lead: trail,
+    }));
+  });
+
   protected headerCellVms = computed<TableHeaderCellVm<T>[]>(() => {
     const pinning = this.columnPinning();
     const templates = this.columnTemplates().header;
     const labels = this.resolvedLabels();
+    const obscured = this.obscuredColumns();
 
     return this.visibleColumns().map((column) => {
       const direction = this.sortDirection(column.key);
@@ -869,6 +945,7 @@ export class TableComponent<T> {
         sortLabel: column.sortable ? labels.sortAction(column.header ?? column.key, next) : null,
         direction,
         template: templates.get(column.key) ?? null,
+        obscured: obscured.has(column.key),
       };
     });
   });
@@ -899,6 +976,7 @@ export class TableComponent<T> {
     const templates = this.columnTemplates().cell;
     const columns = this.visibleColumns();
     const leads = this.leadCells();
+    const trails = this.trailCells();
     const cellState = this.cellState();
     const indexOffset = this.rowIndexOffset();
     const detail = this.rowDetail();
@@ -926,14 +1004,15 @@ export class TableComponent<T> {
         link,
         href,
         linkLabelId: `${this.LINK_ID_PREFIX}-${indexOffset + index}`,
-        classes: leads
-          .map((lead) => lead.lead.rowClass?.(row))
+        classes: [...leads, ...trails]
+          .map((utility) => utility.lead.rowClass?.(row))
           .filter((className): className is string => !!className)
           .join(' '),
         stripe: (indexOffset + index) % 2 === 1,
         last: endsWithRows && index === rendered.length - 1,
         detail: detail?.isOpen(row) ? detail : null,
         leads,
+        trails,
         cells: columns.map((column) => {
           const value = column.value(row);
 
@@ -949,8 +1028,7 @@ export class TableComponent<T> {
             ...(pinning?.cellPinning(column.key) ?? NO_PIN),
             key: column.key,
             align: column.align ?? 'start',
-            // Not while this cell is being edited: the link covers the cell, and the editor must have it.
-            linkHost: href !== null && column.key === linkColumn && editTemplate === null,
+            linkHost: href !== null && column.key === linkColumn,
             interactive: !!column.interactive,
             state,
             message: typeof answer === 'string' ? null : (answer?.message ?? null),
@@ -987,6 +1065,9 @@ export class TableComponent<T> {
    * {@link visibleColumns}, and the list a "columns" chooser iterates.
    */
   public allColumns = computed(() => this.orderedColumns());
+
+  // Which feature owns the drag each live pointer started - see claimPointerGesture.
+  private pointerGestureClaims = new Map<number, string>();
 
   constructor() {
     // A detail template with nothing to render it looks like a broken template rather than a missing
@@ -1044,11 +1125,11 @@ export class TableComponent<T> {
     effect(() => {
       this.hostDimensions();
       this.templateColumns();
-      afterNextRender({ read: () => this.syncScrollFades() }, { injector: this.injector });
+      afterNextRender({ read: () => this.syncScrollState() }, { injector: this.injector });
     });
   }
 
-  protected syncScrollFades() {
+  protected syncScrollState() {
     const element = this.elementRef.nativeElement;
     // `scrollLeft` counts down from 0 in RTL, so compare distances rather than raw offsets.
     const offset = Math.abs(element.scrollLeft);
@@ -1057,6 +1138,19 @@ export class TableComponent<T> {
     const current = this.scrollFades();
 
     if (next.start !== current.start || next.end !== current.end) this.scrollFades.set(next);
+
+    const below = element.scrollHeight - element.clientHeight - element.scrollTop;
+    const shadows = {
+      blockStart: element.scrollTop > SCROLL_FADE_EPSILON,
+      blockEnd: below > SCROLL_FADE_EPSILON,
+    };
+    const currentShadows = this.blockScrollShadows();
+
+    if (shadows.blockStart !== currentShadows.blockStart || shadows.blockEnd !== currentShadows.blockEnd) {
+      this.blockScrollShadows.set(shadows);
+    }
+
+    this.syncObscuredColumns();
   }
 
   /**
@@ -1194,9 +1288,24 @@ export class TableComponent<T> {
     return this.leadColumns().map((lead) => ({ key: lead.key, cellClass: lead.cellClass }));
   }
 
+  /** The rendered header cells of the trailing utility columns. Part of the feature contract. */
+  public trailHeaderCellElements() {
+    return this.trailHeaderCells().map((ref) => ref.nativeElement);
+  }
+
+  /** The trailing utility columns, in render order. Part of the feature contract. */
+  public trailColumnsMeta() {
+    return this.trailColumns().map((trail) => ({ key: trail.key, cellClass: trail.cellClass }));
+  }
+
   /** Whether a trailing slack track is in play. Part of the feature contract. */
   public hasFillerTrack() {
     return this.hasFiller();
+  }
+
+  /** Whether rows have a box of their own (a card, a row link). Part of the feature contract. */
+  public hasRowBox() {
+    return this.rowBox();
   }
 
   /** The `expandedRowTemplate` input, type-erased for the feature contract. */
@@ -1227,6 +1336,39 @@ export class TableComponent<T> {
    */
   public editCell(rowIndex: number, columnIndex: number) {
     return this.cellEditing()?.editCell(rowIndex, columnIndex) ?? false;
+  }
+
+  /** What a pinned block covers at each inline edge. Part of the feature contract. */
+  public frozenInsets() {
+    return this.fadeInset();
+  }
+
+  /**
+   * Claim the drag a pointer started for one feature. Part of the feature contract - it is how
+   * `etTableReorder` keeps a header drag away from `etTableDragScroll` without either knowing about
+   * the other. Consumers never call this.
+   */
+  public claimPointerGesture(event: PointerEvent, feature: string) {
+    const { pointerId } = event;
+
+    this.pointerGestureClaims.set(pointerId, feature);
+
+    // Released off the document, not off the table: a pointer let go outside the table sends its
+    // `pointerup` nowhere near this element, and a claim left behind would block the next gesture
+    // that reuses the id.
+    merge(fromEvent<PointerEvent>(this.document, 'pointerup'), fromEvent<PointerEvent>(this.document, 'pointercancel'))
+      .pipe(
+        filter((ended) => ended.pointerId === pointerId),
+        take(1),
+        tap(() => this.pointerGestureClaims.delete(pointerId)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  /** Which feature claimed this pointer's drag, or `null`. Part of the feature contract. */
+  public pointerGestureClaim(event: PointerEvent) {
+    return this.pointerGestureClaims.get(event.pointerId) ?? null;
   }
 
   /** A rendered body cell, for a feature measuring real row height. Part of the feature contract. */
@@ -1478,6 +1620,11 @@ export class TableComponent<T> {
     return this.visibleColumns();
   }
 
+  /** The grid itself, for a feature measuring the whole of it. Part of the feature contract. */
+  public gridElement() {
+    return this.gridRef()?.nativeElement ?? null;
+  }
+
   /** The rendered header cells, ordered like {@link visibleColumnsMeta}. Part of the feature contract. */
   public headerCellElements() {
     return this.headerCells().map((ref) => ref.nativeElement);
@@ -1598,6 +1745,48 @@ export class TableComponent<T> {
 
       return next;
     });
+  }
+
+  // Which columns have scrolled behind a pinned one. Their cells are hidden by the pinned cells' own
+  // opaque fill, but anything a feature hangs off a header cell in a portal - a filter menu, a column
+  // menu - is not: it floats over the pinned column, anchored to a cell nobody can see. floating-ui's
+  // own `referenceHidden` can't catch this either, since the cell is clipped by nothing; it is covered.
+  // So the table says when a column is covered, and the header drops its adornments.
+  private syncObscuredColumns() {
+    const inset = this.fadeInset();
+
+    if (inset.start === 0 && inset.end === 0) {
+      if (this.obscuredColumns().size) this.obscuredColumns.set(EMPTY_COLUMN_KEYS);
+
+      return;
+    }
+
+    const cells = this.headerCells();
+    const columns = this.visibleColumns();
+    // One live read per scroll tick over the header row only, which is what this has to compare against
+    // the pinned edges - `signalElementDimensions` observes a single element and never sees a scroll.
+
+    const host = this.elementRef.nativeElement.getBoundingClientRect();
+    const startEdge = host.left + inset.start;
+    const endEdge = host.right - inset.end;
+    const next = new Set<string>();
+
+    columns.forEach((column, index) => {
+      if (column.sticky) return;
+
+      const cell = cells[index]?.nativeElement;
+
+      if (!cell) return;
+
+      const rect = cell.getBoundingClientRect();
+
+      if (rect.right <= startEdge || rect.left >= endEdge) next.add(column.key);
+    });
+
+    const current = this.obscuredColumns();
+    const changed = next.size !== current.size || [...next].some((key) => !current.has(key));
+
+    if (changed) this.obscuredColumns.set(next);
   }
 
   /**

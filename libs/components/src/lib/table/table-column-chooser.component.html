@@ -1,5 +1,12 @@
 <div class="et-table-column-chooser" etMenu>
-  <button class="et-table-column-chooser-trigger" et-button size="sm" variant="transparent" etMenuTrigger type="button">
+  <button
+    [size]="size()"
+    [variant]="variant()"
+    class="et-table-column-chooser-trigger"
+    et-button
+    etMenuTrigger
+    type="button"
+  >
     <i etIcon="et-grid-2x2"></i>
     {{ labels().columns }}
   </button>
