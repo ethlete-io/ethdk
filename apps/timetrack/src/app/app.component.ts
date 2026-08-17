@@ -1,12 +1,17 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { injectRoute } from '@ethlete/core';
 import { injectCollectionPause } from './collection-pause';
 import { NudgeBannerComponent } from './nudge-banner.component';
 import { PauseControlComponent } from './pause-control.component';
 import { SidebarComponent } from './shell';
 import { TimerControlComponent } from './timer-control.component';
 import { injectTrayReadout } from './tray-readout';
+import { rememberViewState } from './view-state';
 import { WindowControlsComponent } from './window-controls.component';
+
+/** The first segment of a route, which is the view the window is on. */
+const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
 
 @Component({
   selector: 'ethlete-root',
@@ -65,8 +70,17 @@ import { WindowControlsComponent } from './window-controls.component';
 export class AppComponent {
   protected pause = injectCollectionPause();
 
+  private route = injectRoute();
+
   constructor() {
     // The tray readout has no view of its own, so nothing else would ever construct it.
     injectTrayReadout();
+
+    // So the window reopens on the view it was closed on. `APP_ROUTES` reads it back.
+    effect(() => {
+      const view = viewPathOf(this.route());
+
+      if (view) rememberViewState({ view });
+    });
   }
 }

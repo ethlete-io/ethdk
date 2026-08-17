@@ -92,6 +92,26 @@ describe('checkDay', () => {
     expect(check.proposedMs).toBe(300 * MINUTE);
   });
 
+  it('counts what Tempo already holds towards the target', () => {
+    const check = checkDay({
+      proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 60 })],
+      options: { targetMs: 480 * MINUTE, coveredMs: 420 * MINUTE },
+    });
+
+    expect(check.warnings).toEqual([]);
+    expect(check.proposedMs).toBe(60 * MINUTE);
+    expect(check.coveredMs).toBe(420 * MINUTE);
+    expect(check.loggedMs).toBe(480 * MINUTE);
+    expect(check.deltaMs).toBe(0);
+  });
+
+  it('names both halves of a covered day in the warning', () => {
+    const check = checkDay({ proposals: [], options: { targetMs: 480 * MINUTE, coveredMs: 120 * MINUTE } });
+
+    expect(check.warnings[0]?.kind).toBe('under-target');
+    expect(check.warnings[0]?.detail).toBe('0m proposed and 2h 0m already in Tempo, against a 8h 0m target');
+  });
+
   it('warns over target', () => {
     const check = checkDay({
       proposals: [proposal({ issueKey: 'FIP-2177', durationMinutes: 600 })],

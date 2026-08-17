@@ -43,6 +43,10 @@ export const tempoDayCoverageOf = (options: {
   };
 };
 
+/** Everything the record covers, as the day check counts it against the target. */
+export const coveredMsOf = (coverage: TempoDayCoverage | null | undefined) =>
+  (coverage?.issues ?? []).reduce((sum, issue) => sum + issue.coveredMs, 0);
+
 /**
  * The record as `subtractForeignTime` reads it, so a day reduced offline comes out the same as a day a
  * sync plans against the live Tempo answer.

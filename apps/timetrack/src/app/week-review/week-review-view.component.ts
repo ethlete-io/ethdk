@@ -87,13 +87,18 @@ export class WeekReviewViewComponent {
     (this.store.week()?.days ?? []).map((day) => ({
       key: day.day,
       label: formatWeekdayLabel(day.day),
-      proposed: formatDurationMs(day.proposedMs),
+      proposed: formatDurationMs(day.proposedMs + day.coveredMs),
       owes: day.gap ? describeDayReviewGap(day.gap) : null,
       state: day.worked ? 'Logged' : 'Nothing observed',
     })),
   );
 
-  protected proposed = computed(() => formatDurationMs(this.store.week()?.proposedMs ?? 0));
+  protected proposed = computed(() => {
+    const week = this.store.week();
+
+    return formatDurationMs((week?.proposedMs ?? 0) + (week?.coveredMs ?? 0));
+  });
+
   protected target = computed(() => formatDurationMs(this.store.week()?.targetMs ?? 0));
   protected delta = computed(() => formatSignedDurationMs(this.store.week()?.deltaMs ?? 0));
   protected workedDays = computed(() => (this.store.week()?.days ?? []).filter((day) => day.worked).length);

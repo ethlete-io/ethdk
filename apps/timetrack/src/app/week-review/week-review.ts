@@ -15,6 +15,7 @@ import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector 
 import { injectHostPorts } from '../../host';
 import { DayReadOptions, readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
+import { readViewState, rememberViewState } from '../view-state';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -39,8 +40,13 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
   const git = injectGitCollector();
   const settings = injectTimetrackSettings();
 
-  const start = signal(startOfWeekKey(localDayKey(new Date())));
+  const start = signal(startOfWeekKey(readViewState().weekStart ?? localDayKey(new Date())));
   const reload = signal(0);
+
+  const goToWeek = (day: string) => {
+    start.set(day);
+    rememberViewState({ weekStart: day });
+  };
 
   const readWeek$ = (options: DayReadOptions & { start: string }): Observable<WeekReview> =>
     combineLatest(
@@ -98,8 +104,8 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
     /** Whether the week under review is the one today falls in. */
     isThisWeek: computed(() => start() === startOfWeekKey(localDayKey(new Date()))),
 
-    shiftWeek: (byWeeks: number) => start.update((day) => shiftWeekKey(day, byWeeks)),
-    goToThisWeek: () => start.set(startOfWeekKey(localDayKey(new Date()))),
+    shiftWeek: (byWeeks: number) => goToWeek(shiftWeekKey(start(), byWeeks)),
+    goToThisWeek: () => goToWeek(startOfWeekKey(localDayKey(new Date()))),
     recorrelate: () => reload.update((count) => count + 1),
   };
 });

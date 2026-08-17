@@ -3,6 +3,7 @@ export * from './client';
 export * from './coverage';
 export * from './diff';
 export * from './execute';
+export * from './fetch-coverage';
 export * from './marker';
 export * from './preview';
 export * from './subtract';

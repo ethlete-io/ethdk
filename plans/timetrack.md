@@ -1626,6 +1626,43 @@ what never handed it over. What closing it settled:
   Tempo's range is inclusive by date, so the next day's worklogs arrived in this day's foreign list.
   Taking the day itself rather than a range removed the chance to disagree.
 
+**A day now counts what Tempo already holds against its target.** The first real day the review was
+opened on read `0m proposed against a 8h target` while Tempo held ten hours for it, logged by hand -
+and it was not a rounding error but the definition: `checkDay` compared its own proposals with the
+target, and a day logged by hand proposes nothing, because every row is reduced to zero by the same
+foreign time. `checkDay` now takes `coveredMs` and reports `coveredMs` and `loggedMs`; `reviewWeek`
+totals the same. Three things this settled:
+
+- **The record had to be readable without planning a sync.** `TempoDayCoverage` existed, but only
+  `previewTempoSync$` ever wrote one, so a day nobody had previewed had none - which is every past day.
+  `fetchTempoDayCoverage$` is the read on its own: the account, the day's worklogs, and the keys behind
+  the ids Tempo names. Ownership still comes from the ledger, so what this app wrote stays out of the
+  record and is not counted twice.
+- **A stored record is trusted when it was observed after its day ended.** Nothing more lands in a day
+  that is over, so a past day is read from Tempo once, ever. Today's is re-read on every open, because
+  the rest of today has not happened. Time added to a past day afterwards is the case this misses on
+  purpose - `Re-correlate` forces the read.
+- **A failed read leaves the day exactly as it was.** No token, an expired one or no network yields
+  `null` and the old wording. Tempo is an extra here, not the day.
+
+**`HEAD` is not a branch.** A third of a real day read as blocks labelled `HEAD`: `git rev-parse
+--abbrev-ref HEAD` answers `HEAD` in a detached checkout and Claude Code writes that answer into
+`gitBranch` - 13,226 records on this machine, all in the home directory and NAS app folders. Git
+refuses `HEAD` as a branch name, so it never names one, and the parser now drops it exactly as
+`parseGitReflog` drops a bare object name. The timeline label leads with the checkout for the same
+reason: `next` is a branch in most repositories here, so `ethlete-sdk · next` identifies work that
+`next` alone does not.
+
+**A standing answer that changes nothing has to say so.** `No tickets here` writes a donating rule,
+and `donateBlocks` hands a donor's time to attributed work in the same day - so on a day with none, the
+context comes back unchanged and the button reads as broken. The naming card now shows the rule that
+covers a context and why it is still listed, and offers to take it back.
+
+**The window reopens where it was left** (`src/app/view-state.ts`): the view, the day under review and
+the week. `localStorage` rather than the encrypted store, because it answers synchronously - the empty
+route redirects straight to the remembered view, so the default one is never painted first - and
+because a route name and two calendar days are not observations.
+
 ## Storage, privacy, secrets
 
 **The core half is built** - `libs/timetrack/src/lib/store/`: the two persistence ports, the

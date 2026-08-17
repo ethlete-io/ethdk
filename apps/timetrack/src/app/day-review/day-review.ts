@@ -2,6 +2,7 @@ import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  AttributionRule,
   ClosedTimerRun,
   CollectedEvent,
   CorrelateDayOptions,
@@ -11,17 +12,23 @@ import {
   ReviewedRow,
   AttributionTarget,
   SyncedWorklog,
+  TempoDayCoverage,
   TimeWindow,
   TimerRun,
   UnnamedContext,
   closeTimerRun,
   correlateDay,
+  coveredMsOf,
+  fetchTempoDayCoverage$,
   gitFlowConfigFor,
   localDayKey,
   localDayRange,
+  matchAttributionRule,
   mergeRows,
   moveRowBoundary,
   pauseWindows,
+  readJiraCredentials$,
+  readTempoCredentials$,
   reasoningCandidates,
   reasoningPlan,
   resetRow,
@@ -54,9 +61,19 @@ import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector 
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectTimer } from '../timer';
+import { readViewState, rememberViewState } from '../view-state';
 
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
+
+/**
+ * Whether a stored coverage record still states what Tempo holds, without asking Tempo again.
+ *
+ * A record observed after its day ended cannot go stale by itself — no more work lands in a day that
+ * is over. Today's can, because the rest of today has not happened. Time somebody adds to a past day
+ * afterwards is the case this misses on purpose; `recorrelate` re-reads the day for it.
+ */
+const isSettled = (coverage: TempoDayCoverage, dayEnd: Date) => coverage.observedAt >= dayEnd;
 
 /** A load tagged with the day it was asked for, so a stale answer is recognised rather than shown. */
 type Loaded<T> = { key: string; value: T | null; failure: string | null };
@@ -101,12 +118,14 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
 
-  const day = signal(localDayKey(new Date()));
+  const day = signal(readViewState().day ?? localDayKey(new Date()));
   const targetMs = computed(() => settings.settings().dayTargetMs);
   const local = signal<Record<string, DayReviewEdits>>({});
   const expanded = signal<ReadonlySet<string>>(new Set());
   const selection = signal<readonly string[]>([]);
   const reload = signal(0);
+  /** Set by `recorrelate` and cleared by `goToDay`, so only the day the reviewer asked about is re-read. */
+  const coverageReload = signal(false);
   const saves$ = new Subject<{ key: string; edits: DayReviewEdits }>();
 
   const probe = computed(() => ({
@@ -152,6 +171,66 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     { initialValue: null },
   );
 
+  /**
+   * What Tempo already holds for the day, read from Tempo when the store has no settled record.
+   *
+   * A day logged by hand proposes nothing at all — every row is reduced to zero by the same foreign
+   * time — so without this the day compares `0m` against the target and reports a finished day as
+   * short. What is read is stored, which is also what lets the week view and the reminder answer with
+   * no token and no network.
+   */
+  const readCoverage$ = (key: string): Observable<TempoDayCoverage | null> =>
+    combineLatest({
+      jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
+      tempo: readTempoCredentials$({ secrets: ports.secrets }),
+    }).pipe(
+      switchMap(({ jira, tempo }) =>
+        jira && tempo
+          ? fetchTempoDayCoverage$({
+              transport: ports.transport,
+              jira,
+              tempo,
+              ledger: ports.ledger,
+              day: key,
+            }).pipe(
+              concatMap((read) =>
+                ports.coverage.save$(read).pipe(
+                  catchError(() => of(undefined)),
+                  map(() => read),
+                ),
+              ),
+            )
+          : of(null),
+      ),
+      // Tempo is an extra, not the day. A missing token, an expired one or an offline machine leaves
+      // the day reading exactly as it did before this was here.
+      catchError(() => of(null)),
+    );
+
+  const loadedCoverage = toSignal(
+    toObservable(computed(() => ({ key: day(), forced: coverageReload() }))).pipe(
+      switchMap(({ key, forced }) => {
+        const dayEnd = localDayRange(key).to;
+
+        return loadedFor<TempoDayCoverage | null>({
+          key,
+          load$: ports.coverage.forDay$(key).pipe(
+            catchError(() => of(null)),
+            switchMap((stored) => (stored && !forced && isSettled(stored, dayEnd) ? of(stored) : readCoverage$(key))),
+          ),
+        });
+      }),
+      startWith(null),
+    ),
+    { initialValue: null },
+  );
+
+  const coverage = computed(() => {
+    const loaded = loadedCoverage();
+
+    return loaded?.key === day() ? loaded.value : null;
+  });
+
   const evidenceLoad = computed(() => {
     const loaded = loadedDay();
 
@@ -195,6 +274,26 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const unnamed = computed(() => unnamedContexts({ unattributed: correlation()?.unattributed ?? [] }));
 
+  /**
+   * The standing rule that already covers a context, for the naming card to say so.
+   *
+   * A donating context stays on the list on a day with no attributed work to join, because there is
+   * nothing to hand its time to — and without this the card looks exactly as it did before the user
+   * answered, which reads as a button that did nothing.
+   */
+  const rulesByContext = computed(() => {
+    const rules = settings.settings().attributionRules;
+    const found = new Map<string, AttributionRule>();
+
+    for (const context of unnamed()) {
+      const match = matchAttributionRule({ context: context.context, rules });
+
+      if (match) found.set(context.id, match.rule);
+    }
+
+    return found;
+  });
+
   const plan = computed(() => {
     const correlated = correlation();
 
@@ -231,7 +330,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const review = computed(() => {
     const correlated = reasoned();
 
-    return correlated ? reviewDay({ correlation: correlated, edits: edits(), check: { targetMs: targetMs() } }) : null;
+    return correlated
+      ? reviewDay({
+          correlation: correlated,
+          edits: edits(),
+          check: { targetMs: targetMs(), coveredMs: coveredMsOf(coverage()) },
+        })
+      : null;
   });
 
   const rows = computed(() => review()?.rows ?? []);
@@ -297,6 +402,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const goToDay = (key: string) => {
     day.set(key);
+    rememberViewState({ day: key });
+    coverageReload.set(false);
     selection.set([]);
     expanded.set(new Set());
   };
@@ -332,6 +439,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * asking again tomorrow.
      */
     unnamed,
+    /** The rule already covering an unnamed context, by context id. */
+    rulesByContext,
     /**
      * Time in a path the user marked private. The day reports it rather than hiding it: a reviewer who
      * cannot see that the app watched has no way to tell a working link from a broken one.
@@ -354,6 +463,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     openRunId: computed(() => timers.running()?.id ?? null),
     isLoading: computed(() => !evidenceLoad()),
     failure: computed(() => evidenceLoad()?.failure ?? editsLoad()?.failure ?? null),
+    /** What Tempo already holds for the day, and when that was read. `null` while it is unknown. */
+    coverage,
     /** Rows this app has already written to Tempo, by proposal id. */
     syncedIds,
     /** How many of the day's rows Tempo holds. An entry no row claims is not one — the sync deletes it. */
@@ -365,7 +476,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     goToDay,
     goToToday: () => goToDay(localDayKey(new Date())),
     shiftDay: (byDays: number) => goToDay(shiftDayKey(day(), byDays)),
-    recorrelate: () => reload.update((count) => count + 1),
+    recorrelate: () => {
+      coverageReload.set(true);
+      reload.update((count) => count + 1);
+    },
 
     setIssue: (row: ReviewedRow, issueKey: string) => apply(setRowIssue({ edits: edits(), row, issueKey })),
     setDescription: (row: ReviewedRow, description: string) =>
@@ -407,6 +521,9 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * cannot tell from a client's checkout, and the day stops asking about it from here on.
      */
     markPathPrivate: (path: string) => settings.addProjectLink({ path, target: { kind: 'private' } }),
+
+    /** Takes back the standing answer for a context, so the day asks about it again. */
+    forgetRule: (id: string) => settings.removeAttributionRule(id),
 
     nameContext: (context: UnnamedContext, target: AttributionTarget) =>
       settings.addAttributionRule({

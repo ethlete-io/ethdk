@@ -83,16 +83,27 @@ export type DayWarning = {
 export type DayCheck = {
   /** Sum of the rounded proposals — what a sync would write. */
   proposedMs: number;
+  /** Time Tempo already holds for the day and no sync will write again. */
+  coveredMs: number;
+  /** What the day is logged for in total: the proposals plus what Tempo already holds. */
+  loggedMs: number;
   /** Observed time nothing could attribute. Never folded into the proposals. */
   unattributedMs: number;
   targetMs?: number;
-  /** Proposed minus target. Positive is over. */
+  /** Logged minus target. Positive is over. */
   deltaMs?: number;
   warnings: DayWarning[];
 };
 
 export type CheckDayOptions = {
   targetMs?: number;
+  /**
+   * Time Tempo already holds for the day that this app did not write, from `TempoDayCoverage`.
+   *
+   * A day logged by hand proposes nothing — every row is reduced to zero by the same foreign time —
+   * so without this the target compares against `0m` and reports a finished day as short.
+   */
+  coveredMs?: number;
   /** A day this close to the target is not worth a warning. Defaults to one rounding increment. */
   toleranceMs?: number;
   maxRowsPerDay?: number;
@@ -120,13 +131,19 @@ export const checkDay = (options: {
     options.options ?? {};
   const unattributed = options.unattributed ?? [];
   const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
+  const coveredMs = options.options?.coveredMs ?? 0;
+  const loggedMs = proposedMs + coveredMs;
   const unattributedMs = unattributed.reduce((sum, group) => sum + group.observedMs, 0);
   const tolerance = toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
   const warnings: DayWarning[] = [];
 
   if (targetMs !== undefined) {
-    const delta = proposedMs - targetMs;
-    const against = `${formatDurationMs(proposedMs)} proposed against a ${formatDurationMs(targetMs)} target`;
+    const delta = loggedMs - targetMs;
+    const proposed = `${formatDurationMs(proposedMs)} proposed`;
+    const against =
+      coveredMs > 0
+        ? `${proposed} and ${formatDurationMs(coveredMs)} already in Tempo, against a ${formatDurationMs(targetMs)} target`
+        : `${proposed} against a ${formatDurationMs(targetMs)} target`;
 
     if (delta < -tolerance) warnings.push({ kind: 'under-target', detail: against });
     else if (delta > tolerance) warnings.push({ kind: 'over-target', detail: against });
@@ -184,9 +201,11 @@ export const checkDay = (options: {
 
   return {
     proposedMs,
+    coveredMs,
+    loggedMs,
     unattributedMs,
     targetMs,
-    deltaMs: targetMs === undefined ? undefined : proposedMs - targetMs,
+    deltaMs: targetMs === undefined ? undefined : loggedMs - targetMs,
     warnings,
   };
 };

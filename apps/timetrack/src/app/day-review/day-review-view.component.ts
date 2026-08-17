@@ -76,7 +76,11 @@ import { WorklogRowComponent } from './worklog-row.component';
                   (revert)="store.reset(row)"
                 />
               }
-            } @else {
+            } @else if (!store.unnamed().length) {
+              <!--
+                Only when there is nothing to answer either. A day whose work is all unnamed has the
+                naming card right below, and an empty state above it says the opposite of the truth.
+              -->
               <et-empty-state
                 description="Nothing on this day could be attributed to an issue. The timeline shows what was observed."
                 heading="No worklogs to review"
@@ -86,6 +90,7 @@ import { WorklogRowComponent } from './worklog-row.component';
             @if (store.unnamed().length) {
               <ethlete-unnamed-work
                 [contexts]="store.unnamed()"
+                [rules]="store.rulesByContext()"
                 [suggestions]="store.inferredByContext()"
                 [payload]="store.reasoningPayload()"
                 [canAsk]="store.canAsk()"
@@ -95,6 +100,7 @@ import { WorklogRowComponent } from './worklog-row.component';
                 (ask)="store.ask()"
                 (createTicket)="tickets.open($event)"
                 (markPrivate)="store.markPathPrivate($event)"
+                (forget)="store.forgetRule($event)"
               />
             }
 
@@ -184,6 +190,9 @@ import { WorklogRowComponent } from './worklog-row.component';
         >
           <span class="text-large">{{ proposed() }}</span>
           <span class="text-small text-et-surface-muted">of a {{ target() }} target ({{ delta() }})</span>
+          @if (covered(); as coveredTime) {
+            <span class="text-small text-et-surface-muted">{{ coveredTime }} logged outside this app</span>
+          }
           <span class="text-small text-et-surface-muted">{{ store.syncedRowCount() }} row(s) already in Tempo</span>
           @if (day.check.unattributedMs > 0) {
             <span class="text-small text-et-warning-ink">{{ unattributed() }} unattributed</span>
@@ -249,6 +258,13 @@ export class DayReviewViewComponent {
   });
 
   protected proposed = computed(() => formatDurationMs(this.store.review()?.check.proposedMs ?? 0));
+
+  protected covered = computed(() => {
+    const coveredMs = this.store.review()?.check.coveredMs ?? 0;
+
+    return coveredMs > 0 ? formatDurationMs(coveredMs) : null;
+  });
+
   protected target = computed(() => formatDurationMs(this.store.targetMs()));
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));

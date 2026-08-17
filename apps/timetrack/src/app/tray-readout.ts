@@ -45,7 +45,7 @@ const formatActivity = (activity: CurrentActivity) => {
  */
 const formatTotal = (options: { check: DayCheck; targetMs: number }) => {
   const { check } = options;
-  const against = `${formatDurationMs(check.proposedMs)} of a ${formatDurationMs(options.targetMs)} target`;
+  const against = `${formatDurationMs(check.loggedMs)} of a ${formatDurationMs(options.targetMs)} target`;
 
   return check.unattributedMs > 0 ? `${against}, ${formatDurationMs(check.unattributedMs)} unattributed` : against;
 };

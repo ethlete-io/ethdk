@@ -1,5 +1,5 @@
 import { SyncedWorklog } from '../model/proposal';
-import { TempoDayCoverage } from '../tempo/coverage';
+import { TempoDayCoverage, coveredMsOf } from '../tempo/coverage';
 import { shiftDayKey } from './day';
 import { DayReview } from './model';
 import { DayReviewGap, dayReviewGap } from './nudge';
@@ -35,6 +35,8 @@ export type WeekReviewDay = {
   day: string;
   /** What a sync would write for the day. */
   proposedMs: number;
+  /** What Tempo already held for the day, which no sync will write again. */
+  coveredMs: number;
   /** Observed time no issue claimed. */
   unattributedMs: number;
   /** What the day still owes, or `null` once nothing is left to do on it. */
@@ -58,9 +60,11 @@ export type WeekReview = {
   /** The days in order, oldest first. */
   days: WeekReviewDay[];
   proposedMs: number;
+  /** What Tempo already held across the week. */
+  coveredMs: number;
   /** The day target times the days that saw work, so an empty weekend is neither short nor over. */
   targetMs: number;
-  /** Proposed minus target. Positive is over. */
+  /** The proposals plus what Tempo already holds, minus target. Positive is over. */
   deltaMs: number;
   /** How many days still owe something. This is the number the week view exists to show. */
   owingDays: number;
@@ -81,10 +85,12 @@ export const reviewWeek = (options: {
     .sort((a, b) => a.day.localeCompare(b.day))
     .map((entry): WeekReviewDay => {
       const { proposedMs, unattributedMs } = entry.review.check;
+      const coveredMs = coveredMsOf(entry.coverage);
 
       return {
         day: entry.day,
         proposedMs,
+        coveredMs,
         unattributedMs,
         gap: dayReviewGap({
           review: entry.review,
@@ -93,18 +99,20 @@ export const reviewWeek = (options: {
           attributesByProposalId: entry.attributesByProposalId,
           toleranceMs: options.toleranceMs,
         }),
-        worked: proposedMs > 0 || unattributedMs > 0 || entry.review.rows.length > 0,
+        worked: proposedMs > 0 || coveredMs > 0 || unattributedMs > 0 || entry.review.rows.length > 0,
       };
     });
 
   const proposedMs = days.reduce((sum, day) => sum + day.proposedMs, 0);
+  const coveredMs = days.reduce((sum, day) => sum + day.coveredMs, 0);
   const targetMs = options.dayTargetMs * days.filter((day) => day.worked).length;
 
   return {
     days,
     proposedMs,
+    coveredMs,
     targetMs,
-    deltaMs: proposedMs - targetMs,
+    deltaMs: proposedMs + coveredMs - targetMs,
     owingDays: days.filter((day) => day.gap).length,
   };
 };

@@ -6,6 +6,7 @@ import {
   TimetrackSettings,
   closeTimerRun,
   correlateDay,
+  coveredMsOf,
   gitFlowConfigFor,
   localDayKey,
   localDayRange,
@@ -46,8 +47,9 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
     events: ports.events.eventsBetween$(from, to),
     edits: ports.review.editsFor$(key),
     runs: ports.timers.runsBetween$(from, to),
+    coverage: ports.coverage.forDay$(key),
   }).pipe(
-    map(({ events, edits, runs }) => {
+    map(({ events, edits, runs, coverage }) => {
       const at = new Date(Math.min(Date.now(), to.getTime()));
       const correlation = correlateDay({
         events,
@@ -68,7 +70,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         review: reviewDay({
           correlation,
           edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
-          check: { targetMs: settings.dayTargetMs },
+          check: { targetMs: settings.dayTargetMs, coveredMs: coveredMsOf(coverage) },
         }),
       };
     }),

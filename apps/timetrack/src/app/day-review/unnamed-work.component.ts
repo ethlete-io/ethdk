@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import {
+  AttributionRule,
   AttributionTarget,
   InferredAttribution,
   ReasoningRequest,
@@ -59,35 +60,41 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
 
           <span class="flex min-w-50 grow flex-col">
             <span class="text-small">{{ entry.label }}</span>
-            @if (entry.suggestion; as suggestion) {
+            @if (entry.answered) {
+              <span class="text-small text-et-surface-muted">{{ entry.answered }}</span>
+            } @else if (entry.suggestion; as suggestion) {
               <span class="text-small text-et-surface-muted">
                 Suggested {{ suggestion.issueKey }} — {{ suggestion.reason }}
               </span>
             }
           </span>
 
-          <et-form-field class="w-30 shrink-0" appearance="underline" size="sm">
-            <et-input
-              [value]="draftFor(entry.id)"
-              [aria-label]="'Issue for ' + entry.label"
-              (valueChange)="setDraft(entry.id, $event)"
-              (keydown.enter)="submit(entry.id)"
-              placeholder="Issue"
-            />
-          </et-form-field>
+          @if (entry.answered) {
+            <button (click)="askAgain(entry.id)" et-button variant="outline" size="sm">Ask me again</button>
+          } @else {
+            <et-form-field class="w-30 shrink-0" appearance="underline" size="sm">
+              <et-input
+                [value]="draftFor(entry.id)"
+                [aria-label]="'Issue for ' + entry.label"
+                (valueChange)="setDraft(entry.id, $event)"
+                (keydown.enter)="submit(entry.id)"
+                placeholder="Issue"
+              />
+            </et-form-field>
 
-          <button [disabled]="!draftFor(entry.id)" (click)="submit(entry.id)" et-button variant="outline" size="sm">
-            Always log here
-          </button>
+            <button [disabled]="!draftFor(entry.id)" (click)="submit(entry.id)" et-button variant="outline" size="sm">
+              Always log here
+            </button>
 
-          <button (click)="createTicket.emit(entry.context)" et-button variant="transparent" size="sm">
-            Create a ticket
-          </button>
+            <button (click)="createTicket.emit(entry.context)" et-button variant="transparent" size="sm">
+              Create a ticket
+            </button>
 
-          <button (click)="donate(entry.id)" et-button variant="transparent" size="sm">No tickets here</button>
+            <button (click)="donate(entry.id)" et-button variant="transparent" size="sm">No tickets here</button>
 
-          @if (entry.path; as path) {
-            <button (click)="markPrivate.emit(path)" et-button variant="transparent" size="sm">Not work</button>
+            @if (entry.path; as path) {
+              <button (click)="markPrivate.emit(path)" et-button variant="transparent" size="sm">Not work</button>
+            }
           }
         </div>
       }
@@ -102,6 +109,8 @@ export class UnnamedWorkComponent {
   public suggestions = input<ReadonlyMap<string, InferredAttribution>>(new Map());
   /** Exactly what a run would send, shown here so it can be read before it leaves the machine. */
   public payload = input<ReasoningRequest | null>(null);
+  /** The standing rule already covering a context, by context id. */
+  public rules = input<ReadonlyMap<string, AttributionRule>>(new Map());
   public canAsk = input(false);
   public isAsking = input(false);
   public hasAsked = input(false);
@@ -115,11 +124,14 @@ export class UnnamedWorkComponent {
    * a browser and a chat client are named by the exclusion rules, which read an app rather than a path.
    */
   public markPrivate = output<string>();
+  /** The id of a rule the user takes back, so this context is asked about again. */
+  public forget = output<string>();
 
   private drafts = signal<Record<string, string>>({});
 
   protected listed = computed(() => {
     const suggestions = this.suggestions();
+    const rules = this.rules();
 
     return this.contexts().map((context) => ({
       id: context.id,
@@ -129,6 +141,7 @@ export class UnnamedWorkComponent {
       label: describeAttributionRule(context.suggestion),
       path: context.suggestion.repoPath,
       suggestion: suggestions.get(context.id),
+      answered: answeredBy(rules.get(context.id)),
     }));
   });
 
@@ -157,6 +170,12 @@ export class UnnamedWorkComponent {
     this.emitNaming(id, { kind: 'donate' });
   }
 
+  protected askAgain(id: string) {
+    const rule = this.rules().get(id);
+
+    if (rule) this.forget.emit(rule.id);
+  }
+
   private emitNaming(id: string, target: AttributionTarget) {
     const entry = this.listed().find((candidate) => candidate.id === id);
 
@@ -166,3 +185,18 @@ export class UnnamedWorkComponent {
     this.name.emit({ context: entry.context, target });
   }
 }
+
+/**
+ * Why a context the user has already answered for is still on the list.
+ *
+ * A donating context needs attributed work in the same day to hand its time to, and a day that has
+ * none leaves it exactly where it was. Saying so is the difference between a rule that is waiting for
+ * something and a button that did nothing.
+ */
+const answeredBy = (rule: AttributionRule | undefined) => {
+  if (!rule) return null;
+
+  return rule.target.kind === 'issue'
+    ? `Always logged on ${rule.target.issueKey}, but no time reached it on this day`
+    : 'Files no issues — its time joins the work beside it, and this day has none to join';
+};

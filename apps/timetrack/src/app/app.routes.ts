@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
+import { readViewState } from './view-state';
 
 export const APP_ROUTES: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'day' },
+  // A window that opens on the view it was closed on, without the default one being painted first.
+  { path: '', pathMatch: 'full', redirectTo: () => readViewState().view ?? 'day' },
   {
     path: 'day',
     title: 'Day',
