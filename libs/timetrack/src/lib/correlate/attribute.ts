@@ -250,6 +250,14 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
 
   if (rule) return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'weak' });
 
+  /**
+   * A donating context leaves the ladder here, so that `donateBlocks` still sees it. The rungs below
+   * read a coincidence — a standing Tempo pattern, a key in whatever tab was open — and either would
+   * name an issue for work the user has already said belongs beside the day's own work instead. A key
+   * on a browser tab about another tracker is exactly how that goes wrong.
+   */
+  if (match?.rule.target.kind === 'donate') return { block, confidence: 'weak', evidence };
+
   const pattern = options.patterns?.length ? patternAt({ patterns: options.patterns, at: block.from }) : undefined;
 
   if (pattern) {
