@@ -131,6 +131,18 @@ export const MAX_MINUTE_OF_DAY = 24 * 60 - 1;
 /** Holds a reminder time inside a day, whether it came from a control or from a stored document. */
 export const clampMinuteOfDay = (value: number) => Math.min(MAX_MINUTE_OF_DAY, Math.max(0, Math.round(value)));
 
+/** How long the window waits after the user goes idle before it locks itself. */
+export const DEFAULT_LOCK_AFTER_IDLE_MS = 60_000;
+
+/**
+ * An hour is already far past the point the wait is protecting anything, and a document that asked for
+ * a day would read as a lock that never engages.
+ */
+export const MAX_LOCK_AFTER_IDLE_MS = 60 * 60_000;
+
+/** Holds an idle-lock wait inside its range. Zero is meaningful: it locks the moment the user is idle. */
+export const clampLockAfterIdleMs = (value: number) => Math.min(MAX_LOCK_AFTER_IDLE_MS, Math.max(0, Math.round(value)));
+
 /**
  * Everything the user configures that is not a secret, read and written as one document.
  *
@@ -194,6 +206,14 @@ export type TimetrackSettings = {
    * ignores the setting where the account password cannot be checked at all.
    */
   lockWindow: boolean;
+  /**
+   * How long after the user goes idle the window locks itself. It is a wait on top of the five minutes
+   * the window source takes to call them idle at all, so the two add up.
+   *
+   * The host reads this for itself, the same way it reads `lockWindow`, because the thread that acts on
+   * it must not depend on a webview that is showing the password prompt.
+   */
+  lockAfterIdleMs: number;
 };
 
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
@@ -219,4 +239,5 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   attributionRules: [],
   projectLinks: [],
   lockWindow: true,
+  lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
 };

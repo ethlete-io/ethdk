@@ -17,10 +17,56 @@ use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 /// Told to the webview so it can clear the view it is showing before the window goes away.
 pub const LOCKED_EVENT: &str = "window-locked";
 
-/// How long after the user goes idle the window locks itself.
+/// How long after the user goes idle the window locks itself, when the document says nothing.
 ///
 /// The window source reports idleness at five minutes, so this is the wait on top of that.
-const LOCK_AFTER_IDLE_MS: i64 = 60_000;
+const DEFAULT_LOCK_AFTER_IDLE_MS: i64 = 60_000;
+
+/// The longest wait a settings document may ask for.
+///
+/// It mirrors `MAX_LOCK_AFTER_IDLE_MS` in the core, and has to: the host reads that document itself
+/// rather than through the parser that would have clamped it.
+const MAX_LOCK_AFTER_IDLE_MS: i64 = 60 * 60_000;
+
+/// What the settings document says about the lock.
+///
+/// The host reads these two fields for itself rather than being told them. It has to know before any
+/// view is mounted, and the thread that acts on them must not depend on a webview that is showing the
+/// password prompt.
+pub struct LockSettings {
+    enabled: bool,
+    after_idle_ms: i64,
+}
+
+impl LockSettings {
+    /// Reads the lock's two fields out of a settings document, treating anything it cannot make sense
+    /// of as the default. The shape of that document belongs to the core; this is all the host wants
+    /// from it.
+    pub fn read(document: &serde_json::Value) -> Self {
+        let default = Self::default();
+
+        Self {
+            enabled: document
+                .get("lockWindow")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(default.enabled),
+            after_idle_ms: document
+                .get("lockAfterIdleMs")
+                .and_then(serde_json::Value::as_f64)
+                .map(|value| (value.round() as i64).clamp(0, MAX_LOCK_AFTER_IDLE_MS))
+                .unwrap_or(default.after_idle_ms),
+        }
+    }
+}
+
+impl Default for LockSettings {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            after_idle_ms: DEFAULT_LOCK_AFTER_IDLE_MS,
+        }
+    }
+}
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,6 +87,7 @@ pub struct WindowLock {
     /// When the user last went idle, or 0 while they are present.
     idle_since_ms: Arc<AtomicI64>,
     enabled: Arc<AtomicBool>,
+    after_idle_ms: Arc<AtomicI64>,
 }
 
 impl WindowLock {
@@ -53,6 +100,7 @@ impl WindowLock {
             locked: Arc::new(AtomicBool::new(usable)),
             idle_since_ms: Arc::new(AtomicI64::new(0)),
             enabled: Arc::new(AtomicBool::new(usable)),
+            after_idle_ms: Arc::new(AtomicI64::new(DEFAULT_LOCK_AFTER_IDLE_MS)),
         }
     }
 
@@ -60,12 +108,13 @@ impl WindowLock {
         self.enabled.load(Ordering::SeqCst) && self.locked.load(Ordering::SeqCst)
     }
 
-    /// Applies the user's setting. Turning it on is refused where the password cannot be checked, for
-    /// the same reason `new` starts unlocked there.
-    pub fn set_enabled(&self, enabled: bool) {
-        let enabled = enabled && auth::can_verify();
+    /// Applies the user's settings. Turning the lock on is refused where the password cannot be
+    /// checked, for the same reason `new` starts unlocked there.
+    pub fn apply(&self, settings: &LockSettings) {
+        let enabled = settings.enabled && auth::can_verify();
 
         self.enabled.store(enabled, Ordering::SeqCst);
+        self.after_idle_ms.store(settings.after_idle_ms, Ordering::SeqCst);
 
         if !enabled {
             self.locked.store(false, Ordering::SeqCst);
@@ -132,7 +181,7 @@ pub fn lock_if_idle_long_enough<R: Runtime>(app: &AppHandle<R>, now_ms: i64) {
         return;
     };
 
-    if now_ms - since >= LOCK_AFTER_IDLE_MS {
+    if now_ms - since >= state.after_idle_ms.load(Ordering::SeqCst) {
         lock(app);
     }
 }
@@ -154,7 +203,7 @@ pub fn start<R: Runtime>(app: AppHandle<R>) {
 /// reading the database during `setup` would hold the app's launch behind it.
 #[tauri::command]
 pub async fn lock_state(db: State<'_, crate::state::Db>, state: State<'_, WindowLock>) -> TimetrackResult<LockState> {
-    state.set_enabled(crate::store::lock_window_setting(&db).await);
+    state.apply(&crate::store::lock_settings(&db).await);
 
     Ok(state.state())
 }
@@ -201,11 +250,18 @@ mod tests {
         assert_eq!(WindowLock::new().is_locked(), auth::can_verify());
     }
 
+    fn off() -> LockSettings {
+        LockSettings {
+            enabled: false,
+            ..LockSettings::default()
+        }
+    }
+
     #[test]
     fn reads_as_unlocked_once_the_user_turns_the_lock_off() {
         let lock = WindowLock::new();
 
-        lock.set_enabled(false);
+        lock.apply(&off());
 
         assert!(!lock.is_locked());
     }
@@ -214,11 +270,44 @@ mod tests {
     fn never_locks_again_once_it_is_off() {
         let lock = WindowLock::new();
 
-        lock.set_enabled(false);
+        lock.apply(&off());
         lock.went_idle(0);
         lock.locked.store(true, Ordering::SeqCst);
 
         assert!(!lock.is_locked());
+    }
+
+    #[test]
+    fn waits_a_minute_after_the_user_goes_idle_unless_the_document_says_otherwise() {
+        assert_eq!(LockSettings::read(&serde_json::json!({})).after_idle_ms, 60_000);
+        assert_eq!(
+            LockSettings::read(&serde_json::json!({ "lockAfterIdleMs": 300_000 })).after_idle_ms,
+            300_000
+        );
+    }
+
+    /// The host reads the document itself, so a hand-edit that asks for a day has to be held to the
+    /// same range the core's own parser holds it to.
+    #[test]
+    fn holds_the_wait_inside_its_range_however_the_document_was_written() {
+        assert_eq!(
+            LockSettings::read(&serde_json::json!({ "lockAfterIdleMs": -1 })).after_idle_ms,
+            0
+        );
+        assert_eq!(
+            LockSettings::read(&serde_json::json!({ "lockAfterIdleMs": 86_400_000 })).after_idle_ms,
+            MAX_LOCK_AFTER_IDLE_MS
+        );
+        assert_eq!(
+            LockSettings::read(&serde_json::json!({ "lockAfterIdleMs": "soon" })).after_idle_ms,
+            DEFAULT_LOCK_AFTER_IDLE_MS
+        );
+    }
+
+    #[test]
+    fn locks_by_default_and_only_stops_where_the_document_says_so() {
+        assert!(LockSettings::read(&serde_json::json!({})).enabled);
+        assert!(!LockSettings::read(&serde_json::json!({ "lockWindow": false })).enabled);
     }
 
     #[test]
@@ -239,6 +328,6 @@ mod tests {
 
     #[test]
     fn tells_the_webview_whether_it_has_to_ask_for_a_password_itself() {
-        assert_eq!(WindowLock::new().state().prompts_itself, cfg!(target_os = "macos"));
+        assert_eq!(WindowLock::new().state().prompts_itself, cfg!(any(target_os = "macos", target_os = "windows")));
     }
 }

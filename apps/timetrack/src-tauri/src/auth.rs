@@ -1,8 +1,8 @@
 //! Checks that whoever is at the machine is the account's owner, by asking the operating system.
 //!
-//! No verdict of ours decides this and no secret of ours is stored: PAM owns the answer on Linux and
-//! LocalAuthentication owns it on macOS, because both already hold the account's credential. The app
-//! only ever learns whether the check passed.
+//! No verdict of ours decides this and no secret of ours is stored: PAM owns the answer on Linux,
+//! LocalAuthentication on macOS and Windows Hello on Windows, because each already holds the account's
+//! credential. The app only ever learns whether the check passed.
 
 use crate::error::TimetrackResult;
 
@@ -11,7 +11,7 @@ use crate::error::TimetrackResult;
 /// `false` means the caller has to supply the account password, the way a lock screen does. `true`
 /// means the operating system puts its own sheet up and a password must never be asked for or sent.
 pub fn collects_its_own_secret() -> bool {
-    cfg!(target_os = "macos")
+    cfg!(any(target_os = "macos", target_os = "windows"))
 }
 
 /// Whether this machine can check the account password at all.
@@ -234,23 +234,97 @@ mod platform {
 /// so nothing here ever handles a secret.
 ///
 /// It needs an application with an identity: an unbundled binary, which is what `tauri dev` builds, is
-/// refused before any sheet appears.
+/// refused before any sheet appears. `can_verify` asks the context that question rather than assuming
+/// an answer, so such a build reports `false` and the window never locks there.
 #[cfg(target_os = "macos")]
 mod platform {
     use crate::error::{TimetrackError, TimetrackResult};
+    use block2::RcBlock;
+    use objc2::runtime::Bool;
+    use objc2_foundation::{NSError, NSString};
+    use objc2_local_authentication::{LAContext, LAPolicy};
+    use std::sync::mpsc;
+
+    /// Touch ID with the account password behind it, rather than biometrics alone. A Mac with no
+    /// enrolled finger still has to have a way back into the window, and this is the same credential
+    /// PAM checks on Linux.
+    const POLICY: LAPolicy = LAPolicy::DeviceOwnerAuthentication;
+
+    /// Shown in the system's sheet after the application's name: `Timetrack is trying to …`.
+    const REASON: &str = "unlock the window";
 
     pub fn can_verify() -> bool {
-        false
+        unsafe { LAContext::new().canEvaluatePolicy_error(POLICY) }.is_ok()
     }
 
     pub fn verify_owner(_password: Option<&str>) -> TimetrackResult<bool> {
-        Err(TimetrackError::Rejected(
-            "checking the account password on macOS is not implemented yet".into(),
-        ))
+        let context = unsafe { LAContext::new() };
+
+        if unsafe { context.canEvaluatePolicy_error(POLICY) }.is_err() {
+            return Err(TimetrackError::Rejected(
+                "this build cannot put the system's authentication sheet up, so the owner cannot be checked".into(),
+            ));
+        }
+
+        let (sender, receiver) = mpsc::channel();
+        let reply = RcBlock::new(move |verified: Bool, _error: *mut NSError| {
+            let _ = sender.send(verified.as_bool());
+        });
+
+        // The context has to outlive the evaluation: dropping it cancels the sheet. `receiver.recv()`
+        // below is what keeps it alive, so nothing between here and there may return early.
+        unsafe { context.evaluatePolicy_localizedReason_reply(POLICY, &NSString::from_str(REASON), &reply) };
+
+        // The sheet stays up until the user answers it. A reply that never comes drops the sender
+        // rather than hanging here, and a check that did not answer is a check that did not pass.
+        Ok(receiver.recv().unwrap_or(false))
     }
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+/// Windows Hello puts the system's own dialog up — a PIN, a face or a fingerprint — so nothing here
+/// ever handles a secret either.
+///
+/// The dialog has to be parented to a window, which is why this goes through
+/// `IUserConsentVerifierInterop` and not `UserConsentVerifier::RequestVerificationAsync`. The latter is
+/// the store-application API and has no window to attach to in a desktop process.
+#[cfg(target_os = "windows")]
+mod platform {
+    use crate::error::{TimetrackError, TimetrackResult};
+    use windows::core::{factory, HSTRING};
+    use windows::Security::Credentials::UI::{
+        UserConsentVerificationResult, UserConsentVerifier, UserConsentVerifierAvailability,
+    };
+    use windows::Win32::System::WinRT::IUserConsentVerifierInterop;
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    use windows_future::IAsyncOperation;
+
+    /// Shown in the system's dialog.
+    const REASON: &str = "Unlock the Timetrack window";
+
+    pub fn can_verify() -> bool {
+        UserConsentVerifier::CheckAvailabilityAsync()
+            .and_then(|pending| pending.get())
+            .is_ok_and(|availability| availability == UserConsentVerifierAvailability::Available)
+    }
+
+    pub fn verify_owner(_password: Option<&str>) -> TimetrackResult<bool> {
+        let interop = factory::<UserConsentVerifier, IUserConsentVerifierInterop>().map_err(|error| {
+            TimetrackError::Rejected(format!("Windows Hello could not be reached: {error}"))
+        })?;
+
+        // The window the user is looking at, because pressing unlock is what got here and there is no
+        // other handle to reach from this side. A dialog with no parent is refused outright.
+        let pending: IAsyncOperation<UserConsentVerificationResult> =
+            unsafe { interop.RequestVerificationForWindowAsync(GetForegroundWindow(), &HSTRING::from(REASON)) }
+                .map_err(|error| TimetrackError::Rejected(format!("Windows Hello refused to ask: {error}")))?;
+
+        // Every other result — cancelled, out of retries, the device busy — is a check that did not
+        // pass rather than a machine that cannot check.
+        Ok(pending.get().is_ok_and(|result| result == UserConsentVerificationResult::Verified))
+    }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 mod platform {
     use crate::error::{TimetrackError, TimetrackResult};
 
@@ -271,7 +345,7 @@ mod tests {
 
     #[test]
     fn asks_for_a_password_everywhere_the_system_puts_up_no_sheet_of_its_own() {
-        assert_eq!(collects_its_own_secret(), cfg!(target_os = "macos"));
+        assert_eq!(collects_its_own_secret(), cfg!(any(target_os = "macos", target_os = "windows")));
     }
 
     #[cfg(target_os = "linux")]

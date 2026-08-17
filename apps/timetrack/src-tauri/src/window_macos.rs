@@ -226,7 +226,7 @@ mod tests {
 
     fn sampler() -> Sampler {
         Sampler {
-            sink: WindowSource::new(),
+            sink: WindowSource::new(crate::lock::WindowLock::new()),
             emitted: None,
             idle: false,
             trusted: true,

@@ -1980,9 +1980,10 @@ startup and show itself to whoever was sitting there.
   `system-auth` (Fedora and relatives), else `login` (Debian and relatives). Naming a service that does
   not exist falls through to `other`, which denies everything and would read as a wrong password.
 - **A machine that cannot check the password never locks.** `auth::can_verify()` gates it, and without
-  that the lock's only outcome on such a machine is an app nobody can open. This is also why macOS does
-  not lock yet: LocalAuthentication would put the system's own sheet up and handle the secret itself,
-  but it refuses an unbundled binary, which is what `tauri dev` builds.
+  that the lock's only outcome on such a machine is an app nobody can open. On macOS and Windows that
+  question is asked of the platform rather than assumed - `canEvaluatePolicy` and
+  `CheckAvailabilityAsync` - so an unbundled `tauri dev` build, or a machine with no Hello enrolled,
+  reports `false` and simply does not lock.
 - **The window stays visible while locked; the webview renders the prompt and nothing else.** There has to
   be somewhere to type, so `tray::reveal` is deliberately not gated - revealing a locked window is how the
   user reaches the prompt. Every view is behind `lock.ready()` as well as `lock.isLocked()`, because a
@@ -2007,7 +2008,44 @@ startup and show itself to whoever was sitting there.
 The floating readout is gated too, and it has to be: it is a second window, always on top, naming the
 current activity and the issue it is going to. `app.emit` reaches every window, so it reads the same state.
 
-Still owed: the macOS check through LocalAuthentication, and Windows through `UserConsentVerifier`.
+**All three platforms now check** (`auth.rs`, one `mod platform` each). What building the other two settled:
+
+- **macOS: `LAPolicy::DeviceOwnerAuthentication`, not the biometrics-only policy.** A Mac with no enrolled
+  finger still has to have a way back into the window, and the fallback that policy offers is the account
+  password - the same credential PAM checks. `evaluatePolicy` does not block, so `verify_owner` waits on a
+  channel the reply block sends to, and the `LAContext` has to outlive that wait or the sheet is cancelled.
+- **macOS: the screen lock is `NSDistributedNotificationCenter`,** `com.apple.screenIsLocked` and
+  `…Unlocked` (`lock_macos.rs`). Registered from `setup`, on the main thread, because the observer is
+  delivered through the run loop of the thread that registered it - a thread of its own would need a run
+  loop of its own. The returned token is the registration, so it is deliberately leaked.
+- **Windows: `IUserConsentVerifierInterop`, not `UserConsentVerifier::RequestVerificationAsync`.** The
+  latter is the store-application API and has no window to parent its dialog to in a desktop process. The
+  interop one takes an `HWND`, and the only handle reachable from `auth.rs` is `GetForegroundWindow()` -
+  which is the window the user just pressed unlock in. That is the weak point of the Windows path.
+- **`collects_its_own_secret()` covers Windows too.** Hello puts its own dialog up exactly as macOS does,
+  so the lock view must render no password field and send none.
+- **Compiling on the target is not optional.** `window_macos.rs`'s tests had never been built, and still
+  called `WindowSource::new()` with the argument the lock added. `cargo test` on macOS was broken and no
+  Linux run could have said so.
+
+The **PAM service file** is shipped now: `pam/timetrack.deb` (`common-auth`) and `pam/timetrack.rpm`
+(`system-auth`), installed to `/etc/pam.d/timetrack` by `bundle.linux.deb.files` and `…rpm.files`. One file
+cannot serve both families because the aggregate has a different name in each, and only the `auth` stack is
+included because `pam_authenticate` is the only call the app makes. This matters most on Debian, where the
+probe's fallback was `login` - a stack carrying `pam_nologin` and `pam_securetty`, neither of which has
+anything to do with unlocking a window. An AppImage installs nothing, so the probe stays as the safety net.
+openSUSE is not covered: it is an rpm distribution that uses `common-auth`, and it falls back as before.
+
+**The idle wait is a setting** (`lockAfterIdleMs`, 0 to 60 minutes, one minute by default). It is applied
+in `set_app_settings`, from the document the host is writing, rather than re-read: the thread that locks the
+window reads neither the webview nor the database again, so a wait the user just changed would otherwise not
+apply until the next start. `lock::LockSettings::read` clamps it in Rust as well as in the core's parser,
+because the host reads that document itself and a hand-edit never passes through `parseTimetrackSettings`.
+
+Still owed: nothing on Linux. macOS is written and compiles on a Mac, but the sheet itself is untested -
+that needs a bundled, signed build, which is the same limitation notifications have. Windows is written and
+type-checks against the exact `windows` crate version Tauri pulls, and has never run: there is no Windows
+machine here, and no window source there either, so the idle trigger would never fire even once it does.
 
 ## Picked projects, and rows the machine never saw
 

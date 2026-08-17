@@ -1,0 +1,3 @@
+# Timetrack unlocks its window by checking the account's own password. Only the auth stack is used,
+# and the app learns nothing from it but whether the check passed.
+auth	include	common-auth

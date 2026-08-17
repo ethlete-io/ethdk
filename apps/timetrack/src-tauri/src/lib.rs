@@ -12,6 +12,8 @@ mod keychain;
 mod lock;
 #[cfg(target_os = "linux")]
 mod lock_linux;
+#[cfg(target_os = "macos")]
+mod lock_macos;
 mod logs;
 mod nudge;
 mod oauth;
@@ -63,6 +65,9 @@ pub fn run() {
 
             #[cfg(target_os = "linux")]
             lock_linux::start(app.handle().clone());
+
+            #[cfg(target_os = "macos")]
+            lock_macos::start(app.handle().clone());
 
             // Before the sources start, not after the webview has loaded and told us: a pause the
             // user took yesterday must not collect the first seconds of today's start.

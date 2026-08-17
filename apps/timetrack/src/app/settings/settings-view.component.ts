@@ -57,15 +57,22 @@ a time Tempo already holds an issue for follows that history. This is the answer
 
 Leave it unset and such a meeting stays unattributed, which means the review asks about it every day.`;
 
-const LOCK_WHY = `The window starts locked and locks itself again a minute after you go idle. Your own account
-password opens it - the check is the operating system's, through PAM on Linux, so nothing here holds a
-secret of its own and there is no second password to remember.
+const LOCK_WHY = `The window starts locked and locks itself again once you have been idle long enough. Your own
+account password opens it - the check is the operating system's, through PAM on Linux and the system's own
+sheet on macOS, so nothing here holds a secret of its own and there is no second password to remember.
 
 Collection never stops for it. A lock that stopped the collectors would leave a hole in the day, which is
 what the pause button is for instead. What is locked is the reading of the day, because the database holds
 months of window titles.
 
 A machine that cannot check the account password never locks: there would be no way back in.`;
+
+const LOCK_WAIT_WHY = `How long after you go idle the window locks itself. It is a wait on top of the five
+minutes it takes to call you idle at all, so a minute here locks the window about six minutes after your last
+keystroke.
+
+Zero locks as soon as you are called idle. Locking the screen locks the window straight away whatever this
+says, because walking off is not something to wait out.`;
 
 const SUGGESTIONS_WHY = `For work no branch name, rule or merge request could name an issue for, the review
 can ask the agent CLI you already have signed in.
@@ -331,9 +338,22 @@ window title, never a file path. A suggestion never syncs on its own.`;
                   <ethlete-explain [text]="LOCK_WHY" label="the window lock" />
                 </div>
 
-                @if (!lock.isLocked() && store.settings().lockWindow) {
-                  <div>
-                    <button (click)="lock.lock()" et-button variant="outline" size="sm">Lock now</button>
+                @if (store.settings().lockWindow) {
+                  <div class="flex flex-wrap items-end gap-3">
+                    <et-form-field class="w-30" appearance="underline" size="sm">
+                      <et-label>Lock after idle</et-label>
+                      <et-duration-input
+                        [value]="store.settings().lockAfterIdleMs"
+                        (valueChange)="store.setLockAfterIdleMs($event ?? 0)"
+                        durationFormat="mm:ss"
+                      />
+                    </et-form-field>
+
+                    <ethlete-explain [text]="LOCK_WAIT_WHY" label="the idle wait" />
+
+                    @if (!lock.isLocked()) {
+                      <button (click)="lock.lock()" et-button variant="outline" size="sm">Lock now</button>
+                    }
                   </div>
                 }
               </div>
@@ -417,6 +437,7 @@ export class SettingsViewComponent {
   protected readonly MEETING_WHY = MEETING_WHY;
   protected readonly SUGGESTIONS_WHY = SUGGESTIONS_WHY;
   protected readonly LOCK_WHY = LOCK_WHY;
+  protected readonly LOCK_WAIT_WHY = LOCK_WAIT_WHY;
 
   protected repoPaths = computed(() => this.git.discovery()?.repos ?? []);
 

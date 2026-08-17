@@ -16,6 +16,7 @@ import {
   TimetrackTicketSettings,
   clampDayTargetMs,
   clampGapFillMs,
+  clampLockAfterIdleMs,
   clampMinuteOfDay,
   timetrackCredentialStatus,
   withAttributionRule,
@@ -189,6 +190,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setTicket: (ticket: TimetrackTicketSettings) => patch({ ticket }),
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
     setLockWindow: (lockWindow: boolean) => patch({ lockWindow }),
+    setLockAfterIdleMs: (lockAfterIdleMs: number) => patch({ lockAfterIdleMs: clampLockAfterIdleMs(lockAfterIdleMs) }),
 
     addExclusionRule: (rule: TimetrackExclusionRule) => {
       const rules = settings().exclusionRules;

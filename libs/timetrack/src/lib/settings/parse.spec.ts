@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_DAY_TARGET_MS,
   DEFAULT_GAP_FILL_MS,
+  DEFAULT_LOCK_AFTER_IDLE_MS,
   DEFAULT_NUDGE_AT_MINUTE,
   DEFAULT_TIMETRACK_SETTINGS,
   MAX_DAY_TARGET_MS,
   MAX_GAP_FILL_MS,
+  MAX_LOCK_AFTER_IDLE_MS,
   MAX_MINUTE_OF_DAY,
   MIN_DAY_TARGET_MS,
 } from './model';
@@ -56,12 +58,21 @@ describe('parseTimetrackSettings', () => {
       attributionRules: [],
       projectLinks: [],
       lockWindow: true,
+      lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
     });
   });
 
   it('keeps the window lock on unless the document turns it off', () => {
     expect(parseTimetrackSettings({ lockWindow: false }).lockWindow).toBe(false);
     expect(parseTimetrackSettings({ lockWindow: 'yes' }).lockWindow).toBe(true);
+  });
+
+  it('keeps the idle wait inside its range, and defaults it to a minute', () => {
+    expect(parseTimetrackSettings({}).lockAfterIdleMs).toBe(DEFAULT_LOCK_AFTER_IDLE_MS);
+    expect(parseTimetrackSettings({ lockAfterIdleMs: 5 * 60_000 }).lockAfterIdleMs).toBe(5 * 60_000);
+    expect(parseTimetrackSettings({ lockAfterIdleMs: -1 }).lockAfterIdleMs).toBe(0);
+    expect(parseTimetrackSettings({ lockAfterIdleMs: 86_400_000 }).lockAfterIdleMs).toBe(MAX_LOCK_AFTER_IDLE_MS);
+    expect(parseTimetrackSettings({ lockAfterIdleMs: 'a minute' }).lockAfterIdleMs).toBe(DEFAULT_LOCK_AFTER_IDLE_MS);
   });
 
   it('falls back to the defaults for anything it cannot make sense of', () => {
@@ -82,6 +93,7 @@ describe('parseTimetrackSettings', () => {
       attributionRules: [],
       projectLinks: [],
       lockWindow: true,
+      lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
   });

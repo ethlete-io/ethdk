@@ -11,6 +11,7 @@ import {
   TimetrackTicketSettings,
   clampDayTargetMs,
   clampGapFillMs,
+  clampLockAfterIdleMs,
   clampMinuteOfDay,
 } from './model';
 
@@ -26,6 +27,11 @@ const asTarget = (value: unknown) =>
 
 const asGapFill = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) ? clampGapFillMs(value) : DEFAULT_TIMETRACK_SETTINGS.gapFillMs;
+
+const asLockAfterIdle = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value)
+    ? clampLockAfterIdleMs(value)
+    : DEFAULT_TIMETRACK_SETTINGS.lockAfterIdleMs;
 
 /**
  * A rule whose regular expression does not compile survives the read on purpose: `applyExclusionRules`
@@ -234,5 +240,6 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     attributionRules: asAttributionRules(document['attributionRules']),
     projectLinks: asProjectLinks(document['projectLinks']),
     lockWindow: document['lockWindow'] !== false,
+    lockAfterIdleMs: asLockAfterIdle(document['lockAfterIdleMs']),
   };
 };

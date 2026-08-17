@@ -337,12 +337,10 @@ pub async fn app_settings(db: State<'_, Db>) -> TimetrackResult<Option<serde_jso
     .await
 }
 
-/// The one field of the settings document the host reads for itself: whether the window locks.
+/// The part of the settings document the host reads for itself: what the window lock is told to do.
 ///
-/// The shape of that document belongs to the core, so this reads a single optional flag and treats
-/// anything it does not understand as the default. The host has to know before a view is mounted, which
-/// is why it does not wait to be told.
-pub async fn lock_window_setting(db: &Db) -> bool {
+/// The host has to know this before a view is mounted, which is why it does not wait to be told.
+pub async fn lock_settings(db: &Db) -> crate::lock::LockSettings {
     let stored = db
         .run(move |connection| {
             Ok(connection
@@ -354,17 +352,22 @@ pub async fn lock_window_setting(db: &Db) -> bool {
         .await;
 
     let Ok(Some(document)) = stored else {
-        return true;
+        return crate::lock::LockSettings::default();
     };
 
     serde_json::from_str::<serde_json::Value>(&document)
-        .ok()
-        .and_then(|document| document.get("lockWindow").and_then(serde_json::Value::as_bool))
-        .unwrap_or(true)
+        .map(|document| crate::lock::LockSettings::read(&document))
+        .unwrap_or_default()
 }
 
 #[tauri::command]
-pub async fn set_app_settings(db: State<'_, Db>, settings: serde_json::Value) -> TimetrackResult<()> {
+pub async fn set_app_settings(
+    db: State<'_, Db>,
+    lock: State<'_, crate::lock::WindowLock>,
+    settings: serde_json::Value,
+) -> TimetrackResult<()> {
+    let lock_settings = crate::lock::LockSettings::read(&settings);
+
     db.run(move |connection| {
         connection.execute(
             "INSERT INTO app_setting (id, document) VALUES (1, ?1)
@@ -374,7 +377,14 @@ pub async fn set_app_settings(db: State<'_, Db>, settings: serde_json::Value) ->
 
         Ok(())
     })
-    .await
+    .await?;
+
+    // Taken from the document just written rather than waited for. The thread that locks the window
+    // reads neither the webview nor the database again, so a wait the user just changed would
+    // otherwise not apply until the next start.
+    lock.apply(&lock_settings);
+
+    Ok(())
 }
 
 #[tauri::command]
