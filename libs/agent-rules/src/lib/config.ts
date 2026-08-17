@@ -82,6 +82,9 @@ const readRawConfig = (root: string) => {
  *   a handoff instead of writing the handoff file automatically.
  * - `sdkSourcePath` points at a local `ethlete-sdk` checkout, which the SDK source and local-build
  *   skills read when they need the SDK's own sources instead of the published package.
+ * - `apiRepoPaths` maps an app in this repo to the checkout of the API it talks to (`{ "hub":
+ *   "../fut-hub-backend" }`), which the api-source skill reads to answer a question about the
+ *   server instead of guessing it from the client.
  * - `jira` holds the per-user Jira credentials `git-flow start` needs. This is the one place in the
  *   repo a secret may sit, and only because the file is gitignored; `JIRA_EMAIL`/`JIRA_API_TOKEN`
  *   in the environment are the alternative.
@@ -90,6 +93,7 @@ export type LocalConfig = {
   disableHooks?: boolean | string[];
   disableAutoHandoffSave?: boolean;
   sdkSourcePath?: string;
+  apiRepoPaths?: Record<string, string>;
   jira?: { host?: string; email?: string; token?: string };
 };
 
@@ -98,7 +102,13 @@ export type LocalConfigState =
   | { exists: true; valid: false }
   | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[] };
 
-const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'disableAutoHandoffSave', 'sdkSourcePath', 'jira'];
+const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = [
+  'disableHooks',
+  'disableAutoHandoffSave',
+  'sdkSourcePath',
+  'apiRepoPaths',
+  'jira',
+];
 
 export const readLocalConfig = (root: string): LocalConfigState => {
   const path = join(root, LOCAL_CONFIG_FILE_NAME);

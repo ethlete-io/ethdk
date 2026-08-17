@@ -328,6 +328,7 @@ differ per developer, without touching any committed file:
 {
   "disableHooks": true,
   "sdkSourcePath": "/absolute/path/to/ethlete-sdk",
+  "apiRepoPaths": { "hub": "../fut-hub-backend" },
   "jira": { "email": "you@example.com", "token": "…" }
 }
 ```
@@ -345,12 +346,18 @@ differ per developer, without touching any committed file:
   `sdk-local-build` skills read it when the agent needs the SDK's own sources, or has to
   build the SDK and install it here through a `file:` dependency. A relative path is
   resolved from the repo root.
+- **`apiRepoPaths`** - one checkout per app, keyed by the app's project name
+  (`{ "hub": "../fut-hub-backend" }`). The `api-source` skill reads it to confirm a
+  response shape, a status code or an enum in the API's own source instead of guessing it
+  from the client. Relative paths resolve from the repo root; a map with a single entry is
+  used for whatever app is in play.
 
 Everything in this file is read at runtime, never by `sync`: the generated files stay
 identical on every machine and in CI, which is what lets `check` diff them. That is also
 why the file takes nothing beyond these keys - `sync`/`check` warn about unknown keys,
-and about an `sdkSourcePath` that is missing or is not an SDK checkout. Add the filename
-to your repo's `.gitignore`.
+about an `sdkSourcePath` that is missing or is not an SDK checkout, and about an
+`apiRepoPaths` entry that is not a directory. Add the filename to your repo's
+`.gitignore`.
 
 ## Authoring content
 
