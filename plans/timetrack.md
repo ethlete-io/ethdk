@@ -1007,6 +1007,32 @@ Code` says which checkout is in front of you. Consequences worth keeping: a focu
    repositories share is dropped rather than resolved, because guessing which `api` an editor is
    showing would attribute one project's time to another.
 
+   **An agent session is not presence, and reading it as presence cost one real day 7 hours.** Found
+   on 2026-08-10, reported by the user: 15h 40m over 34 blocks, one of them
+   `feat/collection-item-rejection-tooltip · 7h 14m` starting at 16:15. The mechanism is exact. A
+   Claude Code session appends a record per minute for as long as it runs, and the parser emits a
+   sample per minute from it. So the `idle-start` at 16:15 closed the block the user left - and the
+   agent's next sample, one minute later, opened a new one that no rule could close: never a
+   30-minute gap, never a context change, and the user was already idle so no second `idle-start` was
+   coming. The evening ran into one block. **From an `idle-start` or a `lock` until the input that
+   ends it, nothing the machine does on its own opens or holds open a block** - an agent session and
+   a commit both keep happening after the user leaves. Being away ends on `idle-end`, `unlock`, a
+   window focus or an editor heartbeat, because all four need somebody at the keyboard; it does not
+   end on a commit, or an agent that commits through the night would re-arm presence every time.
+   Repo and branch are still learned while away, so a branch the agent checked out is the branch the
+   user comes back to. The window's first presence event carries the night: an `idle-end` with no
+   `idle-start` before it means idleness began before midnight, which is the same edge `pauseWindows`
+   reads a dangling `pause-end` as. Confirmed on this machine that the idle source this rests on is
+   live - niri exposes `ext_idle_notifier_v1`. `currentActivity` needed no change and gets better for
+   free: the tray said `working` all evening only because the block outlived the `idle-start`.
+
+   **A flap may only be absorbed by a block it touches.** Found while reading the same day. `collapse`
+   handed any block under `flapThresholdMs` to the block before it with no contiguity check, so one
+   lone sample hours later - a single commit at 14:00 after a morning that ended at 10:00 - stretched
+   the morning block across the whole gap. The merge branch beside it always checked contiguity; the
+   flap branch now does too, and a flap across a gap is dropped rather than absorbed. It is under a
+   minute of unattributable time either way.
+
 2. **Extract keys.** Run the branch-grammar parser over every branch-bearing piece of
    evidence (git checkouts, agent-session `gitBranch`, MR source branches, editor
    heartbeats), then a loose key regex over window titles as a lower-confidence pass.

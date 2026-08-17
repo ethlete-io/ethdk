@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blockDurationMs } from '../model/block';
+import { ActivityBlock, blockDurationMs } from '../model/block';
 import { CollectedEvent } from '../model/event';
 import { sessionize } from './sessionize';
 
@@ -258,6 +258,109 @@ describe('sessionize', () => {
 
   it('returns nothing for an empty window', () => {
     expect(sessionize({ events: [] })).toEqual([]);
+  });
+});
+
+/**
+ * The case a real day reported: 7h 14m on one branch, starting at the minute the user left. An agent
+ * session writes to its log every minute for as long as it runs, so nothing else was needed to hold
+ * the block open all evening.
+ */
+describe('sessionize, while the user is away', () => {
+  const agentEvening = (): CollectedEvent[] => {
+    const events: CollectedEvent[] = [focus(0, 'code'), session(1, '/home/tom/dev/fut-frontend', 'feat/tooltip')];
+
+    for (let minute = 16; minute <= 200; minute++) {
+      events.push(session(minute, '/home/tom/dev/fut-frontend', 'feat/tooltip'));
+    }
+
+    return [...events, presence(15, 'idle-start')];
+  };
+
+  const observedMs = (blocks: readonly ActivityBlock[]) =>
+    blocks.reduce((sum, block) => sum + blockDurationMs(block), 0);
+
+  it('leaves a background agent session out of the day', () => {
+    const blocks = sessionize({ events: agentEvening() });
+
+    expect(blocks.at(-1)?.to).toEqual(AT(15));
+    expect(observedMs(blocks)).toBe(15 * 60_000);
+  });
+
+  it('counts the agent again once the user is back at the machine', () => {
+    const blocks = sessionize({
+      events: [...agentEvening(), focus(201, 'code'), session(202, '/home/tom/dev/fut-frontend', 'feat/tooltip')],
+    });
+
+    expect(blocks.at(-1)?.from).toEqual(AT(201));
+    expect(blocks.at(-1)?.to).toEqual(AT(202));
+    expect(observedMs(blocks)).toBe(16 * 60_000);
+  });
+
+  it('reads a lock the same way as an idle, and an unlock as the return', () => {
+    const blocks = sessionize({
+      events: [
+        session(1, '/home/tom/dev/fut-frontend'),
+        presence(5, 'lock'),
+        session(30, '/home/tom/dev/fut-frontend'),
+        presence(60, 'unlock'),
+        session(61, '/home/tom/dev/fut-frontend'),
+        session(70, '/home/tom/dev/fut-frontend'),
+      ],
+    });
+
+    expect(blocks.map((block) => [block.from, block.to])).toEqual([
+      [AT(1), AT(5)],
+      [AT(61), AT(70)],
+    ]);
+  });
+
+  /** Idleness outlives a calendar day, so the day's first presence event says how the night ended. */
+  it('treats a window that opens on a resume as opening away', () => {
+    const blocks = sessionize({
+      events: [
+        session(0, '/home/tom/dev/fut-frontend'),
+        session(30, '/home/tom/dev/fut-frontend'),
+        presence(60, 'idle-end'),
+        focus(61, 'code'),
+        session(70, '/home/tom/dev/fut-frontend'),
+      ],
+    });
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].from).toEqual(AT(61));
+  });
+
+  it('still learns the branch the agent checked out while the user was gone', () => {
+    const blocks = sessionize({
+      events: [
+        focus(0, 'code', 'list.ts - fut-frontend - Visual Studio Code'),
+        checkout(1, 'feat/one'),
+        presence(5, 'idle-start'),
+        checkout(30, 'feat/two'),
+        focus(60, 'code', 'list.ts - fut-frontend - Visual Studio Code'),
+        focus(70, 'code', 'list.ts - fut-frontend - Visual Studio Code'),
+      ],
+    });
+
+    expect(blocks.at(-1)?.context.branch).toBe('feat/two');
+  });
+
+  /**
+   * A lone sample hours after the last one is under the flap threshold, and absorbing it into the
+   * block before would hand that block every minute in between.
+   */
+  it('drops a lone late sample rather than stretching the block before it', () => {
+    const blocks = sessionize({
+      events: [
+        checkout(0, 'feat/FIP-2177-user-management'),
+        commit(10, 'abc1234', 'feat(hub): One', 'feat/FIP-2177-user-management'),
+        commit(100, 'def5678', 'feat(hub): Two', 'feat/FIP-2177-user-management'),
+      ],
+    });
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].to).toEqual(AT(10));
   });
 });
 

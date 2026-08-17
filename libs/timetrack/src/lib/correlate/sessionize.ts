@@ -177,25 +177,27 @@ const clampToWorkingHours = (block: ActivityBlock, hours: WorkingHours): Activit
 /**
  * Absorbs flapping into the block before it, then merges neighbours that ended up in the same
  * context — which is what makes an alt-tab to Slack and back one coding block rather than three.
- * Only genuinely contiguous neighbours merge, so a block that ended at an idle stays separate from
- * the one that resumes the same work an hour later.
+ * Only genuinely contiguous neighbours merge or absorb, so a block that ended at an idle stays
+ * separate from the one that resumes the same work an hour later.
  */
 const collapse = (blocks: ActivityBlock[], flapThresholdMs: number) => {
   const kept: ActivityBlock[] = [];
 
   for (const block of blocks) {
     const previous = kept[kept.length - 1];
+    const contiguous = !!previous && previous.to.getTime() === block.from.getTime();
 
+    // A flap joins the block before it only where it touches it. Across a gap — an idle, or a
+    // stretch nothing observed — absorbing it would hand that block every minute of the gap, so a
+    // lone sample hours later is dropped instead of stretching the morning into the evening.
     if (blockDurationMs(block) < flapThresholdMs) {
-      if (!previous) continue;
+      if (!contiguous) continue;
       previous.to = block.to;
       for (const evidence of block.evidence) addEvidence(previous.evidence, evidence);
       continue;
     }
 
-    const contiguous = previous?.to.getTime() === block.from.getTime();
-
-    if (previous && contiguous && contextKey(previous.context) === contextKey(block.context)) {
+    if (contiguous && contextKey(previous.context) === contextKey(block.context)) {
       previous.to = block.to;
       for (const evidence of block.evidence) addEvidence(previous.evidence, evidence);
       continue;
@@ -207,11 +209,32 @@ const collapse = (blocks: ActivityBlock[], flapThresholdMs: number) => {
   return kept;
 };
 
+/** Whether a sample is the user at the machine, rather than something the machine did on its own. */
+const isPresent = (event: ActivityEvent) => event.kind === 'window-focus' || event.kind === 'editor-heartbeat';
+
+/**
+ * Whether the window opens with the user already away.
+ *
+ * A resume with nothing to resume from began before the window — the same edge `pauseWindows` reads,
+ * and for the same reason: idleness outlives a calendar day. Without this an agent that ran through
+ * midnight arrives as a morning of work nobody was at.
+ */
+const opensAway = (samples: readonly ActivityEvent[]) => {
+  const first = samples.find((sample) => sample.source === 'idle');
+
+  return first?.kind === 'idle-end' || first?.kind === 'unlock';
+};
+
 /**
  * Turns raw observations into contiguous same-context blocks. A block ends where the context
  * changes, where presence ends, or where the samples simply stop — and in that last case it ends
  * at its final sample rather than being stretched to the next one, because nothing observed the
  * time in between.
+ *
+ * Nothing the machine does on its own counts while the user is away. An agent session and a commit
+ * both go on happening after the user leaves, and the idle notifier is what says they left — so from
+ * an `idle-start` or a `lock` until the input that ends it, those samples neither open a block nor
+ * hold one open. This is what keeps a background agent's evening out of the day.
  */
 export const sessionize = (options: {
   events: CollectedEvent[];
@@ -231,6 +254,7 @@ export const sessionize = (options: {
   let current: ActivityBlock | null = null;
   let appId: string | undefined;
   let repoPath: string | undefined;
+  let away = opensAway(samples);
 
   const close = (at: Date) => {
     if (!current) return;
@@ -241,11 +265,19 @@ export const sessionize = (options: {
 
   for (const sample of samples) {
     if (sample.source === 'idle') {
-      if (sample.kind === 'idle-start' || sample.kind === 'lock') close(sample.at);
+      if (sample.kind === 'idle-start' || sample.kind === 'lock') {
+        away = true;
+        close(sample.at);
+      }
+
+      if (sample.kind === 'idle-end' || sample.kind === 'unlock') away = false;
+
       continue;
     }
 
-    if (current && sample.at.getTime() - current.to.getTime() >= config.maxUnobservedMs) close(current.to);
+    // Input the idle notifier may have missed the resume of. A focus change and an editor heartbeat
+    // both need somebody at the keyboard, so either one ends being away on its own.
+    if (isPresent(sample)) away = false;
 
     if (sample.kind === 'window-focus') appId = sample.appId;
 
@@ -266,6 +298,12 @@ export const sessionize = (options: {
     if (repoPath && (!seen || sample.at.getTime() - seen.at.getTime() > config.repoStickinessMs)) {
       repoPath = undefined;
     }
+
+    // The repository the sample names is learned either way — a branch the agent checked out while
+    // the user was gone is still the branch they come back to. Only the block is withheld.
+    if (away) continue;
+
+    if (current && sample.at.getTime() - current.to.getTime() >= config.maxUnobservedMs) close(current.to);
 
     const context: ActivityContext = { appId, repoPath, branch: repoPath ? repos.get(repoPath)?.branch : undefined };
 

@@ -46,6 +46,18 @@ export const e2eEvents = (): CollectedEvent[] => [
     branch: `feat/${E2E_ISSUE_KEY}-user-management`,
   },
   { at: at(9, 1), source: 'window', kind: 'window-focus', appId: 'com.microsoft.VSCode', title: 'user-management.ts' },
+  // The morning is sampled through, not just at its ends. A block ends at its last sample, so two
+  // events 89 minutes apart describe one observed minute rather than the hour and a half between them.
+  ...[
+    { at: at(9, 25), title: 'invite.ts - fut-frontend - Visual Studio Code' },
+    { at: at(9, 50), title: 'invite.spec.ts - fut-frontend - Visual Studio Code' },
+    { at: at(10, 15), title: 'member.ts - fut-frontend - Visual Studio Code' },
+  ].map((sample): CollectedEvent => ({
+    ...sample,
+    source: 'window',
+    kind: 'window-focus',
+    appId: 'com.microsoft.VSCode',
+  })),
   {
     at: at(10, 30),
     source: 'git',
