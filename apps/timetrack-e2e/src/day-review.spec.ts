@@ -6,7 +6,7 @@ test.describe('the day view', () => {
   });
 
   test('reconstructs the seeded morning into a row that names its issue', async ({ page }) => {
-    await expect(page.locator('button[data-kind="row"]')).toHaveAttribute('title', 'FIP-3010 · 1h 30m');
+    await expect(page.locator('[data-kind="row"]')).toHaveAttribute('title', 'ABC-3010 · 1h 30m');
     await expect(page.getByText('feat(users): Invite a member by email').first()).toBeVisible();
   });
 
@@ -30,7 +30,7 @@ test.describe('the day view', () => {
 
     await again.click();
 
-    await expect(page.getByText('Suggested FIP-3010')).toBeVisible();
+    await expect(page.getByText('Suggested ABC-3010')).toBeVisible();
   });
 
   test('opens the create-ticket form on no parent, never on a guess', async ({ page }) => {

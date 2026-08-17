@@ -18,7 +18,7 @@ test.describe('a day logged in tempo by hand', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('e2e.foreignMinutes', '90'));
     await page.goto('/');
-    await page.getByLabel('Log time for FIP-3010').check();
+    await page.getByLabel('Log time for ABC-3010').check();
   });
 
   test('reads what tempo holds after the day review opened the day', async ({ page }) => {

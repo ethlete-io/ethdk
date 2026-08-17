@@ -4,14 +4,14 @@ import {
   BUTTON_IMPORTS,
   CHECKBOX_IMPORTS,
   CHEVRON_ICON,
-  CHOICE_FIELD_IMPORTS,
   DURATION_INPUT_IMPORTS,
   FORM_FIELD_IMPORTS,
   ICON_IMPORTS,
   INPUT_IMPORTS,
   provideIcons,
 } from '@ethlete/components';
-import { Confidence, ReviewedRow, formatDurationMs, syncsInState } from '@ethlete/timetrack';
+import { Confidence, ReviewedRow, formatDurationMs, isManualRow, syncsInState } from '@ethlete/timetrack';
+import { IssueSelectComponent } from '../jira';
 import { formatClockTime } from './format';
 
 const CONFIDENCE_TONE: Record<Confidence, string> = {
@@ -34,21 +34,22 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
       class="rounded-md border border-et-surface-border p-3 data-[rejected=true]:opacity-55 data-[weak=true]:border-dashed"
     >
       <div class="flex flex-wrap items-center gap-3">
-        <et-choice-field>
-          <et-checkbox
-            [checked]="willSync()"
-            [attr.aria-label]="'Log time for ' + row().issueKey"
-            (checkedChange)="stateChange.emit($event ? 'accepted' : 'rejected')"
-          />
-        </et-choice-field>
+        <et-checkbox
+          [checked]="willSync()"
+          [attr.aria-label]="'Log time for ' + row().issueKey"
+          (checkedChange)="stateChange.emit($event ? 'accepted' : 'rejected')"
+        />
 
-        <et-form-field class="w-30 shrink-0" appearance="underline" size="sm">
-          <et-input
-            [value]="row().issueKey"
-            [aria-label]="'Issue for ' + row().issueKey"
-            (valueChange)="issueChange.emit($event)"
-          />
-        </et-form-field>
+        <ethlete-issue-select
+          [value]="row().issueKey"
+          [ariaLabel]="'Issue for ' + row().issueKey"
+          (valueChange)="issueChange.emit($event)"
+          class="w-42 shrink-0"
+        />
+
+        @if (manual()) {
+          <et-badge size="sm" color="brand">by hand</et-badge>
+        }
 
         <et-form-field class="w-22 shrink-0" appearance="underline" size="sm">
           <et-duration-input
@@ -116,7 +117,9 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
           <div class="flex flex-wrap gap-2">
             <button (click)="split.emit()" et-button variant="outline" size="sm">Split in half</button>
 
-            @if (row().edited) {
+            @if (manual()) {
+              <button (click)="removeRow.emit()" et-button variant="transparent" size="sm">Remove this row</button>
+            } @else if (row().edited) {
               <button (click)="revert.emit()" et-button variant="transparent" size="sm">Reset to proposal</button>
             }
           </div>
@@ -129,11 +132,11 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
     BADGE_IMPORTS,
     BUTTON_IMPORTS,
     CHECKBOX_IMPORTS,
-    CHOICE_FIELD_IMPORTS,
     DURATION_INPUT_IMPORTS,
     FORM_FIELD_IMPORTS,
     ICON_IMPORTS,
     INPUT_IMPORTS,
+    IssueSelectComponent,
   ],
   providers: [provideIcons(CHEVRON_ICON)],
 })
@@ -151,8 +154,11 @@ export class WorklogRowComponent {
   public mergeToggle = output<void>();
   public split = output<void>();
   public revert = output<void>();
+  /** Takes a hand-written row off the day. Only such a row can be removed — see `removeManualRow`. */
+  public removeRow = output<void>();
 
   protected willSync = computed(() => syncsInState(this.row().state));
+  protected manual = computed(() => isManualRow(this.row()));
   protected tone = computed(() => CONFIDENCE_TONE[this.row().confidence]);
   protected observed = computed(() => formatDurationMs(this.row().observedMs));
   protected logged = computed(() => formatDurationMs(this.row().durationMs));

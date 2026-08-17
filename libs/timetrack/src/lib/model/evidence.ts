@@ -13,7 +13,9 @@ export type EvidenceKind =
   | 'window-title'
   | 'editor'
   | 'calendar'
-  | 'timer';
+  | 'timer'
+  /** A row the reviewer added by hand. Nothing observed it, and the day says so rather than implying it. */
+  | 'manual';
 
 /**
  * One concrete observation behind a block or a proposal. `detail` is shown verbatim in the review

@@ -16,9 +16,9 @@ describe('parseTimetrackSettings', () => {
     const settings = parseTimetrackSettings({
       dayTargetMs: 7 * 60 * 60_000,
       gapFillMs: 10 * 60_000,
-      jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
+      jira: { host: 'example.atlassian.net', email: 'you@example.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
-      gitlab: { host: 'git.braune-digital.com' },
+      gitlab: { host: 'git.example.com' },
       ticket: {
         issueTypeName: 'Aufgabe',
         parentIssueTypeNames: ['Story'],
@@ -30,15 +30,15 @@ describe('parseTimetrackSettings', () => {
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
-      gitScanRoots: ['/home/tom/dev'],
+      gitScanRoots: ['/home/you/dev'],
     });
 
     expect(settings).toEqual({
       dayTargetMs: 7 * 60 * 60_000,
       gapFillMs: 10 * 60_000,
-      jira: { host: 'ethlete.atlassian.net', email: 'trb@braune-digital.com' },
+      jira: { host: 'example.atlassian.net', email: 'you@example.com' },
       google: { clientId: 'client.apps.googleusercontent.com', calendarIds: ['work@example.com'] },
-      gitlab: { host: 'git.braune-digital.com' },
+      gitlab: { host: 'git.example.com' },
       ticket: {
         issueTypeName: 'Aufgabe',
         parentIssueTypeNames: ['Story'],
@@ -50,8 +50,9 @@ describe('parseTimetrackSettings', () => {
       nudge: { enabled: false, atMinute: 18 * 60 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
       keepDefaultExclusionRules: false,
-      gitScanRoots: ['/home/tom/dev'],
-      issueKeyPrefixes: [],
+      gitScanRoots: ['/home/you/dev'],
+      favoriteProjects: [],
+      meetingIssueKey: '',
       attributionRules: [],
       projectLinks: [],
     });
@@ -70,7 +71,8 @@ describe('parseTimetrackSettings', () => {
       exclusionRules: [],
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
-      issueKeyPrefixes: [],
+      favoriteProjects: [],
+      meetingIssueKey: '',
       attributionRules: [],
       projectLinks: [],
     });
@@ -133,9 +135,9 @@ describe('parseTimetrackSettings', () => {
       attributionRules: [
         {
           id: 'rule-1',
-          repoPath: '/home/tom/dev/ea-frontend',
+          repoPath: '/home/you/dev/abc-frontend',
           branch: 'next',
-          target: { kind: 'issue', issueKey: 'FIP-100' },
+          target: { kind: 'issue', issueKey: 'ABC-100' },
           createdAt: '2026-08-01T00:00:00.000Z',
         },
       ],
@@ -144,10 +146,10 @@ describe('parseTimetrackSettings', () => {
     expect(settings.attributionRules).toEqual([
       {
         id: 'rule-1',
-        repoPath: '/home/tom/dev/ea-frontend',
+        repoPath: '/home/you/dev/abc-frontend',
         branch: 'next',
         appId: undefined,
-        target: { kind: 'issue', issueKey: 'FIP-100' },
+        target: { kind: 'issue', issueKey: 'ABC-100' },
         createdAt: new Date('2026-08-01T00:00:00.000Z'),
       },
     ]);
@@ -156,8 +158,8 @@ describe('parseTimetrackSettings', () => {
   it('drops an attribution rule that names no context or no issue', () => {
     const settings = parseTimetrackSettings({
       attributionRules: [
-        { target: { kind: 'issue', issueKey: 'FIP-100' } },
-        { repoPath: '/home/tom/dev/ea-frontend' },
+        { target: { kind: 'issue', issueKey: 'ABC-100' } },
+        { repoPath: '/home/you/dev/abc-frontend' },
         {},
       ],
     });
@@ -170,22 +172,22 @@ describe('parseTimetrackSettings', () => {
       projectLinks: [
         {
           id: 'link-1',
-          path: '/home/tom/dev/ea-frontend',
-          target: { kind: 'project', projectKey: 'fip' },
+          path: '/home/you/dev/abc-frontend',
+          target: { kind: 'project', projectKey: 'abc' },
           createdAt: '2026-08-01T00:00:00.000Z',
         },
-        { id: 'link-2', path: '/home/tom/dev/private', target: { kind: 'private' } },
+        { id: 'link-2', path: '/home/you/dev/private', target: { kind: 'private' } },
       ],
     });
 
     expect(settings.projectLinks).toEqual([
       {
         id: 'link-1',
-        path: '/home/tom/dev/ea-frontend',
-        target: { kind: 'project', projectKey: 'FIP' },
+        path: '/home/you/dev/abc-frontend',
+        target: { kind: 'project', projectKey: 'ABC' },
         createdAt: new Date('2026-08-01T00:00:00.000Z'),
       },
-      { id: 'link-2', path: '/home/tom/dev/private', target: { kind: 'private' }, createdAt: new Date(0) },
+      { id: 'link-2', path: '/home/you/dev/private', target: { kind: 'private' }, createdAt: new Date(0) },
     ]);
   });
 
@@ -193,8 +195,8 @@ describe('parseTimetrackSettings', () => {
     const settings = parseTimetrackSettings({
       projectLinks: [
         { target: { kind: 'private' } },
-        { path: '/home/tom/dev/x' },
-        { path: '/home/tom/dev/x', target: { kind: 'project', projectKey: '' } },
+        { path: '/home/you/dev/x' },
+        { path: '/home/you/dev/x', target: { kind: 'project', projectKey: '' } },
         {},
       ],
     });
@@ -203,8 +205,8 @@ describe('parseTimetrackSettings', () => {
   });
 
   it('trims and de-duplicates the scan roots', () => {
-    expect(parseTimetrackSettings({ gitScanRoots: [' /home/tom/dev ', '/home/tom/dev', '', 7] }).gitScanRoots).toEqual([
-      '/home/tom/dev',
+    expect(parseTimetrackSettings({ gitScanRoots: [' /home/you/dev ', '/home/you/dev', '', 7] }).gitScanRoots).toEqual([
+      '/home/you/dev',
     ]);
   });
 
@@ -212,6 +214,30 @@ describe('parseTimetrackSettings', () => {
     const google = { calendarIds: [' work@example.com ', 'work@example.com', '', 7] };
 
     expect(parseTimetrackSettings({ google }).google.calendarIds).toEqual(['work@example.com']);
+  });
+
+  it('reads the picked projects, naming one after its key when the document holds no name', () => {
+    const settings = parseTimetrackSettings({
+      favoriteProjects: [{ key: 'abc', name: ' Alpha ' }, { key: 'ABC' }, { key: 'def' }, { name: 'no key' }],
+    });
+
+    expect(settings.favoriteProjects).toEqual([
+      { key: 'ABC', name: 'Alpha' },
+      { key: 'DEF', name: 'DEF' },
+    ]);
+  });
+
+  it('migrates the bare prefixes an older document held into picked projects', () => {
+    expect(parseTimetrackSettings({ issueKeyPrefixes: ['abc', 'DEF'] }).favoriteProjects).toEqual([
+      { key: 'ABC', name: 'ABC' },
+      { key: 'DEF', name: 'DEF' },
+    ]);
+  });
+
+  it('prefers the picked projects over the prefixes they replaced', () => {
+    const settings = parseTimetrackSettings({ favoriteProjects: [], issueKeyPrefixes: ['ABC'] });
+
+    expect(settings.favoriteProjects).toEqual([]);
   });
 
   it('keeps the shipped rules unless the document says otherwise', () => {

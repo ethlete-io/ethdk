@@ -4,6 +4,7 @@ import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import {
   DEFAULT_TIMETRACK_SETTINGS,
+  TimetrackFavoriteProject,
   TimetrackNudgeSettings,
   TimetrackReasoningSettings,
   TimetrackSettings,
@@ -157,6 +158,34 @@ const asTextList = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
 /**
+ * Reads the picked projects, and reads a document written before they existed: the list used to be
+ * bare `issueKeyPrefixes`, which held exactly these keys with no name beside them. Migrating them here
+ * rather than asking again keeps the one setting that stops a false issue key from being read.
+ */
+const asFavoriteProjects = (document: Record<string, unknown>): TimetrackFavoriteProject[] => {
+  const stored = document['favoriteProjects'];
+
+  if (Array.isArray(stored)) {
+    const found = new Map<string, TimetrackFavoriteProject>();
+
+    for (const entry of stored) {
+      const raw = asRecord(entry);
+      const key = asText(raw['key']).toUpperCase();
+
+      if (key && !found.has(key)) found.set(key, { key, name: asText(raw['name']) || key });
+    }
+
+    return [...found.values()];
+  }
+
+  return asTextList(document['issueKeyPrefixes']).map((prefix) => {
+    const key = prefix.toUpperCase();
+
+    return { key, name: key };
+  });
+};
+
+/**
  * The parenting mode is read back against the two the create call can execute. A document naming a
  * third would otherwise reach `createJiraIssue$`, which would then file every ticket with no parent
  * at all and report nothing.
@@ -200,7 +229,8 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     exclusionRules: asRules(document['exclusionRules']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
-    issueKeyPrefixes: asTextList(document['issueKeyPrefixes']).map((prefix) => prefix.toUpperCase()),
+    favoriteProjects: asFavoriteProjects(document),
+    meetingIssueKey: asText(document['meetingIssueKey']).toUpperCase(),
     attributionRules: asAttributionRules(document['attributionRules']),
     projectLinks: asProjectLinks(document['projectLinks']),
   };

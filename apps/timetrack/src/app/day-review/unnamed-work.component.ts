@@ -1,11 +1,5 @@
 import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
-import {
-  BANNER_IMPORTS,
-  BUTTON_IMPORTS,
-  FORM_FIELD_IMPORTS,
-  INPUT_IMPORTS,
-  SpinnerComponent,
-} from '@ethlete/components';
+import { BANNER_IMPORTS, BUTTON_IMPORTS, SpinnerComponent } from '@ethlete/components';
 import {
   AttributionRule,
   AttributionTarget,
@@ -15,6 +9,7 @@ import {
   describeAttributionRule,
   formatDurationMs,
 } from '@ethlete/timetrack';
+import { IssueSelectComponent } from '../jira';
 import { formatClockTime } from './format';
 
 export type ContextNaming = { context: UnnamedContext; target: AttributionTarget };
@@ -88,15 +83,13 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
           @if (entry.answered) {
             <button (click)="askAgain(entry.id)" et-button variant="outline" size="sm">Ask me again</button>
           } @else {
-            <et-form-field class="w-30 shrink-0" appearance="underline" size="sm">
-              <et-input
-                [value]="draftFor(entry.id)"
-                [aria-label]="'Issue for ' + entry.label"
-                (valueChange)="setDraft(entry.id, $event)"
-                (keydown.enter)="submit(entry.id)"
-                placeholder="Issue"
-              />
-            </et-form-field>
+            <ethlete-issue-select
+              [value]="draftFor(entry.id)"
+              [ariaLabel]="'Issue for ' + entry.label"
+              (valueChange)="setDraft(entry.id, $event)"
+              class="w-42 shrink-0"
+              placeholder="Issue"
+            />
 
             <button [disabled]="!draftFor(entry.id)" (click)="submit(entry.id)" et-button variant="outline" size="sm">
               Always log here
@@ -117,7 +110,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SpinnerComponent],
+  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, IssueSelectComponent, SpinnerComponent],
 })
 export class UnnamedWorkComponent {
   public contexts = input.required<readonly UnnamedContext[]>();

@@ -19,8 +19,10 @@ import {
   clampMinuteOfDay,
   timetrackCredentialStatus,
   withAttributionRule,
+  withFavoriteProjects,
   withProjectLink,
   withoutAttributionRule,
+  withoutFavoriteProject,
   withoutProjectLink,
 } from '@ethlete/timetrack';
 import {
@@ -210,17 +212,16 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     removeGitScanRoot: (root: string) =>
       patch({ gitScanRoots: settings().gitScanRoots.filter((existing) => existing !== root) }),
 
-    setIssueKeyPrefixes: (typed: string) =>
-      patch({
-        issueKeyPrefixes: [
-          ...new Set(
-            typed
-              .split(/[\s,]+/)
-              .map((prefix) => prefix.trim().toUpperCase())
-              .filter((prefix) => !!prefix),
-          ),
-        ],
-      }),
+    setMeetingIssueKey: (issueKey: string) => patch({ meetingIssueKey: issueKey.trim().toUpperCase() }),
+
+    /**
+     * Writes the projects a picker chose. It is one write of the whole list rather than an add and a
+     * remove: the control is a multi-select, and the list it holds is the answer.
+     */
+    setFavoriteProjects: (projects: readonly { key: string; name?: string }[]) =>
+      apply(withFavoriteProjects({ settings: settings(), projects })),
+
+    removeFavoriteProject: (key: string) => apply(withoutFavoriteProject({ settings: settings(), key })),
 
     addAttributionRule: (rule: AttributionRule) => apply(withAttributionRule({ settings: settings(), rule })),
     removeAttributionRule: (id: string) => apply(withoutAttributionRule({ settings: settings(), id })),

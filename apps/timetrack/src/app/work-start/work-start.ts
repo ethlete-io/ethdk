@@ -147,7 +147,7 @@ const WORK_START_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   // Debounced on the typed project key: the parents are a search, and one call per keystroke would
-  // ask Jira for `F`, `FI` and `FIP`. A `blur` binding is not an option — blur does not bubble out of
+  // ask Jira for `A`, `AB` and `ABC`. A `blur` binding is not an option — blur does not bubble out of
   // `et-input`, so the handler would never run.
   const candidateStatus = toSignal(
     searches$.pipe(

@@ -9,13 +9,13 @@ import {
   TEXTAREA_IMPORTS,
 } from '@ethlete/components';
 import {
-  JiraProject,
   ParentCandidate,
   TicketWritingRequest,
   UnnamedContext,
   describeAttributionRule,
   formatDurationMs,
 } from '@ethlete/timetrack';
+import { ProjectSelectComponent } from '../jira';
 import { AgentMatch, TicketForm } from './ticket-draft';
 
 /**
@@ -94,39 +94,20 @@ import { AgentMatch, TicketForm } from './ticket-draft';
         }
 
         <div class="flex flex-wrap items-end gap-3">
-          <et-form-field class="w-70" appearance="underline" size="sm">
-            <et-label>Project</et-label>
-            @if (projects().length) {
-              <et-select
-                [value]="draft.projectKey || null"
-                (valueChange)="pickProject($event)"
-                placeholder="Pick a project"
-              >
-                <input etSelectSearch placeholder="Search projects" />
-
-                @for (project of projects(); track project.key) {
-                  <et-select-option [value]="project.key">{{ project.key }} — {{ project.name }}</et-select-option>
-                }
-              </et-select>
-            } @else {
-              <et-input
-                [value]="draft.projectKey"
-                [placeholder]="isLoadingProjects() ? 'Reading the projects…' : 'Type a project key'"
-                (valueChange)="projectKeyChange.emit($event)"
-              />
-            }
-          </et-form-field>
+          <div class="flex w-60 flex-col gap-1">
+            <span class="text-small text-et-surface-muted">Project</span>
+            <ethlete-project-select
+              [value]="draft.projectKey"
+              (valueChange)="projectKeyChange.emit($event)"
+              ariaLabel="The project the ticket is filed in"
+            />
+          </div>
 
           <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
             <et-label>Summary</et-label>
             <et-input [value]="draft.summary" (valueChange)="summaryChange.emit($event)" />
           </et-form-field>
         </div>
-
-        @if (projectFailure(); as failure) {
-          <et-banner [description]="failure" type="warning" heading="The projects could not be read" />
-          <button (click)="reloadProjects.emit()" et-button variant="outline" size="sm">Read them again</button>
-        }
 
         <et-form-field appearance="underline" size="sm">
           <et-label>Description</et-label>
@@ -142,12 +123,24 @@ import { AgentMatch, TicketForm } from './ticket-draft';
         <div class="flex flex-col gap-2">
           <et-form-field appearance="underline" size="sm">
             <et-label>Parent</et-label>
-            <et-select [value]="draft.parentKey" (valueChange)="pickParent($event)" placeholder="No parent">
+            <et-select
+              [value]="draft.parentKey"
+              [loading]="isSearching()"
+              (valueChange)="pickParent($event)"
+              placeholder="No parent"
+            >
               <input etSelectSearch placeholder="Search parents" />
 
               @for (candidate of candidates(); track candidate.issue.key) {
-                <et-select-option [value]="candidate.issue.key">
-                  {{ candidate.issue.key }} — {{ candidate.issue.summary }}
+                <et-select-option
+                  [value]="candidate.issue.key"
+                  [label]="candidate.issue.key + ' ' + candidate.issue.summary"
+                >
+                  <span class="flex min-w-0 items-baseline gap-2">
+                    <span class="shrink-0 text-mono text-small">{{ candidate.issue.key }}</span>
+                    <span class="min-w-0 grow truncate text-small">{{ candidate.issue.summary }}</span>
+                    <span class="shrink-0 text-small text-et-surface-subtle">{{ candidate.issue.issueType }}</span>
+                  </span>
                 </et-select-option>
               }
             </et-select>
@@ -193,6 +186,7 @@ import { AgentMatch, TicketForm } from './ticket-draft';
     BUTTON_IMPORTS,
     FORM_FIELD_IMPORTS,
     INPUT_IMPORTS,
+    ProjectSelectComponent,
     SELECT_IMPORTS,
     SpinnerComponent,
     TEXTAREA_IMPORTS,
@@ -206,19 +200,15 @@ export class CreateTicketComponent {
   public existing = input<readonly ParentCandidate[]>([]);
   /** The issue the agent says is this very work, which outranks anything the wording matched. */
   public agentMatch = input<AgentMatch | null>(null);
-  /** The projects the instance offers. Empty falls the field back to a typed key. */
-  public projects = input<readonly JiraProject[]>([]);
   /** Exactly what a writing run would send, shown here so it can be read before it leaves the machine. */
   public payload = input<TicketWritingRequest | null>(null);
   public isSearching = input(false);
-  public isLoadingProjects = input(false);
   public canWrite = input(false);
   public isWriting = input(false);
   public isCreating = input(false);
   public canCreate = input(false);
   public createdKey = input<string | null>(null);
   public searchFailure = input<string | null>(null);
-  public projectFailure = input<string | null>(null);
   public writeFailure = input<string | null>(null);
   public createFailure = input<string | null>(null);
 
@@ -227,7 +217,6 @@ export class CreateTicketComponent {
   public descriptionChange = output<string>();
   public parentKeyChange = output<string | null>();
   public findParents = output<void>();
-  public reloadProjects = output<void>();
   public write = output<void>();
   /** The key of an issue that already tracks this work, taken instead of filing a new ticket. */
   public useExisting = output<string>();
@@ -248,10 +237,6 @@ export class CreateTicketComponent {
 
     return [...found, ...matched];
   });
-
-  protected pickProject(value: unknown) {
-    this.projectKeyChange.emit(typeof value === 'string' ? value : '');
-  }
 
   protected pickParent(value: unknown) {
     this.parentKeyChange.emit(typeof value === 'string' ? value : null);

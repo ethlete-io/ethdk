@@ -1,3 +1,4 @@
+import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { CalendarOccurrenceEvent } from '../model/event';
@@ -24,18 +25,21 @@ const block = (options: { from: Date; to: Date; title?: string; branch?: string 
   evidence: options.title ? [{ kind: 'window-title', at: options.from, detail: options.title }] : [],
 });
 
+/** A key in an event title is only read against configured projects — see `issueKeyInText`. */
+const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['ABC'] });
+
 const match = (options: { event?: CalendarOccurrenceEvent; blocks?: ActivityBlock[]; meetings?: MeetingOptions }) => {
   const found = matchMeetings({
     events: [options.event ?? meeting()],
     blocks: options.blocks ?? [],
-    meetings: options.meetings,
+    meetings: { config: CONFIG, ...options.meetings },
   });
 
   return found[0]!;
 };
 
 const PATTERNS: RecurringPattern[] = [
-  { issueKey: 'FIP-9', weekday: at(10).getDay(), fromMinute: 9 * 60, toMinute: 11 * 60, occurrences: 5 },
+  { issueKey: 'ABC-9', weekday: at(10).getDay(), fromMinute: 9 * 60, toMinute: 11 * 60, occurrences: 5 },
 ];
 
 describe('matchMeetings', () => {
@@ -66,7 +70,7 @@ describe('matchMeetings', () => {
 
   it('reports activity during the meeting as observed, with the overlap it double-claims', () => {
     const found = match({
-      blocks: [block({ from: at(10, 30), to: at(11, 30), title: 'app.ts - fut-frontend - Code' })],
+      blocks: [block({ from: at(10, 30), to: at(11, 30), title: 'app.ts - abc-frontend - Code' })],
     });
 
     expect(found.attendance).toBe('observed');
@@ -89,23 +93,23 @@ describe('matchMeetings', () => {
 
   it('takes the issue key out of the event title and is certain once attendance is confirmed', () => {
     const found = match({
-      event: meeting({ title: 'FIP-2177 refinement' }),
-      blocks: [block({ from: at(10, 2), to: at(10, 55), title: 'FIP-2177 refinement - Google Meet' })],
+      event: meeting({ title: 'ABC-2177 refinement' }),
+      blocks: [block({ from: at(10, 2), to: at(10, 55), title: 'ABC-2177 refinement - Google Meet' })],
     });
 
-    expect(found.group.issueKey).toBe('FIP-2177');
+    expect(found.group.issueKey).toBe('ABC-2177');
     expect(found.keySource).toBe('event-title');
     expect(found.group.confidence).toBe('certain');
   });
 
   it('drops to likely for a title key nothing observed', () => {
-    const found = match({ event: meeting({ title: 'FIP-2177 refinement' }) });
+    const found = match({ event: meeting({ title: 'ABC-2177 refinement' }) });
 
     expect(found.group.confidence).toBe('likely');
   });
 
   it('never trusts an unanswered invitation, whatever its title says', () => {
-    const found = match({ event: meeting({ title: 'FIP-2177 refinement', accepted: false }) });
+    const found = match({ event: meeting({ title: 'ABC-2177 refinement', accepted: false }) });
 
     expect(found.group.confidence).toBe('weak');
     expect(found.group.evidence[0]?.detail).toContain('never answered');
@@ -114,7 +118,7 @@ describe('matchMeetings', () => {
   it('falls back to a recurring tempo pattern and stays weak', () => {
     const found = match({ meetings: { patterns: PATTERNS } });
 
-    expect(found.group.issueKey).toBe('FIP-9');
+    expect(found.group.issueKey).toBe('ABC-9');
     expect(found.keySource).toBe('tempo-history');
     expect(found.group.confidence).toBe('weak');
     expect(found.group.evidence.map((entry) => entry.kind)).toEqual(['calendar', 'tempo-history']);
@@ -130,10 +134,10 @@ describe('matchMeetings', () => {
   });
 
   it('uses the configured meeting ticket only when nothing else names one', () => {
-    const found = match({ meetings: { defaultIssueKey: 'FIP-1', patterns: PATTERNS } });
+    const found = match({ meetings: { defaultIssueKey: 'ABC-1', patterns: PATTERNS } });
 
-    expect(found.group.issueKey).toBe('FIP-9');
-    expect(match({ meetings: { defaultIssueKey: 'FIP-1' } }).group.issueKey).toBe('FIP-1');
+    expect(found.group.issueKey).toBe('ABC-9');
+    expect(match({ meetings: { defaultIssueKey: 'ABC-1' } }).group.issueKey).toBe('ABC-1');
   });
 
   it('leaves a meeting nothing can name unattributed rather than guessing', () => {
@@ -170,7 +174,7 @@ describe('matchMeetings', () => {
   it('refuses to confirm from an event name too short to be distinctive', () => {
     const found = match({
       event: meeting({ title: 'QA', conferenceUrl: undefined }),
-      blocks: [block({ from: at(10, 2), to: at(10, 55), title: 'qa-report.ts - fut-frontend - Code' })],
+      blocks: [block({ from: at(10, 2), to: at(10, 55), title: 'qa-report.ts - abc-frontend - Code' })],
     });
 
     expect(found.attendance).toBe('observed');

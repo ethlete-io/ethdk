@@ -4,6 +4,7 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AttributionRule,
   ClosedTimerRun,
+  ManualRow,
   CollectedEvent,
   CorrelateDayOptions,
   DayReviewEdits,
@@ -16,6 +17,7 @@ import {
   TimeWindow,
   TimerRun,
   UnnamedContext,
+  addManualRow,
   closeTimerRun,
   correlateDay,
   coveredMsOf,
@@ -31,12 +33,14 @@ import {
   readTempoCredentials$,
   reasoningCandidates,
   reasoningPlan,
+  removeManualRow,
   resetRow,
   reviewDay,
   runReasoning$,
   setRowDescription,
   setRowDuration,
   setRowIssue,
+  setRowRange,
   setRowState,
   shiftDayKey,
   splitRow,
@@ -252,6 +256,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     links: settings.settings().projectLinks,
     sessionize: { repoRoots: git.discovery()?.repos ?? [] },
     fill: { maxFillGapMs: settings.settings().gapFillMs },
+    meetings: { defaultIssueKey: settings.settings().meetingIssueKey || undefined },
   }));
 
   /**
@@ -510,6 +515,19 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       reload.update((count) => count + 1);
     },
 
+    /**
+     * The day's meetings, for the add-entry panel to offer rather than make the user retype one. A
+     * meeting the rows already hold is left out: it is already on the day, and offering it again is how
+     * one lunch becomes two.
+     */
+    meetings: computed(() => {
+      const claimed = new Set(rows().map((row) => `${row.from.getTime()}|${row.to.getTime()}`));
+
+      return (reasoned()?.meetings ?? []).filter(
+        (meeting) => !claimed.has(`${meeting.event.at.getTime()}|${meeting.event.until.getTime()}`),
+      );
+    }),
+
     setIssue: (row: ReviewedRow, issueKey: string) => apply(setRowIssue({ edits: edits(), row, issueKey })),
     setDescription: (row: ReviewedRow, description: string) =>
       apply(setRowDescription({ edits: edits(), row, description })),
@@ -519,6 +537,19 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     split: (row: ReviewedRow, at: Date) => apply(splitRow({ edits: edits(), row, at })),
     moveBoundary: (move: { before: ReviewedRow; after: ReviewedRow; at: Date }) =>
       apply(moveRowBoundary({ edits: edits(), ...move })),
+
+    /**
+     * Adds a row for work nothing observed — a meeting away from the desk, a phone call, an hour on
+     * another machine. It is what the timeline's drag-to-create and the add-entry panel write.
+     */
+    addRow: (row: ManualRow) => apply(addManualRow({ edits: edits(), row })),
+
+    /** Where a dragged row now sits. A move keeps its duration; dragging one end re-reads it. */
+    rescheduleRow: (move: { row: ReviewedRow; from: Date; to: Date }) =>
+      apply(setRowRange({ edits: edits(), ...move })),
+
+    /** Takes a hand-written row off the day. An engine proposal is rejected rather than removed. */
+    removeRow: (row: ReviewedRow) => apply(removeManualRow({ edits: edits(), row })),
 
     mergeSelection: () => {
       apply(mergeRows({ edits: edits(), rows: selectedRows() }));

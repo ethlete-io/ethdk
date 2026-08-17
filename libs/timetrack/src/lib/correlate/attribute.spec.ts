@@ -23,7 +23,7 @@ const localBlock = (context: ActivityBlock['context'], evidence: ActivityBlock['
 
 const mergeRequest = (overrides: Partial<IssueActivity> = {}): IssueActivity => ({
   kind: 'merge-request',
-  issueKey: 'FIP-3010',
+  issueKey: 'ABC-3010',
   at: new Date('2026-08-11T08:30:00Z'),
   branch: 'fix/logout-confirmation',
   detail: 'merge request !412 on `fix/logout-confirmation`',
@@ -32,19 +32,19 @@ const mergeRequest = (overrides: Partial<IssueActivity> = {}): IssueActivity => 
 });
 
 const TUESDAY_PATTERN: RecurringPattern = {
-  issueKey: 'FIP-9000',
+  issueKey: 'ABC-9000',
   weekday: 2,
   fromMinute: 9 * 60 + 30,
   toMinute: 10 * 60 + 30,
   occurrences: 5,
 };
 
-const FIP = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
+const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['ABC'] });
 
 const REPO_RULE: AttributionRule = {
   id: 'rule-repo',
   repoPath: '/Users/tom/dev/ea-frontend',
-  target: { kind: 'issue', issueKey: 'FIP-100' },
+  target: { kind: 'issue', issueKey: 'ABC-100' },
   createdAt: new Date('2026-08-01T00:00:00Z'),
 };
 
@@ -52,7 +52,7 @@ const BRANCH_RULE: AttributionRule = {
   ...REPO_RULE,
   id: 'rule-branch',
   branch: 'refactor/hub-query-v3',
-  target: { kind: 'issue', issueKey: 'FIP-2904' },
+  target: { kind: 'issue', issueKey: 'ABC-2904' },
 };
 
 const PRIVATE_LINK: TimetrackProjectLink = {
@@ -65,46 +65,46 @@ const PRIVATE_LINK: TimetrackProjectLink = {
 const PROJECT_LINK: TimetrackProjectLink = {
   id: 'link-ea',
   path: '/Users/tom/dev/ea-frontend',
-  target: { kind: 'project', projectKey: 'FIP' },
+  target: { kind: 'project', projectKey: 'ABC' },
   createdAt: new Date('2026-08-01T00:00:00Z'),
 };
 
 describe('attribute', () => {
   it('is certain about a conforming main feature branch', () => {
-    const result = attribute({ block: block({ branch: 'feat/FIP-2177-user-management' }), config: FIP });
+    const result = attribute({ block: block({ branch: 'feat/ABC-2177-user-management' }), config: CONFIG });
 
-    expect(result.issueKey).toBe('FIP-2177');
-    expect(result.storyKey).toBe('FIP-2177');
+    expect(result.issueKey).toBe('ABC-2177');
+    expect(result.storyKey).toBe('ABC-2177');
     expect(result.confidence).toBe('certain');
   });
 
   it('logs a sub-feature against the task and keeps the story for roll-up', () => {
     const result = attribute({
-      block: block({ branch: 'sub/feat/FIP-2177-user-management/FIP-2178-user-password-reset' }),
-      config: FIP,
+      block: block({ branch: 'sub/feat/ABC-2177-user-management/ABC-2178-user-password-reset' }),
+      config: CONFIG,
     });
 
-    expect(result.issueKey).toBe('FIP-2178');
-    expect(result.storyKey).toBe('FIP-2177');
-    expect(result.taskKey).toBe('FIP-2178');
+    expect(result.issueKey).toBe('ABC-2178');
+    expect(result.storyKey).toBe('ABC-2177');
+    expect(result.taskKey).toBe('ABC-2178');
     expect(result.confidence).toBe('certain');
   });
 
   it('drops to likely when the branch names a key but does not conform', () => {
-    const result = attribute({ block: block({ branch: 'feature/FIP-2177-user-management' }), config: FIP });
+    const result = attribute({ block: block({ branch: 'feature/ABC-2177-user-management' }), config: CONFIG });
 
-    expect(result.issueKey).toBe('FIP-2177');
+    expect(result.issueKey).toBe('ABC-2177');
     expect(result.confidence).toBe('likely');
   });
 
   it('inherits the story through the base branch and says so in the evidence', () => {
     const result = attribute({
       block: block({ branch: 'fix/logout-confirmation' }),
-      config: FIP,
-      resolveBase: () => 'feat/FIP-2177-user-management',
+      config: CONFIG,
+      resolveBase: () => 'feat/ABC-2177-user-management',
     });
 
-    expect(result.issueKey).toBe('FIP-2177');
+    expect(result.issueKey).toBe('ABC-2177');
     expect(result.confidence).toBe('likely');
     expect(result.evidence.map((entry) => entry.kind)).toContain('inherited-branch');
   });
@@ -112,35 +112,55 @@ describe('attribute', () => {
   it('falls back to a key in a window title, weakly', () => {
     const result = attribute({
       block: block({ appId: 'chrome' }, [
-        { kind: 'window-title', at: new Date('2026-08-11T08:00:00Z'), detail: '[FIP-2222] Button not visible - Jira' },
+        { kind: 'window-title', at: new Date('2026-08-11T08:00:00Z'), detail: '[ABC-2222] Button not visible - Jira' },
       ]),
-      config: FIP,
+      config: CONFIG,
     });
 
-    expect(result.issueKey).toBe('FIP-2222');
+    expect(result.issueKey).toBe('ABC-2222');
     expect(result.confidence).toBe('weak');
   });
 
-  it('ignores a title key from another project when keyPrefixes is set', () => {
+  it('ignores a title key from a project that is not configured', () => {
     const result = attribute({
       block: block({ appId: 'chrome' }, [
-        { kind: 'window-title', at: new Date('2026-08-11T08:00:00Z'), detail: 'ABC-99 something else' },
+        { kind: 'window-title', at: new Date('2026-08-11T08:00:00Z'), detail: 'DEF-99 something else' },
       ]),
-      config: FIP,
+      config: CONFIG,
     });
 
     expect(result.issueKey).toBeUndefined();
   });
 
+  it('reads no key out of free text at all while no project is configured', () => {
+    const result = attribute({
+      block: block({ appId: 'chrome' }, [
+        { kind: 'window-title', at: new Date('2026-08-11T08:00:00Z'), detail: 'ABC-1234 - Cloud console' },
+      ]),
+      config: resolveGitFlowConfig({ keyPrefixes: [] }),
+    });
+
+    expect(result.issueKey).toBeUndefined();
+  });
+
+  it('still reads a branch name while no project is configured', () => {
+    const result = attribute({
+      block: block({ branch: 'feat/ABC-2177-user-management' }),
+      config: resolveGitFlowConfig({ keyPrefixes: [] }),
+    });
+
+    expect(result.issueKey).toBe('ABC-2177');
+  });
+
   it('leaves a block with no key at all unattributed rather than guessing', () => {
-    const result = attribute({ block: block({ appId: 'slack' }), config: FIP });
+    const result = attribute({ block: block({ appId: 'slack' }), config: CONFIG });
 
     expect(result.issueKey).toBeUndefined();
     expect(result.confidence).toBe('weak');
   });
 
   it('does not attribute a keyless branch when nothing resolves its base', () => {
-    const result = attribute({ block: block({ branch: 'fix/logout-confirmation' }), config: FIP });
+    const result = attribute({ block: block({ branch: 'fix/logout-confirmation' }), config: CONFIG });
 
     expect(result.issueKey).toBeUndefined();
   });
@@ -148,11 +168,11 @@ describe('attribute', () => {
   it('attributes a keyless branch through the merge request opened for it', () => {
     const result = attribute({
       block: block({ branch: 'fix/logout-confirmation' }),
-      config: FIP,
+      config: CONFIG,
       activity: [mergeRequest()],
     });
 
-    expect(result.issueKey).toBe('FIP-3010');
+    expect(result.issueKey).toBe('ABC-3010');
     expect(result.confidence).toBe('likely');
     expect(result.evidence.find((entry) => entry.kind === 'merge-request')?.summary).toBe('Confirm before logging out');
   });
@@ -160,39 +180,39 @@ describe('attribute', () => {
   it('matches a merge request branch that still carries its ref prefix', () => {
     const result = attribute({
       block: block({ branch: 'fix/logout-confirmation' }),
-      config: FIP,
+      config: CONFIG,
       activity: [mergeRequest({ branch: 'refs/heads/fix/logout-confirmation' })],
     });
 
-    expect(result.issueKey).toBe('FIP-3010');
+    expect(result.issueKey).toBe('ABC-3010');
   });
 
   it('lets a conforming branch outrank a merge request naming another issue', () => {
     const result = attribute({
-      block: block({ branch: 'feat/FIP-2177-user-management' }),
-      config: FIP,
-      activity: [mergeRequest({ branch: 'feat/FIP-2177-user-management' })],
+      block: block({ branch: 'feat/ABC-2177-user-management' }),
+      config: CONFIG,
+      activity: [mergeRequest({ branch: 'feat/ABC-2177-user-management' })],
     });
 
-    expect(result.issueKey).toBe('FIP-2177');
+    expect(result.issueKey).toBe('ABC-2177');
     expect(result.confidence).toBe('certain');
   });
 
   it('takes an issue viewed during the block only weakly', () => {
     const result = attribute({
       block: block({ appId: 'chrome' }),
-      config: FIP,
-      activity: [mergeRequest({ kind: 'issue-view', branch: undefined, detail: 'viewed FIP-3010' })],
+      config: CONFIG,
+      activity: [mergeRequest({ kind: 'issue-view', branch: undefined, detail: 'viewed ABC-3010' })],
     });
 
-    expect(result.issueKey).toBe('FIP-3010');
+    expect(result.issueKey).toBe('ABC-3010');
     expect(result.confidence).toBe('weak');
   });
 
   it('ignores activity that falls outside the block', () => {
     const result = attribute({
       block: block({ appId: 'chrome' }),
-      config: FIP,
+      config: CONFIG,
       activity: [mergeRequest({ kind: 'issue-view', branch: undefined, at: new Date('2026-08-11T14:00:00Z') })],
     });
 
@@ -200,9 +220,9 @@ describe('attribute', () => {
   });
 
   it('falls back to a recurring Tempo pattern when nothing else attributes the block', () => {
-    const result = attribute({ block: localBlock({ appId: 'meet' }), config: FIP, patterns: [TUESDAY_PATTERN] });
+    const result = attribute({ block: localBlock({ appId: 'meet' }), config: CONFIG, patterns: [TUESDAY_PATTERN] });
 
-    expect(result.issueKey).toBe('FIP-9000');
+    expect(result.issueKey).toBe('ABC-9000');
     expect(result.confidence).toBe('weak');
     expect(result.evidence.map((entry) => entry.kind)).toContain('tempo-history');
   });
@@ -210,81 +230,81 @@ describe('attribute', () => {
   it('lets activity outrank a recurring pattern', () => {
     const result = attribute({
       block: localBlock({ appId: 'chrome' }),
-      config: FIP,
+      config: CONFIG,
       activity: [mergeRequest({ kind: 'issue-view', branch: undefined, at: new Date(2026, 7, 11, 10, 30) })],
       patterns: [TUESDAY_PATTERN],
     });
 
-    expect(result.issueKey).toBe('FIP-3010');
+    expect(result.issueKey).toBe('ABC-3010');
   });
 
   it('lets a recurring pattern outrank a window title', () => {
     const result = attribute({
       block: localBlock({ appId: 'chrome' }, [
-        { kind: 'window-title', at: new Date(2026, 7, 11, 10, 0), detail: '[FIP-2222] Button not visible - Jira' },
+        { kind: 'window-title', at: new Date(2026, 7, 11, 10, 0), detail: '[ABC-2222] Button not visible - Jira' },
       ]),
-      config: FIP,
+      config: CONFIG,
       patterns: [TUESDAY_PATTERN],
     });
 
-    expect(result.issueKey).toBe('FIP-9000');
+    expect(result.issueKey).toBe('ABC-9000');
   });
 
   it('attributes a keyless branch through the rule the user wrote for it', () => {
     const result = attribute({
       block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
-      config: FIP,
+      config: CONFIG,
       rules: [BRANCH_RULE],
     });
 
-    expect(result.issueKey).toBe('FIP-2904');
+    expect(result.issueKey).toBe('ABC-2904');
     expect(result.confidence).toBe('likely');
-    expect(result.evidence.at(-1)?.detail).toBe('you assigned `ea-frontend @ refactor/hub-query-v3` to FIP-2904');
+    expect(result.evidence.at(-1)?.detail).toBe('you assigned `ea-frontend @ refactor/hub-query-v3` to ABC-2904');
   });
 
   it('lets a conforming branch outrank a rule for the same repository', () => {
     const result = attribute({
-      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/FIP-2177-user-management' }),
-      config: FIP,
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
+      config: CONFIG,
       rules: [REPO_RULE],
     });
 
-    expect(result.issueKey).toBe('FIP-2177');
+    expect(result.issueKey).toBe('ABC-2177');
     expect(result.confidence).toBe('certain');
   });
 
   it('lets a branch rule outrank a merge request naming another issue', () => {
     const result = attribute({
       block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
-      config: FIP,
+      config: CONFIG,
       rules: [BRANCH_RULE],
       activity: [mergeRequest({ branch: 'refactor/hub-query-v3' })],
     });
 
-    expect(result.issueKey).toBe('FIP-2904');
+    expect(result.issueKey).toBe('ABC-2904');
   });
 
   /** A rule about a whole project says only which project, so an MR for this very branch beats it. */
   it('lets a merge request outrank a repository-wide rule', () => {
     const result = attribute({
       block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'fix/logout-confirmation' }),
-      config: FIP,
+      config: CONFIG,
       rules: [REPO_RULE],
       activity: [mergeRequest()],
     });
 
-    expect(result.issueKey).toBe('FIP-3010');
+    expect(result.issueKey).toBe('ABC-3010');
   });
 
   it('takes a repository-wide rule weakly, and above a recurring pattern', () => {
     const result = attribute({
       block: localBlock({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'next' }),
-      config: FIP,
+      config: CONFIG,
       rules: [REPO_RULE],
       patterns: [TUESDAY_PATTERN],
     });
 
-    expect(result.issueKey).toBe('FIP-100');
+    expect(result.issueKey).toBe('ABC-100');
     expect(result.confidence).toBe('weak');
   });
 
@@ -292,7 +312,7 @@ describe('attribute', () => {
     const INFERRED = [
       {
         contextId: 'repo:/Users/tom/dev/ea-frontend@refactor/hub-query-v3',
-        issueKey: 'FIP-2201',
+        issueKey: 'ABC-2201',
         reason: 'the branch and the commits both name the query rewrite',
       },
     ];
@@ -300,22 +320,22 @@ describe('attribute', () => {
     it('names a context nothing else could, weakly and with its reason in the chain', () => {
       const result = attribute({
         block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
-        config: FIP,
+        config: CONFIG,
         inferred: INFERRED,
       });
 
-      expect(result.issueKey).toBe('FIP-2201');
+      expect(result.issueKey).toBe('ABC-2201');
       expect(result.confidence).toBe('weak');
       expect(result.evidence.at(-1)).toMatchObject({
         kind: 'model',
-        detail: 'suggested FIP-2201 — the branch and the commits both name the query rewrite',
+        detail: 'suggested ABC-2201 — the branch and the commits both name the query rewrite',
       });
     });
 
     it('never reaches a context the provider was not shown', () => {
       const result = attribute({
         block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v4' }),
-        config: FIP,
+        config: CONFIG,
         inferred: INFERRED,
       });
 
@@ -325,12 +345,12 @@ describe('attribute', () => {
     it('loses to every deterministic rung, including a repository-wide rule', () => {
       const result = attribute({
         block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
-        config: FIP,
+        config: CONFIG,
         rules: [REPO_RULE],
         inferred: INFERRED,
       });
 
-      expect(result.issueKey).toBe('FIP-100');
+      expect(result.issueKey).toBe('ABC-100');
       expect(result.evidence.some((entry) => entry.kind === 'model')).toBe(false);
     });
   });
@@ -338,8 +358,8 @@ describe('attribute', () => {
   describe('a private link', () => {
     it('answers before the branch grammar, so a side project keeps no key it happens to spell', () => {
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/private/game', branch: 'feat/FIP-2177-user-management' }),
-        config: FIP,
+        block: block({ repoPath: '/Users/tom/dev/private/game', branch: 'feat/ABC-2177-user-management' }),
+        config: CONFIG,
         links: [PRIVATE_LINK],
       });
 
@@ -356,7 +376,7 @@ describe('attribute', () => {
       const rule: AttributionRule = { ...REPO_RULE, repoPath: '/Users/tom/dev/private/game' };
       const result = attribute({
         block: block({ repoPath: '/Users/tom/dev/private/game' }),
-        config: FIP,
+        config: CONFIG,
         rules: [rule],
         links: [PRIVATE_LINK],
       });
@@ -367,19 +387,19 @@ describe('attribute', () => {
 
     it('leaves a repository the same root links to a project alone', () => {
       const result = attribute({
-        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/FIP-2177-user-management' }),
-        config: FIP,
+        block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
+        config: CONFIG,
         links: [PRIVATE_LINK, PROJECT_LINK],
       });
 
-      expect(result.issueKey).toBe('FIP-2177');
+      expect(result.issueKey).toBe('ABC-2177');
       expect(result.privateLink).toBeUndefined();
     });
 
     it('changes nothing for a link that only names a project', () => {
       const result = attribute({
         block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),
-        config: FIP,
+        config: CONFIG,
         links: [PROJECT_LINK],
       });
 

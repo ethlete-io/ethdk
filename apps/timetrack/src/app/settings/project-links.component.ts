@@ -1,24 +1,29 @@
 import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
 import { BADGE_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { ProjectLinkTarget, TimetrackProjectLink } from '@ethlete/timetrack';
+import { ProjectSelectComponent } from '../jira';
+import { ExplainComponent } from './explain.component';
+
+const WHY = `A directory covers everything under it, and a path named on its own beats the directory it
+sits in — so one client checkout can stay work inside a folder you marked private.
+
+Marking a path private is the only statement in the app that takes time out of a day, which is why every
+one of them is listed here. The same editor on the same machine writes a client's code and a side
+project's, and nothing the collectors see can tell the two apart. A path can.`;
 
 /**
- * Which paths are work, and which are the user's own.
+ * Which directories are work, and which are the user's own.
  *
- * The same editor on the same machine writes a client's code and a side project's, so nothing the
- * collectors see can tell the two apart. A path can. Marking one private is also the only statement in
- * the app that takes time out of a day, which is why the list shows every one of them.
+ * Repositories have their own list — see `ethlete-repo-projects`. This is the one below it: the
+ * directory roots, and any path the discovery does not report as a repository at all.
  */
 @Component({
   selector: 'ethlete-project-links',
   template: `
     <div class="flex flex-col gap-3">
-      <div class="flex flex-col gap-1">
-        <h3 class="text-h4">What counts as work</h3>
-        <p class="text-small text-et-surface-muted">
-          A directory covers everything under it. A path named on its own beats the directory it sits in, so one client
-          checkout can stay work inside a private folder.
-        </p>
+      <div class="flex items-center gap-1">
+        <h3 class="text-h4">Directories</h3>
+        <ethlete-explain [text]="WHY" label="directories that are work" />
       </div>
 
       @for (link of listed(); track link.id) {
@@ -49,10 +54,13 @@ import { ProjectLinkTarget, TimetrackProjectLink } from '@ethlete/timetrack';
           <et-input [(value)]="path" placeholder="/home/you/dev/side-project" />
         </et-form-field>
 
-        <et-form-field class="w-32" appearance="underline" size="sm">
-          <et-label>Project</et-label>
-          <et-input [(value)]="projectKey" placeholder="FIP" />
-        </et-form-field>
+        <ethlete-project-select
+          [value]="projectKey()"
+          (valueChange)="projectKey.set($event)"
+          class="w-45"
+          ariaLabel="The project this path files its tickets in"
+          placeholder="Project"
+        />
 
         <button [disabled]="!canLink()" (click)="link()" et-button variant="outline" size="sm">Link to project</button>
 
@@ -63,13 +71,15 @@ import { ProjectLinkTarget, TimetrackProjectLink } from '@ethlete/timetrack';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BADGE_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS],
+  imports: [BADGE_IMPORTS, BUTTON_IMPORTS, ExplainComponent, FORM_FIELD_IMPORTS, INPUT_IMPORTS, ProjectSelectComponent],
 })
 export class ProjectLinksComponent {
   public links = input.required<readonly TimetrackProjectLink[]>();
 
   public add = output<{ path: string; target: ProjectLinkTarget }>();
   public remove = output<string>();
+
+  protected readonly WHY = WHY;
 
   protected path = signal('');
   protected projectKey = signal('');

@@ -1,4 +1,4 @@
-import { ActivityBlock } from '../model/block';
+import { ActivityBlock, blockDurationMs } from '../model/block';
 import { AttributedBlock } from './attribute';
 import { AttributionRule, describeAttributionRule, matchAttributionRule } from './rules';
 
@@ -9,10 +9,17 @@ export type DonateOptions = {
    * asks about it.
    */
   maxDonationGapMs: number;
+  /**
+   * How long a donor block may be and still be folded into the work beside it. A longer stretch is a
+   * piece of work in its own right rather than a favour done for something else, so it stays
+   * unattributed and the review offers to name it or to file a ticket for it.
+   */
+  maxDonationBlockMs: number;
 };
 
 export const DEFAULT_DONATE_OPTIONS: DonateOptions = {
   maxDonationGapMs: 4 * 60 * 60_000,
+  maxDonationBlockMs: 2 * 60 * 60_000,
 };
 
 const gapBetween = (a: ActivityBlock, b: ActivityBlock) =>
@@ -51,7 +58,9 @@ const beneficiaryOf = (options: { donor: AttributedBlock; candidates: Attributed
  * work profited is an inference, and it must not sync until a reviewer has looked at it.
  *
  * A donor with nothing to join stays unattributed rather than being forced somewhere, so a day that was
- * *only* library work reads as unaccounted time instead of quietly landing on an unrelated ticket.
+ * *only* library work reads as unaccounted time instead of quietly landing on an unrelated ticket. A
+ * donor longer than `maxDonationBlockMs` stays unattributed for the other reason: an afternoon in the
+ * library is its own piece of work, and folding it into whatever ran beside it would hide it.
  */
 export const donateBlocks = (options: {
   blocks: AttributedBlock[];
@@ -62,7 +71,7 @@ export const donateBlocks = (options: {
 
   if (rules.length === 0) return options.blocks;
 
-  const { maxDonationGapMs } = { ...DEFAULT_DONATE_OPTIONS, ...options.options };
+  const { maxDonationGapMs, maxDonationBlockMs } = { ...DEFAULT_DONATE_OPTIONS, ...options.options };
   const donorRule = (block: ActivityBlock) => {
     const match = matchAttributionRule({ context: block.context, rules });
 
@@ -74,6 +83,7 @@ export const donateBlocks = (options: {
     const rule = entry.issueKey ? undefined : donorRule(entry.block);
 
     if (!rule) return entry;
+    if (blockDurationMs(entry.block) > maxDonationBlockMs) return entry;
 
     const beneficiary = beneficiaryOf({ donor: entry, candidates, maxGapMs: maxDonationGapMs });
 

@@ -80,14 +80,21 @@ Two constraints the code depends on:
 
 ## Connecting Google Calendar
 
-Each user registers their own OAuth client, so there is a one-time setup in the Google Cloud console:
+Each user registers their own OAuth client, so there is a one-time setup in the Google Cloud console.
+The consent screen now lives under **Google Auth Platform**, in the **Overview**, **Branding**,
+**Audience**, **Clients** and **Data access** tabs:
 
 1. Create a project, then enable the **Google Calendar API** in it.
-2. Configure the OAuth consent screen as **External**, and add your own address under **Test users**.
-   Google shows an unverified-app warning until you do.
-3. Create an OAuth client of type **Desktop app**. No redirect URI has to be registered — Google
-   allows any `127.0.0.1` port for an installed application.
-4. Paste the client id and the client secret into Settings, press **Connect**, then pick the
+2. Open **APIs & Services → OAuth consent screen**, which redirects to the Google Auth Platform. Run
+   **Get started** and set the audience to **External**.
+3. On the **Audience** tab, leave the publishing status at **Testing** and add your own address under
+   **Test users**. Google shows an unverified-app warning until you do.
+4. On the **Data access** tab, add the two scopes from `GOOGLE_CALENDAR_SCOPES`
+   (`libs/timetrack/src/lib/google-auth/oauth.ts`): `calendar.events.readonly` and
+   `calendar.readonly`. Both are sensitive, but a project in **Testing** needs no verification.
+5. On the **Clients** tab, create a client of type **Desktop app**. No redirect URI has to be
+   registered — Google allows any `127.0.0.1` port for an installed application.
+6. Paste the client id and the client secret into Settings, press **Connect**, then pick the
    calendars that count as work. Nothing is read until a calendar is picked.
 
 ## Still to build

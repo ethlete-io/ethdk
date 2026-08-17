@@ -1,5 +1,6 @@
 import { GitFlowConfig, resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { AttributionRule } from '../correlate/rules';
+import { favoriteProjectKeys } from './favorites';
 import { TimetrackSettings } from './model';
 
 /**
@@ -7,11 +8,12 @@ import { TimetrackSettings } from './model';
  * of the grammar belongs to the repositories being watched, not to this machine, and a user who has to
  * describe a branch shape before the app collects anything would never get past the settings screen.
  *
- * Setting the keys is what makes a false key impossible. Without them anything shaped like one counts,
- * so a repository that names a branch `chore/angular-22` logs time against issue ANGULAR-22.
+ * The keys are the projects the user picked, so picking them is what makes a false key impossible.
+ * Without them anything shaped like a key counts, and a repository that names a branch
+ * `chore/angular-22` logs time against issue ANGULAR-22.
  */
 export const gitFlowConfigFor = (settings: TimetrackSettings): GitFlowConfig =>
-  resolveGitFlowConfig({ keyPrefixes: settings.issueKeyPrefixes });
+  resolveGitFlowConfig({ keyPrefixes: favoriteProjectKeys(settings) });
 
 /**
  * What makes two rules the same statement. A rule about a context replaces the rule that was there

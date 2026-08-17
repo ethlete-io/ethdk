@@ -38,6 +38,19 @@ export type TimetrackJiraSettings = {
 };
 
 /**
+ * One Jira project the user works in, picked from the instance rather than typed.
+ *
+ * The name is stored beside the key so a picker can read `FIP — Fanily Platform` with no call, and so
+ * a list of keys somebody has to recognise stays readable on a machine that is offline or whose token
+ * expired. It is a cache of one string, not a source of truth: a project renamed in Jira reads under
+ * its old name until the list is picked again, which is a wrong label, never a wrong worklog.
+ */
+export type TimetrackFavoriteProject = {
+  key: string;
+  name: string;
+};
+
+/**
  * The Google account meetings are read from. The client secret and the refresh token are keychain
  * entries; the client id is not one, and the settings screen has to show it to be editable at all.
  */
@@ -145,11 +158,21 @@ export type TimetrackSettings = {
   /** Directories the repository discovery walks. Empty means the host decides. */
   gitScanRoots: string[];
   /**
-   * The Jira project keys a branch name or a window title may name, such as `FIP`. Empty accepts
-   * anything shaped like a key, which also reads `chore/angular-22` as issue ANGULAR-22 — so a
-   * repository whose branch subjects can start with a word and a number needs this set.
+   * The Jira projects this machine works in, picked from the instance.
+   *
+   * They are the app's whole notion of "your projects": the keys a branch name or a window title may
+   * name, and the projects every issue picker reads from. An instance has hundreds of projects and a
+   * person works in a handful, so a picker that offered all of them would be a list nobody reads.
+   *
+   * Empty is the unconfigured state, and it costs accuracy: a key in free text is then never trusted,
+   * because anything shaped like one would count and `GCP-1234` in a browser title is not an issue.
    */
-  issueKeyPrefixes: string[];
+  favoriteProjects: TimetrackFavoriteProject[];
+  /**
+   * The issue a meeting is logged against when neither its own title nor Tempo history names one.
+   * Empty leaves such a meeting unattributed, which is a question the review then asks every day.
+   */
+  meetingIssueKey: string;
   /**
    * What the user decided a context belongs to, for repositories the branch grammar cannot name an
    * issue in. A setting rather than a table of its own: it is a handful of statements the user wrote,
@@ -182,7 +205,8 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   exclusionRules: [],
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
-  issueKeyPrefixes: [],
+  favoriteProjects: [],
+  meetingIssueKey: '',
   attributionRules: [],
   projectLinks: [],
 };

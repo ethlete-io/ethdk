@@ -3,16 +3,15 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   JiraIssue,
-  JiraProject,
   ParentCandidate,
   TicketWording,
   TicketWritingRequest,
   UnnamedContext,
   createJiraIssue$,
   draftTicket,
+  favoriteProjectKeys,
   fetchJiraOpenIssues$,
   fetchJiraParentCandidates$,
-  fetchJiraProjects$,
   gitFlowConfigFor,
   inferTicketProjectKey,
   matchExistingIssues,
@@ -60,9 +59,6 @@ type ProjectIssues = {
 type CandidateStatus =
   typeof IDLE | { kind: 'loading' } | ({ kind: 'ready' } & ProjectIssues) | { kind: 'failed'; message: string };
 
-type ProjectStatus =
-  typeof IDLE | { kind: 'loading' } | { kind: 'ready'; projects: JiraProject[] } | { kind: 'failed'; message: string };
-
 type CreateStatus =
   typeof IDLE | { kind: 'creating' } | { kind: 'created'; issueKey: string } | { kind: 'failed'; message: string };
 
@@ -99,7 +95,6 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const form = signal<TicketForm | null>(null);
   const notes = signal<readonly string[]>([]);
   const searches$ = new Subject<string>();
-  const projectLoads$ = new Subject<void>();
   const writes$ = new Subject<TicketWritingRequest>();
   const creations$ = new Subject<TicketForm>();
 
@@ -158,24 +153,6 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       tap((status) => suggestParent(status)),
     ),
     { initialValue: IDLE as CandidateStatus },
-  );
-
-  const projects$ = (): Observable<ProjectStatus> =>
-    readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-      switchMap((credentials) =>
-        credentials
-          ? fetchJiraProjects$({ transport: ports.transport, credentials })
-          : throwError(() => new Error(NO_JIRA)),
-      ),
-      map((projects): ProjectStatus => ({ kind: 'ready', projects })),
-      catchError((error: unknown) => of<ProjectStatus>({ kind: 'failed', message: messageOf(error) })),
-    );
-
-  // The list is read once per session and kept: an instance's projects do not change while a day is
-  // being reviewed, and every card that opens would otherwise pay for the same call again.
-  const projectStatus = toSignal(
-    projectLoads$.pipe(exhaustMap(() => projects$().pipe(startWith<ProjectStatus>({ kind: 'loading' })))),
-    { initialValue: IDLE as ProjectStatus },
   );
 
   const createStatus = signal<CreateStatus>(IDLE);
@@ -314,18 +291,6 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       return status.kind === 'failed' ? status.message : null;
     }),
-    /** The projects the token can file into, so the key is picked rather than typed from memory. */
-    projects: computed((): JiraProject[] => {
-      const status = projectStatus();
-
-      return status.kind === 'ready' ? status.projects : [];
-    }),
-    isLoadingProjects: computed(() => projectStatus().kind === 'loading'),
-    projectFailure: computed(() => {
-      const status = projectStatus();
-
-      return status.kind === 'failed' ? status.message : null;
-    }),
     /** Exactly what a writing run would send, shown so it can be read before it leaves the machine. */
     writingRequest: computed(writingRequestNow),
     canWrite: computed(() => settings.settings().reasoning.enabled && !!context()),
@@ -363,7 +328,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           context: unnamed.context,
           rules: settings.settings().attributionRules,
           proposals: dayReview.deterministic()?.proposals ?? [],
-          prefixes: settings.settings().issueKeyPrefixes,
+          projectKeys: favoriteProjectKeys(settings.settings()),
           links: settings.settings().projectLinks,
         }) ?? '';
 
@@ -374,8 +339,6 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       writeStatus.set(IDLE);
       agentMatch.set(null);
       searches$.next(projectKey);
-
-      if (projectStatus().kind !== 'ready') projectLoads$.next();
     },
 
     close,
@@ -406,9 +369,6 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** Re-reads the parents for whatever project the form now names. */
     findParents: () => searches$.next(form()?.projectKey ?? ''),
-
-    /** Re-reads the project list after a failed read, or a token that was fixed since. */
-    loadProjects: () => projectLoads$.next(),
 
     /**
      * Hands the draft to the local agent CLI, which writes the summary and the description a reader

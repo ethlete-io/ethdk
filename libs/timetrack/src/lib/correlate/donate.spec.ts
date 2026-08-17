@@ -4,8 +4,8 @@ import { AttributedBlock } from './attribute';
 import { donateBlocks } from './donate';
 import { AttributionRule } from './rules';
 
-const SDK = '/Users/tom/dev/ethlete-sdk';
-const APP = '/Users/tom/dev/ea-frontend';
+const SDK = '/home/you/dev/shared-sdk';
+const APP = '/home/you/dev/abc-frontend';
 
 const DONOR_RULE: AttributionRule = {
   id: 'rule-donor',
@@ -33,15 +33,15 @@ describe('donateBlocks', () => {
     const [donor] = donateBlocks({
       blocks: [
         attributed(SDK, '2026-08-13T10:00:00Z', '2026-08-13T11:00:00Z'),
-        attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'FIP-2904'),
+        attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'ABC-2904'),
       ],
       rules: [DONOR_RULE],
     });
 
-    expect(donor?.issueKey).toBe('FIP-2904');
+    expect(donor?.issueKey).toBe('ABC-2904');
     expect(donor?.confidence).toBe('weak');
     expect(donor?.evidence.at(-1)?.detail).toBe(
-      '`ethlete-sdk` files no issues; logged with the work on FIP-2904 beside it',
+      '`shared-sdk` files no issues; logged with the work on ABC-2904 beside it',
     );
   });
 
@@ -49,13 +49,13 @@ describe('donateBlocks', () => {
     const [donor] = donateBlocks({
       blocks: [
         attributed(SDK, '2026-08-13T12:00:00Z', '2026-08-13T13:00:00Z'),
-        attributed(APP, '2026-08-13T08:00:00Z', '2026-08-13T09:00:00Z', 'FIP-1000'),
-        attributed(APP, '2026-08-13T13:15:00Z', '2026-08-13T15:00:00Z', 'FIP-2904'),
+        attributed(APP, '2026-08-13T08:00:00Z', '2026-08-13T09:00:00Z', 'ABC-1000'),
+        attributed(APP, '2026-08-13T13:15:00Z', '2026-08-13T15:00:00Z', 'ABC-2904'),
       ],
       rules: [DONOR_RULE],
     });
 
-    expect(donor?.issueKey).toBe('FIP-2904');
+    expect(donor?.issueKey).toBe('ABC-2904');
   });
 
   /** A library is changed for something, and the thing it was changed for is usually what comes next. */
@@ -63,20 +63,20 @@ describe('donateBlocks', () => {
     const [donor] = donateBlocks({
       blocks: [
         attributed(SDK, '2026-08-13T12:00:00Z', '2026-08-13T13:00:00Z'),
-        attributed(APP, '2026-08-13T11:00:00Z', '2026-08-13T11:30:00Z', 'FIP-1000'),
-        attributed(APP, '2026-08-13T13:30:00Z', '2026-08-13T15:00:00Z', 'FIP-2904'),
+        attributed(APP, '2026-08-13T11:00:00Z', '2026-08-13T11:30:00Z', 'ABC-1000'),
+        attributed(APP, '2026-08-13T13:30:00Z', '2026-08-13T15:00:00Z', 'ABC-2904'),
       ],
       rules: [DONOR_RULE],
     });
 
-    expect(donor?.issueKey).toBe('FIP-2904');
+    expect(donor?.issueKey).toBe('ABC-2904');
   });
 
   it('leaves a donor with nothing near it unattributed', () => {
     const [donor] = donateBlocks({
       blocks: [
         attributed(SDK, '2026-08-13T09:00:00Z', '2026-08-13T10:00:00Z'),
-        attributed(APP, '2026-08-13T20:00:00Z', '2026-08-13T21:00:00Z', 'FIP-2904'),
+        attributed(APP, '2026-08-13T20:00:00Z', '2026-08-13T21:00:00Z', 'ABC-2904'),
       ],
       rules: [DONOR_RULE],
     });
@@ -88,7 +88,7 @@ describe('donateBlocks', () => {
     const [donor] = donateBlocks({
       blocks: [
         attributed(SDK, '2026-08-13T10:00:00Z', '2026-08-13T11:00:00Z', 'ETH-1'),
-        attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'FIP-2904'),
+        attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'ABC-2904'),
       ],
       rules: [DONOR_RULE],
     });
@@ -100,11 +100,36 @@ describe('donateBlocks', () => {
     const [donor] = donateBlocks({
       blocks: [
         attributed('/Users/tom/dev/other', '2026-08-13T10:00:00Z', '2026-08-13T11:00:00Z'),
-        attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'FIP-2904'),
+        attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'ABC-2904'),
       ],
       rules: [DONOR_RULE],
     });
 
     expect(donor?.issueKey).toBeUndefined();
+  });
+
+  it('leaves a donor too long to be a favour for something else unattributed', () => {
+    const [donor] = donateBlocks({
+      blocks: [
+        attributed(SDK, '2026-08-13T08:00:00Z', '2026-08-13T11:00:00Z'),
+        attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'ABC-2904'),
+      ],
+      rules: [DONOR_RULE],
+    });
+
+    expect(donor?.issueKey).toBeUndefined();
+  });
+
+  it('still folds a long donor in when the caller raised the limit', () => {
+    const [donor] = donateBlocks({
+      blocks: [
+        attributed(SDK, '2026-08-13T08:00:00Z', '2026-08-13T11:00:00Z'),
+        attributed(APP, '2026-08-13T11:30:00Z', '2026-08-13T13:00:00Z', 'ABC-2904'),
+      ],
+      rules: [DONOR_RULE],
+      options: { maxDonationBlockMs: 4 * 60 * 60_000 },
+    });
+
+    expect(donor?.issueKey).toBe('ABC-2904');
   });
 });

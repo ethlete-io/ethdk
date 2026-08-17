@@ -32,10 +32,10 @@ test.describe('branch repair', () => {
 
     const steps = page.getByRole('listitem');
 
-    await expect(steps.filter({ hasText: 'git branch -m feat/pdf-export feat/FIP-9999-pdf-export' })).toBeVisible();
-    await expect(steps.filter({ hasText: 'git push -u origin feat/FIP-9999-pdf-export' })).toBeVisible();
+    await expect(steps.filter({ hasText: 'git branch -m feat/pdf-export feat/ABC-9999-pdf-export' })).toBeVisible();
+    await expect(steps.filter({ hasText: 'git push -u origin feat/ABC-9999-pdf-export' })).toBeVisible();
     await expect(steps.filter({ hasText: 'git push origin --delete feat/pdf-export' })).toBeVisible();
-    await expect(page.getByText('Undo: git branch -m feat/FIP-9999-pdf-export feat/pdf-export')).toBeVisible();
+    await expect(page.getByText('Undo: git branch -m feat/ABC-9999-pdf-export feat/pdf-export')).toBeVisible();
   });
 
   test('runs nothing until the steps are confirmed', async ({ page }) => {
@@ -51,6 +51,6 @@ test.describe('branch repair', () => {
     await page.getByRole('button', { name: 'Show me the steps' }).click();
     await page.getByRole('button', { name: 'Run these steps' }).click();
 
-    await expect(page.getByText(/feat\/pdf-export is now feat\/FIP-9999-pdf-export/)).toBeVisible();
+    await expect(page.getByText(/feat\/pdf-export is now feat\/ABC-9999-pdf-export/)).toBeVisible();
   });
 });

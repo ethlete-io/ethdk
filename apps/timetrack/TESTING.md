@@ -20,11 +20,12 @@ in-memory fakes. There is no Tauri, no network and no keychain in that run. Ever
 To look at the fake app yourself, run `npx nx serve timetrack-app --configuration=e2e` and open
 `http://localhost:4211`.
 
-**Pass:** 676 unit tests and 9 e2e tests pass.
+**Pass:** 896 unit tests and 22 e2e tests pass.
 
 The e2e suite covers the day reconstruction, the unnamed-work card, the create-ticket draft, the sync
-preview against time already in Tempo, and the week view reading that time back. It does not cover the
-boundary drag or the agent call. Those still need sections 5 and 6.
+preview against time already in Tempo, the week view reading that time back, the branch repair and the
+start-work plan. It does not cover any pointer gesture on the timeline or the agent call. Those still
+need sections 5, 6 and 17.
 
 ## 1. Start the app
 
@@ -57,13 +58,22 @@ and a write to Tempo.
 
 ## 3. Settings
 
-1. Open Settings.
-2. Check that Jira, Tempo and GitLab each report a connection.
-3. Turn **Suggestions** on.
-4. Open **New tickets** and read the two fields for the branch subject and the parent.
+The screen is five tabs, and every explanation sits behind the **i** glyph beside the thing it is
+about. Press a few of them.
 
-**Pass:** the three services report a connection, and the app stores each change without an error
-banner.
+1. Open Settings. On **Jira**, check that Jira and Tempo report a connection. On **Sources**, check
+   GitLab.
+2. On **Projects**, open the **Projects** picker and pick the projects you work in.
+3. Still on **Jira**, open **File as** and **A parent may be**. Both read your instance's own issue
+   types. Open **Branch-subject field**: it lists your own custom fields by name.
+4. On **Suggestions**, turn the switch on.
+
+**Pass:**
+
+- The two services report a connection, and the app stores each change without an error banner.
+- Every picker fills with real Jira data. None of them is a box you type an identifier into.
+- Picking a project is what makes the pickers elsewhere in the app offer anything at all: with an
+  empty list they are empty, and the filter above them says so.
 
 ## 4. The day view
 
@@ -308,7 +318,7 @@ This writes nothing outside this machine. It needs a git checkout you do not bil
 
 **Pass:** the checkout appears under **Not yet named**, with a **Not work** button beside it.
 
-2. Press **Not work**, then open Settings and read **What counts as work**.
+2. Press **Not work**, then open Settings → **Projects** and read **Directories**.
 
 **Pass:** the list holds the checkout's path, badged `private`, and says `never logged`.
 
@@ -322,13 +332,55 @@ Cases worth checking separately:
 - **A directory root.** Add a link on the directory your side projects sit in, marked private. Every
   checkout under it goes private at once, and one you link to a project by its own path stays work —
   the longer path wins.
-- **A conforming branch.** Check out a branch named like `feat/FIP-1-thing` inside a private
+- **A conforming branch.** Check out a branch named like `feat/ABC-1-thing` inside a private
   checkout. It still proposes nothing: a private link is read before the branch grammar.
 - **A project link.** Link a checkout to a project key, then press **Create a ticket** on any unnamed
   work in it. The project field is already filled in. The Start view fills it in the same way when you
   pick that repository.
 - **Undo.** Remove the link in Settings and re-read the day. The time comes back as unnamed work —
   nothing was deleted, only left out.
+
+## 17. Move, resize and add on the timeline
+
+This writes to the local store only. Everything here is an edit to the day, and every edit is
+reversible.
+
+1. Open Day and find a row on the timeline.
+2. Press its middle and drag it to another hour.
+
+**Pass:** the block follows the pointer, snapping to the quarter hour, and lands where you dropped it.
+The row's **Logs** duration is unchanged — a move says when the work happened, not how much.
+
+3. Press the block's bottom edge and drag it down.
+
+**Pass:** only that end moves, and the duration grows to match the new span.
+
+4. Press empty grid and drag a range out.
+
+**Pass:** a dashed range follows the pointer, and releasing it opens **Add an entry** over exactly
+that range. The issue is pre-filled from the nearest row, and it is a picker, not a text box.
+
+5. Type a key the picker does not list, press Enter, write a description and press **Add the entry**.
+
+**Pass:** a row appears with a **by hand** badge, the timeline block reads `· by hand`, and the day's
+total grows by what the entry logs. Expanding the row says `you added this row by hand` and reports
+`observed 0m` — nothing watched it, and the day does not pretend otherwise.
+
+6. Expand that row and press **Remove this row**.
+
+**Pass:** the row and its block are gone, and the total is back. A row the machine proposed offers
+**Reset to proposal** instead: it is still what was observed, so it is rejected rather than removed.
+
+Cases worth checking separately:
+
+- **The header button.** Press **Add an entry** in the header with nothing drawn. The panel opens over
+  the hour that just finished.
+- **A meeting.** With a calendar connected, open the panel on a day that had a meeting the timesheet
+  does not hold. The meeting is offered by name, with its own times, one press away.
+- **A click, not a drag.** Press empty grid and release without moving. It still drafts a range — the
+  panel is where the duration is corrected anyway.
+- **A story band.** On a day whose rows carry a Story, a band appears in the strip above the hour axis
+  naming the story and how many rows roll up to it. Pressing it opens the first of them.
 
 ## How to report a failure
 

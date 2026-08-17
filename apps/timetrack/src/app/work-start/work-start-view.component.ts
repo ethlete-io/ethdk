@@ -9,6 +9,7 @@ import {
   SpinnerComponent,
   TEXTAREA_IMPORTS,
 } from '@ethlete/components';
+import { ProjectSelectComponent } from '../jira';
 import { injectWorkStart } from './work-start';
 import { WorkStartPlanComponent } from './work-start-plan.component';
 
@@ -64,14 +65,15 @@ import { WorkStartPlanComponent } from './work-start-plan.component';
 
         @if (start.form().repoPath) {
           <div class="flex flex-wrap items-end gap-3">
-            <et-form-field class="w-30" appearance="underline" size="sm">
-              <et-label>Project</et-label>
-              <et-input
+            <div class="flex w-40 flex-col gap-1">
+              <span class="text-small text-et-surface-muted">Project</span>
+              <ethlete-project-select
                 [value]="start.form().projectKey"
                 (valueChange)="start.setProjectKey($event)"
-                placeholder="FIP"
+                ariaLabel="The project the ticket is filed in"
+                placeholder="Project"
               />
-            </et-form-field>
+            </div>
 
             <et-form-field class="w-30" appearance="underline" size="sm">
               <et-label>Type</et-label>
@@ -130,7 +132,11 @@ import { WorkStartPlanComponent } from './work-start-plan.component';
                   et-button
                   size="sm"
                 >
-                  {{ candidate.issue.key }} — {{ candidate.issue.summary }}
+                  <span class="flex min-w-0 grow items-baseline gap-2">
+                    <span class="shrink-0 text-mono">{{ candidate.issue.key }}</span>
+                    <span class="min-w-0 grow truncate text-left">{{ candidate.issue.summary }}</span>
+                    <span class="shrink-0 text-et-surface-subtle">{{ candidate.issue.issueType }}</span>
+                  </span>
                 </button>
               }
             </div>
@@ -156,6 +162,7 @@ import { WorkStartPlanComponent } from './work-start-plan.component';
     EMPTY_STATE_IMPORTS,
     FORM_FIELD_IMPORTS,
     INPUT_IMPORTS,
+    ProjectSelectComponent,
     SELECT_IMPORTS,
     SpinnerComponent,
     TEXTAREA_IMPORTS,

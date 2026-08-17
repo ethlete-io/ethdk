@@ -82,20 +82,29 @@ export type AttributeOptions = {
 };
 
 /**
- * The first issue key in free text — a window title, a calendar event's name — or nothing. A key
- * whose prefix the grammar does not know is not a key: `SCRUM-2` in a page title is somebody else's
- * tracker, and attributing time to it is worse than leaving the block unattributed.
+ * The first issue key in free text — a window title, a calendar event's name — or nothing.
+ *
+ * A key whose prefix the grammar does not know is not a key: `SCRUM-2` in a page title is somebody
+ * else's tracker, and attributing time to it is worse than leaving the block unattributed. Free text
+ * is therefore read against the configured projects and nothing else, and an empty list yields
+ * nothing at all — the pattern alone reads a cloud console's `ABC-1234` as an issue that has never
+ * existed, and a row against a key nobody recognises is the one mistake this rung can make.
+ *
+ * A branch name is not free text and is not read here. `parseBranch` states both keys itself, which is
+ * why it stays trusted on a machine whose project list is still empty.
  */
 export const issueKeyInText = (options: { text: string; config: GitFlowConfig }) => {
   const { text, config } = options;
+
+  if (config.keyPrefixes.length === 0) return undefined;
+
   const match = new RegExp(config.keyPattern).exec(text);
 
   if (!match) return undefined;
 
   const key = match[0];
-  const prefix = key.slice(0, key.indexOf('-'));
 
-  return config.keyPrefixes.length > 0 && !config.keyPrefixes.includes(prefix) ? undefined : key;
+  return config.keyPrefixes.includes(key.slice(0, key.indexOf('-'))) ? key : undefined;
 };
 
 const resolveBranch = (options: {

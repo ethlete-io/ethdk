@@ -11,7 +11,11 @@ const openTheForm = async (page: Page) => {
   await page.getByRole('link', { name: 'Start' }).click();
   await page.getByLabel('Repository').click();
   await page.getByRole('option', { name: '/Users/e2e/dev/fut-frontend' }).click();
-  await page.getByLabel('Project').fill('FIP');
+  // the project field is a picker over the instance's projects, and it takes a typed key too
+  const project = page.locator('ethlete-project-select input');
+
+  await project.fill('ABC');
+  await project.press('Enter');
   await page.getByLabel('Summary').fill('Logout confirmation');
 };
 
@@ -35,7 +39,7 @@ test.describe('starting work', () => {
 
     const steps = page.getByRole('listitem');
 
-    await expect(steps.filter({ hasText: 'File a Task in FIP' })).toBeVisible();
+    await expect(steps.filter({ hasText: 'File a Task in ABC' })).toBeVisible();
     await expect(
       steps.filter({ hasText: 'git switch -c feat/<KEY>-logout-confirmation --no-track origin/next' }),
     ).toBeVisible();
@@ -45,12 +49,12 @@ test.describe('starting work', () => {
 
   test('nests the branch under the story it rolls up to', async ({ page }) => {
     await openTheForm(page);
-    await page.getByRole('button', { name: /FIP-2000/ }).click();
+    await page.getByRole('button', { name: /ABC-2000/ }).click();
 
     const summary = page.getByRole('definition');
 
-    await expect(summary.nth(0)).toHaveText('sub/feat/FIP-2000-member-onboarding/<KEY>-logout-confirmation');
-    await expect(summary.nth(2)).toHaveText('feat/FIP-2000-member-onboarding');
+    await expect(summary.nth(0)).toHaveText('sub/feat/ABC-2000-member-onboarding/<KEY>-logout-confirmation');
+    await expect(summary.nth(2)).toHaveText('feat/ABC-2000-member-onboarding');
   });
 
   test('runs nothing until the steps are confirmed', async ({ page }) => {
@@ -72,7 +76,7 @@ test.describe('starting work', () => {
     await openTheForm(page);
     await page.getByRole('button', { name: 'Run these steps' }).click();
 
-    await expect(page.getByText(/FIP-9999 is filed and you are on feat\/FIP-9999-logout-confirmation/)).toBeVisible();
+    await expect(page.getByText(/ABC-9999 is filed and you are on feat\/ABC-9999-logout-confirmation/)).toBeVisible();
     await expect(
       page.getByText('https://gitlab.example.com/braune-digital/fut-frontend/-/merge_requests/42'),
     ).toBeVisible();

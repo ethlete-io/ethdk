@@ -1,6 +1,14 @@
-import { Component, ViewEncapsulation, computed } from '@angular/core';
+import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, SpinnerComponent } from '@ethlete/components';
-import { DayWarningKind, ReviewedRow, formatDurationMs, localDayRange } from '@ethlete/timetrack';
+import {
+  DayWarningKind,
+  ManualRow,
+  ReviewedRow,
+  DEFAULT_ROUND_OPTIONS,
+  formatDurationMs,
+  localDayRange,
+} from '@ethlete/timetrack';
+import { AddEntryComponent, EntryRange } from './add-entry.component';
 import { BranchRepairComponent } from './branch-repair.component';
 import { injectBranchRepair } from './branch-repair';
 import { CreateTicketComponent } from './create-ticket.component';
@@ -11,6 +19,10 @@ import { TimerRunLabel, TimerRunsComponent } from './timer-runs.component';
 import { injectTicketDraft } from './ticket-draft';
 import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
 import { WorklogRowComponent } from './worklog-row.component';
+
+/** What the header's own button drafts: the quarter-hour grid, and the hour that just finished. */
+const ENTRY_STEP_MS = DEFAULT_ROUND_OPTIONS.incrementMs;
+const DEFAULT_ENTRY_MS = 60 * 60_000;
 
 @Component({
   selector: 'ethlete-day-review',
@@ -26,7 +38,10 @@ import { WorklogRowComponent } from './worklog-row.component';
           <button (click)="store.goToToday()" et-button variant="transparent" size="sm">Today</button>
         </div>
 
-        <button (click)="store.recorrelate()" et-button variant="outline" size="sm">Re-correlate</button>
+        <div class="flex items-center gap-2">
+          <button (click)="openEntry()" et-button variant="outline" size="sm">Add an entry</button>
+          <button (click)="store.recorrelate()" et-button variant="outline" size="sm">Re-correlate</button>
+        </div>
       </header>
 
       @if (store.failure(); as failure) {
@@ -56,9 +71,21 @@ import { WorklogRowComponent } from './worklog-row.component';
             [unattributed]="unattributedBlocks()"
             (rowSelect)="store.toggleExpanded($event.id)"
             (boundaryMove)="store.moveBoundary($event)"
+            (rowReschedule)="store.rescheduleRow($event)"
+            (rangeDrawn)="entryRange.set($event)"
           />
 
           <div class="flex min-h-0 flex-col gap-3 overflow-y-auto pb-6">
+            @if (entryRange(); as range) {
+              <ethlete-add-entry
+                [range]="range"
+                [meetings]="store.meetings()"
+                [suggestedIssueKey]="suggestedIssueKey()"
+                (entry)="addEntry($event)"
+                (dismiss)="entryRange.set(null)"
+              />
+            }
+
             @if (store.rows().length) {
               @for (row of store.rows(); track row.id) {
                 <ethlete-worklog-row
@@ -74,6 +101,7 @@ import { WorklogRowComponent } from './worklog-row.component';
                   (mergeToggle)="store.toggleSelected(row.id)"
                   (split)="splitInHalf(row)"
                   (revert)="store.reset(row)"
+                  (removeRow)="store.removeRow(row)"
                 />
               }
             } @else if (!store.unnamed().length && !inTempo().length) {
@@ -140,17 +168,14 @@ import { WorklogRowComponent } from './worklog-row.component';
                 [candidates]="tickets.candidates()"
                 [existing]="tickets.existing()"
                 [agentMatch]="tickets.agentMatch()"
-                [projects]="tickets.projects()"
                 [payload]="tickets.writingRequest()"
                 [isSearching]="tickets.isSearching()"
-                [isLoadingProjects]="tickets.isLoadingProjects()"
                 [canWrite]="tickets.canWrite()"
                 [isWriting]="tickets.isWriting()"
                 [isCreating]="tickets.isCreating()"
                 [canCreate]="tickets.canCreate()"
                 [createdKey]="tickets.createdKey()"
                 [searchFailure]="tickets.searchFailure()"
-                [projectFailure]="tickets.projectFailure()"
                 [writeFailure]="tickets.writeFailure()"
                 [createFailure]="tickets.createFailure()"
                 (projectKeyChange)="tickets.setProjectKey($event)"
@@ -158,7 +183,6 @@ import { WorklogRowComponent } from './worklog-row.component';
                 (descriptionChange)="tickets.setDescription($event)"
                 (parentKeyChange)="tickets.setParentKey($event)"
                 (findParents)="tickets.findParents()"
-                (reloadProjects)="tickets.loadProjects()"
                 (write)="tickets.writeWithAgent()"
                 (useExisting)="tickets.useExisting($event)"
                 (create)="tickets.create()"
@@ -236,6 +260,7 @@ import { WorklogRowComponent } from './worklog-row.component';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    AddEntryComponent,
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
     BranchRepairComponent,
@@ -253,6 +278,9 @@ export class DayReviewViewComponent {
   protected store = injectDayReview();
   protected tickets = injectTicketDraft();
   protected repair = injectBranchRepair();
+
+  /** The range an entry is being written for, or nothing while the panel is closed. */
+  protected entryRange = signal<EntryRange | null>(null);
 
   protected readonly WARNING_HEADINGS: Record<DayWarningKind, string> = {
     'under-target': 'The day is short of its target',
@@ -316,6 +344,35 @@ export class DayReviewViewComponent {
       duration: formatDurationMs(entry.observedMs),
     })),
   );
+
+  /**
+   * The issue an entry drawn over this range most likely belongs to: whatever the row nearest it is
+   * logged against. It is a starting point and not a decision — the field it fills is still a picker.
+   */
+  protected suggestedIssueKey = computed(() => {
+    const range = this.entryRange();
+
+    if (!range) return '';
+
+    const at = range.from.getTime();
+    const [nearest] = [...this.store.rows()].sort(
+      (a, b) => Math.abs(a.from.getTime() - at) - Math.abs(b.from.getTime() - at),
+    );
+
+    return nearest?.issueKey ?? '';
+  });
+
+  /** Opens the panel over the hour the reviewer is most likely to mean: the one that just finished. */
+  protected openEntry() {
+    const from = new Date(Math.floor(Date.now() / ENTRY_STEP_MS) * ENTRY_STEP_MS - DEFAULT_ENTRY_MS);
+
+    this.entryRange.set({ from, to: new Date(from.getTime() + DEFAULT_ENTRY_MS) });
+  }
+
+  protected addEntry(row: ManualRow) {
+    this.store.addRow(row);
+    this.entryRange.set(null);
+  }
 
   protected nameContext(naming: ContextNaming) {
     this.store.nameContext(naming.context, naming.target);

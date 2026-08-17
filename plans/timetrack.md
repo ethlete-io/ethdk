@@ -1919,6 +1919,64 @@ commit that later also lives on another branch is not a second piece of work.
     ticket-creation config values - `subjectField` and parenting - now have fields to hold them
     (`TimetrackTicketSettings`, the New tickets section); what is missing is the answer, not the seam.
 
+## Picked projects, and rows the machine never saw
+
+Two failures showed up on the same day (2026-08-17), and the answer to both is that the app was asking
+the user to type things it could have read.
+
+**1. A project key typed from memory is a setting nobody can check.** `issueKeyPrefixes` was a text
+field, and an empty one accepts anything shaped like a key. Working on this app with the Google Cloud
+console open produced a worklog against a `GCP-…` issue that has never existed: `issueKeyInText` read
+the console's own identifier out of a window title and the empty prefix list waved it through. What
+that settled:
+
+- **The prefixes are the projects, and the projects come from Jira.** `favoriteProjects` holds what a
+  multi-select over `/project/search` chose, key and name together. `gitFlowConfigFor` reads the keys,
+  so picking your projects _is_ configuring the branch grammar — one list, one place, and no key that
+  can be a character wrong.
+- **Free text fails closed.** `issueKeyInText` yields nothing while the list is empty, rather than
+  trusting the pattern alone. It is the one rung that reads a string nobody wrote for this app, so it
+  is the one rung that must not guess. A branch name is untouched: `parseBranch` states both keys
+  itself, and a machine whose list is still empty has to keep working.
+- **The same list is every picker's scope.** An instance has hundreds of projects and a person works in
+  a handful; a picker offering all of them is a search box, not a list. One shared read of the open
+  issues of those projects backs every picker in the window, each filtering it as the user types — a
+  request per keystroke per row is what a search-per-picker would have cost.
+- **A typed key is still accepted.** The list is the hundred most recently touched issues, so logging
+  against something nobody has opened in months has to stay possible. A picker that refuses a key the
+  user knows is a picker they work around.
+
+**2. A day could only ever be edited, never written to.** Every operation the review offered reshaped
+what the collectors saw — split, merge, move a boundary. A meeting held away from the desk, an hour on
+somebody else's machine and a phone call leave no evidence at all, and the only way to put them on the
+day was to stretch a row that meant something else. `addManualRow` writes one instead:
+
+- **It carries no observed time, and it is `certain`.** Both halves are honest: nothing watched it, so
+  `observedMs` is zero and the day's evidence-backed total stays a number that can be checked; a person
+  stated it, which is the strongest claim the app has. The new `manual` evidence kind is how the row
+  says so in its own chain.
+- **It is a `PinnedRow` with an empty `replaces`.** The mechanism for "a row the engine did not
+  produce" already existed; a row that replaces nothing is the one case it had ruled out.
+- **The timeline is where it is drawn.** A range dragged over empty grid is the scheduler's own
+  `draftRange`, a row dragged to another time is its `appointmentDrag`, and both preview themselves
+  because the layout reads `effectiveAppointments`. What the app adds is what the grid cannot know:
+  what a pointer position means in this day's geometry, and that a worklog snaps to the quarter hour.
+  A move keeps the row's duration and a resize re-reads it — the clock says when, the duration says how
+  much, and dragging a row an hour later changed only the first.
+- **The stories the day rolls up to are all-day appointments, parents of the rows under them.** An
+  all-day entry is laid out on the day axis rather than the hour axis, so a band cannot steal width
+  from the rows it groups — which is exactly what a story band drawn as a timed appointment does.
+
+**3. Prose in a settings screen is read once and then never again.** The screen had a paragraph over
+every field, and the paragraphs were right: what a wrong value costs here is rarely visible from the
+field. They are now behind a glyph next to the thing they explain (`ethlete-explain`), and the screen
+is five tabs. The text was never the problem; printing all of it at once was.
+
+**4. A donor block can be too big to be a favour.** `maxDonationBlockMs` (two hours) keeps a long
+stretch in a donating repository unattributed instead of folding it into whatever ran beside it. The
+goal of donation is that SDK work lands on the project it was done for; an afternoon in the SDK is its
+own piece of work, and hiding it inside a client's row is the opposite of the same goal.
+
 ## Phasing
 
 **Phase 1 - the spine.** ~~event model, sessionizing, the branch-grammar parser, correlation~~

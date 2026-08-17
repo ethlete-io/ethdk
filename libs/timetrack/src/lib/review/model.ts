@@ -12,12 +12,16 @@ export type ProposalOverride = {
 };
 
 /**
- * A row the reviewer built by splitting or merging, stored whole because nothing the engine produces
- * corresponds to it. It replaces the proposals in `replaces`, which are dropped from a re-correlation.
+ * A row the reviewer built by splitting, merging, moving or adding, stored whole because nothing the
+ * engine produces corresponds to it. It replaces the proposals in `replaces`, which are dropped from a
+ * re-correlation.
  */
 export type PinnedRow = {
   id: string;
-  /** Proposal ids this row was built from. Never empty — a pinned row always comes from a proposal. */
+  /**
+   * Proposal ids this row was built from. Empty for a row the reviewer added by hand, which stands in
+   * for nothing the engine ever proposed — `addManualRow` is the only thing that writes one.
+   */
   replaces: string[];
   issueKey: string;
   storyKey?: string;

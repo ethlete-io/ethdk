@@ -3,9 +3,9 @@ import { CollectedEvent, DEFAULT_TIMETRACK_SETTINGS, TimetrackRequest, Timetrack
 
 export const E2E_JIRA_HOST = 'https://e2e.atlassian.net';
 export const E2E_ACCOUNT_ID = 'acc:e2e';
-export const E2E_ISSUE_KEY = 'FIP-3010';
+export const E2E_ISSUE_KEY = 'ABC-3010';
 export const E2E_ISSUE_ID = '10100';
-export const E2E_PARENT_KEY = 'FIP-2000';
+export const E2E_PARENT_KEY = 'ABC-2000';
 export const E2E_REPO = '/Users/e2e/dev/fut-frontend';
 /** A branch the grammar can spell but which names no issue — the case branch repair exists for. */
 export const E2E_KEYLESS_BRANCH = 'feat/pdf-export';
@@ -85,7 +85,7 @@ export const e2eSettings = (): TimetrackSettings => ({
   ...DEFAULT_TIMETRACK_SETTINGS,
   jira: { host: E2E_JIRA_HOST, email: 'e2e@example.com' },
   gitlab: { host: 'https://gitlab.example.com' },
-  issueKeyPrefixes: ['FIP'],
+  favoriteProjects: [{ key: 'ABC', name: 'Alpha' }],
   gitScanRoots: [E2E_REPO],
   reasoning: { ...DEFAULT_TIMETRACK_SETTINGS.reasoning, enabled: true },
 });
@@ -131,7 +131,7 @@ const body = (request: TimetrackRequest): unknown => {
     ];
   }
 
-  if (url.includes('/rest/api/3/issue')) return { id: '10999', key: 'FIP-9999' };
+  if (url.includes('/rest/api/3/issue')) return { id: '10999', key: 'ABC-9999' };
 
   // Method-specific: a start opens one merge request, a repair lists the open ones for a branch.
   if (url.includes('/merge_requests')) {

@@ -4,7 +4,7 @@ import { AttributionRule } from '../correlate/rules';
 import { WorklogProposal } from '../model/proposal';
 import { inferTicketProjectKey, projectKeyOf } from './project';
 
-const REPO = '/Users/tom/dev/ea-frontend';
+const REPO = '/home/you/dev/abc-frontend';
 
 const rule = (options: { repoPath: string; issueKey: string }): AttributionRule => ({
   id: options.repoPath,
@@ -36,7 +36,7 @@ const link = (options: { path: string; projectKey: string }): TimetrackProjectLi
 const infer = (options: {
   rules?: AttributionRule[];
   proposals?: WorklogProposal[];
-  prefixes?: string[];
+  projectKeys?: string[];
   repoPath?: string;
   links?: TimetrackProjectLink[];
 }) =>
@@ -44,13 +44,13 @@ const infer = (options: {
     context: { repoPath: options.repoPath ?? REPO },
     rules: options.rules ?? [],
     proposals: options.proposals ?? [],
-    prefixes: options.prefixes ?? [],
+    projectKeys: options.projectKeys ?? [],
     links: options.links ?? [],
   });
 
 describe('projectKeyOf', () => {
   it('reads the project out of an issue key', () => {
-    expect(projectKeyOf('fip-2177')).toBe('FIP');
+    expect(projectKeyOf('abc-2177')).toBe('ABC');
   });
 
   it('names nothing for something that is not a key', () => {
@@ -62,41 +62,41 @@ describe('inferTicketProjectKey', () => {
   it('prefers a rule the user already wrote about this repository', () => {
     expect(
       infer({
-        rules: [rule({ repoPath: REPO, issueKey: 'FIP-1' })],
-        prefixes: ['ABC'],
+        rules: [rule({ repoPath: REPO, issueKey: 'ABC-1' })],
+        projectKeys: ['ABC'],
         proposals: [proposal('ABC-2')],
       }),
-    ).toBe('FIP');
+    ).toBe('ABC');
   });
 
   it('ignores a rule about another repository', () => {
-    expect(infer({ rules: [rule({ repoPath: '/Users/tom/dev/other', issueKey: 'FIP-1' })] })).toBeUndefined();
+    expect(infer({ rules: [rule({ repoPath: '/home/you/dev/other', issueKey: 'ABC-1' })] })).toBeUndefined();
   });
 
-  it('takes the single project this machine is configured for', () => {
-    expect(infer({ prefixes: ['fip'] })).toBe('FIP');
+  it('takes the single project the user picked', () => {
+    expect(infer({ projectKeys: ['abc'] })).toBe('ABC');
   });
 
   it("falls back to the day's own work when it all sits in one project", () => {
-    expect(infer({ proposals: [proposal('FIP-1'), proposal('FIP-2')] })).toBe('FIP');
+    expect(infer({ proposals: [proposal('ABC-1'), proposal('ABC-2')] })).toBe('ABC');
   });
 
   it('reads a link before every other rung, including a rule about the same repository', () => {
     expect(
       infer({
-        links: [link({ path: REPO, projectKey: 'ETH' })],
-        rules: [rule({ repoPath: REPO, issueKey: 'FIP-100' })],
-        prefixes: ['FIP'],
+        links: [link({ path: REPO, projectKey: 'GHI' })],
+        rules: [rule({ repoPath: REPO, issueKey: 'ABC-100' })],
+        projectKeys: ['ABC'],
       }),
-    ).toBe('ETH');
+    ).toBe('GHI');
   });
 
   it('reads a link on the directory root the repository sits in', () => {
-    expect(infer({ links: [link({ path: '/Users/tom/dev', projectKey: 'ETH' })] })).toBe('ETH');
+    expect(infer({ links: [link({ path: '/home/you/dev', projectKey: 'GHI' })] })).toBe('GHI');
   });
 
   it('names nothing rather than choosing between two projects', () => {
-    expect(infer({ prefixes: ['FIP', 'ABC'] })).toBeUndefined();
-    expect(infer({ proposals: [proposal('FIP-1'), proposal('ABC-2')] })).toBeUndefined();
+    expect(infer({ projectKeys: ['ABC', 'DEF'] })).toBeUndefined();
+    expect(infer({ proposals: [proposal('ABC-1'), proposal('DEF-2')] })).toBeUndefined();
   });
 });
