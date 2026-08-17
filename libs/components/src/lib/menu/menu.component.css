@@ -191,9 +191,16 @@
     .et-menu-body {
       flex: 1;
       min-block-size: 0;
-      padding: var(--et-menu-padding-block) var(--et-menu-padding-inline);
+      padding-inline: var(--et-menu-padding-inline);
       overflow-y: auto;
       overscroll-behavior: contain;
+    }
+
+    /* The block padding belongs to the content, not to the scrollport: a scroller clips at its
+       padding box, so padding of its own is inside the scrolled area and a scrolled item paints in
+       the gap under the search field. */
+    .et-menu-body-content {
+      padding-block: var(--et-menu-padding-block);
     }
 
     .et-menu-group {
