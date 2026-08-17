@@ -27,6 +27,7 @@ pub struct AgentSessionCursorRow {
     pub next_line: i64,
     pub after_ms: Option<i64>,
     pub title: Option<String>,
+    pub cwd: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -124,12 +125,18 @@ fn append(
         }
 
         let mut upsert = transaction.prepare(
-            "INSERT INTO agent_session_cursor (id, next_line, after_ms, title)
-             VALUES (?1, ?2, ?3, ?4)
-             ON CONFLICT (id) DO UPDATE SET next_line = ?2, after_ms = ?3, title = ?4",
+            "INSERT INTO agent_session_cursor (id, next_line, after_ms, title, cwd)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT (id) DO UPDATE SET next_line = ?2, after_ms = ?3, title = ?4, cwd = ?5",
         )?;
         for cursor in cursors {
-            upsert.execute(params![cursor.id, cursor.next_line, cursor.after_ms, cursor.title])?;
+            upsert.execute(params![
+                cursor.id,
+                cursor.next_line,
+                cursor.after_ms,
+                cursor.title,
+                cursor.cwd
+            ])?;
         }
     }
 
@@ -184,13 +191,14 @@ pub async fn events_oldest_at(db: State<'_, Db>) -> TimetrackResult<Option<i64>>
 pub async fn agent_session_cursors(db: State<'_, Db>) -> TimetrackResult<Vec<AgentSessionCursorRow>> {
     db.run(|connection| {
         let mut statement =
-            connection.prepare("SELECT id, next_line, after_ms, title FROM agent_session_cursor")?;
+            connection.prepare("SELECT id, next_line, after_ms, title, cwd FROM agent_session_cursor")?;
         let rows = statement.query_map([], |row| {
             Ok(AgentSessionCursorRow {
                 id: row.get(0)?,
                 next_line: row.get(1)?,
                 after_ms: row.get(2)?,
                 title: row.get(3)?,
+                cwd: row.get(4)?,
             })
         })?;
 
@@ -457,6 +465,7 @@ mod tests {
                 next_line: 42,
                 after_ms: None,
                 title: None,
+                cwd: None,
             }],
         )
         .unwrap();
@@ -468,6 +477,37 @@ mod tests {
                     .get::<_, i64>(0))
                 .unwrap(),
             42
+        );
+    }
+
+    #[test]
+    fn rewinds_a_cursor_and_forgets_what_it_last_read() {
+        let mut connection = store();
+        let cursor = |next_line: i64, after_ms: Option<i64>, title: Option<&str>| AgentSessionCursorRow {
+            id: "session-a".to_string(),
+            next_line,
+            after_ms,
+            title: title.map(str::to_string),
+            cwd: Some("/home/tom/dev/fut-frontend".to_string()),
+        };
+
+        append(&mut connection, &[], &[cursor(42, Some(1_000), Some("a session"))]).unwrap();
+        append(&mut connection, &[], &[cursor(0, None, None)]).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT next_line, after_ms, title, cwd FROM agent_session_cursor WHERE id = 'session-a'",
+                    [],
+                    |row| Ok((
+                        row.get::<_, i64>(0)?,
+                        row.get::<_, Option<i64>>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, Option<String>>(3)?
+                    ))
+                )
+                .unwrap(),
+            (0, None, None, Some("/home/tom/dev/fut-frontend".to_string()))
         );
     }
 }

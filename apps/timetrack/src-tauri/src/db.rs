@@ -131,6 +131,16 @@ CREATE TABLE tempo_coverage (
 );
 ";
 
+/// The checkout a session log was last read in, so a new project link can rewind exactly the logs it
+/// covers.
+///
+/// A session carries no dedupe key, so rewinding a log that a link does not cover appends a second copy
+/// of every sample in it. The column is what makes the choice per log rather than all or nothing. It is
+/// NULL for every cursor written before this, and such a cursor is never rewound.
+const SCHEMA_V10: &str = "
+ALTER TABLE agent_session_cursor ADD COLUMN cwd TEXT;
+";
+
 /// Gives every ledger entry written before schema v8 its day.
 ///
 /// A proposal id is `<issueKey>@<ISO instant>`, so the day is in the row already; a row whose id does
@@ -247,6 +257,11 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         connection.pragma_update(None, "user_version", 9)?;
     }
 
+    if version < 10 {
+        connection.execute_batch(SCHEMA_V10)?;
+        connection.pragma_update(None, "user_version", 10)?;
+    }
+
     Ok(())
 }
 
@@ -294,6 +309,10 @@ mod tests {
             connection.execute_batch(SCHEMA_V8).unwrap();
         }
 
+        if version >= 9 {
+            connection.execute_batch(SCHEMA_V9).unwrap();
+        }
+
         connection.pragma_update(None, "user_version", version).unwrap();
         migrate(&connection).unwrap();
 
@@ -314,9 +333,26 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            9
+            10
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
+    }
+
+    #[test]
+    fn leaves_a_cursor_written_before_the_checkout_column_without_one() {
+        let connection = migrated_from(9);
+
+        connection
+            .execute("INSERT INTO agent_session_cursor (id, next_line) VALUES ('s1', 42)", [])
+            .unwrap();
+
+        assert_eq!(
+            connection
+                .query_row("SELECT cwd FROM agent_session_cursor WHERE id = 's1'", [], |row| row
+                    .get::<_, Option<String>>(0))
+                .unwrap(),
+            None
+        );
     }
 
     #[test]

@@ -9,16 +9,20 @@ import {
   effectiveExclusionRules,
   keepLinkedAgentSessions,
   parseClaudeCodeSessionLog,
+  pathIsUnder,
+  resyncAgentSessionCursors,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
   Observable,
+  Subject,
   catchError,
   concatMap,
   defer,
   exhaustMap,
   finalize,
   map,
+  merge,
   switchMap,
   tap,
   timer,
@@ -89,6 +93,16 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   let modifiedAfter: Date | undefined;
 
   /**
+   * Paths whose logs the next run has to read again, from a link the user has just made.
+   *
+   * The rewind is applied inside the run rather than written to the store when it is asked for. A poll
+   * already in flight persists the cursors it read at the end of its own transaction, and those would
+   * be written over a rewind made in the meantime — the logs would then never be re-read.
+   */
+  let pendingResync: string[] = [];
+  const resyncAsked$ = new Subject<void>();
+
+  /**
    * Two filters, and they answer different questions. The project link asks whether the checkout is one
    * this machine bills at all — a session Tempo could never take a worklog for is stored nowhere. An
    * exclusion rule then title-matches what is left, because an agent session is named after the work and
@@ -126,24 +140,32 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
+  /**
+   * A run reads every log again once a rewind is pending, because `modifiedAfter` skips the logs the
+   * agent has not touched since the last run — which is most of them, and all of the old ones.
+   */
   const collect$ = (): Observable<AgentSessionCollection> =>
     defer(() => {
       const startedAt = new Date();
+      const resyncPaths = pendingResync;
 
+      pendingResync = [];
       isCollecting.set(true);
 
       return settings.ready$.pipe(
         concatMap(() => ports.events.cursors$()),
+        map((cursors) => (resyncPaths.length ? resyncAgentSessionCursors({ cursors, paths: resyncPaths }) : cursors)),
         switchMap((cursors) =>
           collectAgentSessions$({
             parser: parseClaudeCodeSessionLog,
             reader: ports.agentLogs,
             cursors,
-            modifiedAfter,
+            modifiedAfter: resyncPaths.length ? undefined : modifiedAfter,
           }),
         ),
         switchMap((collection) => persist$(collection, startedAt)),
         catchError((error: unknown) => {
+          pendingResync = [...new Set([...resyncPaths, ...pendingResync])];
           failure.set(error instanceof Error ? error.message : String(error));
 
           return EMPTY;
@@ -152,15 +174,35 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       );
     });
 
+  /**
+   * Reads the logs under `paths` again, so the sessions dropped while nothing linked them are stored.
+   *
+   * The checkouts drop out of `totals().unlinked` straight away: they have their answer now, and the
+   * re-read reports whatever is still skipped. A run already in flight finishes first — the next tick
+   * picks the rewind up, within one poll interval.
+   */
+  const resync = (paths: readonly string[]) => {
+    const wanted = paths.map((path) => path.trim()).filter(Boolean);
+
+    if (!wanted.length) return;
+
+    pendingResync = [...new Set([...pendingResync, ...wanted])];
+    totals.update((all) => ({
+      ...all,
+      unlinked: all.unlinked.filter((entry) => !wanted.some((path) => pathIsUnder(path, entry.cwd))),
+    }));
+    resyncAsked$.next();
+  };
+
   /** A paused collector reads no log at all: the session titles are the work, and the work is private. */
-  timer(0, AGENT_SESSION_POLL_INTERVAL_MS)
+  merge(timer(0, AGENT_SESSION_POLL_INTERVAL_MS), resyncAsked$)
     .pipe(
       exhaustMap(() => (pause.isPaused() ? EMPTY : collect$())),
       takeUntilDestroyed(),
     )
     .subscribe();
 
-  return { lastRun, totals, failure, isCollecting };
+  return { lastRun, totals, failure, isCollecting, resync };
 });
 
 export const injectAgentSessionCollector = /* @__PURE__ */ toInjectFn(AGENT_SESSION_COLLECTOR_DEF);

@@ -32,6 +32,16 @@ const normalize = (path: string) => path.trim().replace(/\/+$/, '');
 const covers = (link: string, path: string) => path === link || path.startsWith(`${link}/`);
 
 /**
+ * Whether `path` is `root` itself or sits under it, by the same rule a link covers a checkout — a
+ * trailing slash and a directory boundary both read the way they do in the settings list.
+ */
+export const pathIsUnder = (root: string, path: string) => {
+  const from = normalize(root);
+
+  return !!from && covers(from, normalize(path));
+};
+
+/**
  * The link covering a context, longest path first — so a link on one repository beats the root it sits
  * in. That order is the whole point of allowing a root: a user marks `~/dev` private once, and still
  * links the two client checkouts inside it.

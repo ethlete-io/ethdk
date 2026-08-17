@@ -27,6 +27,7 @@ type StoredCursor = {
   nextLine: number;
   afterMs: number | null;
   title: string | null;
+  cwd: string | null;
 };
 
 const toStored = (event: CollectedEvent): StoredEvent => ({
@@ -49,6 +50,7 @@ const toStoredCursor = (cursor: AgentSessionCursor): StoredCursor => ({
   nextLine: cursor.nextLine,
   afterMs: cursor.after ? cursor.after.getTime() : null,
   title: cursor.title ?? null,
+  cwd: cursor.cwd ?? null,
 });
 
 const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
@@ -56,6 +58,7 @@ const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
   nextLine: stored.nextLine,
   ...(stored.afterMs === null ? {} : { after: new Date(stored.afterMs) }),
   ...(stored.title === null ? {} : { title: stored.title }),
+  ...(stored.cwd === null ? {} : { cwd: stored.cwd }),
 });
 
 /**

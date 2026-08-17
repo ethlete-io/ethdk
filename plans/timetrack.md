@@ -459,6 +459,25 @@ Two decisions inside it:
 The cursors move for a dropped log the same as for a kept one: the line was read, and re-reading it
 would only drop it again.
 
+**Which is why a link made afterwards has to be able to rewind them** (`resyncAgentSessionCursors`,
+`agentSessionResyncOffers`, and `resync()` on the collector). The Projects tab lists the checkouts whose
+sessions were dropped and which a link now files into a project, and offers to read their logs again.
+Four things this settled:
+
+- **A cursor records the checkout of its last sample** (`cwd`, schema v10). Without it the rewind is
+  all-or-nothing, and an agent session has no dedupe key - `dedupeKeyOf` covers commits, checkouts,
+  calendar occurrences, merge-request activity and editor heartbeats, and nothing else. Reading a log
+  that was already kept therefore appends a second copy of every sample in it. A cursor written before
+  v10 has no `cwd` and is never rewound.
+- **The rewind is applied inside a run, not written when it is asked for.** A poll already in flight
+  persists the cursors it read at the end of its own transaction; those would be written straight over a
+  rewind made in the meantime, and the logs would never be re-read. So the request is a pending intent
+  the next run drains, and a run that fails hands it back.
+- **`modifiedAfter` has to be dropped for that run.** It skips every log the agent has not touched since
+  the last run, which is most of them and all of the old ones - exactly the ones a rewind is for.
+- **Only a checkout a _project_ link now covers is offered.** One still covered by nothing has nowhere to
+  be filed, and one the user marked private would be dropped again by design.
+
 Verified: Claude Code writes `~/.claude/projects/<cwd-slug>/<sessionId>.jsonl`, where the
 directory name is the working directory (`-home-tom-dev-fut-frontend`), and `user` /
 `assistant` / `system` / `attachment` records each carry `timestamp`, `cwd`, **`gitBranch`**
@@ -1937,6 +1956,27 @@ commit that later also lives on another branch is not a second piece of work.
   - Still owed here: the hard pause, the OAuth client registration, and the marker scheme. The two
     ticket-creation config values - `subjectField` and parenting - now have fields to hold them
     (`TimetrackTicketSettings`, the New tickets section); what is missing is the answer, not the seam.
+
+### A lock over the window (designed, not built)
+
+The database holds months of window titles and session titles, and today it decrypts on startup and
+anyone at an unlocked desktop reads all of it. What is settled:
+
+- **The window locks; the database stays open.** Collection must never stop for a lock. A closed database
+  would punch a hole in the day, which is the failure the hard pause is built around - and a pause records
+  `pause-start` / `pause-end` precisely so the gap stays reconstructible. A lock that hid the window has
+  nothing to record and nothing to reconstruct, so it needs none of that machinery.
+- **Two triggers: an idle timeout, and the OS session lock.** The window source already consumes the
+  D-Bus `Lock` / `Unlock` signals on Linux (see the active-window collector), so the second one is a
+  reader of what is there rather than a listener of its own.
+- **No keychain presence gate for now.** Touch ID through `kSecAccessControlUserPresence` and Windows
+  Hello are both real, but `keyring` v4 exposes no `SecAccessControl`, so macOS would mean calling
+  Security.framework directly. Out of scope.
+- **No TOTP and no passkey.** With no server the app is both prover and verifier, so the verdict is a
+  boolean inside a process an attacker already controls. WebAuthn's `prf` extension is the one genuine
+  exception, because it derives a secret that could wrap the database key - and it is still out of scope.
+
+Open: what unlocks it. There is no credential yet, and choosing one is the whole remaining question.
 
 ## Picked projects, and rows the machine never saw
 

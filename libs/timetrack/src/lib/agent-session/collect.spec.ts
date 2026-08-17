@@ -68,8 +68,20 @@ describe('collectAgentSessions$', () => {
     ]);
     expect(result.events).toHaveLength(2);
     expect(result.cursors).toEqual([
-      { id: 's1', nextLine: 1, after: new Date('2026-08-11T09:00:00.000Z'), title: undefined },
-      { id: 's2', nextLine: 1, after: new Date('2026-08-11T09:10:00.000Z'), title: undefined },
+      {
+        id: 's1',
+        nextLine: 1,
+        after: new Date('2026-08-11T09:00:00.000Z'),
+        title: undefined,
+        cwd: '/Users/tom/dev/ethlete-sdk',
+      },
+      {
+        id: 's2',
+        nextLine: 1,
+        after: new Date('2026-08-11T09:10:00.000Z'),
+        title: undefined,
+        cwd: '/Users/tom/dev/ethlete-sdk',
+      },
     ]);
   });
 
@@ -110,7 +122,45 @@ describe('collectAgentSessions$', () => {
     });
 
     expect(result.events).toEqual([]);
-    expect(result.cursors).toEqual([{ id: 's1', nextLine: 1, after, title: undefined }]);
+    expect(result.cursors).toEqual([{ id: 's1', nextLine: 1, after, title: undefined, cwd: undefined }]);
+  });
+
+  it('records the checkout of the last sample, so a re-sync can find the log by path', () => {
+    const { result } = collect({
+      logs: [
+        {
+          ref: ref('s1'),
+          lines: [record({ timestamp: '2026-08-11T09:00:00.000Z', cwd: '/Users/tom/dev/fut-frontend' })],
+        },
+      ],
+    });
+
+    expect(result.cursors[0]?.cwd).toBe('/Users/tom/dev/fut-frontend');
+  });
+
+  it('keeps the checkout the last run recorded when the new lines hold no sample', () => {
+    const { result } = collect({
+      logs: [{ ref: ref('s1'), lines: [record({ timestamp: '2026-08-11T09:00:00.000Z' })] }],
+      cursors: [{ id: 's1', nextLine: 1, cwd: '/Users/tom/dev/fut-frontend' }],
+    });
+
+    expect(result.cursors[0]?.cwd).toBe('/Users/tom/dev/fut-frontend');
+  });
+
+  it('takes the last checkout of a log that changed one part way through', () => {
+    const { result } = collect({
+      logs: [
+        {
+          ref: ref('s1'),
+          lines: [
+            record({ timestamp: '2026-08-11T09:00:00.000Z', cwd: '/Users/tom/dev/one' }),
+            record({ timestamp: '2026-08-11T09:05:00.000Z', cwd: '/Users/tom/dev/two' }),
+          ],
+        },
+      ],
+    });
+
+    expect(result.cursors[0]?.cwd).toBe('/Users/tom/dev/two');
   });
 
   it('carries a title the previous run resolved into a batch that holds none', () => {

@@ -14,6 +14,11 @@ export type AgentSessionCursor = {
   after?: Date;
   /** Title records are rewritten as a session grows, so a batch holding none keeps what the last one said. */
   title?: string;
+  /**
+   * The checkout the last sample was taken in, so a re-sync can tell which logs belong to a path
+   * without reading any of them again. A log may change checkout part way through; the last one wins.
+   */
+  cwd?: string;
 };
 
 export type AgentSessionCollection = {
@@ -50,14 +55,17 @@ const readLog$ = (options: {
         resume: cursor ? { after: cursor.after, title: cursor.title } : undefined,
       });
 
+      const last = parsed.events[parsed.events.length - 1];
+
       return {
         events: parsed.events,
         unparsedLines: parsed.unparsedLines,
         cursor: {
           id: ref.id,
           nextLine: chunk.nextLine,
-          after: parsed.events[parsed.events.length - 1]?.at ?? cursor?.after,
+          after: last?.at ?? cursor?.after,
           title: parsed.title,
+          cwd: last?.cwd ?? cursor?.cwd,
         },
       };
     }),

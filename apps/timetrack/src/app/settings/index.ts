@@ -1,3 +1,4 @@
+export * from './agent-session-resync.component';
 export * from './attribution-rules.component';
 export * from './project-links.component';
 export * from './settings';

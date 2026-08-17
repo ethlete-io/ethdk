@@ -12,9 +12,10 @@ import {
   SpinnerComponent,
   TAB_IMPORTS,
 } from '@ethlete/components';
-import { injectGitCollector } from '../../collectors';
+import { injectAgentSessionCollector, injectGitCollector } from '../../collectors';
 import { IssueSelectComponent } from '../jira';
 import { injectDayNudge } from '../day-nudge';
+import { AgentSessionResyncComponent } from './agent-session-resync.component';
 import { AttributionRulesComponent } from './attribution-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { ExplainComponent } from './explain.component';
@@ -249,6 +250,13 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 (remove)="store.removeProjectLink($event)"
               />
 
+              <ethlete-agent-session-resync
+                [unlinked]="agent.totals().unlinked"
+                [links]="store.settings().projectLinks"
+                [busy]="agent.isCollecting()"
+                (resync)="agent.resync($event)"
+              />
+
               <ethlete-attribution-rules
                 [rules]="store.settings().attributionRules"
                 (remove)="store.removeAttributionRule($event)"
@@ -338,6 +346,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    AgentSessionResyncComponent,
     AttributionRulesComponent,
     BADGE_IMPORTS,
     BANNER_IMPORTS,
@@ -366,6 +375,7 @@ export class SettingsViewComponent {
   protected store = injectTimetrackSettings();
 
   public git = injectGitCollector();
+  protected agent = injectAgentSessionCollector();
   private dayNudge = injectDayNudge();
   private destroyRef = inject(DestroyRef);
 
