@@ -1,5 +1,6 @@
-import { listen } from '@tauri-apps/api/event';
+import { emit, listen } from '@tauri-apps/api/event';
 import { EMPTY, Observable } from 'rxjs';
+import { hostOnly$ } from './invoke';
 
 /** What the tray asks for when its timer entry is picked. Matches `TIMER_TOGGLE_EVENT` in `tray.rs`. */
 export const TIMER_TOGGLE_EVENT = 'timer-toggle';
@@ -21,3 +22,21 @@ export const hostEvent$ = (event: string): Observable<void> =>
 
     return () => void unlisten.then((stop) => stop());
   });
+
+/** The same, for an event that carries a document. Silent outside the shell, for the same reason. */
+export const hostEventWith$ = <T>(event: string): Observable<T> =>
+  new Observable<T>((subscriber) => {
+    if (!('__TAURI_INTERNALS__' in globalThis)) return EMPTY.subscribe(subscriber);
+
+    const unlisten = listen<T>(event, (received) => subscriber.next(received.payload));
+
+    return () => void unlisten.then((stop) => stop());
+  });
+
+/**
+ * Sends an event to every window of this app, including the one that sent it.
+ *
+ * It is how one window tells another what it has computed, which is cheaper and simpler than a store
+ * both of them read: the app window already reconstructs the day, and nothing else needs to.
+ */
+export const emitHostEvent$ = <T>(event: string, payload: T): Observable<void> => hostOnly$(() => emit(event, payload));

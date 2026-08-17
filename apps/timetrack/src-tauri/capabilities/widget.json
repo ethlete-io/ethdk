@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "widget",
+  "description": "What the floating readout may reach. It reads the day from an event the app window emits rather than from the store, so it needs no command of its own beyond closing itself and being dragged. It gets neither minimize nor maximize: it has one size, and hiding it is what closing it means.",
+  "windows": ["widget"],
+  "permissions": ["core:default", "core:window:allow-close", "core:window:allow-start-dragging"]
+}

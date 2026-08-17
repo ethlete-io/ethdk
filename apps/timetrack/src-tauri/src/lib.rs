@@ -18,6 +18,7 @@ mod state;
 mod store;
 mod timer;
 mod tray;
+mod widget;
 mod window;
 #[cfg(target_os = "macos")]
 mod window_macos;
@@ -110,6 +111,10 @@ pub fn run() {
             timer::timer_start,
             timer::timer_stop,
             tray::tray_set_readout,
+            widget::widget_close,
+            widget::widget_is_open,
+            widget::widget_open,
+            widget::widget_reveal_app,
             window::window_events,
             window::window_request_accessibility,
             window::window_source_status,

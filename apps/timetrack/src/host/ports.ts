@@ -16,6 +16,7 @@ import { createTauriSettingsStore } from './settings-store';
 import { createTauriTimerStore } from './timer-store';
 import { createTauriTransport } from './transport';
 import { TauriTray, createTauriTray } from './tray';
+import { TauriWidget, createTauriWidget } from './widget';
 import { TauriWindowControls, createTauriWindowControls } from './window-controls';
 import { TauriWindowSource, createTauriWindowSource } from './window-source';
 
@@ -28,6 +29,7 @@ export type HostPorts = TimetrackPorts & {
   nudge: TauriNudge;
   oauth: TauriOAuth;
   tray: TauriTray;
+  widget: TauriWidget;
   windows: TauriWindowSource;
   windowControls: TauriWindowControls;
 };
@@ -49,6 +51,7 @@ export const createHostPorts = (): HostPorts => ({
   nudge: createTauriNudge(),
   oauth: createTauriOAuth(),
   tray: createTauriTray(),
+  widget: createTauriWidget(),
   windows: createTauriWindowSource(),
   windowControls: createTauriWindowControls(),
 });

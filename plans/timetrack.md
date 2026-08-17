@@ -1632,6 +1632,50 @@ routed shell: a sticky rail beside `<router-outlet />`, one lazy view per route
 would 404 the moment the webview reloads on it. The stores are `defineRootProvider`s, so day
 state, settings and the tray readout all survive navigation; only the views are lazy.
 
+#### The floating readout: a second window, one bundle, no second collector
+
+**Built** - `apps/timetrack/src/app/widget/`, `src-tauri/src/widget.rs`. Always on top, 340×148, and
+it says four things: what is being recorded, the issue it would go to, how sure of that the day is, and
+the day's total against its target. It carries the pause button and a way back into the app, which is
+what makes it the replacement for the tray menu on a desktop whose bar hosts no tray.
+
+What building it settled:
+
+- **A second window must not be a second app.** Everything `AppComponent` starts on boot - the window,
+  git, agent-session, calendar, GitLab and ingest collectors, the tray readout, the day nudge - would
+  start again in a second webview, and two of them collecting would write every event twice. So the
+  widget has a root and a provider set of its own (`widget.config.ts`): the themes, and nothing else.
+- **One bundle, two roots, picked by the window's label.** A second entry point would mean a second
+  build and a second `index.html` for one small window. `isWidgetWindow()` reads
+  `getCurrentWindow().label`, which is set by the Rust builder, so nothing has to be passed in a URL.
+  **Both root elements have to stand in `index.html`**: a `bootstrapApplication` whose selector matches
+  no element renders a blank window and logs an error into a console nobody can open - which is exactly
+  how the first version failed.
+- **The widget computes nothing; the app window publishes.** The app window already reconstructs today
+  every minute for the tray, so it emits the same reconstruction as a `widget-readout` event and the
+  widget renders it. Two windows correlating the same day would double every read and could disagree
+  about the same minute. A widget that opens between two changes asks for the current one
+  (`widget-ready`), so no state has to be kept for it anywhere.
+- **The confidence is worded, not shown as a label.** `weak` reads as "a guess" and `certain` as "the
+  branch names it", because the point of the window is to be glanced at. Work no row claims says so
+  outright rather than showing an empty issue field - `currentAttribution` (`review/now.ts`) answers
+  `null` for it, which is a different thing from a weak guess.
+- **A tiling compositor decides where it goes, and that is not a bug to fight.** The window asks for
+  `always_on_top`, no decorations, no taskbar entry and the bottom-right corner of the primary monitor.
+  niri tiles it anyway; it needs a window rule, which is why the widget carries the distinct title
+  `Timetrack readout`:
+
+  ```kdl
+  window-rule {
+      match title="^Timetrack readout$"
+      open-floating true
+  }
+  ```
+
+- **The widget gets its own capability** (`capabilities/widget.json`), because Tauri scopes permissions
+  per window label and the app's is scoped to `main`. It may close itself and be dragged; it gets
+  neither minimize nor maximize, since it has one size and hiding it is what closing it means.
+
 The **sync view** (`apps/timetrack/src/app/sync/`) plans on demand, and writes only when the reviewer
 presses the write button. It is deliberately not reactive to the day's rows: a plan is a statement
 about a moment, and one that re-planned itself while the reviewer edited would read as if Tempo were
@@ -1954,9 +1998,7 @@ Raised 2026-08-16, in no order and none of them designed yet.
 - **A Windows collector.** The window source was always meant to be pluggable and macOS proved it;
   Windows is the third source. Focus and idle both have plain Win32 answers
   (`GetForegroundWindow`, `GetLastInputInfo`).
-- **A floating mini widget.** Always on top, small: what is being recorded right now, which issue it
-  is going to, the confidence of that guess, and the pause button. It is the honest answer to "is this
-  thing watching me and does it understand what I am doing", which today needs the window open.
+- ~~**A floating mini widget.**~~ **- built**, see below.
 - **Auto-resume, and auto-pause on standby.** Resuming when work is noticed again - VS Code activity,
   a meeting starting - and pausing when the machine suspends. **This is in tension with the hard
   pause, which is a promise that nothing collects until the user says so.** If both ship, they have

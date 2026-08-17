@@ -7,6 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
+    <!--
+      One document, two roots: the app window bootstraps the first and the floating readout the second,
+      and each leaves the other empty. Both have to stand here because a bootstrap whose selector
+      matches no element renders a blank window and logs an error nobody can see.
+    -->
     <ethlete-root></ethlete-root>
+    <ethlete-widget></ethlete-widget>
   </body>
 </html>

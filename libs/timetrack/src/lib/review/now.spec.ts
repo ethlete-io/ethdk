@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { CollectedEvent } from '../model/event';
-import { currentActivity } from './now';
+import { WorklogProposal } from '../model/proposal';
+import { currentActivity, currentAttribution } from './now';
 
 const at = (hour: number, minute = 0) => new Date(2026, 7, 11, hour, minute);
 
@@ -98,5 +99,53 @@ describe('currentActivity', () => {
     expect(currentActivity({ events: [], blocks: [newest, block({ from: at(9), to: at(11) })] })).toMatchObject({
       block: newest,
     });
+  });
+});
+
+describe('currentAttribution', () => {
+  const row = (options: { from: Date; to: Date; issueKey: string; confidence?: WorklogProposal['confidence'] }) =>
+    ({
+      id: `row-${options.issueKey}-${options.from.getHours()}`,
+      issueKey: options.issueKey,
+      from: options.from,
+      to: options.to,
+      durationMs: options.to.getTime() - options.from.getTime(),
+      observedMs: options.to.getTime() - options.from.getTime(),
+      description: '',
+      confidence: options.confidence ?? 'certain',
+      evidence: [],
+      state: 'suggested',
+    }) satisfies WorklogProposal;
+
+  const working = (from: Date, to: Date) => currentActivity({ events: [], blocks: [block({ from, to })] });
+
+  it('names the issue the current work would be logged on', () => {
+    const attribution = currentAttribution({
+      activity: working(at(14), at(15)),
+      rows: [row({ from: at(9), to: at(11), issueKey: 'FIP-1' }), row({ from: at(14), to: at(15), issueKey: 'FIP-2' })],
+    });
+
+    expect(attribution).toEqual({ issueKey: 'FIP-2', confidence: 'certain' });
+  });
+
+  it('reports the confidence the row carries, so a guess never reads as a fact', () => {
+    const attribution = currentAttribution({
+      activity: working(at(14), at(15)),
+      rows: [row({ from: at(13), to: at(16), issueKey: 'FIP-2', confidence: 'weak' })],
+    });
+
+    expect(attribution).toEqual({ issueKey: 'FIP-2', confidence: 'weak' });
+  });
+
+  it('answers nothing for work no row claims', () => {
+    expect(currentAttribution({ activity: working(at(14), at(15)), rows: [] })).toBeNull();
+  });
+
+  it('answers nothing while the machine is idle or paused', () => {
+    const idle = currentActivity({ events: [{ at: at(15), source: 'idle', kind: 'idle-start' }], blocks: [] });
+
+    expect(
+      currentAttribution({ activity: idle, rows: [row({ from: at(9), to: at(18), issueKey: 'FIP-1' })] }),
+    ).toBeNull();
   });
 });

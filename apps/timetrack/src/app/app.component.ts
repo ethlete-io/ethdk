@@ -8,6 +8,7 @@ import { SidebarComponent } from './shell';
 import { TimerControlComponent } from './timer-control.component';
 import { injectTrayReadout } from './tray-readout';
 import { rememberViewState } from './view-state';
+import { WidgetControlComponent } from './widget/widget-control.component';
 import { WindowControlsComponent } from './window-controls.component';
 
 /** The first segment of a route, which is the view the window is on. */
@@ -34,6 +35,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
         <div class="flex items-center gap-3">
           <ethlete-timer-control />
           <ethlete-pause-control />
+          <ethlete-widget-control />
         </div>
 
         <ethlete-window-controls />
@@ -64,6 +66,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
     TimerControlComponent,
     PauseControlComponent,
     NudgeBannerComponent,
+    WidgetControlComponent,
     WindowControlsComponent,
   ],
 })

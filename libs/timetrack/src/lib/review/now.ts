@@ -1,5 +1,7 @@
 import { ActivityBlock } from '../model/block';
 import { CollectedEvent, PresenceEvent } from '../model/event';
+import { Confidence } from '../model/evidence';
+import { WorklogProposal } from '../model/proposal';
 
 /** What the machine is doing at this moment, as a tray readout has to state it in one line. */
 export type CurrentActivity =
@@ -41,4 +43,29 @@ export const currentActivity = (options: {
   }
 
   return block ? { state: 'working', since: block.from, block } : { state: 'unknown' };
+};
+
+/** The issue the work happening now would be logged on, and how sure the day is of it. */
+export type CurrentAttribution = { issueKey: string; confidence: Confidence };
+
+/**
+ * Which row the current work would land on, or `null` when nothing names one.
+ *
+ * A readout that states the issue without stating how sure of it the day is invites the reader to
+ * trust a guess — and a keyless branch produces exactly such a guess. `null` is the answer for work
+ * no rule could name, which is a different thing from a weak guess and has to read differently.
+ *
+ * The row is found by the block's last sample rather than its start: a merged row spans several
+ * blocks, and the newest sample is the one the reader is watching happen.
+ */
+export const currentAttribution = (options: {
+  activity: CurrentActivity;
+  rows: readonly WorklogProposal[];
+}): CurrentAttribution | null => {
+  if (options.activity.state !== 'working') return null;
+
+  const at = options.activity.block.to.getTime();
+  const row = options.rows.find((candidate) => candidate.from.getTime() <= at && at <= candidate.to.getTime());
+
+  return row ? { issueKey: row.issueKey, confidence: row.confidence } : null;
 };

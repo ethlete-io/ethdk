@@ -17,5 +17,6 @@ export * from './settings-store';
 export * from './timer-store';
 export * from './transport';
 export * from './tray';
+export * from './widget';
 export * from './window-controls';
 export * from './window-source';

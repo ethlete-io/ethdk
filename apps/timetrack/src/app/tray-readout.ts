@@ -1,7 +1,15 @@
 import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { CurrentActivity, DayCheck, TimerRun, currentActivity, formatDurationMs } from '@ethlete/timetrack';
+import {
+  CurrentActivity,
+  DayCheck,
+  ReviewedRow,
+  TimerRun,
+  currentActivity,
+  currentAttribution,
+  formatDurationMs,
+} from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concatMap, distinctUntilChanged, map, merge, timer } from 'rxjs';
 import {
   injectAgentSessionCollector,
@@ -11,7 +19,7 @@ import {
   injectIngestCollector,
   injectWindowCollector,
 } from '../collectors';
-import { TrayReadout, injectHostPorts } from '../host';
+import { TrayReadout, WidgetReadout, injectHostPorts } from '../host';
 import { injectCollectionPause } from './collection-pause';
 import { formatBlockLabel, formatClockTime } from './day-review/format';
 import { injectTimetrackSettings } from './settings/settings';
@@ -58,6 +66,51 @@ const formatTimer = (options: { running: TimerRun | null; elapsedMs: number }) =
 const formatPause = (options: { isPaused: boolean; pausedForMs: number }) =>
   options.isPaused ? `Resume collection — paused ${formatDurationMs(options.pausedForMs)}` : 'Pause collection';
 
+/** What the state itself is, for a readout that shows the state and the work as two separate things. */
+const labelActivity = (activity: CurrentActivity) => {
+  if (activity.state === 'working') return formatBlockLabel(activity.block);
+  if (activity.state === 'paused') return 'Nothing is being watched';
+  if (activity.state === 'idle') return 'Nobody at the machine';
+
+  return 'Nothing observed today';
+};
+
+/**
+ * The same day as the tray readout, in the fields a floating readout shows separately.
+ *
+ * It is computed here rather than in the widget because this is the window that already reconstructs
+ * today — a second window doing it again would double every read, and two windows disagreeing about
+ * the same minute is worse than one being a minute late.
+ */
+const widgetReadout = (options: {
+  activity: CurrentActivity;
+  rows: readonly ReviewedRow[];
+  total: string;
+  isPaused: boolean;
+}): WidgetReadout => {
+  const { activity } = options;
+  const attributed = currentAttribution({ activity, rows: options.rows });
+
+  return {
+    state: activity.state,
+    label: labelActivity(activity),
+    since: activity.state === 'unknown' ? '' : formatClockTime(activity.since),
+    issueKey: attributed?.issueKey ?? null,
+    confidence: attributed?.confidence ?? null,
+    total: options.total,
+    isPaused: options.isPaused,
+  };
+};
+
+/** Both readouts of one reconstruction. They are published together, so nothing can disagree. */
+type Readouts = { tray: TrayReadout; widget: WidgetReadout };
+
+/**
+ * Whether two reconstructions say the same thing. Both documents are flat, so the wording is the
+ * whole comparison — and the wording is exactly what a change has to reach a surface for.
+ */
+const isSame = (before: Readouts, after: Readouts) => JSON.stringify(before) === JSON.stringify(after);
+
 /**
  * Keeps the tray menu saying what today looks like, whether or not the window is open.
  *
@@ -76,6 +129,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const pause = injectCollectionPause();
   const settings = injectTimetrackSettings();
   const readout = signal<TrayReadout | null>(null);
+  const published = signal<WidgetReadout | null>(null);
 
   const collected = computed(() => ({
     windows: windows.lastRun(),
@@ -92,33 +146,52 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     rules: settings.settings().attributionRules.length,
   }));
 
-  const read$ = (): Observable<TrayReadout> => {
+  const read$ = (): Observable<Readouts> => {
     const current = settings.settings();
 
     return readToday$({ ports, settings: current, repoRoots: git.discovery()?.repos ?? [] }).pipe(
-      map(({ events, correlation, review }) => ({
-        activity: formatActivity(currentActivity({ events, blocks: correlation.blocks })),
-        total: formatTotal({ check: review.check, targetMs: current.dayTargetMs }),
-        timer: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
-        pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),
-      })),
+      map(({ events, correlation, review }) => {
+        const activity = currentActivity({ events, blocks: correlation.blocks });
+        const total = formatTotal({ check: review.check, targetMs: current.dayTargetMs });
+
+        return {
+          tray: {
+            activity: formatActivity(activity),
+            total,
+            timer: formatTimer({ running: timers.running(), elapsedMs: timers.elapsedMs() }),
+            pause: formatPause({ isPaused: pause.isPaused(), pausedForMs: pause.pausedForMs() }),
+          },
+          widget: widgetReadout({ activity, rows: review.rows, total, isPaused: pause.isPaused() }),
+        };
+      }),
     );
   };
 
   merge(toObservable(collected), timer(0, TRAY_READOUT_INTERVAL_MS))
     .pipe(
       concatMap(() => read$().pipe(catchError(() => EMPTY))),
-      distinctUntilChanged(
-        (before, after) =>
-          before.activity === after.activity &&
-          before.total === after.total &&
-          before.timer === after.timer &&
-          before.pause === after.pause,
-      ),
+      distinctUntilChanged(isSame),
       concatMap((next) => {
-        readout.set(next);
+        readout.set(next.tray);
+        published.set(next.widget);
 
-        return ports.tray.setReadout$(next).pipe(catchError(() => EMPTY));
+        return merge(ports.tray.setReadout$(next.tray), ports.widget.publish$(next.widget)).pipe(
+          catchError(() => EMPTY),
+        );
+      }),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  // A widget opens between two changes, so the last readout has to be repeatable on request. Nothing
+  // is stored for it: the one this window last published is what it asks for.
+  ports.widget
+    .ready$()
+    .pipe(
+      concatMap(() => {
+        const last = published();
+
+        return last ? ports.widget.publish$(last).pipe(catchError(() => EMPTY)) : EMPTY;
       }),
       takeUntilDestroyed(),
     )

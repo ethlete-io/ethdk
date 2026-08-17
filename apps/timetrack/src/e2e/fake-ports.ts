@@ -11,7 +11,7 @@ import {
   TimetrackResponse,
   TimetrackSettings,
 } from '@ethlete/timetrack';
-import { Observable, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 import { HostPorts } from '../host/ports';
 import {
   E2E_ISSUE_KEY,
@@ -207,6 +207,19 @@ export const createFakePorts = (): HostPorts => {
     oauth: { authorize$: () => ok({ code: 'e2e', redirectUri: 'http://localhost', codeVerifier: 'e2e' }) },
 
     tray: { setReadout$: () => done() },
+
+    // A browser tab has no second window to open, so the toggle reports one that never opens. The
+    // readout stream is silent for the same reason: nothing here has a window to publish to.
+    widget: {
+      open$: () => done(),
+      close$: () => done(),
+      isOpen$: () => ok(false),
+      revealApp$: () => done(),
+      publish$: () => done(),
+      readout$: () => EMPTY,
+      announceReady$: () => done(),
+      ready$: () => EMPTY,
+    },
 
     windows: {
       batch$: (afterSeq) => ok({ events: [], throughSeq: afterSeq, dropped: 0 }),
