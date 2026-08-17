@@ -82,7 +82,7 @@ const whereFor = (context: UnnamedContext) => {
 
   if (!repoPath) return appId ?? 'this machine';
 
-  return branch ? `${repoNameOf(repoPath)} @ ${branch}` : repoNameOf(repoPath);
+  return branch ? `${repoNameOf(repoPath)}, on branch ${branch}` : repoNameOf(repoPath);
 };
 
 /**
@@ -91,6 +91,10 @@ const whereFor = (context: UnnamedContext) => {
  * It quotes only what may leave the machine (`QUOTABLE_EVIDENCE_KINDS`), so a description carries
  * commit subjects and agent-session titles and never a window title or a file path. The branch is the
  * strongest source there is for a summary: it is what the user called the work while doing it.
+ *
+ * The description leads with what the work says about itself and ends with where the time came from,
+ * because the reader of the ticket is somebody who was not there. Where the time came from is the
+ * least interesting line for them, so it goes last rather than first.
  */
 export const draftTicket = (options: {
   context: UnnamedContext;
@@ -105,11 +109,14 @@ export const draftTicket = (options: {
     max: options.maxNotes ?? DEFAULT_MAX_TICKET_NOTES,
   });
   const summary = summaryFor({ context, notes, config });
-  const opening = `Reconstructed from ${formatDurationMs(context.observedMs)} of work in ${whereFor(context)}.`;
+  const provenance = `Recorded from ${formatDurationMs(context.observedMs)} of work in ${whereFor(context)}.`;
+  const body = notes.length
+    ? ['What the work says it was:', '', ...notes.map((note) => `- ${note}`), '']
+    : ['Nothing in the day names this work beyond where it happened.', ''];
 
   return {
     summary,
-    description: [opening, ...(notes.length ? ['', ...notes.map((note) => `- ${note}`)] : [])].join('\n'),
+    description: [...body, provenance].join('\n'),
     subject: ticketSubjectOf(summary),
     notes,
   };

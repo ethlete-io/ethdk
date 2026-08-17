@@ -1663,6 +1663,31 @@ the week. `localStorage` rather than the encrypted store, because it answers syn
 route redirects straight to the remembered view, so the default one is never painted first - and
 because a route name and two calendar days are not observations.
 
+**The ticket draft was written for the app, not for the person who reads it.** On the first real day
+it was used, the card offered `Reconstructed from 21m of work in fut-frontend @ feat/hub-review-feedback`
+as a description, a free-text project field holding a guessed placeholder, and `No parent` with no list
+under it - which is a form that asks the reviewer to do the work the app was built to do. What the fix
+settled:
+
+- **The project is picked, not typed.** `fetchJiraProjects$` (`jira/projects.ts`) reads
+  `/rest/api/3/project/search` ordered by `-lastIssueUpdatedTime`, so the project the user has actually
+  been in is at the top of the list. The list is read once per session and kept - an instance's projects
+  do not change while a day is reviewed. It falls back to a typed key when the read fails, because a
+  failed read must not be the thing that stops a ticket from being filed. Picking a project re-reads the
+  parents under it and clears the parent already chosen, which is what made `No parent` the only option
+  before: the parents were only ever read for the key the guess produced, and an empty guess read none.
+- **A description leads with the work and ends with the provenance.** Where the time came from is the
+  least interesting line for a reader who was not there, so it goes last. This is a better draft, not a
+  good ticket - the honest fix is that a person writes it, and nobody is going to.
+- **So the agent writes it.** `writeTicketWithAgent$` (`ticket/write.ts`) is a second one-shot call to
+  the same local CLI the day's reasoning uses, with the same isolation flags, the same redaction (a
+  repository's name, never its path; only `QUOTABLE_EVIDENCE_KINDS` wording) and the same payload
+  disclosure before the press. It fills the two fields and files nothing. A run that fails answers
+  `null` and leaves the deterministic draft standing, which is worse wording and no less correct.
+- **Both calls now share one seam.** `agentProcessSpec` (`reason/spec.ts`) holds the isolation flags and
+  `agentOutputDocument` (`reason/envelope.ts`) reads the CLI's JSON envelope for any schema. A third
+  question asked of the agent should add a prompt and a schema, nothing else.
+
 ## Storage, privacy, secrets
 
 **The core half is built** - `libs/timetrack/src/lib/store/`: the two persistence ports, the

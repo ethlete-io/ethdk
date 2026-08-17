@@ -1,40 +1,18 @@
 import { Observable, catchError, defer, map, of, retry } from 'rxjs';
 import { InferredAttribution } from '../correlate/rules';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
-import { DEFAULT_REASONING_OPTIONS, ReasoningOptions, ReasoningPlan } from './model';
+import { ReasoningOptions, ReasoningPlan } from './model';
 import { parseReasoningOutput } from './parse';
 import { REASONING_JSON_SCHEMA, REASONING_SYSTEM_PROMPT } from './prompt';
+import { agentProcessSpec } from './spec';
 
-/**
- * The flags that make the call a one-shot question rather than a coding session.
- *
- * `--safe-mode` is what `--bare` was meant to be here: it drops hooks, skills, plugins, MCP servers,
- * custom agents and `CLAUDE.md` discovery, but leaves authentication alone. `--bare` cannot be used —
- * it reads `ANTHROPIC_API_KEY` only, and the whole point of spawning a CLI is to use the subscription
- * the user already has. `--tools ""` disables every built-in tool, so the run has no filesystem and no
- * network of its own; the prompt on stdin is all it can see.
- */
-const ISOLATION_ARGS = ['--print', '--safe-mode', '--no-session-persistence', '--strict-mcp-config', '--tools', ''];
-
-export const reasoningSpec = (options: { plan: ReasoningPlan; options?: Partial<ReasoningOptions> }): ProcessSpec => {
-  const settings = { ...DEFAULT_REASONING_OPTIONS, ...options.options };
-
-  return {
-    command: settings.command,
-    args: [
-      ...ISOLATION_ARGS,
-      '--system-prompt',
-      REASONING_SYSTEM_PROMPT,
-      '--output-format',
-      'json',
-      '--json-schema',
-      JSON.stringify(REASONING_JSON_SCHEMA),
-      ...(settings.model ? ['--model', settings.model] : []),
-    ],
+export const reasoningSpec = (options: { plan: ReasoningPlan; options?: Partial<ReasoningOptions> }): ProcessSpec =>
+  agentProcessSpec({
+    systemPrompt: REASONING_SYSTEM_PROMPT,
+    schema: REASONING_JSON_SCHEMA,
     stdin: JSON.stringify(options.plan.request),
-    timeoutMs: settings.timeoutMs,
-  };
-};
+    options: options.options,
+  });
 
 /**
  * Runs the day's one reasoning call and returns what it proposes.

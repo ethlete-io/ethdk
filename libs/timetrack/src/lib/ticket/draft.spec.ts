@@ -73,10 +73,13 @@ describe('draftTicket', () => {
     expect(draft({ context: { appId: 'com.figma.Desktop' } }).summary).toBe('com.figma.Desktop');
   });
 
-  it('says where the time came from and how much of it there was', () => {
+  it('says where the time came from, and says it last', () => {
     const drafted = draft({ context: { repoPath: REPO, branch: 'feat/user-management' } });
 
-    expect(drafted.description).toBe('Reconstructed from 2h 15m of work in ea-frontend @ feat/user-management.');
+    expect(drafted.description).toContain(
+      'Recorded from 2h 15m of work in ea-frontend, on branch feat/user-management.',
+    );
+    expect(drafted.description.split('\n').at(-1)).toContain('Recorded from');
   });
 
   it('quotes commit and agent-session wording, never a window title', () => {
@@ -92,6 +95,15 @@ describe('draftTicket', () => {
     expect(drafted.notes).toEqual(['feat(admin): Add the user list', 'Wire the invite endpoint']);
     expect(drafted.description).toContain('- feat(admin): Add the user list');
     expect(drafted.description).not.toContain('Salary review');
+  });
+
+  it('leads with the work rather than with where the time came from', () => {
+    const drafted = draft({
+      context: { repoPath: REPO, branch: 'feat/user-management' },
+      entries: [evidence('commit', '4 commits', 'feat(admin): Add the user list')],
+    });
+
+    expect(drafted.description.split('\n')[0]).toBe('What the work says it was:');
   });
 
   it('quotes no more notes than it was allowed', () => {

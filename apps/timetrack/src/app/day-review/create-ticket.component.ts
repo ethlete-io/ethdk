@@ -4,10 +4,18 @@ import {
   BUTTON_IMPORTS,
   FORM_FIELD_IMPORTS,
   INPUT_IMPORTS,
+  SELECT_IMPORTS,
   SpinnerComponent,
   TEXTAREA_IMPORTS,
 } from '@ethlete/components';
-import { ParentCandidate, UnnamedContext, describeAttributionRule, formatDurationMs } from '@ethlete/timetrack';
+import {
+  JiraProject,
+  ParentCandidate,
+  TicketWritingRequest,
+  UnnamedContext,
+  describeAttributionRule,
+  formatDurationMs,
+} from '@ethlete/timetrack';
 import { TicketForm } from './ticket-draft';
 
 /**
@@ -35,15 +43,55 @@ import { TicketForm } from './ticket-draft';
           <et-banner [description]="failure" type="error" heading="Jira did not take the ticket" />
         }
 
+        @if (canWrite()) {
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-wrap items-center gap-3">
+              <button [disabled]="isWriting()" (click)="write.emit()" et-button variant="outline" size="sm">
+                @if (isWriting()) {
+                  <et-spinner size="sm" />
+                }
+                Let the agent write it
+              </button>
+              <span class="text-small text-et-surface-muted">
+                It rewrites the summary and the description. Both stay yours to edit.
+              </span>
+            </div>
+
+            @if (writeFailure(); as failure) {
+              <et-banner [description]="failure" type="warning" heading="The agent wrote nothing" />
+            }
+
+            @if (payload(); as request) {
+              <details class="rounded-md border border-et-surface-border p-3">
+                <summary class="cursor-pointer text-small text-et-surface-muted">
+                  What gets sent — {{ request.notes.length }} note(s), no path and no window title
+                </summary>
+                <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printedPayload() }}</pre>
+              </details>
+            }
+          </div>
+        }
+
         <div class="flex flex-wrap items-end gap-3">
-          <et-form-field class="w-30" appearance="underline" size="sm">
+          <et-form-field class="w-70" appearance="underline" size="sm">
             <et-label>Project</et-label>
-            <et-input
-              [value]="draft.projectKey"
-              (valueChange)="projectKeyChange.emit($event)"
-              (blur)="findParents.emit()"
-              placeholder="FIP"
-            />
+            @if (projects().length) {
+              <et-select
+                [value]="draft.projectKey || null"
+                (valueChange)="pickProject($event)"
+                placeholder="Pick a project"
+              >
+                @for (project of projects(); track project.key) {
+                  <et-select-option [value]="project.key">{{ project.key }} — {{ project.name }}</et-select-option>
+                }
+              </et-select>
+            } @else {
+              <et-input
+                [value]="draft.projectKey"
+                [placeholder]="isLoadingProjects() ? 'Reading the projects…' : 'Type a project key'"
+                (valueChange)="projectKeyChange.emit($event)"
+              />
+            }
           </et-form-field>
 
           <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
@@ -51,6 +99,11 @@ import { TicketForm } from './ticket-draft';
             <et-input [value]="draft.summary" (valueChange)="summaryChange.emit($event)" />
           </et-form-field>
         </div>
+
+        @if (projectFailure(); as failure) {
+          <et-banner [description]="failure" type="warning" heading="The projects could not be read" />
+          <button (click)="reloadProjects.emit()" et-button variant="outline" size="sm">Read them again</button>
+        }
 
         <et-form-field appearance="underline" size="sm">
           <et-label>Description</et-label>
@@ -73,6 +126,7 @@ import { TicketForm } from './ticket-draft';
 
           @if (searchFailure(); as failure) {
             <et-banner [description]="failure" type="warning" heading="The parents could not be read" />
+            <button (click)="findParents.emit()" et-button variant="outline" size="sm">Read them again</button>
           }
 
           <div class="flex max-h-60 flex-col gap-1 overflow-y-auto">
@@ -122,17 +176,34 @@ import { TicketForm } from './ticket-draft';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SpinnerComponent, TEXTAREA_IMPORTS],
+  imports: [
+    BANNER_IMPORTS,
+    BUTTON_IMPORTS,
+    FORM_FIELD_IMPORTS,
+    INPUT_IMPORTS,
+    SELECT_IMPORTS,
+    SpinnerComponent,
+    TEXTAREA_IMPORTS,
+  ],
 })
 export class CreateTicketComponent {
   public context = input.required<UnnamedContext>();
   public form = input<TicketForm | null>(null);
   public candidates = input<readonly ParentCandidate[]>([]);
+  /** The projects the instance offers. Empty falls the field back to a typed key. */
+  public projects = input<readonly JiraProject[]>([]);
+  /** Exactly what a writing run would send, shown here so it can be read before it leaves the machine. */
+  public payload = input<TicketWritingRequest | null>(null);
   public isSearching = input(false);
+  public isLoadingProjects = input(false);
+  public canWrite = input(false);
+  public isWriting = input(false);
   public isCreating = input(false);
   public canCreate = input(false);
   public createdKey = input<string | null>(null);
   public searchFailure = input<string | null>(null);
+  public projectFailure = input<string | null>(null);
+  public writeFailure = input<string | null>(null);
   public createFailure = input<string | null>(null);
 
   public projectKeyChange = output<string>();
@@ -140,9 +211,16 @@ export class CreateTicketComponent {
   public descriptionChange = output<string>();
   public parentKeyChange = output<string | null>();
   public findParents = output<void>();
+  public reloadProjects = output<void>();
+  public write = output<void>();
   public create = output<void>();
   public dismiss = output<void>();
 
   protected label = computed(() => describeAttributionRule(this.context().suggestion));
   protected duration = computed(() => formatDurationMs(this.context().observedMs));
+  protected printedPayload = computed(() => JSON.stringify(this.payload(), null, 2));
+
+  protected pickProject(value: unknown) {
+    this.projectKeyChange.emit(typeof value === 'string' ? value : '');
+  }
 }

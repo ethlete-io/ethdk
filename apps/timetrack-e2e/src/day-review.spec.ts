@@ -27,7 +27,7 @@ test.describe('the day view', () => {
     const field = (label: string) => page.locator('et-form-field').filter({ hasText: label });
 
     await expect(field('Summary').locator('input')).toHaveValue('Pdf export');
-    await expect(field('Description').locator('textarea')).toHaveValue(/Reconstructed from .* feat\/pdf-export/);
+    await expect(field('Description').locator('textarea')).toHaveValue(/Recorded from .* on branch feat\/pdf-export/);
   });
 
   test('quotes only the commit subject, never a window title', async ({ page }) => {

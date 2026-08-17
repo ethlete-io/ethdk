@@ -6,4 +6,5 @@ export * from './create';
 export * from './hierarchy';
 export * from './issue';
 export * from './myself';
+export * from './projects';
 export * from './search';
