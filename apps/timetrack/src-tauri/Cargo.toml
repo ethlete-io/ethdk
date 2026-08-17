@@ -58,6 +58,8 @@ objc2-local-authentication = { version = "0.3.2", features = ["LAContext", "bloc
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["windows-native-keyring-store"] }
+# Held at what Tauri pulls, so the lockfile keeps one copy. On 0.62 the blocking method on
+# IAsyncOperation is join(), not get(), so auth.rs stops compiling as well.
 windows = { version = "0.61.3", features = [
   "Security_Credentials_UI",
   "Win32_System_WinRT",
