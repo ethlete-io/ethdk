@@ -1,5 +1,11 @@
 import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
-import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SpinnerComponent } from '@ethlete/components';
+import {
+  BANNER_IMPORTS,
+  BUTTON_IMPORTS,
+  FORM_FIELD_IMPORTS,
+  INPUT_IMPORTS,
+  SpinnerComponent,
+} from '@ethlete/components';
 import {
   AttributionRule,
   AttributionTarget,
@@ -41,6 +47,16 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
           </button>
         }
       </div>
+
+      @if (askFailure(); as failure) {
+        <et-banner [description]="failure" type="warning" heading="The agent suggested nothing" />
+      } @else if (askedInVain()) {
+        <et-banner
+          description="It read the work and matched none of the day's issues to it. Name one below, or file a ticket."
+          type="info"
+          heading="The agent had no suggestion"
+        />
+      }
 
       @if (payload(); as request) {
         @if (canAsk()) {
@@ -101,7 +117,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SpinnerComponent],
+  imports: [BANNER_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SpinnerComponent],
 })
 export class UnnamedWorkComponent {
   public contexts = input.required<readonly UnnamedContext[]>();
@@ -114,6 +130,10 @@ export class UnnamedWorkComponent {
   public canAsk = input(false);
   public isAsking = input(false);
   public hasAsked = input(false);
+  /** Why the last run produced nothing. A run that answered nothing at all is not a failure. */
+  public askFailure = input<string | null>(null);
+  /** Whether a run answered and named no issue, which is an answer and has to look like one. */
+  public askedInVain = input(false);
 
   public name = output<ContextNaming>();
   public ask = output<void>();

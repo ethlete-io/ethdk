@@ -307,6 +307,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const answers = signal<Record<string, InferredAttribution[]>>({});
+  /** The last run that produced nothing, tagged with the question it failed on. One run is in flight. */
+  const failure = signal<{ hash: string; message: string } | null>(null);
   const asking = signal(false);
 
   /** Keyed by payload rather than by day: a day whose evidence grew is a new question, and only then. */
@@ -374,16 +376,24 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   /**
-   * Asks the local agent CLI about the contexts nothing could name. One run per payload: the answer
-   * is kept against the payload's own hash, so re-opening the day, or a collector tick that changed
-   * nothing about the question, reads the answer back instead of spawning the CLI again.
+   * Asks the local agent CLI about the contexts nothing could name.
+   *
+   * An answer is kept against the payload's own hash, so re-opening the day, or a collector tick that
+   * changed nothing about the question, reads the answer back instead of spawning the CLI. A press
+   * still runs: the button that offers to ask again is the reviewer saying this answer was not enough,
+   * and only `asking` may refuse it — a second CLI while the first is in flight answers the same
+   * question twice.
+   *
+   * A failed run is not kept. Its hash stays unanswered, so the card offers the question again rather
+   * than reading an empty answer back as the day's verdict.
    */
   const ask = () => {
     const current = plan();
 
-    if (!current || asking() || current.hash in answers()) return;
+    if (!current || asking()) return;
 
     asking.set(true);
+    failure.set(null);
 
     runReasoning$({
       runner: ports.processes,
@@ -391,8 +401,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
     })
       .pipe(
-        tap((proposed) => {
-          answers.update((all) => ({ ...all, [current.hash]: proposed }));
+        tap((outcome) => {
+          if (outcome.failure) failure.set({ hash: current.hash, message: outcome.failure });
+          else answers.update((all) => ({ ...all, [current.hash]: outcome.answers }));
+
           asking.set(false);
         }),
         takeUntilDestroyed(destroyRef),
@@ -455,6 +467,23 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const current = plan();
 
       return !!current && current.hash in answers();
+    }),
+    /** Why the last run for this question produced nothing, or `null`. The reviewer can press again. */
+    askFailure: computed(() => {
+      const failed = failure();
+
+      return failed && failed.hash === plan()?.hash ? failed.message : null;
+    }),
+    /**
+     * Whether a run answered this question and named no issue for any context.
+     *
+     * Without it the card looks exactly as it did before the press, which is the reading the user
+     * reported: a model that has no idea and a button that does nothing are the same picture.
+     */
+    askedInVain: computed(() => {
+      const current = plan();
+
+      return !!current && current.hash in answers() && !inferred().length;
     }),
     canAsk: computed(() => settings.settings().reasoning.enabled && (plan()?.request.contexts.length ?? 0) > 0),
     ask,

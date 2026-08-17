@@ -15,6 +15,24 @@ test.describe('the day view', () => {
     await expect(page.getByRole('button', { name: 'feat/pdf-export · 20m' })).toBeVisible();
   });
 
+  test('says so when the agent named nothing, rather than looking unpressed', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ask for suggestions' }).click();
+
+    await expect(page.getByText('The agent had no suggestion')).toBeVisible();
+  });
+
+  test('runs the agent again when the button offers to', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ask for suggestions' }).click();
+
+    const again = page.getByRole('button', { name: 'Ask again' });
+
+    await expect(again).toBeVisible();
+
+    await again.click();
+
+    await expect(page.getByText('Suggested FIP-3010')).toBeVisible();
+  });
+
   test('opens the create-ticket form on no parent, never on a guess', async ({ page }) => {
     await page.getByRole('button', { name: 'Create a ticket' }).click();
 

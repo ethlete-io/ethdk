@@ -57,35 +57,54 @@ describe('runReasoning$', () => {
   it('proposes what the provider answered', async () => {
     const { runner } = stubRunner([ok(ANSWER)]);
 
-    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN }))).resolves.toEqual([
-      { contextId: PLAN.contextIds['c1'], issueKey: 'FIP-2201', reason: 'the branch names the rewrite' },
-    ]);
+    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN }))).resolves.toEqual({
+      answers: [{ contextId: PLAN.contextIds['c1'], issueKey: 'FIP-2201', reason: 'the branch names the rewrite' }],
+      failure: null,
+    });
   });
 
   it('spawns nothing when there is no question or no candidate to answer with', async () => {
     const { runner, specs } = stubRunner([ok(ANSWER)]);
 
-    await expect(firstValueFrom(runReasoning$({ runner, plan: EMPTY_PLAN }))).resolves.toEqual([]);
+    await expect(firstValueFrom(runReasoning$({ runner, plan: EMPTY_PLAN }))).resolves.toEqual({
+      answers: [],
+      failure: null,
+    });
     expect(specs).toEqual([]);
   });
 
   it('retries once, then proposes nothing rather than guessing', async () => {
     const { runner, specs } = stubRunner([ok('not json')]);
 
-    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN }))).resolves.toEqual([]);
+    const outcome = await firstValueFrom(runReasoning$({ runner, plan: PLAN }));
+
+    expect(outcome.answers).toEqual([]);
+    expect(outcome.failure).toBeTruthy();
     expect(specs).toHaveLength(2);
   });
 
   it('recovers when the second run answers', async () => {
     const { runner } = stubRunner([ok('not json'), ok(ANSWER)]);
 
-    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN }))).resolves.toHaveLength(1);
+    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN }))).resolves.toMatchObject({ failure: null });
   });
 
-  it('treats a non-zero exit as a failed run', async () => {
+  it('reports why a non-zero exit produced nothing, so it is not read as an answer', async () => {
     const { runner, specs } = stubRunner([{ code: 1, stdout: '', stderr: 'not logged in' }]);
 
-    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN }))).resolves.toEqual([]);
+    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN }))).resolves.toEqual({
+      answers: [],
+      failure: 'not logged in',
+    });
     expect(specs).toHaveLength(2);
+  });
+
+  it('answers nothing without a failure when the provider proposed no attribution', async () => {
+    const { runner } = stubRunner([ok(JSON.stringify({ structured_output: { answers: [] } }))]);
+
+    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN }))).resolves.toEqual({
+      answers: [],
+      failure: null,
+    });
   });
 });

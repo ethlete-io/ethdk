@@ -97,6 +97,8 @@ import { WorklogRowComponent } from './worklog-row.component';
                 [canAsk]="store.canAsk()"
                 [isAsking]="store.isAsking()"
                 [hasAsked]="store.hasAsked()"
+                [askFailure]="store.askFailure()"
+                [askedInVain]="store.askedInVain()"
                 (name)="nameContext($event)"
                 (ask)="store.ask()"
                 (createTicket)="tickets.open($event)"

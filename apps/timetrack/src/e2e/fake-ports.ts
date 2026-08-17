@@ -47,6 +47,7 @@ export const createFakePorts = (): HostPorts => {
   const timers: TimerRun[] = [];
   let settings: TimetrackSettings = e2eSettings();
   let pausedAt: Date | null = null;
+  let reasoningRuns = 0;
 
   return {
     transport: { request$: <T>(request: TimetrackRequest) => ok(e2eRespond(request) as TimetrackResponse<T>) },
@@ -169,7 +170,13 @@ export const createFakePorts = (): HostPorts => {
       },
     },
 
-    processes: { run$: (spec: ProcessSpec) => ok({ code: 0, stdout: fakeStdout(spec), stderr: '' }) },
+    processes: {
+      run$: (spec: ProcessSpec) => {
+        if (isReasoningSpec(spec)) reasoningRuns += 1;
+
+        return ok({ code: 0, stdout: fakeStdout(spec, reasoningRuns), stderr: '' });
+      },
+    },
 
     agentLogs: { logs$: () => ok([]), readLines$: () => ok({ lines: [], nextLine: 0 }) },
 
@@ -222,8 +229,40 @@ export const createFakePorts = (): HostPorts => {
   };
 };
 
-/** The shape the reasoning provider validates. It answers nothing, so no suggestion is ever offered. */
+/** The shape the reasoning provider validates. Nothing is proposed, and that is a complete answer. */
 const EMPTY_AGENT_ANSWER = '{"structured_output":{"answers":[]}}';
+
+/**
+ * A reasoning call, told apart from a ticket-writing one by what it sends: only the day's question
+ * carries `contexts`. Both spawn the same CLI with the same flags, so the payload is the difference.
+ */
+const isReasoningSpec = (spec: ProcessSpec) => spec.command !== 'git' && !!spec.stdin?.includes('"contexts"');
+
+/**
+ * What a reasoning run answers, so a second run is observable in the UI.
+ *
+ * The first run proposes nothing, which is the case the empty answer covers. A later run names the
+ * first candidate for the first context — the difference a test reads to prove that pressing the
+ * button a second time really spawned a second run.
+ */
+const fakeReasoningAnswer = (spec: ProcessSpec, run: number) => {
+  if (run < 2) return EMPTY_AGENT_ANSWER;
+
+  const request = JSON.parse(spec.stdin ?? '{}') as {
+    contexts?: { id: string }[];
+    candidates?: { issueKey: string }[];
+  };
+  const context = request.contexts?.[0];
+  const candidate = request.candidates?.[0];
+
+  if (!context || !candidate) return EMPTY_AGENT_ANSWER;
+
+  const answers = JSON.stringify([
+    { id: context.id, issueKey: candidate.issueKey, reason: 'the branch reads like that issue' },
+  ]);
+
+  return `{"structured_output":{"answers":${answers}}}`;
+};
 
 /**
  * A repository that is clean, has both fixture branches and pushes to the fixture's GitLab instance.
@@ -238,7 +277,8 @@ const FAKE_GIT: Record<string, string> = {
   'for-each-ref --format=%(refname:strip=3) refs/remotes/origin': `HEAD\nnext\n${E2E_KEYLESS_BRANCH}\n${E2E_PARENT_BRANCH}\n`,
 };
 
-const fakeStdout = (spec: ProcessSpec) => {
+const fakeStdout = (spec: ProcessSpec, reasoningRuns: number) => {
+  if (isReasoningSpec(spec)) return fakeReasoningAnswer(spec, reasoningRuns);
   if (spec.command !== 'git') return EMPTY_AGENT_ANSWER;
 
   const key = spec.args.join(' ');

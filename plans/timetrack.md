@@ -1221,6 +1221,16 @@ What building it settled:
   retrying re-subscribed to the first spawn's result and replayed the failure it was meant to escape.
 - **The model declines when it should.** Given a 40-minute Slack context with no notes it answers
   `null` with "no notes or branch saying what was discussed", rather than reaching for a candidate.
+- **The cache must not also guard the press** (found on a real day, 2026-08-17). `ask()` refused to
+  run when the payload's hash was already answered - and that is the same condition that relabels the
+  button `Ask again`, so the button could never do anything. The cache still keeps a re-opened day
+  from spawning a CLI; only a run in flight refuses a press now. `Ask again` is the reviewer saying
+  the answer was not enough, which is the one case worth a second run.
+- **A failed run is not an answer, and an answer of nothing has to say so.** `runReasoning$` degraded
+  every failure to `[]`, so a CLI that was not logged in cached an empty answer and the day read as
+  answered. It now returns `{ answers, failure }`: a failure is reported and never cached, and a run
+  that answered no issue for any context says that on the card. Both cases used to look like a button
+  that ignored the press.
 
 ## Ticket creation
 
