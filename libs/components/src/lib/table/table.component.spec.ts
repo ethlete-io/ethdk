@@ -580,6 +580,33 @@ describe('TableComponent', () => {
       expect(rows[1]!.classList.contains('et-table-row--stripe')).toBe(true);
       expect(rows[2]!.classList.contains('et-table-row--stripe')).toBe(false);
     });
+
+    it('marks the row that ends the table (its divider would hang under it)', () => {
+      const fixture = create(columns(), UNSORTED); // 3 rows
+      const rows = [...fixture.nativeElement.querySelectorAll('.et-table-row')] as HTMLElement[];
+
+      expect(rows.map((row) => row.classList.contains('et-table-row--last'))).toEqual([false, false, true]);
+    });
+
+    it('marks no row as last while a footer row follows the body', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [data]="data">
+            <ng-template [etTableFooterCell]="cols.name" let-rows>{{ rows.length }} people</ng-template>
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class FooterHostComponent {
+        data = PEOPLE;
+        cols = { name: { header: 'Name', value: (person: Person) => person.name } } satisfies TableColumns<Person>;
+      }
+
+      const fixture = TestBed.createComponent(FooterHostComponent);
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('.et-table-row--last')).toBeNull();
+    });
   });
 
   describe('sticky columns & footer', () => {

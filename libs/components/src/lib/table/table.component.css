@@ -204,6 +204,14 @@
     border-block-end: 1px solid var(--_et-table-row-divider);
   }
 
+  /* A divider separates two rows, so the one that ends the table has nothing to separate: a `divided`
+     table would close on a rule with empty space under it, and an `enclosed` or `grid` one would draw it
+     a pixel inside its own border. The row keeps its rule while its detail row follows it - the detail
+     row then ends the table, and drops its own (see the detail stylesheet). */
+  .et-table-row--last:not(:has(+ .et-table-detail-row)) .et-table-cell {
+    border-block-end: 0;
+  }
+
   /* Zebra striping — keyed off the absolute row index so it survives virtualization and expansion. */
   .et-table-row--stripe .et-table-cell {
     background: var(--_et-table-stripe-bg);

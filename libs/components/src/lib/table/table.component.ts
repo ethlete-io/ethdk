@@ -134,6 +134,8 @@ type TableBodyRowVm<T> = {
   key: unknown;
   classes: string;
   stripe: boolean;
+  /** Whether the table ends here, so this row's rule would close it with a line hanging under it. */
+  last: boolean;
   /** Where this row links to (see `rowLink`), or `null` for a row that links nowhere. */
   link: TableRowLink | null;
   /** The `href` the row's anchor carries - the link itself, or a navigator's resolution of it. */
@@ -871,6 +873,27 @@ export class TableComponent<T> {
     });
   });
 
+  protected footerCells = computed<TableFooterCellVm[]>(() => {
+    const pinning = this.columnPinning();
+    const templates = this.columnTemplates().footer;
+
+    return this.visibleColumns().map((column) => ({
+      ...(pinning?.cellPinning(column.key) ?? NO_PIN),
+      key: column.key,
+      align: column.align ?? 'start',
+      template: templates.get(column.key) ?? null,
+    }));
+  });
+
+  /** Spacer sizes standing in for the rows a window leaves out, or `null` when every row renders. */
+  protected spacers = computed(() => {
+    const window = this.rowWindow();
+
+    if (!window || !this.rows().length) return null;
+
+    return { start: window.paddingStart(), end: window.paddingEnd() };
+  });
+
   protected bodyRows = computed<TableBodyRowVm<T>[]>(() => {
     const pinning = this.columnPinning();
     const templates = this.columnTemplates().cell;
@@ -885,8 +908,11 @@ export class TableComponent<T> {
     const rowLink = this.rowLink();
     const linkColumn = this.linkColumnKey();
     const navigation = this.rowNavigation();
+    const rendered = this.renderedRows();
+    // A footer row separates itself with this rule, and an end spacer stands in for rows still below.
+    const endsWithRows = !this.hasFooter() && !this.spacers()?.end;
 
-    return this.renderedRows().map((row, index) => {
+    return rendered.map((row, index) => {
       const key = this.rowIdentity(row);
       const link = rowLink?.(row) ?? null;
       // A string is an href as given; commands are a URL only a navigator can build, so a table without
@@ -905,6 +931,7 @@ export class TableComponent<T> {
           .filter((className): className is string => !!className)
           .join(' '),
         stripe: (indexOffset + index) % 2 === 1,
+        last: endsWithRows && index === rendered.length - 1,
         detail: detail?.isOpen(row) ? detail : null,
         leads,
         cells: columns.map((column) => {
@@ -935,27 +962,6 @@ export class TableComponent<T> {
         }),
       };
     });
-  });
-
-  protected footerCells = computed<TableFooterCellVm[]>(() => {
-    const pinning = this.columnPinning();
-    const templates = this.columnTemplates().footer;
-
-    return this.visibleColumns().map((column) => ({
-      ...(pinning?.cellPinning(column.key) ?? NO_PIN),
-      key: column.key,
-      align: column.align ?? 'start',
-      template: templates.get(column.key) ?? null,
-    }));
-  });
-
-  /** Spacer sizes standing in for the rows a window leaves out, or `null` when every row renders. */
-  protected spacers = computed(() => {
-    const window = this.rowWindow();
-
-    if (!window || !this.rows().length) return null;
-
-    return { start: window.paddingStart(), end: window.paddingEnd() };
   });
 
   /**

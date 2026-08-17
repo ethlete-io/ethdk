@@ -24,6 +24,11 @@
     border-block-end: 0;
   }
 
+  /* The detail row of the last row ends the table, so its rule has nothing under it to close off. */
+  .et-table-row--last + .et-table-detail-row {
+    border-block-end: 0;
+  }
+
   /* The animation must sit on the element Angular removes — this component's host, which is why it is a
      host binding. `animate.leave` looks for a running animation on *that* element and unmounts the
      moment it finds none, so an animation on a child is never awaited. */
