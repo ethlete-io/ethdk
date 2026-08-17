@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.54
+
+### Minor Changes
+
+- [`4f5d8d1`](https://github.com/ethlete-io/ethdk/commit/4f5d8d19e39fe1565934592746ad6b66448fc2ea) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: `rowLink` makes every row a real link (with `etTableRowRouterLink` for router commands), and
+  `appearance="cards"` gives each row a card of its own.
+
+### Patch Changes
+
+- [`8903d9d`](https://github.com/ethlete-io/ethdk/commit/8903d9d203da42ecaf9123f97e84297e1c454b3e) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: the row that ends the table no longer draws a divider under itself, so a `divided` table stops
+  closing on a line hanging in empty space.
+
 ## 1.0.0-next.53
 
 ### Patch Changes

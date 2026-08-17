@@ -1,5 +1,87 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.4
+
+### Minor Changes
+
+- [`f132d0b`](https://github.com/ethlete-io/ethdk/commit/f132d0b64e322c5823c9f50adeedecf388c5aa65) Thanks [@TomTomB](https://github.com/TomTomB)! - A coding agent in any repository can ask the app about Jira over a loopback endpoint, so no checkout
+  needs a token of its own.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`65147f8`](https://github.com/ethlete-io/ethdk/commit/65147f8f5bff8387f33061e811d34a09748e21f2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Reconstruct a day in a project that does not follow the branch grammar: attribution rules
+  name a repository's or a branch's issue, and a repository with no tickets of its own donates
+  its time to the work beside it.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`0adabf7`](https://github.com/ethlete-io/ethdk/commit/0adabf7541b3fcc31422710ebf60e60ff777c2e9) Thanks [@github-actions](https://github.com/apps/github-actions)! - A branch that names no issue can now be repaired from the day view, once a ticket is filed for it.
+
+- [`55a5fb5`](https://github.com/ethlete-io/ethdk/commit/55a5fb55c72d76072d91a26ffd75575a1548e105) Thanks [@TomTomB](https://github.com/TomTomB)! - A day now counts the time Tempo already holds against its target, so a day logged by hand no longer reports itself as short.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`eab3cc4`](https://github.com/ethlete-io/ethdk/commit/eab3cc4b99704fdd847fab5b15d950c0625b864c) Thanks [@github-actions](https://github.com/apps/github-actions)! - The week view and the end-of-day reminder no longer call a day unfinished when Tempo already holds its
+  time; a new `TimetrackCoverageStore` port keeps what the Sync preview read, so both still answer
+  offline.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`dce484d`](https://github.com/ethlete-io/ethdk/commit/dce484d3d25069b4327f93fc4230a3668eead1b4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Editor heartbeats: a new `editor` source names the checkout, branch and directory being edited, and
+  an `ingest` module carries the wire format a reporter posts to the app's local endpoint.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`8ceb0bd`](https://github.com/ethlete-io/ethdk/commit/8ceb0bd3782015662eb8fe1b5709eb55fba23fff) Thanks [@github-actions](https://github.com/apps/github-actions)! - Say when a day is not finished: `dayNudge()` words the one reminder a day gets, from what the local
+  ledger says is still owed. `TimetrackSettings` gains a `nudge` field.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`dac26ff`](https://github.com/ethlete-io/ethdk/commit/dac26ff902c3c5683891a3d76b40d3e594d66a8f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Log a pause shorter than `gapFillMs` as the work around it, so the day stops coming up
+  short of its target across a run of small idle gaps.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`f668325`](https://github.com/ethlete-io/ethdk/commit/f668325b2ee5885b03dd6bd703205d6ee9fd1e3d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Read GitLab merge-request activity: `collectGitLabEvents$` stores what you pushed, commented on and
+  approved, and `mergeRequestActivity()` turns it into the issue behind the merge request's own branch —
+  so reviewing somebody else's work reaches the Task being reviewed.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`c8045d4`](https://github.com/ethlete-io/ethdk/commit/c8045d46d11cb675e12a78d8ac05787163e5d065) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the Google OAuth half the calendar provider was waiting on: the code exchange, the refresh, the
+  revoke, and a token source that hands out an access token that is valid right now.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`59df547`](https://github.com/ethlete-io/ethdk/commit/59df54780d54e8044ecf8b3b3ecc7b5245f1ce09) Thanks [@github-actions](https://github.com/apps/github-actions)! - Correlate a hard pause: `pauseWindows()` reads the stretches collection was stopped for out
+  of a day's events, and `correlateDay()` takes them as `pauses` so no row is billed for time
+  nothing watched.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`ce9ca31`](https://github.com/ethlete-io/ethdk/commit/ce9ca31886c7f720a9ecd1320e87218d91c93335) Thanks [@github-actions](https://github.com/apps/github-actions)! - Own Tempo worklogs per day: the ledger port now reads `entriesForDay$(day)`, so a worklog whose
+  proposal the day stopped producing is deleted instead of reading as somebody else's.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`d4ede59`](https://github.com/ethlete-io/ethdk/commit/d4ede598eb18cce86993988a6aa2459715f48e65) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `moveRowBoundary()`, which moves the instant two adjacent worklog rows meet at without changing
+  the pair's total, so a split can be placed exactly rather than only halved.
+
+- [`b70453e`](https://github.com/ethlete-io/ethdk/commit/b70453e774c19aa821ef7365520a0712c8105e3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Settings hold picked Jira projects (`favoriteProjects`) instead of typed key prefixes, an issue key
+  in free text is only read against them, and a reviewer can now write, move and remove a row the
+  collectors never saw.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`47df13d`](https://github.com/ethlete-io/ethdk/commit/47df13dcf26f65ac7539edf90033b884823e5fe2) Thanks [@github-actions](https://github.com/apps/github-actions)! - A path can now be linked to a Jira project or marked private, so a side project on the same machine proposes nothing and fills in no timesheet.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`7f62cbc`](https://github.com/ethlete-io/ethdk/commit/7f62cbca2ea6e2891a800c4edeb9a12f17a1d272) Thanks [@github-actions](https://github.com/apps/github-actions)! - A day review can now ask your own `claude` CLI what the work it could not name belongs to. The answer
+  arrives as a `weak` suggestion with its reason attached, so nothing syncs unread.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`3b2b253`](https://github.com/ethlete-io/ethdk/commit/3b2b253e08c552ff0f4a67410e4dde3678a82418) Thanks [@github-actions](https://github.com/apps/github-actions)! - Work a day found that no issue covers can now be filed as a Jira ticket from the review, and the new
+  key becomes the standing rule for that context.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`39c64e7`](https://github.com/ethlete-io/ethdk/commit/39c64e7262b9dbe20f33d28552d019853396b4a1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Read a week of days at once: `reviewWeek()` answers which days still owe something, from the same
+  local ledger the end-of-day reminder reads. Adds `startOfWeekKey()`, `weekDayKeys()`,
+  `shiftWeekKey()` and `describeDayReviewGap()`, which words a gap for every surface that reports one.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`840886b`](https://github.com/ethlete-io/ethdk/commit/840886b4d0f47cbab1ea3229ebc2ff550068f0b7) Thanks [@github-actions](https://github.com/apps/github-actions)! - A new Start view files a ticket, creates the branch the grammar names for it and opens a draft merge request.
+
+### Patch Changes
+
+- [`de287bc`](https://github.com/ethlete-io/ethdk/commit/de287bc48aef0daa96103614ae32ceb5eec03610) Thanks [@TomTomB](https://github.com/TomTomB)! - A day no longer counts an agent session that ran while the user was away, and a lone late sample no longer stretches the block before it.
+
+- [`c60c430`](https://github.com/ethlete-io/ethdk/commit/c60c4301d218c740c198f21b0fa2d05d652c1f7a) Thanks [@TomTomB](https://github.com/TomTomB)! - New `currentAttribution`, which names the issue the work happening now would be logged on and how sure the day is of it.
+
+- [`9e23593`](https://github.com/ethlete-io/ethdk/commit/9e23593b03f371d707efce92c47d39132ed66e32) Thanks [@TomTomB](https://github.com/TomTomB)! - A day no longer labels blocks `HEAD`, including events a collector already stored with that branch.
+
+- [`f89ab22`](https://github.com/ethlete-io/ethdk/commit/f89ab22b87a07465683fab32161d98d98af6bc2e) Thanks [@TomTomB](https://github.com/TomTomB)! - A Claude Code session in a detached checkout no longer reports `HEAD` as its branch.
+
+- [#3066](https://github.com/ethlete-io/ethdk/pull/3066) [`68bf132`](https://github.com/ethlete-io/ethdk/commit/68bf1324db1a4c1c4b447941a2dec254352e31c9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tempo sync: time you logged in Tempo by hand now counts against the day, so a sync no longer writes
+  a second copy of it.
+
+- [`67f9d12`](https://github.com/ethlete-io/ethdk/commit/67f9d12e34b19c18ccb9b2b3b25a520c9f6c7d4e) Thanks [@TomTomB](https://github.com/TomTomB)! - A reasoning run now reports why it proposed nothing, so a failed run is no longer read as an answer.
+
+- [`13e944c`](https://github.com/ethlete-io/ethdk/commit/13e944c95f33074908b2a359b97aefce4d5d7ba8) Thanks [@TomTomB](https://github.com/TomTomB)! - A new ticket now reads the instance's projects, leads its description with what the work says it was, and can have the local agent write both fields.
+
+- [`46fe3fe`](https://github.com/ethlete-io/ethdk/commit/46fe3fe98abbcc0618aa6f06e911318d26f854e9) Thanks [@TomTomB](https://github.com/TomTomB)! - A ticket draft now suggests its parent, offers the open issues that may already track the work, and lets the agent pick both.
+
 ## 0.1.0-next.3
 
 ### Minor Changes
