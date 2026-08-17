@@ -81,6 +81,20 @@ describe('parseClaudeCodeSessionLog', () => {
     expect(result.events.map((event) => event.gitBranch)).toEqual([BRANCH, 'feat/FIP-2200-club-pack']);
   });
 
+  it('reads a detached checkout as no branch at all', () => {
+    const result = parse([record({ minute: 0, branch: 'HEAD' })]);
+
+    expect(result.events[0]?.gitBranch).toBeUndefined();
+  });
+
+  it('emits when a detached checkout returns to a branch', () => {
+    const result = parse([record({ minute: 0, branch: 'HEAD' }), record({ minute: 0, second: 5 })], {
+      sampleIntervalMs: 60_000,
+    });
+
+    expect(result.events.map((event) => event.gitBranch)).toEqual([undefined, BRANCH]);
+  });
+
   it('emits on a working-directory switch even inside the sampling interval', () => {
     const result = parse([record({ minute: 0 }), record({ minute: 0, second: 5, cwd: '/home/tom/dev/ethlete-sdk' })], {
       sampleIntervalMs: 60_000,

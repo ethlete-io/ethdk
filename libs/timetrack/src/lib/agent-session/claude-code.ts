@@ -24,6 +24,19 @@ const stringAt = (record: Record<string, unknown>, key: string) => {
 };
 
 /**
+ * The branch the record names, or `undefined` for a detached checkout.
+ *
+ * `git rev-parse --abbrev-ref HEAD` answers `HEAD` when no branch is checked out, and the agent writes
+ * that answer through. Git refuses `HEAD` as a branch name, so it never names one — and keeping it
+ * would label a block with a word that says nothing and that the branch grammar can never resolve.
+ */
+const branchOf = (record: Record<string, unknown>) => {
+  const branch = stringAt(record, 'gitBranch');
+
+  return branch === 'HEAD' ? undefined : branch;
+};
+
+/**
  * Anything carrying a timestamp, a working directory and a session id counts as a sample of the
  * session running, whatever its record type — so a record type the agent adds later still lands.
  */
@@ -36,7 +49,7 @@ const activityOf = (record: Record<string, unknown>): ActivityRecord | null => {
 
   const at = new Date(timestamp);
 
-  return Number.isNaN(at.getTime()) ? null : { at, sessionId, cwd, gitBranch: stringAt(record, 'gitBranch') };
+  return Number.isNaN(at.getTime()) ? null : { at, sessionId, cwd, gitBranch: branchOf(record) };
 };
 
 const readTitle = (record: Record<string, unknown>, into: TitleCandidates) => {
