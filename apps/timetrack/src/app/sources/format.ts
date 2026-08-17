@@ -38,8 +38,23 @@ export const formatWindowSource = (options: { status: WindowSourceStatus | null;
   ]);
 };
 
-export const formatAgentSessions = (totals: AgentSessionCollectorTotals) =>
-  totals.excluded ? `${totals.excluded} denied by an exclusion rule since ${clock(totals.since)}.` : '';
+/**
+ * Names the unlinked checkouts rather than counting them. A repository this drops is one the user
+ * either does not bill or has not linked yet, and the path is the only thing that tells them which.
+ */
+export const formatAgentSessions = (totals: AgentSessionCollectorTotals) => {
+  const dropped = totals.unlinked.reduce((count, entry) => count + entry.events, 0);
+  const named = totals.unlinked.slice(0, 3).map((entry) => entry.cwd);
+
+  return sentences([
+    totals.excluded ? `${totals.excluded} denied by an exclusion rule since ${clock(totals.since)}.` : null,
+    dropped
+      ? `${dropped} skipped in ${repos(totals.unlinked.length)} no project link covers: ${named.join(', ')}${
+          totals.unlinked.length > named.length ? ', and more' : ''
+        }.`
+      : null,
+  ]);
+};
 
 /**
  * A scan reads a window of history it has mostly stored already, so a run that adds nothing is what a

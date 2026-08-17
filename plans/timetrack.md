@@ -440,6 +440,25 @@ through `appendWithCursors$` in one transaction. Two things worth keeping:
 First real run on this machine: 477 logs imported, back to 13 July, 0 unparsed lines. The run a
 minute later found 5 new samples, which is the incremental path working.
 
+**Only the checkouts a project link covers are stored** (`keepLinkedAgentSessions`). Tempo takes a
+worklog against an issue, so a session in a checkout no project covers is time nothing can ever bill,
+and a developer's machine holds far more of those than it holds client repositories. The filter runs
+before the exclusion rules, and the two answer different questions: a link says whether the checkout
+is billed at all, a rule title-matches what is left. A private link drops too - private time is not
+billable either, and the day still reports the stretch from the window focus covering it.
+
+Two decisions inside it:
+
+- **An empty link list denies everything**, rather than reading as unconfigured. It is the same rule
+  either way, and the day review already needs links to name anything; a collector that stored
+  everything until the first link would change behaviour the moment one was added.
+- **What is dropped is named, not counted.** The sources view lists the checkouts, because a
+  repository the user has not linked yet looks exactly like one they never will, and only the path
+  tells them which. A silent filter here is indistinguishable from a dead collector.
+
+The cursors move for a dropped log the same as for a kept one: the line was read, and re-reading it
+would only drop it again.
+
 Verified: Claude Code writes `~/.claude/projects/<cwd-slug>/<sessionId>.jsonl`, where the
 directory name is the working directory (`-home-tom-dev-fut-frontend`), and `user` /
 `assistant` / `system` / `attachment` records each carry `timestamp`, `cwd`, **`gitBranch`**
@@ -2003,6 +2022,12 @@ instance expects. So it answers instead:
   review would double-book against whatever the evidence already proposed for that hour, and the
   person who would have to explain it is the one who never saw it.
 
+- **One operation reads the instance rather than the settings.** `jira.instance` reports the levels
+  Jira defines and the custom text fields a branch subject could go in. It is a setup read, not a
+  work read: everything else here answers from settings, and this is what fills them in. It is also
+  the only way to write an instance's real shape down, which is how open questions 1 and 2 were
+  closed.
+
 What the repository still says about Jira is how one of its issue types becomes a branch type. The
 instance, the credentials, the picked projects, the subject field and the ticket shape are settings
 here — which is what makes a ticket an agent filed indistinguishable from one the review filed.
@@ -2095,16 +2120,40 @@ Raised 2026-08-16, in no order and none of them designed yet.
 
 ## Open questions
 
-1. **The Jira hierarchy** (Story → Task) - **the reader exists**; `describeJiraHierarchy$` reports
-   the instance's levels and whether the parent field can express the relation at all. **The field
-   now exists too** (`ticket.parenting`), and both modes it can hold are implemented. What is left is
-   running the reader against the real instance and writing the answer down. It no longer blocks the
-   retroactive flow - that flow ships on the `parent-field` default - only its correctness.
-2. **The story-subject meta field** - which Jira field holds `user-management` in
-   `feat/FIP-2177-user-management`. Needs a real instance to name. **Both sides now read and write
-   it**: `fetchJiraIssues$` and `fetchJiraParentCandidates$` take `subjectField`, `createJiraIssue$`
-   writes it, and `ticket.subjectField` holds the id. Empty writes no subject, which is what an
-   unanswered instance does today.
+1. ~~**The Jira hierarchy** (Story → Task)~~ **Answered against the real instance (2026-08-17),
+   through the new `timetrack instance` command.** `braune-digital` defines three levels:
+
+   | Level | Types                                                                 |
+   | ----- | --------------------------------------------------------------------- |
+   | 1     | Epic                                                                  |
+   | 0     | Aufgabe, Bug, Change, Incident, Problem, Service Request, Story, Task |
+   | -1    | Sub-Task, Subtask, Unteraufgabe                                       |
+
+   A sub-task level exists, so `suggestedParenting` reports `parent-field`, and the field really does
+   carry the relation - `FIP-2929` (Task) names `FIP-2306` (Epic) as its parent, and `FIP-2924` names
+   `FIP-2524`. **But the convention's Story → Task is not expressible here**, because Story and Task
+   both sit on level 0. The relation this instance actually holds is **Epic → Task**. So
+   `parentIssueTypeNames` must be `['Epic']`; setting it to `['Story']` would offer parents the parent
+   field cannot accept. `parenting` stays on its `parent-field` default, which is correct.
+
+   Measured on the way: `/rest/api/3/issuetype` returns one entry per issue-type scheme, so this
+   instance reported `Epic` four times and `Task` four times, at the same level with different ids.
+   `levelsOf` now names a type once per level.
+
+2. ~~**The story-subject meta field**~~ **Answered against the real instance (2026-08-17): there is
+   none.** The instance defines 32 custom text fields, and not one of them holds a branch subject -
+   they are Jira's own (`Epic-Name`, `Rang`, `Vorgangsfarbe`), Tempo's, and Braune Digital's service
+   management fields (`Backout plan`, `Root cause`, `Sicherheitsrisiko`). Nor is the summary a
+   substitute: `feature/FIP-2924-potm-backgrounds` carries `potm-backgrounds`, while `FIP-2924` reads
+   "Designanpassungen Liegen personalisieren bis 24.8".
+
+   So `ticket.subjectField` stays empty, which is what the app already defaults to. Two consequences
+   to state plainly rather than work around: a ticket filed from the review names a branch with no
+   subject, and a branch cannot be traced back to its ticket through a field. Closing that needs an
+   admin to add a field, not code. **Both sides stay built** - `fetchJiraIssues$` and
+   `fetchJiraParentCandidates$` take `subjectField`, `createJiraIssue$` writes it - so the day the
+   field exists it is one setting.
+
 3. ~~**Whether `git-flow-draft.md` lands as written**, especially nested sub-feature branches~~
    **Resolved for the load-bearing part.** Nesting stays, under a `sub/` prefix, and the parent's
    full path stays inside the child's name - so Story-level roll-up is safe. What is still open is

@@ -3,9 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentSessionCollection,
+  UnlinkedAgentSessions,
   applyExclusionRules,
   collectAgentSessions$,
   effectiveExclusionRules,
+  keepLinkedAgentSessions,
   parseClaudeCodeSessionLog,
 } from '@ethlete/timetrack';
 import {
@@ -40,6 +42,31 @@ export type AgentSessionCollectorRun = {
 export type AgentSessionCollectorTotals = {
   since: Date;
   excluded: number;
+  /** The checkouts whose sessions were dropped for want of a project link, most samples first. */
+  unlinked: UnlinkedAgentSessions[];
+};
+
+/** Keeps the most-costly checkouts and drops the tail, so a machine with many repos still reads. */
+const UNLINKED_SHOWN = 20;
+
+const mergeUnlinked = (all: UnlinkedAgentSessions[], run: UnlinkedAgentSessions[]) => {
+  const merged = new Map(all.map((entry) => [entry.cwd, { ...entry }]));
+
+  for (const entry of run) {
+    const seen = merged.get(entry.cwd);
+
+    if (!seen) {
+      merged.set(entry.cwd, { ...entry });
+      continue;
+    }
+
+    seen.events += entry.events;
+    if (entry.lastAt > seen.lastAt) seen.lastAt = entry.lastAt;
+  }
+
+  return [...merged.values()]
+    .sort((a, b) => b.events - a.events || a.cwd.localeCompare(b.cwd))
+    .slice(0, UNLINKED_SHOWN);
 };
 
 /**
@@ -54,7 +81,7 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const settings = injectTimetrackSettings();
   const pause = injectCollectionPause();
   const lastRun = signal<AgentSessionCollectorRun | null>(null);
-  const totals = signal<AgentSessionCollectorTotals>({ since: new Date(), excluded: 0 });
+  const totals = signal<AgentSessionCollectorTotals>({ since: new Date(), excluded: 0, unlinked: [] });
   const failure = signal<string | null>(null);
   const isCollecting = signal(false);
 
@@ -62,13 +89,21 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   let modifiedAfter: Date | undefined;
 
   /**
-   * A session title is title-matched like a window title — an agent session is named after the work, and
-   * the work is sometimes what a rule is there to keep out. The cursors move either way: the line was
-   * read, and re-reading it would only deny it again.
+   * Two filters, and they answer different questions. The project link asks whether the checkout is one
+   * this machine bills at all — a session Tempo could never take a worklog for is stored nowhere. An
+   * exclusion rule then title-matches what is left, because an agent session is named after the work and
+   * the work is sometimes what the rule is there to keep out.
+   *
+   * The cursors move either way: the line was read, and re-reading it would only drop it again.
    */
   const persist$ = (collection: AgentSessionCollection, startedAt: Date): Observable<AgentSessionCollection> => {
-    const { kept, excluded } = applyExclusionRules({
+    const linked = keepLinkedAgentSessions({
       events: collection.events,
+      links: settings.settings().projectLinks,
+    });
+
+    const { kept, excluded } = applyExclusionRules({
+      events: linked.kept,
       rules: effectiveExclusionRules(settings.settings()),
     });
 
@@ -82,7 +117,11 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
           events: kept.length,
           unparsedLines: collection.unparsedLines,
         });
-        totals.update((all) => ({ since: all.since, excluded: all.excluded + excluded.length }));
+        totals.update((all) => ({
+          since: all.since,
+          excluded: all.excluded + excluded.length,
+          unlinked: mergeUnlinked(all.unlinked, linked.unlinked),
+        }));
       }),
     );
   };
