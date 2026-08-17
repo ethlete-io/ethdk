@@ -2042,10 +2042,16 @@ window reads neither the webview nor the database again, so a wait the user just
 apply until the next start. `lock::LockSettings::read` clamps it in Rust as well as in the core's parser,
 because the host reads that document itself and a hand-edit never passes through `parseTimetrackSettings`.
 
-Still owed: nothing on Linux. macOS is written and compiles on a Mac, but the sheet itself is untested -
-that needs a bundled, signed build, which is the same limitation notifications have. Windows is written and
-type-checks against the exact `windows` crate version Tauri pulls, and has never run: there is no Windows
-machine here, and no window source there either, so the idle trigger would never fire even once it does.
+Still owed: nothing on Linux, and the session trigger is now proven there end to end. Locking the desktop
+broadcasts `Session.Lock` and `Session.Unlock` on the session object, and both branches ran: the window went
+away and the desktop coming back left it locked. The signals are what to subscribe to, not `LockedHint` -
+that property changes alongside them and carries no more information. A plain match-rule client sees them
+all without root, which `busctl monitor` needs, so the trigger can be watched from outside the app.
+
+macOS is written and compiles on a Mac, but the sheet itself is untested - that needs a bundled, signed
+build, which is the same limitation notifications have. Windows is written and type-checks against the exact
+`windows` crate version Tauri pulls, and has never run: there is no Windows machine here, and no window
+source there either, so the idle trigger would never fire even once it does.
 
 ## Picked projects, and rows the machine never saw
 
