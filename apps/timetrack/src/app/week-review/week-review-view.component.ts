@@ -46,6 +46,7 @@ import { injectWeekReview, provideWeekReview } from './week-review';
         <ul class="flex min-h-0 grow list-none flex-col gap-2 overflow-y-auto px-6 pb-6">
           @for (day of days(); track day.key) {
             <li
+              [attr.data-day]="day.key"
               [class]="day.owes ? 'border-et-warning-ink' : 'border-et-surface-border'"
               class="grid grid-cols-[8.5rem_4.5rem_1fr_auto] items-center gap-x-4 rounded-md border px-3 py-2"
             >
