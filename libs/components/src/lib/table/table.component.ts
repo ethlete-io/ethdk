@@ -1434,7 +1434,11 @@ export class TableComponent<T> {
     return Math.max(1, Math.floor(viewport / rowHeight) - 1);
   }
 
-  /** Apply a previously captured {@link TableState} - column order, visibility, sort, filters and feature slices. */
+  /**
+   * Apply a previously captured {@link TableState} - column order, visibility, sort, filters and feature
+   * slices. A bound {@link rowsSource} keeps the sort and the filters it publishes; only the layout and
+   * the feature slices are restored onto such a table.
+   */
   public restoreState(next: TableState) {
     this.columnOrder.set(next.columns.map((column) => column.key));
     this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
@@ -1447,18 +1451,28 @@ export class TableComponent<T> {
 
     this.columnWidths.set(widths);
 
-    const sort = next.columns
-      .filter((column) => column.sort)
-      .sort((a, b) => (a.sortPriority ?? 0) - (b.sortPriority ?? 0))
-      .map((column) => ({ key: column.key, direction: column.sort as TableSortDirection }));
+    // Whatever a bound source publishes, it owns (see the constructor). Writing it from a restored
+    // state would leave the mirror holding a value the source never had: the source does not change,
+    // so the effect does not re-run to correct it. A layout-only state would silently drop the sort
+    // arrow off a header whose rows are still sorted.
+    const source = this.rowsSource();
 
-    this.sort.set(sort);
+    if (!source?.sort) {
+      const sort = next.columns
+        .filter((column) => column.sort)
+        .sort((a, b) => (a.sortPriority ?? 0) - (b.sortPriority ?? 0))
+        .map((column) => ({ key: column.key, direction: column.sort as TableSortDirection }));
 
-    const filters = next.columns
-      .filter((column) => column.filterValues?.length)
-      .map((column) => ({ key: column.key, values: column.filterValues ?? [] }));
+      this.sort.set(sort);
+    }
 
-    this.filters.set(filters);
+    if (!source?.filters) {
+      const filters = next.columns
+        .filter((column) => column.filterValues?.length)
+        .map((column) => ({ key: column.key, values: column.filterValues ?? [] }));
+
+      this.filters.set(filters);
+    }
 
     // Hand each feature its own slice back. A slice with no matching feature (it wasn't imported here)
     // is left alone rather than dropped, so a round-trip through a table that lacks a feature doesn't

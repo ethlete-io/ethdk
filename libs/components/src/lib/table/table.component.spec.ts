@@ -969,6 +969,37 @@ describe('TableComponent', () => {
       expect(table.rows()).toEqual(PEOPLE);
     });
 
+    it('keeps the source sort and filters when a layout-only state is restored', () => {
+      const source = createSource();
+      const fixture = create({
+        name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
+        role: { header: 'Role', value: (person: Person) => person.role, filterable: true },
+      } satisfies TableColumns<Person>);
+      const table = fixture.componentInstance;
+
+      fixture.componentRef.setInput('rowsSource', source);
+      source.rows.set(PEOPLE);
+      source.sort.set([{ key: 'name', direction: 'desc' }]);
+      source.filters.set([{ key: 'role', values: ['Admin'] }]);
+      fixture.detectChanges();
+
+      table.restoreState({
+        v: 3,
+        columns: [
+          { key: 'role', hidden: false },
+          { key: 'name', hidden: true },
+        ],
+      });
+      fixture.detectChanges();
+
+      // The layout lands, the source's own state stays - and the source is never written back to.
+      expect(table.isColumnVisible('name')).toBe(false);
+      expect(table.sortDirection('name')).toBe('desc');
+      expect(table.filterValuesFor('role')).toEqual(['Admin']);
+      expect(source.setSort).not.toHaveBeenCalled();
+      expect(source.setFilters).not.toHaveBeenCalled();
+    });
+
     it('leaves an explicit mode alone, and keeps the modes client-side without a source', () => {
       const source = createSource();
       const fixture = create(columns());
