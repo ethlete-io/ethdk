@@ -14,16 +14,10 @@ export const CONFIG_FILE_NAME = 'ethlete-agents.config.json';
 export const LOCAL_CONFIG_FILE_NAME = 'ethlete-agents.config.local.json';
 
 /**
- * Non-secret Jira wiring, committed with the repo — `git-flow start` resolves an issue key through
- * it. Credentials never live here; they come from the environment or the gitignored local config.
+ * How this repo reads a Jira issue into a branch name. The instance, the credentials and the subject
+ * field are not here and cannot be: the Timetrack app holds them, and `git-flow start` asks it.
  */
 export type JiraSettings = {
-  host?: string;
-  /**
-   * The instance's field holding a Story's branch subject (`customfield_10050`). Without it the
-   * summary is slugified instead, which is a paraphrase rather than the agreed subject.
-   */
-  subjectField?: string;
   /** Branch type per Jira issue type, e.g. `{ "Bug": "fix" }`. Anything unlisted becomes `feat`. */
   typeByIssueType?: Record<string, string>;
 };
@@ -85,16 +79,15 @@ const readRawConfig = (root: string) => {
  * - `apiRepoPaths` maps an app in this repo to the checkout of the API it talks to (`{ "hub":
  *   "../fut-hub-backend" }`), which the api-source skill reads to answer a question about the
  *   server instead of guessing it from the client.
- * - `jira` holds the per-user Jira credentials `git-flow start` needs. This is the one place in the
- *   repo a secret may sit, and only because the file is gitignored; `JIRA_EMAIL`/`JIRA_API_TOKEN`
- *   in the environment are the alternative.
+ *
+ * No secret belongs here any more. Jira is reached through the Timetrack app, which holds the token
+ * in the machine's keychain — one secret per machine rather than one per checkout.
  */
 export type LocalConfig = {
   disableHooks?: boolean | string[];
   disableAutoHandoffSave?: boolean;
   sdkSourcePath?: string;
   apiRepoPaths?: Record<string, string>;
-  jira?: { host?: string; email?: string; token?: string };
 };
 
 export type LocalConfigState =
@@ -107,7 +100,6 @@ const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = [
   'disableAutoHandoffSave',
   'sdkSourcePath',
   'apiRepoPaths',
-  'jira',
 ];
 
 export const readLocalConfig = (root: string): LocalConfigState => {

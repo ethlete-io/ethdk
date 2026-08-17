@@ -27,7 +27,7 @@ tauri = { version = "2.11.5", features = ["tray-icon"] }
 tauri-plugin-notification = "2.3.3"
 tauri-plugin-single-instance = "2.4.1"
 thiserror = "2.0.20"
-tokio = { version = "1.53.1", features = ["process", "time", "net", "rt-multi-thread", "macros"] }
+tokio = { version = "1.53.1", features = ["process", "sync", "time", "net", "rt-multi-thread", "macros"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["zbus-secret-service-keyring-store"] }

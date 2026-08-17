@@ -9,8 +9,8 @@ import {
   remoteBranchExists,
 } from './git';
 import { BranchNameSpec, featureBranchesFor, GitFlowConfig, nestedSpecFor, planStart, StartPlan } from './git-flow';
-import { fetchJiraIssue, JiraIssue, resolveJiraCredentials } from './jira';
 import { confirm } from './prompt';
+import { TimetrackIssue, timetrackIssue } from './timetrack';
 
 export type StartRequest = {
   root: string;
@@ -26,7 +26,7 @@ export type StartRequest = {
   dryRun: boolean;
 };
 
-type Resolved = { spec: BranchNameSpec; issue?: JiraIssue; subjectSource: string };
+type Resolved = { spec: BranchNameSpec; issue?: TimetrackIssue; subjectSource: string };
 
 /**
  * A Task's parent Story must already have its feature branch, because that branch is what the
@@ -54,18 +54,15 @@ const findParentBranch = (options: { root: string; storyKey: string; config: Git
   return matches[0] as string;
 };
 
-const resolveSubject = (options: { issue: JiraIssue; settings: SyncConfig['jira'] }) => {
-  const { issue, settings } = options;
-
-  if (issue.subject) return { subject: issue.subject, subjectSource: `${settings.subjectField}` };
-
-  return {
-    subject: issue.summary,
-    subjectSource: settings.subjectField
-      ? `the summary — ${settings.subjectField} is empty on ${issue.key}`
-      : 'the summary — set jira.subjectField to use the story subject field instead',
-  };
-};
+/**
+ * Timetrack resolves the subject field, because the field id is the instance's and lives there. An
+ * issue that sets nothing falls back to its summary, which is a paraphrase rather than the agreed
+ * subject — so the plan says which of the two it used.
+ */
+const resolveSubject = (issue: TimetrackIssue) =>
+  issue.subject
+    ? { subject: issue.subject, subjectSource: "the issue's subject field" }
+    : { subject: issue.summary, subjectSource: `the summary — ${issue.key} sets no subject field` };
 
 const resolve = async (request: StartRequest): Promise<Resolved> => {
   const { root, config, subject, type, parent, hotfix, releaseDate } = request;
@@ -86,12 +83,8 @@ const resolve = async (request: StartRequest): Promise<Resolved> => {
     return { spec: { kind: 'main-feature', type, key, subject }, subjectSource: '--subject' };
   }
 
-  const issue = await fetchJiraIssue({
-    key,
-    credentials: resolveJiraCredentials({ root, settings: config.jira }),
-    settings: config.jira,
-  });
-  const resolvedSubject = resolveSubject({ issue, settings: config.jira });
+  const issue = await timetrackIssue(key);
+  const resolvedSubject = resolveSubject(issue);
   const resolvedType = type ?? config.jira.typeByIssueType?.[issue.issueType];
   const shared = { key, subject: resolvedSubject.subject };
 

@@ -196,24 +196,24 @@ exist already - `start` says so rather than inventing a parent. `--of <branch>` 
 parent explicitly, `--hotfix` branches off production, `--release <date>` makes a release
 branch, and `--subject <text>` skips Jira entirely.
 
-Jira needs a host, an email and an API token. Only the host belongs in the committed
-config; the two secrets come from `JIRA_EMAIL` / `JIRA_API_TOKEN` or from the gitignored
-local config.
+The issue is read through the Timetrack app - see [Jira, through Timetrack](#jira-through-timetrack).
+No repository holds a Jira credential, so the only thing the committed config still says about
+Jira is how an issue type becomes a branch type:
 
 ```json
 {
   "jira": {
-    "host": "https://your-team.atlassian.net",
-    "subjectField": "customfield_10050",
     "typeByIssueType": { "Bug": "fix" }
   }
 }
 ```
 
-- **`subjectField`** - the field holding a Story's branch subject. Without it the summary
-  is slugified, which is a paraphrase rather than the agreed subject.
 - **`typeByIssueType`** - the branch type per Jira issue type; anything unlisted becomes
   `feat`. `--type` overrides it per call.
+
+The branch subject comes from the instance's own subject field, which Timetrack resolves
+because the field id is a property of the instance rather than of this repo. An issue that
+sets no subject falls back to its summary, and the printed plan says which of the two it used.
 
 ### `repair` - renaming a branch that does not conform
 
@@ -231,6 +231,44 @@ Everything is checked before the first mutation, and it refuses rather than half
   that is not GitLab) blocks too. `--no-mr-check` asserts that none point at it.
 - If a retarget fails halfway, the old branch is still there and the recovery commands are
   printed.
+
+## Jira, through Timetrack
+
+A Jira token in every repository is a secret nobody can rotate. There is one on this machine
+instead, in the Timetrack app's keychain entry, and every repository asks the running app:
+
+```bash
+npx ethlete-agents timetrack status                # is it reachable, and what does it hold?
+npx ethlete-agents timetrack issue FIP-2177        # summary, type, parent, branch subject
+npx ethlete-agents timetrack search "password"     # open issues of the picked projects
+npx ethlete-agents timetrack project               # which project does this repo log into?
+npx ethlete-agents timetrack create --summary "…"  # file a ticket with the instance's settings
+npx ethlete-agents timetrack log --issue FIP-2177 --minutes 45
+```
+
+`--json` prints the raw answer instead of lines. `git-flow start` uses the same channel.
+
+**How it connects.** The app binds a loopback socket and writes its port and a fresh token
+into `agent.json` in its own data directory (`~/.local/share/io.ethlete.timetrack/` on Linux,
+`~/Library/Application Support/…` on macOS, `%APPDATA%\…` on Windows), readable by its owner
+alone. The token lives no longer than the run, so a caller left over from an earlier one is
+refused rather than trusted, and a request carrying an `Origin` header is refused outright -
+a page the user happens to have open must not reach Jira through a port it guessed.
+`TIMETRACK_AGENT_DISCOVERY` names the file for a machine that keeps it elsewhere.
+
+**What the app answers, not this package.** The instance, the credentials, the picked
+projects, the subject field and the ticket shape are all settings there. That is what makes
+`create` file a ticket indistinguishable from one the app filed, and it is why none of them
+appear in a repo's config any more.
+
+**`log` writes to the day, not to Tempo.** It adds the same row the app's own timeline draws
+for work nothing observed, and the user reviews the day before syncing it. A worklog posted
+behind the review would double-book against whatever the evidence already proposed for that
+hour.
+
+**When the app is not running** every command says so and exits non-zero. There is no
+fallback to an environment variable on purpose - a fallback is how the per-repo secret comes
+back.
 
 ## Hooks (opt-in)
 
@@ -328,8 +366,7 @@ differ per developer, without touching any committed file:
 {
   "disableHooks": true,
   "sdkSourcePath": "/absolute/path/to/ethlete-sdk",
-  "apiRepoPaths": { "hub": "../fut-hub-backend" },
-  "jira": { "email": "you@example.com", "token": "…" }
+  "apiRepoPaths": { "hub": "../fut-hub-backend" }
 }
 ```
 
@@ -339,9 +376,6 @@ differ per developer, without touching any committed file:
 - **`disableAutoHandoffSave`** - keeps the `context-warning` hook's tiered warnings but
   drops the auto-mode escalation: at the critical tier it recommends `/ethlete-handoff`
   instead of saving the handoff file itself.
-- **`jira`** - the credentials `git-flow start` needs (`host`, `email`, `token`). This is
-  the one place in a repo a secret may sit, and only because the file is gitignored;
-  `JIRA_EMAIL` / `JIRA_API_TOKEN` in the environment are the alternative and win over it.
 - **`sdkSourcePath`** - a local `ethlete-sdk` checkout. The `sdk-source` and
   `sdk-local-build` skills read it when the agent needs the SDK's own sources, or has to
   build the SDK and install it here through a `file:` dependency. A relative path is

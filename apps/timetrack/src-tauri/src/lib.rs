@@ -1,3 +1,4 @@
+mod agent;
 mod db;
 mod decorations;
 #[cfg(target_os = "linux")]
@@ -60,6 +61,11 @@ pub fn run() {
             ingest::start(reporters.clone(), data_dir.clone());
             app.manage(windows);
             app.manage(reporters);
+
+            let agents = agent::AgentEndpoint::new();
+
+            agent::start(agents.clone(), app.handle().clone(), data_dir.clone());
+            app.manage(agents);
             app.manage(git::GitWatcher::new());
             app.manage(decorations::detect());
 
@@ -69,6 +75,8 @@ pub fn run() {
         })
         .on_window_event(tray::hide_instead_of_closing)
         .invoke_handler(tauri::generate_handler![
+            agent::agent_reply,
+            agent::agent_status,
             decorations::window_capabilities,
             git::git_changes,
             git::git_repos,

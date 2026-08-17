@@ -65,6 +65,7 @@ skill: they need a Rust toolchain and a per-OS matrix that the Angular libraries
 | `ledger_*`                                               | `TimetrackLedgerStore`   |
 | `run_process`                                            | `TimetrackProcessRunner` |
 | `oauth_authorize`                                        | The Google connect flow  |
+| `agent_reply`, `agent_status`                            | The agent endpoint       |
 
 The TypeScript adapters are in `src/host/`; `injectHostPorts()` hands the core a `TimetrackPorts`.
 
@@ -77,6 +78,27 @@ Two constraints the code depends on:
 - **`oauth_authorize` owns the redirect.** It binds the loopback port, so it is what builds the
   `redirect_uri`, the PKCE challenge and the `state`. It reports the redirect and the verifier back
   with the code, because the token exchange is rejected unless it repeats the same pair.
+
+## The agent endpoint
+
+A coding agent in any repository on this machine reaches Jira through this app, so no checkout holds
+a Jira token. `ethlete-agents timetrack …` in `@ethlete/agent-rules` is the client; the contract is
+`libs/timetrack/src/lib/agent-api/`.
+
+`agent.rs` binds a loopback socket, writes the port and a per-run token into `agent.json` beside the
+database (mode `0600`), and hands each request to the main window. It interprets nothing but the
+`op`, exactly as the ingest endpoint interprets nothing but `atMs` and `kind` — the window is where
+the Jira client, the settings and the day already live, and a second implementation of any of them in
+Rust would be a second set of rules about what may be written.
+
+Three consequences worth knowing before changing it:
+
+- **The window carries out every operation**, and the host addresses it by label. A broadcast would
+  make a second window file the same ticket a second time, and no reply can undo that.
+- **A non-200 status means the endpoint could not carry the request at all.** Whether the operation
+  succeeded is in the body, because a key Jira does not know says nothing about the endpoint.
+- **`worklog.add` writes a row onto the day**, not a Tempo worklog. It goes through the same review as
+  every other row, which is what keeps it from double-booking against what the evidence proposed.
 
 ## Connecting Google Calendar
 

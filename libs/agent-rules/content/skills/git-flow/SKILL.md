@@ -26,6 +26,10 @@ npx ethlete-agents git-flow repair <branch>       # rename a non-conforming one,
 `--dry-run` to see the plan alone. It refuses on a dirty working tree, and a Task nests under
 its parent Story's branch, so that branch has to exist first.
 
+It reads the issue through the running Timetrack app, which holds this machine's only Jira
+credentials - see the `timetrack` skill. If it reports that the app is not running, ask the
+user to start it. `--subject <text>` names a branch without reading Jira at all.
+
 ## The five shapes
 
 | Shape                                                                             | Issue | Branch from                    | MR targets                                                       |

@@ -1,3 +1,4 @@
+export * from './lib/agent-api';
 export * from './lib/agent-session';
 export * from './lib/correlate';
 export * from './lib/git';

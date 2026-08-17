@@ -9,6 +9,12 @@ export const TIMER_TOGGLE_EVENT = 'timer-toggle';
 export const COLLECTION_PAUSE_TOGGLE_EVENT = 'collection-pause-toggle';
 
 /**
+ * One request an agent's CLI made of this machine, handed over by the loopback endpoint. Matches
+ * `REQUEST_EVENT` in `agent.rs`, which addresses the main window alone.
+ */
+export const AGENT_REQUEST_EVENT = 'agent-request';
+
+/**
  * An event the host emits, as a cold Observable that unlistens when the last subscriber leaves.
  *
  * Outside the desktop shell this is silent rather than an error: a story or a browser tab has no host

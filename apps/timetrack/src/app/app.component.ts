@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { injectRoute } from '@ethlete/core';
+import { injectAgentEndpoint } from './agent';
 import { injectCollectionPause } from './collection-pause';
 import { NudgeBannerComponent } from './nudge-banner.component';
 import { PauseControlComponent } from './pause-control.component';
@@ -78,6 +79,9 @@ export class AppComponent {
   constructor() {
     // The tray readout has no view of its own, so nothing else would ever construct it.
     injectTrayReadout();
+
+    // Neither does the agent endpoint, and it has to answer whatever view the window is on.
+    injectAgentEndpoint();
 
     // So the window reopens on the view it was closed on. `APP_ROUTES` reads it back.
     effect(() => {

@@ -53,12 +53,15 @@ import {
   combineLatest,
   concatMap,
   debounceTime,
+  defer,
+  filter,
   groupBy,
   map,
   mergeMap,
   of,
   startWith,
   switchMap,
+  take,
   tap,
 } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
@@ -425,6 +428,37 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     expanded.set(new Set());
   };
 
+  /** Whether the day on screen holds its own edits yet, and why it never will when a read failed. */
+  const editsState$ = toObservable(
+    computed(() => {
+      const load = editsLoad();
+
+      return { day: day(), ready: !!local()[day()] || (!!load && !load.failure), failure: load?.failure ?? null };
+    }),
+  );
+
+  /**
+   * Writes a row onto a day that is not necessarily the one on screen — what the agent endpoint calls.
+   *
+   * It moves the review to that day and waits for that day's stored edits to arrive. Applying before
+   * they do would write the row onto an empty document, and the save behind it would take every earlier
+   * edit of the day with it.
+   */
+  const addRowOnDay$ = (options: { day: string; row: ManualRow }): Observable<void> =>
+    defer(() => {
+      if (day() !== options.day) goToDay(options.day);
+
+      return editsState$.pipe(
+        filter((state) => state.day === options.day && (state.ready || !!state.failure)),
+        take(1),
+        map((state) => {
+          if (state.failure) throw new Error(`Timetrack cannot read the edits of ${options.day}: ${state.failure}`);
+
+          apply(addManualRow({ edits: edits(), row: options.row }));
+        }),
+      );
+    });
+
   const selectedRows = computed(() => {
     const byId = new Map(rows().map((row) => [row.id, row]));
 
@@ -543,6 +577,12 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * another machine. It is what the timeline's drag-to-create and the add-entry panel write.
      */
     addRow: (row: ManualRow) => apply(addManualRow({ edits: edits(), row })),
+
+    /**
+     * The same, for a row an agent's CLI wrote from another repository. It moves the review to the day
+     * the row belongs to, which is also how the reviewer finds out that something was added at all.
+     */
+    addRowOnDay$,
 
     /** Where a dragged row now sits. A move keeps its duration; dragging one end re-reads it. */
     rescheduleRow: (move: { row: ReviewedRow; from: Date; to: Date }) =>

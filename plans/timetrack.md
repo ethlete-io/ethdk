@@ -1977,6 +1977,36 @@ stretch in a donating repository unattributed instead of folding it into whateve
 goal of donation is that SDK work lands on the project it was done for; an afternoon in the SDK is its
 own piece of work, and hiding it inside a client's row is the opposite of the same goal.
 
+## The app as the machine's Jira credential
+
+A coding agent working in a client repository needs Jira for the ordinary reasons — name a branch off
+an issue, read what a key actually says, open a ticket for work that has none. Until now that meant a
+token per checkout, in an environment variable or a gitignored file that `@ethlete/agent-rules` read.
+Ten repositories is ten copies of one secret, and a secret in ten places is one nobody rotates.
+
+This app already holds exactly one of them, in the keychain, beside the settings that say what the
+instance expects. So it answers instead:
+
+- **The endpoint is the ingest endpoint's shape, turned around.** A loopback socket on a port the OS
+  hands out, a `0600` discovery file naming the port and a token that lives no longer than the run, a
+  refusal of anything carrying an `Origin`. Ingest takes records and answers `204`; this one takes an
+  operation and answers with a value. Neither host interprets what it carries.
+- **The window carries out every operation, not Rust.** The Jira client, the settings and the day all
+  live there already. A second implementation in the host would be a second set of rules about what
+  may be written, and the first thing to drift. The host addresses the main window by name, because a
+  broadcast would file the same ticket once per open window.
+- **The operation's own verdict is in the body.** An HTTP status other than 200 says the endpoint
+  could not carry the request at all; a key Jira does not know is a failed operation over an endpoint
+  that worked perfectly.
+- **A worklog an agent writes is a row on the day, not a Tempo entry.** It is the same row the
+  timeline draws for work nothing observed, and it goes through the same review. Posting behind the
+  review would double-book against whatever the evidence already proposed for that hour, and the
+  person who would have to explain it is the one who never saw it.
+
+What the repository still says about Jira is how one of its issue types becomes a branch type. The
+instance, the credentials, the picked projects, the subject field and the ticket shape are settings
+here — which is what makes a ticket an agent filed indistinguishable from one the review filed.
+
 ## Phasing
 
 **Phase 1 - the spine.** ~~event model, sessionizing, the branch-grammar parser, correlation~~
