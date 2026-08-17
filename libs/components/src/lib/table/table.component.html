@@ -55,12 +55,13 @@
             }
             @if (cell.direction; as direction) {
               <!-- Flipping direction keeps this element mounted, so the arrow turns over rather than
-                   swapping; only appearing and disappearing are the fade. -->
+                   swapping; only appearing and disappearing are the fade, and only for a sort the user
+                   just asked for (see sortIndicatorEnter). -->
               <i
                 [attr.data-direction]="direction"
+                [animate.enter]="sortIndicatorEnter()"
+                [animate.leave]="sortIndicatorLeave()"
                 class="et-table-sort-indicator"
-                animate.enter="et-table-sort-indicator--enter"
-                animate.leave="et-table-sort-indicator--leave"
                 etIcon="et-arrow-up"
               ></i>
             }

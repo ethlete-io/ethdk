@@ -23,7 +23,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, fromEvent, merge, take, tap } from 'rxjs';
+import { filter, fromEvent, merge, Subscription, take, tap, timer } from 'rxjs';
 import {
   injectColorThemes,
   ProvideColorDirective,
@@ -198,6 +198,9 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringif
 
 /** Sub-pixel slack (px) before a scroll offset counts as "there is content over there". */
 const SCROLL_FADE_EPSILON = 1;
+
+/** Sort indicator enter duration (must match the CSS animation) - see {@link TableComponent.sortIndicatorEnter}. */
+const SORT_INDICATOR_ANIMATION_MS = 150;
 
 /** What a cell renders as when nothing pins columns - see `registerColumnPinning`. */
 const NO_PIN: TableCellPinning = { stickyStart: false, stickyEnd: false, offsetStart: null, offsetEnd: null };
@@ -762,6 +765,18 @@ export class TableComponent<T> {
    * rigid column.
    */
   protected hasFiller = computed(() => this.columnTracks().fixed);
+
+  // Set while the sort the user just asked for renders, cleared once its animation has run. A sort that
+  // arrives from a URL, a restored state or a bound source mounts the arrow too, and that one has to
+  // appear already there rather than fade in over a table the reader is still taking in.
+  private sortGesture = signal(false);
+  private sortGestureReset: Subscription | undefined;
+
+  /** The arrow's enter animation, empty unless the sort was a gesture on this table. */
+  protected sortIndicatorEnter = computed(() => (this.sortGesture() ? 'et-table-sort-indicator--enter' : ''));
+
+  /** The same for the arrow of a column the gesture unsorted. */
+  protected sortIndicatorLeave = computed(() => (this.sortGesture() ? 'et-table-sort-indicator--leave' : ''));
 
   /** The serializable, versioned table state - column order, visibility, sort, filters and feature slices. */
   public state = computed<TableState>(() => {
@@ -1809,6 +1824,15 @@ export class TableComponent<T> {
    * keep reading `sort()` whichever drives it.
    */
   private applySort(sort: TableSort[]) {
+    this.sortGesture.set(true);
+    this.sortGestureReset?.unsubscribe();
+    this.sortGestureReset = timer(SORT_INDICATOR_ANIMATION_MS)
+      .pipe(
+        tap(() => this.sortGesture.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
     const source = this.rowsSource();
 
     if (source?.setSort) {

@@ -403,7 +403,11 @@ protected readonly COLUMNS = {
 
 The only sort affordance is an accented arrow beside the label showing the direction
 the column is sorted by; an unsorted header is just its label, with nothing reserving
-space. For explicit "sort ascending / descending / clear" entries, add the
+space. The arrow fades in only for a sort the reader just asked for on this table. A
+sort that arrives with the table - from a URL, a restored state or a bound source - is
+already there on the first paint.
+
+For explicit "sort ascending / descending / clear" entries, add the
 [column menu](#column-menu). `setSort(key, direction | null)` does the same
 programmatically, without `toggleSort`'s cycle.
 
