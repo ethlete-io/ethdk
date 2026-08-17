@@ -55,7 +55,13 @@ describe('parseTimetrackSettings', () => {
       meetingIssueKey: '',
       attributionRules: [],
       projectLinks: [],
+      lockWindow: true,
     });
+  });
+
+  it('keeps the window lock on unless the document turns it off', () => {
+    expect(parseTimetrackSettings({ lockWindow: false }).lockWindow).toBe(false);
+    expect(parseTimetrackSettings({ lockWindow: 'yes' }).lockWindow).toBe(true);
   });
 
   it('falls back to the defaults for anything it cannot make sense of', () => {
@@ -75,6 +81,7 @@ describe('parseTimetrackSettings', () => {
       meetingIssueKey: '',
       attributionRules: [],
       projectLinks: [],
+      lockWindow: true,
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
   });

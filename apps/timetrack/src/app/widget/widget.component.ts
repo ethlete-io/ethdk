@@ -4,6 +4,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import { EMPTY, catchError, take } from 'rxjs';
 import { WidgetReadout, injectHostPorts } from '../../host';
 import { injectCollectionPause } from '../collection-pause';
+import { injectWindowLock } from '../window-lock';
 
 /** How a confidence reads to somebody glancing at it, rather than the word the model uses. */
 const CONFIDENCE_WORDING: Record<NonNullable<WidgetReadout['confidence']>, string> = {
@@ -24,7 +25,12 @@ const CONFIDENCE_WORDING: Record<NonNullable<WidgetReadout['confidence']>, strin
   selector: 'ethlete-widget',
   template: `
     <div class="flex h-dvh flex-col gap-2 border border-et-surface-border p-3" data-tauri-drag-region="deep">
-      @if (readout(); as now) {
+      @if (lock.isLocked() || !lock.ready()) {
+        <div class="flex items-start justify-between gap-2">
+          <span class="text-small font-medium">Locked</span>
+          <button (click)="close()" et-button variant="transparent" size="sm" aria-label="Hide the readout">✕</button>
+        </div>
+      } @else if (readout(); as now) {
         <div class="flex items-start justify-between gap-2">
           <span class="text-small font-medium">{{ now.label }}</span>
           <button (click)="close()" et-button variant="transparent" size="sm" aria-label="Hide the readout">✕</button>
@@ -64,6 +70,7 @@ const CONFIDENCE_WORDING: Record<NonNullable<WidgetReadout['confidence']>, strin
 })
 export class WidgetComponent {
   protected pause = injectCollectionPause();
+  protected lock = injectWindowLock();
 
   private ports = injectHostPorts();
 

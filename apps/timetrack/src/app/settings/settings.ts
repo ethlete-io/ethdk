@@ -188,6 +188,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setReasoning: (reasoning: TimetrackReasoningSettings) => patch({ reasoning }),
     setTicket: (ticket: TimetrackTicketSettings) => patch({ ticket }),
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
+    setLockWindow: (lockWindow: boolean) => patch({ lockWindow }),
 
     addExclusionRule: (rule: TimetrackExclusionRule) => {
       const rules = settings().exclusionRules;

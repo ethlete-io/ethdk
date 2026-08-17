@@ -19,4 +19,5 @@ export * from './transport';
 export * from './tray';
 export * from './widget';
 export * from './window-controls';
+export * from './window-lock';
 export * from './window-source';

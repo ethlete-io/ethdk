@@ -15,6 +15,7 @@ import {
 import { injectAgentSessionCollector, injectGitCollector } from '../../collectors';
 import { IssueSelectComponent } from '../jira';
 import { injectDayNudge } from '../day-nudge';
+import { injectWindowLock } from '../window-lock';
 import { AgentSessionResyncComponent } from './agent-session-resync.component';
 import { AttributionRulesComponent } from './attribution-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
@@ -55,6 +56,16 @@ const MEETING_WHY = `A meeting whose own title names an issue is logged against 
 a time Tempo already holds an issue for follows that history. This is the answer for every other meeting.
 
 Leave it unset and such a meeting stays unattributed, which means the review asks about it every day.`;
+
+const LOCK_WHY = `The window starts locked and locks itself again a minute after you go idle. Your own account
+password opens it - the check is the operating system's, through PAM on Linux, so nothing here holds a
+secret of its own and there is no second password to remember.
+
+Collection never stops for it. A lock that stopped the collectors would leave a hole in the day, which is
+what the pause button is for instead. What is locked is the reading of the day, because the database holds
+months of window titles.
+
+A machine that cannot check the account password never locks: there would be no way back in.`;
 
 const SUGGESTIONS_WHY = `For work no branch name, rule or merge request could name an issue for, the review
 can ask the agent CLI you already have signed in.
@@ -309,6 +320,24 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 (forgetClientSecret)="store.forgetGoogleClientSecret()"
               />
 
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-h4">Lock the window</h3>
+                  <et-switch
+                    [checked]="store.settings().lockWindow"
+                    (checkedChange)="store.setLockWindow($event)"
+                    aria-label="Lock the window until the account password is given"
+                  />
+                  <ethlete-explain [text]="LOCK_WHY" label="the window lock" />
+                </div>
+
+                @if (!lock.isLocked() && store.settings().lockWindow) {
+                  <div>
+                    <button (click)="lock.lock()" et-button variant="outline" size="sm">Lock now</button>
+                  </div>
+                }
+              </div>
+
               <ethlete-exclusion-rules
                 [rules]="store.settings().exclusionRules"
                 [keepDefaults]="store.settings().keepDefaultExclusionRules"
@@ -376,6 +405,7 @@ export class SettingsViewComponent {
 
   public git = injectGitCollector();
   protected agent = injectAgentSessionCollector();
+  protected lock = injectWindowLock();
   private dayNudge = injectDayNudge();
   private destroyRef = inject(DestroyRef);
 
@@ -386,6 +416,7 @@ export class SettingsViewComponent {
   protected readonly GITLAB_WHY = GITLAB_WHY;
   protected readonly MEETING_WHY = MEETING_WHY;
   protected readonly SUGGESTIONS_WHY = SUGGESTIONS_WHY;
+  protected readonly LOCK_WHY = LOCK_WHY;
 
   protected repoPaths = computed(() => this.git.discovery()?.repos ?? []);
 

@@ -18,6 +18,7 @@ import { createTauriTransport } from './transport';
 import { TauriTray, createTauriTray } from './tray';
 import { TauriWidget, createTauriWidget } from './widget';
 import { TauriWindowControls, createTauriWindowControls } from './window-controls';
+import { TauriWindowLock, createTauriWindowLock } from './window-lock';
 import { TauriWindowSource, createTauriWindowSource } from './window-source';
 
 export type HostPorts = TimetrackPorts & {
@@ -32,6 +33,7 @@ export type HostPorts = TimetrackPorts & {
   widget: TauriWidget;
   windows: TauriWindowSource;
   windowControls: TauriWindowControls;
+  windowLock: TauriWindowLock;
 };
 
 export const createHostPorts = (): HostPorts => ({
@@ -54,6 +56,7 @@ export const createHostPorts = (): HostPorts => ({
   widget: createTauriWidget(),
   windows: createTauriWindowSource(),
   windowControls: createTauriWindowControls(),
+  windowLock: createTauriWindowLock(),
 });
 
 export const HOST_PORTS = new InjectionToken<HostPorts>('HOST_PORTS', {

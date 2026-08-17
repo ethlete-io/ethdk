@@ -1957,26 +1957,57 @@ commit that later also lives on another branch is not a second piece of work.
     ticket-creation config values - `subjectField` and parenting - now have fields to hold them
     (`TimetrackTicketSettings`, the New tickets section); what is missing is the answer, not the seam.
 
-### A lock over the window (designed, not built)
+### A lock over the window
 
-The database holds months of window titles and session titles, and today it decrypts on startup and
-anyone at an unlocked desktop reads all of it. What is settled:
+**Built** - `src-tauri/src/lock.rs` holds the state and the commands, `auth.rs` the password check,
+`lock_linux.rs` the session listener, `src/app/lock-view.component.ts` the prompt, and `lockWindow` in the
+settings document is the switch. The database holds months of window titles, and it used to decrypt at
+startup and show itself to whoever was sitting there.
 
 - **The window locks; the database stays open.** Collection must never stop for a lock. A closed database
   would punch a hole in the day, which is the failure the hard pause is built around - and a pause records
-  `pause-start` / `pause-end` precisely so the gap stays reconstructible. A lock that hid the window has
+  `pause-start` / `pause-end` precisely so the gap stays reconstructible. A lock over the window has
   nothing to record and nothing to reconstruct, so it needs none of that machinery.
-- **Two triggers: an idle timeout, and the OS session lock.** The window source already consumes the
-  D-Bus `Lock` / `Unlock` signals on Linux (see the active-window collector), so the second one is a
-  reader of what is there rather than a listener of its own.
-- **No keychain presence gate for now.** Touch ID through `kSecAccessControlUserPresence` and Windows
-  Hello are both real, but `keyring` v4 exposes no `SecAccessControl`, so macOS would mean calling
-  Security.framework directly. Out of scope.
+- **The account password is the credential, checked by the operating system.** PAM on Linux, so no secret
+  of ours is stored and no verdict of ours decides it. `pam_faildelay` costs two seconds on a wrong
+  password, which is the rate limit for free. Rejected on the way: a passphrase or PIN of our own (one
+  more secret to hold, and still our own boolean), and polkit (an `auth_self` action needs a `.policy`
+  file installed under `/usr/share/polkit-1/actions`, which a development build cannot provide).
+- **PAM is reached through `dlopen`, not by linking `-lpam`.** Linking the name needs the `libpam.so`
+  symlink, which only `pam-devel` installs - so building the app would need a system package that running
+  it does not. `libpam.so.0` is on every Linux desktop already.
+- **The PAM service is probed, not assumed**: `timetrack` where a package installed one, else
+  `system-auth` (Fedora and relatives), else `login` (Debian and relatives). Naming a service that does
+  not exist falls through to `other`, which denies everything and would read as a wrong password.
+- **A machine that cannot check the password never locks.** `auth::can_verify()` gates it, and without
+  that the lock's only outcome on such a machine is an app nobody can open. This is also why macOS does
+  not lock yet: LocalAuthentication would put the system's own sheet up and handle the secret itself,
+  but it refuses an unbundled binary, which is what `tauri dev` builds.
+- **The window stays visible while locked; the webview renders the prompt and nothing else.** There has to
+  be somewhere to type, so `tray::reveal` is deliberately not gated - revealing a locked window is how the
+  user reaches the prompt. Every view is behind `lock.ready()` as well as `lock.isLocked()`, because a
+  window that rendered a day for one frame before the answer arrived would have shown it.
+- **Two triggers.** The idle one rides on `WindowSource::push`, which is the single funnel both platform
+  sources already push `IdleStart` through, and the lock is told before the buffer so a paused collector
+  still locks. The session one is a logind listener. The plan used to claim the window source already
+  consumed logind's `Lock` / `Unlock`; it never did, and `zbus` was not even a direct dependency.
+- **`GetSessionByPID` is the wrong way to find the session.** It answers from the caller's cgroup, and an
+  app started from a terminal or a development server sits outside the graphical session's - on this
+  machine it fails outright. `XDG_SESSION_ID` is tried first and the user's `Display` session last.
+- **The desktop unlocking does not unlock the window.** Following it would make this the weaker of the two
+  gates; it only restarts the idle wait.
+- **No keychain presence gate.** Touch ID through `kSecAccessControlUserPresence` and Windows Hello are
+  both real, but `keyring` v4 exposes no `SecAccessControl`, so macOS would mean calling
+  Security.framework directly.
 - **No TOTP and no passkey.** With no server the app is both prover and verifier, so the verdict is a
-  boolean inside a process an attacker already controls. WebAuthn's `prf` extension is the one genuine
-  exception, because it derives a secret that could wrap the database key - and it is still out of scope.
+  boolean inside a process an attacker already controls - which is the honest limit of this whole feature.
+  WebAuthn's `prf` extension is the one genuine exception, because it derives a secret that could wrap the
+  database key, and it stays out of scope.
 
-Open: what unlocks it. There is no credential yet, and choosing one is the whole remaining question.
+The floating readout is gated too, and it has to be: it is a second window, always on top, naming the
+current activity and the issue it is going to. `app.emit` reaches every window, so it reads the same state.
+
+Still owed: the macOS check through LocalAuthentication, and Windows through `UserConsentVerifier`.
 
 ## Picked projects, and rows the machine never saw
 

@@ -239,6 +239,13 @@ export const createFakePorts = (): HostPorts => {
       toggleMaximize$: () => done(),
       close$: () => done(),
     },
+
+    /** Unlocked, so a scenario reaches the view it is about rather than a password prompt. */
+    windowLock: {
+      state$: () => ok({ locked: false, promptsItself: false }),
+      lock$: () => done(),
+      unlock$: () => ok(true),
+    },
   };
 };
 

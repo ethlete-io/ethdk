@@ -8,6 +8,9 @@ export const TIMER_TOGGLE_EVENT = 'timer-toggle';
 /** The tray's pause entry. Matches `COLLECTION_PAUSE_TOGGLE_EVENT` in `tray.rs`. */
 export const COLLECTION_PAUSE_TOGGLE_EVENT = 'collection-pause-toggle';
 
+/** The host telling the window to stop showing what is in it. Matches `LOCKED_EVENT` in `lock.rs`. */
+export const WINDOW_LOCKED_EVENT = 'window-locked';
+
 /**
  * One request an agent's CLI made of this machine, handed over by the loopback endpoint. Matches
  * `REQUEST_EVENT` in `agent.rs`, which addresses the main window alone.

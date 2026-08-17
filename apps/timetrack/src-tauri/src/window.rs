@@ -35,16 +35,18 @@ pub type WindowEventBatch = SampleBatch<WindowEventPayload>;
 pub struct WindowSource {
     samples: SampleBuffer<WindowEventPayload>,
     status: Arc<Mutex<WindowSourceStatus>>,
+    lock: crate::lock::WindowLock,
 }
 
 impl WindowSource {
-    pub fn new() -> Self {
+    pub fn new(lock: crate::lock::WindowLock) -> Self {
         Self {
             samples: SampleBuffer::new(),
             status: Arc::new(Mutex::new(WindowSourceStatus {
                 kind: "none".to_string(),
                 detail: Some("the window source has not started yet".to_string()),
             })),
+            lock,
         }
     }
 
@@ -56,7 +58,15 @@ impl WindowSource {
         self.samples.is_paused()
     }
 
+    /// The lock is told before the buffer, because a paused collector stores no sample and the window
+    /// must lock itself whether or not the day is being reconstructed.
     pub fn push(&self, at_ms: i64, payload: WindowEventPayload) {
+        match payload {
+            WindowEventPayload::IdleStart => self.lock.went_idle(at_ms),
+            WindowEventPayload::IdleEnd => self.lock.came_back(),
+            WindowEventPayload::WindowFocus { .. } => {}
+        }
+
         self.samples.push(at_ms, payload);
     }
 
@@ -80,7 +90,7 @@ impl WindowSource {
 
 impl Default for WindowSource {
     fn default() -> Self {
-        Self::new()
+        Self::new(crate::lock::WindowLock::new())
     }
 }
 
@@ -144,7 +154,7 @@ mod tests {
 
     #[test]
     fn takes_no_sample_at_all_while_collection_is_paused() {
-        let source = WindowSource::new();
+        let source = WindowSource::default();
 
         source.set_paused(true);
         source.push(10, focus("code", "a"));
@@ -154,7 +164,7 @@ mod tests {
 
     #[test]
     fn reports_what_the_platform_source_last_said_about_itself() {
-        let source = WindowSource::new();
+        let source = WindowSource::default();
 
         source.set_status("macos-app-only", Some("the Accessibility permission is not granted".to_string()));
 

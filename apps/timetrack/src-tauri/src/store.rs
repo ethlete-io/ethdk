@@ -337,6 +337,32 @@ pub async fn app_settings(db: State<'_, Db>) -> TimetrackResult<Option<serde_jso
     .await
 }
 
+/// The one field of the settings document the host reads for itself: whether the window locks.
+///
+/// The shape of that document belongs to the core, so this reads a single optional flag and treats
+/// anything it does not understand as the default. The host has to know before a view is mounted, which
+/// is why it does not wait to be told.
+pub async fn lock_window_setting(db: &Db) -> bool {
+    let stored = db
+        .run(move |connection| {
+            Ok(connection
+                .query_row("SELECT document FROM app_setting WHERE id = 1", [], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?)
+        })
+        .await;
+
+    let Ok(Some(document)) = stored else {
+        return true;
+    };
+
+    serde_json::from_str::<serde_json::Value>(&document)
+        .ok()
+        .and_then(|document| document.get("lockWindow").and_then(serde_json::Value::as_bool))
+        .unwrap_or(true)
+}
+
 #[tauri::command]
 pub async fn set_app_settings(db: State<'_, Db>, settings: serde_json::Value) -> TimetrackResult<()> {
     db.run(move |connection| {

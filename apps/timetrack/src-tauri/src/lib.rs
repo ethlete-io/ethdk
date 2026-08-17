@@ -1,4 +1,5 @@
 mod agent;
+mod auth;
 mod db;
 mod decorations;
 #[cfg(target_os = "linux")]
@@ -8,6 +9,9 @@ mod git;
 mod http;
 mod ingest;
 mod keychain;
+mod lock;
+#[cfg(target_os = "linux")]
+mod lock_linux;
 mod logs;
 mod nudge;
 mod oauth;
@@ -50,8 +54,15 @@ pub fn run() {
                     .build()?,
             ));
 
-            let windows = window::WindowSource::new();
+            let window_lock = lock::WindowLock::new();
+            let windows = window::WindowSource::new(window_lock.clone());
             let reporters = ingest::IngestSource::new();
+
+            app.manage(window_lock);
+            lock::start(app.handle().clone());
+
+            #[cfg(target_os = "linux")]
+            lock_linux::start(app.handle().clone());
 
             // Before the sources start, not after the webview has loaded and told us: a pause the
             // user took yesterday must not collect the first seconds of today's start.
@@ -83,6 +94,9 @@ pub fn run() {
             http::http_request,
             ingest::ingest_events,
             ingest::ingest_status,
+            lock::lock_state,
+            lock::lock_window,
+            lock::unlock_window,
             logs::agent_log_lines,
             logs::agent_logs,
             nudge::day_nudge_record,

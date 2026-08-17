@@ -185,6 +185,15 @@ export type TimetrackSettings = {
    * that vanished from the day without being asked about is worse than one row too many.
    */
   projectLinks: TimetrackProjectLink[];
+  /**
+   * Whether the window locks itself, so the months of window titles in the database are not readable by
+   * whoever walks up to an unlocked desktop.
+   *
+   * It never gates collection: a lock that stopped the collectors would punch a hole in the day. The
+   * host is what reads this, because it starts the window locked before any view is mounted, and it
+   * ignores the setting where the account password cannot be checked at all.
+   */
+  lockWindow: boolean;
 };
 
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
@@ -209,4 +218,5 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   meetingIssueKey: '',
   attributionRules: [],
   projectLinks: [],
+  lockWindow: true,
 };

@@ -4732,6 +4732,7 @@ dependencies = [
  "wayland-client",
  "wayland-protocols",
  "wayland-protocols-wlr",
+ "zbus",
 ]
 
 [[package]]

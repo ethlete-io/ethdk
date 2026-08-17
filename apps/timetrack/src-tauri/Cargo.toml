@@ -31,9 +31,11 @@ tokio = { version = "1.53.1", features = ["process", "sync", "time", "net", "rt-
 
 [target.'cfg(target_os = "linux")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["zbus-secret-service-keyring-store"] }
+libc = "0.2.189"
 wayland-client = "0.31.15"
 wayland-protocols = { version = "0.32.13", features = ["client", "staging"] }
 wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
+zbus = "5.19.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["apple-native-keyring-store"] }

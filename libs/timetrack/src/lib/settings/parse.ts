@@ -233,5 +233,6 @@ export const parseTimetrackSettings = (raw: unknown): TimetrackSettings => {
     meetingIssueKey: asText(document['meetingIssueKey']).toUpperCase(),
     attributionRules: asAttributionRules(document['attributionRules']),
     projectLinks: asProjectLinks(document['projectLinks']),
+    lockWindow: document['lockWindow'] !== false,
   };
 };
