@@ -55,6 +55,13 @@ const BRANCH_RULE: AttributionRule = {
   target: { kind: 'issue', issueKey: 'ABC-2904' },
 };
 
+const DONATE_RULE: AttributionRule = {
+  id: 'rule-donate',
+  repoPath: '/Users/tom/dev/ethlete-sdk',
+  target: { kind: 'donate' },
+  createdAt: new Date('2026-08-01T00:00:00Z'),
+};
+
 const PRIVATE_LINK: TimetrackProjectLink = {
   id: 'link-private',
   path: '/Users/tom/dev/private',
@@ -306,6 +313,29 @@ describe('attribute', () => {
 
     expect(result.issueKey).toBe('ABC-100');
     expect(result.confidence).toBe('weak');
+  });
+
+  it('leaves a donating context for the day to place, rather than reading a browser tab', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ethlete-sdk', branch: 'next' }, [
+        { kind: 'window-title', at: new Date('2026-08-11T08:00:00Z'), detail: '[ABC-2222] Button not visible - Jira' },
+      ]),
+      config: CONFIG,
+      rules: [DONATE_RULE],
+    });
+
+    expect(result.issueKey).toBeUndefined();
+  });
+
+  it('leaves a donating context alone even where a recurring pattern would claim it', () => {
+    const result = attribute({
+      block: localBlock({ repoPath: '/Users/tom/dev/ethlete-sdk', branch: 'next' }),
+      config: CONFIG,
+      rules: [DONATE_RULE],
+      patterns: [TUESDAY_PATTERN],
+    });
+
+    expect(result.issueKey).toBeUndefined();
   });
 
   describe('an inferred attribution', () => {
