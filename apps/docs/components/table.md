@@ -1711,6 +1711,11 @@ const snapshot = table.state();
 table.restoreState(snapshot);
 ```
 
+A bound [`rowsSource`](#server-side-rows-query) owns the sort and the filters it publishes, so
+`restoreState` keeps those and applies only the layout and the feature slices. Restore that half
+wherever the source reads it from - a query form, the URL - and leave it out of the stored state:
+a second copy would drift from the one the source answers with.
+
 The per-column shape maps 1:1 onto typical server-side list-view config (`hidden`,
 sort direction, `filterValues`), so bridging to a backend is mechanical. With
 `multiSort`, each sorted column also carries a `sortPriority` so the sort order
