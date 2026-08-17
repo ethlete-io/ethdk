@@ -92,16 +92,25 @@ const repoRootOf = (options: { path: string; roots: readonly string[] }) => {
   return found ?? options.path;
 };
 
+/**
+ * A branch name, or nothing for a detached checkout.
+ *
+ * A collector that asks git for the current branch is answered `HEAD` when none is checked out, and
+ * git refuses `HEAD` as a branch name, so it never names one. The reader drops it rather than the
+ * collectors alone, because events already in the store carry whatever they were written with.
+ */
+const branchOf = (branch: string | undefined) => (branch === 'HEAD' ? undefined : branch);
+
 const repoStateFor = (event: ActivityEvent, roots: readonly string[]): RepoState | null => {
   switch (event.kind) {
     case 'git-checkout':
     case 'git-commit':
-      return { repoPath: event.repoPath, branch: event.branch, at: event.at };
+      return { repoPath: event.repoPath, branch: branchOf(event.branch), at: event.at };
     case 'agent-session':
-      return { repoPath: repoRootOf({ path: event.cwd, roots }), branch: event.gitBranch, at: event.at };
+      return { repoPath: repoRootOf({ path: event.cwd, roots }), branch: branchOf(event.gitBranch), at: event.at };
     case 'editor-heartbeat':
       return event.repoPath
-        ? { repoPath: repoRootOf({ path: event.repoPath, roots }), branch: event.branch, at: event.at }
+        ? { repoPath: repoRootOf({ path: event.repoPath, roots }), branch: branchOf(event.branch), at: event.at }
         : null;
     default:
       return null;

@@ -76,10 +76,11 @@ import { WorklogRowComponent } from './worklog-row.component';
                   (revert)="store.reset(row)"
                 />
               }
-            } @else if (!store.unnamed().length) {
+            } @else if (!store.unnamed().length && !inTempo().length) {
               <!--
-                Only when there is nothing to answer either. A day whose work is all unnamed has the
-                naming card right below, and an empty state above it says the opposite of the truth.
+                Only when there is nothing to answer and nothing already logged either. A day whose
+                work is all unnamed has the naming card right below, and an empty state above it says
+                the opposite of the truth.
               -->
               <et-empty-state
                 description="Nothing on this day could be attributed to an issue. The timeline shows what was observed."
@@ -102,6 +103,24 @@ import { WorklogRowComponent } from './worklog-row.component';
                 (markPrivate)="store.markPathPrivate($event)"
                 (forget)="store.forgetRule($event)"
               />
+            }
+
+            @if (inTempo().length) {
+              <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-1">
+                  <h3 class="text-h4">Already in Tempo</h3>
+                  <p class="text-small text-et-surface-muted">
+                    Time this day already holds, written outside this app. A sync leaves it alone.
+                  </p>
+                </div>
+
+                @for (entry of inTempo(); track entry.issueKey) {
+                  <div class="flex flex-wrap items-center gap-3 rounded-md border border-et-surface-border p-3">
+                    <span class="w-14 shrink-0 text-small">{{ entry.duration }}</span>
+                    <span class="grow text-mono text-small">{{ entry.issueKey }}</span>
+                  </div>
+                }
+              </div>
             }
 
             @for (entry of privateTime(); track entry.id) {
@@ -268,6 +287,13 @@ export class DayReviewViewComponent {
   protected target = computed(() => formatDurationMs(this.store.targetMs()));
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
+
+  /** What Tempo already holds, widest first, so the day shows it rather than only counting it. */
+  protected inTempo = computed(() =>
+    [...(this.store.coverage()?.issues ?? [])]
+      .sort((a, b) => b.coveredMs - a.coveredMs)
+      .map((issue) => ({ issueKey: issue.issueKey, duration: formatDurationMs(issue.coveredMs) })),
+  );
 
   protected privateTime = computed(() =>
     this.store.privateTime().map((entry) => ({

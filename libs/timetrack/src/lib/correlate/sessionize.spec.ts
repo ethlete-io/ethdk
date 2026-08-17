@@ -62,6 +62,15 @@ describe('sessionize', () => {
     expect(blockDurationMs(blocks[0])).toBe(40 * 60_000);
   });
 
+  it('reads a stored detached checkout as no branch at all', () => {
+    const blocks = sessionize({
+      events: [session(0, '/home/tom/dev/fut-frontend', 'HEAD'), session(5, '/home/tom/dev/fut-frontend', 'HEAD')],
+    });
+
+    expect(blocks[0]?.context.branch).toBeUndefined();
+    expect(blocks[0]?.context.repoPath).toBe('/home/tom/dev/fut-frontend');
+  });
+
   it('splits on an explicit idle and starts a fresh block on return', () => {
     const blocks = sessionize({
       events: [
