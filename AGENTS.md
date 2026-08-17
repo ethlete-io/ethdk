@@ -166,6 +166,11 @@ npx prettier --write libs/agent-rules/content/<file>   # format first
 yarn agents:sync                                       # then regenerate
 ```
 
+`content/output-styles/` is the exception: a Claude Code output style is a machine-level
+file, so `sync` never emits it and `agents:check` never diffs it. It is installed on
+demand instead - `node dist/libs/agent-rules/src/index.js output-style` after a build here,
+`npx ethlete-agents output-style` in a consumer repo.
+
 Format **before** syncing. The generated copies under `.claude/` and `.agents/` are
 Prettier-ignored, so formatting the content afterwards silently leaves them stale, and
 `yarn agents:check` (which CI runs) fails. The `npx ethlete-agents sync` in the published

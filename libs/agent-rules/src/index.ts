@@ -4,6 +4,7 @@ import { join } from 'path';
 import { AGENT_TARGETS, AgentTarget, CONFIG_FILE_NAME, detectTargets } from './lib/config';
 import { gitFlowCommand } from './lib/git-flow-command';
 import { migrate } from './lib/migrate';
+import { outputStyleCommand } from './lib/output-style-command';
 import { check, sync } from './lib/sync';
 import { timetrackCommand } from './lib/timetrack-command';
 
@@ -14,6 +15,9 @@ const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into y
   ethlete-agents init      Write a starter ${CONFIG_FILE_NAME}
   ethlete-agents git-flow  Name, check and repair branches against the repo's git flow
                            (start, check, repair, explain)
+  ethlete-agents output-style
+                           Install an Ethlete output style into this machine's Claude Code
+                           config and switch to it (Claude Code only)
   ethlete-agents timetrack Ask the running Timetrack app about Jira - it holds this
                            machine's credentials, so no repo needs a token
                            (status, instance, issue, search, project, create, log)
@@ -80,6 +84,8 @@ const run = (argv: string[]): number | Promise<number> => {
       return init(root);
     case 'git-flow':
       return gitFlowCommand({ root, argv: argv.slice(1) });
+    case 'output-style':
+      return outputStyleCommand({ argv: argv.slice(1) });
     case 'timetrack':
       return timetrackCommand({ root, argv: argv.slice(1) });
     case 'migrate':

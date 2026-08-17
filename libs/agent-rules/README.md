@@ -357,6 +357,37 @@ Git Flow:
 `allow_failure: true` on top of `advisory` mode is deliberate belt and braces: the job
 reports for a whole grace period before it can ever be the reason a merge request is red.
 
+## Output styles (Claude Code)
+
+An output style replaces Claude Code's own answer style for a whole session. This package
+ships one - **`ste-clarity`**, which writes every answer in ASD-STE100 Simplified Technical
+English - and installs it into the machine's Claude config rather than into a repo, because
+that is where Claude Code reads styles from:
+
+```bash
+npx ethlete-agents output-style             # install ste-clarity and switch to it
+npx ethlete-agents output-style --dry-run   # print what would change
+npx ethlete-agents output-style --remove    # take it back out
+```
+
+Two files, both under `~/.claude` (or `$CLAUDE_CONFIG_DIR`, or `--config-dir <path>`):
+
+| File                           | What changes                                                       |
+| ------------------------------ | ------------------------------------------------------------------ |
+| `output-styles/ste-clarity.md` | The style itself, written whole                                    |
+| `settings.json`                | `"outputStyle": "ste-clarity"` - every other setting is left alone |
+
+- **`--no-activate`** writes the style file but not the setting, so switching to it is then
+  `/output-style ste-clarity` inside a session.
+- A style file this command did not write is never overwritten or deleted - it says so and
+  stops, and `--force` is the way through. A copy of the same style that differs only in
+  layout still counts as its own.
+- Nothing here is repo-local, so `sync` and `check` neither write nor diff it. `--remove`
+  clears `outputStyle` only while it still points at that style.
+
+**Claude Code only.** Codex has no output-style mechanism - everything it is told comes
+from `AGENTS.md`, which `sync` already writes.
+
 ## Per-machine local config
 
 A gitignored `ethlete-agents.config.local.json` at the repo root holds the values that
@@ -409,6 +440,11 @@ paths: ['**/*.css'] # optional; becomes Claude `paths` and Cursor `globs` on rul
 vars: [docsBaseUrl] # optional
 ---
 ```
+
+`content/output-styles/<name>.md` is a third kind, and the only one this package does not
+compile: it is a Claude Code output style verbatim, so its frontmatter is Claude's
+(`name`, `description`, `keep-coding-instructions`) and `output-style` installs the file
+as it is, apart from a marker line that records where it came from.
 
 In a body, `{% varName %}` substitutes a variable, `{% skill:other-name %}` links to
 another guide the way the current target expects, and `{% resource:file.mjs %}` links to
