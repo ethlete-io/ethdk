@@ -18,4 +18,6 @@ export const TABLE_ERROR_CODES = {
   CONFLICTING_EXPORT_OPTIONS: 3507,
   /** An `expandedRowTemplate` was set on a table without `etTableRowExpansion` to render it. */
   MISSING_ROW_EXPANSION: 3508,
+  /** A `rowLink` answered with router commands on a table without `etTableRowRouterLink` to resolve them. */
+  MISSING_ROW_ROUTER_LINK: 3509,
 } as const;

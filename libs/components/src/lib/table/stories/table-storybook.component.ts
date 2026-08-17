@@ -154,6 +154,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         [columns]="columns()"
         [multiSort]="multiSort()"
         [rowInteractive]="rowInteractive()"
+        [rowLink]="rowLinks() ? personLink : undefined"
         [rowKey]="rowKey"
         [expandedRowTemplate]="detail"
         [etTableRowExpansion]="{ enabled: expandable() }"
@@ -186,6 +187,15 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         <ng-template [etTableCell]="columns().role" let-value="value">
           <et-chip>{{ value }}</et-chip>
         </ng-template>
+
+        @if (rowLinks()) {
+          <!-- The row is the link; the Joined column is not - it says so with interactive: true, which
+               keeps the row's stretched hit area out of its cells. So the button is the button, and the
+               rest of the row is the link. -->
+          <ng-template [etTableCell]="columns().joined">
+            <button (click)="lastClicked.set(null)" size="sm" variant="outline" et-button type="button">Archive</button>
+          </ng-template>
+        }
 
         @if (keyboardNav()) {
           <!-- A cell with a control in it, so Enter has somewhere to drill into and Escape somewhere to
@@ -384,6 +394,7 @@ export class TableStorybookComponent {
   public footer = input(false);
   public paginated = input(false);
   public rowInteractive = input(false);
+  public rowLinks = input(false);
   public resizableColumns = input(false);
   public columnMenu = input(false);
   public selectable = input(false);
@@ -391,7 +402,7 @@ export class TableStorybookComponent {
   public keyboardNav = input(false);
   public inlineEdit = input(false);
   public serverPaged = input(false);
-  public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
+  public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare' | 'cards'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');
   protected selection = viewChild<TableSelectionDirective<Person>>('selection');
@@ -525,6 +536,8 @@ export class TableStorybookComponent {
         header: 'Joined',
         value: (person) => person.joinedAt,
         sortable: true,
+        // A cell with a control of its own, once the rows are links - see the Joined cell template.
+        interactive: this.rowLinks(),
         align: 'end',
         width: sticky ? '160px' : 'minmax(96px, 1fr)',
         sticky: sticky ? 'end' : undefined,
@@ -574,6 +587,14 @@ export class TableStorybookComponent {
   // Stable identity so selection/expansion key by id rather than row reference.
   protected rowKey(person: Person) {
     return person.id;
+  }
+
+  /**
+   * Where a row goes. A hash href, so the demo stays on the page - a real app answers with router
+   * commands and adds etTableRowRouterLink, or with the href of another page.
+   */
+  protected personLink(person: Person) {
+    return '#/people/' + person.id;
   }
 
   /**

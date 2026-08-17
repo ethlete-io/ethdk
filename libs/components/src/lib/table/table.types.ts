@@ -215,6 +215,14 @@ export type TableColumn<T, TValue = unknown> = {
    */
   sticky?: 'start' | 'end';
 
+  /**
+   * This column's cells hold controls of their own - a button, a menu trigger, a link. A
+   * [row link](/components/table#row-links)'s hit area covers the rest of the row but stays out of
+   * such a cell, and the link is never hosted in one, so the control keeps the click.
+   * @default false
+   */
+  interactive?: boolean;
+
   /** Header/cell alignment. @default 'start' */
   align?: TableColumnAlign;
 
@@ -332,3 +340,12 @@ export type TableHeaderGroup = {
 
 /** A reference to a row, derived from a consumer-provided `rowKey`, or the row itself. */
 export type TableRowKey = (row: unknown) => string | number;
+
+/**
+ * Where a row links to - what a `rowLink` callback answers with.
+ *
+ * A **string** is an `href` the browser follows, which is what an external URL or an app without the
+ * Angular router needs. An **array** is router commands (`['/orders', order.id]`), resolved and
+ * navigated by `etTableRowRouterLink` - the table itself never depends on the router.
+ */
+export type TableRowLink = string | readonly unknown[];

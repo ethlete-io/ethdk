@@ -18,6 +18,12 @@
     border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
   }
 
+  /* Card rows are separated by the gap between them, so the rule that closes a detail row would only
+     draw a line across it — and, being a border, one the row-gap then holds away from the next card. */
+  .et-table-host:where([data-appearance='cards']) .et-table-detail-row {
+    border-block-end: 0;
+  }
+
   /* The animation must sit on the element Angular removes — this component's host, which is why it is a
      host binding. `animate.leave` looks for a running animation on *that* element and unmounts the
      moment it finds none, so an animation on a child is never awaited. */

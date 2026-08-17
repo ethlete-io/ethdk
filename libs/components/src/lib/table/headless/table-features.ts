@@ -268,6 +268,25 @@ export type TableCellEditing = {
 };
 
 /**
+ * How a feature resolves and follows a row link given as router commands (`etTableRowRouterLink`).
+ *
+ * The table renders the link itself - one `<a href>` per row - and takes the `href` from here, because
+ * turning `['/orders', 42]` into a URL is the router's job and the base table depends on no router. A
+ * link given as a plain string never reaches this seam: the browser follows it.
+ */
+export type TableRowNavigation = {
+  /** The `href` to render for these commands. */
+  href(commands: readonly unknown[]): string;
+  /**
+   * Follow the link in place of the browser. Returns whether it did: a modified click (middle button,
+   * Ctrl/Cmd/Shift) is left alone, which is what keeps "open in a new tab" working.
+   */
+  navigate(commands: readonly unknown[], event: MouseEvent): boolean;
+  /** Whether the navigator is live - see {@link TableHeaderAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
+/**
  * A feature's own serializable state, contributed to the table's {@link TableState} under `key`.
  *
  * The base table owns column order/visibility/width, sort and filters because they must round-trip
@@ -318,6 +337,8 @@ export type TableFeatureHost = {
   registerColumnPinning(pinning: TableColumnPinning): void;
   /** Replace the mark drawn in failed cells. Call once, from the feature's constructor. */
   registerCellErrorMark(mark: TableCellErrorMark): void;
+  /** Resolve and follow row links given as router commands. Call once, from the constructor. */
+  registerRowNavigation(navigation: TableRowNavigation): void;
   /** Contribute the feature's own serializable state. Call once, from the feature's constructor. */
   registerStateSlice(slice: TableStateSlice): void;
 

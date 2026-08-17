@@ -42,6 +42,14 @@
        an opaque solid (for pinned cells, which must not let scrolled content show through). */
     --_et-table-stripe-bg: transparent;
     --_et-table-stripe-solid: var(--et-surface-background-solid, Canvas);
+    /* The hover tint, in the same two forms and for the same reason. Read as a knob so an appearance
+       can mix it over its own surface - or drop it, where a row has nothing to react to. */
+    --_et-table-row-hover: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+    --_et-table-row-hover-solid: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 8%,
+      var(--et-surface-background-solid, Canvas)
+    );
   }
 
   /* Density drives the shared cell-padding custom props. */
@@ -96,6 +104,20 @@
 
   .et-table-host:where([data-appearance='bare']) {
     --_et-table-header-border: transparent;
+  }
+
+  /* Cards: every row is a box of its own (see `.et-table-row--box`), tinted a step off the table's own
+     surface so it reads as a card lying on it, and spaced by a margin rather than by the grid's
+     `row-gap` - a gap would push the header, the detail rows and the footer apart too. */
+  .et-table-host:where([data-appearance='cards']) {
+    --_et-table-header-bg: var(--et-surface-background-solid, Canvas);
+    --_et-table-row-divider: transparent;
+    /* A pinned cell's opaque hover has to mix over the card it sits on, not over the table. */
+    --_et-table-row-hover-solid: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 8%,
+      var(--_et-table-band)
+    );
   }
 
   .et-table {
@@ -238,11 +260,7 @@
   @media (hover: hover) {
     .et-table-row:hover .et-table-cell.et-table-sticky-start,
     .et-table-row:hover .et-table-cell.et-table-sticky-end {
-      background: color-mix(
-        in srgb,
-        var(--et-surface-interaction-solid, gray) 8%,
-        var(--et-surface-background-solid, Canvas)
-      );
+      background: var(--_et-table-row-hover-solid);
     }
   }
 
@@ -383,8 +401,105 @@
      (A hovered *selected* row keeps its accent instead — see the selection feature's styles.) */
   @media (hover: hover) {
     .et-table-row:hover .et-table-cell {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+      background: var(--_et-table-row-hover);
     }
+  }
+
+  /* ── Row box ────────────────────────────────────────────────────────────
+     A row with a box of its own, in place of the layout-transparent default. `subgrid` is what keeps the
+     cells in the table's own column tracks, so every column still lines up across the header, the rows
+     and the footer — the same shape the detail row already uses inside this grid.
+
+     Opt-in (a card row, a row link — see `rowBox`), because a box is a containing block: everything
+     positioned inside a row, a pinned column above all, then positions against the row rather than
+     against the table.
+
+     `z-index: 0` makes it a stacking context, so a cell that lifts itself over the row's link cannot
+     also rise over the sticky header. */
+  .et-table-row--box {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    position: relative;
+    z-index: 0;
+  }
+
+  /* ── Row links ──────────────────────────────────────────────────────────
+     One real anchor per row, stretched over the row box: middle click, Ctrl/Cmd-click, "open in a new
+     tab" and "copy link address" are the browser's again, and the row stays one link in the
+     accessibility tree and one stop in the tab order. It holds no text — the cell it sits in names it —
+     so nothing about the row's own content changes.
+
+     It is positioned against the row, so the cell around it may not clip it. Long text still truncates:
+     that is `.et-table-cell-text`'s own overflow, not the cell's. */
+  .et-table-cell--link {
+    overflow: visible;
+  }
+
+  .et-table-row-link {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+  }
+
+  /* The ring marks the row, which is what the link covers, and sits inside a card row's own border. */
+  .et-table-row-link:focus-visible {
+    outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    outline-offset: -2px;
+  }
+
+  /* Cells that hold their own controls stay above the stretched link, so the control keeps the click:
+     the utility cells always, and a column that says so with `interactive`. A pinned cell is positioned
+     already and therefore above it too — pinning a column takes its cells out of the row's link area. */
+  .et-table-row--link :where(.et-table-select-cell, .et-table-expander-cell, .et-table-cell--interactive) {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Card rows ──────────────────────────────────────────────────────────
+     The row's box carries the surface, the border and the radius; its cells keep their padding and stay
+     transparent, so the card paints through them. The leading and trailing cell take the row's own
+     corner radii, so a cell background — hover, a selected row, a pinned column — cannot square off a
+     corner, whichever column happens to be first after a reorder or a hidden column. */
+  .et-table-host:where([data-appearance='cards']) .et-table-row {
+    margin-block-end: var(--et-table-row-gap, 8px);
+    background: var(--_et-table-band);
+    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    border-radius: var(--et-table-row-radius, 10px);
+  }
+
+  /* The header is a label row over the cards, so its rule must not run into the first one's border.
+     A margin under the header cells rather than a grid `row-gap`, which would space out every row
+     kind - the same reason the cards themselves are spaced by a margin. */
+  .et-table-host:where([data-appearance='cards']) .et-table-header-cell {
+    margin-block-end: var(--et-table-row-gap, 8px);
+  }
+
+  /* A card that neither links nor takes clicks has nothing to react to, so it does not light up under
+     the pointer. Set as the tint rather than as a background, so a selected row keeps its accent. */
+  .et-table-host:where([data-appearance='cards']) .et-table-row:not(.et-table-row--interactive, .et-table-row--link) {
+    --_et-table-row-hover: transparent;
+    --_et-table-row-hover-solid: var(--_et-table-band);
+  }
+
+  .et-table-host:where([data-appearance='cards']) .et-table-row > :first-child {
+    border-start-start-radius: inherit;
+    border-end-start-radius: inherit;
+  }
+
+  .et-table-host:where([data-appearance='cards']) .et-table-row > :last-child {
+    border-start-end-radius: inherit;
+    border-end-end-radius: inherit;
+  }
+
+  /* A pinned cell has to stay opaque for scrolled cells to pass behind it, and on a card that means the
+     card's own tint rather than the table's surface. */
+  .et-table-host:where([data-appearance='cards']) .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+    background: var(--_et-table-band);
+  }
+
+  .et-table-host:where([data-appearance='cards']) .et-table-row-link {
+    border-radius: var(--et-table-row-radius, 10px);
   }
 
   /* ── Header label & sort ────────────────────────────────────────────────

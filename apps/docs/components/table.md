@@ -30,6 +30,7 @@ the table. A table that doesn't import a feature never pays for its code.
 | Column reorder       | `TABLE_REORDER_IMPORTS`            | `etTableReorder`            | the drag primitives                                  |
 | Row selection        | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
 | Row expansion        | `TABLE_ROW_EXPANSION_IMPORTS`      | `etTableRowExpansion`       | the detail row's chrome + grow-open animation        |
+| Row link routing     | `TABLE_ROW_ROUTER_LINK_IMPORTS`    | `etTableRowRouterLink`      | `@angular/router`                                    |
 | Loading placeholders | `TABLE_SKELETON_IMPORTS`           | `etTableSkeleton`           | the [skeleton](/components/skeleton) component       |
 | Sticky columns       | `TABLE_STICKY_COLUMNS_IMPORTS`     | `etTableStickyColumns`      | the offset measuring (nothing else)                  |
 | Grouped headers      | `TABLE_GROUP_HEADERS_IMPORTS`      | `etTableGroupHeaders`       | the spanning header row + its chrome                 |
@@ -102,26 +103,27 @@ than resetting them.
 
 ## Inputs
 
-| Input                 | Default      | Description                                                                                                       |
-| --------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
-| `data`                | `[]`         | The rows to render.                                                                                               |
-| `columns`             | `{}`         | The column definitions, keyed by column key - see [Columns](#columns).                                            |
-| `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                            |
-| `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`. See [below](#appearance-density).         |
-| `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                             |
-| `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                      |
-| `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                     |
-| `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states).   |
-| `error`               | `null`       | Anything non-nullish replaces the body with the error state.                                                      |
-| `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                    |
-| `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                  |
-| `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                         |
-| `multiSort`           | `false`      | Allow more than one column to be sorted at once.                                                                  |
-| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                             |
-| `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                                 |
-| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                         |
-| `expandedRowTemplate` | -            | Detail template for [row expansion](#row-expansion) - needs `etTableRowExpansion`. Context: `{ $implicit: row }`. |
-| `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row navigation](#row-navigation).                                |
+| Input                 | Default      | Description                                                                                                          |
+| --------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `data`                | `[]`         | The rows to render.                                                                                                  |
+| `columns`             | `{}`         | The column definitions, keyed by column key - see [Columns](#columns).                                               |
+| `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                               |
+| `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`, `'cards'`. See [below](#appearance-density). |
+| `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                                |
+| `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                         |
+| `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                        |
+| `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states).      |
+| `error`               | `null`       | Anything non-nullish replaces the body with the error state.                                                         |
+| `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                       |
+| `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                     |
+| `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                            |
+| `multiSort`           | `false`      | Allow more than one column to be sorted at once.                                                                     |
+| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                                |
+| `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                                    |
+| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                            |
+| `expandedRowTemplate` | -            | Detail template for [row expansion](#row-expansion) - needs `etTableRowExpansion`. Context: `{ $implicit: row }`.    |
+| `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row clicks](#row-clicks).                                           |
+| `rowLink`             | -            | `(row: T) => string \| unknown[] \| null` - make every row a real link. See [Row links](#row-links).                 |
 
 ## Appearance & density
 
@@ -141,6 +143,38 @@ row rhythm. They compose with every feature.
 | `zebra`      | Alternating row backgrounds; good for wide, scannable tables.                                |
 | `grid`       | Full cell borders - spreadsheet density.                                                     |
 | `bare`       | No chrome at all; hover only. For dashboards and cards.                                      |
+| `cards`      | Every row a card of its own - tinted, bordered, rounded, with a gap between rows.            |
+
+### Card rows
+
+`appearance="cards"` gives each body row a **box of its own** instead of the
+layout-transparent row every other appearance uses, and paints that box: the surface tint,
+a border, a radius, and a gap to the next row.
+
+<StoryEmbed id="components-data-display-table--card-rows" height="420px" />
+
+Two custom properties tune it:
+
+| Property                | Default | Sets                         |
+| ----------------------- | ------- | ---------------------------- |
+| `--et-table-row-gap`    | `8px`   | The space between two cards. |
+| `--et-table-row-radius` | `10px`  | The card's corner radius.    |
+
+The columns still line up with the header, because the row box is a
+[`subgrid`](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout/Subgrid) of the
+table's own column tracks - the same shape the [detail row](#row-expansion) already uses. The
+leading and trailing cell take the row's corner radii, so a cell background (hover, a selected
+row, a pinned column) can't square off a corner, whichever column happens to be first after a
+reorder or a hidden column.
+
+The row box is what a [row link](#row-links) stretches over, so `rowLink` turns it on in any
+appearance. Two things it changes, both by design:
+
+- **A pinned column positions against the row**, not against the table. Pinning still works
+  (the offsets are unchanged), but a pinned cell paints above a row link's hit area - see
+  [Row links](#row-links).
+- **[Loading placeholders](#loading-error-states) are not cards.** `etTableSkeleton` draws its
+  own rows, which stay layout-transparent.
 
 `density` is `'md'` (default), `'sm'` (tight), or `'lg'` (roomy) - it sets the
 `--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom properties,
@@ -166,6 +200,7 @@ Each value of the `TableColumns<T>` record:
 | `header`        | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                                 |
 | `group`         | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers).  |
 | `sticky`        | -                     | `'start' \| 'end'` - pin the column while scrolling, with `etTableStickyColumns`. See [Sticky columns](#sticky-columns-footer). |
+| `interactive`   | `false`               | This column's cells hold their own controls: a [row link](#row-links) never covers them, nor is it hosted here.                 |
 | `align`         | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                 |
 | `width`         | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                            |
 | `hidden`        | `false`               | Hide the column initially; toggle later via table state.                                                                        |
@@ -301,6 +336,10 @@ Action cells **compose with [row navigation](#row-navigation)**: when the table 
 `rowInteractive`, a click on any button, link, input or menu trigger inside a cell
 is ignored by `(rowClick)` (it's detected via `composedPath`), so "Edit" fires its
 own handler without also triggering row navigation - no `stopPropagation` needed.
+
+With [`rowLink`](#row-links) the row is a real link stretched over the whole row, so an action
+column has to say that it holds controls: `interactive: true` keeps the link's hit area out of
+its cells.
 
 ## Grouped headers
 
@@ -714,6 +753,80 @@ filtering), while `selection` keeps keys for filtered-out rows.
 
 ## Row navigation
 
+A list of entities is usually a list of links, so reach for
+[row links](#row-links) first: `rowLink` gives every row a real `<a href>`. Use
+[`rowInteractive`](#row-clicks) for a row whose click is an action rather than a
+destination.
+
+### Row links
+
+`rowLink` says where a row goes, and the table renders **one real anchor per row**,
+stretched over the whole row:
+
+```html
+<et-table [data]="orders()" [columns]="COLUMNS" [rowLink]="orderLink" etTableRowRouterLink />
+```
+
+```ts
+protected orderLink = (order: Order) => ['/orders', order.id];
+```
+
+<StoryEmbed id="components-data-display-table--row-links" height="420px" />
+
+Because it is a genuine link, the browser's own behaviour comes for free - and none of it can
+be had from a click handler:
+
+- middle click, and Ctrl/Cmd-click, to open the row in a new tab,
+- "Open in new tab" and "Copy link address" from the context menu,
+- a crawlable `href`, and a status-bar preview on hover.
+
+The callback answers with one of three things:
+
+| Answer                     | What happens                                                                                          |
+| -------------------------- | ----------------------------------------------------------------------------------------------------- |
+| a string                   | Rendered as the `href` and followed by the browser - an external URL, or an app without routing.      |
+| an array (router commands) | Resolved and navigated by `etTableRowRouterLink`; needs that feature, else the table throws `ET3509`. |
+| `null` / nothing           | That row links nowhere and stays a plain row.                                                         |
+
+**In-app navigation needs the feature.** Import `TABLE_ROW_ROUTER_LINK_IMPORTS` and add
+`etTableRowRouterLink`: it turns the commands into the `href` and routes a plain left click
+through the router, while leaving a modified click to the browser. Without it the base table
+depends on no router at all, which is why it is a feature and not built in.
+
+#### Cells that keep their own clicks
+
+The link covers the row, so anything else that must be clickable has to sit above it. The
+table does that for the [selection](#selection) and [expander](#row-expansion) cells; a column
+of your own says so with `interactive: true`:
+
+```ts
+actions: { header: '', value: (o) => o, interactive: true, align: 'end', width: '120px' },
+```
+
+Such a column is also never the one that hosts the link. The anchor goes in the **first visible
+column that isn't `interactive`**, and takes its accessible name from that cell's content - so
+that column should be the one a reader identifies the row by, which the leftmost usually is.
+
+A [pinned column](#sticky-columns-footer) is positioned too, so its cells sit above the link
+area as well: pinning the identity column shrinks the clickable area to that column. Pin an
+`interactive` column instead where you can.
+
+#### Keyboard and assistive tech
+
+The row is **one** stop in the tab order and **one** link in the accessibility tree: the anchor
+is it, and a linked row is never itself focusable (even with `rowInteractive` set). `role="row"`
+stays on the row and `role="gridcell"` on its cells, so the grid semantics are unchanged - the
+anchor lives inside a cell, which ARIA allows.
+
+With [`etTableKeyboardNav`](#keyboard-navigation) the link behaves like any other control in a
+cell: `Enter` drills into it from the focused cell, `Escape` comes back out. Clicking a row
+lands the focus on the link for the same reason.
+
+Text selection inside a linked row is not possible - a stretched link takes the drag. Mark the
+columns whose text has to be selectable `interactive: true`.
+
+### Row clicks
+
 Set `rowInteractive` to make whole rows respond to clicks: rows get a pointer
 affordance and emit `(rowClick)` with the row. The table performs **no** navigation
 itself - you wire it, keeping the SDK action-agnostic:
@@ -734,9 +847,12 @@ by walking `event.composedPath()`), so in-row controls and the row's own checkbo
 keep working without also triggering navigation. Interactive rows are keyboard
 focusable and activate on Enter/Space.
 
-For crawlable, middle-click-friendly per-row links, prefer rendering a real `<a>` in
-a cell over `(rowClick)` - a genuine link is better for SEO and accessibility;
-`rowInteractive` is the convenience layer for the whole-row target.
+A row that _navigates_ belongs to [`rowLink`](#row-links) instead: a real link is better for
+SEO, for the keyboard and for assistive tech, and it is what makes middle click work. Keep
+`(rowClick)` for a row whose click is an action - opening an overlay, selecting a record.
+
+The two compose: on a linked row, a click that went through the link emits no `(rowClick)`, so
+`rowInteractive` still catches clicks on the cells the link stays out of.
 
 ## Sticky header
 
@@ -1639,6 +1755,9 @@ cells. Sortable headers are real `<button>`s (keyboard-operable) and set
 Cell-by-cell keyboard navigation is [opt-in](#keyboard-navigation): without it Tab
 skips past the body, which is what a read-only display table usually wants.
 
+A [row link](#row-links) is one `<a href>` inside the row's identity cell, named by that cell -
+so a linked row reads as one link, in one tab stop, and the grid roles stay as they are.
+
 ## Theming
 
 Colors come from the [surface theming](/core/theming) tokens of the nearest
@@ -1650,7 +1769,8 @@ properties, and the leading utility columns via `--et-table-expander-width`
 (`32px`) / `--et-table-select-width` (`44px`, matching the ≥44px touch-target
 guideline the bare label-less checkbox otherwise falls short of) - both sized to
 their control, so the expander button and the checkbox keep their own size even
-if you set these narrower.
+if you set these narrower. [Card rows](#card-rows) add `--et-table-row-gap` (`8px`)
+and `--et-table-row-radius` (`10px`).
 
 All of the table's metrics are px, not `rem`, so they don't shift with the host app's
 root font size.

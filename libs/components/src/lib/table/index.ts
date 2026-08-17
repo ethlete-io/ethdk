@@ -19,6 +19,7 @@ export * from './table-reorder-overlay.component';
 export * from './table-reorder.directive';
 export * from './table-row-detail.component';
 export * from './table-row-expansion.directive';
+export * from './table-row-router-link.directive';
 export * from './table-resize-grip.component';
 export * from './table-resize.directive';
 export * from './table-select-cell.component';

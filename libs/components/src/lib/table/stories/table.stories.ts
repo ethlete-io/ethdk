@@ -26,6 +26,7 @@ export default {
     footer: false,
     paginated: false,
     rowInteractive: false,
+    rowLinks: false,
     resizableColumns: false,
     columnMenu: false,
     selectable: false,
@@ -37,7 +38,7 @@ export default {
   },
   argTypes: {
     rowCount: { control: { type: 'range', min: 0, max: 40, step: 1 } },
-    appearance: { control: 'inline-radio', options: ['enclosed', 'divided', 'zebra', 'grid', 'bare'] },
+    appearance: { control: 'inline-radio', options: ['enclosed', 'divided', 'zebra', 'grid', 'bare', 'cards'] },
     density: { control: 'inline-radio', options: ['sm', 'md', 'lg'] },
     constrainHeight: { control: 'boolean' },
     empty: { control: 'boolean' },
@@ -56,6 +57,7 @@ export default {
     footer: { control: 'boolean' },
     paginated: { control: 'boolean' },
     rowInteractive: { control: 'boolean' },
+    rowLinks: { control: 'boolean' },
     resizableColumns: { control: 'boolean' },
     columnMenu: { control: 'boolean' },
     selectable: { control: 'boolean' },
@@ -78,7 +80,7 @@ export const Appearance: Story = {
       description: {
         story:
           'The `appearance` input picks the frame: `enclosed` (default, bordered rounded panel), `divided`, ' +
-          '`zebra`, `grid`, or `bare`. Switch it in the controls to compare.',
+          '`zebra`, `grid`, `bare`, or `cards` (every row a card of its own). Switch it in the controls to compare.',
       },
     },
   },
@@ -352,6 +354,35 @@ export const RowInteractive: Story = {
           'when the click lands on interactive cell content (a button, link, input, the selection checkbox, ' +
           'or the expander), which keeps those controls working. The table performs no navigation itself; ' +
           'wire `router.navigate` in the handler. Click a row to update the readout below.',
+      },
+    },
+  },
+};
+
+export const RowLinks: Story = {
+  args: { rowLinks: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `rowLink`, every row is a real `<a href>` stretched over the row: middle click, Ctrl/Cmd-click, ' +
+          '"open in a new tab" and "copy link address" all work, and the row is one link in the accessibility ' +
+          'tree and one stop in the tab order. The Joined column declares `interactive: true`, so its button ' +
+          'keeps its own clicks. Answer with router commands and add `etTableRowRouterLink` for in-app routing.',
+      },
+    },
+  },
+};
+
+export const CardRows: Story = {
+  args: { appearance: 'cards', rowLinks: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The `cards` appearance gives every row a box of its own - a tinted, rounded card, spaced by ' +
+          '`--et-table-row-gap` and rounded by `--et-table-row-radius`. The columns still line up with the ' +
+          "header, because the row is a `subgrid` of the table's own tracks.",
       },
     },
   },

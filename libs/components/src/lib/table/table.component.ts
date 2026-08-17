@@ -47,6 +47,7 @@ import {
   TableColumnPinning,
   TableHeaderRow,
   TableRowDetail,
+  TableRowNavigation,
   TableRowWindow,
   TableStateSlice,
 } from './headless/table-features';
@@ -67,6 +68,7 @@ import {
   TableErrorContext,
   TableExpandedRowContext,
   TableFilter,
+  TableRowLink,
   TableSort,
   TableSortDirection,
   TableState,
@@ -105,6 +107,10 @@ type TableHeaderCellVm<T> = TableCellPinning & {
 type TableBodyCellVm<T> = TableCellPinning & {
   key: string;
   align: string;
+  /** Whether this is the cell that hosts the row's link - at most one per row, and only when it has one. */
+  linkHost: boolean;
+  /** Whether the column says it holds its own controls, which a row link's hit area then stays out of. */
+  interactive: boolean;
   state: TableCellState | null;
   /** What went wrong, when the callback said - shown on the mark. */
   message: string | null;
@@ -128,6 +134,12 @@ type TableBodyRowVm<T> = {
   key: unknown;
   classes: string;
   stripe: boolean;
+  /** Where this row links to (see `rowLink`), or `null` for a row that links nowhere. */
+  link: TableRowLink | null;
+  /** The `href` the row's anchor carries - the link itself, or a navigator's resolution of it. */
+  href: string | null;
+  /** Id of the cell hosting the link, which names the (textless) anchor via `aria-labelledby`. */
+  linkLabelId: string;
   /** The registered detail row to stamp under this row, while it is open. */
   detail: TableRowDetail | null;
   leads: TableLeadCellVm[];
@@ -184,6 +196,9 @@ const NO_PIN: TableCellPinning = { stickyStart: false, stickyEnd: false, offsetS
 /** The same for a leading utility cell, and for the scroll fades' inline offsets. */
 const NO_LEAD_PIN = { sticky: false, offset: null };
 const NO_INSET = { start: 0, end: 0 };
+
+// Per-table counter, so the ids a row link is named by are unique across every table on the page.
+let uniqueTableId = 0;
 
 /**
  * The default table. Renders typed rows and cells from a {@link TableColumns}
@@ -295,9 +310,10 @@ export class TableComponent<T> {
   /**
    * The table's visual frame. `'enclosed'` (default) is a bordered, rounded surface panel with a
    * tinted header band; `'divided'` is borderless with row dividers; `'zebra'` stripes rows; `'grid'`
-   * draws full cell borders; `'bare'` has no chrome. @default 'enclosed'
+   * draws full cell borders; `'bare'` has no chrome; `'cards'` gives every row a box of its own - a
+   * tinted, rounded card, spaced by `--et-table-row-gap`. @default 'enclosed'
    */
-  public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
+  public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare' | 'cards'>('enclosed');
 
   /** Row density (cell padding): `'sm'` tight, `'md'` default, `'lg'` roomy. @default 'md' */
   public density = input<'sm' | 'md' | 'lg'>('md');
@@ -346,9 +362,31 @@ export class TableComponent<T> {
 
   /**
    * Make whole rows respond to clicks: adds a hover/pointer affordance and emits {@link rowClick}
-   * (clicks landing on interactive cell content are ignored - see `rowClick`). @default false
+   * (clicks landing on interactive cell content are ignored - see `rowClick`). For a row that
+   * navigates, prefer {@link rowLink} - a real link, not a click handler. @default false
    */
   public rowInteractive = input(false, { transform: booleanAttribute });
+
+  /**
+   * Make every row a link, by saying where it goes: an `href` the browser follows, or the router
+   * commands to navigate to - which need `etTableRowRouterLink` on the table, since the base table
+   * depends on no router. Answer `null` for a row that links nowhere.
+   *
+   * The table renders **one** real `<a href>` per row and stretches it over the row, so middle click,
+   * Ctrl/Cmd-click, "open in a new tab" and "copy link address" all work - none of which a
+   * {@link rowInteractive} click handler can offer. The anchor sits in the first column that holds no
+   * controls of its own and takes its accessible name from that cell, which keeps the row one link in
+   * the accessibility tree and one stop in the tab order.
+   *
+   * A cell with a control in it keeps its clicks: the selection and expander cells always, and any
+   * column that declares `interactive: true`.
+   *
+   * @example
+   * <et-table [rowsSource]="source" [columns]="columns()" [rowLink]="orderLink" etTableRowRouterLink />
+   *
+   * protected orderLink = (order: Order) => ['/orders', order.id];
+   */
+  public rowLink = input<(row: T) => TableRowLink | null | undefined>();
 
   /**
    * Emitted when an interactive row (see {@link rowInteractive}) is clicked, with the row as payload.
@@ -372,6 +410,9 @@ export class TableComponent<T> {
   // The rendered lead-column header cells, in lead-column order - measured so each lead column and
   // the pinned data columns know how far in they start.
   private leadHeaderCells = viewChildren<ElementRef<HTMLElement>>('leadHeaderCell');
+
+  // Base of the ids a row link is named by - one per table, so two tables on a page can't collide.
+  private readonly LINK_ID_PREFIX = `et-table-${uniqueTableId++}-row-link`;
 
   /** The sort mode in effect: what you set, else `'server'` when a {@link rowsSource} is bound. */
   public resolvedSortMode = computed<'client' | 'server'>(
@@ -413,6 +454,14 @@ export class TableComponent<T> {
   private cellErrorMarkList = signal<TableCellErrorMark[]>([]);
 
   protected cellErrorMark = computed(() => this.cellErrorMarkList().find((mark) => mark.enabled?.() ?? true) ?? null);
+
+  // How a feature follows a row link given as router commands (etTableRowRouterLink). Null until one
+  // registers, which is what keeps the router out of a table that links with plain hrefs - or not at all.
+  private rowNavigationList = signal<TableRowNavigation[]>([]);
+
+  private rowNavigation = computed(
+    () => this.rowNavigationList().find((navigation) => navigation.enabled?.() ?? true) ?? null,
+  );
 
   // Floating UI contributed by features (the reorder drag ghost). The table hosts it so a feature
   // never needs a view - and never an element - of its own.
@@ -757,6 +806,29 @@ export class TableComponent<T> {
    */
   protected showBusyBar = signalDeferredLoading(this.refetchingOverRows);
 
+  /**
+   * Whether a body row gets a box of its own instead of being layout-transparent - a subgrid spanning
+   * every track (see `.et-table-row--box`).
+   *
+   * Opt-in, because a box changes the containing block of everything positioned inside a row: a pinned
+   * column, the row's own link. A card row needs one to paint, and a stretched row link needs one to
+   * stretch over.
+   */
+  protected rowBox = computed(() => this.appearance() === 'cards' || !!this.rowLink());
+
+  /**
+   * The column whose cell hosts a row's link: the first visible one that doesn't hold controls of its
+   * own, else the first visible one. Its content is what names the link, so it should be the column a
+   * reader identifies the row by - which is what the leftmost column usually is.
+   */
+  private linkColumnKey = computed(() => {
+    if (!this.rowLink()) return null;
+
+    const columns = this.visibleColumns();
+
+    return (columns.find((column) => !column.interactive) ?? columns[0])?.key ?? null;
+  });
+
   /** The leading utility cells, with the pinning every row kind applies to them. */
   protected leadCells = computed<TableLeadCellVm[]>(() => {
     const pinning = this.columnPinning();
@@ -810,14 +882,24 @@ export class TableComponent<T> {
     // At most one cell is ever open, so the edit templates are only looked up once there is one.
     const editing = this.cellEditing()?.cell() ?? null;
     const editTemplates = editing ? this.columnTemplates().cellEdit : null;
+    const rowLink = this.rowLink();
+    const linkColumn = this.linkColumnKey();
+    const navigation = this.rowNavigation();
 
     return this.renderedRows().map((row, index) => {
       const key = this.rowIdentity(row);
+      const link = rowLink?.(row) ?? null;
+      // A string is an href as given; commands are a URL only a navigator can build, so a table without
+      // one renders no link at all rather than a wrong one (see the dev-mode check in the constructor).
+      const href = link === null ? null : typeof link === 'string' ? link : (navigation?.href(link) ?? null);
 
       return {
         row,
         key,
         index: indexOffset + index,
+        link,
+        href,
+        linkLabelId: `${this.LINK_ID_PREFIX}-${indexOffset + index}`,
         classes: leads
           .map((lead) => lead.lead.rowClass?.(row))
           .filter((className): className is string => !!className)
@@ -840,6 +922,9 @@ export class TableComponent<T> {
             ...(pinning?.cellPinning(column.key) ?? NO_PIN),
             key: column.key,
             align: column.align ?? 'start',
+            // Not while this cell is being edited: the link covers the cell, and the editor must have it.
+            linkHost: href !== null && column.key === linkColumn && editTemplate === null,
+            interactive: !!column.interactive,
             state,
             message: typeof answer === 'string' ? null : (answer?.message ?? null),
             template: templates.get(column.key) ?? null,
@@ -909,6 +994,22 @@ export class TableComponent<T> {
         throw new RuntimeError(
           TABLE_ERROR_CODES.MISSING_ROW_EXPANSION,
           '[et-table] [expandedRowTemplate] needs the row-expansion feature to render it. Add `etTableRowExpansion` to the table and import TABLE_ROW_EXPANSION_IMPORTS.',
+          { element: this.elementRef.nativeElement },
+        );
+      });
+
+      // Router commands are a URL only the router can build, so such a row would otherwise render as a
+      // row that looks like a link and leads nowhere. Asked of the rendered rows rather than of the
+      // callback, since only a returned value says which form a table uses.
+      effect(() => {
+        const rowLink = this.rowLink();
+
+        if (!rowLink || this.rowNavigationList().length) return;
+        if (!this.renderedRows().some((row) => Array.isArray(rowLink(row)))) return;
+
+        throw new RuntimeError(
+          TABLE_ERROR_CODES.MISSING_ROW_ROUTER_LINK,
+          '[et-table] [rowLink] answered with router commands, which need the router feature to resolve them. Add `etTableRowRouterLink` to the table and import TABLE_ROW_ROUTER_LINK_IMPORTS, or answer with an href string instead.',
           { element: this.elementRef.nativeElement },
         );
       });
@@ -1067,6 +1168,14 @@ export class TableComponent<T> {
    */
   public registerColumnPinning(pinning: TableColumnPinning) {
     this.columnPinningList.update((list) => [...list, pinning]);
+  }
+
+  /**
+   * Called by an opt-in feature to resolve and follow row links given as router commands
+   * (`etTableRowRouterLink`). Part of the feature contract; consumers never call this.
+   */
+  public registerRowNavigation(navigation: TableRowNavigation) {
+    this.rowNavigationList.update((list) => [...list, navigation]);
   }
 
   /** The rendered header cells of the leading utility columns. Part of the feature contract. */
@@ -1330,6 +1439,17 @@ export class TableComponent<T> {
     if (event instanceof KeyboardEvent) event.preventDefault();
 
     this.rowClick.emit(row);
+  }
+
+  /**
+   * Follow a row link the browser would otherwise load as a whole page. Only a link given as router
+   * commands is followed, and only on a plain left click - a middle or Ctrl/Cmd-click keeps the
+   * browser's own behaviour, which is the reason the row carries a real `href` at all.
+   */
+  protected activateRowLink(link: TableRowLink | null, event: MouseEvent) {
+    if (link === null || typeof link === 'string') return;
+
+    if (this.rowNavigation()?.navigate(link, event)) event.preventDefault();
   }
 
   /**

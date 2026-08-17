@@ -125,11 +125,14 @@
     }
   } @else {
     @for (rowVm of bodyRows(); track rowVm.key) {
+      <!-- A linked row is not a tab stop of its own: its anchor is the one stop, and the one link. -->
       <div
         [class]="rowVm.classes"
         [class.et-table-row--stripe]="rowVm.stripe"
         [class.et-table-row--interactive]="rowInteractive()"
-        [attr.tabindex]="rowInteractive() && !cellNavigation() ? 0 : null"
+        [class.et-table-row--box]="rowBox()"
+        [class.et-table-row--link]="rowVm.href !== null"
+        [attr.tabindex]="rowInteractive() && !cellNavigation() && rowVm.href === null ? 0 : null"
         (click)="activateRow(rowVm.row, $event)"
         (keydown.enter)="activateRow(rowVm.row, $event)"
         (keydown.space)="activateRow(rowVm.row, $event)"
@@ -156,6 +159,9 @@
             [attr.data-col-key]="cell.key"
             [attr.tabindex]="cellNavigation() ? -1 : null"
             [attr.data-state]="cell.state"
+            [attr.id]="cell.linkHost ? rowVm.linkLabelId : null"
+            [class.et-table-cell--link]="cell.linkHost"
+            [class.et-table-cell--interactive]="cell.interactive"
             [class.et-table-cell--editing]="cell.edit"
             [class.et-skeleton--animated]="cell.state === 'loading'"
             [class.et-table-sticky-start]="cell.stickyStart"
@@ -201,6 +207,21 @@
               } @else {
                 <span class="et-table-cell-text">{{ cell.value }}</span>
               }
+            }
+
+            @if (cell.linkHost) {
+              <!-- The row's link: one real anchor, stretched over the row box (see rowBox) rather than
+                   wrapping any content, so the cells stay exactly as a table without links renders them.
+                   It carries no text of its own and is named by this cell instead - `aria-labelledby`
+                   resolves to the cell's content, which is the row's identity. -->
+              <!-- eslint-disable-next-line @angular-eslint/template/elements-content -- the rule's
+                   allowList knows `aria-label` but not `aria-labelledby`, which names it just as well. -->
+              <a
+                [attr.href]="rowVm.href"
+                [attr.aria-labelledby]="rowVm.linkLabelId"
+                (click)="activateRowLink(rowVm.link, $event)"
+                class="et-table-row-link"
+              ></a>
             }
           </div>
         }

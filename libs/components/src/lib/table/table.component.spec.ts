@@ -1,5 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { vi } from 'vitest';
 import { injectLocale, RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
 import { TABLE_ERROR_CODES } from './table-errors';
@@ -7,7 +9,7 @@ import { filterRows } from './headless/table-filter';
 import { sortRows } from './headless/table-sort';
 import { TableComponent } from './table.component';
 import { DEFAULT_TABLE_LABELS, provideTableLabels } from './headless/table-labels';
-import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS } from './table.imports';
+import { TABLE_IMPORTS, TABLE_ROW_ROUTER_LINK_IMPORTS, TABLE_SELECTION_IMPORTS } from './table.imports';
 import { TableColumns, TableFilter, TableSort } from './table.types';
 
 type Person = { id: number; name: string; role: string };
@@ -1074,6 +1076,171 @@ describe('TableComponent', () => {
       cell.click();
 
       expect(emitted).toBe(false);
+    });
+  });
+
+  describe('row links', () => {
+    @Component({
+      template: `
+        <et-table [columns]="cols" [data]="data" [rowLink]="link" (rowClick)="clicked = $event" rowInteractive>
+          <ng-template [etTableCell]="cols.act"><button class="act" type="button">Act</button></ng-template>
+        </et-table>
+      `,
+      imports: [TABLE_IMPORTS],
+    })
+    class HostComponent {
+      clicked: Person | null = null;
+      data = PEOPLE;
+      link = (person: Person): string | null => (person.id === 1 ? `/people/${person.id}` : null);
+      cols = {
+        name: { header: 'Name', value: (person: Person) => person.name },
+        act: { header: '', value: (person: Person) => person, interactive: true },
+      } satisfies TableColumns<Person>;
+    }
+
+    const build = () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    const links = (fixture: ComponentFixture<unknown>) =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('a.et-table-row-link'));
+
+    it('renders one anchor per linked row, named by the cell it sits in', () => {
+      const fixture = build();
+      const anchors = links(fixture);
+
+      expect(anchors.length).toBe(1);
+
+      const anchor = anchors[0] as HTMLAnchorElement;
+      const cell = anchor.parentElement as HTMLElement;
+
+      expect(anchor.getAttribute('href')).toBe('/people/1');
+      // The link sits in the first column that holds no controls of its own, and is named by it.
+      expect(cell.dataset['colKey']).toBe('name');
+      expect(anchor.getAttribute('aria-labelledby')).toBe(cell.id);
+      expect(cell.textContent).toContain('Ada');
+    });
+
+    it('gives the linked row a box, and leaves the row itself out of the tab order', () => {
+      const fixture = build();
+      const rows = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-row'));
+      const [linked, unlinked] = rows as HTMLElement[];
+
+      expect(linked?.classList.contains('et-table-row--box')).toBe(true);
+      expect(linked?.classList.contains('et-table-row--link')).toBe(true);
+      // The anchor is the row's one tab stop; `rowInteractive` may not add a second.
+      expect(linked?.hasAttribute('tabindex')).toBe(false);
+
+      // A row the callback answered `null` for stays a plain, clickable row.
+      expect(unlinked?.classList.contains('et-table-row--link')).toBe(false);
+      expect(unlinked?.getAttribute('tabindex')).toBe('0');
+    });
+
+    it('keeps a column marked interactive out of the link, and never hosts the link in it', () => {
+      const fixture = build();
+      const host = fixture.nativeElement as HTMLElement;
+      const actCell = host.querySelector('.et-table-cell[data-col-key="act"]') as HTMLElement;
+
+      expect(actCell.classList.contains('et-table-cell--interactive')).toBe(true);
+      expect(actCell.querySelector('a.et-table-row-link')).toBeNull();
+
+      // A click on the control is the control's, not the row's.
+      (host.querySelector('button.act') as HTMLElement).click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.clicked).toBeNull();
+    });
+
+    it('does not emit rowClick for a click that went through the row link', () => {
+      const fixture = build();
+      const anchor = links(fixture)[0] as HTMLAnchorElement;
+
+      // The anchor's own navigation is the browser's; jsdom would follow it, so only the row's handler
+      // is under test here.
+      anchor.addEventListener('click', (event) => event.preventDefault());
+      anchor.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.clicked).toBeNull();
+    });
+
+    it('gives every row a box in the cards appearance', () => {
+      const fixture = create(columns());
+      fixture.componentRef.setInput('appearance', 'cards');
+      fixture.detectChanges();
+
+      const rows = (fixture.nativeElement as HTMLElement).querySelectorAll('.et-table-row--box');
+
+      expect(rows.length).toBe(PEOPLE.length);
+    });
+
+    it('throws when a link is router commands and nothing can resolve them', () => {
+      @Component({
+        template: `<et-table [columns]="cols" [data]="data" [rowLink]="link" />`,
+        imports: [TABLE_IMPORTS],
+      })
+      class CommandsHost {
+        data = PEOPLE;
+        link = (person: Person) => ['/people', person.id];
+        cols = columns();
+      }
+
+      const fixture = TestBed.createComponent(CommandsHost);
+
+      expect(() => fixture.detectChanges()).toThrow(
+        expect.objectContaining({ code: TABLE_ERROR_CODES.MISSING_ROW_ROUTER_LINK }) as unknown as RuntimeError,
+      );
+    });
+
+    describe('with etTableRowRouterLink', () => {
+      @Component({
+        template: ` <et-table [columns]="cols" [data]="data" [rowLink]="link" etTableRowRouterLink /> `,
+        imports: [TABLE_IMPORTS, TABLE_ROW_ROUTER_LINK_IMPORTS],
+      })
+      class RoutedHost {
+        data = PEOPLE;
+        link = (person: Person) => ['/people', person.id];
+        cols = columns();
+      }
+
+      const buildRouted = () => {
+        TestBed.configureTestingModule({ providers: [provideRouter([])] });
+
+        const fixture = TestBed.createComponent(RoutedHost);
+        fixture.detectChanges();
+
+        return fixture;
+      };
+
+      it('renders the serialized URL as the href', () => {
+        const fixture = buildRouted();
+        const anchors = links(fixture);
+
+        expect(anchors.length).toBe(PEOPLE.length);
+        expect(anchors[0]?.getAttribute('href')).toBe('/people/1');
+      });
+
+      it('navigates through the router on a plain click, and leaves a modified one to the browser', () => {
+        const fixture = buildRouted();
+        const anchor = links(fixture)[0] as HTMLAnchorElement;
+        const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+        const plain = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+        anchor.dispatchEvent(plain);
+
+        expect(navigate).toHaveBeenCalledTimes(1);
+        expect(plain.defaultPrevented).toBe(true);
+
+        // Ctrl-click opens a new tab - the router must not swallow it.
+        const modified = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ctrlKey: true });
+        anchor.dispatchEvent(modified);
+
+        expect(navigate).toHaveBeenCalledTimes(1);
+        expect(modified.defaultPrevented).toBe(false);
+      });
     });
   });
 });

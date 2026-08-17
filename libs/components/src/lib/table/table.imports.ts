@@ -9,6 +9,7 @@ import { TableInlineEditDirective } from './table-inline-edit.directive';
 import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
 import { TableReorderDirective } from './table-reorder.directive';
 import { TableRowExpansionDirective } from './table-row-expansion.directive';
+import { TableRowRouterLinkDirective } from './table-row-router-link.directive';
 import { TableResizeDirective } from './table-resize.directive';
 import { TableSelectionDirective } from './table-selection.directive';
 import { TableSkeletonDirective } from './table-skeleton.directive';
@@ -117,6 +118,13 @@ export const TABLE_SKELETON_IMPORTS = [TableSkeletonDirective, TableCellSkeleton
  * why it is separate - a table that never expands a row pays for none of it.
  */
 export const TABLE_ROW_EXPANSION_IMPORTS = [TableRowExpansionDirective] as const;
+
+/**
+ * Angular routing for row links (`etTableRowRouterLink`): a `[rowLink]` may then answer with router
+ * commands instead of an `href`, and a plain click navigates through the router. Separate because the
+ * base table depends on no router - a table linking with plain `href` strings pays for none of it.
+ */
+export const TABLE_ROW_ROUTER_LINK_IMPORTS = [TableRowRouterLinkDirective] as const;
 
 /**
  * Tooltips on failed cells (`etTableCellErrorTooltip`): a `cellState` message is shown on hover/focus
