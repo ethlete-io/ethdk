@@ -3,6 +3,7 @@ import {
   timetrackAddWorklog,
   timetrackCreateIssue,
   timetrackDiscoveryPath,
+  timetrackInstance,
   timetrackIssue,
   timetrackRepoProject,
   timetrackSearch,
@@ -77,6 +78,7 @@ const USAGE = `ethlete-agents timetrack — ask the running Timetrack app about 
 The app holds this machine's Jira credentials, so no repository needs a token of its own.
 
   timetrack status              Whether the app is reachable, and which projects it holds
+  timetrack instance            The instance's own levels and its branch-subject candidates
   timetrack issue <KEY>         One issue: its summary, type, parent and branch subject
   timetrack search [text]       Open issues of the picked projects, most recently touched first
   timetrack project [path]      Which Jira project a repository logs into
@@ -130,6 +132,20 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(status, json);
+  }
+
+  if (subcommand === 'instance') {
+    const instance = await timetrackInstance();
+
+    if (!json) {
+      console.log('Levels, highest first');
+      instance.levels.forEach((level) => console.log(`  ${level.hierarchyLevel}  ${level.typeNames.join(', ')}`));
+      console.log(`A parent can be named by  ${instance.suggestedParenting}`);
+      console.log(`Branch-subject candidates (${instance.subjectFieldCandidates.length})`);
+      instance.subjectFieldCandidates.forEach((field) => console.log(`  ${field.id}  ${field.name}`));
+    }
+
+    return printed(instance, json);
   }
 
   if (subcommand === 'issue') {

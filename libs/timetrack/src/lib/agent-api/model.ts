@@ -1,3 +1,5 @@
+import { JiraParenting } from '../jira/hierarchy';
+
 /**
  * The contract between the app and a coding agent's CLI, spoken over the host's loopback endpoint.
  *
@@ -9,6 +11,22 @@
  * rather than guessing what an answer means.
  */
 export const AGENT_API_VERSION = 1;
+
+/**
+ * What the Jira instance itself is shaped like, read from the instance rather than from settings.
+ *
+ * It answers the two questions a setup step cannot guess: which levels exist, and which custom field
+ * could hold a branch subject. Both differ on every instance, and a wrong answer to either files
+ * tickets at the wrong level or writes a subject into a field that means something else.
+ */
+export type AgentApiInstance = {
+  /** The levels this instance defines, highest first, with the type names sitting on each. */
+  levels: { hierarchyLevel: number; typeNames: string[] }[];
+  /** What those levels imply a parent can be named by. Settings may still override it. */
+  suggestedParenting: JiraParenting;
+  /** The custom text fields a branch subject could be written to, by name. */
+  subjectFieldCandidates: { id: string; name: string }[];
+};
 
 /** One issue, as an agent reads it. The subject is resolved against the instance's own field. */
 export type AgentApiIssue = {
@@ -61,6 +79,7 @@ export type AgentApiWorklog = {
 
 export type AgentApiRequest =
   | { op: 'status' }
+  | { op: 'jira.instance' }
   | { op: 'jira.issue'; key: string }
   | { op: 'jira.search'; text: string; projectKey?: string; assignedToMe: boolean; limit?: number }
   | { op: 'repo.project'; repoPath: string }

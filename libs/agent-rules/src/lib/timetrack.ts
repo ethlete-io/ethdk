@@ -34,6 +34,12 @@ export type TimetrackStatus = {
   subjectField: string;
 };
 
+export type TimetrackInstance = {
+  levels: { hierarchyLevel: number; typeNames: string[] }[];
+  suggestedParenting: 'parent-field' | 'issue-link';
+  subjectFieldCandidates: { id: string; name: string }[];
+};
+
 export type TimetrackRepoProject = {
   repoPath: string;
   projectKey?: string;
@@ -151,6 +157,8 @@ export const askTimetrack = async <T>(request: Record<string, unknown> & { op: s
 };
 
 export const timetrackStatus = () => askTimetrack<TimetrackStatus>({ op: 'status' });
+
+export const timetrackInstance = () => askTimetrack<TimetrackInstance>({ op: 'jira.instance' });
 
 export const timetrackIssue = async (key: string) =>
   (await askTimetrack<{ issue: TimetrackIssue }>({ op: 'jira.issue', key })).issue;

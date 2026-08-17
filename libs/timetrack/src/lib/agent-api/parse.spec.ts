@@ -9,6 +9,13 @@ describe('parseAgentRequest', () => {
     });
   });
 
+  it('takes an instance read with nothing but its op', () => {
+    expect(parseAgentRequest({ op: 'jira.instance' })).toEqual({
+      ok: true,
+      request: { op: 'jira.instance' },
+    });
+  });
+
   it('names the missing field rather than the operation', () => {
     expect(parseAgentRequest({ op: 'jira.issue' })).toEqual({
       ok: false,

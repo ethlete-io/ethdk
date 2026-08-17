@@ -79,6 +79,15 @@ describe('describeJiraHierarchy$', () => {
     ]);
   });
 
+  it('names a type once per level, however many schemes define it', () => {
+    const { transport } = typesTransport([...WITH_SUBTASK, { id: '5', name: 'Task', hierarchyLevel: 0 }]);
+    const seen = vi.fn();
+
+    describeJiraHierarchy$({ transport, credentials: CREDENTIALS }).subscribe(seen);
+
+    expect(seen.mock.calls[0]?.[0].levels[1]).toEqual({ hierarchyLevel: 0, typeNames: ['Story', 'Task'] });
+  });
+
   it('suggests the parent field when the instance has a level below the standard one', () => {
     const { transport } = typesTransport(WITH_SUBTASK);
     const seen = vi.fn();

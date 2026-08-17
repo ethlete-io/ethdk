@@ -63,9 +63,11 @@ const levelsOf = (issueTypes: JiraIssueType[]) => {
     byLevel.set(issueType.hierarchyLevel, [...(byLevel.get(issueType.hierarchyLevel) ?? []), issueType.name]);
   }
 
+  // Deduplicated by name: `/issuetype` returns one entry per issue-type scheme, so an instance with
+  // four project schemes reports "Task" four times, at the same level and with different ids.
   return [...byLevel]
     .sort(([a], [b]) => b - a)
-    .map(([hierarchyLevel, typeNames]) => ({ hierarchyLevel, typeNames: typeNames.sort() }));
+    .map(([hierarchyLevel, typeNames]) => ({ hierarchyLevel, typeNames: [...new Set(typeNames)].sort() }));
 };
 
 /**

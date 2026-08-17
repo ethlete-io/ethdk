@@ -27,7 +27,7 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
   const raw = asRecord(value);
   const op = asText(raw['op']);
 
-  if (op === 'status') return { ok: true, request: { op } };
+  if (op === 'status' || op === 'jira.instance') return { ok: true, request: { op } };
 
   if (op === 'jira.issue') {
     const key = asText(raw['key']).toUpperCase();

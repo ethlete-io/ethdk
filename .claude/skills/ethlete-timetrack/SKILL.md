@@ -15,6 +15,7 @@ npx ethlete-agents timetrack status                 # is the app reachable, and 
 npx ethlete-agents timetrack issue FIP-2177         # one issue: summary, type, parent, subject
 npx ethlete-agents timetrack search "password"      # open issues of the picked projects
 npx ethlete-agents timetrack project                # which project does this repo log into?
+npx ethlete-agents timetrack instance               # the instance's own levels and custom fields
 ```
 
 Add `--json` to any of them when you need to read a field rather than a line.
@@ -29,6 +30,7 @@ nobody can rotate.
 | Command                           | Use it when                                                             |
 | --------------------------------- | ----------------------------------------------------------------------- |
 | `status`                          | Before anything else, when a Jira command failed and you need the cause |
+| `instance`                        | A setup step needs the instance's levels or its branch-subject field    |
 | `issue <KEY>`                     | The user names a key and you need its summary, type or parent           |
 | `search [text]`                   | The user describes work but names no key                                |
 | `project [path]`                  | You need the project a repository files into                            |

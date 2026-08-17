@@ -3,22 +3,26 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AGENT_API_VERSION,
+  AgentApiInstance,
   AgentApiIssue,
   AgentApiRequest,
   AgentApiStatus,
   JiraCredentials,
   JiraIssue,
   createJiraIssue$,
+  describeJiraHierarchy$,
   favoriteProjectKeys,
+  fetchJiraFields$,
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
+  jiraSubjectFieldCandidates,
   localDayKey,
   matchProjectLink,
   parseAgentRequest,
   readJiraCredentials$,
   suggestProjectForRepo,
 } from '@ethlete/timetrack';
-import { Observable, catchError, map, mergeMap, of, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, mergeMap, of, switchMap, throwError } from 'rxjs';
 import { AGENT_REQUEST_EVENT, hostEventWith$, injectHostPorts, invokeHost$ } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -72,6 +76,27 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         jiraReady: !!credentials,
         projects: settings.settings().favoriteProjects.map((project) => ({ key: project.key, name: project.name })),
         subjectField: settings.settings().ticket.subjectField,
+      })),
+    );
+
+  /**
+   * Reads the instance's own shape, so a setup step reports what Jira says rather than what the
+   * convention assumes. Nothing here reads settings: the point is to fill them in.
+   */
+  const instance$ = (): Observable<AgentApiInstance> =>
+    withCredentials$((credentials) =>
+      forkJoin({
+        hierarchy: describeJiraHierarchy$({ transport: ports.transport, credentials }),
+        fields: fetchJiraFields$({ transport: ports.transport, credentials }),
+      }),
+    ).pipe(
+      map(({ hierarchy, fields }) => ({
+        levels: hierarchy.levels,
+        suggestedParenting: hierarchy.suggestedParenting,
+        subjectFieldCandidates: jiraSubjectFieldCandidates(fields).map((field) => ({
+          id: field.id,
+          name: field.name,
+        })),
       })),
     );
 
@@ -206,6 +231,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     switch (request.op) {
       case 'status':
         return status$();
+      case 'jira.instance':
+        return instance$();
       case 'jira.issue':
         return issue$(request.key);
       case 'jira.search':
