@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { JiraIssue } from '../jira/issue';
-import { rankParentCandidates } from './parents';
+import { rankParentCandidates, suggestParentKey } from './parents';
 
 const issue = (key: string, summary: string): JiraIssue => ({ key, id: key, summary, issueType: 'Story' });
 
@@ -46,5 +46,30 @@ describe('rankParentCandidates', () => {
     expect(short[0]?.score).toBe(1);
     expect(long[0]?.score).toBeGreaterThan(0);
     expect(long[0]?.score).toBeLessThan(1);
+  });
+});
+
+describe('suggestParentKey', () => {
+  const suggested = (summary: string, issues: JiraIssue[]) =>
+    suggestParentKey(rankParentCandidates({ summary, issues }));
+
+  it('fills in the parent that clearly matches the draft', () => {
+    const issues = [issue('FIP-1', 'User management screen'), issue('FIP-2', 'Release tooling')];
+
+    expect(suggested('User management screen', issues)).toBe('FIP-1');
+  });
+
+  it('suggests nothing when the best match shares too little wording', () => {
+    expect(suggested('Invite flow', [issue('FIP-1', 'Release tooling')])).toBeUndefined();
+  });
+
+  it('suggests nothing when two issues match about equally well', () => {
+    const issues = [issue('FIP-1', 'User management screen'), issue('FIP-2', 'User management screen')];
+
+    expect(suggested('User management screen', issues)).toBeUndefined();
+  });
+
+  it('suggests nothing when there is nothing to suggest', () => {
+    expect(suggestParentKey([])).toBeUndefined();
   });
 });

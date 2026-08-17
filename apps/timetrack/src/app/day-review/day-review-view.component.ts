@@ -136,6 +136,8 @@ import { WorklogRowComponent } from './worklog-row.component';
                 [context]="drafting"
                 [form]="tickets.form()"
                 [candidates]="tickets.candidates()"
+                [existing]="tickets.existing()"
+                [agentMatch]="tickets.agentMatch()"
                 [projects]="tickets.projects()"
                 [payload]="tickets.writingRequest()"
                 [isSearching]="tickets.isSearching()"
@@ -156,6 +158,7 @@ import { WorklogRowComponent } from './worklog-row.component';
                 (findParents)="tickets.findParents()"
                 (reloadProjects)="tickets.loadProjects()"
                 (write)="tickets.writeWithAgent()"
+                (useExisting)="tickets.useExisting($event)"
                 (create)="tickets.create()"
                 (dismiss)="tickets.close()"
               />

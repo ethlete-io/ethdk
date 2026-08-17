@@ -16,7 +16,7 @@ import {
   describeAttributionRule,
   formatDurationMs,
 } from '@ethlete/timetrack';
-import { TicketForm } from './ticket-draft';
+import { AgentMatch, TicketForm } from './ticket-draft';
 
 /**
  * The create form for work no issue covers. It writes to Jira, so it shows the whole ticket before it
@@ -43,6 +43,26 @@ import { TicketForm } from './ticket-draft';
           <et-banner [description]="failure" type="error" heading="Jira did not take the ticket" />
         }
 
+        @if (matches().length) {
+          <div class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3">
+            <span class="text-small">This work may already have a ticket.</span>
+
+            @for (match of matches(); track match.key) {
+              <div class="flex flex-wrap items-center gap-3">
+                <span class="flex min-w-50 grow flex-col">
+                  <span class="text-small">{{ match.key }} — {{ match.summary }}</span>
+                  @if (match.reason) {
+                    <span class="text-small text-et-surface-muted">{{ match.reason }}</span>
+                  }
+                </span>
+                <button (click)="useExisting.emit(match.key)" et-button variant="outline" size="sm">
+                  Log on {{ match.key }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+
         @if (canWrite()) {
           <div class="flex flex-col gap-2">
             <div class="flex flex-wrap items-center gap-3">
@@ -50,10 +70,11 @@ import { TicketForm } from './ticket-draft';
                 @if (isWriting()) {
                   <et-spinner size="sm" />
                 }
-                Let the agent write it
+                Let the agent fill this in
               </button>
               <span class="text-small text-et-surface-muted">
-                It rewrites the summary and the description. Both stay yours to edit.
+                It writes the summary and the description, picks the parent, and says if a ticket for this already
+                exists. Everything stays yours to edit.
               </span>
             </div>
 
@@ -81,6 +102,8 @@ import { TicketForm } from './ticket-draft';
                 (valueChange)="pickProject($event)"
                 placeholder="Pick a project"
               >
+                <input etSelectSearch placeholder="Search projects" />
+
                 @for (project of projects(); track project.key) {
                   <et-select-option [value]="project.key">{{ project.key }} — {{ project.name }}</et-select-option>
                 }
@@ -117,41 +140,30 @@ import { TicketForm } from './ticket-draft';
         </et-form-field>
 
         <div class="flex flex-col gap-2">
-          <div class="flex items-center gap-3">
-            <span class="text-small">Parent</span>
-            @if (isSearching()) {
+          <et-form-field appearance="underline" size="sm">
+            <et-label>Parent</et-label>
+            <et-select [value]="draft.parentKey" (valueChange)="pickParent($event)" placeholder="No parent">
+              <input etSelectSearch placeholder="Search parents" />
+
+              @for (candidate of candidates(); track candidate.issue.key) {
+                <et-select-option [value]="candidate.issue.key">
+                  {{ candidate.issue.key }} — {{ candidate.issue.summary }}
+                </et-select-option>
+              }
+            </et-select>
+          </et-form-field>
+
+          @if (isSearching()) {
+            <div class="flex items-center gap-3 text-et-surface-muted">
               <et-spinner size="sm" />
-            }
-          </div>
+              <span class="text-small">Reading the project's issues…</span>
+            </div>
+          }
 
           @if (searchFailure(); as failure) {
             <et-banner [description]="failure" type="warning" heading="The parents could not be read" />
             <button (click)="findParents.emit()" et-button variant="outline" size="sm">Read them again</button>
           }
-
-          <div class="flex max-h-60 flex-col gap-1 overflow-y-auto">
-            <button
-              [pressed]="!draft.parentKey"
-              (click)="parentKeyChange.emit(null)"
-              et-button
-              variant="transparent"
-              size="sm"
-            >
-              No parent
-            </button>
-
-            @for (candidate of candidates(); track candidate.issue.key) {
-              <button
-                [pressed]="draft.parentKey === candidate.issue.key"
-                [variant]="draft.parentKey === candidate.issue.key ? 'filled' : 'transparent'"
-                (click)="parentKeyChange.emit(candidate.issue.key)"
-                et-button
-                size="sm"
-              >
-                {{ candidate.issue.key }} — {{ candidate.issue.summary }}
-              </button>
-            }
-          </div>
         </div>
 
         <div class="flex items-center gap-3">
@@ -190,6 +202,10 @@ export class CreateTicketComponent {
   public context = input.required<UnnamedContext>();
   public form = input<TicketForm | null>(null);
   public candidates = input<readonly ParentCandidate[]>([]);
+  /** Open issues whose wording says this may already be tracked. */
+  public existing = input<readonly ParentCandidate[]>([]);
+  /** The issue the agent says is this very work, which outranks anything the wording matched. */
+  public agentMatch = input<AgentMatch | null>(null);
   /** The projects the instance offers. Empty falls the field back to a typed key. */
   public projects = input<readonly JiraProject[]>([]);
   /** Exactly what a writing run would send, shown here so it can be read before it leaves the machine. */
@@ -213,6 +229,8 @@ export class CreateTicketComponent {
   public findParents = output<void>();
   public reloadProjects = output<void>();
   public write = output<void>();
+  /** The key of an issue that already tracks this work, taken instead of filing a new ticket. */
+  public useExisting = output<string>();
   public create = output<void>();
   public dismiss = output<void>();
 
@@ -220,7 +238,22 @@ export class CreateTicketComponent {
   protected duration = computed(() => formatDurationMs(this.context().observedMs));
   protected printedPayload = computed(() => JSON.stringify(this.payload(), null, 2));
 
+  /** The agent's answer first, then what the wording matched, with the same issue never listed twice. */
+  protected matches = computed(() => {
+    const agent = this.agentMatch();
+    const found = agent ? [{ key: agent.issueKey, summary: agent.summary, reason: agent.reason }] : [];
+    const matched = this.existing()
+      .filter((candidate) => candidate.issue.key !== agent?.issueKey)
+      .map((candidate) => ({ key: candidate.issue.key, summary: candidate.issue.summary, reason: '' }));
+
+    return [...found, ...matched];
+  });
+
   protected pickProject(value: unknown) {
     this.projectKeyChange.emit(typeof value === 'string' ? value : '');
+  }
+
+  protected pickParent(value: unknown) {
+    this.parentKeyChange.emit(typeof value === 'string' ? value : null);
   }
 }

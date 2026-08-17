@@ -1688,6 +1688,28 @@ settled:
   `agentOutputDocument` (`reason/envelope.ts`) reads the CLI's JSON envelope for any schema. A third
   question asked of the agent should add a prompt and a schema, nothing else.
 
+**Every field of the card is now a question the app tries to answer first.** What the first round left
+the user doing by hand, and what each answer rests on:
+
+- **Both pickers are searchable** (`input etSelectSearch`). A project list is 40 entries long and a
+  parent list is 30, and a picker that long without a search is a scroll, not a choice.
+- **The parent fills itself in when the ranking is sure.** `suggestParentKey` (`ticket/parents.ts`)
+  takes the leader only when it shares at least 0.3 of its wording with the draft _and_ leads the
+  runner-up by 0.1. A leader that only just wins is a coin toss, and a coin toss pre-filled reads as a
+  decision somebody made. It fills only while nothing is chosen, so a pick made during the read stands.
+- **The duplicate is the expensive mistake, so it is checked before the ticket is written.**
+  `matchExistingIssues` ranks every open issue in the project against the draft and offers the ones
+  over 0.4 as "this work may already have a ticket", each with a `Log on <key>` button that writes the
+  same standing rule a creation would. Filing a second ticket puts the time on a key nobody is watching
+  until another person notices, which is a cost this app cannot see and its user does not pay.
+- **The agent answers the same three questions.** `writeTicketWithAgent$` now takes `parents` and
+  `issues` in its payload and answers `parentKey`, `existingKey` and `existingReason` beside the
+  wording. A key the payload never offered is dropped, exactly as `parseReasoningOutput` drops an
+  invented issue key — a model that answers outside the list is not to be trusted with that field.
+- **Two reads, not one filtered afterwards** (`fetchJiraOpenIssues$`, `fetchJiraParentCandidates$`).
+  The parents are the 30 most recently updated of the parent types; narrowing a 100-issue window of
+  open issues down to those types would offer fewer parents the busier the project is.
+
 ## Storage, privacy, secrets
 
 **The core half is built** - `libs/timetrack/src/lib/store/`: the two persistence ports, the

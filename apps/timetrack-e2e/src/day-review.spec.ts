@@ -18,7 +18,9 @@ test.describe('the day view', () => {
   test('opens the create-ticket form on no parent, never on a guess', async ({ page }) => {
     await page.getByRole('button', { name: 'Create a ticket' }).click();
 
-    await expect(page.getByRole('button', { name: 'No parent' })).toHaveAttribute('aria-pressed', 'true');
+    const parent = page.locator('et-form-field').filter({ hasText: 'Parent' }).locator('input');
+
+    await expect(parent).toHaveValue('');
   });
 
   test('drafts the summary and the description from what the work left behind', async ({ page }) => {

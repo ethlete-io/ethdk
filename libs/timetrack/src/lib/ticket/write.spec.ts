@@ -1,6 +1,7 @@
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { UnnamedContext } from '../correlate/rules';
+import { JiraIssue } from '../jira/issue';
 import { contextKey } from '../model/block';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { ticketWritingRequest, writeTicketWithAgent$ } from './write';
@@ -16,7 +17,14 @@ const UNNAMED: UnnamedContext = {
   suggestion: { repoPath: CONTEXT.repoPath, branch: CONTEXT.branch },
 };
 
-const REQUEST = ticketWritingRequest({ context: UNNAMED, notes: ['feat(hub): Add the review feedback panel'] });
+const issue = (key: string, summary: string): JiraIssue => ({ key, id: key, summary, issueType: 'Task' });
+
+const REQUEST = ticketWritingRequest({
+  context: UNNAMED,
+  notes: ['feat(hub): Add the review feedback panel'],
+  parents: [issue('FIP-100', 'Hub')],
+  issues: [issue('FIP-2810', 'Review feedback panel')],
+});
 
 const answer = (wording: unknown) => JSON.stringify({ is_error: false, structured_output: wording });
 
@@ -44,6 +52,8 @@ describe('ticketWritingRequest', () => {
       app: undefined,
       minutes: 21,
       notes: ['feat(hub): Add the review feedback panel'],
+      parents: [{ key: 'FIP-100', summary: 'Hub' }],
+      issues: [{ key: 'FIP-2810', summary: 'Review feedback panel' }],
     });
   });
 });
@@ -55,9 +65,51 @@ describe('writeTicketWithAgent$', () => {
     await expect(firstValueFrom(writeTicketWithAgent$({ runner, request: REQUEST }))).resolves.toEqual({
       summary: 'Review feedback panel',
       description: 'It shows.',
+      parentKey: undefined,
+      existingKey: undefined,
+      existingReason: undefined,
     });
     expect(specs[0]?.stdin).toBe(JSON.stringify(REQUEST));
     expect(specs[0]?.args).toContain('--safe-mode');
+  });
+
+  it('keeps a parent and an existing issue the request offered', async () => {
+    const { runner } = stubRunner([
+      ok(
+        answer({
+          summary: 's',
+          description: 'd',
+          parentKey: 'fip-100',
+          existingKey: 'FIP-2810',
+          existingReason: 'the panel is its whole subject',
+        }),
+      ),
+    ]);
+    const written = await firstValueFrom(writeTicketWithAgent$({ runner, request: REQUEST }));
+
+    expect(written?.parentKey).toBe('FIP-100');
+    expect(written?.existingKey).toBe('FIP-2810');
+    expect(written?.existingReason).toBe('the panel is its whole subject');
+  });
+
+  it('drops a key the request never offered rather than showing an invented issue', async () => {
+    const { runner } = stubRunner([
+      ok(answer({ summary: 's', description: 'd', parentKey: 'FIP-9', existingKey: 'SCRUM-2' })),
+    ]);
+    const written = await firstValueFrom(writeTicketWithAgent$({ runner, request: REQUEST }));
+
+    expect(written?.parentKey).toBeUndefined();
+    expect(written?.existingKey).toBeUndefined();
+  });
+
+  it('drops the reason when no existing issue was chosen', async () => {
+    const { runner } = stubRunner([
+      ok(answer({ summary: 's', description: 'd', existingKey: null, existingReason: 'left over' })),
+    ]);
+
+    await expect(firstValueFrom(writeTicketWithAgent$({ runner, request: REQUEST }))).resolves.toMatchObject({
+      existingReason: undefined,
+    });
   });
 
   it('trims a summary Jira would refuse', async () => {

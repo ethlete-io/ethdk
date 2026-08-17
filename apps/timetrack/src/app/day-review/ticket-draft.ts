@@ -5,21 +5,37 @@ import {
   JiraIssue,
   JiraProject,
   ParentCandidate,
+  TicketWording,
   TicketWritingRequest,
   UnnamedContext,
   createJiraIssue$,
   draftTicket,
+  fetchJiraOpenIssues$,
   fetchJiraParentCandidates$,
   fetchJiraProjects$,
   gitFlowConfigFor,
   inferTicketProjectKey,
+  matchExistingIssues,
   rankParentCandidates,
   readJiraCredentials$,
+  suggestParentKey,
   ticketSubjectOf,
   ticketWritingRequest,
   writeTicketWithAgent$,
 } from '@ethlete/timetrack';
-import { Observable, Subject, catchError, exhaustMap, map, of, startWith, switchMap, tap, throwError } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  catchError,
+  exhaustMap,
+  forkJoin,
+  map,
+  of,
+  startWith,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
@@ -35,8 +51,14 @@ export type TicketForm = {
   parentKey: string | null;
 };
 
+/** The project's open issues: the ones a ticket may roll up to, and every one it could already be. */
+type ProjectIssues = {
+  parents: JiraIssue[];
+  open: JiraIssue[];
+};
+
 type CandidateStatus =
-  typeof IDLE | { kind: 'loading' } | { kind: 'ready'; issues: JiraIssue[] } | { kind: 'failed'; message: string };
+  typeof IDLE | { kind: 'loading' } | ({ kind: 'ready' } & ProjectIssues) | { kind: 'failed'; message: string };
 
 type ProjectStatus =
   typeof IDLE | { kind: 'loading' } | { kind: 'ready'; projects: JiraProject[] } | { kind: 'failed'; message: string };
@@ -45,6 +67,13 @@ type CreateStatus =
   typeof IDLE | { kind: 'creating' } | { kind: 'created'; issueKey: string } | { kind: 'failed'; message: string };
 
 type WriteStatus = typeof IDLE | { kind: 'writing' } | { kind: 'failed'; message: string };
+
+/** An issue the agent says already tracks this work, so nothing new has to be filed for it. */
+export type AgentMatch = {
+  issueKey: string;
+  summary: string;
+  reason: string;
+};
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -80,24 +109,43 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (current) form.set({ ...current, ...change });
   };
 
+  // Two reads rather than one filtered afterwards: the parent list is the most recent 30 of the
+  // parent types, and narrowing a window of open issues to those types would offer fewer parents the
+  // busier the project is.
   const candidates$ = (projectKey: string): Observable<CandidateStatus> => {
     const ticket = settings.settings().ticket;
+    const subjectField = ticket.subjectField || undefined;
 
     return readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
       switchMap((credentials) =>
         credentials
-          ? fetchJiraParentCandidates$({
-              transport: ports.transport,
-              credentials,
-              projectKey,
-              issueTypeNames: ticket.parentIssueTypeNames,
-              subjectField: ticket.subjectField || undefined,
+          ? forkJoin({
+              parents: fetchJiraParentCandidates$({
+                transport: ports.transport,
+                credentials,
+                projectKey,
+                issueTypeNames: ticket.parentIssueTypeNames,
+                subjectField,
+              }),
+              open: fetchJiraOpenIssues$({ transport: ports.transport, credentials, projectKey, subjectField }),
             })
           : throwError(() => new Error(NO_JIRA)),
       ),
-      map((issues): CandidateStatus => ({ kind: 'ready', issues })),
+      map((issues): CandidateStatus => ({ kind: 'ready', ...issues })),
       catchError((error: unknown) => of<CandidateStatus>({ kind: 'failed', message: messageOf(error) })),
     );
+  };
+
+  // The parent is filled in as soon as the list arrives, so the field is answered rather than asked.
+  // Only when nothing is chosen yet: a user who picked one while the read was in flight keeps it.
+  const suggestParent = (status: CandidateStatus) => {
+    const draft = form();
+
+    if (status.kind !== 'ready' || !draft || draft.parentKey) return;
+
+    const parentKey = suggestParentKey(rankParentCandidates({ summary: draft.summary, issues: status.parents }));
+
+    if (parentKey) update({ parentKey });
   };
 
   const candidateStatus = toSignal(
@@ -107,6 +155,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           ? candidates$(projectKey).pipe(startWith<CandidateStatus>({ kind: 'loading' }))
           : of<CandidateStatus>(IDLE),
       ),
+      tap((status) => suggestParent(status)),
     ),
     { initialValue: IDLE as CandidateStatus },
   );
@@ -131,9 +180,28 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const createStatus = signal<CreateStatus>(IDLE);
   const writeStatus = signal<WriteStatus>(IDLE);
+  const agentMatch = signal<AgentMatch | null>(null);
+
+  const matchFor = (issueKey: string): AgentMatch => {
+    const status = candidateStatus();
+    const found = status.kind === 'ready' ? status.open.find((issue) => issue.key === issueKey) : undefined;
+
+    return { issueKey, summary: found?.summary ?? '', reason: '' };
+  };
+
+  const applyWording = (wording: TicketWording) => {
+    update({
+      summary: wording.summary,
+      description: wording.description,
+      ...(wording.parentKey ? { parentKey: wording.parentKey } : {}),
+    });
+    agentMatch.set(
+      wording.existingKey ? { ...matchFor(wording.existingKey), reason: wording.existingReason ?? '' } : null,
+    );
+  };
 
   // `exhaustMap`, not `switchMap`: spawning a second CLI while the first still runs costs the user
-  // twice and answers into the same two fields.
+  // twice and answers into the same fields.
   writes$
     .pipe(
       exhaustMap((request) =>
@@ -143,7 +211,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           options: { command: settings.settings().reasoning.command, model: settings.settings().reasoning.model },
         }).pipe(
           tap((wording) => {
-            if (wording) update({ summary: wording.summary, description: wording.description });
+            if (wording) applyWording(wording);
           }),
           map((wording): WriteStatus => (wording ? IDLE : { kind: 'failed', message: AGENT_FAILED })),
           startWith<WriteStatus>({ kind: 'writing' }),
@@ -196,6 +264,25 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  const close = () => {
+    context.set(null);
+    form.set(null);
+    notes.set([]);
+    createStatus.set(IDLE);
+    writeStatus.set(IDLE);
+    agentMatch.set(null);
+  };
+
+  const writingRequestNow = (): TicketWritingRequest | null => {
+    const unnamed = context();
+    const status = candidateStatus();
+    const issues = status.kind === 'ready' ? status : { parents: [], open: [] };
+
+    return unnamed
+      ? ticketWritingRequest({ context: unnamed, notes: notes(), parents: issues.parents, issues: issues.open })
+      : null;
+  };
+
   return {
     /** The context being filed, or nothing when the form is closed. */
     context: context.asReadonly(),
@@ -205,9 +292,22 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const status = candidateStatus();
 
       return status.kind === 'ready'
-        ? rankParentCandidates({ summary: form()?.summary ?? '', issues: status.issues })
+        ? rankParentCandidates({ summary: form()?.summary ?? '', issues: status.parents })
         : [];
     }),
+    /**
+     * Open issues whose wording says this work may already be tracked, best first. Ranked here as the
+     * summary is typed, so it answers before any agent is asked — and it is a question, not a verdict.
+     */
+    existing: computed((): ParentCandidate[] => {
+      const status = candidateStatus();
+
+      return status.kind === 'ready'
+        ? matchExistingIssues({ summary: form()?.summary ?? '', issues: status.open })
+        : [];
+    }),
+    /** The one the agent says is the same work, which is a stronger claim than shared wording. */
+    agentMatch: agentMatch.asReadonly(),
     isSearching: computed(() => candidateStatus().kind === 'loading'),
     searchFailure: computed(() => {
       const status = candidateStatus();
@@ -227,11 +327,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       return status.kind === 'failed' ? status.message : null;
     }),
     /** Exactly what a writing run would send, shown so it can be read before it leaves the machine. */
-    writingRequest: computed((): TicketWritingRequest | null => {
-      const unnamed = context();
-
-      return unnamed ? ticketWritingRequest({ context: unnamed, notes: notes() }) : null;
-    }),
+    writingRequest: computed(writingRequestNow),
     canWrite: computed(() => settings.settings().reasoning.enabled && !!context()),
     isWriting: computed(() => writeStatus().kind === 'writing'),
     writeFailure: computed(() => {
@@ -276,17 +372,25 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       notes.set(drafted.notes);
       createStatus.set(IDLE);
       writeStatus.set(IDLE);
+      agentMatch.set(null);
       searches$.next(projectKey);
 
       if (projectStatus().kind !== 'ready') projectLoads$.next();
     },
 
-    close: () => {
-      context.set(null);
-      form.set(null);
-      notes.set([]);
-      createStatus.set(IDLE);
-      writeStatus.set(IDLE);
+    close,
+
+    /**
+     * Takes an issue that already tracks this work instead of filing a second one for it. It writes
+     * the same standing rule a creation would, so every later day with this context lands on that key.
+     */
+    useExisting: (issueKey: string) => {
+      const named = context();
+
+      if (!named) return;
+
+      dayReview.nameContext(named, { kind: 'issue', issueKey });
+      close();
     },
 
     /** Picking a project also re-reads the parents, so the list under it is never for another one. */
@@ -308,13 +412,14 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /**
      * Hands the draft to the local agent CLI, which writes the summary and the description a reader
-     * outside the work would want. It only ever runs on this press, and it fills the form rather than
-     * filing anything — the ticket is still the user's to change and still theirs to send.
+     * outside the work would want, picks the parent, and says whether an open issue already tracks
+     * this. It only ever runs on this press, and it fills the form rather than filing anything — the
+     * ticket is still the user's to change and still theirs to send.
      */
     writeWithAgent: () => {
-      const unnamed = context();
+      const request = writingRequestNow();
 
-      if (unnamed) writes$.next(ticketWritingRequest({ context: unnamed, notes: notes() }));
+      if (request) writes$.next(request);
     },
 
     create: () => {

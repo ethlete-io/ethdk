@@ -3,13 +3,26 @@ import { agentOutputDocument } from '../reason/envelope';
 import { ReasoningOptions } from '../reason/model';
 import { agentProcessSpec } from '../reason/spec';
 import { UnnamedContext } from '../correlate/rules';
+import { JiraIssue } from '../jira/issue';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { MAX_TICKET_SUMMARY_LENGTH } from './draft';
 
-/** The wording of one ticket. Both fields land in the form, and both stay editable. */
+/** An issue the agent may choose from, offered so it picks rather than invents a key. */
+export type TicketWritingIssue = {
+  key: string;
+  summary: string;
+};
+
+/** What the agent answers. Every field lands in the form, and every field stays the user's. */
 export type TicketWording = {
   summary: string;
   description: string;
+  /** The parent it chose from `parents`, or nothing for a ticket that rolls up to none. */
+  parentKey?: string;
+  /** An issue from `issues` that already is this work, so nothing new needs filing. */
+  existingKey?: string;
+  /** One sentence for why that issue is the same work. Empty unless `existingKey` is set. */
+  existingReason?: string;
 };
 
 /**
@@ -23,6 +36,10 @@ export type TicketWritingRequest = {
   app?: string;
   minutes: number;
   notes: string[];
+  /** The issues that may be the parent of a new ticket. */
+  parents: TicketWritingIssue[];
+  /** The project's open issues, so the work already tracked is found instead of filed twice. */
+  issues: TicketWritingIssue[];
 };
 
 /**
@@ -35,6 +52,7 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '',
   'The user message is JSON with the repository, the branch, the application, how many minutes the',
   'work lasted, and notes taken from commit subjects, merge request titles and agent session titles.',
+  '`parents` is the issues a new ticket could roll up to. `issues` is every open issue in the project.',
   '',
   'Write for the person who reads the backlog and was not there: a delivery lead, a product manager.',
   '',
@@ -46,6 +64,13 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '- Use only what the JSON says. Never invent a requirement, an acceptance criterion, a deadline or',
   '  a person. Where the notes are thin, write less rather than filling the gap.',
   '- Never write about yourself, the notes, the tracking, or how long the work took.',
+  '- `parentKey` is the issue from `parents` this work belongs under, or null. Choose only from',
+  '  `parents`. Answer null unless the notes or the branch actually say it belongs there.',
+  '- `existingKey` is an issue from `issues` that already tracks this very work, or null. Answer it',
+  '  only when the same work is meant, not when the subject is merely related — a second ticket is',
+  '  a nuisance, and time logged on the wrong existing issue is worse. Choose only from `issues`.',
+  '- `existingReason` is one sentence naming the wording that decided `existingKey`. Empty otherwise.',
+  '- Write `summary` and `description` in every answer, including one that names an `existingKey`.',
 ].join('\n');
 
 /** Passed to `--json-schema`, so the CLI validates the shape before it answers. */
@@ -54,17 +79,25 @@ export const TICKET_WRITING_JSON_SCHEMA = {
   properties: {
     summary: { type: 'string' },
     description: { type: 'string' },
+    parentKey: { type: ['string', 'null'] },
+    existingKey: { type: ['string', 'null'] },
+    existingReason: { type: 'string' },
   },
-  required: ['summary', 'description'],
+  required: ['summary', 'description', 'parentKey', 'existingKey', 'existingReason'],
   additionalProperties: false,
 } as const;
 
 const repoNameOf = (path: string) => path.split('/').filter(Boolean).pop() ?? path;
 
+const asIssues = (issues: readonly JiraIssue[]): TicketWritingIssue[] =>
+  issues.map((issue) => ({ key: issue.key, summary: issue.summary }));
+
 /** Builds the redacted payload the review shows before anything is sent. */
 export const ticketWritingRequest = (options: {
   context: UnnamedContext;
   notes: readonly string[];
+  parents?: readonly JiraIssue[];
+  issues?: readonly JiraIssue[];
 }): TicketWritingRequest => {
   const { repoPath, branch, appId } = options.context.context;
 
@@ -74,6 +107,8 @@ export const ticketWritingRequest = (options: {
     app: appId,
     minutes: Math.round(options.context.observedMs / 60_000),
     notes: [...options.notes],
+    parents: asIssues(options.parents ?? []),
+    issues: asIssues(options.issues ?? []),
   };
 };
 
@@ -88,12 +123,34 @@ export const ticketWritingSpec = (options: {
     options: options.options,
   });
 
-const isWording = (value: unknown): value is TicketWording => {
+type RawWording = {
+  summary: string;
+  description: string;
+  parentKey?: string | null;
+  existingKey?: string | null;
+  existingReason?: string;
+};
+
+const isOptionalKey = (value: unknown) => value === undefined || value === null || typeof value === 'string';
+
+const isWording = (value: unknown): value is RawWording => {
   if (!value || typeof value !== 'object') return false;
 
-  const wording = value as Partial<TicketWording>;
+  const wording = value as Partial<RawWording>;
 
-  return typeof wording.summary === 'string' && typeof wording.description === 'string';
+  return (
+    typeof wording.summary === 'string' &&
+    typeof wording.description === 'string' &&
+    isOptionalKey(wording.parentKey) &&
+    isOptionalKey(wording.existingKey)
+  );
+};
+
+/** A key the request never offered is a key the agent made up, and it is dropped rather than shown. */
+const offeredKey = (options: { answered: string | null | undefined; issues: readonly TicketWritingIssue[] }) => {
+  const key = options.answered?.trim().toUpperCase();
+
+  return key && options.issues.some((issue) => issue.key.toUpperCase() === key) ? key : undefined;
 };
 
 /**
@@ -102,6 +159,9 @@ const isWording = (value: unknown): value is TicketWording => {
  * `null` rather than a throw or a half-written draft: the deterministic draft is already in the form
  * and is a worse but honest ticket, so a failed run costs the user the button and nothing else. An
  * empty summary is treated as a failed run — a ticket with no title is not a ticket.
+ *
+ * A parent or an existing issue the request never offered is dropped, exactly as the day's reasoning
+ * drops an invented issue key: the rest of the answer still stands on the wording it was given.
  */
 export const writeTicketWithAgent$ = (options: {
   runner: TimetrackProcessRunner;
@@ -121,7 +181,15 @@ export const writeTicketWithAgent$ = (options: {
 
       if (!summary) throw new Error('the agent wrote no summary');
 
-      return { summary, description: wording.description.trim() };
+      const existingKey = offeredKey({ answered: wording.existingKey, issues: options.request.issues });
+
+      return {
+        summary,
+        description: wording.description.trim(),
+        parentKey: offeredKey({ answered: wording.parentKey, issues: options.request.parents }),
+        existingKey,
+        existingReason: existingKey ? wording.existingReason?.trim() : undefined,
+      };
     }),
     retry(1),
     catchError(() => of(null)),
