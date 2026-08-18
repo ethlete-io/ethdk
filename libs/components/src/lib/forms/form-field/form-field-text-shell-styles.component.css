@@ -11,7 +11,10 @@
       --et-form-field-label-font-size: 12px;
     }
 
-    &:where([data-size='md']) {
+    /* `data-size` is a host binding, so a field the router just created paints one frame without it.
+       The default size must therefore also match a field that has no attribute yet, or the frame
+       grows 10px between that frame and the bound one. */
+    &:where([data-size='md'], :not([data-size])) {
       --et-form-field-gap: 5px;
       --et-form-field-control-border-radius: 5px;
       --et-form-field-control-padding-block: 6px;
