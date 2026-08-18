@@ -1,5 +1,9 @@
 import { HttpEventType, HttpResponse } from '@angular/common/http';
+import { createEnvironmentInjector, DestroyRef, EnvironmentInjector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Observable } from 'rxjs';
+import { HttpRequest } from './http-request';
+import { QueryErrorResponse } from './query-error-response';
 import { setupQueryState } from './query-state';
 
 describe('setupQueryState', () => {
@@ -58,5 +62,55 @@ describe('setupQueryState', () => {
     state.latestHttpEvent.set({ type: HttpEventType.Sent });
 
     expect(state.executionState()).toBeNull();
+  });
+
+  it.each([false, 0, ''])('should report the falsy cached response %j while loading', (response) => {
+    const state = setup<typeof response>();
+
+    state.rawResponse.set(response as never);
+    state.loading.set({ executeTime: 1, progress: null });
+
+    expect(state.executionState()).toEqual({
+      type: 'loading',
+      hasCachedResponse: true,
+      loading: { executeTime: 1, progress: null },
+      cachedResponse: response,
+    });
+  });
+
+  it('should include the cached response when a re-execution fails', () => {
+    const state = setup<{ id: number }>();
+    const error = { code: 500 } as QueryErrorResponse;
+
+    state.rawResponse.set({ id: 1 });
+    state.error.set(error);
+
+    expect(state.executionState()).toEqual({
+      type: 'failure',
+      error,
+      hasCachedResponse: true,
+      cachedResponse: { id: 1 },
+    });
+  });
+
+  it('should report when a failure has no cached response', () => {
+    const state = setup();
+    const error = { code: 500 } as QueryErrorResponse;
+
+    state.error.set(error);
+
+    expect(state.executionState()).toEqual({ type: 'failure', error, hasCachedResponse: false });
+  });
+
+  it('should unsubscribe from request events when its injection scope is destroyed', () => {
+    const injector = createEnvironmentInjector([], TestBed.inject(EnvironmentInjector));
+    const unsubscribe = vi.fn();
+    const events$ = new Observable<never>(() => unsubscribe);
+    const state = setupQueryState<{ response: string }>({ destroyRef: injector.get(DestroyRef) });
+
+    state.subtle.bindRequestEvents({ events$ } as HttpRequest<{ response: string }>);
+    injector.destroy();
+
+    expect(unsubscribe).toHaveBeenCalledOnce();
   });
 });

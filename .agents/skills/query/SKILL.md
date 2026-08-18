@@ -60,7 +60,7 @@ post = computed(() => this.postQuery.response());
 Every state member is an **`ObservableSignal`** - a `Signal` that also has
 `.asObservable()`. So each is both a signal (call it) and a stream:
 
-- `response()` → `TResponse | null` (kept while re-executing; cleared on a failed re-exec).
+- `response()` → `TResponse | null` (kept while re-executing and if that re-execution fails).
 - `loading()`, `error()` (normalized `QueryErrorResponse`), `args()`,
   `executionState()` (`{ type: 'loading' | 'success' | 'failure', … } | null`, great for `@switch`).
 - Methods: `execute({ args?, options? })`, `reset()`, `createSnapshot()`, `asReadonly()`.

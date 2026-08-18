@@ -194,7 +194,7 @@ throws there. Passing `injector` at the call site stays the better answer where 
 - **Secure queries wait for a token.** A secure query executed before login does not fail - it parks until `accessToken()` is set, then runs. Don't gate them on `isAuthenticated()` by hand.
 - **`withPersistentAuth` calls `tryLogin()` during setup.** The cookie-backed session restore happens on its own; you do not need a `tryLoginViaCookie()` call in an app initializer. A failed restore surfaces as `executionState()` with `type: 'autoLogin'`, `state: 'error'`.
 - **`logout()` clears the queries bound to it.** It drops the tokens, tears down every secure cache entry, and resets the secure queries still holding a response - a component mounted across the logout stops showing the previous user's data without a manual `reset()`.
-- **Responses survive a re-execution but not a failed one.** `response()` is kept while a query re-runs, and cleared if that run fails.
+- **Responses survive a re-execution and a failed refresh.** `response()` is kept while a query re-runs and remains available if that run fails.
 - **Interop containers follow the request method again.** `createSignal` / `createSubject` default their cleanup (`abortPrevious`, `stopPreviousPolling`, `abortOnDestroy`) to "on for cacheable requests", and an interop query now answers that question from its creator. A superseded `GET` is aborted and stops polling, and a container's teardown destroys the query it holds - so a one-shot query stored in a container does not also need `destroyOnResponse`.
 - **An `entity` config only sees real responses.** `set` runs on success - including a 204, whose body is legitimately `null` - and never on `prepare()` or on a failure that left a previous response in place.
 

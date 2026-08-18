@@ -210,6 +210,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
 
     const state = setupQueryState<TArgs>({
       transformResponse: options.creator?.transformResponse,
+      destroyRef: deps.destroyRef,
       devtoolsStats,
       devtoolsFormLinks,
       devtoolsOverrides,

@@ -1,5 +1,5 @@
 import { HttpEventType } from '@angular/common/http';
-import { Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
+import { DestroyRef, Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
 import { Observable, Subject, Subscription } from 'rxjs';
 import { QueryDevtoolsFormLinksRecorder } from '../devtools/query-devtools-form-links';
 import { QueryDevtoolsOverridesRecorder } from '../devtools/query-devtools-overrides';
@@ -10,6 +10,8 @@ import { QueryErrorResponse } from './query-error-response';
 
 export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
   transformResponse?: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
+
+  destroyRef?: DestroyRef;
 
   /**
    * The devtools stats recorder to feed from this state's executions, or nothing when the devtools are
@@ -83,10 +85,21 @@ export type QueryExecutionStateSuccess<TArgs extends QueryArgs> = {
   response: ResponseType<TArgs>;
 };
 
-export type QueryExecutionStateFailure = {
+export type QueryExecutionStateFailureWithNoResponse = {
   type: 'failure';
   error: QueryErrorResponse;
+  hasCachedResponse?: false;
 };
+
+export type QueryExecutionStateFailureWithCachedResponse<TArgs extends QueryArgs> = {
+  type: 'failure';
+  error: QueryErrorResponse;
+  hasCachedResponse: true;
+  cachedResponse: ResponseType<TArgs>;
+};
+
+export type QueryExecutionStateFailure<TArgs extends QueryArgs> =
+  QueryExecutionStateFailureWithNoResponse | QueryExecutionStateFailureWithCachedResponse<TArgs>;
 
 export type QueryExecutionStateLoadingWithNoResponse = {
   type: 'loading';
@@ -105,7 +118,7 @@ export type QueryExecutionStateLoading<TArgs extends QueryArgs> =
   QueryExecutionStateLoadingWithNoResponse | QueryExecutionStateLoadingWithCachedResponse<TArgs>;
 
 export type QueryExecutionState<TArgs extends QueryArgs> =
-  QueryExecutionStateSuccess<TArgs> | QueryExecutionStateFailure | QueryExecutionStateLoading<TArgs>;
+  QueryExecutionStateSuccess<TArgs> | QueryExecutionStateFailure<TArgs> | QueryExecutionStateLoading<TArgs>;
 
 export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions<TArgs>) => {
   const request = signal<HttpRequest<TArgs> | null>(null);
@@ -141,13 +154,18 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     requestEventsSubscription = request.events$.subscribe((event) => requestEvents$.next(event));
   };
 
+  options.destroyRef?.onDestroy(() => {
+    requestEventsSubscription.unsubscribe();
+    requestEvents$.complete();
+  });
+
   const executionState = computed<QueryExecutionState<TArgs> | null>(() => {
     const currentResponse = response();
     const currentError = error();
     const currentLoading = loading();
 
     if (currentLoading) {
-      if (currentResponse) {
+      if (currentResponse !== null) {
         return {
           type: 'loading',
           hasCachedResponse: true,
@@ -161,10 +179,18 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
         hasCachedResponse: false,
         loading: currentLoading,
       };
+    } else if (currentError && currentResponse !== null) {
+      return {
+        type: 'failure',
+        error: currentError,
+        hasCachedResponse: true,
+        cachedResponse: currentResponse,
+      };
     } else if (currentError) {
       return {
         type: 'failure',
         error: currentError,
+        hasCachedResponse: false,
       };
     } else if (currentResponse !== null || latestHttpEvent()?.type === HttpEventType.Response) {
       // A response event having arrived is what makes the execution a success, not a truthy body: a 204 (or any

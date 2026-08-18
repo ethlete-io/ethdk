@@ -122,17 +122,17 @@ Creators expose `.clone(additionalOptions)` to derive a variant with merged opti
 
 Every state property is a signal - and every one of them is an `ObservableSignal`, so `query.response.asObservable()` hands you an RxJS stream when you need one.
 
-| Signal                 | Type                              | Description                                                                                |
-| ---------------------- | --------------------------------- | ------------------------------------------------------------------------------------------ |
-| `response()`           | `TResponse \| null`               | Latest (transformed) response. Kept while re-executing; cleared when a re-execution fails. |
-| `loading()`            | `HttpRequestLoadingState \| null` | Loading state incl. `progress` (`percentage`, `speed`, `remainingTime`).                   |
-| `error()`              | `QueryErrorResponse \| null`      | Normalized error - see [Errors & retries](/query/errors).                                  |
-| `executionState()`     | discriminated union               | `{ type: 'loading' \| 'success' \| 'failure', … } \| null` - handy for `@switch` blocks.   |
-| `args()`               | `RequestArgs \| null`             | Args of the latest execution.                                                              |
-| `latestHttpEvent()`    | `HttpEvent \| null`               | Last raw Angular HTTP event.                                                               |
-| `lastTimeExecutedAt()` | `number \| null`                  | Timestamp of the latest execution.                                                         |
-| `triggeredBy()`        | `string \| null`                  | Who triggered the execution (`null` for user-triggered).                                   |
-| `id()`                 | `QueryKey \| null`                | Current repository cache key.                                                              |
+| Signal                 | Type                              | Description                                                                              |
+| ---------------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `response()`           | `TResponse \| null`               | Latest (transformed) response. Kept while re-executing and if that re-execution fails.   |
+| `loading()`            | `HttpRequestLoadingState \| null` | Loading state incl. `progress` (`percentage`, `speed`, `remainingTime`).                 |
+| `error()`              | `QueryErrorResponse \| null`      | Normalized error - see [Errors & retries](/query/errors).                                |
+| `executionState()`     | discriminated union               | `{ type: 'loading' \| 'success' \| 'failure', … } \| null` - handy for `@switch` blocks. |
+| `args()`               | `RequestArgs \| null`             | Args of the latest execution.                                                            |
+| `latestHttpEvent()`    | `HttpEvent \| null`               | Last raw Angular HTTP event.                                                             |
+| `lastTimeExecutedAt()` | `number \| null`                  | Timestamp of the latest execution.                                                       |
+| `triggeredBy()`        | `string \| null`                  | Who triggered the execution (`null` for user-triggered).                                 |
+| `id()`                 | `QueryKey \| null`                | Current repository cache key.                                                            |
 
 Methods:
 
@@ -142,5 +142,9 @@ Methods:
 - `asReadonly()` - the query without its mutating methods.
 
 Some objects also carry a `subtle` namespace - everything under it is an unsupported escape hatch: if you touch it and it breaks, that's on you.
+
+Both the `loading` and `failure` variants of `executionState()` report `hasCachedResponse: true` and
+carry `cachedResponse` when a previous response is still available. This lets a screen keep rendering
+known data while showing that its refresh is in progress or failed.
 
 Queries live in a child injector parented to the component (or `queryConfig.injector`) that created them - when that scope is destroyed, the query is torn down and its cache reference released.

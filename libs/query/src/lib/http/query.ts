@@ -30,7 +30,7 @@ export type PathParamsType<T extends QueryArgs | null> = T extends QueryArgs ? T
 export type QueryParamsType<T extends QueryArgs | null> = T extends QueryArgs ? T['queryParams'] : never;
 export type BodyType<T extends QueryArgs | null> = T extends QueryArgs ? T['body'] : never;
 
-export type RequestArgs<T extends QueryArgs | null> = T extends QueryArgs ? Omit<T, 'response'> : never;
+export type RequestArgs<T extends QueryArgs | null> = T extends QueryArgs ? Omit<T, 'rawResponse' | 'response'> : never;
 
 /**
  * The empty request-args object, typed to satisfy `RequestArgs<TArgs>` for a query that takes no
@@ -59,8 +59,7 @@ export type QueryBase<TArgs extends QueryArgs> = {
 
   /**
    * The latest response of the query. Will be `null` if the query has never been executed.
-   * Responses are cached until a new response is received.
-   * If a response is present but the next execution of the query fails, the response will be set to `null` again.
+   * Responses are cached until a new response is received, including when a re-execution fails.
    */
   response: ObservableSignal<ResponseType<TArgs> | null>;
 

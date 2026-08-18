@@ -1,7 +1,22 @@
-import { QueryArgs, RawResponseType, ResponseType } from './query';
+import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
 import { RequiresTransform } from './query-creator';
 
 describe('query creator', () => {
+  describe('RequestArgs type', () => {
+    it('should omit response metadata from request arguments', () => {
+      type TransformedArgs = {
+        response: string;
+        rawResponse: { data: string };
+        body: { id: number };
+      };
+
+      const requestArgs: RequestArgs<TransformedArgs> = { body: { id: 1 } };
+
+      expectTypeOf<RequestArgs<TransformedArgs>>().toEqualTypeOf<{ body: { id: number } }>();
+      expect(requestArgs).toEqual({ body: { id: 1 } });
+    });
+  });
+
   describe('RequiresTransform type', () => {
     it('should return false when rawResponse is undefined', () => {
       type TestArgs = {

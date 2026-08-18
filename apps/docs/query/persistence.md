@@ -46,10 +46,9 @@ If the revalidation **fails**, the persisted response stays. `query.response()` 
 persisted data on screen for as long as the retries last, and only then reaches `failure`.
 
 ::: tip Deciding what to render
-`executionState()` reports `failure` when a request failed, even though `response()` still has the
-persisted body - the same as any refetch that fails over data you already had. If a screen should keep
-rendering data through a failed revalidation, read `response()` and treat the error as a banner rather
-than a state.
+`executionState()` reports `failure` when a request failed. Its `hasCachedResponse` flag and
+`cachedResponse` carry the persisted body - the same as any refetch that fails over data you already
+had - so a screen can keep rendering data and treat the error as a banner.
 :::
 
 ## Three windows, three different jobs
