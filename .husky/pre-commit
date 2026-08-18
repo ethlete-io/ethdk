@@ -10,3 +10,12 @@ if [ -n "$staged" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/lint-changesets.js $staged
 fi
+
+# Catches an @property initial-value the browser drops (a relative unit is not computationally
+# independent), which leaves the token unregistered and every use site silently unset.
+styles=$(git diff --cached --name-only --diff-filter=ACM -- '*.css' '*.scss' '*.ts' '*.html')
+
+if [ -n "$styles" ]; then
+  # shellcheck disable=SC2086
+  node ./tools/scripts/lint-css-properties.js $styles
+fi
