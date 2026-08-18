@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, TextFieldControlDirective } from '../../form-field/headless';
+import { COLOR_NOTATION_ORDER, COLOR_NOTATIONS, ColorNotation } from '../color-input.types';
 import { formatRgbToHex, parseColorToRgb } from './internals/color-convert';
 import { createColorPickerOverlay } from './internals/color-picker-overlay';
 import { createColorPickerState } from './internals/color-picker-state';
@@ -53,6 +54,14 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
    */
   public swatches = input<readonly string[]>([]);
 
+  /**
+   * The notations the picker's entry field offers, in the order its switch cycles through them.
+   * More than one shows the switch; exactly one pins the field to that notation, and an entry in
+   * another notation is converted to it with an advisory under the field. The emitted `value` is
+   * always hex, whatever the field displays.
+   */
+  public notations = input<readonly ColorNotation[]>(COLOR_NOTATION_ORDER);
+
   /** Whether the picker overlay is open. */
   public pickerOpen = model(false);
 
@@ -90,6 +99,18 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
     }
 
     return [...seen];
+  });
+
+  /**
+   * The notations the panel actually offers: the given ones, deduplicated, with anything the picker
+   * cannot read dropped. An empty result falls back to hex.
+   */
+  public resolvedNotations = computed<readonly [ColorNotation, ...ColorNotation[]]>(() => {
+    const offered = [...new Set(this.notations())].filter((notation) =>
+      COLOR_NOTATION_ORDER.includes(notation as (typeof COLOR_NOTATION_ORDER)[number]),
+    );
+
+    return offered.length ? (offered as [ColorNotation, ...ColorNotation[]]) : [COLOR_NOTATIONS.HEX];
   });
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.COLOR_INPUT);

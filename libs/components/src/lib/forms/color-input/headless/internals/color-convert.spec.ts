@@ -1,10 +1,16 @@
 import {
+  detectColorNotation,
+  formatHsl,
   formatHsvToHex,
+  formatHsvToNotation,
+  formatRgb,
   formatRgbToHex,
+  hslToRgb,
   hsvToRgb,
   hueToCssColor,
   parseColorToHsv,
   parseColorToRgb,
+  rgbToHsl,
   rgbToHsv,
 } from './color-convert';
 
@@ -45,7 +51,7 @@ describe('parseColorToRgb', () => {
     expect(parseColorToRgb('rgba(0, 0, 0, 4)')?.alpha).toBe(1);
   });
 
-  it.each([null, undefined, '', '   ', '#ff', '#fffff', 'red', 'rgb(256, 0, 0)', 'hsl(0 100% 50%)'])(
+  it.each([null, undefined, '', '   ', '#ff', '#fffff', 'red', 'rgb(256, 0, 0)', 'hsl(0 100 50)'])(
     'returns null for %p',
     (value) => {
       expect(parseColorToRgb(value)).toBeNull();
@@ -181,5 +187,113 @@ describe('hueToCssColor', () => {
 
   it('wraps a hue outside the wheel', () => {
     expect(hueToCssColor(-30)).toBe('hsl(330 100% 50%)');
+  });
+});
+
+describe('hsl', () => {
+  it('reads the space form', () => {
+    expect(parseColorToRgb('hsl(210 100% 50%)')).toEqual({ red: 0, green: 128, blue: 255, alpha: 1 });
+  });
+
+  it('reads the comma form with a deg unit', () => {
+    expect(parseColorToRgb('hsl(120deg, 100%, 25%)')).toEqual({ red: 0, green: 128, blue: 0, alpha: 1 });
+  });
+
+  it('reads the alpha slash form', () => {
+    expect(parseColorToRgb('hsl(0 100% 50% / 0.5)')).toEqual({ red: 255, green: 0, blue: 0, alpha: 0.5 });
+  });
+
+  it('reads hsla with a comma alpha', () => {
+    expect(parseColorToRgb('hsla(0, 100%, 50%, 50%)')).toEqual({ red: 255, green: 0, blue: 0, alpha: 0.5 });
+  });
+
+  it('refuses a saturation above 100%', () => {
+    expect(parseColorToRgb('hsl(210 140% 50%)')).toBeNull();
+  });
+
+  it('wraps a hue outside the wheel', () => {
+    expect(hslToRgb({ hue: -30, saturation: 1, lightness: 0.5, alpha: 1 })).toEqual(
+      hslToRgb({ hue: 330, saturation: 1, lightness: 0.5, alpha: 1 }),
+    );
+  });
+
+  it('round trips a color through rgb', () => {
+    const hsl = rgbToHsl({ red: 51, green: 102, blue: 255, alpha: 1 });
+
+    expect(hslToRgb(hsl)).toEqual({ red: 51, green: 102, blue: 255, alpha: 1 });
+  });
+
+  it('reports no hue and no saturation for a grey', () => {
+    const hsl = rgbToHsl({ red: 128, green: 128, blue: 128, alpha: 1 });
+
+    expect(hsl.hue).toBe(0);
+    expect(hsl.saturation).toBe(0);
+  });
+});
+
+describe('detectColorNotation', () => {
+  it.each([
+    ['#f00', 'hex'],
+    ['#ff0000', 'hex'],
+    ['rgb(255 0 0)', 'rgb'],
+    ['rgba(255, 0, 0, 0.5)', 'rgb'],
+    ['hsl(0 100% 50%)', 'hsl'],
+    ['HSLA(0, 100%, 50%, 0.5)', 'hsl'],
+  ])('reads %s as %s', (value, notation) => {
+    expect(detectColorNotation(value)).toBe(notation);
+  });
+
+  it('returns null for a value nothing can read', () => {
+    expect(detectColorNotation('rebeccapurple')).toBeNull();
+  });
+
+  it('returns null for an empty value', () => {
+    expect(detectColorNotation('')).toBeNull();
+  });
+});
+
+describe('formatRgb', () => {
+  it('formats the space form', () => {
+    expect(formatRgb({ red: 51, green: 102, blue: 255, alpha: 1 })).toBe('rgb(51 102 255)');
+  });
+
+  it('adds alpha when it is on', () => {
+    expect(formatRgb({ red: 51, green: 102, blue: 255, alpha: 0.8 }, { alpha: true })).toBe('rgb(51 102 255 / 0.8)');
+  });
+});
+
+describe('formatHsl', () => {
+  it('formats the space form', () => {
+    expect(formatHsl({ red: 0, green: 128, blue: 255, alpha: 1 })).toBe('hsl(210 100% 50%)');
+  });
+
+  it('adds alpha when it is on', () => {
+    expect(formatHsl({ red: 255, green: 0, blue: 0, alpha: 0.5 }, { alpha: true })).toBe('hsl(0 100% 50% / 0.5)');
+  });
+});
+
+describe('formatHsvToNotation', () => {
+  const red = { hue: 0, saturation: 1, value: 1, alpha: 1 };
+
+  it.each([
+    ['hex', '#ff0000'],
+    ['rgb', 'rgb(255 0 0)'],
+    ['hsl', 'hsl(0 100% 50%)'],
+  ] as const)('formats %s', (notation, expected) => {
+    expect(formatHsvToNotation(red, { notation })).toBe(expected);
+  });
+
+  // hsl() rounds its three channels to integers, so a round trip lands within a channel step
+  it('reads back what it wrote in every notation', () => {
+    const color = { hue: 220, saturation: 0.8, value: 0.9, alpha: 1 };
+    const expected = hsvToRgb(color);
+
+    for (const notation of ['hex', 'rgb', 'hsl'] as const) {
+      const read = parseColorToRgb(formatHsvToNotation(color, { notation }));
+
+      expect(read?.red).toBeCloseTo(expected.red, -0.5);
+      expect(read?.green).toBeCloseTo(expected.green, -0.5);
+      expect(read?.blue).toBeCloseTo(expected.blue, -0.5);
+    }
   });
 });

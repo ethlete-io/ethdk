@@ -371,6 +371,17 @@ Controls that render their own support region (`et-slider`, `et-rating`,
 `et-otp-input`, the selection groups, `et-dropzone`, `et-choice-field`) show
 warnings in the same place, from the same rule.
 
+A control that is **not** bound to a signal-forms field has no schema to carry a
+`warn()` rule, so it takes its advisories directly - `[warnings]` accepts the same
+shapes a `warn()` rule may return, and the field shows them the same way:
+
+```html
+<et-form-field>
+  <et-label>Color</et-label>
+  <et-input [(value)]="hex" [warnings]="converted() ? 'Converted to hex.' : null" />
+</et-form-field>
+```
+
 Warning texts localize like error texts, through their own resolver keyed by
 `kind`:
 

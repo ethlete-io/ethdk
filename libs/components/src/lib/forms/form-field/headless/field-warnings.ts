@@ -25,7 +25,8 @@ export const FIELD_WARNINGS = /* @__PURE__ */ createMetadataKey<readonly FieldWa
   reduce: (accumulated, warnings) => (warnings.length > 0 ? [...accumulated, ...warnings] : accumulated),
 });
 
-const toFieldWarnings = (result: FieldWarningResult): readonly FieldWarning[] => {
+/** @internal Normalizes what a `warn()` rule or a control's `warnings` input supplied. */
+export const toFieldWarnings = (result: FieldWarningResult): readonly FieldWarning[] => {
   if (!result) {
     return [];
   }

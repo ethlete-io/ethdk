@@ -16,8 +16,18 @@ export type ColorInputLabels = {
   hue: string;
   /** Accessible name of the opacity track. */
   alpha: string;
-  /** Label of the hex entry field inside the panel. */
+  /** Accessible name of the color entry field inside the panel. */
+  value: string;
+  /** Name of the hex notation - the panel shows it beside the entry field. */
   hex: string;
+  /** Name of the `rgb()` notation. */
+  rgb: string;
+  /** Name of the `hsl()` notation. */
+  hsl: string;
+  /** Accessible name of the button that switches the entry field to the next notation. */
+  notation: (currentNotation: string) => string;
+  /** Advisory shown under the entry field after an entry in another notation was converted. */
+  notationConverted: (targetNotation: string) => string;
   /** Accessible name of the preset swatch group. */
   swatches: string;
   /** Accessible name of the button that samples a color from the screen. */
@@ -33,7 +43,12 @@ export const DEFAULT_COLOR_INPUT_LABELS: ColorInputLabels = {
   brightness: 'Brightness',
   hue: 'Hue',
   alpha: 'Opacity',
+  value: 'Color value',
   hex: 'Hex',
+  rgb: 'RGB',
+  hsl: 'HSL',
+  notation: (currentNotation) => `Change notation, currently ${currentNotation}`,
+  notationConverted: (targetNotation) => `Converted to ${targetNotation}.`,
   swatches: 'Preset colors',
   eyedropper: 'Pick a color from the screen',
 };

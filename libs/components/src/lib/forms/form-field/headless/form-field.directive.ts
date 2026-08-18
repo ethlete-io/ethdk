@@ -1,7 +1,7 @@
 import { afterNextRender, computed, contentChildren, Directive, effect, inject, signal } from '@angular/core';
 import { FORM_FIELD } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
-import { FIELD_WARNINGS, FieldWarning } from './field-warnings';
+import { FIELD_WARNINGS, FieldWarning, toFieldWarnings } from './field-warnings';
 import { FORM_FIELD_ERROR_CODES } from './form-field-errors';
 import {
   ControlSuffixBase,
@@ -73,15 +73,19 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   });
 
   /**
-   * The non-blocking advisories the bound field's `warn()` rules produced. They never touch
-   * validity - the field stays valid and submittable while one is shown.
+   * The non-blocking advisories to show under the field: what the bound field's `warn()` rules
+   * produced, plus what the registered control was given through its own `warnings` input. They
+   * never touch validity - the field stays valid and submittable while one is shown.
    */
   public warnings = computed<readonly FieldWarning[]>(() => {
     const bindings = this.ownFieldBinding
       ? [this.ownFieldBinding, ...this.wrappedFieldBindings()]
       : this.wrappedFieldBindings();
 
-    return bindings.flatMap((binding) => binding.state().metadata(FIELD_WARNINGS)?.() ?? []);
+    return [
+      ...bindings.flatMap((binding) => binding.state().metadata(FIELD_WARNINGS)?.() ?? []),
+      ...toFieldWarnings(this.registeredControl()?.warnings?.() ?? null),
+    ];
   });
 
   public shouldDisplayError = computed(() => {

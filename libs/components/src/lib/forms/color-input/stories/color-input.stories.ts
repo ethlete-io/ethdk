@@ -21,6 +21,7 @@ export default {
     required: { control: 'boolean' },
     alpha: { control: 'boolean' },
     swatches: { control: 'text' },
+    notations: { control: 'text' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
   args: {
@@ -39,6 +40,7 @@ export default {
     required: false,
     alpha: false,
     swatches: '',
+    notations: 'hex, rgb, hsl',
     color: 'brand',
   },
 } as Meta<FormFieldColorInputStorybookComponent>;
@@ -67,6 +69,14 @@ export const Readonly: Story = {
     value: '#ff5533',
     readonly: true,
     hint: 'A read-only control keeps its tab stop but refuses to open the picker.',
+  },
+};
+
+export const PinnedNotation: Story = {
+  args: {
+    value: '#3366ff',
+    notations: 'hex',
+    hint: 'Pinned to hex: the notation switch is gone, and an entry in another notation is converted with an advisory.',
   },
 };
 

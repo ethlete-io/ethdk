@@ -13,6 +13,7 @@ import {
   FormFieldSize,
 } from '../../form-field';
 import { COLOR_INPUT_IMPORTS } from '../color-input.imports';
+import { ColorNotation } from '../color-input.types';
 
 @Component({
   selector: 'et-sb-form-field-color-input',
@@ -26,6 +27,7 @@ import { COLOR_INPUT_IMPORTS } from '../color-input.imports';
           [mixedLabel]="mixedLabel()"
           [alpha]="alpha()"
           [swatches]="resolvedSwatches()"
+          [notations]="resolvedNotations()"
         />
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -59,6 +61,7 @@ export class FormFieldColorInputStorybookComponent {
   public required = input(false);
   public alpha = input(false);
   public swatches = input('');
+  public notations = input('hex, rgb, hsl');
   public color = input('brand');
 
   public resolvedSwatches = computed(() =>
@@ -66,6 +69,14 @@ export class FormFieldColorInputStorybookComponent {
       .split(',')
       .map((entry) => entry.trim())
       .filter((entry) => entry.length > 0),
+  );
+
+  public resolvedNotations = computed(
+    () =>
+      this.notations()
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0) as ColorNotation[],
   );
 
   public mixedState = linkedSignal(() => this.mixed());

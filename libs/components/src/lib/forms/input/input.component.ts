@@ -24,6 +24,7 @@ import { InputDirective } from './headless';
         'hidden',
         'invalid',
         'errors',
+        'warnings',
         'required',
         'name',
         'maxLength',

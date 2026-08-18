@@ -29,6 +29,7 @@ import { ColorInputDirective, ColorPickerSurfaceDirective, ColorPickerTriggerDir
         'pending',
         'alpha',
         'swatches',
+        'notations',
         'pickerOpen',
         'aria-label',
         'aria-labelledby',

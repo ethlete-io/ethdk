@@ -1,5 +1,6 @@
 import { InjectionToken, Signal, TemplateRef, WritableSignal } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
+import { FieldWarningResult } from './field-warnings';
 
 export const FORM_FIELD_CONTROL_TYPES = {
   TEXT_INPUT: 'text-input',
@@ -37,6 +38,11 @@ export type FormFieldControl = {
   touched: Signal<boolean>;
   invalid: Signal<boolean>;
   errors: Signal<readonly ValidationError.WithOptionalFieldTree[]>;
+  /**
+   * Advisories the control was given directly, for a field with no signal-forms binding to carry
+   * `warn()` rules. The field shows them the same way, and they never reach validity.
+   */
+  warnings?: Signal<FieldWarningResult>;
   name: Signal<string>;
   required?: Signal<boolean>;
   disabled?: Signal<boolean>;

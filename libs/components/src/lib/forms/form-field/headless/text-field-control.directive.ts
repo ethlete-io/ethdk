@@ -1,5 +1,6 @@
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal, Signal } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
+import { FieldWarningResult } from './field-warnings';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form-field.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../form-field-text-shell-styles.component';
@@ -42,6 +43,13 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public hidden = input(false, { transform: booleanAttribute });
   public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
+
+  /**
+   * Non-blocking advisories to show under the field, for a control that is not bound to a
+   * signal-forms field (which would carry them through `warn()` rules instead). A bare string is
+   * one advisory; `null` is none. They never reach validity - the field stays valid and submittable.
+   */
+  public warnings = input<FieldWarningResult>(null);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
 

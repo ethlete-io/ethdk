@@ -218,13 +218,6 @@
     }
   }
 
-  .et-color-picker-footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-inline-size: 0;
-  }
-
   /* the color is a gradient layer, not `background-color`: a background image paints over the
      background color, so a checkerboard declared that way would sit on top of an opaque color */
   .et-color-picker-preview {
@@ -232,8 +225,8 @@
     --_et-color-picker-preview-color: transparent;
 
     flex: none;
-    inline-size: 24px;
-    block-size: 24px;
+    inline-size: 20px;
+    block-size: 20px;
     border-radius: 4px;
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     background-image:
@@ -260,24 +253,37 @@
       4px 4px;
   }
 
-  .et-color-picker-hex {
+  .et-color-picker-value {
     flex: 1;
     min-inline-size: 0;
+  }
+
+  .et-color-picker-notation {
+    white-space: nowrap;
+  }
+
+  button.et-color-picker-notation {
+    text-decoration: underline dotted from-font;
+    text-underline-offset: 3px;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--et-surface-color-solid, rgb(244 244 245));
+    }
+
+    &:disabled {
+      cursor: default;
+      text-decoration: none;
+    }
   }
 
   .et-color-picker-eyedropper {
     display: grid;
     flex: none;
-    /* the hex form field sets the row height - stretch to it instead of naming a second number */
-    align-self: stretch;
     place-items: center;
-    inline-size: 32px;
-    padding: 0;
-    border-radius: 6px;
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    background: none;
-    color: inherit;
-    cursor: pointer;
+    inline-size: 24px;
+    block-size: 24px;
+    border-radius: 4px;
 
     i {
       inline-size: 16px;
@@ -333,6 +339,7 @@
 
     .et-color-picker-eyedropper {
       inline-size: 40px;
+      block-size: 40px;
     }
   }
 }

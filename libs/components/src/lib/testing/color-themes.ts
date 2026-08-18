@@ -10,9 +10,10 @@ export const testColorSwatch = (color: ThemeColor): ThemeSwatch => ({
 });
 
 /**
- * Colour themes for a spec that renders a form control: a default, and one typed `error`. The
- * form-field support layer resolves its validation theme by `type`, so a TestBed missing either
- * dies with `No provider found for InjectionToken Color Themes` before any assertion runs.
+ * Colour themes for a spec that renders a form control: a default, one typed `error` and one typed
+ * `warning`. The form-field support layer resolves its validation theme by `type`, so a TestBed
+ * missing one dies with `No provider found for InjectionToken Color Themes` before any assertion
+ * runs.
  *
  * @example
  * TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
@@ -34,6 +35,11 @@ export const TEST_COLOR_THEMES: ColorTheme[] = [
         disabled: '0 36 23',
       },
     },
+  },
+  {
+    name: 'sunshine',
+    type: 'warning',
+    primary: testColorSwatch('234 179 8'),
   },
   {
     name: 'red',

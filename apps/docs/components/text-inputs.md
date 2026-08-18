@@ -200,14 +200,15 @@ the same as the [date and time pickers](/components/date-time-inputs) and the
 
 ### The panel
 
-| Part                           | Notes                                                                                                                                                                |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Saturation and brightness area | Drag it, or tab to the two sliders behind it (`Saturation`, `Brightness`) and use the arrow keys                                                                     |
-| Hue track                      | A real range input, so arrow keys, `Home`, `End` and the page keys all work                                                                                          |
-| Opacity track                  | Only with `[alpha]` - see below                                                                                                                                      |
-| Preset swatches                | Only with `[swatches]` - see below                                                                                                                                   |
-| Hex field                      | A small `et-form-field`, so it carries the normal hover and focus treatment. It commits on blur or `Enter`, and an entry it cannot read reverts rather than standing |
-| Eyedropper                     | Only where the browser has the [EyeDropper API](https://developer.mozilla.org/docs/Web/API/EyeDropper) (Chromium at the time of writing); hidden everywhere else     |
+| Part                           | Notes                                                                                                                                                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Saturation and brightness area | Drag it, or tab to the two sliders behind it (`Saturation`, `Brightness`) and use the arrow keys                                                                                     |
+| Hue track                      | A real range input, so arrow keys, `Home`, `End` and the page keys all work                                                                                                          |
+| Opacity track                  | Only with `[alpha]` - see below                                                                                                                                                      |
+| Preset swatches                | Only with `[swatches]` - see below                                                                                                                                                   |
+| Entry field                    | A small `et-form-field` carrying the preview swatch, the notation switch and the eyedropper. It commits on blur or `Enter`, and an entry it cannot read reverts rather than standing |
+| Notation switch                | Only with more than one notation offered - see [notation](#notation-notations)                                                                                                       |
+| Eyedropper                     | Only where the browser has the [EyeDropper API](https://developer.mozilla.org/docs/Web/API/EyeDropper) (Chromium at the time of writing); hidden everywhere else                     |
 
 Every surface is built around a native range input, which is what carries the
 keyboard and touch handling. Picking commits live - there is no confirm step, and
@@ -236,12 +237,41 @@ accept and render as canonical hex, so one color given twice in two notations
 renders one swatch. An entry that cannot be read is dropped rather than shown as a
 broken swatch.
 
+### Notation - `[notations]`
+
+```html
+<!-- the default: all three, and the field follows what the user types -->
+<et-color-input [formField]="demoForm.brandColor" />
+
+<!-- pinned to hex, for an API that accepts nothing else -->
+<et-color-input [formField]="demoForm.brandColor" [notations]="['hex']" />
+```
+
+<StoryEmbed id="components-forms-color-input--pinned-notation" height="520px" />
+
+`notations` lists what the panel's entry field offers, in the order its switch
+cycles through them: `'hex'`, `'rgb'`, `'hsl'`. Duplicates collapse, an entry the
+picker cannot read is dropped, and an empty list falls back to hex.
+
+| Given                  | The panel                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| More than one notation | Shows the switch beside the entry field, and an entry in any offered notation switches the display to it              |
+| Exactly one notation   | Pins the field to it and shows no switch. An entry in another notation is converted, with an advisory under the field |
+
+The field opens on the notation the bound value is written in, when that one is
+offered. The advisory clears on the next entry, on any pick elsewhere in the panel,
+and when the panel closes.
+
+**The notation is display only.** Whatever the field shows, the control emits hex -
+so a `hexColor()` validator keeps passing, and switching the notation never changes
+the form value.
+
 ### What the value is
 
 The picker emits lowercase `'#rrggbb'` (or `'#rrggbbaa'`), but it **reads** every
-notation the validators accept - `#f00`, `#rrggbbaa`, `rgb()` and `rgba()`. A value
-that arrived from an API in one of those forms displays correctly and is not
-rewritten until the user picks something.
+notation the validators accept - `#f00`, `#rrggbbaa`, `rgb()`, `rgba()`, `hsl()` and
+`hsla()`. A value that arrived from an API in one of those forms displays correctly
+and is not rewritten until the user picks something.
 
 ### Design tokens
 

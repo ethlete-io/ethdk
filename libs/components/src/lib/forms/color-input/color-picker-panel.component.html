@@ -55,25 +55,44 @@
     </div>
   }
 
-  <div class="et-color-picker-footer">
+  <!-- one field carries the whole footer: the preview and the notation switch as prefixes, the
+       eyedropper as a suffix - so every part sits on the field's own baseline and height, and the
+       conversion advisory spans the row it belongs to -->
+  <et-form-field class="et-color-picker-value" size="sm">
     <span
       [style.--_et-color-picker-preview-color]="canonicalHex()"
       class="et-color-picker-preview"
+      etInputPrefix
       aria-hidden="true"
     ></span>
 
-    <!-- committed on change, not on input: a half-typed color is unreadable, and rewriting the
-         field to the canonical notation on every keystroke would fight the typing -->
-    <et-form-field class="et-color-picker-hex" labelMode="inline" size="sm">
-      <et-label>{{ labels().hex }}</et-label>
-      <et-input
-        [(value)]="hexDraft"
+    @if (canSwitchNotation()) {
+      <button
+        [attr.aria-label]="labels().notation(notationLabel())"
         [disabled]="!colorInput.interactive()"
-        (change)="commitHexDraft()"
-        (keydown)="handleHexKeydown($event)"
-        autocomplete="off"
-      />
-    </et-form-field>
+        (click)="switchNotation()"
+        class="et-color-picker-notation"
+        etInputPrefix
+        type="button"
+      >
+        {{ notationLabel() }}
+      </button>
+    } @else {
+      <span class="et-color-picker-notation" etInputPrefix aria-hidden="true">{{ notationLabel() }}</span>
+    }
+
+    <!-- committed on change, not on input: a half-typed color is unreadable, and rewriting the
+         field to the displayed notation on every keystroke would fight the typing -->
+    <et-input
+      [value]="colorDraft()"
+      [warnings]="notationWarning()"
+      [disabled]="!colorInput.interactive()"
+      [aria-label]="labels().value + ', ' + notationLabel()"
+      (valueChange)="handleDraftInput($event)"
+      (change)="commitColorDraft()"
+      (keydown)="handleColorKeydown($event)"
+      autocomplete="off"
+    />
 
     @if (showEyeDropper) {
       <button
@@ -81,10 +100,11 @@
         [disabled]="!colorInput.interactive()"
         (click)="openEyeDropper()"
         class="et-color-picker-eyedropper"
+        etInputSuffix
         type="button"
       >
         <i etIcon="et-eyedropper"></i>
       </button>
     }
-  </div>
+  </et-form-field>
 </div>

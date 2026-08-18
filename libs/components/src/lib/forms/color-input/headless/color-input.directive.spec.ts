@@ -6,6 +6,7 @@ import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { COLOR_INPUT_IMPORTS } from '../color-input.imports';
+import { COLOR_NOTATION_ORDER, ColorNotation } from '../color-input.types';
 import { ColorInputDirective } from './color-input.directive';
 import { ColorPickerSurfaceDirective } from './color-picker-surface.directive';
 import { ColorPickerTriggerDirective } from './color-picker-trigger.directive';
@@ -63,12 +64,15 @@ class ColorInputTestHost {
 }
 
 @Component({
-  template: ` <et-color-input [(value)]="value" [(mixed)]="mixed" mixedLabel="Mixed colors" /> `,
+  template: `
+    <et-color-input [(value)]="value" [(mixed)]="mixed" [notations]="notations()" mixedLabel="Mixed colors" />
+  `,
   imports: [COLOR_INPUT_IMPORTS],
 })
 class ColorInputComponentTestHost {
   value = signal<string | null>(null);
   mixed = signal(false);
+  notations = signal<readonly ColorNotation[]>(COLOR_NOTATION_ORDER);
 }
 
 const flushFrames = () =>
@@ -291,7 +295,7 @@ describe('ColorInputDirective', () => {
           '--_et-color-input-swatch-color',
         );
       const valueSlot = () => fixture.nativeElement.querySelector('.et-color-input-value') as HTMLElement;
-      const hexField = () => pane()?.querySelector<HTMLInputElement>('.et-color-picker-hex .et-input-native') ?? null;
+      const hexField = () => pane()?.querySelector<HTMLInputElement>('.et-color-picker-value .et-input-native') ?? null;
 
       const openPicker = async () => {
         trigger().click();
@@ -375,6 +379,194 @@ describe('ColorInputDirective', () => {
 
       expect(swatchColor()).toBe('');
       expect(hexField()?.value).toBe('#000000');
+    });
+  });
+
+  describe('notations', () => {
+    const setup = (notations?: readonly ColorNotation[]) => {
+      TestBed.configureTestingModule({
+        imports: [ColorInputComponentTestHost],
+        providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      });
+
+      const fixture = TestBed.createComponent(ColorInputComponentTestHost);
+      const host = fixture.componentInstance;
+
+      if (notations) {
+        host.notations.set(notations);
+      }
+
+      fixture.detectChanges();
+
+      const colorInputDir = fixture.debugElement
+        .query((node) => node.nativeElement?.tagName === 'ET-COLOR-INPUT')
+        .injector.get(ColorInputDirective);
+
+      const openPicker = async () => {
+        (fixture.nativeElement.querySelector('.et-color-input-trigger') as HTMLButtonElement).click();
+        tick();
+        await flushFrames();
+        tick();
+      };
+
+      const valueField = () => pane()?.querySelector<HTMLInputElement>('.et-color-picker-value .et-input-native');
+      const notationCell = () => pane()?.querySelector<HTMLElement>('.et-color-picker-notation') ?? null;
+      const support = () => pane()?.querySelector<HTMLElement>('.et-color-picker-value .et-form-field-support');
+      // the field's own state, not the support text: a message being animated out stays in the DOM
+      // here, because jsdom fires no transition events
+      const hasWarning = () => pane()?.querySelector('.et-color-picker-value')?.hasAttribute('data-warning') ?? false;
+
+      // a render between the two events, as a real keystroke and a real commit have: the draft the
+      // field displays is only written back to the DOM when change detection runs
+      const type = (entry: string) => {
+        const field = valueField();
+
+        if (field) {
+          field.value = entry;
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          tick();
+          field.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        tick();
+      };
+
+      return { fixture, host, colorInputDir, openPicker, valueField, notationCell, support, hasWarning, type };
+    };
+
+    it('drops an entry the picker cannot read and keeps the order given', () => {
+      const { host, colorInputDir } = setup(['hsl', 'nope' as ColorNotation, 'hex']);
+
+      tick();
+
+      expect(colorInputDir.resolvedNotations()).toEqual(['hsl', 'hex']);
+      expect(host.notations().length).toBe(3);
+    });
+
+    it('collapses a notation given twice', () => {
+      const { colorInputDir } = setup(['rgb', 'rgb', 'hex']);
+
+      tick();
+
+      expect(colorInputDir.resolvedNotations()).toEqual(['rgb', 'hex']);
+    });
+
+    it('falls back to hex when nothing is left', () => {
+      const { colorInputDir } = setup([]);
+
+      tick();
+
+      expect(colorInputDir.resolvedNotations()).toEqual(['hex']);
+    });
+
+    it('offers a switch while more than one notation is given', async () => {
+      const { openPicker, notationCell } = setup(['hex', 'rgb']);
+
+      await openPicker();
+
+      expect(notationCell()?.tagName).toBe('BUTTON');
+    });
+
+    it('cycles the displayed notation from the switch', async () => {
+      const { host, openPicker, notationCell, valueField } = setup(['hex', 'rgb']);
+
+      host.value.set('#3366ff');
+      tick();
+      await openPicker();
+
+      expect(valueField()?.value).toBe('#3366ff');
+
+      notationCell()?.click();
+      tick();
+
+      expect(notationCell()?.textContent?.trim()).toBe('RGB');
+      expect(valueField()?.value).toBe('rgb(51 102 255)');
+    });
+
+    it('pins the field and shows no switch for a single notation', async () => {
+      const { openPicker, notationCell } = setup(['hex']);
+
+      await openPicker();
+
+      expect(notationCell()?.tagName).toBe('SPAN');
+    });
+
+    it('opens on the notation the bound value is written in', async () => {
+      const { host, openPicker, notationCell } = setup(['hex', 'rgb']);
+
+      host.value.set('rgb(51 102 255)');
+      tick();
+      await openPicker();
+
+      expect(notationCell()?.textContent?.trim()).toBe('RGB');
+    });
+
+    it('follows an entry in another offered notation', async () => {
+      const { openPicker, notationCell, valueField, hasWarning, type } = setup(['hex', 'hsl']);
+
+      await openPicker();
+      type('hsl(210 100% 50%)');
+
+      expect(notationCell()?.textContent?.trim()).toBe('HSL');
+      expect(valueField()?.value).toBe('hsl(210 100% 50%)');
+      expect(hasWarning()).toBe(false);
+    });
+
+    it('converts an entry in a notation it does not offer, and says so', async () => {
+      const { host, openPicker, valueField, support, type } = setup(['hex']);
+
+      await openPicker();
+      type('rgb(255 0 0)');
+
+      expect(host.value()).toBe('#ff0000');
+      expect(valueField()?.value).toBe('#ff0000');
+      expect(support()?.textContent?.trim()).toBe('Converted to Hex.');
+    });
+
+    it('drops the advisory on the next entry', async () => {
+      const { openPicker, valueField, support, hasWarning, type } = setup(['hex']);
+
+      await openPicker();
+      type('rgb(255 0 0)');
+
+      expect(support()?.textContent?.trim()).toBe('Converted to Hex.');
+
+      const field = valueField();
+
+      if (field) {
+        field.value = '#00f';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      tick();
+
+      expect(hasWarning()).toBe(false);
+    });
+
+    it('drops the advisory when the color changes elsewhere in the panel', async () => {
+      const { openPicker, support, hasWarning, type, colorInputDir } = setup(['hex']);
+
+      await openPicker();
+      type('rgb(255 0 0)');
+
+      expect(support()?.textContent?.trim()).toBe('Converted to Hex.');
+
+      colorInputDir.picker.commitColor('#00ff00');
+      tick();
+
+      expect(hasWarning()).toBe(false);
+    });
+
+    it('reverts an entry nothing can read', async () => {
+      const { host, openPicker, valueField, type } = setup(['hex']);
+
+      host.value.set('#3366ff');
+      tick();
+      await openPicker();
+      type('not a color');
+
+      expect(host.value()).toBe('#3366ff');
+      expect(valueField()?.value).toBe('#3366ff');
     });
   });
 });
