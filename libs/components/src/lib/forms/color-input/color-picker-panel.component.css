@@ -266,9 +266,14 @@
     text-decoration: underline dotted from-font;
     text-underline-offset: 3px;
 
-    &:hover,
     &:focus-visible {
       color: var(--et-surface-color-solid, rgb(244 244 245));
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--et-surface-color-solid, rgb(244 244 245));
+      }
     }
 
     &:disabled {

@@ -55,8 +55,8 @@
     </div>
   }
 
-  <!-- one field carries the whole footer: the preview and the notation switch as prefixes, the
-       eyedropper as a suffix - so every part sits on the field's own baseline and height, and the
+  <!-- one field carries the whole footer: the preview as a prefix, the notation switch and the
+       eyedropper as suffixes - so every part sits on the field's own baseline and height, and the
        conversion advisory spans the row it belongs to -->
   <et-form-field class="et-color-picker-value" size="sm">
     <span
@@ -65,21 +65,6 @@
       etInputPrefix
       aria-hidden="true"
     ></span>
-
-    @if (canSwitchNotation()) {
-      <button
-        [attr.aria-label]="labels().notation(notationLabel())"
-        [disabled]="!colorInput.interactive()"
-        (click)="switchNotation()"
-        class="et-color-picker-notation"
-        etInputPrefix
-        type="button"
-      >
-        {{ notationLabel() }}
-      </button>
-    } @else {
-      <span class="et-color-picker-notation" etInputPrefix aria-hidden="true">{{ notationLabel() }}</span>
-    }
 
     <!-- committed on change, not on input: a half-typed color is unreadable, and rewriting the
          field to the displayed notation on every keystroke would fight the typing -->
@@ -93,6 +78,21 @@
       (keydown)="handleColorKeydown($event)"
       autocomplete="off"
     />
+
+    @if (canSwitchNotation()) {
+      <button
+        [attr.aria-label]="labels().notation(notationLabel())"
+        [disabled]="!colorInput.interactive()"
+        (click)="switchNotation()"
+        class="et-color-picker-notation"
+        etInputSuffix
+        type="button"
+      >
+        {{ notationLabel() }}
+      </button>
+    } @else {
+      <span class="et-color-picker-notation" etInputSuffix aria-hidden="true">{{ notationLabel() }}</span>
+    }
 
     @if (showEyeDropper) {
       <button
