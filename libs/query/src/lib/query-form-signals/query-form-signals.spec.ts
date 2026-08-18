@@ -278,6 +278,24 @@ describe('defineQueryForm', () => {
     expect(qf.value()).toEqual({ region: 'eu', page: 3 });
   });
 
+  it('keeps a value patched before observe() where the URL does not name it', async () => {
+    const { harness, injector, mod } = await setup();
+
+    await harness.navigateByUrl('/?region=eu');
+
+    const qf = runInInjectionContext(injector, () => {
+      const form = mod.defineQueryForm({
+        fields: { region: mod.queryField<string>(), page: mod.queryField<number>({ defaultValue: 1 }) },
+      });
+
+      form.patchValue({ region: 'us', page: 3 });
+
+      return form.observe();
+    });
+
+    expect(qf.value()).toEqual({ region: 'eu', page: 3 });
+  });
+
   it('re-applies the URL on navigation (back/forward)', async () => {
     const { harness, injector, mod } = await setup();
 

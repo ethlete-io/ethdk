@@ -451,8 +451,8 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     model.set(clone(next) as QueryFormModel<TFields>);
   };
 
-  const applyFromUrl = (params: Dict) => {
-    const current = { ...(committed() as Dict) };
+  const applyFromUrl = (params: Dict, base: Dict = committed() as Dict) => {
+    const current = { ...base };
     let changed = false;
 
     for (const [key, def] of Object.entries(fieldDefs)) {
@@ -552,7 +552,9 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       observing.set(true);
 
       if (options?.syncOnNavigation !== false) {
-        applyFromUrl(route.snapshot.queryParams as Dict);
+        // A value written before `observe()` sits in the model only, so the URL merges onto the model
+        // here. Against `committed()` any single URL param would drop that value.
+        applyFromUrl(route.snapshot.queryParams as Dict, model() as Dict);
       }
 
       // Commit whatever the model holds now (URL-restored or programmatic defaults).
