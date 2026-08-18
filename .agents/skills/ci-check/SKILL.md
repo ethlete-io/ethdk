@@ -25,22 +25,27 @@ Run in this order and **stop at the first failure** - a later step's output is n
 an earlier one is broken.
 
 ```bash
-yarn nx format:check                      # 1. Prettier across the workspace
-yarn agents:check                         # 2. generated agent files vs libs/agent-rules/content
-yarn versions:check                       # 3. libs/*/src/lib/version.ts vs each package.json
-yarn lint:changesets                      # 4. unreleased changeset notes: ≤40 words, 1 paragraph, ≤3 bullets
-yarn nx run-many -t lint                  # 5. ESLint, incl. @nx/dependency-checks
-yarn nx run-many -t test                  # 6. all unit tests
-yarn nx run-many -t build                 # 7. all libs + apps (docs build fails on dead links)
-yarn nx run treeshake:bundle-goldens      # 8. bundle-size goldens
-yarn nx run storybook:build-storybook:ci # 9. Storybook production build
+yarn install --immutable                  # 1. deps + lockfile is up to date
+yarn nx format:check                      # 2. Prettier across the workspace
+yarn agents:check                         # 3. generated agent files vs libs/agent-rules/content
+yarn versions:check                       # 4. libs/*/src/lib/version.ts vs each package.json
+yarn lint:changesets                      # 5. unreleased changeset notes: ≤40 words, 1 paragraph, ≤3 bullets
+yarn nx run-many -t lint                  # 6. ESLint, incl. @nx/dependency-checks
+yarn nx run-many -t test                  # 7. all unit tests
+yarn nx run-many -t build                 # 8. all libs + apps (docs build fails on dead links)
+yarn nx run treeshake:bundle-goldens      # 9. bundle-size goldens
+yarn nx run storybook:build-storybook:ci # 10. Storybook production build
 ```
 
-Step 9 is the slowest by far. Skip it only when the change touches no component source
+Step 10 is the slowest by far. Skip it only when the change touches no component source
 and no story - and say so rather than reporting a clean run you didn't do.
 
 ## Reading the results
 
+- **`install --immutable`** - this is the Yarn 4 name for a frozen lockfile: it fails
+  instead of writing `yarn.lock`. A failure means the lockfile does not match the
+  `package.json` files. Fix with a plain `yarn install` and commit `yarn.lock` with the
+  change. An `nx` task that prunes a lib's `dependencies` causes this too.
 - **`format:check`** - fix with `yarn nx format:write`, or `npx prettier --write <files>`
   for just your diff. Do not hand-fix formatting.
 - **`agents:check`** - drift means a `libs/agent-rules/content/**` edit was never compiled.
