@@ -87,6 +87,9 @@ Always available, no provider needed:
 | `'bulletedList'`, `'numberedList'`                        | the two lists    |
 | `'divider'`                                               | a separator      |
 
+A `'divider'` renders only between two tools that are actually there. Leave an opt-in tool out and
+its dividers collapse with it, so the bar never shows a doubled or a dangling separator.
+
 Opt-in - add the provider to a component or route:
 
 | Token          | Provider                                | What else it turns on                                                        |

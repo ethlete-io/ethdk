@@ -9,6 +9,7 @@ import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.to
 import {
   RICH_TEXT_EDITOR_TOOL,
   RICH_TEXT_EDITOR_TOOL_BUTTONS,
+  RICH_TEXT_EDITOR_TOOLS,
   injectRichTextEditorTools,
   RichTextEditorTool,
   RichTextEditorToolDefinition,
@@ -97,9 +98,6 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
    */
   private history = createRichTextEditorHistory();
 
-  /** Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config. */
-  public resolvedTools = computed(() => this.tools() ?? this.toolsConfig.tools);
-
   /**
    * @internal Every tool that can render, by token: the always-built-in buttons plus whatever was
    * registered through {@link RICH_TEXT_EDITOR_TOOL}. Both toolbars read this, so a token in
@@ -117,6 +115,28 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     return defs;
   })();
+
+  /**
+   * Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config, with
+   * every token that has no definition dropped. A divider only survives between two tools that
+   * render, so leaving an opt-in tool unprovided cannot strand a doubled or dangling separator.
+   */
+  public resolvedTools = computed(() => {
+    const configured = this.tools() ?? this.toolsConfig.tools;
+    const rendered: RichTextEditorTool[] = [];
+
+    for (const tool of configured) {
+      if (tool !== RICH_TEXT_EDITOR_TOOLS.DIVIDER) {
+        if (this.toolDefs.has(tool)) rendered.push(tool);
+      } else if (rendered.length && rendered[rendered.length - 1] !== RICH_TEXT_EDITOR_TOOLS.DIVIDER) {
+        rendered.push(tool);
+      }
+    }
+
+    if (rendered[rendered.length - 1] === RICH_TEXT_EDITOR_TOOLS.DIVIDER) rendered.pop();
+
+    return rendered;
+  });
 
   /**
    * The strings in effect here: the injected label set with this instance's `labels` applied. Every part
