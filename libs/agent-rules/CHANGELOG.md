@@ -1,5 +1,14 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.10
+
+### Minor Changes
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`226fd3d`](https://github.com/ethlete-io/ethdk/commit/226fd3d0b52f1a131ccbaa417ffe96682752d3f8) Thanks [@github-actions](https://github.com/apps/github-actions)! - New `ethlete-agents output-style` command: it installs the `ste-clarity` ASD-STE100 output style into Claude Code's user config and switches to it. Claude Code only.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`3657156`](https://github.com/ethlete-io/ethdk/commit/36571560c755468459a87da9d9ec5764d976ee96) Thanks [@github-actions](https://github.com/apps/github-actions)! - `ethlete-agents timetrack instance` reports the Jira instance's own levels and the custom fields a
+  branch subject could go in, so a setup step reads the answer instead of guessing it.
+
 ## 0.1.0-next.9
 
 ### Minor Changes

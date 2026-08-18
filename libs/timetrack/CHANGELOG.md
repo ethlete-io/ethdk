@@ -1,5 +1,27 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.5
+
+### Minor Changes
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`5bd2f14`](https://github.com/ethlete-io/ethdk/commit/5bd2f14d27877c7db23c7fc878bb55bf5376bac4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Agent sessions: a cursor now records its checkout, so `resyncAgentSessionCursors()` can rewind the logs under a path and `agentSessionResyncOffers()` can name the skipped checkouts a new project link covers.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`3657156`](https://github.com/ethlete-io/ethdk/commit/36571560c755468459a87da9d9ec5764d976ee96) Thanks [@github-actions](https://github.com/apps/github-actions)! - `ethlete-agents timetrack instance` reports the Jira instance's own levels and the custom fields a
+  branch subject could go in, so a setup step reads the answer instead of guessing it.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`8072455`](https://github.com/ethlete-io/ethdk/commit/8072455df2987b382e537e34a7810401bca01211) Thanks [@github-actions](https://github.com/apps/github-actions)! - Agent sessions are stored only for checkouts a project link covers, so work Tempo could never bill no
+  longer fills the database.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`d73d386`](https://github.com/ethlete-io/ethdk/commit/d73d38685721714021f5e7ac86997506486770fc) Thanks [@github-actions](https://github.com/apps/github-actions)! - How long the window waits after you go idle before it locks is now a setting, `lockAfterIdleMs`,
+  rather than a fixed minute.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`46e883b`](https://github.com/ethlete-io/ethdk/commit/46e883b8e814a79df5cc882955aaa225ffeac69f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Settings: add `lockWindow`, which says whether the app locks its window until the account password is given. Collection never stops for it.
+
+### Patch Changes
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`7465f4f`](https://github.com/ethlete-io/ethdk/commit/7465f4f095839a4d289e5ebf92f14818465c36aa) Thanks [@github-actions](https://github.com/apps/github-actions)! - A repository that donates its time no longer takes an issue key off a recurring Tempo pattern or a
+  browser tab. The block stays unattributed, so the day places it beside the work it was done for.
+
 ## 0.1.0-next.4
 
 ### Minor Changes

@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.0.0-next.55
+
+### Minor Changes
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: a `cards` row keeps its rounded ends at a pinned column, the empty and error messages centre on the scroll viewport, and only a pinned block's outermost cell marks its edge.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: add `etTableDragScroll` (`TABLE_DRAG_SCROLL_IMPORTS`), which pans a wide table by dragging anywhere in it, and `<et-table-column-chooser>` takes a `variant` for its trigger.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: `--et-table-header-background-color` paints the sticky header row and the footer bar over whatever the appearance would have used, and a pinned column's edge mark no longer reaches into the gaps between cards.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: add `etTablePageStickyHeader` (`TABLE_PAGE_STICKY_HEADER_IMPORTS`), which pins the header row of a page-scrolled table to the viewport rather than to the table's own scroll container.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: the pin shadow takes a colour per axis - `--et-table-pin-shadow-color-inline` and `--et-table-pin-shadow-color-block` - both falling back to `--et-table-pin-shadow-color`.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: a column reorder no longer pans the table under itself when `etTableDragScroll` is on, and it auto-scrolls while held near an inline edge so a column can be dropped past the visible range.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: card rows take `--et-table-row-border-color`, which recolours the ring and the corner a pinned column holds together; `transparent` gives cards that read by their tint alone.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: `etTableSelection` takes `side: 'start' | 'end'`, a feature can register a utility column on either edge through `TableLeadColumn.side`, and `<et-table-column-chooser>` takes a `size` for its trigger.
+
+### Patch Changes
+
+- [`32d6627`](https://github.com/ethlete-io/ethdk/commit/32d66278c9905d079e0692e7bb53a8291d066381) Thanks [@TomTomB](https://github.com/TomTomB)! - Menu: a scrolled option no longer paints in the gap under the search field. The block padding moved off the scrollport onto its content, so the list is clipped at the search field's edge.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: a `cards` row keeps its rounded end while the table is scrolled sideways, instead of showing the row's ring drawn straight out past it.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: a pinned cell paints what its row is painted on, a card's ring no longer seams between two pinned cells, a covered column's menus close, and focus rings are drawn inset so a cell cannot clip them.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: the header's filter and column-menu triggers go from a 24px box with a 14px icon to 28px with a 16px icon, off the WCAG 2.2 target-size floor.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: `etTableResize`'s grip draws its hairline on the header cell's trailing edge instead of 3px inside it, so it lines up with the column rules beside it.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`cc353a6`](https://github.com/ethlete-io/ethdk/commit/cc353a64e419b6cb24f3ee1e82264cf35726ae20) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: `restoreState` keeps the sort and the filters a bound `rowsSource` publishes, so a layout-only state no longer drops the header's sort arrow while the rows stay sorted.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`4c5ef17`](https://github.com/ethlete-io/ethdk/commit/4c5ef174e643c068f9645f2de914e08fc2be08b8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: a row link covers the whole row again when its column is pinned, the utility cells stay pinned in a linked row, and the scroll fades read on a dark surface.
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`dcf0120`](https://github.com/ethlete-io/ethdk/commit/dcf0120dd3e877ed60fb797b5b792384ee28b781) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: the sort arrow fades in only for a sort the reader just asked for. A sort that arrives from a URL, a restored state or a bound `rowsSource` now paints the arrow already in place.
+
 ## 1.0.0-next.54
 
 ### Minor Changes
