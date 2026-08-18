@@ -244,8 +244,15 @@
     line-height: 1.4;
   }
 
-  /* The trailing slack cell: table chrome only (band, dividers, rules), never content. */
-  .et-table-filler-cell {
+  /* The trailing slack cell: table chrome only (band, dividers, rules), never content. Its track is
+     `minmax(0, 1fr)`, so on a table wide enough to scroll the track resolves to 0 and any inline padding
+     left on the cell becomes overflow past the last column - a header band that outruns the rows under
+     it. Every cell kind sets `padding` as a shorthand, and the group cell's rule is in another file, so
+     this has to outweigh them rather than merely follow them. */
+  .et-table-header-cell.et-table-filler-cell,
+  .et-table-cell.et-table-filler-cell,
+  .et-table-footer-cell.et-table-filler-cell,
+  .et-table-group-cell.et-table-filler-cell {
     padding-inline: 0;
   }
 
