@@ -145,13 +145,18 @@ row rhythm. They compose with every feature.
 | `zebra`      | Alternating row backgrounds; good for wide, scannable tables.                                |
 | `grid`       | Full cell borders - spreadsheet density.                                                     |
 | `bare`       | No chrome at all; hover only. For dashboards and cards.                                      |
-| `cards`      | Every row a card of its own - tinted, bordered, rounded, with a gap between rows.            |
+| `cards`      | Every row a card of its own - raised one surface elevation, bordered, rounded, gapped.       |
 
 ### Card rows
 
 `appearance="cards"` gives each body row a **box of its own** instead of the
-layout-transparent row every other appearance uses, and paints that box: the surface tint,
-a border, a radius, and a gap to the next row.
+layout-transparent row every other appearance uses, and paints that box: a border, a radius,
+a gap to the next row, and a surface one elevation above the one the table sits on. The card is
+therefore painted by a registered [surface theme](/core/theming), not by a tint over the table -
+and everything inside the row that resolves an elevation of its own (an `etAutoSurface`, a form
+field in an editing cell) resolves it from the card. Where the app registers no surface themes, or
+the table already sits on the top elevation, the card falls back to a tint so it still reads as a
+card.
 
 <StoryEmbed id="components-data-display-table--card-rows" height="420px" />
 
@@ -163,7 +168,7 @@ Three custom properties tune it:
 | `--et-table-row-radius`       | `10px`                      | The card's corner radius.                                      |
 | `--et-table-row-border-color` | `--et-surface-border-solid` | The card's 1px ring, and the corner it holds at a pinned edge. |
 
-Set `--et-table-row-border-color: transparent` for cards that read by their tint alone, which is
+Set `--et-table-row-border-color: transparent` for cards that read by their surface alone, which is
 what a design whose other cards carry no border wants. The rounded corner survives it: the corner
 a pinned column holds is cut from the page's own background, not drawn from the ring.
 
@@ -1866,7 +1871,8 @@ properties, and the utility columns via `--et-table-expander-width`
 guideline the bare label-less checkbox otherwise falls short of) - both sized to
 their control, so the expander button and the checkbox keep their own size even
 if you set these narrower. [Card rows](#card-rows) add `--et-table-row-gap` (`8px`),
-`--et-table-row-radius` (`10px`) and `--et-table-row-border-color`.
+`--et-table-row-radius` (`10px`) and `--et-table-row-border-color`, and paint the row itself from the
+surface one elevation above the table's.
 
 `--et-table-header-background-color` paints the two bars rows pass under - the sticky
 header row and the footer bar - over whatever the appearance would have used. Both read

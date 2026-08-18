@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { SkeletonItemComponent } from '../skeleton/skeleton-item.component';
+import { TableCardSurfaceDirective } from './table-card-surface.directive';
 import { injectTableFeatureHost } from './headless/table-features';
 import { TableSkeletonDirective } from './table-skeleton.directive';
 import { TableCellSkeletonContext } from './table.types';
@@ -38,6 +39,8 @@ type SkeletonRowVm = {
       <div
         [style.--_et-table-row-h.px]="feature.measuredRowHeight()"
         [class.et-table-row--box]="table.hasRowBox()"
+        [class.et-table-row--card]="table.hasCardRows()"
+        [etTableCardSurface]="table.hasCardRows()"
         class="et-table-row et-table-row--placeholder et-skeleton--animated"
         role="row"
         aria-hidden="true"
@@ -72,7 +75,7 @@ type SkeletonRowVm = {
   `,
   styleUrl: './table-skeleton-rows.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, SkeletonItemComponent],
+  imports: [NgTemplateOutlet, SkeletonItemComponent, TableCardSurfaceDirective],
   host: { class: 'et-table-skeleton-rows' },
 })
 export class TableSkeletonRowsComponent {

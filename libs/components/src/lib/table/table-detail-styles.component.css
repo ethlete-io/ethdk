@@ -10,18 +10,25 @@
      re-resolves the table's layout. Measured on a 20-row table at 20× CPU throttle, per toggle: ~41ms
      average frame and 5–6 long frames, against ~20ms and 3 for the compositor-only transform+opacity
      reveal this replaced. Reach for that one instead (`opacity`/`translateY`, no track animation) if a
-     table ever needs to stay smooth under load. */
+     table ever needs to stay smooth under load.
+
+     Sized and pinned to the scroll viewport, not to the column tracks: the row spans every column, so on
+     a table wider than its viewport the detail content is laid out across the whole scroll extent — its
+     right-hand part sits off screen, and the panel slides sideways with the list instead of staying where
+     the reader is looking. The same shape `table.component.css` gives the empty and error cells, and
+     `--_et-table-viewport-inline-size` is the width the table measures for them.
+
+     The pin belongs on this row and not on the cell inside it: that cell clips its overflow, which makes
+     it a scroll container, and a `position: sticky` element inside one sticks to that container rather
+     than to the table's viewport. */
   .et-table-detail-row {
     grid-column: 1 / -1;
+    position: sticky;
+    inset-inline-start: 0;
+    inline-size: var(--_et-table-viewport-inline-size, 100%);
     display: grid;
     grid-template-rows: 1fr;
-    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
-  }
-
-  /* Card rows are separated by the gap between them, so the rule that closes a detail row would only
-     draw a line across it — and, being a border, one the row-gap then holds away from the next card. */
-  .et-table-host:where([data-appearance='cards']) .et-table-detail-row {
-    border-block-end: 0;
+    border-block-end: var(--_et-table-detail-rule);
   }
 
   /* The detail row of the last row ends the table, so its rule has nothing under it to close off. */
@@ -68,14 +75,19 @@
 
   /* The clip window, and nothing else. It is stretched to a track that is 0 tall for part of the
      animation, so it has to be allowed to shrink past its content (`min-block-size`) and clip what
-     doesn't fit (`overflow`) — without either, the row would jump to full height on the first frame.
+     doesn't fit (`overflow-y`) — without either, the row would jump to full height on the first frame.
+
+     Only the block axis is clipped. The row is now as wide as the viewport, so content that needs more
+     room than that has to stay reachable; `overflow-x: auto` gives the detail its own scrollbar instead
+     of cutting it off. A nested `et-table` scrolls itself and never reaches for this one.
 
      It must also carry no padding or border of its own: under `box-sizing: border-box` those set a floor
      under its height, so the row would pop open to that floor before the animation started and then jump
      the rest of the way. That is what the padding below is separated out for. */
   .et-table-detail-cell {
     min-block-size: 0;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 
   .et-table-detail-body {

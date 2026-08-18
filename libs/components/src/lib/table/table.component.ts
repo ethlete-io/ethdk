@@ -36,6 +36,7 @@ import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
 import { TRIANGLE_EXCLAMATION_ICON } from '../icon/headless/triangle-exclamation-icon';
 import { reconcileColumnOrder, reconcileColumnWidths, reconcileHiddenColumns } from './headless/table-column-state';
+import { TableCardSurfaceDirective } from './table-card-surface.directive';
 import { TABLE_ERROR_CODES } from './table-errors';
 import {
   TABLE_FEATURE_HOST,
@@ -232,7 +233,7 @@ let uniqueTableId = 0;
   templateUrl: './table.component.html',
   styleUrl: './table.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgComponentOutlet, NgTemplateOutlet, IconDirective, ProvideColorDirective],
+  imports: [NgComponentOutlet, NgTemplateOutlet, IconDirective, ProvideColorDirective, TableCardSurfaceDirective],
   providers: [
     { provide: TABLE_FEATURE_HOST, useExisting: TableComponent },
     provideIcons(ARROW_UP_ICON, TRIANGLE_EXCLAMATION_ICON),
@@ -332,7 +333,8 @@ export class TableComponent<T> {
    * The table's visual frame. `'enclosed'` (default) is a bordered, rounded surface panel with a
    * tinted header band; `'divided'` is borderless with row dividers; `'zebra'` stripes rows; `'grid'`
    * draws full cell borders; `'bare'` has no chrome; `'cards'` gives every row a box of its own - a
-   * tinted, rounded card, spaced by `--et-table-row-gap`. @default 'enclosed'
+   * rounded card on a surface one elevation above the table's, spaced by `--et-table-row-gap`.
+   * @default 'enclosed'
    */
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare' | 'cards'>('enclosed');
 
@@ -887,6 +889,9 @@ export class TableComponent<T> {
    */
   protected showBusyBar = signalDeferredLoading(this.refetchingOverRows);
 
+  /** Whether body rows are cards - a box painted on a surface of its own (see `.et-table-row--card`). */
+  protected cardRows = computed(() => this.appearance() === 'cards');
+
   /**
    * Whether a body row gets a box of its own instead of being layout-transparent - a subgrid spanning
    * every track (see `.et-table-row--box`).
@@ -895,7 +900,7 @@ export class TableComponent<T> {
    * column, the row's own link. A card row needs one to paint, and a stretched row link needs one to
    * stretch over.
    */
-  protected rowBox = computed(() => this.appearance() === 'cards' || !!this.rowLink());
+  protected rowBox = computed(() => this.cardRows() || !!this.rowLink());
 
   /**
    * The column whose cell hosts a row's link: the first visible one that doesn't hold controls of its
@@ -1322,6 +1327,11 @@ export class TableComponent<T> {
   /** Whether rows have a box of their own (a card, a row link). Part of the feature contract. */
   public hasRowBox() {
     return this.rowBox();
+  }
+
+  /** Whether rows are cards. Part of the feature contract. */
+  public hasCardRows() {
+    return this.cardRows();
   }
 
   /** The `expandedRowTemplate` input, type-erased for the feature contract. */

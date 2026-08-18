@@ -499,6 +499,13 @@ export type TableFeatureHost = {
   hasRowBox(): boolean;
 
   /**
+   * Whether rows are cards - a box on a surface one elevation above the table's own. A feature drawing
+   * a whole row has to raise that row too, else its card is painted on the table's surface and reads as
+   * a gap between the real ones.
+   */
+  hasCardRows(): boolean;
+
+  /**
    * The rendered header cells of the visible columns, in the same order as `visibleColumnsMeta()`.
    * A feature that must attach behavior to cells the table renders (a reorder drag) works from these.
    */

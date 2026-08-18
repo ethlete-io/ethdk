@@ -1,4 +1,5 @@
 export * from './headless';
+export * from './table-card-surface.directive';
 export * from './table-cell-error-mark.component';
 export * from './table-cell-error-tooltip.directive';
 export * from './table-column-chooser.component';

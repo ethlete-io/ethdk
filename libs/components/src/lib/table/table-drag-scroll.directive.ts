@@ -19,6 +19,30 @@ import { TableDragScrollStylesComponent } from './table-drag-scroll-styles.compo
 /** Options for {@link TableDragScrollDirective}. */
 export type TableDragScrollConfig = TableFeatureConfig;
 
+/**
+ * Whether a press landed inside a scroll container of its own between the target and the table - a sub
+ * table in a detail row, a scrolling panel in a cell. That container is what the gesture belongs to, so
+ * the table must not pan instead: dragging in a sub table would scroll the list under it. One that fits
+ * its content scrolls nothing, so it is left to the table.
+ */
+const hasOwnScroller = (target: EventTarget | null, host: HTMLElement) => {
+  let element = target instanceof Element ? target : null;
+
+  while (element !== null && element !== host) {
+    const style = getComputedStyle(element);
+    const scrollsInline = /^(auto|scroll)$/.test(style.overflowX) && element.scrollWidth > element.clientWidth;
+    const scrollsBlock = /^(auto|scroll)$/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
+
+    if (scrollsInline || scrollsBlock) {
+      return true;
+    }
+
+    element = element.parentElement;
+  }
+
+  return false;
+};
+
 /** Whether a press landed in something whose own drag is the point of it: selecting text, not panning. */
 const isTextGesture = (target: EventTarget | null) =>
   target instanceof HTMLInputElement ||
@@ -35,7 +59,8 @@ const isTextGesture = (target: EventTarget | null) =>
  * A press that does not travel is still a click, so rows, row links and header controls behave exactly
  * as they did; a press that becomes a drag swallows the click it would have ended on, so panning off a
  * row link does not also follow it. Dragging inside a text field is left alone, and a touch pointer
- * keeps the browser's own scrolling.
+ * keeps the browser's own scrolling. A press inside content that scrolls on its own - a sub table in a
+ * detail row - belongs to that content, so the table stays put.
  *
  * @example
  * <et-table [data]="rows()" [columns]="COLUMNS" etTableDragScroll />
@@ -109,6 +134,8 @@ export class TableDragScrollDirective {
     if (!this.scrollable() || isTextGesture(event.target)) return;
 
     const host = this.elementRef.nativeElement;
+
+    if (hasOwnScroller(event.target, host)) return;
     const startLeft = host.scrollLeft;
     const startTop = host.scrollTop;
 

@@ -164,7 +164,9 @@
         [class.et-table-row--last]="rowVm.last"
         [class.et-table-row--interactive]="rowInteractive()"
         [class.et-table-row--box]="rowBox()"
+        [class.et-table-row--card]="cardRows()"
         [class.et-table-row--link]="rowVm.href !== null"
+        [etTableCardSurface]="cardRows()"
         [attr.tabindex]="rowInteractive() && !cellNavigation() && rowVm.href === null ? 0 : null"
         (click)="activateRow(rowVm.row, $event)"
         (keydown.enter)="activateRow(rowVm.row, $event)"
@@ -278,7 +280,7 @@
           ></a>
         }
 
-        @if (appearance() === 'cards') {
+        @if (cardRows()) {
           <div class="et-table-card-corners" role="presentation" aria-hidden="true"></div>
         }
       </div>

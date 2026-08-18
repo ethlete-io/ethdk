@@ -414,7 +414,8 @@ export const CardRows: Story = {
     docs: {
       description: {
         story:
-          'The `cards` appearance gives every row a box of its own - a tinted, rounded card, spaced by ' +
+          'The `cards` appearance gives every row a box of its own - a rounded card on a surface one ' +
+          "elevation above the table's, spaced by " +
           '`--et-table-row-gap` and rounded by `--et-table-row-radius`. The columns still line up with the ' +
           "header, because the row is a `subgrid` of the table's own tracks.",
       },

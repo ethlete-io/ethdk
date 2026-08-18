@@ -58,12 +58,37 @@
     --_et-table-stripe-solid: var(--_et-table-row-surface);
     /* The hover tint, in the same two forms and for the same reason. Read as a knob so an appearance
        can drop it, where a row has nothing to react to. */
-    --_et-table-row-hover: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
-    --_et-table-row-hover-solid: color-mix(
+    --_et-table-hover-tint: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+    --_et-table-hover-tint-solid: color-mix(
       in srgb,
       var(--et-surface-interaction-solid, gray) 8%,
       var(--_et-table-row-surface)
     );
+    --_et-table-row-hover: var(--_et-table-hover-tint);
+    --_et-table-row-hover-solid: var(--_et-table-hover-tint-solid);
+    /* The tint for a row with nothing to react to, which an appearance drops where its rows are cards.
+       A knob of its own rather than the row rule reading the appearance, so the two stay separable. */
+    --_et-table-inert-row-hover: var(--_et-table-hover-tint);
+    --_et-table-inert-row-hover-solid: var(--_et-table-hover-tint-solid);
+
+    /* Skin knobs. Every appearance writes what it needs into these, and every table host re-declares
+       the defaults on itself — which is what stops a skin from reaching a table nested inside this one.
+       A descendant selector from the host cannot do that: a sub table's rows are as much its
+       descendants as its own rows are, so `[data-appearance='cards'] .et-table-row` paints the cards
+       of every table below it. The custom property stops at the next host that declares it. */
+    --_et-table-row-gap-block: 0px;
+    --_et-table-row-paint: transparent;
+    --_et-table-row-corner: 0px;
+    --_et-table-header-gap-block: 0px;
+    --_et-table-cell-rule: 0;
+    --_et-table-sticky-clip: none;
+    --_et-table-busy-margin-block-start: 0px;
+    --_et-table-busy-margin-block-end: -2px;
+    --_et-table-detail-rule: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    /* The paint outside a card's rounded corner - the table's own surface. Declared here and not on the
+       corner box, which sits inside a card row: a card row raises its elevation, so a var() resolved
+       inside it would pick the card's own surface and the rounding would vanish. */
+    --_et-table-card-outside: var(--et-surface-background-solid, Canvas);
     /* The mark at an edge rows pass under - a pinned column's inner edge, the sticky header, the footer
        bar. The surface's own interaction neutral rather than a fixed black, which is invisible on a dark
        table: the boundary has to lighten there instead. Named per direction so a cell sitting at two of
@@ -154,6 +179,7 @@
   }
 
   .et-table-host:where([data-appearance='grid']) {
+    --_et-table-cell-rule: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
     --_et-table-header-bg: var(--et-table-header-background-color, var(--_et-table-band));
     --_et-table-row-divider: var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
   }
@@ -162,14 +188,24 @@
     --_et-table-header-border: transparent;
   }
 
-  /* Cards: every row is a box of its own (see `.et-table-row--box`), tinted a step off the table's own
-     surface so it reads as a card lying on it, and spaced by a margin rather than by the grid's
-     `row-gap` - a gap would push the header, the detail rows and the footer apart too. */
+  /* Cards: every row is a box of its own (see `.et-table-row--box`), painted one surface elevation above
+     the table so it reads as a card lying on it (see `.et-table-row--card`), and spaced by a margin
+     rather than by the grid's `row-gap` - a gap would push the header, the detail rows and the footer
+     apart too. */
   .et-table-host:where([data-appearance='cards']) {
+    --_et-table-row-gap-block: var(--et-table-row-gap, 8px);
+    --_et-table-row-corner: var(--et-table-row-radius, 10px);
+    --_et-table-header-gap-block: var(--et-table-row-gap, 8px);
+    --_et-table-sticky-clip: inset(0 -24px);
+    /* The first row is a box with a border and rounded corners, which a bar across its top edge would
+       cut into - so the bar draws centred in the gap the header already leaves above the first card,
+       touching neither. The two margins still cancel the 2px grid row, so a refetch moves nothing. */
+    --_et-table-busy-margin-block-start: calc((var(--et-table-row-gap, 8px) + 2px) / -2);
+    --_et-table-busy-margin-block-end: calc((var(--et-table-row-gap, 8px) - 2px) / 2);
+    --_et-table-detail-rule: 0;
+    --_et-table-inert-row-hover: transparent;
     --_et-table-header-bg: var(--et-table-header-background-color, var(--et-surface-background-solid, Canvas));
     --_et-table-row-divider: transparent;
-    /* Rows are painted by the card, not by the table, so every opaque tint mixes over the card's tint. */
-    --_et-table-row-surface: var(--_et-table-band);
   }
 
   .et-table {
@@ -325,14 +361,15 @@
     background: var(--_et-table-stripe-bg);
   }
 
-  /* Grid skin: vertical rules between cells (dropped on the last column of each row). */
-  .et-table-host:where([data-appearance='grid']) .et-table-header-cell,
-  .et-table-host:where([data-appearance='grid']) .et-table-cell {
-    border-inline-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+  /* Vertical rules between cells, drawn by the skins that ask for them (dropped on the last column of
+     each row). */
+  .et-table-header-cell,
+  .et-table-cell {
+    border-inline-end: var(--_et-table-cell-rule);
   }
 
-  .et-table-host:where([data-appearance='grid']) .et-table-header-row .et-table-header-cell:last-child,
-  .et-table-host:where([data-appearance='grid']) .et-table-row .et-table-cell:nth-last-child(1 of .et-table-cell) {
+  .et-table-header-row .et-table-header-cell:last-child,
+  .et-table-row .et-table-cell:nth-last-child(1 of .et-table-cell) {
     border-inline-end: 0;
   }
 
@@ -623,10 +660,34 @@
      transparent, so the card paints through them. The leading and trailing cell take the row's own
      corner radii, so a cell background — hover, a selected row, a pinned column — cannot square off a
      corner, whichever column happens to be first after a reorder or a hidden column. */
-  .et-table-host:where([data-appearance='cards']) .et-table-row {
-    margin-block-end: var(--et-table-row-gap, 8px);
-    background: var(--_et-table-band);
-    border-radius: var(--et-table-row-radius, 10px);
+  .et-table-row {
+    margin-block-end: var(--_et-table-row-gap-block);
+    background: var(--_et-table-row-paint);
+    border-radius: var(--_et-table-row-corner);
+  }
+
+  /* A card is a surface, not a tint: `etTableCardSurface` puts the theme one elevation above the table's
+     on the row, and the row paints that theme's background. Every knob naming the row's paint therefore
+     has to be declared here rather than in the appearance block - a `var()` in the block would resolve
+     against the host, which is the surface the card is meant to stand off. */
+  .et-table-row--card {
+    --_et-table-row-paint: var(--et-surface-background-solid, Canvas);
+    --_et-table-row-surface: var(--_et-table-row-paint);
+    --_et-table-stripe-solid: var(--_et-table-row-paint);
+    --_et-table-row-hover-solid: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 8%,
+      var(--_et-table-row-paint)
+    );
+    --_et-table-inert-row-hover-solid: var(--_et-table-row-paint);
+    color: var(--et-surface-color-solid, CanvasText);
+  }
+
+  /* No surface a level above the table's to raise the card onto - a theme-less app, or a table already on
+     top of the ladder (see etTableCardSurface). Back to a tint, so the card is still marked off from the
+     table under it. Only the paint needs saying: every knob above reads it. */
+  .et-table-row--card:where(.et-table-row--card-tint) {
+    --_et-table-row-paint: var(--_et-table-band);
   }
 
   /* The card's 1px ring, drawn out of flow instead of as a border on the row, and that is load-bearing: a
@@ -652,36 +713,36 @@
      block extent and let out sideways only, since a mark laid across a gap outlives the rounded card end.
      Body cells only: header and footer cells compose a block-axis shadow in the same property, which is
      meant to fall on the rows passing under them. */
-  .et-table-host:where([data-appearance='cards']) .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
-    clip-path: inset(0 -24px);
+  .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+    clip-path: var(--_et-table-sticky-clip);
   }
 
   /* The header is a label row over the cards, so its rule must not run into the first one's border.
      A margin under the header cells rather than a grid `row-gap`, which would space out every row
      kind - the same reason the cards themselves are spaced by a margin. */
-  .et-table-host:where([data-appearance='cards']) .et-table-header-cell {
-    margin-block-end: var(--et-table-row-gap, 8px);
+  .et-table-header-cell {
+    margin-block-end: var(--_et-table-header-gap-block);
   }
 
   /* A card that neither links nor takes clicks has nothing to react to, so it does not light up under
      the pointer. Set as the tint rather than as a background, so a selected row keeps its accent. */
-  .et-table-host:where([data-appearance='cards']) .et-table-row:not(.et-table-row--interactive, .et-table-row--link) {
-    --_et-table-row-hover: transparent;
-    --_et-table-row-hover-solid: var(--_et-table-band);
+  .et-table-row:not(.et-table-row--interactive, .et-table-row--link) {
+    --_et-table-row-hover: var(--_et-table-inert-row-hover);
+    --_et-table-row-hover-solid: var(--_et-table-inert-row-hover-solid);
   }
 
-  .et-table-host:where([data-appearance='cards']) .et-table-row > :first-child {
+  .et-table-row > :first-child {
     border-start-start-radius: inherit;
     border-end-start-radius: inherit;
   }
 
-  .et-table-host:where([data-appearance='cards']) .et-table-row > .et-table-cell:nth-last-child(1 of .et-table-cell) {
+  .et-table-row > .et-table-cell:nth-last-child(1 of .et-table-cell) {
     border-start-end-radius: inherit;
     border-end-end-radius: inherit;
   }
 
-  .et-table-host:where([data-appearance='cards']) .et-table-row-link {
-    border-radius: var(--et-table-row-radius, 10px);
+  .et-table-row-link {
+    border-radius: var(--_et-table-row-corner);
   }
 
   /* A card's leading and trailing corners belong to whichever box is holding that edge, which stops
@@ -711,7 +772,6 @@
   .et-table-host:where([data-appearance='cards']) .et-table-card-corners::after {
     --_et-table-card-radius: var(--et-table-row-radius, 10px);
     --_et-table-card-edge: var(--et-table-row-border-color, var(--et-surface-border-solid, rgb(128 128 128 / 0.3)));
-    --_et-table-card-outside: var(--et-surface-background-solid, Canvas);
 
     content: '';
     flex: 0 0 auto;
@@ -938,17 +998,10 @@
     /* Contributes no height, so starting a refetch never nudges the rows down by 2px: the negative
        margin cancels the size the grid row would take, and the bar paints over the top edge of the
        first row instead. */
-    margin-block-end: -2px;
+    margin-block-start: var(--_et-table-busy-margin-block-start);
+    margin-block-end: var(--_et-table-busy-margin-block-end);
     overflow: hidden;
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
-  }
-
-  /* On cards the first row is a box with a border and rounded corners, which a bar across its top edge
-     would cut into - so there it draws centred in the gap the header already leaves above the first card,
-     touching neither. The two margins still cancel the 2px grid row, so starting a refetch moves nothing. */
-  .et-table-host:where([data-appearance='cards']) .et-table-busy-bar {
-    margin-block-start: calc((var(--et-table-row-gap, 8px) + 2px) / -2);
-    margin-block-end: calc((var(--et-table-row-gap, 8px) - 2px) / 2);
   }
 
   .et-table-busy-bar.et-table-busy-bar--enter {

@@ -30,12 +30,9 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--et-surface-color-muted-solid, CanvasText);
-  }
-
-  /* Grid skin: the vertical rule the base sheet draws between header cells and body cells, extended to
-     labelled group runs. Unlabelled runs get none, so the band above an ungrouped column reads as empty
-     rather than as a one-column group. */
-  .et-table-host:where([data-appearance='grid']) .et-table-group-cell:where(.et-table-group-cell--labeled) {
-    border-inline-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    /* The vertical rule the base sheet draws between header cells and body cells, extended to labelled
+       group runs. Unlabelled runs get none, so the band above an ungrouped column reads as empty rather
+       than as a one-column group. */
+    border-inline-end: var(--_et-table-cell-rule);
   }
 }
