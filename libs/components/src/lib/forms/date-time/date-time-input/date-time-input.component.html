@@ -6,6 +6,10 @@
   placeholderChar="_"
 />
 
+@if (localReadingText(); as reading) {
+  <span [id]="dateTimeInput.localReadingId()" class="et-date-time-input-local-reading">{{ reading }}</span>
+}
+
 <ng-template etControlSuffix>
   @if (showClear()) {
     <!-- pointer-only, out of the tab order — keyboard users clear by erasing the text.

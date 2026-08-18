@@ -1,15 +1,27 @@
-import { booleanAttribute, computed, input, signal, Directive } from '@angular/core';
+import { booleanAttribute, computed, effect, input, signal, Directive } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
 import { injectDateFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
-import { formatDateValue, parseDateValue } from '../../internals/date-value';
+import { parseDateValue } from '../../internals/date-value';
+import {
+  formatInZone,
+  isValidTimeZone,
+  localReading,
+  reinterpretInZone,
+  timeZoneDisplayName,
+  withZonedDay,
+  withZonedTimeOfDay,
+  zonedProxy,
+} from '../../internals/time-zone';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { withTimeOfDay } from '../../internals/date-time-merge';
 import { parseDateTimeText } from '../../internals/date-time-parse';
 import { createPendingDateTime, renderPartialDateTime } from '../../internals/pending-date-time';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
+
+let localReadingIdCounter = 0;
 
 /**
  * A combined date & time form control with a `string | null` value (a date-fns
@@ -39,6 +51,16 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /** Combined date-fns format shown in (and parsed from) the field. Locale-aware by default. */
   public displayFormat = input('Pp');
+
+  /**
+   * IANA name of the zone the field's wall clock stands for - `'Asia/Tokyo'` makes the field, the
+   * calendar and the time picker all read in Tokyo, and writes the value with Tokyo's offset. The
+   * value stays an instant either way. `null` keeps the runtime's own zone.
+   */
+  public timeZone = input<string | null>(null);
+
+  /** A name for {@link timeZone} in the second reading. Defaults to the IANA name's last segment. */
+  public timeZoneLabel = input<string | null>(null);
 
   /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
   public minDate = input<Date | null>(null);
@@ -75,6 +97,20 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_TIME_INPUT);
 
+  /** The zone in effect, or `null` when none is set or the name is not one `Intl` knows. */
+  public effectiveTimeZone = computed(() => {
+    const timeZone = this.timeZone();
+
+    return timeZone !== null && isValidTimeZone(timeZone) ? timeZone : null;
+  });
+
+  /** The name shown for the field's zone. */
+  public resolvedTimeZoneLabel = computed(() => {
+    const timeZone = this.effectiveTimeZone();
+
+    return timeZone === null ? null : (this.timeZoneLabel() ?? timeZoneDisplayName(timeZone));
+  });
+
   /** The current value as a `Date` (what the picker calendar and time picker bind to). */
   public dateTime = computed(() => {
     // masking: while mixed the hidden raw value is neither rendered in the field
@@ -96,18 +132,55 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   private halfPick = createPendingDateTime();
 
+  /**
+   * The committed value as the calendar and the time picker see it: a plain `Date` whose local wall
+   * clock is the zone's, so both keep doing local arithmetic. Highlighting only - a committed value
+   * is always derived from the instant, never from this. See `zonedProxy`.
+   */
+  private pickerDateTime = computed(() => {
+    const dateTime = this.dateTime();
+    const timeZone = this.effectiveTimeZone();
+
+    return dateTime === null || timeZone === null ? dateTime : zonedProxy(dateTime, timeZone);
+  });
+
   /** The day the picker calendar highlights - the committed one, else a day picked with no time yet. */
-  public pickerDate = computed(() => this.dateTime() ?? this.halfPick.day());
+  public pickerDate = computed(() => this.pickerDateTime() ?? this.halfPick.day());
 
   /** The time the picker's columns mark as selected - the committed one, else a time picked with no day yet. */
-  public pickerTime = computed(() => this.dateTime() ?? this.halfPick.time());
+  public pickerTime = computed(() => this.pickerDateTime() ?? this.halfPick.time());
+
+  /**
+   * The same moment read in the runtime's own zone, or `null` when no zone is set, the field is
+   * empty, or both zones show the same wall clock.
+   */
+  public localReading = computed(() =>
+    localReading(this.dateTime(), {
+      format: this.displayFormat(),
+      locale: this.effectiveLocale(),
+      timeZone: this.effectiveTimeZone(),
+    }),
+  );
+
+  private readonly LOCAL_READING_ELEMENT_ID = `et-date-time-local-reading-${localReadingIdCounter++}`;
+
+  /** @internal Id of the second-reading element, or `null` while it does not render. */
+  public localReadingId = computed(() => (this.localReading() === null ? null : this.LOCAL_READING_ELEMENT_ID));
+
+  public override ownDescribedBy = this.localReadingId;
 
   /** The committed value rendered in `displayFormat`, or a half-pick rendered against placeholders. */
   public displayValue = computed(() => {
     const dateTime = this.dateTime();
 
     if (dateTime !== null) {
-      return formatDateValue(dateTime, { format: this.displayFormat(), locale: this.effectiveLocale() }) ?? '';
+      return (
+        formatInZone(dateTime, {
+          format: this.displayFormat(),
+          locale: this.effectiveLocale(),
+          timeZone: this.effectiveTimeZone(),
+        }) ?? ''
+      );
     }
 
     // a typing mask owns the field text and draws its own guides - a second set of placeholders
@@ -125,6 +198,21 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       }) ?? ''
     );
   });
+
+  constructor() {
+    super();
+
+    if (ngDevMode) {
+      // an unknown zone name silently behaving like no zone at all would be a head-scratcher
+      effect(() => {
+        const timeZone = this.timeZone();
+
+        if (timeZone !== null && !isValidTimeZone(timeZone)) {
+          console.warn(`[et-date-time-input] timeZone "${timeZone}" is not an IANA zone name, so it is ignored.`);
+        }
+      });
+    }
+  }
 
   /**
    * @internal Commits typed field text: empty clears, a strict-then-lenient
@@ -171,7 +259,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       return;
     }
 
-    this.commitDateTime(parsed);
+    this.commitInstant(reinterpretInZone(parsed, this.effectiveTimeZone()));
   }
 
   /**
@@ -184,8 +272,17 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     }
 
     const current = this.dateTime();
+    const timeZone = this.effectiveTimeZone();
 
-    this.resolvePick(current === null ? this.halfPick.holdDay(date) : withTimeOfDay(date, current));
+    if (current !== null) {
+      this.resolvePick(
+        timeZone === null ? withTimeOfDay(date, current) : withZonedDay(current, { day: date, timeZone }),
+      );
+
+      return;
+    }
+
+    this.resolvePick(this.holdHalfPick(this.halfPick.holdDay(date)));
   }
 
   /**
@@ -198,8 +295,17 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     }
 
     const current = this.dateTime();
+    const timeZone = this.effectiveTimeZone();
 
-    this.resolvePick(current === null ? this.halfPick.holdTime(time) : withTimeOfDay(current, time));
+    if (current !== null) {
+      this.resolvePick(
+        timeZone === null ? withTimeOfDay(current, time) : withZonedTimeOfDay(current, { time, timeZone }),
+      );
+
+      return;
+    }
+
+    this.resolvePick(this.holdHalfPick(this.halfPick.holdTime(time)));
   }
 
   /** Drops a held half along with the value - the two are one control state. */
@@ -208,10 +314,15 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     this.halfPick.clear();
   }
 
+  /** A completed half-pick carries the wall clock the user picked, so it is read in the field's zone. */
+  private holdHalfPick(merged: Date | null) {
+    return merged === null ? null : reinterpretInZone(merged, this.effectiveTimeZone());
+  }
+
   /** Commits a completed pick, or settles the control around a half that is still waiting. */
-  private resolvePick(dateTime: Date | null) {
-    if (dateTime !== null) {
-      this.commitDateTime(dateTime);
+  private resolvePick(instant: Date | null) {
+    if (instant !== null) {
+      this.commitInstant(instant);
     } else if (this.mixed()) {
       // a half-pick resolves the bulk-edit mask like any other pick: replace, never merge into
       // the hidden raw value
@@ -222,11 +333,17 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     this.touched.set(true);
   }
 
-  private commitDateTime(dateTime: Date) {
+  private commitInstant(instant: Date) {
     this.halfPick.clear();
     this.inputText.set('');
     this.parseError.set(false);
-    this.value.set(formatDateValue(dateTime, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
+    this.value.set(
+      formatInZone(instant, {
+        format: this.effectiveValueFormat(),
+        locale: this.effectiveLocale(),
+        timeZone: this.effectiveTimeZone(),
+      }),
+    );
     this.mixed.set(false);
   }
 }

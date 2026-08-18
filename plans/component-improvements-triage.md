@@ -44,6 +44,13 @@ a registration, `[perBreakpointConstraints]` on `et-grid-item`. It was the last 
 `component-improvements.md` still had open outside the `L` projects, so **that file now holds nothing
 smaller than an `L`**. Its traps are in "Already fixed, do not re-report".
 
+The forms time-zone row went the same day, and it turned out not to be an `L` at all: `timeZone` on
+`et-date-time-input` and `et-date-time-range-input` shows the field in another zone and names the
+reader's own underneath, without a single line of zoned arithmetic in the calendar, the time picker
+or the scheduler. The value stays an instant throughout. The scheduler's own zoned grid stays out -
+23- and 25-hour days make it the separate `L` the docs always said it was. Design calls and the
+one-hour-a-year trap are in "Already fixed, do not re-report".
+
 Everything left is an `L` project with nothing left to decide, so the next pick is purely which
 project to start.
 
@@ -51,13 +58,12 @@ project to start.
 
 ### L - projects, not tickets
 
-| Item                                      | Tag     | Note                                                                                                                                                                                                                                                                                         |
-| ----------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Charts                                    | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't                          |
-| Command palette                           | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                                           |
-| Stat tile                                 | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                                      |
-| Test harnesses                            | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                                       |
-| Forms: time-zone handling / local-time UX | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, **date-time range** and scheduler together |
+| Item            | Tag     | Note                                                                                                                                                                                                                                                                |
+| --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Charts          | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't |
+| Command palette | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                  |
+| Stat tile       | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                             |
+| Test harnesses  | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                              |
 
 ### Colour picker follow-ups, shipped - do not re-report
 

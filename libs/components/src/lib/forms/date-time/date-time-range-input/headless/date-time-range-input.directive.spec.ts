@@ -446,3 +446,116 @@ describe('DateTimeRangeInputDirective mixed state', () => {
     };
   });
 });
+
+@Component({
+  template: `
+    <div
+      [(value)]="value"
+      [timeZone]="timeZone()"
+      displayFormat="MM/dd/yyyy, HH:mm"
+      etDateTimeRangeInput
+      valueFormat="yyyy-MM-dd'T'HH:mm:ssxxx"
+    >
+      <input class="start" etDateTimeRangeInputField side="start" />
+      <input class="end" etDateTimeRangeInputField side="end" />
+    </div>
+  `,
+  imports: [DateTimeRangeInputDirective, DateTimeRangeInputFieldDirective],
+})
+class ZonedDateTimeRangeInputTestHost {
+  value = signal<DateTimeRangeValue>({ start: null, end: null });
+  timeZone = signal<string | null>(null);
+}
+
+const RUNTIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+/** 2026-08-18, 14:00 to 18:00 in Tokyo - the same two instants read in New York. */
+const RANGE =
+  RUNTIME_ZONE === 'Asia/Tokyo'
+    ? {
+        zone: 'America/New_York',
+        name: 'New York',
+        wire: { start: '2026-08-18T01:00:00-04:00', end: '2026-08-18T05:00:00-04:00' },
+        display: { start: '08/18/2026, 01:00', end: '08/18/2026, 05:00' },
+        afterStartTimePick: '2026-08-18T21:45:00-04:00',
+        afterDayPick: '2026-07-16T01:00:00-04:00',
+      }
+    : {
+        zone: 'Asia/Tokyo',
+        name: 'Tokyo',
+        wire: { start: '2026-08-18T14:00:00+09:00', end: '2026-08-18T18:00:00+09:00' },
+        display: { start: '08/18/2026, 14:00', end: '08/18/2026, 18:00' },
+        afterStartTimePick: '2026-08-18T21:45:00+09:00',
+        afterDayPick: '2026-07-16T14:00:00+09:00',
+      };
+
+describe('DateTimeRangeInputDirective time zone', () => {
+  let fixture: ComponentFixture<ZonedDateTimeRangeInputTestHost>;
+  let host: ZonedDateTimeRangeInputTestHost;
+  let rangeInput: DateTimeRangeInputDirective;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [ZonedDateTimeRangeInputTestHost] });
+    fixture = TestBed.createComponent(ZonedDateTimeRangeInputTestHost);
+    host = fixture.componentInstance;
+    host.timeZone.set(RANGE.zone);
+    fixture.detectChanges();
+    rangeInput = fixture.debugElement.children[0].injector.get(DateTimeRangeInputDirective);
+  });
+
+  const setValue = (value: DateTimeRangeValue) => {
+    host.value.set(value);
+    fixture.detectChanges();
+  };
+
+  it('renders both fields in the given zone', () => {
+    setValue(RANGE.wire);
+
+    expect(rangeInput.displayValue('start')).toBe(RANGE.display.start);
+    expect(rangeInput.displayValue('end')).toBe(RANGE.display.end);
+  });
+
+  it('reads typed text as that zone and writes the zone offset', () => {
+    rangeInput.commitSide('start', RANGE.display.start);
+
+    expect(host.value().start).toBe(RANGE.wire.start);
+  });
+
+  it('keeps the zone day when a time is picked', () => {
+    setValue(RANGE.wire);
+    rangeInput.selectTime('start', new Date(2026, 0, 1, 21, 45));
+
+    expect(host.value().start).toBe(RANGE.afterStartTimePick);
+  });
+
+  it('keeps each side zone time of day when the days are picked', () => {
+    setValue(RANGE.wire);
+    rangeInput.selectCalendarRange({ start: new Date(2026, 6, 16), end: null });
+
+    expect(host.value().start).toBe(RANGE.afterDayPick);
+  });
+
+  it('offers one second reading covering both ends', () => {
+    setValue(RANGE.wire);
+
+    expect(rangeInput.localReading('start')).not.toBeNull();
+    expect(rangeInput.localReading('end')).not.toBeNull();
+    expect(rangeInput.localReadingId()).not.toBeNull();
+  });
+
+  it('offers no second reading while the field zone is the runtime zone', () => {
+    host.timeZone.set(RUNTIME_ZONE);
+    setValue(RANGE.wire);
+
+    expect(rangeInput.localReading('start')).toBeNull();
+    expect(rangeInput.localReadingId()).toBeNull();
+  });
+
+  it('ignores a zone name Intl does not know', () => {
+    host.timeZone.set('Middle/Earth');
+    setValue(RANGE.wire);
+
+    expect(rangeInput.effectiveTimeZone()).toBeNull();
+    expect(rangeInput.localReadingId()).toBeNull();
+  });
+});

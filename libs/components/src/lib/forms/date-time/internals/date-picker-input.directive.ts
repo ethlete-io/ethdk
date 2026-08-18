@@ -123,6 +123,19 @@ export abstract class DatePickerInputDirective
   public expanded = computed(() => this.pickerOpen());
   public describedBy = signal<string | null>(null);
 
+  /**
+   * @internal Ids the control contributes to `aria-describedby` itself, on top of the one the form
+   * field sets. Overridden by a control that renders describing text of its own.
+   */
+  public ownDescribedBy: Signal<string | null> = signal(null);
+
+  /** @internal Everything the field's `aria-describedby` must point at, in reading order. */
+  public describedByIds = computed(() => {
+    const ids = [this.describedBy(), this.ownDescribedBy()].filter((id): id is string => id !== null && id !== '');
+
+    return ids.length > 0 ? ids.join(' ') : null;
+  });
+
   /** @internal */
   public registeredField = signal<DatePickerInputFieldBase | null>(null);
   /** @internal */

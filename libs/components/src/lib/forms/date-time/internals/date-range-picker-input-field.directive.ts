@@ -30,7 +30,7 @@ import { DateRangePickerInputDirective, DateRangeSide } from './date-range-picke
     '[attr.placeholder]': 'placeholder() || null',
     '[attr.aria-required]': 'rangeInput?.required() || null',
     '[attr.aria-invalid]': 'rangeInput?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'rangeInput?.describedBy() || null',
+    '[attr.aria-describedby]': 'rangeInput?.describedByIds() || null',
     // attr bindings, not [disabled]/[readOnly]: this base has no selector, so the template
     // checker can't tie the host to an <input> and rejects the property forms (NG8002)
     '[attr.disabled]': 'rangeInput?.disabled() ? "" : null',

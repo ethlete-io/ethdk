@@ -233,6 +233,32 @@ path.
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
 
+**Forms: time-zone handling / local-time UX** (2026-08-18, user-raised 2026-08-10) - shipped as
+`timeZone` + `timeZoneLabel` on `et-date-time-input` and `et-date-time-range-input`, and the docs'
+"rendering a foreign zone's calendar is deliberately not supported" paragraph is now the feature. The
+design calls, so the question does not get re-opened:
+
+- **The value stays an instant.** Only which wall clock the field shows, and which offset it writes,
+  follow the zone. `format(new TZDate(instant, zone), "…xxx")` writes `+09:00`, so the wire keeps the
+  venue's offset rather than collapsing to the reader's the way every commit used to.
+- **No zoned arithmetic anywhere.** The calendar and the time picker are handed a plain `Date` whose
+  _local_ wall clock is the zone's (`zonedProxy`), so all 186 local-zone `date-fns` calls across
+  calendar/scheduler/inputs stayed untouched. `@date-fns/tz` is the only new dependency, an optional
+  peer next to `date-fns`, and it is Intl-backed - no tzdata payload.
+- **A committed value is never rebuilt from that stand-in.** The reader's own spring-forward hour has
+  no local wall clock, so the proxy moves forward for one hour a year - measured, 1 of 8760. Commits
+  go through `zonedFields`/`instantFromZonedFields` instead, which leaves only the picker highlight
+  affected. Breaking that rule is the one way to make this control commit an hour nobody picked.
+- **The second reading drops the date while both zones share a day**, and keeps it when they do not -
+  so a date appearing there _is_ the "you are not on the same day" signal, not noise. It sits in the
+  control's own template (a grid row under the input), not in the form field's error/warning/hint
+  stack, because it is permanent and must survive an error; it reaches `aria-describedby` through a
+  new overridable `ownDescribedBy` on both date-picker bases.
+- **Deliberately not offered:** `et-date-input`/`et-date-range-input` (a calendar date names no
+  instant), `et-time-input`/`et-time-range-input` (an `HH:mm` has no day to convert on), and the
+  **scheduler** - it takes `Date`s straight from the consumer, and a foreign-zone grid means 23- and
+  25-hour days in the time grid. That remains a separate `L` project; say so if it is needed.
+
 **Grid per-breakpoint span constraints** (2026-08-18, the last `A` row in the triage) - the additive
 shape the backlog proposed, on both constraint sources: `constraints.perBreakpoint` on a registration
 and `[perBreakpointConstraints]` on `et-grid-item`. What the implementation turned up:
@@ -1568,29 +1594,6 @@ focus ring and the border onto a child. Stating it here so the question is not r
 The tile lands as a second sheet mounted the same way as `SelectionCardStylesComponent`, so a
 consumer who never writes `variant="tile"` never injects it. It needs its own story in both the
 checkbox-group and radio-group story files.
-
-## Forms: time-zone handling and local-time UX
-
-Raised by the user 2026-08-10; not yet researched against the source.
-
-The date/time controls and the scheduler all deal in some notion of "when", and there is no stated
-answer for which zone that is. The concrete want is **a way to show an input's date/time in local
-time** - typically alongside the value the user actually typed, when the two differ.
-
-The user's own constraint, verbatim: _"though we need to make sure this doesn't get confusing."_ That
-is the whole difficulty. Two clocks on one field is a reliable way to make a form worse, so the
-design has to earn each one:
-
-- **Show the second reading only when it differs**, and only when the field's zone is genuinely not
-  the viewer's - a field that already is local should look exactly as it does today.
-- **Name both.** An unlabelled second time is worse than none; if it says `14:00` it must also say
-  which zone, or it just reads as a contradiction.
-- **Decide what the value _is_** before designing the display. Whether the control's model is a zoned
-  instant, a wall-clock time plus a zone, or a naive local string changes every one of the above, and
-  it is the thing to settle first.
-
-Scope this against `forms/date-time/`, `DateRangeInputComponent` and the scheduler together - a
-per-control answer would guarantee they disagree.
 
 ## New components still open
 

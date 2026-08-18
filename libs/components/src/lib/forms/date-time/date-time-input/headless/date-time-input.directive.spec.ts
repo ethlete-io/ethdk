@@ -425,3 +425,134 @@ describe('DateTimeInputDirective mixed state', () => {
     };
   });
 });
+
+@Component({
+  template: `
+    <div
+      [(value)]="value"
+      [timeZone]="timeZone()"
+      displayFormat="MM/dd/yyyy, HH:mm"
+      etDateTimeInput
+      valueFormat="yyyy-MM-dd'T'HH:mm:ssxxx"
+    >
+      <input etDateTimeInputField />
+    </div>
+  `,
+  imports: [DateTimeInputDirective, DateTimeInputFieldDirective],
+})
+class ZonedDateTimeInputTestHost {
+  value = signal<string | null>(null);
+  timeZone = signal<string | null>(null);
+}
+
+/** 2026-08-18T14:00 in Tokyo, 2026-08-18T01:00 in New York. */
+const RUNTIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const FIELD =
+  RUNTIME_ZONE === 'Asia/Tokyo'
+    ? {
+        zone: 'America/New_York',
+        name: 'New York',
+        wire: '2026-08-18T01:00:00-04:00',
+        display: '08/18/2026, 01:00',
+        afterDayPick: '2026-07-16T01:00:00-04:00',
+        afterTimePick: '2026-08-18T21:45:00-04:00',
+      }
+    : {
+        zone: 'Asia/Tokyo',
+        name: 'Tokyo',
+        wire: '2026-08-18T14:00:00+09:00',
+        display: '08/18/2026, 14:00',
+        afterDayPick: '2026-07-16T14:00:00+09:00',
+        afterTimePick: '2026-08-18T21:45:00+09:00',
+      };
+
+describe('DateTimeInputDirective time zone', () => {
+  let fixture: ComponentFixture<ZonedDateTimeInputTestHost>;
+  let host: ZonedDateTimeInputTestHost;
+  let input: DateTimeInputDirective;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [ZonedDateTimeInputTestHost] });
+    fixture = TestBed.createComponent(ZonedDateTimeInputTestHost);
+    host = fixture.componentInstance;
+    host.timeZone.set(FIELD.zone);
+    fixture.detectChanges();
+    input = fixture.debugElement.children[0].injector.get(DateTimeInputDirective);
+  });
+
+  const setValue = (value: string) => {
+    host.value.set(value);
+    fixture.detectChanges();
+  };
+
+  const setTimeZone = (timeZone: string) => {
+    host.timeZone.set(timeZone);
+    fixture.detectChanges();
+  };
+
+  it('renders the field in the given zone', () => {
+    setValue(FIELD.wire);
+
+    expect(input.displayValue()).toBe(FIELD.display);
+  });
+
+  it('names the zone by the last segment of its IANA name', () => {
+    expect(input.resolvedTimeZoneLabel()).toBe(FIELD.name);
+  });
+
+  it('reads typed text as that zone and writes the zone offset', () => {
+    input.commitInput(FIELD.display);
+
+    expect(host.value()).toBe(FIELD.wire);
+  });
+
+  it('keeps the zone time of day when a day is picked', () => {
+    setValue(FIELD.wire);
+    input.selectDate(new Date(2026, 6, 16));
+
+    expect(host.value()).toBe(FIELD.afterDayPick);
+  });
+
+  it('keeps the zone day when a time is picked', () => {
+    setValue(FIELD.wire);
+    input.selectTime(new Date(2026, 0, 1, 21, 45));
+
+    expect(host.value()).toBe(FIELD.afterTimePick);
+  });
+
+  it('offers a second reading in the runtime zone', () => {
+    setValue(FIELD.wire);
+
+    expect(input.localReading()).not.toBeNull();
+    expect(input.localReading()).not.toBe(FIELD.display);
+  });
+
+  it('offers no second reading while the field zone is the runtime zone', () => {
+    setTimeZone(RUNTIME_ZONE);
+    setValue(FIELD.wire);
+
+    expect(input.localReading()).toBeNull();
+  });
+
+  it('offers no second reading while the field is empty', () => {
+    expect(input.localReading()).toBeNull();
+    expect(input.localReadingId()).toBeNull();
+  });
+
+  it('ignores a zone name Intl does not know', () => {
+    setTimeZone('Middle/Earth');
+    setValue(FIELD.wire);
+
+    expect(input.effectiveTimeZone()).toBeNull();
+    expect(input.localReading()).toBeNull();
+  });
+
+  it('describes the field by the second reading only while it renders', () => {
+    expect(input.describedByIds()).toBeNull();
+
+    setValue(FIELD.wire);
+
+    expect(input.describedByIds()).toBe(input.localReadingId());
+  });
+});

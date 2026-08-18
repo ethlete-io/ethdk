@@ -106,7 +106,7 @@ that provides labels needs no per-instance wiring at all.
 | ------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `FORM_FIELD_LABELS`       | `provideFormFieldLabels`      | `mixed`, `clear` and `selectAll` - shared by **every** form control                                           |
 | `INPUT_LABELS`            | `provideInputLabels`          | Number steppers, password reveal, Caps Lock warning                                                           |
-| `DATE_TIME_LABELS`        | `provideDateTimeLabels`       | Picker triggers, range start/end, the pickers' date/time tabs, parse errors                                   |
+| `DATE_TIME_LABELS`        | `provideDateTimeLabels`       | Picker triggers, range start/end, the pickers' date/time tabs, the zoned second reading, parse errors         |
 | `CALENDAR_LABELS`         | `provideCalendarLabels`       | Step/zoom controls of each view, week column (names come from `DATE_LOCALE`)                                  |
 | `TIME_PICKER_LABELS`      | `provideTimePickerLabels`     | Hours / minutes / seconds / AM-PM columns, a range's start/end side switch                                    |
 | `SELECT_LABELS`           | `provideSelectLabels`         | Panel loading/empty state, load more, create-a-value                                                          |

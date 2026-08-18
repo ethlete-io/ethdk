@@ -30,6 +30,8 @@ import { DATE_TIME_INPUT_IMPORTS } from '../date-time-input.imports';
           [minTime]="minTimeDate()"
           [maxTime]="maxTimeDate()"
           [timeFilter]="filterFn()"
+          [timeZone]="timeZone()"
+          [timeZoneLabel]="timeZoneLabel()"
         />
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -62,6 +64,8 @@ export class DateTimeInputStorybookComponent {
   public minTime = input<string | null>(null);
   public maxTime = input<string | null>(null);
   public filter = input<TimeFilterPreset>('none');
+  public timeZone = input<string | null>(null);
+  public timeZoneLabel = input<string | null>(null);
   public disabled = input(false);
   public readonly = input(false);
   public required = input(false);

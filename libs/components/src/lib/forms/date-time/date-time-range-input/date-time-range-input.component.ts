@@ -67,6 +67,8 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
         'parseErrorMessage',
         'valueFormat',
         'displayFormat',
+        'timeZone',
+        'timeZoneLabel',
         'locale',
         'mask',
         'minDate',
@@ -131,6 +133,25 @@ export class DateTimeRangeInputComponent {
   protected resolvedDatesTabLabel = computed(() => this.datesTabLabel() ?? this.dateTimeLabels().datesTab);
 
   protected resolvedTimesTabLabel = computed(() => this.timesTabLabel() ?? this.dateTimeLabels().timesTab);
+
+  /**
+   * The second reading shown under the fields: the zone they are in, and the same moments in the
+   * reader's own zone. `null` whenever the two agree - one clock is better than two that match.
+   */
+  protected localReadingText = computed(() => {
+    const timeZone = this.rangeInput.resolvedTimeZoneLabel();
+    const start = this.rangeInput.localReading('start');
+    const end = this.rangeInput.localReading('end');
+
+    if (timeZone === null || (start === null && end === null)) {
+      return null;
+    }
+
+    // the same en dash the two fields are separated by, so the second reading lines up with them
+    const reading = start !== null && end !== null ? `${start} – ${end}` : ((start ?? end) as string);
+
+    return this.dateTimeLabels().timeZoneReading(timeZone, reading);
+  });
 
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);

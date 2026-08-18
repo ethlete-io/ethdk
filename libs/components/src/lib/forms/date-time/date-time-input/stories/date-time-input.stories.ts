@@ -87,3 +87,13 @@ export const Mixed: Story = {
     hint: 'The hidden date-time stays intact and unshown; the mixed label is the placeholder. Parsing a typed value or picking one commits a replacement.',
   },
 };
+
+export const TimeZone: Story = {
+  args: {
+    label: 'Doors open',
+    value: '2026-08-18T14:00:00+09:00',
+    timeZone: 'Asia/Tokyo',
+    displayFormat: 'MM/dd/yyyy, HH:mm',
+    hint: 'The field reads in the venue zone. The line under it is the same moment where you are.',
+  },
+};

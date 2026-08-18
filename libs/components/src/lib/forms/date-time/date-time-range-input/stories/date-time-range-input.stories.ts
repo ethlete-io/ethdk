@@ -117,3 +117,14 @@ export const Mixed: Story = {
     hint: 'The hidden range stays intact and unshown; the mixed label is both placeholders. The first resolving commit replaces the whole range.',
   },
 };
+
+export const TimeZone: Story = {
+  args: {
+    label: 'Broadcast window',
+    start: '2026-08-18T14:00:00+09:00',
+    end: '2026-08-18T18:00:00+09:00',
+    timeZone: 'Asia/Tokyo',
+    displayFormat: 'MM/dd/yyyy, HH:mm',
+    hint: 'Both fields read in the venue zone. The line under them is the same window where you are.',
+  },
+};

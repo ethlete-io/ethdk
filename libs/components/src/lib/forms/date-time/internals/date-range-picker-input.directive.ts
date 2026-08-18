@@ -22,7 +22,8 @@ import { injectDateLocale } from '../date-time-formats';
 import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '../picker/date-picker-host';
 import { DatePickerInputFieldBase } from './date-picker-input.directive';
 import { createDatePickerOverlay } from './date-picker-overlay';
-import { formatDateValue, parseDateValue } from './date-value';
+import { parseDateValue } from './date-value';
+import { formatInZone, reinterpretInZone, zonedProxy } from './time-zone';
 import { maskPatternFromDisplayFormat } from './display-format-mask';
 
 /** The two wire strings a range control holds; a side is `null` while empty/unparseable. */
@@ -132,6 +133,12 @@ export abstract class DateRangePickerInputDirective
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public effectiveValueFormat = computed(() => this.valueFormat() ?? this.defaultValueFormat);
+
+  /**
+   * The IANA zone both fields' wall clock stands for. Only the date & time range control offers
+   * one; the date-only and time-only ranges leave it `null` and stay in the runtime's own zone.
+   */
+  public effectiveTimeZone: Signal<string | null> = signal(null);
   public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
 
   /** The side the focused field edits - the picker previews from here too. */
@@ -155,6 +162,19 @@ export abstract class DateRangePickerInputDirective
   public parseError = computed(() => this.startParseError() || this.endParseError());
 
   public describedBy = signal<string | null>(null);
+
+  /**
+   * @internal Ids the control contributes to `aria-describedby` itself, on top of the one the form
+   * field sets. Overridden by a control that renders describing text of its own.
+   */
+  public ownDescribedBy: Signal<string | null> = signal(null);
+
+  /** @internal Everything the fields' `aria-describedby` must point at, in reading order. */
+  public describedByIds = computed(() => {
+    const ids = [this.describedBy(), this.ownDescribedBy()].filter((id): id is string => id !== null && id !== '');
+
+    return ids.length > 0 ? ids.join(' ') : null;
+  });
   public focused = computed(() => this.focusedSide() !== null || this.pickerOpen());
   /** @internal Keeps the form field in its focused style while the picker overlay is open. */
   public expanded = computed(() => this.pickerOpen());
@@ -273,12 +293,29 @@ export abstract class DateRangePickerInputDirective
       return '';
     }
 
-    return formatDateValue(date, { format: this.effectiveDisplayFormat(), locale: this.effectiveLocale() }) ?? '';
+    return (
+      formatInZone(date, {
+        format: this.effectiveDisplayFormat(),
+        locale: this.effectiveLocale(),
+        timeZone: this.effectiveTimeZone(),
+      }) ?? ''
+    );
   }
 
   /** The committed `Date` of one side, or `null` while that side is empty (or the value is masked). */
   public sideDate(side: DateRangeSide) {
     return side === 'start' ? this.startDate() : this.endDate();
+  }
+
+  /**
+   * One side as the calendar and the time picker see it: a plain `Date` whose local wall clock is
+   * the zone's. Highlighting only - see `zonedProxy`.
+   */
+  public pickerSideDate(side: DateRangeSide) {
+    const date = this.sideDate(side);
+    const timeZone = this.effectiveTimeZone();
+
+    return date === null || timeZone === null ? date : zonedProxy(date, timeZone);
   }
 
   public activate() {
@@ -366,7 +403,7 @@ export abstract class DateRangePickerInputDirective
     state.inputText.set('');
     state.parseError.set(false);
 
-    this.commitSideValue(side, this.formatSide(parsed));
+    this.commitSideValue(side, this.formatSide(reinterpretInZone(parsed, this.effectiveTimeZone())));
   }
 
   /** Clears both sides and any uncommitted field text - wired to the styled input's clear button. */
@@ -400,18 +437,22 @@ export abstract class DateRangePickerInputDirective
     }
   }
 
-  /** @internal One side's committed value rendered in `valueFormat`. */
-  public formatSide(date: Date) {
-    return formatDateValue(date, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() });
+  /** @internal One side's committed instant rendered in `valueFormat`, with the field zone's offset. */
+  public formatSide(instant: Date) {
+    return formatInZone(instant, {
+      format: this.effectiveValueFormat(),
+      locale: this.effectiveLocale(),
+      timeZone: this.effectiveTimeZone(),
+    });
   }
 
   /**
    * @internal Commits one side's `Date` - a picker selection that resolves a single end, dropping
    * that side's pending field text.
    */
-  public commitSideDate(side: DateRangeSide, date: Date) {
+  public commitSideDate(side: DateRangeSide, instant: Date) {
     this.clearSideText(side);
-    this.commitSideValue(side, this.formatSide(date));
+    this.commitSideValue(side, this.formatSide(instant));
   }
 
   /**

@@ -50,6 +50,12 @@ export type DateTimeLabels = {
    * setting is chosen inside it, by `TIME_PICKER_LABELS.startTime`/`endTime`.) */
   timesTab: string;
 
+  /**
+   * The second reading under a field whose zone is not the reader's: which zone the field shows,
+   * and the same moment in the reader's own zone.
+   */
+  timeZoneReading: (timeZone: string, localTime: string) => string;
+
   /** Validation message for text that isn't a date. */
   invalidDate: string;
   /** Validation message for text that isn't a time. */
@@ -89,6 +95,8 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   timeTab: 'Time',
   datesTab: 'Dates',
   timesTab: 'Times',
+
+  timeZoneReading: (timeZone, localTime) => `${timeZone} · ${localTime} your time`,
 
   invalidDate: 'Please enter a valid date',
   invalidTime: 'Please enter a valid time',

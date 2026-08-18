@@ -40,6 +40,8 @@ export type DateTimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours'
           [minTime]="minTimeDate()"
           [maxTime]="maxTimeDate()"
           [timeFilter]="filterFn()"
+          [timeZone]="timeZone()"
+          [timeZoneLabel]="timeZoneLabel()"
         />
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -75,6 +77,8 @@ export class DateTimeRangeInputStorybookComponent {
   public maxTime = input<string | null>(null);
   public filter = input<DateTimeRangeFilterPreset>('none');
   public locale = input<'default' | 'de'>('default');
+  public timeZone = input<string | null>(null);
+  public timeZoneLabel = input<string | null>(null);
   public disabled = input(false);
   public readonly = input(false);
   public color = input('brand');

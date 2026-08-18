@@ -61,6 +61,8 @@ import { ControlSuffixDirective } from '../../form-field/partials';
         'parseErrorMessage',
         'valueFormat',
         'displayFormat',
+        'timeZone',
+        'timeZoneLabel',
         'locale',
         'mask',
         'minDate',
@@ -113,6 +115,21 @@ export class DateTimeInputComponent {
 
   /** The string in effect: this instance's `dialogLabel`, else the domain's label set. */
   protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDateTime);
+
+  /**
+   * The second reading shown under the field: the zone the field is in, and the same moment in the
+   * reader's own zone. `null` whenever the two agree - one clock is better than two that match.
+   */
+  protected localReadingText = computed(() => {
+    const reading = this.dateTimeInput.localReading();
+    const timeZone = this.dateTimeInput.resolvedTimeZoneLabel();
+
+    if (reading === null || timeZone === null) {
+      return null;
+    }
+
+    return this.dateTimeLabels().timeZoneReading(timeZone, reading);
+  });
 
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);

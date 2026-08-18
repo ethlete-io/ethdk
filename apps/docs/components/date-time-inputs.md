@@ -142,10 +142,10 @@ Naming a `displayFormat` yourself still wins over the derived one. The range inp
 
 ### Time zones {#time-zones}
 
-Every `Date` in this family is read and written in the **runtime's own zone**. date-fns' `startOfDay`,
-`isSameDay` and `format` all work on local wall-clock time, so "the 30th" means the 30th where the
-browser is, and the default `valueFormat` (`yyyy-MM-dd'T'HH:mm:ssxxx`) writes that instant with the
-local offset.
+By default every `Date` in this family is read and written in the **runtime's own zone**. date-fns'
+`startOfDay`, `isSameDay` and `format` all work on local wall-clock time, so "the 30th" means the
+30th where the browser is, and the default `valueFormat` (`yyyy-MM-dd'T'HH:mm:ssxxx`) writes that
+instant with the local offset.
 
 That is right for _an instant_ - when something happened - and wrong for _a date someone chose_. A
 value of `2026-07-30T00:00:00+02:00` read in a browser set to UTC is July 29th at 22:00, so the picker
@@ -159,16 +159,55 @@ when what was meant was a day.
 <et-date-input [formField]="demoForm.date" valueFormat="yyyy-MM-dd" />
 ```
 
-If the value genuinely is an instant in a zone that is not the reader's - a booking in the venue's
-zone, say - convert at the boundary: turn the stored instant into a `Date` whose _local_ wall-clock
-reading matches that zone's, hand that to the control, and convert back on commit. The controls stay
-in local time throughout, which keeps one rule for the whole family.
+#### Showing a field in another zone {#value-time-zone}
 
-Rendering a foreign zone's calendar directly is deliberately not supported: every day boundary,
-`isSameDay` comparison and time-picker column would have to be evaluated in that zone, which means
-zoned arithmetic through the calendar, the time picker and all four inputs, a zoned date dependency,
-and a different answer to what a committed value means. That is a project, not an option - say so if
-you need it.
+When the value genuinely is an instant somewhere else - a booking in the venue's zone, a broadcast
+window in the studio's - `et-date-time-input` and `et-date-time-range-input` take a `timeZone`:
+
+```html
+<et-date-time-input [formField]="demoForm.doorsOpen" timeZone="Asia/Tokyo" />
+```
+
+<StoryEmbed id="components-forms-date-time-input--time-zone" height="420px" />
+
+`timeZone` takes an IANA name. It changes three things and nothing else:
+
+1. The field, the picker calendar and the time picker all read and write **that zone's wall clock**.
+2. The value is written with **that zone's offset** (`2026-08-18T14:00:00+09:00`), not the reader's.
+3. A second line under the field names the zone and gives the same moment in the **reader's own**
+   zone. It appears only while the two disagree, and it carries the date only when the reader's day
+   differs - so a date showing up there is the signal that the two are not on the same day at all.
+
+The value stays an instant throughout. Nothing about the wire contract changes: the string still
+names one moment, and any reader in any zone resolves it to the same one. Only which wall clock the
+control shows, and which offset it writes, follow `timeZone`.
+
+Give the reader a friendlier name than the IANA one with `timeZoneLabel`:
+
+```html
+<et-date-time-input [formField]="demoForm.doorsOpen" timeZone="Asia/Tokyo" timeZoneLabel="Venue time" />
+```
+
+A name `Intl` does not know is ignored, and the control stays in the runtime's zone (dev mode warns).
+
+The same input is on the range control, where one second reading covers both ends:
+
+<StoryEmbed id="components-forms-date-time-range-input--time-zone" height="420px" />
+
+#### What `timeZone` is not for {#time-zone-limits}
+
+- **`et-date-input` and `et-date-range-input` do not take one.** A calendar date names no instant, so
+  there is no second reading to give. Store it as a date (`valueFormat="yyyy-MM-dd"`) instead.
+- **`et-time-input` and `et-time-range-input` do not take one.** An `HH:mm` value has no day, and
+  converting a time of day between zones needs one.
+- **The scheduler does not take one.** It takes `Date` objects straight from you, so the zone its grid
+  draws in is the runtime's. Showing a foreign zone's grid means every day boundary and hour row
+  being evaluated in it, which daylight saving makes 23 and 25 hours long - a separate project, not
+  this input. Convert at your boundary if you need it today.
+- **One hour a year, the picker highlight can be an hour out.** The calendar and the time picker are
+  handed a plain `Date` carrying the zone's wall clock, and the reader's own spring-forward hour has
+  no such local wall clock. The committed value is always exact - it is rebuilt from the zone, never
+  from that stand-in - so only the highlight is affected, and only in that hour.
 
 ## Date range input - `et-date-range-input` {#date-range-input}
 
@@ -336,6 +375,8 @@ correct the day is never interrupted.
 | ------------------------------- | -------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------- |
 | `valueFormat`                   | `string`                                     | `DATE_FORMAT` token         | date-fns format of the string value (token default: ISO 8601 with offset).        |
 | `displayFormat`                 | `string`                                     | `'Pp'`                      | Combined date-fns format shown in and parsed from the field (locale-aware).       |
+| `timeZone`                      | `string \| null`                             | `null`                      | IANA zone the field's wall clock stands for - see [time zones](#value-time-zone). |
+| `timeZoneLabel`                 | `string \| null`                             | `null`                      | Name shown for `timeZone`. Defaults to the IANA name's last segment.              |
 | `locale`                        | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token         | Display/parse locale (also decides the time picker's 12/24-hour layout).          |
 | `minDate` / `maxDate`           | `Date \| null`                               | `null`                      | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).      |
 | `dateFilter`                    | `((date: Date) => boolean) \| null`          | `null`                      | Forwarded to the picker calendar.                                                 |
@@ -413,7 +454,9 @@ appointment - instead of pairing two `et-date-time-input`s.
 Options are the union of the two: everything the date range input forwards to the
 calendar (`minDate`/`maxDate`/`dateFilter`, `startAt`, `startView`, `dateClass`,
 `weekNumbers`) plus everything the date-time input forwards to a time picker
-(`minuteStep`, `secondStep`, `minTime`, `maxTime`, `timeFilter`), with
+(`minuteStep`, `secondStep`, `minTime`, `maxTime`, `timeFilter`) plus
+`timeZone`/`timeZoneLabel` (see [time zones](#value-time-zone) - one second reading
+covers both ends), with
 `startPlaceholder`/`endPlaceholder` and `startAriaLabel`/`endAriaLabel` (defaults
 `'Start date and time'`/`'End date and time'`; the host is a `role="group"`
 labelled by the field label). `precision` is absent, as on the single date-time

@@ -1,13 +1,15 @@
 @layer components {
   et-date-time-input {
-    display: flex;
-    align-items: center;
+    /* rows, not a flex line: the second reading stacks under the field text, and a field without
+       one lays out exactly as a single-row grid */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
     flex: 1;
     min-inline-size: 0;
     color: inherit;
 
     .et-date-time-input-field {
-      flex: 1;
       min-inline-size: 0;
       border: none;
       outline: none;
@@ -25,6 +27,20 @@
       &:disabled {
         cursor: not-allowed;
       }
+    }
+
+    .et-date-time-input-local-reading {
+      font-size: var(--et-form-field-hint-font-size);
+      line-height: 1.3;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    et-form-field[data-disabled] & .et-date-time-input-local-reading {
+      color: var(--et-surface-interaction-disabled-solid, currentColor);
     }
 
     /* an unresolved bulk-edit value reads as provisional: the field stays empty and the

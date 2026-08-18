@@ -3417,6 +3417,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@date-fns/tz@npm:1.5.0":
+  version: 1.5.0
+  resolution: "@date-fns/tz@npm:1.5.0"
+  checksum: 10c0/4ef25eedd55924938fa81b23b949a3425201597e2007f5323db54d50fc19283eca5e2a7963c3d82c99b3adf273e9ea9bc7adfd1c9076e15badd99c593a984ffa
+  languageName: node
+  linkType: hard
+
 "@discoveryjs/json-ext@npm:1.1.0":
   version: 1.1.0
   resolution: "@discoveryjs/json-ext@npm:1.1.0"
@@ -4429,6 +4436,7 @@ __metadata:
     "@commitlint/cli": "npm:21.2.1"
     "@commitlint/config-conventional": "npm:21.2.0"
     "@contentful/rich-text-types": "npm:17.2.7"
+    "@date-fns/tz": "npm:1.5.0"
     "@eslint/js": "npm:10.0.1"
     "@floating-ui/dom": "npm:1.8.0"
     "@nx/angular": "npm:23.1.0"
