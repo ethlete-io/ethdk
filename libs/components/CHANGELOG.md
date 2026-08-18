@@ -1,5 +1,117 @@
 # Changelog
 
+## 1.0.0-next.56
+
+### Major Changes
+
+- [`98dc861`](https://github.com/ethlete-io/ethdk/commit/98dc861d1cac3fe8e827a8d2e733d75e5e9ff595) Thanks [@TomTomB](https://github.com/TomTomB)! - A loading button keeps DOM focus and its place in the tab order. Native `disabled` and
+  `tabindex="-1"` now come from `disabled` alone, and the directive blocks the click instead.
+
+- [`37e4cad`](https://github.com/ethlete-io/ethdk/commit/37e4cad03139aab434f84497dfea415e630b8f07) Thanks [@TomTomB](https://github.com/TomTomB)! - Replaced the color input's native `<input type="color">` with the SDK's own picker: a saturation area, hue and optional opacity tracks, preset swatches, a hex field and an eyedropper. `nativeControl` and `syncFromNativeInput()` are gone.
+
+- [`d9e4622`](https://github.com/ethlete-io/ethdk/commit/d9e4622134e5d08bef3b6ee082c4fbaa82d27b37) Thanks [@TomTomB](https://github.com/TomTomB)! - `etFocusRing`'s `disabled` input is now `focusRingDisabled`, so it stops swallowing a native
+  control's own `[disabled]` binding.
+
+- [`e265fa6`](https://github.com/ethlete-io/ethdk/commit/e265fa6286e063e55ecf0c7cf72fbc3ad4b1f4c4) Thanks [@TomTomB](https://github.com/TomTomB)! - Grid items take span bounds per breakpoint, through `constraints.perBreakpoint` on a registration or
+  `[perBreakpointConstraints]` on `et-grid-item`. `getConstraintsForColumns()` is now
+  `getConstraintsForBreakpoint()`.
+
+### Minor Changes
+
+- [`990ca0b`](https://github.com/ethlete-io/ethdk/commit/990ca0bff8e8ff9648bbc41d24508c1ae99be6f9) Thanks [@TomTomB](https://github.com/TomTomB)! - Added `notations` to `et-color-input`: the picker's entry field can switch between hex, `rgb()` and `hsl()`, follows what the user types, and pins to one notation with an advisory when it converts. The emitted value stays hex.
+
+- [`c3ca8c7`](https://github.com/ethlete-io/ethdk/commit/c3ca8c73b0c46fa5366a965b1c156f41ade8d2c1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-command-palette`: a searchable dialog over commands any part of an app registers with
+  `registerCommands`, ranked and highlighted as you type, opened by the opt-in `etCommandPaletteShortcut`.
+
+- [`59e7148`](https://github.com/ethlete-io/ethdk/commit/59e7148139afa81c5df4545af34533c2734f8876) Thanks [@TomTomB](https://github.com/TomTomB)! - Date & time inputs: `timeZone` reads and writes a field in another zone, with a second line naming
+  the same moment where the reader is.
+
+- [`e57d408`](https://github.com/ethlete-io/ethdk/commit/e57d408ce5a60b24f4c24b8e55ba4fc222b52a8c) Thanks [@TomTomB](https://github.com/TomTomB)! - A readonly `et-dropzone` stops looking like a drop target: no action buttons, a solid border, and
+  an empty one reads "No files" instead of the drop prompt. The prompt now comes from the
+  `DROPZONE_LABELS` set, which it never read before.
+
+- [`d9e4622`](https://github.com/ethlete-io/ethdk/commit/d9e4622134e5d08bef3b6ee082c4fbaa82d27b37) Thanks [@TomTomB](https://github.com/TomTomB)! - Readonly and disabled read the same way on every form control: readonly shows a plain cursor and
+  no hover, disabled shows `not-allowed`. `et-dropzone` gained a `readonly` input.
+
+- [`990ca0b`](https://github.com/ethlete-io/ethdk/commit/990ca0bff8e8ff9648bbc41d24508c1ae99be6f9) Thanks [@TomTomB](https://github.com/TomTomB)! - Added a `warnings` input to the text-field controls, so a control without a signal-forms binding can show an advisory in the field's support region. `hsl()` and `hsla()` are now read wherever the color validators read a color.
+
+- [`1e66670`](https://github.com/ethlete-io/ethdk/commit/1e66670e66307402d5849545146d6ca4e445693f) Thanks [@TomTomB](https://github.com/TomTomB)! - A menu row that opens a submenu now renders its own chevron icon, so remove any manual arrow you put in its `<et-menu-item-shortcut>`. Size it with `--et-menu-item-submenu-icon-size` (`12px`).
+
+- [`a98b5a4`](https://github.com/ethlete-io/ethdk/commit/a98b5a4381528ba81b7a0f16c19b27aac9df5055) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: `appearance="cards"` paints each row from the surface one elevation above the table's instead of tinting it, so a form field or `etAutoSurface` inside a card resolves its elevation from the card.
+
+- [`98160bc`](https://github.com/ethlete-io/ethdk/commit/98160bc372867c9d42045ef0f1fa3531af553d10) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: a column can be marked `disabled`, which turns off its sortable header, its filter
+  menu and its column menu. The cells keep their values.
+
+### Patch Changes
+
+- [`a2fb582`](https://github.com/ethlete-io/ethdk/commit/a2fb58228af561278546ac0a183ad14fad33bf2e) Thanks [@TomTomB](https://github.com/TomTomB)! - Stop a white ring from flashing around the checkbox inside a card choice field on blur
+
+- [`f7803bf`](https://github.com/ethlete-io/ethdk/commit/f7803bf86eca07861610053f456f5c8b7b2f69f1) Thanks [@TomTomB](https://github.com/TomTomB)! - The color picker's hex field is now an `et-form-field` with an `et-input`, so it carries the library's hover, focus and disabled treatment instead of a hand-rolled border.
+
+- [`f9e1f04`](https://github.com/ethlete-io/ethdk/commit/f9e1f04c06d82636036584f97b76909f789b600c) Thanks [@TomTomB](https://github.com/TomTomB)! - The color picker's notation switch now sits after the value, next to the eyedropper, instead of between the preview swatch and the value - and its hover treatment no longer sticks after a tap on a touch device.
+
+- [`1db9c9d`](https://github.com/ethlete-io/ethdk/commit/1db9c9dbfedeb02b385306f45d5bcc680da33f6e) Thanks [@TomTomB](https://github.com/TomTomB)! - A CSV export now writes an empty field for a column whose `exportValue` reports an empty cell,
+  instead of falling back to the column's `value` - which wrote `[object Object]` whenever that value
+  was an object.
+
+- [`80f9bae`](https://github.com/ethlete-io/ethdk/commit/80f9bae88427b1697917fb19e1e8118b93b5efdf) Thanks [@TomTomB](https://github.com/TomTomB)! - Select, cascader, date and time picker and color input panels now close as soon as focus lands outside them, so a `Tab` out of the panel no longer leaves it open behind the page.
+
+- [`9052e42`](https://github.com/ethlete-io/ethdk/commit/9052e4257beef2e7b4fa4c87ec18ca986615a92b) Thanks [@TomTomB](https://github.com/TomTomB)! - A text form field is its default `md` height on the frame the router creates it in, instead of
+  40px until `data-size` lands one frame later.
+
+- [`82450c6`](https://github.com/ethlete-io/ethdk/commit/82450c608ac5ac4fa4f6af29a89cc5e649021be7) Thanks [@TomTomB](https://github.com/TomTomB)! - Menu: a scrolling option list is cut inside the panel instead of on the search field's border, and its cut edges fade while more can be scrolled. Size the fade with `--et-menu-scroll-fade-size`.
+
+- [`a824a29`](https://github.com/ethlete-io/ethdk/commit/a824a29f52e1eb301c6327bbfdd52703c759bd2f) Thanks [@TomTomB](https://github.com/TomTomB)! - Lock body scroll for any overlay that shows a backdrop, including one a breakpoint switch gives a backdrop while it is open.
+
+- [`2352137`](https://github.com/ethlete-io/ethdk/commit/235213735ede4c3542b7796d378e008bcab50bdc) Thanks [@TomTomB](https://github.com/TomTomB)! - An overlay strategy switch between a backdropped and a backdrop-less shape now adds or
+  removes the backdrop instead of keeping the one it mounted with. `elements.backdropElement`
+  is a signal.
+
+- [`1548753`](https://github.com/ethlete-io/ethdk/commit/15487535b707dbc0478221a0e1421e17014f1e8c) Thanks [@TomTomB](https://github.com/TomTomB)! - Rating: a mixed rating draws each star as a dashed accent outline rather than a dashed rule
+  under the row, so the state reads on the stars.
+
+- [`c8eee9b`](https://github.com/ethlete-io/ethdk/commit/c8eee9b4d169a8b7d706e4c37a7c07f496bdb44a) Thanks [@TomTomB](https://github.com/TomTomB)! - The rich text editor toolbar no longer shows a doubled or a dangling divider when an opt-in tool
+  between two dividers is not registered.
+
+- [`d9e4622`](https://github.com/ethlete-io/ethdk/commit/d9e4622134e5d08bef3b6ee082c4fbaa82d27b37) Thanks [@TomTomB](https://github.com/TomTomB)! - `et-checkbox-group-select-all` keeps its mixed state while the whole group is disabled.
+
+- [`018d98e`](https://github.com/ethlete-io/ethdk/commit/018d98eb5020176ee01f329ca2087519a500b7ce) Thanks [@TomTomB](https://github.com/TomTomB)! - Keep a drag surface inside a sheet or a notification from dragging it away - a color picker area or a slider now keeps its own gesture.
+
+- [`44f159c`](https://github.com/ethlete-io/ethdk/commit/44f159c08659301a24c0854bb6f9e0d731fbad9d) Thanks [@TomTomB](https://github.com/TomTomB)! - A skeleton bone with no explicit `--et-skeleton-size` is one line of text tall again, instead of
+  collapsing to zero height.
+
+- [`d9e4622`](https://github.com/ethlete-io/ethdk/commit/d9e4622134e5d08bef3b6ee082c4fbaa82d27b37) Thanks [@TomTomB](https://github.com/TomTomB)! - A slider thumb no longer keeps its focus ring after a mouse press. The ring is now keyboard-only.
+
+- [`a98b5a4`](https://github.com/ethlete-io/ethdk/commit/a98b5a4381528ba81b7a0f16c19b27aac9df5055) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: a detail row is sized and pinned to the scroll viewport, so expanded content stays where the reader is looking on a table that scrolls sideways.
+
+- [`a98b5a4`](https://github.com/ethlete-io/ethdk/commit/a98b5a4381528ba81b7a0f16c19b27aac9df5055) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: `etTableDragScroll` leaves a press that lands in content with a scrollbar of its own to that content, instead of panning the list behind it.
+
+- [`5bb741c`](https://github.com/ethlete-io/ethdk/commit/5bb741c53340aae1bd77ad289eb416824fe21abf) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: a table wide enough to scroll ends its header band where the last column does, instead of 20px
+  past the rows under it.
+
+- [#3068](https://github.com/ethlete-io/ethdk/pull/3068) [`3fcfcac`](https://github.com/ethlete-io/ethdk/commit/3fcfcac3a351e6feaa54f4351c23f3403694d435) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: keep the header row at one height while scrolling sideways - it used to grow and shrink as pinned
+  columns covered and uncovered the filter and column-menu triggers.
+
+- [`c1c282c`](https://github.com/ethlete-io/ethdk/commit/c1c282c428d24d54a24ea03fa9e1307799c82815) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: a sortable column header takes a hover and a pressed tint, so it reads as a
+  control rather than as a label.
+
+- [`af09c04`](https://github.com/ethlete-io/ethdk/commit/af09c0477395d61421c9effea90116c7b4fce04f) Thanks [@TomTomB](https://github.com/TomTomB)! - A hovered or held sortable table header tints a box around its own label, instead of a band of colour
+  across the whole column.
+
+- [`af09c04`](https://github.com/ethlete-io/ethdk/commit/af09c0477395d61421c9effea90116c7b4fce04f) Thanks [@TomTomB](https://github.com/TomTomB)! - A table row that reacts to a click takes a pressed tint while it is held, so a row answers a press
+  the way every other control in the library does.
+
+- [`25257b1`](https://github.com/ethlete-io/ethdk/commit/25257b11e382c01db23bad0725be99b6b037ac68) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: a `restoreState()` that lands before the `columns` input is populated keeps its column
+  visibility, which the declared `hidden` used to overwrite.
+
+- [`c1c282c`](https://github.com/ethlete-io/ethdk/commit/c1c282c428d24d54a24ea03fa9e1307799c82815) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: a focused row's ring keeps its ends, which a pinned select or expander cell
+  used to paint over.
+
+- [`a98b5a4`](https://github.com/ethlete-io/ethdk/commit/a98b5a4381528ba81b7a0f16c19b27aac9df5055) Thanks [@TomTomB](https://github.com/TomTomB)! - Table: an appearance no longer paints the tables nested inside it, so a sub table in a detail row keeps its own appearance.
+
+- [`46fa7a5`](https://github.com/ethlete-io/ethdk/commit/46fa7a5ab2cf0509a271d37f1a891b5f8d0fa49f) Thanks [@TomTomB](https://github.com/TomTomB)! - Avatar, badge, button, FAB and icon button no longer paint a full-strength primary fill while the
+  element is still unstyled, so a route swap cannot flash a solid primary disc.
+
 ## 1.0.0-next.55
 
 ### Minor Changes

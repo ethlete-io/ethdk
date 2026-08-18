@@ -1,5 +1,17 @@
 # @ethlete/core
 
+## 5.0.0-next.53
+
+### Major Changes
+
+- [`2352137`](https://github.com/ethlete-io/ethdk/commit/235213735ede4c3542b7796d378e008bcab50bdc) Thanks [@TomTomB](https://github.com/TomTomB)! - An overlay strategy switch between a backdropped and a backdrop-less shape now adds or
+  removes the backdrop instead of keeping the one it mounted with. `elements.backdropElement`
+  is a signal.
+
+### Patch Changes
+
+- [`0b4b4eb`](https://github.com/ethlete-io/ethdk/commit/0b4b4eb779218d6c70b27c212b03703ca8b64564) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: an overlay's own providers are destroyed when it closes, so an overlay router with `syncUrl` removes its query param from the url again.
+
 ## 5.0.0-next.52
 
 ### Major Changes

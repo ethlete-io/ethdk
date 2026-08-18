@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.22
+
+### Patch Changes
+
+- [`656a886`](https://github.com/ethlete-io/ethdk/commit/656a886de552134e5be027aa215f51e6c234c03c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fixed `no-native-observers` crashing on `new constructor()` or `new toString()` - an identifier naming an inherited `Object.prototype` key was read as a known observer entry.
+
 ## 1.0.0-next.21
 
 ### Minor Changes

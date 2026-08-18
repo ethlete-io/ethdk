@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-next.7
+
+### Patch Changes
+
+- [`a9bf390`](https://github.com/ethlete-io/ethdk/commit/a9bf390952d78d436bd23d33c86b57369a990fce) Thanks [@TomTomB](https://github.com/TomTomB)! - Auth multi-tab sync: a tab the browser froze now gives the leadership up instead of holding it while it refreshes nothing, and a follower whose token goes stale takes the refresh over when the leader does not answer.
+
+- [`1e66670`](https://github.com/ethlete-io/ethdk/commit/1e66670e66307402d5849545146d6ca4e445693f) Thanks [@TomTomB](https://github.com/TomTomB)! - A menu row that opens a submenu now renders its own chevron icon, so remove any manual arrow you put in its `<et-menu-item-shortcut>`. Size it with `--et-menu-item-submenu-icon-size` (`12px`).
+
 ## 1.0.0-next.6
 
 ### Patch Changes
