@@ -182,6 +182,16 @@ export type BearerAuthRefreshCoordination = {
 
   /** Emits in the leader tab whenever another tab asked for a refresh. */
   requests$: Observable<void>;
+
+  /**
+   * Tells the other tabs that a refresh started here. It is what makes {@link request} more than a
+   * message into the void: a follower that gets no answer takes the refresh over itself, so a leader
+   * that is working on one has to say so.
+   */
+  announceStart: () => void;
+
+  /** Emits whenever another tab announced that it started a refresh. */
+  starts$: Observable<void>;
 };
 
 /**

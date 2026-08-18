@@ -8,6 +8,15 @@ const snapshotOf = (options: { held?: LockInfo[]; pending?: LockInfo[] }): LockM
 });
 
 describe('summarizeLocks', () => {
+  it('should decode an auth refresh lock to the provider whose token is being spent', () => {
+    const [row] = summarizeLocks({
+      snapshot: snapshotOf({ held: [info('ethlete-auth:refresh:main', 'a')] }),
+      clientId: 'a',
+    });
+
+    expect(row).toMatchObject({ kind: 'auth', label: 'main refresh' });
+  });
+
   it('should decode an auth leader lock to the provider it elects for', () => {
     const rows = summarizeLocks({
       snapshot: snapshotOf({ held: [info('ethlete-auth:leader:main', 'a')] }),

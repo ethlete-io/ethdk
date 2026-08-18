@@ -1584,11 +1584,12 @@ service worker of the same app.
 Two things in the SDK take one, and the tab decodes both rather than dumping the raw
 names:
 
-| Kind        | Raw name                        | What the row shows                                                                        |
-| ----------- | ------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Auth**    | `ethlete-auth:leader:<name>`    | The [auth provider](/query/auth#multi-tab-sync) it elects for                             |
-| **Polling** | `et-query-poll:<channel>:<key>` | The [cache key](/query/multi-tab#polling-dedup), and the client's sync channel next to it |
-| **Other**   | anything else                   | The raw name, unchanged - a lock your app or a service worker took                        |
+| Kind        | Raw name                        | What the row shows                                                                                          |
+| ----------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Auth**    | `ethlete-auth:leader:<name>`    | The [auth provider](/query/auth#multi-tab-sync) it elects for                                               |
+| **Auth**    | `ethlete-auth:refresh:<name>`   | The provider whose refresh token a tab is [spending right now](/query/auth#when-the-leader-stops-answering) |
+| **Polling** | `et-query-poll:<channel>:<key>` | The [cache key](/query/multi-tab#polling-dedup), and the client's sync channel next to it                   |
+| **Other**   | anything else                   | The raw name, unchanged - a lock your app or a service worker took                                          |
 
 **Taking part** is held plus queued on that one name. Every participant requests the same
 lock and exactly one gets it, so the number is how many tabs are in that election - the

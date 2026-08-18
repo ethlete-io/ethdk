@@ -1,6 +1,6 @@
 import { computed, DestroyRef, effect, inject, isDevMode, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { concatMap, EMPTY, fromEvent, Observable, of, switchMap, timer } from 'rxjs';
+import { concatMap, EMPTY, fromEvent, Observable, of, race, switchMap, take, timer } from 'rxjs';
 import { patchQueryDevtoolsTokenPayload } from '../devtools/query-devtools-hook';
 import { QueryArgs, QueryCreator, QueryErrorResponse, RequestArgs, ResponseType } from '../http';
 import { ShouldRetryRequestFn } from '../http/query-retry-utils';
@@ -165,6 +165,12 @@ export type RefreshFailure = {
  */
 type RefreshAttempt = 'executed' | 'noToken' | 'delegated' | 'notLeader' | 'busy' | 'throttled';
 
+/**
+ * Why a refresh is being attempted. `takeover` is a follower spending the refresh token because the
+ * leader did not, so it is the one reason that ignores the leadership.
+ */
+type RefreshReason = 'scheduled' | 'unauthorized' | 'takeover';
+
 /** How long a scheduled refresh waits before retrying an attempt that could not run yet. */
 const rescheduleDelayMs = 5000;
 
@@ -175,8 +181,40 @@ const rescheduleDelayMs = 5000;
  */
 const delegatedRefreshRetryMs = 3000;
 
-/** How often a delegated refresh is re-asked for before the tab leaves it to the next 401. */
+/** How often a delegated refresh is re-asked for before this tab refreshes the tokens itself. */
 const maxDelegatedRefreshAttempts = 3;
+
+/**
+ * The same budget for a leader that answered with "a refresh started here". It is working on the
+ * refresh, so it gets longer than a silent one - but not forever, because the answer says a refresh
+ * started, not that it will ever finish.
+ */
+const maxDelegatedRefreshWindows = 6;
+
+/**
+ * How long before its expiry an access token counts as stale, which is the point a follower stops
+ * waiting for the leader. Long enough to run the delegation ladder before the token is worthless,
+ * short enough that a leader whose timer is merely throttled still gets to act first.
+ */
+const followerTakeoverGraceMs = 30000;
+
+/**
+ * How long a tab that took a refresh over holds the refresh lock at most. It is released as soon as
+ * the refresh reports back; this only bounds the wait for one that never does.
+ */
+const takeoverRefreshMaxLockHoldMs = 15000;
+
+/**
+ * The longest delay `setTimeout` can hold. Anything above it fires straight away, which would turn a
+ * long wait into a busy loop that spends every re-arm at once.
+ */
+const maxTimerDelayMs = 2147483647;
+
+/**
+ * The lock a tab must hold to spend the refresh token outside the leadership. Two followers go stale
+ * at the same instant - their access token is the same one - so the takeover needs a mutex of its own.
+ */
+const refreshLockName = (providerName: string) => `ethlete-auth:refresh:${providerName}`;
 
 /**
  * How often a scheduled refresh may re-arm before it waits for a new token pair. A tab that keeps
@@ -282,20 +320,22 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     let unauthorizedRefreshStreak = 0;
     let delegatedRefreshAttempts = 0;
     let isWatchingDelegatedRefresh = false;
+    let hasLeaderAnsweredDelegation = false;
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const refreshQuery = () => context.queries[key]!;
 
-    const executeRefresh = (reason: 'scheduled' | 'unauthorized'): RefreshAttempt => {
+    const executeRefresh = (reason: RefreshReason): RefreshAttempt => {
       const currentRefreshToken = context.refreshToken();
       if (!currentRefreshToken) return 'noToken';
 
-      if (!context.isLeader()) {
-        // A scheduled tick on a follower is pure duplicate: multi-tab sync keeps the access token
-        // identical across tabs, so the leader's own timer is due at the same instant and it is the
-        // only tab allowed to act. Delegation is for the 401 path, where this tab has a request that
-        // really failed and the leader has no way of knowing.
-        if (reason === 'scheduled') return 'notLeader';
+      if (reason !== 'takeover' && !context.isLeader()) {
+        // A scheduled tick on a follower is pure duplicate while the token still has life left: multi-tab
+        // sync keeps the access token identical across tabs, so the leader's own timer is due at the same
+        // instant and it is the only tab allowed to act. Once the token is stale that reasoning is spent -
+        // the leader had its moment and let it pass - so the tab delegates and, if that goes unanswered,
+        // takes the refresh over.
+        if (reason === 'scheduled' && !isAccessTokenStale()) return 'notLeader';
 
         context.refreshCoordination?.request();
         watchDelegatedRefresh(context.accessToken());
@@ -332,17 +372,31 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
       refreshQuery().execute(buildArgs(currentRefreshToken), { triggeredBy: 'token-refresh' });
 
+      // Answers every follower waiting on a delegated refresh, not just the one that asked: they all
+      // hold the same access token, so they all go stale at the same moment.
+      context.refreshCoordination?.announceStart();
+
       return 'executed';
     };
 
     /**
-     * Asks the leader again if a delegated refresh went unanswered - the request is a channel message
-     * with no ack, so a frozen leader, or one that handed the leadership over mid-flight, drops it
-     * silently. One watch at a time, and by the time it re-asks this tab may be the leader itself;
-     * `executeRefresh` re-decides that on every attempt.
+     * Asks the leader again if a delegated refresh went unanswered, and refreshes the tokens in this tab
+     * once the leader has run out of chances. A frozen leader keeps the lock that makes it the leader
+     * while it runs no timer and reads no message, so waiting for it is waiting for nothing.
+     *
+     * One watch at a time, and by the time it re-asks this tab may be the leader itself; `executeRefresh`
+     * re-decides that on every attempt.
      */
     function watchDelegatedRefresh(tokenAtRequest: string | null) {
-      if (isWatchingDelegatedRefresh || delegatedRefreshAttempts >= maxDelegatedRefreshAttempts) return;
+      if (isWatchingDelegatedRefresh) return;
+
+      // A new ladder judges the leader by what it answers this time round, not by an answer from an hour
+      // ago - the tab that gave it may not even be open any more.
+      if (delegatedRefreshAttempts === 0) hasLeaderAnsweredDelegation = false;
+
+      const budget = hasLeaderAnsweredDelegation ? maxDelegatedRefreshWindows : maxDelegatedRefreshAttempts;
+
+      if (delegatedRefreshAttempts >= budget) return;
 
       delegatedRefreshAttempts++;
       isWatchingDelegatedRefresh = true;
@@ -355,6 +409,15 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
           // A new access token is the leader's answer - nothing to re-ask for.
           if (context.accessToken() !== tokenAtRequest) {
             delegatedRefreshAttempts = 0;
+            hasLeaderAnsweredDelegation = false;
+
+            return;
+          }
+
+          const spentBudget = hasLeaderAnsweredDelegation ? maxDelegatedRefreshWindows : maxDelegatedRefreshAttempts;
+
+          if (delegatedRefreshAttempts >= spentBudget) {
+            void takeOverRefresh(tokenAtRequest);
 
             return;
           }
@@ -362,6 +425,55 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
           executeRefresh('unauthorized');
         });
     }
+
+    /** Runs the refresh and keeps the refresh lock until it reports back, or until the bound runs out. */
+    const runTakenOverRefresh = async () => {
+      if (executeRefresh('takeover') !== 'executed') return;
+
+      delegatedRefreshAttempts = 0;
+      hasLeaderAnsweredDelegation = false;
+
+      await new Promise<void>((resolve) => {
+        race(context.afterTokenRefresh$, timer(takeoverRefreshMaxLockHoldMs))
+          .pipe(take(1), takeUntilDestroyed(destroyRef))
+          .subscribe({ next: () => resolve(), complete: () => resolve() });
+      });
+    };
+
+    /**
+     * Spends the refresh token in this tab, after the leader failed to. Guarded by a lock of its own
+     * rather than by the leadership, which the unresponsive tab still holds: every follower runs out of
+     * patience at the same instant, and a single-use refresh token must not be spent twice.
+     *
+     * `ifAvailable` makes it a try-lock, so the tab that does not get the lock stands down instead of
+     * queueing for a turn it must no longer take - the winner's new token pair arrives over the sync
+     * channel long before then.
+     */
+    const takeOverRefresh = async (tokenAtRequest: string | null) => {
+      if (context.accessToken() !== tokenAtRequest) return;
+
+      const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+
+      if (!locks) {
+        await runTakenOverRefresh();
+
+        return;
+      }
+
+      await locks.request(refreshLockName(context.name), { ifAvailable: true }, async (lock) => {
+        if (!lock) {
+          // Another tab is spending the refresh token right now. Start the ladder over rather than race
+          // it: this tab hears about the pair it issues, and needs a way back if it never issues one.
+          delegatedRefreshAttempts = 0;
+
+          return;
+        }
+
+        if (context.accessToken() !== tokenAtRequest) return;
+
+        await runTakenOverRefresh();
+      });
+    };
 
     /**
      * How long a scheduled refresh that did not spend the refresh token waits before trying again.
@@ -377,11 +489,17 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
           return Math.max(minRefreshInterval - (Date.now() - lastRefreshTime), rescheduleDelayMs);
         case 'busy':
           return rescheduleDelayMs;
-        // Both wait for the leader: `delegated` asked it to act, `notLeader` left it to its own timer.
-        // Coming back keeps this tab covered if the leadership moves here in the meantime.
         case 'delegated':
-        case 'notLeader':
           return minRefreshInterval;
+        // Left to the leader's own timer, which is due at the same instant as this one. Coming back at
+        // the staleness deadline instead of on a fixed interval is what makes the wait bounded: a fixed
+        // interval spends `maxRescheduleAttempts` within minutes of a token that can live for hours, and
+        // the tab is then left with no armed timer at all.
+        case 'notLeader':
+          return Math.min(
+            Math.max(msUntilAccessTokenIsStale() ?? minRefreshInterval, rescheduleDelayMs),
+            maxTimerDelayMs,
+          );
       }
     };
 
@@ -399,8 +517,8 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       return Math.max(minBufferMs, Math.min(maxBufferMs, calculatedBuffer));
     };
 
-    /** When this access token is due to be refreshed, or `null` if it cannot be scheduled at all. */
-    const scheduledRefreshDelay = (token: string) => {
+    /** When this token expires, as a timestamp, or `null` if the expiry cannot be read off it. */
+    const tokenExpiresAt = (token: string) => {
       try {
         const decoded = context.bearerDecryptFn ? context.bearerDecryptFn(token) : decryptBearer(token);
         const bearerDataValue = patchQueryDevtoolsTokenPayload({
@@ -418,22 +536,51 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
           return null;
         }
 
-        const tokenLifetimeMs = expiresIn * 1000 - Date.now();
-
-        if (tokenLifetimeMs <= 0) {
-          if (!refreshIfExpired) return null;
-
-          if (isDevMode()) {
-            console.warn('Token is already expired, triggering immediate refresh');
-          }
-
-          return 0;
-        }
-
-        return Math.max(tokenLifetimeMs - calculateRefreshBuffer(tokenLifetimeMs), 0);
+        return expiresIn * 1000;
       } catch {
         return null;
       }
+    };
+
+    /** When this access token is due to be refreshed, or `null` if it cannot be scheduled at all. */
+    const scheduledRefreshDelay = (token: string) => {
+      const expiresAt = tokenExpiresAt(token);
+
+      if (expiresAt === null) return null;
+
+      const tokenLifetimeMs = expiresAt - Date.now();
+
+      if (tokenLifetimeMs <= 0) {
+        if (!refreshIfExpired) return null;
+
+        if (isDevMode()) {
+          console.warn('Token is already expired, triggering immediate refresh');
+        }
+
+        return 0;
+      }
+
+      return Math.max(tokenLifetimeMs - calculateRefreshBuffer(tokenLifetimeMs), 0);
+    };
+
+    /**
+     * How long this tab can still work with the access token it holds, or `null` without a readable
+     * expiry. Zero or less means a refresh has to happen now, whichever tab does it.
+     */
+    const msUntilAccessTokenIsStale = () => {
+      const token = context.accessToken();
+
+      if (!token) return null;
+
+      const expiresAt = tokenExpiresAt(token);
+
+      return expiresAt === null ? null : expiresAt - followerTakeoverGraceMs - Date.now();
+    };
+
+    const isAccessTokenStale = () => {
+      const remainingMs = msUntilAccessTokenIsStale();
+
+      return remainingMs !== null && remainingMs <= 0;
     };
 
     /**
@@ -487,6 +634,10 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
     context.refreshCoordination?.requests$.pipe(takeUntilDestroyed()).subscribe(() => executeRefresh('unauthorized'));
 
+    context.refreshCoordination?.starts$.pipe(takeUntilDestroyed()).subscribe(() => {
+      hasLeaderAnsweredDelegation = true;
+    });
+
     const onRefreshFailure =
       config.onRefreshFailure ??
       (({ error, logout }: RefreshFailure) => {
@@ -512,6 +663,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         if (event.type === 'request-success' && event.isSecure) {
           unauthorizedRefreshStreak = 0;
           delegatedRefreshAttempts = 0;
+          hasLeaderAnsweredDelegation = false;
 
           return;
         }

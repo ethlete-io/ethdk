@@ -7,7 +7,7 @@ import {
   installFakeWebLocks,
 } from '@ethlete/query/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setupLeaderElection } from './leader-election';
+import { InternalLeaderElection, setupLeaderElection } from './leader-election';
 
 /**
  * Lets lock grants, presence messages and the `navigator.locks.query()` behind the instance count all
@@ -20,7 +20,45 @@ const settle = async () => {
   }
 };
 
-const openTab = (name = 'test-auth') => TestBed.runInInjectionContext(() => setupLeaderElection({ name }));
+const opened: InternalLeaderElection[] = [];
+
+const openTab = (name = 'test-auth') => {
+  const tab = TestBed.runInInjectionContext(() => setupLeaderElection({ name }));
+
+  opened.push(tab);
+
+  return tab;
+};
+
+/**
+ * A tab that is not an election instance, so it hears none of the page lifecycle events the specs
+ * dispatch on the one shared `document` - which is the only way to tell two tabs apart in here.
+ */
+const openForeignTab = (name = 'test-auth') => {
+  let isLeader = false;
+  let release = () => {
+    /* not granted yet */
+  };
+
+  const done = navigator.locks.request(`ethlete-auth:leader:${name}`, () => {
+    isLeader = true;
+
+    return new Promise<void>((resolve) => {
+      release = () => {
+        isLeader = false;
+        resolve();
+      };
+    });
+  });
+
+  return {
+    isLeader: () => isLeader,
+    close: async () => {
+      release();
+      await done.catch(() => undefined);
+    },
+  };
+};
 
 describe('setupLeaderElection', () => {
   let bus: FakeBroadcastChannelHandle;
@@ -32,6 +70,12 @@ describe('setupLeaderElection', () => {
   });
 
   afterEach(() => {
+    // Every tab, not only the ones a passing spec cleans up: a leaked tab keeps its page lifecycle
+    // listeners on the shared `document` and reacts to the next spec's events.
+    for (const tab of opened.splice(0)) {
+      tab.cleanup();
+    }
+
     bus.restore();
     locks.restore();
   });
@@ -170,6 +214,137 @@ describe('setupLeaderElection', () => {
     expect(heard).toEqual([]);
 
     tab.cleanup();
+  });
+
+  it('should carry a refresh start to every other tab', async () => {
+    const leader = openTab();
+    const follower = openTab();
+
+    await settle();
+
+    const heard: string[] = [];
+
+    leader.refreshStarts$.subscribe(() => heard.push('leader'));
+    follower.refreshStarts$.subscribe(() => heard.push('follower'));
+
+    leader.announceRefreshStart();
+    await settle();
+
+    expect(heard).toEqual(['follower']);
+
+    leader.cleanup();
+    follower.cleanup();
+  });
+
+  it('should hand the leadership over while the page is frozen', async () => {
+    const tab = openTab();
+
+    await settle();
+
+    const otherTab = openForeignTab();
+
+    await settle();
+
+    expect(tab.isLeader()).toBe(true);
+    expect(otherTab.isLeader()).toBe(false);
+
+    document.dispatchEvent(new Event('freeze'));
+    await settle();
+
+    // A frozen page runs no timer, so a frozen leader is a session nothing refreshes.
+    expect(tab.isLeader()).toBe(false);
+    expect(otherTab.isLeader()).toBe(true);
+
+    await otherTab.close();
+  });
+
+  it('should take part again once the page resumes, behind the tab that took over', async () => {
+    const tab = openTab();
+
+    await settle();
+
+    const otherTab = openForeignTab();
+
+    await settle();
+
+    document.dispatchEvent(new Event('freeze'));
+    await settle();
+
+    document.dispatchEvent(new Event('resume'));
+    await settle();
+
+    expect(tab.isLeader()).toBe(false);
+    expect(otherTab.isLeader()).toBe(true);
+    expect(locks.pendingNames()).toEqual(['ethlete-auth:leader:test-auth']);
+
+    await otherTab.close();
+    await settle();
+
+    expect(tab.isLeader()).toBe(true);
+  });
+
+  it('should lead again after a resume that finds no other tab', async () => {
+    const tab = openTab();
+
+    await settle();
+
+    document.dispatchEvent(new Event('freeze'));
+    await settle();
+
+    expect(tab.isLeader()).toBe(false);
+    expect(locks.heldNames()).toEqual([]);
+
+    document.dispatchEvent(new Event('resume'));
+    await settle();
+
+    expect(tab.isLeader()).toBe(true);
+
+    tab.cleanup();
+  });
+
+  it('should give the leadership up for the back/forward cache, and take it again on restore', async () => {
+    const tab = openTab();
+
+    await settle();
+
+    window.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }));
+    await settle();
+
+    expect(tab.isLeader()).toBe(false);
+    expect(locks.heldNames()).toEqual([]);
+
+    window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+    await settle();
+
+    expect(tab.isLeader()).toBe(true);
+  });
+
+  it('should keep the leadership on a page hide that is not a cache entry', async () => {
+    const leader = openTab();
+
+    await settle();
+
+    window.dispatchEvent(new Event('pagehide'));
+    await settle();
+
+    expect(leader.isLeader()).toBe(true);
+
+    leader.cleanup();
+  });
+
+  it('should stop reacting to freeze and resume after cleanup', async () => {
+    const tab = openTab();
+
+    await settle();
+
+    tab.cleanup();
+    await settle();
+
+    document.dispatchEvent(new Event('resume'));
+    await settle();
+
+    expect(tab.isLeader()).toBe(false);
+    expect(locks.heldNames()).toEqual([]);
   });
 
   it('should release the lock on cleanup, idempotently', async () => {

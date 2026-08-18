@@ -239,7 +239,7 @@ It behaves exactly like a successful auth query: `bearerData` / `isAuthenticated
 
 `withRefreshQuery` wires two refresh triggers:
 
-- **Proactive** - a timer computed from the JWT's expiration claim (`expiresInPropertyName`, default `'exp'`) and the `refreshStrategy` (default: refresh at **75%** of the token lifetime, clamped between 1 and 10 minutes before expiry). With multi-tab sync active, only the elected leader tab refreshes: a follower's timer comes due at the same instant (the tabs share the token), so it skips the tick entirely rather than asking the leader for a refresh the leader is already doing.
+- **Proactive** - a timer computed from the JWT's expiration claim (`expiresInPropertyName`, default `'exp'`) and the `refreshStrategy` (default: refresh at **75%** of the token lifetime, clamped between 1 and 10 minutes before expiry). With multi-tab sync active, only the elected leader tab refreshes: a follower's timer comes due at the same instant (the tabs share the token), so it skips the tick rather than asking the leader for a refresh the leader is already doing - until the token is nearly expired, at which point the leader has provably not acted and the follower [takes it over](#when-the-leader-stops-answering).
 - **Reactive** - any secure query failing with a `401` triggers a refresh (`autoRetryOn401`, default `true`), then re-executes.
 
 A `401` is only ever retried once the refresh has actually **changed** the access token. A refresh that hands back the same token is not a reason to retry: the retry would `401` again, and that `401` would ask for another refresh - an endless loop for as long as the server keeps issuing a token it rejects. The query stays armed, so the next refresh that does change the token still retries it - including a refresh that completed **before** the `401` even landed, which is common when several requests are in flight as the token expires.
@@ -248,15 +248,21 @@ The reactive trigger also checks **which token the failing request went out with
 
 `minRefreshInterval` (default 30s) throttles the **proactive** trigger, and any refresh that runs starts that interval - so a proactive tick right behind a `401`-driven rotation cannot spend a second refresh token. A refresh a `401` asked for is itself not throttled by it - a token revoked seconds after a proactive refresh is exactly when the request has to go out. Those are deduplicated instead (one refresh in flight at a time, stale `401`s refresh nothing), and only a streak of them - three fresh tokens in a row `401`ing again, with no secure request succeeding in between - falls back to one refresh per `minRefreshInterval`.
 
-A proactive refresh that comes due while it cannot run - throttled, waiting on a login or refresh already in flight, or handed to a leader tab that has not answered - **comes back for it** rather than waiting out the token. It re-arms up to five times before it leaves the session to the reactive trigger; a new token pair starts the schedule over.
+A proactive refresh that comes due while it cannot run - throttled, waiting on a login or refresh already in flight, or handed to a leader tab that has not answered - **comes back for it** rather than waiting out the token. It re-arms up to five times before it leaves the session to the reactive trigger; a new token pair starts the schedule over. A tick left to the leader is the one exception to the fixed interval: it re-arms for the moment the token goes stale, 30 seconds before it expires, because a token that can live for hours would otherwise spend all five re-arms in the first two minutes and leave the tab with no armed timer at all.
 
 **The schedule is also recomputed whenever the tab becomes visible again.** A backgrounded tab's timers are throttled, and a frozen page stops running them altogether while keeping the Web Lock that makes it the leader - so a tab that was away for a while can hold a token whose refresh time has long passed. Coming back to the foreground re-reads the token and refreshes right away if what is left of its lifetime is already inside the refresh buffer, instead of waiting for a secure query to `401`.
-
-A follower's delegated refresh is also **re-asked for** if the leader does not answer within 3 seconds, up to three times: the request is a channel message with no acknowledgement, so a frozen leader - or one that handed the leadership over mid-flight - would otherwise drop it silently. By the time it re-asks, the tab may be the leader itself, in which case it simply refreshes.
 
 In a tab that is not the elected leader, a `401` asks the leader to refresh over the leader channel rather than refreshing itself - a single-use refresh token must only be spent once, and the resulting tokens arrive back through [multi-tab sync](#multi-tab-sync). Without the feature every tab is its own leader and refreshes directly.
 
 Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 504` by default) with unlimited attempts (`retryConfig.maxAttempts: 0`) capped at 30s delay. By default the token extractor expects `{ accessToken, refreshToken }` in the response of both the authentication and refresh queries - override with `extractTokens`.
+
+### When the leader stops answering
+
+A follower's delegated refresh is **re-asked for** if the leader does not answer within 3 seconds, up to three times. By the time it re-asks, the tab may be the leader itself, in which case it simply refreshes.
+
+Every tab that starts a refresh says so on the leader channel, which is what turns the request into more than a message into the void: a leader that answers gets six windows instead of three, and one that answers none of them has the refresh **taken over**. The follower then spends the refresh token itself, under a second lock (`ethlete-auth:refresh:<provider name>`) so that two tabs going stale at the same instant - they hold the same token, so they always do - cannot spend it twice. The tab that does not get the lock stands down and waits for the pair the winner broadcasts.
+
+Without the takeover a frozen leader is a session nothing renews: the platform leaves it holding the leadership lock while it runs no timer and reads no message, so every other tab waits for a tab that will never act. A leader that is merely hidden still gets there first - the escalation only starts inside the last 30 seconds of the token's life.
 
 ### When a refresh fails for good
 
@@ -304,7 +310,9 @@ Without the feature every tab is its own leader and refreshes its own token - ex
 
 Leadership is one lock in the [Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API) - the same primitive the query client elects its [polling tabs](/query/multi-tab#polling-dedup) with. Every tab asks for it, one gets it, the rest queue: requests are granted FIFO, and a holder that closes, crashes or navigates away has its lock released by the platform, so the longest-waiting tab takes over. There is no heartbeat to tune and no window in which two tabs both believe they are the leader. Without Web Locks the tab elects itself, which is the single-tab behavior anyway.
 
-Two consequences worth knowing. `isLeader` starts `false` and flips on the next microtask, because the platform grants asynchronously - nothing observes the gap, since the proactive refresh it gates runs off a timer. And the instance count `withTracking` reports is best-effort: it is recounted when a tab announces itself, says goodbye or takes over the leadership, so a tab that _crashes_ without holding the lock is counted until the next of those happens.
+**A leader that is about to stop running leaves the election.** The platform releases a lock for a tab that closes or crashes, but not for one the browser _freezes_ - Chrome does that to a hidden tab after a few minutes, and to any page it puts in the back/forward cache. Such a page keeps the lock while it runs no timer, so the leadership is given up on `freeze` (and on a `pagehide` into the cache) and asked for again on `resume`, which puts the tab behind whichever one took over. A follower's [takeover](#when-the-leader-stops-answering) is what covers the case anyway, in a browser that fires neither event.
+
+Two consequences worth knowing. `isLeader` starts `false` and flips on the next microtask, because the platform grants asynchronously - nothing observes the gap, since the proactive refresh it gates runs off a timer. And the instance count `withTracking` reports is best-effort: it is recounted when a tab announces itself, says goodbye or takes over the leadership, so a tab that _crashes_ without holding the lock is counted until the next of those happens. A frozen tab is not counted at all, which is what it is - a tab taking no part.
 
 Because `isLeader` reads `true` in three quite different situations, `leadership` says which one you are in:
 

@@ -2406,6 +2406,211 @@ describe('createBearerAuthProvider', () => {
       });
     });
 
+    /**
+     * Everything a follower spec needs: the fakes installed, another tab holding the leader lock, and a
+     * logged-in provider whose access token is one tick away from being stale. `dispose` unwinds it.
+     */
+    const openFollowerTab = async (options: { holdRefreshLock?: boolean } = {}) => {
+      const bus = installFakeBroadcastChannel();
+      const locks = installFakeWebLocks();
+
+      let releaseLeaderLock = () => {
+        /* not granted yet */
+      };
+      const leaderLock = navigator.locks.request(
+        'ethlete-auth:leader:test-auth',
+        () => new Promise<void>((resolve) => (releaseLeaderLock = resolve)),
+      );
+
+      let releaseRefreshLock = () => {
+        /* not requested */
+      };
+      const refreshLock = options.holdRefreshLock
+        ? navigator.locks.request(
+            'ethlete-auth:refresh:test-auth',
+            () => new Promise<void>((resolve) => (releaseRefreshLock = resolve)),
+          )
+        : Promise.resolve();
+
+      const postQuery = createPostQuery(queryClientRef);
+      const loginQuery = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+      const refresh = postQuery<{
+        body: { token: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/refresh');
+
+      const extractTokens = (response: { token: string; refresh_token: string }) => ({
+        accessToken: response.token,
+        refreshToken: response.refresh_token,
+      });
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', { queryCreator: loginQuery, extractTokens }),
+          withRefreshQuery('refresh', { queryCreator: refresh, extractTokens }),
+        ],
+        features: [withBearerAuthMultiTabSync()],
+      });
+
+      const settle = async () => {
+        for (let i = 0; i < 5; i++) {
+          TestBed.tick();
+          await flushMultiTabSync();
+        }
+      };
+
+      return {
+        bus,
+        settle,
+        injectAuthProvider,
+        dispose: async () => {
+          releaseLeaderLock();
+          releaseRefreshLock();
+          await Promise.all([leaderLock.catch(() => undefined), refreshLock.catch(() => undefined)]);
+          TestBed.resetTestingModule();
+          bus.restore();
+          locks.restore();
+        },
+      };
+    };
+
+    /**
+     * Runs the token down to the point a follower stops waiting: 1000s of lifetime, a 250s refresh
+     * buffer, and a 30s staleness grace, so the tab delegates 970s in.
+     */
+    const runTokenDownToStale = async (settle: () => Promise<void>) => {
+      vi.advanceTimersByTime(750_000);
+      await settle();
+
+      vi.advanceTimersByTime(220_000);
+      await settle();
+    };
+
+    it('should refresh the tokens itself once the leader has ignored every delegated request', async () => {
+      const tab = await openFollowerTab();
+
+      try {
+        await TestBed.runInInjectionContext(async () => {
+          // Read before the first await: an injection context does not survive one.
+          const provider = tab.injectAuthProvider();
+
+          login(provider);
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/login')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+
+          await tab.settle();
+          tab.bus.posted.length = 0;
+
+          await runTokenDownToStale(tab.settle);
+
+          // Delegated rather than run here: the leader may still be the one to act on it.
+          expect(
+            tab.bus.posted.filter((message) => (message.data as { type: string }).type === 'refresh-requested').length,
+          ).toBe(1);
+          httpTesting.expectNone('https://api.example.com/auth/refresh');
+
+          // Three unanswered 3s windows. A leader that answers none of them is frozen, gone, or broken,
+          // and the tab holds a token that is about to be worthless either way.
+          for (let window = 0; window < 3; window++) {
+            vi.advanceTimersByTime(3_000);
+            await tab.settle();
+          }
+
+          const request = httpTesting.expectOne('https://api.example.com/auth/refresh');
+
+          expect(request.request.body).toEqual({ token: 'refresh-1' });
+
+          request.flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-2' });
+          await tab.settle();
+
+          expect(provider.refreshToken()).toBe('refresh-2');
+        });
+      } finally {
+        await tab.dispose();
+      }
+    });
+
+    it('should keep waiting while the leader answers that a refresh started', async () => {
+      const tab = await openFollowerTab();
+
+      try {
+        await TestBed.runInInjectionContext(async () => {
+          login(tab.injectAuthProvider());
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/login')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+
+          await tab.settle();
+          await runTokenDownToStale(tab.settle);
+
+          const leaderChannel = new BroadcastChannel('ethlete-auth-leader:test-auth');
+
+          leaderChannel.postMessage({ type: 'refresh-started' });
+          await tab.settle();
+
+          // The three windows a silent leader gets. This one said it is working on the refresh, so the
+          // tab must not spend the refresh token that leader is spending.
+          for (let window = 0; window < 3; window++) {
+            vi.advanceTimersByTime(3_000);
+            await tab.settle();
+          }
+
+          httpTesting.expectNone('https://api.example.com/auth/refresh');
+
+          // Bounded even so: the answer said a refresh started, not that it will ever finish.
+          for (let window = 0; window < 3; window++) {
+            vi.advanceTimersByTime(3_000);
+            await tab.settle();
+          }
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/refresh')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-2' });
+          await tab.settle();
+
+          leaderChannel.close();
+        });
+      } finally {
+        await tab.dispose();
+      }
+    });
+
+    it('should stand down when another tab already holds the refresh lock', async () => {
+      const tab = await openFollowerTab({ holdRefreshLock: true });
+
+      try {
+        await TestBed.runInInjectionContext(async () => {
+          login(tab.injectAuthProvider());
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/login')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+
+          await tab.settle();
+          await runTokenDownToStale(tab.settle);
+
+          for (let window = 0; window < 3; window++) {
+            vi.advanceTimersByTime(3_000);
+            await tab.settle();
+          }
+
+          // Every follower goes stale at the same instant, so the lock is what stops the second one from
+          // spending a refresh token the first one is already spending.
+          httpTesting.expectNone('https://api.example.com/auth/refresh');
+        });
+      } finally {
+        await tab.dispose();
+      }
+    });
+
     it('should leave a scheduled refresh to the leader instead of delegating it', async () => {
       const bus = installFakeBroadcastChannel();
       const locks = installFakeWebLocks();

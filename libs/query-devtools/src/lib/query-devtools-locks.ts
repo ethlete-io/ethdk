@@ -11,6 +11,7 @@ export const devtoolsProbeLockName = (id: string) => `${DEVTOOLS_PROBE_NAMESPACE
 
 const PROBE_PREFIX = `${DEVTOOLS_PROBE_NAMESPACE}:probe:`;
 const AUTH_PREFIX = 'ethlete-auth:leader:';
+const AUTH_REFRESH_PREFIX = 'ethlete-auth:refresh:';
 const POLL_PREFIX = 'et-query-poll:';
 
 /** Which SDK feature a lock name belongs to, or `other` for one the panel did not put there. */
@@ -47,6 +48,10 @@ export type DevtoolsLockRow = {
 
 const decode = (name: string): Pick<DevtoolsLockRow, 'kind' | 'label' | 'channel'> => {
   if (name.startsWith(AUTH_PREFIX)) return { kind: 'auth', label: name.slice(AUTH_PREFIX.length), channel: null };
+
+  if (name.startsWith(AUTH_REFRESH_PREFIX)) {
+    return { kind: 'auth', label: `${name.slice(AUTH_REFRESH_PREFIX.length)} refresh`, channel: null };
+  }
 
   if (name.startsWith(POLL_PREFIX)) {
     const rest = name.slice(POLL_PREFIX.length);

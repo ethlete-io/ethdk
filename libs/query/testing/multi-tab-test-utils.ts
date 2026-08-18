@@ -112,7 +112,7 @@ export type FakeWebLocksHandle = {
 };
 
 type FakeLockWaiter = {
-  callback: (lock: Lock) => unknown;
+  callback: (lock: Lock | null) => unknown;
   resolve: (value: unknown) => void;
   reject: (reason: unknown) => void;
   granted: boolean;
@@ -124,7 +124,10 @@ type FakeLockWaiter = {
  * promise settles. `signal` is honored for queued requests and - as in the real API - ignored once a
  * request has been granted.
  *
- * `mode: 'shared'`, `ifAvailable` and `steal` are not implemented; nothing in the library uses them.
+ * `ifAvailable` is a try-lock: a request that cannot be granted straight away runs its callback with
+ * `null` instead of queueing, exactly as the real API does.
+ *
+ * `mode: 'shared'` and `steal` are not implemented; nothing in the library uses them.
  */
 export const installFakeWebLocks = (): FakeWebLocksHandle => {
   const originalDescriptor = Object.getOwnPropertyDescriptor(navigator, 'locks');
@@ -165,7 +168,7 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
   const request = (name: string, optionsOrCallback: unknown, maybeCallback?: unknown) => {
     const options = (typeof optionsOrCallback === 'function' ? {} : (optionsOrCallback ?? {})) as LockOptions;
     const callback = (typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback) as (
-      lock: Lock,
+      lock: Lock | null,
     ) => unknown;
 
     return new Promise((resolve, reject) => {
@@ -190,6 +193,23 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
 
         reject(abortError());
       });
+
+      // Availability is decided a microtask out, not here: that is when the real API decides it too, so
+      // two try-locks requested in the same tick still resolve to one winner and one `null`.
+      if (options.ifAvailable) {
+        queueMicrotask(() => {
+          if (holders.has(name) || (queues.get(name)?.length ?? 0) > 0) {
+            Promise.resolve(callback(null)).then(resolve, reject);
+
+            return;
+          }
+
+          queues.set(name, [waiter]);
+          pump(name);
+        });
+
+        return;
+      }
 
       queues.set(name, [...(queues.get(name) ?? []), waiter]);
       queueMicrotask(() => pump(name));
