@@ -50,31 +50,35 @@
             class="et-table-header-label et-table-header-label--sortable"
             type="button"
           >
-            @if (cell.template; as headerTemplate) {
-              <ng-container *ngTemplateOutlet="headerTemplate; context: { $implicit: cell.column.header }" />
-            } @else {
-              <span class="et-table-cell-text">{{ cell.column.header }}</span>
-            }
-            @if (cell.direction; as direction) {
-              <!-- Flipping direction keeps this element mounted, so the arrow turns over rather than
-                   swapping; only appearing and disappearing are the fade, and only for a sort the user
-                   just asked for (see sortIndicatorEnter). -->
-              <i
-                [attr.data-direction]="direction"
-                [animate.enter]="sortIndicatorEnter()"
-                [animate.leave]="sortIndicatorLeave()"
-                class="et-table-sort-indicator"
-                etIcon="et-arrow-up"
-              ></i>
-            }
+            <span class="et-table-header-label-box">
+              @if (cell.template; as headerTemplate) {
+                <ng-container *ngTemplateOutlet="headerTemplate; context: { $implicit: cell.column.header }" />
+              } @else {
+                <span class="et-table-cell-text">{{ cell.column.header }}</span>
+              }
+              @if (cell.direction; as direction) {
+                <!-- Flipping direction keeps this element mounted, so the arrow turns over rather than
+                     swapping; only appearing and disappearing are the fade, and only for a sort the user
+                     just asked for (see sortIndicatorEnter). -->
+                <i
+                  [attr.data-direction]="direction"
+                  [animate.enter]="sortIndicatorEnter()"
+                  [animate.leave]="sortIndicatorLeave()"
+                  class="et-table-sort-indicator"
+                  etIcon="et-arrow-up"
+                ></i>
+              }
+            </span>
           </button>
         } @else {
           <span class="et-table-header-label">
-            @if (cell.template; as headerTemplate) {
-              <ng-container *ngTemplateOutlet="headerTemplate; context: { $implicit: cell.column.header }" />
-            } @else {
-              <span class="et-table-cell-text">{{ cell.column.header }}</span>
-            }
+            <span class="et-table-header-label-box">
+              @if (cell.template; as headerTemplate) {
+                <ng-container *ngTemplateOutlet="headerTemplate; context: { $implicit: cell.column.header }" />
+              } @else {
+                <span class="et-table-cell-text">{{ cell.column.header }}</span>
+              }
+            </span>
           </span>
         }
 
@@ -84,12 +88,14 @@
              Dropped once the column is covered by a pinned one: an adornment's menu is a portal, so it
              would go on floating over the pinned column, anchored to a cell nobody can see. Unmounting
              the trigger is what closes it. -->
-        @if (!cell.obscured) {
-          @for (adornment of headerAdornments(); track $index) {
-            <ng-container
-              *ngComponentOutlet="adornment.component; inputs: { column: cell.column }; injector: adornment.injector"
-            />
-          }
+        @if (!cell.obscured && headerAdornments().length) {
+          <div class="et-table-header-adornments">
+            @for (adornment of headerAdornments(); track $index) {
+              <ng-container
+                *ngComponentOutlet="adornment.component; inputs: { column: cell.column }; injector: adornment.injector"
+              />
+            }
+          </div>
         }
       </div>
     }

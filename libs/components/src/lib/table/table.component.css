@@ -52,7 +52,7 @@
     --_et-table-row-divider: transparent;
     /* The box of a header adornment (a filter trigger, a column menu trigger), read both by the button
        itself and by the height the header row reserves for it. */
-    --_et-table-header-adornment-size: 2.8rem;
+    --_et-table-header-adornment-size: 2.4rem;
     /* The opaque paint under a row. A pinned cell has to be opaque for scrolled cells to pass behind it,
        so it cannot use the translucent tints the other cells layer on - it needs each of them mixed over
        what the row is actually painted on. Every `*-solid` below mixes over this one knob, and an
@@ -72,8 +72,16 @@
     );
     --_et-table-row-hover: var(--_et-table-hover-tint);
     --_et-table-row-hover-solid: var(--_et-table-hover-tint-solid);
-    /* Held rather than hovered. Twice the hover tint, the same step the library's buttons take. */
+    /* Held rather than hovered. Twice the hover tint, the same step the library's buttons take, in the
+       same two forms as the hover tint and for the same reason. */
     --_et-table-pressed-tint: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent);
+    --_et-table-pressed-tint-solid: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 16%,
+      var(--_et-table-row-surface)
+    );
+    --_et-table-row-pressed: var(--_et-table-pressed-tint);
+    --_et-table-row-pressed-solid: var(--_et-table-pressed-tint-solid);
     /* The tint for a row with nothing to react to, which an appearance drops where its rows are cards.
        A knob of its own rather than the row rule reading the appearance, so the two stay separable. */
     --_et-table-inert-row-hover: var(--_et-table-hover-tint);
@@ -303,10 +311,20 @@
     border-block-end: 1px solid var(--_et-table-header-border);
   }
 
+  /* The adornments are one group, so the cell's gap holds them off the label and nothing holds them
+     off each other: two of them are two narrow glyphs in two padded boxes, and a gap on top of that
+     padding reads as a hole in the header rather than as spacing. Each box still keeps its own target
+     size, so touching costs nothing. */
+  .et-table-header-adornments {
+    display: flex;
+    align-items: center;
+    flex: none;
+  }
+
   /* The header's adornments are `xs` icon buttons, whose 24px box is exactly the WCAG 2.2 target-size
-     minimum and reads thin beside a 600-weight label. Sized here rather than promoted to `sm`, which
-     would take the button - and the header row with it - past the label's own line box by half again.
-     `min-*` as well as the size, so an app that scales its `xs` down stays over the 24px minimum.
+     minimum. Sized here rather than promoted to `sm`, which would take the button - and the header row
+     with it - past the label's own line box by half again. `min-*` as well as the size, so an app that
+     scales its `xs` down stays over the 24px minimum.
 
      Two classes deep, not `:where()`: the button sets its own size at single-class weight, so a
      `:where()` here would tie with it and leave source order to decide. */
@@ -442,6 +460,11 @@
     .et-table-row:hover .et-table-cell.et-table-sticky-end {
       background: var(--_et-table-row-hover-solid);
     }
+  }
+
+  .et-table-row:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell.et-table-sticky-start,
+  .et-table-row:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell.et-table-sticky-end {
+    background: var(--_et-table-row-pressed-solid);
   }
 
   /* Header/footer pinned cells are corner-sticky (both axes) and sit above the row-pinned cells. */
@@ -592,6 +615,12 @@
     }
   }
 
+  /* Held. Only on a row that reacts to the press - hover marks every row the pointer crosses, but a row
+     that does nothing when you click it must not look as if it did. */
+  .et-table-row:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell {
+    background: var(--_et-table-row-pressed);
+  }
+
   /* ── Row box ────────────────────────────────────────────────────────────
      A row with a box of its own, in place of the layout-transparent default. `subgrid` is what keeps the
      cells in the table's own column tracks, so every column still lines up across the header, the rows
@@ -707,6 +736,11 @@
     --_et-table-row-hover-solid: color-mix(
       in srgb,
       var(--et-surface-interaction-solid, gray) 8%,
+      var(--_et-table-row-paint)
+    );
+    --_et-table-row-pressed-solid: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 16%,
       var(--_et-table-row-paint)
     );
     --_et-table-inert-row-hover-solid: var(--_et-table-row-paint);
@@ -869,7 +903,6 @@
   .et-table-header-label {
     display: flex;
     align-items: center;
-    gap: 4px;
     flex: 1;
     min-inline-size: 0;
     margin: 0;
@@ -881,17 +914,33 @@
     border: none;
   }
 
+  /* The label's own box, which is what carries the sort button's tint - the label itself grows to push
+     the adornments out, so a tint there is a band of colour across the whole column rather than a
+     control. The padding is cancelled by an equal negative margin, so the tint stands off the text
+     without moving it: the header label still lines up with the cells under it, and the header row
+     keeps its height. Sideways that leaves the box 4px wider than the label at each end, which is the
+     header cell's own gap - so even a label wide enough to truncate stops where an adornment starts. */
+  .et-table-header-label-box {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-inline-size: 0;
+    padding: 4px;
+    margin: -4px;
+    border-radius: 4px;
+  }
+
   /* The header *is* the sort button, so it escalates like any other control in the library: a hover
      tint, then the focus ring, then a stronger tint while it is held. The tint is painted on the label
      and not on the cell, which is pinned and opaque - a tint there would have to be layered over the
-     header's own background. The block padding is cancelled by an equal negative margin, so the tint
-     stands taller than the text without moving it: the header label still lines up with the cells
-     under it, and the header row keeps its height. */
+     header's own background. */
   .et-table-header-label:where(.et-table-header-label--sortable) {
     cursor: pointer;
-    padding-block: 4px;
-    margin-block: -4px;
-    background: var(--_et-table-header-label-tint, transparent);
+  }
+
+  .et-table-header-label--sortable .et-table-header-label-box {
+    background-color: var(--_et-table-header-label-tint, transparent);
+    transition: background-color 120ms var(--ease-out-5, ease);
   }
 
   @media (hover: hover) {

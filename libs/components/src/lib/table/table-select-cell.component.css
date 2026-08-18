@@ -64,4 +64,20 @@
       );
     }
   }
+
+  /* A held selected row escalates within its accent, for the same reason. */
+  .et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell {
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 26%, transparent);
+  }
+
+  .et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
+    .et-table-cell.et-table-sticky-start,
+  .et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
+    .et-table-cell.et-table-sticky-end {
+    background: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid, gray) 26%,
+      var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+    );
+  }
 }
