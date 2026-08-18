@@ -1,5 +1,5 @@
-import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { Component, computed, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import {
   FORM_FIELD_APPEARANCES,
@@ -20,7 +20,13 @@ import { COLOR_INPUT_IMPORTS } from '../color-input.imports';
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()" [labelMode]="labelMode()">
         <et-label>{{ label() }}</et-label>
-        <et-color-input [(mixed)]="mixedState" [formField]="demoForm.value" [mixedLabel]="mixedLabel()" />
+        <et-color-input
+          [(mixed)]="mixedState"
+          [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
+          [alpha]="alpha()"
+          [swatches]="resolvedSwatches()"
+        />
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
         }
@@ -49,8 +55,18 @@ export class FormFieldColorInputStorybookComponent {
   public mixedLabel = input('Mixed');
   public showMixedState = input(false);
   public disabled = input(false);
+  public readonly = input(false);
   public required = input(false);
+  public alpha = input(false);
+  public swatches = input('');
   public color = input('brand');
+
+  public resolvedSwatches = computed(() =>
+    this.swatches()
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0),
+  );
 
   public mixedState = linkedSignal(() => this.mixed());
 
@@ -58,6 +74,7 @@ export class FormFieldColorInputStorybookComponent {
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
+    readonly(s.value, () => this.readonly());
     required(s.value, { when: () => this.required(), message: 'This field is required' });
   });
 }

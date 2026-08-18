@@ -177,12 +177,11 @@ A textarea is the usual home for an [`<et-counter />`](/components/forms#charact
 
 ## Color input
 
-`et-color-input` wraps the native color picker: a swatch plus the picked hex
-value, with the real `input[type=color]` stretched invisibly over it so clicking
-anywhere opens the platform picker. The form value is `'#rrggbb' | null` - `null`
-until something is picked (the swatch shows black). `[readonly]` is honored (the
-native `<input type="color">` ignores the attribute, so the control blocks the
-picker-opening interactions itself while keeping the field focusable).
+`et-color-input` is a swatch plus the picked hex value, and it opens the SDK's own
+color picker. **There is no `<input type="color">` behind it any more** - the
+platform picker was replaced in full, so the panel looks and behaves the same on
+every browser and can be themed like the rest of the library. The form value is
+`'#rrggbb' | null` - `null` until something is picked (the swatch shows black).
 
 ```html
 <et-form-field>
@@ -191,8 +190,70 @@ picker-opening interactions itself while keeping the field focusable).
 </et-form-field>
 ```
 
-Design tokens: `--et-color-input-swatch-size` (default `20px`),
-`--et-color-input-swatch-radius` (default `4px`).
+<StoryEmbed id="components-forms-color-input--with-swatches" height="520px" />
+
+The field itself is a single tab stop that opens the panel. `[readonly]` keeps the
+field focusable and refuses to open the picker; `[disabled]` disables the trigger.
+The picker mounts as an anchored pane from `md` up and as a bottom sheet below it,
+the same as the [date and time pickers](/components/date-time-inputs) and the
+[cascader](/components/cascader).
+
+### The panel
+
+| Part                           | Notes                                                                                                                                                            |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Saturation and brightness area | Drag it, or tab to the two sliders behind it (`Saturation`, `Brightness`) and use the arrow keys                                                                 |
+| Hue track                      | A real range input, so arrow keys, `Home`, `End` and the page keys all work                                                                                      |
+| Opacity track                  | Only with `[alpha]` - see below                                                                                                                                  |
+| Preset swatches                | Only with `[swatches]` - see below                                                                                                                               |
+| Hex field                      | Commits on blur or `Enter`. An entry it cannot read reverts rather than standing                                                                                 |
+| Eyedropper                     | Only where the browser has the [EyeDropper API](https://developer.mozilla.org/docs/Web/API/EyeDropper) (Chromium at the time of writing); hidden everywhere else |
+
+Every surface is built around a native range input, which is what carries the
+keyboard and touch handling. Picking commits live - there is no confirm step, and
+closing the panel is not a cancel.
+
+### Opacity - `[alpha]`
+
+```html
+<et-color-input [formField]="demoForm.brandColor" alpha />
+```
+
+With `alpha` on, the panel gains an opacity track and the value widens to
+`'#rrggbbaa'`. Validate it with `hexColor({ allowAlpha: true })` - the strict
+default rejects the eight-digit form.
+
+### Presets - `[swatches]`
+
+```html
+<et-color-input [formField]="demoForm.brandColor" [swatches]="['#ff5533', 'rgb(51 187 136)', '#36f']" />
+```
+
+Presets take any notation the [color validators](/components/forms#color-validators)
+accept and render as canonical hex, so one color given twice in two notations
+renders one swatch. An entry that cannot be read is dropped rather than shown as a
+broken swatch.
+
+### What the value is
+
+The picker emits lowercase `'#rrggbb'` (or `'#rrggbbaa'`), but it **reads** every
+notation the validators accept - `#f00`, `#rrggbbaa`, `rgb()` and `rgba()`. A value
+that arrived from an API in one of those forms displays correctly and is not
+rewritten until the user picks something.
+
+### Design tokens
+
+| Token                            | Default                                                 |
+| -------------------------------- | ------------------------------------------------------- |
+| `--et-color-input-swatch-size`   | `20px`                                                  |
+| `--et-color-input-swatch-radius` | `4px`                                                   |
+| `--et-color-picker-area-size`    | `240px` (the panel's width, and the square area's side) |
+| `--et-color-picker-font-size`    | `14px`                                                  |
+| `--et-color-picker-track-size`   | `12px`                                                  |
+| `--et-color-picker-thumb-size`   | `12px`                                                  |
+
+The panel's own strings are localized through `provideColorInputLabels` - see
+[localization](/components/localization).
 
 Two colors that have to be readable together belong to
 [`colorContrast`](/components/forms#color-contrast-across-two-fields), which measures a field
@@ -394,12 +455,12 @@ the overview. Control-specific notes:
 
 Public design tokens on this page's controls (override them in your CSS scope):
 
-| Component           | Tokens                                                                                                  |
-| ------------------- | ------------------------------------------------------------------------------------------------------- |
-| `et-number-input`   | `--et-number-input-stepper-size` (`16px`)                                                               |
-| `et-password-input` | `--et-password-input-reveal-size` (`16px`)                                                              |
-| `et-color-input`    | `--et-color-input-swatch-size` (`20px`), `--et-color-input-swatch-radius` (`4px`)                       |
-| `et-otp-input`      | `--et-otp-input-segment-size` (`44px`), `--et-otp-input-segment-gap` (`8px`), `-segment-radius` (`8px`) |
+| Component           | Tokens                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `et-number-input`   | `--et-number-input-stepper-size` (`16px`)                                                                                      |
+| `et-password-input` | `--et-password-input-reveal-size` (`16px`)                                                                                     |
+| `et-color-input`    | `--et-color-input-swatch-size` (`20px`), `--et-color-input-swatch-radius` (`4px`), plus the `--et-color-picker-*` panel tokens |
+| `et-otp-input`      | `--et-otp-input-segment-size` (`44px`), `--et-otp-input-segment-gap` (`8px`), `-segment-radius` (`8px`)                        |
 
 The `et-form-field` shell tokens (padding, border, sizes) are documented on the
 [Forms overview](/components/forms#theming). All colors resolve through the

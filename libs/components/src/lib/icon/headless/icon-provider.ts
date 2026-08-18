@@ -110,6 +110,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-ellipsis-vertical',
   'et-eye',
   'et-eye-slash',
+  'et-eyedropper',
   'et-file',
   'et-filter',
   'et-floppy-disk',

@@ -1,22 +1,14 @@
-<span [style.background-color]="colorInputDir.swatchColor()" class="et-color-input-swatch" aria-hidden="true"></span>
-<span class="et-color-input-value">{{ colorInputDir.displayValue() }}</span>
-<input
-  #nativeInput
-  [value]="colorInputDir.resolvedColor()"
-  [disabled]="colorInputDir.disabled()"
-  [required]="colorInputDir.required()"
-  [attr.name]="colorInputDir.name() || null"
-  [attr.aria-invalid]="colorInputDir.shouldDisplayError() || null"
-  [attr.aria-describedby]="colorInputDir.describedBy() || null"
-  [attr.aria-label]="colorInputDir.ariaLabel() || null"
-  [attr.aria-labelledby]="colorInputDir.labelId() || null"
-  [attr.aria-readonly]="colorInputDir.readonly() || null"
-  (input)="syncNativeValue($event)"
-  (mousedown)="blockWhenReadonly($event)"
-  (click)="blockWhenReadonly($event)"
-  (keydown)="blockWhenReadonly($event)"
-  (focus)="colorInputDir.focused.set(true)"
-  (blur)="colorInputDir.focused.set(false); colorInputDir.touched.set(true)"
-  class="et-color-input-native"
-  type="color"
-/>
+<!-- the whole field is the trigger, the way the native input used to stretch over it, so the
+     control keeps its single tab stop -->
+<button [attr.aria-label]="fallbackTriggerLabel()" class="et-color-input-trigger" etColorPickerTrigger>
+  <span
+    [style.--_et-color-input-swatch-color]="colorInputDir.swatchColor()"
+    class="et-color-input-swatch"
+    aria-hidden="true"
+  ></span>
+  <span class="et-color-input-value">{{ colorInputDir.displayValue() }}</span>
+</button>
+
+<ng-template etColorPickerSurface>
+  <et-color-picker-panel />
+</ng-template>

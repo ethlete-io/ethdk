@@ -31,8 +31,14 @@ shipped as `et-date-time-range-input`, the first `L` row to go). Each one's desi
 are recorded in `component-improvements.md`'s "Already fixed, do not re-report". The selection list's `variant="tile"`
 was dropped on 2026-08-12 rather than shipped - do not re-add it.
 
-**Nothing is left below `L`, and nothing is left to decide.** Every remaining row is an `L` project,
-so the next pick is purely which project to start.
+The colour input's custom picker shipped on 2026-08-18 - the first `L` row picked off this list since
+the date-time range input. It replaced the native `<input type="color">` outright rather than sitting
+beside it, so `nativeControl` and `syncFromNativeInput()` are gone; see
+`plans/color-input-custom-picker.md` for the design calls and the traps it turned up.
+
+It also raised three follow-ups, which are now the only rows here below `L` - see
+"Colour picker follow-ups" below. The rest of the file is still `L` projects with nothing left to
+decide, so beyond those three the next pick is purely which project to start.
 
 ## Everything else, by effort
 
@@ -41,11 +47,21 @@ so the next pick is purely which project to start.
 | Item                                      | Tag     | Note                                                                                                                                                                                                                                                                                         |
 | ----------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Charts                                    | `D`,`L` | Four unknowns stacked: diverge from the `[innerHTML]` SVG precedent, a categorical palette that doesn't exist, `[etTooltip]` unverified on an SVG host, and no mechanism for animating SVG attributes. Bar charts could ship without the last one; pie/sankey can't                          |
-| Colour input: custom picker               | `A`     | Replaces the native input behind the same directive contract                                                                                                                                                                                                                                 |
 | Command palette                           | `A`,`D` | Merged item. Leans on the existing overlay + menu, so cheaper than it looks - but settle the scope before starting, the backlog flags scope creep as the real risk                                                                                                                           |
 | Stat tile                                 | `A`     | Merged item, marked low / opportunistic. Note the `dataviz` guidance covers stat tiles, so the design language exists even though the component doesn't                                                                                                                                      |
 | Test harnesses                            | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                                       |
 | Forms: time-zone handling / local-time UX | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, **date-time range** and scheduler together |
+
+### Colour picker follow-ups - the only rows below `L`
+
+Raised by the user on 2026-08-18 against the picker that shipped the same day. Full write-up in
+`plans/color-input-custom-picker.md`; do 2 before 3, because 3 needs the warning slot 2 brings.
+
+| Item                                    | Tag     | Effort | Note                                                                                                                                                                                                                                          |
+| --------------------------------------- | ------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Focus escapes an open anchored panel | `B`,`D` | `S`    | Not a missing flag: the runtime traps focus only when `modal !== false`, and these panes are non-modal on purpose. Fix in `createAnchoredPanelController` - select, cascader and the date pickers share the gap. Close-on-focus-leave vs trap |
+| 2. Panel hex field is a bare `<input>`  | `C`     | `S`    | No hover, focus or disabled treatment, and nowhere to put a message. Use `et-form-field` + `et-input`, which also brings the warning slot                                                                                                     |
+| 3. Notation switching (hex / RGB / HSL) | `A`,`D` | `M`    | Follow what the user pastes, but let a consumer pin the control to one notation and warn on conversion. Settle first whether the emitted value may ever leave hex - that decides everything else                                              |
 
 ### Watchlist - gated on browsers, not on us
 

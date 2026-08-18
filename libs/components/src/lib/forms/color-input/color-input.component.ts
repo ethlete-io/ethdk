@@ -1,12 +1,15 @@
-import { afterNextRender, Component, ElementRef, inject, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { ColorInteractiveDirective } from '@ethlete/core';
-import { ColorInputDirective } from './headless';
+import { injectColorInputLabels } from './color-input-labels';
+import { ColorPickerPanelComponent } from './color-picker-panel.component';
+import { ColorInputDirective, ColorPickerSurfaceDirective, ColorPickerTriggerDirective } from './headless';
 
 @Component({
   selector: 'et-color-input',
   templateUrl: './color-input.component.html',
   styleUrl: './color-input.component.css',
   encapsulation: ViewEncapsulation.None,
+  imports: [ColorPickerPanelComponent, ColorPickerSurfaceDirective, ColorPickerTriggerDirective],
   hostDirectives: [
     {
       directive: ColorInputDirective,
@@ -24,10 +27,13 @@ import { ColorInputDirective } from './headless';
         'name',
         'maxLength',
         'pending',
+        'alpha',
+        'swatches',
+        'pickerOpen',
         'aria-label',
         'aria-labelledby',
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
     },
     ColorInteractiveDirective,
   ],
@@ -38,38 +44,12 @@ import { ColorInputDirective } from './headless';
 })
 export class ColorInputComponent {
   protected colorInputDir = inject(ColorInputDirective);
+  public labels = injectColorInputLabels();
 
-  private nativeInput = viewChild<ElementRef<HTMLInputElement>>('nativeInput');
-
-  constructor() {
-    afterNextRender(() => {
-      const nativeInput = this.nativeInput()?.nativeElement ?? null;
-
-      this.colorInputDir.focusTarget.set(nativeInput);
-      this.colorInputDir.nativeControl.set(nativeInput);
-    });
-  }
-
-  public syncNativeValue(event: Event) {
-    this.colorInputDir.syncFromNativeInput(event.target as HTMLInputElement);
-  }
-
-  /**
-   * `<input type="color">` ignores `readonly`, so we stop the events that open the OS picker
-   * (pointer + Enter/Space) while the control is read-only - keeping it focusable but inert,
-   * like every sibling control honors `readonly`.
-   */
-  protected blockWhenReadonly(event: Event) {
-    if (this.colorInputDir.interactive()) {
-      return;
-    }
-
-    if (event instanceof KeyboardEvent && event.key !== 'Enter' && event.key !== ' ') {
-      return;
-    }
-
-    event.preventDefault();
-  }
+  /** The accessible name of the trigger, unless the consumer supplied one. */
+  protected fallbackTriggerLabel = computed(() =>
+    this.colorInputDir.hasCustomAccessibleName() || this.colorInputDir.labelId() ? null : this.labels().pickerTrigger,
+  );
 
   public focus(options?: FocusOptions) {
     this.colorInputDir.focus(options);

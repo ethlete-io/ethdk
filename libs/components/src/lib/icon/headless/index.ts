@@ -16,6 +16,7 @@ export * from './code-icon';
 export * from './ellipsis-icon';
 export * from './ellipsis-vertical-icon';
 export * from './eye-icons';
+export * from './eyedropper-icon';
 export * from './file-icon';
 export * from './filter-icon';
 export * from './floppy-disk-icon';

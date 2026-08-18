@@ -1,26 +1,69 @@
-import { computed, Directive, ElementRef, inject, model, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  computed,
+  inject,
+  Directive,
+  InjectionToken,
+  TemplateRef,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, TextFieldControlDirective } from '../../form-field/headless';
+import { formatRgbToHex, parseColorToRgb } from './internals/color-convert';
+import { createColorPickerOverlay } from './internals/color-picker-overlay';
+import { createColorPickerState } from './internals/color-picker-state';
+
+export type ColorInputTriggerBase = {
+  elementRef: { nativeElement: HTMLElement };
+};
+
+export type ColorInputSurfaceBase = {
+  templateRef: TemplateRef<ColorInputSurfaceContext>;
+};
+
+/** Context of the template rendered inside the picker overlay pane. */
+export type ColorInputSurfaceContext = {
+  $implicit: ColorInputDirective;
+  close: () => void;
+};
+
+export const COLOR_INPUT_TOKEN = new InjectionToken<ColorInputDirective>('COLOR_INPUT_TOKEN');
 
 @Directive({
   selector: '[etColorInput]',
+  providers: [{ provide: COLOR_INPUT_TOKEN, useExisting: ColorInputDirective }],
 })
 export class ColorInputDirective extends TextFieldControlDirective implements FormValueControl<string | null> {
-  /** Hex color in `#rrggbb` notation, or `null` when nothing was picked yet. */
+  private ownFormField = inject(FORM_FIELD_TOKEN, { optional: true });
+
+  /** Hex color in `#rrggbb` notation - `#rrggbbaa` while `alpha` is on - or `null` when nothing was picked yet. */
   public value = model<string | null>(null);
+
+  /**
+   * Adds an opacity track to the picker and widens the emitted value to `#rrggbbaa`. Pair it with
+   * `hexColor({ allowAlpha: true })` if the field is validated.
+   */
+  public alpha = input(false, { transform: booleanAttribute });
+
+  /**
+   * Preset colors offered in the picker, in any notation the color validators accept. An entry that
+   * cannot be read is dropped rather than rendered as a broken swatch.
+   */
+  public swatches = input<readonly string[]>([]);
+
+  /** Whether the picker overlay is open. */
+  public pickerOpen = model(false);
 
   public hasValue = computed(() => this.mixed() || this.value() !== null);
 
-  /**
-   * `<input type="color">` ignores the native `readonly` attribute (spec), so the surface gates
-   * interaction on this instead - the component blocks the picker-opening events while it's false,
-   * and the value sync no-ops as a backstop.
-   */
+  /** Whether the control accepts a new color - the picker refuses to open while it does not. */
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
   /**
-   * The color the native input currently paints - `#000000` until a value is picked, and
-   * while mixed (the picker must not preselect and thereby reveal the hidden raw color).
+   * The color the picker and the field preview paint - black until a value is picked, and while
+   * mixed (the picker must not preselect and thereby reveal the hidden raw color).
    */
   public resolvedColor = computed(() => (this.mixed() ? '#000000' : (this.value() ?? '#000000')));
 
@@ -30,44 +73,85 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
   /** The text the value slot renders - `mixedLabel` while mixed, never the hidden raw color. */
   public displayValue = computed(() => (this.mixed() ? this.resolvedMixedLabel() : (this.value() ?? '')));
 
+  /**
+   * The presets that could be read, as canonical hex - so a color given twice in two notations
+   * renders one swatch, and the panel can compare a swatch against the current value directly.
+   */
+  public resolvedSwatches = computed(() => {
+    const withAlpha = this.alpha();
+    const seen = new Set<string>();
+
+    for (const entry of this.swatches()) {
+      const parsed = parseColorToRgb(entry);
+
+      if (parsed) {
+        seen.add(formatRgbToHex(parsed, { alpha: withAlpha }));
+      }
+    }
+
+    return [...seen];
+  });
+
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.COLOR_INPUT);
 
-  /**
-   * The native color input this directive controls. Set automatically when the
-   * directive is placed on an `<input>` element; otherwise the hosting component
-   * registers it.
-   */
-  public nativeControl = signal<HTMLInputElement | null>(null);
+  /** @internal */
+  public registeredTrigger = signal<ColorInputTriggerBase | null>(null);
 
-  constructor() {
-    super();
+  /** @internal */
+  public registeredSurface = signal<ColorInputSurfaceBase | null>(null);
 
-    const hostRef = inject<ElementRef<HTMLElement | null>>(ElementRef);
-    const hostElement = hostRef.nativeElement;
+  /** @internal The picker's working color. See {@link createColorPickerState} for why it exists. */
+  public picker = createColorPickerState({
+    value: this.value,
+    mixed: this.mixed,
+    alpha: this.alpha,
+    interactive: this.interactive,
+  });
 
-    if (hostElement?.tagName === 'INPUT') {
-      this.nativeControl.set(hostElement as HTMLInputElement);
-      this.focusTarget.set(hostElement);
-    }
-  }
+  private overlay = createColorPickerOverlay({
+    interactive: this.interactive,
+    pickerOpen: this.pickerOpen,
+    surface: this.registeredSurface,
+    anchor: () => this.resolveAnchorElement(),
+    context: () => ({ $implicit: this, close: () => this.overlay.close() }) satisfies ColorInputSurfaceContext,
+    onAfterClosed: (info) => {
+      this.touched.set(true);
 
-  /**
-   * @internal Routes a picked color from the native input into the model. Picking is the
-   * commit over a mixed state: it replaces the raw value and resolves `mixed`.
-   */
-  public syncFromNativeInput(inputElement: HTMLInputElement) {
+      // a deliberate click elsewhere, and a swiped-away sheet, are the user moving on - only a
+      // close from inside an anchored panel (Escape, or the pane itself) hands focus back
+      if (!info.byOutsidePointer && !info.fromBottomSheet) {
+        this.focus();
+      }
+    },
+  });
+
+  public openPicker() {
     if (!this.interactive()) {
       return;
     }
 
-    if (this.mixed()) {
-      if (!inputElement.value) {
-        return;
-      }
+    this.pickerOpen.set(true);
+  }
 
-      this.mixed.set(false);
+  public closePicker() {
+    this.pickerOpen.set(false);
+  }
+
+  public togglePicker() {
+    if (this.pickerOpen()) {
+      this.closePicker();
+
+      return;
     }
 
-    this.value.set(inputElement.value || null);
+    this.openPicker();
+  }
+
+  /**
+   * The pane anchors to the whole field, not to the trigger inside it - otherwise it opens over the
+   * field's own lower edge. It doubles as the region whose pointerdowns toggle instead of close.
+   */
+  private resolveAnchorElement() {
+    return this.ownFormField?.controlFrameElement() ?? this.registeredTrigger()?.elementRef.nativeElement;
   }
 }

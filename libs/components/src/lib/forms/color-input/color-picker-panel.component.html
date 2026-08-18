@@ -1,0 +1,93 @@
+<div #panelBody class="et-color-picker-panel-body">
+  <div #area="etColorPickerArea" [attr.aria-label]="labels().area" etColorPickerArea role="group">
+    <span
+      [style.inset-inline-start.%]="area.saturationPercent()"
+      [style.inset-block-end.%]="area.brightnessPercent()"
+      [style.background-color]="opaqueHex()"
+      class="et-color-picker-area-thumb"
+      aria-hidden="true"
+    ></span>
+
+    <!-- two real sliders, one per axis: they carry the keyboard story the surface itself cannot,
+         and the area's own drag handles the pointer (see etColorPickerChannel) -->
+    <input [attr.aria-label]="labels().saturation" etColorPickerChannel="saturation" />
+    <input [attr.aria-label]="labels().brightness" etColorPickerChannel="brightness" />
+  </div>
+
+  <div class="et-color-picker-track et-color-picker-track--hue">
+    <span
+      [style.inset-inline-start.%]="huePercent()"
+      [style.background-color]="area.hueColor()"
+      class="et-color-picker-track-thumb"
+      aria-hidden="true"
+    ></span>
+    <input [attr.aria-label]="labels().hue" etColorPickerChannel="hue" />
+  </div>
+
+  @if (colorInput.alpha()) {
+    <div
+      [style.--_et-color-picker-alpha-color]="opaqueHex()"
+      class="et-color-picker-track et-color-picker-track--alpha"
+    >
+      <span
+        [style.inset-inline-start.%]="alphaPercent()"
+        [style.background-color]="canonicalHex()"
+        class="et-color-picker-track-thumb"
+        aria-hidden="true"
+      ></span>
+      <input [attr.aria-label]="labels().alpha" etColorPickerChannel="alpha" />
+    </div>
+  }
+
+  @if (colorInput.resolvedSwatches().length) {
+    <div [attr.aria-label]="labels().swatches" class="et-color-picker-swatches" role="group">
+      @for (swatch of colorInput.resolvedSwatches(); track swatch) {
+        <button
+          [style.background-color]="swatch"
+          [attr.aria-label]="swatch"
+          [attr.aria-pressed]="swatch === canonicalHex()"
+          [disabled]="!colorInput.interactive()"
+          (click)="colorInput.picker.commitColor(swatch)"
+          class="et-color-picker-swatch"
+          type="button"
+        ></button>
+      }
+    </div>
+  }
+
+  <div class="et-color-picker-footer">
+    <span
+      [style.--_et-color-picker-preview-color]="canonicalHex()"
+      class="et-color-picker-preview"
+      aria-hidden="true"
+    ></span>
+
+    <label class="et-color-picker-hex">
+      <span class="et-color-picker-hex-label">{{ labels().hex }}</span>
+      <!-- committed on change, not on input: a half-typed color is unreadable, and rewriting the
+           field to the canonical notation on every keystroke would fight the typing -->
+      <input
+        [value]="canonicalHex()"
+        [disabled]="!colorInput.interactive()"
+        (change)="commitHex($event)"
+        (keydown)="handleHexKeydown($event)"
+        class="et-color-picker-hex-field"
+        autocomplete="off"
+        spellcheck="false"
+        type="text"
+      />
+    </label>
+
+    @if (showEyeDropper) {
+      <button
+        [attr.aria-label]="labels().eyedropper"
+        [disabled]="!colorInput.interactive()"
+        (click)="openEyeDropper()"
+        class="et-color-picker-eyedropper"
+        type="button"
+      >
+        <i etIcon="et-eyedropper"></i>
+      </button>
+    }
+  </div>
+</div>

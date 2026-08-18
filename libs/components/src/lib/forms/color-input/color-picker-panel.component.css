@@ -1,0 +1,362 @@
+@layer components {
+  @property --et-color-picker-area-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 240px;
+  }
+
+  @property --et-color-picker-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-color-picker-track-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-color-picker-thumb-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  .et-overlay.et-with-default-animation.et-overlay--color-picker {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition: opacity 140ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition: opacity 100ms ease;
+    }
+  }
+
+  .et-color-picker-panel {
+    display: block;
+    box-sizing: border-box;
+    max-inline-size: calc(100vw - 24px);
+    overflow: hidden;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background-solid, rgb(32 32 32));
+    color: var(--et-surface-color-solid, rgb(244 244 245));
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
+    /* the pane is detached from the field, so it inherits the root font size (10px in this
+       workspace) rather than the field's - it has to name its own */
+    font-size: var(--et-color-picker-font-size);
+
+    &.et-color-picker-panel--resizing {
+      overflow: clip;
+    }
+  }
+
+  .et-color-picker-panel-body {
+    display: grid;
+    /* minmax(0, …), not the implicit auto: an auto track never shrinks below the footer's
+       min-content width, which would push the surfaces out past the pane - where a pointer
+       release counts as "outside" and closes the picker */
+    grid-template-columns: minmax(0, 1fr);
+    /* at least half a thumb: a thumb at an axis end has its centre on the edge, so it reaches
+       half its own size into whatever comes next */
+    gap: 12px;
+    inline-size: var(--et-color-picker-area-size);
+  }
+
+  .et-color-picker-area {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    /* the saturation ramp runs to the current hue, the brightness ramp darkens it to black */
+    background-image:
+      linear-gradient(to top, #000, transparent),
+      linear-gradient(to right, #fff, var(--_et-color-picker-area-hue, #f00));
+    cursor: crosshair;
+
+    &:has(.et-color-picker-channel:focus-visible) {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: 2px;
+    }
+  }
+
+  .et-color-picker-track {
+    position: relative;
+    block-size: var(--et-color-picker-track-size);
+    border-radius: 999px;
+
+    &:has(.et-color-picker-channel:focus-visible) {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: 2px;
+    }
+  }
+
+  .et-color-picker-track--hue {
+    background-image: linear-gradient(
+      to right,
+      hsl(0 100% 50%),
+      hsl(60 100% 50%),
+      hsl(120 100% 50%),
+      hsl(180 100% 50%),
+      hsl(240 100% 50%),
+      hsl(300 100% 50%),
+      hsl(360 100% 50%)
+    );
+  }
+
+  .et-color-picker-track--alpha {
+    --_et-color-picker-checker: color-mix(in srgb, currentColor 18%, transparent);
+
+    background-image:
+      linear-gradient(to right, transparent, var(--_et-color-picker-alpha-color, #000)),
+      linear-gradient(
+        45deg,
+        var(--_et-color-picker-checker) 25%,
+        transparent 25% 75%,
+        var(--_et-color-picker-checker) 75%
+      ),
+      linear-gradient(
+        45deg,
+        var(--_et-color-picker-checker) 25%,
+        transparent 25% 75%,
+        var(--_et-color-picker-checker) 75%
+      );
+    background-size:
+      100% 100%,
+      8px 8px,
+      8px 8px;
+    background-position:
+      0 0,
+      0 0,
+      4px 4px;
+  }
+
+  /* the ring is white over a dark halo, not a theme token: a thumb sits on the color the user is
+     choosing, so it has to stay legible over every hue a token could not anticipate */
+  .et-color-picker-area-thumb,
+  .et-color-picker-track-thumb {
+    position: absolute;
+    inline-size: var(--et-color-picker-thumb-size);
+    block-size: var(--et-color-picker-thumb-size);
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+    pointer-events: none;
+  }
+
+  .et-color-picker-area-thumb {
+    translate: -50% 50%;
+  }
+
+  .et-color-picker-track-thumb {
+    inset-block-start: 50%;
+    translate: -50% -50%;
+  }
+
+  /* the real slider behind every surface: it keeps the keyboard, the touch handling and the
+     accessible name, and hands the picture to the element around it. On a track it also takes the
+     pointer; on the area it must not, because two channels cannot share one pointer. */
+  .et-color-picker-channel {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    background: none;
+    border: none;
+    opacity: 0;
+    cursor: inherit;
+
+    /* a zero-width thumb makes the native value map edge to edge, so the visible thumb above it can
+       sit at the same percentage without drifting half a thumb out at either end */
+    &::-webkit-slider-thumb {
+      appearance: none;
+      inline-size: 0;
+      block-size: 100%;
+    }
+
+    &::-moz-range-thumb {
+      inline-size: 0;
+      block-size: 100%;
+      border: none;
+    }
+  }
+
+  .et-color-picker-area .et-color-picker-channel {
+    pointer-events: none;
+  }
+
+  .et-color-picker-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .et-color-picker-swatch {
+    inline-size: 20px;
+    block-size: 20px;
+    padding: 0;
+    border-radius: 4px;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+
+  .et-color-picker-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-inline-size: 0;
+  }
+
+  /* the color is a gradient layer, not `background-color`: a background image paints over the
+     background color, so a checkerboard declared that way would sit on top of an opaque color */
+  .et-color-picker-preview {
+    --_et-color-picker-checker: color-mix(in srgb, currentColor 18%, transparent);
+    --_et-color-picker-preview-color: transparent;
+
+    flex: none;
+    inline-size: 24px;
+    block-size: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background-image:
+      linear-gradient(var(--_et-color-picker-preview-color), var(--_et-color-picker-preview-color)),
+      linear-gradient(
+        45deg,
+        var(--_et-color-picker-checker) 25%,
+        transparent 25% 75%,
+        var(--_et-color-picker-checker) 75%
+      ),
+      linear-gradient(
+        45deg,
+        var(--_et-color-picker-checker) 25%,
+        transparent 25% 75%,
+        var(--_et-color-picker-checker) 75%
+      );
+    background-size:
+      100% 100%,
+      8px 8px,
+      8px 8px;
+    background-position:
+      0 0,
+      0 0,
+      4px 4px;
+  }
+
+  .et-color-picker-hex {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 6px;
+    min-inline-size: 0;
+  }
+
+  .et-color-picker-hex-label {
+    flex: none;
+    color: var(--et-surface-color-muted-solid, rgb(161 161 170));
+  }
+
+  .et-color-picker-hex-field {
+    flex: 1;
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background: none;
+    color: inherit;
+    font: inherit;
+  }
+
+  .et-color-picker-eyedropper {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 32px;
+    block-size: 32px;
+    padding: 0;
+    border-radius: 6px;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background: none;
+    color: inherit;
+    cursor: pointer;
+
+    i {
+      inline-size: 16px;
+      block-size: 16px;
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+
+  /* below the md breakpoint the picker mounts as a bottom sheet: the panel becomes the full-width
+     sheet surface, draws its own drag handle (the runtime's sits outside the panel background) and
+     centers the picker, matching how the date and cascader pickers present */
+  .et-overlay.et-color-picker-sheet {
+    --et-color-picker-area-size: min(320px, calc(100vw - 48px));
+    --et-color-picker-track-size: 16px;
+    --et-color-picker-thumb-size: 20px;
+
+    border-radius: 16px 16px 0 0;
+
+    .et-overlay-container-drag-handle {
+      display: none;
+    }
+
+    .et-color-picker-panel {
+      max-inline-size: none;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      padding-block: 8px max(16px, env(safe-area-inset-bottom));
+
+      &::before {
+        content: '';
+        display: block;
+        inline-size: 32px;
+        block-size: 4px;
+        margin-inline: auto;
+        margin-block-end: 12px;
+        border-radius: 999px;
+        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+      }
+    }
+
+    .et-color-picker-panel-body {
+      margin-inline: auto;
+    }
+
+    .et-color-picker-swatch {
+      inline-size: 28px;
+      block-size: 28px;
+    }
+
+    .et-color-picker-eyedropper {
+      inline-size: 40px;
+      block-size: 40px;
+    }
+
+    .et-color-picker-hex-field {
+      padding-block: 10px;
+    }
+  }
+}

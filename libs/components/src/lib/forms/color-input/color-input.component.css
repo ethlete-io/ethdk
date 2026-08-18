@@ -12,65 +12,99 @@
   }
 
   et-color-input {
-    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-inline-size: 0;
+    color: inherit;
+  }
+
+  .et-color-input-trigger {
     display: flex;
     flex: 1;
     align-items: center;
     gap: 8px;
     min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
     color: inherit;
+    font: inherit;
+    text-align: start;
     cursor: pointer;
 
+    &:disabled {
+      cursor: default;
+    }
+  }
+
+  /* the color is a gradient layer, not `background-color`: a background image paints over the
+     background color, so the checkerboard a translucent value is read against would otherwise sit
+     on top of it */
+  .et-color-input-swatch {
+    --_et-color-input-checker: color-mix(in srgb, currentColor 18%, transparent);
+    --_et-color-input-swatch-color: transparent;
+
+    inline-size: var(--et-color-input-swatch-size);
+    block-size: var(--et-color-input-swatch-size);
+    border-radius: var(--et-color-input-swatch-radius);
+    border: 1px solid var(--et-surface-border-solid, currentColor);
+    flex: none;
+    background-image:
+      linear-gradient(var(--_et-color-input-swatch-color), var(--_et-color-input-swatch-color)),
+      linear-gradient(
+        45deg,
+        var(--_et-color-input-checker) 25%,
+        transparent 25% 75%,
+        var(--_et-color-input-checker) 75%
+      ),
+      linear-gradient(
+        45deg,
+        var(--_et-color-input-checker) 25%,
+        transparent 25% 75%,
+        var(--_et-color-input-checker) 75%
+      );
+    background-size:
+      100% 100%,
+      6px 6px,
+      6px 6px;
+    background-position:
+      0 0,
+      0 0,
+      3px 3px;
+  }
+
+  .et-color-input-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-color-input-trigger:focus-visible {
+    outline: none;
+
     .et-color-input-swatch {
-      inline-size: var(--et-color-input-swatch-size);
-      block-size: var(--et-color-input-swatch-size);
-      border-radius: var(--et-color-input-swatch-radius);
-      border: 1px solid var(--et-surface-border-solid, currentColor);
-      flex: none;
-    }
-
-    .et-color-input-value {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .et-color-input-native {
-      position: absolute;
-      inset: 0;
-      inline-size: 100%;
-      block-size: 100%;
-      opacity: 0;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-
-      &:disabled {
-        cursor: default;
-      }
-    }
-
-    &:has(.et-color-input-native:focus-visible) .et-color-input-swatch {
       outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
       outline-offset: 2px;
     }
+  }
 
-    /* an unresolved bulk-edit value: the swatch must not reveal the hidden raw color, so it
-       renders neutral — transparent with a diagonal strike — and the value slot shows the
-       mixed label in the same provisional treatment the text fields use */
-    &[data-mixed] .et-color-input-swatch {
-      background: linear-gradient(
-        to top right,
-        transparent calc(50% - 1px),
-        color-mix(in srgb, currentColor 25%, transparent) calc(50% - 1px),
-        color-mix(in srgb, currentColor 25%, transparent) calc(50% + 1px),
-        transparent calc(50% + 1px)
-      );
-    }
+  /* an unresolved bulk-edit value: the swatch must not reveal the hidden raw color, so it
+     renders neutral — transparent with a diagonal strike — and the value slot shows the
+     mixed label in the same provisional treatment the text fields use */
+  et-color-input[data-mixed] .et-color-input-swatch {
+    background: linear-gradient(
+      to top right,
+      transparent calc(50% - 1px),
+      color-mix(in srgb, currentColor 25%, transparent) calc(50% - 1px),
+      color-mix(in srgb, currentColor 25%, transparent) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    );
+  }
 
-    &[data-mixed] .et-color-input-value {
-      font-style: italic;
-      color: color-mix(in srgb, currentColor 72%, transparent);
-    }
+  et-color-input[data-mixed] .et-color-input-value {
+    font-style: italic;
+    color: color-mix(in srgb, currentColor 72%, transparent);
   }
 }

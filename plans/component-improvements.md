@@ -47,15 +47,11 @@ structure below), no component change.
 
 ## Color input
 
-`ColorInputComponent`/`ColorInputDirective` (`forms/color-input/`) already
-exists as a custom control - swatch, text value, and a native `<input
-type="color">` synced underneath, with `readonly`/`disabled`/`mixed`
-handling. A custom picker replaces that native input while keeping the same
-directive/value contract - still open, still an `L`.
-
-The **hex/RGB validators shipped 2026-08-10** and the **contrast validator
-on 2026-08-12** (both under "Already fixed"). Nothing about validation is
-left open here; only the custom picker is.
+**Nothing is open here.** The hex/RGB validators shipped 2026-08-10, the
+contrast validator on 2026-08-12, and the custom picker on 2026-08-18 - it
+replaced the native `<input type="color">` outright, so `nativeControl` and
+`syncFromNativeInput()` are gone. Design calls and traps are in
+`plans/color-input-custom-picker.md`.
 
 ## Progress steps
 

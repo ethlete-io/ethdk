@@ -60,6 +60,8 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 4300–4399 | Match              | [Match](/components/match)                         |
 | 4400–4499 | Standings          | [Standings](/components/standings)                 |
 | 4500–4599 | Scheduler          | [Scheduler](/components/scheduler)                 |
+| 4600–4699 | Tree               | [Tree](/components/tree)                           |
+| 4700–4799 | Color input        | [Color input](/components/text-inputs#color-input) |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages - the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -440,3 +442,16 @@ Checked in dev mode only, after the first render.
 | -------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `ET4600` | An `[etTree]` was rendered without a `[dataSource]`.                       | Bind an object with a `loadChildren(parent)` method. |
 | `ET4601` | A tree part (`etTreeNode`, `etTreeNodeDef`) is used outside an `[etTree]`. | Move it inside the tree root (e.g. `<et-tree>`).     |
+
+## Color input (ET47xx)
+
+Checked in dev mode only, after the first render - except `ET4704`, which is thrown when the picker
+is asked to open.
+
+| Code     | Cause                                                                            | Fix                                                      |
+| -------- | -------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `ET4700` | `etColorPickerTrigger` is used outside an `[etColorInput]`.                      | Move the button inside the color input element.          |
+| `ET4701` | `etColorPickerSurface` is used outside an `[etColorInput]`.                      | Move the template inside the color input element.        |
+| `ET4702` | `etColorPickerArea` is used outside an `[etColorInput]`.                         | Move the surface inside the color input element.         |
+| `ET4703` | `etColorPickerChannel` is used outside an `[etColorInput]`.                      | Move the range input inside the color input element.     |
+| `ET4704` | The picker was opened without an `<ng-template etColorPickerSurface>` to render. | Add the surface template inside the color input element. |
