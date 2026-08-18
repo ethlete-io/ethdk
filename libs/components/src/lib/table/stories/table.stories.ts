@@ -31,6 +31,7 @@ export default {
     rowLinks: false,
     resizableColumns: false,
     columnMenu: false,
+    disabledColumns: false,
     selectable: false,
     selectionSide: 'start',
     csvExport: false,
@@ -65,6 +66,7 @@ export default {
     rowLinks: { control: 'boolean' },
     resizableColumns: { control: 'boolean' },
     columnMenu: { control: 'boolean' },
+    disabledColumns: { control: 'boolean' },
     selectable: { control: 'boolean' },
     selectionSide: { control: 'inline-radio', options: ['start', 'end'] },
     csvExport: { control: 'boolean' },
@@ -341,6 +343,23 @@ export const ColumnMenu: Story = {
           '(offered only once the column has actually been resized), and hide the column (never the last ' +
           'visible one). Sorting itself stays on the header \u2014 click it to cycle, and the arrow beside ' +
           'the label shows the direction it is sorted by.',
+      },
+    },
+  },
+};
+
+export const DisabledColumns: Story = {
+  args: { disabledColumns: true, columnMenu: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A column marked `disabled` turns off its own header controls: its sortable header, its ' +
+          'filter menu and its column menu all render disabled, and the label dims with them. Email is ' +
+          'sortable and Role is filterable, so both are shown here. The cells keep their full weight \u2014 ' +
+          'the values are still real \u2014 and a sort or filter the column already carries stays applied; ' +
+          'only the controls that would change it are off. Resizing and hiding stay available, being ' +
+          'width and layout gestures rather than column controls.',
       },
     },
   },

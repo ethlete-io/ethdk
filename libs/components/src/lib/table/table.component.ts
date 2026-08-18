@@ -103,6 +103,7 @@ type TableHeaderCellVm<T> = TableCellPinning & {
   column: TableColumnDef<T>;
   align: string;
   sortable: boolean;
+  disabled: boolean;
   ariaSort: 'ascending' | 'descending' | 'none' | null;
   sortLabel: string | null;
   direction: TableSortDirection | null;
@@ -956,6 +957,7 @@ export class TableComponent<T> {
         column,
         align: column.align ?? 'start',
         sortable: !!column.sortable,
+        disabled: !!column.disabled,
         ariaSort: column.sortable
           ? direction === 'asc'
             ? 'ascending'

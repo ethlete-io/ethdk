@@ -223,6 +223,7 @@ Each value of the `TableColumns<T>` record:
 | `align`         | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                 |
 | `width`         | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                            |
 | `hidden`        | `false`               | Hide the column initially; toggle later via table state.                                                                        |
+| `disabled`      | `false`               | Turn off this column's header controls: its sortable header, its filter menu and its column menu.                               |
 
 **Every column has a floor**, `minWidth` (96px by default), and it applies whether the
 column is squeezed by a wider neighbour or dragged there by a

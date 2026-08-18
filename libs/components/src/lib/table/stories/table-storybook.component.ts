@@ -405,6 +405,7 @@ export class TableStorybookComponent {
   public rowLinks = input(false);
   public resizableColumns = input(false);
   public columnMenu = input(false);
+  public disabledColumns = input(false);
   public selectable = input(false);
   public selectionSide = input<'start' | 'end'>('start');
   public csvExport = input(false);
@@ -510,6 +511,7 @@ export class TableStorybookComponent {
     // `editable` alone does nothing: a column is only editable once it also has an etTableCellEdit
     // template, so the flag can be left on and gated by whether the demo renders the templates.
     const editable = this.inlineEdit();
+    const disabled = this.disabledColumns();
     return {
       name: {
         header: 'Name',
@@ -523,6 +525,7 @@ export class TableStorybookComponent {
         header: 'Email',
         value: (person) => person.email,
         sortable: true,
+        disabled,
         editable,
         width: sticky ? '280px' : 'minmax(96px, 2fr)',
         group: grouped ? 'Contact' : undefined,
@@ -534,6 +537,7 @@ export class TableStorybookComponent {
         // text form is. Without this the export would write the accessor's value, which happens to be
         // right here; a cell built from several fields would need it to say anything at all.
         exportValue: (person) => person.role,
+        disabled,
         filterable: true,
         filterSearch: true,
         filterSelection: this.singleSelectFilter() ? 'single' : 'multiple',

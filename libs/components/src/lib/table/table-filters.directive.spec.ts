@@ -78,6 +78,15 @@ describe('TableFiltersDirective', () => {
     expect(triggers[0]?.getAttribute('aria-label')).toBe('Filter Role');
   });
 
+  it('disables the trigger on a disabled column, so its menu cannot be opened', () => {
+    const fixture = create(roleColumn({ filterOptions: [{ label: 'Admin', value: 'Admin' }], disabled: true }));
+    const trigger = (fixture.nativeElement as HTMLElement).querySelector(
+      '.et-table-filter-trigger',
+    ) as HTMLButtonElement;
+
+    expect(trigger.disabled).toBe(true);
+  });
+
   it('marks the trigger active while the column is filtered', () => {
     const fixture = create(roleColumn({ filterOptions: [{ label: 'Admin', value: 'Admin' }] }));
     const trigger = () => (fixture.nativeElement as HTMLElement).querySelector('.et-table-filter-trigger');

@@ -9,7 +9,12 @@ import { filterRows } from './headless/table-filter';
 import { sortRows } from './headless/table-sort';
 import { TableComponent } from './table.component';
 import { DEFAULT_TABLE_LABELS, provideTableLabels } from './headless/table-labels';
-import { TABLE_IMPORTS, TABLE_ROW_ROUTER_LINK_IMPORTS, TABLE_SELECTION_IMPORTS } from './table.imports';
+import {
+  TABLE_COLUMN_MENU_IMPORTS,
+  TABLE_IMPORTS,
+  TABLE_ROW_ROUTER_LINK_IMPORTS,
+  TABLE_SELECTION_IMPORTS,
+} from './table.imports';
 import { TableColumns, TableFilter, TableSort } from './table.types';
 
 type Person = { id: number; name: string; role: string };
@@ -1347,6 +1352,74 @@ describe('TableComponent', () => {
         expect(navigate).toHaveBeenCalledTimes(1);
         expect(modified.defaultPrevented).toBe(false);
       });
+    });
+  });
+  describe('disabled columns', () => {
+    @Component({
+      template: ` <et-table [columns]="cols" [data]="data" etTableColumnMenu /> `,
+      imports: [TABLE_IMPORTS, TABLE_COLUMN_MENU_IMPORTS],
+    })
+    class HostComponent {
+      data = PEOPLE;
+      cols = {
+        name: { header: 'Name', value: (person: Person) => person.name, sortable: true, disabled: true },
+        role: { header: 'Role', value: (person: Person) => person.role, disabled: true },
+        id: { header: 'Id', value: (person: Person) => person.id, sortable: true },
+      } satisfies TableColumns<Person>;
+    }
+
+    const build = () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      return fixture.nativeElement as HTMLElement;
+    };
+
+    const headerCell = (host: HTMLElement, key: string) =>
+      host.querySelector<HTMLElement>(`.et-table-header-cell[data-col-key="${key}"]`) as HTMLElement;
+
+    it('marks a disabled column header cell, sortable or not', () => {
+      const host = build();
+
+      expect(headerCell(host, 'name').dataset['disabled']).toBe('true');
+      expect(headerCell(host, 'role').dataset['disabled']).toBe('true');
+      expect(headerCell(host, 'id').dataset['disabled']).toBeUndefined();
+    });
+
+    it("disables a disabled column's sort button and leaves an enabled one alone", () => {
+      const host = build();
+      const disabled = headerCell(host, 'name').querySelector('button') as HTMLButtonElement;
+      const enabled = headerCell(host, 'id').querySelector('button') as HTMLButtonElement;
+
+      expect(disabled.disabled).toBe(true);
+      expect(enabled.disabled).toBe(false);
+    });
+
+    it("disables a disabled column's column-menu trigger", () => {
+      const host = build();
+      const trigger = headerCell(host, 'name').querySelector<HTMLButtonElement>(
+        '.et-table-column-menu-trigger',
+      ) as HTMLButtonElement;
+      const enabled = headerCell(host, 'id').querySelector<HTMLButtonElement>(
+        '.et-table-column-menu-trigger',
+      ) as HTMLButtonElement;
+
+      expect(trigger.disabled).toBe(true);
+      expect(enabled.disabled).toBe(false);
+    });
+
+    it('still sorts a disabled column programmatically - only its controls are off', () => {
+      const table = create(
+        {
+          name: { header: 'Name', value: (person) => person.name, sortable: true, disabled: true },
+        } satisfies TableColumns<Person>,
+        UNSORTED,
+      ).componentInstance;
+
+      table.toggleSort('name');
+
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'asc' }]);
+      expect(table.rows().map((r) => r.name)).toEqual(['Ada', 'Bob', 'Charlie']);
     });
   });
 });

@@ -3,6 +3,7 @@
     <button
       [attr.data-active]="filters.isFiltered(column().key)"
       [attr.aria-label]="labels().filterColumn(column().header ?? column().key)"
+      [disabled]="!!column().disabled"
       class="et-table-filter-trigger"
       et-icon-button
       size="xs"

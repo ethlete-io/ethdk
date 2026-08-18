@@ -1,6 +1,7 @@
 <div class="et-table-column-menu" etMenu>
   <button
     [attr.aria-label]="labels().columnMenu(column().header ?? column().key)"
+    [disabled]="!!column().disabled"
     class="et-table-column-menu-trigger"
     et-icon-button
     size="xs"

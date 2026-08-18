@@ -173,6 +173,15 @@ export type TableColumn<T, TValue = unknown> = {
   /** Allow sorting by this column (renders a sortable header). @default false */
   sortable?: boolean;
 
+  /**
+   * Turn off this column's own header controls: the sortable header, the filter menu and the column
+   * menu all render disabled. The cells keep rendering their values, and a sort or filter the column
+   * already carries stays applied - only the controls that would change it are off. Resizing and
+   * hiding the column are width and layout gestures, and stay available.
+   * @default false
+   */
+  disabled?: boolean;
+
   /** Comparable value to sort by. Defaults to `value`. Use when the display value isn't comparable. */
   sortValue?: (row: T) => TableSortValue;
 

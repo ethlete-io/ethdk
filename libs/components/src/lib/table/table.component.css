@@ -11,6 +11,12 @@
     initial-value: 12px;
   }
 
+  @property --et-table-opacity-disabled {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.4;
+  }
+
   /* The table owns its scroll container: give the host a bounded block-size to scroll within, and
      the sticky header pins to it (virtualization relies on this too). Without a height it grows to
      content; a too-wide table scrolls horizontally inside itself instead of breaking the page.
@@ -882,13 +888,23 @@
   }
 
   @media (hover: hover) {
-    .et-table-header-label--sortable:hover {
+    .et-table-header-label--sortable:hover:not(:disabled) {
       --_et-table-header-label-tint: var(--_et-table-hover-tint);
     }
   }
 
-  .et-table-header-label--sortable:active {
+  .et-table-header-label--sortable:active:not(:disabled) {
     --_et-table-header-label-tint: var(--_et-table-pressed-tint);
+  }
+
+  /* Scoped to the cell rather than to the button, so a disabled column that is not sortable - whose
+     label is a plain span - dims with the rest of them. */
+  .et-table-header-cell:where([data-disabled]) .et-table-header-label {
+    opacity: var(--et-table-opacity-disabled);
+  }
+
+  .et-table-header-label:where(.et-table-header-label--sortable:disabled) {
+    cursor: not-allowed;
   }
 
   .et-table-header-cell:where([data-align='center']) .et-table-header-label {

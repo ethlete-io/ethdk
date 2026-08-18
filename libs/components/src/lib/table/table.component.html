@@ -30,6 +30,7 @@
         #headerCell
         [attr.data-align]="cell.align"
         [attr.data-col-key]="cell.key"
+        [attr.data-disabled]="cell.disabled || null"
         [attr.aria-sort]="cell.ariaSort"
         [class.et-table-sticky-start]="cell.stickyStart"
         [class.et-table-sticky-end]="cell.stickyEnd"
@@ -44,6 +45,7 @@
         @if (cell.sortable) {
           <button
             [attr.aria-label]="cell.sortLabel"
+            [disabled]="cell.disabled"
             (click)="toggleSort(cell.key)"
             class="et-table-header-label et-table-header-label--sortable"
             type="button"
