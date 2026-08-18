@@ -45,6 +45,8 @@ class ColorInputInFormFieldTestHost {}
         <button (click)="colorInput.picker.commitColor(pickColor)" class="pick-color" type="button">pick</button>
       </ng-template>
     </div>
+
+    <button class="outside" type="button">outside</button>
   `,
   imports: [ColorInputDirective, ColorPickerSurfaceDirective, ColorPickerTriggerDirective],
 })
@@ -110,6 +112,7 @@ describe('ColorInputDirective', () => {
     let host: ColorInputTestHost;
     let colorInputDir: ColorInputDirective;
     let trigger: HTMLButtonElement;
+    let outside: HTMLButtonElement;
 
     const pickButton = () => pane()?.querySelector<HTMLButtonElement>('.pick-color') ?? null;
 
@@ -127,6 +130,7 @@ describe('ColorInputDirective', () => {
       fixture.detectChanges();
       colorInputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(ColorInputDirective);
       trigger = fixture.nativeElement.querySelector('.open-picker');
+      outside = fixture.nativeElement.querySelector('.outside');
     });
 
     afterEach(async () => {
@@ -165,6 +169,22 @@ describe('ColorInputDirective', () => {
       tick();
 
       expect(colorInputDir.pickerOpen()).toBe(false);
+    });
+
+    it('closes the picker once focus leaves the pane', async () => {
+      await openPicker();
+      outside.focus();
+      tick();
+
+      expect(colorInputDir.pickerOpen()).toBe(false);
+    });
+
+    it('keeps the picker open while focus moves inside the pane', async () => {
+      await openPicker();
+      pickButton()?.focus();
+      tick();
+
+      expect(colorInputDir.pickerOpen()).toBe(true);
     });
 
     it('refuses to open while disabled', async () => {

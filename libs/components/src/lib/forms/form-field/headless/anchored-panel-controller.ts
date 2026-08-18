@@ -14,6 +14,8 @@ export type AnchoredPanelSurfaceLike = { templateRef: unknown };
 export type AnchoredPanelCloseInfo = {
   /** A deliberate pointerdown outside the panel and anchor closed it. */
   byOutsidePointer: boolean;
+  /** Focus moved to an element outside the panel and anchor, which closed it. */
+  byFocusLeave: boolean;
   /** The pane was presented as a bottom sheet (small viewport) when it closed. */
   fromBottomSheet: boolean;
 };
@@ -57,7 +59,8 @@ export type CreateAnchoredPanelControllerOptions = {
  * overlay from a trigger (`select`, `cascader`; the date pickers use the sibling
  * `createDatePickerOverlay`). It owns the overlay ref, the disabled/open reconciliation effect,
  * the outside-pointer close (so a pointerdown on the anchor toggles instead of close-and-reopen),
- * and the model sync on every interactive close. Everything control-specific - the overlay config
+ * the close when focus leaves the pane (these panes are non-modal, so nothing traps Tab), and the
+ * model sync on every interactive close. Everything control-specific - the overlay config
  * and the mount/close side effects - is supplied via the hooks. Call in an injection context.
  */
 export const createAnchoredPanelController = (options: CreateAnchoredPanelControllerOptions) => {
@@ -69,11 +72,37 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
 
   let interactionListenersCleanup: (() => void) | null = null;
   let closedByOutsidePointer = false;
+  let closedByFocusLeave = false;
   let closedFromBottomSheet = false;
 
   const detachInteractionListeners = () => {
     interactionListenersCleanup?.();
     interactionListenersCleanup = null;
+  };
+
+  const isOutsideThePanel = (target: Node) => {
+    const pane = overlayRef()?.elements?.paneElement;
+
+    // A target inside this panel - or inside a nested popover it opened (a select body, menu,
+    // tooltip; those mount as sibling panes in the overlay root, not DOM descendants) - must not
+    // count as "outside", otherwise reaching the child popover closes this panel.
+    if (pane && isTargetInsideOverlayTree({ target, rootPane: pane, openOverlays: overlayManager.openOverlays() })) {
+      return false;
+    }
+
+    if (options.anchor()?.contains(target)) {
+      return false;
+    }
+
+    return !isOnHigherOverlayLayer(target, resolveOverlayLayer(pane ?? options.anchor()));
+  };
+
+  const requestClose = () => {
+    if (options.open()) {
+      options.open.set(false);
+    } else {
+      overlayRef()?.close();
+    }
   };
 
   const attachInteractionListeners = () => {
@@ -82,38 +111,28 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target;
 
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      const pane = overlayRef()?.elements?.paneElement;
-
-      // A pointerdown inside this panel - or inside a nested popover it opened (a select body,
-      // menu, tooltip; those mount as sibling panes in the overlay root, not DOM descendants) -
-      // must not count as "outside", otherwise clicking the child popover closes this panel.
-      if (pane && isTargetInsideOverlayTree({ target, rootPane: pane, openOverlays: overlayManager.openOverlays() })) {
-        return;
-      }
-
-      if (options.anchor()?.contains(target)) {
-        return;
-      }
-
-      if (isOnHigherOverlayLayer(target, resolveOverlayLayer(pane ?? options.anchor()))) {
+      if (!(target instanceof Element) || !isOutsideThePanel(target)) {
         return;
       }
 
       closedByOutsidePointer = true;
+      requestClose();
+    };
 
-      if (options.open()) {
-        options.open.set(false);
-      } else {
-        overlayRef()?.close();
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Element) || !isOutsideThePanel(target)) {
+        return;
       }
+
+      closedByFocusLeave = true;
+      requestClose();
     };
 
     const subscriptions: Subscription[] = [
       fromEvent<PointerEvent>(documentRef, 'pointerdown', { capture: true }).subscribe(onPointerDown),
+      fromEvent<FocusEvent>(documentRef, 'focusin', { capture: true }).subscribe(onFocusIn),
     ];
 
     if (options.onDocumentKeydown) {
@@ -181,10 +200,12 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
 
           const info: AnchoredPanelCloseInfo = {
             byOutsidePointer: closedByOutsidePointer,
+            byFocusLeave: closedByFocusLeave,
             fromBottomSheet: closedFromBottomSheet,
           };
 
           closedByOutsidePointer = false;
+          closedByFocusLeave = false;
           closedFromBottomSheet = false;
           options.onAfterClosed?.(info);
         }),

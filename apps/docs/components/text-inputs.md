@@ -211,7 +211,9 @@ the same as the [date and time pickers](/components/date-time-inputs) and the
 
 Every surface is built around a native range input, which is what carries the
 keyboard and touch handling. Picking commits live - there is no confirm step, and
-closing the panel is not a cancel.
+closing the panel is not a cancel. The panel closes on `Escape`, on a click outside
+it, and on a `Tab` past its last control - see
+[how a field panel closes](/components/forms#how-a-field-panel-closes).
 
 ### Opacity - `[alpha]`
 

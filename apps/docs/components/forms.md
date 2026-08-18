@@ -237,6 +237,20 @@ runs across the library - the [select](/components/select#how-a-wait-is-reported
 [table](/components/table)'s busy bar - and `signalDeferredLoading` from
 [`@ethlete/core`](/core/signal-utils#deferred-loading) is what your own components can use for it.
 
+### How a field panel closes
+
+The controls that open a panel from the field share one set of close rules: the
+[select](/components/select), the [cascader](/components/cascader), the
+[date and time pickers](/components/date-time-inputs) and the
+[color input](/components/text-inputs#color-input). A panel closes on <kbd>Escape</kbd>, on a
+pointer down outside the panel and the field, and as soon as focus lands on an element outside
+both. A <kbd>Tab</kbd> past the last control in the panel therefore closes it, and focus stays
+where it went. An <kbd>Escape</kbd> close hands focus back to the field instead.
+
+These panels are not modal, so nothing traps <kbd>Tab</kbd> inside them. A pointer down or a
+focus move into a popover the panel itself opened - a nested select, a menu, a tooltip - does
+not count as outside.
+
 ## Mixed values (bulk editing)
 
 When one form edits several records whose values disagree, every value control

@@ -117,9 +117,9 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
     onAfterClosed: (info) => {
       this.touched.set(true);
 
-      // a deliberate click elsewhere, and a swiped-away sheet, are the user moving on - only a
-      // close from inside an anchored panel (Escape, or the pane itself) hands focus back
-      if (!info.byOutsidePointer && !info.fromBottomSheet) {
+      // a deliberate click elsewhere, a tab out, and a swiped-away sheet are the user moving on -
+      // only a close from inside an anchored panel (Escape, or the pane itself) hands focus back
+      if (!info.byOutsidePointer && !info.byFocusLeave && !info.fromBottomSheet) {
         this.focus();
       }
     },
