@@ -9,6 +9,7 @@ export * from './lib/calendar';
 export * from './lib/card';
 export * from './lib/carousel';
 export * from './lib/chip';
+export * from './lib/command-palette';
 export * from './lib/copy-button';
 export * from './lib/description-list';
 export * from './lib/divider';

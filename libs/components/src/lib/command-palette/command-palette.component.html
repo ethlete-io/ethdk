@@ -1,0 +1,23 @@
+<div class="et-command-palette-search-field">
+  <input [attr.aria-label]="labels().searchLabel" [placeholder]="labels().placeholder" etCommandPaletteSearch />
+</div>
+
+@let resultGroups = palette.groups();
+
+@if (resultGroups.length) {
+  <div [attr.aria-label]="labels().searchLabel" [id]="palette.listboxId" class="et-command-palette-list" role="listbox">
+    @for (group of resultGroups; track group.label) {
+      @if (group.label; as groupLabel) {
+        <p [id]="groupId(groupLabel)" class="et-command-palette-group-label" role="presentation">{{ groupLabel }}</p>
+      }
+
+      <div [attr.aria-labelledby]="group.label ? groupId(group.label) : null" role="group">
+        @for (result of group.results; track result.command.id) {
+          <et-command-palette-item [result]="result" />
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <p class="et-command-palette-empty">{{ palette.hasCommands() ? labels().empty : labels().noCommands }}</p>
+}

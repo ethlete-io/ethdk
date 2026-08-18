@@ -455,3 +455,12 @@ is asked to open.
 | `ET4702` | `etColorPickerArea` is used outside an `[etColorInput]`.                         | Move the surface inside the color input element.         |
 | `ET4703` | `etColorPickerChannel` is used outside an `[etColorInput]`.                      | Move the range input inside the color input element.     |
 | `ET4704` | The picker was opened without an `<ng-template etColorPickerSurface>` to render. | Add the surface template inside the color input element. |
+
+## Command palette (ET48xx)
+
+Checked in dev mode only - `ET4800` after the first render, `ET4801` when the directive is created.
+
+| Code     | Cause                                                                  | Fix                                                |
+| -------- | ---------------------------------------------------------------------- | -------------------------------------------------- |
+| `ET4800` | `etCommandPaletteSearch` is used outside an `[etCommandPalette]`.      | Move the input inside the command palette element. |
+| `ET4801` | `etCommandPaletteShortcut` was given a chord of modifiers with no key. | Add a key to the chord, for example `mod+k`.       |

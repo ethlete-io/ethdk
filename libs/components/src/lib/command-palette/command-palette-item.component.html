@@ -1,0 +1,29 @@
+@let currentCommand = command();
+
+@if (currentCommand.icon; as icon) {
+  <i [etIcon]="icon" class="et-command-palette-item-icon"></i>
+} @else if (palette.hasIcons()) {
+  <span class="et-command-palette-item-icon" aria-hidden="true"></span>
+}
+
+<span class="et-command-palette-item-text">
+  <span class="et-command-palette-item-label">
+    <!-- Every branch renders an element, never bare text: a text node here would carry this
+         indentation into the label, and show as a gap around the matched run. -->
+    @for (segment of result().segments; track $index) {
+      @if (segment.matched) {
+        <mark class="et-command-palette-item-match">{{ segment.text }}</mark>
+      } @else {
+        <span>{{ segment.text }}</span>
+      }
+    }
+  </span>
+
+  @if (currentCommand.description; as description) {
+    <span class="et-command-palette-item-description">{{ description }}</span>
+  }
+</span>
+
+@if (currentCommand.shortcut; as shortcut) {
+  <et-kbd [keys]="shortcut" class="et-command-palette-item-shortcut" />
+}

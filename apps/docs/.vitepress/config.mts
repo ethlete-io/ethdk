@@ -223,6 +223,7 @@ export default defineConfig({
           items: [
             { text: 'Overlay Openers', link: '/components/overlay-openers' },
             { text: 'Overlays', link: '/components/overlays' },
+            { text: 'Command palette', link: '/components/command-palette' },
             { text: 'Menu', link: '/components/menu' },
             { text: 'Tooltip', link: '/components/tooltip' },
             { text: 'Toggletip', link: '/components/toggletip' },

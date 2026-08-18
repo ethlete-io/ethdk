@@ -191,8 +191,9 @@ To avoid collisions, each component domain owns a fixed numeric range:
 | 4500 – 4599 | Scheduler                       |
 | 4600 – 4699 | Tree                            |
 | 4700 – 4799 | Color input                     |
+| 4800 – 4899 | Command palette                 |
 
-Add new domains by claiming the next free hundred block (next free: **4800**
+Add new domains by claiming the next free hundred block (next free: **4900**
 onward). The 1100 block was pre-allocated for a standalone combobox that never
 shipped - the unified select covers it and owns 1000 – 1099 - so the chip domain
 reclaimed it. **3900 – 4299** is an unclaimed gap - it's free, but new domains

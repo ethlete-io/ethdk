@@ -78,10 +78,19 @@ export const KBD_PLATFORM = new InjectionToken<KbdPlatform>('KBD_PLATFORM', {
   factory: detectKbdPlatform,
 });
 
+/**
+ * The canonical name of a key, with spelling aliases resolved - `cmd` and `command` both give
+ * `meta`, `escape` gives `esc`. An unknown key is returned lowercased and trimmed.
+ */
+export const canonicalKbdKey = (key: string) => {
+  const normalized = key.trim().toLowerCase();
+
+  return KBD_KEY_ALIASES[normalized] ?? normalized;
+};
+
 const resolveKey = (key: string, platform: KbdPlatform): KbdKeyRendering => {
   const trimmed = key.trim();
-  const normalized = trimmed.toLowerCase();
-  const canonical = KBD_KEY_ALIASES[normalized] ?? normalized;
+  const canonical = canonicalKbdKey(trimmed);
   const spec = KBD_KEY_SPECS[canonical];
 
   if (spec) return spec[platform];

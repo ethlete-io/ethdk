@@ -1,0 +1,94 @@
+@layer components {
+  @property --et-command-palette-item-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 40px;
+  }
+
+  @property --et-command-palette-item-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
+  @property --et-command-palette-item-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
+  @property --et-command-palette-item-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-command-palette-item-icon-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  .et-command-palette-item {
+    display: flex;
+    align-items: center;
+    gap: var(--et-command-palette-item-gap);
+    min-block-size: var(--et-command-palette-item-height);
+    padding-inline: var(--et-command-palette-item-padding-inline);
+    border-radius: var(--et-command-palette-item-border-radius);
+    cursor: pointer;
+
+    /* Marks the row the arrow keys reached. Not `:hover`: the pointer and the keyboard drive one
+       highlight, and the component decides which row that is. */
+    &.et-command-palette-item--active {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+    }
+
+    &:where([aria-disabled='true']) {
+      cursor: default;
+      opacity: 0.5;
+    }
+  }
+
+  .et-command-palette-item-icon {
+    flex: none;
+    inline-size: var(--et-command-palette-item-icon-size);
+    block-size: var(--et-command-palette-item-icon-size);
+    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+
+    svg {
+      inline-size: 100%;
+      block-size: 100%;
+    }
+  }
+
+  .et-command-palette-item-text {
+    display: grid;
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .et-command-palette-item-label,
+  .et-command-palette-item-description {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-command-palette-item-description {
+    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    font-size: 12px;
+  }
+
+  /* A `mark` carries a yellow background by default, which is not how a match should read here. */
+  .et-command-palette-item-match {
+    background: none;
+    color: var(--et-theme-color-ink-solid, currentcolor);
+    font-weight: 600;
+  }
+
+  .et-command-palette-item-shortcut {
+    flex: none;
+    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+  }
+}
