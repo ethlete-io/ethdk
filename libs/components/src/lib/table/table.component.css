@@ -66,6 +66,8 @@
     );
     --_et-table-row-hover: var(--_et-table-hover-tint);
     --_et-table-row-hover-solid: var(--_et-table-hover-tint-solid);
+    /* Held rather than hovered. Twice the hover tint, the same step the library's buttons take. */
+    --_et-table-pressed-tint: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent);
     /* The tint for a row with nothing to react to, which an appearance drops where its rows are cards.
        A knob of its own rather than the row rule reading the appearance, so the two stay separable. */
     --_et-table-inert-row-hover: var(--_et-table-hover-tint);
@@ -630,11 +632,26 @@
   }
 
   /* The row's ring marks the whole row, which is what the link covers. It sits well inside the card so
-     it reads as a ring of its own rather than as a second, doubled card border - the row is usually
-     wider than the viewport, so its rounded ends are off-screen and the edges are all there is to see. */
+     it reads as a ring of its own rather than as a second, doubled card border.
+
+     Drawn on the row's box and not on the link, and that is load-bearing: the link is positioned with a
+     z-index, so it is its own stacking context and an `outline` on it - or any pseudo inside it - paints
+     at the link's own level, which is 2. The utility cells sit at 3 and are opaque where they are
+     pinned, so each one covered whichever end of the ring it held and the ring read as two loose lines
+     with no ends. Here it is a layer of the row box instead, above the cells and above the card's ring
+     at 4. */
   .et-table-row-link:focus-visible {
-    outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
-    outline-offset: -4px;
+    outline: none;
+  }
+
+  .et-table-row--box:has(.et-table-row-link:focus-visible)::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    z-index: 5;
+    border: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    border-radius: max(0px, calc(var(--_et-table-row-corner, 0px) - 4px));
+    pointer-events: none;
   }
 
   /* Cells that hold their own controls stay above the stretched link, so the control keeps the click: the
@@ -851,8 +868,27 @@
     border: none;
   }
 
+  /* The header *is* the sort button, so it escalates like any other control in the library: a hover
+     tint, then the focus ring, then a stronger tint while it is held. The tint is painted on the label
+     and not on the cell, which is pinned and opaque - a tint there would have to be layered over the
+     header's own background. The block padding is cancelled by an equal negative margin, so the tint
+     stands taller than the text without moving it: the header label still lines up with the cells
+     under it, and the header row keeps its height. */
   .et-table-header-label:where(.et-table-header-label--sortable) {
     cursor: pointer;
+    padding-block: 4px;
+    margin-block: -4px;
+    background: var(--_et-table-header-label-tint, transparent);
+  }
+
+  @media (hover: hover) {
+    .et-table-header-label--sortable:hover {
+      --_et-table-header-label-tint: var(--_et-table-hover-tint);
+    }
+  }
+
+  .et-table-header-label--sortable:active {
+    --_et-table-header-label-tint: var(--_et-table-pressed-tint);
   }
 
   .et-table-header-cell:where([data-align='center']) .et-table-header-label {
