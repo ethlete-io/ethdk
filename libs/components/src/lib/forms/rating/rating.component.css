@@ -79,6 +79,12 @@
       cursor: pointer;
       /* vertical page scrolling stays native; horizontal swipes rate */
       touch-action: pan-y;
+      /* one clip width = one continuous fill motion (displayValue icons + crossed gaps). Declared
+         here rather than on the fill row so the base row can clip against the same edge. */
+      --_et-rating-fill-width: calc(
+        var(--_et-rating-fill-icons, 0) * var(--et-rating-icon-size) + var(--_et-rating-fill-gaps, 0) *
+          var(--et-rating-gap)
+      );
     }
 
     .et-rating-row {
@@ -89,12 +95,6 @@
     }
 
     .et-rating-row--fill {
-      /* one clip width = one continuous fill motion (displayValue icons + crossed gaps) */
-      --_et-rating-fill-width: calc(
-        var(--_et-rating-fill-icons, 0) * var(--et-rating-icon-size) + var(--_et-rating-fill-gaps, 0) *
-          var(--et-rating-gap)
-      );
-
       pointer-events: none;
       clip-path: inset(0 calc(100% - var(--_et-rating-fill-width)) 0 0);
     }
@@ -134,17 +134,32 @@
       color: var(--et-theme-color-primary-solid, currentColor);
     }
 
-    /* an unresolved bulk-edit rating fills nothing — a dashed accent baseline under the row
-       (not a muted/grey one, which would read as disabled) makes that read as "provisional /
-       values differ", not "zero stars". Hovered previews keep their full state colors.
-       Consumers restyle via [data-mixed]. */
+    /* an unresolved bulk-edit rating fills nothing — the stars themselves become a dashed accent
+       outline (not a muted/grey one, which would read as disabled), so "provisional / values differ"
+       reads on the stars rather than on a rule under them. Same mark the switch parks its thumb in.
+       A hovered preview paints its solid fill over the top, so the pick being previewed still reads
+       as committed. Consumers restyle via [data-mixed]. */
     &[data-mixed] {
-      .et-rating-icons::after {
-        content: '';
-        position: absolute;
-        inset-inline: 0;
-        inset-block-end: -6px;
-        border-block-end: 1px dashed var(--et-theme-color-primary-solid, currentColor);
+      /* A stroke is centred on its path, so the dashes stand half their width outside the star's
+         silhouette and fringe the solid fill a preview paints over them. Clipping the dashed row to
+         where the fill is not keeps each star either solid or dashed, never both. Matched on the base
+         icon so a custom icon template, which renders one row and no fill, is left alone. */
+      .et-rating-row:has(.et-rating-icon-base) {
+        clip-path: inset(0 0 0 var(--_et-rating-fill-width));
+      }
+
+      .et-rating-icon-base {
+        color: var(--et-theme-color-primary-solid, currentColor);
+
+        /* Stroke widths are in the icon's own viewBox units, so the dash keeps its weight at every
+           --et-rating-icon-size rather than needing a knob per size. */
+        path {
+          fill: none;
+          stroke: currentColor;
+          stroke-width: 40;
+          stroke-dasharray: 48 34;
+          stroke-linejoin: round;
+        }
       }
     }
 
