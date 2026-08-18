@@ -246,6 +246,7 @@ let uniqueTableId = 0;
     '[class.et-table-host--scrolled-block-end]': 'blockScrollShadows().blockEnd',
     '[class.et-table-host--scrolled-inline-start]': 'scrollFades().start',
     '[class.et-table-host--scrolled-inline-end]': 'scrollFades().end',
+    '[class.et-table-host--header-adornments]': 'headerAdornments().length > 0',
     '[style.--_et-table-viewport-inline-size.px]': 'viewportInlineSize()',
     '(scroll)': 'syncScrollState()',
   },

@@ -44,6 +44,9 @@
     --_et-table-header-bg: var(--et-table-header-background-color, var(--et-surface-background-solid, Canvas));
     --_et-table-header-border: var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
     --_et-table-row-divider: transparent;
+    /* The box of a header adornment (a filter trigger, a column menu trigger), read both by the button
+       itself and by the height the header row reserves for it. */
+    --_et-table-header-adornment-size: 2.8rem;
     /* The opaque paint under a row. A pinned cell has to be opaque for scrolled cells to pass behind it,
        so it cannot use the translucent tints the other cells layer on - it needs each of them mixed over
        what the row is actually painted on. Every `*-solid` below mixes over this one knob, and an
@@ -258,11 +261,21 @@
      `:where()` here would tie with it and leave source order to decide. */
   .et-table-header-cell .et-table-filter-trigger,
   .et-table-header-cell .et-table-column-menu-trigger {
-    --et-icon-button-size: 2.8rem;
+    --et-icon-button-size: var(--_et-table-header-adornment-size);
     --et-icon-button-icon-size: 1.6rem;
 
     min-width: 24px;
     min-height: 24px;
+  }
+
+  /* An adornment is dropped from a header cell whose column scrolls behind a pinned one, and it is
+     taller than the label's line box - so the row would change height as columns pass behind the pins.
+     Reserve its box on every header cell instead. `max()` and the `+ 1px` mirror the rule above: the
+     button never goes under 24px, and the block-end border counts towards a border-box height. */
+  .et-table-host--header-adornments .et-table-header-cell {
+    min-block-size: calc(
+      max(var(--_et-table-header-adornment-size), 24px) + 2 * var(--et-table-cell-padding-block) + 1px
+    );
   }
 
   .et-table-cell {
