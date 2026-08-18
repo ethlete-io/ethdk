@@ -19,6 +19,7 @@ export default {
     multiple: { control: 'boolean' },
     maxFileSize: { control: 'number' },
     disabled: { control: 'boolean' },
+    readonly: { control: 'boolean' },
     required: { control: 'boolean' },
     flaky: { table: { disable: true } },
     v2: { table: { disable: true } },
@@ -31,6 +32,7 @@ export default {
     multiple: false,
     maxFileSize: null,
     disabled: false,
+    readonly: false,
     required: false,
     flaky: false,
     v2: false,
@@ -52,6 +54,21 @@ export const ExistingMedia: Story = {
   args: {
     multiple: true,
     initialValue: ['mountain', 'ocean'],
+  },
+};
+
+export const Readonly: Story = {
+  args: {
+    multiple: true,
+    readonly: true,
+    initialValue: ['mountain', 'ocean'],
+  },
+};
+
+export const ReadonlySingle: Story = {
+  args: {
+    readonly: true,
+    initialValue: 'mountain',
   },
 };
 

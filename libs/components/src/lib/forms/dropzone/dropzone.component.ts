@@ -89,7 +89,7 @@ import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
   },
 })
 export class DropzoneComponent {
-  private dropzoneLabels = injectDropzoneLabels();
+  protected dropzoneLabels = injectDropzoneLabels();
 
   protected dropzoneDir = inject(DropzoneDirective);
   public support = injectFormSupport();

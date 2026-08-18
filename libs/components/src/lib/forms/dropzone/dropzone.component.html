@@ -31,9 +31,16 @@
     <span class="et-dropzone-prompt">
       <ng-content>
         <i class="et-dropzone-prompt-icon" etIcon="et-upload"></i>
-        <span class="et-dropzone-prompt-text">Drag &amp; drop or click to browse</span>
+        <span class="et-dropzone-prompt-text">{{ dropzoneLabels().prompt }}</span>
       </ng-content>
     </span>
+
+    @if (dropzoneDir.readonly()) {
+      <span class="et-dropzone-empty">
+        <i class="et-dropzone-prompt-icon" etIcon="et-file"></i>
+        <span class="et-dropzone-prompt-text">{{ dropzoneLabels().empty }}</span>
+      </span>
+    }
   </button>
 
   @if (singleEntry(); as entry) {
@@ -60,47 +67,49 @@
         }
       </div>
 
-      <div class="et-dropzone-preview-actions">
-        @if (entry.status() === 'error') {
+      @if (!dropzoneDir.readonly()) {
+        <div class="et-dropzone-preview-actions">
+          @if (entry.status() === 'error') {
+            <button
+              [disabled]="!dropzoneDir.interactive()"
+              [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
+              (click)="dropzoneDir.retryEntry(entry.id)"
+              class="et-dropzone-retry-button"
+              type="button"
+              et-icon-button
+              variant="filled"
+              size="sm"
+            >
+              <i etIcon="et-rotate-right"></i>
+            </button>
+          } @else {
+            <button
+              [disabled]="!dropzoneDir.interactive()"
+              [attr.aria-label]="resolvedReplaceLabel()"
+              (click)="openFilePicker()"
+              class="et-dropzone-replace-button"
+              type="button"
+              et-icon-button
+              variant="filled"
+              size="sm"
+            >
+              <i etIcon="et-rotate-right"></i>
+            </button>
+          }
           <button
             [disabled]="!dropzoneDir.interactive()"
-            [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
-            (click)="dropzoneDir.retryEntry(entry.id)"
-            class="et-dropzone-retry-button"
+            [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
+            (click)="removeEntryAnimated(entry, entryEl)"
+            class="et-dropzone-remove-button"
             type="button"
             et-icon-button
             variant="filled"
             size="sm"
           >
-            <i etIcon="et-rotate-right"></i>
+            <i etIcon="et-times"></i>
           </button>
-        } @else {
-          <button
-            [disabled]="!dropzoneDir.interactive()"
-            [attr.aria-label]="resolvedReplaceLabel()"
-            (click)="openFilePicker()"
-            class="et-dropzone-replace-button"
-            type="button"
-            et-icon-button
-            variant="filled"
-            size="sm"
-          >
-            <i etIcon="et-rotate-right"></i>
-          </button>
-        }
-        <button
-          [disabled]="!dropzoneDir.interactive()"
-          [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
-          (click)="removeEntryAnimated(entry, entryEl)"
-          class="et-dropzone-remove-button"
-          type="button"
-          et-icon-button
-          variant="filled"
-          size="sm"
-        >
-          <i etIcon="et-times"></i>
-        </button>
-      </div>
+        </div>
+      }
     </div>
   }
 </div>
@@ -133,31 +142,33 @@
           }
         </div>
 
-        @if (entry.status() === 'error') {
+        @if (!dropzoneDir.readonly()) {
+          @if (entry.status() === 'error') {
+            <button
+              [disabled]="!dropzoneDir.interactive()"
+              [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
+              (click)="dropzoneDir.retryEntry(entry.id)"
+              class="et-dropzone-retry-button"
+              type="button"
+              et-icon-button
+              size="sm"
+            >
+              <i etIcon="et-rotate-right"></i>
+            </button>
+          }
+
           <button
             [disabled]="!dropzoneDir.interactive()"
-            [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
-            (click)="dropzoneDir.retryEntry(entry.id)"
-            class="et-dropzone-retry-button"
+            [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
+            (click)="removeEntryAnimated(entry, entryEl)"
+            class="et-dropzone-remove-button"
             type="button"
             et-icon-button
             size="sm"
           >
-            <i etIcon="et-rotate-right"></i>
+            <i etIcon="et-times"></i>
           </button>
         }
-
-        <button
-          [disabled]="!dropzoneDir.interactive()"
-          [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
-          (click)="removeEntryAnimated(entry, entryEl)"
-          class="et-dropzone-remove-button"
-          type="button"
-          et-icon-button
-          size="sm"
-        >
-          <i etIcon="et-times"></i>
-        </button>
       </li>
     }
   </ul>

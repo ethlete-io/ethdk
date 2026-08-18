@@ -154,11 +154,21 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 `readonly` and `disabled` both come from the form schema (`readonly(s.media, …)` /
 `disabled(s, …)`) and both stop every mutation - selecting, dropping, replacing,
 retrying and removing. They differ in what the user sees: a **read-only** dropzone
-keeps its entries at full contrast and its controls at the plain arrow cursor,
-because there is nothing to operate; a **disabled** one dims and shows
-`not-allowed`. See [Forms](/components/forms#the-field-shell) for the shared convention.
+keeps its entries at full contrast, because there is nothing to operate; a
+**disabled** one dims and shows `not-allowed`. See
+[Forms](/components/forms#the-field-shell) for the shared convention.
 
-The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop prompt, `retry` / `remove` / `replaceFile` for the action buttons, and the `uploadFailed` wording. Per instance, the matching `retryLabel` / `removeLabel` / `replaceLabel` inputs override them, and `uploadErrorMessage` replaces the whole per-entry failure message.
+A read-only dropzone also stops looking like a drop target, so it does not offer a
+gesture it will refuse:
+
+- The remove, replace and retry buttons are not rendered.
+- The dashed border turns solid.
+- With files in multiple mode the drop area is gone, leaving the file list alone. A
+  single file keeps its preview, which fills that area anyway.
+- With no file at all the box shrinks to `--et-dropzone-readonly-min-height` and reads
+  the `empty` label ("No files") in place of the prompt.
+
+The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, and the `uploadFailed` wording. Per instance, the matching `retryLabel` / `removeLabel` / `replaceLabel` inputs override them, and `uploadErrorMessage` replaces the whole per-entry failure message.
 
 ## Validation
 
@@ -221,6 +231,7 @@ Colors come from the app-registered [surface and color theme systems](/component
 | Token                               | Default | Purpose                              |
 | ----------------------------------- | ------- | ------------------------------------ |
 | `--et-dropzone-min-height`          | `160px` | Drop area height                     |
+| `--et-dropzone-readonly-min-height` | `96px`  | Height of an empty read-only box     |
 | `--et-dropzone-border-radius`       | `12px`  | Drop area corner radius              |
 | `--et-dropzone-border-width`        | `2px`   | Dashed border width                  |
 | `--et-dropzone-gap`                 | `10px`  | Vertical gap between building blocks |

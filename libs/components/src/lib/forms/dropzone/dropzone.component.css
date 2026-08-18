@@ -5,6 +5,12 @@
     initial-value: 160px;
   }
 
+  @property --et-dropzone-readonly-min-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 96px;
+  }
+
   @property --et-dropzone-border-radius {
     syntax: '<length>';
     inherits: true;
@@ -466,6 +472,36 @@
     .et-dropzone-trigger:disabled,
     .et-icon-button:disabled {
       cursor: default;
+    }
+
+    /* A dashed border is the drop target's own mark. Nothing can be dropped here, so the box states
+       what it holds instead of inviting a file into it. */
+    .et-dropzone-trigger {
+      border-style: solid;
+    }
+
+    /* Only the empty box loses height. With a file in it the trigger is what the preview stretches
+       to, and a shorter one would crop the image. */
+    .et-dropzone-area:not([data-has-preview]) .et-dropzone-trigger {
+      min-block-size: var(--et-dropzone-readonly-min-height);
+    }
+
+    .et-dropzone-prompt {
+      display: none;
+    }
+
+    .et-dropzone-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    /* A file already listed below needs no empty box above it. The single-file preview covers this
+       same box, so only the list case leaves one standing. */
+    &:has(.et-dropzone-list) .et-dropzone-area {
+      display: none;
     }
   }
 }

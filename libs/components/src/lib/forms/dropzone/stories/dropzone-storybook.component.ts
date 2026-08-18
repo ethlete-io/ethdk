@@ -1,6 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { Component, computed, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { createPostQuery, createQueryClient, def, V2QueryClient } from '@ethlete/query';
 import { HintComponent } from '../../form-field/hint.component';
@@ -51,6 +51,7 @@ export class DropzoneStorybookComponent {
   public accept = input('');
   public maxFileSize = input<number | null>(null);
   public disabled = input(false);
+  public readonly = input(false);
   public required = input(false);
   public flaky = input(false);
   public v2 = input(false);
@@ -97,6 +98,7 @@ export class DropzoneStorybookComponent {
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
+    readonly(s, () => this.readonly());
     required(s.media, { when: () => this.required(), message: 'Please upload a file' });
     dropzoneFiles(s.media, () => ({
       accept: this.accept() || undefined,

@@ -10,6 +10,8 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 export type DropzoneLabels = {
   /** The drop-target prompt, shown when nothing is projected into the dropzone. */
   prompt: string;
+  /** Replaces the prompt while the dropzone is readonly and holds no file. */
+  empty: string;
   /** The retry action on a failed entry. */
   retry: string;
   /** Accessible label prefix for an entry's remove action - the file name is appended. */
@@ -25,6 +27,7 @@ export type DropzoneLabels = {
 /** The built-in English labels. */
 export const DEFAULT_DROPZONE_LABELS: DropzoneLabels = {
   prompt: 'Drag & drop or click to browse',
+  empty: 'No files',
   retry: 'Retry',
   remove: 'Remove',
   replaceFile: 'Replace file',
