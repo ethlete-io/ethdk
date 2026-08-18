@@ -35,7 +35,12 @@ import { ARROW_UP_ICON } from '../icon/headless/arrow-up-icon';
 import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
 import { TRIANGLE_EXCLAMATION_ICON } from '../icon/headless/triangle-exclamation-icon';
-import { reconcileColumnOrder, reconcileColumnWidths, reconcileHiddenColumns } from './headless/table-column-state';
+import {
+  ReconcilableColumn,
+  reconcileColumnOrder,
+  reconcileColumnWidths,
+  reconcileHiddenColumns,
+} from './headless/table-column-state';
 import { TableCardSurfaceDirective } from './table-card-surface.directive';
 import { TABLE_ERROR_CODES } from './table-errors';
 import {
@@ -625,10 +630,21 @@ export class TableComponent<T> {
         previous?.value,
       ),
   });
+  // A restore that lands before the `columns` input is populated - a consumer building its columns
+  // from the same request that carries the stored state - has no previous source to reconcile against,
+  // so every column would read as never-seen and take its declared `hidden`, discarding the restore.
+  // What the restore spoke about stands in for the source in that one case.
+  private restoredColumns: ReconcilableColumn[] = [];
   private hiddenColumns = linkedSignal<TableColumnDef<T>[], Set<string>>({
     source: () => this.columnDefs(),
     computation: (columns, previous) =>
-      reconcileHiddenColumns(columns, previous && { columns: previous.source, hidden: previous.value }),
+      reconcileHiddenColumns(
+        columns,
+        previous && {
+          columns: previous.source.length ? previous.source : this.restoredColumns,
+          hidden: previous.value,
+        },
+      ),
   });
   /**
    * The user's width overrides (px) per column. Public because it is part of the feature contract -
@@ -1468,6 +1484,7 @@ export class TableComponent<T> {
    * the feature slices are restored onto such a table.
    */
   public restoreState(next: TableState) {
+    this.restoredColumns = next.columns.map((column) => ({ key: column.key, hidden: column.hidden }));
     this.columnOrder.set(next.columns.map((column) => column.key));
     this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
 

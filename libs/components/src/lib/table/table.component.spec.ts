@@ -519,6 +519,51 @@ describe('TableComponent', () => {
       expect(state.columns.find((c) => c.key === 'name')?.sortPriority).toBeUndefined();
     });
 
+    it('keeps a restore that landed before the columns input was populated', () => {
+      // A consumer whose columns and stored state arrive from the same request restores first and
+      // binds the columns after. Both directions have to survive that: a column the state hides and
+      // one it reveals against its own declaration.
+      const fixture = TestBed.createComponent<TableComponent<Person>>(TableComponent);
+      fixture.componentRef.setInput('columns', {});
+      fixture.componentRef.setInput('data', PEOPLE);
+      fixture.detectChanges();
+
+      fixture.componentInstance.restoreState({
+        v: 3,
+        columns: [
+          { key: 'id', hidden: false },
+          { key: 'name', hidden: true },
+          { key: 'role', hidden: false },
+        ],
+      });
+
+      fixture.componentRef.setInput('columns', {
+        id: { header: 'ID', value: (p: Person) => p.id },
+        name: { header: 'Name', value: (p: Person) => p.name },
+        role: { header: 'Role', value: (p: Person) => p.role, hidden: true },
+      } satisfies TableColumns<Person>);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.visibleColumns().map((c) => c.key)).toEqual(['id', 'role']);
+    });
+
+    it('takes the declaration for a column no restored state spoke about', () => {
+      const fixture = TestBed.createComponent<TableComponent<Person>>(TableComponent);
+      fixture.componentRef.setInput('columns', {});
+      fixture.componentRef.setInput('data', PEOPLE);
+      fixture.detectChanges();
+
+      fixture.componentInstance.restoreState({ v: 3, columns: [{ key: 'id', hidden: false }] });
+
+      fixture.componentRef.setInput('columns', {
+        id: { header: 'ID', value: (p: Person) => p.id },
+        name: { header: 'Name', value: (p: Person) => p.name, hidden: true },
+      } satisfies TableColumns<Person>);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.visibleColumns().map((c) => c.key)).toEqual(['id']);
+    });
+
     it('round-trips a multi-sort through state()/restoreState() preserving priority', () => {
       const fixture = create(stateColumns(), UNSORTED);
       fixture.componentRef.setInput('multiSort', true);
