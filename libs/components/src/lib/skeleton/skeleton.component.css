@@ -1,8 +1,11 @@
 @layer components {
+  /* `syntax: '*'` with no initial-value, so the fallback at each use site resolves `1em` against the
+     element's own font. A registered `<length>` cannot carry a relative initial-value - the whole
+     @property rule is dropped - which left this token unregistered and every unsized bone at
+     `block-size: auto`. */
   @property --et-skeleton-size {
-    syntax: '<length>';
+    syntax: '*';
     inherits: true;
-    initial-value: 1em;
   }
 
   @property --et-skeleton-radius {
@@ -52,7 +55,7 @@
     position: relative;
     overflow: hidden;
     inline-size: 100%;
-    block-size: var(--et-skeleton-size);
+    block-size: var(--et-skeleton-size, 1em);
     border-radius: var(--et-skeleton-radius);
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
   }
@@ -71,8 +74,8 @@
   }
 
   .et-skeleton-item:where([data-shape='circle']) {
-    inline-size: var(--et-skeleton-size);
-    block-size: var(--et-skeleton-size);
+    inline-size: var(--et-skeleton-size, 1em);
+    block-size: var(--et-skeleton-size, 1em);
     flex: none;
     border-radius: 50%;
   }
