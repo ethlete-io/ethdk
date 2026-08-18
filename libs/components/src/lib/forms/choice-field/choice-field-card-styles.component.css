@@ -39,9 +39,11 @@
     }
 
     /* The focus ring belongs to the whole panel here, not to the 20px control inside it — two rings, one
-       nested in the other, read as a rendering glitch. */
+       nested in the other, read as a rendering glitch. `outline-color`, not `outline: none`: the control
+       keeps a transparent ring either way, and `et-checkbox` transitions `outline-color`, so resetting the
+       shorthand would hand it `currentColor` to fade out of on blur — a white ring flashing around the box. */
     .et-choice-field-control-slot > :focus-visible {
-      outline: none;
+      outline-color: transparent;
     }
 
     /* The panel's border already answers hover and focus, which frees the label to carry selection — and
