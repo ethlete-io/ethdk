@@ -16,12 +16,13 @@ type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
   host: {
     '[attr.data-loading]': 'loading() ? true : null',
     '[attr.data-pressed]': 'pressed() ? true : null',
-    '[attr.disabled]': 'IS_BUTTON && isInactive() ? "" : null',
+    '[attr.disabled]': 'IS_BUTTON && disabled() ? "" : null',
     '[attr.aria-busy]': 'loading() ? true : null',
     '[attr.aria-disabled]': 'isInactive() ? true : null',
     '[attr.aria-pressed]': 'emitAriaPressed() && pressed() ? true : null',
     '[attr.type]': 'IS_BUTTON ? type() : null',
-    '[attr.tabindex]': 'IS_ANCHOR && isInactive() ? -1 : null',
+    '[attr.tabindex]': 'IS_ANCHOR && disabled() ? -1 : null',
+    '(click)': 'blockInactiveClick($event)',
   },
 })
 export class ButtonDirective {
@@ -47,4 +48,15 @@ export class ButtonDirective {
   public isInactive = computed(() => this.disabled() || this.loading());
 
   public hasProgress = computed(() => this.progress() !== null);
+
+  // A loading button sets no native `disabled`, so it keeps DOM focus and its place in the tab
+  // order. Nothing else stops the click a keyboard activation dispatches.
+  protected blockInactiveClick(event: MouseEvent) {
+    if (!this.isInactive()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
 }

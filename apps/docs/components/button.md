@@ -76,7 +76,8 @@ button keeps its resting theme and only its variant swaps.
 
 All flavors share the headless `ButtonDirective` (`[etButton]`):
 
-- `disabled` and `loading` both make the button **inactive**: native `disabled` on `<button>`, `tabindex="-1"` on `<a>`, plus `aria-disabled`.
+- `disabled` and `loading` both make the button **inactive**: `aria-disabled`, no pointer events, and a blocked click.
+- Only `disabled` takes the control out of the tab order (native `disabled` on `<button>`, `tabindex="-1"` on `<a>`). A **loading** button stays focusable, so it keeps the focus it already had - which matters when the work behind it opens an overlay that restores focus on close.
 - `loading` additionally overlays a size-matched spinner (`aria-busy`) on top of the hidden label.
 - `progress` (`0`-`100`) turns that spinner from an indeterminate ring into a determinate arc with a track. Leave it unset for work of unknown length. It pairs directly with a [query batch](/query/batching) or a [query sequence](/query/dependent-queries#imperative-waterfalls-dependent-mutations), whose `progress()` signals use the same scale:
 
@@ -130,7 +131,7 @@ Every flavor works on `<a>` for navigation with identical styling:
 
 ## Accessibility
 
-All flavors keep native `<button>` / `<a>` semantics - no custom key handling, no role juggling. On top of that the headless directive emits `aria-busy` while loading, `aria-disabled` (plus native `disabled` on buttons, `tabindex="-1"` on anchors) while inactive, and `aria-pressed` for toggles; the loading spinner overlay is `aria-hidden`. Keyboard focus shows the shared [focus ring](/components/focus-ring).
+All flavors keep native `<button>` / `<a>` semantics - no custom key handling, no role juggling. On top of that the headless directive emits `aria-busy` while loading, `aria-disabled` while inactive, and `aria-pressed` for toggles; the loading spinner overlay is `aria-hidden`. A busy control keeps its place in the tab order - native `disabled` (buttons) and `tabindex="-1"` (anchors) come from `disabled` alone - and the directive blocks the click instead. Keyboard focus shows the shared [focus ring](/components/focus-ring).
 
 One thing that stays your job: icon-only buttons have no text content, so always give them an `aria-label` (this is not enforced). That includes a split button's trigger segment; with `etMenuTrigger` on it, the menu system adds `aria-haspopup` / `aria-expanded` for you.
 

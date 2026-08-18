@@ -70,10 +70,43 @@ describe('ButtonDirective', () => {
         expect(button.hasAttribute('disabled')).toBe(true);
       });
 
-      it('sets disabled attribute when loading=true', () => {
+      it('sets no disabled attribute when loading=true', () => {
         fixture.componentInstance.loading = true;
         fixture.detectChanges();
-        expect(button.hasAttribute('disabled')).toBe(true);
+        expect(button.hasAttribute('disabled')).toBe(false);
+        expect(button.getAttribute('aria-disabled')).toBe('true');
+      });
+
+      it('keeps a loading button focusable', () => {
+        fixture.componentInstance.loading = true;
+        fixture.detectChanges();
+
+        button.focus();
+
+        expect(document.activeElement).toBe(button);
+      });
+
+      it('blocks a click while loading', () => {
+        const clicks = vi.fn();
+
+        button.addEventListener('click', clicks);
+        fixture.componentInstance.loading = true;
+        fixture.detectChanges();
+
+        button.click();
+
+        expect(clicks).not.toHaveBeenCalled();
+      });
+
+      it('lets a click through while active', () => {
+        const clicks = vi.fn();
+
+        button.addEventListener('click', clicks);
+        fixture.detectChanges();
+
+        button.click();
+
+        expect(clicks).toHaveBeenCalledTimes(1);
       });
 
       it('sets aria-disabled when inactive', () => {
@@ -159,10 +192,11 @@ describe('ButtonDirective', () => {
       expect(anchor.getAttribute('tabindex')).toBe('-1');
     });
 
-    it('sets tabindex="-1" when loading', () => {
+    it('keeps a loading anchor in the tab order', () => {
       fixture.componentInstance.loading = true;
       fixture.detectChanges();
-      expect(anchor.getAttribute('tabindex')).toBe('-1');
+      expect(anchor.getAttribute('tabindex')).toBeNull();
+      expect(anchor.getAttribute('aria-disabled')).toBe('true');
     });
 
     it('has no tabindex when active', () => {
