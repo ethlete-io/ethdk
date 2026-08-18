@@ -1381,7 +1381,8 @@ protected readonly COLUMNS = {
 
 `exportValue` returns a `string | number | boolean | Date | null | undefined`. Dates are
 written as ISO 8601 (the only form that survives a spreadsheet's locale) and nullish
-becomes an empty field rather than the text `null`.
+becomes an empty field rather than the text `null` - a column that declares `exportValue`
+is exported by it alone, so an empty cell never falls back to a non-primitive `value`.
 
 ### Options
 

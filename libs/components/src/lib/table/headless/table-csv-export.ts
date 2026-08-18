@@ -206,7 +206,8 @@ const resolveColumns = <T>(table: TableCsvSource<T>, columns: TableCsvExportOpti
  *
  * A cell's text comes from the column's `exportValue`, else its `value` accessor. A column rendered
  * through an `etTableCell` template needs `exportValue`: a template is DOM, and there is nothing to
- * serialize it to.
+ * serialize it to. A column that declares `exportValue` is exported by it alone - an empty cell it
+ * reports as `null` is written as an empty field, not as the raw `value` behind it.
  *
  * @example
  * const csv = tableToCsv(this.table(), { columns: 'all', delimiter: ';' });
@@ -222,7 +223,7 @@ export const tableToCsv = <T>(table: TableCsvSource<T>, options: TableCsvSeriali
   }
 
   for (const row of rows) {
-    const fields = columns.map((column) => toField(column.exportValue?.(row) ?? column.value(row), field));
+    const fields = columns.map((column) => toField((column.exportValue ?? column.value)(row), field));
 
     lines.push(fields.join(field.delimiter));
   }

@@ -188,7 +188,8 @@ export type TableColumn<T, TValue = unknown> = {
   /**
    * The value a CSV export writes for this column. Defaults to `value`. Required for a column whose
    * cell is an `etTableCell` template - a template renders DOM, which has no text form to export -
-   * and for one whose `value` isn't a primitive.
+   * and for one whose `value` isn't a primitive. Once declared it is the only source the export
+   * reads: `null` for an empty cell writes an empty field, never the `value` behind it.
    */
   exportValue?: (row: T) => TableCsvValue;
 

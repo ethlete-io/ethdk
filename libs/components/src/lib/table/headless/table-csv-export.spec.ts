@@ -111,6 +111,12 @@ describe('tableToCsv', () => {
     it('uses a column exportValue over its value accessor', () => {
       expect(lines(tableToCsv(source(), { columns: ['tags'], header: false }))).toEqual(['a|b', '']);
     });
+
+    it('writes an empty field for a nullish exportValue, not the value it stands in for', () => {
+      const columns: TableColumnDef<Row>[] = [{ key: 'tags', value: (row) => row.tags, exportValue: () => null }];
+
+      expect(tableToCsv({ ...source(), allColumns: () => columns }, { columns: ['tags'], header: false })).toBe('\r\n');
+    });
   });
 
   describe('quoting', () => {
