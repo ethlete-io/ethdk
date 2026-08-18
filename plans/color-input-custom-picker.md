@@ -80,10 +80,10 @@ hand-roll a pointer pipeline - the backlog already tracks carousel as the last o
 The slider's own engine is under `headless/internals/`, so it is not reusable across domains;
 the picker gets its own small engine, and it needs 2D anyway.
 
-## Follow-ups, raised by the user 2026-08-18 after the first pass
+## Follow-ups, raised by the user 2026-08-18 after the first pass - all three shipped
 
-None of these block the picker that shipped. The first is a correctness gap and the rest are one
-project.
+All three shipped on 2026-08-18. What was decided and built is recorded under each one; the design
+questions below are **settled - do not re-open them**.
 
 ### 1. Focus does not stay in the panel - `B`
 
@@ -100,7 +100,23 @@ answers:
   already does, and needs no trap.
 - **Trap focus** and make the pane modal. Heavier, and it changes what a click outside means.
 
-Settle it once, for all of them.
+**Shipped: close on focus leave**, in `createAnchoredPanelController`. A document `focusin` listener
+sits beside the existing `pointerdown` one and reuses the same "is this outside" test, so a nested
+popover the panel opened still does not count as outside. `AnchoredPanelCloseInfo` gained
+`byFocusLeave`, which is how the colour input knows not to pull focus back off the element the user
+tabbed to.
+
+Two facts found while building it, both verified in Chromium:
+
+- **`focusin` never fires with `<body>` as the target.** Removing the focused element inside a pane
+  fires only `focusout` (`relatedTarget` `null`, and the target still reports `isConnected`), and
+  focus falls to `<body>`. So a removal cannot close a panel by accident, and no guard is needed for
+  it. Verified live: zooming the calendar out drops focus to `<body>` and the panel stays open.
+- **Tabbing past the last focusable in the document** also lands on `<body>` and takes focus out of
+  the document (`document.hasFocus()` turns false). A panel therefore stays open in a page whose
+  only focusable is the field - a Storybook story. In a real form the next field is a real element,
+  which closes it. Not worth chasing: the discriminator would be `hasFocus()`, and it cannot tell a
+  tab-out from an Alt-Tab, which must not close a picker.
 
 ### 2. The panel's hex field is hand-rolled - `C`
 
@@ -108,6 +124,22 @@ It is a bare `<input>` with a border, so it has no hover, focus or disabled trea
 put a message. The user's own suggestion is the right one: **use `et-form-field` with `et-input`
 inside the panel.** That brings the interaction states, the sizes, and - the part that matters for
 item 3 - the field's warning slot, which already exists (`field-warnings.ts`).
+
+**Shipped:** `et-form-field size="sm"` holding the whole footer - the preview swatch and the notation
+cell as `etInputPrefix`, the value as `et-input`, the eyedropper as `etInputSuffix`. One frame means
+every part sits on the field's own height and the advisory spans the row it belongs to; the separate
+`.et-color-picker-footer` flex row is gone.
+
+- **The draft is a `linkedSignal` over the displayed colour**, committed on `change`, never on
+  `input` - rewriting a half-typed entry fights the typing. A commit ends with
+  `colorDraft.set(displayColor())`, which covers both outcomes: a read entry normalises, an
+  unreadable one reverts.
+- **The panel now needs the app's colour themes.** `et-form-field` resolves its error and warning
+  themes through DI, so a `TestBed` that mounts the panel needs `provideColorThemes` - and
+  `TEST_COLOR_THEMES` gained a `type: 'warning'` theme for it.
+- **Bind `aria-label` as an input, not `[attr.aria-label]`.** The field's dev-mode labelling guard
+  (`ET2201`) reads the control's `ariaLabel()`; an attribute binding leaves it empty and the guard
+  throws at runtime while the DOM looks correct.
 
 ### 3. Notation switching in the field - `A`, `D`
 
@@ -128,3 +160,28 @@ error. Settle before any code:
 - Whether the warning is transient (it fades once the user edits again) or sticks until commit.
 
 Item 2 is a prerequisite for the warning, so do them in order: 2, then 3.
+
+**Shipped, with all three decisions taken by the user:**
+
+- **The value never leaves hex.** The notation is display only, so a consumer's `hexColor()`
+  validator keeps passing and switching notation cannot change a form value.
+- **One input, `notations`.** More than one entry offers a switch and follows what the user types;
+  exactly one pins the field and converts an entry in another notation with an advisory.
+  `resolvedNotations()` dedupes, drops what the picker cannot read, and falls back to hex.
+- **The advisory is transient**: it clears on the next entry and on any change to the picked colour.
+
+How it is held together, and the traps:
+
+- `colour-convert.ts` gained `hsl()`/`hsla()` parsing, `rgbToHsl`/`hslToRgb`, `formatRgb`,
+  `formatHsl`, `formatHsvToNotation` and `detectColorNotation`. A bound `hsl()` value is now readable
+  everywhere the colour validators read a colour, including `[swatches]`.
+- **A `linkedSignal` computation tracks every signal it reads, not only its `source`.** Seeding the
+  displayed notation from the bound value has to read that value inside `untracked()`, or committing
+  (which writes hex to the value) pulls the display back to hex after every entry.
+- **The advisory resets off the picked colour**, as a `linkedSignal` whose source is
+  `picker.hsv()`. So it must be set _after_ `commitColor`, never before.
+- **A control can now carry advisories without signal forms.** `TextFieldControlDirective` gained a
+  `warnings` input (the shapes `warn()` accepts) that `FormFieldDirective.warnings()` merges in - the
+  panel's field has no `[formField]` binding, so there was no schema to hold a `warn()` rule.
+- In a spec, assert an advisory is gone through the field's `data-warning` attribute. The support
+  region animates a message out, and jsdom fires no transition events, so the text stays in the DOM.

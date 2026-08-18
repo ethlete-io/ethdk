@@ -36,9 +36,9 @@ the date-time range input. It replaced the native `<input type="color">` outrigh
 beside it, so `nativeControl` and `syncFromNativeInput()` are gone; see
 `plans/color-input-custom-picker.md` for the design calls and the traps it turned up.
 
-It also raised three follow-ups, which are now the only rows here below `L` - see
-"Colour picker follow-ups" below. The rest of the file is still `L` projects with nothing left to
-decide, so beyond those three the next pick is purely which project to start.
+It raised three follow-ups, and all three shipped on 2026-08-18 as well - see "Colour picker
+follow-ups, shipped" below. The rest of the file is `L` projects with nothing left to decide, so
+the next pick is purely which project to start.
 
 ## Everything else, by effort
 
@@ -52,16 +52,16 @@ decide, so beyond those three the next pick is purely which project to start.
 | Test harnesses                            | `D`     | Merged item. `forms/testing/` has one utility and every spec talks to the DOM directly; CDK-`ComponentHarness`-style drivers are the question. Explicitly "not urgent" - revisit as more controls land                                                                                       |
 | Forms: time-zone handling / local-time UX | `D`     | User-raised 2026-08-10. Wants an input's date/time also shown in local time, with the user's own caveat that it must not get confusing. Settle what the control's value _is_ (zoned instant vs wall clock + zone) before any UI. Scope date-time, **date-time range** and scheduler together |
 
-### Colour picker follow-ups - the only rows below `L`
+### Colour picker follow-ups, shipped - do not re-report
 
-Raised by the user on 2026-08-18 against the picker that shipped the same day. Full write-up in
-`plans/color-input-custom-picker.md`; do 2 before 3, because 3 needs the warning slot 2 brings.
+Raised by the user on 2026-08-18 against the picker that shipped the same day, and all three shipped
+that day. Full write-up in `plans/color-input-custom-picker.md`.
 
-| Item                                    | Tag     | Effort | Note                                                                                                                                                                                                                                          |
-| --------------------------------------- | ------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Focus escapes an open anchored panel | `B`,`D` | `S`    | Not a missing flag: the runtime traps focus only when `modal !== false`, and these panes are non-modal on purpose. Fix in `createAnchoredPanelController` - select, cascader and the date pickers share the gap. Close-on-focus-leave vs trap |
-| 2. Panel hex field is a bare `<input>`  | `C`     | `S`    | No hover, focus or disabled treatment, and nowhere to put a message. Use `et-form-field` + `et-input`, which also brings the warning slot                                                                                                     |
-| 3. Notation switching (hex / RGB / HSL) | `A`,`D` | `M`    | Follow what the user pastes, but let a consumer pin the control to one notation and warn on conversion. Settle first whether the emitted value may ever leave hex - that decides everything else                                              |
+| Item                                    | What shipped                                                                                                                                                                                                                      |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Focus escapes an open anchored panel | Close-on-focus-leave in `createAnchoredPanelController`, so select, cascader, the date pickers and the colour picker all close when focus lands outside. The panes stay non-modal - no trap, no backdrop                          |
+| 2. Panel hex field is a bare `<input>`  | The whole footer is one `et-form-field`: the preview swatch and the notation switch as prefixes, the eyedropper as a suffix. Brought the interaction states and the warning slot 3 needed                                         |
+| 3. Notation switching (hex / RGB / HSL) | `[notations]` on `et-color-input`. More than one offers a switch and follows what the user types; exactly one pins the field and converts with an advisory. **The emitted value never leaves hex** - the notation is display only |
 
 ### Watchlist - gated on browsers, not on us
 
