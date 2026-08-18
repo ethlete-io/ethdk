@@ -77,6 +77,40 @@
     initial-value: 36px;
   }
 
+  @property --et-menu-scroll-fade-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 12px;
+  }
+
+  @property --_et-menu-fade-start {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  @property --_et-menu-fade-end {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  @keyframes et-menu-scroll-fade-start {
+    to {
+      --_et-menu-fade-start: var(--et-menu-scroll-fade-size);
+    }
+  }
+
+  @keyframes et-menu-scroll-fade-end {
+    from {
+      --_et-menu-fade-end: var(--et-menu-scroll-fade-size);
+    }
+
+    to {
+      --_et-menu-fade-end: 0px;
+    }
+  }
+
   .et-overlay.et-overlay--menu {
     overflow: visible;
     background: transparent;
@@ -188,19 +222,39 @@
       }
     }
 
+    /* The block gap has to be a margin. Padding on the scroller is inside its scrollport, so an
+       option scrolls into the gap under the search field; padding on the content scrolls away with
+       it, leaving the cut on the field's border. A margin holds the gap outside the scrollport, so a
+       scrolled option is always cut a gap away from the field and from the rounded corners. */
     .et-menu-body {
       flex: 1;
       min-block-size: 0;
+      margin-block: var(--et-menu-padding-block);
       padding-inline: var(--et-menu-padding-inline);
       overflow-y: auto;
       overscroll-behavior: contain;
-    }
 
-    /* The block padding belongs to the content, not to the scrollport: a scroller clips at its
-       padding box, so padding of its own is inside the scrolled area and a scrolled item paints in
-       the gap under the search field. */
-    .et-menu-body-content {
-      padding-block: var(--et-menu-padding-block);
+      /* The two fade lengths ride the scroll position, so each cut edge only fades while there is
+         more to scroll that way - `both` is what holds a fade at full length beyond its range. The
+         mask stays inside the `@supports`: without scroll-driven animations it could never animate,
+         and a permanent fade on a list that does not scroll is worse than the plain cut. */
+      @supports (animation-timeline: scroll()) {
+        mask-image: linear-gradient(
+          to bottom,
+          transparent 0,
+          black var(--_et-menu-fade-start),
+          black calc(100% - var(--_et-menu-fade-end)),
+          transparent 100%
+        );
+
+        animation:
+          et-menu-scroll-fade-start linear both,
+          et-menu-scroll-fade-end linear both;
+        animation-timeline: scroll(self block), scroll(self block);
+        animation-range:
+          0 var(--et-menu-scroll-fade-size),
+          calc(100% - var(--et-menu-scroll-fade-size)) 100%;
+      }
     }
 
     .et-menu-group {
