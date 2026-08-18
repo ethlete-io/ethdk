@@ -40,7 +40,6 @@ import { MENU_IMPORTS } from '../../menu.imports';
               <button et-menu-item etMenuTrigger type="button">
                 <i etIcon="et-arrow-out-up-right"></i>
                 Export as
-                <et-menu-item-shortcut>›</et-menu-item-shortcut>
               </button>
 
               <ng-template etMenuSurface>
@@ -49,10 +48,7 @@ import { MENU_IMPORTS } from '../../menu.imports';
                   <button (click)="lastAction.set('Export CSV')" et-menu-item type="button">CSV</button>
 
                   <div etMenu>
-                    <button et-menu-item etMenuTrigger type="button">
-                      More formats
-                      <et-menu-item-shortcut>›</et-menu-item-shortcut>
-                    </button>
+                    <button et-menu-item etMenuTrigger type="button">More formats</button>
 
                     <ng-template etMenuSurface>
                       <et-menu>

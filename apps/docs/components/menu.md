@@ -41,20 +41,17 @@ import { MENU_IMPORTS } from '@ethlete/components';
 
 ## Items
 
-- `button[et-menu-item]` / `a[et-menu-item]` - a menu row with slots for an `[etIcon]`, the label, and a trailing `<et-menu-item-shortcut>`. `variant="destructive"` switches it to the app's error color theme (the theme registered with `type: 'error'`).
+- `button[et-menu-item]` / `a[et-menu-item]` - a menu row with slots for an `[etIcon]`, the label, and a trailing `<et-menu-item-shortcut>`. A row that also opens a submenu appends a chevron after that slot - see [Submenus](#submenus). `variant="destructive"` switches it to the app's error color theme (the theme registered with `type: 'error'`).
 - The headless `etMenuItem` directive exposes an `activate` output (`{ source: 'pointer' | 'keyboard-enter' | 'keyboard-space' }`) and a `closeOnActivate` input to control whether activating dismisses the menu.
 - `<et-menu-separator />` and `<et-menu-group-label>` structure longer menus (the label is wired into group `aria-labelledby` automatically).
 
 ## Submenus
 
-Nest an `[etMenu]` inside the surface; a row that is both `et-menu-item` and `etMenuTrigger` opens it. Arbitrary depth is supported - submenus open on hover (with intent delays) or <kbd>ArrowRight</kbd>, close on <kbd>ArrowLeft</kbd>:
+Nest an `[etMenu]` inside the surface; a row that is both `et-menu-item` and `etMenuTrigger` opens it. The row shows the chevron itself - do not add one. Arbitrary depth is supported - submenus open on hover (with intent delays) or <kbd>ArrowRight</kbd>, close on <kbd>ArrowLeft</kbd>:
 
 ```html
 <div etMenu>
-  <button et-menu-item etMenuTrigger type="button">
-    Export as
-    <et-menu-item-shortcut>›</et-menu-item-shortcut>
-  </button>
+  <button et-menu-item etMenuTrigger type="button">Export as</button>
   <ng-template etMenuSurface>
     <et-menu>…</et-menu>
   </ng-template>
@@ -179,7 +176,7 @@ Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics ar
 
 ## Theming
 
-Public tokens (defaults in parentheses): `--et-menu-min-width` (`180px`), `--et-menu-max-height` (`40vh`, caps the whole panel - header included - and is itself capped by the space next to the trigger, see [Panel placement](#panel-placement)), `--et-menu-padding-block` / `-inline` (`6px`), `--et-menu-item-height` (`36px`), `--et-menu-item-padding-inline` (`10px`), `--et-menu-item-gap` (`10px`), `--et-menu-item-border-radius` (`6px`), `--et-menu-item-font-size` (`14px`), `--et-menu-item-icon-size` (`16px`), `--et-menu-separator-margin-block` (`6px`), `--et-menu-group-label-font-size` (`12px`), `--et-menu-search-height` (`36px`), `--et-menu-scroll-fade-size` (`12px`, see [Panel placement](#panel-placement)). Colors come from the [surface/color theme systems](/core/theming).
+Public tokens (defaults in parentheses): `--et-menu-min-width` (`180px`), `--et-menu-max-height` (`40vh`, caps the whole panel - header included - and is itself capped by the space next to the trigger, see [Panel placement](#panel-placement)), `--et-menu-padding-block` / `-inline` (`6px`), `--et-menu-item-height` (`36px`), `--et-menu-item-padding-inline` (`10px`), `--et-menu-item-gap` (`10px`), `--et-menu-item-border-radius` (`6px`), `--et-menu-item-font-size` (`14px`), `--et-menu-item-icon-size` (`16px`), `--et-menu-item-submenu-icon-size` (`12px`), `--et-menu-separator-margin-block` (`6px`), `--et-menu-group-label-font-size` (`12px`), `--et-menu-search-height` (`36px`), `--et-menu-scroll-fade-size` (`12px`, see [Panel placement](#panel-placement)). Colors come from the [surface/color theme systems](/core/theming).
 
 ## Error codes
 

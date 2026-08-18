@@ -5,6 +5,7 @@ export * from './menu-errors';
 export * from './menu-group-label.component';
 export * from './menu-item.component';
 export * from './menu-item-shortcut.component';
+export * from './menu-item-submenu-icon.component';
 export * from './menu-radio-group.component';
 export * from './menu-radio-item.component';
 export * from './menu-separator.component';

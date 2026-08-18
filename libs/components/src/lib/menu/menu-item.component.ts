@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, effect, inject, input, untracked } from '@angular/core';
 import { ProvideColorDirective, injectErrorTheme } from '@ethlete/core';
 import { MenuItemDirective } from './headless';
+import { MenuItemSubmenuIconComponent } from './menu-item-submenu-icon.component';
 
 export const MENU_ITEM_VARIANTS = {
   DEFAULT: 'default',
@@ -14,6 +15,7 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
   templateUrl: './menu-item.component.html',
   styleUrl: './menu-item.component.css',
   encapsulation: ViewEncapsulation.None,
+  imports: [MenuItemSubmenuIconComponent],
   hostDirectives: [
     {
       directive: MenuItemDirective,
@@ -30,8 +32,12 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
 export class MenuItemComponent {
   private provideColor = inject(ProvideColorDirective);
   private errorColorTheme = injectErrorTheme();
+  private item = inject(MenuItemDirective);
 
   public variant = input<MenuItemVariant>(MENU_ITEM_VARIANTS.DEFAULT);
+
+  // static: the host directive resolves `submenu` in its own constructor, which runs before this one
+  protected isSubmenuTrigger = this.item.submenu !== null;
 
   constructor() {
     effect(() => {

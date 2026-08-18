@@ -59,6 +59,12 @@
     initial-value: 16px;
   }
 
+  @property --et-menu-item-submenu-icon-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   @property --et-menu-separator-margin-block {
     syntax: '<length>';
     inherits: false;

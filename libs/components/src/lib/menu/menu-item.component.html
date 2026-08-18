@@ -8,4 +8,8 @@
 
 <span class="et-menu-item-trailing">
   <ng-content select="et-menu-item-shortcut" />
+
+  @if (isSubmenuTrigger) {
+    <et-menu-item-submenu-icon />
+  }
 </span>
