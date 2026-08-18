@@ -6,6 +6,7 @@ import {
   matchesReducedMotion,
 } from '@ethlete/core';
 import { Subject, Subscription, filter, fromEvent, takeUntil, tap, timer } from 'rxjs';
+import { claimsPointerAxis, isInteractivePointerTarget } from '../../internals/pointer-gesture-target';
 import { OverlayRef } from '../overlay-ref';
 import {
   OverlayDragToDismissConfig,
@@ -225,13 +226,6 @@ const shouldCancelDragForScrollableElement = (
   }
 };
 
-/** Elements whose own pointer handling wins over dragging the overlay around. */
-const isInteractiveTarget = (target: HTMLElement) => {
-  const tag = target.tagName.toLowerCase();
-
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'a';
-};
-
 /**
  * Enables drag-to-dismiss functionality on an overlay element.
  * Returns a cleanup function to disable the feature.
@@ -243,6 +237,7 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
     direction: resolvePhysicalDirection(context.config.direction, el),
   };
   const axis = createDismissAxis(config.direction);
+  const dismissAxisName = isVerticalDismiss(config.direction) ? 'y' : 'x';
   const document = el.ownerDocument;
   const stop$ = new Subject<void>();
 
@@ -343,7 +338,8 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
       tap((event) => {
         if (isSelectionActive || activePointerId !== null) return;
         if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
-        if (isInteractiveTarget(event.target as HTMLElement)) return;
+        if (isInteractivePointerTarget(event.target as HTMLElement)) return;
+        if (claimsPointerAxis(event.target as HTMLElement, { boundary: el, axis: dismissAxisName })) return;
 
         // A settle still animating would otherwise smooth the drag and leave the overlay's real
         // position behind its tracked one. Land it first so the finger takes over from a known spot.

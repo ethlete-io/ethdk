@@ -162,6 +162,8 @@ The ref also offers `dismiss()`, `pauseTimer()` / `resumeTimer()` (hover and foc
 
 Drag a notification toward the edge its stack is docked to and it follows the pointer, fading as it goes; let go past a third of its width - or flick it - and it leaves carrying the speed of the release. A shorter drag slides back. `center` positions accept either direction, and the gesture is inline-only (`touch-action: pan-y`), so a touch that pans the page vertically is left to the page. Swiping away counts as a manual dismissal, like the dismiss button.
 
+A drag surface inside the notification keeps its own gesture: the swipe skips any pointerdown whose target sits under an element that has taken the inline axis with `touch-action` (a slider at `pan-y`, a color picker area at `none`). Buttons, links and form fields are skipped the same way.
+
 Turn it off with `provideNotificationManager({ swipeToDismiss: false })`. A custom toast opts in by adding `etNotificationSwipeToDismiss` to its notification element.
 
 ## Right-to-left

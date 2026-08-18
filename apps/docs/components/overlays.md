@@ -236,6 +236,8 @@ The consequence is for hand-rolled strategies: an overlay that sets a layout `co
 
 The gesture runs on pointer events, so touch, pen and mouse take one code path. It only starts following the pointer after 8px of travel along the dismiss axis. That threshold is deliberate: within it the browser is still free to claim the gesture as a scroll, so a swipe that begins on scrolled overlay content scrolls that content instead of dragging the sheet. A gesture the browser does take over (or one that starts on an `input`, `button` or link) leaves the sheet where it was.
 
+A drag surface inside the sheet keeps its own gesture: the sheet skips any pointerdown whose target sits under an element that has taken the dismiss axis with `touch-action`. That is the same declaration the browser reads, so nothing extra is needed to opt out - a color picker area at `touch-action: none` and a vertical slider at `pan-x` both keep a downward drag to themselves, while a horizontal slider at `pan-y` leaves the vertical axis to the bottom sheet.
+
 On release the sheet either settles back or leaves, decided by `minDistanceToDismiss` (150px) and `minVelocityToDismiss` (150px/s) - either one is enough. Release velocity is measured over the last 100ms of the gesture rather than averaged across it, so a slow drag that ends in a flick dismisses, and a fast drag parked before release does not.
 
 Both the settle and the exit animate at the speed the pointer had when it let go, clamped to 100–350ms - the sheet is thrown, not handed to a fixed transition. Under `prefers-reduced-motion` the momentum handoff is skipped and the stylesheet's own durations apply.
@@ -426,7 +428,7 @@ While it renders inline the sidebar is the content grid's first column and a fle
 - **Role**: modal overlays default to `role="dialog"` (`config.role` accepts `'dialog' | 'alertdialog'`); non-modal overlays get no role unless you set one.
 - **Name/description**: set `ariaLabel`, `ariaLabelledBy` or `ariaDescribedBy` in the config - or just use `[et-overlay-title]`, which auto-wires the overlay's `aria-labelledby` to the title element when nothing else names it.
 - **Focus**: `autoFocus` targets `'container' | 'first-heading' | 'first-tabbable'`, a CSS selector, or `false`; `restoreFocus` (default `true`) returns focus to the opener on close. With the overlay router, each navigation re-applies initial focus to the new page (default `'first-tabbable'`), and `[etOverlayRouterLink]` sets `aria-current="page"` on the active link.
-- **Dismissal & scroll**: `closeOnEscape` and `closeOnOutsidePointer` default to `true` (`disableClose` forces both off), and body scroll is locked while any _modal_ overlay is open - non-modal overlays (tooltips, popovers) never lock the page.
+- **Dismissal & scroll**: `closeOnEscape` and `closeOnOutsidePointer` default to `true` (`disableClose` forces both off), and body scroll is locked while any overlay that is _modal_ or shows a _backdrop_ is open. A non-modal overlay that leaves the page visible - a tooltip, a popover, an anchored pane - never locks it. The two are checked separately because a breakpoint switch can add a backdrop to an overlay that is already open: a non-modal picker anchored to its field above `md` becomes a backdropped bottom sheet below it, and the page locks on the switch and unlocks again on the way back.
 - **Reduced motion**: every built-in strategy's enter/leave animation is skipped under `prefers-reduced-motion` - the overlay still opens and closes, just without the transition.
 
 ## Error codes

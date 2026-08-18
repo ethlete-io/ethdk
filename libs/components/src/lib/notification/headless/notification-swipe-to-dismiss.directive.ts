@@ -2,6 +2,7 @@ import { DOCUMENT, DestroyRef, Directive, ElementRef, afterNextRender, inject } 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RuntimeError, SwipeTracker, createSwipeTracker, injectRenderer, matchesReducedMotion } from '@ethlete/core';
 import { filter, fromEvent, tap } from 'rxjs';
+import { claimsPointerAxis, isInteractivePointerTarget } from '../../internals/pointer-gesture-target';
 import { injectNotificationManagerConfig } from '../notification-config';
 import { NOTIFICATION_ERROR_CODES } from '../notification-errors';
 import { NOTIFICATION_STACK_CONTEXT_TOKEN } from '../notification-stack-context.token';
@@ -34,13 +35,6 @@ const EXIT_OVERSHOOT_PX = 16;
 
 /** Opacity the notification reaches once it has been dragged its full width. */
 const MIN_SWIPE_OPACITY = 0.3;
-
-/** Elements whose own pointer handling wins over swiping the notification away. */
-const isInteractiveTarget = (target: HTMLElement) => {
-  const tag = target.tagName.toLowerCase();
-
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'a';
-};
 
 /**
  * Swipe-to-dismiss for a notification: drag it toward the edge its stack is docked to and let go.
@@ -155,7 +149,8 @@ export class NotificationSwipeToDismissDirective {
   private startGesture(event: PointerEvent) {
     if (!this.isEnabled || this.activePointerId !== null) return;
     if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
-    if (isInteractiveTarget(event.target as HTMLElement)) return;
+    if (isInteractivePointerTarget(event.target as HTMLElement)) return;
+    if (claimsPointerAxis(event.target as HTMLElement, { boundary: this.elementRef.nativeElement, axis: 'x' })) return;
 
     this.tracker = createSwipeTracker(event);
     this.activePointerId = event.pointerId;
