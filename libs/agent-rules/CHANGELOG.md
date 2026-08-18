@@ -1,5 +1,13 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.11
+
+### Patch Changes
+
+- [`16ae17e`](https://github.com/ethlete-io/ethdk/commit/16ae17e30238ef4539f3e168ca8299a4546ac292) Thanks [@TomTomB](https://github.com/TomTomB)! - The theming skill now states that a component which tints with `--et-theme-color-primary-opacity`
+  must compose the color itself, and that an `@property` `initial-value` cannot use a font-relative or
+  container unit.
+
 ## 0.1.0-next.10
 
 ### Minor Changes

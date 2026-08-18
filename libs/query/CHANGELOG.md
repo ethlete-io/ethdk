@@ -1,5 +1,20 @@
 # @ethlete/query
 
+## 6.0.0-next.39
+
+### Minor Changes
+
+- [`194e668`](https://github.com/ethlete-io/ethdk/commit/194e668efec08272b5a6fc82c16f1593b03d4584) Thanks [@TomTomB](https://github.com/TomTomB)! - Queries: omit response metadata from request args and expose retained responses on loading and failed execution states.
+
+### Patch Changes
+
+- [`a9bf390`](https://github.com/ethlete-io/ethdk/commit/a9bf390952d78d436bd23d33c86b57369a990fce) Thanks [@TomTomB](https://github.com/TomTomB)! - Auth multi-tab sync: a tab the browser froze now gives the leadership up instead of holding it while it refreshes nothing, and a follower whose token goes stale takes the refresh over when the leader does not answer.
+
+- [`4c97b3e`](https://github.com/ethlete-io/ethdk/commit/4c97b3e584aed96f905ec48e409f90ab8e334af8) Thanks [@TomTomB](https://github.com/TomTomB)! - The bearer auth leadership now follows the visible tab: a hidden leader gives way, and one that stopped running has the lock taken off it, so a sleeping tab no longer strands the others on a dead token.
+
+- [`78e46fa`](https://github.com/ethlete-io/ethdk/commit/78e46fa8643d37c11e13d3f50065dea29f5c3e46) Thanks [@TomTomB](https://github.com/TomTomB)! - `defineQueryForm().observe()` now merges the URL onto the form's live model, so a value written
+  before `observe()` survives and only the fields the URL names are overwritten.
+
 ## 6.0.0-next.38
 
 ### Minor Changes
