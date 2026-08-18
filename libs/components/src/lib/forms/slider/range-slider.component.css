@@ -128,7 +128,9 @@
       box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
       outline: none;
 
-      &:focus-visible {
+      /* not `:focus-visible` alone: the track focuses the thumb programmatically on a press, and
+         Chrome matches `:focus-visible` for that - the ring then stayed on after every click */
+      &:focus-visible:not([data-pointer-focused]) {
         outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
         outline-offset: 2px;
       }
@@ -222,15 +224,16 @@
       }
     }
 
-    &[data-disabled],
-    &[data-readonly] {
-      .et-range-slider-interaction {
-        cursor: default;
-      }
+    &[data-readonly] .et-range-slider-interaction {
+      cursor: default;
     }
 
     &[data-disabled] {
       opacity: 0.4;
+
+      .et-range-slider-interaction {
+        cursor: not-allowed;
+      }
     }
 
     .et-range-slider-support {

@@ -184,6 +184,23 @@ value - so it reads as view-only content; **disabled** stays dimmed. The choice
 controls use `et-choice-field` instead of `et-form-field` - see
 [Choice & rating](/components/choice-inputs).
 
+The mouse cursor follows the same split, across every control:
+
+| State     | Cursor             | What it says                                             |
+| --------- | ------------------ | -------------------------------------------------------- |
+| Enabled   | `text` / `pointer` | Type here, or open this picker                           |
+| Read-only | `default`          | Nothing to do here - the value is content, not a control |
+| Disabled  | `not-allowed`      | There is a control here and it is switched off           |
+
+So a read-only field never shows `not-allowed`: it is view-only, not broken. That
+includes the affordances a control puts in its suffix - the picker trigger, the
+clear button, the select and cascader arrows - which stay visible and legible but
+stop answering a hover.
+
+The Storybook story **Components / Forms / Control States** renders every control
+in all four states side by side (default, read-only, disabled, mixed); its
+**Focus walk** story is the same set with a live readout of what holds focus.
+
 ### Character counter
 
 Project an `<et-counter />` to get an `x / N` count at the inline-end of the support region. It takes its limit from the bound field's `maxLength()` - signal forms binds the schema limit into the control, so you don't repeat it:

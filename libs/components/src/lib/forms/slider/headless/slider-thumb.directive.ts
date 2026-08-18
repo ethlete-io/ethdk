@@ -5,6 +5,9 @@ import { SLIDER_TOKEN, SliderThumbBase } from './slider.tokens';
 
 const PAGE_STEP_MULTIPLIER = 10;
 
+/** `origin: 'pointer'` focuses the thumb without raising its focus ring - see `pointerFocused`. */
+export type SliderThumbFocusOptions = FocusOptions & { origin?: 'pointer' };
+
 /**
  * A slider thumb: carries the ARIA slider semantics and the keyboard model.
  * Registration order determines its index - for ranges, place the start thumb first.
@@ -33,6 +36,7 @@ const PAGE_STEP_MULTIPLIER = 10;
     '[attr.data-disabled]': 'slider?.disabled() || null',
     '[attr.data-readonly]': 'slider?.readonly() || null',
     '[attr.data-dragging]': 'dragging() || null',
+    '[attr.data-pointer-focused]': 'pointerFocused() || null',
     '(keydown)': 'handleKeydown($event)',
     '(focus)': 'focused.set(true)',
     '(blur)': 'handleBlur()',
@@ -47,6 +51,14 @@ export class SliderThumbDirective implements SliderThumbBase {
   public label = input('');
 
   public focused = signal(false);
+
+  /**
+   * Set while the current focus came from a pointer press. The track focuses the thumb
+   * programmatically after preventing the pointerdown default, and a programmatic `focus()` with no
+   * preceding native focus makes Chrome match `:focus-visible` - which left the ring stuck on after
+   * every click. The stylesheet gates the ring on this; the next key press clears it.
+   */
+  public pointerFocused = signal(false);
 
   public index = computed(() => this.slider?.thumbs().indexOf(this) ?? -1);
 
@@ -79,16 +91,21 @@ export class SliderThumbDirective implements SliderThumbBase {
     }
   }
 
-  public focus(options?: FocusOptions) {
+  public focus(options?: SliderThumbFocusOptions) {
+    this.pointerFocused.set(options?.origin === 'pointer');
     this.elementRef.nativeElement.focus(options ?? { preventScroll: true });
   }
 
   protected handleBlur() {
     this.focused.set(false);
+    this.pointerFocused.set(false);
     this.slider?.markTouched();
   }
 
   protected handleKeydown(event: KeyboardEvent) {
+    // any key press means the user moved to the keyboard - the ring belongs back on
+    this.pointerFocused.set(false);
+
     const slider = this.slider;
 
     if (!slider || !slider.interactive() || event.ctrlKey || event.metaKey || event.altKey) {

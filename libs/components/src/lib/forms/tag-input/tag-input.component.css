@@ -10,6 +10,11 @@
       cursor: not-allowed;
     }
 
+    /* no tag can be typed here - an I-beam over the row would promise one */
+    &[data-readonly] {
+      cursor: default;
+    }
+
     .et-tag-input-row {
       display: flex;
       flex-wrap: wrap;

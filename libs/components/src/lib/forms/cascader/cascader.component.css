@@ -23,6 +23,11 @@
       cursor: not-allowed;
     }
 
+    /* the panel cannot open while readonly - a pointer would promise a menu that never appears */
+    &[data-readonly] .et-cascader-trigger {
+      cursor: default;
+    }
+
     .et-cascader-value {
       flex: 1;
       min-inline-size: 0;

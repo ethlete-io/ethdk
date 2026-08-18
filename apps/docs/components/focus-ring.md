@@ -21,7 +21,7 @@ import { FocusRingDirective } from '@ethlete/components';
 
 - The ring is pure CSS on `:focus-visible` - mouse clicks don't show it, keyboard focus does. The directive also flashes it during <kbd>Enter</kbd>/<kbd>Space</kbd> activation.
 - The stylesheet is mounted lazily once, on first use.
-- Disable per element with the directive's `disabled` input: `<span etFocusRing [disabled]="true">`. On native form elements the binding also hits the element's own `disabled` property, so there it's rarely what you want.
+- Suppress the ring per element with `focusRingDisabled`: `<span etFocusRing [focusRingDisabled]="true">`. It is deliberately not called `disabled` - on a native control that name would swallow the element's own `[disabled]` binding and leave the control enabled.
 
 ## Theming
 

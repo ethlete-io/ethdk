@@ -1,6 +1,7 @@
 <!-- headless select composition: compact flag trigger, searchable country panel -->
 <div
   [value]="phone.country()"
+  [readonly]="phone.readonly()"
   (valueChange)="handleCountryChange($event)"
   class="et-phone-input-country"
   mirrorPanelWidth="false"

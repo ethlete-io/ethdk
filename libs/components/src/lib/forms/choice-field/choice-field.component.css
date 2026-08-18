@@ -54,6 +54,16 @@
       gap: var(--et-choice-field-gap);
     }
 
+    /* The row carries the state cursor, not the control: a disabled checkbox/radio/switch sets
+       `pointer-events: none` on itself, so its own cursor never reaches the pointer. */
+    &:where(:has([aria-disabled='true'])) .et-choice-field-control {
+      cursor: not-allowed;
+    }
+
+    &:where(:has([data-readonly])) .et-choice-field-control {
+      cursor: default;
+    }
+
     .et-choice-field-control-slot {
       flex: 0 0 auto;
     }

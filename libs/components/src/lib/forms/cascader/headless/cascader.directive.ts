@@ -70,6 +70,8 @@ type CascaderSearchLike = {
   host: {
     '[attr.data-cascader-open]': 'open() || null',
     '[attr.data-mixed]': 'mixed() || null',
+    '[attr.data-disabled]': 'disabled() || null',
+    '[attr.data-readonly]': 'readonly() || null',
   },
 })
 export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] | null>, FormFieldControl {

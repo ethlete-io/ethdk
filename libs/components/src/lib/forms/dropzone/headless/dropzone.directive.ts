@@ -56,6 +56,7 @@ const valuesEqual = (a: unknown, b: unknown) => {
   host: {
     '[attr.data-drag-over]': 'isDragOver() || null',
     '[attr.data-disabled]': 'disabled() || null',
+    '[attr.data-readonly]': 'readonly() || null',
     '(dragenter)': 'handleDragEnter($event)',
     '(dragover)': 'handleDragOver($event)',
     '(dragleave)': 'handleDragLeave()',
@@ -74,6 +75,8 @@ export class DropzoneDirective<TValue = unknown>
   public value = model<TValue | TValue[] | null>(null);
   public touched = model(false);
   public disabled = input(false, { transform: booleanAttribute });
+  /** View-only: the entries stay visible and the control stays focusable, nothing can be changed. */
+  public readonly = input(false, { transform: booleanAttribute });
   public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
@@ -110,6 +113,9 @@ export class DropzoneDirective<TValue = unknown>
   private entryWatchers = new Map<string, EffectRef>();
   private lastSyncedValue: TValue | TValue[] | null = null;
   private hasSyncedValue = false;
+
+  /** Whether files can still be added, replaced or removed. */
+  public interactive = computed(() => !this.disabled() && !this.readonly());
 
   /** All entries currently managed by the dropzone, including uploading and failed ones. */
   public entries = this.internalEntries.asReadonly();
@@ -183,7 +189,7 @@ export class DropzoneDirective<TValue = unknown>
 
   /** Validates the given files and uploads all accepted ones. */
   public selectFiles(files: FileList | readonly File[]) {
-    if (this.disabled()) {
+    if (!this.interactive()) {
       return;
     }
 
@@ -245,7 +251,7 @@ export class DropzoneDirective<TValue = unknown>
 
   /** Removes an entry. Cancels its upload if it is still in flight. */
   public removeEntry(id: string) {
-    if (this.disabled()) {
+    if (!this.interactive()) {
       return;
     }
 
@@ -277,7 +283,7 @@ export class DropzoneDirective<TValue = unknown>
 
   /** Retries the upload of a failed entry with its original request args. */
   public retryEntry(id: string) {
-    if (this.disabled()) {
+    if (!this.interactive()) {
       return;
     }
 
@@ -318,7 +324,7 @@ export class DropzoneDirective<TValue = unknown>
   }
 
   protected handleDragEnter(event: DragEvent) {
-    if (this.disabled() || !event.dataTransfer?.types.includes('Files')) {
+    if (!this.interactive() || !event.dataTransfer?.types.includes('Files')) {
       return;
     }
 
@@ -327,7 +333,7 @@ export class DropzoneDirective<TValue = unknown>
   }
 
   protected handleDragOver(event: DragEvent) {
-    if (this.disabled() || !event.dataTransfer?.types.includes('Files')) {
+    if (!this.interactive() || !event.dataTransfer?.types.includes('Files')) {
       return;
     }
 
@@ -335,7 +341,7 @@ export class DropzoneDirective<TValue = unknown>
   }
 
   protected handleDragLeave() {
-    if (this.disabled()) {
+    if (!this.interactive()) {
       return;
     }
 
@@ -343,7 +349,7 @@ export class DropzoneDirective<TValue = unknown>
   }
 
   protected handleDrop(event: DragEvent) {
-    if (this.disabled()) {
+    if (!this.interactive()) {
       return;
     }
 

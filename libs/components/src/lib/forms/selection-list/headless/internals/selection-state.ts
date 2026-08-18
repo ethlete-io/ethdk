@@ -66,7 +66,14 @@ export const createSelectionState = <
   // computed over that same set. Evaluating `every`/`length` over all items (incl. disabled)
   // meant a single disabled-and-unchecked item pinned `allSelected` to false forever, leaving
   // the select-all control stuck showing "mixed" that no click could clear.
-  const togglableItems = computed(() => items().filter((item) => !item.disabled()));
+  // With the whole list disabled nothing is togglable, and that same filter emptied the set and
+  // reported "none selected" over a group that has some - so there it falls back to every item.
+  const togglableItems = computed(() => {
+    const all = items();
+    const enabled = all.filter((item) => !item.disabled());
+
+    return enabled.length ? enabled : all;
+  });
 
   const allSelected = computed(() => {
     const list = togglableItems();

@@ -85,6 +85,26 @@
     }
   }
 
+  /* A readonly field's suffix affordances are inert: the picker cannot open and the value cannot be
+     cleared. `not-allowed` is the disabled cursor and would say the field is broken, so readonly
+     keeps the plain arrow and answers no hover. Placed after both blocks above so the equal-weight
+     `:disabled` / `:hover` rules lose on source order; the second selector is the same rule at one
+     class more, to outweigh the field shell's `.et-form-field-affix button { cursor: pointer }`. */
+  :where([data-readonly]) :is(.et-input-picker-trigger, .et-input-clear),
+  :where([data-readonly]) .et-form-field-affix :is(.et-input-picker-trigger, .et-input-clear) {
+    cursor: default;
+
+    &:disabled {
+      cursor: default;
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--et-surface-color-muted-solid, currentColor);
+      }
+    }
+  }
+
   @keyframes et-input-clear-in {
     from {
       opacity: 0;

@@ -18,6 +18,7 @@ import { COLOR_INPUT_TOKEN } from './color-input.directive';
     '[attr.aria-label]': 'colorInput?.ariaLabel() || null',
     '[attr.aria-labelledby]': 'colorInput?.labelId() || null',
     '[attr.aria-readonly]': 'colorInput?.readonly() || null',
+    '[attr.data-readonly]': 'colorInput?.readonly() || null',
     '[disabled]': 'colorInput?.disabled() || false',
     '(click)': 'colorInput?.togglePicker()',
     '(focus)': 'handleFocus()',

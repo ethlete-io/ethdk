@@ -55,6 +55,21 @@
     gap: var(--et-radio-group-gap);
     color: var(--et-surface-color-solid, currentColor);
 
+    /* The group carries the state cursor, not the options: a disabled option sets
+       `pointer-events: none` on itself, so its own cursor never reaches the pointer. The support
+       row keeps the plain arrow - a hint is text, not a control. */
+    &[data-disabled] {
+      cursor: not-allowed;
+
+      .et-radio-group-support {
+        cursor: auto;
+      }
+    }
+
+    &[data-readonly] {
+      cursor: default;
+    }
+
     > et-label,
     .et-radio-group-label {
       font-size: var(--et-radio-group-label-font-size);

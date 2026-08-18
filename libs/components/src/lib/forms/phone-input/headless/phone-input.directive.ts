@@ -25,6 +25,8 @@ const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
   exportAs: 'etPhoneInput',
   host: {
     '[attr.data-mixed]': 'mixed() || null',
+    '[attr.data-disabled]': 'disabled() || null',
+    '[attr.data-readonly]': 'readonly() || null',
   },
 })
 export class PhoneInputDirective implements FormValueControl<string>, FormFieldControl {

@@ -35,6 +35,11 @@
     cursor: pointer;
 
     &:disabled {
+      cursor: not-allowed;
+    }
+
+    /* the picker cannot open while readonly - the swatch stays legible, the pointer goes away */
+    &[data-readonly] {
       cursor: default;
     }
   }

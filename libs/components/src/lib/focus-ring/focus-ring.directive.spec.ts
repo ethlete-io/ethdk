@@ -4,11 +4,12 @@ import '../../test-helpers';
 import { FocusRingDirective } from './focus-ring.directive';
 
 @Component({
-  template: `<button [disabled]="disabled" etFocusRing>Test</button>`,
+  template: `<button [disabled]="disabled" [focusRingDisabled]="ringDisabled" etFocusRing>Test</button>`,
   imports: [FocusRingDirective],
 })
 class FocusRingTestHost {
   disabled = false;
+  ringDisabled = false;
 }
 
 describe('FocusRingDirective', () => {
@@ -27,10 +28,17 @@ describe('FocusRingDirective', () => {
       expect(button.classList.contains('et-focus-ring')).toBe(true);
     });
 
-    it('omits the class when disabled', () => {
-      fixture.componentInstance.disabled = true;
+    it('omits the class when focusRingDisabled', () => {
+      fixture.componentInstance.ringDisabled = true;
       fixture.detectChanges();
       expect(button.classList.contains('et-focus-ring')).toBe(false);
+    });
+
+    it('leaves the host element own disabled binding alone', () => {
+      fixture.componentInstance.disabled = true;
+      fixture.detectChanges();
+      expect(button.disabled).toBe(true);
+      expect(button.classList.contains('et-focus-ring')).toBe(true);
     });
   });
 

@@ -68,7 +68,7 @@ export class SliderTrackDirective {
 
     slider.draggingThumbIndex.set(index);
     slider.commitThumbValue(index, pressValue);
-    slider.thumbs()[index]?.focus();
+    slider.thumbs()[index]?.focus({ origin: 'pointer' });
 
     // keep the interaction from selecting text or starting a native drag
     event.preventDefault();

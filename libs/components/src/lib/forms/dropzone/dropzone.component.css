@@ -458,4 +458,14 @@
       opacity: var(--et-dropzone-opacity-disabled);
     }
   }
+
+  /* Readonly keeps the entries at full strength and only takes the affordances away. Every control
+     here is `:disabled` so it cannot act, but the field is view-only rather than broken - the
+     disabled `not-allowed` cursor would say the wrong thing. */
+  et-dropzone[data-readonly] {
+    .et-dropzone-trigger:disabled,
+    .et-icon-button:disabled {
+      cursor: default;
+    }
+  }
 }

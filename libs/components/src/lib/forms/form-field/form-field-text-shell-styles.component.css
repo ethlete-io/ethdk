@@ -230,7 +230,20 @@
       }
 
       &[data-readonly] {
+        /* the shell is the label + frame row (the support row is its sibling). The frame's own
+           cursor covers the frame; the shell covers the gaps around it, and is the element the
+           pointer actually hits once a disabled frame drops out of hit-testing. */
+        .et-form-field-shell {
+          cursor: default;
+        }
+
         .et-form-field-control-frame {
+          cursor: default;
+        }
+
+        /* the label activates the control by click, so it carries the control's own I-beam —
+           readonly has nothing to activate */
+        .et-form-field-label-area {
           cursor: default;
         }
 
@@ -260,6 +273,12 @@
          buttons while fully enabled, and :has(:disabled) would dim (and pointer-events-kill) the
          whole field over it. */
       &[data-disabled] {
+        /* on the shell, not the frame: the frame's `pointer-events: none` takes it out of hit
+           testing, so its own cursor never reaches the pointer */
+        .et-form-field-shell {
+          cursor: not-allowed;
+        }
+
         .et-form-field-control-frame {
           opacity: var(--et-form-field-control-disabled-opacity);
           pointer-events: none;

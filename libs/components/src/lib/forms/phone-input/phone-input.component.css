@@ -33,6 +33,11 @@
       }
     }
 
+    /* the country panel cannot open while readonly */
+    &[data-readonly] .et-phone-input-country-trigger {
+      cursor: default;
+    }
+
     .et-phone-input-country-flag {
       display: inline-flex;
       align-items: center;

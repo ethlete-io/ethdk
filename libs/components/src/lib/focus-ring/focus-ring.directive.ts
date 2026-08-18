@@ -5,7 +5,7 @@ import { FocusRingStylesComponent } from './focus-ring-styles.component';
 @Directive({
   selector: '[etFocusRing]',
   host: {
-    '[class.et-focus-ring]': '!disabled()',
+    '[class.et-focus-ring]': '!focusRingDisabled()',
     '[class.et-focus-ring--active]': 'active()',
     '(keydown.enter)': 'active.set(true)',
     '(keyup.enter)': 'active.set(false)',
@@ -15,13 +15,19 @@ import { FocusRingStylesComponent } from './focus-ring-styles.component';
 })
 export class FocusRingDirective {
   private styleManager = injectStyleManager();
-  public disabled = input(false, { transform: booleanAttribute });
+
+  /**
+   * Suppresses the ring on this element. Named for the directive, not `disabled`: on a native
+   * control an input called `disabled` swallows the element's own `[disabled]` binding, leaving the
+   * button enabled.
+   */
+  public focusRingDisabled = input(false, { transform: booleanAttribute });
 
   protected active = signal(false);
 
   constructor() {
     effect(() => {
-      if (this.disabled()) {
+      if (this.focusRingDisabled()) {
         return;
       }
 

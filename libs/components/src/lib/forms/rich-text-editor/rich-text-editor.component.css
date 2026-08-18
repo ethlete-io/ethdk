@@ -84,6 +84,12 @@
       .et-icon-button {
         --_et-focus-ring-offset: -1px;
       }
+
+      /* readonly disables every tool, but the editor is view-only rather than broken - the button's
+         `not-allowed` would say the wrong thing */
+      :where([data-readonly]) & .et-icon-button {
+        cursor: default;
+      }
     }
 
     /* On touch the toolbar is a full-width bar fixed above the on-screen keyboard (the OS selection

@@ -149,6 +149,14 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 | ---------- | ---------------------- | ------- | -------------------------------------------------------- |
 | `upload`   | `DropzoneUploadConfig` | -       | The upload workflow config (required).                   |
 | `multiple` | `boolean`              | `false` | Allow several files; the control value becomes an array. |
+| `readonly` | `boolean`              | `false` | View-only: the entries stay visible, nothing can change. |
+
+`readonly` and `disabled` both come from the form schema (`readonly(s.media, …)` /
+`disabled(s, …)`) and both stop every mutation - selecting, dropping, replacing,
+retrying and removing. They differ in what the user sees: a **read-only** dropzone
+keeps its entries at full contrast and its controls at the plain arrow cursor,
+because there is nothing to operate; a **disabled** one dims and shows
+`not-allowed`. See [Forms](/components/forms#the-field-shell) for the shared convention.
 
 The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop prompt, `retry` / `remove` / `replaceFile` for the action buttons, and the `uploadFailed` wording. Per instance, the matching `retryLabel` / `removeLabel` / `replaceLabel` inputs override them, and `uploadErrorMessage` replaces the whole per-entry failure message.
 

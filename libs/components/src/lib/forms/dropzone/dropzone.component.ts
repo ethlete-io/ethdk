@@ -56,7 +56,18 @@ import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
     FormFieldDirective,
     {
       directive: DropzoneDirective,
-      inputs: ['value', 'touched', 'disabled', 'invalid', 'errors', 'required', 'name', 'upload', 'multiple'],
+      inputs: [
+        'value',
+        'touched',
+        'disabled',
+        'readonly',
+        'invalid',
+        'errors',
+        'required',
+        'name',
+        'upload',
+        'multiple',
+      ],
       outputs: [
         'valueChange',
         'touchedChange',

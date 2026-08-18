@@ -4,7 +4,7 @@
   #fileInput
   [accept]="dropzoneDir.accept() || null"
   [multiple]="dropzoneDir.multiple()"
-  [disabled]="dropzoneDir.disabled()"
+  [disabled]="!dropzoneDir.interactive()"
   (change)="uploadPickedFiles($event)"
   (cancel)="resetFilePickerState()"
   class="et-dropzone-native-input"
@@ -16,7 +16,7 @@
 <div [attr.data-has-preview]="singleEntry() ? true : null" class="et-dropzone-area">
   <button
     #browseButton
-    [disabled]="dropzoneDir.disabled()"
+    [disabled]="!dropzoneDir.interactive()"
     [attr.tabindex]="singleEntry() ? '-1' : null"
     [attr.aria-invalid]="dropzoneDir.shouldDisplayError() || null"
     [attr.aria-describedby]="dropzoneDir.describedBy() || null"
@@ -63,7 +63,7 @@
       <div class="et-dropzone-preview-actions">
         @if (entry.status() === 'error') {
           <button
-            [disabled]="dropzoneDir.disabled()"
+            [disabled]="!dropzoneDir.interactive()"
             [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
             (click)="dropzoneDir.retryEntry(entry.id)"
             class="et-dropzone-retry-button"
@@ -76,7 +76,7 @@
           </button>
         } @else {
           <button
-            [disabled]="dropzoneDir.disabled()"
+            [disabled]="!dropzoneDir.interactive()"
             [attr.aria-label]="resolvedReplaceLabel()"
             (click)="openFilePicker()"
             class="et-dropzone-replace-button"
@@ -89,7 +89,7 @@
           </button>
         }
         <button
-          [disabled]="dropzoneDir.disabled()"
+          [disabled]="!dropzoneDir.interactive()"
           [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
           (click)="removeEntryAnimated(entry, entryEl)"
           class="et-dropzone-remove-button"
@@ -135,7 +135,7 @@
 
         @if (entry.status() === 'error') {
           <button
-            [disabled]="dropzoneDir.disabled()"
+            [disabled]="!dropzoneDir.interactive()"
             [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
             (click)="dropzoneDir.retryEntry(entry.id)"
             class="et-dropzone-retry-button"
@@ -148,7 +148,7 @@
         }
 
         <button
-          [disabled]="dropzoneDir.disabled()"
+          [disabled]="!dropzoneDir.interactive()"
           [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
           (click)="removeEntryAnimated(entry, entryEl)"
           class="et-dropzone-remove-button"

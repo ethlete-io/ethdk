@@ -140,6 +140,12 @@
         background: transparent;
       }
 
+      /* nothing can be typed into a readonly code - an I-beam over the segments would say otherwise.
+         Before the disabled rule: a disabled input is :read-only too, and there not-allowed wins. */
+      &:read-only {
+        cursor: default;
+      }
+
       &:disabled {
         cursor: not-allowed;
       }

@@ -16,6 +16,7 @@ const defaultNormalizeTag = (raw: string) => {
   exportAs: 'etTagInput',
   host: {
     '[attr.data-disabled]': 'disabled() || null',
+    '[attr.data-readonly]': 'readonly() || null',
     '[attr.data-mixed]': 'mixed() || null',
   },
 })
