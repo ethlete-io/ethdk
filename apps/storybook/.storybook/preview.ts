@@ -1,4 +1,5 @@
 import { afterNextRender, Component, DOCUMENT, ElementRef, inject, ViewEncapsulation } from '@angular/core';
+import { provideOverlay } from '@ethlete/components';
 import {
   provideColorThemesWithTailwind4,
   ProvideSurfaceDirective,
@@ -176,7 +177,12 @@ const preview: Preview = {
 
   decorators: [
     applicationConfig({
-      providers: [...provideColorThemesWithTailwind4(THEMES), ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES)],
+      providers: [
+        ...provideColorThemesWithTailwind4(THEMES),
+        ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES),
+        // an app calls this at bootstrap; without it no story locks the page behind a modal overlay
+        ...provideOverlay(),
+      ],
     }),
     moduleMetadata({
       imports: [StorybookRootComponent],

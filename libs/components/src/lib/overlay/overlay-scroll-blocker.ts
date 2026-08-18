@@ -18,9 +18,12 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
     const renderer = injectRenderer();
     const documentScrollState = signalElementScrollState(createDocumentElementSignal());
 
-    // non-modal overlays (e.g. tooltips) must not lock the page
+    // A breakpoint switch can give an already open overlay a backdrop (an anchored pane becoming a
+    // bottom sheet), so the backdrop is read as a signal rather than from the static config.
     const hasBlockingOverlay = computed(() =>
-      overlayManager.openOverlays().some((overlayRef) => overlayRef.config.mode !== 'non-modal'),
+      overlayManager
+        .openOverlays()
+        .some((overlayRef) => overlayRef.config.mode !== 'non-modal' || !!overlayRef.elements?.backdropElement()),
     );
 
     const root = document.documentElement;
