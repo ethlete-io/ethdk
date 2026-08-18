@@ -80,7 +80,7 @@ The `items` input still owns the layout - projection only supplies the markup, s
 
 **Each item must be rendered by exactly one of the two mechanisms.** An item whose type has a registration _and_ a projected `et-grid-item` renders twice, stacked perfectly so the duplicate is invisible - dev mode throws [`ET1905`](/components/error-codes#grid-et19xx) rather than let it through. Mixing the two in one grid is fine as long as you project only the items whose type is unregistered. An item covered by neither renders nothing, which is [`ET1904`](/components/error-codes#grid-et19xx).
 
-The per-item inputs (`ariaLabel`, `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan`, the `remove` output) are only reachable this way - the grid's own loop binds `itemId` and nothing else, so a registered widget takes its constraints from the registration.
+The per-item inputs (`ariaLabel`, `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan`, `perBreakpointConstraints`, the `remove` output) are only reachable this way - the grid's own loop binds `itemId` and nothing else, so a registered widget takes its constraints from the registration.
 
 ## Imperative API
 
@@ -117,9 +117,46 @@ If the items come from a backend, declare the breakpoints in the adapter instead
 - **Pointer** (mouse and touch): drag items to move, drag edges/corners to resize - neighbors that fit in the vacated space swap into it, everything else is pushed down, and the layout compacts. (The gestures are built on the core [drag & resize primitives](/core/drag-resize), if you need the same behavior outside the grid.)
 - **Keyboard** (on a focused item): <kbd>Ctrl/Cmd</kbd>+arrows move, <kbd>Shift</kbd>+arrows resize, <kbd>Ctrl/Cmd</kbd>+<kbd>Delete</kbd> (or <kbd>Backspace</kbd>) removes.
 - A gesture the **browser** takes away mid-drag - a system back gesture, an incoming call, the tab going to the background - reverts like <kbd>Escape</kbd> rather than dropping the item where the pointer happened to be. Same for a resize.
-- Per-item span constraints are three layers, narrowest last: the built-in defaults (`1` / `12` / `1` / `24`), the registration's `constraints` for the item's `type`, then whatever the `et-grid-item` inputs `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan` set. Each input is unset unless you write it, so narrowing one bound of a registered type leaves the other three as the registration declared them. A `minColSpan` wider than a breakpoint's column count is capped to it, so `minColSpan: 2` degrades to full width at a one-column breakpoint. Each item also takes an `ariaLabel` (default `'Grid item'`) and emits `remove` when it's removed.
-- Constraints are declared once but the column count is per breakpoint, so both column spans are capped at the active breakpoint's columns: `minColSpan: 3` becomes a full-width item at the one- or two-column breakpoint rather than one wider than the grid. An item whose span cannot change on an axis grows no resize handles there - at a one-column breakpoint the whole left and right edge stays draggable instead of being covered by strips that do nothing.
+- Per-item span constraints are three layers, narrowest last: the built-in defaults (`1` / `12` / `1` / `24`), the registration's `constraints` for the item's `type`, then whatever the `et-grid-item` inputs `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan` set. Each input is unset unless you write it, so narrowing one bound of a registered type leaves the other three as the registration declared them. Each item also takes an `ariaLabel` (default `'Grid item'`) and emits `remove` when it's removed. See [Per-breakpoint constraints](#per-breakpoint-constraints) for bounds that differ by breakpoint.
+- Both column spans are capped at the active breakpoint's column count, so `minColSpan: 3` becomes a full-width item at the one- or two-column breakpoint rather than one wider than the grid. An item whose span cannot change on an axis grows no resize handles there - at a one-column breakpoint the whole left and right edge stays draggable instead of being covered by strips that do nothing.
 - The resize strips reach **into the gap** as well as into the item, by half the gap up to 8px - so at the default `gap: 16` an edge is a 14px target rather than 6px, and the hover marker has not moved. The gap is split evenly between the two items either side of it. Nothing changes inside the item, so the strips never cover content or a scrollbar; shrink `gap` and the outward half shrinks with it.
+
+## Per-breakpoint constraints
+
+A bound that should differ by breakpoint - two columns wide at `md`, full width at `sm` - goes in `perBreakpoint`, next to the base bounds. Both the registration and the item accept it:
+
+```ts
+provideGridConfig({
+  registrations: [
+    {
+      type: 'chart',
+      component: ChartWidgetComponent,
+      constraints: {
+        minColSpan: 4,
+        maxColSpan: 12,
+        perBreakpoint: {
+          md: { minColSpan: 3, maxColSpan: 6 },
+          sm: { minColSpan: 2, maxColSpan: 2 },
+        },
+      },
+    },
+  ],
+});
+```
+
+```html
+<et-grid-item [itemId]="item.id" [perBreakpointConstraints]="{ sm: { maxColSpan: 1 } }">…</et-grid-item>
+```
+
+The rules:
+
+- **The merge is per key.** A breakpoint the override does not name keeps the base bound, so `{ sm: { maxColSpan: 1 } }` leaves the three other bounds alone.
+- **The layers still apply.** For one breakpoint, narrowest last: the defaults, the registration's base bounds, the registration's override for that breakpoint, the item's inputs, the item's override for that breakpoint. What you write on the element always beats what the registration declares.
+- **Capping happens anyway.** Column spans are still capped to the breakpoint's column count, so you only need an override for what the cap cannot say - a _different_ span where the grid is wide enough for the base one. `minColSpan: 3` already degrades to full width at a two-column breakpoint on its own.
+- **A stored position is refitted, not trusted.** When the grid moves to a breakpoint it refits every item to that breakpoint's bounds and compacts, so a saved layout from before you narrowed a bound corrects itself. A minimum only grows an item whose `et-grid-item` has initialised - an item added mid-session is 1×1 for one frame, and growing it then would fight its own registration.
+- **Re-registering an equal config is a no-op**, compared by value, so an object literal written inline in the template is safe.
+
+Read the effective bounds with `getConstraints(id)` for the active breakpoint, or `getConstraintsForBreakpoint(id, name)` for another one.
 
 ## Item actions & labels
 

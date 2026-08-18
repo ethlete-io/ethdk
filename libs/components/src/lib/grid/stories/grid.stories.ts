@@ -1,6 +1,11 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { provideGridConfig } from '../headless/grid-config';
-import { GridDataStorybookComponent, GridPartnerStorybookComponent, GridStorybookComponent } from './components';
+import {
+  GridConstraintsStorybookComponent,
+  GridDataStorybookComponent,
+  GridPartnerStorybookComponent,
+  GridStorybookComponent,
+} from './components';
 import { DummyChartComponent, DummyTableComponent, DummyTextComponent } from './components/dummy-components';
 
 export default {
@@ -75,6 +80,30 @@ export const SixColumnGrid: Story = {
       { name: 'md', columns: 3, minWidth: 500 },
       { name: 'sm', columns: 1, minWidth: 0 },
     ],
+  },
+};
+
+export const PerBreakpointConstraints: StoryObj<GridConstraintsStorybookComponent> = {
+  // Drops the meta's registrations: this story writes its own et-grid-item per widget, and an item
+  // covered by both a registration and a projected item renders twice (ET1905).
+  decorators: [
+    moduleMetadata({
+      imports: [GridConstraintsStorybookComponent],
+      providers: [...provideGridConfig({ registrations: [] })],
+    }),
+  ],
+  render: () => ({ template: '<et-sb-grid-constraints />' }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Span bounds that differ per breakpoint. Each item declares base bounds plus a ' +
+          '`perBreakpointConstraints` override; the table reads back what the grid resolved at the ' +
+          'active breakpoint. Resize the viewport across 1200px and 768px: the chart drops to a ' +
+          '3-6 column range at `md` and to full width at `sm`, and an item whose bounds collapse to ' +
+          'one value loses its horizontal resize handles.',
+      },
+    },
   },
 };
 

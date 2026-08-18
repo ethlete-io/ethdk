@@ -2,3 +2,4 @@ export { DummyChartComponent, DummyTableComponent, DummyTextComponent } from './
 export { GridStorybookComponent } from './grid-storybook.component';
 export { GridDataStorybookComponent } from './grid-data-storybook.component';
 export { GridPartnerStorybookComponent } from './grid-partner-storybook.component';
+export { GridConstraintsStorybookComponent } from './grid-constraints-storybook.component';

@@ -1,6 +1,7 @@
 import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideGridConfig } from './grid-config';
 import { GridDirective } from './grid.directive';
 import { GridItemConfig, GridItemConstraints, GridItemPosition, GridSerializedState } from './grid.types';
 
@@ -162,6 +163,112 @@ describe('GridDirective', () => {
         minRowSpan: 1,
         maxRowSpan: 3,
       });
+    });
+  });
+
+  describe('per-breakpoint constraints', () => {
+    it('merges the override of the active breakpoint over the base bounds', () => {
+      fixture.detectChanges();
+      measureGrid(800);
+      getDirective().registerConstraints('item', {
+        minColSpan: 2,
+        maxColSpan: 6,
+        perBreakpoint: { md: { maxColSpan: 3 } },
+      });
+
+      expect(getDirective().getConstraints('item')).toEqual({
+        minColSpan: 2,
+        maxColSpan: 3,
+        minRowSpan: 1,
+        maxRowSpan: 24,
+      });
+    });
+
+    it('leaves a breakpoint the override does not name on the base bounds', () => {
+      fixture.detectChanges();
+      measureGrid(1216);
+      getDirective().registerConstraints('item', { maxColSpan: 6, perBreakpoint: { md: { maxColSpan: 3 } } });
+
+      expect(getDirective().getConstraints('item').maxColSpan).toBe(6);
+    });
+
+    it('reads another breakpoint through getConstraintsForBreakpoint', () => {
+      fixture.detectChanges();
+      measureGrid(1216);
+      getDirective().registerConstraints('item', { minColSpan: 2, perBreakpoint: { md: { minColSpan: 4 } } });
+
+      expect(getDirective().getConstraintsForBreakpoint('item', 'md').minColSpan).toBe(4);
+      expect(getDirective().getConstraintsForBreakpoint('item', 'lg').minColSpan).toBe(2);
+    });
+
+    it('still caps an override to the column count of its breakpoint', () => {
+      fixture.detectChanges();
+      measureGrid(1216);
+
+      getDirective().registerConstraints('item', { perBreakpoint: { sm: { minColSpan: 6, maxColSpan: 8 } } });
+
+      expect(getDirective().getConstraintsForBreakpoint('item', 'sm')).toEqual({
+        minColSpan: 2,
+        maxColSpan: 2,
+        minRowSpan: 1,
+        maxRowSpan: 24,
+      });
+    });
+
+    it('lets an item override the registration of its type', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [TestHostComponent],
+        providers: [
+          ...provideGridConfig({
+            registrations: [
+              {
+                type: 'widget',
+                component: TestHostComponent,
+                constraints: { maxColSpan: 6, perBreakpoint: { md: { maxColSpan: 2 } } },
+              },
+            ],
+          }),
+        ],
+      });
+      fixture = TestBed.createComponent(TestHostComponent);
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'widget', data: {}, layout: everyBreakpoint({ col: 0, row: 0, colSpan: 1, rowSpan: 1 }) },
+      ]);
+      fixture.detectChanges();
+      measureGrid(800);
+
+      expect(getDirective().getConstraints('a').maxColSpan).toBe(2);
+
+      getDirective().registerConstraints('a', { perBreakpoint: { md: { maxColSpan: 4 } } });
+
+      expect(getDirective().getConstraints('a').maxColSpan).toBe(4);
+    });
+
+    it('grows a registered item to the minimum of the breakpoint it moves to', () => {
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: {}, layout: everyBreakpoint({ col: 0, row: 0, colSpan: 4, rowSpan: 1 }) },
+      ]);
+      fixture.detectChanges();
+      measureGrid(1216);
+      getDirective().registerConstraints('a', { perBreakpoint: { md: { minColSpan: 6 } } });
+
+      expect(getDirective().layout()[0]?.position.colSpan).toBe(4);
+
+      measureGrid(800);
+
+      expect(getDirective().layout()[0]?.position.colSpan).toBe(6);
+    });
+
+    it('does not grow an item whose constraints have not been registered', () => {
+      fixture.componentRef.setInput('items', [
+        { id: 'a', type: 'test', data: {}, layout: everyBreakpoint({ col: 0, row: 0, colSpan: 1, rowSpan: 1 }) },
+      ]);
+      fixture.detectChanges();
+      measureGrid(1216);
+      measureGrid(800);
+
+      expect(getDirective().layout()[0]?.position.colSpan).toBe(1);
     });
   });
 

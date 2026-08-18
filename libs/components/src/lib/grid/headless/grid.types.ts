@@ -16,6 +16,18 @@ export type GridItemConstraints = {
   maxRowSpan: number;
 };
 
+/**
+ * Span bounds for a grid item: a base that applies everywhere, plus optional overrides per
+ * breakpoint. The two merge key by key, so `{ minColSpan: 2, perBreakpoint: { sm: { minColSpan: 1 } } }`
+ * keeps the other three bounds at `sm`. A bound the breakpoint does not name keeps its base value.
+ *
+ * Column spans are still capped to the breakpoint's column count, so an override only has to say
+ * what the cap cannot: a different span where the grid is wide enough for the base one.
+ */
+export type GridItemConstraintsConfig = Partial<GridItemConstraints> & {
+  perBreakpoint?: Partial<Record<GridBreakpointName, Partial<GridItemConstraints>>>;
+};
+
 export type GridItemConfig<
   TType extends string = string,
   TData = unknown,
@@ -76,12 +88,7 @@ export type GridItemActionsComponent<TData = unknown> = Type<{
 export type GridComponentRegistration<TData = unknown> = {
   component: Type<{ data: Signal<TData> }>;
   type: string;
-  constraints?: {
-    minColSpan?: number;
-    maxColSpan?: number;
-    minRowSpan?: number;
-    maxRowSpan?: number;
-  };
+  constraints?: GridItemConstraintsConfig;
   configComponent?: Type<unknown>;
 };
 

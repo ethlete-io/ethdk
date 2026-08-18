@@ -37,7 +37,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
   hostDirectives: [
     {
       directive: GridItemDirective,
-      inputs: ['itemId', 'minColSpan', 'maxColSpan', 'minRowSpan', 'maxRowSpan'],
+      inputs: ['itemId', 'minColSpan', 'maxColSpan', 'minRowSpan', 'maxRowSpan', 'perBreakpointConstraints'],
     },
     GridDragDirective,
     GridResizeDirective,

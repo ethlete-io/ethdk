@@ -16,6 +16,7 @@ import { RuntimeError } from '@ethlete/core';
 import { filter, fromEvent, merge, Subscription, take, tap, timer } from 'rxjs';
 import { GRID_ERROR_CODES } from '../grid-errors';
 import { GRID_TOKEN } from './grid.tokens';
+import { GridItemConstraintsConfig } from './grid.types';
 import { PixelRect, pixelRectsEqual, positionsEqual, positionToPixelRect } from './internals';
 
 const SETTLE_FALLBACK_MS = 350;
@@ -52,6 +53,12 @@ export class GridItemDirective {
   public maxColSpan = input(undefined, { transform: optionalNumberAttribute });
   public minRowSpan = input(undefined, { transform: optionalNumberAttribute });
   public maxRowSpan = input(undefined, { transform: optionalNumberAttribute });
+  /**
+   * Span bounds that replace the four inputs above at one breakpoint:
+   * `[perBreakpointConstraints]="{ sm: { maxColSpan: 1 } }"`. Merged per key, so a bound the
+   * breakpoint does not name keeps whatever the item or its registration set.
+   */
+  public perBreakpointConstraints = input<GridItemConstraintsConfig['perBreakpoint']>();
 
   public isBeingDragged = computed(() => this.grid?.dragState()?.itemId === this.itemId());
 
@@ -125,6 +132,7 @@ export class GridItemDirective {
         ...(this.maxColSpan() === undefined ? {} : { maxColSpan: this.maxColSpan() }),
         ...(this.minRowSpan() === undefined ? {} : { minRowSpan: this.minRowSpan() }),
         ...(this.maxRowSpan() === undefined ? {} : { maxRowSpan: this.maxRowSpan() }),
+        perBreakpoint: this.perBreakpointConstraints(),
       });
       onCleanup(() => this.grid?.unregisterConstraints(id));
     });

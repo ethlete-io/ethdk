@@ -16,7 +16,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { injectPrefersReducedMotion, RuntimeError, signalHostElementDimensions, randomId } from '@ethlete/core';
+import { equal, injectPrefersReducedMotion, RuntimeError, signalHostElementDimensions, randomId } from '@ethlete/core';
 import { filter, switchMap, tap, timer } from 'rxjs';
 import { GRID_ERROR_CODES } from '../grid-errors';
 import { injectGridConfig } from './grid-config';
@@ -27,6 +27,7 @@ import {
   GridComponentRegistration,
   GridItemConfig,
   GridItemConstraints,
+  GridItemConstraintsConfig,
   GridItemPosition,
   GridLayoutEntry,
   GridMutationOptions,
@@ -113,18 +114,31 @@ const fitConstraintsToColumns = (constraints: GridItemConstraints, columns: numb
   return { ...constraints, minColSpan: Math.min(constraints.minColSpan, maxColSpan), maxColSpan };
 };
 
+/** The base bounds of one config with that config's overrides for `breakpoint` merged over them. */
+const flattenConstraintsConfig = (
+  config: GridItemConstraintsConfig | undefined,
+  breakpoint: GridBreakpointName,
+): Partial<GridItemConstraints> => {
+  if (!config) return {};
+
+  const { perBreakpoint, ...base } = config;
+
+  return { ...base, ...perBreakpoint?.[breakpoint] };
+};
+
 /**
- * Three layers, narrowest last: the defaults, the registration for the item's `type`, then whatever
- * the item's own `et-grid-item` inputs set. The item layer is a partial - the inputs are unset unless
- * a consumer wrote them - so refining one bound of a registered type does not silently reset the
- * other three to an input default.
+ * Narrowest last: the defaults, the registration for the item's `type`, then whatever the item's own
+ * `et-grid-item` inputs set - and within each of those two sources, its base bounds first and its
+ * override for `breakpoint` after. Every layer above the defaults is a partial, so refining one bound
+ * at one breakpoint does not silently reset the other three.
  */
 const resolveItemConstraints = (
   id: string,
   context: {
     itemConfigs: GridItemConfig[];
     registrations: GridComponentRegistration[];
-    constraintsRegistry: ReadonlyMap<string, Partial<GridItemConstraints>>;
+    constraintsRegistry: ReadonlyMap<string, GridItemConstraintsConfig>;
+    breakpoint: GridBreakpointName;
     columns: number;
   },
 ): GridItemConstraints => {
@@ -134,8 +148,8 @@ const resolveItemConstraints = (
   return fitConstraintsToColumns(
     {
       ...DEFAULT_CONSTRAINTS,
-      ...registration?.constraints,
-      ...context.constraintsRegistry.get(id),
+      ...flattenConstraintsConfig(registration?.constraints, context.breakpoint),
+      ...flattenConstraintsConfig(context.constraintsRegistry.get(id), context.breakpoint),
     },
     context.columns,
   );
@@ -202,7 +216,7 @@ export class GridDirective<TData = unknown> {
 
   // A signal, not a plain Map: an item registers its constraints after the first layout pass, and
   // everything derived from them - the live drag layout, the resize edges - has to see that arrive.
-  private constraintsRegistry = signal<ReadonlyMap<string, Partial<GridItemConstraints>>>(new Map());
+  private constraintsRegistry = signal<ReadonlyMap<string, GridItemConstraintsConfig>>(new Map());
 
   private resizeBaseLayout = signal<GridLayoutEntry[] | null>(null);
   private pendingResize: { id: string; position: GridItemPosition } | null = null;
@@ -227,10 +241,7 @@ export class GridDirective<TData = unknown> {
     return resolveBreakpoint(this.breakpoints(), width);
   });
 
-  public activeColumns = computed(() => {
-    const bp = this.breakpoints().find((b) => b.name === this.activeBreakpoint());
-    return bp?.columns ?? 12;
-  });
+  public activeColumns = computed(() => this.columnsForBreakpoint(this.activeBreakpoint()));
 
   private paddings = computed(() => {
     this.dimensions();
@@ -296,6 +307,7 @@ export class GridDirective<TData = unknown> {
         itemConfigs: this.itemConfigs(),
         registrations: this.gridConfig.registrations,
         constraintsRegistry: this.constraintsRegistry(),
+        breakpoint: this.activeBreakpoint(),
         columns,
       }),
       columns,
@@ -469,26 +481,20 @@ export class GridDirective<TData = unknown> {
 
           this.layoutOverrides.update((prev) => ({ ...prev, [breakpoint]: compacted }));
         } else {
-          // Cap items that overflow the column boundary after a breakpoint change.
-          // Min span is intentionally NOT enforced here: newly-added items are placed
-          // with 1×1 defaults before their GridItemDirective registers real constraints,
-          // and registerConstraints() corrects the size on first registration.
-          // Enforcing min here would resize those items again on the next addItem call
-          // and cause them to overlap their neighbours.
-          const clamped = existing.map((entry) => {
-            const constraints = this.getConstraints(entry.id);
-            const pos = entry.position;
-            const colSpan = Math.min(pos.colSpan, constraints.maxColSpan, columns);
-            const col = Math.min(pos.col, columns - colSpan);
-            const rowSpan = Math.min(pos.rowSpan, constraints.maxRowSpan);
-
-            return { ...entry, position: { col, row: pos.row, colSpan, rowSpan } };
-          });
+          const clamped = existing.map((entry) => ({
+            ...entry,
+            position: this.fitPositionToBreakpoint({ id: entry.id, position: entry.position, breakpoint, columns }),
+          }));
 
           const hasChanged = clamped.some((e, i) => {
             const orig = existing[i];
 
-            return orig && (e.position.col !== orig.position.col || e.position.colSpan !== orig.position.colSpan);
+            return (
+              orig &&
+              (e.position.col !== orig.position.col ||
+                e.position.colSpan !== orig.position.colSpan ||
+                e.position.rowSpan !== orig.position.rowSpan)
+            );
           });
 
           if (hasChanged) {
@@ -506,12 +512,18 @@ export class GridDirective<TData = unknown> {
     return { left: rect.left + el.clientLeft, top: rect.top + el.clientTop };
   }
 
-  public registerConstraints(id: string, constraints: Partial<GridItemConstraints>) {
+  public registerConstraints(id: string, constraints: GridItemConstraintsConfig) {
     // Every signal read here is wrapped in untracked() to prevent this method from inadvertently
     // becoming a dependency of the caller's reactive context (e.g. GridItemDirective's registration
     // effect), which would cause the writes below to re-trigger that effect in a loop.
     untracked(() => {
-      const isFirstRegistration = !this.constraintsRegistry().has(id);
+      const registry = this.constraintsRegistry();
+      const isFirstRegistration = !registry.has(id);
+
+      // By value, not by identity: `perBreakpointConstraints` is an object, and a caller that rebuilds
+      // it per change detection run would otherwise re-enter the effect that calls this.
+      if (!isFirstRegistration && equal(registry.get(id), constraints)) return;
+
       this.constraintsRegistry.update((prev) => new Map(prev).set(id, constraints));
 
       if (!isFirstRegistration) return;
@@ -527,7 +539,7 @@ export class GridDirective<TData = unknown> {
       if (!entry) return;
 
       const cols = this.activeColumns();
-      const effective = this.getConstraintsForColumns(id, cols);
+      const effective = this.getConstraints(id);
       const pos = entry.position;
       if (pos.colSpan >= effective.minColSpan && pos.rowSpan >= effective.minRowSpan) return;
 
@@ -560,16 +572,17 @@ export class GridDirective<TData = unknown> {
 
   /** The item's constraints as they apply at the active breakpoint - column spans already capped to it. */
   public getConstraints(id: string): GridItemConstraints {
-    return this.getConstraintsForColumns(id, this.activeColumns());
+    return this.getConstraintsForBreakpoint(id, this.activeBreakpoint());
   }
 
   /** The same, for a breakpoint other than the active one (placement writes every breakpoint at once). */
-  public getConstraintsForColumns(id: string, columns: number): GridItemConstraints {
+  public getConstraintsForBreakpoint(id: string, breakpoint: GridBreakpointName): GridItemConstraints {
     return resolveItemConstraints(id, {
       itemConfigs: this.itemConfigs(),
       registrations: this.gridConfig.registrations,
       constraintsRegistry: this.constraintsRegistry(),
-      columns,
+      breakpoint,
+      columns: this.columnsForBreakpoint(breakpoint),
     });
   }
 
@@ -856,6 +869,10 @@ export class GridDirective<TData = unknown> {
     this.layoutOverrides.set(overrides);
   }
 
+  private columnsForBreakpoint(breakpoint: GridBreakpointName) {
+    return this.breakpoints().find((b) => b.name === breakpoint)?.columns ?? 12;
+  }
+
   /**
    * Dev-mode-only: rejects consumer-provided item configs whose ids are not unique, and warns about
    * layouts that do not line up with the configured breakpoints.
@@ -922,6 +939,31 @@ export class GridDirective<TData = unknown> {
   }
 
   /**
+   * A stored position refitted to the bounds one breakpoint gives the item. A minimum only grows an
+   * item whose `GridItemDirective` has registered: an item added mid-session sits in the layout at
+   * 1×1 until it does, and growing it here would fight `registerConstraints()` and overlap its
+   * neighbours. Callers pass the result through `compactLayout()`, which resolves the overlaps
+   * growing can still introduce.
+   */
+  private fitPositionToBreakpoint(options: {
+    id: string;
+    position: GridItemPosition;
+    breakpoint: GridBreakpointName;
+    columns: number;
+  }): GridItemPosition {
+    const { id, position, breakpoint, columns } = options;
+    const constraints = this.getConstraintsForBreakpoint(id, breakpoint);
+    const grow = this.constraintsRegistry().has(id);
+
+    const cappedColSpan = Math.min(position.colSpan, constraints.maxColSpan, columns);
+    const colSpan = grow ? Math.max(cappedColSpan, constraints.minColSpan) : cappedColSpan;
+    const cappedRowSpan = Math.min(position.rowSpan, constraints.maxRowSpan);
+    const rowSpan = grow ? Math.max(cappedRowSpan, constraints.minRowSpan) : cappedRowSpan;
+
+    return { col: Math.max(0, Math.min(position.col, columns - colSpan)), row: position.row, colSpan, rowSpan };
+  }
+
+  /**
    * The layout entries of `items` for one breakpoint. An item the breakpoint has no position for is
    * auto-placed against the entries built before it, so a partial layout spreads out instead of
    * stacking every unpositioned item on the grid origin.
@@ -943,15 +985,16 @@ export class GridDirective<TData = unknown> {
         continue;
       }
 
-      const constraints = this.getConstraintsForColumns(item.id, columns);
-      const position =
-        item.layout[breakpoint] ??
-        autoPlace({
-          entries,
-          colSpan: constraints.minColSpan,
-          rowSpan: constraints.minRowSpan,
-          columns,
-        });
+      const stored = item.layout[breakpoint];
+      const constraints = this.getConstraintsForBreakpoint(item.id, breakpoint);
+      const position = stored
+        ? this.fitPositionToBreakpoint({ id: item.id, position: stored, breakpoint, columns })
+        : autoPlace({
+            entries,
+            colSpan: constraints.minColSpan,
+            rowSpan: constraints.minRowSpan,
+            columns,
+          });
 
       entries.push({ id: item.id, position });
     }
@@ -996,7 +1039,7 @@ export class GridDirective<TData = unknown> {
 
       layout[bp.name] = autoPlace({
         entries: bpEntries,
-        colSpan: this.getConstraintsForColumns(config.id, bp.columns).minColSpan,
+        colSpan: this.getConstraintsForBreakpoint(config.id, bp.name).minColSpan,
         rowSpan: constraints.minRowSpan,
         columns: bp.columns,
       });

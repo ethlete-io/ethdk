@@ -37,8 +37,15 @@ beside it, so `nativeControl` and `syncFromNativeInput()` are gone; see
 `plans/color-input-custom-picker.md` for the design calls and the traps it turned up.
 
 It raised three follow-ups, and all three shipped on 2026-08-18 as well - see "Colour picker
-follow-ups, shipped" below. The rest of the file is `L` projects with nothing left to decide, so
-the next pick is purely which project to start.
+follow-ups, shipped" below.
+
+The grid's per-breakpoint span constraints shipped on 2026-08-18 too - `constraints.perBreakpoint` on
+a registration, `[perBreakpointConstraints]` on `et-grid-item`. It was the last row
+`component-improvements.md` still had open outside the `L` projects, so **that file now holds nothing
+smaller than an `L`**. Its traps are in "Already fixed, do not re-report".
+
+Everything left is an `L` project with nothing left to decide, so the next pick is purely which
+project to start.
 
 ## Everything else, by effort
 

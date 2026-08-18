@@ -233,6 +233,34 @@ path.
 Implemented on 2026-08-06, sections deleted from this file. Listed so the next pass does
 not rediscover them.
 
+**Grid per-breakpoint span constraints** (2026-08-18, the last `A` row in the triage) - the additive
+shape the backlog proposed, on both constraint sources: `constraints.perBreakpoint` on a registration
+and `[perBreakpointConstraints]` on `et-grid-item`. What the implementation turned up:
+
+- **Resolution had to move from a column count to a breakpoint name.** `getConstraintsForColumns(id,
+columns)` could not look an override up, so it is now `getConstraintsForBreakpoint(id, name)` and
+  reads the column count itself - the one breaking change, and the reason the changeset is a major.
+- **The merge is per key, and the item still beats the registration.** Narrowest last: defaults,
+  registration base, registration override, item inputs, item override. Writing an override on the
+  element therefore wins over one the registration declares, at that breakpoint only.
+- **A stored position is refitted on arrival at a breakpoint, not just capped.** The old refit only
+  ran on the branch where the breakpoint already had a layout, so a per-breakpoint minimum did
+  nothing the first time the grid reached that breakpoint - `entriesForBreakpoint` took
+  `item.layout[bp]` verbatim. Both paths now go through one `fitPositionToBreakpoint`, and
+  `compactLayout` resolves what growing an item can overlap.
+- **A minimum only grows an item whose `GridItemDirective` has registered.** That keeps the old
+  guard's intent (an item added mid-session is 1×1 for a frame and `registerConstraints()` owns
+  correcting it) while letting the min apply to every settled item - registry membership is the
+  precise test the old comment lacked.
+- **`input()` has no `equal` option.** Angular signal inputs take `alias`/`transform` only, so the
+  first attempt at value-comparing the new object input did not compile. Storybook's own type-check
+  overlay caught it - `nx test` does not type-check and the eslint config is not type-aware here.
+  The comparison lives in `registerConstraints` instead, which is the better place: it protects the
+  registration effect from any caller, not just a template.
+- Free consequence: at a breakpoint where an override pins a span, the item grows no resize handles
+  on that axis - `resizeEdges` already derives from `getConstraints`. Verified in the new
+  `Per Breakpoint Constraints` story at 1400/900/500px.
+
 **Date-time range picker** (2026-08-12, the scheduler row above) - `et-date-time-range-input`, a
 start/end control with time-bearing wire strings on the date range input's `{ start, end }` shape.
 The four calls the user settled before any code:
@@ -1460,27 +1488,7 @@ and `[breakpoints]` disagree.
 
 ## Grid: per-breakpoint span constraints
 
-The clamping half is fixed: `resolveItemConstraints` (`grid.directive.ts`) now takes the column
-count and caps `minColSpan`/`maxColSpan` against it, `clampPosition` no longer applies a minimum
-after the column clamp, and `getConstraintsForColumns` covers the paths that write a breakpoint
-other than the active one. So `minColSpan: 2` degrades to full width at a one-column breakpoint,
-which is what anyone writing it means, and the four ad-hoc clamps that used to enforce that by
-accident are now redundant rather than load-bearing.
-
-What clamping cannot express is still open: "two columns at `md` but full width at `sm`", or a
-different row minimum where the layout is stacked. Additive shape, base plus overrides, rather
-than a union that has to be discriminated:
-
-```ts
-constraints?: Partial<GridItemConstraints> & {
-  perBreakpoint?: Record<GridBreakpointName, Partial<GridItemConstraints>>;
-};
-```
-
-The early-return half is fixed (2026-08-11): `resolveItemConstraints` merges three layers -
-defaults, the registration for the item's type, then the item's own inputs, which are unset
-unless a consumer writes them - so refining one bound of a registered type no longer resets the
-other three. What is left is the `perBreakpoint` shape above.
+**Shipped 2026-08-18.** See "Already fixed, do not re-report". **Nothing is open on this component.**
 
 ## Selection list: the tile variant that is missing
 
