@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, DestroyRef, InjectionToken, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { AnimatedLifecycleDirective, AnimatedLifecycleState } from '../animations';
@@ -24,6 +24,13 @@ class PlainOverlayComponent {}
 
 @Component({ template: '<button type="button">focusable content</button>' })
 class FocusableOverlayComponent {}
+
+const OVERLAY_SCOPED_TOKEN = new InjectionToken<boolean>('OVERLAY_SCOPED_TOKEN');
+
+@Component({ template: 'overlay with a scoped provider' })
+class ScopedProviderOverlayComponent {
+  scoped = inject(OVERLAY_SCOPED_TOKEN);
+}
 
 @Component({ template: 'animated overlay' })
 class AnimatedOverlayComponent {
@@ -317,6 +324,31 @@ describe('overlay runtime', () => {
       raisedSurface.remove();
       plainTarget.remove();
     });
+  });
+
+  it('destroys the injector holding the overlay providers on close', () => {
+    const onProviderDestroy = vi.fn();
+    const ref = mount(
+      {
+        providers: [
+          {
+            provide: OVERLAY_SCOPED_TOKEN,
+            useFactory: () => {
+              inject(DestroyRef).onDestroy(onProviderDestroy);
+
+              return true;
+            },
+          },
+        ],
+      },
+      ScopedProviderOverlayComponent,
+    );
+
+    expect(onProviderDestroy).not.toHaveBeenCalled();
+
+    ref.close();
+
+    expect(onProviderDestroy).toHaveBeenCalledTimes(1);
   });
 
   it('tears down synchronously without a leave animation when the reference detaches', async () => {

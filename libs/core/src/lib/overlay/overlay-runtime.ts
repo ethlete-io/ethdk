@@ -188,7 +188,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       const elementInjector = Injector.create({
         parent: parentInjector,
         providers: config.providers ?? [],
-      });
+      }) as EnvironmentInjector;
 
       const componentRef = createComponent(config.component, {
         environmentInjector,
@@ -241,6 +241,12 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         cleanupFns.forEach((cleanup) => cleanup());
         appRef.detachView(componentRef.hostView);
         componentRef.destroy();
+
+        // Angular does not own this injector, so nothing else tears down what the overlay's own
+        // providers registered on it - their `DestroyRef` hooks and effects would outlive the overlay.
+        if (!elementInjector.destroyed) {
+          elementInjector.destroy();
+        }
 
         const parentNode = renderer.parentNode(hostElement);
         if (parentNode) {
