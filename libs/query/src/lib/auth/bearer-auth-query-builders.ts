@@ -428,10 +428,15 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
     /** Runs the refresh and keeps the refresh lock until it reports back, or until the bound runs out. */
     const runTakenOverRefresh = async () => {
-      if (executeRefresh('takeover') !== 'executed') return;
+      const attempt = executeRefresh('takeover');
 
+      // The ladder starts over whatever came of it, including a takeover that could not run yet - a
+      // refresh already in flight, or the floor under the 401-driven ones. Leaving the budget spent
+      // would retire the only path a follower has to a token the leader is not going to issue.
       delegatedRefreshAttempts = 0;
       hasLeaderAnsweredDelegation = false;
+
+      if (attempt !== 'executed') return;
 
       await new Promise<void>((resolve) => {
         race(context.afterTokenRefresh$, timer(takeoverRefreshMaxLockHoldMs))
@@ -591,9 +596,19 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     const scheduledRefresh = (dueInMs: number, attemptsLeft: number): Observable<unknown> =>
       (dueInMs <= 0 ? of(0) : timer(dueInMs)).pipe(
         concatMap(() => {
-          const retryInMs = retryScheduledIn(executeRefresh('scheduled'));
+          const attempt = executeRefresh('scheduled');
+          const retryInMs = retryScheduledIn(attempt);
 
-          return retryInMs === null || attemptsLeft <= 0 ? EMPTY : scheduledRefresh(retryInMs, attemptsLeft - 1);
+          if (retryInMs === null) return EMPTY;
+
+          // Waiting on another tab does not spend the budget. Both outcomes come back at a deadline
+          // rather than on a fixed interval, and both end the moment a token pair arrives, because a
+          // new token restarts the schedule. Spending the budget on them leaves a follower whose
+          // leader never acts with no armed timer at all, which is the one state nothing recovers
+          // from: the tab then holds a dead token and cannot even ask for a new one.
+          if (attempt === 'notLeader' || attempt === 'delegated') return scheduledRefresh(retryInMs, attemptsLeft);
+
+          return attemptsLeft <= 0 ? EMPTY : scheduledRefresh(retryInMs, attemptsLeft - 1);
         }),
       );
 

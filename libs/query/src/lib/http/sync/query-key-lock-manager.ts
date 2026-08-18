@@ -1,5 +1,24 @@
 import { Signal, signal } from '@angular/core';
 
+/** How a hold is requested, and how it reports back when it is taken away. */
+export type QueryKeyLockHoldOptions = {
+  /**
+   * Takes the key from whoever holds it instead of queueing behind them, and preempts every request
+   * already queued for it. For the one case a queue cannot answer: a holder that stopped running -
+   * a frozen or suspended tab - keeps its lock while it does none of the work the lock stands for,
+   * and nothing it does not run can hand it over.
+   *
+   * The tab it is taken from hears about it through {@link onLost}.
+   */
+  steal?: boolean;
+
+  /**
+   * Called when another tab took this key over while this hold had it. Not called for a release of
+   * this tab's own, and not for a queued request that was aborted.
+   */
+  onLost?: () => void;
+};
+
 /** A single outstanding request for the lock of one key. */
 export type QueryKeyLockHold = {
   /**
@@ -31,7 +50,7 @@ export type QueryKeyLockState = 'holder' | 'standby';
  */
 export type QueryKeyLockManager = {
   /** Requests the lock for `key`. */
-  hold: (key: string) => QueryKeyLockHold;
+  hold: (key: string, options?: QueryKeyLockHoldOptions) => QueryKeyLockHold;
 
   /**
    * Whether the Web Locks API backs this manager. When `false` every caller is immediately the
@@ -76,13 +95,14 @@ export const createQueryKeyLockManager = (namespace: string): QueryKeyLockManage
     keyStates.set(states);
   };
 
-  const hold = (key: string): QueryKeyLockHold => {
+  const hold = (key: string, options: QueryKeyLockHoldOptions = {}): QueryKeyLockHold => {
     const isHolder = signal(false);
     const abortController = new AbortController();
     const activeHold = { key, isHolder: isHolder.asReadonly() };
 
     let releaseHeldLock: (() => void) | null = null;
     let isReleased = false;
+    let wasGranted = false;
 
     activeHolds.add(activeHold);
     publishKeyStates();
@@ -105,12 +125,17 @@ export const createQueryKeyLockManager = (namespace: string): QueryKeyLockManage
       }
     };
 
+    // A stealing request is granted on the spot, so it never queues and has nothing to abort - and
+    // the platform rejects `signal` together with `steal` outright.
+    const requestOptions: LockOptions = options.steal ? { steal: true } : { signal: abortController.signal };
+
     locks
-      .request(`${namespace}:${key}`, { signal: abortController.signal }, () => {
+      .request(`${namespace}:${key}`, requestOptions, () => {
         // Aborting a request the platform has already granted does nothing, so a release that raced
         // the grant lands here instead: take the lock and give it straight back.
         if (isReleased) return Promise.resolve();
 
+        wasGranted = true;
         isHolder.set(true);
         publishKeyStates();
 
@@ -123,6 +148,14 @@ export const createQueryKeyLockManager = (namespace: string): QueryKeyLockManage
         // standby hold ends. Nothing to recover from in either case - this tab is simply not the
         // holder, which is what the signal already says.
         isHolder.set(false);
+
+        // A hold that had the lock only ends in a rejection one way: another tab stole it. This one
+        // is over, so it leaves the published states behind and lets the caller decide what comes next.
+        if (!wasGranted || isReleased) return;
+
+        activeHolds.delete(activeHold);
+        publishKeyStates();
+        options.onLost?.();
       });
 
     return { isHolder: activeHold.isHolder, release };

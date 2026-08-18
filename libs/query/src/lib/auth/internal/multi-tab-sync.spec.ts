@@ -508,6 +508,62 @@ describe('setupMultiTabSync', () => {
       });
     });
 
+    it('should ask again for the session when the page resumes', () => {
+      TestBed.runInInjectionContext(() => {
+        accessToken.set('access-1');
+        refreshToken.set('refresh-1');
+
+        setup();
+        mockChannel.postMessage.mockClear();
+
+        document.dispatchEvent(new Event('resume'));
+
+        // The page ran nothing while it was frozen, so every rotation broadcast in the meantime went
+        // to a tab that was not listening.
+        expect(mockChannel.postMessage).toHaveBeenCalledWith({ type: 'state-request' });
+      });
+    });
+
+    it('should ask again for the session when the page comes back from the cache', () => {
+      TestBed.runInInjectionContext(() => {
+        accessToken.set('access-1');
+        refreshToken.set('refresh-1');
+
+        setup();
+        mockChannel.postMessage.mockClear();
+
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+
+        expect(mockChannel.postMessage).toHaveBeenCalledWith({ type: 'state-request' });
+      });
+    });
+
+    it('should not ask again on a page show that is not a cache entry', () => {
+      TestBed.runInInjectionContext(() => {
+        accessToken.set('access-1');
+        refreshToken.set('refresh-1');
+
+        setup();
+        mockChannel.postMessage.mockClear();
+
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+
+        expect(mockChannel.postMessage).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should not ask again on a resume without a session', () => {
+      TestBed.runInInjectionContext(() => {
+        setup();
+        mockChannel.postMessage.mockClear();
+
+        document.dispatchEvent(new Event('resume'));
+
+        // Nothing to bring up to date, and the tab already asked once on setup.
+        expect(mockChannel.postMessage).not.toHaveBeenCalled();
+      });
+    });
+
     it('should not ask when tokens are deliberately tab local', () => {
       TestBed.runInInjectionContext(() => {
         const sync = setup({ syncTokens: false });

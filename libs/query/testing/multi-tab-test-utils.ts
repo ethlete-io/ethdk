@@ -125,9 +125,10 @@ type FakeLockWaiter = {
  * request has been granted.
  *
  * `ifAvailable` is a try-lock: a request that cannot be granted straight away runs its callback with
- * `null` instead of queueing, exactly as the real API does.
+ * `null` instead of queueing, exactly as the real API does. `steal` releases the current holder -
+ * rejecting its request with an `AbortError` - and is granted ahead of everything queued.
  *
- * `mode: 'shared'` and `steal` are not implemented; nothing in the library uses them.
+ * `mode: 'shared'` is not implemented; nothing in the library uses it.
  */
 export const installFakeWebLocks = (): FakeWebLocksHandle => {
   const originalDescriptor = Object.getOwnPropertyDescriptor(navigator, 'locks');
@@ -147,7 +148,10 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
     holders.set(name, waiter);
 
     const settle = (settleWaiter: () => void) => {
-      holders.delete(name);
+      // Only if this waiter is still the holder: a stolen lock already has a new one, and the callback
+      // of the tab it was taken from settles afterwards.
+      if (holders.get(name) === waiter) holders.delete(name);
+
       settleWaiter();
       pump(name);
     };
@@ -193,6 +197,22 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
 
         reject(abortError());
       });
+
+      if (options.steal) {
+        queueMicrotask(() => {
+          const holder = holders.get(name);
+
+          if (holder) {
+            holders.delete(name);
+            holder.reject(abortError());
+          }
+
+          queues.set(name, [waiter, ...(queues.get(name) ?? [])]);
+          pump(name);
+        });
+
+        return;
+      }
 
       // Availability is decided a microtask out, not here: that is when the real API decides it too, so
       // two try-locks requested in the same tick still resolve to one winner and one `null`.

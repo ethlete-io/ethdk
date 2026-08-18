@@ -215,10 +215,42 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
   let adoptionTimeout: ReturnType<typeof setTimeout> | undefined;
 
+  const requestState = () => channel.postMessage({ type: 'state-request' } satisfies SyncMessage);
+
+  /**
+   * A page that was frozen or held in the back/forward cache ran nothing while it was away, so the
+   * token pair it wakes up with is whatever it held when it stopped - the rotations it missed were
+   * broadcast to a tab that was not listening. Asking again is what stops it spending a refresh token
+   * that was already spent, which the server answers with a 401 and the provider with a logout for
+   * every tab.
+   */
+  const resyncAfterResume = () => {
+    if (!syncTokens || !context.accessToken()) return;
+
+    requestState();
+  };
+
+  const onResume = () => resyncAfterResume();
+  const onPageShow = (event: Event) => {
+    if ((event as PageTransitionEvent).persisted === true) resyncAfterResume();
+  };
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('resume', onResume);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pageshow', onPageShow);
+  }
+
   const cleanup = () => {
     clearTimeout(adoptionTimeout);
     settleAdoption();
     remoteActivity.complete();
+
+    if (typeof document !== 'undefined') document.removeEventListener('resume', onResume);
+    if (typeof window !== 'undefined') window.removeEventListener('pageshow', onPageShow);
+
     channel.close();
   };
 
@@ -241,7 +273,7 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
         adoptionTimeout = setTimeout(settleAdoption, sessionAdoptionTimeoutMs);
 
-        channel.postMessage({ type: 'state-request' } satisfies SyncMessage);
+        requestState();
 
         return { isPending: () => isAdoptionPending, settled } satisfies BearerAuthSessionAdoption;
       })()

@@ -37,7 +37,11 @@ export type BearerAuthMultiTabSyncConfig = {
 };
 
 export type BearerAuthMultiTabSyncFeature = {
-  /** Whether this tab is the one performing the automatic token refresh. */
+  /**
+   * Whether this tab is the one performing the automatic token refresh. It follows the user: a tab
+   * that becomes hidden gives the leadership up, a tab that becomes visible claims it, and a tab that
+   * stopped running has it taken off it.
+   */
   isLeader: Signal<boolean>;
 
   /** How many tabs of this app currently take part in the election. Telemetry only. */
@@ -62,7 +66,8 @@ const SINGLE_TAB = /* @__PURE__ */ (() => {
 /**
  * Keeps one browser session consistent across the user's tabs: a login in one tab logs the others in,
  * a logout logs them out, and only one tab (the leader) performs the automatic token refresh so a
- * single-use refresh token is not spent twice.
+ * single-use refresh token is not spent twice. The leadership follows the tab the user is looking at,
+ * because a hidden tab has its timers throttled and a frozen one runs none at all.
  *
  * Off by default - a single-tab app, a kiosk or an embedded webview ships neither the
  * `BroadcastChannel` sync nor the Web Locks leader election without it. Degrades to "this tab is the

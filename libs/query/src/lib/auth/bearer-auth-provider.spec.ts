@@ -2407,13 +2407,11 @@ describe('createBearerAuthProvider', () => {
     });
 
     /**
-     * Everything a follower spec needs: the fakes installed, another tab holding the leader lock, and a
-     * logged-in provider whose access token is one tick away from being stale. `dispose` unwinds it.
+     * The other tab a follower spec needs: it holds the leader lock, and it answers a claim. Both
+     * halves matter - a tab that held the lock and said nothing would be a leader that stopped
+     * running, and the tab under test would take the leadership off it.
      */
-    const openFollowerTab = async (options: { holdRefreshLock?: boolean } = {}) => {
-      const bus = installFakeBroadcastChannel();
-      const locks = installFakeWebLocks();
-
+    const openForeignLeaderTab = () => {
       let releaseLeaderLock = () => {
         /* not granted yet */
       };
@@ -2421,6 +2419,33 @@ describe('createBearerAuthProvider', () => {
         'ethlete-auth:leader:test-auth',
         () => new Promise<void>((resolve) => (releaseLeaderLock = resolve)),
       );
+
+      const channel = new BroadcastChannel('ethlete-auth-leader:test-auth');
+
+      channel.onmessage = (event: MessageEvent<unknown>) => {
+        if ((event.data as { type?: string })?.type !== 'claim') return;
+
+        channel.postMessage({ type: 'leader-alive', isVisible: true });
+      };
+
+      return {
+        close: async () => {
+          channel.close();
+          releaseLeaderLock();
+          await leaderLock.catch(() => undefined);
+        },
+      };
+    };
+
+    /**
+     * Everything a follower spec needs: the fakes installed, another tab leading, and a logged-in
+     * provider whose access token is one tick away from being stale. `dispose` unwinds it.
+     */
+    const openFollowerTab = async (options: { holdRefreshLock?: boolean; giveUpOnRefreshFailure?: boolean } = {}) => {
+      const bus = installFakeBroadcastChannel();
+      const locks = installFakeWebLocks();
+
+      const foreignLeader = openForeignLeaderTab();
 
       let releaseRefreshLock = () => {
         /* not requested */
@@ -2452,7 +2477,18 @@ describe('createBearerAuthProvider', () => {
         queryClientRef,
         queries: [
           withAuthenticationQuery('login', { queryCreator: loginQuery, extractTokens }),
-          withRefreshQuery('refresh', { queryCreator: refresh, extractTokens }),
+          withRefreshQuery('refresh', {
+            queryCreator: refresh,
+            extractTokens,
+            // A refresh that fails once and stays failed, so a spec can put the tab back in the state
+            // it was in before: a follower holding a token nothing has renewed.
+            ...(options.giveUpOnRefreshFailure
+              ? {
+                  retryConfig: { retryableStatusCodes: [] },
+                  onRefreshFailure: () => undefined,
+                }
+              : {}),
+          }),
         ],
         features: [withBearerAuthMultiTabSync()],
       });
@@ -2468,10 +2504,10 @@ describe('createBearerAuthProvider', () => {
         bus,
         settle,
         injectAuthProvider,
+        releaseRefreshLock: () => releaseRefreshLock(),
         dispose: async () => {
-          releaseLeaderLock();
           releaseRefreshLock();
-          await Promise.all([leaderLock.catch(() => undefined), refreshLock.catch(() => undefined)]);
+          await Promise.all([foreignLeader.close(), refreshLock.catch(() => undefined)]);
           TestBed.resetTestingModule();
           bus.restore();
           locks.restore();
@@ -2537,6 +2573,54 @@ describe('createBearerAuthProvider', () => {
       }
     });
 
+    it('should take the refresh over again after one that could not run yet', async () => {
+      const tab = await openFollowerTab({ giveUpOnRefreshFailure: true });
+
+      try {
+        await TestBed.runInInjectionContext(async () => {
+          login(tab.injectAuthProvider());
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/login')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+
+          await tab.settle();
+          await runTokenDownToStale(tab.settle);
+
+          for (let window = 0; window < 3; window++) {
+            vi.advanceTimersByTime(3_000);
+            await tab.settle();
+          }
+
+          // Left in flight, so the takeover it started is still running when the next one comes round -
+          // and the tab holding the refresh lock releases it after 15s either way.
+          const firstRequest = httpTesting.expectOne('https://api.example.com/auth/refresh');
+
+          for (let window = 0; window < 20; window++) {
+            vi.advanceTimersByTime(3_000);
+            await tab.settle();
+          }
+
+          firstRequest.error(new ProgressEvent('error'), { status: 503, statusText: 'Service Unavailable' });
+          await tab.settle();
+
+          // A takeover that could not run is not a takeover that must never run again: the tab is the
+          // only one left that can issue a token pair, and the one it holds is worthless.
+          for (let window = 0; window < 30; window++) {
+            vi.advanceTimersByTime(3_000);
+            await tab.settle();
+          }
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/refresh')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-2' });
+          await tab.settle();
+        });
+      } finally {
+        await tab.dispose();
+      }
+    });
+
     it('should keep waiting while the leader answers that a refresh started', async () => {
       const tab = await openFollowerTab();
 
@@ -2583,6 +2667,50 @@ describe('createBearerAuthProvider', () => {
       }
     });
 
+    it('should keep asking for a refresh for as long as the leader ignores it', async () => {
+      const tab = await openFollowerTab({ holdRefreshLock: true });
+
+      try {
+        await TestBed.runInInjectionContext(async () => {
+          login(tab.injectAuthProvider());
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/login')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+
+          await tab.settle();
+          await runTokenDownToStale(tab.settle);
+
+          // Long past the point a bounded schedule gives up. Nothing here can end the wait: the leader
+          // acts on nothing, and the tab that holds the refresh lock is the reason this one stands down
+          // every time it comes round.
+          for (let lap = 0; lap < 12; lap++) {
+            vi.advanceTimersByTime(30_000);
+            await tab.settle();
+          }
+
+          httpTesting.expectNone('https://api.example.com/auth/refresh');
+
+          tab.releaseRefreshLock();
+          await tab.settle();
+
+          // The tab still has an armed timer, which is the whole point: without one it would sit on a
+          // dead token with nothing left to bring it back.
+          for (let lap = 0; lap < 3; lap++) {
+            vi.advanceTimersByTime(30_000);
+            await tab.settle();
+          }
+
+          httpTesting
+            .expectOne('https://api.example.com/auth/refresh')
+            .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-2' });
+          await tab.settle();
+        });
+      } finally {
+        await tab.dispose();
+      }
+    });
+
     it('should stand down when another tab already holds the refresh lock', async () => {
       const tab = await openFollowerTab({ holdRefreshLock: true });
 
@@ -2615,14 +2743,8 @@ describe('createBearerAuthProvider', () => {
       const bus = installFakeBroadcastChannel();
       const locks = installFakeWebLocks();
 
-      // Another tab already holds the leader lock, so the provider below is a follower.
-      let releaseLeaderLock = () => {
-        /* not granted yet */
-      };
-      const leaderLock = navigator.locks.request(
-        'ethlete-auth:leader:test-auth',
-        () => new Promise<void>((resolve) => (releaseLeaderLock = resolve)),
-      );
+      // Another tab already leads, so the provider below is a follower.
+      const foreignLeader = openForeignLeaderTab();
 
       try {
         const postQuery = createPostQuery(queryClientRef);
@@ -2676,8 +2798,7 @@ describe('createBearerAuthProvider', () => {
           ).toEqual([]);
         });
       } finally {
-        releaseLeaderLock();
-        await leaderLock.catch(() => undefined);
+        await foreignLeader.close();
         TestBed.resetTestingModule();
         bus.restore();
         locks.restore();
