@@ -36,7 +36,7 @@
   }
 
   .et-badge {
-    --_et-badge-background: var(--et-theme-color-primary);
+    --_et-badge-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
     --_et-badge-color: var(--et-theme-color-ink-solid);
     --_et-badge-border-color: transparent;
 

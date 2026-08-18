@@ -38,7 +38,7 @@
     position: relative;
     align-items: center;
 
-    background: var(--et-theme-color-primary);
+    background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
     color: var(--et-theme-color-on-primary);
     border: none;
     border-radius: 9999px;
@@ -160,7 +160,7 @@
     &:where([data-variant='outline']) {
       --et-theme-color-primary-opacity: 0;
       --et-button-shadow: none;
-      background: var(--et-theme-color-primary);
+      background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       color: var(--et-theme-color-ink-solid);
 
       &::after {
@@ -194,7 +194,7 @@
     &:where([data-variant='tonal']) {
       --et-theme-color-primary-opacity: 0.16;
       --et-button-shadow: none;
-      background: var(--et-theme-color-primary);
+      background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       color: var(--et-theme-color-ink-solid);
 
       @media (hover: hover) {
@@ -223,7 +223,7 @@
     &:where([data-variant='transparent']) {
       --et-theme-color-primary-opacity: 0;
       --et-button-shadow: none;
-      background: var(--et-theme-color-primary);
+      background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       color: var(--et-theme-color-ink-solid);
 
       @media (hover: hover) {

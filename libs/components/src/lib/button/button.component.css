@@ -1,6 +1,6 @@
 @layer components {
   .et-button {
-    --_et-button-background: var(--et-theme-color-primary);
+    --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
     --_et-button-color: var(--et-theme-color-on-primary);
     --_et-button-border-color: transparent;
 
@@ -90,7 +90,7 @@
 
     &:where([data-variant='outline']) {
       --et-theme-color-primary-opacity: 0;
-      --_et-button-background: var(--et-theme-color-primary);
+      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: var(--et-theme-color-ink-solid);
 
@@ -111,7 +111,7 @@
 
     &[data-pressed='true']:where([data-pressed-variant='outline']) {
       --et-theme-color-primary-opacity: 0;
-      --_et-button-background: var(--et-theme-color-primary);
+      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: var(--et-theme-color-ink-solid);
 
@@ -138,7 +138,7 @@
     &:where([data-variant='tonal']),
     &[data-pressed='true']:where([data-pressed-variant='tonal']) {
       --et-theme-color-primary-opacity: 0.16;
-      --_et-button-background: var(--et-theme-color-primary);
+      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: transparent;
 
@@ -159,7 +159,7 @@
 
     &:where([data-variant='transparent']) {
       --et-theme-color-primary-opacity: 0;
-      --_et-button-background: var(--et-theme-color-primary);
+      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: transparent;
 
@@ -180,7 +180,7 @@
 
     &[data-pressed='true']:where([data-pressed-variant='filled']) {
       --et-theme-color-primary-opacity: 1;
-      --_et-button-background: var(--et-theme-color-primary);
+      --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-on-primary);
       --_et-button-border-color: transparent;
 

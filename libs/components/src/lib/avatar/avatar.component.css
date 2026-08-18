@@ -30,7 +30,7 @@
     box-sizing: border-box;
     border-radius: var(--et-avatar-border-radius);
     overflow: hidden;
-    background: var(--et-theme-color-primary);
+    background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
     color: var(--et-theme-color-on-primary);
     font-size: var(--et-avatar-font-size);
     font-weight: var(--et-avatar-font-weight);

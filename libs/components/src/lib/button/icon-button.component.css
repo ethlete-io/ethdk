@@ -18,7 +18,7 @@
     justify-content: center;
     width: var(--et-icon-button-size);
     height: var(--et-icon-button-size);
-    background: var(--et-theme-color-primary);
+    background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
     color: var(--et-theme-color-ink-solid);
     border: none;
     border-radius: var(--et-icon-button-border-radius, 9999px);

@@ -180,6 +180,8 @@ When a color theme is active, these custom properties are available on the eleme
 
 `--et-theme-color-primary-opacity` starts at `1`. Components override it per interaction state to produce tint layers. For example, a `tonal` button at rest sets it to `0.16`; at hover it becomes `0.24`. The base color never changes — only the opacity.
 
+A component that overrides the opacity must compose the color itself, with `rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity))`. Do not read `--et-theme-color-primary` there. That alias is declared on `:root` and on each `et-color--*` scope, and CSS substitutes its `var()` where it is declared, so an element that inherits it gets the scope's opacity of `1`, never its own. An element only re-declares the alias while it carries an `et-color--*` class, and that class arrives from `ProvideColorDirective` as a host binding — so a component that relies on the alias paints at full opacity for as long as the element is unbound.
+
 Interaction state management is automatic via `[etColorInteractive]`. Components do not manually track hover/focus/active — the directive drives the opacity.
 
 ---
