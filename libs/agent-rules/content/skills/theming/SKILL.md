@@ -61,12 +61,12 @@ Surface (each exists as `-solid` = usable color, `-rgb` = `R G B` channels):
 
 Color (from the nearest `[etProvideColor]` scope):
 
-| Token                            | Use for                                                                                                                                |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `--et-theme-color-primary`       | filled backgrounds; **opacity-aware** - set `--et-theme-color-primary-opacity: 0.16` etc. per state to tint without changing the color |
-| `--et-theme-color-primary-solid` | accents at full strength: focus borders, selected marks, spinners                                                                      |
-| `--et-theme-color-on-primary`    | text/icons on a primary-filled background                                                                                              |
-| `--et-theme-color-ink-solid`     | primary-tinted text/border on transparent/tonal fills                                                                                  |
+| Token                            | Use for                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-theme-color-primary`       | filled backgrounds on an element you do **not** tint. To tint per state, set `--et-theme-color-primary-opacity: 0.16` and compose the color yourself: `rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity))`. The alias is substituted at the `et-color--*` scope, so an inherited value carries the scope's opacity, never the element's |
+| `--et-theme-color-primary-solid` | accents at full strength: focus borders, selected marks, spinners                                                                                                                                                                                                                                                                                                   |
+| `--et-theme-color-on-primary`    | text/icons on a primary-filled background                                                                                                                                                                                                                                                                                                                           |
+| `--et-theme-color-ink-solid`     | primary-tinted text/border on transparent/tonal fills                                                                                                                                                                                                                                                                                                               |
 
 Interaction-state variants (`--et-surface-interaction-{hover,focus,active,disabled}-solid`)
 resolve automatically per CSS state when the element has `[etSurfaceInteractive]`;
@@ -96,6 +96,13 @@ the interactive element itself, never on a wrapper.
   declared via `@property` can never default to a theme token. If the default should
   come from the theme, don't declare an `@property` - consume the theme token directly
   (optionally behind a `--_et-*` indirection var).
+- `@property` `initial-value` also cannot use a **font-relative or container unit**
+  (`em`, `rem`, `ex`, `ch`, `lh`, `cap`, `ic`, `cq*`). The value must be computationally
+  independent, so the browser drops the whole rule and leaves the token unregistered -
+  with no error. Percentages and viewport units (`vh`, `vw`, `dvh`) are fine. When the
+  default has to be relative, use `syntax: '*'` with no `initial-value` and put the
+  default in a fallback at each use site: `var(--et-skeleton-size, 1em)`.
+  `yarn lint:css-properties` checks this, and pre-commit runs it on staged files.
 - `--et-theme-color-primary-*` always resolves to the **nearest color scope**. A
   hardcoded semantic color in CSS can't be replaced by it unless the right theme is
   provided on that element.
