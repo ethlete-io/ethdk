@@ -261,36 +261,17 @@
   }
 
   .et-color-picker-hex {
-    display: flex;
     flex: 1;
-    align-items: center;
-    gap: 6px;
     min-inline-size: 0;
-  }
-
-  .et-color-picker-hex-label {
-    flex: none;
-    color: var(--et-surface-color-muted-solid, rgb(161 161 170));
-  }
-
-  .et-color-picker-hex-field {
-    flex: 1;
-    inline-size: 100%;
-    min-inline-size: 0;
-    padding: 6px 8px;
-    border-radius: 6px;
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    background: none;
-    color: inherit;
-    font: inherit;
   }
 
   .et-color-picker-eyedropper {
     display: grid;
     flex: none;
+    /* the hex form field sets the row height - stretch to it instead of naming a second number */
+    align-self: stretch;
     place-items: center;
     inline-size: 32px;
-    block-size: 32px;
     padding: 0;
     border-radius: 6px;
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
@@ -352,11 +333,6 @@
 
     .et-color-picker-eyedropper {
       inline-size: 40px;
-      block-size: 40px;
-    }
-
-    .et-color-picker-hex-field {
-      padding-block: 10px;
     }
   }
 }

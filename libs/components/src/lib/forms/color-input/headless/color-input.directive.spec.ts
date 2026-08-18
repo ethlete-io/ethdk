@@ -1,6 +1,8 @@
 import { ApplicationRef, Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { COLOR_INPUT_IMPORTS } from '../color-input.imports';
@@ -272,7 +274,11 @@ describe('ColorInputDirective', () => {
 
   describe('mixed state', () => {
     const setup = () => {
-      TestBed.configureTestingModule({ imports: [ColorInputComponentTestHost] });
+      TestBed.configureTestingModule({
+        imports: [ColorInputComponentTestHost],
+        // the panel's hex field is an `et-form-field`, whose error and warning themes resolve by type
+        providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+      });
 
       const fixture = TestBed.createComponent(ColorInputComponentTestHost);
 
@@ -285,7 +291,7 @@ describe('ColorInputDirective', () => {
           '--_et-color-input-swatch-color',
         );
       const valueSlot = () => fixture.nativeElement.querySelector('.et-color-input-value') as HTMLElement;
-      const hexField = () => pane()?.querySelector<HTMLInputElement>('.et-color-picker-hex-field') ?? null;
+      const hexField = () => pane()?.querySelector<HTMLInputElement>('.et-color-picker-hex .et-input-native') ?? null;
 
       const openPicker = async () => {
         trigger().click();
@@ -303,6 +309,8 @@ describe('ColorInputDirective', () => {
 
         if (field) {
           field.value = color;
+          // `input` moves the et-input model, `change` is what commits it to the picker
+          field.dispatchEvent(new Event('input', { bubbles: true }));
           field.dispatchEvent(new Event('change', { bubbles: true }));
         }
 

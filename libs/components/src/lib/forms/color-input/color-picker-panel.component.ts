@@ -1,10 +1,21 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, DestroyRef, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  linkedSignal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AutoSurfaceDirective, ProvideColorDirective } from '@ethlete/core';
 import { EYEDROPPER_ICON, IconDirective, provideIcons } from '../../icon/headless';
 import { tap } from 'rxjs';
-import { injectOverlaySurfaceContext } from '../form-field/headless';
+import { FormFieldComponent } from '../form-field/form-field.component';
+import { injectOverlaySurfaceContext, LabelDirective } from '../form-field/headless';
+import { InputComponent } from '../input/input.component';
 import { injectColorInputLabels } from './color-input-labels';
 import { COLOR_INPUT_TOKEN, ColorPickerAreaDirective, ColorPickerChannelDirective } from './headless';
 import { formatHsvToHex } from './headless/internals/color-convert';
@@ -15,7 +26,14 @@ import { eyeDropperColor, isEyeDropperSupported } from './headless/internals/eye
   templateUrl: './color-picker-panel.component.html',
   styleUrl: './color-picker-panel.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ColorPickerAreaDirective, ColorPickerChannelDirective, IconDirective],
+  imports: [
+    ColorPickerAreaDirective,
+    ColorPickerChannelDirective,
+    FormFieldComponent,
+    IconDirective,
+    InputComponent,
+    LabelDirective,
+  ],
   providers: [provideIcons(EYEDROPPER_ICON)],
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   // the trigger promises `aria-haspopup="dialog"`, so the mounted pane has to be a named dialog -
@@ -47,6 +65,12 @@ export class ColorPickerPanelComponent {
   /** The picked color at full opacity - the area thumb and the alpha gradient both need it. */
   protected opaqueHex = computed(() => formatHsvToHex({ ...this.colorInput.picker.hsv(), alpha: 1 }));
 
+  /**
+   * What the hex field shows: the canonical hex, except while the user types in it. Every pick
+   * elsewhere in the panel resets it, so the field follows the area, the tracks and the swatches.
+   */
+  protected hexDraft = linkedSignal(() => this.canonicalHex());
+
   protected huePercent = computed(() => (this.colorInput.picker.hsv().hue / 360) * 100);
 
   protected alphaPercent = computed(() => this.colorInput.picker.hsv().alpha * 100);
@@ -59,15 +83,13 @@ export class ColorPickerPanelComponent {
     injectOverlaySurfaceContext({ panelBody: this.panelBody, resizingClass: 'et-color-picker-panel--resizing' });
   }
 
-  protected commitHex(event: Event) {
-    const field = event.target as HTMLInputElement;
+  protected commitHexDraft() {
+    this.colorInput.picker.commitColor(this.hexDraft());
 
-    if (!this.colorInput.picker.commitColor(field.value)) {
-      // An unreadable entry is reverted rather than left standing: the bound value only rewrites the
-      // field when the color actually changed, and a field disagreeing with the swatch above it
-      // reads as a broken control.
-      field.value = this.canonicalHex();
-    }
+    // Both outcomes end here: a read entry is rewritten to the canonical notation, and one the
+    // picker could not read reverts. A field disagreeing with the swatch above it reads as a
+    // broken control.
+    this.hexDraft.set(this.canonicalHex());
   }
 
   protected handleHexKeydown(event: KeyboardEvent) {
@@ -78,7 +100,7 @@ export class ColorPickerPanelComponent {
     // the picker commits live, so Enter has nothing left to submit - and letting it through would
     // submit the form the field sits in
     event.preventDefault();
-    this.commitHex(event);
+    this.commitHexDraft();
   }
 
   protected openEyeDropper() {

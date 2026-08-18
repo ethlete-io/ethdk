@@ -62,21 +62,18 @@
       aria-hidden="true"
     ></span>
 
-    <label class="et-color-picker-hex">
-      <span class="et-color-picker-hex-label">{{ labels().hex }}</span>
-      <!-- committed on change, not on input: a half-typed color is unreadable, and rewriting the
-           field to the canonical notation on every keystroke would fight the typing -->
-      <input
-        [value]="canonicalHex()"
+    <!-- committed on change, not on input: a half-typed color is unreadable, and rewriting the
+         field to the canonical notation on every keystroke would fight the typing -->
+    <et-form-field class="et-color-picker-hex" labelMode="inline" size="sm">
+      <et-label>{{ labels().hex }}</et-label>
+      <et-input
+        [(value)]="hexDraft"
         [disabled]="!colorInput.interactive()"
-        (change)="commitHex($event)"
+        (change)="commitHexDraft()"
         (keydown)="handleHexKeydown($event)"
-        class="et-color-picker-hex-field"
         autocomplete="off"
-        spellcheck="false"
-        type="text"
       />
-    </label>
+    </et-form-field>
 
     @if (showEyeDropper) {
       <button

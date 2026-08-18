@@ -200,14 +200,14 @@ the same as the [date and time pickers](/components/date-time-inputs) and the
 
 ### The panel
 
-| Part                           | Notes                                                                                                                                                            |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Saturation and brightness area | Drag it, or tab to the two sliders behind it (`Saturation`, `Brightness`) and use the arrow keys                                                                 |
-| Hue track                      | A real range input, so arrow keys, `Home`, `End` and the page keys all work                                                                                      |
-| Opacity track                  | Only with `[alpha]` - see below                                                                                                                                  |
-| Preset swatches                | Only with `[swatches]` - see below                                                                                                                               |
-| Hex field                      | Commits on blur or `Enter`. An entry it cannot read reverts rather than standing                                                                                 |
-| Eyedropper                     | Only where the browser has the [EyeDropper API](https://developer.mozilla.org/docs/Web/API/EyeDropper) (Chromium at the time of writing); hidden everywhere else |
+| Part                           | Notes                                                                                                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Saturation and brightness area | Drag it, or tab to the two sliders behind it (`Saturation`, `Brightness`) and use the arrow keys                                                                     |
+| Hue track                      | A real range input, so arrow keys, `Home`, `End` and the page keys all work                                                                                          |
+| Opacity track                  | Only with `[alpha]` - see below                                                                                                                                      |
+| Preset swatches                | Only with `[swatches]` - see below                                                                                                                                   |
+| Hex field                      | A small `et-form-field`, so it carries the normal hover and focus treatment. It commits on blur or `Enter`, and an entry it cannot read reverts rather than standing |
+| Eyedropper                     | Only where the browser has the [EyeDropper API](https://developer.mozilla.org/docs/Web/API/EyeDropper) (Chromium at the time of writing); hidden everywhere else     |
 
 Every surface is built around a native range input, which is what carries the
 keyboard and touch handling. Picking commits live - there is no confirm step, and
