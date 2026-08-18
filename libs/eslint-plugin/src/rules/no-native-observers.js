@@ -73,7 +73,10 @@ const noNativeObservers = {
         if (node.callee.type !== 'Identifier') return;
 
         const name = node.callee.name;
-        if (!(name in OBSERVER_ALTERNATIVES)) return;
+
+        // hasOwn, not `in`: `new constructor()` / `new toString()` would otherwise match an
+        // inherited Object.prototype key and read a function where an entry is expected
+        if (!Object.hasOwn(OBSERVER_ALTERNATIVES, name)) return;
 
         const info = OBSERVER_ALTERNATIVES[name];
 

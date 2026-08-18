@@ -17,6 +17,9 @@ tester.run('no-native-observers', rule, {
     // Unrelated new expressions
     { code: `new MyService();` },
     { code: `new Map();` },
+    // an identifier that names an inherited Object.prototype key is still unrelated
+    { code: `new constructor();` },
+    { code: `new toString();` },
   ],
   invalid: [
     {
