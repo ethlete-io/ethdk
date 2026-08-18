@@ -172,7 +172,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         role,
         positionStrategy: controller.initialMountConfig.positionStrategy,
         animationDelegate: controller.initialMountConfig.animationDelegate,
-        hasBackdrop: resolvedConfig.hasBackdrop ?? controller.initialMountConfig.hasBackdrop ?? modal,
+        hasBackdrop: controller.initialMountConfig.hasBackdrop,
         modal,
         autoFocus: resolvedConfig.autoFocus,
         restoreFocus: resolvedConfig.restoreFocus,
@@ -182,10 +182,9 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         ariaLabelledBy: resolvedConfig.ariaLabelledBy,
         ariaLabel: resolvedConfig.ariaLabel,
         hostClass: [...normalizeClassList(resolvedConfig.hostClass), ...controller.initialMountConfig.hostClass],
-        backdropClass: [
-          ...normalizeClassList(resolvedConfig.backdropClass),
-          ...controller.initialMountConfig.backdropClass,
-        ],
+        // the strategy's own backdrop classes are applied by the controller - the backdrop element is
+        // re-created when a switch turns it back on, and only the config's classes survive that
+        backdropClass: normalizeClassList(resolvedConfig.backdropClass),
         paneClass: [...normalizeClassList(resolvedConfig.panelClass), ...controller.initialMountConfig.paneClass],
       });
 

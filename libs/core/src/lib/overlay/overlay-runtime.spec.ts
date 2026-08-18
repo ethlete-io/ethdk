@@ -107,6 +107,42 @@ describe('overlay runtime', () => {
     ref.close();
   });
 
+  it('adds and removes the backdrop in place via updateBackdrop', () => {
+    const ref = mount({ hasBackdrop: false, backdropClass: ['custom-backdrop'] });
+
+    expect(ref.elements.backdropElement()).toBeNull();
+    expect(ref.elements.hostElement.style.pointerEvents).toBe('none');
+
+    ref.updateBackdrop(true);
+
+    const backdrop = ref.elements.backdropElement();
+
+    expect(backdrop?.classList.contains('et-overlay-runtime-backdrop')).toBe(true);
+    expect(backdrop?.classList.contains('custom-backdrop')).toBe(true);
+    // the pane must stay on top of the backdrop
+    expect(ref.elements.hostElement.firstElementChild).toBe(backdrop);
+    expect(ref.elements.hostElement.style.pointerEvents).toBe('auto');
+
+    ref.updateBackdrop(false);
+
+    expect(ref.elements.backdropElement()).toBeNull();
+    expect(backdrop?.isConnected).toBe(false);
+    expect(ref.elements.hostElement.style.pointerEvents).toBe('none');
+
+    ref.close();
+  });
+
+  it('keeps the pane click-through after a backdrop-less strategy switch', () => {
+    const ref = mount({ hasBackdrop: true, positionStrategy: { kind: 'global' } });
+
+    ref.updateBackdrop(false);
+    ref.updatePositionStrategy({ kind: 'center' });
+
+    expect(ref.elements.hostElement.style.pointerEvents).toBe('none');
+
+    ref.close();
+  });
+
   it('anchors to a virtual element without mirroring its width', () => {
     const virtualElement = {
       getBoundingClientRect: () => new DOMRect(120, 80, 0, 0),

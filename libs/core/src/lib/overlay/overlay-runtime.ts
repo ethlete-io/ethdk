@@ -136,12 +136,32 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       const root = getRootElement(targetDocument, layer);
       const hostElement = renderer.createElement('div');
       const paneElement = renderer.createElement('div');
-      const backdropElement = config.hasBackdrop === false ? null : renderer.createElement('div');
+      const backdropElement = signal<HTMLElement | null>(null);
       const previousFocusedElement = isHTMLElement(targetDocument.activeElement) ? targetDocument.activeElement : null;
       const autoFocus = config.autoFocus ?? 'first-tabbable';
+      let currentHasBackdrop = config.hasBackdrop !== false;
+      let currentPositionStrategy = config.positionStrategy;
+
+      const activeConfig = () =>
+        ({
+          ...config,
+          positionStrategy: currentPositionStrategy,
+          hasBackdrop: currentHasBackdrop,
+        }) as OverlayRuntimeMountConfig<object>;
+
+      const createBackdropElement = () => {
+        const element = renderer.createElement('div');
+
+        renderer.addClass(element, 'et-overlay-runtime-backdrop');
+        setBackdropStyles(element, renderer);
+        renderer.setAttribute(element, 'data-overlay-id', config.id);
+        (config.backdropClass ?? []).forEach((className) => renderer.addClass(element, className));
+
+        return element;
+      };
 
       renderer.addClass(hostElement, 'et-overlay-runtime-entry');
-      setBaseElementStyles(config as OverlayRuntimeMountConfig<object>, hostElement, paneElement, renderer);
+      setBaseElementStyles(activeConfig(), hostElement, paneElement, renderer);
       renderer.setAttributes(hostElement, {
         'data-overlay-id': config.id,
         role: config.role ?? null,
@@ -154,12 +174,11 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
       renderer.addClass(hostElement, ...(config.hostClass ?? []));
 
-      if (backdropElement) {
-        renderer.addClass(backdropElement, 'et-overlay-runtime-backdrop');
-        setBackdropStyles(backdropElement, renderer);
-        renderer.setAttribute(backdropElement, 'data-overlay-id', config.id);
-        (config.backdropClass ?? []).forEach((className) => renderer.addClass(backdropElement, className));
-        renderer.appendChild(hostElement, backdropElement);
+      if (currentHasBackdrop) {
+        const element = createBackdropElement();
+
+        renderer.appendChild(hostElement, element);
+        backdropElement.set(element);
       }
 
       renderer.appendChild(hostElement, paneElement);
@@ -171,7 +190,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         {
           rootElement: root,
           hostElement,
-          backdropElement,
+          backdropElement: backdropElement.asReadonly(),
           paneElement,
         },
         (result, source) => beginClose({ result, source }),
@@ -209,7 +228,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       openEntriesState.update((entries) => [...entries, overlayRef as OverlayRuntimeRef<object, unknown>]);
 
       let positionCleanup = setupPositioning(
-        config as OverlayRuntimeMountConfig<object>,
+        activeConfig(),
         hostElement,
         paneElement,
         overlayRef as OverlayRuntimeRef<object, unknown>,
@@ -217,7 +236,6 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       );
       cleanupFns.push(() => positionCleanup());
 
-      let currentPositionStrategy = config.positionStrategy;
       const getOriginElement = () =>
         currentPositionStrategy?.kind === 'anchored' && isHTMLElement(currentPositionStrategy.referenceElement)
           ? currentPositionStrategy.referenceElement
@@ -226,14 +244,38 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       overlayRef.attachPositionUpdater((strategy) => {
         currentPositionStrategy = strategy;
         positionCleanup();
-        resetPositioningStyles(config as OverlayRuntimeMountConfig<object>, hostElement, paneElement, renderer);
+        resetPositioningStyles(activeConfig(), hostElement, paneElement, renderer);
         positionCleanup = setupPositioning(
-          { ...config, positionStrategy: strategy } as OverlayRuntimeMountConfig<object>,
+          activeConfig(),
           hostElement,
           paneElement,
           overlayRef as OverlayRuntimeRef<object, unknown>,
           renderer,
         );
+      });
+
+      overlayRef.attachBackdropUpdater((hasBackdrop) => {
+        if (hasBackdrop === currentHasBackdrop) {
+          return;
+        }
+
+        currentHasBackdrop = hasBackdrop;
+
+        if (hasBackdrop) {
+          const element = createBackdropElement();
+
+          renderer.insertBefore(hostElement, element, paneElement);
+          backdropElement.set(element);
+        } else {
+          const element = backdropElement();
+
+          if (element) {
+            renderer.removeChild(hostElement, element);
+            backdropElement.set(null);
+          }
+        }
+
+        renderer.setStyle(hostElement, { pointerEvents: hasBackdrop ? 'auto' : 'none' });
       });
 
       const destroyMountedOverlay = (closeEvent: OverlayRuntimeCloseEvent<TResult>) => {

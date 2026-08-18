@@ -80,7 +80,7 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
 - `componentInstance()` - the content component instance
 - `updatePositionStrategy(strategy)` - reposition without remounting
 - `registerCloseGuard(guard)` - veto pending closes synchronously (returns an unregister fn); `forceClose(source?, result?)` commits a close bypassing all guards. These are the low-level seam behind `createOverlayUnsavedChangesGuard` (below) - reach for that instead of wiring guards by hand
-- `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement`) - identity and DOM access
+- `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement()`) - identity and DOM access. `backdropElement` is a signal because a strategy switch can add or remove the backdrop
 
 The manager also exposes an `openOverlays` computed with every currently open ref.
 
@@ -268,6 +268,8 @@ this.overlayManager.open(ExampleOverlayComponent, {
   strategies: transformingBottomSheetToDialogOverlayStrategy({ breakpoint: 'md' }),
 });
 ```
+
+A switch carries the strategy's own `hasBackdrop` over too: morphing a backdropped bottom sheet into a backdrop-less anchored pane removes the backdrop and lets pointers through the host again, and the reverse adds one and fades it in. `config.hasBackdrop` still wins over every strategy, so set it only when the backdrop must stay the same at every breakpoint.
 
 Also available: `transformingFullScreenDialogToDialogOverlayStrategy` and `transformingFullScreenDialogToRightSheetOverlayStrategy`. Custom combinations are just arrays - each strategy provider (e.g. `injectDialogStrategy()`) exposes `.build(config)`, and app-wide defaults can be tuned via `provideDialogStrategyDefaults` and friends.
 

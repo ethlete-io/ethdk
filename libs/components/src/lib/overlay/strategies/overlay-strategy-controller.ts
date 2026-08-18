@@ -19,6 +19,7 @@ import {
   injectRenderer,
   injectStyleManager,
   isHTMLElement,
+  nextFrame,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { OverlayConfig } from '../overlay-config';
@@ -30,10 +31,9 @@ export type OverlayStrategyControllerMountConfig = {
   positionStrategy: OverlayRuntimePositionStrategy;
   paneClass: string[];
   hostClass: string[];
-  backdropClass: string[];
   animationDelegate: OverlayRuntimeAnimationDelegate;
   renderArrow: boolean;
-  hasBackdrop: boolean | undefined;
+  hasBackdrop: boolean;
 };
 
 export type OverlayStrategyController = {
@@ -49,6 +49,9 @@ const normalizeClasses = (value?: string | string[]): string[] => {
 
   return Array.isArray(value) ? value : [value];
 };
+
+/** Set by the overlay container while the overlay is open - see `overlay-container.component.css`. */
+const BACKDROP_VISIBLE_CLASS = 'et-overlay-backdrop--visible';
 
 const coerceCssPixelValue = (value: number | string) => {
   return typeof value === 'number' ? `${value}px` : value;
@@ -145,7 +148,7 @@ export const createOverlayStrategyController = (
       runtimeRef,
       containerEl: runtimeRef.elements.paneElement,
       hostEl: runtimeRef.elements.hostElement,
-      backdropEl: runtimeRef.elements.backdropElement,
+      backdropEl: runtimeRef.elements.backdropElement(),
       lifecycle,
       config: strategyConfig,
       previousConfig,
@@ -155,6 +158,10 @@ export const createOverlayStrategyController = (
 
   const resolvePositionStrategy = (strategyConfig: OverlayBreakpointConfig): OverlayRuntimePositionStrategy => {
     return strategyConfig.positionStrategy?.(originElement) ?? { kind: 'global' };
+  };
+
+  const resolveHasBackdrop = (strategyConfig: OverlayBreakpointConfig) => {
+    return config.hasBackdrop ?? strategyConfig.hasBackdrop ?? config.mode !== 'non-modal';
   };
 
   const composeMaxSize = (value: number | string | undefined, cssVar: string) => {
@@ -204,7 +211,8 @@ export const createOverlayStrategyController = (
     currConfig: OverlayBreakpointConfig;
   }) => {
     const { runtimeRef, prevConfig, currConfig } = options;
-    const { paneElement, hostElement, backdropElement } = runtimeRef.elements;
+    const { paneElement, hostElement } = runtimeRef.elements;
+    const backdropElement = runtimeRef.elements.backdropElement();
 
     applyClassChange(paneElement, { prev: prevConfig?.containerClass, curr: currConfig.containerClass });
     applyClassChange(hostElement, { prev: prevConfig?.hostClass, curr: currConfig.hostClass });
@@ -226,6 +234,25 @@ export const createOverlayStrategyController = (
     }
   };
 
+  /**
+   * A backdrop the switch just added has missed the enter transition that fades one in, so it is
+   * faded in from the next frame instead. Must run before `applyClasses`, which puts the strategy's
+   * own classes on whatever element exists afterwards.
+   */
+  const applyBackdrop = (runtimeRef: OverlayRuntimeRef<object, unknown>, strategyConfig: OverlayBreakpointConfig) => {
+    const hadBackdrop = !!runtimeRef.elements.backdropElement();
+
+    runtimeRef.updateBackdrop(resolveHasBackdrop(strategyConfig));
+
+    const backdropElement = runtimeRef.elements.backdropElement();
+    const lifecycleState = getLifecycle()?.state$.value;
+    const isVisible = lifecycleState === 'entering' || lifecycleState === 'entered';
+
+    if (hadBackdrop || !backdropElement || !isVisible) return;
+
+    nextFrame(() => renderer.addClass(backdropElement, BACKDROP_VISIBLE_CLASS));
+  };
+
   const switchStrategy = (currStrategy: OverlayStrategy, prevStrategy: OverlayStrategy) => {
     const runtimeRef = attachedRuntimeRef;
     if (!runtimeRef) return;
@@ -240,6 +267,7 @@ export const createOverlayStrategyController = (
     activeStrategy = currStrategy;
 
     mountStrategyStyles(currStrategy.config);
+    applyBackdrop(runtimeRef, currStrategy.config);
     applyClasses({ runtimeRef, prevConfig: prevStrategy.config, currConfig: currStrategy.config });
     runtimeRef.updatePositionStrategy(resolvePositionStrategy(currStrategy.config));
     // re-position clears inline pane styles, so sizing must be re-applied afterwards
@@ -284,6 +312,11 @@ export const createOverlayStrategyController = (
     attachedOverlayRef = overlayRef;
 
     applySizingStyles(runtimeRef.elements.paneElement, activeStrategy.config);
+
+    const backdropElement = runtimeRef.elements.backdropElement();
+    if (backdropElement) {
+      applyClassChange(backdropElement, { curr: activeStrategy.config.backdropClass });
+    }
 
     if (activeStrategy.config.documentClass) {
       renderer.addClass(document.documentElement, ...normalizeClasses(activeStrategy.config.documentClass));
@@ -364,10 +397,9 @@ export const createOverlayStrategyController = (
       positionStrategy: resolvePositionStrategy(activeStrategy.config),
       paneClass: normalizeClasses(activeStrategy.config.containerClass),
       hostClass: normalizeClasses(activeStrategy.config.hostClass),
-      backdropClass: normalizeClasses(activeStrategy.config.backdropClass),
       animationDelegate,
       renderArrow: activeStrategy.config.arrow ?? false,
-      hasBackdrop: activeStrategy.config.hasBackdrop,
+      hasBackdrop: resolveHasBackdrop(activeStrategy.config),
     },
     attach,
   };

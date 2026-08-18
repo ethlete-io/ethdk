@@ -164,7 +164,7 @@ export class OverlayContainerComponent {
     this.animatedLifecycle()
       .state$.pipe(
         tap((state) => {
-          const backdrop = this.overlayRef.elements?.backdropElement;
+          const backdrop = this.overlayRef.elements?.backdropElement();
           if (!backdrop) return;
 
           if (state === 'entering' || state === 'entered') {

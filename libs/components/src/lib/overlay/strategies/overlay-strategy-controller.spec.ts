@@ -165,6 +165,36 @@ describe('overlay strategy controller', () => {
     expect(smallStrategy.onBeforeLeave).toHaveBeenCalledOnce();
   });
 
+  it('adds and removes the backdrop when the switched-to strategy differs', async () => {
+    smallStrategy.config.hasBackdrop = true;
+    smallStrategy.config.backdropClass = 'small-backdrop';
+    largeStrategy.config.hasBackdrop = false;
+
+    const overlayRef = openOverlay();
+    const elements = overlayRef.elements;
+
+    await flushFrames();
+
+    expect(elements?.backdropElement()?.classList.contains('small-backdrop')).toBe(true);
+    expect(elements?.backdropElement()?.classList.contains('et-overlay-backdrop--visible')).toBe(true);
+
+    fakeBreakpoints.setMatches(MD_QUERY, true);
+    TestBed.tick();
+
+    expect(elements?.backdropElement()).toBeNull();
+    expect(elements?.hostElement.style.pointerEvents).toBe('none');
+
+    fakeBreakpoints.setMatches(MD_QUERY, false);
+    TestBed.tick();
+    await flushFrames();
+
+    const backdrop = elements?.backdropElement();
+
+    expect(backdrop?.classList.contains('small-backdrop')).toBe(true);
+    expect(backdrop?.classList.contains('et-overlay-backdrop--visible')).toBe(true);
+    expect(elements?.hostElement.style.pointerEvents).toBe('auto');
+  });
+
   it('switches strategies when the breakpoint changes', () => {
     const overlayRef = openOverlay();
     const elements = overlayRef.elements;

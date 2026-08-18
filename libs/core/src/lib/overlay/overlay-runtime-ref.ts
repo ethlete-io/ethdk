@@ -21,6 +21,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
   const _componentInstance = signal<TComponent | null>(null);
 
   let positionUpdater: ((strategy: OverlayRuntimePositionStrategy) => void) | null = null;
+  let backdropUpdater: ((hasBackdrop: boolean) => void) | null = null;
 
   const beforeOpenedSubject = new Subject<void>();
   const afterOpenedSubject = new Subject<void>();
@@ -100,6 +101,23 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
       }
 
       positionUpdater?.(strategy);
+    },
+
+    /** @internal */
+    attachBackdropUpdater(updater: (hasBackdrop: boolean) => void) {
+      backdropUpdater = updater;
+    },
+
+    /**
+     * Adds or removes the backdrop of an open overlay. `elements.backdropElement` follows.
+     * A closing overlay keeps the backdrop it has, so its leave transition stays intact.
+     */
+    updateBackdrop(hasBackdrop: boolean) {
+      if (_state() === 'closing' || _state() === 'closed') {
+        return;
+      }
+
+      backdropUpdater?.(hasBackdrop);
     },
 
     markOpened() {

@@ -77,7 +77,8 @@ export type OverlayRuntimePositionStrategy =
 export type OverlayRuntimeElements = {
   rootElement: HTMLElement;
   hostElement: HTMLElement;
-  backdropElement: HTMLElement | null;
+  /** Present only while the overlay has a backdrop - a strategy switch can add or remove it. */
+  backdropElement: Signal<HTMLElement | null>;
   paneElement: HTMLElement;
 };
 
