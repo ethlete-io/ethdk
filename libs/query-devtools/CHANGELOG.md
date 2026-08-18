@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.6
+
+### Patch Changes
+
+- [#3067](https://github.com/ethlete-io/ethdk/pull/3067) [`e271c58`](https://github.com/ethlete-io/ethdk/commit/e271c58ffc395075a5c4496abf34b34568855276) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the value explorer shows the headers a `headers` provider hands the request, instead of an `fn(headerProvider)` row.
+
 ## 1.0.0-next.5
 
 ### Patch Changes
