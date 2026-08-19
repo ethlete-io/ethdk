@@ -17,8 +17,12 @@
     initial-value: 0px;
   }
 
+  /* The page scrolls this table, so the host scrolls nothing - but it keeps the grid and its
+     `minmax(0, 1fr)` column. As a plain block its inline min-content size would be the header strip's
+     whole track width, and no ancestor can be narrower than that: a window under it scrolls the page
+     sideways instead of narrowing the table. */
   .et-table-host--page-sticky-header {
-    display: block;
+    grid-template-rows: none;
     overflow: visible;
     position: relative;
   }
@@ -26,6 +30,10 @@
   .et-table-header-strip {
     position: sticky;
     inset-block-start: var(--et-table-sticky-header-offset);
+    /* The strip is a grid item, and the column it sits in has a 0 floor. Without this it takes its
+       content's width instead and hangs out past the table, rather than clipping the columns that
+       scroll behind it. */
+    min-inline-size: 0;
     overflow: clip;
     z-index: 4;
   }
@@ -34,15 +42,25 @@
     transform: translateX(calc(-1 * var(--_et-table-inline-scroll)));
   }
 
+  /* The strip pins these cells, so they do not pin themselves. The gap an appearance leaves under the
+     header (`cards`) leaves with them: the strip is pinned over the rows and paints its own surface, so
+     it has to end on the header's rule instead of covering the rows for the gap's height as well. The
+     body below carries that gap - see the scroller. */
   .et-table-header .et-table-header-cell {
     position: relative;
     inset-block-start: auto;
+    margin-block-end: 0;
   }
 
+  /* Padding rather than a margin on the header, so the busy bar's negative offset lands inside the
+     scrollport instead of in unreachable overflow above it.
+
+     The bar is the host's: `scrollbar-color` inherits on its own, `scrollbar-width` does not, and a
+     table that hides its own bar (or thins it) must not get the platform's one back in this layout. */
   .et-table-scroller {
+    padding-block-start: var(--_et-table-header-gap-block);
     overflow-x: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 35%, transparent) transparent;
+    scrollbar-width: inherit;
   }
 
   .et-table-header .et-table-header-cell.et-table-sticky-start {
