@@ -1,4 +1,4 @@
-import { Resource, resource } from '@angular/core';
+import { inject, Injector, Resource, resource, runInInjectionContext } from '@angular/core';
 import { FieldContext, PathKind, SchemaPath, SchemaPathRules, TreeValidationResult } from '@angular/forms/signals';
 import { FormViolationView } from '@ethlete/types';
 import { Observable, filter, firstValueFrom, take } from 'rxjs';
@@ -61,6 +61,7 @@ export type ValidateWithV2QueryConfig<
 type PreparedV2Query<TData> = {
   execute: () => void;
   abort: () => void;
+  destroy?: () => void;
   state$: Observable<V2QueryState<TData>>;
 };
 
@@ -99,6 +100,7 @@ export const validateWithV2Query = <
 ) => {
   type TParams = V2PrepareArgsOf<TCreator>;
   type TResult = QueryDataOf<TCreator>;
+  const injector = inject(Injector);
 
   applyQueryAsyncValidator<TValue, TParams, TResult, TPathKind>(path, {
     params: config.args,
@@ -111,9 +113,26 @@ export const validateWithV2Query = <
         loader: ({ params: prepareArgs, abortSignal }) => {
           // Prepared per request - v2 caches by the prepared args, so a fresh `prepare()` is the
           // legacy idiom (the sibling `selectOptionsFromV2Query` does the same via `queryComputed`).
-          const query = config.queryCreator.prepare(prepareArgs) as unknown as PreparedV2Query<TResult>;
+          const query = runInInjectionContext(
+            injector,
+            () => config.queryCreator.prepare(prepareArgs) as unknown as PreparedV2Query<TResult>,
+          );
+          let destroyed = false;
+          const destroy = () => {
+            if (destroyed) return;
 
-          abortSignal.addEventListener('abort', () => query.abort());
+            destroyed = true;
+            query.destroy?.();
+          };
+
+          abortSignal.addEventListener(
+            'abort',
+            () => {
+              query.abort();
+              destroy();
+            },
+            { once: true },
+          );
           query.execute();
 
           // Resolve once the query settles. A failure is thrown so it lands in `onError`, where the
@@ -124,13 +143,15 @@ export const validateWithV2Query = <
               filter((state) => isQueryStateSuccess(state) || isQueryStateFailure(state)),
               take(1),
             ),
-          ).then((state) => {
-            if (isQueryStateFailure(state)) {
-              throw state.error.httpErrorResponse;
-            }
+          )
+            .then((state) => {
+              if (isQueryStateFailure(state)) {
+                throw state.error.httpErrorResponse;
+              }
 
-            return state.response;
-          });
+              return state.response;
+            })
+            .finally(destroy);
         },
       }) as Resource<TResult | undefined>,
   });

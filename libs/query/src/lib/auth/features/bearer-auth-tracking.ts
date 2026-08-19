@@ -1,5 +1,5 @@
 import { effect, isDevMode, Signal, untracked } from '@angular/core';
-import { QueryArgs, QueryErrorResponse, QuerySnapshot } from '../../http';
+import { QueryArgs, QueryErrorResponse, QuerySnapshot, RequestArgs } from '../../http';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
@@ -32,7 +32,7 @@ type ExtractArgsForEvent<TBuilders extends readonly AnyQueryBuilder[], TEventNam
 
 export type QueryExecuteEventData<TArgs extends QueryArgs = QueryArgs> = {
   queryKey: string;
-  args: TArgs;
+  args: RequestArgs<TArgs> | null;
 };
 
 export type QuerySuccessEventData<TArgs extends QueryArgs = QueryArgs> = {
@@ -177,9 +177,10 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
   };
 
   type ForwardedMessage = { event: string; data: unknown };
+  const pendingForwardedMessages: ForwardedMessage[] = [];
   const forwardingChannel =
     context.leaderElection && typeof BroadcastChannel !== 'undefined'
-      ? new BroadcastChannel('ethlete-auth-tracking')
+      ? new BroadcastChannel(`ethlete-auth-tracking:${context.name}`)
       : null;
 
   if (forwardingChannel) {
@@ -191,21 +192,56 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     context.destroyRef.onDestroy(() => forwardingChannel.close());
   }
 
+  const forward = (message: ForwardedMessage) => {
+    if (!forwardingChannel) return false;
+
+    try {
+      forwardingChannel.postMessage(message);
+
+      return true;
+    } catch (error) {
+      if (isDevMode()) {
+        console.warn(
+          `[@ethlete/query] Could not forward the "${message.event}" tracking event to the leader tab.`,
+          error,
+        );
+      }
+
+      return false;
+    }
+  };
+
+  if (context.leaderElection) {
+    effect(
+      () => {
+        const isLeader = context.leaderElection?.isLeader() ?? false;
+        const instanceCount = context.leaderElection?.instanceCount() ?? 1;
+
+        if (!pendingForwardedMessages.length || (!isLeader && instanceCount <= 1)) return;
+
+        untracked(() => {
+          const pending = pendingForwardedMessages.splice(0);
+
+          for (const message of pending) {
+            if (isLeader || !forward(message)) fireHandlers(message.event, message.data);
+          }
+        });
+      },
+      { injector: context.injector },
+    );
+  }
+
   const emit = (event: string, data: unknown) => {
     if (forwardingChannel && !context.isLeader()) {
-      try {
-        forwardingChannel.postMessage({ event, data } satisfies ForwardedMessage);
+      const message = { event, data } satisfies ForwardedMessage;
+
+      if ((context.leaderElection?.instanceCount() ?? 1) <= 1) {
+        pendingForwardedMessages.push(message);
 
         return;
-      } catch (error) {
-        // Some payloads cannot leave the tab they were made in: a query snapshot is a bundle of
-        // signals, and the structured clone algorithm throws on functions. Firing the handlers here
-        // is the lesser evil - the event reaches a handler in the wrong tab rather than taking the
-        // effect it was emitted from down with it.
-        if (isDevMode()) {
-          console.warn(`[@ethlete/query] Could not forward the "${event}" tracking event to the leader tab.`, error);
-        }
       }
+
+      if (forward(message)) return;
     }
 
     fireHandlers(event, data);
@@ -215,7 +251,10 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     fireHandlers(event, data);
   };
 
-  const trackedQueries = new Map<string, { loading: boolean; lastResult: 'success' | 'error' | null }>();
+  const trackedQueries = new Map<
+    string,
+    { lastResult: 'success' | 'error' | null; snapshot: QuerySnapshot<QueryArgs> }
+  >();
 
   Object.entries(context.queries).forEach(([key, queryEntry]) => {
     const query = queryEntry as { snapshot: Signal<any>; execute: (...args: any[]) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -233,18 +272,19 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
 
       const prevState = trackedQueries.get(key);
 
+      if (prevState?.snapshot !== snapshot) {
+        trackedQueries.set(key, { snapshot, lastResult: null });
+        emit(`${key}Execute`, { queryKey: key, args: snapshot.args() });
+      }
+
       if (response && !loading && !error && prevState?.lastResult !== 'success') {
-        trackedQueries.set(key, { loading: false, lastResult: 'success' });
+        trackedQueries.set(key, { snapshot, lastResult: 'success' });
         emit(`${key}Success`, { snapshot });
       }
 
       if (error && !loading && prevState?.lastResult !== 'error') {
-        trackedQueries.set(key, { loading: false, lastResult: 'error' });
+        trackedQueries.set(key, { snapshot, lastResult: 'error' });
         emit(`${key}Failure`, { error });
-      }
-
-      if (loading) {
-        trackedQueries.set(key, { loading: true, lastResult: null });
       }
     });
   });
@@ -262,11 +302,16 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     hadTokens = hasTokens;
   });
 
-  context.afterTokenRefresh$.subscribe(() => {
+  let lastTrackedRefreshState: unknown = null;
+  effect(() => {
+    const state = context.executionState();
+
+    if (state === lastTrackedRefreshState || state?.type !== 'tokenRefresh' || state.state !== 'success') return;
+
+    lastTrackedRefreshState = state;
     emit('tokenRefreshSuccess', {
-      queryKey: 'refresh',
-      snapshot: undefined,
-    });
+      automatic: !!untracked(context.latestExecutedQuery)?.snapshot.triggeredBy(),
+    } satisfies TokenRefreshEventData);
   });
 
   if (config?.on) {

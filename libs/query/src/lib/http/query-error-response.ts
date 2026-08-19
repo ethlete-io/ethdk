@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { runDefaultQueryRetry, runQueryErrorParsers } from './query-error-parsing';
-import { ShouldRetryRequestResult } from './query-retry-utils';
+import { ShouldRetryRequestFn, ShouldRetryRequestResult } from './query-retry-utils';
 
 export type QueryErrorResponseList = {
   isList: true;
@@ -54,7 +54,10 @@ export const queryErrorMessages = (error: QueryErrorResponse | null | undefined)
 export const queryErrorMessage = (error: QueryErrorResponse | null | undefined): string | null =>
   queryErrorMessages(error)[0] ?? null;
 
-export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => {
+export const createQueryErrorResponse = (
+  error: unknown,
+  retry?: { retryCount: number; retryFn?: ShouldRetryRequestFn },
+): QueryErrorResponse => {
   let err = error instanceof HttpErrorResponse ? error : null;
 
   if (!err) {
@@ -64,7 +67,9 @@ export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => 
       statusText: 'Unknown Error',
     });
   }
-  const retryState = runDefaultQueryRetry({ retryCount: 0, error: err });
+  const retryOptions = { retryCount: retry?.retryCount ?? 0, error: err };
+  const retryState =
+    typeof retry?.retryFn === 'function' ? retry.retryFn(retryOptions) : runDefaultQueryRetry(retryOptions);
 
   const detail = err.error;
   const errorList: QueryErrorResponseItem[] = [];

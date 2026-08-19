@@ -215,6 +215,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
         }),
         take(1),
         tap(() => exec(execArgsWithDefaults)),
+        takeUntilDestroyed(options.deps.destroyRef),
       )
       .subscribe();
 

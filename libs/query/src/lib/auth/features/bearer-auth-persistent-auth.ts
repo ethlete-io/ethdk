@@ -1,5 +1,5 @@
 import { Signal, effect, signal } from '@angular/core';
-import { deleteCookie as coreDeleteCookie, getCookie, getDomain, injectRoute, setCookie } from '@ethlete/core';
+import { deleteCookie as coreDeleteCookie, getCookie, injectRoute, setCookie } from '@ethlete/core';
 import { RequestArgs } from '../../http';
 import {
   AnyQueryBuilder,
@@ -156,7 +156,7 @@ export const createPersistentAuthFeature = <
 
   const rememberMeSignal = signal(initializeRememberMe());
 
-  const cookieDomain = () => config.cookie?.domain ?? getDomain() ?? 'localhost';
+  const cookieDomain = () => config.cookie?.domain ?? null;
   const cookiePath = () => config.cookie?.path ?? '/';
 
   const removeCookie = () => coreDeleteCookie(cookieName, cookiePath(), cookieDomain());
@@ -184,15 +184,15 @@ export const createPersistentAuthFeature = <
   });
 
   effect(() => {
+    const endCause = context.sessionEndCause();
+
+    if (endCause) removeCookie();
+  });
+
+  effect(() => {
     const state = executionState();
 
     if (!state) return;
-
-    if (state.type === 'logout') {
-      removeCookie();
-
-      return;
-    }
 
     // A token the server itself rejected is worth nothing on the next visit; anything else (offline, a
     // 500, an aborted startup) leaves it in place so a reload can try again.

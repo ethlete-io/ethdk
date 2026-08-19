@@ -10,7 +10,7 @@ export const transformToStringArray = (value: unknown) => {
   if (Array.isArray(value)) {
     return value.map(transformToString).filter(Boolean) as string[];
   } else if (typeof value === 'string') {
-    return [transformToString(value)] as string[];
+    return value ? [value] : [];
   }
 
   return null;
@@ -21,7 +21,11 @@ export const transformToNumber = (value: unknown) => {
     return value;
   }
   if (typeof value === 'string') {
-    return Number(value);
+    if (!value.trim()) return null;
+
+    const number = Number(value);
+
+    return Number.isNaN(number) ? null : number;
   }
   return null;
 };
@@ -29,8 +33,10 @@ export const transformToNumber = (value: unknown) => {
 export const transformToNumberArray = (value: unknown) => {
   if (Array.isArray(value)) {
     return value.map(transformToNumber).filter((item) => item !== null) as number[];
-  } else if (typeof value === 'number') {
-    return [value] as number[];
+  } else if (typeof value === 'string' || typeof value === 'number') {
+    const number = transformToNumber(value);
+
+    return number === null ? [] : [number];
   }
 
   return null;
@@ -50,7 +56,9 @@ export const transformToBooleanArray = (value: unknown) => {
   if (Array.isArray(value)) {
     return value.map(transformToBoolean).filter((item) => item !== null) as boolean[];
   } else if (typeof value === 'string' || typeof value === 'boolean') {
-    return [transformToBoolean(value)] as boolean[];
+    const boolean = transformToBoolean(value);
+
+    return boolean === null ? [] : [boolean];
   }
 
   return null;
@@ -76,7 +84,9 @@ export const transformToDateArray = (value: unknown) => {
   if (Array.isArray(value)) {
     return value.map(transformToDate).filter((item) => item !== null) as Date[];
   } else if (typeof value === 'string' || value instanceof Date) {
-    return [transformToDate(value)] as Date[];
+    const date = transformToDate(value);
+
+    return date === null ? [] : [date];
   }
 
   return null;
@@ -99,7 +109,7 @@ export const transformToSort = (value: unknown): Sort | null => {
 
     return {
       active,
-      direction: direction as 'asc' | 'desc',
+      direction: direction === 'asc' || direction === 'desc' ? direction : '',
     };
   }
 

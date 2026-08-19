@@ -83,6 +83,8 @@ export class QueryStore {
   }
 
   private initSmartQueryHandling() {
+    if (typeof window === 'undefined') return;
+
     const windowBlur$ = fromEvent<Event>(window, 'blur');
     const windowFocus$ = fromEvent<Event>(window, 'focus');
 
@@ -152,6 +154,8 @@ export class QueryStore {
   }
 
   private initGarbageCollector() {
+    if (typeof window === 'undefined') return;
+
     if (this.garbageCollector !== null) {
       return;
     }
@@ -164,6 +168,8 @@ export class QueryStore {
   }
 
   private stopGarbageCollector() {
+    if (typeof window === 'undefined') return;
+
     if (this.garbageCollector !== null) {
       window.clearInterval(this.garbageCollector);
       this.garbageCollector = null;

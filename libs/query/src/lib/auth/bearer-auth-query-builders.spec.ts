@@ -557,6 +557,24 @@ describe('bearer-auth-query-builders', () => {
       expect(seen).toEqual([401]);
       expect(authSetup.auth.isAuthenticated()).toBe(true);
     });
+
+    it('hands an unusable successful refresh response to onRefreshFailure', () => {
+      const seen: number[] = [];
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        extractRefreshTokens: () => {
+          throw new Error('missing tokens');
+        },
+        onRefreshFailure: ({ error }) => seen.push(error.code),
+      });
+
+      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access', refreshToken: 'refresh' });
+      authSetup.refresh('refresh', { accessToken: 'ignored', refreshToken: 'ignored' });
+      TestBed.tick();
+
+      expect(seen).toEqual([0]);
+      expect(authSetup.auth.accessToken()).toBe('access');
+    });
   });
 
   describe('withRefreshQuery - Preemptive Refresh', () => {

@@ -462,6 +462,10 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
         mergeMap((entry) => runEntry(entry), concurrency),
         toArray(),
         map(() => settleRun(entries)),
+        finalize(() => {
+          if (status() === 'running') status.set('idle');
+          running.set(false);
+        }),
       );
     });
 

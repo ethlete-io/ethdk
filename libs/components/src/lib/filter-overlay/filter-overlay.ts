@@ -1,4 +1,4 @@
-import { InjectionToken, Provider, Signal, computed, inject } from '@angular/core';
+import { InjectionToken, Injector, Provider, Signal, computed, inject } from '@angular/core';
 import { FieldTree } from '@angular/forms/signals';
 import { equal } from '@ethlete/core';
 import { QueryFormFields, QueryFormModel, QueryFormSignals } from '@ethlete/query';
@@ -108,7 +108,7 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
   });
   const labels = injectFilterOverlayLabels();
 
-  const draft = config.queryForm.branch();
+  const draft = config.queryForm.branch(inject(Injector));
   const maxCountedHits = config.maxCountedHits ?? 250;
 
   // Called here, inside the overlay's injection context, which is why `preview` is a factory: a query created at

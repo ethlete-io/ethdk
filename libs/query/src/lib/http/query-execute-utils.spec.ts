@@ -81,6 +81,7 @@ describe('query execute utils', () => {
       expect(state.latestHttpEvent()).toBeNull();
       expect(state.loading()).toBeNull();
       expect(state.response()).toBeNull();
+      expect(executeState.previousKey()).toBeNull();
     });
 
     unbindSpy.mockRestore();

@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { AuthProvider } from '../auth';
 import { EntityStore } from '../entity';
 import {
@@ -193,6 +193,12 @@ export class V2QueryClient {
     return this._authProvider$.getValue() ?? this._clientConfig.parent?._authProvider$.getValue() ?? null;
   }
   get authProvider$() {
-    return this._authProvider$.asObservable() ?? this._clientConfig.parent?._authProvider$.asObservable() ?? null;
+    const parent = this._clientConfig.parent?._authProvider$;
+
+    return parent
+      ? combineLatest([this._authProvider$, parent]).pipe(
+          map(([ownProvider, parentProvider]) => ownProvider ?? parentProvider),
+        )
+      : this._authProvider$.asObservable();
   }
 }

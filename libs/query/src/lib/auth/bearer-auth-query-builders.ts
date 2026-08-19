@@ -245,7 +245,6 @@ export type TokenRefreshQueryBuilder<TKey extends string, TArgs extends QueryArg
   /**
    * The args a refresh sends for a given refresh token, so the devtools can describe the request
    * without running it.
-   * @internal
    */
   buildArgs: (refreshToken: string) => RequestArgs<QueryArgs>;
 };
@@ -265,7 +264,11 @@ export const withAuthenticationQuery = <TKey extends string, TArgs extends Query
     ...config,
     // A spent credential entry must not sit out a retention window: the request body holds the
     // username and password, the response the tokens it was exchanged for.
-    queryCreator: config.queryCreator.clone({ keepUnusedFor: 0, subtle: { useQueryRepositoryCache: true } }),
+    queryCreator: config.queryCreator.clone({
+      ...(config.retryFn ? { retryFn: config.retryFn } : {}),
+      keepUnusedFor: 0,
+      subtle: { useQueryRepositoryCache: true },
+    }),
   },
   setup,
 });
@@ -510,7 +513,9 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
     const calculateRefreshBuffer = (tokenLifetimeMs: number) => {
       if (typeof config.refreshStrategy === 'number') {
-        return config.refreshStrategy;
+        return config.refreshStrategy >= 0 && config.refreshStrategy <= 1
+          ? tokenLifetimeMs * (1 - config.refreshStrategy)
+          : config.refreshStrategy;
       }
 
       const percentage = config.refreshStrategy?.percentage ?? 0.75;
@@ -594,7 +599,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
      * a request fails with a 401 - by which time the refresh token may be gone too.
      */
     const scheduledRefresh = (dueInMs: number, attemptsLeft: number): Observable<unknown> =>
-      (dueInMs <= 0 ? of(0) : timer(dueInMs)).pipe(
+      (dueInMs <= 0 ? of(0) : timer(Math.min(dueInMs, maxTimerDelayMs))).pipe(
         concatMap(() => {
           const attempt = executeRefresh('scheduled');
           const retryInMs = retryScheduledIn(attempt);
@@ -660,15 +665,11 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       });
 
     effect(() => {
-      const snapshot = refreshQuery().snapshot();
+      const state = context.executionState();
 
-      if (!snapshot || snapshot.loading()) return;
+      if (state?.type !== 'tokenRefresh' || state.state !== 'error') return;
 
-      const error = snapshot.error();
-
-      if (!error) return;
-
-      onRefreshFailure({ error, logout: () => context.logout('expired') });
+      onRefreshFailure({ error: state.error, logout: () => context.logout('expired') });
     });
 
     // Auto-retry on 401: Listen to repository events and trigger refresh on 401 errors
@@ -706,7 +707,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     config: {
       ...config,
       queryCreator: config.queryCreator.clone({
-        retryFn: refreshRetryFn,
+        retryFn: config.retryFn ?? refreshRetryFn,
         keepUnusedFor: 0,
         subtle: { useQueryRepositoryCache: true },
       }),

@@ -13,6 +13,7 @@ export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecute
   const { state } = opts;
 
   opts.deps.client.repository.unbind(executeState.previousKey(), opts.deps.destroyRef);
+  executeState.previousKey.set(null);
 
   state.args.set(null);
   state.error.set(null);

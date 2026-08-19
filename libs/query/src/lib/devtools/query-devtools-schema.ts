@@ -96,6 +96,7 @@ const MAX_DEPTH = 12;
 
 /** How many elements are generated for an array, whatever its `minItems` says. */
 const MAX_ITEMS = 3;
+const MAX_STRING_LENGTH = 10_000;
 
 /**
  * How many array elements are generated on their own rather than copied from the first. Nested arrays
@@ -365,14 +366,14 @@ const pickStressStringPreset = () =>
 
 /** Keeps a generated string inside `minLength`/`maxLength`, since a seed is exported as a real body. */
 const fitLength = (value: string, schema: Record<string, unknown>) => {
-  const min = finiteNumber(schema['minLength']);
-  const max = finiteNumber(schema['maxLength']);
+  const min = Math.min(finiteNumber(schema['minLength']) ?? 0, MAX_STRING_LENGTH);
+  const max = Math.min(finiteNumber(schema['maxLength']) ?? MAX_STRING_LENGTH, MAX_STRING_LENGTH);
 
   let out = value;
 
-  while (min !== null && out.length < min) out += value || 'x';
+  while (out.length < min) out += value || 'x';
 
-  return max === null ? out : out.slice(0, max);
+  return out.slice(0, max);
 };
 
 /**

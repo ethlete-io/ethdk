@@ -442,15 +442,11 @@ export const computeQueryAuthHeader = (config: {
 }) => {
   let authHeader: Record<string, string> | null = null;
 
-  if (config.config.secure) {
+  if (config.config.secure === true) {
     const header = config.client.authProvider?.header;
 
     if (header) {
       authHeader = header;
-    }
-  } else if (config.client.authProvider?.header) {
-    if (config.config.secure === undefined || config.config.secure) {
-      authHeader = config.client.authProvider.header;
     }
   }
 

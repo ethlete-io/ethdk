@@ -45,7 +45,7 @@ describe('createQueryRepository', () => {
 
     expect(req).toBeTruthy();
 
-    const expectedKey = '441402764';
+    const expectedKey = '25888864122865389909';
 
     expect(req.key).toBe(expectedKey);
     expect(req2.key).toBe(expectedKey);
@@ -60,7 +60,7 @@ describe('createQueryRepository', () => {
       args: { body: { foo: true }, headers, pathParams: { userId: 'abc123' }, queryParams: { page: 1 } },
     });
 
-    const expectedKey2 = '2137832378';
+    const expectedKey2 = '02575197862373240585';
     expect(req4.key).toBe(expectedKey2);
   });
 
@@ -84,12 +84,12 @@ describe('createQueryRepository', () => {
 
   it('should change the resulting key if a prefix if set', () => {
     const req1 = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
-    const expectedKey1 = '441402764';
+    const expectedKey1 = '25888864122865389909';
 
     expect(req1.key).toBe(expectedKey1);
 
     const req2 = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test', key: 'custom' });
-    const expectedKey2 = '3672919614';
+    const expectedKey2 = '15254359661871970873';
 
     expect(req2.key).toBe(expectedKey2);
   });
@@ -108,6 +108,40 @@ describe('createQueryRepository', () => {
     const res4 = repo.unbind('not existing key', destroyRef);
 
     expect(res4).toBe(false);
+  });
+
+  it('merges restrictive policies when another consumer shares a cache key', () => {
+    const first = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/shared' });
+
+    repo.request({
+      consumerDestroyRef: destroyRef,
+      method: 'GET',
+      route: '/shared',
+      isSecure: true,
+      creatorOptions: { multiTabSync: false, persistence: false },
+      runQueryOptions: { keepUnusedFor: 0 },
+    });
+
+    repo.unbindAllSecure();
+
+    expect(repo.subtle.cacheEntries().find((entry) => entry.key === first.key)).toBeUndefined();
+  });
+
+  it('registers one destroy listener while the same consumer repeatedly executes a cache key', () => {
+    const unregister = vi.fn();
+    const consumerDestroyRef = {
+      destroyed: false,
+      onDestroy: vi.fn(() => unregister),
+    } as unknown as DestroyRef;
+
+    const first = repo.request({ consumerDestroyRef, method: 'GET', route: '/test' });
+    repo.request({ consumerDestroyRef, method: 'GET', route: '/test' });
+    repo.request({ consumerDestroyRef, method: 'GET', route: '/test' });
+
+    expect(consumerDestroyRef.onDestroy).toHaveBeenCalledTimes(1);
+    expect(repo.unbind(first.key, consumerDestroyRef)).toBe(true);
+    expect(unregister).toHaveBeenCalledTimes(1);
+    expect(repo.unbind(first.key, consumerDestroyRef)).toBe(false);
   });
 
   it('allowCache should work', () => {

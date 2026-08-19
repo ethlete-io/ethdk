@@ -90,11 +90,7 @@ export type BearerRefreshConfig<T extends AnyV2QueryCreator> = {
   cookieName?: string;
 
   /**
-   * The domain of the cookie. If not set, the current origin will be used.
-   *
-   * @example
-   * "https://example.com" -> "example.com"
-   * "https://sub.example.com" -> "example.com"
+   * The domain of the cookie. If not set, a host-only cookie is used.
    */
   cookieDomain?: string;
 

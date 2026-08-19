@@ -91,7 +91,7 @@ describe('transformGql', () => {
 
   describe('operation name extraction', () => {
     it('should extract operation name from named query', () => {
-      const query = 'query GetUser() { user { id } }';
+      const query = 'query GetUser { user { id } }';
       const transformer = transformGql(query);
       const result = transformer(null);
 
@@ -165,6 +165,16 @@ describe('transformGql', () => {
       const result = transformer(null);
 
       expect(result.operationName).toBe('GetUser');
+    });
+
+    it('should handle a multiline variable declaration', () => {
+      const query = `query GetUser(
+        $id: ID!
+      ) {
+        user(id: $id) { id }
+      }`;
+
+      expect(transformGql(query)(null).operationName).toBe('GetUser');
     });
   });
 

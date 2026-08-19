@@ -144,10 +144,7 @@ describe('createWebSocketClient', () => {
 
     first.destroy();
 
-    expect(double.sent()).toEqual([
-      { event: 'join-room', data: 'match-42' },
-      { event: 'join-room', data: 'match-42' },
-    ]);
+    expect(double.sent()).toEqual([{ event: 'join-room', data: 'match-42' }]);
 
     double.serverSend({ room: 'match-42', event: 'score', data: { goals: 2 } });
 
@@ -156,6 +153,19 @@ describe('createWebSocketClient', () => {
     second.destroy();
 
     expect(double.sent().at(-1)).toEqual({ event: 'leave-room', data: 'match-42' });
+  });
+
+  it('does not leave a room when a joiner is destroyed before its effect joins', () => {
+    const { double, instance } = provided();
+
+    TestBed.runInInjectionContext(() => instance.joinRoom('match-42'));
+    TestBed.tick();
+
+    const pending = childInjector();
+    runInInjectionContext(pending, () => instance.joinRoom(() => 'match-42'));
+    pending.destroy();
+
+    expect(double.sent()).toEqual([{ event: 'join-room', data: 'match-42' }]);
   });
 
   it('should re-join a room that every joiner had left', () => {

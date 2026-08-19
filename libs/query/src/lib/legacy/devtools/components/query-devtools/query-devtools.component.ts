@@ -216,7 +216,7 @@ export class QueryDevtoolsComponent {
             cookiePath: refreshCfg?.cookiePath ?? '/ (default)',
             cookieEnabled: refreshCfg?.cookieEnabled ?? 'true (default)',
             cookieSameSite: refreshCfg?.cookieSameSite ?? 'lax (default)',
-            refreshBuffer: refreshCfg?.refreshBuffer ?? '30000 (default)',
+            refreshBuffer: refreshCfg?.refreshBuffer ?? '300000 (default)',
             expiresInPropertyName: refreshCfg?.expiresInPropertyName ?? 'exp (default)',
             strategy: refreshCfg?.strategy ?? 'AuthBearerRefreshStrategy.BeforeExpiration (default)',
             requestArgsAdapter: refreshCfg?.requestArgsAdapter ? 'custom' : 'default',

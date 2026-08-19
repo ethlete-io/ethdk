@@ -636,6 +636,41 @@ describe('createBearerAuthProvider', () => {
       });
     });
 
+    it('should ignore tokens from an execution that settles after logout', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        provider.queries.login.execute({ body: { username: 'test' } });
+        const request = httpTesting.expectOne('https://api.example.com/auth/login');
+
+        provider.logout();
+        request.flush({ token: 'late-access', refresh_token: 'late-refresh' });
+        TestBed.tick();
+
+        expect(provider.accessToken()).toBeNull();
+        expect(provider.refreshToken()).toBeNull();
+        expect(provider.sessionStatus()).toBe('anonymous');
+        expect(provider.executionState()).toEqual({ type: 'logout', state: 'success' });
+      });
+    });
+
     it('should re-run a secure query that outlived the logout once the user logs back in', () => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{
@@ -2283,7 +2318,7 @@ describe('createBearerAuthProvider', () => {
     const tokenExpiringIn = (seconds: number) =>
       `header.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + seconds }))}.signature`;
 
-    const createProvider = () => {
+    const createProvider = (refreshStrategy?: number) => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{
         body: { username: string };
@@ -2304,7 +2339,7 @@ describe('createBearerAuthProvider', () => {
         queryClientRef,
         queries: [
           withAuthenticationQuery('login', { queryCreator: login, extractTokens }),
-          withRefreshQuery('refresh', { queryCreator: refresh, extractTokens }),
+          withRefreshQuery('refresh', { queryCreator: refresh, extractTokens, refreshStrategy }),
         ],
       });
     };
@@ -2336,6 +2371,29 @@ describe('createBearerAuthProvider', () => {
         vi.advanceTimersByTime(750_000);
         TestBed.tick();
 
+        httpTesting
+          .expectOne('https://api.example.com/auth/refresh')
+          .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-2' });
+        TestBed.tick();
+      });
+    });
+
+    it('treats a numeric value up to one as a lifetime percentage', () => {
+      const { inject: injectAuthProvider } = createProvider(0.75);
+
+      TestBed.runInInjectionContext(() => {
+        login(injectAuthProvider());
+        httpTesting
+          .expectOne('https://api.example.com/auth/login')
+          .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-1' });
+        TestBed.tick();
+
+        vi.advanceTimersByTime(749_000);
+        TestBed.tick();
+        httpTesting.expectNone('https://api.example.com/auth/refresh');
+
+        vi.advanceTimersByTime(1_000);
+        TestBed.tick();
         httpTesting
           .expectOne('https://api.example.com/auth/refresh')
           .flush({ token: tokenExpiringIn(1000), refresh_token: 'refresh-2' });

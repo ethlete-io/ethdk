@@ -304,7 +304,7 @@ describe('bearer-auth-tracking', () => {
         await settle();
 
         // A non-leader tab forwarding a logout event over the tracking channel.
-        new BroadcastChannel('ethlete-auth-tracking').postMessage({ event: 'logout', data: undefined });
+        new BroadcastChannel('ethlete-auth-tracking:test-auth').postMessage({ event: 'logout', data: undefined });
 
         await flushMultiTabSync();
 
@@ -331,7 +331,7 @@ describe('bearer-auth-tracking', () => {
 
         expect(authSetup.auth.isAuthenticated()).toBe(true);
 
-        const forwardedBefore = postedOn('ethlete-auth-tracking').length;
+        const forwardedBefore = postedOn('ethlete-auth-tracking:test-auth').length;
 
         authSetup.auth.logout();
 
@@ -339,7 +339,7 @@ describe('bearer-auth-tracking', () => {
 
         // The event belongs to the leader, so this tab hands it over rather than firing it.
         expect(localLogoutHandler).not.toHaveBeenCalled();
-        expect(postedOn('ethlete-auth-tracking').slice(forwardedBefore)).toEqual([
+        expect(postedOn('ethlete-auth-tracking:test-auth').slice(forwardedBefore)).toEqual([
           { event: 'logout', data: { cause: 'user' } },
         ]);
 

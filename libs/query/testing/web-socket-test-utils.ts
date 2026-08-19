@@ -39,7 +39,7 @@ export type WebSocketTestDouble = {
 export const createWebSocketTestDouble = (): WebSocketTestDouble => {
   const sent: { event: string; data: unknown }[] = [];
   const listeners = new Map<'connect' | 'disconnect', () => void>();
-  const anyListeners: ((frame: string) => void)[] = [];
+  const anyListeners: ((eventName: string, ...args: unknown[]) => void)[] = [];
 
   let connection: { url: string; transports: string[] | undefined } | null = null;
   let connectRequested = false;
@@ -65,10 +65,10 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
     serverDisconnect: () => listeners.get('disconnect')?.(),
     serverSend: (message) => {
       const frame = JSON.stringify(message);
-      for (const listener of anyListeners) listener(frame);
+      for (const listener of anyListeners) listener('message', frame);
     },
     serverSendRaw: (frame) => {
-      for (const listener of anyListeners) listener(frame);
+      for (const listener of anyListeners) listener('message', frame);
     },
   };
 };

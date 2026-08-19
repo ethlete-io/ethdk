@@ -125,6 +125,13 @@ const createBranch = <TFields extends QueryFormFields>(
   const defaults = buildDefaults(fields);
   const model = signal<QueryFormModel<TFields>>(clone(initial));
   const tree = form(model, { injector });
+  const defaultFor = (key: string) => {
+    const value = resolveDefault(fields[key] as QueryFieldDef<unknown>);
+
+    defaults[key] = value;
+
+    return value;
+  };
 
   return {
     fields: tree,
@@ -132,8 +139,12 @@ const createBranch = <TFields extends QueryFormFields>(
     activeFilterCount: computed(() => computeFilterCount(fields, model() as Dict, defaults)),
     setValue: (value) => model.set(clone(value)),
     patchValue: (value) => model.update((cur) => ({ ...cur, ...value })),
-    resetFieldToDefault: (key) => model.update((cur) => ({ ...cur, [key]: defaults[key as string] })),
-    resetAllFieldsToDefault: () => model.set(clone(defaults) as QueryFormModel<TFields>),
+    resetFieldToDefault: (key) => model.update((cur) => ({ ...cur, [key]: defaultFor(key as string) })),
+    resetAllFieldsToDefault: () => {
+      for (const key of Object.keys(fields)) defaultFor(key);
+
+      model.set(clone(defaults) as QueryFormModel<TFields>);
+    },
   };
 };
 
@@ -202,7 +213,7 @@ export type QueryFormSignals<TFields extends QueryFormFields> = {
   ): void;
 
   /** Create a detached editor over the same fields, seeded from the current committed value. */
-  branch(): QueryFormBranch<TFields>;
+  branch(injector?: Injector): QueryFormBranch<TFields>;
 };
 
 /**
@@ -248,6 +259,14 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   const prefix = config.queryParamPrefix;
   const defaults = buildDefaults(fieldDefs);
   const defaultValue = clone(defaults) as QueryFormModel<TFields>;
+  const defaultFor = (key: string) => {
+    const value = resolveDefault(fieldDefs[key] as QueryFieldDef<unknown>);
+
+    defaults[key] = value;
+    (defaultValue as Dict)[key] = clone(value);
+
+    return value;
+  };
 
   /** Live field values (updated immediately by bound controls). */
   const model = signal(clone(defaults) as QueryFormModel<TFields>);
@@ -262,6 +281,8 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   let observeOptions: QueryFormSignalsObserveOptions | undefined;
   let pendingTimer: ReturnType<typeof setTimeout> | null = null;
   let skipNextResets = false;
+  let urlWriteVersion = 0;
+  const urlNavigationMarker = {};
 
   const fields = form(model);
 
@@ -281,6 +302,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
     if (!writeToUrl || (isDefault && !writeDefault)) return undefined;
     if (def.valueToQueryParam) return def.valueToQueryParam(value);
+    if (value === '' && defaults[key] === null) return undefined;
 
     return value === null ? ET_NULL_VALUE : value;
   };
@@ -303,6 +325,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
   const writeToUrl = (value: Dict) => {
     const queryParams: Dict = {};
+    const version = ++urlWriteVersion;
 
     for (const [key, def] of Object.entries(fieldDefs)) {
       queryParams[paramKey(key)] = queryParamFor(key, def, value[key]);
@@ -313,11 +336,12 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
         queryParams,
         queryParamsHandling: 'merge',
         replaceUrl: observeOptions?.replaceUrl,
+        info: { queryForm: urlNavigationMarker, version },
       });
     });
   };
 
-  const applyResets = (live: Dict, changedKeys: string[]): Dict => {
+  const applyResets = (live: Dict, changedKeys: string[], resetDefaults: Map<string, unknown>): Dict => {
     const next = { ...live };
 
     for (const [key, def] of Object.entries(fieldDefs)) {
@@ -339,7 +363,12 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
       if (!triggered) continue;
 
-      const fieldDefault = defaults[key];
+      let fieldDefault = resetDefaults.get(key);
+
+      if (!resetDefaults.has(key)) {
+        fieldDefault = defaultFor(key);
+        resetDefaults.set(key, fieldDefault);
+      }
 
       if (!equal(next[key], fieldDefault)) {
         next[key] = fieldDefault;
@@ -358,9 +387,10 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
    */
   const resolveResets = (prev: Dict, live: Dict): Dict => {
     let next = live;
+    const resetDefaults = new Map<string, unknown>();
 
     for (let pass = 0; pass < MAX_RESET_PASSES; pass++) {
-      const applied = applyResets(next, changedKeysBetween(prev, next));
+      const applied = applyResets(next, changedKeysBetween(prev, next), resetDefaults);
 
       if (equal(applied, next)) return applied;
 
@@ -377,11 +407,29 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   const flush = () => {
     clearTimer();
 
-    const live = model() as Dict;
+    const rawLive = model() as Dict;
+    const live = { ...rawLive };
+
+    for (const [key, def] of Object.entries(fieldDefs)) {
+      if (equal(live[key], defaults[key])) continue;
+
+      const serialized = def.valueToQueryParam?.(live[key]);
+      const serializedToNothing = !!def.valueToQueryParam && (serialized === null || serialized === undefined);
+      const clearedNullableText = live[key] === '' && defaults[key] === null;
+
+      if (serializedToNothing || clearedNullableText) {
+        live[key] = defaults[key];
+      }
+    }
+
     const prev = committed() as Dict;
 
     if (equal(live, prev)) {
       skipNextResets = false;
+
+      if (!equal(live, rawLive)) {
+        model.set(clone(live) as QueryFormModel<TFields>);
+      }
 
       return;
     }
@@ -395,7 +443,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
     // Reflect any reset overrides back into the bound controls. The effect re-runs
     // but no-ops because the model now equals the committed value.
-    if (!equal(next, live)) {
+    if (!equal(next, rawLive)) {
       model.set(clone(next) as QueryFormModel<TFields>);
     }
 
@@ -473,13 +521,13 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     commitFromUrl(current);
   };
 
-  const cleanup = () => {
+  const cleanup = (removeQueryParams = true) => {
     if (!observing()) return;
 
     observing.set(false);
     clearTimer();
 
-    if (observeOptions?.writeToQueryParams === false) return;
+    if (!removeQueryParams || observeOptions?.writeToQueryParams === false) return;
 
     const queryParams: Dict = {};
 
@@ -511,7 +559,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       const next = { ...cur } as Dict;
 
       for (const key of keys) {
-        next[key as string] = defaults[key as string];
+        next[key as string] = defaultFor(key as string);
       }
 
       return next as QueryFormModel<TFields>;
@@ -560,6 +608,13 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       // Commit whatever the model holds now (URL-restored or programmatic defaults).
       flush();
 
+      if (
+        options?.writeToQueryParams !== false &&
+        Object.values(fieldDefs).some((field) => field.appendDefaultValueToUrl === true)
+      ) {
+        writeToUrl(committed() as Dict);
+      }
+
       return queryForm;
     },
 
@@ -577,7 +632,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       resetFieldsToDefault(keys, options);
     },
 
-    branch: () => createBranch(fieldDefs, clone(committed()), injector),
+    branch: (branchInjector = injector) => createBranch(fieldDefs, clone(committed()), branchInjector),
   };
 
   // React to live control edits: schedule a debounced commit.
@@ -594,11 +649,15 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     untracked(() => {
       if (!observing() || observeOptions?.syncOnNavigation === false) return;
 
+      const info = router.lastSuccessfulNavigation()?.extras.info as
+        { queryForm?: object; version?: number } | undefined;
+      if (info?.queryForm === urlNavigationMarker && (info.version ?? 0) < urlWriteVersion) return;
+
       applyFromUrl(changes as Dict);
     });
   });
 
-  destroyRef.onDestroy(() => cleanup());
+  destroyRef.onDestroy(() => cleanup(false));
 
   if (devtoolsId) {
     /**

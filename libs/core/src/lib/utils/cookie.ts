@@ -13,15 +13,16 @@ export const getCookie = (name: string) => {
     return null;
   }
 
-  // From https://stackoverflow.com/questions/10730362/get-cookie-by-name
-  return ('; ' + document.cookie).split(`; ${name}=`).pop()?.split(';')[0];
+  const cookie = document.cookie.split(';').find((entry) => entry.trim().startsWith(`${name}=`));
+
+  return cookie?.trim().slice(name.length + 1) ?? null;
 };
 
 export const setCookie = (
   name: string,
   data: string,
   expiresInDays?: number | null,
-  domain = getDomain(),
+  domain: string | null = getDomain(),
   path = '/',
   sameSite: 'strict' | 'none' | 'lax' = 'lax',
 ) => {
@@ -41,11 +42,21 @@ export const setCookie = (
     cookieString += `; expires=${date.toUTCString()}`;
   }
 
-  cookieString += `; domain=${domain}; SameSite=${sameSiteUpper};`;
+  if (domain) {
+    cookieString += `; domain=${domain}`;
+  }
+
+  cookieString += `; SameSite=${sameSiteUpper}`;
+
+  if (sameSite === 'none' || window.location.protocol === 'https:') {
+    cookieString += '; Secure';
+  }
+
+  cookieString += ';';
   document.cookie = cookieString;
 };
 
-export const deleteCookie = (name: string, path = '/', domain = getDomain()) => {
+export const deleteCookie = (name: string, path = '/', domain: string | null = getDomain()) => {
   if (hasCookie(name)) {
     document.cookie =
       name +

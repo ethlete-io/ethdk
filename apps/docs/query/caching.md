@@ -4,7 +4,7 @@ All [queries](/query/queries) of a client share one **query repository** - an in
 
 ## What is cached
 
-`GET`, `OPTIONS` and `HEAD` requests, plus [GraphQL queries](/query/gql) regardless of transport. Cache keys are a hash of route + args, so identical requests map to the same entry. Mutating methods are never cached - passing `key` or `allowCache` to an uncacheable query throws in dev mode.
+`GET`, `OPTIONS` and `HEAD` requests, plus [GraphQL queries](/query/gql) regardless of transport. Cache keys hash the resolved route, request body and per-execution headers (except `Authorization`), so requests for different languages or tenants do not share a response. Mutating methods are never cached - passing `key` or `allowCache` to an uncacheable query throws in dev mode.
 
 ## Deduplication
 
@@ -50,7 +50,7 @@ Details worth knowing:
 
 ## Freshness
 
-The client's `cacheAdapter` derives a TTL from response headers. The default (`extractExpiresInSeconds`) reads `cache-control` (`no-cache`, `max-age`, `s-maxage`), `age` and `expires`; a `max-age` without an `age` header is halved as a safety margin.
+The client's `cacheAdapter` derives a TTL from response headers. The default (`extractExpiresInSeconds`) reads `cache-control` (`no-cache`, `no-store`, `max-age`, `s-maxage`), `age` and `expires`; a `max-age` without an `age` header is halved as a safety margin, while `max-age=0` expires immediately.
 
 While an entry is fresh, `execute({ options: { allowCache: true } })` and auto-executions reuse the cached response without hitting the server; a stale entry re-fetches. There is no interval-based revalidation - combine with [`withPolling`](/query/features#withpolling) when you need periodic refreshes.
 

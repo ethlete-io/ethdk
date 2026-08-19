@@ -275,6 +275,8 @@ export type QueryDevtoolsOptions = {
   schema?: QueryDevtoolsSchemaLoaders;
 };
 
+let queryDevtoolsInitialized = false;
+
 /**
  * Enables the `@ethlete/query` devtools. Add this to your application providers (e.g. in
  * `bootstrapApplication`) to make query clients, queries, stacks, sequences and auth providers
@@ -291,6 +293,10 @@ export type QueryDevtoolsOptions = {
  * ```
  */
 export const provideQueryDevtools = (options?: QueryDevtoolsOptions): EnvironmentProviders => {
+  if (queryDevtoolsInitialized) return makeEnvironmentProviders([]);
+
+  queryDevtoolsInitialized = true;
+
   // First: the stored settings say where the override store lives and whether the panel has raised the
   // retention this app asked for, and both are read by the calls below.
   initQueryDevtoolsSettings();

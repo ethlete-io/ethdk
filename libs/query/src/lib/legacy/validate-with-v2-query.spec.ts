@@ -33,7 +33,12 @@ const successState = (): V2QueryState =>
   ({ type: 'SUCCESS', response: undefined, headers: {}, meta: {} }) as unknown as V2QueryState;
 
 const fakeCreator = (state: V2QueryState) => {
-  const prepared = { execute: vi.fn(), abort: vi.fn(), state$: of(state) as Observable<V2QueryState> };
+  const prepared = {
+    execute: vi.fn(),
+    abort: vi.fn(),
+    destroy: vi.fn(),
+    state$: of(state) as Observable<V2QueryState>,
+  };
 
   return { prepare: vi.fn(() => prepared), _prepared: prepared } as unknown as AnyV2QueryCreator & {
     _prepared: typeof prepared;
@@ -72,6 +77,7 @@ describe('validateWithV2Query', () => {
     await settle();
 
     expect(creator.prepare).toHaveBeenCalledWith({ body: { name: 'Ada' } });
+    expect(creator._prepared.destroy).toHaveBeenCalledOnce();
     expect(testForm.name().errors()).toEqual([
       expect.objectContaining({ kind: SERVER_VIOLATION_ERROR_KIND, message: 'Name is taken' }),
     ]);

@@ -572,6 +572,10 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     const { method, url } = cacheEntry.request;
 
     clearTimeout(cacheEntry.evictTimer);
+    for (const unregister of cacheEntry.consumers.values()) {
+      unregister();
+    }
+    cacheEntry.consumers.clear();
     cacheEntry.request.destroy();
     cacheEntry.eventSubscription?.unsubscribe();
     cache.delete(key);
@@ -601,6 +605,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   };
 
   const retain = (key: QueryKey, cacheEntry: DestroyListenerMapItem) => {
+    clearTimeout(cacheEntry.evictTimer);
     cacheEntry.unusedSince = Date.now();
     cacheEntry.evictTimer = setTimeout(() => evict(key, 'expired'), cacheEntry.keepUnusedFor);
 
@@ -614,6 +619,11 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     if (!cacheEntry) return false;
 
+    const unregister = cacheEntry.consumers.get(consumerDestroyRef);
+
+    if (!unregister) return false;
+
+    unregister();
     cacheEntry.consumers.delete(consumerDestroyRef);
 
     if (cacheEntry.consumers.size === 0) {
@@ -713,34 +723,57 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       keepUnusedFor,
     } = options;
 
-    const destroyListener = consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef));
-
     const cacheEntry = cache.get(key);
 
     if (cacheEntry && isCached) {
-      cacheEntry.consumers.set(consumerDestroyRef, destroyListener);
+      cacheEntry.isSecure ||= isSecure;
+      cacheEntry.isRefreshable ||= isRefreshable;
+      cacheEntry.isMultiTabSyncEnabled &&= isMultiTabSyncEnabled;
+      cacheEntry.isPersistEnabled &&= isPersistEnabled;
+      cacheEntry.keepUnusedFor = Math.min(cacheEntry.keepUnusedFor, keepUnusedFor);
+
+      if (!cacheEntry.consumers.has(consumerDestroyRef)) {
+        cacheEntry.consumers.set(
+          consumerDestroyRef,
+          consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
+        );
+      }
     } else {
       const consumers: Map<DestroyRef, DestroyCleanupCallback> = new Map([]);
 
-      consumers.set(consumerDestroyRef, destroyListener);
+      consumers.set(
+        consumerDestroyRef,
+        consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
+      );
 
       // Drive repository events off the request's discrete, terminal event stream rather than
       // recombining the `error` + `response` signals via combineLatest (which could observe stale
       // pairings). Each settle emits exactly one terminal event.
       const eventSubscription = request.events$.subscribe((event) => {
+        const currentEntry = cache.get(key);
+        const currentIsSecure = currentEntry?.isSecure ?? isSecure;
+        const currentIsMultiTabSyncEnabled = currentEntry?.isMultiTabSyncEnabled ?? isMultiTabSyncEnabled;
+        const currentIsPersistEnabled = currentEntry?.isPersistEnabled ?? isPersistEnabled;
+
         if (event.type === 'error') {
           if (event.error.raw instanceof HttpErrorResponse) {
-            eventsSubject.next({ type: 'request-error', error: event.error.raw, key, isSecure, request });
+            eventsSubject.next({
+              type: 'request-error',
+              error: event.error.raw,
+              key,
+              isSecure: currentIsSecure,
+              request,
+            });
           }
         } else if (event.type === HttpEventType.Response) {
           eventsSubject.next({
             type: 'request-success',
             key,
-            isSecure,
+            isSecure: currentIsSecure,
             request,
             isCached,
-            isMultiTabSyncEnabled,
-            isPersistEnabled,
+            isMultiTabSyncEnabled: currentIsMultiTabSyncEnabled,
+            isPersistEnabled: currentIsPersistEnabled,
           });
         }
       });

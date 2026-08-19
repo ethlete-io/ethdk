@@ -45,7 +45,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       gqlParams = { ...gqlParams, ...args.queryParams };
     }
 
-    const computedArgs = args ?? ({} as RequestArgs<TArgs>);
+    const computedArgs = { ...(args ?? ({} as RequestArgs<TArgs>)) };
 
     if (executeOptions.creatorInternals.transport === 'GET') {
       computedArgs.queryParams = gqlParams;

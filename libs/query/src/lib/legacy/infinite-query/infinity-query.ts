@@ -178,6 +178,8 @@ export class InfinityQuery<
   ) {
     this._config = { ...this._config, ...(newConfig ?? {}) };
 
+    this.destroyQueries();
+
     this._currentPage$.next(null);
     this._currentCalculatedPage$.next(null);
     this._totalPages$.next(null);
@@ -185,6 +187,20 @@ export class InfinityQuery<
     this.queries$.next([]);
 
     this.nextPage();
+  }
+
+  destroy() {
+    this.destroyQueries();
+    this.queries$.next([]);
+  }
+
+  private destroyQueries() {
+    for (const query of this.queries$.value) {
+      query.stopPolling();
+      query.abort();
+
+      if ('destroy' in query && typeof query.destroy === 'function') query.destroy();
+    }
   }
 
   private prepareArgs(config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>, page: number) {

@@ -219,6 +219,8 @@ The rule of thumb: **the snapshot drives the UI of the attempt that produced it;
 
 Only the most recently started token-issuing execution applies its tokens and writes `executionState()`. Everything else is ignored, however late it comes back.
 
+`logout()` is a terminal supersession too: a login, auto-login or refresh that was already in flight cannot restore the session when its response arrives later.
+
 This holds **across registry keys**, not just within one. A `401`-driven token refresh that is still in flight when the user submits a login used to end with the refresh's tokens applied and the login's outcome on display, or the reverse - two writers, two different executions. Now the login supersedes the refresh, and the refresh's late response is dropped entirely.
 
 The other half of that rule: an automatic refresh does not **start** while any token-issuing execution is in flight, so a login already under way is never superseded by a refresh that began after it. A refresh you execute by hand is explicit intent and always runs.
@@ -240,6 +242,9 @@ It behaves exactly like a successful auth query: `bearerData` / `isAuthenticated
 `withRefreshQuery` wires two refresh triggers:
 
 - **Proactive** - a timer computed from the JWT's expiration claim (`expiresInPropertyName`, default `'exp'`) and the `refreshStrategy` (default: refresh at **75%** of the token lifetime, clamped between 1 and 10 minutes before expiry). With multi-tab sync active, only the elected leader tab refreshes: a follower's timer comes due at the same instant (the tabs share the token), so it skips the tick rather than asking the leader for a refresh the leader is already doing - until the token is nearly expired, at which point the leader has provably not acted and the follower [takes it over](#when-the-leader-stops-answering).
+
+A numeric `refreshStrategy` from `0` to `1` is the fraction of the token lifetime to use before refreshing; a larger number is a fixed buffer in milliseconds before expiry. The object form adds minimum and maximum buffer clamps.
+
 - **Reactive** - any secure query failing with a `401` triggers a refresh (`autoRetryOn401`, default `true`), then re-executes.
 
 A `401` is only ever retried once the refresh has actually **changed** the access token. A refresh that hands back the same token is not a reason to retry: the retry would `401` again, and that `401` would ask for another refresh - an endless loop for as long as the server keeps issuing a token it rejects. The query stays armed, so the next refresh that does change the token still retries it - including a refresh that completed **before** the `401` even landed, which is common when several requests are in flight as the token expires.
@@ -404,6 +409,8 @@ apps want one or the other, not both.
 ### When the remember-me cookie is written and deleted
 
 `withPersistentAuth` treats the cookie as a record of the session, not a mirror of the current token. It is **written** whenever a token is applied - a login, a refresh, `setTokens`, an incoming cross-tab update - and whenever `setRememberMe` changes whether it should outlive the browser session.
+
+The cookie is host-only by default, so its origin-local encryption key and the cookie always have the same scope. Set `cookie.domain` explicitly only when sibling subdomains deliberately share the same storage and key setup. HTTPS cookies are marked `Secure`, and `sameSite: 'none'` always adds the attribute browsers require.
 
 It is **deleted** only on the two events that actually end a session:
 

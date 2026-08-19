@@ -163,38 +163,41 @@ const buildSequence = <TResponses extends unknown[]>(
     const responses: unknown[] = [];
     let previousResponse: unknown = undefined;
 
-    for (const [i, step] of steps.entries()) {
-      state.currentStep.set(i + 1);
+    try {
+      for (const [i, step] of steps.entries()) {
+        state.currentStep.set(i + 1);
 
-      const { args } = step.produceArgs(previousResponse, responses);
-      stepArgs.push(args);
-      state.stepArgs.set([...stepArgs]);
-      const snapshot = await executeUntilSettled(step.query, { args });
+        const { args } = step.produceArgs(previousResponse, responses);
+        stepArgs.push(args);
+        state.stepArgs.set([...stepArgs]);
+        const snapshot = await executeUntilSettled(step.query, { args });
 
-      snapshots.push(snapshot);
-      state.snapshots.set([...snapshots]);
+        snapshots.push(snapshot);
+        state.snapshots.set([...snapshots]);
 
-      const error = snapshot.error();
+        const error = snapshot.error();
 
-      if (error) {
-        state.status.set('error');
-        state.error.set(error);
-        state.failedAt.set(i);
-        state.running.set(false);
+        if (error) {
+          state.status.set('error');
+          state.error.set(error);
+          state.failedAt.set(i);
 
-        return { ok: false, failedAt: i, error, snapshots };
+          return { ok: false, failedAt: i, error, snapshots };
+        }
+
+        const response = snapshot.response();
+        responses.push(response);
+        state.responses.set([...responses]);
+        previousResponse = response;
       }
 
-      const response = snapshot.response();
-      responses.push(response);
-      state.responses.set([...responses]);
-      previousResponse = response;
+      state.status.set('success');
+
+      return { ok: true, responses: responses as TResponses, snapshots };
+    } finally {
+      if (state.status() === 'running') state.status.set('idle');
+      state.running.set(false);
     }
-
-    state.status.set('success');
-    state.running.set(false);
-
-    return { ok: true, responses: responses as TResponses, snapshots };
   };
 
   const completed = computed(() => state.snapshots().length);

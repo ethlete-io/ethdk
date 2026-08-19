@@ -71,6 +71,26 @@ describe('querySequence', () => {
     expect(seq.error()).toBeNull();
   });
 
+  it('can run again after an args mapper throws', async () => {
+    const { createOrder } = makeQueries();
+    let shouldThrow = true;
+    const sequence = querySequence(createOrder, () => {
+      if (shouldThrow) throw new Error('bad args');
+
+      return { args: { body: { item: 'book' } } };
+    });
+
+    await expect(sequence.run()).rejects.toThrow('bad args');
+    expect(sequence.running()).toBe(false);
+    expect(sequence.status()).toBe('idle');
+
+    shouldThrow = false;
+    const rerun = sequence.run();
+    await settleStep('https://example.com/orders', { id: 10, item: 'book' });
+
+    await expect(rerun).resolves.toEqual(expect.objectContaining({ ok: true }));
+  });
+
   it('runs dependent steps in order, threading each response into the next', async () => {
     const { createOrder, createPayment, confirm } = makeQueries();
 

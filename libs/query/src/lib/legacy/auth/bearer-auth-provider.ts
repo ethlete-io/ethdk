@@ -20,7 +20,7 @@ import { decryptBearer } from './auth-provider.utils';
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthProvider {
-  private readonly destroy$ = new Subject<boolean>();
+  private destroy$ = new Subject<void>();
   private readonly _currentRefreshQuery$ = new BehaviorSubject<ConstructQuery<T> | null>(null);
 
   private readonly _tokens$ = new BehaviorSubject<TokenResponse>({
@@ -59,8 +59,10 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
     }
   }
 
-  get header() {
-    return { Authorization: `Bearer ${this._tokens$.getValue().token}` };
+  get header(): Record<string, string> {
+    const token = this._tokens$.getValue().token;
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   get tokens$() {
@@ -88,8 +90,9 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
   }
 
   cleanUp() {
-    this.destroy$.next(true);
-    this.destroy$.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.destroy$ = new Subject<void>();
     this._currentRefreshQuery$.next(null);
 
     if (this._config.refreshConfig?.cookieName) {
@@ -201,7 +204,7 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
       this._config.refreshConfig.cookieName,
       this.tokens.refreshToken,
       this._config.refreshConfig.cookieExpiresInDays,
-      this._config.refreshConfig.cookieDomain,
+      this._config.refreshConfig.cookieDomain ?? null,
       this._config.refreshConfig.cookiePath,
       this._config.refreshConfig.cookieSameSite,
     );
@@ -213,7 +216,7 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
     deleteCookie(
       this._config.refreshConfig.cookieName,
       this._config.refreshConfig.cookiePath,
-      this._config.refreshConfig.cookieDomain,
+      this._config.refreshConfig.cookieDomain ?? null,
     );
   }
 
@@ -233,9 +236,7 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
     const fiveMinutes = 5 * 60 * 1000;
     const refreshBuffer = this._config.refreshConfig.refreshBuffer ?? fiveMinutes;
 
-    if (expiresIn === undefined) {
-      throw new Error(`Bearer token does not contain an '${expiresInPropertyName}' property`);
-    }
+    if (typeof expiresIn !== 'number') return;
 
     const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
 

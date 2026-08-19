@@ -60,7 +60,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh-token-123'), 30, 'test.com', '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh-token-123'), 30, null, '/', 'lax');
     });
 
     it('should use default cookie name if not provided', () => {
@@ -82,7 +82,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(setCookie).toHaveBeenCalledWith('etAuth', encryptToken('refresh'), 30, 'test.com', '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('etAuth', encryptToken('refresh'), 30, null, '/', 'lax');
     });
 
     it('should use custom cookie configuration', () => {
@@ -139,7 +139,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', 'test.com');
+      expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', null);
     });
 
     it('should keep the cookie while the auto-login it triggered is still in flight', () => {
@@ -191,7 +191,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', 'test.com');
+      expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', null);
     });
 
     it('should keep the cookie when the auto-login fails without the server rejecting the token', () => {
@@ -370,7 +370,7 @@ describe('bearer-auth-persistent-auth', () => {
       expect(authSetup.auth.features.persistentAuth?.rememberMe()).toBe(false);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('testAuth-rememberMe', 'false');
       // Should set session cookie (no expiry)
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), null, 'test.com', '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), null, null, '/', 'lax');
     });
 
     it('should save session cookie (no expiry) when rememberMe=false', () => {
@@ -403,7 +403,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), null, 'test.com', '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), null, null, '/', 'lax');
     });
 
     it('should change to persistent cookie when setRememberMe(true) is called', () => {
@@ -443,7 +443,7 @@ describe('bearer-auth-persistent-auth', () => {
       expect(authSetup.auth.features.persistentAuth?.rememberMe()).toBe(true);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('testAuth-rememberMe', 'true');
       // Should set persistent cookie with expiry
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), 30, 'test.com', '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), 30, null, '/', 'lax');
     });
   });
 

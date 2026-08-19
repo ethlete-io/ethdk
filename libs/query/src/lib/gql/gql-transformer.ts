@@ -1,6 +1,6 @@
 import { isDevMode } from '@angular/core';
 
-const getOpName = /(query|mutation) ?([\w\d-_]+)? ?\(.*?\)? \{/;
+const getOpName = /\b(?:query|mutation)\s+([\w-]+)(?:\s*\([^)]*\))?\s*\{/;
 
 export type TransformedGqlQuery = {
   query: string;
@@ -23,7 +23,7 @@ export const transformGql = (str: string | string[]): GqlTransformer => {
     }
 
     if (name && name.length) {
-      const operationName = name[2];
+      const operationName = name[1];
       if (operationName) {
         data['operationName'] = operationName;
       }

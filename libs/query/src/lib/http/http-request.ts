@@ -594,7 +594,10 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   };
 
   const updateErrorState = (errorResponse: unknown) => {
-    const errorRes = createQueryErrorResponse(errorResponse);
+    const errorRes = createQueryErrorResponse(errorResponse, {
+      retryCount: attempts(),
+      retryFn: options.retryFn,
+    });
 
     error.set(errorRes);
     loading.set(null);
@@ -641,7 +644,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       const bytesPerSecond = (loadedAmount / elapsedTimeSinceLastEvent) * 1000;
 
       progress.speed = bytesPerSecond;
-      progress.remainingTime = Math.round((event.total - event.loaded) / bytesPerSecond) * 1000;
+      progress.remainingTime = Math.round(((event.total - event.loaded) / bytesPerSecond) * 1000);
     }
 
     if (isMeasurable) {

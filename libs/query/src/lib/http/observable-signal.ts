@@ -14,15 +14,16 @@ export type ObservableSignal<T> = Signal<T> & {
 };
 
 export const wrapAsObservableSignal = <T>(source: Signal<T>, defaultInjector: Injector): ObservableSignal<T> => {
-  const asObservable = (options?: { injector?: Injector }): Observable<T> => {
-    const effectiveInjector = options?.injector ?? defaultInjector;
-    const base$ = toObservable(source, { injector: effectiveInjector });
+  const default$ = toObservable(source, { injector: defaultInjector });
 
+  const asObservable = (options?: { injector?: Injector }): Observable<T> => {
     if (options?.injector) {
-      return base$.pipe(takeUntilDestroyed(defaultInjector.get(DestroyRef)));
+      return toObservable(source, { injector: options.injector }).pipe(
+        takeUntilDestroyed(defaultInjector.get(DestroyRef)),
+      );
     }
 
-    return base$;
+    return default$;
   };
 
   return Object.assign(source, { asObservable }) as unknown as ObservableSignal<T>;

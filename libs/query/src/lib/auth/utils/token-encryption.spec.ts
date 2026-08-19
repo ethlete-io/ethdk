@@ -66,6 +66,21 @@ describe('token-encryption', () => {
       const encrypted2 = encryptToken(token);
       expect(encrypted2).toBe(encrypted1);
     });
+
+    it('should keep the token encrypted when browser storage is unavailable', () => {
+      resetEncryptionKey();
+      localStorageMock.getItem.mockImplementation(() => {
+        throw new Error('blocked');
+      });
+      localStorageMock.setItem.mockImplementation(() => {
+        throw new Error('blocked');
+      });
+
+      const encrypted = encryptToken('test-token');
+
+      expect(encrypted).not.toBe('test-token');
+      expect(decryptToken(encrypted)).toBe('test-token');
+    });
   });
 
   describe('decryptToken', () => {

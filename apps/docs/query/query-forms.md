@@ -11,8 +11,8 @@ There are two implementations:
   Built on [Angular signal forms](https://angular.dev/guide/forms/signals), so
   fields bind to `@ethlete/components` controls with `[formField]` and everything
   is a signal.
-- **`QueryForm`** - the original reactive-forms class. Unchanged and still
-  exported; see [below](#legacy-queryform).
+- **`QueryForm`** - the deprecated reactive-forms class. It remains exported for
+  migration; see [below](#legacy-queryform).
 
 ## Quickstart
 
@@ -199,10 +199,12 @@ apply() {
 The branch exposes `fields`, `value`, `activeFilterCount`, `setValue`,
 `patchValue`, `resetFieldToDefault` and `resetAllFieldsToDefault`.
 
+By default it shares the source form's injector lifetime. Code that creates a branch in a shorter-lived injection context can pass that context's `Injector` to `branch(inject(Injector))`; the filter overlay does this so every draft is released when its overlay closes.
+
 ## Legacy `QueryForm`
 
 The original `QueryForm` class (with `QueryField`, `SearchQueryField`,
-`SortQueryField`, … and a reactive-forms `FormGroup`) is unchanged and still
+`SortQueryField`, … and a reactive-forms `FormGroup`) is deprecated but remains
 exported. It works with both query clients but grew up alongside the
 [legacy client](/query/legacy). Prefer `defineQueryForm` for new code - it binds
 to `@ethlete/components` controls directly and is signals-native throughout.

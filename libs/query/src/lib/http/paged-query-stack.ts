@@ -320,7 +320,9 @@ export const createPagedQueryStack = <
 
         return { queries: oldQueries, lastQuery };
       } else if (dir === 'previous') {
-        return { queries: [newQuery, ...oldQueries], lastQuery: newQuery };
+        const queries = [newQuery, ...oldQueries];
+
+        return { queries, lastQuery: queries[queries.length - 1] ?? null };
       } else {
         return { queries: [...oldQueries, newQuery], lastQuery: newQuery };
       }
@@ -388,11 +390,16 @@ export const createPagedQueryStack = <
       return null;
     }
 
-    currentPageArgs.set(options.args(page, allResponses));
-    loadedMinPage.set(page);
+    const args = options.args(page, allResponses);
     pageDirection.set('previous');
+    const query = stack.subtle.runWithArgs(args);
 
-    return stack.subtle.runWithArgs(currentPageArgs());
+    if (query) {
+      currentPageArgs.set(args);
+      loadedMinPage.set(page);
+    }
+
+    return query;
   };
 
   const fetchNextPage = () => {
@@ -420,11 +427,16 @@ export const createPagedQueryStack = <
       return null;
     }
 
-    currentPageArgs.set(options.args(page, allResponses));
-    loadedMaxPage.set(page);
+    const args = options.args(page, allResponses);
     pageDirection.set('next');
+    const query = stack.subtle.runWithArgs(args);
 
-    return stack.subtle.runWithArgs(currentPageArgs());
+    if (query) {
+      currentPageArgs.set(args);
+      loadedMaxPage.set(page);
+    }
+
+    return query;
   };
 
   const canFetchNewPage = (pageToLoad: number) => {

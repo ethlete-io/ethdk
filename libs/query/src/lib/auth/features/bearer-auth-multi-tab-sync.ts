@@ -88,27 +88,33 @@ const SINGLE_TAB = /* @__PURE__ */ (() => {
 export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBuilder[]>(
   config: BearerAuthMultiTabSyncConfig = {},
 ) => {
-  let instance: BearerAuthMultiTabSyncFeature = SINGLE_TAB;
-  let channelName = config.channelName ?? '';
+  const pendingSetups: { instance: BearerAuthMultiTabSyncFeature; channelName: string }[] = [];
 
-  const setup = (_context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => ({
-    type: BearerAuthFeatureType.MULTI_TAB_SYNC,
-    instance,
-    devtools: () => [
-      { label: 'channel', value: channelName },
-      { label: 'tokens', value: config.syncTokens === false ? 'tab local' : 'synced' },
-      { label: 'logout', value: config.syncLogout === false ? 'tab local' : 'synced' },
-      {
-        label: 'leader election',
-        value: config.leaderElection === false ? 'every tab refreshes' : 'one tab refreshes',
-      },
-    ],
-  });
+  const setup = (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
+    const state = pendingSetups.shift() ?? {
+      instance: SINGLE_TAB,
+      channelName: config.channelName ?? defaultSyncChannelName(context.name),
+    };
+
+    return {
+      type: BearerAuthFeatureType.MULTI_TAB_SYNC,
+      instance: state.instance,
+      devtools: () => [
+        { label: 'channel', value: state.channelName },
+        { label: 'tokens', value: config.syncTokens === false ? 'tab local' : 'synced' },
+        { label: 'logout', value: config.syncLogout === false ? 'tab local' : 'synced' },
+        {
+          label: 'leader election',
+          value: config.leaderElection === false ? 'every tab refreshes' : 'one tab refreshes',
+        },
+      ],
+    };
+  };
 
   // The elected leader gates the auth queries' automatic refresh, which is wired up before the
   // regular feature setup runs - so this half has to happen earlier than `setup`.
   const earlySetup: BearerAuthProviderEarlySetup['earlySetup'] = (context: BearerAuthProviderEarlySetupContext) => {
-    channelName = config.channelName ?? defaultSyncChannelName(context.name);
+    const channelName = config.channelName ?? defaultSyncChannelName(context.name);
 
     // Filled in below once the election exists. Until then this tab answers as its own leader, which
     // is what it is: the sync is set up first because the auth queries read `isLeader` while being
@@ -130,6 +136,8 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
     );
 
     if (config.leaderElection === false) {
+      pendingSetups.push({ instance: SINGLE_TAB, channelName });
+
       return { sessionAdoption: sync.sessionAdoption, activityCoordination: sync.activityCoordination };
     }
 
@@ -137,11 +145,12 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
 
     isLeaderRef = () => election.isLeader();
 
-    instance = {
+    const instance: BearerAuthMultiTabSyncFeature = {
       isLeader: election.isLeader,
       instanceCount: election.instanceCount,
       leadership: election.isSupported ? 'election' : 'unsupported',
     };
+    pendingSetups.push({ instance, channelName });
 
     return {
       isLeader: () => election.isLeader(),

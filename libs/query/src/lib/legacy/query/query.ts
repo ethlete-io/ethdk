@@ -522,7 +522,9 @@ export class V2Query<
             takeUntilResponse(),
             takeUntil(this.onAbort$),
             tap((state) =>
-              isQueryStateSuccess(state) ? this.execute({ ...options, _isUnauthorizedRetry: true }) : failure(),
+              isQueryStateSuccess(state)
+                ? this.execute({ ...options, _isUnauthorizedRetry: true, cancelPrevious: true })
+                : failure(),
             ),
           )
           .subscribe();

@@ -90,6 +90,33 @@ describe('createQueryBatch', () => {
     expect(batch.results()).toEqual([]);
   });
 
+  it('can run again after an args mapper throws', async () => {
+    let shouldThrow = true;
+    const batch = TestBed.runInInjectionContext(() =>
+      createQueryBatch({
+        queryCreator: patchPost,
+        args: (post: Post) => {
+          if (shouldThrow) throw new Error('bad args');
+
+          return { pathParams: { id: post.id }, body: { archived: true } };
+        },
+      }),
+    );
+
+    batch.run(posts(1)).subscribe({ error: () => undefined });
+
+    expect(batch.running()).toBe(false);
+    expect(batch.status()).toBe('idle');
+
+    shouldThrow = false;
+    const rerun = start(batch.run(posts(1)));
+    await tick();
+    flushPost(1);
+    await tick();
+
+    expect(rerun.result.ok).toBe(true);
+  });
+
   it('sends nothing until the run is subscribed to', async () => {
     const batch = makeBatch();
 

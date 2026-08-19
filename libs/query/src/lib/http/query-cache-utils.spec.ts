@@ -36,6 +36,21 @@ describe('query cache utils', () => {
       expect(key1).not.toBe(key2);
     });
 
+    it('should include request headers other than authorization in the hash', () => {
+      const english = buildQueryCacheKey('/api/test', {
+        headers: new HttpHeaders({ 'Accept-Language': 'en', Authorization: 'Bearer one' }),
+      });
+      const german = buildQueryCacheKey('/api/test', {
+        headers: new HttpHeaders({ 'Accept-Language': 'de', Authorization: 'Bearer one' }),
+      });
+      const rotatedToken = buildQueryCacheKey('/api/test', {
+        headers: new HttpHeaders({ 'Accept-Language': 'en', Authorization: 'Bearer two' }),
+      });
+
+      expect(english).not.toBe(german);
+      expect(english).toBe(rotatedToken);
+    });
+
     it('should return a numeric string', () => {
       const key = buildQueryCacheKey('/api/test', undefined);
       expect(Number.isNaN(Number(key))).toBe(false);
@@ -46,6 +61,20 @@ describe('query cache utils', () => {
     it('should return null when cache-control is no-cache', () => {
       const headers = new HttpHeaders({ 'cache-control': 'no-cache' });
       expect(extractExpiresInSeconds(headers)).toBeNull();
+    });
+
+    it('should return null when cache-control is no-store', () => {
+      const headers = new HttpHeaders({ 'cache-control': 'no-store' });
+      expect(extractExpiresInSeconds(headers)).toBeNull();
+    });
+
+    it('should not fall through to expires when max-age is zero', () => {
+      const headers = new HttpHeaders({
+        'cache-control': 'max-age=0',
+        expires: new Date(Date.now() + 60_000).toUTCString(),
+      });
+
+      expect(extractExpiresInSeconds(headers)).toBe(0);
     });
 
     it('should return max-age/2 as estimate when only max-age is present', () => {

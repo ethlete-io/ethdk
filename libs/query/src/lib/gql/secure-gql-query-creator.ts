@@ -1,5 +1,10 @@
 import { AnyCreateBearerAuthProviderResult } from '../auth';
-import { AnyCreateQueryClientResult, createBaseQueryCreator, QueryCreator } from '../http';
+import {
+  AnyCreateQueryClientResult,
+  createBaseQueryCreator,
+  gqlDataPropertyMissingInResponse,
+  QueryCreator,
+} from '../http';
 import { GqlQueryArgs } from './gql-query';
 import { CreateGqlQueryCreatorOptions } from './gql-query-creator';
 import { createSecureGqlQuery } from './secure-gql-query';
@@ -26,7 +31,8 @@ export const createSecureGqlQueryCreator = <TArgs extends GqlQueryArgs>(
           if (rawResponse && typeof rawResponse === 'object' && 'data' in rawResponse) {
             return (rawResponse as { data: unknown }).data;
           }
-          return rawResponse;
+
+          throw gqlDataPropertyMissingInResponse();
         }),
     },
     internals,

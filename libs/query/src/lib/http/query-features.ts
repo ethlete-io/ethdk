@@ -223,7 +223,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
             // It should have args because a withArgs feature is present.
             if (args === null && context.flags.hasWithArgsFeature) return;
 
-            if (options.executeInitially) {
+            if (options.executeInitially && (!hold || hold.isHolder())) {
               context.execute({ args });
             }
 

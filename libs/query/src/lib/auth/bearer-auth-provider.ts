@@ -426,6 +426,7 @@ export type BearerAuthProviderFeatureContext<
   TBearerData = unknown,
   TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
 > = {
+  name: string;
   refreshToken: WritableSignal<string | null>;
   afterTokenRefresh$: Observable<void>;
   accessToken: WritableSignal<string | null>;
@@ -452,6 +453,7 @@ export type BearerAuthProviderFeatureContext<
    */
   activityCoordination?: BearerAuthActivityCoordination;
   queries: QueryRegistry<TBuilders>;
+  latestExecutedQuery: Signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>;
   executionState: WritableSignal<BearerAuthExecutionState | null>;
   sessionStatus: Signal<BearerAuthSessionStatus>;
   sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
@@ -476,6 +478,7 @@ export type BearerAuthProviderQueryContext<
   /** Ends the session, exactly as the provider's own `logout()` does. */
   logout: (cause?: BearerAuthSessionEndCause) => void;
   queries: QueryRegistry<TBuilders>;
+  executionState: Signal<BearerAuthExecutionState | null>;
 
   /** Whether any execution that can issue tokens is still running, across every registry key. */
   hasTokenIssuingExecutionInFlight: Signal<boolean>;
@@ -534,41 +537,10 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
 
     const extractTokens = builder.config.extractTokens ?? defaultExtractTokens;
 
-    // A 2xx whose body carries no usable tokens is a failed execution, not a successful one - the
-    // state effect below reads this so it cannot report `success` for an attempt that left the tab
-    // unauthenticated.
-    const extractionError = signal<QueryErrorResponse | null>(null);
-
     const currentExecution = signal<CurrentExecution | null>(null);
     currentExecutions.push(currentExecution);
 
     const isSuperseded = (execution: CurrentExecution) => execution.id !== null && execution.id !== latestExecutionId;
-
-    // Runs before the state effect below, which reads the extraction error this one writes. Angular
-    // runs effects in creation order, so the two must stay in this order.
-    effect(() => {
-      const execution = currentExecution();
-      if (!execution) return;
-
-      const { snapshot } = execution;
-      const response = snapshot.response();
-      const loading = snapshot.loading();
-      const error = snapshot.error();
-
-      if (response && !loading && !error && !isSuperseded(execution)) {
-        try {
-          const tokens = extractTokens(response);
-          extractionError.set(null);
-          applyTokens(tokens.accessToken, tokens.refreshToken);
-        } catch (extractError) {
-          extractionError.set(createQueryErrorResponse(extractError));
-
-          if (isDevMode()) {
-            console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
-          }
-        }
-      }
-    });
 
     effect(() => {
       const execution = currentExecution();
@@ -584,12 +556,16 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       if (error) {
         executionState.set({ type, state: 'error', error });
       } else if (response) {
-        const failedExtraction = extractionError();
-
-        if (failedExtraction) {
-          executionState.set({ type, state: 'error', error: failedExtraction });
-        } else {
+        try {
+          const tokens = extractTokens(response);
+          applyTokens(tokens.accessToken, tokens.refreshToken);
           executionState.set({ type, state: 'success', response });
+        } catch (extractError) {
+          executionState.set({ type, state: 'error', error: createQueryErrorResponse(extractError) });
+
+          if (isDevMode()) {
+            console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
+          }
         }
       }
 
@@ -608,7 +584,6 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
     const execute = (args?: RequestArgs<QueryArgs>, options?: { triggeredBy?: string }) => {
       query ??= builder.config.queryCreator({ onlyManualExecution: true, injector });
 
-      extractionError.set(null);
       query.execute({ args, options });
       const snapshot = query.createSnapshot();
 
@@ -646,7 +621,11 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
     }),
   );
 
-  return { queries, querySnapshots, hasTokenIssuingExecutionInFlight };
+  const invalidateTokenIssuingExecutions = () => {
+    latestExecutionId++;
+  };
+
+  return { queries, querySnapshots, hasTokenIssuingExecutionInFlight, invalidateTokenIssuingExecutions };
 };
 
 const setupFeatures = <
@@ -799,17 +778,21 @@ const createBearerAuthProviderImpl = <
     executionState.set({ type: 'tokenSeed', state: 'success' });
   };
 
-  const { queries, hasTokenIssuingExecutionInFlight } = setupBearerQueryRegistry(config.queries, {
-    injector,
-    latestExecutedQuery,
-    latestNonInternalQuery,
-    applyTokens,
-    executionState,
-    sessionStatus,
-    isAuthenticated,
-  });
+  const { queries, hasTokenIssuingExecutionInFlight, invalidateTokenIssuingExecutions } = setupBearerQueryRegistry(
+    config.queries,
+    {
+      injector,
+      latestExecutedQuery,
+      latestNonInternalQuery,
+      applyTokens,
+      executionState,
+      sessionStatus,
+      isAuthenticated,
+    },
+  );
 
   const logout = (cause: BearerAuthSessionEndCause = 'user') => {
+    invalidateTokenIssuingExecutions();
     accessToken.set(null);
     refreshToken.set(null);
     queryClient.repository.unbindAllSecure();
@@ -848,6 +831,7 @@ const createBearerAuthProviderImpl = <
     logout,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
+    executionState: executionState.asReadonly(),
     hasTokenIssuingExecutionInFlight,
   };
 
@@ -856,6 +840,7 @@ const createBearerAuthProviderImpl = <
   }
 
   const featureSetupContext: BearerAuthProviderFeatureContext<TBearerData, TBuilders> = {
+    name: config.name,
     refreshToken,
     accessToken,
     bearerData,
@@ -869,6 +854,7 @@ const createBearerAuthProviderImpl = <
     activityCoordination: isLeader.activityCoordination,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
+    latestExecutedQuery: latestExecutedQuery.asReadonly(),
     executionState,
     sessionStatus: sessionStatus.asReadonly(),
     sessionEndCause: sessionEndCause.asReadonly(),

@@ -10,7 +10,6 @@ export function mapToPaginated<T>(response: Paginated<T>) {
   return map((items) => ({ ...response, items }) as Paginated<T>);
 }
 
-// FIXME: This breaks if SubStoreType is an array
 /**
  * Use an other store to represent a property of the current entity.
  *

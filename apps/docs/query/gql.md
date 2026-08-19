@@ -52,7 +52,7 @@ Two orthogonal axes: the **operation kind** (`Query` vs `Mutation`) and the **HT
 The operation kind controls **caching**: queries are cached/deduplicated in the repository, mutations are not - even a query sent via POST is cached (its cache key hashes the body). The transport only controls **how the payload travels**: via GET it's serialized into URL query params (CDN/proxy-cache friendly), via POST it goes in the request body.
 :::
 
-The `Secure…` variants take `(client, authProviderRef)` and behave like [secure HTTP queries](/query/auth) (token gating, `Authorization` header, refresh-and-retry on 401). Note: secure GQL derives the HTTP method from the operation kind (query → GET, mutation → POST) rather than the transport suffix.
+The `Secure…` variants take `(client, authProviderRef)` and behave like [secure HTTP queries](/query/auth) (token gating, `Authorization` header, refresh-and-retry on 401). Their transport suffix controls the HTTP method exactly like the non-secure variants.
 
 ## Typing & args
 

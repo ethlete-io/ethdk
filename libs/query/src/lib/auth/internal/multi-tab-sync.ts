@@ -185,6 +185,8 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
     }
 
     if (message.type === 'logout' && syncLogout) {
+      if (!context.accessToken() && !context.refreshToken()) return;
+
       lastSyncedState = LOGGED_OUT;
       hadTokens = false;
       context.logout(incomingCause(message.cause));
@@ -201,7 +203,11 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
     const isNewSession = !context.accessToken();
 
-    lastSyncedState = tokenState(access, refresh);
+    const incomingState = tokenState(access, refresh);
+
+    if (incomingState === lastSyncedState) return;
+
+    lastSyncedState = incomingState;
     hadTokens = true;
 
     if (isNewSession) {

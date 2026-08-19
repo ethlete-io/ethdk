@@ -1,5 +1,4 @@
-import { computed, inject } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { effect, inject, Injector } from '@angular/core';
 import {
   CanActivateFn,
   CanMatchFn,
@@ -8,7 +7,7 @@ import {
   Router,
   UrlTree,
 } from '@angular/router';
-import { defer, filter, from, map, Observable, take } from 'rxjs';
+import { defer, from, Observable } from 'rxjs';
 import { AnyCreateBearerAuthProviderResult } from './bearer-auth-provider';
 
 /** Anything {@link createAuthGuard} accepts as a navigation target. */
@@ -117,17 +116,18 @@ export const createAuthGuard = (providerRef: AnyCreateBearerAuthProviderResult, 
 
   const guardFor = (requiresSession: boolean) => () => {
     const router = inject(Router);
+    const injector = inject(Injector);
     const provider = providerRef.inject();
 
     // Captured before the wait below: once the session settles the router has moved on, and the URL
     // the visitor actually asked for is no longer reachable from it.
     const attemptedUrl = router.currentNavigation()?.extractedUrl.toString() ?? router.url;
 
-    const settled = computed(() => {
+    const settled = () => {
       const status = provider.sessionStatus();
 
       return status !== 'unknown' && status !== 'restoring';
-    });
+    };
 
     const decide = () => {
       const authenticated = provider.sessionStatus() === 'authenticated';
@@ -150,7 +150,19 @@ export const createAuthGuard = (providerRef: AnyCreateBearerAuthProviderResult, 
 
     if (settled()) return decide();
 
-    return toObservable(settled).pipe(filter(Boolean), take(1), map(decide));
+    return new Observable<true | RedirectCommand>((subscriber) => {
+      const watcher = effect(
+        () => {
+          if (!settled()) return;
+
+          subscriber.next(decide());
+          subscriber.complete();
+        },
+        { injector },
+      );
+
+      return () => watcher.destroy();
+    });
   };
 
   const requireSession = guardFor(true);

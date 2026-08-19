@@ -1,7 +1,7 @@
 import { DestroyRef, NgZone, assertInInjectionContext, inject, isDevMode } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   ET_PROPERTY_REMOVED,
   clone,
@@ -36,8 +36,10 @@ import {
 
 const ET_ARR_PREFIX = 'ET_ARR__';
 const ET_OBJ_PREFIX = 'ET_OBJ__';
+const ET_DATE_PREFIX = 'ET_DATE__';
 const ET_PROP_NULL_VALUE = 'ET_NULL__';
 
+/** @deprecated Use `queryField` with `defineQueryForm`. */
 export class QueryField<T> {
   constructor(public data: QueryFieldOptions<T>) {}
   get control() {
@@ -45,6 +47,7 @@ export class QueryField<T> {
   }
 }
 
+/** @deprecated Use `searchQueryField` with `defineQueryForm`. */
 export class SearchQueryField {
   data: QueryFieldOptions<string | null>;
 
@@ -61,6 +64,7 @@ export class SearchQueryField {
   }
 }
 
+/** @deprecated Use `sortQueryField` with `defineQueryForm`. */
 export class SortQueryField {
   data: QueryFieldOptions<Sort | null>;
 
@@ -77,6 +81,7 @@ export class SortQueryField {
   }
 }
 
+/** @deprecated Use `stringArrayQueryField` with `defineQueryForm`. */
 export class StringArrayQueryField<T extends string[]> {
   data: QueryFieldOptions<T | null>;
 
@@ -92,6 +97,7 @@ export class StringArrayQueryField<T extends string[]> {
   }
 }
 
+/** @deprecated Use `booleanArrayQueryField` with `defineQueryForm`. */
 export class BooleanArrayQueryField {
   data: QueryFieldOptions<boolean[] | null>;
 
@@ -107,6 +113,7 @@ export class BooleanArrayQueryField {
   }
 }
 
+/** @deprecated Use `numberArrayQueryField` with `defineQueryForm`. */
 export class NumberArrayQueryField {
   data: QueryFieldOptions<number[] | null>;
 
@@ -122,6 +129,7 @@ export class NumberArrayQueryField {
   }
 }
 
+/** @deprecated Use `dateQueryField` with `defineQueryForm`. */
 export class DateQueryField {
   data: QueryFieldOptions<Date | null>;
 
@@ -137,6 +145,7 @@ export class DateQueryField {
   }
 }
 
+/** @deprecated Use `dateArrayQueryField` with `defineQueryForm`. */
 export class DateArrayQueryField {
   data: QueryFieldOptions<Date[] | null>;
 
@@ -164,10 +173,10 @@ export type QueryFormOptions = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQueryForm = QueryForm<any>;
 
+/** @deprecated Use `defineQueryForm`. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class QueryForm<T extends Record<string, QueryField<any>>> {
   private router = inject(Router);
-  private activatedRoute = inject(ActivatedRoute);
   private zone = inject(NgZone);
   private queryParams = injectQueryParams();
   private readonly destroy$ = createDestroy();
@@ -176,7 +185,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   private readonly didValueChanges$ = new Subject<boolean>();
 
   private isObserving = false;
+  private removeQueryParamsOnCleanup = true;
   private skipNextResets = false;
+  private urlWriteVersion = 0;
+  private readonly urlNavigationMarker = {};
 
   private queryParamChanges$ = toObservable(injectQueryParamChanges());
 
@@ -244,7 +256,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   ) {
     assertInInjectionContext(QueryForm);
 
-    inject(DestroyRef).onDestroy(() => this.cleanup());
+    inject(DestroyRef).onDestroy(() => this.cleanup(false));
   }
 
   get controls() {
@@ -273,6 +285,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
 
     this.isObserving = true;
+    this.removeQueryParamsOnCleanup = options?.writeToQueryParams !== false;
 
     if (options?.syncOnNavigation !== false) {
       const didChanges = this.setFormValueFromUrlQueryParams({
@@ -377,6 +390,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           takeUntil(this.destroy$),
           takeUntil(this.unobserveTrigger$),
           tap((changes) => {
+            const info = this.router.lastSuccessfulNavigation()?.extras.info as
+              { queryForm?: object; version?: number } | undefined;
+            if (info?.queryForm === this.urlNavigationMarker && (info.version ?? 0) < this.urlWriteVersion) return;
+
             const didValueChanges = this.setFormValueFromUrlQueryParams({ queryParams: changes });
 
             if (didValueChanges) {
@@ -427,7 +444,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         const valueHasLeadingZero = typeof value === 'string' && value.startsWith('0');
         const valueEndsWithDot = typeof value === 'string' && value.endsWith('.');
 
-        const defaultIsBool = this.getDefaultValue(key) === 'boolean';
+        const defaultIsBool = typeof this.getDefaultValue(key) === 'boolean';
         const valueIsBool = value === 'true' || value === 'false';
 
         if (value === ET_PROP_NULL_VALUE) {
@@ -454,19 +471,23 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   setValue(value: QueryFormValue<T>, options?: QueryFormWriteOptions) {
-    this._form._setValue(value, options);
-
     if (options?.skipResets) {
       this.skipNextResets = true;
     }
+
+    this._form._setValue(value, options);
+
+    if (!this.isObserving) this.handleFormChange(true);
   }
 
   patchValue(value: Partial<QueryFormValue<T>>, options?: QueryFormWriteOptions) {
-    this._form._patchValue(value, options);
-
     if (options?.skipResets) {
       this.skipNextResets = true;
     }
+
+    this._form._patchValue(value, options);
+
+    if (!this.isObserving) this.handleFormChange(true);
   }
 
   resetFieldToDefault(key: keyof QueryFormValue<T>, options?: QueryFormWriteOptions) {
@@ -574,6 +595,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       return JSON.parse(val.slice(ET_ARR_PREFIX.length));
     } else if (typeof val === 'string' && val.startsWith(ET_OBJ_PREFIX)) {
       return JSON.parse(val.slice(ET_OBJ_PREFIX.length));
+    } else if (typeof val === 'string' && val.startsWith(ET_DATE_PREFIX)) {
+      return new Date(val.slice(ET_DATE_PREFIX.length));
     } else if (typeof val === 'function') {
       return val();
     } else if (val === ET_PROP_NULL_VALUE) {
@@ -597,11 +620,13 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   private isDefaultValue(key: string, value: unknown) {
     const normalizedValue = Array.isArray(value)
       ? `${ET_ARR_PREFIX}${JSON.stringify(value)}`
-      : typeof value === 'object' && value !== null
-        ? `${ET_OBJ_PREFIX}${JSON.stringify(value)}`
-        : value === null
-          ? ET_PROP_NULL_VALUE
-          : value;
+      : value instanceof Date
+        ? `${ET_DATE_PREFIX}${value.toISOString()}`
+        : typeof value === 'object' && value !== null
+          ? `${ET_OBJ_PREFIX}${JSON.stringify(value)}`
+          : value === null
+            ? ET_PROP_NULL_VALUE
+            : value;
 
     return this.defaultValues[key] === normalizedValue;
   }
@@ -630,6 +655,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
       if (Array.isArray(value)) {
         defaultValues[key] = `${ET_ARR_PREFIX}${JSON.stringify(value)}`;
+      } else if (value instanceof Date) {
+        defaultValues[key] = `${ET_DATE_PREFIX}${value.toISOString()}`;
       } else if (typeof value === 'object' && value !== null) {
         defaultValues[key] = `${ET_OBJ_PREFIX}${JSON.stringify(value)}`;
       } else if (value === null) {
@@ -643,7 +670,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _syncViaUrlQueryParams(values: QueryFormValue<T>, replaceUrl?: boolean) {
-    const queryParams = { ...clone(this.activatedRoute.snapshot.queryParams) };
+    const queryParams: Record<string, unknown> = {};
+    const version = ++this.urlWriteVersion;
 
     for (const [key, value] of Object.entries(values)) {
       const queryParamKey = this.transformKeyToQueryParam(key);
@@ -674,6 +702,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           queryParams,
           replaceUrl,
           queryParamsHandling: 'merge',
+          info: { queryForm: this.urlNavigationMarker, version },
         });
       });
     });
@@ -697,6 +726,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     const newVal = clone(this.formValue);
 
     if (equal(currentVal, newVal)) {
+      this.skipNextResets = false;
+
       return;
     }
 
@@ -709,10 +740,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     this.currentFormValue$.next(newVal);
   }
 
-  private cleanup() {
+  private cleanup(removeQueryParams = this.removeQueryParamsOnCleanup) {
     if (!this.isObserving) return;
 
     this.isObserving = false;
+
+    if (!removeQueryParams) return;
 
     const queryParamKeys = Object.keys(this._fields);
     const queryParams = queryParamKeys.reduce(

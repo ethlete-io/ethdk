@@ -1,6 +1,6 @@
 import { Signal, computed } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { combineLatest, interval, map } from 'rxjs';
+import { map, of, switchMap, timer } from 'rxjs';
 import { formatQueryDevtoolsDuration } from '../../devtools/query-devtools-features';
 import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
@@ -49,16 +49,21 @@ export const withTokenExpirationWarning = <TBuilders extends readonly AnyQueryBu
       return new Date(exp * 1000);
     });
 
-    const expiresIn$ = combineLatest([interval(checkInterval), toObservable(context.bearerData)]).pipe(
-      map(() => {
-        const expiry = expiresAt();
-        if (!expiry) return null;
+    const expiresIn$ = toObservable(context.bearerData).pipe(
+      switchMap((bearerData) =>
+        bearerData
+          ? timer(0, checkInterval).pipe(
+              map(() => {
+                const expiry = expiresAt();
+                if (!expiry) return null;
 
-        const now = Date.now();
-        const msUntilExpiry = expiry.getTime() - now;
+                const msUntilExpiry = expiry.getTime() - Date.now();
 
-        return msUntilExpiry > 0 ? msUntilExpiry : null;
-      }),
+                return msUntilExpiry > 0 ? msUntilExpiry : null;
+              }),
+            )
+          : of(null),
+      ),
     );
 
     const isExpiringSoon$ = expiresIn$.pipe(

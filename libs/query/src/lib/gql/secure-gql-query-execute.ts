@@ -57,7 +57,7 @@ export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
         ...executeOptions,
         creatorInternals: {
           client: executeOptions.creatorInternals.client,
-          method: executeOptions.creatorInternals.method === 'QUERY' ? 'GET' : 'POST',
+          method: executeOptions.creatorInternals.transport,
           route: (executeOptions.creator?.route ?? '') as RouteType<TArgs>,
         },
       };

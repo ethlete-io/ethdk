@@ -95,8 +95,6 @@ export class InfinityQueryDirective<
 
   private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
 
-  // TODO: Skipped for migration because:
-  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etInfinityQuery')
   get infinityQuery(): Q {
     return this._infinityQuery;
@@ -214,6 +212,8 @@ export class InfinityQueryDirective<
 
   private cleanup() {
     this.queryConfigChanged$.next(true);
+    this.infinityQueryInstance?.destroy();
+    this.infinityQueryInstance = null;
 
     this.viewContext.loading = false;
     this.viewContext.error = null;

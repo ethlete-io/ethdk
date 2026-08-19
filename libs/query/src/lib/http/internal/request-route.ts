@@ -98,7 +98,7 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
 
   const queryParams: string[] = [];
 
-  function processValue(key: string, value: unknown) {
+  function processValue(key: string, value: unknown): boolean | void {
     if (config?.objectNotation === 'json-stringify') {
       if (value === undefined) {
         return false;
@@ -123,6 +123,7 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
       return true;
     } else if (Array.isArray(value)) {
       let currentFilteredIndex = 0;
+      let didAddAnyValue = false;
       for (const arrayValue of value) {
         const nestedKey = writeArrayIndexes ? `${key}[${currentFilteredIndex}]` : `${key}[]`;
 
@@ -130,17 +131,19 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
 
         if (didAddValue) {
           currentFilteredIndex++;
+          didAddAnyValue = true;
         }
       }
 
-      return null;
+      return didAddAnyValue;
     } else if (typeof value === 'object' && value !== null) {
+      let didAddAnyValue = false;
       for (const [objKey, val] of Object.entries(value)) {
         const nestedKey = objectNotation === 'dot' ? `${key}.${objKey}` : `${key}[${objKey}]`;
-        processValue(nestedKey, val);
+        didAddAnyValue = processValue(nestedKey, val) || didAddAnyValue;
       }
 
-      return null;
+      return didAddAnyValue;
     } else {
       if (ignoredValues.includes(value)) {
         return false;
@@ -231,7 +234,7 @@ export const decryptBearer = <Result = Record<string, unknown>>(token: string) =
 
     return JSON.parse(jsonPayload) as Result;
   } catch (error) {
-    console.error(`Invalid bearer token: ${token}`, error);
+    console.error('Invalid bearer token', error);
 
     return null;
   }

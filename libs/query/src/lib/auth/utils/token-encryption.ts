@@ -1,14 +1,13 @@
 const ENCRYPTION_KEY_STORAGE = '__eth_ek';
 
 const generateEncryptionKey = () => {
-  const navigatorInfo =
-    typeof navigator !== 'undefined'
-      ? `${navigator.userAgent}${navigator.language}${screen.width}${screen.height}${screen.colorDepth}`
-      : 'server';
+  const navigatorInfo = typeof navigator !== 'undefined' ? `${navigator.userAgent}${navigator.language}` : 'server';
+  const screenInfo =
+    typeof screen !== 'undefined' ? `${screen.width}${screen.height}${screen.colorDepth}` : 'no-screen';
 
   const random = Math.random().toString(36).substring(2, 15);
 
-  return btoa(`${navigatorInfo}${random}`);
+  return btoa(`${navigatorInfo}${screenInfo}${random}`);
 };
 
 let cachedKey: string | null = null;
@@ -17,24 +16,30 @@ const getEncryptionKey = () => {
   if (cachedKey) return cachedKey;
 
   if (typeof localStorage !== 'undefined') {
-    const stored = localStorage.getItem(ENCRYPTION_KEY_STORAGE);
-    if (stored) {
-      cachedKey = stored;
+    try {
+      const stored = localStorage.getItem(ENCRYPTION_KEY_STORAGE);
+      if (stored) {
+        cachedKey = stored;
 
-      return stored;
+        return stored;
+      }
+    } catch {
+      cachedKey = null;
     }
-
-    const newKey = generateEncryptionKey();
-    localStorage.setItem(ENCRYPTION_KEY_STORAGE, newKey);
-    cachedKey = newKey;
-
-    return newKey;
   }
 
-  if (!cachedKey) {
-    cachedKey = generateEncryptionKey();
+  const newKey = generateEncryptionKey();
+  cachedKey = newKey;
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(ENCRYPTION_KEY_STORAGE, newKey);
+    } catch {
+      return newKey;
+    }
   }
-  return cachedKey;
+
+  return newKey;
 };
 
 const xorCipher = (text: string, key: string) => {
@@ -53,7 +58,7 @@ export const encryptToken = (token: string) => {
     const encrypted = xorCipher(token, key);
     return btoa(encrypted);
   } catch {
-    return token;
+    return '';
   }
 };
 

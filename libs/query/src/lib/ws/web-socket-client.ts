@@ -61,7 +61,7 @@ export type WebSocketClientSocket = {
   disconnect: () => void;
   emit: (event: string, data: unknown) => void;
   on: (event: 'connect' | 'disconnect', listener: () => void) => void;
-  onAny: (listener: (data: string) => void) => void;
+  onAny: (listener: (eventName: string, ...args: unknown[]) => void) => void;
 };
 
 /**
@@ -197,10 +197,9 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         const roomFn = typeof room === 'function' ? room : () => room;
         const pre = previousSignalValue(computed(() => roomFn()));
         const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
+        let joinedRoomName: string | null = null;
 
         const join = (name: string) => {
-          emit({ event: 'join-room', data: name, room: name });
-
           const existingRoom = rooms.get(name);
 
           if (existingRoom) {
@@ -208,6 +207,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
             return existingRoom;
           }
+
+          emit({ event: 'join-room', data: name, room: name });
 
           const message = signal<TMessageData | null>(null);
 
@@ -230,11 +231,17 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
             if (previous === current) return;
 
-            if (previous) leaveRoom(previous);
+            if (previous) {
+              leaveRoom(previous);
+              joinedRoomName = null;
+            }
 
             if (current) {
               const joinedRoom = join(current);
-              if (joinedRoom) roomData.set(joinedRoom);
+              if (joinedRoom) {
+                joinedRoomName = current;
+                roomData.set(joinedRoom);
+              }
             } else {
               roomData.set(null);
             }
@@ -242,10 +249,9 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         });
 
         inject(DestroyRef).onDestroy(() => {
-          const current = roomFn();
-
-          if (current) {
-            leaveRoom(current);
+          if (joinedRoomName) {
+            leaveRoom(joinedRoomName);
+            joinedRoomName = null;
             roomData.set(null);
           }
         });
@@ -284,8 +290,12 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       };
 
       const setupWebSocketListener = () => {
-        socket.onAny((data: string) => {
+        socket.onAny((_eventName: string, ...args: unknown[]) => {
           try {
+            const data = args[0];
+
+            if (typeof data !== 'string') throw messageMalformed();
+
             const json = JSON.parse(data) as TMessageData;
 
             recordDevtoolsMessage({ room: json.room, event: json.event, data: json.data, direction: 'in' });
