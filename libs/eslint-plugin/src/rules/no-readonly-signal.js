@@ -50,6 +50,10 @@ const REACTIVE_APIS = new Set([
   'effect',
   'afterNextRender',
   'afterRender',
+  'afterRenderEffect',
+  'resource',
+  'rxResource',
+  'httpResource',
   // RxJS interop
   'toSignal',
   'toObservable',
@@ -83,7 +87,7 @@ const noReadonlySignal = {
         let apiName = null;
 
         // Simple call: signal(), input(), computed(), inject(), etc.
-        if (callee.type === 'Identifier' && REACTIVE_APIS.has(callee.name)) {
+        if (callee.type === 'Identifier' && (REACTIVE_APIS.has(callee.name) || callee.name.startsWith('inject'))) {
           apiName = callee.name;
         }
         // Member call: input.required(), outputFromObservable.something(), etc.
@@ -101,13 +105,17 @@ const noReadonlySignal = {
             messageId: 'noReadonlySignal',
             data: { name: apiName },
             fix(fixer) {
-              // Find and remove the "readonly" token
               const sourceCode = context.sourceCode;
               const tokens = sourceCode.getTokens(node);
-              const readonlyToken = tokens.find((t) => t.value === 'readonly');
+              const decoratorEnd = node.decorators?.at(-1)?.range[1] ?? node.range[0];
+              const readonlyToken = tokens.find(
+                (token) =>
+                  token.value === 'readonly' && token.range[0] >= decoratorEnd && token.range[1] <= node.key.range[0],
+              );
               if (!readonlyToken) return null;
-              // Remove "readonly " (including the trailing space)
-              return fixer.removeRange([readonlyToken.range[0], readonlyToken.range[1] + 1]);
+              const nextToken = sourceCode.getTokenAfter(readonlyToken);
+              const rangeEnd = nextToken ? nextToken.range[0] : readonlyToken.range[1];
+              return fixer.removeRange([readonlyToken.range[0], rangeEnd]);
             },
           });
         }

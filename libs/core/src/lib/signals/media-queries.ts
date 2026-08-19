@@ -1,4 +1,4 @@
-import { computed, DOCUMENT, inject } from '@angular/core';
+import { computed, DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
 import {
   Breakpoint,
   BREAKPOINT_ORDER,
@@ -123,7 +123,11 @@ export const injectViewportDimensions = /* @__PURE__ */ memoizeSignal(() =>
 /** Inject a signal containing the scrollbar dimensions. Dimensions will be 0 if scrollbars overlap the page contents (like on mobile). */
 export const injectScrollbarDimensions = /* @__PURE__ */ memoizeSignal(() => {
   const document = inject(DOCUMENT);
+  const destroyRef = inject(DestroyRef);
   const renderer = injectRenderer();
+  const view = document.defaultView;
+
+  if (!view) return signal<{ width: number; height: number } | null>(null).asReadonly();
 
   const scrollbarRuler = renderer.createElement('div');
   scrollbarRuler.style.width = '100px';
@@ -131,8 +135,12 @@ export const injectScrollbarDimensions = /* @__PURE__ */ memoizeSignal(() => {
   scrollbarRuler.style.overflow = 'scroll';
   scrollbarRuler.style.position = 'absolute';
   scrollbarRuler.style.top = '-9999px';
-  scrollbarRuler.style.scrollbarWidth = getComputedStyle(document.documentElement).scrollbarWidth;
+  scrollbarRuler.style.scrollbarWidth = view.getComputedStyle(document.documentElement).scrollbarWidth;
   renderer.appendChild(document.body, scrollbarRuler);
+  destroyRef.onDestroy(() => {
+    const parent = renderer.parentNode(scrollbarRuler);
+    if (parent) renderer.removeChild(parent, scrollbarRuler);
+  });
 
   const scrollContainerDimensions = signalElementDimensions(scrollbarRuler);
 

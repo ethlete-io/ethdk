@@ -128,12 +128,15 @@ export const createFlipAnimation = (config: FlipAnimationConfig) => {
   };
 
   const cleanup = () => {
-    if (!animation) {
+    const currentAnimation = animation;
+    if (!currentAnimation) {
       return;
     }
 
-    animation.removeEventListener('finish', onAnimationFinish);
-    animation.removeEventListener('cancel', onAnimationCancel);
+    currentAnimation.removeEventListener('finish', onAnimationFinish);
+    currentAnimation.removeEventListener('cancel', onAnimationCancel);
+    animation = null;
+    currentAnimation.cancel();
   };
 
   const updateInit = () => {
@@ -141,6 +144,11 @@ export const createFlipAnimation = (config: FlipAnimationConfig) => {
   };
 
   const play = () => {
+    if (animation) {
+      cleanup();
+      onCancel$.next();
+    }
+
     const lastRect = el.getBoundingClientRect();
 
     const delta = {
@@ -183,9 +191,9 @@ export const createFlipAnimation = (config: FlipAnimationConfig) => {
   };
 
   const cancel = () => {
-    animation?.cancel();
-
+    if (!animation) return;
     cleanup();
+    onCancel$.next();
   };
 
   return {

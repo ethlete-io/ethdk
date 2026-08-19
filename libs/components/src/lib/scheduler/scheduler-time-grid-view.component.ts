@@ -80,7 +80,7 @@ type SchedulerTimeGridAllDayDrag = Omit<SchedulerTimeGridAllDayDragTarget, 'lane
   },
 })
 export class SchedulerTimeGridViewComponent {
-  protected scheduler = inject(SchedulerDirective, { optional: true });
+  private scheduler = inject(SchedulerDirective, { optional: true });
   protected grid = inject(SchedulerTimeGridDirective);
 
   private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
@@ -88,7 +88,7 @@ export class SchedulerTimeGridViewComponent {
   private destroyRef = inject(DestroyRef);
   private hostInjector = inject(Injector);
   private renderer = injectRenderer();
-  protected timeGridBody = viewChild<ElementRef<HTMLElement>>('timeGridBody');
+  public timeGridBody = viewChild<ElementRef<HTMLElement>>('timeGridBody');
   private firstHourRow = viewChild<ElementRef<HTMLElement>>('hourRow');
   private dayColumns = viewChildren<ElementRef<HTMLElement>>('dayColumn');
   public draftBlock = viewChild<ElementRef<HTMLElement>>('draftBlock');

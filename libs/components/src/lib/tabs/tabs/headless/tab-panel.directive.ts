@@ -18,7 +18,7 @@ let nextPanelId = 0;
 })
 export class TabPanelDirective {
   private tabGroup = inject(TAB_GROUP_TOKEN, { optional: true });
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public triggerId = input<string | null>(null);
   public readonly ID = `et-tab-panel-${nextPanelId++}`;

@@ -6,10 +6,10 @@ import { Tree, logger } from '@nx/devkit';
 const TS_SYMBOL_RENAMES: Record<string, string> = {
   ProvideThemeDirective: 'ProvideColorDirective',
   THEME_PROVIDER: 'COLOR_PROVIDER',
-  ColorThemedDirective: 'ColoredDirective',
-  ColorThemedStylesComponent: 'ColoredStylesComponent',
-  SurfaceThemedDirective: 'SurfacedDirective',
-  SurfaceThemedStylesComponent: 'SurfacedStylesComponent',
+  ColorThemedDirective: 'ColorInteractiveDirective',
+  ColorThemedStylesComponent: 'ColorInteractiveStylesComponent',
+  SurfaceThemedDirective: 'SurfaceInteractiveDirective',
+  SurfaceThemedStylesComponent: 'SurfaceInteractiveStylesComponent',
   injectThemesPrefix: 'injectColorThemesPrefix',
   createCssThemeName: 'createCssColorThemeName',
 };
@@ -20,14 +20,10 @@ const TS_SYMBOL_RENAMES: Record<string, string> = {
 const TEMPLATE_REPLACEMENTS: [string, string][] = [
   ['[etProvideTheme]', '[etProvideColor]'],
   ['etProvideTheme', 'etProvideColor'],
-  ['[etProvideAltTheme]', '[etProvideAltColor]'],
-  ['etProvideAltTheme', 'etProvideAltColor'],
-  ['[etColorThemed]', '[etColored]'],
-  ['etColorThemed', 'etColored'],
-  ['[etSurfaceThemed]', '[etSurfaced]'],
-  ['etSurfaceThemed', 'etSurfaced'],
-  ['[theme]=', '[color]='],
-  ['[altTheme]=', '[altColor]='],
+  ['[etColorThemed]', '[etColorInteractive]'],
+  ['etColorThemed', 'etColorInteractive'],
+  ['[etSurfaceThemed]', '[etSurfaceInteractive]'],
+  ['etSurfaceThemed', 'etSurfaceInteractive'],
   ['et-theme-alt--', 'et-color-alt--'],
   ['et-theme--', 'et-color--'],
 ];
@@ -36,8 +32,8 @@ const TEMPLATE_REPLACEMENTS: [string, string][] = [
  * CSS class name replacements.
  */
 const CSS_REPLACEMENTS: [string, string][] = [
-  ['.et-color-themed', '.et-colored'],
-  ['.et-surface-themed', '.et-surfaced'],
+  ['.et-color-themed', '.et-color-interactive'],
+  ['.et-surface-themed', '.et-surface-interactive'],
   ['.et-theme--', '.et-color--'],
   ['.et-theme-alt--', '.et-color-alt--'],
 ];
@@ -47,13 +43,11 @@ const CSS_REPLACEMENTS: [string, string][] = [
  */
 const HOST_DIRECTIVE_REPLACEMENTS: [string, string][] = [
   ["'etProvideTheme:theme'", "'etProvideColor:color'"],
-  ["'etProvideAltTheme:altTheme'", "'etProvideAltColor:altColor'"],
   ["'etProvideTheme:color'", "'etProvideColor:color'"],
-  ["'etProvideAltTheme:altColor'", "'etProvideAltColor:altColor'"],
   ['"etProvideTheme:theme"', '"etProvideColor:color"'],
-  ['"etProvideAltTheme:altTheme"', '"etProvideAltColor:altColor"'],
   ['"etProvideTheme"', '"etProvideColor"'],
-  ['"etProvideAltTheme"', '"etProvideAltColor"'],
+  ["'etProvideTheme: theme'", "'etProvideColor: color'"],
+  ['"etProvideTheme: theme"', '"etProvideColor: color"'],
 ];
 
 export default async function migrateColorNaming(tree: Tree) {
@@ -107,7 +101,7 @@ function findFiles(dir: string, tree: Tree, tsFiles: string[], htmlFiles: string
     if (tree.isFile(path)) {
       if (path.includes('node_modules')) continue;
 
-      if (path.endsWith('.ts') && !path.endsWith('.spec.ts')) {
+      if (path.endsWith('.ts')) {
         tsFiles.push(path);
       } else if (path.endsWith('.html')) {
         htmlFiles.push(path);
@@ -126,6 +120,8 @@ function migrateTypeScriptFile(tree: Tree, filePath: string): boolean {
   if (!content) return false;
 
   const original = content;
+
+  if (!/from\s+['"]@ethlete\/(?:core|cdk)['"]/.test(content)) return false;
 
   // Rename symbols
   for (const [oldName, newName] of Object.entries(TS_SYMBOL_RENAMES)) {

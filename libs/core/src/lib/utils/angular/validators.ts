@@ -46,7 +46,7 @@ export const IS_ARRAY_NOT_EMPTY = 'isArrayNotEmpty';
 
 export const IsArrayNotEmpty = (control: AbstractControl): ValidationErrors | null => {
   const value = control.value;
-  if (!value) {
+  if (!Array.isArray(value)) {
     return null;
   }
 
@@ -61,7 +61,11 @@ export const IsEmail = (control: AbstractControl): ValidationErrors | null => {
     return null;
   }
 
-  const regex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const regex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
   return regex.test(value) ? null : { [IS_EMAIL]: true };
 };
 
@@ -72,22 +76,15 @@ export const MustMatch = (controlName: string, matchingControlName: string) => {
     const control = formGroup.get(controlName);
     const matchingControl = formGroup.get(matchingControlName);
 
-    if (matchingControl?.errors && !matchingControl.errors[MUST_MATCH]) {
-      return null;
-    }
-
     if (control?.value !== matchingControl?.value) {
-      matchingControl?.setErrors({ [MUST_MATCH]: true });
-
       return { [MUST_MATCH]: true };
-    } else {
-      matchingControl?.setErrors(null);
-      return null;
     }
+
+    return null;
   };
 };
 
-export const Validators = {
+export const EthleteValidators = {
   MustMatch,
   IsEmail,
   IsArrayNotEmpty,

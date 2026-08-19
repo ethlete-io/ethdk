@@ -52,8 +52,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   private isConstructed = false;
   private transitionIdCounter = 0;
 
-  private forcedAtFrameId: number | null = null;
-  private currentFrameId = 0;
+  private forcedThisFrame = false;
+  private forcedFrameResetId: number | null = null;
 
   state$ = new BehaviorSubject<AnimatedLifecycleState>('init');
 
@@ -74,18 +74,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         takeUntilDestroyed(),
       )
       .subscribe();
-
-    this.trackFrameId();
-  }
-
-  private trackFrameId() {
-    const updateFrameId = () => {
-      this.currentFrameId = requestAnimationFrame(updateFrameId);
-    };
-    this.currentFrameId = requestAnimationFrame(updateFrameId);
-
     this.destroyRef.onDestroy(() => {
-      cancelAnimationFrame(this.currentFrameId);
+      if (this.forcedFrameResetId !== null) cancelAnimationFrame(this.forcedFrameResetId);
     });
   }
 
@@ -103,7 +93,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       this.updateState('entered');
       this.skipNextEnter.set(false);
       this.addClass(ANIMATION_CLASSES.enterDone);
-      this.forcedAtFrameId = null;
+      this.forcedThisFrame = false;
 
       return;
     }
@@ -119,8 +109,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     const transitionId = `enter-${++this.transitionIdCounter}`;
     this.animatable.setTransitionId(transitionId);
 
-    const skipAnimation = this.forcedAtFrameId !== null && this.forcedAtFrameId === this.currentFrameId;
-    this.forcedAtFrameId = null;
+    const skipAnimation = this.forcedThisFrame;
+    this.forcedThisFrame = false;
 
     this.debugLog(
       `enter: ${skipAnimation ? 'skip (forced this frame)' : isInterrupting ? 'interrupting leave' : 'normal'}`,
@@ -192,7 +182,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       this.debugLog('leave: instant (state is init, enter never ran)');
       this.updateState('left');
       this.addClass(ANIMATION_CLASSES.leaveDone);
-      this.forcedAtFrameId = null;
+      this.forcedThisFrame = false;
 
       return;
     }
@@ -208,8 +198,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     const transitionId = `leave-${++this.transitionIdCounter}`;
     this.animatable.setTransitionId(transitionId);
 
-    const skipAnimation = this.forcedAtFrameId !== null && this.forcedAtFrameId === this.currentFrameId;
-    this.forcedAtFrameId = null;
+    const skipAnimation = this.forcedThisFrame;
+    this.forcedThisFrame = false;
 
     this.debugLog(
       `leave: ${skipAnimation ? 'skip (forced this frame)' : isInterrupting ? 'interrupting enter' : 'normal'}`,
@@ -285,7 +275,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       ANIMATION_CLASSES.leaveTo,
     );
     this.addClass(ANIMATION_CLASSES.enterDone);
-    this.forcedAtFrameId = this.currentFrameId;
+    this.markForcedThisFrame();
   }
 
   forceLeftState() {
@@ -301,7 +291,19 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       ANIMATION_CLASSES.leaveTo,
     );
     this.addClass(ANIMATION_CLASSES.leaveDone);
-    this.forcedAtFrameId = this.currentFrameId;
+    this.markForcedThisFrame();
+  }
+
+  private markForcedThisFrame() {
+    this.forcedThisFrame = true;
+
+    if (typeof requestAnimationFrame === 'undefined') return;
+    if (this.forcedFrameResetId !== null) cancelAnimationFrame(this.forcedFrameResetId);
+
+    this.forcedFrameResetId = requestAnimationFrame(() => {
+      this.forcedThisFrame = false;
+      this.forcedFrameResetId = null;
+    });
   }
 
   private handleNormalTransition(config: {

@@ -26,7 +26,7 @@ const assertInsideSelect = (
 /** Replaces the default loading row rendered while the select's `loading` input is true. */
 @Directive({ selector: 'ng-template[etSelectLoading]' })
 export class SelectLoadingDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
@@ -45,7 +45,7 @@ export type SelectErrorContext = {
 /** Replaces the default error row rendered while the select's `error` input is set. Context: the error text. */
 @Directive({ selector: 'ng-template[etSelectError]' })
 export class SelectErrorDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectErrorContext>>(TemplateRef);
@@ -60,7 +60,7 @@ export class SelectErrorDirective {
 /** Replaces the default empty row rendered when no options are visible. */
 @Directive({ selector: 'ng-template[etSelectEmpty]' })
 export class SelectEmptyDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);

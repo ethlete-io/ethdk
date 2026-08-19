@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injector, PLATFORM_ID, Signal, computed, inject } from '@angular/core';
+import { Injector, PLATFORM_ID, Signal, computed, inject, runInInjectionContext } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Data, NavigationEnd, NavigationSkipped, Params, Router } from '@angular/router';
 import { equal } from '../utils';
@@ -151,7 +151,11 @@ export const createRouterState = (router: Router): RouterState => {
  * where `router.url` is already committed. Falls back to the browser location before the first navigation commits.
  */
 export const createRoute = (router: Router) => {
-  const url = router.navigated ? router.url : window.location.pathname + window.location.search + window.location.hash;
+  const browserUrl =
+    typeof window === 'undefined'
+      ? router.url
+      : window.location.pathname + window.location.search + window.location.hash;
+  const url = router.navigated ? router.url : browserUrl;
 
   return url.split('?')[0]?.split('#')[0] ?? '';
 };
@@ -177,7 +181,9 @@ export const injectRouterState = /* @__PURE__ */ memoizeSignal(() => {
 export const injectFragment = <T = string | null>(
   config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
 ) => {
-  const routerState = injectRouterState();
+  const routerState = config?.injector
+    ? runInInjectionContext(config.injector, injectRouterState)
+    : injectRouterState();
   const fragment = computed(() => routerState().fragment);
 
   return transformOrReturn(fragment, config);

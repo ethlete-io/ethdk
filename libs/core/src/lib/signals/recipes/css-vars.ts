@@ -1,9 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
-import { DOCUMENT, effect, inject, PLATFORM_ID } from '@angular/core';
+import { DOCUMENT, effect, EnvironmentInjector, inject, PLATFORM_ID } from '@angular/core';
 import { injectRenderer } from '../../providers';
 import { injectScrollbarDimensions, injectViewportDimensions } from '../media-queries';
 
-let hasWrittenScrollbarSizes = false;
+const scrollbarSizeWriters = /* @__PURE__ */ new WeakSet<EnvironmentInjector>();
 
 /**
  * Applies scrollbar size CSS variables to the documentElement (html tag) in pixels.
@@ -15,10 +15,11 @@ export const writeScrollbarSizeToCssVariables = () => {
     return;
   }
 
-  if (hasWrittenScrollbarSizes) {
+  const environmentInjector = inject(EnvironmentInjector);
+  if (scrollbarSizeWriters.has(environmentInjector)) {
     return;
   }
-  hasWrittenScrollbarSizes = true;
+  scrollbarSizeWriters.add(environmentInjector);
 
   const document = inject(DOCUMENT);
   const renderer = injectRenderer();
@@ -36,7 +37,7 @@ export const writeScrollbarSizeToCssVariables = () => {
   });
 };
 
-let hasWrittenViewportSizes = false;
+const viewportSizeWriters = /* @__PURE__ */ new WeakSet<EnvironmentInjector>();
 
 /**
  * Applies viewport size CSS variables to the documentElement (html tag) in pixels.
@@ -48,10 +49,11 @@ export const writeViewportSizeToCssVariables = () => {
     return;
   }
 
-  if (hasWrittenViewportSizes) {
+  const environmentInjector = inject(EnvironmentInjector);
+  if (viewportSizeWriters.has(environmentInjector)) {
     return;
   }
-  hasWrittenViewportSizes = true;
+  viewportSizeWriters.add(environmentInjector);
 
   const document = inject(DOCUMENT);
   const renderer = injectRenderer();

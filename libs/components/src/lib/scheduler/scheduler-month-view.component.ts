@@ -32,7 +32,7 @@ import { Appointment } from './scheduler.types';
   },
 })
 export class SchedulerMonthViewComponent {
-  protected scheduler = inject(SchedulerDirective, { optional: true });
+  private scheduler = inject(SchedulerDirective, { optional: true });
   protected month = inject(SchedulerMonthDirective);
   protected labels = injectSchedulerLabels();
 

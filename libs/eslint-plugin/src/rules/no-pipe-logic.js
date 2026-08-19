@@ -39,6 +39,7 @@ const noPipeLogic = {
       MethodDefinition(node) {
         const key = /** @type {any} */ (node).key;
         if (key.type !== 'Identifier' || key.name !== 'transform') return;
+        if (!node.value?.body || node.value.body.type === 'TSEmptyBodyFunctionExpression') return;
 
         const classBody = node.parent;
         if (!classBody || classBody.type !== 'ClassBody') return;

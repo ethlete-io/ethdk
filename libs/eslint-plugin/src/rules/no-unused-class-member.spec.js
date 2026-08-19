@@ -63,6 +63,12 @@ tester.run('no-unused-class-member', rule, {
 
     // private used only in nested arrow function inside a method
     { code: `class C { private cfg = {}; build() { return () => this.cfg; } }` },
+    { code: `class C { private value = 1; read() { return this['value']; } }` },
+    { code: `class C { private value = 1; read() { const { value } = this; return value; } }` },
+    { code: `class C { protected override hook() {} }` },
+    { code: `@Directive({}) abstract class C { protected service = inject(Service); }` },
+    { code: `@Directive({}) class C { @HostListener('click') private activate() {} }` },
+    { code: `@Directive({ host: { '[class.active]': 'active' } }) class C { private active = true; }` },
   ],
   invalid: [
     // private field — never referenced

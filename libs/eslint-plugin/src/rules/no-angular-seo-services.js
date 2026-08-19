@@ -18,9 +18,9 @@
  *   import { Title, Meta } from '@angular/platform-browser';
  *
  * ✅ Use the @ethlete/core SEO utilities:
- *   import { injectTitleBinding, injectMetaBinding } from '@ethlete/core';
- *   const titleBinding = injectTitleBinding();
- *   const metaBinding  = injectMetaBinding();
+ *   import { applyHeadTitleBinding, applyMetaBinding } from '@ethlete/core';
+ *   applyHeadTitleBinding(title);
+ *   applyMetaBinding(meta);
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -32,12 +32,12 @@ const rule = {
     },
     schema: [],
     messages: {
-      noInjectTitle: "Do not inject Angular's Title service. Use injectTitleBinding() from '@ethlete/core' instead.",
-      noInjectMeta: "Do not inject Angular's Meta service. Use injectMetaBinding() from '@ethlete/core' instead.",
+      noInjectTitle: "Do not inject Angular's Title service. Use applyHeadTitleBinding() from '@ethlete/core' instead.",
+      noInjectMeta: "Do not inject Angular's Meta service. Use applyMetaBinding() from '@ethlete/core' instead.",
       noImportTitle:
-        "Do not import Title from '@angular/platform-browser'. Use injectTitleBinding() from '@ethlete/core' instead.",
+        "Do not import Title from '@angular/platform-browser'. Use applyHeadTitleBinding() from '@ethlete/core' instead.",
       noImportMeta:
-        "Do not import Meta from '@angular/platform-browser'. Use injectMetaBinding() from '@ethlete/core' instead.",
+        "Do not import Meta from '@angular/platform-browser'. Use applyMetaBinding() from '@ethlete/core' instead.",
     },
   },
   create(context) {

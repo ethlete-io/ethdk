@@ -1,6 +1,6 @@
 # @ethlete/eslint-plugin
 
-Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide - 58 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access, TypeScript style and migrating off the maintenance-mode packages. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
+Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide - 59 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access, TypeScript style and migrating off the maintenance-mode packages. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
 
 ```bash
 yarn add --dev @ethlete/eslint-plugin
@@ -28,7 +28,7 @@ export default [
 | --------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `recommendedTs`       | `**/*.ts`      | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                                                 |
 | `recommendedTemplate` | `**/*.html`    | Angular template rules (`@angular-eslint/template/*`, `ethlete/prefer-static-boolean-properties`, `ethlete/require-form-submit`) |
-| `recommendedSpec`     | `**/*.spec.ts` | Turns off `@typescript-eslint/no-non-null-assertion` - non-null assertions are common and intentional in tests                   |
+| `recommendedSpec`     | `**/*.spec.ts` | Relaxes non-null assertions, async test code, and DOM/platform access used by test fixtures and browser assertions               |
 
 The `ethlete` plugin itself is pre-wired into the configs - you don't need a `plugins:` entry for it.
 
@@ -63,7 +63,7 @@ export default [
 ```
 
 ::: warning Bring your own base config
-`recommendedTs` and `recommendedTemplate` set severities for `@typescript-eslint/*` and `@angular-eslint/*` rules but do **not** register those plugins or parsers - your base config must (Nx's `flat/angular` / `flat/angular-template` presets do). Peer requirements: `eslint >= 9`, `@typescript-eslint/eslint-plugin >= 8`, `@angular-eslint/eslint-plugin-template >= 21`.
+`recommendedTs` and `recommendedTemplate` set severities for `@typescript-eslint/*` and `@angular-eslint/*` rules but do **not** register those plugins or parsers - your base config must (Nx's `flat/angular` / `flat/angular-template` presets do). Peer requirements: Angular and Angular ESLint >= 21, ESLint >= 9, TypeScript >= 5.9 and `@typescript-eslint/eslint-plugin >= 8`.
 :::
 
 ## What `recommended` enforces beyond the custom rules
@@ -73,11 +73,11 @@ Besides the [custom `ethlete/*` rules](/eslint/rules), `recommendedTs` configure
 - **TypeScript**: no `any` (`@typescript-eslint/no-explicit-any`); `type` instead of `interface`; strict unused-variable checking (`_`-prefixed args exempt).
 - **Naming**: camelCase / PascalCase / UPPER_CASE via `@typescript-eslint/naming-convention` - no leading/trailing underscores on types and methods, `T`-prefixed generic parameters (`TValue`, never bare `T`).
 - **Code style**: `const` by default, no `var`, one declaration per statement, `===` / `!==` only, max two function parameters.
-- **Banned syntax** (`no-restricted-syntax`): `enum`, `function` declarations/expressions, arrow-function class properties, `async`/`await` (use RxJS), `static` members (except `ngTemplateContextGuard`, which Angular's template type checker requires to be static), `#`-private members, constructor injection, legacy Angular lifecycle hooks (`ngOnChanges`, `ngAfterViewInit`, …), `@Injectable` and `@Service` (use `defineProvider` / `defineRootProvider` from `@ethlete/core`), route guards and resolvers, barrel (`index`) imports, and `on`-prefixed method names.
+- **Banned syntax** (`no-restricted-syntax`): `function` declarations/expressions, arrow-function class properties, `static` members (except `ngTemplateContextGuard`, which Angular's template type checker requires to be static), `#`-private members, constructor injection, legacy Angular lifecycle hooks (`ngOnChanges`, `ngAfterViewInit`, …), `@Injectable` and `@Service` (use `defineProvider` / `defineRootProvider` from `@ethlete/core`), route guards and resolvers, barrel (`index`) imports, and `on`-prefixed method names.
 - **Restricted globals**: direct `document` / `window` access - use `inject(DOCUMENT)` or a dedicated injection token.
 - **Angular outputs**: no `on` prefix (`@angular-eslint/no-output-on-prefix`), no native DOM event names (`@angular-eslint/no-output-native`).
 
-`recommendedTemplate` adds four template rules: no `$any()` (`@angular-eslint/template/no-any`), prefer plain attributes over property bindings for static strings (`@angular-eslint/template/prefer-static-string-properties`, e.g. `etIcon="foo"` instead of `[etIcon]="'foo'"`), and the same for static booleans (the custom [`ethlete/prefer-static-boolean-properties`](/eslint/rules#angular-templates), e.g. `isReadonly` instead of `[isReadonly]="true"` - suggestion-only, since it is only safe for inputs with a `booleanAttribute` transform). It also adds [`ethlete/require-form-submit`](/eslint/rules#angular-templates), which requires a `<form>` to handle its own submission and a `type="submit"` control to reach one.
+`recommendedTemplate` adds four template rules: no `$any()` (`@angular-eslint/template/no-any`), prefer plain attributes over property bindings for static strings (`@angular-eslint/template/prefer-static-string-properties`, e.g. `etIcon="foo"` instead of `[etIcon]="'foo'"`), and the same for static booleans (the custom [`ethlete/prefer-static-boolean-properties`](/eslint/rules#angular-templates), e.g. `isReadonly` instead of `[isReadonly]="true"` - suggestion-only and never offered for native boolean properties or structural directives). It also adds [`ethlete/require-form-submit`](/eslint/rules#angular-templates), which requires every `<form>` to handle its own submission.
 
 The two [migration rules](/eslint/rules#legacy-packages-migration) - `no-cdk-import` and `no-legacy-query-import` - are in no config: enable them per project once an app is leaving `@ethlete/cdk` or the legacy query system behind.
 

@@ -47,8 +47,8 @@ export class RichTextEditorTableToolComponent {
 
   public editor = input.required<RichTextEditorDirective>();
 
-  protected menu = viewChild.required(MenuDirective);
-  protected pickerGrid = viewChild<ElementRef<HTMLElement>>('pickerGrid');
+  public menu = viewChild.required(MenuDirective);
+  public pickerGrid = viewChild<ElementRef<HTMLElement>>('pickerGrid');
 
   /** The editor's strings - the tool is part of that editor's toolbar. */
   protected labels = computed(() => this.editor().resolvedLabels());

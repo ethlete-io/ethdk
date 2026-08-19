@@ -31,6 +31,14 @@ tester.run('no-redundant-internal', rule, {
     },
     {
       code: `class C {
+  /** @internal */
+  protected sync() {
+    return true;
+  }
+}`,
+    },
+    {
+      code: `class C {
   public service = inject(Service);
 }`,
     },
@@ -56,17 +64,23 @@ tester.run('no-redundant-internal', rule, {
     },
     {
       code: `class C {
-  /** @internal */
-  protected sync() {
+  /**
+   * Returns the current state.
+   * @internal
+   */
+  private sync() {
     return true;
   }
 }`,
       output: `class C {
-  protected sync() {
+  /**
+   * Returns the current state.
+   */
+  private sync() {
     return true;
   }
 }`,
-      errors: [{ messageId: 'redundantInternal', data: { accessibility: 'protected', kind: 'method', name: 'sync' } }],
+      errors: [{ messageId: 'redundantInternal', data: { accessibility: 'private', kind: 'method', name: 'sync' } }],
     },
   ],
 });

@@ -242,6 +242,16 @@ tester.run('template-member-accessibility', rule, {
       errors: [{ messageId: 'shouldBePublic', data: { name: 'activate' } }],
     },
     {
+      code: `@Component({ template: '{{ value }}' }) class C { private readonly value = 1; }`,
+      output: `@Component({ template: '{{ value }}' }) class C { public readonly value = 1; }`,
+      errors: [{ messageId: 'shouldBeExplicit', data: { name: 'value' } }],
+    },
+    {
+      code: `@Directive({ host: { '(click)': 'activate()' } }) class C { @HostListener('focus') private activate() {} }`,
+      output: `@Directive({ host: { '(click)': 'activate()' } }) class C { @HostListener('focus') public activate() {} }`,
+      errors: [{ messageId: 'shouldBeExplicit', data: { name: 'activate' } }],
+    },
+    {
       code: [
         "import { PublicApi } from './fixture.contract';",
         '@Directive({})',

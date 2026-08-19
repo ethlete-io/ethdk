@@ -22,7 +22,7 @@ import { TreeNodeDefContext } from './tree.types';
   exportAs: 'etTreeNodeDef',
 })
 export class TreeNodeDefDirective<T = unknown> {
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   private tree = inject<TreeDirective<T>>(TreeDirective, { optional: true });
 

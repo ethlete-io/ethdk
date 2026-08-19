@@ -127,7 +127,7 @@ export class RichTextEditorComponent {
   /** Present only when `provideRichTextEditorFloatingToolbar()` is in scope; otherwise the editor
    *  shows its static toolbar only and the overlay runtime never ships. */
   private floatingToolbarSetup = inject(RICH_TEXT_EDITOR_FLOATING_TOOLBAR, { optional: true });
-  protected editable = viewChild.required<ElementRef<HTMLElement>>('editable');
+  public editable = viewChild.required<ElementRef<HTMLElement>>('editable');
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
 

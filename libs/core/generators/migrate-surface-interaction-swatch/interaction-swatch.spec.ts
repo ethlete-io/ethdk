@@ -32,6 +32,24 @@ export const CARD = {
     expect(result.content.match(/interactionColor: \{ color: \{/g)).toHaveLength(2);
   });
 
+  it('migrates a flat swatch referenced by identifier', () => {
+    const source = `
+const SHARED_MAP = {
+  default: '115 115 115',
+  hover: '64 64 64',
+  focus: '64 64 64',
+  active: '23 23 23',
+  disabled: '180 180 180',
+};
+export const CARD = { name: 'card', interactionColor: SHARED_MAP };
+`;
+
+    const result = migrateInteractionSwatchInFile('surface-themes.ts', source);
+
+    expect(result.changed).toBe(true);
+    expect(result.content).toContain('const SHARED_MAP = { color: {');
+  });
+
   it('leaves an already migrated swatch alone', () => {
     const migrated = migrateInteractionSwatchInFile('surface-themes.ts', FLAT).content;
 

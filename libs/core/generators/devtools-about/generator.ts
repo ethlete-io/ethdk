@@ -14,7 +14,7 @@ export type DevtoolsAboutGeneratorSchema = {
   skipFormat?: boolean;
 };
 
-const SCRIPT_PATH = 'tools/generate-build-info.js';
+const SCRIPT_PATH = 'tools/generate-build-info.cjs';
 
 const SCRIPT = `const { execSync } = require('child_process');
 const fs = require('fs');
@@ -78,35 +78,49 @@ const relativeImport = (from: string, to: string) => {
 
 /** Wires the `provideQueryDevtools({ about })` call up to the generated constant, if it can be found. */
 const wireProvider = (tree: Tree, projectRoot: string, outputPath: string) => {
-  let wired = false;
+  const candidates: Array<{ file: string; contents: string }> = [];
 
   visitNotIgnoredFiles(tree, projectRoot, (file) => {
-    if (wired || !file.endsWith('.ts')) return;
+    if (
+      !file.endsWith('.ts') ||
+      file.endsWith('.spec.ts') ||
+      file.endsWith('.test.ts') ||
+      file.endsWith('.stories.ts')
+    ) {
+      return;
+    }
 
     const contents = tree.read(file, 'utf-8');
 
     if (!contents?.includes('provideQueryDevtools(')) return;
+    candidates.push({ file, contents });
+  });
 
-    if (!contents.includes('provideQueryDevtools()')) {
+  const alreadyWired = candidates.some(({ contents }) =>
+    /provideQueryDevtools\(\s*{[\s\S]*?about\s*:\s*APP_BUILD_INFO/.test(contents),
+  );
+  if (alreadyWired) return true;
+
+  const candidate = candidates.find(({ contents }) => contents.includes('provideQueryDevtools()'));
+  if (!candidate) {
+    for (const { file } of candidates) {
       logger.warn(
         `${file} already passes options to provideQueryDevtools() - add \`about: APP_BUILD_INFO\` to them yourself.`,
       );
-      wired = true;
-
-      return;
     }
 
-    const importPath = relativeImport(file, outputPath);
+    return candidates.length > 0;
+  }
 
-    tree.write(
-      file,
-      `import { APP_BUILD_INFO } from '${importPath}';\n` +
-        contents.replace('provideQueryDevtools()', 'provideQueryDevtools({ about: APP_BUILD_INFO })'),
-    );
-    wired = true;
-  });
+  const importPath = relativeImport(candidate.file, outputPath);
 
-  return wired;
+  tree.write(
+    candidate.file,
+    `import { APP_BUILD_INFO } from '${importPath}';\n` +
+      candidate.contents.replace('provideQueryDevtools()', 'provideQueryDevtools({ about: APP_BUILD_INFO })'),
+  );
+
+  return true;
 };
 
 export const devtoolsAboutGenerator = async (tree: Tree, options: DevtoolsAboutGeneratorSchema) => {
@@ -120,7 +134,9 @@ export const devtoolsAboutGenerator = async (tree: Tree, options: DevtoolsAboutG
 
   // Regenerated on every build, and its SHA changes with every commit - committing it would put a
   // one-line diff in every commit that says nothing about the change.
-  if (!gitignore.includes(outputPath)) tree.write('.gitignore', `${gitignore.trimEnd()}\n${outputPath}\n`);
+  if (!gitignore.includes(outputPath)) {
+    tree.write('.gitignore', `${gitignore.trimEnd()}${gitignore.trim() ? '\n' : ''}${outputPath}\n`);
+  }
 
   project.targets ??= {};
   project.targets['build-info'] = {

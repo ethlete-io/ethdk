@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getMetadataEntryRemovalRange } = require('./internals/angular-metadata-fix');
+
 /**
  * Disallow explicit `changeDetection: ChangeDetectionStrategy.OnPush` on
  * `@Component` decorators. Since Angular 22, OnPush is the default change
@@ -85,33 +87,12 @@ const isComponentDecorator = (node) => {
 /**
  * @param {any} value
  */
-const isOnPushValue = (value) =>
+const isOnPushValue = (value, localName) =>
   value.type === 'MemberExpression' &&
   value.object.type === 'Identifier' &&
-  value.object.name === 'ChangeDetectionStrategy' &&
+  value.object.name === localName &&
   value.property.type === 'Identifier' &&
   value.property.name === 'OnPush';
-
-/**
- * Range that removes a property together with the comma that joins it to its
- * siblings (leading comma when it is the last property, otherwise trailing).
- *
- * @param {import('eslint').SourceCode} sourceCode
- * @param {any} metadata
- * @param {any} property
- */
-const getPropertyRemovalRange = (sourceCode, metadata, property) => {
-  const properties = metadata.properties.filter((entry) => entry.type === 'Property');
-  const index = properties.indexOf(property);
-  const openingBrace = sourceCode.getFirstToken(metadata);
-  const closingBrace = sourceCode.getLastToken(metadata);
-
-  if (!openingBrace || !closingBrace) return property.range;
-  if (properties.length === 1) return [openingBrace.range[1], closingBrace.range[0]];
-  if (index < properties.length - 1) return [property.range[0], properties[index + 1].range[0]];
-
-  return [properties[index - 1].range[1], property.range[1]];
-};
 
 /**
  * Range that removes a single named import specifier together with its comma.
@@ -126,6 +107,15 @@ const getSpecifierRemovalRange = (sourceCode, importNode, specifier) => {
 
   // Sole specifier of the whole import — drop the entire declaration.
   if (importNode.specifiers.length === 1) return importNode.range;
+  if (named.length === 1) {
+    const openingBrace = sourceCode.getTokenBefore(specifier, (token) => token.value === '{');
+    const closingBrace = sourceCode.getTokenAfter(specifier, (token) => token.value === '}');
+    const precedingComma = openingBrace ? sourceCode.getTokenBefore(openingBrace) : null;
+
+    if (openingBrace && closingBrace && precedingComma?.value === ',') {
+      return [precedingComma.range[0], closingBrace.range[1]];
+    }
+  }
   if (index < named.length - 1) return [specifier.range[0], named[index + 1].range[0]];
 
   return [named[index - 1].range[1], specifier.range[1]];
@@ -137,18 +127,10 @@ const getSpecifierRemovalRange = (sourceCode, importNode, specifier) => {
  * removing those properties leaves the import unused and safe to drop.
  *
  * @param {import('eslint').Scope.Reference} reference
+ * @param {Set<any>} removableIdentifiers
  */
-const isOnPushChangeDetectionReference = (reference) => {
-  const identifier = /** @type {any} */ (reference.identifier);
-  const member = identifier.parent;
-  if (!member || member.type !== 'MemberExpression' || member.object !== identifier) return false;
-  if (member.property.type !== 'Identifier' || member.property.name !== 'OnPush') return false;
-
-  const property = member.parent;
-  if (!property || property.type !== 'Property' || property.value !== member) return false;
-
-  return getPropertyName(property.key) === 'changeDetection';
-};
+const isOnPushChangeDetectionReference = (reference, removableIdentifiers) =>
+  removableIdentifiers.has(reference.identifier);
 
 /** @type {import('eslint').Rule.RuleModule} */
 const noRedundantOnPushChangeDetection = {
@@ -177,6 +159,8 @@ const noRedundantOnPushChangeDetection = {
     const sourceCode = context.sourceCode;
     /** @type {any} */
     let changeDetectionSpecifier = null;
+    let changeDetectionLocalName = 'ChangeDetectionStrategy';
+    const removableIdentifiers = new Set();
 
     return {
       Decorator(node) {
@@ -191,12 +175,13 @@ const noRedundantOnPushChangeDetection = {
         const property = metadata.properties.find(
           (entry) => entry.type === 'Property' && getPropertyName(entry.key) === 'changeDetection',
         );
-        if (!property || !isOnPushValue(property.value)) return;
+        if (!property || !isOnPushValue(property.value, changeDetectionLocalName)) return;
+        removableIdentifiers.add(property.value.object);
 
         context.report({
           node: property,
           messageId: 'redundant',
-          fix: (fixer) => fixer.replaceTextRange(getPropertyRemovalRange(sourceCode, metadata, property), ''),
+          fix: (fixer) => fixer.replaceTextRange(getMetadataEntryRemovalRange(sourceCode, metadata, property), ''),
         });
       },
 
@@ -210,6 +195,7 @@ const noRedundantOnPushChangeDetection = {
             specifier.imported.name === 'ChangeDetectionStrategy'
           ) {
             changeDetectionSpecifier = specifier;
+            changeDetectionLocalName = specifier.local.name;
             return;
           }
         }
@@ -219,8 +205,12 @@ const noRedundantOnPushChangeDetection = {
         if (!changeDetectionSpecifier) return;
 
         const [variable] = sourceCode.getDeclaredVariables(changeDetectionSpecifier);
-        if (!variable || variable.references.length === 0) return;
-        if (!variable.references.every(isOnPushChangeDetectionReference)) return;
+        if (!variable) return;
+        if (
+          !variable.references.every((reference) => isOnPushChangeDetectionReference(reference, removableIdentifiers))
+        ) {
+          return;
+        }
 
         const importNode = changeDetectionSpecifier.parent;
         context.report({

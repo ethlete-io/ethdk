@@ -66,14 +66,14 @@ export class MasonryDirective {
    * Accepts a per-breakpoint map (`{ xs: 150, md: 240 }`) for a layout that wants coarser columns on a phone
    * than the container width alone would give. @default 250
    */
-  public columnWidth = input(250, { transform: numberBreakpointTransform() });
+  public columnWidth = input(250, { transform: numberBreakpointTransform(250) });
 
   /**
    * The space between columns and between stacked items, in px. Also accepts a per-breakpoint map. It is a
    * number rather than CSS `gap` because the items are positioned, not laid out - CSS never sees the
    * columns. @default 16
    */
-  public gap = input(16, { transform: numberBreakpointTransform() });
+  public gap = input(16, { transform: numberBreakpointTransform(16) });
   private dimensions = signalHostElementDimensions();
 
   private registeredItems = signal<MasonryItemDirective[]>([]);

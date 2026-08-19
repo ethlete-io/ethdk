@@ -19,6 +19,9 @@ tester.run('class-constant-property', rule, {
     { code: `class Foo { readonly BASE = 2; value = this.BASE * 2; }` },
     // transform = utilFn in a @Pipe class is the mandated pattern (no-pipe-logic), not a class constant
     { code: `@Pipe({ name: 'myPipe' }) class MyPipe { transform = myUtil; }` },
+    { code: `class Foo { private items = []; add(item) { this.items.push(item); } }` },
+    { code: `class Foo { private cache = {}; add(key, value) { this.cache[key] = value; } }` },
+    { code: `class Foo { protected activeId = null; }` },
   ],
   invalid: [
     {

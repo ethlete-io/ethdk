@@ -53,9 +53,6 @@ const STRUCTURED_DATA_STORE_DEF = /* @__PURE__ */ defineRootProvider(
         const script = renderer.createElement('script');
 
         renderer.setAttributes(script, { type: 'application/ld+json' });
-        // The JSON is the script's *content*, not an attribute. Written as text rather than markup so a
-        // `</script>` inside a string can't close the tag early - the escaping problem
-        // `StructuredDataComponent` has to solve by hand because it goes through `innerHTML`.
         renderer.setTextContent(script, JSON.stringify(data));
 
         const target = getTargetElement();

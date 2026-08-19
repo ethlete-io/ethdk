@@ -13,10 +13,11 @@ export default async function migrateCreateProvider(tree: Tree) {
       const path = dir === '.' ? child : `${dir}/${child}`;
 
       if (tree.isFile(path)) {
-        if (path.endsWith('.ts') && !path.includes('node_modules') && !path.endsWith('.spec.ts')) {
+        if (path.endsWith('.ts') && !path.includes('node_modules')) {
           tsFiles.push(path);
         }
       } else {
+        if (child === 'node_modules') continue;
         findTsFiles(path);
       }
     }
@@ -49,6 +50,7 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
 
   let cdkImport: ts.ImportDeclaration | undefined;
   let hasCreateProviderInCdk = false;
+  let createProviderImport = 'createProvider';
 
   // Find relevant imports
   for (const statement of sourceFile.statements) {
@@ -58,9 +60,11 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
       if (modulePath === '@ethlete/cdk') {
         cdkImport = statement;
         if (statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)) {
-          hasCreateProviderInCdk = statement.importClause.namedBindings.elements.some(
-            (element) => element.name.text === 'createProvider',
+          const specifier = statement.importClause.namedBindings.elements.find(
+            (element) => (element.propertyName?.text ?? element.name.text) === 'createProvider',
           );
+          hasCreateProviderInCdk = !!specifier;
+          createProviderImport = specifier?.getText(sourceFile) ?? createProviderImport;
         }
       }
     }
@@ -74,7 +78,9 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
   // Remove createProvider from @ethlete/cdk import
   if (cdkImport && cdkImport.importClause?.namedBindings && ts.isNamedImports(cdkImport.importClause.namedBindings)) {
     const namedBindings = cdkImport.importClause.namedBindings;
-    const otherImports = namedBindings.elements.filter((element) => element.name.text !== 'createProvider');
+    const otherImports = namedBindings.elements.filter(
+      (element) => (element.propertyName?.text ?? element.name.text) !== 'createProvider',
+    );
 
     const importStart = cdkImport.getStart(sourceFile);
     const importEnd = cdkImport.getEnd();
@@ -96,7 +102,7 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
       updatedContent = content.slice(0, lineStart) + content.slice(lineEnd);
     } else {
       // Keep other imports
-      const newImports = otherImports.map((el) => el.name.text).join(', ');
+      const newImports = otherImports.map((el) => el.getText(sourceFile)).join(', ');
       const newImportText = `import { ${newImports} } from '@ethlete/cdk';`;
       updatedContent = content.slice(0, importStart) + newImportText + content.slice(importEnd);
     }
@@ -124,14 +130,16 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
     const namedBindings = updatedCoreImport.importClause.namedBindings;
 
     // Check if createProvider already exists
-    const hasCreateProvider = namedBindings.elements.some((element) => element.name.text === 'createProvider');
+    const hasCreateProvider = namedBindings.elements.some(
+      (element) => (element.propertyName?.text ?? element.name.text) === 'createProvider',
+    );
 
     if (!hasCreateProvider) {
       const importStart = updatedCoreImport.getStart(intermediateSourceFile);
       const importEnd = updatedCoreImport.getEnd();
 
-      const existingImports = namedBindings.elements.map((el) => el.name.text);
-      const allImports = [...existingImports, 'createProvider'].sort();
+      const existingImports = namedBindings.elements.map((el) => el.getText(intermediateSourceFile));
+      const allImports = [...existingImports, createProviderImport].sort();
       const newImportText = `import { ${allImports.join(', ')} } from '@ethlete/core';`;
 
       updatedContent = updatedContent.slice(0, importStart) + newImportText + updatedContent.slice(importEnd);
@@ -164,11 +172,11 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
 
       updatedContent =
         updatedContent.slice(0, insertPosition) +
-        "import { createProvider } from '@ethlete/core';\n" +
+        `import { ${createProviderImport} } from '@ethlete/core';\n` +
         updatedContent.slice(insertPosition);
     } else {
       // No imports, add at the beginning
-      updatedContent = "import { createProvider } from '@ethlete/core';\n\n" + updatedContent;
+      updatedContent = `import { ${createProviderImport} } from '@ethlete/core';\n\n` + updatedContent;
     }
   }
 

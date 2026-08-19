@@ -45,5 +45,12 @@ tester.run('no-leading-underscore-class-member', rule, {
         { messageId: 'noLeadingUnderscore', data: { oldName: '_strokeDashOffset', newName: 'strokeDashOffset' } },
       ],
     },
+    {
+      code: `class Foo { private _value = 0; private __value = 1; }`,
+      errors: [
+        { messageId: 'noLeadingUnderscore', data: { oldName: '_value', newName: 'value' } },
+        { messageId: 'noLeadingUnderscore', data: { oldName: '__value', newName: 'value' } },
+      ],
+    },
   ],
 });

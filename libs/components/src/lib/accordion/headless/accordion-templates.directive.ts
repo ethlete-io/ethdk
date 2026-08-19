@@ -49,7 +49,7 @@ const assertInsideAccordion = ({
 export class AccordionLabelDirective {
   private accordion = inject(ACCORDION_TOKEN, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerPart(this.accordion?.labelTemplate, this);
@@ -73,7 +73,7 @@ export class AccordionLabelDirective {
 export class AccordionHintDirective {
   private accordion = inject(ACCORDION_TOKEN, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerPart(this.accordion?.hintTemplate, this);
@@ -109,7 +109,7 @@ export class AccordionHintDirective {
 export class AccordionContentDirective {
   private accordion = inject(ACCORDION_TOKEN, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerPart(this.accordion?.contentTemplate, this);

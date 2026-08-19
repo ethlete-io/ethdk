@@ -249,6 +249,11 @@ const collectWrittenMembers = (node, writtenMembers) => {
 
   if (node.type === 'AssignmentExpression') {
     collectAssignedMemberNames(node.left, writtenMembers);
+
+    if (node.left.type === 'MemberExpression' && node.left.object.type === 'MemberExpression') {
+      const memberName = getWrittenMemberName(node.left.object);
+      if (memberName !== null) writtenMembers.add(memberName);
+    }
   }
 
   if (node.type === 'UpdateExpression') {
@@ -257,6 +262,20 @@ const collectWrittenMembers = (node, writtenMembers) => {
     if (memberName !== null) {
       writtenMembers.add(memberName);
     }
+  }
+
+  if (
+    node.type === 'CallExpression' &&
+    node.callee.type === 'MemberExpression' &&
+    node.callee.object.type === 'MemberExpression' &&
+    !node.callee.computed &&
+    node.callee.property.type === 'Identifier' &&
+    ['add', 'clear', 'delete', 'pop', 'push', 'reverse', 'set', 'shift', 'sort', 'splice', 'unshift'].includes(
+      node.callee.property.name,
+    )
+  ) {
+    const memberName = getWrittenMemberName(node.callee.object);
+    if (memberName !== null) writtenMembers.add(memberName);
   }
 
   for (const [key, value] of Object.entries(node)) {
@@ -323,6 +342,14 @@ const classConstantProperty = {
           const memberName = getMemberName(member);
 
           if (memberName === null || writtenMembers.has(memberName)) {
+            continue;
+          }
+
+          if (
+            !member.readonly &&
+            ((member.value.type === 'Literal' && member.value.value === null) ||
+              (member.value.type === 'Identifier' && member.value.name === 'undefined'))
+          ) {
             continue;
           }
 

@@ -27,7 +27,7 @@ export type SelectOptionTemplateContext<TOption extends SelectOptionData = Selec
   exportAs: 'etSelectOptionTemplate',
 })
 export class SelectOptionTemplateDirective<TOption extends SelectOptionData = SelectOptionData> {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectOptionTemplateContext<TOption>>>(TemplateRef);

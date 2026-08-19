@@ -41,8 +41,12 @@ export type ElementSignalValue = ReturnType<ElementSignal>;
 export const isElementSignal = (el: unknown): el is ElementSignal => {
   if (!isSignal(el)) return false;
 
-  const val = el();
-  return typeof val === 'object' && val !== null && 'currentElements' in val && 'previousElements' in val;
+  try {
+    const val = el();
+    return typeof val === 'object' && val !== null && 'currentElements' in val && 'previousElements' in val;
+  } catch {
+    return false;
+  }
 };
 
 export const createDocumentElementSignal = (): ElementSignal => {
@@ -75,7 +79,6 @@ const areElementSignalValuesEqual = (a: ElementSignalValue, b: ElementSignalValu
 
 export const buildElementSignal = (el: SignalElementBindingType | null | undefined): ElementSignal => {
   if (el === null || el === undefined) return createEmptyElementSignal();
-  if (isElementSignal(el)) return el;
 
   if (el instanceof HTMLElement || el instanceof ElementRef) {
     const element = coerceElement(el);
@@ -92,10 +95,21 @@ export const buildElementSignal = (el: SignalElementBindingType | null | undefin
   return createElementSignalFromObservable(createElementsObservable(el));
 };
 
-const createElementSignalFromSignal = (input: Signal<SignalElementBindingComplexType>): ElementSignal => {
+const createElementSignalFromSignal = (
+  input: Signal<SignalElementBindingComplexType | ElementSignalValue>,
+): ElementSignal => {
   return linkedSignal({
     source: input,
     computation: (source, previous) => {
+      if (
+        typeof source === 'object' &&
+        source !== null &&
+        'currentElements' in source &&
+        'previousElements' in source
+      ) {
+        return source as ElementSignalValue;
+      }
+
       const currentElements = coerceValueToElementArray(source);
       const previousElements = previous?.value.currentElements ?? [];
 

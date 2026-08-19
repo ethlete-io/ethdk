@@ -160,10 +160,6 @@ const RENDERER_DEF = /* @__PURE__ */ defineRootProvider(
       renderer.setProperty(element, 'textContent', text);
     };
 
-    const setInnerHTML = (element: HTMLElement, html: string) => {
-      renderer.setProperty(element, 'innerHTML', html);
-    };
-
     const setAttributes = (
       element: HTMLElement,
       attributes: Record<string, string | null>,
@@ -222,7 +218,6 @@ const RENDERER_DEF = /* @__PURE__ */ defineRootProvider(
       replaceChild,
       empty,
       setTextContent,
-      setInnerHTML,
       setAttributes,
       setDataAttributes,
       setCssProperty,

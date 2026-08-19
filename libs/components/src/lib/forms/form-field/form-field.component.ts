@@ -124,15 +124,15 @@ export class FormFieldComponent {
    */
   public busy = input(false, { transform: booleanAttribute });
 
-  protected errorContent = viewChild<ElementRef<HTMLElement>>('errorContent');
-  protected warningContent = viewChild<ElementRef<HTMLElement>>('warningContent');
-  protected hintContent = viewChild<ElementRef<HTMLElement>>('hintContent');
+  public errorContent = viewChild<ElementRef<HTMLElement>>('errorContent');
+  public warningContent = viewChild<ElementRef<HTMLElement>>('warningContent');
+  public hintContent = viewChild<ElementRef<HTMLElement>>('hintContent');
   public counterContent = viewChild<ElementRef<HTMLElement>>('counterContent');
   private controlFrame = viewChild<ElementRef<HTMLElement>>('controlFrame');
   public prefixEl = viewChild<ElementRef<HTMLElement>>('prefixEl');
-  protected errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
-  protected warningAnimatable = viewChild<AnimatableDirective>('warningAnimatable');
-  protected hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
+  public errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
+  public warningAnimatable = viewChild<AnimatableDirective>('warningAnimatable');
+  public hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
 
   /** Whether the field is busy - a pending async validator, or `[busy]`. */
   public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());

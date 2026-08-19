@@ -6,19 +6,19 @@ Inject-style signal helpers for media queries, router state, form controls and a
 
 Sugar on top of the [breakpoint observer](/core/providers#breakpoint-observer). The `inject*` helpers are **memoized per environment injector** - calling them repeatedly returns the same signal instance, so they're cheap to use everywhere:
 
-| Helper                                                                      | Returns                                             |
-| --------------------------------------------------------------------------- | --------------------------------------------------- |
-| `injectIsXs()` … `injectIs2Xl()`                                            | `Signal<boolean>` per breakpoint band.              |
-| `injectCurrentBreakpoint()`                                                 | `Signal<Breakpoint>`                                |
-| `injectObserveBreakpoint({ min?, max? })`                                   | `Signal<boolean>` for a custom range.               |
-| `injectObserveMediaQuery(query)`                                            | `Signal<boolean>` for a raw query.                  |
-| `injectPrefersReducedMotion()`                                              | `Signal<boolean>`                                   |
-| `injectCanHover()`                                                          | `Signal<boolean>` (`hover: hover`)                  |
-| `injectHasTouchInput()` / `injectHasPrecisionInput()`                       | `Signal<boolean>` (`pointer: coarse` / `fine`)      |
-| `injectDeviceInputType()`                                                   | `Signal<'touch' \| 'mouse'>`                        |
-| `injectIsPortrait()` / `injectIsLandscape()` / `injectDisplayOrientation()` | orientation signals                                 |
-| `injectViewportDimensions()`                                                | `Signal<NullableElementDimensions>` of `<html>`     |
-| `injectScrollbarDimensions()`                                               | `Signal<{ width, height } \| null>` - measured once |
+| Helper                                                                      | Returns                                                |
+| --------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `injectIsXs()` … `injectIs2Xl()`                                            | `Signal<boolean>` per breakpoint band.                 |
+| `injectCurrentBreakpoint()`                                                 | `Signal<Breakpoint>`                                   |
+| `injectObserveBreakpoint({ min?, max? })`                                   | `Signal<boolean>` for a custom range.                  |
+| `injectObserveMediaQuery(query)`                                            | `Signal<boolean>` for a raw query.                     |
+| `injectPrefersReducedMotion()`                                              | `Signal<boolean>`                                      |
+| `injectCanHover()`                                                          | `Signal<boolean>` (`hover: hover`)                     |
+| `injectHasTouchInput()` / `injectHasPrecisionInput()`                       | `Signal<boolean>` (`pointer: coarse` / `fine`)         |
+| `injectDeviceInputType()`                                                   | `Signal<'touch' \| 'mouse'>`                           |
+| `injectIsPortrait()` / `injectIsLandscape()` / `injectDisplayOrientation()` | orientation signals                                    |
+| `injectViewportDimensions()`                                                | `Signal<NullableElementDimensions>` of `<html>`        |
+| `injectScrollbarDimensions()`                                               | `Signal<{ width, height } \| null>` - live measurement |
 
 `injectBreakpointIsMatched(options)` and `injectMediaQueryIsMatched(query)` are the non-reactive variants - they return a plain `boolean`, not a signal.
 
@@ -38,16 +38,16 @@ import {
   providers: [provideBreakpointInstance(MyGridComponent)],
 })
 export class MyGridComponent {
-  columns = input(1, { transform: numberBreakpointTransform() });
-  snap = input(false, { transform: boolBreakpointTransform() });
-  itemSize = input('auto', { transform: typedBreakpointTransform<ItemSize>() });
+  columns = input(1, { transform: numberBreakpointTransform(1) });
+  snap = input(false, { transform: boolBreakpointTransform(false) });
+  itemSize = input('auto', { transform: typedBreakpointTransform<ItemSize>('auto') });
 }
 ```
 
-`provideBreakpointInstance(ComponentClass)` in the component's `providers` is required for the transforms to re-resolve when the breakpoint changes. For a signal you already hold, `injectBreakpointInput(signal, defaultValue)` resolves it into a plain `Signal<T>`.
+Each transform receives the input's default explicitly and uses it when no map key applies at the current breakpoint. `provideBreakpointInstance(ComponentClass)` in the component's `providers` makes transforms re-resolve when the breakpoint changes; without it, the initial resolution still works. For a signal you already hold, `injectBreakpointInput(signal, defaultValue)` resolves it into a plain `Signal<T>`.
 
 ::: warning The keys are `xs sm md lg xl 2xl` - and only those
-A map with **one** unrecognized key stops being a breakpoint map entirely: it is passed through as a plain value, which for an attribute binding means `[object Object]` and no effect at all. There is no `default` key - the smallest breakpoint you specify is the fallback, so write `{ xs: 'full', lg: 'third' }`. Dev mode warns when a map has some valid keys and some not.
+A map with **one** unrecognized key stops being a breakpoint map entirely: it is passed through as a plain value, which for an attribute binding means `[object Object]` and no effect at all. There is no `default` key: the transform's explicit default applies below the smallest key, so `{ lg: 'third' }` remains `'auto'` below `lg` in the example. Dev mode warns when a map has some valid keys and some not.
 :::
 
 ## Router signals

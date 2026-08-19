@@ -15,15 +15,18 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-const set = (obj: any, key: any, val: any) => {
-  if (typeof val.value === 'object') val.value = clone(val.value);
+const set = (obj: any, key: any, val: any, seen: WeakMap<object, unknown>) => {
+  if (typeof val.value === 'object' && val.value !== null) val.value = cloneValue(val.value, seen);
   if (!val.enumerable || val.get || val.set || !val.configurable || !val.writable || key === '__proto__') {
     Object.defineProperty(obj, key, val);
   } else obj[key] = val.value;
 };
 
-export const clone = <T>(original: T): T => {
+const cloneValue = <T>(original: T, seen: WeakMap<object, unknown>): T => {
   if (typeof original !== 'object') return original;
+  if (original === null) return original;
+  const existing = seen.get(original);
+  if (existing) return existing as T;
 
   var _og = original as any;
 
@@ -34,25 +37,27 @@ export const clone = <T>(original: T): T => {
   var str = Object.prototype.toString.call(_og);
 
   if (str === '[object Object]') {
-    tmp = Object.create(_og.__proto__ || null);
+    tmp = Object.create(Object.getPrototypeOf(_og));
   } else if (str === '[object Array]') {
     tmp = Array(_og.length);
   } else if (str === '[object Set]') {
     tmp = new Set();
+    seen.set(_og, tmp);
     _og.forEach(function (val: any) {
-      tmp.add(clone(val));
+      tmp.add(cloneValue(val, seen));
     });
   } else if (str === '[object Map]') {
     tmp = new Map();
+    seen.set(_og, tmp);
     _og.forEach(function (val: any, key: any) {
-      tmp.set(clone(key), clone(val));
+      tmp.set(cloneValue(key, seen), cloneValue(val, seen));
     });
   } else if (str === '[object Date]') {
     tmp = new Date(+_og);
   } else if (str === '[object RegExp]') {
     tmp = new RegExp(_og.source, _og.flags);
   } else if (str === '[object DataView]') {
-    tmp = new _og.constructor(clone(_og.buffer));
+    tmp = new _og.constructor(cloneValue(_og.buffer, seen));
   } else if (str === '[object ArrayBuffer]') {
     tmp = _og.slice(0);
   } else if (str.slice(-6) === 'Array]') {
@@ -60,18 +65,22 @@ export const clone = <T>(original: T): T => {
   }
 
   if (tmp) {
+    seen.set(_og, tmp);
+
     for (list = Object.getOwnPropertySymbols(_og); i < list.length; i++) {
-      set(tmp, list[i], Object.getOwnPropertyDescriptor(_og, list[i]!));
+      set(tmp, list[i], Object.getOwnPropertyDescriptor(_og, list[i]!), seen);
     }
 
     for (i = 0, list = Object.getOwnPropertyNames(_og); i < list.length; i++) {
       if (Object.hasOwnProperty.call(tmp, (k = list[i]!)) && tmp[k] === _og[k]) continue;
-      set(tmp, k, Object.getOwnPropertyDescriptor(_og, k));
+      set(tmp, k, Object.getOwnPropertyDescriptor(_og, k), seen);
     }
   }
 
   return tmp || _og;
 };
+
+export const clone = <T>(original: T): T => cloneValue(original, new WeakMap());
 
 /**
  * Stolen from dequal to avoid adding a dependency
@@ -114,7 +123,14 @@ export const equal = (foo: any, bar: any) => {
   var tmp: any;
   if (foo === bar) return true;
 
-  if (foo && bar && (ctor = foo.constructor) === bar.constructor) {
+  if (
+    foo &&
+    bar &&
+    ((ctor = foo.constructor) === bar.constructor ||
+      (!ctor && bar.constructor === Object) ||
+      (ctor === Object && !bar.constructor))
+  ) {
+    ctor ??= bar.constructor;
     if (ctor === Date) return foo.getTime() === bar.getTime();
     if (ctor === RegExp) return foo.toString() === bar.toString();
 

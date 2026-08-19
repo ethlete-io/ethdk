@@ -79,7 +79,7 @@ export class DragHandleDirective {
     applyHostListener('pointerdown', (e) => this.startGesture(e));
   }
 
-  startGesture(event: PointerEvent) {
+  public startGesture(event: PointerEvent) {
     if (event.button !== 0 || this.disabled()) return;
     event.stopPropagation();
     this.gestureStart$.next(event);

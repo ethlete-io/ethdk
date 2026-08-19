@@ -111,7 +111,7 @@ export class CarouselComponent {
   /** @internal Read from the template; also handy for a consumer reaching in with `viewChild`. */
   public carousel = inject(CarouselDirective);
   private autoplayDirective = inject(CarouselAutoplayDirective);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   /**
    * How much of the track one slide takes: `'full'` (the default) is one slide per view; `'half'`,

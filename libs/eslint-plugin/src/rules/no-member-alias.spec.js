@@ -49,6 +49,10 @@ tester.run('no-member-alias', rule, {
 
     // Zero-arg method wrapping a differently-named target (e.g. retry → resource.reload)
     { code: `class C { playerResource = rxResource({}); retry() { this.playerResource.reload(); } }` },
+    { code: `class C implements Reloadable { reload() { this.resource.reload(); } }` },
+    { code: `class C extends Base { override reload() { this.resource.reload(); } }` },
+    { code: `@Component({}) class C { focus() { this.input.focus(); } }` },
+    { code: `class C { private elementRef = inject(ElementRef); private element = this.elementRef.nativeElement; }` },
   ],
   invalid: [
     // inject alias — the original motivating pattern

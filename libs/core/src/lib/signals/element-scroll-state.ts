@@ -29,7 +29,7 @@ export type ElementScrollState = {
   elementDimensions: NullableElementDimensions;
 };
 
-export const areScrollStatesEqual = (a: ElementScrollState, b: ElementScrollState) => {
+const areScrollStatesEqual = (a: ElementScrollState, b: ElementScrollState) => {
   return (
     a.canScroll === b.canScroll &&
     a.canScrollHorizontally === b.canScrollHorizontally &&

@@ -59,6 +59,22 @@ if (!allFilled) {
     },
     {
       code: `function fn() {
+if (!allFilled) {
+  doSomething(); // updates the current selection
+  return;
+}
+}`,
+      output: `function fn() {
+if (!allFilled) {
+  doSomething(); // updates the current selection
+
+  return;
+}
+}`,
+      errors: [{ messageId: 'missingEmptyLine' }],
+    },
+    {
+      code: `function fn() {
 if (condition) {
   doA();
   doB();

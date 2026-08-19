@@ -78,7 +78,7 @@ type TreeNodeDefLike<T> = {
   },
 })
 export class TreeDirective<T = unknown> {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   /** The hierarchical source the tree renders. Required. */
   public dataSource = input<TreeDataSource<T> | null>(null);

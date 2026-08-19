@@ -55,6 +55,7 @@ tester.run('inject-member-accessibility', rule, {
   valid: [
     { code: `class Foo { private service = inject(MyService); }` },
     { code: `class Foo { public service = inject(MyService); }` },
+    { code: `abstract class Foo { protected service = inject(MyService); }` },
     { code: INLINE_COMPONENT_PROTECTED },
     {
       code: [
@@ -103,6 +104,21 @@ tester.run('inject-member-accessibility', rule, {
     {
       code: INLINE_COMPONENT_PRIVATE,
       output: INLINE_COMPONENT_PROTECTED,
+      errors: [{ messageId: 'shouldBeProtected' }],
+    },
+    {
+      code: `class Foo { readonly service = inject(MyService); }`,
+      output: `class Foo { private readonly service = inject(MyService); }`,
+      errors: [{ messageId: 'shouldBePrivate' }],
+    },
+    {
+      code: `class Foo { @Optional() protected service = inject(MyService); }`,
+      output: `class Foo { @Optional() private service = inject(MyService); }`,
+      errors: [{ messageId: 'shouldBePrivate' }],
+    },
+    {
+      code: `abstract class Foo { service = inject(MyService); }`,
+      output: `abstract class Foo { protected service = inject(MyService); }`,
       errors: [{ messageId: 'shouldBeProtected' }],
     },
     {

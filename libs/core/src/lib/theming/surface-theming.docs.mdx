@@ -106,10 +106,10 @@ provideSurfaceThemesWithTailwind4([DARK_SURFACE, LIGHT_SURFACE, DARK_ELEVATED_SU
 
 ```html
 <div etProvideSurface="dark">...</div>
-<div [etProvideSurface]="myCustomSurface">...</div>
+<div [etProvideSurface]="myCustomSurfaceName">...</div>
 ```
 
-The directive sets the surface context. All components inside inherit the surface tokens.
+The directive accepts a registered surface theme name and sets the surface context. All components inside inherit the surface tokens.
 
 ---
 

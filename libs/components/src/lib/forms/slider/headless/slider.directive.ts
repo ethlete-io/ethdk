@@ -46,7 +46,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public value = model(0);
   /** View state for a field whose source values disagree. The raw form value stays untouched. */

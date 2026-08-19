@@ -757,7 +757,7 @@ export class TestComponent {
       expect(normalizeCode(tree.read('test.component.ts', 'utf-8')!)).toBe(normalizeCode(expected));
     });
 
-    it('should remove monitorViewport() call', async () => {
+    it('should replace monitorViewport() with both CSS variable writers', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -768,9 +768,14 @@ class Dummy {
   }
 }`;
 
-      const expected = `class Dummy {
+      const expected = `import { writeScrollbarSizeToCssVariables, writeViewportSizeToCssVariables } from '@ethlete/core';
+
+class Dummy {
 
   constructor() {
+    writeViewportSizeToCssVariables();
+    writeScrollbarSizeToCssVariables();
+
   }
 }`;
 
@@ -780,7 +785,7 @@ class Dummy {
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
     });
 
-    it('should add writeViewportSizeToCssVariables() when --et-vw is used in CSS', async () => {
+    it('should add both CSS variable writers when --et-vw is used in CSS', async () => {
       const tsInput = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -796,12 +801,13 @@ class Dummy {
   height: calc(100 * var(--et-vh));
 }`;
 
-      const expected = `import { writeViewportSizeToCssVariables } from '@ethlete/core';
+      const expected = `import { writeScrollbarSizeToCssVariables, writeViewportSizeToCssVariables } from '@ethlete/core';
 
 class Dummy {
 
   constructor() {
     writeViewportSizeToCssVariables();
+    writeScrollbarSizeToCssVariables();
 
   }
 }`;
@@ -813,7 +819,7 @@ class Dummy {
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
     });
 
-    it('should add writeScrollbarSizeToCssVariables() when --et-sw is used in CSS', async () => {
+    it('should add both CSS variable writers when --et-sw is used in CSS', async () => {
       const tsInput = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -829,11 +835,12 @@ class Dummy {
   margin-bottom: calc(1rem + var(--et-sh));
 }`;
 
-      const expected = `import { writeScrollbarSizeToCssVariables } from '@ethlete/core';
+      const expected = `import { writeScrollbarSizeToCssVariables, writeViewportSizeToCssVariables } from '@ethlete/core';
 
 class Dummy {
 
   constructor() {
+    writeViewportSizeToCssVariables();
     writeScrollbarSizeToCssVariables();
 
   }

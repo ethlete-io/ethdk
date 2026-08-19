@@ -2,16 +2,11 @@
 'use strict';
 
 /**
- * Checks the two ends of the same wire: that a `<form>` handles its own submission, and that a
- * submit control reaches a form at all.
+ * Checks that a `<form>` handles its own submission.
  *
  *   <form (ngSubmit)="save()">          ✔
  *   <form [etForm]="form">              ✔ signal forms - the directive submits the field tree
  *   <form>                              ✘ pressing Enter in a field does nothing, or reloads the page
- *
- *   <form …><button type="submit">      ✔
- *   <button type="submit" form="edit">  ✔ associated by id, outside the form's subtree
- *   <button type="submit">              ✘ submits nothing
  *
  * A form declaring native submission (`action`, `ngNoForm`, `method="dialog"`) is left alone - it is
  * handled by the platform rather than by a handler.
@@ -35,31 +30,23 @@ const handlesSubmit = (node) =>
 const submitsNatively = (node) =>
   hasBinding(node, 'action') || hasBinding(node, 'ngNoForm') || attribute(node, 'method')?.value === 'dialog';
 
-/** @param {any} node */
-const isSubmitControl = (node) =>
-  (node.name === 'button' || node.name === 'input') && attribute(node, 'type')?.value === 'submit';
-
 /** @type {import('eslint').Rule.RuleModule} */
 const requireFormSubmit = {
   meta: {
     type: 'problem',
     docs: {
-      description: 'Require a `<form>` to handle its own submission, and a submit control to reach a form.',
+      description: 'Require a `<form>` to handle its own submission.',
     },
     schema: [],
     messages: {
       missingSubmitHandler:
         'This `<form>` handles no submission - pressing Enter in a field either does nothing or reloads the page. Bind `[etForm]` (signal forms), `(ngSubmit)` (reactive forms) or `(submit)`, or use a plain element if this is not a form.',
-      submitOutsideForm:
-        'A `type="submit"` control outside a `<form>` submits nothing. Put it inside the form, or associate it with one by id: `form="the-form-id"`.',
     },
   },
   create(context) {
     const parserServices = /** @type {any} */ (context.sourceCode.parserServices);
 
     if (!parserServices?.convertNodeSourceSpanToLoc) return {};
-
-    let formDepth = 0;
 
     /** @param {any} node */
     const report = (node, messageId) =>
@@ -72,21 +59,8 @@ const requireFormSubmit = {
       /** @param {any} node */
       Element(node) {
         if (node.name === 'form') {
-          formDepth++;
-
           if (!handlesSubmit(node) && !submitsNatively(node)) report(node, 'missingSubmitHandler');
-
-          return;
         }
-
-        if (formDepth > 0 || !isSubmitControl(node) || hasBinding(node, 'form')) return;
-
-        report(node, 'submitOutsideForm');
-      },
-
-      /** @param {any} node */
-      'Element:exit'(node) {
-        if (node.name === 'form') formDepth--;
       },
     };
   },

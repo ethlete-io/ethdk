@@ -70,7 +70,11 @@ export const applyInitialFocus = (
     return;
   }
 
-  focusElement(paneElement.querySelector<HTMLElement>(autoFocus) ?? paneElement);
+  try {
+    focusElement(paneElement.querySelector<HTMLElement>(autoFocus) ?? paneElement);
+  } catch {
+    focusElement(paneElement);
+  }
 };
 
 export const setupFocusTrap = (
@@ -101,6 +105,13 @@ export const setupFocusTrap = (
     const lastElement = focusableElements[focusableElements.length - 1];
     const activeElement = document.activeElement;
 
+    if (!activeElement || !paneElement.contains(activeElement)) {
+      event.preventDefault();
+      focusElement(event.shiftKey ? (lastElement ?? null) : (firstElement ?? null));
+
+      return;
+    }
+
     if (event.shiftKey && activeElement === firstElement) {
       event.preventDefault();
       focusElement(lastElement ?? null);
@@ -114,9 +125,9 @@ export const setupFocusTrap = (
     }
   };
 
-  paneElement.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keydown', onKeyDown, true);
 
   return () => {
-    paneElement.removeEventListener('keydown', onKeyDown);
+    document.removeEventListener('keydown', onKeyDown, true);
   };
 };

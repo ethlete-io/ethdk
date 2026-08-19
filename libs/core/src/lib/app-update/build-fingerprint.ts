@@ -10,7 +10,7 @@ const isCrossOrigin = (source: string) => /^(https?:)?\/\//.test(source);
  * as a new deploy on every check.
  */
 export const readBuildFingerprint = (document: Document) =>
-  Array.from(document.querySelectorAll('script[src]'))
+  Array.from(document.head.querySelectorAll('script[src]'))
     .map((script) => script.getAttribute('src') ?? '')
     .filter((source) => !!source && !isCrossOrigin(source))
     .sort()

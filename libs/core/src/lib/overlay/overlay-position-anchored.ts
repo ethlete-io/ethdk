@@ -195,7 +195,11 @@ export const createAnchoredPositionCleanup = (
     }
   };
 
+  let updateId = 0;
+  let destroyed = false;
+
   const update = () => {
+    const currentUpdateId = ++updateId;
     // Checked here rather than left to the `hide` middleware, which is only in the list when `autoHide`
     // or `autoCloseIfReferenceHidden` asked for it: a trigger destroyed while its overlay is open (a
     // menu item that removes the button it was opened from) would otherwise fly to the corner for the
@@ -217,7 +221,7 @@ export const createAnchoredPositionCleanup = (
         ? flip({
             fallbackPlacements: strategy.fallbackPlacements ?? undefined,
             fallbackAxisSideDirection: 'start',
-            padding: insets,
+            padding: viewportPadding,
             boundary: strategy.boundary,
           })
         : preferredSide({
@@ -298,6 +302,8 @@ export const createAnchoredPositionCleanup = (
       strategy: 'absolute',
       middleware,
     }).then(({ x, y, placement, middlewareData }) => {
+      if (destroyed || currentUpdateId !== updateId) return;
+
       if (middlewareData.hide?.referenceHidden) {
         handleUnusableReference();
 
@@ -332,6 +338,8 @@ export const createAnchoredPositionCleanup = (
   const stopInsetUpdates = onOverlayViewportInsetsChange(update);
 
   return () => {
+    destroyed = true;
+    updateId++;
     cleanup();
     stopInsetUpdates();
   };

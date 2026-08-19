@@ -14,7 +14,7 @@ export default async function migrateViewportService(tree: Tree) {
     for (const child of children) {
       const path = dir === '.' ? child : `${dir}/${child}`;
       if (tree.isFile(path)) {
-        if (path.endsWith('.ts') && !path.includes('node_modules') && !path.includes('.spec.ts')) {
+        if (path.endsWith('.ts') && !path.includes('node_modules')) {
           tsFiles.push(path);
         } else if (
           path.endsWith('.css') ||
@@ -25,6 +25,7 @@ export default async function migrateViewportService(tree: Tree) {
           styleFiles.push(path);
         }
       } else {
+        if (child === 'node_modules') continue;
         findFiles(path);
       }
     }
@@ -53,6 +54,8 @@ export default async function migrateViewportService(tree: Tree) {
     logger.log(`Processing: ${filePath}`);
 
     const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+    const viewportPackage = getViewportServicePackage(sourceFile);
+    if (viewportPackage !== '@ethlete/core' && !viewportPackage?.startsWith('@fifa-gg/uikit')) continue;
 
     // Check if this is a component with a template
     const templatePath = findTemplateForComponent(tree, filePath, sourceFile);
@@ -115,7 +118,7 @@ export default async function migrateViewportService(tree: Tree) {
       });
 
       // Check if any replacements use toObservable or toSignal
-      for (const [original, replacement] of context.replacements) {
+      for (const [original, replacement] of [...context.replacements].sort((a, b) => b[0].length - a[0].length)) {
         if (replacement.includes('toObservable(')) {
           allImportsNeeded['@angular/core/rxjs-interop'].add('toObservable');
         }
@@ -221,6 +224,7 @@ export default async function migrateViewportService(tree: Tree) {
     }
 
     const updatedSourceFileForInline = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+    const inlineTemplateEdits: Array<{ start: number; end: number; replacement: string }> = [];
 
     updatedSourceFileForInline.forEachChild((node) => {
       if (ts.isClassDeclaration(node)) {
@@ -246,27 +250,28 @@ export default async function migrateViewportService(tree: Tree) {
                 // Remove the surrounding quotes/backticks
                 templateText = templateText.slice(1, -1);
 
-                // For each signal property, replace usages with ()
-                for (const propName of templateMigrationInfo.signalProperties) {
-                  const regex = new RegExp(`\\b${propName}(?!\\s*\\()\\b`, 'g');
-                  templateText = templateText.replace(regex, `${propName}()`);
-                }
+                templateText = migrateTemplateText(templateText, templateMigrationInfo.signalProperties);
 
                 // Re-wrap with original quotes/backticks
                 const quote = prop.initializer.getText()[0];
                 const newInitializer = quote + templateText + quote;
 
-                // Replace in the file content
-                updatedContent =
-                  updatedContent.slice(0, prop.initializer.getStart(updatedSourceFileForInline)) +
-                  newInitializer +
-                  updatedContent.slice(prop.initializer.getEnd());
+                inlineTemplateEdits.push({
+                  start: prop.initializer.getStart(updatedSourceFileForInline),
+                  end: prop.initializer.getEnd(),
+                  replacement: newInitializer,
+                });
               }
             });
           }
         });
       }
     });
+
+    inlineTemplateEdits.sort((a, b) => b.start - a.start);
+    for (const edit of inlineTemplateEdits) {
+      updatedContent = updatedContent.slice(0, edit.start) + edit.replacement + updatedContent.slice(edit.end);
+    }
 
     // Write the updated content if changes were made
     if (updatedContent !== content) {
@@ -352,32 +357,40 @@ type TemplateMigrationInfo = {
   signalProperties: Set<string>; // Properties that are now signals and need () in templates
 };
 
+const migrateTemplateExpression = (expression: string, signalProperties: Set<string>) => {
+  let migrated = expression;
+
+  for (const propName of signalProperties) {
+    const regex = new RegExp(`\\b${escapeRegExp(propName)}(?!\\s*\\()\\b`, 'g');
+    migrated = migrated.replace(regex, `${propName}()`);
+  }
+
+  return migrated;
+};
+
+const migrateTemplateText = (template: string, signalProperties: Set<string>) =>
+  template
+    .replace(
+      /{{([\s\S]*?)}}/g,
+      (_, expression: string) => `{{${migrateTemplateExpression(expression, signalProperties)}}}`,
+    )
+    .replace(
+      /((?:\[[^\]]+\]|\([^)]+\)|\*[\w.-]+)\s*=\s*)(["'])([\s\S]*?)\2/g,
+      (_, prefix: string, quote: string, expression: string) =>
+        `${prefix}${quote}${migrateTemplateExpression(expression, signalProperties)}${quote}`,
+    )
+    .replace(
+      /@(if|for|switch|case|defer)\s*\(([^\n{}]*)\)/g,
+      (_, block: string, expression: string) =>
+        `@${block} (${migrateTemplateExpression(expression, signalProperties)})`,
+    );
+
 function migrateTemplateFile(tree: Tree, htmlFilePath: string, migrationInfo: TemplateMigrationInfo): boolean {
   const content = tree.read(htmlFilePath, 'utf-8');
   if (!content) return false;
 
-  let updatedContent = content;
-  let hasChanges = false;
-
-  // For each signal property, replace usages with () calls
-  for (const propName of migrationInfo.signalProperties) {
-    // Match property usage in various Angular contexts:
-    // 1. Interpolation: {{ propName }}
-    // 2. Property binding: [prop]="propName"
-    // 3. Event binding: (event)="propName === value"
-    // 4. Structural directives: *ngIf="propName"
-    // But NOT if already called: propName()
-
-    // Create a regex that matches the property but not if followed by (
-    const regex = new RegExp(`\\b${escapeRegExp(propName)}(?!\\s*\\()\\b`, 'g');
-
-    const newContent = updatedContent.replace(regex, `${propName}()`);
-
-    if (newContent !== updatedContent) {
-      updatedContent = newContent;
-      hasChanges = true;
-    }
-  }
+  const updatedContent = migrateTemplateText(content, migrationInfo.signalProperties);
+  const hasChanges = updatedContent !== content;
 
   if (hasChanges) {
     tree.write(htmlFilePath, updatedContent);
@@ -432,7 +445,7 @@ function getViewportServicePackage(sourceFile: ts.SourceFile): string | null {
     if (ts.isImportDeclaration(node) && node.importClause?.namedBindings) {
       if (ts.isNamedImports(node.importClause.namedBindings)) {
         const hasViewportService = node.importClause.namedBindings.elements.some(
-          (el) => el.name.text === 'ViewportService',
+          (el) => (el.propertyName?.text ?? el.name.text) === 'ViewportService',
         );
 
         if (hasViewportService && ts.isStringLiteral(node.moduleSpecifier)) {
@@ -456,7 +469,7 @@ function getPropertyMaps(packageName: string | null) {
     isLg: isEthleteCore ? 'injectIsLg' : 'injectIsXl',
     isXl: isEthleteCore ? 'injectIsXl' : 'injectIs2Xl',
     is2Xl: 'injectIs2Xl',
-    isBase: isEthleteCore ? 'injectIsBase' : 'injectIsLg',
+    isBase: 'injectIsLg',
     viewportSize: 'injectViewportDimensions',
     scrollbarSize: 'injectScrollbarDimensions',
     currentViewport: 'injectCurrentBreakpoint',
@@ -1414,7 +1427,7 @@ function findAvailableMemberName(baseName: string, existingMembers: Set<string>)
   // baseName already has $ suffix for observables at this point
 
   // Try variations: name, _name, #name
-  const candidates = [baseName, `_${baseName}`, `#${baseName}`];
+  const candidates = [baseName, `_${baseName}`];
 
   for (const candidate of candidates) {
     if (!existingMembers.has(candidate)) {
@@ -1507,32 +1520,8 @@ function migrateMonitorViewport(
   }
 
   // Determine what to add to constructor
-  const constructorStatements: string[] = [];
-  if (cssVariablesUsed.hasViewportVariables) {
-    constructorStatements.push('writeViewportSizeToCssVariables();');
-    imports.push('writeViewportSizeToCssVariables');
-  }
-  if (cssVariablesUsed.hasScrollbarVariables) {
-    constructorStatements.push('writeScrollbarSizeToCssVariables();');
-    imports.push('writeScrollbarSizeToCssVariables');
-  }
-
-  if (constructorStatements.length === 0) {
-    // Just remove monitorViewport calls
-    const modifications = monitorViewportCalls.map((call) => ({
-      start: call.start,
-      end: call.end,
-      replacement: '',
-    }));
-
-    // Apply modifications from end to start
-    modifications.sort((a, b) => b.start - a.start);
-    for (const mod of modifications) {
-      updatedContent = updatedContent.slice(0, mod.start) + mod.replacement + updatedContent.slice(mod.end);
-    }
-
-    return { content: updatedContent, imports };
-  }
+  const constructorStatements = ['writeViewportSizeToCssVariables();', 'writeScrollbarSizeToCssVariables();'];
+  imports.push('writeViewportSizeToCssVariables', 'writeScrollbarSizeToCssVariables');
 
   // Group calls by class
   const callsByClass = new Map<ts.ClassDeclaration, typeof monitorViewportCalls>();
@@ -1654,8 +1643,10 @@ function addImportsToPackage(
   const importsToAdd = Array.from(neededImports).sort();
 
   if (existingImport?.importClause?.namedBindings && ts.isNamedImports(existingImport.importClause.namedBindings)) {
-    const existingImportNames = existingImport.importClause.namedBindings.elements.map((el) => el.name.text);
-    const newImports = importsToAdd.filter((imp) => !existingImportNames.includes(imp));
+    const existingElements = existingImport.importClause.namedBindings.elements;
+    const existingImportedNames = existingElements.map((el) => el.propertyName?.text ?? el.name.text);
+    const existingImportNames = existingElements.map((el) => el.getText(sourceFile));
+    const newImports = importsToAdd.filter((imp) => !existingImportedNames.includes(imp));
 
     if (newImports.length > 0) {
       const allImports = [...existingImportNames, ...newImports].sort();

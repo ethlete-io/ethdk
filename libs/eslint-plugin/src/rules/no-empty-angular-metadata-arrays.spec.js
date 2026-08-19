@@ -26,6 +26,11 @@ tester.run('no-empty-angular-metadata-arrays', rule, {
       errors: [{ messageId: 'noEmptyImports' }],
     },
     {
+      code: `@Component({ ...BASE, imports: [] }) class Foo {}`,
+      output: `@Component({ ...BASE }) class Foo {}`,
+      errors: [{ messageId: 'noEmptyImports' }],
+    },
+    {
       code: `@Directive({ selector: '[etTest]', hostDirectives: [], standalone: true }) class Foo {}`,
       output: `@Directive({ selector: '[etTest]', standalone: true }) class Foo {}`,
       errors: [{ messageId: 'noEmptyHostDirectives' }],

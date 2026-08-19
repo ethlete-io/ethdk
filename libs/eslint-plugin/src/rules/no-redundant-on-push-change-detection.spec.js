@@ -83,6 +83,32 @@ class Foo {}`,
 @Component({ selector: 'et-b', template: '' }) class B {}`,
       errors: [{ messageId: 'redundantImport' }, { messageId: 'redundant' }, { messageId: 'redundant' }],
     },
+    {
+      code: `import ng, { ChangeDetectionStrategy } from '@angular/core';
+@Component({ changeDetection: ChangeDetectionStrategy.OnPush }) class Foo {}`,
+      output: `import ng from '@angular/core';
+@Component({}) class Foo {}`,
+      errors: [{ messageId: 'redundantImport' }, { messageId: 'redundant' }],
+    },
+    {
+      code: `import { ChangeDetectionStrategy as CDS } from '@angular/core';
+@Component({ changeDetection: CDS.OnPush }) class Foo {}`,
+      output: `
+@Component({}) class Foo {}`,
+      errors: [{ messageId: 'redundantImport' }, { messageId: 'redundant' }],
+    },
+    {
+      code: `import { ChangeDetectionStrategy } from '@angular/core';
+@Component({ ...BASE, changeDetection: ChangeDetectionStrategy.OnPush }) class Foo {}`,
+      output: `
+@Component({ ...BASE }) class Foo {}`,
+      errors: [{ messageId: 'redundantImport' }, { messageId: 'redundant' }],
+    },
+    {
+      code: `import { ChangeDetectionStrategy } from '@angular/core';`,
+      output: ``,
+      errors: [{ messageId: 'redundantImport' }],
+    },
   ],
 });
 

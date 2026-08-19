@@ -152,13 +152,18 @@ export type BearerRefreshConfig<T extends AnyV2QueryCreator> = {
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
-export const enum AuthBearerRefreshStrategy {
+export const AuthBearerRefreshStrategy = {
   /**
    * Automatically refresh the token 5 minutes before expiration.
    * The time can be configured with the `refreshBuffer` property.
    */
-  BeforeExpiration = 'beforeExpiration',
-}
+  BeforeExpiration: 'beforeExpiration',
+} as const;
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export type AuthBearerRefreshStrategy = (typeof AuthBearerRefreshStrategy)[keyof typeof AuthBearerRefreshStrategy];
 
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.

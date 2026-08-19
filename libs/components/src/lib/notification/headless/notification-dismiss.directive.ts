@@ -12,7 +12,7 @@ import { NotificationDirective } from './notification.directive';
 })
 export class NotificationDismissDirective {
   private notification = inject(NotificationDirective, { optional: true });
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   constructor() {
     this.notification?.registeredDismiss.set(this);

@@ -16,14 +16,14 @@ export class StructuredDataComponent {
 
   data = input<JsonLD.WithContext<JsonLD.Thing> | JsonLD.Graph | null | undefined>(null);
 
-  jsonLD = computed(() => {
+  protected jsonLD = computed(() => {
     const data = this.data();
 
     if (!data) {
       return null;
     }
 
-    const json = data ? JSON.stringify(data, null, 2).replace(/<\/script>/g, '<\\/script>') : '';
+    const json = JSON.stringify(data, null, 2).replace(/</g, '\\u003C');
     const html = `<script type="application/ld+json">${json}</script>`;
     return this.sanitizer.bypassSecurityTrustHtml(html);
   });

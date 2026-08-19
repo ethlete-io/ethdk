@@ -445,6 +445,29 @@ describe('tailwind-4-color-theme generator', () => {
     expect(content).toContain('--color-et-on-blue-focus: rgb(10 13 16);'); // Falls back to hover -> default
   });
 
+  it('should resolve color maps referenced by identifier', async () => {
+    const themesContent = `
+      const BRAND = { default: '1 1 1', hover: '2 2 2', active: '3 3 3', disabled: '4 4 4' };
+      const ON_BRAND = { default: '255 255 255' };
+      export const BRAND_THEME = {
+        name: 'brand',
+        isDefault: true,
+        primary: { color: BRAND, onColor: ON_BRAND },
+      };
+      export const THEMES = [BRAND_THEME];
+    `;
+
+    tree.write('src/themes.ts', themesContent);
+
+    await migrate(tree, {
+      themesPath: 'src/themes.ts',
+      outputPath: 'src/styles/tw.css',
+      skipFormat: true,
+    });
+
+    expect(tree.read('src/styles/tw.css', 'utf-8')).toContain('--et-color-primary: 1 1 1;');
+  });
+
   it('should generate dynamic theme variables', async () => {
     const themesContent = `
     import { type Theme as EthleteTheme } from '@ethlete/cdk';

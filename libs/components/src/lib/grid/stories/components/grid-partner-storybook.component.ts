@@ -266,7 +266,7 @@ type LayoutRow = {
   imports: [GridComponent, GridItemComponent],
 })
 export class GridPartnerStorybookComponent {
-  protected gridRef = viewChild<GridComponent<PartnerWidgetData>>(GridComponent);
+  public gridRef = viewChild<GridComponent<PartnerWidgetData>>(GridComponent);
 
   public readonly BREAKPOINTS = adapter.breakpoints;
 

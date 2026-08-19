@@ -22,7 +22,7 @@ let uniqueIdCounter = 0;
 })
 export class FormFieldDirective implements FormFieldDirectiveBase {
   /** The field's own element, chrome included - what scrolling to this field targets. */
-  public readonly element = injectHostElement();
+  public element = injectHostElement();
 
   // the `warn()` rules live on the signal-forms field, so the warnings come from wherever
   // `[formField]` is bound: on the control this field wraps (`et-form-field`), or on this very host

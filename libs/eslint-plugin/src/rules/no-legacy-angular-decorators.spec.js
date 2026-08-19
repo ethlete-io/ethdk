@@ -86,6 +86,10 @@ tester.run('no-legacy-angular-decorators', rule, {
       errors: [{ messageId: 'useHostBinding' }],
     },
     {
+      code: `@Component({ template: '' }) class Foo { @HostBinding(HOST_KEY) isActive = false; }`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
       code: `
 @Component({
   selector: 'et-foo',

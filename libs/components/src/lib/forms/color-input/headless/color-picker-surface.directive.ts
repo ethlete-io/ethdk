@@ -12,7 +12,7 @@ import { COLOR_INPUT_TOKEN, ColorInputSurfaceContext } from './color-input.direc
 export class ColorPickerSurfaceDirective {
   private colorInput = inject(COLOR_INPUT_TOKEN, { optional: true });
   public templateRef = inject<TemplateRef<ColorInputSurfaceContext>>(TemplateRef);
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerSingleton(this.colorInput?.registeredSurface, this);

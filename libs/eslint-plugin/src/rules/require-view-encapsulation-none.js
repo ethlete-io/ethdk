@@ -44,11 +44,25 @@ const hasTrailingComma = (sourceCode, property) => {
 /**
  * @param {import('eslint').SourceCode} sourceCode
  */
-const findAngularCoreImport = (sourceCode) =>
-  sourceCode.ast.body.find(
+const findAngularCoreImport = (sourceCode) => {
+  const imports = sourceCode.ast.body.filter(
     (node) =>
       node.type === 'ImportDeclaration' && node.source.type === 'Literal' && node.source.value === '@angular/core',
-  ) ?? null;
+  );
+
+  return (
+    imports.find((node) =>
+      node.specifiers.some(
+        (specifier) =>
+          specifier.type === 'ImportSpecifier' &&
+          specifier.imported.type === 'Identifier' &&
+          specifier.imported.name === 'ViewEncapsulation',
+      ),
+    ) ??
+    imports.find((node) => node.importKind !== 'type') ??
+    null
+  );
+};
 
 /**
  * @param {import('eslint').SourceCode} sourceCode
@@ -90,16 +104,25 @@ const buildMissingAngularCoreImportFix = (sourceCode) => {
   const importDeclarations = sourceCode.ast.body.filter((node) => node.type === 'ImportDeclaration');
   const lastImport = importDeclarations[importDeclarations.length - 1] ?? null;
 
-  return lastImport
-    ? (fixer) => fixer.insertTextAfter(lastImport, `\nimport { ViewEncapsulation } from '@angular/core';`)
+  if (lastImport) {
+    return (fixer) => fixer.insertTextAfter(lastImport, `\nimport { ViewEncapsulation } from '@angular/core';`);
+  }
+
+  const firstNode = sourceCode.ast.body[0];
+  const lastComment = firstNode ? sourceCode.getCommentsBefore(firstNode).at(-1) : null;
+
+  return lastComment
+    ? (fixer) => fixer.insertTextAfter(lastComment, `\nimport { ViewEncapsulation } from '@angular/core';\n`)
     : (fixer) =>
-        fixer.replaceTextRange([0, sourceCode.ast.range[0]], `import { ViewEncapsulation } from '@angular/core';\n\n`);
+        fixer.replaceTextRange([0, firstNode?.range[0] ?? 0], `import { ViewEncapsulation } from '@angular/core';\n\n`);
 };
 
 /**
  * @param {any} metadata
  */
 const getEncapsulationInsertionTarget = (metadata) => {
+  if (metadata.properties.some((property) => property.type === 'SpreadElement')) return null;
+
   const encapsulationIndex = COMPONENT_ORDER.indexOf('encapsulation');
 
   return (
@@ -119,7 +142,7 @@ const getEncapsulationInsertionTarget = (metadata) => {
  */
 const buildMetadataFix = (sourceCode, metadata) => {
   const encText = 'encapsulation: ViewEncapsulation.None';
-  const properties = metadata.properties.filter((property) => property.type === 'Property');
+  const properties = metadata.properties;
   const insertionTarget = getEncapsulationInsertionTarget(metadata);
   const isMultiline = Boolean(metadata.loc && metadata.loc.start.line !== metadata.loc.end.line);
 
@@ -228,8 +251,7 @@ const requireViewEncapsulationNone = {
         if (!metadata || metadata.type !== 'ObjectExpression') return;
 
         const encProp = metadata.properties.find(
-          (property) =>
-            property.type === 'Property' && property.key.type === 'Identifier' && property.key.name === 'encapsulation',
+          (property) => property.type === 'Property' && getPropertyName(property.key) === 'encapsulation',
         );
 
         if (!encProp) {

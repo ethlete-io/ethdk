@@ -82,7 +82,6 @@ export class SwitchIndeterminateStorybookComponent {
   template: `
     <div class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-choice-field>
-        <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- checked is a two-way model(), so no booleanAttribute transform applies -->
         <et-switch [checked]="true" disabled />
         <et-label>Enabled (disabled control)</et-label>
       </et-choice-field>

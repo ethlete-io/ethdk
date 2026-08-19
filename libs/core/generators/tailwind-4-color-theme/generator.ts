@@ -132,6 +132,11 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   logger.log('\n🎨 Generating Tailwind theme CSS...');
   const css = generateTailwindThemeCss(themes, prefix, runtimePrefix, schema);
 
+  const typesOutputPath = schema.typesOutputPath ?? outputPath.replace(/\.css$/, '.d.ts');
+  if (typesOutputPath === outputPath) {
+    throw new Error('A custom outputPath must end in .css or be paired with a distinct typesOutputPath.');
+  }
+
   // Step 7: Write the generated CSS file
   const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
   if (outputDir && !tree.exists(outputDir)) {
@@ -144,7 +149,6 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   // Step 8: Generate the `EthleteColorThemeNameRegistry` augmentation, so `etProvideColor`
   // (and anything else that accepts a `RegisteredColorThemeName`) is checked/autocompleted
   // against this app's actual theme names, instead of a plain `string`.
-  const typesOutputPath = schema.typesOutputPath || outputPath.replace(/\.css$/, '.d.ts');
   const typesDts = generateColorThemeNameTypes(themes, schema);
 
   tree.write(typesOutputPath, typesDts);
@@ -220,9 +224,11 @@ function extractThemesFromContent(content: string, filePath: string): Theme[] {
   const elements = initializer.getElements();
 
   for (const element of elements) {
-    // Resolve the identifier to its declaration
+    let themeObj: Expression | undefined;
+    let name = '<inline>';
+
     if (element.isKind(SyntaxKind.Identifier)) {
-      const name = element.getText();
+      name = element.getText();
       const themeDecl = exportedDeclarations.find((decl) => decl.getName() === name);
 
       if (!themeDecl) {
@@ -230,29 +236,29 @@ function extractThemesFromContent(content: string, filePath: string): Theme[] {
         continue;
       }
 
-      let themeObj = themeDecl.getInitializer();
+      themeObj = themeDecl.getInitializer();
       if (!themeObj) {
         logger.warn(`⚠️  Theme ${name} has no initializer`);
         continue;
       }
+    } else {
+      themeObj = element;
+    }
 
-      // Handle 'as const' and 'satisfies X' wrappers on individual theme objects, in
-      // either order (e.g. `{...} satisfies Theme`, `{...} as const`, or both combined).
-      while (themeObj.isKind(SyntaxKind.AsExpression) || themeObj.isKind(SyntaxKind.SatisfiesExpression)) {
-        themeObj = themeObj.getExpression();
-      }
+    while (themeObj.isKind(SyntaxKind.AsExpression) || themeObj.isKind(SyntaxKind.SatisfiesExpression)) {
+      themeObj = themeObj.getExpression();
+    }
 
-      if (!themeObj.isKind(SyntaxKind.ObjectLiteralExpression)) {
-        logger.warn(`⚠️  Theme ${name} is not an object literal`);
-        continue;
-      }
+    if (!themeObj.isKind(SyntaxKind.ObjectLiteralExpression)) {
+      logger.warn(`⚠️  Theme ${name} is not an object literal`);
+      continue;
+    }
 
-      try {
-        const theme = parseThemeObject(themeObj, sourceFile);
-        themes.push(theme);
-      } catch (error) {
-        logger.warn(`⚠️  Failed to parse theme ${name}: ${error instanceof Error ? error.message : String(error)}`);
-      }
+    try {
+      const theme = parseThemeObject(themeObj, sourceFile);
+      themes.push(theme);
+    } catch (error) {
+      logger.warn(`⚠️  Failed to parse theme ${name}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -417,6 +423,13 @@ type ColorMapKey = (typeof COLOR_MAP_KEYS)[number];
 const isColorMapKey = (name: string): name is ColorMapKey => COLOR_MAP_KEYS.some((key) => key === name);
 
 function parseColorMap(initializer: Expression, sourceFile: SourceFile): ThemeColorMap | OnThemeColorMap | null {
+  if (initializer.isKind(SyntaxKind.Identifier)) {
+    const declaration = sourceFile.getVariableDeclarations().find((decl) => decl.getName() === initializer.getText());
+    const referencedInitializer = declaration?.getInitializer();
+
+    return referencedInitializer ? parseColorMap(referencedInitializer, sourceFile) : null;
+  }
+
   // Handle spread expressions by resolving references
   if (initializer.isKind(SyntaxKind.ObjectLiteralExpression)) {
     const colorMap: Partial<Record<ColorMapKey, ThemeColor>> = {};

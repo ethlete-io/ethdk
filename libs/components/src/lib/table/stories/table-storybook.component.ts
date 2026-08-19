@@ -454,7 +454,7 @@ export class TableStorybookComponent {
   };
   protected lastClicked = signal<Person | null>(null);
   /** Committed edits, by cell - the demo's "server". */
-  protected edits = signal<ReadonlyMap<string, string>>(new Map());
+  public edits = signal<ReadonlyMap<string, string>>(new Map());
   /** Cells whose save is in flight, which `cellStateOf` reports as `'loading'`. */
   public saving = signal<ReadonlySet<string>>(new Set());
   /** Cells whose save failed, with the message the error mark shows. */

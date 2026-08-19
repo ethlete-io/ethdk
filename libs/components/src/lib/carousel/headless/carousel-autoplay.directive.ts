@@ -62,7 +62,7 @@ export class CarouselAutoplayDirective {
   private prefersReducedMotion = injectPrefersReducedMotion();
   private isDocumentVisible = injectIsDocumentVisible();
   private styleManager = injectStyleManager();
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   /**
    * Turn autoplay off without removing the directive - the same escape hatch `etScrollableSnap` has. A

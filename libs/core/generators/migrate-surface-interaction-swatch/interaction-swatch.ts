@@ -27,6 +27,20 @@ const findFlatInteractionColor = (sourceFile: ReturnType<Project['createSourceFi
     if (initializer?.isKind(SyntaxKind.ObjectLiteralExpression) && isFlatInteractionColor(initializer)) {
       return initializer;
     }
+
+    if (initializer?.isKind(SyntaxKind.Identifier)) {
+      const declaration = sourceFile
+        .getVariableDeclarations()
+        .find((candidate) => candidate.getName() === initializer.getText());
+      const referencedInitializer = declaration?.getInitializer();
+
+      if (
+        referencedInitializer?.isKind(SyntaxKind.ObjectLiteralExpression) &&
+        isFlatInteractionColor(referencedInitializer)
+      ) {
+        return referencedInitializer;
+      }
+    }
   }
 
   return null;
@@ -35,6 +49,7 @@ const findFlatInteractionColor = (sourceFile: ReturnType<Project['createSourceFi
 export type InteractionSwatchResult = {
   changed: boolean;
   content: string;
+  unresolved?: string[];
 };
 
 /**
@@ -57,5 +72,17 @@ export const migrateInteractionSwatchInFile = (filePath: string, content: string
     initializer = findFlatInteractionColor(sourceFile);
   }
 
-  return { changed, content: changed ? sourceFile.getFullText() : content };
+  const unresolved = sourceFile
+    .getDescendantsOfKind(SyntaxKind.PropertyAssignment)
+    .filter((property) => property.getName() === 'interactionColor')
+    .flatMap((property) => {
+      const initializer = property.getInitializer();
+      return initializer && !initializer.isKind(SyntaxKind.ObjectLiteralExpression) ? [initializer.getText()] : [];
+    });
+
+  return {
+    changed,
+    content: changed ? sourceFile.getFullText() : content,
+    ...(unresolved.length > 0 ? { unresolved } : {}),
+  };
 };

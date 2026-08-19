@@ -39,7 +39,7 @@ export type SyncSignalOptions = {
 };
 
 export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>, options?: SyncSignalOptions) => {
-  let isFirstRun = options?.skipSyncRead ? false : true;
+  let isFirstRun = true;
 
   if (!options?.skipSyncRead) {
     try {

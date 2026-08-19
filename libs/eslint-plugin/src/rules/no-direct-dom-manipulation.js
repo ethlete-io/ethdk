@@ -100,6 +100,23 @@ const noDirectDomManipulation = {
 
         const methodName = callee.property.name;
 
+        if (
+          methodName === 'setProperty' &&
+          callee.object.type === 'MemberExpression' &&
+          callee.object.property.type === 'Identifier' &&
+          callee.object.property.name === 'style'
+        ) {
+          context.report({
+            node,
+            messageId: 'domMutation',
+            data: {
+              method: methodName,
+              alternative: 'renderer.setStyle(el, prop, value, RendererStyleFlags2.DashCase)',
+            },
+          });
+          return;
+        }
+
         // ── classList.add / .remove / .toggle / .replace ─────────────────────
         if (
           callee.object.type === 'MemberExpression' &&

@@ -81,7 +81,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private bottomSheetStrategy = injectBottomSheetStrategy();
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   /** The committed value: `T | null` in single mode, `T[]` with `multiple`. */
   public value = model<T | T[] | null>(null);

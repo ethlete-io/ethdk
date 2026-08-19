@@ -4,7 +4,6 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@analogjs/vite-plugin-angular": "2.6.3",
     "@angular/common": "22.0.7",
     "@angular/core": "22.0.7",
     "@angular/forms": "22.0.7",
@@ -15,13 +14,9 @@
     "@nx/devkit": "23.1.0",
     "rxjs": "7.8.2",
     "ts-morph": "21.0.1",
-    "typescript": "6.0.3",
-    "vite": "8.1.5"
+    "typescript": "6.0.3"
   },
   "peerDependenciesMeta": {
-    "@analogjs/vite-plugin-angular": {
-      "optional": true
-    },
     "@nx/devkit": {
       "optional": true
     },
@@ -29,9 +24,6 @@
       "optional": true
     },
     "typescript": {
-      "optional": true
-    },
-    "vite": {
       "optional": true
     }
   },

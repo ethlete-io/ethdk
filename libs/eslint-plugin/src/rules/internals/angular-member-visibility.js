@@ -67,8 +67,8 @@ const getStringValue = (node) => {
   if (!node) return null;
   if (node.type === 'Literal' && typeof node.value === 'string') return node.value;
 
-  if (node.type === 'TemplateLiteral' && node.expressions.length === 0 && node.quasis.length === 1) {
-    return node.quasis[0].value.cooked || '';
+  if (node.type === 'TemplateLiteral') {
+    return node.quasis.map((quasi) => quasi.value.cooked ?? quasi.value.raw).join(' ');
   }
 
   return null;
@@ -111,9 +111,9 @@ const templateReferencesMember = (memberName, template) => {
 
   const escapedName = escapeRegExp(memberName);
   const patterns = [
-    new RegExp(`\\{\\{[\\s\\S]*?\\b${escapedName}\\b[\\s\\S]*?\\}\\}`, 'u'),
-    new RegExp(`@[a-zA-Z]+\\s*\\([\\s\\S]*?\\b${escapedName}\\b[\\s\\S]*?\\)`, 'u'),
-    new RegExp(`@let\\s+[a-zA-Z_$][\\w$]*\\s*=\\s*[\\s\\S]*?\\b${escapedName}\\b`, 'u'),
+    new RegExp(`\\{\\{[^{}]*\\b${escapedName}\\b[^{}]*\\}\\}`, 'u'),
+    new RegExp(`@[a-zA-Z]+(?:\\s+if)?\\s*\\([^)]*\\b${escapedName}\\b[^)]*\\)`, 'u'),
+    new RegExp(`@let\\s+[a-zA-Z_$][\\w$]*\\s*=\\s*[^;]*\\b${escapedName}\\b`, 'u'),
     new RegExp(`\\*[a-zA-Z0-9_\\-]+\\s*=\\s*"[^"]*\\b${escapedName}\\b[^"]*"`, 'u'),
     new RegExp(`\\*[a-zA-Z0-9_\\-]+\\s*=\\s*'[^']*\\b${escapedName}\\b[^']*'`, 'u'),
     new RegExp(`\\[[^\\]]+\\]\\s*=\\s*"[^"]*\\b${escapedName}\\b[^"]*"`, 'u'),

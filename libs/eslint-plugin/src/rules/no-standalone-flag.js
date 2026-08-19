@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getMetadataEntryRemovalRange } = require('./internals/angular-metadata-fix');
+
 /** @typedef {'Component' | 'Directive' | 'Pipe'} TDecoratorName */
 
 /**
@@ -26,24 +28,6 @@ const getDecoratorName = (node) => {
   }
 
   return expression.type === 'Identifier' ? expression.name : null;
-};
-
-/**
- * @param {import('eslint').SourceCode} sourceCode
- * @param {any} metadata
- * @param {any} property
- */
-const getRemovalRange = (sourceCode, metadata, property) => {
-  const properties = metadata.properties.filter((entry) => entry.type === 'Property');
-  const propertyIndex = properties.indexOf(property);
-  const openingBrace = sourceCode.getFirstToken(metadata);
-  const closingBrace = sourceCode.getLastToken(metadata);
-
-  if (!openingBrace || !closingBrace) return property.range;
-  if (properties.length === 1) return [openingBrace.range[1], closingBrace.range[0]];
-  if (propertyIndex < properties.length - 1) return [property.range[0], properties[propertyIndex + 1].range[0]];
-
-  return [properties[propertyIndex - 1].range[1], property.range[1]];
 };
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -78,12 +62,13 @@ const noStandaloneFlag = {
         for (const property of metadata.properties) {
           if (property.type !== 'Property') continue;
           if (getPropertyName(property.key) !== 'standalone') continue;
+          if (property.value.type !== 'Literal' || property.value.value !== true) continue;
 
           context.report({
             node: property,
             messageId: 'noStandalone',
             fix(fixer) {
-              return fixer.replaceTextRange(getRemovalRange(sourceCode, metadata, property), '');
+              return fixer.replaceTextRange(getMetadataEntryRemovalRange(sourceCode, metadata, property), '');
             },
           });
         }

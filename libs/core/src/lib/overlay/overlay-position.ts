@@ -134,6 +134,8 @@ export const resetPositioningStyles = (
   });
 
   renderer.removeAttribute(paneElement, 'data-overlay-placement');
+  const arrowElement = paneElement.querySelector<HTMLElement>('[et-floating-arrow]');
+  if (arrowElement) renderer.setCssProperty(arrowElement, '--et-floating-arrow-translate', null);
 
   setBaseElementStyles(config, hostElement, paneElement, renderer);
 };

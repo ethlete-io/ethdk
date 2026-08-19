@@ -102,7 +102,7 @@ export class CarouselDirective {
   private injectedLabels = injectCarouselLabels();
   private prefersReducedMotion = injectPrefersReducedMotion();
   private styleManager = injectStyleManager();
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   // Three ways the carousel finds its track, because where you put `etCarousel` decides what else can see
   // it: slides and controls resolve the carousel from an *ancestor*, so wrapping the scrollable is usually

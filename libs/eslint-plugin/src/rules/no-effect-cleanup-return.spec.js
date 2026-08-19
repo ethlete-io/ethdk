@@ -55,6 +55,14 @@ tester.run('no-effect-cleanup-return', rule, {
       errors: [{ messageId: 'returnedCleanup', data: { callee: 'effect' } }],
     },
     {
+      code: `effect(() => { if (!ready()) { return () => cleanup(); } continueSetup(); });`,
+      errors: [{ messageId: 'returnedCleanup', data: { callee: 'effect' } }],
+    },
+    {
+      code: `effect(() => { const onCleanup = createCleanup(); return () => onCleanup(); });`,
+      errors: [{ messageId: 'returnedCleanup', data: { callee: 'effect' } }],
+    },
+    {
       code: `effect(function () { register(); return function () { unregister(); }; });`,
       output: `effect(function (onCleanup) { register(); onCleanup(function () { unregister(); }); });`,
       errors: [{ messageId: 'returnedCleanup', data: { callee: 'effect' } }],

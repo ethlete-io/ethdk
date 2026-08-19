@@ -11,12 +11,22 @@ const escapeHtmlPreservingEntities = (str: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-/** Rejects URL schemes that execute script when navigated. Whitespace/control characters are
- *  stripped before checking - browsers ignore them inside URLs, so `java\tscript:` would
- *  otherwise slip through. */
-const isSafeUrl = (url: string) =>
-  // eslint-disable-next-line no-control-regex -- stripping control characters is the point: browsers ignore them inside URLs
-  !/^(javascript|data|vbscript):/i.test(url.replace(/[\s\u0000-\u001f]/g, ''));
+const decodeUrlCharacterReferences = (url: string) =>
+  url
+    .replace(/&#(\d+);?/g, (_, value: string) => String.fromCodePoint(Number(value)))
+    .replace(/&#x([0-9a-f]+);?/gi, (_, value: string) => String.fromCodePoint(Number.parseInt(value, 16)))
+    .replace(/&(colon|tab|newline);/gi, (_, entity: string) =>
+      entity.toLowerCase() === 'colon' ? ':' : entity.toLowerCase() === 'tab' ? '\t' : '\n',
+    );
+
+const isSafeUrl = (url: string) => {
+  // eslint-disable-next-line no-control-regex -- URL parsers ignore these characters inside schemes.
+  const normalized = decodeUrlCharacterReferences(url).replace(/[\s\u0000-\u001f]/g, '');
+
+  return (
+    !/^(javascript|vbscript):/i.test(normalized) && !/^data:(?!image\/(?:avif|gif|jpeg|png|webp);)/i.test(normalized)
+  );
+};
 
 const unescapeHtml = (str: string) =>
   str
@@ -147,8 +157,6 @@ const processInline = (text: string): string => {
     .replace(placeholderRe('IC'), (_, i) => inlineCodes[+i] ?? '')
     .replace(placeholderRe('NTLINK'), (_, i) => newTabLinks[+i] ?? '');
 };
-
-// --- Nested list helpers (regex can't match balanced nesting, so these scan by tag depth) ---
 
 /** The first top-level `<ul>`/`<ol>` in `html`, matched with balanced nesting. */
 const findList = (html: string): { start: number; end: number; ordered: boolean; inner: string } | null => {

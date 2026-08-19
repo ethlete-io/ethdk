@@ -29,10 +29,15 @@ tester.run('prefer-present-tense-output', rule, {
 
     // Too short to be a past participle
     { code: `class C { ed = output<void>(); }` },
+    { code: `class C { selected = output<void>({ alias: 'playerSelect' }); }` },
   ],
   invalid: [
     {
       code: `class C { playerSelected = output<Player>(); }`,
+      errors: [{ messageId: 'pastTense' }],
+    },
+    {
+      code: `class C { select = output<void>({ alias: 'playerSelected' }); }`,
       errors: [{ messageId: 'pastTense' }],
     },
     {

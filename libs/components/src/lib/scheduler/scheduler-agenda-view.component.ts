@@ -20,8 +20,8 @@ import { Appointment } from './scheduler.types';
   },
 })
 export class SchedulerAgendaViewComponent {
-  protected scheduler = inject(SchedulerDirective, { optional: true });
-  protected agenda = inject(SchedulerAgendaDirective);
+  private scheduler = inject(SchedulerDirective, { optional: true });
+  private agenda = inject(SchedulerAgendaDirective);
 
   private featureHost = inject(SCHEDULER_FEATURE_HOST, { optional: true });
 

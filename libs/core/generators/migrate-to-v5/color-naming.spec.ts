@@ -31,7 +31,7 @@ export class AppComponent {}`,
     expect(result).not.toContain("'etProvideTheme:theme'");
   });
 
-  it('should rename ColorThemedDirective to ColoredDirective', async () => {
+  it('should rename ColorThemedDirective to ColorInteractiveDirective', async () => {
     tree.write(
       'src/my.component.ts',
       `import { ColorThemedDirective } from '@ethlete/core';
@@ -45,11 +45,11 @@ export class MyComponent {}`,
     await migrateColorNaming(tree);
 
     const result = tree.read('src/my.component.ts', 'utf-8');
-    expect(result).toContain('ColoredDirective');
+    expect(result).toContain('ColorInteractiveDirective');
     expect(result).not.toContain('ColorThemedDirective');
   });
 
-  it('should rename SurfaceThemedDirective to SurfacedDirective', async () => {
+  it('should rename SurfaceThemedDirective to SurfaceInteractiveDirective', async () => {
     tree.write(
       'src/my.component.ts',
       `import { SurfaceThemedDirective } from '@ethlete/core';
@@ -63,7 +63,7 @@ export class MyComponent {}`,
     await migrateColorNaming(tree);
 
     const result = tree.read('src/my.component.ts', 'utf-8');
-    expect(result).toContain('SurfacedDirective');
+    expect(result).toContain('SurfaceInteractiveDirective');
     expect(result).not.toContain('SurfaceThemedDirective');
   });
 
@@ -76,11 +76,9 @@ export class MyComponent {}`,
     await migrateColorNaming(tree);
 
     const result = tree.read('src/my.component.html', 'utf-8');
-    expect(result).toContain('[color]="brand"');
-    expect(result).toContain('[altColor]="alt"');
+    expect(result).toContain('[theme]="brand"');
+    expect(result).toContain('[altTheme]="alt"');
     expect(result).toContain('etProvideColor="brand"');
-    expect(result).not.toContain('[theme]=');
-    expect(result).not.toContain('[altTheme]=');
     expect(result).not.toContain('etProvideTheme');
   });
 
@@ -96,8 +94,8 @@ export class MyComponent {}`,
     await migrateColorNaming(tree);
 
     const result = tree.read('src/styles.css', 'utf-8');
-    expect(result).toContain('.et-colored');
-    expect(result).toContain('.et-surfaced');
+    expect(result).toContain('.et-color-interactive');
+    expect(result).toContain('.et-surface-interactive');
     expect(result).toContain('.et-color--brand');
     expect(result).toContain('.et-color-alt--brand');
     expect(result).not.toContain('.et-color-themed');
@@ -106,13 +104,13 @@ export class MyComponent {}`,
     expect(result).not.toContain('.et-theme-alt--');
   });
 
-  it('should not modify spec files', async () => {
+  it('should modify spec files', async () => {
     tree.write('src/test.spec.ts', `import { ProvideThemeDirective } from '@ethlete/core';`);
 
     await migrateColorNaming(tree);
 
     const result = tree.read('src/test.spec.ts', 'utf-8');
-    expect(result).toContain('ProvideThemeDirective');
+    expect(result).toContain('ProvideColorDirective');
   });
 
   it('should not modify files without relevant content', async () => {

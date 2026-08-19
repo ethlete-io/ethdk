@@ -125,22 +125,6 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const elementRect = options.elementRect || element.getBoundingClientRect();
   const containerRect = container ? options.containerRect || container.getBoundingClientRect() : createViewportRect();
 
-  const canScroll = elementCanScroll(container);
-
-  if (!canScroll) {
-    return {
-      inline: true,
-      block: true,
-      blockIntersection: 1,
-      inlineIntersection: 1,
-      intersectionRatio: 1,
-      isIntersecting: true,
-      element,
-      containerRect,
-      elementRect,
-    };
-  }
-
   const elLeft = elementRect.left;
   const elTop = elementRect.top;
   const elWidth = elementRect.width || 1;
@@ -167,7 +151,7 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
     block: isElementBlockVisible,
     inlineIntersection: inlineIntersectionPercentage,
     blockIntersection: blockIntersectionPercentage,
-    isIntersecting: isElementInlineVisible && isElementBlockVisible,
+    isIntersecting: inlineIntersectionPercentage > 0 && blockIntersectionPercentage > 0,
     element,
     containerRect,
     elementRect,

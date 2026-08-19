@@ -130,9 +130,9 @@ export class PipSlotPlaceholderComponent {
 
   public cardSurface = computed(() => {
     const themes = this.surfaceThemes;
-    if (!themes) return null;
-
     const type = this.surfaceType();
+    if (!themes || !type) return null;
+
     const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
 
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;

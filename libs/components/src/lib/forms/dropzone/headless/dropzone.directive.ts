@@ -70,7 +70,7 @@ export class DropzoneDirective<TValue = unknown>
   private signalFormField = inject(FORM_FIELD, { optional: true });
   private destroyRef = inject(DestroyRef);
   private injector = inject(Injector);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public value = model<TValue | TValue[] | null>(null);
   public touched = model(false);

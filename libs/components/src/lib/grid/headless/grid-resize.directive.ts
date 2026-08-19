@@ -29,7 +29,7 @@ export class GridResizeDirective {
   private gridItem = inject(GridItemDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public isResizing = signal(false);
 

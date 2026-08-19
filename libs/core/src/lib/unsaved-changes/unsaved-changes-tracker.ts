@@ -175,7 +175,10 @@ export const createUnsavedChangesTracker = <T>(
       return false;
     }
 
-    const defaultValue = _defaultValue() as T;
+    const defaultValue = _defaultValue();
+    if (defaultValue === null || defaultValue === undefined) {
+      return false;
+    }
 
     return !(compareFn ? compareFn(current, defaultValue) : equal(current, defaultValue));
   });

@@ -1,4 +1,4 @@
-import { afterNextRender } from '@angular/core';
+import { afterNextRender, isDevMode } from '@angular/core';
 
 export const createSetup = <T extends Record<string, unknown>>(config: {
   setupFn: (params: T) => void;
@@ -7,7 +7,7 @@ export const createSetup = <T extends Record<string, unknown>>(config: {
   let didCallSetup = false;
 
   afterNextRender(() => {
-    if (!didCallSetup) {
+    if (!didCallSetup && isDevMode()) {
       console.error('The setup() function was not called. Please call it inside your constructor.', config.this);
 
       return;
@@ -16,6 +16,8 @@ export const createSetup = <T extends Record<string, unknown>>(config: {
 
   return (params: T) => {
     if (didCallSetup) {
+      if (!isDevMode()) return;
+
       console.error(
         'The setup() function was already called. Please call it only once. \n\n',
         'Instance containing the setup() call \n',

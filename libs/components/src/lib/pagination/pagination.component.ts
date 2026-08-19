@@ -149,7 +149,7 @@ export class PaginationComponent {
   });
 
   /** The "Showing X–Y of Z" readout, or `null` when `totalItems`/`pageSize` aren't set. */
-  protected rangeStatus = computed(() => {
+  public rangeStatus = computed(() => {
     const range = this.range();
 
     if (!range) return null;

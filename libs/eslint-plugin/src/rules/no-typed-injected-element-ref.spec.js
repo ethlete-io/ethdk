@@ -33,6 +33,11 @@ tester.run('no-typed-injected-element-ref', rule, {
       output: `inject<ElementRef<HTMLElement>>(ElementRef, { optional: true });`,
       errors: [{ messageId: 'missingGeneric' }],
     },
+    {
+      code: `inject<ElementRef>(ElementRef);`,
+      output: `inject<ElementRef<HTMLElement>>(ElementRef);`,
+      errors: [{ messageId: 'missingGeneric' }],
+    },
     // Generic on the token itself — fix: move type arg to inject(), replace token with plain identifier
     {
       code: `inject(ElementRef<HTMLElement>);`,

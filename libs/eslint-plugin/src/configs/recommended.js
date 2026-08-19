@@ -107,11 +107,8 @@ const recommendedTs = {
 
     'no-restricted-syntax': [
       'error',
-      // No enum — use const object + derived union type
-      {
-        selector: 'TSEnumDeclaration',
-        message: 'No enums. Use a const object + derived union type instead.',
-      },
+      // enum / const enum is owned by ethlete/no-enum, so a lib can keep it on while it works
+      // through the rest of this rule's backlog.
       // No standalone function declarations / expressions — use arrow functions
       {
         selector: 'FunctionDeclaration',
@@ -245,6 +242,9 @@ const recommendedTs = {
     // No async/await — asynchronous work is modelled as cold Observables
     'ethlete/no-async-await': 'error',
 
+    // No enum / const enum — use a const object with `as const` plus a derived union type
+    'ethlete/no-enum': 'error',
+
     // No .subscribe() inside effect() or computed()
     'ethlete/no-rxjs-in-effect': 'error',
 
@@ -272,7 +272,7 @@ const recommendedTs = {
     // No raw IntersectionObserver / MutationObserver / ResizeObserver — use @ethlete/core signal utils
     'ethlete/no-native-observers': 'error',
 
-    // Prefer injectViewportSize() over window.innerWidth / innerHeight / outerWidth / outerHeight
+    // Prefer injectViewportSize() over window.innerWidth / innerHeight
     'ethlete/prefer-viewport-size': 'warn',
 
     // Prefer injectMediaQueryIsMatched() / injectBreakpointIsMatched() etc. over .matchMedia()
@@ -297,7 +297,7 @@ const recommendedTs = {
     'ethlete/no-legacy-angular-decorators': 'error',
 
     // No Angular Title/Meta services — use @ethlete/core SEO utilities instead
-    // (injectTitleBinding, injectMetaBinding, injectLinkBinding, etc.)
+    // (applyHeadTitleBinding, applyMetaBinding, applyLinkBinding, etc.)
     'ethlete/no-angular-seo-services': 'error',
 
     // No JSON.parse(JSON.stringify()), structuredClone, or lodash cloneDeep / isEqual
@@ -414,20 +414,30 @@ const recommendedTemplate = {
     // (warn + suggestion-only: the rewrite is only safe when the input has a booleanAttribute transform,
     // which a template rule cannot verify)
     'ethlete/prefer-static-boolean-properties': 'warn',
-    // A form must handle its own submission, and a type="submit" control must reach a form
+    // A form must handle its own submission
     'ethlete/require-form-submit': 'error',
   },
 };
 
 /**
- * Relaxed rules for test/spec files.
- * Non-null assertions are common and intentional in tests.
+ * Relaxed rules for test/spec files, including common DOM assertions and async test orchestration.
  * @type {import('eslint').Linter.Config}
  */
 const recommendedSpec = {
   files: ['**/*.spec.ts'],
   rules: {
     '@typescript-eslint/no-non-null-assertion': 'off',
+    'no-restricted-globals': 'off',
+    'ethlete/no-async-await': 'off',
+    'ethlete/no-direct-dom-manipulation': 'off',
+    'ethlete/no-document-cookie': 'off',
+    'ethlete/no-dom-query': 'off',
+    'ethlete/no-native-observers': 'off',
+    'ethlete/no-window-location': 'off',
+    'ethlete/prefer-element-dimensions': 'off',
+    'ethlete/prefer-match-media': 'off',
+    'ethlete/prefer-scroll-state': 'off',
+    'ethlete/prefer-viewport-size': 'off',
   },
 };
 

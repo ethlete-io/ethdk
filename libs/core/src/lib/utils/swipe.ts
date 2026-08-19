@@ -82,10 +82,12 @@ export const createSwipeTracker = (startEvent: TouchEvent | MouseEvent): SwipeTr
     const positiveMovementY = Math.abs(movementY);
 
     if (!isSwiping && !isScrolling) {
-      if (positiveMovementY > positiveMovementX) {
-        isScrolling = true;
-      } else {
-        isSwiping = true;
+      if (positiveMovementY > 0 || positiveMovementX > 0) {
+        if (positiveMovementY > positiveMovementX) {
+          isScrolling = true;
+        } else {
+          isSwiping = true;
+        }
       }
     }
 

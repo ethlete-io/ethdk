@@ -1,6 +1,6 @@
 # SEO
 
-Signal-based head management: a family of `apply*Binding` functions that write the document title, meta tags, links and JSON-LD structured data - all SSR-safe (they go through Angular's `Title`/`Meta` services and the renderer, never raw `document` calls).
+Signal-based head management: a family of `apply*Binding` functions that write the document title, meta tags, links and JSON-LD structured data. They use Angular's `Title`/`Meta` services, the renderer, and the injected `DOCUMENT` so the same API works with server rendering.
 
 Every binding accepts a raw value **or a signal** (`MaybeSignal<T>`) and must be called in an injection context - typically a component constructor or field initializer. Bindings clean up after themselves when the component is destroyed:
 

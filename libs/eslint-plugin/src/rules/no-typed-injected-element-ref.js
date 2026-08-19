@@ -38,16 +38,23 @@ const noTypedInjectedElementRef = {
 
         const src = context.sourceCode;
         const existingTypeParams = node.typeParameters || node.typeArguments;
-        const hasInjectTypeParam =
-          existingTypeParams && existingTypeParams.params && existingTypeParams.params.length > 0;
+        const injectType = existingTypeParams?.params?.[0];
+        const hasTypedElementRef =
+          existingTypeParams?.params?.length === 1 &&
+          injectType?.type === 'TSTypeReference' &&
+          injectType.typeName?.type === 'Identifier' &&
+          injectType.typeName.name === 'ElementRef' &&
+          (injectType.typeArguments || injectType.typeParameters)?.params?.length > 0;
 
-        if (isPlainElementRef && !hasInjectTypeParam) {
+        if (isPlainElementRef && !hasTypedElementRef) {
           // inject(ElementRef) → inject<ElementRef<HTMLElement>>(ElementRef)
           context.report({
             node,
             messageId: 'missingGeneric',
             fix(fixer) {
-              return fixer.insertTextAfter(node.callee, '<ElementRef<HTMLElement>>');
+              return existingTypeParams
+                ? fixer.replaceText(existingTypeParams, '<ElementRef<HTMLElement>>')
+                : fixer.insertTextAfter(node.callee, '<ElementRef<HTMLElement>>');
             },
           });
           return;
@@ -57,16 +64,16 @@ const noTypedInjectedElementRef = {
           // Capture the type args text from the token, e.g. "<HTMLElement>"
           const tokenTypeParamText = src.getText(firstArg.typeParameters || firstArg.typeArguments);
 
-          if (!hasInjectTypeParam) {
+          if (!hasTypedElementRef) {
             // inject(ElementRef<HTMLElement>) → inject<ElementRef<HTMLElement>>(ElementRef)
             context.report({
               node,
               messageId: 'missingGeneric',
               fix(fixer) {
-                return [
-                  fixer.insertTextAfter(node.callee, `<ElementRef${tokenTypeParamText}>`),
-                  fixer.replaceText(firstArg, 'ElementRef'),
-                ];
+                const typeFix = existingTypeParams
+                  ? fixer.replaceText(existingTypeParams, `<ElementRef${tokenTypeParamText}>`)
+                  : fixer.insertTextAfter(node.callee, `<ElementRef${tokenTypeParamText}>`);
+                return [typeFix, fixer.replaceText(firstArg, 'ElementRef')];
               },
             });
           } else {

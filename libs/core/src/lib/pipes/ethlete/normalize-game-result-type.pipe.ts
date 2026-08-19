@@ -10,7 +10,6 @@ export type NormalizedGameResultType = Translatable & {
   shortCode: string;
 };
 
-// TODO(TRB): Add correct type once provided by API
 export const normalizeGameResultType = (type: string | null): NormalizedGameResultType | null => {
   if (!type) {
     return null;

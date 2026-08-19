@@ -25,7 +25,7 @@ import { ACCORDION_TOKEN } from './accordion.tokens';
 })
 export class AccordionPanelDirective {
   protected accordion = inject(ACCORDION_TOKEN, { optional: true });
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   constructor() {
     this.accordion?.registerPanel(this);

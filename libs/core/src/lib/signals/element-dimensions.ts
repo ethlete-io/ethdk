@@ -1,5 +1,5 @@
-import { DOCUMENT } from '@angular/common';
 import {
+  DOCUMENT,
   computed,
   DestroyRef,
   effect,
@@ -14,6 +14,7 @@ import {
 import { equal } from '../utils';
 import { buildElementSignal, firstElementSignal, SignalElementBindingType } from './element';
 import { signalIsRendered } from './render-utils';
+import { memoizeSignal } from './signal-data-utils';
 
 export type LogicalSize = {
   inlineSize: number;
@@ -91,31 +92,35 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
 
   const elementDimensionsSignal = signal<NullableElementDimensions>(initialValue());
 
-  const observer = new ResizeObserver((e) => {
-    if (!isRendered()) return;
-
-    const entry = e[0];
-
-    if (entry) {
-      const target = entry.target as HTMLElement;
-      const newDimensions = createElementDimensions(target);
-
-      zone.run(() => elementDimensionsSignal.set(newDimensions));
-    }
-  });
+  let observer: ResizeObserver | null = null;
 
   effect(() => {
     const els = firstEl();
+    const rendered = isRendered();
 
     untracked(() => {
       elementDimensionsSignal.set(initialValue());
 
-      if (els.previousElement) {
-        observer.disconnect();
+      if (!rendered || typeof ResizeObserver === 'undefined') {
+        return;
       }
 
+      observer ??= new ResizeObserver((entries) => {
+        const entry = entries[0];
+
+        if (entry) {
+          const target = entry.target as HTMLElement;
+          const newDimensions = createElementDimensions(target);
+
+          zone.run(() => elementDimensionsSignal.set(newDimensions));
+        }
+      });
+      observer.disconnect();
+
       if (els.currentElement) {
-        const computedDisplay = getComputedStyle(els.currentElement).display;
+        const computedDisplay = els.currentElement.ownerDocument.defaultView?.getComputedStyle(
+          els.currentElement,
+        ).display;
         const currentElIsAngularComponent = els.currentElement?.tagName.toLowerCase().includes('-');
 
         if (computedDisplay === 'inline' && isDevMode() && currentElIsAngularComponent) {
@@ -129,7 +134,7 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
     });
   });
 
-  destroyRef.onDestroy(() => observer.disconnect());
+  destroyRef.onDestroy(() => observer?.disconnect());
 
   return computed(() => elementDimensionsSignal(), {
     equal: (a, b) => equal(a, b),
@@ -138,7 +143,7 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
 
 export const signalHostElementDimensions = () => signalElementDimensions(inject<ElementRef<HTMLElement>>(ElementRef));
 
-export const injectViewportSize = (): Signal<ElementSize> => {
+export const injectViewportSize = /* @__PURE__ */ memoizeSignal((): Signal<ElementSize> => {
   const document = inject(DOCUMENT);
   const zone = inject(NgZone);
   const destroyRef = inject(DestroyRef);
@@ -165,4 +170,4 @@ export const injectViewportSize = (): Signal<ElementSize> => {
   }
 
   return size;
-};
+});

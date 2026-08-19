@@ -1,6 +1,10 @@
 import { Observable } from 'rxjs';
 
 export const nextFrame = (cb: () => void) => {
+  if (typeof requestAnimationFrame === 'undefined') {
+    return;
+  }
+
   requestAnimationFrame(() => {
     requestAnimationFrame(cb);
   });

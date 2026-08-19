@@ -36,10 +36,15 @@ tester.run('no-native-html-input-name', rule, {
     // required inputs / models
     { code: `class C { label = input.required<string>(); }` },
     { code: `class C { selection = model<string>(''); }` },
+    { code: `class C { title = input('x', { alias: 'label' }); }` },
   ],
   invalid: [
     {
       code: `class C { title = input('Widget'); }`,
+      errors: [{ messageId: 'nativeName' }],
+    },
+    {
+      code: `class C { label = input('Widget', { alias: 'title' }); }`,
       errors: [{ messageId: 'nativeName' }],
     },
     {

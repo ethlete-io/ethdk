@@ -20,9 +20,7 @@ describe('devtools-about generator', () => {
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
-      // noop
-    });
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => consoleWarnSpy.mockRestore());
@@ -31,7 +29,7 @@ describe('devtools-about generator', () => {
     addApp();
     await generator(tree, { project: 'my-app' });
 
-    expect(tree.exists('tools/generate-build-info.js')).toBe(true);
+    expect(tree.exists('tools/generate-build-info.cjs')).toBe(true);
     expect(tree.read('apps/my-app/src/build-info.ts', 'utf-8')).toContain('APP_BUILD_INFO');
   });
 
@@ -95,11 +93,11 @@ describe('devtools-about generator', () => {
     const dir = mkdtempSync(join(tmpdir(), 'devtools-about-'));
 
     try {
-      const script = join(dir, 'generate-build-info.js');
+      const script = join(dir, 'generate-build-info.cjs');
       const packageJson = join(dir, 'package.json');
       const output = join(dir, 'src', 'build-info.ts');
 
-      writeFileSync(script, tree.read('tools/generate-build-info.js', 'utf-8') ?? '');
+      writeFileSync(script, tree.read('tools/generate-build-info.cjs', 'utf-8') ?? '');
       writeFileSync(packageJson, JSON.stringify({ version: '1.4.2' }));
       execFileSync(process.execPath, [script, output, packageJson], { cwd: process.cwd() });
 

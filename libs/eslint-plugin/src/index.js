@@ -59,13 +59,15 @@ const requireFormSubmit = require('./rules/require-form-submit');
 const noCdkImport = require('./rules/no-cdk-import');
 const noLegacyQueryImport = require('./rules/no-legacy-query-import');
 const noAsyncAwait = require('./rules/no-async-await');
+const noEnum = require('./rules/no-enum');
 const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
+const { version } = require('../package.json');
 
 /** @type {import('eslint').ESLint.Plugin} */
 const plugin = {
   meta: {
     name: '@ethlete/eslint-plugin',
-    version: '0.0.1',
+    version,
   },
   rules: {
     'no-inject-chain': noInjectChain,
@@ -126,6 +128,7 @@ const plugin = {
     'no-cdk-import': noCdkImport,
     'no-legacy-query-import': noLegacyQueryImport,
     'no-async-await': noAsyncAwait,
+    'no-enum': noEnum,
   },
 };
 

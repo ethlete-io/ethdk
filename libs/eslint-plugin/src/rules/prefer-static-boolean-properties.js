@@ -23,6 +23,33 @@
  * which covers the string-literal case (where the rewrite is always safe).
  */
 
+const NATIVE_BOOLEAN_PROPERTIES = new Set([
+  'allowFullscreen',
+  'async',
+  'autofocus',
+  'autoplay',
+  'checked',
+  'controls',
+  'default',
+  'defer',
+  'disabled',
+  'formNoValidate',
+  'hidden',
+  'inert',
+  'isMap',
+  'loop',
+  'multiple',
+  'muted',
+  'noModule',
+  'noValidate',
+  'open',
+  'playsInline',
+  'readOnly',
+  'required',
+  'reversed',
+  'selected',
+]);
+
 /** @type {import('eslint').Rule.RuleModule} */
 const preferStaticBooleanProperties = {
   meta: {
@@ -55,6 +82,9 @@ const preferStaticBooleanProperties = {
         // structural directives (*foo has no keySpan details)
         const isBindingProperty = keySpan?.details && !keySpan.details.includes('@') && !keySpan.details.includes('.');
         if (!isBindingProperty) return;
+        if (name.startsWith('ng') || NATIVE_BOOLEAN_PROPERTIES.has(name)) {
+          return;
+        }
 
         // Only literal `true` / `false` expressions. `value.ast` is a
         // LiteralPrimitive for literals; the raw-source check guards against

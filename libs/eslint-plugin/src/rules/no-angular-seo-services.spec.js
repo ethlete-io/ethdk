@@ -15,8 +15,8 @@ const tester = new RuleTester({
 tester.run('no-angular-seo-services', rule, {
   valid: [
     // Using ethlete/core SEO utilities is fine
-    { code: `import { injectTitleBinding } from '@ethlete/core';` },
-    { code: `import { injectMetaBinding } from '@ethlete/core';` },
+    { code: `import { applyHeadTitleBinding } from '@ethlete/core';` },
+    { code: `import { applyMetaBinding } from '@ethlete/core';` },
     // Importing other things from @angular/platform-browser is fine
     { code: `import { DomSanitizer } from '@angular/platform-browser';` },
     { code: `import { BrowserModule } from '@angular/platform-browser';` },

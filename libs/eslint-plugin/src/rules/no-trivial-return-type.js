@@ -173,6 +173,7 @@ const noTrivialReturnType = {
 
       const annotation = fn.returnType.typeAnnotation;
       if (!TRIVIAL_TYPES.has(annotation.type)) return;
+      if (fn.body.type !== 'BlockStatement') return;
       if (isSelfReferencing(fn)) return;
 
       const label = TRIVIAL_LABELS[annotation.type] ?? annotation.type;

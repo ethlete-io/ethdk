@@ -113,7 +113,7 @@ export const provideColorThemesWithTailwind4 = (themes: ColorTheme[], prefix = '
 };
 
 const injectColorThemeByType = (type: ColorThemeType) => {
-  const themes = injectColorThemes();
+  const themes = injectColorThemes({ optional: true });
 
   if (!themes) {
     throw new Error(
@@ -147,7 +147,7 @@ export const injectWarningTheme = () => injectColorThemeByType('warning');
 export const injectSuccessTheme = () => injectColorThemeByType('success');
 
 export const injectDefaultColorTheme = () => {
-  const themes = injectColorThemes();
+  const themes = injectColorThemes({ optional: true });
 
   if (!themes) {
     throw new Error(

@@ -17,7 +17,7 @@ export type { SchedulerMonthDayCell } from './internals/scheduler-month';
   exportAs: 'etSchedulerMonth',
 })
 export class SchedulerMonthDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private scheduler = inject(SchedulerDirective, { optional: true });
 

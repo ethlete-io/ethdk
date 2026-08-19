@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import { PropHandlers } from './create-prop-handlers';
 import { Props, PropsInternal } from './create-props';
 
@@ -32,12 +33,14 @@ export const bindProps = (config: BindPropsOptions) => {
     } else if (single) {
       const firstAttachedRefElement = attachedElements.first();
 
-      console.error(
-        `[${name}] These props can only be attached to a single element at a time.\n\n Already attached to \n`,
-        firstAttachedRefElement,
-        '\n Trying to attach to \n',
-        el,
-      );
+      if (isDevMode()) {
+        console.error(
+          `[${name}] These props can only be attached to a single element at a time.\n\n Already attached to \n`,
+          firstAttachedRefElement,
+          '\n Trying to attach to \n',
+          el,
+        );
+      }
 
       return;
     }

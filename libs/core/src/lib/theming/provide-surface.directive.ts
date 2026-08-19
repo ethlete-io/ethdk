@@ -20,7 +20,6 @@ import {
   injectSurfaceThemes,
   injectSurfaceThemesPrefix,
   RegisteredSurfaceThemeName,
-  SURFACE_TYPE,
   SurfaceTheme,
 } from './surface-theme.util';
 
@@ -118,7 +117,7 @@ export class ProvideSurfaceDirective {
 
     runInInjectionContext(this.injector, () => {
       this.currentProviderSync = effect(() => {
-        const provideSurface = provider.effectiveSurface();
+        const provideSurface = provider.activeTheme()?.name;
 
         untracked(() => {
           if (provideSurface === undefined) {
@@ -165,7 +164,7 @@ export class ProvideSurfaceDirective {
  */
 export const injectSurfaceType = () => {
   const provider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-  const defaultType = injectDefaultSurfaceTheme()?.type ?? SURFACE_TYPE.DARK;
+  const defaultType = injectDefaultSurfaceTheme()?.type ?? null;
 
   return computed(() => provider?.surfaceType() ?? defaultType);
 };

@@ -17,6 +17,12 @@ tester.run('no-trivial-return-type', rule, {
     // Non-trivial return type
     { code: `const parse = (): Date => new Date();` },
     { code: `const build = (): MyType => ({});` },
+    { code: `export const remove = (key: string): void => cache.delete(key);` },
+    { code: `const check = (): boolean => true;` },
+    { code: `const getName = (): string => 'name';` },
+    { code: `const getCount = (): number => 42;` },
+    { code: `const maybeUndefined = (): undefined => undefined;` },
+    { code: `const noop = (): null => null;` },
     // Type context — allowed
     { code: `type F = () => void;` },
     { code: `interface I { fn(): string; }` },
@@ -33,31 +39,6 @@ tester.run('no-trivial-return-type', rule, {
     {
       code: `const fn = (): void => {};`,
       output: `const fn = () => {};`,
-      errors: [{ messageId: 'trivialReturnType' }],
-    },
-    {
-      code: `const check = (): boolean => true;`,
-      output: `const check = () => true;`,
-      errors: [{ messageId: 'trivialReturnType' }],
-    },
-    {
-      code: `const getName = (): string => 'name';`,
-      output: `const getName = () => 'name';`,
-      errors: [{ messageId: 'trivialReturnType' }],
-    },
-    {
-      code: `const getCount = (): number => 42;`,
-      output: `const getCount = () => 42;`,
-      errors: [{ messageId: 'trivialReturnType' }],
-    },
-    {
-      code: `const maybeUndefined = (): undefined => undefined;`,
-      output: `const maybeUndefined = () => undefined;`,
-      errors: [{ messageId: 'trivialReturnType' }],
-    },
-    {
-      code: `const noop = (): null => null;`,
-      output: `const noop = () => null;`,
       errors: [{ messageId: 'trivialReturnType' }],
     },
     // Non-recursive class method — still stripped

@@ -25,6 +25,9 @@ tester.run('no-trivial-wrapper-method', rule, {
     { code: `@Component({}) class Foo { focus(options) { this.dir.focus(options); } }` },
     { code: `@Directive() class Foo { blur(options) { this.dir.blur(options); } }` },
     { code: `@Component({}) class Foo { reset(value) { this.dir.reset(value); } }` },
+    { code: `class Foo implements ControlValueAccessor { writeValue(value) { this.control.set(value); } }` },
+    { code: `class Foo extends Base { override handle(event) { this.delegate.handle(event); } }` },
+    { code: `class Foo { static ngTemplateContextGuard(dir, ctx) { return guard(dir, ctx); } }` },
   ],
   invalid: [
     {

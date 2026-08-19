@@ -40,7 +40,7 @@ export const templateComputed = (templateSignal: Signal<AnyTemplateType | null>)
   computed((): StringTemplate | NgTemplateTemplate | ComponentTemplate | null => {
     const content = templateSignal();
 
-    if (!content) return null;
+    if (content === null) return null;
 
     if (typeof content === 'string') {
       return {

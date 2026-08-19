@@ -30,7 +30,7 @@ import { TabLabelDirective } from './tab-label.directive';
 })
 export class TabComponent {
   private tabGroup = inject(TAB_GROUP_TOKEN, { optional: true });
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public label = input('');
   public icon = input<string | null>(null);

@@ -4,7 +4,7 @@ import { fromEvent } from 'rxjs';
 
 export const createRxHostListener = <K extends keyof HTMLElementEventMap>(
   eventName: K,
-  options?: EventListenerOptions,
+  options?: AddEventListenerOptions,
 ) => {
   const element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement as EventTarget;
 
@@ -18,14 +18,14 @@ export const createRxHostListener = <K extends keyof HTMLElementEventMap>(
 export const applyHostListener = <K extends keyof HTMLElementEventMap>(
   eventName: K,
   handler: (event: HTMLElementEventMap[K]) => void,
-  options?: EventListenerOptions,
+  options?: AddEventListenerOptions,
 ) => createRxHostListener(eventName, options).subscribe(handler);
 
 export const applyHostListeners = (
   listeners: Partial<{
     [K in keyof HTMLElementEventMap]: (event: HTMLElementEventMap[K]) => void;
   }>,
-  options?: EventListenerOptions,
+  options?: AddEventListenerOptions,
 ) => {
   for (const eventName in listeners) {
     const handler = listeners[eventName as keyof HTMLElementEventMap];

@@ -12,7 +12,7 @@ import { DATE_PICKER_HOST, DatePickerSurfaceContext } from './date-picker-host';
 export class DatePickerSurfaceDirective {
   private host = inject(DATE_PICKER_HOST, { optional: true });
   public templateRef = inject<TemplateRef<DatePickerSurfaceContext>>(TemplateRef);
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerSingleton(this.host?.registeredSurface, this);

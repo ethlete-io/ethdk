@@ -17,16 +17,9 @@ tester.run('no-locale-id', rule, {
     { code: `import { inject, signal } from '@angular/core';` },
     { code: `import { Component, PLATFORM_ID } from '@angular/core';` },
     { code: `inject(MyService);` },
+    { code: `import { LOCALE_ID } from '@angular/core'; const provider = { provide: LOCALE_ID, useValue: 'de' };` },
   ],
   invalid: [
-    {
-      code: `import { LOCALE_ID } from '@angular/core';`,
-      errors: [{ messageId: 'noLocaleId' }],
-    },
-    {
-      code: `import { inject, LOCALE_ID } from '@angular/core';`,
-      errors: [{ messageId: 'noLocaleId' }],
-    },
     {
       code: `const locale = inject(LOCALE_ID);`,
       errors: [{ messageId: 'noLocaleId' }],

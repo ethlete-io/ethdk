@@ -273,7 +273,12 @@ const noLegacyPrepareWithoutInjector = {
   },
   create(context) {
     const sourceCode = context.sourceCode;
-    const creatorPattern = new RegExp(context.options[0]?.creatorPattern ?? '^legacy');
+    let creatorPattern;
+    try {
+      creatorPattern = new RegExp(context.options[0]?.creatorPattern ?? '^legacy');
+    } catch {
+      creatorPattern = /^legacy/u;
+    }
     /** Names known to be legacy creators: imported under the naming convention, or declared locally. */
     const creatorNames = new Set();
 
@@ -297,38 +302,42 @@ const noLegacyPrepareWithoutInjector = {
      * @param {string[]} needed
      */
     const buildCoreImportFix = (needed) => {
-      const coreImport = /** @type {any} */ (
-        sourceCode.ast.body.find(
+      const coreImports = /** @type {any[]} */ (
+        sourceCode.ast.body.filter(
           (node) =>
             node.type === 'ImportDeclaration' &&
             node.source.type === 'Literal' &&
             node.source.value === '@angular/core',
         )
       );
+      const existing = new Set(
+        coreImports.flatMap((coreImport) =>
+          coreImport.specifiers
+            .filter((specifier) => specifier.type === 'ImportSpecifier' && coreImport.importKind !== 'type')
+            .map((specifier) => specifier.imported.name),
+        ),
+      );
+      const missing = needed.filter((name) => !existing.has(name));
+      if (missing.length === 0) return null;
 
-      if (!coreImport) {
+      const editableImport = coreImports.find(
+        (coreImport) =>
+          coreImport.importKind !== 'type' &&
+          coreImport.specifiers.length > 0 &&
+          coreImport.specifiers.every((specifier) => specifier.type === 'ImportSpecifier'),
+      );
+
+      if (!editableImport) {
         const imports = sourceCode.ast.body.filter((node) => node.type === 'ImportDeclaration');
-        const lastImport = imports[imports.length - 1];
-        const text = `import { ${needed.join(', ')} } from '@angular/core';`;
+        const lastImport = coreImports.at(-1) ?? imports.at(-1);
+        const text = `import { ${missing.join(', ')} } from '@angular/core';`;
 
         return lastImport
           ? /** @param {any} fixer */ (fixer) => fixer.insertTextAfter(lastImport, `\n${text}`)
           : /** @param {any} fixer */ (fixer) => fixer.insertTextBefore(sourceCode.ast.body[0], `${text}\n\n`);
       }
 
-      const specifiers = coreImport.specifiers ?? [];
-
-      if (specifiers.some(/** @param {any} specifier */ (specifier) => specifier.type !== 'ImportSpecifier')) {
-        return null;
-      }
-
-      const existing = new Set(specifiers.map(/** @param {any} specifier */ (specifier) => specifier.imported.name));
-      const missing = needed.filter((name) => !existing.has(name));
-      const lastSpecifier = specifiers[specifiers.length - 1];
-
-      if (missing.length === 0 || !lastSpecifier) {
-        return null;
-      }
+      const lastSpecifier = editableImport.specifiers.at(-1);
 
       return /** @param {any} fixer */ (fixer) => fixer.insertTextAfter(lastSpecifier, `, ${missing.join(', ')}`);
     };
@@ -366,12 +375,6 @@ const noLegacyPrepareWithoutInjector = {
             hasTrailingComma ? tokenAfter : lastProperty,
             `${hasTrailingComma ? '' : ','}${indentation}${injectorProperty}${isMultiline ? ',' : ''}`,
           );
-      }
-
-      // `prepare(args)` - spreading is the only way to keep whatever the variable holds.
-      if (argument.type === 'Identifier' || argument.type === 'MemberExpression') {
-        return /** @param {any} fixer */ (fixer) =>
-          fixer.replaceText(argument, `{ ...${sourceCode.getText(argument)}, ${injectorProperty} }`);
       }
 
       return null;
@@ -457,7 +460,20 @@ const noLegacyPrepareWithoutInjector = {
 
         const classBody = findEnclosingClassBody(node);
         const existingInjector = classBody ? findInjectorMemberName(classBody) : null;
-        const injectorName = existingInjector ?? 'injector';
+        const declaredNames = new Set(
+          classBody?.body
+            .map((member) => (member.key?.type === 'Identifier' ? member.key.name : null))
+            .filter(Boolean) ?? [],
+        );
+        let injectorName = existingInjector ?? 'injector';
+        if (!existingInjector && declaredNames.has(injectorName)) {
+          injectorName = 'queryInjector';
+          let suffix = 2;
+          while (declaredNames.has(injectorName)) {
+            injectorName = `queryInjector${suffix}`;
+            suffix += 1;
+          }
+        }
         const argumentFix = classBody ? buildArgumentFix(node, `this.${injectorName}`) : null;
 
         context.report({

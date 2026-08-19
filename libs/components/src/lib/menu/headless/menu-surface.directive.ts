@@ -17,7 +17,7 @@ export class MenuSurfaceDirective {
   private menu = inject(MenuDirective, { optional: true });
   public templateRef = inject<TemplateRef<MenuSurfaceContext>>(TemplateRef);
   private destroyRef = inject(DestroyRef);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   constructor() {
     this.menu?.registeredSurface.set(this);

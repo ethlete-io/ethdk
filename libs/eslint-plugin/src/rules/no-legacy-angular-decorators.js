@@ -379,6 +379,14 @@ const rule = {
                 const expression = anyNode.expression;
                 if (expression.type !== 'CallExpression' && expression.type !== 'Identifier') return null;
 
+                if (
+                  expression.type === 'CallExpression' &&
+                  expression.arguments.length > 0 &&
+                  (expression.arguments[0]?.type !== 'Literal' || typeof expression.arguments[0].value !== 'string')
+                ) {
+                  return null;
+                }
+
                 const bindingName =
                   expression.type === 'CallExpression'
                     ? expression.arguments[0]?.type === 'Literal' && typeof expression.arguments[0].value === 'string'

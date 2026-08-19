@@ -51,5 +51,15 @@ tester.run('no-readonly-signal', rule, {
       output: `class Foo { data$ = toSignal(obs$); }`,
       errors: [{ messageId: 'noReadonlySignal' }],
     },
+    {
+      code: `class Foo { @Host({ readonly: true }) readonly count = signal(0); }`,
+      output: `class Foo { @Host({ readonly: true }) count = signal(0); }`,
+      errors: [{ messageId: 'noReadonlySignal' }],
+    },
+    {
+      code: `class Foo { private readonly host = injectHostElement(); }`,
+      output: `class Foo { private host = injectHostElement(); }`,
+      errors: [{ messageId: 'noReadonlySignal' }],
+    },
   ],
 });

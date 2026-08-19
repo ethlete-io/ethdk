@@ -63,6 +63,7 @@ const setupDragObservable = (
   commitThreshold: number,
 ): Observable<DragGestureEvent> => {
   const { pointerId, clientX: startX, clientY: startY } = startEvent;
+  const document = el.ownerDocument;
 
   let cancelled = false;
   let endX = startX;

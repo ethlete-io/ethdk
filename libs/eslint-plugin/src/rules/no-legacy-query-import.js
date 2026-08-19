@@ -48,7 +48,7 @@ const LEGACY_SYMBOLS = {
   queryStateErrorSignal: { to: '`query.error()`', docs: '/query/queries#the-query-object' },
   queryStateLoadingSignal: { to: '`query.loading()`', docs: '/query/queries#the-query-object' },
   validateWithV2Query: { to: '`validateWithQuery`', docs: '/query/errors#validating-against-the-server-as-the-user-types' }, // prettier-ignore
-  provideQueryClientForDevtools: { to: '`provideQueryDevtools()` from `@ethlete/query-devtools`, which registers every client at once', docs: '/query-devtools/' }, // prettier-ignore
+  provideQueryClientForDevtools: { to: '`provideQueryDevtools()` from `@ethlete/query`, which registers every client at once', docs: '/query-devtools/' }, // prettier-ignore
 };
 
 /** The current-system counterparts of the names the legacy system had to give up its half of. */

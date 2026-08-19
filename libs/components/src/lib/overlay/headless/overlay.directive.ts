@@ -37,7 +37,7 @@ import { OverlayTriggerDirective } from './overlay-trigger.directive';
 export class OverlayDirective {
   private destroyRef = inject(DestroyRef);
   private overlayManager = injectOverlayManager();
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public mode = input<OverlayMode>('non-modal');
   // eslint-disable-next-line ethlete/no-native-html-input-name -- deliberately sets the overlay's ARIA role

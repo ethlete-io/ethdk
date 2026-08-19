@@ -14,6 +14,7 @@ export default async function migrateSurfaceInteractionSwatch(tree: Tree, schema
   console.log(`   Scope: ${scope.describe()}`);
 
   let filesChanged = 0;
+  let unresolvedCount = 0;
 
   scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.d.ts')) return;
@@ -23,6 +24,11 @@ export default async function migrateSurfaceInteractionSwatch(tree: Tree, schema
     if (!before) return;
 
     const result = migrateInteractionSwatchInFile(filePath, before);
+
+    for (const expression of result.unresolved ?? []) {
+      unresolvedCount++;
+      console.warn(`   ⚠ ${filePath}: could not resolve interactionColor value ${expression}`);
+    }
 
     if (!result.changed) return;
 
@@ -36,6 +42,10 @@ export default async function migrateSurfaceInteractionSwatch(tree: Tree, schema
       ? '   Nothing to migrate.\n'
       : `\n✅ Migrated ${filesChanged} file(s). Regenerate your surface CSS with \`nx g @ethlete/core:tailwind-4-surface-theme\`.\n`,
   );
+
+  if (unresolvedCount > 0) {
+    console.warn(`   Review ${unresolvedCount} unresolved interactionColor value(s) manually.\n`);
+  }
 
   if (!schema.skipFormat) {
     await formatFiles(tree);

@@ -52,7 +52,80 @@ const lint = (code, settings) => {
   );
 };
 
+const lintAndFix = (code) => {
+  const linter = new Linter({ configType: 'flat' });
+  return linter.verifyAndFix(
+    code,
+    [
+      {
+        ...plugin.configs.recommendedTs,
+        plugins: {
+          ...plugin.configs.recommendedTs.plugins,
+          '@typescript-eslint': tsPlugin,
+          '@angular-eslint': angularEslint,
+        },
+        languageOptions: {
+          parser: tsParser,
+          ecmaVersion: 2022,
+          sourceType: 'module',
+        },
+      },
+    ],
+    { filename: 'test.ts' },
+  );
+};
+
+const lintSpec = (code) => {
+  const linter = new Linter({ configType: 'flat' });
+  return linter.verify(
+    code,
+    [
+      {
+        ...plugin.configs.recommendedTs,
+        plugins: {
+          ...plugin.configs.recommendedTs.plugins,
+          '@typescript-eslint': tsPlugin,
+          '@angular-eslint': angularEslint,
+        },
+        languageOptions: {
+          parser: tsParser,
+          ecmaVersion: 2022,
+          sourceType: 'module',
+        },
+      },
+      plugin.configs.recommendedSpec,
+    ],
+    { filename: 'test.spec.ts' },
+  );
+};
+
 const ruleIds = (messages) => [...new Set(messages.map((m) => m.ruleId))];
+
+test('recommended fixers converge when removing OnPush and adding ViewEncapsulation.None', () => {
+  const result = lintAndFix(`import { ChangeDetectionStrategy, Component } from '@angular/core';
+@Component({
+  selector: 'et-test',
+  template: '',
+  styleUrl: './test.css',
+  imports: [ButtonDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+  class TestComponent {}`);
+
+  expect(result.output).not.toContain('ChangeDetectionStrategy');
+  expect(result.messages.some((message) => message.message.includes('ChangeDetectionStrategy'))).toBe(false);
+});
+
+test('recommendedSpec relaxes DOM and async test code', () => {
+  const messages = lintSpec(`it('works', async () => {
+  const element = document.querySelector('button');
+  await element?.click();
+});`);
+
+  expect(ruleIds(messages)).not.toContain('ethlete/no-async-await');
+  expect(ruleIds(messages)).not.toContain('ethlete/no-dom-query');
+  expect(ruleIds(messages)).not.toContain('no-restricted-globals');
+});
 
 // ── @typescript-eslint/consistent-type-definitions ──────────────────────────
 
@@ -113,12 +186,16 @@ test('max-params: 2 params is valid', () => {
   expect(ruleIds(msgs)).not.toContain('max-params');
 });
 
-// ── no-restricted-syntax: enum ────────────────────────────────────────────────
+// ── no-enum ───────────────────────────────────────────────────────────────────
 
-test('no-restricted-syntax: enum is flagged', () => {
+test('no-enum: enum is flagged', () => {
   const msgs = lint(`enum Color { Red, Green }`);
-  expect(msgs.length).toBeGreaterThan(0);
-  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('enum'))).toBe(true);
+  expect(ruleIds(msgs)).toContain('ethlete/no-enum');
+});
+
+test('no-enum: const enum is flagged', () => {
+  const msgs = lint(`const enum Color { Red = 'red' }`);
+  expect(ruleIds(msgs)).toContain('ethlete/no-enum');
 });
 
 // ── no-async-await ────────────────────────────────────────────────────────────
@@ -498,8 +575,8 @@ test('no-angular-seo-services: import Meta from platform-browser is flagged', ()
   expect(ruleIds(msgs)).toContain('ethlete/no-angular-seo-services');
 });
 
-test('no-angular-seo-services: injectTitleBinding from ethlete/core is valid', () => {
-  const msgs = lint(`import { injectTitleBinding } from '@ethlete/core';`);
+test('no-angular-seo-services: applyHeadTitleBinding from ethlete/core is valid', () => {
+  const msgs = lint(`import { applyHeadTitleBinding } from '@ethlete/core';`);
   expect(ruleIds(msgs)).not.toContain('ethlete/no-angular-seo-services');
 });
 
@@ -665,9 +742,9 @@ test('no-window-location: injectRoute from @ethlete/core is valid', () => {
 });
 
 // ── ethlete/no-locale-id ──────────────────────────────────────────────────────
-test('no-locale-id: import LOCALE_ID from @angular/core is flagged', () => {
+test('no-locale-id: importing LOCALE_ID for provider registration is allowed', () => {
   const msgs = lint(`import { LOCALE_ID } from '@angular/core';`);
-  expect(ruleIds(msgs)).toContain('ethlete/no-locale-id');
+  expect(ruleIds(msgs)).not.toContain('ethlete/no-locale-id');
 });
 
 test('no-locale-id: inject(LOCALE_ID) is flagged', () => {

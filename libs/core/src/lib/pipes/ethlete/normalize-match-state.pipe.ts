@@ -8,6 +8,10 @@ export class NormalizeMatchStatePipe implements PipeTransform {
 }
 
 export const normalizeMatchState = (match: MatchListView | null | undefined) => {
+  if (!match) {
+    return null;
+  }
+
   if (match?.isCompletedByReferee) {
     return MatchStateType.AUTO_WIN;
   } else if (match?.status === 'preparing') {
@@ -16,7 +20,7 @@ export const normalizeMatchState = (match: MatchListView | null | undefined) => 
     return MatchStateType.LIVE;
   } else if (match?.status === 'published' || match?.status === 'finished') {
     return MatchStateType.POST_MATCH;
-  } else if (match?.round.state !== 'preparing') {
+  } else if (match.round.state === 'preparing') {
     return MatchStateType.PREPARING_ROUND;
   }
 

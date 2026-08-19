@@ -130,25 +130,27 @@ export class ScrollableComponent {
 
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>() });
-  direction = input('horizontal', { transform: typedBreakpointTransform<ScrollableDirection>() });
+  itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>('auto') });
+  direction = input('horizontal', { transform: typedBreakpointTransform<ScrollableDirection>('horizontal') });
   scrollableRole = input<string | null>(null);
   scrollableClass = input<NgClassType | null>(null);
-  renderNavigation = input(false, { transform: boolBreakpointTransform() });
-  renderMasks = input(true, { transform: boolBreakpointTransform() });
-  renderButtons = input(true, { transform: boolBreakpointTransform() });
-  buttonPosition = input('inside', { transform: typedBreakpointTransform<ScrollableButtonPosition>() });
-  renderScrollbars = input(false, { transform: boolBreakpointTransform() });
-  stickyButtons = input(false, { transform: boolBreakpointTransform() });
-  cursorDragScroll = input(true, { transform: boolBreakpointTransform() });
-  disableActiveElementScrolling = input(false, { transform: boolBreakpointTransform() });
-  scrollMode = input('container', { transform: typedBreakpointTransform<ScrollableScrollMode>() });
-  snap = input(false, { transform: boolBreakpointTransform() });
-  scrollMargin = input(0, { transform: numberBreakpointTransform() });
-  scrollOrigin = input('auto', { transform: typedBreakpointTransform<ScrollableScrollOrigin>() });
-  darkenNonIntersectingItems = input(false, { transform: boolBreakpointTransform() });
-  showLoadingTemplate = input(false, { transform: boolBreakpointTransform() });
-  loadingTemplatePosition = input('end', { transform: typedBreakpointTransform<ScrollableLoadingTemplatePosition>() });
+  renderNavigation = input(false, { transform: boolBreakpointTransform(false) });
+  renderMasks = input(true, { transform: boolBreakpointTransform(true) });
+  renderButtons = input(true, { transform: boolBreakpointTransform(true) });
+  buttonPosition = input('inside', { transform: typedBreakpointTransform<ScrollableButtonPosition>('inside') });
+  renderScrollbars = input(false, { transform: boolBreakpointTransform(false) });
+  stickyButtons = input(false, { transform: boolBreakpointTransform(false) });
+  cursorDragScroll = input(true, { transform: boolBreakpointTransform(true) });
+  disableActiveElementScrolling = input(false, { transform: boolBreakpointTransform(false) });
+  scrollMode = input('container', { transform: typedBreakpointTransform<ScrollableScrollMode>('container') });
+  snap = input(false, { transform: boolBreakpointTransform(false) });
+  scrollMargin = input(0, { transform: numberBreakpointTransform(0) });
+  scrollOrigin = input('auto', { transform: typedBreakpointTransform<ScrollableScrollOrigin>('auto') });
+  darkenNonIntersectingItems = input(false, { transform: boolBreakpointTransform(false) });
+  showLoadingTemplate = input(false, { transform: boolBreakpointTransform(false) });
+  loadingTemplatePosition = input('end', {
+    transform: typedBreakpointTransform<ScrollableLoadingTemplatePosition>('end'),
+  });
 
   scrollable = viewChild<ElementRef<HTMLElement>>('scrollable');
   scrollObserver = viewChild.required(ScrollObserverDirective);

@@ -147,15 +147,17 @@ const noEffectCleanupReturn = {
           return;
         }
 
-        // Only the mechanical shape is auto-fixed: a zero-parameter callback whose single `return` hands
-        // back a function literal. With an existing parameter, an early `return`, or a returned reference,
-        // the intent needs a human.
-        // The parameter list's `(` — the first one before the body, so this works for `() => {}` and
-        // `function () {}` alike (their first token differs).
         const openParen = sourceCode
           .getTokens(callback)
           .find((token) => token.value === '(' && token.range[1] <= callback.body.range[0]);
-        const fixable = callback.params.length === 0 && returns.length === 1 && cleanupReturns.length === 1;
+        const callbackScope = sourceCode.getScope(callback);
+        const hasOnCleanupBinding = callbackScope.variables.some((variable) => variable.name === 'onCleanup');
+        const fixable =
+          callback.params.length === 0 &&
+          returns.length === 1 &&
+          cleanupReturns.length === 1 &&
+          callback.body.body.at(-1) === cleanupReturns[0] &&
+          !hasOnCleanupBinding;
 
         for (const statement of cleanupReturns) {
           context.report({

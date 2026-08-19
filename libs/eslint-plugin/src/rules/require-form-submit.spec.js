@@ -75,6 +75,14 @@ tester.run('require-form-submit', rule, {
       code: `<button [type]="isSubmit() ? 'submit' : 'button'">Save</button>`,
       filename: 'test.html',
     },
+    {
+      code: `<button type="submit">Save</button>`,
+      filename: 'test.html',
+    },
+    {
+      code: `<ng-template #actions><button type="submit">Save</button></ng-template>`,
+      filename: 'test.html',
+    },
   ],
   invalid: [
     {
@@ -82,23 +90,6 @@ tester.run('require-form-submit', rule, {
       filename: 'test.html',
       errors: [{ messageId: 'missingSubmitHandler' }],
     },
-    {
-      code: `<button type="submit">Save</button>`,
-      filename: 'test.html',
-      errors: [{ messageId: 'submitOutsideForm' }],
-    },
-    {
-      code: `<input type="submit" value="Save" />`,
-      filename: 'test.html',
-      errors: [{ messageId: 'submitOutsideForm' }],
-    },
-    // The form closed before the button, so the button is not in it
-    {
-      code: `<form (ngSubmit)="save()"></form><button type="submit">Save</button>`,
-      filename: 'test.html',
-      errors: [{ messageId: 'submitOutsideForm' }],
-    },
-    // Both halves missing, reported once each
     {
       code: `<form><button type="submit">Save</button></form>`,
       filename: 'test.html',

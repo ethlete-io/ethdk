@@ -1,4 +1,4 @@
-import { Directive, ElementRef, inject } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, inject } from '@angular/core';
 import { ScrollObserverDirective } from './scroll-observer.directive';
 
 @Directive({
@@ -9,6 +9,6 @@ export class ScrollObserverStartDirective {
   private host = inject(ScrollObserverDirective);
 
   constructor() {
-    this.host._registerStart(this.elementRef);
+    inject(DestroyRef).onDestroy(this.host.registerStart(this.elementRef));
   }
 }

@@ -163,6 +163,7 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       if (config.property) return `property="${config.property}"`;
       if (config.httpEquiv) return `http-equiv="${config.httpEquiv}"`;
       if (config.itemprop) return `itemprop="${config.itemprop}"`;
+      if (config.charset) return `charset="${config.charset}"`;
       return config.key ?? '';
     };
 
@@ -320,7 +321,7 @@ export const applyDescriptionBinding = /* @__PURE__ */ createPropertyBinding(
 export const applyKeywordsBinding = (binding: MaybeSignal<string[] | null | undefined>) => {
   applyMetaBinding(
     computed(() => {
-      const keywords = untracked(() => (isSignal(binding) ? binding() : binding));
+      const keywords = isSignal(binding) ? binding() : binding;
       return keywords && keywords.length > 0 ? { name: 'keywords', content: keywords.join(', ') } : null;
     }),
   );
@@ -345,7 +346,7 @@ export type RobotsConfig = {
 export const applyRobotsBinding = (binding: MaybeSignal<RobotsConfig | null | undefined>) => {
   applyMetaBinding(
     computed(() => {
-      const config = untracked(() => (isSignal(binding) ? binding() : binding));
+      const config = isSignal(binding) ? binding() : binding;
       if (!config) return null;
 
       const directives: string[] = [];
@@ -544,20 +545,20 @@ export const applySocialMediaBindings = (config: SocialMediaConfig) => {
 
   if (config.openGraph || config.title || config.description || config.image || config.url) {
     applyOpenGraphBindings({
+      ...config.openGraph,
       title: config.openGraph?.title ?? config.title,
       description: config.openGraph?.description ?? config.description,
       image: config.openGraph?.image ?? config.image,
       url: config.openGraph?.url ?? config.url,
-      ...config.openGraph,
     });
   }
 
   if (config.twitter || config.title || config.description || config.image) {
     applyTwitterCardBindings({
+      ...config.twitter,
       title: config.twitter?.title ?? config.title,
       description: config.twitter?.description ?? config.description,
       image: config.twitter?.image ?? config.image,
-      ...config.twitter,
     });
   }
 

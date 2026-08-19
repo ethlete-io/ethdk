@@ -36,7 +36,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
     state: _state.asReadonly(),
     componentInstance: _componentInstance.asReadonly(),
 
-    // Internal - driven by overlay-runtime.ts
+    /** @internal */
     beforeOpenedSubject,
 
     close(result?: TResult, source: OverlayRuntimeCloseSource = 'api') {
@@ -86,6 +86,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
       return afterClosedSubject.asObservable();
     },
 
+    /** @internal */
     attachComponentRef(componentRef: ComponentRef<TComponent>) {
       _componentInstance.set(componentRef.instance);
     },
@@ -120,6 +121,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
       backdropUpdater?.(hasBackdrop);
     },
 
+    /** @internal */
     markOpened() {
       if (_state() !== 'mounting') {
         return;
@@ -130,6 +132,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
       afterOpenedSubject.complete();
     },
 
+    /** @internal */
     beginClose(closeEvent: OverlayRuntimeCloseEvent<TResult>) {
       if (_state() === 'closing' || _state() === 'closed') {
         return false;
@@ -142,6 +145,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
       return true;
     },
 
+    /** @internal */
     finishClose(closeEvent: OverlayRuntimeCloseEvent<TResult>) {
       if (_state() === 'closed') {
         return;

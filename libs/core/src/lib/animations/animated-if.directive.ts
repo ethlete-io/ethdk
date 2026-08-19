@@ -1,6 +1,6 @@
 import { Directive, InjectionToken, TemplateRef, ViewContainerRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { filter, of, switchMap, tap } from 'rxjs';
+import { filter, of, switchMap, take, tap } from 'rxjs';
 import { ANIMATED_LIFECYCLE_TOKEN } from './animated-lifecycle.directive';
 
 export const ANIMATED_IF_TOKEN = new InjectionToken<AnimatedIfDirective>('ANIMATED_IF_TOKEN');
@@ -46,6 +46,7 @@ export class AnimatedIfDirective {
 
           return this.animatedLifecycle.state$.pipe(
             filter((state) => state === 'left'),
+            take(1),
             tap(() => {
               this.viewContainerRef.clear();
               this.hasView = false;

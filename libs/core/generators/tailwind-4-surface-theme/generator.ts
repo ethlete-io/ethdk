@@ -1,5 +1,5 @@
 import { Tree, formatFiles, logger, visitNotIgnoredFiles } from '@nx/devkit';
-import { ObjectLiteralExpression, Project, SyntaxKind } from 'ts-morph';
+import { Expression, ObjectLiteralExpression, Project, SourceFile, SyntaxKind } from 'ts-morph';
 
 //#region Types
 
@@ -124,6 +124,10 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
 
   logger.log('\n🎨 Generating Tailwind surface theme CSS...');
   const css = generateSurfaceThemeCss(themes, prefix, runtimePrefix, schema);
+  const typesOutputPath = schema.typesOutputPath ?? outputPath.replace(/\.css$/, '.d.ts');
+  if (typesOutputPath === outputPath) {
+    throw new Error('A custom outputPath must end in .css or be paired with a distinct typesOutputPath.');
+  }
 
   tree.write(outputPath, css);
   logger.log(`✅ Generated Tailwind surface themes at: ${outputPath}`);
@@ -131,7 +135,6 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   // Generate the `EthleteSurfaceThemeNameRegistry` augmentation, so `etProvideSurface` (and
   // anything else that accepts a `RegisteredSurfaceThemeName`) is checked/autocompleted
   // against this app's actual surface theme names, instead of a plain `string`.
-  const typesOutputPath = schema.typesOutputPath || outputPath.replace(/\.css$/, '.d.ts');
   const typesDts = generateSurfaceThemeNameTypes(themes, schema);
 
   tree.write(typesOutputPath, typesDts);
@@ -200,8 +203,11 @@ function extractSurfaceThemesFromContent(content: string, filePath: string): Sur
   const elements = initializer.getElements();
 
   for (const element of elements) {
+    let themeObj: Expression | undefined;
+    let name = '<inline>';
+
     if (element.isKind(SyntaxKind.Identifier)) {
-      const name = element.getText();
+      name = element.getText();
       const themeDecl = exportedDeclarations.find((decl) => decl.getName() === name);
 
       if (!themeDecl) {
@@ -209,31 +215,31 @@ function extractSurfaceThemesFromContent(content: string, filePath: string): Sur
         continue;
       }
 
-      let themeObj = themeDecl.getInitializer();
+      themeObj = themeDecl.getInitializer();
       if (!themeObj) {
         logger.warn(`⚠️  Surface theme ${name} has no initializer`);
         continue;
       }
+    } else {
+      themeObj = element;
+    }
 
-      // Handle 'as const' and 'satisfies X' wrappers on individual theme objects, in
-      // either order (e.g. `{...} satisfies SurfaceTheme`, `{...} as const`, or both).
-      while (themeObj.isKind(SyntaxKind.AsExpression) || themeObj.isKind(SyntaxKind.SatisfiesExpression)) {
-        themeObj = themeObj.getExpression();
-      }
+    while (themeObj.isKind(SyntaxKind.AsExpression) || themeObj.isKind(SyntaxKind.SatisfiesExpression)) {
+      themeObj = themeObj.getExpression();
+    }
 
-      if (!themeObj.isKind(SyntaxKind.ObjectLiteralExpression)) {
-        logger.warn(`⚠️  Surface theme ${name} is not an object literal`);
-        continue;
-      }
+    if (!themeObj.isKind(SyntaxKind.ObjectLiteralExpression)) {
+      logger.warn(`⚠️  Surface theme ${name} is not an object literal`);
+      continue;
+    }
 
-      try {
-        const theme = parseSurfaceThemeObject(themeObj);
-        themes.push(theme);
-      } catch (error) {
-        logger.warn(
-          `⚠️  Failed to parse surface theme ${name}: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
+    try {
+      const theme = parseSurfaceThemeObject(themeObj, sourceFile);
+      themes.push(theme);
+    } catch (error) {
+      logger.warn(
+        `⚠️  Failed to parse surface theme ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -257,6 +263,25 @@ const SWATCH_KEYS = ['color', 'onColor', 'inkColor'] as const;
 
 const isSwatchKey = (name: string): name is (typeof SWATCH_KEYS)[number] => SWATCH_KEYS.some((key) => key === name);
 
+const resolveObjectLiteral = (expression: Expression, sourceFile: SourceFile): ObjectLiteralExpression | null => {
+  let resolved = expression;
+
+  while (resolved.isKind(SyntaxKind.AsExpression) || resolved.isKind(SyntaxKind.SatisfiesExpression)) {
+    resolved = resolved.getExpression();
+  }
+
+  if (resolved.isKind(SyntaxKind.Identifier)) {
+    const declaration = sourceFile
+      .getVariableDeclarations()
+      .find((candidate) => candidate.getName() === resolved.getText());
+    const initializer = declaration?.getInitializer();
+
+    return initializer ? resolveObjectLiteral(initializer, sourceFile) : null;
+  }
+
+  return resolved.isKind(SyntaxKind.ObjectLiteralExpression) ? resolved : null;
+};
+
 function parseInteractionColorMap(obj: ObjectLiteralExpression): Partial<SurfaceInteractionColorMap> {
   const map: Partial<SurfaceInteractionColorMap> = {};
 
@@ -274,7 +299,11 @@ function parseInteractionColorMap(obj: ObjectLiteralExpression): Partial<Surface
   return map;
 }
 
-function parseInteractionColor(obj: ObjectLiteralExpression, themeName: string): SurfaceInteractionColor | undefined {
+function parseInteractionColor(
+  obj: ObjectLiteralExpression,
+  themeName: string,
+  sourceFile: SourceFile,
+): SurfaceInteractionColor {
   const swatch: Partial<SurfaceInteractionColor> = {};
 
   for (const prop of obj.getProperties()) {
@@ -291,14 +320,23 @@ function parseInteractionColor(obj: ObjectLiteralExpression, themeName: string):
       );
     }
 
-    if (!initializer?.isKind(SyntaxKind.ObjectLiteralExpression) || !isSwatchKey(name)) continue;
+    if (!initializer || !isSwatchKey(name)) continue;
 
-    const map = parseInteractionColorMap(initializer);
+    const mapObject = resolveObjectLiteral(initializer, sourceFile);
+    if (!mapObject) {
+      throw new Error(`Surface theme "${themeName}" has an interactionColor.${name} value that cannot be resolved.`);
+    }
+
+    const map = parseInteractionColorMap(mapObject);
 
     if (name === 'color') {
-      if (map.default && map.hover && map.focus && map.active && map.disabled) {
-        swatch.color = map as SurfaceInteractionColorMap;
+      if (!map.default || !map.hover || !map.focus || !map.active || !map.disabled) {
+        throw new Error(
+          `Surface theme "${themeName}" must define default, hover, focus, active and disabled interaction colors.`,
+        );
       }
+
+      swatch.color = map as SurfaceInteractionColorMap;
 
       continue;
     }
@@ -308,10 +346,14 @@ function parseInteractionColor(obj: ObjectLiteralExpression, themeName: string):
     }
   }
 
-  return swatch.color ? (swatch as SurfaceInteractionColor) : undefined;
+  if (!swatch.color) {
+    throw new Error(`Surface theme "${themeName}" interactionColor must define a color swatch.`);
+  }
+
+  return swatch as SurfaceInteractionColor;
 }
 
-function parseSurfaceThemeObject(obj: ObjectLiteralExpression): SurfaceTheme {
+function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile): SurfaceTheme {
   const properties = obj.getProperties();
   const theme: Partial<SurfaceTheme> = {};
   let interactionColorObj: ObjectLiteralExpression | null = null;
@@ -335,8 +377,11 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression): SurfaceTheme {
       continue;
     }
 
-    if (propName === 'interactionColor' && initializer.isKind(SyntaxKind.ObjectLiteralExpression)) {
-      interactionColorObj = initializer;
+    if (propName === 'interactionColor') {
+      interactionColorObj = resolveObjectLiteral(initializer, sourceFile);
+      if (!interactionColorObj) {
+        throw new Error('Surface theme interactionColor must be an inline or same-file object literal.');
+      }
       continue;
     }
 
@@ -379,7 +424,7 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression): SurfaceTheme {
   }
 
   if (interactionColorObj) {
-    theme.interactionColor = parseInteractionColor(interactionColorObj, theme.name);
+    theme.interactionColor = parseInteractionColor(interactionColorObj, theme.name, sourceFile);
   }
 
   return theme as SurfaceTheme;

@@ -37,15 +37,10 @@ export const inferMimeType = (srcset: string) => {
   const cleanedUrl = urlParts.join(' ');
 
   const queryPart = cleanedUrl.split('?')[1] ?? '';
-  const containsFm = queryPart.startsWith('fm=') || queryPart.includes('&fm=');
   let fileExtension: string | null = null;
 
-  if (containsFm) {
-    const fmIndex = queryPart.indexOf('fm=');
-    const fmValue = queryPart
-      .substring(fmIndex + 3)
-      .split('&')[0]
-      ?.toLowerCase();
+  if (queryPart) {
+    const fmValue = new URLSearchParams(queryPart).get('fm')?.toLowerCase();
 
     if (fmValue) {
       fileExtension = fmValue;
@@ -71,7 +66,7 @@ export const inferMimeType = (srcset: string) => {
       case 'gif':
         return 'image/gif';
       case 'ico':
-        return 'image/vdn.microsoft.icon';
+        return 'image/vnd.microsoft.icon';
       case 'jpg':
       case 'jpeg':
         return 'image/jpeg';
@@ -143,7 +138,7 @@ export const inferMimeType = (srcset: string) => {
       case 'mpeg':
         return 'video/mpeg';
       case 'mpkg':
-        return 'tapplication/vnd.apple.installer+xml';
+        return 'application/vnd.apple.installer+xml';
       case 'odp':
         return 'application/vnd.oasis.opendocument.presentation';
       case 'ods':

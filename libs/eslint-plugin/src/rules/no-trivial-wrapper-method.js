@@ -124,6 +124,9 @@ const noTrivialWrapperMethod = {
         const methodName = node.key.type === 'Identifier' ? node.key.name : null;
         if (!methodName) return;
 
+        const classNode = node.parent?.parent;
+        if (node.override || classNode?.superClass || classNode?.implements?.length) return;
+        if (node.static && methodName === 'ngTemplateContextGuard') return;
         if (CONTRACT_METHOD_NAMES.has(methodName) && isInAngularClass(node)) return;
 
         const callee = callExpr.callee;

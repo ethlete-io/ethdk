@@ -23,7 +23,7 @@ export type {
   exportAs: 'etSchedulerTimeGrid',
 })
 export class SchedulerTimeGridDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private scheduler = inject(SchedulerDirective, { optional: true });
 

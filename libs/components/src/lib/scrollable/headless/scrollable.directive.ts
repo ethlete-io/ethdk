@@ -64,16 +64,16 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
   },
 })
 export class ScrollableDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   // --- Inputs ---
 
-  public itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>() });
+  public itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>('auto') });
   public direction = input('horizontal', {
-    transform: typedBreakpointTransform<ScrollableDirection>(),
+    transform: typedBreakpointTransform<ScrollableDirection>('horizontal'),
   });
   public scrollMode = input('container', {
-    transform: typedBreakpointTransform<ScrollableScrollMode>(),
+    transform: typedBreakpointTransform<ScrollableScrollMode>('container'),
   });
   public scrollOrigin = input<ScrollableScrollOrigin>('auto');
   public scrollMargin = input(0, { transform: numberAttribute });

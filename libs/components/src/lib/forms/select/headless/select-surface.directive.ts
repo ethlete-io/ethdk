@@ -15,7 +15,7 @@ export type SelectSurfaceContext = {
   exportAs: 'etSelectSurface',
 })
 export class SelectSurfaceDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectSurfaceContext>>(TemplateRef);

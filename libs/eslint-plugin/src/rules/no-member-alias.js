@@ -79,6 +79,16 @@ const getMethodAliasInfo = (node) => {
   return { sourceName: obj.property.name, propName: callee.property.name };
 };
 
+const CONTRACT_METHOD_NAMES = new Set(['blur', 'focus', 'reset']);
+
+/** @param {any} methodNode */
+const isInAngularClass = (methodNode) =>
+  methodNode.parent?.parent?.decorators?.some((decorator) => {
+    const expression = decorator.expression;
+    const callee = expression.type === 'CallExpression' ? expression.callee : expression;
+    return callee.type === 'Identifier' && (callee.name === 'Component' || callee.name === 'Directive');
+  }) ?? false;
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noMemberAlias = {
   meta: {
@@ -119,6 +129,10 @@ const noMemberAlias = {
 
         const sourceName = obj.property.name;
         const propName = value.property.name;
+        const sourceMember = node.parent?.body?.find(
+          (member) => !member.computed && member.key?.type === 'Identifier' && member.key.name === sourceName,
+        );
+        if (node.accessibility === 'private' && sourceMember?.accessibility === 'private') return;
 
         context.report({
           node,
@@ -133,6 +147,9 @@ const noMemberAlias = {
 
         const info = getMethodAliasInfo(node);
         if (!info) return;
+        const classNode = node.parent?.parent;
+        if (node.override || classNode?.superClass || classNode?.implements?.length) return;
+        if (isInAngularClass(node) && CONTRACT_METHOD_NAMES.has(aliasName)) return;
 
         // Only flag when names match — different names indicate an intentional
         // API rename, which is not a pure alias.

@@ -12,7 +12,7 @@ import { SLIDER_TOKEN, SliderThumbLabelBase, SliderThumbLabelContext } from './s
 export class SliderThumbLabelDirective implements SliderThumbLabelBase {
   private slider = inject(SLIDER_TOKEN, { optional: true });
   public templateRef = inject<TemplateRef<SliderThumbLabelContext>>(TemplateRef);
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerSingleton(this.slider?.registeredThumbLabelTemplate, this);

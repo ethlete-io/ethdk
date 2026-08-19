@@ -86,8 +86,28 @@ type TupleSite = {
   isExported: boolean;
 };
 
+const collectImportedFactories = (sourceFile: ts.SourceFile) => {
+  const importedFactories = new Map<string, string>();
+
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    if (!statement.moduleSpecifier.text.startsWith('@ethlete/')) continue;
+
+    const bindings = statement.importClause?.namedBindings;
+    if (!bindings || !ts.isNamedImports(bindings)) continue;
+
+    for (const element of bindings.elements) {
+      const importedName = element.propertyName?.text ?? element.name.text;
+      if (isKnownFactory(importedName)) importedFactories.set(element.name.text, importedName);
+    }
+  }
+
+  return importedFactories;
+};
+
 const findTupleSites = (sourceFile: ts.SourceFile): TupleSite[] => {
   const sites: TupleSite[] = [];
+  const importedFactories = collectImportedFactories(sourceFile);
 
   for (const statement of sourceFile.statements) {
     if (!ts.isVariableStatement(statement) || statement.declarationList.declarations.length !== 1) continue;
@@ -98,14 +118,15 @@ const findTupleSites = (sourceFile: ts.SourceFile): TupleSite[] => {
     const call = declaration.initializer;
     if (!call || !ts.isCallExpression(call) || !ts.isIdentifier(call.expression)) continue;
 
-    const factory = call.expression.text;
-    if (!isKnownFactory(factory)) continue;
+    const factory = importedFactories.get(call.expression.text);
+    if (!factory) continue;
 
     const bindings = declaration.name.elements.map((element) => {
       if (ts.isOmittedExpression(element) || !ts.isIdentifier(element.name)) return null;
 
       return element.name.text;
     });
+    if (bindings.length > POSITION_TO_EXTRACTOR.length) continue;
 
     sites.push({
       statement,
@@ -172,30 +193,30 @@ const rewriteImports = (
   const rewrites: ImportRewrite[] = [];
   const imports = sourceFile.statements.filter(ts.isImportDeclaration);
 
-  /** The declaration the extractors join: the one that already provides them, else any core import. */
+  const replacementsUsed = new Set(
+    [...factoriesUsed].flatMap((factory) => (FACTORY_TO_DEFINE[factory] ? [FACTORY_TO_DEFINE[factory]] : [])),
+  );
   const extractorHost =
     imports.find((statement) => namedImportsOf(statement, sourceFile)?.some((name) => extractorsUsed.has(name))) ??
-    imports.find((statement) => {
-      const names = namedImportsOf(statement, sourceFile);
-
-      return names?.some((name) => FACTORY_TO_DEFINE[name] !== undefined) || isCoreImport(statement);
-    });
+    imports.find(isCoreImport);
 
   for (const statement of imports) {
     const bindings = statement.importClause?.namedBindings;
     if (!bindings || !ts.isNamedImports(bindings)) continue;
 
-    const names = bindings.elements.map((element) => element.getText(sourceFile));
-    // A ref factory keeps its name and its import; only a replaced factory is swapped out.
-    const replaced = names.filter((name) => factoriesUsed.has(name) && FACTORY_TO_DEFINE[name] !== undefined);
-    const extractors = statement === extractorHost ? [...extractorsUsed] : [];
+    const elements = bindings.elements.map((element) => ({
+      text: element.getText(sourceFile),
+      importedName: element.propertyName?.text ?? element.name.text,
+    }));
+    const replaced = elements.filter(
+      (element) => factoriesUsed.has(element.importedName) && FACTORY_TO_DEFINE[element.importedName] !== undefined,
+    );
+    const additions = statement === extractorHost ? [...replacementsUsed, ...extractorsUsed] : [];
 
-    if (replaced.length === 0 && extractors.length === 0) continue;
+    if (replaced.length === 0 && additions.length === 0) continue;
 
-    const kept = names.filter((name) => !replaced.includes(name));
-    const merged = [
-      ...new Set([...kept, ...replaced.map((factory) => FACTORY_TO_DEFINE[factory]!), ...extractors]),
-    ].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    const kept = elements.filter((element) => !replaced.includes(element)).map((element) => element.text);
+    const merged = [...new Set([...kept, ...additions])].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
     rewrites.push({
       start: bindings.getStart(sourceFile),
@@ -209,7 +230,7 @@ const rewriteImports = (
   // Nothing to join - the file only imported a ref factory from another package, so add a core import.
   const anchor = imports[imports.length - 1];
   const position = anchor ? anchor.getEnd() : 0;
-  const statement = `import { ${[...extractorsUsed].sort().join(', ')} } from '@ethlete/core';`;
+  const statement = `import { ${[...replacementsUsed, ...extractorsUsed].sort().join(', ')} } from '@ethlete/core';`;
 
   rewrites.push({ start: position, end: position, text: anchor ? `\n${statement}` : `${statement}\n` });
 
@@ -242,12 +263,7 @@ export const migrateProviderShapeInFile = (filePath: string, content: string): P
 
   if (sites.length === 0) return { content, changed: false, tasks };
 
-  const taken = new Set<string>(
-    sourceFile.statements
-      .filter(ts.isVariableStatement)
-      .flatMap((statement) => statement.declarationList.declarations)
-      .flatMap((declaration) => (ts.isIdentifier(declaration.name) ? [declaration.name.text] : [])),
-  );
+  const taken = collectTopLevelNames(sourceFile);
 
   const factoriesUsed = new Set(sites.map((site) => site.factory));
   const extractorsUsed = new Set(
@@ -283,14 +299,41 @@ export const migrateProviderShapeInFile = (filePath: string, content: string): P
 const collectTasks = (filePath: string, sourceFile: ts.SourceFile, sites: TupleSite[]): ProviderShapeTask[] => {
   const rewritten = new Set(sites.map((site) => site.statement));
   const tasks: ProviderShapeTask[] = [];
+  const importedFactories = collectImportedFactories(sourceFile);
+
+  for (const statement of sourceFile.statements) {
+    if (!ts.isExportDeclaration(statement)) continue;
+    if (!statement.moduleSpecifier || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    if (!statement.moduleSpecifier.text.startsWith('@ethlete/') || !statement.exportClause) continue;
+    if (!ts.isNamedExports(statement.exportClause)) continue;
+
+    for (const element of statement.exportClause.elements) {
+      const exportedName = element.propertyName?.text ?? element.name.text;
+      if (!isKnownFactory(exportedName)) continue;
+      const { line } = sourceFile.getLineAndCharacterOfPosition(element.getStart(sourceFile));
+      tasks.push({
+        id: `provider-shape:${filePath}:${line + 1}`,
+        file: filePath,
+        line: line + 1,
+        message: `The \`${exportedName}\` re-export must be migrated manually because the replacement API returns a provider definition.`,
+      });
+    }
+  }
 
   const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && isKnownFactory(node.expression.text)) {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      const importedFactory = importedFactories.get(node.expression.text);
+      if (!importedFactory || FACTORY_TO_DEFINE[importedFactory] === undefined) {
+        ts.forEachChild(node, visit);
+
+        return;
+      }
+
       const statement = enclosingStatement(node);
 
       if (!statement || !rewritten.has(statement as ts.VariableStatement)) {
         const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
-        const factory = node.expression.text;
+        const factory = importedFactory;
 
         const replacement = FACTORY_TO_DEFINE[factory];
 
@@ -311,6 +354,28 @@ const collectTasks = (filePath: string, sourceFile: ts.SourceFile, sites: TupleS
   visit(sourceFile);
 
   return tasks;
+};
+
+const collectTopLevelNames = (sourceFile: ts.SourceFile) => {
+  const names = new Set<string>();
+
+  for (const statement of sourceFile.statements) {
+    if (ts.isImportDeclaration(statement)) {
+      const clause = statement.importClause;
+      if (clause?.name) names.add(clause.name.text);
+      const bindings = clause?.namedBindings;
+      if (bindings && ts.isNamedImports(bindings)) bindings.elements.forEach((element) => names.add(element.name.text));
+      if (bindings && ts.isNamespaceImport(bindings)) names.add(bindings.name.text);
+    } else if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name)) names.add(declaration.name.text);
+      }
+    } else if ((ts.isClassDeclaration(statement) || ts.isFunctionDeclaration(statement)) && statement.name) {
+      names.add(statement.name.text);
+    }
+  }
+
+  return names;
 };
 
 const enclosingStatement = (node: ts.Node): ts.Statement | undefined => {

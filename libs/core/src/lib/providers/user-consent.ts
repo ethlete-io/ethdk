@@ -10,7 +10,7 @@ export type ConsentHandler = {
 };
 
 export type CreateUserConsentProviderOptions = {
-  /** The provider result returned by `createStaticProvider` that this consent provider should be associated with. */
+  /** The `InjectionToken` this consent provider should be associated with. */
   for: InjectionToken<ConsentHandler | null>;
 
   /**

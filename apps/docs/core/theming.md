@@ -106,7 +106,7 @@ Either way the block also sets `color-scheme`, so scrollbars and native controls
 The runtime knows the same default: `injectDefaultSurfaceTheme(type?)` returns the registered
 `isDefault` theme - of the only type the app registers, or of the `type` you name (an app with both
 has to say which, since `:root` picks between them by `prefers-color-scheme`). `injectSurfaceType()`
-returns a signal with the `'light' | 'dark'` a subtree renders on: the surrounding provider's type,
+returns a signal with the `'light' | 'dark'` a subtree renders on, or `null` when no surface can be resolved: the surrounding provider's type,
 or the default's where nothing provides one. A `ProvideSurfaceDirective` with nothing above it and
 no surface set resolves that default too, so a single-scheme app's `elevation()` and `surfaceType()`
 describe its real root surface.

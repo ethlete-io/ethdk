@@ -44,5 +44,17 @@ tester.run('no-direct-dom-manipulation', rule, {
       code: `el.style.color = 'red';`,
       errors: [{ messageId: 'domStyle' }],
     },
+    {
+      code: `el.style.setProperty('--et-size', '1px');`,
+      errors: [
+        {
+          messageId: 'domMutation',
+          data: {
+            method: 'setProperty',
+            alternative: 'renderer.setStyle(el, prop, value, RendererStyleFlags2.DashCase)',
+          },
+        },
+      ],
+    },
   ],
 });

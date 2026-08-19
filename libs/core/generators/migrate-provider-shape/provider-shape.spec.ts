@@ -142,6 +142,55 @@ describe('migrate-provider-shape', () => {
     expect(content).toContain('const injectSocket = toInjectFn(SOCKET_DEF);');
   });
 
+  it('rewrites an aliased Ethlete factory import', () => {
+    const { content, changed } = migrate(
+      [
+        "import { createProvider as makeProvider } from '@ethlete/core';",
+        '',
+        'export const [provideThing, injectThing] = makeProvider(() => 1);',
+      ].join('\n'),
+    );
+
+    expect(changed).toBe(true);
+    expect(content).toContain('defineProvider(() => 1)');
+    expect(content).not.toContain('makeProvider');
+  });
+
+  it('ignores a local helper with the same name', () => {
+    const source = [
+      'const createProvider = (value: unknown) => value;',
+      'export const [provideThing, injectThing] = createProvider([1, 2]);',
+    ].join('\n');
+
+    expect(migrate(source)).toEqual({ content: source, changed: false, tasks: [] });
+  });
+
+  it('reports re-exports and unsupported tuple widths for manual review', () => {
+    const reExport = migrate("export { createProvider } from '@ethlete/core';");
+    const wideTuple = migrate(
+      [
+        "import { createProvider } from '@ethlete/core';",
+        'export const [provideThing, injectThing, TOKEN, extra] = createProvider(() => 1);',
+      ].join('\n'),
+    );
+
+    expect(reExport.changed).toBe(false);
+    expect(reExport.tasks[0]?.message).toContain('re-export');
+    expect(wideTuple.changed).toBe(false);
+    expect(wideTuple.tasks).toHaveLength(1);
+  });
+
+  it('is idempotent', () => {
+    const first = migrate(
+      [
+        "import { createRootProvider } from '@ethlete/core';",
+        'export const [provideThing, injectThing] = createRootProvider(() => 1);',
+      ].join('\n'),
+    );
+
+    expect(migrate(first.content)).toEqual({ content: first.content, changed: false, tasks: [] });
+  });
+
   it('reports a runtime factory call it cannot rewrite instead of touching it', () => {
     const source = [
       "import { createRootProvider } from '@ethlete/core';",

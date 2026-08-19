@@ -59,7 +59,7 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 - `controlValueSignal` - see [Signal utilities](/core/signal-utils#form-control-values).
 - `cloneFormGroup(group)` - deep-clones a `FormGroup` including validators, disabled state and nested groups/arrays.
 - `getFormGroupValue(group)` - the group's value **including disabled controls**, empty values coalesced to `null`.
-- Validators (also grouped under the `Validators` const): `MustMatch(controlName, matchingControlName)` for password-repeat patterns, `IsEmail`, `IsArrayNotEmpty`, and `ValidateAtLeastOneRequired({ keys, checkFalse? })` for "at least one of these fields" groups. Each has a matching error-key const (`MUST_MATCH`, `IS_EMAIL`, …).
+- Validators (also grouped under the `EthleteValidators` const): `MustMatch(controlName, matchingControlName)` for password-repeat patterns, `IsEmail`, `IsArrayNotEmpty`, and `ValidateAtLeastOneRequired({ keys, checkFalse? })` for "at least one of these fields" groups. Each has a matching error-key const (`MUST_MATCH`, `IS_EMAIL`, …).
 
 ## Unsaved changes {#unsaved-changes}
 
@@ -192,7 +192,7 @@ protected save() {
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | `clamp(value, min?, max?)`                       | Constrain to a range - **defaults `min: 0`, `max: 100`**.                                                |
 | `round(value, precision?)`                       | Round to N decimals (default `0`).                                                                       |
-| `createComponentId('et-button')`                 | Process-unique ids per prefix (`et-button-1`, `et-button-2`, …).                                         |
+| `createComponentId('et-button')`                 | Process-unique ids per prefix (`et-button-0`, `et-button-1`, …).                                         |
 | `Translatable`                                   | `{ i18n, text }` - translation key + fallback text.                                                      |
 | `NgClassType`                                    | The value type `[ngClass]` accepts, for typing class inputs.                                             |
 | `TypedQueryList<T>` / `switchQueryListChanges()` | A `QueryList` with typed `changes`, and an RxJS operator that switches to a list's changes stream.       |

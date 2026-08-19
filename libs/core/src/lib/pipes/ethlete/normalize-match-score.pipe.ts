@@ -7,13 +7,15 @@ export class NormalizeMatchScorePipe implements PipeTransform {
   transform = normalizeMatchScore;
 }
 
-export const enum MatchStateType {
-  PREPARING_ROUND = 'preparingRound',
-  PRE_MATCH = 'preMatch',
-  LIVE = 'live',
-  POST_MATCH = 'postMatch',
-  AUTO_WIN = 'autoWin',
-}
+export const MatchStateType = {
+  PREPARING_ROUND: 'preparingRound',
+  PRE_MATCH: 'preMatch',
+  LIVE: 'live',
+  POST_MATCH: 'postMatch',
+  AUTO_WIN: 'autoWin',
+} as const;
+
+export type MatchStateType = (typeof MatchStateType)[keyof typeof MatchStateType];
 
 export type NormalizedMatchScore = {
   home: {
@@ -66,7 +68,6 @@ export const normalizeMatchScore = (match: MatchListView | null | undefined): No
     };
   } else if (isGroupMatch(match)) {
     if (match.games.length === 1) {
-      // Return the score if only one game has been played
       return {
         ...getGroupMatchScore(match),
         subLine,

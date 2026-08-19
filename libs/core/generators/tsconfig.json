@@ -4,7 +4,8 @@
     "outDir": "./dist",
     "rootDir": ".",
     "module": "preserve",
-    "declaration": true,
+    "declaration": false,
+    "sourceMap": false,
     "ignoreDeprecations": "6.0"
   },
   "include": ["**/*.ts"],

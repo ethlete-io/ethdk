@@ -40,6 +40,25 @@ const getMemberKind = (node) => {
   return 'property';
 };
 
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {import('eslint').Rule.Node} node
+ * @param {import('eslint').AST.Token} comment
+ */
+const buildInternalTagFix = (sourceCode, node, comment) => {
+  const commentText = sourceCode.getText(comment);
+  const remainingText = commentText
+    .replace(/^\s*\/\*\*?\s*@internal\s*\*\/\s*$/u, '')
+    .replace(/^\s*\*\s*@internal\s*\r?\n/mu, '')
+    .replace(/@internal\b\s*/u, '');
+
+  if (remainingText.trim() === '') {
+    return (fixer) => fixer.removeRange([comment.range[0], node.range[0]]);
+  }
+
+  return (fixer) => fixer.replaceText(comment, remainingText);
+};
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noRedundantInternal = {
   meta: {
@@ -68,7 +87,7 @@ const noRedundantInternal = {
         return;
       }
 
-      if (node.accessibility !== 'private' && node.accessibility !== 'protected') {
+      if (node.accessibility !== 'private') {
         return;
       }
 
@@ -80,7 +99,7 @@ const noRedundantInternal = {
           kind: getMemberKind(node),
           name: getMemberName(node),
         },
-        fix: (fixer) => fixer.removeRange([internalComment.range[0], node.range[0]]),
+        fix: buildInternalTagFix(sourceCode, node, internalComment),
       });
     };
 

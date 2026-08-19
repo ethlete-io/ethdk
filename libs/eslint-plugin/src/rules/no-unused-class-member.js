@@ -126,6 +126,7 @@ const noUnusedClassMember = {
      *
      * @type {Array<{
      *   classBody: import('eslint').Rule.Node,
+     *   isAbstract: boolean,
      *   isComponent: boolean,
      *   isAngularClass: boolean,
      *   hostBound: Set<string>,
@@ -145,6 +146,7 @@ const noUnusedClassMember = {
       if (node.parent !== frame.classBody) return;
 
       if (node.static) return;
+      if (node.override || node.abstract || node.decorators?.length) return;
 
       const key = node.key;
       if (!key || key.type !== 'Identifier') return;
@@ -153,9 +155,10 @@ const noUnusedClassMember = {
       const name = key.name;
       const accessibility = node.accessibility;
       const { isComponent, isAngularClass, hostBound } = frame;
+      if (frame.isAbstract && accessibility === 'protected') return;
 
       if (accessibility === 'private') {
-        frame.candidates.set(name, node);
+        if (!hostBound.has(name)) frame.candidates.set(name, node);
       } else if (accessibility === 'protected' && isAngularClass && !isComponent) {
         if (!hostBound.has(name)) frame.candidates.set(name, node);
       }
@@ -168,6 +171,7 @@ const noUnusedClassMember = {
         const hostBound = getHostBoundMembers(classNode);
         classStack.push({
           classBody: node,
+          isAbstract: classNode.abstract === true,
           isComponent,
           isAngularClass,
           hostBound,
@@ -190,17 +194,36 @@ const noUnusedClassMember = {
       MethodDefinition: registerMember,
 
       MemberExpression(node) {
-        // Only care about `this.name` (non-computed direct property access)
-        if (node.computed) return;
         if (node.object?.type !== 'ThisExpression') return;
-        if (node.property?.type !== 'Identifier') return;
+        const name =
+          !node.computed && node.property?.type === 'Identifier'
+            ? node.property.name
+            : node.computed && node.property?.type === 'Literal' && typeof node.property.value === 'string'
+              ? node.property.value
+              : null;
+        if (!name) return;
 
         // Mark used in the innermost class frame. Arrow functions don't push a
         // new frame so they correctly share the enclosing class's `this`.
         // Regular nested classes push a new frame so their `this.x` won't
         // accidentally mark an outer class member as used.
         const frame = classStack[classStack.length - 1];
-        if (frame) frame.usedNames.add(node.property.name);
+        if (frame) frame.usedNames.add(name);
+      },
+
+      VariableDeclarator(node) {
+        if (node.init?.type !== 'ThisExpression' || node.id?.type !== 'ObjectPattern') return;
+
+        const frame = classStack[classStack.length - 1];
+        if (!frame) return;
+
+        for (const property of node.id.properties) {
+          if (property.type !== 'Property') continue;
+          if (property.key.type === 'Identifier') frame.usedNames.add(property.key.name);
+          if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
+            frame.usedNames.add(property.key.value);
+          }
+        }
       },
     };
   },

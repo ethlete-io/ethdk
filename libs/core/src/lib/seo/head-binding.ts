@@ -1,11 +1,15 @@
-import { computed, DestroyRef, effect, inject, isSignal, signal, untracked } from '@angular/core';
+import {
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  Injector,
+  isSignal,
+  runInInjectionContext,
+  signal,
+  untracked,
+} from '@angular/core';
 import { MaybeSignal } from '../signals';
-
-export type HeadBinding<T> = {
-  id: symbol;
-  value: T;
-  priority?: number;
-};
 
 export const applyHeadBinding = <T>(
   binding: MaybeSignal<T | null | undefined>,
@@ -46,7 +50,7 @@ export const createPropertyBinding = <TConfig>(
   return (binding: MaybeSignal<string | null | undefined>) => {
     applyConfigFn(
       computed(() => {
-        const value = untracked(() => (isSignal(binding) ? binding() : binding));
+        const value = isSignal(binding) ? binding() : binding;
         return value ? configBuilder(value) : null;
       }),
     );
@@ -58,11 +62,26 @@ export const createArrayPropertyBinding = <TConfig>(
   applyConfigFn: (config: MaybeSignal<TConfig | null | undefined>) => void,
 ) => {
   return (binding: MaybeSignal<string[] | null | undefined>) => {
+    const injector = inject(Injector);
     const valuesSignal = isSignal(binding) ? binding : signal(binding);
-    const valuesList = computed(() => untracked(() => valuesSignal()) ?? []);
+    let bindingCount = 0;
 
-    valuesList().forEach((value, index) => {
-      applyConfigFn(computed(() => configBuilder(value, index)));
+    effect(() => {
+      const values = valuesSignal() ?? [];
+
+      untracked(() => {
+        while (bindingCount < values.length) {
+          const index = bindingCount++;
+          runInInjectionContext(injector, () => {
+            applyConfigFn(
+              computed(() => {
+                const value = valuesSignal()?.[index];
+                return value === undefined ? null : configBuilder(value, index);
+              }),
+            );
+          });
+        }
+      });
     });
   };
 };
@@ -71,20 +90,7 @@ export const toStringBinding = (
   binding: MaybeSignal<string | number | null | undefined>,
 ): MaybeSignal<string | null | undefined> => {
   return computed(() => {
-    const value = untracked(() => (isSignal(binding) ? binding() : binding));
+    const value = isSignal(binding) ? binding() : binding;
     return value !== null && value !== undefined ? String(value) : null;
   });
-};
-
-export const createBulkPropertyBinding = <TConfig extends Record<string, unknown>>(
-  _propertyPrefix: string,
-  applyConfigFn: (property: string, binding: MaybeSignal<string | null | undefined>) => void,
-) => {
-  return (config: TConfig) => {
-    Object.entries(config).forEach(([key, value]) => {
-      if (value !== undefined) {
-        applyConfigFn(key, value as MaybeSignal<string | null | undefined>);
-      }
-    });
-  };
 };

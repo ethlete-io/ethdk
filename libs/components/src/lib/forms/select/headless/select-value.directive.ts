@@ -25,7 +25,7 @@ export type SelectValueContext = {
   exportAs: 'etSelectValue',
 })
 export class SelectValueDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectValueContext>>(TemplateRef);

@@ -4321,7 +4321,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.6.3
     "@angular/common": 22.0.7
     "@angular/core": 22.0.7
     "@angular/forms": 22.0.7
@@ -4333,17 +4332,12 @@ __metadata:
     rxjs: 7.8.2
     ts-morph: 21.0.1
     typescript: 6.0.3
-    vite: 8.1.5
   peerDependenciesMeta:
-    "@analogjs/vite-plugin-angular":
-      optional: true
     "@nx/devkit":
       optional: true
     ts-morph:
       optional: true
     typescript:
-      optional: true
-    vite:
       optional: true
   languageName: unknown
   linkType: soft
@@ -4353,11 +4347,10 @@ __metadata:
   resolution: "@ethlete/eslint-plugin@workspace:libs/eslint-plugin"
   peerDependencies:
     "@angular-eslint/eslint-plugin-template": ">=21.0.0"
-    "@angular/core": 22.0.7
+    "@angular/core": ">=21.0.0"
     "@typescript-eslint/eslint-plugin": ">=8.0.0"
     eslint: ">=9.0.0"
-    tslib: 2.8.1
-    typescript: 6.0.3
+    typescript: ">=5.9.0"
   languageName: unknown
   linkType: soft
 

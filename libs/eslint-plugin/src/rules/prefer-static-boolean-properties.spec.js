@@ -52,6 +52,18 @@ tester.run('prefer-static-boolean-properties', rule, {
       code: `<div *ngIf="true"></div>`,
       filename: 'test.html',
     },
+    {
+      code: `<button [disabled]="false">Save</button>`,
+      filename: 'test.html',
+    },
+    {
+      code: `<input type="checkbox" [checked]="false" />`,
+      filename: 'test.html',
+    },
+    {
+      code: `<ng-template [ngIf]="true"></ng-template>`,
+      filename: 'test.html',
+    },
   ],
   invalid: [
     {
@@ -102,7 +114,7 @@ tester.run('prefer-static-boolean-properties', rule, {
     },
     // Multiple bindings on one element are each flagged
     {
-      code: `<my-cmp [disabled]="true" [isReadonly]="false" />`,
+      code: `<my-cmp [isActive]="true" [isReadonly]="false" />`,
       filename: 'test.html',
       errors: [
         {
@@ -110,7 +122,7 @@ tester.run('prefer-static-boolean-properties', rule, {
           suggestions: [
             {
               messageId: 'useBareAttribute',
-              output: `<my-cmp disabled [isReadonly]="false" />`,
+              output: `<my-cmp isActive [isReadonly]="false" />`,
             },
           ],
         },
@@ -119,7 +131,7 @@ tester.run('prefer-static-boolean-properties', rule, {
           suggestions: [
             {
               messageId: 'useStaticAttribute',
-              output: `<my-cmp [disabled]="true" isReadonly="false" />`,
+              output: `<my-cmp [isActive]="true" isReadonly="false" />`,
             },
           ],
         },

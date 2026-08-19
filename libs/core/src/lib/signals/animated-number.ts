@@ -1,4 +1,4 @@
-import { inject, isSignal, NgZone, signal, Signal, untracked } from '@angular/core';
+import { DestroyRef, inject, isSignal, NgZone, signal, Signal, untracked } from '@angular/core';
 import { MaybeSignal } from './signal-data-utils';
 
 export type SignalAnimatedNumberOptions = {
@@ -73,6 +73,7 @@ export const signalAnimatedNumber = (
   options: SignalAnimatedNumberOptions = {},
 ): AnimatedNumberSignal => {
   const ngZone = inject(NgZone);
+  const destroyRef = inject(DestroyRef);
   const duration = options.duration ?? 1000;
   const easing = options.easing ?? easeOut;
   const round = options.round ?? ((v: number) => Math.round(v));
@@ -82,6 +83,7 @@ export const signalAnimatedNumber = (
 
   let rafId: number | null = null;
   let currentAnimatedValue = initialValue;
+  let destroyed = false;
 
   const cancelAnimation = () => {
     if (rafId !== null) {
@@ -101,7 +103,6 @@ export const signalAnimatedNumber = (
     const startTime = performance.now();
     const delta = targetValue - startValue;
 
-    // Skip animation if no change
     if (delta === 0) {
       options.onAnimationEnd?.();
 
@@ -110,8 +111,18 @@ export const signalAnimatedNumber = (
 
     options.onAnimationStart?.();
 
+    if (typeof requestAnimationFrame === 'undefined') {
+      currentAnimatedValue = targetValue;
+      animatedValue.set(round(targetValue));
+      options.onAnimationEnd?.();
+
+      return readonlySignal;
+    }
+
     ngZone.runOutsideAngular(() => {
       const animate = (timestamp: number) => {
+        if (destroyed) return;
+
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const easedProgress = easing(progress);
@@ -155,6 +166,11 @@ export const signalAnimatedNumber = (
   readonlySignal.play = play;
   readonlySignal.reset = reset;
   readonlySignal.stop = stop;
+
+  destroyRef.onDestroy(() => {
+    destroyed = true;
+    cancelAnimation();
+  });
 
   return readonlySignal;
 };

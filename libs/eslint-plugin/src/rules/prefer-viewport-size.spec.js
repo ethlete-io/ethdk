@@ -15,6 +15,8 @@ tester.run('prefer-viewport-size', rule, {
     // Unrelated window property
     { code: `const loc = window.location;` },
     { code: `const title = document.title;` },
+    { code: `const w = window.outerWidth;` },
+    { code: `const screen = window.screen;` },
   ],
   invalid: [
     {
@@ -23,14 +25,6 @@ tester.run('prefer-viewport-size', rule, {
     },
     {
       code: `const h = window.innerHeight;`,
-      errors: [{ messageId: 'preferViewportSize' }],
-    },
-    {
-      code: `const w = window.outerWidth;`,
-      errors: [{ messageId: 'preferViewportSize' }],
-    },
-    {
-      code: `const screen = window.screen;`,
       errors: [{ messageId: 'preferViewportSize' }],
     },
   ],

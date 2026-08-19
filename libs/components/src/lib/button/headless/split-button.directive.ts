@@ -12,7 +12,7 @@ import { SplitButtonTriggerDirective } from './split-button-trigger.directive';
   },
 })
 export class SplitButtonDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public registeredAction = signal<SplitButtonActionDirective | null>(null);
   public registeredTrigger = signal<SplitButtonTriggerDirective | null>(null);

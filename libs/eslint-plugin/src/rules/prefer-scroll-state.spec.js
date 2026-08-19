@@ -18,6 +18,8 @@ tester.run('prefer-scroll-state', rule, {
     { code: `effect(() => { el.scrollTop = 0; });` },
     // Using signal utility inside effect
     { code: `effect(() => { const s = this.scrollState(); });` },
+    { code: `effect(() => { const top = el.scrollTop; });` },
+    { code: `computed(() => window.scrollY);` },
 
     // ── Scroll listener: non-scroll events are fine ──────────────────────────
     { code: `el.addEventListener('click', fn);` },
@@ -28,20 +30,6 @@ tester.run('prefer-scroll-state', rule, {
     { code: `const handler = el.onscroll;` },
   ],
   invalid: [
-    // ── Reactive-context property reads ─────────────────────────────────────
-    {
-      code: `effect(() => { const top = el.scrollTop; });`,
-      errors: [{ messageId: 'preferScrollState' }],
-    },
-    {
-      code: `effect(() => { const left = el.scrollLeft; });`,
-      errors: [{ messageId: 'preferScrollState' }],
-    },
-    {
-      code: `computed(() => window.scrollY);`,
-      errors: [{ messageId: 'preferScrollState' }],
-    },
-
     // ── Scroll event listeners ───────────────────────────────────────────────
     {
       code: `el.addEventListener('scroll', onScroll);`,

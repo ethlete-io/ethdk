@@ -1,4 +1,4 @@
-import { DOCUMENT, Signal, inject, signal } from '@angular/core';
+import { DOCUMENT, DestroyRef, Signal, inject, signal } from '@angular/core';
 import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
 
 export type Vec2 = [number, number];
@@ -48,10 +48,12 @@ export type BuildMediaQueryOptions = {
 const BREAKPOINT_OBSERVER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const viewportConfig = injectViewportConfig();
+    const destroyRef = inject(DestroyRef);
     const defaultView = inject(DOCUMENT).defaultView;
     const matchMedia = defaultView?.matchMedia?.bind(defaultView) ?? null;
     const queryLists = new Map<string, MediaQueryList>();
     const querySignals = new Map<string, Signal<boolean>>();
+    const queryListenerCleanups = new Map<string, () => void>();
 
     const getQueryList = (mediaQuery: string) => {
       if (!matchMedia) return null;
@@ -76,9 +78,11 @@ const BREAKPOINT_OBSERVER_DEF = /* @__PURE__ */ defineRootProvider(
       const queryList = getQueryList(mediaQuery);
       const matches = signal(queryList?.matches ?? false);
 
-      // the root provider outlives every consumer, so the listener is intentionally never removed -
-      // the same query list is shared by all of them
-      queryList?.addEventListener('change', (event) => matches.set(event.matches));
+      if (queryList) {
+        const onChange = (event: MediaQueryListEvent) => matches.set(event.matches);
+        queryList.addEventListener('change', onChange);
+        queryListenerCleanups.set(mediaQuery, () => queryList.removeEventListener('change', onChange));
+      }
 
       const result = matches.asReadonly();
       querySignals.set(mediaQuery, result);
@@ -110,13 +114,13 @@ const BREAKPOINT_OBSERVER_DEF = /* @__PURE__ */ defineRootProvider(
     };
 
     const buildMediaQueryString = (options: BuildMediaQueryOptions) => {
-      if (!options.min && !options.max) {
+      if (options.min === undefined && options.max === undefined) {
         throw new Error('At least one of min or max must be defined');
       }
 
       const mediaQueryParts: string[] = [];
 
-      if (options.min) {
+      if (options.min !== undefined) {
         if (typeof options.min === 'number') {
           mediaQueryParts.push(`(min-width: ${options.min}px)`);
         } else {
@@ -124,20 +128,17 @@ const BREAKPOINT_OBSERVER_DEF = /* @__PURE__ */ defineRootProvider(
         }
       }
 
-      if (options.min && options.max) {
-        mediaQueryParts.push('and');
+      if (options.max !== undefined) {
+        const max = typeof options.max === 'number' ? options.max : getBreakpointSize(options.max, 'max');
+        if (max !== Infinity) mediaQueryParts.push(`(max-width: ${max}px)`);
       }
 
-      if (options.max) {
-        if (typeof options.max === 'number') {
-          mediaQueryParts.push(`(max-width: ${options.max}px)`);
-        } else {
-          mediaQueryParts.push(`(max-width: ${getBreakpointSize(options.max, 'max')}px)`);
-        }
-      }
-
-      return mediaQueryParts.join(' ');
+      return mediaQueryParts.length > 0 ? mediaQueryParts.join(' and ') : '(min-width: 0px)';
     };
+
+    destroyRef.onDestroy(() => {
+      queryListenerCleanups.forEach((cleanup) => cleanup());
+    });
 
     return {
       observeBreakpoint,

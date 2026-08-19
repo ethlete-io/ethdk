@@ -13,7 +13,7 @@ import { SplitButtonDirective } from './split-button.directive';
 export class SplitButtonTriggerDirective {
   private splitButton = inject(SplitButtonDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   constructor() {
     this.splitButton?.registeredTrigger.set(this);

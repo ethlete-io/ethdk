@@ -61,5 +61,15 @@ class MyPipe {
 }`,
       errors: [{ messageId: 'noLogicInTransform' }],
     },
+    {
+      code: `
+@Pipe({ name: 'myPipe' })
+class MyPipe {
+  transform(value: string): string;
+  transform(value: number): number;
+  transform(value: string | number) { return value; }
+}`,
+      errors: [{ messageId: 'noLogicInTransform' }],
+    },
   ],
 });

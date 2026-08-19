@@ -28,7 +28,7 @@ export type StandingsRenderRow = {
   },
 })
 export class StandingsDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private injectedLabels = injectStandingsLabels();
 

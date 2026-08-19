@@ -17,7 +17,7 @@ let nextOutletId = 0;
 export class NavTabsOutletDirective {
   private nearestTabBar = inject(TabBarDirective, { optional: true });
   private registry = injectNavTabsRegistry();
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public readonly ID = `et-nav-tabs-outlet-${nextOutletId++}`;
 

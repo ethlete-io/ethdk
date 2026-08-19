@@ -61,7 +61,7 @@ See the [localization guide](/components/localization) for the full recipe and e
 
 ## Renderer
 
-`injectRenderer()` wraps Angular's `Renderer2` with ergonomic helpers - `toggleClass`, `setStyle`/`removeStyle` (removing on `null`), `setAttributes`, `setDataAttributes`, `setCssProperty` (dash-case, for custom properties), `setInnerHTML`, `moveBefore` (native with `insertBefore` fallback), and more - plus the raw `renderer`. Prefer it over touching `document` directly; it keeps DOM writes SSR-safe.
+`injectRenderer()` wraps Angular's `Renderer2` with ergonomic helpers - `toggleClass`, `setStyle`/`removeStyle` (removing on `null`), `setAttributes`, `setDataAttributes`, `setCssProperty` (dash-case, for custom properties), `setTextContent`, `moveBefore`, and more - plus the raw `renderer`. Prefer it over scattering direct DOM writes; browser-only helpers still need the usual platform guard.
 
 ## Style manager
 

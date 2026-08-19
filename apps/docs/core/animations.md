@@ -1,6 +1,6 @@
 # Animations
 
-A CSS-class-driven enter/leave animation system - directives manage a lifecycle state machine and apply well-known `et-animation-*` classes; your CSS defines what actually animates. There is no built-in reduced-motion handling: gate your transitions with `prefers-reduced-motion` in CSS (or [`injectPrefersReducedMotion()`](/core/signal-utils#media-queries-breakpoints) in TS).
+A CSS-class-driven enter/leave animation system - directives manage a lifecycle state machine and apply well-known `et-animation-*` classes; your CSS defines what actually animates. Gate CSS transitions with `prefers-reduced-motion` (or [`injectPrefersReducedMotion()`](/core/signal-utils#media-queries-breakpoints) in TS). The FLIP helper handles reduced motion automatically unless `ignoreReducedMotion` is set.
 
 ## Animated lifecycle
 
@@ -79,7 +79,7 @@ its transitions on that reading.
 
 ## FLIP animations
 
-`createFlipAnimation({ element, originElement?, duration?, easing? })` animates an element from a measured previous position/size to its current one using the Web Animations API - the tab bar underline is built on it. Defaults: `duration: 250`, `easing: 'cubic-bezier(0.4, 0, 0.2, 1)'`, `originElement` = the element itself. Returns `{ updateInit, play, cancel, onStart$, onFinish$, onCancel$ }`. `createFlipAnimationGroup` runs several in lockstep.
+`createFlipAnimation({ element, originElement?, duration?, easing?, ignoreReducedMotion? })` animates an element from a measured previous position/size to its current one using the Web Animations API - the tab bar underline is built on it. Defaults: `duration: 250`, `easing: 'cubic-bezier(0.4, 0, 0.2, 1)'`, `originElement` = the element itself, and reduced motion respected. Returns `{ updateInit, play, cancel, onStart$, onFinish$, onCancel$ }`. `createFlipAnimationGroup` runs several in lockstep. `matchesReducedMotion(element)` is available when a custom animation needs the same check.
 
 ## Frame utilities
 

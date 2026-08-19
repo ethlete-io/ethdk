@@ -17,7 +17,7 @@ export type { SchedulerAgendaDay } from './internals/scheduler-agenda';
   exportAs: 'etSchedulerAgenda',
 })
 export class SchedulerAgendaDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private scheduler = inject(SchedulerDirective, { optional: true });
 

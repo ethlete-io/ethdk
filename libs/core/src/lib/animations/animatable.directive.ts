@@ -1,4 +1,4 @@
-import { Directive, ElementRef, inject, InjectionToken } from '@angular/core';
+import { Directive, ElementRef, inject, InjectionToken, isDevMode } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   BehaviorSubject,
@@ -120,9 +120,11 @@ export class AnimatableDirective {
                   `animatable ${el.tagName.toLowerCase()}`,
                   `${eventType} ignored - count already 0 (start ${didEmitStart ? '' : 'not '}emitted)`,
                 );
-                console.warn(
-                  `${el.tagName} received animation end/cancel event but activeAnimationCount is already 0. Start was ${didEmitStart ? '' : 'not '}emitted.`,
-                );
+                if (isDevMode()) {
+                  console.warn(
+                    `${el.tagName} received animation end/cancel event but activeAnimationCount is already 0. Start was ${didEmitStart ? '' : 'not '}emitted.`,
+                  );
+                }
               }
               break;
             }

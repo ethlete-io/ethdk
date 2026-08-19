@@ -15,7 +15,7 @@ import { NavigationError, Router } from '@angular/router';
 import { EMPTY, filter, from, switchMap, timer } from 'rxjs';
 import { injectIsDocumentVisible } from '../signals';
 import { injectUnsavedChangesCoordinator } from '../unsaved-changes';
-import { createSessionMemory, defineRootProvider, defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
+import { createSessionMemory, defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { fetchDeployedBuildFingerprint, readBuildFingerprint } from './build-fingerprint';
 import { isStaleBuildError } from './stale-build-error';
 
@@ -93,7 +93,7 @@ export type AppUpdates = {
   reload: () => void;
 };
 
-const APP_UPDATES_CONFIG_DEF = /* @__PURE__ */ defineStaticProvider<AppUpdatesConfig>(
+const APP_UPDATES_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<AppUpdatesConfig>(
   {
     entryUrl: '/',
     pollInterval: 300_000,

@@ -58,7 +58,6 @@ const rule = {
         const prevEndLine = prevStatement.loc.end.line;
         const returnStartLine = node.loc.start.line;
 
-        // Need at least one empty line (gap of 2+ lines) between prev statement and return
         if (returnStartLine - prevEndLine >= 2) return;
 
         const sourceCode = context.sourceCode;
@@ -67,10 +66,12 @@ const rule = {
           node,
           messageId: 'missingEmptyLine',
           fix(fixer) {
-            const prevToken = sourceCode.getLastToken(/** @type {import('eslint').Rule.Node} */ (prevStatement));
-            if (!prevToken) return null;
+            const trailingComment = sourceCode
+              .getCommentsAfter(/** @type {import('eslint').Rule.Node} */ (prevStatement))
+              .find((comment) => comment.loc.start.line === prevEndLine && comment.range[1] < node.range[0]);
+            const insertionNode = trailingComment ?? prevStatement;
 
-            return fixer.insertTextAfter(prevToken, '\n');
+            return fixer.insertTextAfter(insertionNode, '\n');
           },
         });
       },

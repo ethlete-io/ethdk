@@ -6,7 +6,7 @@
  * calling window.matchMedia() directly or using Angular CDK's BreakpointObserver.
  *
  * The utilities:
- * - Return reactive signals that update when the media query result changes
+ * - Offer both one-shot boolean reads and reactive signals
  * - Are SSR-safe (no window access during server rendering)
  * - Are automatically cleaned up when the component is destroyed
  *
@@ -47,7 +47,7 @@ const preferMatchMedia = {
     },
     messages: {
       preferMatchMedia:
-        "Avoid 'window.matchMedia()' directly. Use 'injectMediaQueryIsMatched(query)' or a pre-built helper (injectCanHover, injectHasTouchInput, injectIsPortrait, injectBreakpointIsMatched, …) from '@ethlete/core' — they return reactive signals and are SSR-safe.",
+        "Avoid 'window.matchMedia()' directly. Use 'injectMediaQueryIsMatched(query)' for a one-shot SSR-safe boolean, or 'injectObserveMediaQuery(query)' when the result must update reactively.",
       noBreakpointObserver:
         "Do not use Angular CDK's 'BreakpointObserver' directly. Use 'injectBreakpointObserver()' from '@ethlete/core' instead, which wraps it with a reactive signal API and proper DI scoping.",
     },

@@ -49,12 +49,17 @@ export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions)
     };
   }
 
+  const uniqueRoots = [...new Set(roots)].filter(
+    (root) =>
+      !roots.some((candidate) => candidate !== root && (root === candidate || root.startsWith(`${candidate}/`))),
+  );
+
   return {
     visit: (targetTree, callback) => {
-      for (const root of roots) {
+      for (const root of uniqueRoots) {
         visitNotIgnoredFiles(targetTree, root, callback);
       }
     },
-    describe: () => roots.join(', '),
+    describe: () => uniqueRoots.join(', '),
   };
 };

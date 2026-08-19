@@ -18,7 +18,7 @@ export class NavTabLinkDirective {
   private navTabs = inject(NAV_TABS_TOKEN, { optional: true });
   private tabBar = inject(TabBarDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public trigger = inject(TabBarTriggerDirective);
 

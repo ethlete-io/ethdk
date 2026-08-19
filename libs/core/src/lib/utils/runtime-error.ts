@@ -19,7 +19,6 @@ export class RuntimeError<T extends number> extends Error {
 }
 
 export function formatRuntimeError<T extends number>(code: T, message: null | false | string): string {
-  // prefix code with zeros if it's less than 100
   const codeWithZeros = code < 10 ? `00${code}` : code < 100 ? `0${code}` : code;
 
   const fullCode = `ET${codeWithZeros}`;

@@ -111,13 +111,6 @@ class A {
     return legacyGetUsers.prepare(args);
   }
 }`),
-      output: withImport(`class A {
-  private injector = inject(Injector);
-
-  load(args) {
-    return legacyGetUsers.prepare({ ...args, injector: this.injector });
-  }
-}`),
       errors: [{ messageId: 'missingInjector', data: { creator: 'legacyGetUsers', boundary: 'method' } }],
     },
     {
@@ -178,6 +171,48 @@ class A {
 
   load() {
     return legacyGetUsers.prepare({ injector: this.injector });
+  }
+}`,
+      errors: [{ messageId: 'missingInjector' }],
+    },
+    {
+      code: `import { legacyGetUsers } from './queries';
+import type { Signal } from '@angular/core';
+class A {
+  load() {
+    return legacyGetUsers.prepare({});
+  }
+}`,
+      output: `import { legacyGetUsers } from './queries';
+import type { Signal } from '@angular/core';
+import { inject, Injector } from '@angular/core';
+class A {
+  private injector = inject(Injector);
+
+  load() {
+    return legacyGetUsers.prepare({ injector: this.injector });
+  }
+}`,
+      errors: [{ messageId: 'missingInjector' }],
+    },
+    {
+      code: `import { legacyGetUsers } from './queries';
+class A {
+  private injector = inject(EnvironmentInjector);
+
+  load() {
+    return legacyGetUsers.prepare({});
+  }
+}`,
+      output: `import { legacyGetUsers } from './queries';
+import { inject, Injector } from '@angular/core';
+class A {
+  private queryInjector = inject(Injector);
+
+  private injector = inject(EnvironmentInjector);
+
+  load() {
+    return legacyGetUsers.prepare({ injector: this.queryInjector });
   }
 }`,
       errors: [{ messageId: 'missingInjector' }],

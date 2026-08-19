@@ -2,6 +2,7 @@
 'use strict';
 
 const { getMemberName, isReferencedFromTemplateOrHost } = require('./internals/angular-member-visibility');
+const { buildAccessibilityFix } = require('./internals/member-accessibility-fix');
 
 /**
  * @param {any} node
@@ -10,25 +11,6 @@ const isInjectCall = (node) => {
   if (!node || node.type !== 'PropertyDefinition' || !node.value) return false;
   if (node.value.type !== 'CallExpression') return false;
   return node.value.callee.type === 'Identifier' && node.value.callee.name === 'inject';
-};
-
-/**
- * @param {any} node
- * @param {import('eslint').SourceCode} sourceCode
- * @param {'private' | 'protected'} expectedAccessibility
- */
-const buildFix = (node, sourceCode, expectedAccessibility) => {
-  const keyToken = sourceCode.getFirstToken(node.key);
-  if (!keyToken) return null;
-
-  if (node.accessibility) {
-    const firstToken = sourceCode.getFirstToken(node);
-    if (!firstToken) return null;
-
-    return (fixer) => fixer.replaceText(firstToken, expectedAccessibility);
-  }
-
-  return (fixer) => fixer.insertTextBefore(keyToken, `${expectedAccessibility} `);
 };
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -63,6 +45,7 @@ const injectMemberAccessibility = {
         if (!memberName) return;
 
         const isTemplateOrHostVisible = isReferencedFromTemplateOrHost(classNode, memberName, context);
+        const isAbstractClass = classNode.abstract === true;
 
         if (isTemplateOrHostVisible) {
           if (node.accessibility === 'protected' || node.accessibility === 'public') return;
@@ -71,7 +54,7 @@ const injectMemberAccessibility = {
             node,
             messageId: 'shouldBeProtected',
             data: { name: memberName },
-            fix: buildFix(node, sourceCode, 'protected'),
+            fix: buildAccessibilityFix(node, sourceCode, 'protected'),
           });
 
           return;
@@ -79,11 +62,24 @@ const injectMemberAccessibility = {
 
         if (node.accessibility === 'private' || node.accessibility === 'public') return;
 
+        if (isAbstractClass) {
+          if (node.accessibility === 'protected') return;
+
+          context.report({
+            node,
+            messageId: 'shouldBeProtected',
+            data: { name: memberName },
+            fix: buildAccessibilityFix(node, sourceCode, 'protected'),
+          });
+
+          return;
+        }
+
         context.report({
           node,
           messageId: 'shouldBePrivate',
           data: { name: memberName },
-          fix: buildFix(node, sourceCode, 'private'),
+          fix: buildAccessibilityFix(node, sourceCode, 'private'),
         });
       },
     };

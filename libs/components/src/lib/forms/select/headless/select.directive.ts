@@ -94,7 +94,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public value = model<unknown | unknown[] | null>(null);
   /** View state for a field whose source values disagree. The raw form value stays untouched. */

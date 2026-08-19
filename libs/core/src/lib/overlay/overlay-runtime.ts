@@ -4,7 +4,8 @@ import {
   DestroyRef,
   EnvironmentInjector,
   Injector,
-  computed,
+  Signal,
+  createEnvironmentInjector,
   createComponent,
   inject,
   signal,
@@ -27,7 +28,7 @@ type OverlayRuntime = {
   mount: <TComponent extends object, TResult = unknown>(
     config: OverlayRuntimeMountConfig<TComponent>,
   ) => OverlayRuntimeRef<TComponent, TResult>;
-  openEntries: ReturnType<typeof computed<OverlayRuntimeRef<object, unknown>[]>>;
+  openEntries: Signal<OverlayRuntimeRef<object, unknown>[]>;
 };
 
 const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
@@ -39,7 +40,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
     const renderer = injectRenderer();
 
     const openEntriesState = signal<OverlayRuntimeRef<object, unknown>[]>([]);
-    const openEntries = computed(() => openEntriesState());
+    const openEntries = openEntriesState.asReadonly();
 
     // One runtime root per document and stacking level: overlays usually all mount into the app's
     // document at the default level, but an overlay anchored inside a same-origin pop-up window
@@ -55,13 +56,6 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       let documentRoots = rootElements.get(targetDocument);
 
       if (!documentRoots) {
-        // A previous Angular app (e.g. the one that existed before a Storybook HMR update or story
-        // switch) may have left its runtime root orphaned in <body> if it was torn down mid-animation.
-        // Such a node keeps a backdrop/pane on screen and blocks pointer events, so clear any stragglers
-        // before creating ours. Only on the document's first root - a second level must not remove the
-        // first one's still-mounted overlays.
-        targetDocument.querySelectorAll('.et-overlay-runtime-root').forEach((el) => el.remove());
-
         documentRoots = new Map<number, HTMLElement>();
         rootElements.set(targetDocument, documentRoots);
       }
@@ -117,7 +111,15 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
     };
 
     const isTopMost = (overlayRef: OverlayRuntimeRef<object, unknown>) => {
-      return openEntriesState().at(-1) === overlayRef;
+      const entries = openEntriesState();
+
+      for (let index = entries.length - 1; index >= 0; index--) {
+        const entry = entries[index];
+
+        if (entry && entry.state() !== 'closing' && entry.state() !== 'closed') return entry === overlayRef;
+      }
+
+      return false;
     };
 
     const getAnimatedLifecycle = (componentRef: ReturnType<typeof createComponent>) => {
@@ -204,13 +206,15 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
       const cleanupFns: Array<() => void> = [];
       const parentInjector = config.injector ?? config.viewContainerRef?.injector ?? environmentInjector;
+      const parentEnvironmentInjector = parentInjector.get(EnvironmentInjector, environmentInjector);
+      const overlayEnvironmentInjector = createEnvironmentInjector(config.providers ?? [], parentEnvironmentInjector);
       const elementInjector = Injector.create({
         parent: parentInjector,
-        providers: config.providers ?? [],
+        providers: [],
       }) as EnvironmentInjector;
 
       const componentRef = createComponent(config.component, {
-        environmentInjector,
+        environmentInjector: overlayEnvironmentInjector,
         elementInjector,
         hostElement: paneElement,
         bindings: config.bindings ?? [],
@@ -289,6 +293,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         if (!elementInjector.destroyed) {
           elementInjector.destroy();
         }
+        overlayEnvironmentInjector.destroy();
 
         const parentNode = renderer.parentNode(hostElement);
         if (parentNode) {
@@ -307,7 +312,11 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
       // Allows the runtime to synchronously destroy this overlay on app teardown, bypassing the
       // async leave animation (whose completion callback would never fire once the app is gone).
-      const forceTeardown = () => destroyMountedOverlay({ result: undefined, source: 'api' });
+      const forceTeardown = () => {
+        const closeEvent = { result: undefined, source: 'api' } as const;
+        overlayRef.beginClose(closeEvent);
+        destroyMountedOverlay(closeEvent);
+      };
       mountedTeardowns.add(forceTeardown);
       cleanupFns.push(() => mountedTeardowns.delete(forceTeardown));
 

@@ -19,7 +19,7 @@ const toActionSlot = (value: NotificationActionSlot | ''): NotificationActionSlo
 })
 export class NotificationActionDirective {
   private notification = inject(NotificationDirective, { optional: true });
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   /** Which action this element runs - `etNotificationAction="secondary"` for the quieter one. */
   public actionSlot = input(NOTIFICATION_ACTION_SLOTS.PRIMARY, {

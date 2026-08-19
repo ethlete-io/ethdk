@@ -113,6 +113,8 @@ function findClassForRouterStateService(
   let classNode: ts.ClassDeclaration | null = null;
 
   function visit(node: ts.Node) {
+    if (classNode) return;
+
     if (ts.isClassDeclaration(node)) {
       const hasRouterStateService = node.members.some((member) => {
         if (ts.isPropertyDeclaration(member) && ts.isIdentifier(member.name)) {
@@ -1007,9 +1009,10 @@ function addImportsToPackage(
   });
 
   if (existingImport?.importClause?.namedBindings && ts.isNamedImports(existingImport.importClause.namedBindings)) {
-    // Add to existing import
-    const existingImports = existingImport.importClause.namedBindings.elements.map((el) => el.name.text);
-    const newImports = importsList.filter((imp) => !existingImports.includes(imp));
+    const existingElements = existingImport.importClause.namedBindings.elements;
+    const existingImportedNames = existingElements.map((el) => el.propertyName?.text ?? el.name.text);
+    const existingImports = existingElements.map((el) => el.getText(sourceFile));
+    const newImports = importsList.filter((imp) => !existingImportedNames.includes(imp));
 
     if (newImports.length === 0) return content;
 
@@ -1047,7 +1050,21 @@ function removeRouterStateServiceInjection(
       node.members.forEach((member) => {
         if (ts.isPropertyDeclaration(member) && ts.isIdentifier(member.name)) {
           const memberName = member.name.text;
-          if (routerStateServiceVars.includes(memberName)) {
+          const injectsRouterState =
+            member.initializer &&
+            ts.isCallExpression(member.initializer) &&
+            ts.isIdentifier(member.initializer.expression) &&
+            member.initializer.expression.text === 'inject' &&
+            member.initializer.arguments.some(
+              (argument) => ts.isIdentifier(argument) && argument.text === 'RouterStateService',
+            );
+          const hasRouterStateType =
+            member.type &&
+            ts.isTypeReferenceNode(member.type) &&
+            ts.isIdentifier(member.type.typeName) &&
+            member.type.typeName.text === 'RouterStateService';
+
+          if (routerStateServiceVars.includes(memberName) && (injectsRouterState || hasRouterStateType)) {
             const memberStart = member.getStart(sourceFile, true);
             const memberEnd = member.getEnd();
 
@@ -1077,7 +1094,12 @@ function removeRouterStateServiceInjection(
           member.parameters.forEach((param) => {
             if (ts.isIdentifier(param.name)) {
               const paramName = param.name.text;
-              if (routerStateServiceVars.includes(paramName)) {
+              const hasRouterStateType =
+                param.type &&
+                ts.isTypeReferenceNode(param.type) &&
+                ts.isIdentifier(param.type.typeName) &&
+                param.type.typeName.text === 'RouterStateService';
+              if (routerStateServiceVars.includes(paramName) && hasRouterStateType) {
                 return;
               }
             }
@@ -1253,10 +1275,11 @@ export default async function migrateRouterStateService(tree: Tree) {
     for (const child of children) {
       const path = dir === '.' ? child : `${dir}/${child}`;
       if (tree.isFile(path)) {
-        if (path.endsWith('.ts') && !path.includes('node_modules') && !path.includes('.spec.ts')) {
+        if (path.endsWith('.ts') && !path.includes('node_modules')) {
           tsFiles.push(path);
         }
       } else {
+        if (child === 'node_modules') continue;
         findFiles(path);
       }
     }
@@ -1276,6 +1299,18 @@ export default async function migrateRouterStateService(tree: Tree) {
     console.log(`Processing: ${filePath}`);
 
     const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+    const hasEthleteImport = sourceFile.statements.some(
+      (statement) =>
+        ts.isImportDeclaration(statement) &&
+        ts.isStringLiteral(statement.moduleSpecifier) &&
+        statement.moduleSpecifier.text.startsWith('@ethlete/') &&
+        !!statement.importClause?.namedBindings &&
+        ts.isNamedImports(statement.importClause.namedBindings) &&
+        statement.importClause.namedBindings.elements.some(
+          (element) => (element.propertyName?.text ?? element.name.text) === 'RouterStateService',
+        ),
+    );
+    if (!hasEthleteImport) continue;
 
     const inlineResult = handleInlineInjectPatterns(sourceFile, content);
     let updatedContent = inlineResult.content;
@@ -1321,7 +1356,7 @@ export default async function migrateRouterStateService(tree: Tree) {
         }
       });
 
-      for (const [original, replacement] of context.replacements) {
+      for (const [original, replacement] of [...context.replacements].sort((a, b) => b[0].length - a[0].length)) {
         if (replacement.includes('toObservable(')) {
           allImportsNeeded['@angular/core/rxjs-interop'].add('toObservable');
         }

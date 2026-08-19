@@ -51,12 +51,13 @@ const createPositionObject = (entry: IntersectionObserverEntry) => {
 };
 
 export const signalElementIntersection = (el: SignalElementBindingType, options?: SignalElementIntersectionOptions) => {
+  const { root: rootBinding, enabled, ...observerOptions } = options ?? {};
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
-  const root = firstElementSignal(options?.root ? buildElementSignal(options?.root) : createEmptyElementSignal());
+  const root = firstElementSignal(rootBinding ? buildElementSignal(rootBinding) : createEmptyElementSignal());
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
-  const isEnabled = options?.enabled ?? signal(true);
+  const isEnabled = enabled ?? signal(true);
 
   const elementIntersectionSignal = signal<IntersectionObserverEntryWithDetails[]>([]);
   const observer = signal<IntersectionObserver | null>(null);
@@ -103,12 +104,13 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
     if (!rendered || !enabled) {
       observer.set(null);
+      elementIntersectionSignal.set([]);
 
       return;
     }
 
     const newObserver = new IntersectionObserver((entries) => updateIntersections(entries), {
-      ...options,
+      ...observerOptions,
       root: rootEl,
     });
 
@@ -118,7 +120,11 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
   const updateObservedElements = (observer: IntersectionObserver | null, elements: ElementSignalValue) => {
     const rootEl = root().currentElement;
 
-    if (!observer) return;
+    if (!observer) {
+      elementIntersectionSignal.set([]);
+
+      return;
+    }
 
     const currIntersectionValue = elementIntersectionSignal();
     const newIntersectionValue: IntersectionObserverEntryWithDetails[] = [];
@@ -141,15 +147,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
         container: rootEl,
         element: el,
       });
-
-      if (!initialElementVisibility) {
-        console.error('No visibility data found for element.', {
-          element: el,
-          container: rootEl,
-        });
-
-        continue;
-      }
+      if (!initialElementVisibility) continue;
 
       const intersectionEntry: IntersectionObserverEntry = {
         boundingClientRect: initialElementVisibility.elementRect,

@@ -1,7 +1,7 @@
 import { Signal, isSignal, linkedSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
-import { Observable, debounceTime, distinctUntilChanged, map, merge, of, startWith, switchMap } from 'rxjs';
+import { Observable, debounceTime, distinctUntilChanged, map, merge, of, switchMap } from 'rxjs';
 import { equal } from '../utils';
 
 export type ControlValueSignalOptions = {
@@ -41,32 +41,34 @@ export const controlValueSignal = <
     switchMap((ctrl) => {
       if (!ctrl) return of(null);
 
-      const vcsObs = options?.debounceTime
-        ? ctrl.valueChanges.pipe(debounceTime(options.debounceTime))
-        : ctrl.valueChanges;
+      const changes = ctrl.valueChanges.pipe(map(() => ctrl.getRawValue()));
+      const debouncedChanges = options?.debounceTime ? changes.pipe(debounceTime(options.debounceTime)) : changes;
 
-      return vcsObs.pipe(
-        startWith(ctrl.getRawValue()),
-        map(() => ctrl.getRawValue()),
-      );
+      if (!options?.debounceFirst) {
+        return merge(of(ctrl.getRawValue()), debouncedChanges);
+      }
+
+      const values = merge(of(ctrl.getRawValue()), changes);
+      return options.debounceTime ? values.pipe(debounceTime(options.debounceTime)) : values;
     }),
   );
 
-  const obs: Observable<TValue | null> = !options?.debounceFirst ? merge(of(initialValue), controlObs) : controlObs;
+  const obs: Observable<TValue | null> = controlObs;
 
   return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
-    initialValue,
+    initialValue: options?.debounceFirst ? null : initialValue,
   });
 };
 
 /**
  * The first item in the pair is the previous value and the second item is the current value.
  */
-export const controlValueSignalWithPrevious = <T extends AbstractControl>(
+export const controlValueSignalWithPrevious = <T extends Signal<AbstractControl | null> | AbstractControl>(
   control: T,
   options?: ControlValueSignalOptions,
 ) => {
-  type TValue = ReturnType<NonNullable<T extends Signal<infer TSignalControl> ? TSignalControl : T>['getRawValue']>;
+  type TControl = NonNullable<T extends Signal<infer TSignalControl> ? TSignalControl : T>;
+  type TValue = ReturnType<TControl['getRawValue']>;
 
   const data = linkedSignal<TValue | null, [TValue | null, TValue | null]>({
     source: controlValueSignal(control, options),

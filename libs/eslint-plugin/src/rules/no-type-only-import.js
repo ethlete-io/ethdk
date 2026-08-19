@@ -31,8 +31,13 @@ const noTypeOnlyImport = {
             messageId: 'noTypeImportDeclaration',
             data: { specifiers, source },
             fix(fixer) {
-              const specifierText = node.specifiers.map((s) => s.local.name).join(', ');
-              return fixer.replaceText(node, `import { ${specifierText} } from '${source}';`);
+              const sourceCode = context.sourceCode;
+              const importToken = sourceCode.getFirstToken(node);
+              const typeToken = importToken ? sourceCode.getTokenAfter(importToken) : null;
+              const nextToken = typeToken ? sourceCode.getTokenAfter(typeToken) : null;
+
+              if (typeToken?.value !== 'type' || !nextToken) return null;
+              return fixer.removeRange([typeToken.range[0], nextToken.range[0]]);
             },
           });
 

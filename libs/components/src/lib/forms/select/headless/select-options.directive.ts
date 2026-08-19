@@ -30,7 +30,7 @@ import { SelectDirective } from './select.directive';
   exportAs: 'etSelectOptions',
 })
 export class SelectOptionsDirective implements OnInit {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
   private destroyRef = inject(DestroyRef);

@@ -7,14 +7,15 @@ Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used w
 
 ## TypeScript & code style
 
-| Rule                                | What it enforces                                                                                                                   | Fix | Default |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-trivial-return-type`            | No explicit return types TypeScript can infer (`void`, `boolean`, `string`, `number`, `undefined`, `null`)                         | 🔧  | error   |
-| `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                                                     | 🔧  | error   |
-| `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call (`focus`/`blur`/`reset` on a component or directive are exempt) |     | error   |
-| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies - locals are camelCase                                                     |     | error   |
-| `guard-return-newline`              | Empty line before a `return` in a multi-statement if-block (guard clause)                                                          | 🔧  | error   |
-| `no-empty-newlines-between-imports` | No blank lines between consecutive import declarations                                                                             | 🔧  | error   |
+| Rule                                | What it enforces                                                                                                                                  | Fix | Default |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-enum`                           | No `enum` and no `const enum` - use a const object with `as const` plus a derived union type                                                      | 🔧  | error   |
+| `no-trivial-return-type`            | No explicit return types TypeScript can infer on block-bodied implementations; concise arrows keep annotations that may narrow their API contract | 🔧  | error   |
+| `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                                                                    | 🔧  | error   |
+| `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call; inherited, implemented and Angular/DOM contract methods are exempt            |     | error   |
+| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies - locals are camelCase                                                                    |     | error   |
+| `guard-return-newline`              | Empty line before a `return` in a multi-statement if-block (guard clause)                                                                         | 🔧  | error   |
+| `no-empty-newlines-between-imports` | No blank lines between consecutive import declarations                                                                                            | 🔧  | error   |
 
 ```ts
 // ❌
@@ -25,6 +26,29 @@ const getName = (user: User): string => user.name;
 import { User } from './user';
 const getName = (user: User) => user.name;
 ```
+
+An enum is the only TypeScript construct that emits runtime code from a type declaration, so it
+cannot be erased and it cannot be tree-shaken. Its members are nominal, so a matching plain string
+is not assignable to an enum-typed parameter. A `const enum` is worse: a transpile-only consumer
+(esbuild, SWC, Babel) has no cross-file type information, so it cannot inline the member.
+
+```ts
+// ❌
+export enum MatchState {
+  Live = 'live',
+}
+
+// ✅
+export const MatchState = {
+  Live: 'live',
+} as const;
+
+export type MatchState = (typeof MatchState)[keyof typeof MatchState];
+```
+
+`no-enum` fixes an enum whose members all have a string literal initializer; a numeric or computed
+enum is reported without a fix. After the fix, a member used in a type position needs `typeof` -
+`type: MatchState.Live` becomes `type: typeof MatchState.Live`.
 
 ## Dependency injection
 
@@ -73,12 +97,12 @@ annotate it - move it inside a function, because a library must not do work when
 
 | Rule                                 | What it enforces                                                                                                                                                  | Fix | Default |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `inject-member-accessibility`        | Injected members are `private` by default, `protected` when referenced from a template or host binding; explicit `public` only to intentionally expose an API     | 🔧  | error   |
+| `inject-member-accessibility`        | Injected members are `private` by default and `protected` for template/host use or abstract bases; explicit `public` only to intentionally expose an API          | 🔧  | error   |
 | `template-member-accessibility`      | Non-injected members referenced from templates/host bindings need an explicit accessibility modifier; implicitly public surface members must be explicit `public` | 🔧  | error   |
-| `no-redundant-internal`              | No `@internal` JSDoc tag on members already hidden by `private` / `protected`                                                                                     | 🔧  | error   |
+| `no-redundant-internal`              | No `@internal` JSDoc tag on members already hidden by `private`; protected members may need it for `stripInternal`                                                | 🔧  | error   |
 | `no-leading-underscore-class-member` | No leading underscores on class members (renames private members automatically when safe)                                                                         | 🔧  | error   |
 | `no-member-alias`                    | No members that are pure aliases for a nested property of another member - widen the source member's accessibility instead                                        |     | error   |
-| `no-unused-class-member`             | No `private` / `protected` members that are declared but never read                                                                                               |     | error   |
+| `no-unused-class-member`             | No provably unread `private` / `protected` members; framework-decorated, overridden and abstract-base members are exempt                                          |     | error   |
 | `class-constant-property`            | True class constants use `readonly` and SCREAMING_CASE                                                                                                            | 🔧  | error   |
 | `class-member-order`                 | Class members follow the styleguide order: inject members, inputs, outputs, queries, properties, constructor, methods                                             | 🔧  | error   |
 
@@ -130,7 +154,7 @@ source$
 | `no-redundant-on-push-change-detection`      | No redundant `OnPush` metadata - it is the default since Angular 22 (version-aware: inert on older Angular)                                                               | 🔧  | error   |
 | `require-view-encapsulation-none`            | `encapsulation: ViewEncapsulation.None` on every `@Component`                                                                                                             | 🔧  | error   |
 | `no-legacy-angular-decorators`               | No `@Input`, `@Output`, `@ViewChild`, `@HostBinding`, … - use signal-based APIs (`input()`, `output()`, …) and `host: {}`                                                 | 🔧  | error   |
-| `no-standalone-flag`                         | No `standalone` metadata - standalone is the default and should be omitted                                                                                                | 🔧  | error   |
+| `no-standalone-flag`                         | No `standalone: true` metadata - standalone is the default; `standalone: false` remains explicit and supported                                                            | 🔧  | error   |
 | `no-empty-angular-metadata-arrays`           | No empty `imports: []` / `hostDirectives: []` metadata noise                                                                                                              | 🔧  | error   |
 | `angular-decorator-property-order`           | Consistent property order in `@Component` / `@Directive` metadata                                                                                                         | 🔧  | error   |
 | `prefer-concise-angular-host-directives`     | Shorthand `hostDirectives` entries when only `directive` is needed; extended configs ordered `directive`, `inputs`, `outputs`                                             | 🔧  | error   |
@@ -193,10 +217,10 @@ export class WidgetComponent {
 
 The custom rules that run on `**/*.html` files (via `recommendedTemplate`) instead of TypeScript. The first complements `@angular-eslint/template/prefer-static-string-properties`, which covers the string-literal case.
 
-| Rule                               | What it enforces                                                                                                                      | Fix | Default |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `prefer-static-boolean-properties` | No property bindings for static booleans (`[isReadonly]="true"` / `"false"`) - use a static attribute when the input coerces booleans |     | warn    |
-| `require-form-submit`              | A `<form>` handles its own submission, and a `type="submit"` control sits inside a form or names one                                  |     | error   |
+| Rule                               | What it enforces                                                                                                                                                | Fix | Default |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `prefer-static-boolean-properties` | No property bindings for static booleans (`[isReadonly]="true"` / `"false"`) - use a static attribute for coercing component inputs; native booleans are exempt |     | warn    |
+| `require-form-submit`              | Every `<form>` handles its own submission through `[etForm]`, `[formRoot]`, `(ngSubmit)`, `(submit)` or native submission                                       |     | error   |
 
 The rewrite is only equivalent when the input declares a `booleanAttribute` transform - otherwise a static attribute passes the _string_ `'true'` / `'false'` instead of a boolean. A template rule has no type information to verify that, so the fix is offered as an editor **suggestion** (💡) rather than applied by `--fix`, and the severity stays at `warn`. Keep the binding for inputs that take a plain boolean without a transform.
 
@@ -208,10 +232,10 @@ The rewrite is only equivalent when the input declares a `booleanAttribute` tran
 <my-cmp isReadonly showHeader="false" />
 ```
 
-`require-form-submit` checks the two ends of the same wire, because either half missing is silent: a `<form>` with no handler does nothing when the user presses Enter in a field (or reloads the page, without an Angular form directive to call `preventDefault`), and a `type="submit"` control outside a form submits nothing at all - it just looks like a button that does not work. A `[etForm]` or `[formRoot]` binding counts as handling submission: both directives submit the signal form themselves.
+`require-form-submit` checks the form itself: a `<form>` with no handler does nothing when the user presses Enter in a field (or reloads the page, without an Angular form directive to call `preventDefault`). A `[etForm]` or `[formRoot]` binding counts as handling submission because both directives submit the signal form themselves. Submit controls are not checked across templates because projection and `ng-template` composition can associate them with a form outside the file being linted.
 
 ```html
-<!-- ❌ nothing handles submission; the button submits nothing -->
+<!-- ❌ nothing handles submission -->
 <form [formGroup]="form"></form>
 <button type="submit">Save</button>
 
@@ -265,26 +289,29 @@ instead of CSS-only classes.
 
 These rules steer code away from raw browser and Angular platform APIs toward the reactive utilities in `@ethlete/core`.
 
-| Rule                         | What it enforces                                                                                                                | Fix | Default |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-direct-dom-manipulation` | No direct DOM manipulation - use `injectRenderer()`                                                                             |     | error   |
-| `no-dom-query`               | No `querySelector`, `getElementById`, … - use `viewChild()` / `viewChildren()` / `contentChild()` / `contentChildren()`         |     | error   |
-| `no-native-observers`        | No raw `IntersectionObserver` / `MutationObserver` / `ResizeObserver` - use the signal-based observer utilities                 |     | error   |
-| `prefer-match-media`         | No `window.matchMedia()` - use `injectMediaQueryIsMatched()` / `injectBreakpointIsMatched()`                                    |     | error   |
-| `prefer-viewport-size`       | `injectViewportSize()` instead of `window.innerWidth` / `innerHeight` / `outerWidth` / `outerHeight`                            |     | warn    |
-| `prefer-element-dimensions`  | `signalElementDimensions()` / `signalHostElementDimensions()` instead of reading element size properties in reactive contexts   |     | warn    |
-| `prefer-scroll-state`        | `signalElementScrollState()` / `signalHostElementScrollState()` instead of reading scroll positions in reactive contexts        |     | warn    |
-| `no-document-cookie`         | No direct `document.cookie` access - use `getCookie` / `setCookie` / `hasCookie` / `deleteCookie`                               |     | error   |
-| `no-window-location`         | No URL state reads from `window.location.*` - use `injectUrl()` / `injectRoute()` / `injectQueryParam()` etc.                   |     | warn    |
-| `no-angular-router-api`      | No injecting `ActivatedRoute` (fully replaced) and no state reads off an injected `Router` - use the `inject*` router utilities |     | warn    |
-| `no-angular-seo-services`    | No Angular `Title` / `Meta` services - use `injectTitleBinding()`, `injectMetaBinding()`, `injectLinkBinding()` etc.            |     | error   |
-| `no-locale-id`               | No `inject(LOCALE_ID)` - use `injectLocale()`                                                                                   |     | error   |
-| `prefer-clone-equal`         | `clone()` / `equal()` instead of JSON round-trips, `structuredClone` or lodash `cloneDeep` / `isEqual`                          |     | error   |
+| Rule                         | What it enforces                                                                                                                         | Fix | Default |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-direct-dom-manipulation` | No direct DOM manipulation - use `injectRenderer()`                                                                                      |     | error   |
+| `no-dom-query`               | No `querySelector`, `getElementById`, … - use `viewChild()` / `viewChildren()` / `contentChild()` / `contentChildren()`                  |     | error   |
+| `no-native-observers`        | No raw `IntersectionObserver` / `MutationObserver` / `ResizeObserver` - use the signal-based observer utilities                          |     | error   |
+| `prefer-match-media`         | No `window.matchMedia()` - use `injectMediaQueryIsMatched()` for a one-shot boolean or `injectObserveMediaQuery()` for a reactive signal |     | error   |
+| `prefer-viewport-size`       | `injectViewportSize()` instead of `window.innerWidth` / `innerHeight`                                                                    |     | warn    |
+| `prefer-element-dimensions`  | `signalElementDimensions()` / `signalHostElementDimensions()` instead of reading element size properties in reactive contexts            |     | warn    |
+| `prefer-scroll-state`        | Scroll signal utilities or `ScrollableComponent` from `@ethlete/components` instead of raw scroll event listeners                        |     | warn    |
+| `no-document-cookie`         | No direct `document.cookie` access - use `getCookie` / `setCookie` / `hasCookie` / `deleteCookie`                                        |     | error   |
+| `no-window-location`         | No URL state reads from `window.location.*` - use `injectUrl()` / `injectRoute()` / `injectQueryParam()` etc.                            |     | warn    |
+| `no-angular-router-api`      | No injecting `ActivatedRoute` (fully replaced) and no state reads off an injected `Router` - use the `inject*` router utilities          |     | warn    |
+| `no-angular-seo-services`    | No Angular `Title` / `Meta` services - use `applyHeadTitleBinding()`, `applyMetaBinding()` and `applyLinkBinding()`                      |     | error   |
+| `no-locale-id`               | No `inject(LOCALE_ID)` for application locale state - use `injectLocale()`; Angular provider registration remains allowed                |     | error   |
+| `prefer-clone-equal`         | `clone()` / `equal()` instead of JSON round-trips, `structuredClone` or lodash `cloneDeep` / `isEqual`                                   |     | error   |
 
 ```ts
 // ❌ one-shot read, not reactive
 const isMobile = window.matchMedia('(max-width: 600px)').matches;
 
-// ✅ reactive signal from @ethlete/core
+// ✅ one-shot SSR-safe boolean
 const isMobile = injectMediaQueryIsMatched('(max-width: 600px)');
+
+// ✅ reactive signal
+const isMobileReactive = injectObserveMediaQuery('(max-width: 600px)');
 ```

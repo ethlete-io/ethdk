@@ -1,4 +1,4 @@
-import { Binding, Injector, Signal, StaticProvider, Type, ViewContainerRef } from '@angular/core';
+import { Binding, EnvironmentProviders, Injector, Provider, Signal, Type, ViewContainerRef } from '@angular/core';
 import { OffsetOptions, Padding, Placement, VirtualElement } from '@floating-ui/dom';
 import { AnimatedLifecycleDirective } from '../animations';
 
@@ -123,7 +123,7 @@ export type OverlayRuntimeMountConfig<TComponent extends object> = {
   component: Type<TComponent>;
   viewContainerRef?: ViewContainerRef;
   injector?: Injector;
-  providers?: StaticProvider[];
+  providers?: Array<Provider | EnvironmentProviders>;
   role?: OverlayRuntimeRole;
   positionStrategy?: OverlayRuntimePositionStrategy;
   hasBackdrop?: boolean;

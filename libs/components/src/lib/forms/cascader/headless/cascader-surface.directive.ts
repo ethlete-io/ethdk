@@ -11,7 +11,7 @@ import { CascaderDirective, CascaderSurfaceContext } from './cascader.directive'
 export class CascaderSurfaceDirective {
   private cascader = inject(CascaderDirective, { optional: true });
   public templateRef = inject<TemplateRef<CascaderSurfaceContext>>(TemplateRef);
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   constructor() {
     registerSingleton(this.cascader?.registeredSurface, this);

@@ -98,7 +98,7 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
   private labels = injectSchedulerLabels();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private overlayRef = inject<OverlayRef<object, SchedulerEditSurfaceResult>>(OVERLAY_REF, { optional: true });
-  protected scheduler = inject(SchedulerDirective, { optional: true });
+  private scheduler = inject(SchedulerDirective, { optional: true });
 
   /** The headless directive behind this surface - field/action registration, draft state and navigation. */
   public surface = inject(SchedulerEditSurfaceDirective);

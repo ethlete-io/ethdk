@@ -27,7 +27,7 @@ const RESIZE_ANIMATION_CLASS = 'et-menu--resizing';
 export class MenuComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
-  protected menu = inject(MenuDirective, { optional: true });
+  private menu = inject(MenuDirective, { optional: true });
   protected errorColorTheme = injectErrorTheme();
 
   // both must stay content-sized: the host's used size is overridden by the resize animation and
@@ -35,7 +35,7 @@ export class MenuComponent {
   private headerElement = viewChild<ElementRef<HTMLElement>>('menuHeader');
   private bodyContentElement = viewChild<ElementRef<HTMLElement>>('menuBodyContent');
 
-  protected search = computed(() => this.menu?.registeredSearch() ?? null);
+  public search = computed(() => this.menu?.registeredSearch() ?? null);
   private searchLoading = computed(() => this.search()?.loading() ?? false);
 
   /**

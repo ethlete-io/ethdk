@@ -78,6 +78,21 @@ describe('markdownToHtml', () => {
     );
   });
 
+  it.each([
+    '&#106;avascript:alert(1)',
+    'javascript&colon;alert(1)',
+    'java&Tab;script:alert(1)',
+    '&#x6a;avascript:alert(1)',
+  ])('rejects entity-encoded script URLs: %s', (url) => {
+    expect(markdownToHtml(`[click](${url})`)).toBe(`<p>[click](${url})</p>`);
+  });
+
+  it('allows non-script image data URLs', () => {
+    expect(markdownToHtml('![pixel](data:image/png;base64,abc)')).toBe(
+      '<p><img src="data:image/png;base64,abc" alt="pixel"></p>',
+    );
+  });
+
   it('converts images', () => {
     expect(markdownToHtml('![alt text](https://example.com/img.png)')).toBe(
       '<p><img src="https://example.com/img.png" alt="alt text"></p>',

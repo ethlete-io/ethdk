@@ -541,19 +541,24 @@ export type PollConfig = {
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
-export const enum QueryStateType {
-  Prepared = 'PREPARED',
-  Loading = 'LOADING',
-  Success = 'SUCCESS',
-  Failure = 'FAILURE',
-  Cancelled = 'CANCELLED',
-}
+export const QueryStateType = {
+  Prepared: 'PREPARED',
+  Loading: 'LOADING',
+  Success: 'SUCCESS',
+  Failure: 'FAILURE',
+  Cancelled: 'CANCELLED',
+} as const;
+
+/**
+ * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
+ */
+export type QueryStateType = (typeof QueryStateType)[keyof typeof QueryStateType];
 
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export type Prepared = {
-  type: QueryStateType.Prepared;
+  type: typeof QueryStateType.Prepared;
   meta: QueryStateMeta;
 };
 
@@ -561,7 +566,7 @@ export type Prepared = {
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export type Success<Response = unknown> = {
-  type: QueryStateType.Success;
+  type: typeof QueryStateType.Success;
   response: Response;
   headers: RequestHeaders;
   meta: QueryStateSuccessMeta;
@@ -571,7 +576,7 @@ export type Success<Response = unknown> = {
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export type Failure = {
-  type: QueryStateType.Failure;
+  type: typeof QueryStateType.Failure;
   error: RequestError;
   meta: QueryStateMeta;
 };
@@ -580,7 +585,7 @@ export type Failure = {
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export type Loading = {
-  type: QueryStateType.Loading;
+  type: typeof QueryStateType.Loading;
   meta: QueryStateMeta;
   partialText?: string;
   progress?: RequestProgress;
@@ -590,7 +595,7 @@ export type Loading = {
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
 export type Cancelled = {
-  type: QueryStateType.Cancelled;
+  type: typeof QueryStateType.Cancelled;
   meta: QueryStateMeta;
 };
 

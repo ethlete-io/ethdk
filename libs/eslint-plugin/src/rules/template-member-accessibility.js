@@ -7,6 +7,7 @@ const {
   isReferencedFromTemplateOrHost,
 } = require('./internals/angular-member-visibility');
 const { getImplementedContractMemberNames } = require('./internals/implemented-contract-members');
+const { buildAccessibilityFix } = require('./internals/member-accessibility-fix');
 
 /**
  * @param {any} node
@@ -15,24 +16,6 @@ const isInjectCall = (node) => {
   if (!node || node.type !== 'PropertyDefinition' || !node.value) return false;
   if (node.value.type !== 'CallExpression') return false;
   return node.value.callee.type === 'Identifier' && node.value.callee.name === 'inject';
-};
-
-/**
- * @param {any} node
- * @param {import('eslint').SourceCode} sourceCode
- */
-const buildPublicFix = (node, sourceCode) => {
-  const keyToken = sourceCode.getFirstToken(node.key);
-  if (!keyToken) return null;
-
-  if (node.accessibility) {
-    const firstToken = sourceCode.getFirstToken(node);
-    if (!firstToken) return null;
-
-    return (fixer) => fixer.replaceText(firstToken, 'public');
-  }
-
-  return (fixer) => fixer.insertTextBefore(keyToken, 'public ');
 };
 
 /**
@@ -127,7 +110,7 @@ const templateMemberAccessibility = {
           node,
           messageId: 'shouldBePublic',
           data: { name: memberName },
-          fix: buildPublicFix(node, sourceCode),
+          fix: buildAccessibilityFix(node, sourceCode, 'public'),
         });
 
         return;
@@ -142,7 +125,7 @@ const templateMemberAccessibility = {
           node,
           messageId: 'shouldBeExplicit',
           data: { name: memberName },
-          fix: buildPublicFix(node, sourceCode),
+          fix: buildAccessibilityFix(node, sourceCode, 'public'),
         });
 
         return;
@@ -184,7 +167,7 @@ const templateMemberAccessibility = {
         node,
         messageId: 'shouldBeExplicitPublic',
         data: { name: memberName },
-        fix: buildPublicFix(node, sourceCode),
+        fix: buildAccessibilityFix(node, sourceCode, 'public'),
       });
     };
 

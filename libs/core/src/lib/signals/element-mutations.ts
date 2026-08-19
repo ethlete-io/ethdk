@@ -11,31 +11,33 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
 
   const elementMutationsSignal = signal<MutationRecord | null>(null);
 
-  const observer = new MutationObserver((e) => {
-    if (!isRendered()) return;
-
-    const entry = e[0];
-
-    if (entry) {
-      zone.run(() => elementMutationsSignal.set(entry));
-    }
-  });
+  let observer: MutationObserver | null = null;
 
   effect(() => {
     const els = firstEl();
+    const rendered = isRendered();
 
     elementMutationsSignal.set(null);
 
-    if (els.previousElement) {
-      observer.disconnect();
+    if (!rendered || typeof MutationObserver === 'undefined') {
+      return;
     }
+
+    observer ??= new MutationObserver((entries) => {
+      const entry = entries[0];
+
+      if (entry) {
+        zone.run(() => elementMutationsSignal.set(entry));
+      }
+    });
+    observer.disconnect();
 
     if (els.currentElement) {
       observer.observe(els.currentElement, options);
     }
   });
 
-  destroyRef.onDestroy(() => observer.disconnect());
+  destroyRef.onDestroy(() => observer?.disconnect());
 
   return elementMutationsSignal.asReadonly();
 };

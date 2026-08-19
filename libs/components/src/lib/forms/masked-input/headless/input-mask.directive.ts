@@ -32,7 +32,7 @@ import { compilePatternMask } from './internals/pattern-mask';
 })
 export class InputMaskDirective {
   private host = inject(INPUT_MASK_HOST, { optional: true });
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   /**
    * The mask: a pattern string (`0` digit, `9` optional digit, `a` letter, `*`

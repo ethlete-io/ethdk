@@ -34,11 +34,17 @@ export class ScrollObserverDirective {
   isAtStart = computed(() => this._startIntersection()[0]?.isIntersecting ?? false);
   isAtEnd = computed(() => this._endIntersection()[0]?.isIntersecting ?? false);
 
-  _registerStart(el: ElementRef<HTMLElement>) {
+  /** @internal */
+  registerStart(el: ElementRef<HTMLElement>) {
     this._startEl.set(el);
+
+    return () => this._startEl.update((current) => (current === el ? null : current));
   }
 
-  _registerEnd(el: ElementRef<HTMLElement>) {
+  /** @internal */
+  registerEnd(el: ElementRef<HTMLElement>) {
     this._endEl.set(el);
+
+    return () => this._endEl.update((current) => (current === el ? null : current));
   }
 }

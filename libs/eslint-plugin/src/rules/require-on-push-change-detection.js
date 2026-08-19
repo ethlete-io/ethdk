@@ -87,11 +87,25 @@ const hasTrailingComma = (sourceCode, property) => {
 /**
  * @param {import('eslint').SourceCode} sourceCode
  */
-const findAngularCoreImport = (sourceCode) =>
-  sourceCode.ast.body.find(
+const findAngularCoreImport = (sourceCode) => {
+  const imports = sourceCode.ast.body.filter(
     (node) =>
       node.type === 'ImportDeclaration' && node.source.type === 'Literal' && node.source.value === '@angular/core',
-  ) ?? null;
+  );
+
+  return (
+    imports.find((node) =>
+      node.specifiers.some(
+        (specifier) =>
+          specifier.type === 'ImportSpecifier' &&
+          specifier.imported.type === 'Identifier' &&
+          specifier.imported.name === 'ChangeDetectionStrategy',
+      ),
+    ) ??
+    imports.find((node) => node.importKind !== 'type') ??
+    null
+  );
+};
 
 /**
  * @param {import('eslint').SourceCode} sourceCode
@@ -133,11 +147,18 @@ const buildMissingAngularCoreImportFix = (sourceCode) => {
   const importDeclarations = sourceCode.ast.body.filter((node) => node.type === 'ImportDeclaration');
   const lastImport = importDeclarations[importDeclarations.length - 1] ?? null;
 
-  return lastImport
-    ? (fixer) => fixer.insertTextAfter(lastImport, `\nimport { ChangeDetectionStrategy } from '@angular/core';`)
+  if (lastImport) {
+    return (fixer) => fixer.insertTextAfter(lastImport, `\nimport { ChangeDetectionStrategy } from '@angular/core';`);
+  }
+
+  const firstNode = sourceCode.ast.body[0];
+  const lastComment = firstNode ? sourceCode.getCommentsBefore(firstNode).at(-1) : null;
+
+  return lastComment
+    ? (fixer) => fixer.insertTextAfter(lastComment, `\nimport { ChangeDetectionStrategy } from '@angular/core';\n`)
     : (fixer) =>
         fixer.replaceTextRange(
-          [0, sourceCode.ast.range[0]],
+          [0, firstNode?.range[0] ?? 0],
           `import { ChangeDetectionStrategy } from '@angular/core';\n\n`,
         );
 };
@@ -146,6 +167,8 @@ const buildMissingAngularCoreImportFix = (sourceCode) => {
  * @param {any} metadata
  */
 const getChangeDetectionInsertionTarget = (metadata) => {
+  if (metadata.properties.some((property) => property.type === 'SpreadElement')) return null;
+
   const changeDetectionIndex = COMPONENT_ORDER.indexOf('changeDetection');
 
   return (
@@ -165,7 +188,7 @@ const getChangeDetectionInsertionTarget = (metadata) => {
  */
 const buildMetadataFix = (sourceCode, metadata) => {
   const changeDetectionText = 'changeDetection: ChangeDetectionStrategy.OnPush';
-  const properties = metadata.properties.filter((property) => property.type === 'Property');
+  const properties = metadata.properties;
   const insertionTarget = getChangeDetectionInsertionTarget(metadata);
   const isMultiline = Boolean(metadata.loc && metadata.loc.start.line !== metadata.loc.end.line);
 
@@ -282,10 +305,7 @@ const requireOnPushChangeDetection = {
         if (!metadata || metadata.type !== 'ObjectExpression') return;
 
         const changeDetectionProp = metadata.properties.find(
-          (property) =>
-            property.type === 'Property' &&
-            property.key.type === 'Identifier' &&
-            property.key.name === 'changeDetection',
+          (property) => property.type === 'Property' && getPropertyName(property.key) === 'changeDetection',
         );
 
         if (!changeDetectionProp) {

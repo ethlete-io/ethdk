@@ -2,6 +2,7 @@ import { afterNextRender, DestroyRef, effect, ElementRef, inject, isSignal, Sign
 import { injectRenderer } from '../providers/renderer';
 import { buildElementSignal, firstElementSignal, SignalElementBindingType } from './element';
 import { injectPrefersReducedMotion } from './media-queries';
+import { signalIsRendered } from './render-utils';
 
 export type AnimatedSizeAxis = 'block' | 'inline';
 
@@ -50,6 +51,7 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig) => {
   const renderer = injectRenderer();
   const prefersReducedMotion = injectPrefersReducedMotion();
   const destroyRef = inject(DestroyRef);
+  const isRendered = signalIsRendered();
 
   const hostSignal = firstElementSignal(buildElementSignal(hostBinding));
   const observeTargets = Array.isArray(config.observe) ? config.observe : [config.observe];
@@ -102,7 +104,7 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig) => {
       return;
     }
 
-    if (config.resizingClass && renderer) {
+    if (config.resizingClass) {
       renderer.addClass(host, config.resizingClass);
     }
 
@@ -131,7 +133,7 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig) => {
         return;
       }
 
-      if (config.resizingClass && renderer) {
+      if (config.resizingClass) {
         renderer.removeClass(host, config.resizingClass);
       }
 
@@ -144,17 +146,20 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig) => {
     animation = nextAnimation;
   };
 
-  // no zone/signal indirection - see the pre-paint timing note in the doc comment above
-  const observer = new ResizeObserver(() => {
-    if (!ready) return;
-
-    run();
-  });
+  let observer: ResizeObserver | null = null;
 
   effect(() => {
     const elements = observedElements.map((element) => element().currentElement);
+    const rendered = isRendered();
 
     untracked(() => {
+      if (!rendered || typeof ResizeObserver === 'undefined') {
+        return;
+      }
+
+      observer ??= new ResizeObserver(() => {
+        if (ready) run();
+      });
       observer.disconnect();
 
       for (const element of elements) {
@@ -165,7 +170,6 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig) => {
     });
   });
 
-  // Capture the settled size of the first render as the baseline, then only animate later changes.
   afterNextRender(() => {
     const host = hostElement();
     const rect = host ? host.getBoundingClientRect() : null;
@@ -176,7 +180,7 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig) => {
   });
 
   destroyRef.onDestroy(() => {
-    observer.disconnect();
+    observer?.disconnect();
     animation?.cancel();
   });
 };

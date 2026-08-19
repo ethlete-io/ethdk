@@ -203,6 +203,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
   const router = inject(Router);
   const document = inject(DOCUMENT);
   const injector = inject(Injector);
+  const destroyRef = inject(DestroyRef);
   const holds = injectScrollRestorationHolds();
 
   const restoreEnabled = config.restore?.enabled === true;
@@ -218,7 +219,8 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
   // The browser restores the offset against the still-loading (much shorter) document, which is the
   // exact problem we are solving - take it over completely.
-  if (restoreEnabled && 'scrollRestoration' in history) {
+  const previousScrollRestoration = 'scrollRestoration' in history ? history.scrollRestoration : null;
+  if (restoreEnabled && previousScrollRestoration !== null) {
     history.scrollRestoration = 'manual';
   }
 
@@ -227,8 +229,8 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
   // Mirrors Angular's own `RouterScroller`: the offset of the currently displayed page belongs to
   // the navigation that produced it, and a popstate reports the id of the entry it moves to.
-  let lastNavigationId = 0;
-  let restoredNavigationId = 0;
+  let lastNavigationId: number | null = null;
+  let restoredNavigationId: number | null = null;
   let isPopstate = false;
   let wantsRestore = false;
 
@@ -251,7 +253,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     // The user scrolling always wins over a restoration we have not committed yet.
     const abortByUser = () => cancelPendingRestore();
 
-    const hardDeadline = Date.now() + Math.max(restoreTimeout, restoreMaxTimeout);
+    const hardDeadline = Date.now() + restoreMaxTimeout;
     let deadline = Date.now() + restoreTimeout;
 
     const step = () => {
@@ -351,12 +353,14 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
     // Re-inserted rather than overwritten so map order stays least-recently-left first, which is both
     // what `findLastVisitedOffset` walks backwards and what the cap below evicts from.
-    positions.delete(lastNavigationId);
-    positions.set(lastNavigationId, {
-      top: resolveScrollElement().scrollTop,
-      route: prev.route,
-      search: serializeQueryParams(prev.state.queryParams),
-    });
+    if (lastNavigationId !== null) {
+      positions.delete(lastNavigationId);
+      positions.set(lastNavigationId, {
+        top: resolveScrollElement().scrollTop,
+        route: prev.route,
+        search: serializeQueryParams(prev.state.queryParams),
+      });
+    }
 
     if (positions.size > MAX_STORED_POSITIONS) {
       const oldest = positions.keys().next();
@@ -365,7 +369,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     }
 
     isPopstate = event.navigationTrigger === 'popstate';
-    restoredNavigationId = event.restoredState?.navigationId ?? 0;
+    restoredNavigationId = event.restoredState?.navigationId ?? null;
 
     // Read off the navigation rather than `history.state`: a symbol key does not survive being
     // structured-cloned into the history entry, which is what keeps the mark from outliving this
@@ -394,11 +398,11 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     } else {
       // A skipped same url navigation is not a history move, so there is nothing to restore.
       isPopstate = false;
-      restoredNavigationId = 0;
+      restoredNavigationId = null;
     }
 
     if (restoreEnabled && isPopstate) {
-      const target = positions.get(restoredNavigationId);
+      const target = restoredNavigationId === null ? undefined : positions.get(restoredNavigationId);
 
       // The saved offset wins over both scroll to top and fragment scrolling: the user may well have
       // scrolled away from the anchor before leaving the page.
@@ -475,4 +479,11 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
       onNavigationEnd(event);
     });
+
+  destroyRef.onDestroy(() => {
+    cancelPendingRestore();
+    if (restoreEnabled && previousScrollRestoration !== null) {
+      history.scrollRestoration = previousScrollRestoration;
+    }
+  });
 };

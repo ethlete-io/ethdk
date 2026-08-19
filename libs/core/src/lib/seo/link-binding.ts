@@ -253,7 +253,7 @@ export const applyCanonicalBinding = /* @__PURE__ */ createPropertyBinding(
 export const applyAlternateBinding = (hreflang: string, binding: MaybeSignal<string | null | undefined>) => {
   applyLinkBinding(
     computed(() => {
-      const url = untracked(() => (isSignal(binding) ? binding() : binding));
+      const url = isSignal(binding) ? binding() : binding;
       return url ? { rel: 'alternate', hreflang, href: url } : null;
     }),
   );

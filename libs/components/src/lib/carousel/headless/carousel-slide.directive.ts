@@ -47,7 +47,7 @@ export type CarouselSlideContext<T> = {
 })
 export class CarouselSlideDirective<T> {
   private carousel = inject(CAROUSEL_TOKEN, { optional: true });
-  private readonly hostElement = injectHostElement<Comment>();
+  private hostElement = injectHostElement<Comment>();
 
   /** @internal The template itself, stamped by whoever renders the slides. */
   public templateRef = inject<TemplateRef<CarouselSlideContext<T>>>(TemplateRef);

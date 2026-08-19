@@ -44,6 +44,8 @@ export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatc
  * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
  */
 export const createRootThemeCss = (themes: ColorTheme[]) => {
+  if (typeof document === 'undefined') return;
+
   const createVars = (name: string, swatch: ThemeSwatch) => {
     const inkDefault = swatch.inkColor?.default || swatch.color.default;
     const inkHover = swatch.inkColor?.hover || inkDefault;
@@ -98,6 +100,7 @@ export const createRootThemeCss = (themes: ColorTheme[]) => {
   }
   `;
 
+  document.getElementById('et-root-themes')?.remove();
   const style = document.createElement('style');
   style.id = `et-root-themes`;
   style.appendChild(document.createTextNode(css));
@@ -108,6 +111,8 @@ export const createRootThemeCss = (themes: ColorTheme[]) => {
  * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
  */
 export const createThemeStyle = (theme: ColorTheme, isAlt: boolean) => {
+  if (typeof document === 'undefined') return;
+
   const cssThemeName = createCssColorThemeName(theme.name);
   const classPrefix = isAlt ? 'et-color-alt' : 'et-color';
 
@@ -126,6 +131,7 @@ export const createThemeStyle = (theme: ColorTheme, isAlt: boolean) => {
   }
   `;
 
+  document.getElementById(`${classPrefix}--${cssThemeName}`)?.remove();
   const style = document.createElement('style');
   style.id = `${classPrefix}--${cssThemeName}`;
   style.appendChild(document.createTextNode(css));

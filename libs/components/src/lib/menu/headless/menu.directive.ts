@@ -61,7 +61,7 @@ const MENU_MIN_AVAILABLE_SPACE = 160;
 export class MenuDirective {
   private destroyRef = inject(DestroyRef);
   private overlayManager = injectOverlayManager();
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   public parent = inject(MenuDirective, { optional: true, skipSelf: true });
 

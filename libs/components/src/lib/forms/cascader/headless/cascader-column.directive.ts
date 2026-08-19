@@ -19,7 +19,7 @@ export class CascaderColumnDirective {
 
   public cascader = inject(CascaderDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   /** The column's zero-based level - column 0 shows the root. */
   public columnIndex = input.required<number>({ alias: 'etCascaderColumn' });

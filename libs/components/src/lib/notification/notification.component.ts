@@ -85,12 +85,13 @@ export class NotificationComponent {
 
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
-    if (!themes) return null;
+    const type = this.surfaceType();
+    if (!themes || !type) return null;
 
     // The stack is appended to <body> and paints above every overlay, so a toast is a layer on the
     // page - elevation 1, the same level a dialog resolves to. It must not follow what is open
     // underneath it: that re-shaded every visible toast whenever an overlay came or went.
-    return resolveSurfaceByElevation(themes, this.surfaceType(), 1);
+    return resolveSurfaceByElevation(themes, type, 1);
   });
 
   protected controlsColor = computed(() => {

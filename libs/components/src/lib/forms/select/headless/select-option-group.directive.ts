@@ -26,7 +26,7 @@ export type SelectOptionGroupItem = {
   },
 })
 export class SelectOptionGroupDirective {
-  private readonly hostElement = injectHostElement();
+  private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
 

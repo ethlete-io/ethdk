@@ -55,10 +55,7 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge, doc: 
 
   let cancelled = false;
 
-  const end$ = merge(
-    fromEvent<PointerEvent>(document, 'pointerup'),
-    fromEvent<PointerEvent>(document, 'pointercancel'),
-  ).pipe(
+  const end$ = merge(fromEvent<PointerEvent>(doc, 'pointerup'), fromEvent<PointerEvent>(doc, 'pointercancel')).pipe(
     filter((e) => e.pointerId === pointerId),
     take(1),
     // Read below by the terminating `defer`, which only runs once this has completed the moves.
@@ -70,7 +67,7 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge, doc: 
 
     return concat(
       of<GestureEvent>({ type: 'start', edge }),
-      fromEvent<PointerEvent>(document, 'pointermove').pipe(
+      fromEvent<PointerEvent>(doc, 'pointermove').pipe(
         filter((e) => e.pointerId === pointerId),
         map((e): GestureEvent => ({
           type: 'move',
@@ -94,151 +91,13 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge, doc: 
       ></div>
     }
   `,
+  styleUrl: './resize-handles.component.css',
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-resize-handles',
     '[attr.inert]': 'disabled() ? "" : null',
     '[attr.data-active-edge]': 'activeEdge()',
   },
-  styles: `
-    @property --et-resize-handles-z-index {
-      syntax: '<integer>';
-      inherits: true;
-      initial-value: 10;
-    }
-
-    @property --et-resize-handles-edge-size {
-      syntax: '<length>';
-      inherits: true;
-      initial-value: 6px;
-    }
-
-    @property --et-resize-handles-corner-size {
-      syntax: '<length>';
-      inherits: true;
-      initial-value: 12px;
-    }
-
-    @property --et-resize-handles-edge-inset {
-      syntax: '<length>';
-      inherits: true;
-      initial-value: 8px;
-    }
-
-    @property --et-resize-handles-outset {
-      syntax: '<length>';
-      inherits: true;
-      initial-value: 0px;
-    }
-
-    @property --et-resize-handles-side-top {
-      syntax: '<length>';
-      inherits: true;
-      initial-value: 0px;
-    }
-
-    @property --et-resize-handles-side-bottom {
-      syntax: '<length>';
-      inherits: true;
-      initial-value: 8px;
-    }
-
-    @property --et-resize-handles-touch-edge-size {
-      syntax: '<length>';
-      inherits: true;
-      initial-value: 20px;
-    }
-
-    @property --et-resize-handles-touch-corner-size {
-      syntax: '<length>';
-      inherits: true;
-      initial-value: 28px;
-    }
-
-    et-resize-handles {
-      position: absolute;
-      inset: calc(-1 * var(--et-resize-handles-outset));
-      pointer-events: none;
-    }
-
-    .et-resize-handle {
-      --et-resize-handle-thickness: calc(var(--et-resize-handles-edge-size) + var(--et-resize-handles-outset));
-      --et-resize-handle-corner: calc(var(--et-resize-handles-corner-size) + var(--et-resize-handles-outset));
-
-      position: absolute;
-      z-index: var(--et-resize-handles-z-index);
-      touch-action: none;
-      pointer-events: auto;
-    }
-
-    .et-resize-handle--n {
-      left: var(--et-resize-handles-edge-inset);
-      right: var(--et-resize-handles-edge-inset);
-      height: var(--et-resize-handle-thickness);
-      top: 0;
-    }
-
-    .et-resize-handle--s {
-      left: var(--et-resize-handles-edge-inset);
-      right: var(--et-resize-handles-edge-inset);
-      height: var(--et-resize-handle-thickness);
-      bottom: 0;
-    }
-
-    .et-resize-handle--e,
-    .et-resize-handle--w {
-      top: var(--et-resize-handles-side-top);
-      bottom: var(--et-resize-handles-side-bottom);
-      width: var(--et-resize-handle-thickness);
-    }
-
-    .et-resize-handle--e {
-      right: 0;
-    }
-
-    .et-resize-handle--w {
-      left: 0;
-    }
-
-    .et-resize-handle--ne,
-    .et-resize-handle--nw {
-      top: 0;
-      width: var(--et-resize-handle-corner);
-      height: var(--et-resize-handle-corner);
-    }
-
-    .et-resize-handle--ne {
-      right: 0;
-    }
-
-    .et-resize-handle--nw {
-      left: 0;
-    }
-
-    .et-resize-handle--se,
-    .et-resize-handle--sw {
-      bottom: 0;
-      width: var(--et-resize-handle-corner);
-      height: var(--et-resize-handle-corner);
-    }
-
-    .et-resize-handle--se {
-      right: 0;
-    }
-
-    .et-resize-handle--sw {
-      left: 0;
-    }
-
-    /* any-pointer, not hover:none - a touchscreen laptop has a mouse as its primary input, so
-       hover:none never matches there even though a finger can still grab a handle. */
-    @media (any-pointer: coarse) {
-      .et-resize-handle {
-        --et-resize-handle-thickness: calc(var(--et-resize-handles-touch-edge-size) + var(--et-resize-handles-outset));
-        --et-resize-handle-corner: calc(var(--et-resize-handles-touch-corner-size) + var(--et-resize-handles-outset));
-      }
-    }
-  `,
 })
 export class ResizeHandlesComponent {
   private el = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -308,9 +167,9 @@ export class ResizeHandlesComponent {
     { initialValue: null },
   );
 
-  readonly edgeCursors = EDGE_CURSORS;
+  protected readonly edgeCursors = EDGE_CURSORS;
 
-  startResizeGesture(event: PointerEvent, edge: ResizeEdge) {
+  protected startResizeGesture(event: PointerEvent, edge: ResizeEdge) {
     if (event.button !== 0 || this.disabled()) return;
     event.stopPropagation();
     this.gestureStart$.next({ event, edge });

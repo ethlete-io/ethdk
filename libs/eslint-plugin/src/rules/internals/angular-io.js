@@ -69,10 +69,28 @@ const getReactiveIo = (node) => {
   const factory = getFactoryName(value.callee);
   if (!factory) return null;
 
+  if (!Object.hasOwn(IO_FACTORIES, factory)) return null;
   const kind = /** @type {Record<string, 'input' | 'model' | 'output'>} */ (IO_FACTORIES)[factory];
   if (!kind) return null;
 
-  return { kind, name: node.key.name, keyNode: node.key };
+  let name = node.key.name;
+  for (const argument of value.arguments) {
+    if (argument.type !== 'ObjectExpression') continue;
+
+    const aliasProperty = argument.properties.find(
+      (property) =>
+        property.type === 'Property' &&
+        !property.computed &&
+        ((property.key.type === 'Identifier' && property.key.name === 'alias') ||
+          (property.key.type === 'Literal' && property.key.value === 'alias')),
+    );
+    if (aliasProperty?.value.type === 'Literal' && typeof aliasProperty.value.value === 'string') {
+      name = aliasProperty.value.value;
+      break;
+    }
+  }
+
+  return { kind, name, keyNode: node.key };
 };
 
 module.exports = { getReactiveIo };

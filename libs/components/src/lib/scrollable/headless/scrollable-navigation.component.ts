@@ -108,7 +108,7 @@ import { ScrollableNavigation } from './scrollable.types';
   `,
 })
 export class ScrollableNavigationComponent {
-  protected scrollable = inject(ScrollableDirective);
+  private scrollable = inject(ScrollableDirective);
 
   private navigationDotsContainer = viewChild<ElementRef<HTMLElement>>('navigationDotsContainer');
   private firstNavigationDot = viewChild<ElementRef<HTMLButtonElement>>('navigationDot');

@@ -73,11 +73,18 @@ const noLeadingUnderscoreClassMember = {
         const frame = classStack.pop();
         if (!frame) return;
 
+        const targetNameCounts = new Map();
+        for (const oldName of frame.membersByName.keys()) {
+          const newName = getFixedName(oldName);
+          targetNameCounts.set(newName, (targetNameCounts.get(newName) ?? 0) + 1);
+        }
+
         for (const [oldName, memberNodes] of frame.membersByName) {
           const newName = getFixedName(oldName);
           const canFix =
             newName.length > 0 &&
             !frame.declaredNames.has(newName) &&
+            targetNameCounts.get(newName) === 1 &&
             memberNodes.every((memberNode) => memberNode.accessibility === 'private');
 
           for (const memberNode of memberNodes) {

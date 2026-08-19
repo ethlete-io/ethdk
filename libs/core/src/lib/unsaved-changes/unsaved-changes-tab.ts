@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   assertInInjectionContext,
   computed,
+  DOCUMENT,
   DestroyRef,
   effect,
   inject,
@@ -98,11 +99,9 @@ type BadgingNavigator = Navigator & {
 // The badge is a single app-wide surface, so every lock that wants one registers here and the badge
 // is derived from all of them - otherwise the first tracker to go clean would clear a badge that
 // another one still needs.
-const BADGE_HOLDERS = /* @__PURE__ */ new Map<symbol, number | true>();
+const BADGE_HOLDERS = /* @__PURE__ */ new WeakMap<Navigator, Map<symbol, number | true>>();
 
-const syncAppBadge = () => {
-  const nav = typeof navigator === 'undefined' ? null : (navigator as BadgingNavigator);
-
+const syncAppBadge = (nav: BadgingNavigator, badgeHolders: Map<symbol, number | true>) => {
   if (!nav?.setAppBadge || !nav.clearAppBadge) {
     return;
   }
@@ -110,13 +109,13 @@ const syncAppBadge = () => {
   // Unsupported, or not installed - the promise rejects instead of throwing synchronously.
   const ignore = () => undefined;
 
-  if (!BADGE_HOLDERS.size) {
+  if (!badgeHolders.size) {
     nav.clearAppBadge().catch(ignore);
 
     return;
   }
 
-  const count = Array.from(BADGE_HOLDERS.values()).reduce<number>(
+  const count = Array.from(badgeHolders.values()).reduce<number>(
     (total, contents) => (typeof contents === 'number' ? total + contents : total),
     0,
   );
@@ -156,10 +155,11 @@ export const createUnsavedChangesTabLock = (config: CreateUnsavedChangesTabLockC
   const titleMarker =
     config.titleMarker === true
       ? UNSAVED_CHANGES_TITLE_MARKER
-      : (config.titleMarker ?? (flash && !favicon ? UNSAVED_CHANGES_TITLE_MARKER : null));
+      : (config.titleMarker ?? (flash ? UNSAVED_CHANGES_TITLE_MARKER : null));
 
   const destroyRef = inject(DestroyRef);
   const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  const navigator = inject(DOCUMENT).defaultView?.navigator as BadgingNavigator | undefined;
 
   const releaseFns: (() => void)[] = [];
 
@@ -270,28 +270,33 @@ export const createUnsavedChangesTabLock = (config: CreateUnsavedChangesTabLockC
     });
   }
 
-  if (isBrowser && badge !== false) {
+  if (isBrowser && navigator && badge !== false) {
     const badgeId = Symbol('unsaved-changes-badge');
     const contents = badge === true ? true : badge;
+    let badgeHolders = BADGE_HOLDERS.get(navigator);
+    if (!badgeHolders) {
+      badgeHolders = new Map();
+      BADGE_HOLDERS.set(navigator, badgeHolders);
+    }
 
     const badgeEffect = effect(() => {
       const dirty = hasChanges();
 
       untracked(() => {
         if (dirty) {
-          BADGE_HOLDERS.set(badgeId, contents);
+          badgeHolders.set(badgeId, contents);
         } else {
-          BADGE_HOLDERS.delete(badgeId);
+          badgeHolders.delete(badgeId);
         }
 
-        syncAppBadge();
+        syncAppBadge(navigator, badgeHolders);
       });
     });
 
     releaseFns.push(() => {
       badgeEffect.destroy();
-      BADGE_HOLDERS.delete(badgeId);
-      syncAppBadge();
+      badgeHolders.delete(badgeId);
+      syncAppBadge(navigator, badgeHolders);
     });
   }
 

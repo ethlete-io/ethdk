@@ -23,23 +23,24 @@ ref.afterClosed().subscribe(({ result, source }) => {
 
 ## Mount config
 
-| Option                                                     | Default              | Description                                                                       |
-| ---------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------- |
-| `id`                                                       | - (required)         | Identifies the overlay (`data-overlay-id`).                                       |
-| `component`                                                | - (required)         | The component to mount.                                                           |
-| `positionStrategy`                                         | `{ kind: 'center' }` | See [position strategies](#position-strategies).                                  |
-| `modal`                                                    | `true`               | Modal overlays get a focus trap and `aria-modal`.                                 |
-| `hasBackdrop`                                              | `true`               | Render a backdrop element.                                                        |
-| `autoFocus`                                                | `'first-tabbable'`   | `'container' \| 'first-heading' \| 'first-tabbable'`, a CSS selector, or `false`. |
-| `restoreFocus`                                             | `true`               | Restore focus to the previously focused element on close.                         |
-| `closeOnEscape`                                            | `true`               | Escape closes the top-most overlay.                                               |
-| `closeOnOutsidePointer`                                    | `!modal`             | Pointer down outside the pane closes it.                                          |
-| `role`                                                     | `null`               | `'dialog' \| 'alertdialog'`.                                                      |
-| `ariaLabel` / `ariaLabelledBy` / `ariaDescribedBy`         | -                    | Accessibility wiring.                                                             |
-| `hostClass` / `backdropClass` / `paneClass`                | -                    | Extra classes on the scaffold elements.                                           |
-| `providers` / `injector` / `viewContainerRef` / `bindings` | -                    | DI and input bindings for the mounted component.                                  |
-| `animationDelegate`                                        | -                    | Custom `enter`/`leave` drivers (must settle the lifecycle).                       |
-| `zIndex`                                                   | `2147483003`         | The stacking level to mount at - see [stacking levels](#stacking-levels).         |
+| Option                                                     | Default              | Description                                                                                                        |
+| ---------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `id`                                                       | - (required)         | Identifies the overlay (`data-overlay-id`).                                                                        |
+| `component`                                                | - (required)         | The component to mount.                                                                                            |
+| `positionStrategy`                                         | `{ kind: 'center' }` | See [position strategies](#position-strategies).                                                                   |
+| `modal`                                                    | `true`               | Modal overlays get a focus trap and `aria-modal`.                                                                  |
+| `hasBackdrop`                                              | `true`               | Render a backdrop element.                                                                                         |
+| `autoFocus`                                                | `'first-tabbable'`   | `'container' \| 'first-heading' \| 'first-tabbable'`, a CSS selector, or `false`.                                  |
+| `restoreFocus`                                             | `true`               | Restore focus to the previously focused element on close.                                                          |
+| `closeOnEscape`                                            | `true`               | Escape closes the top-most overlay.                                                                                |
+| `closeOnOutsidePointer`                                    | `!modal`             | Pointer down outside the pane closes it.                                                                           |
+| `role`                                                     | `null`               | `'dialog' \| 'alertdialog'`.                                                                                       |
+| `ariaLabel` / `ariaLabelledBy` / `ariaDescribedBy`         | -                    | Accessibility wiring.                                                                                              |
+| `hostClass` / `backdropClass` / `paneClass`                | -                    | Extra classes on the scaffold elements.                                                                            |
+| `providers` / `injector` / `viewContainerRef` / `bindings` | -                    | DI and input bindings for the mounted component. `providers` accepts Angular providers and `EnvironmentProviders`. |
+| `document`                                                 | injected document    | Document that owns the overlay DOM.                                                                                |
+| `animationDelegate`                                        | -                    | Custom `enter`/`leave` drivers (must settle the lifecycle).                                                        |
+| `zIndex`                                                   | `2147483003`         | The stacking level to mount at - see [stacking levels](#stacking-levels).                                          |
 
 If the mounted component exposes an `animatedLifecycle` signal (an [`AnimatedLifecycleDirective`](/core/animations)), the runtime drives its enter/leave transitions and waits for `'left'` before tearing down; otherwise open/close is synchronous.
 
@@ -136,17 +137,17 @@ The active strategy can be swapped on a live overlay via `ref.updatePositionStra
 
 `mount()` returns an `OverlayRuntimeRef`:
 
-| Member                             | Description                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `close(result?, source?)`          | Close with an optional result (`source` defaults to `'api'`). Runs registered close guards first.  |
-| `forceClose(result?, source?)`     | Close bypassing every close guard - used by a guard's owner to commit a close it vetoed.           |
-| `registerCloseGuard(guard)`        | Register a synchronous veto `(event) => boolean` for pending closes; returns an unregister fn.     |
-| `state`                            | `Signal<'mounting' \| 'mounted' \| 'closing' \| 'closed'>`                                         |
-| `componentInstance`                | `Signal<TComponent \| null>`                                                                       |
-| `beforeOpened()` / `afterOpened()` | Open lifecycle observables.                                                                        |
-| `beforeClosed()` / `afterClosed()` | Emit `{ result, source }` - `source` is `'api' \| 'escape' \| 'outside-pointer' \| 'drag'`.        |
-| `elements`                         | The scaffold DOM (`rootElement`, `hostElement`, `paneElement`, and `backdropElement` as a signal). |
-| `updateBackdrop(hasBackdrop)`      | Add or remove the backdrop of an open overlay. Ignored once the overlay closes.                    |
+| Member                             | Description                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `close(result?, source?)`          | Close with an optional result (`source` defaults to `'api'`). Runs registered close guards first.                   |
+| `forceClose(result?, source?)`     | Close bypassing every close guard - used by a guard's owner to commit a close it vetoed.                            |
+| `registerCloseGuard(guard)`        | Register a synchronous veto `(event) => boolean` for pending closes; returns an unregister fn.                      |
+| `state`                            | `Signal<'mounting' \| 'mounted' \| 'closing' \| 'closed'>`                                                          |
+| `componentInstance`                | `Signal<TComponent \| null>`                                                                                        |
+| `beforeOpened()` / `afterOpened()` | Open lifecycle observables.                                                                                         |
+| `beforeClosed()` / `afterClosed()` | Emit `{ result, source }` - `source` is `'api' \| 'escape' \| 'outside-pointer' \| 'drag' \| 'reference-detached'`. |
+| `elements`                         | The scaffold DOM (`rootElement`, `hostElement`, `paneElement`, and `backdropElement` as a signal).                  |
+| `updateBackdrop(hasBackdrop)`      | Add or remove the backdrop of an open overlay. Ignored once the overlay closes.                                     |
 
 Escape and outside-pointer closes only apply to the top-most overlay and are ignored until the enter transition has started - a click that opens an overlay can't immediately close it.
 
@@ -158,6 +159,6 @@ For debugging, the runtime shares the [`et-overlay-debug` localStorage flag](/co
 
 The building blocks behind the runtime are exported for custom floating UI:
 
-- **Focus** - `getFocusableElements(container, document)` / `isFocusable(el)` (based on the exported `FOCUSABLE_SELECTOR`), `focusElement(el)`, `applyInitialFocus(…)` and `setupFocusTrap(…)` (returns a cleanup function).
+- **Focus** - `getFocusableElements(container, document)` / `isFocusable(element, document)` (based on the exported `FOCUSABLE_SELECTOR`), `focusElement(el)`, `applyInitialFocus(…)` and `setupFocusTrap(…)` (returns a cleanup function).
 - **Positioning** - `setupPositioning(…)` plus the lower-level `applyCenteredPosition`, `applyGlobalPosition` and `createAnchoredPositionCleanup` used by the [position strategies](#position-strategies).
 - **Misc** - `getHeadingElement(container)` (finds the first heading for `aria-labelledby`) and the `isHTMLElement` guard.

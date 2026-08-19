@@ -21,16 +21,14 @@ tester.run('no-standalone-flag', rule, {
     {
       code: `@Pipe({ name: 'testPipe' }) class Foo {}`,
     },
+    {
+      code: `@Directive({ selector: '[etTest]', standalone: false, host: {} }) class Foo {}`,
+    },
   ],
   invalid: [
     {
       code: `@Component({ selector: 'et-test', standalone: true, template: '' }) class Foo {}`,
       output: `@Component({ selector: 'et-test', template: '' }) class Foo {}`,
-      errors: [{ messageId: 'noStandalone' }],
-    },
-    {
-      code: `@Directive({ selector: '[etTest]', standalone: false, host: {} }) class Foo {}`,
-      output: `@Directive({ selector: '[etTest]', host: {} }) class Foo {}`,
       errors: [{ messageId: 'noStandalone' }],
     },
     {

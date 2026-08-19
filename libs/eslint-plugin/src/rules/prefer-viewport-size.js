@@ -21,13 +21,7 @@
  */
 
 /** Properties on window that report viewport dimensions. */
-const VIEWPORT_PROPERTIES = new Set([
-  'innerWidth',
-  'innerHeight',
-  'outerWidth',
-  'outerHeight',
-  'screen', // window.screen.width / window.screen.height
-]);
+const VIEWPORT_PROPERTIES = new Set(['innerWidth', 'innerHeight']);
 
 /** @type {import('eslint').Rule.RuleModule} */
 const preferViewportSize = {
