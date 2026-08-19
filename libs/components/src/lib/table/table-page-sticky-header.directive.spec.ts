@@ -109,16 +109,17 @@ describe('TablePageStickyHeaderDirective', () => {
     expect(host.style.getPropertyValue('--et-table-sticky-header-offset')).toBe('64px');
   });
 
-  it('frame-batches the header horizontal position from the body scroller', async () => {
+  it('writes the header horizontal position onto the header grid in the same tick as the scroll', () => {
     const fixture = create();
     const host = hostOf(fixture);
     const scroller = host.querySelector<HTMLElement>('.et-table-scroller')!;
+    const headerGrid = host.querySelector<HTMLElement>('.et-table-header')!;
 
     scroller.scrollLeft = 120;
     scroller.dispatchEvent(new Event('scroll'));
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-    expect(host.style.getPropertyValue('--_et-table-inline-scroll')).toBe('120px');
+    expect(headerGrid.style.getPropertyValue('--_et-table-inline-scroll')).toBe('120px');
+    expect(host.style.getPropertyValue('--_et-table-inline-scroll')).toBe('');
   });
 
   it('lets drag scrolling pan the page-sticky body scroller', () => {

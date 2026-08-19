@@ -1125,15 +1125,8 @@ export class TableComponent<T> {
 
   // Which feature owns the drag each live pointer started - see claimPointerGesture.
   private pointerGestureClaims = new Map<number, string>();
-  private pageHeaderScrollFrame: number | null = null;
 
   constructor() {
-    this.destroyRef.onDestroy(() => {
-      const view = this.elementRef.nativeElement.ownerDocument.defaultView;
-
-      if (this.pageHeaderScrollFrame !== null) view?.cancelAnimationFrame(this.pageHeaderScrollFrame);
-    });
-
     // A detail template with nothing to render it looks like a broken template rather than a missing
     // import, so name the mistake. Deferred to an effect because a feature registers from its own
     // constructor, which runs after the table's - and it asks whether one registered at all rather
@@ -1215,7 +1208,7 @@ export class TableComponent<T> {
       this.blockScrollShadows.set(shadows);
     }
 
-    this.schedulePageHeaderScrollSync(element);
+    this.syncPageHeaderScroll(element);
     this.syncObscuredColumns();
   }
 
@@ -1859,19 +1852,15 @@ export class TableComponent<T> {
     });
   }
 
-  private schedulePageHeaderScrollSync(scroller: HTMLElement) {
-    if (!this.pageStickyHeader() || this.pageHeaderScrollFrame !== null) return;
+  // Must stay a same-tick write on the header grid. A requestAnimationFrame hop defers it past the
+  // paint the body already moved in, so the header trails a whole frame; and the property inherits,
+  // so writing it on the host recalculates style for every row cell, which only the header reads.
+  private syncPageHeaderScroll(scroller: HTMLElement) {
+    const header = this.headerGridRef()?.nativeElement;
 
-    const view = scroller.ownerDocument.defaultView;
+    if (!header) return;
 
-    if (!view) return;
-
-    this.pageHeaderScrollFrame = view.requestAnimationFrame(() => {
-      this.pageHeaderScrollFrame = null;
-      this.renderer?.setCssProperties(this.elementRef.nativeElement, {
-        '--_et-table-inline-scroll': `${scroller.scrollLeft}px`,
-      });
-    });
+    this.renderer?.setCssProperties(header, { '--_et-table-inline-scroll': `${scroller.scrollLeft}px` });
   }
 
   private renderedBodyColumnWidth(key: string) {
