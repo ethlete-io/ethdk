@@ -1,17 +1,42 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { injectContentfulConfig } from '../../utils/contentful-config';
 
-const getPrimaryDomain = (host: string) => {
-  const parts = host.split('.');
-  return parts.length > 2 ? parts.slice(-2).join('.') : host;
+const parseWebUrl = (href: string): URL | null => {
+  if (!/^(?:https?:)?\/\//i.test(href)) {
+    return null;
+  }
+
+  try {
+    return new URL(href.startsWith('//') ? 'https:' + href : href);
+  } catch {
+    return null;
+  }
+};
+
+const normalizeHostname = (host: string) => {
+  const value = host.trim().toLowerCase();
+
+  try {
+    return new URL(value.includes('://') ? value : 'https://' + value).hostname;
+  } catch {
+    return value.split(':')[0] ?? value;
+  }
+};
+
+const matchesHostname = (hostname: string, configuredHost: string) => {
+  const normalizedHost = normalizeHostname(configuredHost);
+
+  return hostname === normalizedHost || hostname.endsWith('.' + normalizedHost);
 };
 
 @Component({
   selector: 'et-contentful-link',
   template: `
-    @if (isExternal()) {
+    @if (usesRouterLink()) {
+      <a [class]="linkClass()" [routerLink]="internalUrlTree()">{{ text() }}</a>
+    } @else {
       <a
         [class]="linkClass()"
         [href]="href()"
@@ -19,72 +44,53 @@ const getPrimaryDomain = (host: string) => {
         [rel]="openInNewTab() ? 'noopener noreferrer' : null"
         >{{ text() }}</a
       >
-    } @else {
-      <a [class]="linkClass()" [routerLink]="internalPath()">{{ text() }}</a>
     }
   `,
+  styleUrl: './contentful-link.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [RouterLink],
   host: {
-    style: 'display: contents',
+    class: 'et-contentful-link',
   },
 })
 export class ContentfulLinkComponent {
   private document = inject(DOCUMENT);
+  private router = inject(Router);
   private readonly config = injectContentfulConfig();
 
   href = input.required<string>();
   text = input.required<string>();
   textClass = input('');
 
-  isExternal = computed(() => {
+  protected usesRouterLink = computed(() => {
     const href = this.href();
-    const isAbsolute = href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//');
+    const absoluteUrl = parseWebUrl(href);
 
-    if (!isAbsolute) return false;
+    if (absoluteUrl) {
+      const internalHosts = [this.document.location.hostname, ...this.config.internalHosts];
 
-    try {
-      const parsed = new URL(href.startsWith('//') ? `https:${href}` : href);
-      const internalHosts = [this.document.location.host, ...this.config.internalHosts];
-      return !internalHosts.includes(parsed.host);
-    } catch {
-      return true;
+      return internalHosts.some((host) => matchesHostname(absoluteUrl.hostname, host));
     }
+
+    return !href.startsWith('#') && !/^[a-z][a-z\d+.-]*:/i.test(href);
   });
 
-  openInNewTab = computed(() => {
-    if (!this.isExternal()) return false;
+  protected openInNewTab = computed(() => Boolean(parseWebUrl(this.href())) && !this.usesRouterLink());
 
+  protected internalPath = computed(() => {
     const href = this.href();
+    const url = parseWebUrl(href);
 
-    try {
-      const parsed = new URL(href.startsWith('//') ? `https:${href}` : href);
-      const internalPrimaryDomains = [
-        getPrimaryDomain(this.document.location.host),
-        ...this.config.internalHosts.map(getPrimaryDomain),
-      ];
-      return !internalPrimaryDomains.includes(getPrimaryDomain(parsed.host));
-    } catch {
-      return true;
-    }
-  });
-
-  internalPath = computed(() => {
-    const href = this.href();
-
-    if (!href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('//')) {
+    if (!url) {
       return href;
     }
 
-    try {
-      const url = new URL(href.startsWith('//') ? `https:${href}` : href);
-      return url.pathname + url.search + url.hash;
-    } catch {
-      return href;
-    }
+    return url.pathname + url.search + url.hash;
   });
 
-  linkClass = computed(() => {
+  protected internalUrlTree = computed(() => this.router.parseUrl(this.internalPath()));
+
+  protected linkClass = computed(() => {
     const base = 'et-contentful-rich-text-default-element et-contentful-rich-text-default-a';
     const extra = this.textClass();
 

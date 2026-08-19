@@ -24,7 +24,7 @@ const stripTrailingSlash = (value: string) => (value.endsWith('/') ? value.slice
  * reviewable.
  */
 export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions): MigrationScope => {
-  const roots: string[] = [];
+  const roots = new Set<string>();
 
   for (const projectName of options.projects ?? []) {
     const project = getProjects(tree).get(projectName);
@@ -35,14 +35,14 @@ export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions)
       );
     }
 
-    roots.push(stripTrailingSlash(project.root));
+    roots.add(stripTrailingSlash(project.root));
   }
 
   for (const includePath of options.include ?? []) {
-    roots.push(stripTrailingSlash(includePath));
+    roots.add(stripTrailingSlash(includePath));
   }
 
-  if (roots.length === 0) {
+  if (roots.size === 0) {
     return {
       visit: (targetTree, callback) => visitNotIgnoredFiles(targetTree, '', callback),
       describe: () => 'the whole workspace',
@@ -51,10 +51,17 @@ export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions)
 
   return {
     visit: (targetTree, callback) => {
+      const visited = new Set<string>();
+
       for (const root of roots) {
-        visitNotIgnoredFiles(targetTree, root, callback);
+        visitNotIgnoredFiles(targetTree, root, (filePath) => {
+          if (visited.has(filePath)) return;
+
+          visited.add(filePath);
+          callback(filePath);
+        });
       }
     },
-    describe: () => roots.join(', '),
+    describe: () => [...roots].join(', '),
   };
 };

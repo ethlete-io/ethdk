@@ -38,12 +38,12 @@ const asset = (id: string, title: string, url: string): ContentfulRestAsset =>
     sys: { type: 'Asset', id, createdAt: '', updatedAt: '', locale: 'en-US' },
     fields: {
       title,
-      description: '',
+      description: 'A responsive placeholder image rendered through the built-in asset component.',
       file: {
         url,
         fileName: `${id}.svg`,
         contentType: 'image/svg+xml',
-        details: { size: 1, image: { width: 640, height: 360 } },
+        details: { size: 1, image: { width: 500, height: 250 } },
       },
     },
     metadata: { tags: [] },

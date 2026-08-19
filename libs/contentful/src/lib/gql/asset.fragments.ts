@@ -1,7 +1,7 @@
 import { GQL } from '@ethlete/query';
 
 export const GQL_FRAGMENT_CONTENTFUL_ASSET = `
-  fragment AssetData on Asset {
+  fragment ContentfulAssetData on Asset {
     sys {
       id
     }
@@ -30,7 +30,7 @@ export type ContentfulGqlAsset = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isContentfulGqlAsset = (asset: any): asset is ContentfulGqlAsset => {
-  return asset?.sys?.id && asset?.url && typeof asset?.size === 'number';
+  return Boolean(asset && typeof asset === 'object' && asset.sys?.id && !('fields' in asset));
 };
 
 export type ContentfulGqlWhereFilter<TLinkedFrom extends Record<string, unknown> = Record<string, unknown>> = {

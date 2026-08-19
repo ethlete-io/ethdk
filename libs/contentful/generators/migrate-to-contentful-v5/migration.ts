@@ -1,4 +1,4 @@
-import { formatFiles, Tree, updateJson } from '@nx/devkit';
+import { formatFiles, GeneratorCallback, installPackagesTask, readJson, Tree, updateJson } from '@nx/devkit';
 import { createMigrationScope, MigrationScopeOptions } from './migration-scope.js';
 
 export const CONTENTFUL_V5_REPORT_PATH = 'contentful-v5-migration-tasks.md';
@@ -29,9 +29,11 @@ const REMOVED_EXPORTS = [
   'isExecutedTextCommandCacheItem',
 ];
 
-const IMAGE_TAG_REGEX = /<et-contentful-image\b[^>]*>/g;
 const INLINE_TEMPLATE_REGEX = /template\s*:\s*`([\s\S]*?)`/g;
-const CONTENTFUL_IMPORT_REGEX = /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"]@ethlete\/contentful['"]/g;
+const CONTENTFUL_NAMED_REFERENCE_REGEX =
+  /(?:import|export)\s+(?:type\s+)?(?:[\w$]+\s*,\s*)?\{([\s\S]*?)\}\s+from\s+['"]@ethlete\/contentful['"]/g;
+const CONTENTFUL_NAMESPACE_REFERENCE_REGEX =
+  /(?:import\s+\*\s+as\s+([\w$]+)|export\s+\*)\s+from\s+['"]@ethlete\/contentful['"]/g;
 
 export type ContentfulV5Task = {
   id: string;
@@ -46,12 +48,60 @@ type MigrationSchema = MigrationScopeOptions & {
 
 const lineOf = (source: string, index: number) => source.slice(0, index).split('\n').length;
 
+const replaceImageTags = (source: string, replace: (tag: string, offset: number) => string) => {
+  const tagStart = '<et-contentful-image';
+  let result = '';
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    const start = source.indexOf(tagStart, cursor);
+
+    if (start === -1) {
+      result += source.slice(cursor);
+      break;
+    }
+
+    const boundary = source[start + tagStart.length];
+
+    if (boundary && !/[\s/>]/.test(boundary)) {
+      result += source.slice(cursor, start + tagStart.length);
+      cursor = start + tagStart.length;
+      continue;
+    }
+
+    let quote: '"' | "'" | '`' | null = null;
+    let end = start + tagStart.length;
+
+    for (; end < source.length; end++) {
+      const character = source[end];
+
+      if (quote) {
+        if (character === quote) quote = null;
+      } else if (character === '"' || character === "'" || character === '`') {
+        quote = character;
+      } else if (character === '>') {
+        break;
+      }
+    }
+
+    if (end === source.length) {
+      result += source.slice(cursor);
+      break;
+    }
+
+    result += source.slice(cursor, start) + replace(source.slice(start, end + 1), start);
+    cursor = end + 1;
+  }
+
+  return result;
+};
+
 /** Renames `hasPriority` to `priority` and collects removed class inputs, on `et-contentful-image` only. */
 const migrateTemplate = (template: string) => {
   let changed = false;
   const classInputHits: { line: number; inputs: string[] }[] = [];
 
-  const content = template.replace(IMAGE_TAG_REGEX, (tag, offset: number) => {
+  const content = replaceImageTags(template, (tag, offset) => {
     const foundInputs = REMOVED_CLASS_INPUTS.filter((input) =>
       new RegExp(`(^|[\\s[])${input}(\\]|=|(?=[\\s/>]))`).test(tag),
     );
@@ -89,8 +139,8 @@ const createClassInputTask = (filePath: string, hit: { line: number; inputs: str
     )}. Those inputs were removed — the rendered picture now only carries static \`et-picture-*\` classes. Drop the binding and target the \`et-picture-*\` classes from your own CSS instead.`,
 });
 
-/** Matches a whole `useTailwindClasses: <literal>,` property line — the option was removed in v5. */
-const USE_TAILWIND_CLASSES_REGEX = /^[ \t]*useTailwindClasses\s*:\s*(?:true|false|[\w.]+)\s*,?[ \t]*\r?\n/gm;
+const USE_TAILWIND_CLASSES_REGEX =
+  /^[ \t]*useTailwindClasses\s*:\s*(?:true|false|[\w.$]+)\s*,?[ \t]*\r?\n|\buseTailwindClasses\s*:\s*(?:true|false|[\w.$]+)\s*,[ \t]*|,\s*useTailwindClasses\s*:\s*(?:true|false|[\w.$]+)(?=\s*[}\n])/gm;
 
 const migrateTsFile = (filePath: string, source: string) => {
   const tasks: ContentfulV5Task[] = [];
@@ -117,7 +167,7 @@ const migrateTsFile = (filePath: string, source: string) => {
     return match.replace(template, () => result.content);
   });
 
-  for (const importMatch of source.matchAll(CONTENTFUL_IMPORT_REGEX)) {
+  for (const importMatch of source.matchAll(CONTENTFUL_NAMED_REFERENCE_REGEX)) {
     const symbols = (importMatch[1] ?? '')
       .split(',')
       .map(
@@ -142,43 +192,66 @@ const migrateTsFile = (filePath: string, source: string) => {
     }
   }
 
+  for (const namespaceMatch of source.matchAll(CONTENTFUL_NAMESPACE_REFERENCE_REGEX)) {
+    const namespace = namespaceMatch[1] ?? '*';
+
+    tasks.push({
+      id: `removed-export:${filePath}:${namespace}`,
+      file: filePath,
+      line: lineOf(source, namespaceMatch.index ?? 0),
+      message: `The ${namespace === '*' ? 'star re-export' : `\`${namespace}\` namespace import`} may reference renderer internals that are no longer public API. Replace it with explicit supported imports and remove any command-helper usage.`,
+    });
+  }
+
   return { content, changed, tasks };
 };
 
 const migratePackageJson = (tree: Tree, filePath: string) => {
   const tasks: ContentfulV5Task[] = [];
   let changed = false;
+  const source = tree.read(filePath, 'utf-8');
 
-  updateJson<Record<string, Record<string, string> | undefined>>(tree, filePath, (json) => {
-    const dependencies = json['dependencies'];
-    const peerDependencies = json['peerDependencies'];
-    const section = dependencies?.['@ethlete/contentful']
-      ? 'dependencies'
-      : peerDependencies?.['@ethlete/contentful']
-        ? 'peerDependencies'
-        : null;
+  if (!source) {
+    return { changed, tasks };
+  }
 
-    if (!section) return json;
+  if (!source.includes('@ethlete/contentful')) {
+    return { changed, tasks };
+  }
 
-    const hasComponents = Boolean(dependencies?.[COMPONENTS_PACKAGE] ?? peerDependencies?.[COMPONENTS_PACKAGE]);
+  const json = readJson<Record<string, Record<string, string> | undefined>>(tree, filePath);
+  const dependencies = json['dependencies'];
+  const peerDependencies = json['peerDependencies'];
+  const section = dependencies?.['@ethlete/contentful']
+    ? 'dependencies'
+    : peerDependencies?.['@ethlete/contentful']
+      ? 'peerDependencies'
+      : null;
 
-    if (!hasComponents) {
-      json[section] = { ...json[section], [COMPONENTS_PACKAGE]: COMPONENTS_VERSION };
-      changed = true;
-      console.log(`   ✓ ${filePath}: added ${COMPONENTS_PACKAGE}@${COMPONENTS_VERSION} to ${section}`);
-    }
+  if (!section) {
+    return { changed, tasks };
+  }
 
-    if (dependencies?.['@ethlete/cdk'] ?? peerDependencies?.['@ethlete/cdk']) {
-      tasks.push({
-        id: `cdk-dependency:${filePath}`,
-        file: filePath,
-        message:
-          '`@ethlete/contentful` no longer depends on `@ethlete/cdk`. The dependency was left in place because you may use it directly — if nothing in this project imports `@ethlete/cdk`, remove it.',
-      });
-    }
+  const hasComponents = Boolean(dependencies?.[COMPONENTS_PACKAGE] ?? peerDependencies?.[COMPONENTS_PACKAGE]);
 
-    return json;
-  });
+  if (!hasComponents) {
+    updateJson<Record<string, Record<string, string> | undefined>>(tree, filePath, (packageJson) => {
+      packageJson[section] = { ...packageJson[section], [COMPONENTS_PACKAGE]: COMPONENTS_VERSION };
+
+      return packageJson;
+    });
+    changed = true;
+    console.log(`   ✓ ${filePath}: added ${COMPONENTS_PACKAGE}@${COMPONENTS_VERSION} to ${section}`);
+  }
+
+  if (dependencies?.['@ethlete/cdk'] ?? peerDependencies?.['@ethlete/cdk']) {
+    tasks.push({
+      id: `cdk-dependency:${filePath}`,
+      file: filePath,
+      message:
+        '`@ethlete/contentful` no longer depends on `@ethlete/cdk`. The dependency was left in place because you may use it directly — if nothing in this project imports `@ethlete/cdk`, remove it.',
+    });
+  }
 
   return { changed, tasks };
 };
@@ -215,6 +288,7 @@ export default async function migrateToContentfulV5(tree: Tree, schema: Migratio
 
   const tasks: ContentfulV5Task[] = [];
   let filesChanged = 0;
+  let dependenciesChanged = false;
 
   scope.visit(tree, (filePath) => {
     if (filePath === CONTENTFUL_V5_REPORT_PATH) return;
@@ -225,6 +299,7 @@ export default async function migrateToContentfulV5(tree: Tree, schema: Migratio
       tasks.push(...result.tasks);
 
       if (result.changed) filesChanged++;
+      if (result.changed) dependenciesChanged = true;
 
       return;
     }
@@ -261,4 +336,10 @@ export default async function migrateToContentfulV5(tree: Tree, schema: Migratio
   if (tasks.length > 0) {
     console.log(`⚠️  ${tasks.length} site(s) need a manual decision — see ${CONTENTFUL_V5_REPORT_PATH}.`);
   }
+
+  if (dependenciesChanged) {
+    return (() => installPackagesTask(tree, true)) satisfies GeneratorCallback;
+  }
+
+  return undefined;
 }

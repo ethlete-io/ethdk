@@ -82,6 +82,19 @@ describe('migrate-to-contentful-v5', () => {
     expect(result).toContain('internalHosts: [],');
   });
 
+  it('removes useTailwindClasses from a single-line config object', async () => {
+    tree.write(
+      'apps/web/src/app/app.config.ts',
+      'export const config = provideContentfulConfig({ useTailwindClasses: true, internalHosts: [] });',
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(tree.read('apps/web/src/app/app.config.ts', 'utf-8')).toBe(
+      'export const config = provideContentfulConfig({ internalHosts: [] });',
+    );
+  });
+
   it('reports removed class inputs without touching them', async () => {
     tree.write(
       'apps/web/src/app/classes.component.html',
@@ -114,6 +127,48 @@ describe('migrate-to-contentful-v5', () => {
     expect(report).not.toContain('ContentfulImageComponent');
   });
 
+  it('reports removed exports in re-exports and default plus named imports', async () => {
+    tree.write(
+      'apps/web/src/app/renderer.ts',
+      [
+        "export { RENDER_COMMAND_TYPE } from '@ethlete/contentful';",
+        "import contentful, { isTextRenderCommand } from '@ethlete/contentful';",
+      ].join('\n'),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const report = tree.read(CONTENTFUL_V5_REPORT_PATH, 'utf-8');
+
+    expect(report).toContain('removed-export:apps/web/src/app/renderer.ts:RENDER_COMMAND_TYPE');
+    expect(report).toContain('removed-export:apps/web/src/app/renderer.ts:isTextRenderCommand');
+  });
+
+  it('reports namespace imports and star re-exports for manual review', async () => {
+    tree.write(
+      'apps/web/src/app/renderer.ts',
+      ["import * as contentful from '@ethlete/contentful';", "export * from '@ethlete/contentful';"].join('\n'),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const report = tree.read(CONTENTFUL_V5_REPORT_PATH, 'utf-8');
+
+    expect(report).toContain('removed-export:apps/web/src/app/renderer.ts:contentful');
+    expect(report).toContain('removed-export:apps/web/src/app/renderer.ts:*');
+  });
+
+  it('renames inputs after a greater-than sign inside an image attribute', async () => {
+    tree.write(
+      'apps/web/src/app/page.component.html',
+      '<et-contentful-image [sizes]="width > 5 ? large : small" [hasPriority]="true" />',
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(tree.read('apps/web/src/app/page.component.html', 'utf-8')).toContain('[priority]="true"');
+  });
+
   it('adds @ethlete/components next to @ethlete/contentful and flags a leftover cdk dependency', async () => {
     tree.write(
       'apps/web/package.json',
@@ -123,7 +178,7 @@ describe('migrate-to-contentful-v5', () => {
       }),
     );
 
-    await migration(tree, { skipFormat: true });
+    const install = await migration(tree, { skipFormat: true });
 
     const packageJson = JSON.parse(tree.read('apps/web/package.json', 'utf-8') ?? '{}');
 
@@ -131,6 +186,17 @@ describe('migrate-to-contentful-v5', () => {
     expect(packageJson.dependencies['@ethlete/cdk']).toBe('^5.0.0');
 
     expect(tree.read(CONTENTFUL_V5_REPORT_PATH, 'utf-8')).toContain('cdk-dependency:apps/web/package.json');
+    expect(install).toBeTypeOf('function');
+  });
+
+  it('does not rewrite an unrelated package json', async () => {
+    const packageJson = '{\n    // Keep this JSONC comment.\n    "name": "unrelated",\n    "private": true\n}\n';
+    tree.write('apps/unrelated/package.json', packageJson);
+
+    await migration(tree, { skipFormat: true });
+
+    expect(tree.read('apps/unrelated/package.json', 'utf-8')).toBe(packageJson);
+    expect(tree.listChanges().filter((change) => change.path === 'apps/unrelated/package.json')).toHaveLength(1);
   });
 
   it('leaves @ethlete/components alone when it is already declared as a peer dependency', async () => {
@@ -163,5 +229,17 @@ describe('migrate-to-contentful-v5', () => {
 
     expect(tree.read('apps/web/src/in-scope.html', 'utf-8')).toContain('[priority]=');
     expect(tree.read('apps/other/src/out-of-scope.html', 'utf-8')).toBe(template);
+  });
+
+  it('visits files once when projects and include scopes overlap', async () => {
+    addProjectConfiguration(tree, 'web', { root: 'apps/web', sourceRoot: 'apps/web/src' });
+    tree.write('apps/web/src/classes.component.html', '<et-contentful-image [asset]="asset" [imgClass]="classes" />');
+
+    await migration(tree, { projects: ['web'], include: ['apps/web/src'], skipFormat: true });
+
+    const report = tree.read(CONTENTFUL_V5_REPORT_PATH, 'utf-8') ?? '';
+    const taskId = 'image-class-input:apps/web/src/classes.component.html:1';
+
+    expect(report.split(taskId)).toHaveLength(2);
   });
 });

@@ -13,7 +13,6 @@ import {
   input,
   inputBinding,
   isDevMode,
-  linkedSignal,
   reflectComponentType,
   signal,
   untracked,
@@ -123,6 +122,20 @@ export const marksToClass = (marks: Mark[]) =>
   marks.map((mark) => `et-contentful-rich-text-mark-${mark.type}`).join(' ');
 
 const LINK_COMPONENT_TYPE = '$$$_et-link';
+
+const normalizeHref = (href: string): string | null => {
+  if (!href.trim()) {
+    return null;
+  }
+
+  try {
+    const url = new URL(href, 'https://contentful.invalid');
+
+    return ['http:', 'https:', 'mailto:', 'tel:', 'ftp:'].includes(url.protocol) ? href : null;
+  } catch {
+    return null;
+  }
+};
 
 type ExecutedCommandCacheItemBase = {
   element: HTMLElement;
@@ -293,29 +306,17 @@ export class ContentfulRichTextRendererComponent {
    */
   richTextPath = input.required<string>();
 
-  /**
-   * A cache for all executed commands that are not deleted.
-   * This is used to keep track of all rendered elements and components.
-   * The key is the render command ID.
-   */
   private readonly executedCommandsCache = new Map<string, ExecutedCommandCacheItem>();
 
-  /**
-   * A map of all includes in the contentful response.
-   * This is useful for looking up assets and entries that are referenced in the rich text without having to use loops.
-   */
-  contentIncludesMap = computed<ContentfulIncludeMap>(() => {
+  private contentIncludesMap = computed<ContentfulIncludeMap>(() => {
     const content = this.content();
-    const assets = content?.includes.Asset;
-    const entries = content?.includes.Entry;
+    const assets = content?.includes?.Asset;
+    const entries = content?.includes?.Entry;
 
     return createContentfulIncludeMap({ assets: assets ?? [], entries: entries ?? [] });
   });
 
-  /**
-   * The rich text data that should be rendered.
-   */
-  richTextData = computed(() => {
+  private richTextData = computed(() => {
     const content = this.content();
     const richTextPath = this.richTextPath();
 
@@ -324,6 +325,10 @@ export class ContentfulRichTextRendererComponent {
     }
 
     const richText = getObjectProperty(content as unknown as Record<string, unknown>, richTextPath);
+
+    if (richText === null || richText === undefined) {
+      return null;
+    }
 
     if (!isObject(richText)) {
       throw richTextRendererError('rich_text_undefined', { content, richTextPath });
@@ -336,7 +341,7 @@ export class ContentfulRichTextRendererComponent {
     return richText as RichTextResponse;
   });
 
-  renderCommands = computed(() => {
+  private renderCommands = computed(() => {
     const richTextData = this.richTextData();
 
     if (!richTextData) {
@@ -346,33 +351,14 @@ export class ContentfulRichTextRendererComponent {
     return this.createRenderCommands(richTextData);
   });
 
-  private renderCommandHistory = linkedSignal<RenderCommand[], [RenderCommand[], RenderCommand[]]>({
-    source: this.renderCommands,
-    computation: (commands, previous) => [previous?.source ?? [], commands],
-  });
-
-  private previousRenderCommandMap = computed(() => {
-    const [prevCommands] = this.renderCommandHistory();
-
-    const map = new Map<string, RenderCommand>();
-
-    for (const command of prevCommands) {
-      map.set(command.id, command);
-    }
-
-    return map;
-  });
-
   private renderInstructions = computed(() => {
     const commands = this.renderCommands();
-    const previousRenderCommandMap = this.previousRenderCommandMap();
+    const previousRenderCommandMap = new Map(
+      [...this.executedCommandsCache.entries()].map(([id, item]) => [id, item.command]),
+    );
 
     const instructions: RenderInstruction[] = [];
 
-    // Decide, in document order, which commands survive the change with their DOM intact.
-    // A plain element or text node survives when the same id renders the same output at the same
-    // spot inside a surviving parent. Ancestors are decided first because parents precede their
-    // children in command order. Components survive on id alone — their DOM can be reattached.
     const preserved = new Set<string>();
     const needsReattach = new Set<string>();
 
@@ -412,7 +398,6 @@ export class ContentfulRichTextRendererComponent {
         continue;
       }
 
-      // The same key must render the same component class — a changed class means a fresh instance.
       if (previous.kind === 'component' && command.kind === 'component' && previous.component !== command.component) {
         continue;
       }
@@ -453,16 +438,12 @@ export class ContentfulRichTextRendererComponent {
       }
     }
 
-    // Everything that did not survive is removed first, so the ordered pass below can rebuild
-    // into a clean tree. Close commands never render DOM and are skipped throughout.
     for (const [id, command] of previousRenderCommandMap) {
       if (command.kind !== 'htmlClose' && !preserved.has(id)) {
         instructions.push({ type: 'delete', command });
       }
     }
 
-    // One pass in document order: parents are created before a child component is reattached.
-    // Surviving plain elements still get an update so the cache tracks their fresh command data.
     for (const command of commands) {
       if (command.kind === 'htmlClose') {
         continue;
@@ -489,22 +470,11 @@ export class ContentfulRichTextRendererComponent {
   }
 
   private createRenderCommands(richTextData: RichTextResponse) {
-    /** List of all render commands */
     const rootCommands: RenderCommand[] = [];
-
-    /** Counter for generating unique html element IDs. */
     let elementOpenId = 0;
-
-    /** Counter for generating unique html element IDs. */
     let elementCloseId = 0;
-
-    /** Counter for generating unique component IDs. */
     const componentIdMap = new Map<string, number>();
-
-    /** The nesting level of the current node. */
     let nestingLevel = 0;
-
-    /** The position (index) of the current node inside the parent node. */
     let domPosition = 0;
 
     let textId = 0;
@@ -554,8 +524,6 @@ export class ContentfulRichTextRendererComponent {
           const contentType = asset.fields.file.contentType;
           const assetComponents = this.config.components;
 
-          // Every property inside the asset will be null if no file was provided for a translation.
-          // In this case, we can assume that the asset is missing due to user error.
           const isMissing = !contentType && !asset.fields.file.url;
 
           if (isMissing) {
@@ -612,10 +580,19 @@ export class ContentfulRichTextRendererComponent {
           break;
         }
 
-        case CF_INLINES.HYPERLINK: {
-          const uri = (node.data['uri'] as string) ?? '';
+        case CF_INLINES.HYPERLINK:
+        case CF_INLINES.ASSET_HYPERLINK:
+        case CF_INLINES.ENTRY_HYPERLINK: {
+          let href: string | null = null;
 
-          // Collect all text and marks from children (hyperlink children are text nodes)
+          if (node.nodeType === CF_INLINES.HYPERLINK) {
+            href = normalizeHref((node.data['uri'] as string) ?? '');
+          } else if (node.nodeType === CF_INLINES.ASSET_HYPERLINK) {
+            const assetId = node.data['target']?.sys?.id;
+            const asset = assetId ? this.contentIncludesMap().getAsset(assetId) : null;
+            href = asset?.fields.file.url ? normalizeHref(asset.fields.file.url) : null;
+          }
+
           let linkText = '';
           const linkMarks: Mark[] = [];
 
@@ -626,10 +603,9 @@ export class ContentfulRichTextRendererComponent {
             }
           }
 
-          const linkComponent = this.config.components.link;
+          const linkComponent = href ? this.config.components.link : null;
 
-          if (!linkComponent) {
-            // Without a link component the hyperlink still renders - as a plain anchor.
+          if (href && !linkComponent) {
             rootCommands.push({
               kind: 'htmlOpen',
               nestingLevel,
@@ -637,7 +613,7 @@ export class ContentfulRichTextRendererComponent {
               index: commandIndex++,
               attributes: {
                 class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-a',
-                href: uri,
+                href,
               },
               tagName: 'a',
               id: 'e-o' + elementOpenId++,
@@ -678,6 +654,28 @@ export class ContentfulRichTextRendererComponent {
             break;
           }
 
+          if (!href) {
+            rootCommands.push({
+              kind: 'text',
+              nestingLevel,
+              domPosition,
+              index: commandIndex++,
+              attributes: {
+                class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
+              },
+              markTags: marksToTags(linkMarks),
+              text: linkText,
+              id: 't' + textId++,
+            });
+            domPosition++;
+
+            break;
+          }
+
+          if (!linkComponent) {
+            break;
+          }
+
           const textClass = linkMarks.length ? marksToClass(linkMarks) : '';
 
           let linkComponentId = componentIdMap.get(LINK_COMPONENT_TYPE) ?? -1;
@@ -690,7 +688,7 @@ export class ContentfulRichTextRendererComponent {
             domPosition,
             index: commandIndex++,
             component: linkComponent,
-            inputs: { href: uri, text: linkText, textClass },
+            inputs: { href, text: linkText, textClass },
             id: linkId,
           });
 
@@ -767,19 +765,24 @@ export class ContentfulRichTextRendererComponent {
           });
 
           const domPositionAtThisLevel = domPosition;
-          // Normal html elements can have children
+          nestingLevel++;
+          domPosition = 0;
+
           for (const child of node.content) {
-            domPosition = 0;
-            nestingLevel++;
             traverse(child);
-            nestingLevel--;
-            domPosition = domPositionAtThisLevel;
           }
+
+          nestingLevel--;
+          domPosition = domPositionAtThisLevel;
 
           const lastCommand = rootCommands[rootCommands.length - 1];
 
-          if (lastCommand?.kind === 'htmlOpen' && lastCommand.tagName !== 'td' && lastCommand.tagName !== 'hr') {
-            // If the last command is an open command, we can remove it since it's empty
+          if (
+            lastCommand?.kind === 'htmlOpen' &&
+            lastCommand.tagName !== 'td' &&
+            lastCommand.tagName !== 'th' &&
+            lastCommand.tagName !== 'hr'
+          ) {
             rootCommands.pop();
             elementOpenId--;
             commandIndex--;
@@ -834,7 +837,6 @@ export class ContentfulRichTextRendererComponent {
     if (command.kind === 'component') {
       const inputs = signal(command.inputs);
 
-      // Components may declare any subset of the offered inputs — only bind the declared ones.
       const declaredInputs = reflectComponentType(command.component)?.inputs ?? [];
       const bindings = declaredInputs
         .filter((declared) => declared.propName in command.inputs)
@@ -854,18 +856,12 @@ export class ContentfulRichTextRendererComponent {
       });
     } else if (command.kind === 'text') {
       const span = this.renderer.createElement('span');
-      const textSplitInLineBreaks = command.text.split('\n').filter((t) => t.trim().length > 0);
+      const textSplitInLineBreaks = command.text.split('\n');
 
       for (const [key, value] of Object.entries(command.attributes)) {
         this.renderer.setAttribute(span, key, value);
       }
 
-      if (command.text.startsWith('\n')) {
-        const brNode = this.renderer.createElement('br');
-        this.renderer.appendChild(parentElement, brNode);
-      }
-
-      // Marks are rendered as nested semantic elements inside the span, outermost mark first.
       let textContainer = span;
 
       for (const tag of command.markTags) {
@@ -881,9 +877,11 @@ export class ContentfulRichTextRendererComponent {
           this.renderer.appendChild(textContainer, brNode);
         }
 
-        const textNode = this.renderer.createText(textPart);
+        if (textPart) {
+          const textNode = this.renderer.createText(textPart);
 
-        this.renderer.appendChild(textContainer, textNode);
+          this.renderer.appendChild(textContainer, textNode);
+        }
       }
 
       this.renderInsertOrAppend(span, parentElement, nextElement);
@@ -923,8 +921,6 @@ export class ContentfulRichTextRendererComponent {
       cached.inputs.set(command.inputs);
     }
 
-    // `cached` and the fresh `command` share the same id and therefore the same union variant,
-    // but TS can't correlate the two after the spread — assert the merged object as the union.
     this.executedCommandsCache.set(command.id, {
       ...cached,
       command,
@@ -1001,8 +997,6 @@ export class ContentfulRichTextRendererComponent {
     if (command.nestingLevel === 0) {
       parentElement = hostElement;
     } else {
-      // Reverse search all render commands beginning from the current one.
-      // The parent is the closest preceding html open command one nesting level up.
       const allCommands = this.renderCommands();
 
       let parentCommand: HtmlOpenRenderCommand | null = null;
@@ -1021,22 +1015,21 @@ export class ContentfulRichTextRendererComponent {
       }
 
       if (!parentCommand) {
-        throw new Error('Parent command not found!');
+        throw richTextRendererError('text_parent_not_found', { command });
       }
 
       parentElement = this.executedCommandsCache.get(parentCommand.id)?.element;
     }
 
     if (!parentElement) {
-      throw new Error('Parent element not found!');
+      throw richTextRendererError('text_parent_wrong_type', { command });
     }
 
     return parentElement;
   }
 
   private findFollowingElement(command: RenderCommand) {
-    // Find the closest already rendered element at the same nesting level with a greater
-    // domPosition, to insert before. Without one the element is appended to the parent.
+    const parentElement = this.findParent(command);
     let nextElement: HTMLElement | undefined;
     let nextDomPosition = Infinity;
 
@@ -1045,6 +1038,7 @@ export class ContentfulRichTextRendererComponent {
         cached.command.domPosition > command.domPosition &&
         cached.command.domPosition < nextDomPosition &&
         cached.command.nestingLevel === command.nestingLevel &&
+        cached.element.parentElement === parentElement &&
         cached.command.id !== command.id
       ) {
         nextElement = cached.element;

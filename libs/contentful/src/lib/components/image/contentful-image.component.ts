@@ -1,20 +1,18 @@
-import {
-  Component,
-  ViewEncapsulation,
-  booleanAttribute,
-  computed,
-  inject,
-  input,
-  numberAttribute,
-} from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, input, numberAttribute } from '@angular/core';
 import { PictureComponent, normalizePictureSizes } from '@ethlete/components';
-import { CONTENTFUL_CONFIG } from '../../constants';
 import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
 import { ContentfulImageFocusArea, ContentfulImageResizeBehavior, ContentfulRestAsset } from '../../types';
+import { injectContentfulConfig } from '../../utils/contentful-config';
 import {
   generateContentfulImageSources,
   generateDefaultContentfulImageSource,
 } from './contentful-image.component.utils';
+
+const optionalNumberAttribute = (value: unknown) => {
+  const transformed = numberAttribute(value);
+
+  return Number.isFinite(transformed) ? transformed : null;
+};
 
 @Component({
   selector: 'et-contentful-image',
@@ -37,13 +35,13 @@ import {
   },
 })
 export class ContentfulImageComponent {
-  private contentfulConfig = inject(CONTENTFUL_CONFIG);
+  private readonly contentfulConfig = injectContentfulConfig();
 
   asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
-  backgroundColor = input<string | null>(null);
+  backgroundColor = input<string | null>(this.contentfulConfig.imageOptions.backgroundColor);
   srcsetSizes = input<string[]>(this.contentfulConfig.imageOptions.srcsetSizes);
 
-  quality = input(null, { transform: numberAttribute });
+  quality = input(null, { transform: optionalNumberAttribute });
   focusArea = input<ContentfulImageFocusArea | null>(null);
   resizeBehavior = input<ContentfulImageResizeBehavior | null>(null);
   priority = input(false, { transform: booleanAttribute });

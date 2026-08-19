@@ -58,8 +58,8 @@ export type ContentfulConfig = {
   /**
    * Additional hostnames that should be treated as internal links (in addition to the current page's host).
    * Useful when the app runs on localhost during development but Contentful content references the production domain.
-   * Comparison is done by primary domain (last two hostname labels), so adding "example.com" is sufficient
-   * to also treat "foo.example.com" as internal.
+   * A configured hostname also covers its subdomains, so adding "example.com" treats
+   * "foo.example.com" as internal without matching unrelated public-suffix siblings.
    *
    * @example ['example.com']
    */
@@ -74,7 +74,7 @@ export type ContentfulConfig = {
      * - `"400"` - 400px width
      * - `"400x300"` - 400px width and 300px height
      * - `"400w"` - 400px width
-     * - `"400h"` - 400px height
+     * - `"400h"` - 400px height (requires image dimensions to derive a valid width descriptor)
      * - `"400wx300h"` - 400px width and 300px height
      **/
     srcsetSizes: string[];
@@ -178,9 +178,9 @@ export type ContentfulEntry<T = { [key: string]: any }> = {
 };
 
 export type ContentfulCollection = {
-  includes: {
-    Asset: ContentfulRestAsset[];
-    Entry: ContentfulEntry[];
+  includes?: {
+    Asset?: ContentfulRestAsset[];
+    Entry?: ContentfulEntry[];
   };
   items: ContentfulEntry[];
   limit: number;

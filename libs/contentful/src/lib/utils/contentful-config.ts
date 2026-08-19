@@ -18,15 +18,12 @@ const CONTENTFUL_FALLBACK_CONFIG: ContentfulConfig = {
   customComponents: {},
   imageOptions: {
     srcsetSizes: ['375w', '1280w', '1920w', '2560w'],
-    sizes: [],
+    sizes: ['100vw'],
     backgroundColor: null,
   },
 };
 
-export const createContentfulConfig = (
-  config: Partial<ContentfulConfig> | null | undefined = {},
-): ContentfulConfig => ({
-  // This default config must be inline and not saved inside a const for some weird webpack reason
+export const createContentfulConfig = (config?: Partial<ContentfulConfig> | null): ContentfulConfig => ({
   ...{
     internalHosts: [],
     components: {
@@ -39,11 +36,11 @@ export const createContentfulConfig = (
     customComponents: {},
     imageOptions: {
       srcsetSizes: ['375w', '1280w', '1920w', '2560w'],
-      sizes: [],
+      sizes: ['100vw'],
       backgroundColor: null,
     },
   },
-  ...(config || {}),
+  ...(config ?? {}),
 });
 
 /**

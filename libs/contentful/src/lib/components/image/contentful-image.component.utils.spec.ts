@@ -62,7 +62,7 @@ describe('parseContentfulImageSize', () => {
   });
 
   it('returns null for both dimensions when the size is not parseable', () => {
-    expect(parseContentfulImageSize('abc')).toEqual({ width: NaN, height: null });
+    expect(parseContentfulImageSize('abc')).toEqual({ width: null, height: null });
   });
 });
 
@@ -70,7 +70,7 @@ describe('generateContentfulImageSources', () => {
   it('creates one source per supported image type', () => {
     const sources = generateContentfulImageSources(createRestAsset(), ['400w'], null, null, null, null);
 
-    expect(sources.map((s) => s.type)).toEqual(['image/avif', 'image/webp', 'image/png', 'image/jpg']);
+    expect(sources.map((s) => s.type)).toEqual(['image/avif', 'image/webp']);
   });
 
   it('assembles the format query param and a width descriptor srcset', () => {
@@ -81,10 +81,10 @@ describe('generateContentfulImageSources', () => {
     );
   });
 
-  it('uses a height descriptor when only a height was given', () => {
+  it('derives a valid width descriptor when only a height was given', () => {
     const sources = generateContentfulImageSources(createRestAsset(), ['300h'], null, null, null, null);
 
-    expect(sources[1]?.srcset).toBe('//images.ctfassets.net/foo.png?fm=webp&h=300 300h');
+    expect(sources[1]?.srcset).toBe('//images.ctfassets.net/foo.png?fm=webp&w=400&h=300 400w');
   });
 
   it('uses the width descriptor when both width and height were given', () => {
@@ -96,8 +96,8 @@ describe('generateContentfulImageSources', () => {
   it('assembles bg, q, f and fit query params in order', () => {
     const sources = generateContentfulImageSources(createRestAsset(), ['400w'], '000000', 80, 'faces', 'fill');
 
-    expect(sources[2]?.srcset).toBe(
-      '//images.ctfassets.net/foo.png?fm=png&bg=rgb:000000&q=80&f=faces&fit=fill&w=400 400w',
+    expect(sources[1]?.srcset).toBe(
+      '//images.ctfassets.net/foo.png?fm=webp&bg=rgb:000000&q=80&f=faces&fit=fill&w=400 400w',
     );
   });
 
@@ -110,13 +110,26 @@ describe('generateContentfulImageSources', () => {
   it('falls back to the plain url with query params when no sizes were given', () => {
     const sources = generateContentfulImageSources(createRestAsset(), [], null, null, null, null);
 
-    expect(sources[3]).toEqual({ type: 'image/jpg', srcset: '//images.ctfassets.net/foo.png?fm=jpg' });
+    expect(sources[1]).toEqual({ type: 'image/webp', srcset: '//images.ctfassets.net/foo.png?fm=webp' });
   });
 
   it('uses the flat url of a gql asset', () => {
     const sources = generateContentfulImageSources(createGqlAsset(), ['400w'], null, null, null, null);
 
     expect(sources[0]?.srcset).toBe('//images.ctfassets.net/gql.png?fm=avif&w=400 400w');
+  });
+
+  it('returns no sources when an asset has no url', () => {
+    expect(generateContentfulImageSources(createRestAsset({ url: null }), ['400w'], null, null, null, null)).toEqual(
+      [],
+    );
+    expect(generateContentfulImageSources(createGqlAsset({ url: null }), ['400w'], null, null, null, null)).toEqual([]);
+  });
+
+  it('does not emit an invalid quality parameter', () => {
+    const sources = generateContentfulImageSources(createRestAsset(), ['400w'], null, Number.NaN, null, null);
+
+    expect(sources[0]?.srcset).not.toContain('q=');
   });
 });
 
@@ -147,11 +160,13 @@ describe('generateDefaultContentfulImageSource', () => {
   });
 
   it('returns an empty source when a gql asset has no content type', () => {
-    // A gql asset without a `url` is not detected as a gql asset at all, so only
-    // the missing content type case can be characterized here.
     expect(generateDefaultContentfulImageSource(createGqlAsset({ contentType: null }))).toEqual({
       type: '',
       srcset: '',
     });
+  });
+
+  it('returns an empty source when a gql asset has no url', () => {
+    expect(generateDefaultContentfulImageSource(createGqlAsset({ url: null }))).toEqual({ type: '', srcset: '' });
   });
 });

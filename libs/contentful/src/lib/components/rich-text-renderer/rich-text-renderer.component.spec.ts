@@ -16,8 +16,6 @@ import { ContentfulIncludeMap, ContentfulRichTextRendererComponent } from './ric
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// #region fixtures
-
 const text = (value: string, marks: string[] = []): Text => ({
   nodeType: 'text',
   value,
@@ -43,6 +41,9 @@ const inlineEmbeddedEntry = (entryId: string) =>
 
 const hyperlink = (uri: string, value: string, marks: string[] = []) =>
   block('hyperlink', [text(value, marks)], { uri });
+
+const targetHyperlink = (nodeType: 'asset-hyperlink' | 'entry-hyperlink', targetId: string, value: string) =>
+  block(nodeType, [text(value)], { target: { sys: { id: targetId } } });
 
 const createAsset = (id: string, contentType: string | null, url: string | null = `//cdn/${id}`): ContentfulRestAsset =>
   ({
@@ -80,10 +81,6 @@ const createCollection = (
     total: 1,
     sys: { type: 'Array' },
   }) as ContentfulCollection;
-
-// #endregion
-
-// #region stubs
 
 @Component({ selector: 'et-stub-image', template: `<span>image</span>` })
 class StubImageComponent {
@@ -123,7 +120,6 @@ class StubLinkComponent {
   }
 }
 
-/** Declares every renderer input. */
 @Component({ selector: 'et-stub-teaser', template: `<span class="teaser">{{ fields()?.title }}</span>` })
 class StubTeaserComponent implements OnDestroy {
   static instances: StubTeaserComponent[] = [];
@@ -143,7 +139,6 @@ class StubTeaserComponent implements OnDestroy {
   }
 }
 
-/** Declares only a subset of the renderer inputs. */
 @Component({ selector: 'et-stub-partial', template: `<span class="partial">{{ fields()?.title }}</span>` })
 class StubPartialComponent {
   static instances: StubPartialComponent[] = [];
@@ -154,8 +149,6 @@ class StubPartialComponent {
     StubPartialComponent.instances.push(this);
   }
 }
-
-// #endregion
 
 @Component({
   selector: 'et-test-host',
@@ -174,7 +167,6 @@ type SetupOptions = {
   richTextPath?: string;
   customComponents?: Record<string, any>;
   useStubAssetComponents?: boolean;
-  /** Omit `provideContentfulConfig()` entirely - the renderer then has no embedded components. */
   withoutConfig?: boolean;
 };
 
@@ -232,11 +224,6 @@ const setContent = (
   fixture.detectChanges();
 };
 
-/**
- * The renderer surfaces command errors from within an effect, so they never propagate out of
- * `detectChanges()`. Reading the `renderCommands` computed directly (without ever running change
- * detection) is the only way to observe them synchronously.
- */
 const readRenderCommands = (options: SetupOptions = {}) => {
   TestBed.configureTestingModule({
     providers: [provideRouter([]), provideContentfulConfig({ customComponents: options.customComponents ?? {} })],
@@ -248,7 +235,7 @@ const readRenderCommands = (options: SetupOptions = {}) => {
   fixture.componentRef.setInput('richTextPath', options.richTextPath ?? 'items[0].fields.html');
 
   try {
-    return fixture.componentInstance.renderCommands();
+    return (fixture.componentInstance as any).renderCommands();
   } finally {
     fixture.destroy();
   }
@@ -276,6 +263,14 @@ describe('ContentfulRichTextRendererComponent', () => {
       const { fixture } = setup({ content: null });
 
       expect(renderRoot(fixture).innerHTML).toBe('');
+    });
+
+    it('renders a response that omits includes', () => {
+      const content = createCollection(doc(paragraph('Body')));
+      delete content.includes;
+      const { fixture } = setup({ content });
+
+      expect(renderRoot(fixture).textContent).toBe('Body');
     });
 
     it('renders headings and paragraphs with default element classes', () => {
@@ -360,7 +355,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(Array.from(renderRoot(fixture).children).map((c) => c.tagName)).toEqual(['HR', 'P']);
     });
 
-    it('prunes empty elements but keeps empty td and hr', () => {
+    it('prunes empty elements but keeps empty table cells and hr', () => {
       const { fixture } = setup({
         richText: doc(
           block('paragraph'),
@@ -375,9 +370,8 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(root.querySelector('p')).toBeNull();
       expect(root.querySelector('h2')).toBeNull();
       expect(root.querySelector('hr')).not.toBeNull();
-      // The td survives the prune, the (empty) th does not.
       expect(root.querySelectorAll('td')).toHaveLength(1);
-      expect(root.querySelector('th')).toBeNull();
+      expect(root.querySelectorAll('th')).toHaveLength(1);
     });
 
     it('skips text nodes with an empty value', () => {
@@ -387,6 +381,14 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       expect(spans).toHaveLength(1);
       expect(spans[0]?.textContent).toBe('kept');
+    });
+
+    it('preserves a whitespace-only text node between marked runs', () => {
+      const { fixture } = setup({
+        richText: doc(block('paragraph', [text('bold', ['bold']), text(' '), text('italic', ['italic'])])),
+      });
+
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('bold italic');
     });
   });
 
@@ -399,18 +401,18 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(span?.innerHTML).toBe('one<br>two');
     });
 
-    it('puts a leading <br> into the parent when the text starts with \\n', () => {
+    it('keeps a leading <br> inside the tracked text span', () => {
       const { fixture } = setup({ richText: doc(block('paragraph', [text('\nvalue')])) });
 
       const p = renderRoot(fixture).querySelector('p');
 
-      expect(p?.innerHTML).toBe(`<br><span class="${DEFAULT_SPAN_CLASS}">value</span>`);
+      expect(p?.innerHTML).toBe(`<span class="${DEFAULT_SPAN_CLASS}"><br>value</span>`);
     });
 
-    it('drops blank segments between line breaks', () => {
+    it('preserves blank lines between text segments', () => {
       const { fixture } = setup({ richText: doc(block('paragraph', [text('one\n\ntwo')])) });
 
-      expect(renderRoot(fixture).querySelector('p > span')?.innerHTML).toBe('one<br>two');
+      expect(renderRoot(fixture).querySelector('p > span')?.innerHTML).toBe('one<br><br>two');
     });
   });
 
@@ -534,6 +536,37 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(anchor?.querySelector('strong')).not.toBeNull();
     });
 
+    it('does not assign an unsafe href to a fallback anchor', () => {
+      const { fixture } = setup({
+        withoutConfig: true,
+        richText: doc(block('paragraph', [hyperlink('javascript:alert(1)', 'Unsafe')])),
+      });
+
+      expect(renderRoot(fixture).querySelector('a')).toBeNull();
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('Unsafe');
+    });
+
+    it('resolves an asset hyperlink to the included asset url', () => {
+      const asset = createAsset('a1', 'application/pdf', '//cdn/file.pdf');
+      const { fixture } = setup({
+        richText: doc(block('paragraph', [targetHyperlink('asset-hyperlink', 'a1', 'File')])),
+        includes: { Asset: [asset] },
+      });
+
+      expect(renderRoot(fixture).querySelector('a')?.getAttribute('href')).toBe('//cdn/file.pdf');
+    });
+
+    it('renders an entry hyperlink as text when no route can be inferred', () => {
+      const entry = createEntry('e1', 'page');
+      const { fixture } = setup({
+        richText: doc(block('paragraph', [targetHyperlink('entry-hyperlink', 'e1', 'Page')])),
+        includes: { Entry: [entry] },
+      });
+
+      expect(renderRoot(fixture).querySelector('a')).toBeNull();
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('Page');
+    });
+
     it('renders the default link component', () => {
       const { fixture } = setup({
         richText: doc(block('paragraph', [hyperlink('https://example.com', 'Example')])),
@@ -603,7 +636,6 @@ describe('ContentfulRichTextRendererComponent', () => {
     });
 
     it('destroys the old component and creates a new one when a different entry takes the slot', () => {
-      // Commands are keyed by entry id, so a different entry never reuses another entry's instance.
       const a = createEntry('a', 'teaser', { title: 'A' });
       const c = createEntry('c', 'teaser', { title: 'C' });
 
@@ -698,7 +730,27 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(StubTeaserComponent.instances).toEqual([instance]);
       expect(StubTeaserComponent.destroyed).toBe(0);
       expect(renderRoot(fixture).querySelector('p .teaser')).not.toBeNull();
-      expect(renderRoot(fixture).querySelector('p')?.textContent).toContain('rewritten');
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('rewritten Teaser');
+    });
+
+    it('keeps recreated nested text in sibling order', () => {
+      const { fixture } = setup({ richText: doc(block('paragraph', [text('A'), text('B'), text('C')])) });
+
+      setContent(fixture, doc(block('paragraph', [text('A'), text('B2'), text('C')])));
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('AB2C');
+
+      setContent(fixture, doc(block('paragraph', [text('A2'), text('B2'), text('C')])));
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('A2B2C');
+    });
+
+    it('does not duplicate a leading line break across rerenders', () => {
+      const { fixture } = setup({ richText: doc(block('paragraph', [text('\nA')])) });
+
+      setContent(fixture, doc(block('paragraph', [text('\nB')])));
+
+      expect(renderRoot(fixture).querySelector('p')?.innerHTML).toBe(
+        `<span class="${DEFAULT_SPAN_CLASS}"><br>B</span>`,
+      );
     });
 
     it('moves the component instances with their entries when two entries swap places', () => {
@@ -719,7 +771,6 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       expect(StubTeaserComponent.instances).toEqual([first, second]);
       expect(StubTeaserComponent.destroyed).toBe(0);
-      // The instances travel with their entries: entry b's instance is now first in the DOM.
       expect(first?.fields()).toBe(a.fields);
       expect(second?.fields()).toBe(b.fields);
       expect(Array.from(renderRoot(fixture).querySelectorAll('.teaser')).map((e) => e.textContent)).toEqual(['B', 'A']);
@@ -772,10 +823,10 @@ describe('ContentfulRichTextRendererComponent', () => {
   });
 
   describe('errors', () => {
-    it('throws rich_text_undefined for a path that resolves to nothing', () => {
-      expect(() =>
-        readRenderCommands({ richText: doc(paragraph('a')), richTextPath: 'items[0].fields.missing' }),
-      ).toThrow(/richTextPath is undefined/);
+    it('renders nothing for a path that resolves to an absent field', () => {
+      expect(readRenderCommands({ richText: doc(paragraph('a')), richTextPath: 'items[0].fields.missing' })).toEqual(
+        [],
+      );
     });
 
     it('throws rich_text_wrong_type for a non document node', () => {

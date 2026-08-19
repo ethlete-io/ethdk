@@ -10,7 +10,10 @@ export default [
       '@nx/dependency-checks': [
         'error',
         {
-          ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}'],
+          ignoredFiles: [
+            '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
+            '{projectRoot}/vite.config.{js,cjs,mjs,ts,mts}',
+          ],
         },
       ],
     },
@@ -27,14 +30,7 @@ export default [
     ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts', '**/testing/**', '**/generators/**'],
     rules: {
       ...ethlete.configs.recommendedTs.rules,
-      // TODO(styleguide): the autofix rewrites `get foo()` into `get public foo()` and narrows
-      // members that are part of the published surface. Re-enable once the fixer is safe for
-      // accessors, then land the visibility changes as a breaking change.
       'ethlete/template-member-accessibility': 'off',
-
-      // TODO(styleguide): the two offenders are `generateContentfulImageSources` (a published
-      // 6-arg helper) and `renderInsertOrAppend`. Collapsing them into an options object is an
-      // API change, not a lint fix.
       'max-params': 'off',
       '@angular-eslint/directive-selector': [
         'error',

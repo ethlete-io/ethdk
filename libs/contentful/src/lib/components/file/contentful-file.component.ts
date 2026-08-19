@@ -8,39 +8,47 @@ import { ContentfulRestAsset } from '../../types';
   selector: 'et-contentful-file',
   template: `
     @if (data(); as data) {
-      <a [href]="data.url" [ngClass]="fileClass()" class="underline" target="_blank">
-        {{ data.title }} ({{ data.size }} Bytes)
+      <a [href]="data.url" [ngClass]="fileClass()" target="_blank" rel="noopener noreferrer">
+        {{ data.title }}
+        @if (data.size !== null) {
+          ({{ data.size }} Bytes)
+        }
       </a>
     }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [NgClass],
+  host: {
+    class: 'et-contentful-file',
+  },
 })
 export class ContentfulFileComponent {
   asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
   fileClass = input<NgClassType>(null);
 
-  data = computed(() => {
+  protected data = computed(() => {
     const asset = this.asset();
 
     if (!asset) {
       return null;
     }
 
-    if (isContentfulGqlAsset(asset)) {
+    if (isContentfulGqlAsset(asset) && asset.url) {
       return {
         url: asset.url,
-        contentType: asset.contentType,
         size: asset.size,
         title: asset.title,
       };
     }
 
-    return {
-      url: asset.fields.file.url,
-      contentType: asset.fields.file.contentType,
-      size: asset.fields.file.details.size,
-      title: asset.fields.title,
-    };
+    if (!isContentfulGqlAsset(asset) && asset.fields.file.url) {
+      return {
+        url: asset.fields.file.url,
+        size: asset.fields.file.details.size,
+        title: asset.fields.title,
+      };
+    }
+
+    return null;
   });
 }
