@@ -172,12 +172,12 @@ describe('MasonryDirective', () => {
     expect(container(fixture).hasAttribute('data-settled')).toBe(true);
   });
 
-  it('is not settled before the items have been measured at their column width', () => {
+  it('settles from the post-render measurement without waiting for a resize observer delivery', () => {
     const fixture = TestBed.createComponent(MasonryHostComponent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.masonry().isSettled()).toBe(false);
-    expect(items(fixture).some((item) => item.hasAttribute('data-positioned'))).toBe(false);
+    expect(fixture.componentInstance.masonry().isSettled()).toBe(true);
+    expect(items(fixture).every((item) => item.hasAttribute('data-positioned'))).toBe(true);
   });
 
   it('sends an appended item to the shortest column and leaves the others where they are', () => {
