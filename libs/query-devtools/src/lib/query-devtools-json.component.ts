@@ -274,7 +274,7 @@ export class QueryDevtoolsJsonComponent {
 
   private localExpanded = linkedSignal(() => this.defaultExpanded());
 
-  protected expanded = computed(() => {
+  private expanded = computed(() => {
     // Externally-persisted mode: resolve from the expanded/collapsed path sets, else the depth default.
     if (this.toggleFn()) {
       const path = this.togglePath();

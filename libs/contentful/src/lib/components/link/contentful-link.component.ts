@@ -56,7 +56,7 @@ const matchesHostname = (hostname: string, configuredHost: string) => {
 export class ContentfulLinkComponent {
   private document = inject(DOCUMENT);
   private router = inject(Router);
-  private readonly config = injectContentfulConfig();
+  private config = injectContentfulConfig();
 
   href = input.required<string>();
   text = input.required<string>();

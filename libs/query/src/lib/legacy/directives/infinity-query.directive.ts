@@ -91,7 +91,7 @@ export class InfinityQueryDirective<
   private viewContainerRef = inject(ViewContainerRef);
   private mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
   private errorHandler = inject(ErrorHandler);
-  private readonly infinityQueryResponseDelay = injectInfinityQueryResponseDelay({ host: true });
+  private infinityQueryResponseDelay = injectInfinityQueryResponseDelay({ host: true });
 
   private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
 

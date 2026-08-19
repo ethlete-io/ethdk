@@ -35,7 +35,7 @@ const optionalNumberAttribute = (value: unknown) => {
   },
 })
 export class ContentfulImageComponent {
-  private readonly contentfulConfig = injectContentfulConfig();
+  private contentfulConfig = injectContentfulConfig();
 
   asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
   backgroundColor = input<string | null>(this.contentfulConfig.imageOptions.backgroundColor);

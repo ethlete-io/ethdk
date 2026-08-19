@@ -247,7 +247,7 @@ export class DayTimelineComponent {
   public rangeDrawn = output<RangeDrawn>();
 
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
-  protected dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
+  private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
   public grid = viewChild.required(SchedulerTimeGridDirective);
   private scheduler = viewChild.required<SchedulerDirective<TimelineEntry>>(SchedulerDirective);
 
@@ -376,7 +376,7 @@ export class DayTimelineComponent {
     return Math.max(1, rowCount) * STRIP_ROW_REM;
   }
 
-  protected descriptionOf(appointment: Appointment<TimelineEntry>) {
+  public descriptionOf(appointment: Appointment<TimelineEntry>) {
     const entry = appointment.extra;
 
     return entry?.kind === 'row' ? entry.row.description : null;

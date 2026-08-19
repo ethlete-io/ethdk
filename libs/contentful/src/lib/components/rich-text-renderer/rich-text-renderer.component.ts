@@ -290,9 +290,9 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
 })
 export class ContentfulRichTextRendererComponent {
   private viewContainerRef = inject(ViewContainerRef);
-  private readonly renderer = injectRenderer();
+  private renderer = injectRenderer();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly config = injectContentfulConfig();
+  private config = injectContentfulConfig();
 
   /**
    * The contentful response gotten via their REST api.
