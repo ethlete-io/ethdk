@@ -1,5 +1,13 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.12
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a258308`](https://github.com/ethlete-io/ethdk/commit/a258308e0753eb65d08b3d7fb9a9f14507229047) Thanks [@github-actions](https://github.com/apps/github-actions)! - Agent rules: make generated guidance safer, reference-aware, example-validated, and cheaper to load.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`973462e`](https://github.com/ethlete-io/ethdk/commit/973462ebb9ec7c2eef1aca3fc9f01615824d0074) Thanks [@github-actions](https://github.com/apps/github-actions)! - Agent rules: warn about unknown exclusions and apply Codex model-specific long-context pricing limits in the context warning hook.
+
 ## 0.1.0-next.11
 
 ### Patch Changes

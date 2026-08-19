@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0-next.57
+
+### Patch Changes
+
+- [`3088514`](https://github.com/ethlete-io/ethdk/commit/30885145757f88c4d6e10d83ba043347f73745c8) Thanks [@TomTomB](https://github.com/TomTomB)! - A page-sticky table header no longer lags a frame behind its body during horizontal scroll.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`becdfd4`](https://github.com/ethlete-io/ethdk/commit/becdfd4f80320e3d424a6a945b9f1cc762e55101) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: prevent page scrolling from freezing when `etTablePageStickyHeader` is active.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`7867efb`](https://github.com/ethlete-io/ethdk/commit/7867efba91bb34a6eb96555c49b553a183c67e20) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: keep a `etTablePageStickyHeader` table narrowing with its container instead of scrolling the page sideways, end the pinned header on its own rule, and leave its scrollbar to the host.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - Core: correct framework primitive behavior; breakpoint transforms now require explicit fallbacks, unresolved surface types return `null`, and the validator aggregate is renamed to `EthleteValidators`.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`56e301f`](https://github.com/ethlete-io/ethdk/commit/56e301f6e3b455b1e7e2de54f101206bb890b557) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query: harden auth, caching, forms, GraphQL, WebSockets and legacy lifecycle behavior; add lifecycle-scoped form branches and secure host-only auth cookies.
+
 ## 1.0.0-next.56
 
 ### Major Changes

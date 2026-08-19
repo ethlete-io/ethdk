@@ -1,5 +1,15 @@
 # @ethlete/contentful
 
+## 4.0.0-next.8
+
+### Major Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`1aabd4e`](https://github.com/ethlete-io/ethdk/commit/1aabd4ebc8b5f28a72b6d5cc2079ccaa6318b842) Thanks [@github-actions](https://github.com/apps/github-actions)! - Contentful: correct rich-text ordering, URL handling, nullable assets and responsive images; the GraphQL asset fragment is now named `ContentfulAssetData` to avoid document collisions.
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`55736ec`](https://github.com/ethlete-io/ethdk/commit/55736ec21189efa86fd107043579fc4c65e4452e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Correct reactive state mutability declarations across Query, Contentful and Query Devtools.
+
 ## 4.0.0-next.7
 
 ### Major Changes

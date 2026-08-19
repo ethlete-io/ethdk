@@ -1,5 +1,20 @@
 # @ethlete/core
 
+## 5.0.0-next.54
+
+### Major Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - Core: correct framework primitive behavior; breakpoint transforms now require explicit fallbacks, unresolved surface types return `null`, and the validator aggregate is renamed to `EthleteValidators`.
+
+### Minor Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - `MatchStateType` is now a const object plus a derived union type instead of an `enum`. Dotted access
+  and type-position use are unchanged.
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`56e301f`](https://github.com/ethlete-io/ethdk/commit/56e301f6e3b455b1e7e2de54f101206bb890b557) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query: harden auth, caching, forms, GraphQL, WebSockets and legacy lifecycle behavior; add lifecycle-scoped form branches and secure host-only auth cookies.
+
 ## 5.0.0-next.53
 
 ### Major Changes

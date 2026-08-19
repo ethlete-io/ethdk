@@ -1,5 +1,20 @@
 # @ethlete/query
 
+## 6.0.0-next.40
+
+### Minor Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - The legacy `QueryStateType` and `AuthBearerRefreshStrategy` are const objects instead of
+  `const enum`s, so a transpile-only build can consume them.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`56e301f`](https://github.com/ethlete-io/ethdk/commit/56e301f6e3b455b1e7e2de54f101206bb890b557) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query: harden auth, caching, forms, GraphQL, WebSockets and legacy lifecycle behavior; add lifecycle-scoped form branches and secure host-only auth cookies.
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`0c324b0`](https://github.com/ethlete-io/ethdk/commit/0c324b0d765fb6a07ec9a5766638bd5b52006651) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: list a query's request headers in their own section, so a secure query's `Authorization` is readable however its args reached it.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`55736ec`](https://github.com/ethlete-io/ethdk/commit/55736ec21189efa86fd107043579fc4c65e4452e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Correct reactive state mutability declarations across Query, Contentful and Query Devtools.
+
 ## 6.0.0-next.39
 
 ### Minor Changes
