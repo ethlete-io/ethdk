@@ -1,3 +1,4 @@
+import { HttpHeaders } from '@angular/common/http';
 import { registerQueryDevtoolsEntry } from './query-devtools-hook';
 import { clearQueryDevtoolsTombstones, provideQueryDevtools, queryDevtoolsEntries } from './query-devtools-registry';
 import { MAX_QUERY_DEVTOOLS_TOMBSTONES, snapshotQueryDevtoolsHandle } from './query-devtools-tombstone';
@@ -18,6 +19,7 @@ const fakeQuery = (overrides: { response?: unknown; error?: unknown; url?: strin
       attempts: () => 3,
       lastDurationMs: () => 42,
       resolveHeaders: () => undefined,
+      lastSentHeaders: () => new HttpHeaders({ Authorization: 'Bearer sent' }),
       lastPersistedResponseAt: () => null,
       lastExternalResponseAt: () => null,
     },
@@ -66,6 +68,12 @@ describe('query devtools tombstones', () => {
       expect(snapshot.subtle.request().url).toBe('https://example.com/post/1');
       expect(snapshot.subtle.request().subtle.attempts()).toBe(3);
       expect(snapshot.subtle.request().subtle.lastDurationMs()).toBe(42);
+    });
+
+    it('should keep the headers the last run sent, so a destroyed query still lists them', () => {
+      const snapshot = asAny(snapshotQueryDevtoolsHandle(fakeQuery()));
+
+      expect(snapshot.subtle.request().subtle.lastSentHeaders().get('Authorization')).toBe('Bearer sent');
     });
 
     it('should never report loading, retrying or staleness - a frozen request settles nothing', () => {

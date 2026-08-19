@@ -46,6 +46,7 @@ type LiveRequest = {
     attempts: () => number;
     lastDurationMs: () => number | null;
     resolveHeaders: () => unknown;
+    lastSentHeaders: () => unknown;
     lastPersistedResponseAt: () => number | null;
     lastExternalResponseAt: () => number | null;
   };
@@ -99,6 +100,7 @@ export const snapshotQueryDevtoolsHandle = (handle: unknown): unknown => {
           attempts: read(() => frozen(live.subtle.attempts()), frozen(1)),
           lastDurationMs: read(() => frozen(live.subtle.lastDurationMs()), frozen(null)),
           resolveHeaders: read(() => frozen(live.subtle.resolveHeaders()), frozen(undefined)),
+          lastSentHeaders: read(() => frozen(live.subtle.lastSentHeaders()), frozen(undefined)),
           lastPersistedResponseAt: read(() => frozen(live.subtle.lastPersistedResponseAt()), frozen(null)),
           lastExternalResponseAt: read(() => frozen(live.subtle.lastExternalResponseAt()), frozen(null)),
         },

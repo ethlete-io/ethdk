@@ -556,9 +556,9 @@ request, so a secure query's `Authorization` is readable instead of a `fn(name)`
 It is called again on every read, so the token shown is the current one rather than
 the one the request went out with. A provider that cannot resolve yet - a secure
 query before its access token arrives - keeps the `fn(name)` row.
-Only the args the call passed are shown - client-level headers are merged in later,
-and headers an interceptor adds are added after the SDK hands the request over, so
-neither is visible here.
+
+The **Args** tree only ever shows the args the call itself passed, which is not the
+whole header set and differs per query - so the headers have a section of their own.
 
 **The args editor carries what JSON can carry, and preserves what it cannot.**
 Headers become a plain `name: value` record you can edit, and are rebuilt into
@@ -567,6 +567,26 @@ JSON would flatten to `{}` - `FormData`, `File`, `Blob`, `Map`, `Set`, and a hea
 provider - is left out of the draft and put back **verbatim** on execute, at any
 depth, so replaying an unedited draft repeats the request exactly. Deleting a key
 from the draft still removes it; only what the draft never carried comes back.
+
+### Request headers
+
+Under **Args** sits **Request headers**: the full `name: value` set the query's last
+run sent, client-level headers merged with the per-request ones. It reads the same for
+every query, however its args reached it:
+
+- A `withArgs` query builds its args from the feature's reactive source, and a secure
+  query's `Authorization` provider is never written back to that source - so the args
+  tree of such a query holds no `headers` key at all, while an imperatively executed
+  one holds the provider. Both list their `Authorization` here.
+- Client-level headers (`createQueryClient({ headers })`) are merged in per execution
+  rather than being part of the args, so the args tree never held them.
+
+The section reports what the last run **sent**, so it keeps reading the token that
+request went out with after a refresh replaced it. A query that has not run yet
+resolves its current args and its client instead. It is hidden when there are no
+headers, and while a provider cannot resolve yet - a secure query before its access
+token arrives. Headers an HTTP interceptor adds are added after the SDK hands the
+request over, so they are not visible here either.
 
 ## Features show what they were configured with
 
@@ -722,7 +742,7 @@ sub-tabs under the pinned head and action rows:
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Overview** | Base URL, route, request URL, status, cache key, last-executed time, `triggeredBy`, [what refetched it and which form feeds its args](#why-did-this-refetch), features, and the [Activity tiles](#activity-how-often-a-query-ran-and-what-it-cost). |
 | **History**  | [Every run the query made, and the response diff](#run-history-and-response-diffs). Carries the run count as a badge.                                                                                                                               |
-| **Data**     | The [value explorer](#beyond-a-read-only-view) (args, response or error) and the GraphQL document, if any.                                                                                                                                          |
+| **Data**     | The [value explorer](#beyond-a-read-only-view) (args, request headers, response or error) and the GraphQL document, if any.                                                                                                                         |
 
 The action row stays above the sub-tabs, so nothing you act on is ever behind a tab.
 It holds one primary action and three groups:
@@ -1831,7 +1851,7 @@ The panel doesn't just display state - it acts on the live query objects your
 components are bound to, which the browser Network tab can't do:
 
 - **Value explorer** - a collapsible, searchable tree of the _transformed_ value
-  (args / response / error, post-`transformResponse`). Every row copies to the
+  (args / request headers / response / error, post-`transformResponse`). Every row copies to the
   clipboard, including arrays and objects: a container copies its whole subtree as
   formatted JSON, a leaf copies the bare value (a string without the display
   quotes, so an id or url pastes straight into a search box). The button ticks

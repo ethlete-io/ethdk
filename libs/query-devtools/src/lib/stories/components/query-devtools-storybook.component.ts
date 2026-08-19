@@ -12,6 +12,7 @@ import {
   queryField,
   QueryErrorResponse,
   querySequence,
+  emptyQueryArgs,
   searchQueryField,
   withArgs,
   withErrorHandling,
@@ -60,6 +61,7 @@ import {
   getPost,
   getPosts,
   getProfile,
+  GetProfileArgs,
   getServerTime,
   postExoticArgs,
 } from '../query-devtools-demo.utils';
@@ -498,7 +500,7 @@ export class QdFilterFormCardComponent {
   imports: [CARD_IMPORTS],
 })
 export class QdInvalidateCardComponent {
-  protected readonly client = injectDemoClient();
+  protected client = injectDemoClient();
 
   protected readonly create = createPost(
     withSuccessHandling({ handler: () => this.client.invalidateQueries({ url: '/posts' }) }),
@@ -679,7 +681,7 @@ export class QdGqlCardComponent {
   imports: [CARD_IMPORTS],
 })
 export class QdWsCardComponent {
-  protected readonly socket = injectDemoSocket();
+  protected socket = injectDemoSocket();
   protected readonly room = this.socket.joinRoom('match-events');
 }
 
@@ -706,7 +708,7 @@ export class QdWsCardComponent {
   imports: [CARD_IMPORTS],
 })
 export class QdAuthCardComponent {
-  protected readonly auth = injectDemoAuthProvider();
+  protected auth = injectDemoAuthProvider();
 
   protected state = computed<QdState>(() => (this.auth.isAuthenticated() ? 'ok' : 'idle'));
 
@@ -739,6 +741,33 @@ export class QdAuthCardComponent {
 })
 export class QdProfileCardComponent {
   protected readonly profile = getProfile({ onlyManualExecution: true });
+
+  protected state = computed(() => stateOf(this.profile));
+}
+
+/**
+ * The same secure endpoint driven by `withArgs` instead of an imperative `execute`. Its args come from
+ * the feature's source, which the `Authorization` provider is never written back to - so its args tree
+ * holds no `headers` key while the {@link QdProfileCardComponent} above holds the provider.
+ */
+@Component({
+  selector: 'et-sb-qd-profile-args',
+  template: `
+    <et-sb-qd-card heading="Profile (secure, withArgs)">
+      <et-sb-qd-status [state]="state()" qdStatus>
+        @if (profile.error(); as error) {
+          request failed with {{ error.raw.status }}
+        } @else {
+          {{ profile.response()?.name ?? 'login first' }}
+        }
+      </et-sb-qd-status>
+    </et-sb-qd-card>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [CARD_IMPORTS],
+})
+export class QdProfileArgsCardComponent {
+  protected readonly profile = getProfile(withArgs(() => emptyQueryArgs<GetProfileArgs>()));
 
   protected state = computed(() => stateOf(this.profile));
 }
@@ -855,7 +884,7 @@ const qdDialog = defineOverlay({
   },
 })
 export class QdOverlayBarComponent {
-  private readonly notifications = injectNotificationManager();
+  private notifications = injectNotificationManager();
 
   protected readonly ITEMS = ['Copy request', 'Copy as cURL', 'Open in a new tab', 'Report an issue'];
 
@@ -899,6 +928,7 @@ export class QdOverlayBarComponent {
         <et-sb-qd-bulk-archive />
         <et-sb-qd-auth />
         <et-sb-qd-profile />
+        <et-sb-qd-profile-args />
         <et-sb-qd-gql />
         <et-sb-qd-ws />
         <et-sb-qd-unmount />
@@ -933,6 +963,7 @@ export class QdOverlayBarComponent {
     QdCheckoutCardComponent,
     QdAuthCardComponent,
     QdProfileCardComponent,
+    QdProfileArgsCardComponent,
     QdGqlCardComponent,
     QdWsCardComponent,
     QdOverlayBarComponent,

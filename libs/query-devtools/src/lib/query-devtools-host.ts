@@ -157,6 +157,11 @@ export type QueryDevtoolsHost = {
   requestUrl(query: AnyQuery): string | null;
   requestPath(url: string): string;
   queryArgs(query: AnyQuery): unknown;
+  /**
+   * The headers the query's last run sent, or - before it has run - the ones its args and its client
+   * resolve to now. `null` when there are none, or while a header provider cannot resolve yet.
+   */
+  requestHeaders(query: AnyQuery): Record<string, string> | null;
   routeSegments(entry: QueryDevtoolsEntry | undefined, query: AnyQuery): RouteSegment[];
   queryActivity(entry: QueryDevtoolsEntry): QueryActivity;
   linkActivity(link: QueryLink): QueryActivity;

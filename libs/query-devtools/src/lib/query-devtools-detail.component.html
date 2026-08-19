@@ -674,6 +674,23 @@
       path="args"
     />
 
+    @if (requestHeaders(); as headers) {
+      <h5
+        class="et-query-devtools-section"
+        title="The headers the last run sent - or, for a query that has not run, the ones its args and its client resolve to now. Headers an HTTP interceptor adds are not visible here."
+      >
+        Request headers
+      </h5>
+      <et-query-devtools-json
+        [value]="headers"
+        [search]="host.jsonSearchTerm()"
+        [expandedPaths]="host.jsonExpandedPaths()"
+        [collapsedPaths]="host.jsonCollapsedPaths()"
+        [toggleFn]="host.toggleJsonPath"
+        path="requestHeaders"
+      />
+    }
+
     @if (s.query.error(); as error) {
       <h5 class="et-query-devtools-section">Error ({{ error.raw.status }})</h5>
       <et-query-devtools-json

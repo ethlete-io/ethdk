@@ -813,7 +813,7 @@ export class QueryDevtoolsComponent implements OnInit {
   protected listHeight = signal<number | null>(this.persisted.listHeight ?? null);
   protected drawerHeight = signal<number | null>(this.persisted.drawerHeight ?? null);
 
-  protected drag = signal<ResizeDrag | null>(null);
+  private drag = signal<ResizeDrag | null>(null);
   protected resizing = computed(() => !!this.drag());
 
   /** Which edge the panel is docked to, or `float` for a window of its own inside the page. */
@@ -1093,7 +1093,8 @@ export class QueryDevtoolsComponent implements OnInit {
 
   /** "Inspect" mode: hover the live UI to find the query that a component created. */
   protected inspectActive = signal(false);
-  protected inspectHover = signal<{ rect: DOMRect; entries: QueryDevtoolsEntry[] } | null>(null);
+  /** @internal */
+  public inspectHover = signal<{ rect: DOMRect; entries: QueryDevtoolsEntry[] } | null>(null);
 
   /** Inspect run backwards: the box drawn over the element the selected query was created in. */
   protected locatedRect = signal<DOMRect | null>(null);
@@ -2016,6 +2017,28 @@ export class QueryDevtoolsComponent implements OnInit {
    */
   public queryArgs(query: AnyQuery) {
     return query.args() ?? query.subtle.request()?.args ?? null;
+  }
+
+  /**
+   * The headers a query's request carries, as a plain `name: value` record, or `null` for a query that
+   * has none the panel can read. The set the last run sent, so it stays readable after the token it
+   * used was replaced; for a query that has not run, what its current args and its client resolve to
+   * now. `null` while a header provider throws - a secure query's needs an access token.
+   *
+   * The args tree cannot answer this on its own: a `withArgs` query reads its args from the feature's
+   * source, which the secure `Authorization` provider is never written back to, and client-level
+   * headers are merged in per execution rather than being part of the args at all.
+   */
+  public requestHeaders(query: AnyQuery) {
+    const request = query.subtle.request();
+    const args = this.queryArgs(query) as { headers?: unknown } | null;
+    const headers = request?.subtle.lastSentHeaders() ?? this.resolvedHeaders(request, args);
+
+    if (!headers) return null;
+
+    const entries = headerEntries(headers);
+
+    return entries.length ? Object.fromEntries(entries.map(({ k, v }) => [k, v])) : null;
   }
 
   public queryStatus(query: AnyQuery): QueryStatus {
@@ -3108,6 +3131,26 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   /**
+   * The headers an execution of this request would resolve to now: the client's with the per-request
+   * ones merged on top, providers called. `undefined` when a provider throws, which for a secure query
+   * means no access token is available yet.
+   */
+  private resolvedHeaders(
+    request: { subtle: { resolveHeaders: () => HttpHeaders | undefined } } | null | undefined,
+    args: { headers?: unknown } | null,
+  ) {
+    try {
+      if (request) return request.subtle.resolveHeaders();
+
+      return typeof args?.headers === 'function'
+        ? (args.headers as () => HttpHeaders)()
+        : (args?.headers as HttpHeaders | undefined);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
    * The same route rendered from a set of args rather than from a query, which is what a batch item leaves
    * behind: the batch destroys its query the moment the item settles.
    */
@@ -3501,17 +3544,9 @@ export class QueryDevtoolsComponent implements OnInit {
     request: { subtle: { resolveHeaders: () => HttpHeaders | undefined } } | null | undefined,
     args: { headers?: unknown } | null,
   ) {
-    try {
-      const headers = request
-        ? request.subtle.resolveHeaders()
-        : typeof args?.headers === 'function'
-          ? (args.headers as () => HttpHeaders)()
-          : (args?.headers as HttpHeaders | undefined);
+    const headers = this.resolvedHeaders(request, args);
 
-      return (headers?.keys() ?? []).map((name) => ({ name, value: headers?.getAll(name)?.join(', ') ?? '' }));
-    } catch {
-      return [];
-    }
+    return headers ? headerEntries(headers).map(({ k, v }) => ({ name: k, value: v })) : [];
   }
 
   private sessionClients(): SessionExportClient[] {

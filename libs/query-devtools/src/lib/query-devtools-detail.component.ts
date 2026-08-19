@@ -41,6 +41,12 @@ export class QueryDevtoolsDetailComponent {
   /** Whether any of the three exports behind the Copy menu has just landed on the clipboard. */
   protected copied = computed(() => this.host.copiedReport() || this.host.copiedCurl() || this.host.copiedInsomnia());
 
+  /**
+   * Memoized rather than read straight from the host in the template: the record is built per read, and
+   * a fresh object on every change-detection pass would re-seed the value explorer each time.
+   */
+  protected requestHeaders = computed(() => this.host.requestHeaders(this.sel().query));
+
   protected overrideSetSource = computed(() => {
     const sel = this.sel();
     const url = this.host.requestUrl(sel.query);
