@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, readFileSync, readlinkSync, statSync } from 'fs';
 import { join, resolve } from 'path';
-import { LOCAL_CONFIG_FILE_NAME, readLocalConfig, SyncConfig } from './config';
+import { CONFIG_FILE_NAME, LOCAL_CONFIG_FILE_NAME, readLocalConfig, SyncConfig } from './config';
 import { filterContent, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { emitAgentsSkills } from './targets/agents-skills';
@@ -174,8 +174,23 @@ const collectGitHookWarnings = (config: SyncConfig) => {
   ];
 };
 
-const collectWarnings = (config: SyncConfig) => {
-  const warnings: string[] = [...collectLocalConfigWarnings(config.root), ...collectGitHookWarnings(config)];
+const collectExcludeWarnings = (items: ContentItem[], exclude: string[]) => {
+  const knownNames = new Set(items.map((item) => item.frontmatter.name));
+  const unknownNames = exclude.filter((name) => !knownNames.has(name));
+
+  if (unknownNames.length === 0) return [];
+
+  return [
+    `${CONFIG_FILE_NAME} excludes unknown content name(s): ${unknownNames.join(', ')} — check their spelling or remove them.`,
+  ];
+};
+
+const collectWarnings = (config: SyncConfig, items: ContentItem[]) => {
+  const warnings: string[] = [
+    ...collectLocalConfigWarnings(config.root),
+    ...collectGitHookWarnings(config),
+    ...collectExcludeWarnings(items, config.exclude),
+  ];
 
   if (!config.claudeMdImportsAgentsMd) return warnings;
 
@@ -204,7 +219,8 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
   assertKnownHooks(config.hooks);
   assertKnownGitHooks(config.gitHooks);
 
-  const { kept, skipped } = filterContent(loadContent(), config);
+  const items = loadContent();
+  const { kept, skipped } = filterContent(items, config);
 
   const skills = kept.filter((item) => item.frontmatter.kind === 'skill');
   const emittedSkills = new Set(skills.map((item) => item.frontmatter.name));
@@ -256,5 +272,10 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
     }),
   );
 
-  return { files, skipped, danglingLinks: findDanglingLinks(kept, emittedSkills), warnings: collectWarnings(config) };
+  return {
+    files,
+    skipped,
+    danglingLinks: findDanglingLinks(kept, emittedSkills),
+    warnings: collectWarnings(config, items),
+  };
 };

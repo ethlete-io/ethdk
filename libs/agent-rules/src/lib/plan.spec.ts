@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig, LOCAL_CONFIG_FILE_NAME } from './config';
+import { CONFIG_FILE_NAME, loadConfig, LOCAL_CONFIG_FILE_NAME } from './config';
 import { buildPlan } from './plan';
 
 const planWithLocalConfig = (contents: unknown) => {
@@ -13,6 +13,29 @@ const planWithLocalConfig = (contents: unknown) => {
 
   return buildPlan({ config: loadConfig({ root }) });
 };
+
+const planWithConfig = (contents: unknown) => {
+  const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
+
+  writeFileSync(join(root, CONFIG_FILE_NAME), JSON.stringify(contents), 'utf8');
+
+  return buildPlan({ config: loadConfig({ root }) });
+};
+
+describe('exclude warnings', () => {
+  it('accepts the name of a packaged skill', () => {
+    const plan = planWithConfig({ exclude: ['timetrack'] });
+
+    expect(plan.warnings).toEqual([]);
+    expect(plan.skipped).toContainEqual({ name: 'timetrack', reason: 'excluded by config' });
+  });
+
+  it('warns about names that do not match packaged content', () => {
+    const plan = planWithConfig({ exclude: ['git-fow', 'missing-rule'] });
+
+    expect(plan.warnings).toEqual([expect.stringContaining('excludes unknown content name(s): git-fow, missing-rule')]);
+  });
+});
 
 describe('apiRepoPaths warnings', () => {
   it('accepts a map of app names to directories that exist', () => {

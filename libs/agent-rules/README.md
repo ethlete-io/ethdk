@@ -111,7 +111,10 @@ Prettier rewrites them and `check` then reports drift on every run:
   convention and never mentions a `commitlint` run - an agent that goes looking for a
   promised validator and finds nothing reports the discrepancy instead of just
   committing. Setting either one in `vars` overrides the detection.
-- **`exclude`** - content names to skip entirely.
+- **`exclude`** - rule or skill names to skip entirely for every configured agent and
+  developer. For example, `"exclude": ["git-flow", "handoff"]` prevents those skills
+  from being generated; the next `sync` also removes copies generated previously. Unknown
+  names produce a warning so a typo cannot silently leave a skill enabled.
 - **`claudeMdImportsAgentsMd`** - set (usually by `migrate`) when `CLAUDE.md` is an
   `@AGENTS.md` import or symlink; the claude target then skips `.claude/rules/ethlete/`
   so the rules don't load twice. `sync` warns when the flag is set but the import is
