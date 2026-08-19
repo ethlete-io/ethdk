@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-next.8
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`0c324b0`](https://github.com/ethlete-io/ethdk/commit/0c324b0d765fb6a07ec9a5766638bd5b52006651) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: list a query's request headers in their own section, so a secure query's `Authorization` is readable however its args reached it.
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`55736ec`](https://github.com/ethlete-io/ethdk/commit/55736ec21189efa86fd107043579fc4c65e4452e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Correct reactive state mutability declarations across Query, Contentful and Query Devtools.
+
 ## 1.0.0-next.7
 
 ### Patch Changes

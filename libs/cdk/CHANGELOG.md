@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.30
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - Core: correct framework primitive behavior; breakpoint transforms now require explicit fallbacks, unresolved surface types return `null`, and the validator aggregate is renamed to `EthleteValidators`.
+
 ## 5.0.0-next.29
 
 ### Patch Changes

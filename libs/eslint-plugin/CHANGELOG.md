@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0-next.23
+
+### Minor Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - New rule `ethlete/no-enum`. It bans `enum` and `const enum`, and auto-fixes a string enum into a
+  const object plus a derived union type.
+
+### Patch Changes
+
+- [#3069](https://github.com/ethlete-io/ethdk/pull/3069) [`a9113cb`](https://github.com/ethlete-io/ethdk/commit/a9113cb6ce63942ffce0e26ca7df7f0556a14838) Thanks [@github-actions](https://github.com/apps/github-actions)! - Harden unsafe fixers, reduce contract and test false positives, and correct replacement guidance across the recommended rules.
+
 ## 1.0.0-next.22
 
 ### Patch Changes
