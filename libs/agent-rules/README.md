@@ -301,9 +301,9 @@ Available hooks:
   context crosses 70% / 85% of the token budget, recommending a handoff. Under Claude the
   budget is capped at the 200k long-context pricing boundary: on 1M-window models every
   request past 200k input tokens bills the whole context at a premium rate, so the
-  warnings fire at ~140k/~170k instead of deep into the expensive range. Codex has no
-  such boundary, so its budget is the model's own reported context window and the
-  warnings are pure occupancy.
+  warnings fire at ~140k/~170k instead of deep into the expensive range. Codex uses
+  the model-specific 272k pricing boundary for GPT-5.6, GPT-5.5 and GPT-5.4, and the
+  rollout's reported context window for models without that pricing rule.
 
   Two things are Claude-only: the separate user-facing line (Codex documents only
   `additionalContext`, so there the warning is folded into the text the model is told to

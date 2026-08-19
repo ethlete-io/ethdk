@@ -17,11 +17,10 @@ that matter here, all captured in AGENT_PROFILES:
     carry a TokenUsageInfo. Codex's rollout format is explicitly not a stable
     interface, so the parser searches each line for the usage object instead of
     walking a fixed path.
-  * Context budget. Claude's budget is capped at the 200k long-context pricing
-    boundary: on models with a larger window, every request past that point
-    bills the entire context at the premium rate, which costs far more than
-    handing off into a fresh session ever would. Codex has no such boundary, so
-    its budget is just the window.
+  * Context budget. Claude's budget is capped at its 200k long-context pricing
+    boundary. Codex uses the model-specific pricing boundary where OpenAI
+    documents one, and the reported window otherwise. Crossing either boundary
+    costs far more than handing off into a fresh session ever would.
   * How a handoff is invoked. Claude has a slash command and /clear; Codex has
     neither and reads the skill from disk. The skill's own name differs per repo
     (`ethlete-handoff` where the generator installed it, `handoff` where the repo
@@ -64,6 +63,15 @@ CRITICAL_FRACTION = 0.85
 # context at the long-context premium rate — so the budget never exceeds it.
 PREMIUM_BOUNDARY = 200_000
 
+# Codex models whose long-context pricing starts above 272k input tokens. Models
+# without that pricing rule use their reported context window instead.
+CODEX_PREMIUM_BOUNDARIES = (
+    ("gpt-5.6", 272_000),
+    ("gpt-5.5", 272_000),
+    ("gpt-5.4-mini", None),
+    ("gpt-5.4", 272_000),
+)
+
 # Context window (tokens) per model, matched by substring against the model id
 # from the transcript — first match wins. Edit these as model windows change;
 # anything unmatched falls back to DEFAULT_WINDOW.
@@ -84,6 +92,7 @@ DEFAULT_WINDOW = 200_000
 AGENT_PROFILES = {
     "claude": {
         "premium_boundary": PREMIUM_BOUNDARY,
+        "premium_boundaries": (),
         # Claude's transcript reports no window, so it is resolved from the model id.
         "default_window": None,
         "auto_modes": ("auto",),
@@ -102,6 +111,7 @@ AGENT_PROFILES = {
     },
     "codex": {
         "premium_boundary": None,
+        "premium_boundaries": CODEX_PREMIUM_BOUNDARIES,
         # Only reached if a rollout omits model_context_window; the CONTEXT_WINDOWS table
         # holds Claude model ids and would never match a Codex one.
         "default_window": 272_000,
@@ -213,6 +223,15 @@ def window_for(model):
             if needle in model:
                 return window
     return DEFAULT_WINDOW
+
+
+def premium_boundary_for(profile, model):
+    """Model-specific pricing boundary, falling back to the agent-wide value."""
+    if model:
+        for needle, boundary in profile["premium_boundaries"]:
+            if needle in model:
+                return boundary
+    return profile["premium_boundary"]
 
 
 def claude_context_state(transcript_path):
@@ -377,7 +396,7 @@ def main():
 
     tokens, model, reported_window = CONTEXT_READERS[agent](transcript_path)
     window = reported_window or profile["default_window"] or window_for(model)
-    boundary = profile["premium_boundary"]
+    boundary = premium_boundary_for(profile, model)
     budget = min(window, boundary) if boundary else window
     warn_tokens = int(budget * WARN_FRACTION)
     critical_tokens = int(budget * CRITICAL_FRACTION)

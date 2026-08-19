@@ -58,7 +58,10 @@ export default defineConfig({
       '/agent-rules/': [
         {
           text: 'Agent rules',
-          items: [{ text: 'Overview', link: '/agent-rules/' }],
+          items: [
+            { text: 'Overview', link: '/agent-rules/' },
+            { text: 'Content catalog', link: '/agent-rules/catalog' },
+          ],
         },
       ],
       '/contentful/': [

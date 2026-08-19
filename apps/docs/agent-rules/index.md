@@ -46,6 +46,9 @@ directory or `ethlete-` prefix is ever touched.
 Content that declares `requires` is only emitted when those packages are installed, so
 a repo without `@ethlete/query` never sees the query guide.
 
+See the [content catalog](/agent-rules/catalog) for every rule, skill, agent hook, git
+hook and output style shipped by the package, including the exact names used in config.
+
 ## Migrating to the AGENTS.md layout
 
 `AGENTS.md` is the cross-tool instruction standard, and Claude Code officially supports
@@ -86,7 +89,8 @@ The command is idempotent - every step detects the migrated state and skips itse
     "commitScopes": ["app", "shared", "deps"]
   },
   "exclude": ["git-commit"],
-  "hooks": []
+  "hooks": [],
+  "gitHooks": []
 }
 ```
 
@@ -95,9 +99,10 @@ The command is idempotent - every step detects the migrated state and skips itse
 | `targets`                 | `"auto"`     | `"auto"` always emits `codex` (`AGENTS.md` + `.agents/skills/` is the cross-tool baseline) and adds `claude`, `cursor`, `copilot` when their directory exists; or list an explicit subset. |
 | `profile`                 | `"consumer"` | `"consumer"` emits `scope: consumer` and `scope: both` content; `"sdk"` emits only `both` (used by the SDK repo itself).                                                                   |
 | `vars`                    | -            | Values for the template tokens a guide declares. A guide whose variable has no default and no value is skipped with a warning.                                                             |
-| `exclude`                 | `[]`         | Content names to skip entirely.                                                                                                                                                            |
+| `exclude`                 | `[]`         | Rule or skill names to skip for every configured agent and developer. `sync` removes previously generated copies and warns about unknown names.                                            |
 | `claudeMdImportsAgentsMd` | `false`      | Set (usually by `migrate`) when `CLAUDE.md` imports `AGENTS.md`; skips `.claude/rules/ethlete/` so rules don't load twice. `sync` warns when the flag is set but the import is missing.    |
-| `hooks`                   | `[]`         | Opt-in Claude Code hooks, see below.                                                                                                                                                       |
+| `hooks`                   | `[]`         | Opt-in Claude Code and Codex hooks, see below.                                                                                                                                             |
+| `gitHooks`                | `[]`         | Opt-in checks appended to existing Husky hooks, see below.                                                                                                                                 |
 
 If your repo runs Prettier over everything, exclude the generated paths - otherwise
 Prettier rewrites them and `check` reports drift on every run:
@@ -120,22 +125,46 @@ per hook:
 }
 ```
 
-`sync` writes the script to `.claude/hooks/ethlete/` and registers it in
-`.claude/settings.json`, leaving your own entries untouched; removing the name from
-`hooks` unregisters and deletes it again.
+`sync` emits hooks for whichever `claude` and `codex` targets are enabled. It leaves
+your own registrations untouched; removing a name from `hooks` unregisters and deletes
+the generated script again.
+
+| Target      | Script directory         | Registration file       |
+| ----------- | ------------------------ | ----------------------- |
+| Claude Code | `.claude/hooks/ethlete/` | `.claude/settings.json` |
+| Codex       | `.codex/hooks/ethlete/`  | `.codex/hooks.json`     |
 
 ### `context-warning`
 
-Warns you (and instructs Claude) once per tier when the session context grows large,
-recommending the handoff skill so work continues in a fresh session instead of a
-degraded, expensive one. It fires at 70% / 85% of a token budget that is **capped at
-the 200k long-context pricing boundary**: on 1M-window models, every request past 200k
-input tokens bills the entire context at a premium rate, so the warnings land at ~140k
-and ~170k tokens - before the expensive range - rather than at 70% of the raw window.
-On 200k-window models the same fractions apply to the window itself, where the concern
-is the imminent auto-compact rather than pricing.
+Warns once per tier, and instructs the agent, when the session context crosses 70% and
+85% of its effective budget. Claude's budget is capped at its 200k long-context pricing
+boundary. Codex uses the 272k pricing boundary for GPT-5.6, GPT-5.5 and GPT-5.4, and
+the rollout's reported window for models without that pricing rule. A reported window
+smaller than a pricing boundary always wins.
+
+Claude additionally gets a separate user-facing warning and can save a handoff
+automatically in auto mode at the critical tier. Codex receives the warning through
+the hook's additional context; its permission-mode values are not documented, so the
+hook never enables automatic saving there.
 
 Hooks can be turned off per machine - see the local config below.
+
+## Git hooks
+
+Git hooks are separate from agent hooks and are also opt-in:
+
+```json
+{
+  "gitHooks": ["pre-push", "post-checkout"]
+}
+```
+
+`sync` appends a generated block to the matching `.husky/<name>` file and preserves
+the rest of the hook. `pre-push` checks the current branch before a push;
+`post-checkout` reports a non-conforming local branch while renaming it is still cheap.
+Removing a name takes only the generated block back out. Without a `.husky/` directory,
+`sync` warns and writes nothing. Set `ETHLETE_GIT_FLOW_SKIP=1` to silence both hooks on
+one machine.
 
 ## Per-machine local config
 
@@ -153,7 +182,7 @@ differ per developer, without touching any committed file:
 | Option                   | What it does                                                                                                                                                                                                                                                                                                                         |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                                                                                                                                                                          |
-| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends `/handoff` instead of saving the handoff file itself.                                                                                                                                                      |
+| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends a handoff instead of saving the handoff file itself.                                                                                                                                                       |
 | `sdkSourcePath`          | Path to a local `ethlete-sdk` checkout, read by the `sdk-source` and `sdk-local-build` skills when the agent needs the SDK's own sources, or has to build the SDK and install it here through a `file:` dependency. A relative path resolves from the repo root.                                                                     |
 | `apiRepoPaths`           | One API repo checkout per app, keyed by the app's project name (`{ "hub": "../fut-hub-backend" }`), read by the `api-source` skill when a response shape, a status code or an enum has to be confirmed against the server. Relative paths resolve from the repo root; a map with a single entry is used for whatever app is in play. |
 
@@ -176,7 +205,7 @@ ethlete-agents` has nothing to resolve. Format the content, then regenerate from
 local build:
 
 ```bash
-npx prettier --write libs/agent-rules/content/<file>
+yarn prettier --write libs/agent-rules/content/<file>
 yarn agents:sync    # yarn agents:check is the same drift check CI runs
 ```
 
