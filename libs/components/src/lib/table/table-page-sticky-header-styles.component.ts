@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 
 /**
- * The travelling header row, as a styles-only component mounted by `etTablePageStickyHeader` - see
+ * The split page-sticky header layout, as a styles-only component mounted by `etTablePageStickyHeader` - see
  * `TableDragScrollStylesComponent` for the same pattern.
  *
  * @internal

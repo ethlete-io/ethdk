@@ -175,6 +175,12 @@ export type TableHeaderRow = {
   enabled?: Signal<boolean>;
 };
 
+/** The layout mode contributed by `etTablePageStickyHeader`. */
+export type TablePageStickyHeader = {
+  /** Whether the split page-sticky layout is active. */
+  enabled: Signal<boolean>;
+};
+
 /**
  * What a feature renders in place of the body while the table is loading and has no rows to show yet -
  * the placeholder rows. The table owns *when* (its `loading` / `error` inputs and row count); the
@@ -347,6 +353,8 @@ export type TableFeatureHost = {
   registerRowDetail(detail: TableRowDetail): void;
   /** Render a row above the column headers. Call once, from the feature's constructor. */
   registerHeaderRow(row: TableHeaderRow): void;
+  /** Use the split page-sticky header layout. Call once, from the feature's constructor. */
+  registerPageStickyHeader(header: TablePageStickyHeader): void;
   /** Render the body while the table is loading with no rows yet. Call once, from the constructor. */
   registerBodyPlaceholder(placeholder: TableBodyPlaceholder): void;
   /** Replace the content of a cell that is loading on its own. Call once, from the constructor. */
@@ -462,6 +470,9 @@ export type TableFeatureHost = {
    */
   readonly element: HTMLElement;
 
+  /** The active scroll viewport: the host normally, or the body scroller in page-sticky mode. */
+  scrollElement(): HTMLElement;
+
   /** The selected filter values for a column key (empty when unfiltered). */
   filterValuesFor(key: string): unknown[];
   /** Replace a column's selected filter values (an empty list clears the filter). */
@@ -519,6 +530,12 @@ export type TableFeatureHost = {
    * which is the scroll viewport and therefore a different box. `null` before the first render.
    */
   gridElement(): HTMLElement | null;
+
+  /** The separate header grid in page-sticky mode, or `null` in the regular layout. */
+  pageHeaderGridElement(): HTMLElement | null;
+
+  /** Apply the body grid's resolved column tracks to the page-sticky header grid. */
+  setPageHeaderColumns(columns: string | null): void;
 
   /**
    * The rendered header cells of the leading utility columns, in {@link leadColumnsMeta} order. A feature

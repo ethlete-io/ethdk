@@ -904,15 +904,17 @@ document scrolls, so there is no box within a box and no second scrollbar. The h
 with the page - a bounded height is what its `position: sticky` pins against, and the table has
 none.
 
-`etTablePageStickyHeader` pins it to the viewport instead. It travels the header row down the grid
-by the distance the page has scrolled past the table, and stops it at the last row:
+`etTablePageStickyHeader` pins it to the viewport instead. It renders the header outside the body's
+horizontal scroller, keeps both grids on the same resolved column tracks, and stops the header at the
+end of the table:
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTablePageStickyHeader />
 ```
 
-The row keeps its place in the grid the whole time, so the tracks, the pinned columns and the
-resize grips are untouched, and the header still scrolls sideways with the columns.
+Horizontal scrolling keeps the header aligned with the body, including pinned columns. Grouped
+headers, column menus, resize grips, reordering, drag scrolling, and keyboard navigation continue to
+work in this layout.
 
 Set `--et-table-sticky-header-offset` to stop it lower than the top of the viewport - under a page
 header or a toolbar that is pinned there itself:

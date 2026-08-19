@@ -125,6 +125,27 @@ export const StickyHeader: Story = {
   },
 };
 
+export const PageStickyHeader: Story = {
+  args: {
+    rowCount: 40,
+    pageStickyHeader: true,
+    grouped: true,
+    stickyColumns: true,
+    resizableColumns: true,
+    columnMenu: true,
+    reorderable: true,
+    dragScroll: true,
+    keyboardNav: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'An unbounded table pins its header to the page while its body remains horizontally scrollable.',
+      },
+    },
+  },
+};
+
 export const Empty: Story = {
   args: { empty: true },
 };

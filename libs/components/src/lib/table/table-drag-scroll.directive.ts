@@ -25,10 +25,18 @@ export type TableDragScrollConfig = TableFeatureConfig;
  * the table must not pan instead: dragging in a sub table would scroll the list under it. One that fits
  * its content scrolls nothing, so it is left to the table.
  */
-const hasOwnScroller = (target: EventTarget | null, host: HTMLElement) => {
+const hasOwnScroller = ({
+  target,
+  host,
+  tableScroller,
+}: {
+  target: EventTarget | null;
+  host: HTMLElement;
+  tableScroller: HTMLElement;
+}) => {
   let element = target instanceof Element ? target : null;
 
-  while (element !== null && element !== host) {
+  while (element !== null && element !== host && element !== tableScroller) {
     const style = getComputedStyle(element);
     const scrollsInline = /^(auto|scroll)$/.test(style.overflowX) && element.scrollWidth > element.clientWidth;
     const scrollsBlock = /^(auto|scroll)$/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
@@ -78,7 +86,6 @@ const isTextGesture = (target: EventTarget | null) =>
 })
 export class TableDragScrollDirective {
   private table = injectTableFeatureHost('etTableDragScroll');
-  // The feature is a directive on the table, so its host *is* the table's scroll container.
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
   private injector = inject(Injector);
@@ -112,8 +119,9 @@ export class TableDragScrollDirective {
   }
 
   protected syncScrollable() {
-    const host = this.elementRef.nativeElement;
-    const scrollable = this.enabled() && (host.scrollWidth > host.clientWidth || host.scrollHeight > host.clientHeight);
+    const scroller = this.table.scrollElement();
+    const scrollable =
+      this.enabled() && (scroller.scrollWidth > scroller.clientWidth || scroller.scrollHeight > scroller.clientHeight);
 
     if (scrollable !== this.scrollable()) this.scrollable.set(scrollable);
   }
@@ -134,10 +142,11 @@ export class TableDragScrollDirective {
     if (!this.scrollable() || isTextGesture(event.target)) return;
 
     const host = this.elementRef.nativeElement;
+    const scroller = this.table.scrollElement();
 
-    if (hasOwnScroller(event.target, host)) return;
-    const startLeft = host.scrollLeft;
-    const startTop = host.scrollTop;
+    if (hasOwnScroller({ target: event.target, host, tableScroller: scroller })) return;
+    const startLeft = scroller.scrollLeft;
+    const startTop = scroller.scrollTop;
 
     dragGestureFrom(event, host)
       .pipe(
@@ -155,8 +164,8 @@ export class TableDragScrollDirective {
             this.table.claimPointerGesture(event, 'etTableDragScroll');
           }
           if (gesture.type === 'move') {
-            host.scrollLeft = startLeft - gesture.data.totalDx;
-            host.scrollTop = startTop - gesture.data.totalDy;
+            scroller.scrollLeft = startLeft - gesture.data.totalDx;
+            scroller.scrollTop = startTop - gesture.data.totalDy;
           }
           if (gesture.type === 'end' || gesture.type === 'cancelled') this.swallowNextClick();
         }),

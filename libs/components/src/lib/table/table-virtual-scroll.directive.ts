@@ -39,7 +39,7 @@ export class TableVirtualScrollDirective {
   });
 
   private window = createVirtualWindow({
-    container: computed(() => this.table.element),
+    container: computed(() => this.table.scrollElement()),
     itemCount: computed(() => this.table.rows().length),
     estimateItemHeight: computed(() => this.config().estimateRowHeight ?? 48),
     overscan: computed(() => this.config().overscan ?? 6),

@@ -3,8 +3,8 @@
 Date: 2026-08-19. Reported from the `fut-frontend` hub Partners list view. The user scrolls with a
 mouse wheel and the page stops for seconds at a time.
 
-**Status: cause confirmed and measured. The fix is chosen and not yet written. One trial is still
-owed before the build: horizontal gestures against the `hostx` animation, see piece 2.**
+**Status: implemented and verified. The shipped horizontal sync uses a passive, frame-batched scroll
+listener, so neither the root scroller nor the table scroller carries a scroll timeline.**
 
 ## The symptom
 
@@ -206,7 +206,7 @@ mode, gated on the feature. Plan for the two modes in the template, the styleshe
 
 ## Owed
 
-- A changeset for the fix.
+- A changeset for the fix. Done in `.changeset/components-table-page-sticky-header-scroll.md`.
 - A Chromium bug report with the repro, whatever the SDK ships. A running scroll timeline on the root
   scroller should not block the wake for pending input.
 

@@ -26,6 +26,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, fromEvent, merge, Subscription, take, tap, timer } from 'rxjs';
 import {
   injectColorThemes,
+  injectRenderer,
   ProvideColorDirective,
   RuntimeError,
   signalDeferredLoading,
@@ -56,6 +57,7 @@ import {
   TableCellPlaceholder,
   TableColumnPinning,
   TableHeaderRow,
+  TablePageStickyHeader,
   TableRowDetail,
   TableRowNavigation,
   TableRowWindow,
@@ -249,6 +251,7 @@ let uniqueTableId = 0;
     '[attr.data-appearance]': 'appearance()',
     '[attr.data-density]': 'density()',
     '[attr.aria-busy]': 'resolvedLoading() ? "true" : null',
+    '[attr.role]': 'pageStickyHeader() ? "grid" : null',
     '[class.et-table-host--scrolled-block-start]': 'blockScrollShadows().blockStart',
     '[class.et-table-host--scrolled-block-end]': 'blockScrollShadows().blockEnd',
     '[class.et-table-host--scrolled-inline-start]': 'scrollFades().start',
@@ -264,6 +267,7 @@ export class TableComponent<T> {
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private injectedLabels = injectTableLabels();
+  private renderer = injectRenderer();
 
   /** The rows to render. */
   public data = input<readonly T[]>([]);
@@ -432,6 +436,10 @@ export class TableComponent<T> {
 
   private gridRef = viewChild<ElementRef<HTMLElement>>('grid');
 
+  private headerGridRef = viewChild<ElementRef<HTMLElement>>('headerGrid');
+
+  private scrollerRef = viewChild<ElementRef<HTMLElement>>('scroller');
+
   private headerCells = viewChildren<ElementRef<HTMLElement>>('headerCell');
 
   // Every rendered body cell (tagged with `data-col-key`); the first drives virtual-window
@@ -505,6 +513,12 @@ export class TableComponent<T> {
 
   // Rows a feature renders above the column headers (the spanning group-header row).
   private headerRowList = signal<TableHeaderRow[]>([]);
+
+  private pageStickyHeaderList = signal<TablePageStickyHeader[]>([]);
+
+  protected pageStickyHeader = computed(
+    () => this.pageStickyHeaderList().find((header) => header.enabled()) !== undefined,
+  );
 
   protected headerRows = computed(() => this.headerRowList().filter((row) => row.enabled?.() ?? true));
 
@@ -778,6 +792,10 @@ export class TableComponent<T> {
 
   /** The `grid-template-columns` value for the visible columns (plus a leading expander track when expandable). */
   public templateColumns = computed(() => this.columnTracks().template);
+
+  private resolvedPageHeaderColumns = signal<string | null>(null);
+
+  protected pageHeaderColumns = computed(() => this.resolvedPageHeaderColumns() ?? this.templateColumns());
 
   /**
    * Whether a trailing filler track is in play. It carries an empty cell in every row so the header
@@ -1107,8 +1125,15 @@ export class TableComponent<T> {
 
   // Which feature owns the drag each live pointer started - see claimPointerGesture.
   private pointerGestureClaims = new Map<number, string>();
+  private pageHeaderScrollFrame: number | null = null;
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      const view = this.elementRef.nativeElement.ownerDocument.defaultView;
+
+      if (this.pageHeaderScrollFrame !== null) view?.cancelAnimationFrame(this.pageHeaderScrollFrame);
+    });
+
     // A detail template with nothing to render it looks like a broken template rather than a missing
     // import, so name the mistake. Deferred to an effect because a feature registers from its own
     // constructor, which runs after the table's - and it asks whether one registered at all rather
@@ -1164,12 +1189,13 @@ export class TableComponent<T> {
     effect(() => {
       this.hostDimensions();
       this.templateColumns();
+      this.pageStickyHeader();
       afterNextRender({ read: () => this.syncScrollState() }, { injector: this.injector });
     });
   }
 
   protected syncScrollState() {
-    const element = this.elementRef.nativeElement;
+    const element = this.scrollElement();
     // `scrollLeft` counts down from 0 in RTL, so compare distances rather than raw offsets.
     const offset = Math.abs(element.scrollLeft);
     const remaining = element.scrollWidth - element.clientWidth - offset;
@@ -1189,6 +1215,7 @@ export class TableComponent<T> {
       this.blockScrollShadows.set(shadows);
     }
 
+    this.schedulePageHeaderScrollSync(element);
     this.syncObscuredColumns();
   }
 
@@ -1283,6 +1310,11 @@ export class TableComponent<T> {
    */
   public registerHeaderRow(row: TableHeaderRow) {
     this.headerRowList.update((rows) => [...rows, row]);
+  }
+
+  /** Use the split page-sticky header layout. Part of the feature contract; consumers never call this. */
+  public registerPageStickyHeader(header: TablePageStickyHeader) {
+    this.pageStickyHeaderList.update((headers) => [...headers, header]);
   }
 
   /**
@@ -1471,7 +1503,7 @@ export class TableComponent<T> {
   /** How many rows fit the scroll viewport. Part of the feature contract - the PageUp/PageDown step. */
   public rowsPerPage() {
     const rowHeight = this.firstBodyCellElement()?.offsetHeight ?? 0;
-    const viewport = this.elementRef.nativeElement.clientHeight;
+    const viewport = this.scrollElement().clientHeight;
 
     if (!rowHeight || !viewport) return 1;
 
@@ -1674,6 +1706,11 @@ export class TableComponent<T> {
     return this.elementRef.nativeElement;
   }
 
+  /** The active scroll viewport. Part of the feature contract. */
+  public scrollElement() {
+    return this.scrollerRef()?.nativeElement ?? this.elementRef.nativeElement;
+  }
+
   /** The visible columns, in render order. Part of the feature contract. */
   public visibleColumnsMeta() {
     return this.visibleColumns();
@@ -1682,6 +1719,18 @@ export class TableComponent<T> {
   /** The grid itself, for a feature measuring the whole of it. Part of the feature contract. */
   public gridElement() {
     return this.gridRef()?.nativeElement ?? null;
+  }
+
+  /** The separate page-sticky header grid. Part of the feature contract. */
+  public pageHeaderGridElement() {
+    return this.headerGridRef()?.nativeElement ?? null;
+  }
+
+  /** Use the body grid's resolved column tracks for the page-sticky header. Part of the feature contract. */
+  public setPageHeaderColumns(columns: string | null) {
+    if (columns === this.resolvedPageHeaderColumns()) return;
+
+    this.resolvedPageHeaderColumns.set(columns);
   }
 
   /** The rendered header cells, ordered like {@link visibleColumnsMeta}. Part of the feature contract. */
@@ -1736,7 +1785,7 @@ export class TableComponent<T> {
    * strange state. Stored in `state()` so it round-trips. Part of the feature contract.
    */
   public setColumnWidth(key: string, width: number) {
-    const max = this.elementRef.nativeElement.clientWidth || Number.MAX_SAFE_INTEGER;
+    const max = this.scrollElement().clientWidth || Number.MAX_SAFE_INTEGER;
     const clamped = Math.min(max, Math.max(this.minWidthOf(key), Math.round(width)));
 
     this.columnWidths.update((widths) => ({ ...widths, [key]: clamped }));
@@ -1765,13 +1814,17 @@ export class TableComponent<T> {
 
     if (!measurable.length) return;
 
+    this.resolvedPageHeaderColumns.set(null);
     this.autosizing.set(new Set(measurable));
 
     afterNextRender(
       {
         read: () => {
           // Read every width before writing any, so committing the first doesn't reflow the rest.
-          const measured = measurable.map((key) => [key, Math.ceil(this.renderedColumnWidth(key))] as const);
+          const measured = measurable.map(
+            (key) =>
+              [key, Math.ceil(Math.max(this.renderedColumnWidth(key), this.renderedBodyColumnWidth(key)))] as const,
+          );
 
           this.autosizing.set(new Set());
 
@@ -1806,6 +1859,27 @@ export class TableComponent<T> {
     });
   }
 
+  private schedulePageHeaderScrollSync(scroller: HTMLElement) {
+    if (!this.pageStickyHeader() || this.pageHeaderScrollFrame !== null) return;
+
+    const view = scroller.ownerDocument.defaultView;
+
+    if (!view) return;
+
+    this.pageHeaderScrollFrame = view.requestAnimationFrame(() => {
+      this.pageHeaderScrollFrame = null;
+      this.renderer?.setCssProperties(this.elementRef.nativeElement, {
+        '--_et-table-inline-scroll': `${scroller.scrollLeft}px`,
+      });
+    });
+  }
+
+  private renderedBodyColumnWidth(key: string) {
+    const cell = this.bodyCells().find((ref) => ref.nativeElement.getAttribute('data-col-key') === key);
+
+    return cell?.nativeElement.getBoundingClientRect().width ?? 0;
+  }
+
   // Which columns have scrolled behind a pinned one. Their cells are hidden by the pinned cells' own
   // opaque fill, but anything a feature hangs off a header cell in a portal - a filter menu, a column
   // menu - is not: it floats over the pinned column, anchored to a cell nobody can see. floating-ui's
@@ -1825,7 +1899,7 @@ export class TableComponent<T> {
     // One live read per scroll tick over the header row only, which is what this has to compare against
     // the pinned edges - `signalElementDimensions` observes a single element and never sees a scroll.
 
-    const host = this.elementRef.nativeElement.getBoundingClientRect();
+    const host = this.scrollElement().getBoundingClientRect();
     const startEdge = host.left + inset.start;
     const endEdge = host.right - inset.end;
     const next = new Set<string>();

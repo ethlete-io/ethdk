@@ -1,6 +1,6 @@
 <!-- Every binding below reads a field off a render model (see the `…Vm` types in the component):
      methods belong in event bindings, not in bindings the framework re-evaluates each pass. -->
-<div #grid [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
+<ng-template #headerContent>
   <!-- Rows a feature renders above the column headers (etTableGroupHeaders' spanning group row). Each
        is display: contents and lays its own cells into these tracks — see registerHeaderRow. -->
   @for (headerRow of headerRows(); track $index) {
@@ -15,7 +15,7 @@
         #leadHeaderCell
         [class]="lead.cellClass"
         [class.et-table-sticky-start]="lead.sticky"
-        [style.inset-inline-start.px]="lead.offset"
+        [style.inset-inline-start.px]="pageStickyHeader() ? null : lead.offset"
         [attr.aria-hidden]="lead.lead.headerComponent ? null : 'true'"
         class="et-table-header-cell"
         role="columnheader"
@@ -34,8 +34,8 @@
         [attr.aria-sort]="cell.ariaSort"
         [class.et-table-sticky-start]="cell.stickyStart"
         [class.et-table-sticky-end]="cell.stickyEnd"
-        [style.inset-inline-start.px]="cell.offsetStart"
-        [style.inset-inline-end.px]="cell.offsetEnd"
+        [style.inset-inline-start.px]="pageStickyHeader() ? null : cell.offsetStart"
+        [style.inset-inline-end.px]="pageStickyHeader() ? null : cell.offsetEnd"
         class="et-table-header-cell"
         role="columnheader"
       >
@@ -111,7 +111,7 @@
         #trailHeaderCell
         [class]="trail.cellClass"
         [class.et-table-sticky-end]="trail.sticky"
-        [style.inset-inline-end.px]="trail.offset"
+        [style.inset-inline-end.px]="pageStickyHeader() ? null : trail.offset"
         [attr.aria-hidden]="trail.lead.headerComponent ? null : 'true'"
         class="et-table-header-cell"
         role="columnheader"
@@ -122,7 +122,9 @@
       </div>
     }
   </div>
+</ng-template>
 
+<ng-template #bodyContent>
   <!-- Refetching over rows that are already on screen: a 2px indeterminate bar right under the header,
        so the data stays readable and in place. Drawn here rather than with `et-progress-bar` — the base
        table takes no component dependencies, and this is 2px of chrome, not a control. -->
@@ -374,7 +376,30 @@
       }
     </div>
   }
-</div>
+</ng-template>
+
+@if (pageStickyHeader()) {
+  <div class="et-table-header-strip">
+    <div
+      #headerGrid
+      [style.grid-template-columns]="pageHeaderColumns()"
+      class="et-table et-table-header"
+      role="rowgroup"
+    >
+      <ng-container *ngTemplateOutlet="headerContent" />
+    </div>
+  </div>
+  <div #scroller (scroll)="syncScrollState()" class="et-table-scroller">
+    <div #grid [style.grid-template-columns]="templateColumns()" class="et-table" role="rowgroup">
+      <ng-container *ngTemplateOutlet="bodyContent" />
+    </div>
+  </div>
+} @else {
+  <div #grid [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
+    <ng-container *ngTemplateOutlet="headerContent" />
+    <ng-container *ngTemplateOutlet="bodyContent" />
+  </div>
+}
 
 <!-- Full-width footer slot (paginator, page-size, etc.), pinned to the bottom of the scroll viewport.
      Rendered only when the consumer projects `[etTableFooter]`, so the chrome never shows empty. -->

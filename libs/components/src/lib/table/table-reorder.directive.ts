@@ -233,7 +233,7 @@ export class TableReorderDirective {
    * drag has to travel all the way past the pinned column before the table moves at all.
    */
   private syncAutoScroll(clientX: number) {
-    const bounds = this.table.element.getBoundingClientRect();
+    const bounds = this.table.scrollElement().getBoundingClientRect();
     const frozen = this.table.frozenInsets();
     const intoStart = AUTO_SCROLL_ZONE_PX - (clientX - (bounds.left + frozen.start));
     const intoEnd = AUTO_SCROLL_ZONE_PX - (bounds.right - frozen.end - clientX);
@@ -252,13 +252,13 @@ export class TableReorderDirective {
   }
 
   private stepAutoScroll() {
-    const host = this.table.element;
-    const before = host.scrollLeft;
+    const scroller = this.table.scrollElement();
+    const before = scroller.scrollLeft;
 
-    host.scrollLeft = before + this.autoScrollStep;
+    scroller.scrollLeft = before + this.autoScrollStep;
 
     // The table is already at that end, so stop rather than run a frame per tick doing nothing.
-    if (host.scrollLeft === before) {
+    if (scroller.scrollLeft === before) {
       this.stopAutoScroll();
 
       return;
