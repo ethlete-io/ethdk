@@ -18,14 +18,19 @@ ship auto-fixers, so most violations are corrected for you:
 {%lintCommand%}      # then re-run to see what needs a manual fix
 ```
 
-Full prose reference, including the rule → lint-rule table and the worked
-file-structure example: {%resource:STYLEGUIDE.md%}.
+Load only the reference needed for the current question:
 
-## Focused guides
+- {%resource:lint-rule-lookup.md%} when a lint fix or diagnostic needs explanation.
+- {%resource:file-structure.md%} when placing routes, views, reusable components,
+  providers, or local utilities.
+- {%resource:assets.md%} when deciding where build, serve, shared, or Storybook assets
+  belong.
+- {%resource:storybook-structure.md%} when placing a story file or its private helpers.
+- {%resource:changesets.md%} when deciding whether an application or library change
+  needs a release note and no repository-specific release skill exists.
 
-- {%skill:rxjs-signals%} - synchronous state vs async, subscriptions, effects.
-- {%skill:angular-patterns%} - components, directives, services, pipes, templates,
-  lifecycle.
+For reactive state or Angular building blocks, load the corresponding focused repository
+guide if one was emitted. This entry point does not duplicate those guides.
 
 The rest of this guide is the cross-cutting judgment that doesn't belong to one
 of those.

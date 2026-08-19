@@ -44,6 +44,21 @@ If a build stalls trying to reach Nx Cloud, re-run it with `NX_NO_CLOUD=true`.
 
 ## 3. Point this repo at the build
 
+Preflight the manifest and lockfile before changing either:
+
+Use {%resource:sdk-local-baseline.mjs%} to capture their exact bytes:
+
+```bash
+git status --short -- <manifest> yarn.lock
+sdk_local_baseline_dir=$(mktemp -d)
+node <path-to-sdk-local-baseline.mjs> capture <manifest> yarn.lock "$sdk_local_baseline_dir"
+```
+
+If either file already differs and you cannot tell who owns the edit, stop and ask. If
+the user authorizes the experiment, keep the exact baseline above; pre-existing edits
+are part of it and must survive byte-for-byte. If either file changes for another reason
+during the experiment, stop and take a new agreed baseline before cleanup.
+
 Edit the version specifiers in `package.json` (the one declaring the dependency - in a
 workspace that is the workspace package, not necessarily the root):
 
@@ -97,17 +112,20 @@ reinstalling; the restart in step 3 is still required.)
 ## 6. Clean up when you are done
 
 Leaving a `file:` dependency behind breaks every other checkout and CI, because the path
-does not exist there. Restore it as part of the same task, not later:
+does not exist there. Restore the exact recorded baseline as part of the same task:
 
 ```bash
-git checkout package.json   # or hand-restore the original version specifier
-yarn install
-git status --short          # package.json and yarn.lock must both be clean
+node <path-to-sdk-local-baseline.mjs> restore <manifest> yarn.lock "$sdk_local_baseline_dir"
+yarn install --immutable
+node <path-to-sdk-local-baseline.mjs> verify <manifest> yarn.lock "$sdk_local_baseline_dir"
 ```
 
-Never commit a `file:` specifier or the lockfile it produced. If the verified fix is
-still unreleased, say what has to be published (which lib, which version) instead of
-shipping a local path.
+The verification proves that the local-build delta is gone while preserving any edits
+that existed before it. Do not require either file to be globally clean, and do
+not run whole-file `git checkout` or `git restore`. Report the temporary baseline path;
+it can be removed after verification because this workflow created it. Never commit a
+`file:` specifier or the lockfile it produced. If the verified fix is still unreleased,
+say what has to be published instead of shipping a local path.
 
 ## Related
 

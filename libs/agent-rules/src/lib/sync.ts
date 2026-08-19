@@ -57,7 +57,7 @@ const describe = (change: Change) => {
 
 export const sync = (options: RunOptions) => {
   const config = loadConfig({ root: options.root, targetOverride: options.targets });
-  const { files, skipped, danglingLinks, warnings } = buildPlan({ config });
+  const { files, skipped, warnings } = buildPlan({ config });
   const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
 
   console.log(`Targets: ${config.targets.join(', ')}`);
@@ -68,10 +68,6 @@ export const sync = (options: RunOptions) => {
 
   for (const entry of skipped) {
     console.log(`  skip   ${entry.name} — ${entry.reason}`);
-  }
-
-  for (const link of danglingLinks) {
-    console.log(`  note   ${link.from} references "${link.to}", which is not emitted here — rendered as plain text`);
   }
 
   if (changes.length === 0) {

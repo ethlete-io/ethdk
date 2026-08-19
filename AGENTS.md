@@ -251,10 +251,11 @@ npx nx lint <project> --fix   # auto-fixes first (case, ordering, $ suffix, meta
 npx nx lint <project>      # then re-run to see what needs a manual fix
 ```
 
-For the judgment calls lint cannot enforce — signals vs RxJS, templates, lifecycle and DI
-patterns — see `styleguide`.
+For judgment calls lint cannot enforce, load the repository's focused guidance for the
+code you are changing.
 
-After editing any file, format it before wrapping up:
+Format every edited Prettier-supported source file before wrapping up. Do not send binary,
+generated, or unsupported files to this command:
 
 ```bash
 npx prettier --write <files>
@@ -267,7 +268,7 @@ npx prettier --write <files>
 - **Bridge, don't copy.** Cross the boundary with `toSignal()` / `toObservable()`, never by
   `.subscribe()`-ing and assigning the value somewhere.
 
-Subscriptions, effects, and the traps in each direction: `rxjs-signals`.
+For subscriptions and effects, load the repository's focused reactive-state guidance.
 
 ## Component styling
 
@@ -289,15 +290,17 @@ utility can win.
 rule, so source order decides. Leave interaction states (`:hover`, `:focus-visible`,
 `:active`) bare so they escalate and win.
 
-**Never hardcode a colour.** Backgrounds, text, borders and interaction states all resolve
-from the surface and colour theming tokens (`--et-surface-*-solid`, `--et-theme-color-*`) —
-see `theming`.
+**Never use a hardcoded colour as the primary value.** Backgrounds, text, borders and
+interaction states resolve from the surface and colour theming tokens
+(`--et-surface-*-solid`, `--et-theme-color-*`). A static fallback inside
+`var(--token, <fallback>)` is permitted, but not required.
 
 Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the application;
-the SDK ships none. Never hardcode a theme-name union in a type, a doc or an example —
-semantic colours resolve by theme `type` (e.g. `injectErrorTheme()`).
+the SDK ships none. Never hardcode them as an SDK-defined union or reusable API contract.
+If an app-specific example names one, label it as belonging to that app. Semantic colours
+resolve by theme `type` (e.g. `injectErrorTheme()`).
 
 ## Ethlete skills
 
-On-demand guides live in `.agents/skills/ethlete-*/SKILL.md`; each one's frontmatter says when to read it. If your agent does not discover skills on its own, list that directory and read the matching guide before starting that kind of work — do not work from memory.
+On-demand package guides live in `.agents/skills/ethlete-*/SKILL.md`; `ethlete-agents sync` owns and updates them. Third-party skills may be tracked separately in `skills-lock.json`, while repository-authored skills are maintained by the repository. Each skill's frontmatter says when to read it. If your agent does not discover skills on its own, list the directory and read the matching guide before starting that kind of work — do not work from memory.
 <!-- ethlete:agent-rules:end -->

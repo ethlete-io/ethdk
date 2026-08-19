@@ -79,6 +79,8 @@ const readRawConfig = (root: string) => {
  * - `apiRepoPaths` maps an app in this repo to the checkout of the API it talks to (`{ "hub":
  *   "../fut-hub-backend" }`), which the api-source skill reads to answer a question about the
  *   server instead of guessing it from the client.
+ * - `apiRepoBranches` optionally maps each app to the backend branch that should represent its
+ *   deployed development environment. Both maps may use `"*"` as an explicit shared fallback.
  *
  * No secret belongs here any more. Jira is reached through the Timetrack app, which holds the token
  * in the machine's keychain — one secret per machine rather than one per checkout.
@@ -88,6 +90,7 @@ export type LocalConfig = {
   disableAutoHandoffSave?: boolean;
   sdkSourcePath?: string;
   apiRepoPaths?: Record<string, string>;
+  apiRepoBranches?: Record<string, string>;
 };
 
 export type LocalConfigState =
@@ -100,6 +103,7 @@ const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = [
   'disableAutoHandoffSave',
   'sdkSourcePath',
   'apiRepoPaths',
+  'apiRepoBranches',
 ];
 
 export const readLocalConfig = (root: string): LocalConfigState => {

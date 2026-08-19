@@ -175,23 +175,26 @@ differ per developer, without touching any committed file:
 {
   "disableHooks": true,
   "sdkSourcePath": "/absolute/path/to/ethlete-sdk",
-  "apiRepoPaths": { "hub": "../fut-hub-backend" }
+  "apiRepoPaths": { "hub": "../fut-hub-backend", "*": "../shared-backend" },
+  "apiRepoBranches": { "hub": "develop", "*": "main" }
 }
 ```
 
-| Option                   | What it does                                                                                                                                                                                                                                                                                                                         |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                                                                                                                                                                          |
-| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends a handoff instead of saving the handoff file itself.                                                                                                                                                       |
-| `sdkSourcePath`          | Path to a local `ethlete-sdk` checkout, read by the `sdk-source` and `sdk-local-build` skills when the agent needs the SDK's own sources, or has to build the SDK and install it here through a `file:` dependency. A relative path resolves from the repo root.                                                                     |
-| `apiRepoPaths`           | One API repo checkout per app, keyed by the app's project name (`{ "hub": "../fut-hub-backend" }`), read by the `api-source` skill when a response shape, a status code or an enum has to be confirmed against the server. Relative paths resolve from the repo root; a map with a single entry is used for whatever app is in play. |
+| Option                   | What it does                                                                                                                                                                                                                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                                                                                                               |
+| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends a handoff instead of saving the handoff file itself.                                                                                            |
+| `sdkSourcePath`          | Path to a local `ethlete-sdk` checkout, read by the `sdk-source` and `sdk-local-build` skills when the agent needs the SDK's own sources, or has to build the SDK and install it here through a `file:` dependency. A relative path resolves from the repo root.          |
+| `apiRepoPaths`           | One API repo checkout per app, keyed by the app's project name, read by the `api-source` skill when a response shape, status code or enum must be confirmed. Relative paths resolve from the repo root. Matching is exact; use `"*"` only as an explicit shared fallback. |
+| `apiRepoBranches`        | Optional expected backend branch per app. It uses the same exact key and explicit `"*"` fallback. When omitted, the source guide reports the current branch as context instead of inventing a blocking development-branch requirement.                                    |
 
 Everything in this file is read at runtime - by the generated hook scripts and by the
 agent while following a skill - never by `sync`: the generated files stay identical on
 every machine and in CI, which is what lets `check` diff them. That is also why the file
 takes nothing beyond these keys - `sync`/`check` warn about unknown keys, about an
-`sdkSourcePath` that is missing or is not an SDK checkout, and about an `apiRepoPaths`
-entry that is not a directory. Add the filename to your repo's `.gitignore`.
+`sdkSourcePath` that is missing or is not an SDK checkout, about an `apiRepoPaths`
+entry that is not a directory, and about invalid `apiRepoBranches` values. Add the
+filename to your repo's `.gitignore`.
 
 ## Authoring content
 
@@ -199,6 +202,17 @@ The canonical content lives in the SDK repo under `libs/agent-rules/content/` -
 `rules/<name>.md` for always-loaded rules, `skills/<name>/SKILL.md` (plus resource
 files) for on-demand guides. Frontmatter controls the kind, scope, required packages
 and template variables; see the package README for the authoring reference.
+
+Package skill links use `{% skill:name %}` markers and are strict dependencies. After
+profile, package requirement, variable, and explicit-exclusion filtering, `sync` and
+`check` fail with the source skill and missing target instead of emitting a dangling
+name. Optional guidance must remain self-contained when the other skill is absent.
+
+Consumer repositories can contain three skill categories: package-generated
+`ethlete-*` directories updated by `ethlete-agents sync`, third-party installed skills
+tracked by `skills-lock.json`, and hand-written repository skills maintained directly.
+The generated `AGENTS.md` block names this ownership so one update workflow is not
+mistaken for another.
 
 Inside the SDK the package is the source rather than a dependency, so `npx
 ethlete-agents` has nothing to resolve. Format the content, then regenerate from the

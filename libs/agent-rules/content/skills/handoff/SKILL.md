@@ -94,9 +94,9 @@ resume from it.
 3. Verify reality still matches: current branch, `git status`, last commit. If
    they diverge from the handoff (e.g. someone committed in between), say what
    changed and adapt - the repo is the truth, the handoff is the guide.
-4. Read any guides the handoff's work obviously needs (e.g. {%skill:theming%}
-   before CSS work) - same rules as always.
+4. Read any focused repository guidance the handoff's work needs - same rules as always.
 5. Continue with the **Next steps** section. Don't redo work listed under
    _Done_; don't re-open questions under _Decisions_.
-6. When every next step is complete (including changeset/docs follow-ups),
-   delete the handoff file so the directory only contains live handoffs.
+6. When every next step is complete, decide whether the handoff can be removed. Delete it
+   only if this workflow created it and the save workflow or user authorized cleanup.
+   Otherwise report that it is no longer needed and let the user decide.

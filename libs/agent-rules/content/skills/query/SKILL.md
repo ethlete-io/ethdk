@@ -97,22 +97,33 @@ requests; debounce at the input if you need it.
 
 ## Bridging a query into RxJS / other APIs
 
-To hand a query's results to something that wants an `Observable<T[]>` (e.g. a
-`(query) => Observable<...>` source): drive the query by a search signal and return
-its response stream.
+For a callback that must start one request and return one correlated result, use a
+manual query with `executeUntilSettled()`. Its frozen snapshot cannot be replaced by a
+later execution, and the observable completes after that one result.
 
 ```ts
-private search = signal('');
-private q = getItems(withArgs(() => ({ queryParams: { q: this.search() } })));
+class ItemSource {
+  private itemsQuery = getItems({ onlyManualExecution: true });
 
-fetch(query: string) {
-  this.search.set(query);
-  return this.q.response.asObservable().pipe(
-    filter((r): r is ItemsRes => r !== null),
-    map((r) => r.items),
-  );
+  fetch(query: string) {
+    return defer(() => executeUntilSettled(this.itemsQuery, { args: { queryParams: { q: query } } })).pipe(
+      map((snapshot) => {
+        const response = snapshot.response();
+
+        if (response === null) throw snapshot.error();
+
+        return response.items;
+      }),
+    );
+  }
 }
 ```
+
+Do not set a search signal and immediately return the shared `response` stream: the
+previous response is retained during re-execution and can be the first non-null emission.
+Unsubscribing from the wrapper stops result delivery but does not by itself abort the
+promise-backed execution; use the query's reactive `withArgs` lifecycle when cancellation
+is a requirement rather than a callback contract.
 
 ## Gotchas
 

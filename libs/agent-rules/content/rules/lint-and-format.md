@@ -1,6 +1,6 @@
 ---
 name: lint-and-format
-description: Run lint with --fix before fixing anything by hand, and format every edited file.
+description: Run lint with --fix before fixing anything by hand, and format every edited source file Prettier supports.
 kind: rule
 scope: both
 vars: [lintCommand, lintFixCommand, formatCommand]
@@ -16,10 +16,11 @@ so let them do the work before correcting anything by hand:
 {%lintCommand%}      # then re-run to see what needs a manual fix
 ```
 
-For the judgment calls lint cannot enforce — signals vs RxJS, templates, lifecycle and DI
-patterns — see {%skill:styleguide%}.
+For judgment calls lint cannot enforce, load the repository's focused guidance for the
+code you are changing.
 
-After editing any file, format it before wrapping up:
+Format every edited Prettier-supported source file before wrapping up. Do not send binary,
+generated, or unsupported files to this command:
 
 ```bash
 {%formatCommand%}

@@ -1,6 +1,6 @@
 ---
 name: styling
-description: Component CSS is plain CSS in @layer components, and every colour comes from a theme token.
+description: Component CSS is plain CSS in @layer components, and hardcoded colours are never primary values.
 kind: rule
 scope: both
 requires: ['@ethlete/core']
@@ -26,10 +26,12 @@ utility can win.
 rule, so source order decides. Leave interaction states (`:hover`, `:focus-visible`,
 `:active`) bare so they escalate and win.
 
-**Never hardcode a colour.** Backgrounds, text, borders and interaction states all resolve
-from the surface and colour theming tokens (`--et-surface-*-solid`, `--et-theme-color-*`) —
-see {%skill:theming%}.
+**Never use a hardcoded colour as the primary value.** Backgrounds, text, borders and
+interaction states resolve from the surface and colour theming tokens
+(`--et-surface-*-solid`, `--et-theme-color-*`). A static fallback inside
+`var(--token, <fallback>)` is permitted, but not required.
 
 Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the application;
-the SDK ships none. Never hardcode a theme-name union in a type, a doc or an example —
-semantic colours resolve by theme `type` (e.g. `injectErrorTheme()`).
+the SDK ships none. Never hardcode them as an SDK-defined union or reusable API contract.
+If an app-specific example names one, label it as belonging to that app. Semantic colours
+resolve by theme `type` (e.g. `injectErrorTheme()`).

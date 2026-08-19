@@ -27,7 +27,7 @@ npx ethlete-agents git-flow repair <branch>       # rename a non-conforming one,
 its parent Story's branch, so that branch has to exist first.
 
 It reads the issue through the running Timetrack app, which holds this machine's only Jira
-credentials - see the `timetrack` skill. If it reports that the app is not running, ask the
+credentials. If it reports that the app is not running, ask the
 user to start it. `--subject <text>` names a branch without reading Jira at all.
 
 ## The five shapes
@@ -84,4 +84,4 @@ legitimately target it. Leave a live one alone.
 ## Commit messages are a separate thing
 
 Commits stay conventional (`feat(platform): Prefer a player's common name`) and carry **no
-issue key** - the branch already has it. See {%skill:git-commit%}.
+issue key** - the branch already has it. Follow the repository's commit-message guidance.

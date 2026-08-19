@@ -34,9 +34,15 @@ const data = toSignal(obs$);
 
 ## Using RxJS correctly
 
-- **Always unsubscribe.** Prefer `takeUntilDestroyed()` (needs an injection
-  context); otherwise `take` / `takeUntil` / `takeWhile`, or store and call
-  `.unsubscribe()`. Place the limiting operator **last** in the pipe.
+- **Tear down long-lived or manual subscriptions.** Finite streams that complete on their
+  own need no artificial lifecycle operator. For Angular lifecycle cleanup, prefer
+  `takeUntilDestroyed()` (it needs an injection context) or explicitly unsubscribe.
+  Do not use `takeWhile` as destruction cleanup: without another emission it stays
+  subscribed. Use `take(1)` or `first()` only when one emission is the operation's
+  intended semantics.
+- **Place lifecycle teardown after higher-order operators** such as `switchMap`, so their
+  inner subscriptions are also covered. Other limiting and finalization operators do not
+  have a universal “last” position; place them where their semantics belong.
 - **Side effects go in `tap()`**, never in the `subscribe()` callback - keep
   `subscribe()` empty.
 - **Don't reach for RxJS inside `effect()`/`computed()`.** Subscribing per run

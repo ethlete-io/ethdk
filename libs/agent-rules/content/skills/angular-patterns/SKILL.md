@@ -22,10 +22,10 @@ DOM/`window`, output naming, class-member + decorator-metadata order, no
 
 ```html
 <!-- ❌ runs every CD cycle -->
-<button [disabled]="isDisabled()">
-  <!-- ✅ computed signal -->
-  <button [disabled]="disabled()"></button>
-</button>
+<button [disabled]="isDisabled()"></button>
+
+<!-- ✅ computed signal -->
+<button [disabled]="disabled()"></button>
 ```
 
 ## Lifecycle
@@ -51,8 +51,8 @@ DOM/`window`, output naming, class-member + decorator-metadata order, no
 
 - Inline template/styles for small components; external `.html` / `.css` files
   for complex ones.
-- Component CSS is plain CSS wrapped in `@layer components`, with every colour coming
-  from a theme token — see {%skill:theming%}.
+- Component CSS is plain CSS wrapped in `@layer components`, with every primary colour
+  value coming from the repository's theme tokens.
 
 ## Reactive state
 

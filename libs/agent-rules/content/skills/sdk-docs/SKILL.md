@@ -28,7 +28,7 @@ Page URLs follow `{%docsBaseUrl%}/<lib>/<topic>`. The library sections:
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `/components/`                                 | The active UI library - one guide per domain (see the list below)                                                                                                                    |
 | `/core/`                                       | Framework primitives: `theming`, `overlay-runtime`, `signal-utils`, `element-signals`, `animations`, `scrolling`, `drag-resize`, `directives-pipes`, `providers`, `seo`, `utilities` |
-| `/query/`                                      | Data fetching - see the dedicated {%skill:query%} guide first                                                                                                                        |
+| `/query/`                                      | Data fetching; load the dedicated query guide first when this package emitted one                                                                                                    |
 | `/cdk/`                                        | The predecessor UI toolkit, maintenance mode. Only for code that still uses it                                                                                                       |
 | `/contentful/`, `/cli/`, `/eslint/`, `/types/` | The remaining packages                                                                                                                                                               |
 
@@ -66,13 +66,14 @@ That list is a snapshot. The site itself is machine-readable, so fetch rather th
   `-next` prereleases should read `{%docsBaseUrl%}` and `{%sdkStorybookUrl%}` only if
   they are the matching prerelease deployments, otherwise expect drift and verify
   against the installed `.d.ts` in `node_modules/@ethlete/<lib>`.
-- **`node_modules` is the tiebreaker.** If the docs and the installed package disagree,
-  the installed type definitions win - report the drift rather than working around it.
+- **Use the SDK skills instead of searching `node_modules` ad hoc.** The installed `.d.ts`
+  files are authoritative for the public type surface this consumer can compile against.
+  Source matching that installed build is authoritative for runtime implementation details.
+  A dirty or ahead `next` checkout is not automatically source for the installed package.
+  If docs and installed types disagree, report the drift.
 - **Never treat a `subtle` namespace as public API.** Anything exposed under `subtle` is
   an unsupported escape hatch that can change without a major version.
 
 ## Related
 
-- Data fetching has its own guide: {%skill:query%}
-- Theming tokens and how to register themes: {%skill:theming%}
 - When the docs cannot answer it, read the SDK source: {%skill:sdk-source%}

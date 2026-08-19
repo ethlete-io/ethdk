@@ -38,48 +38,48 @@ holds the full `.d.ts` surface of exactly the version this repo runs - and to
 {%docsBaseUrl%}. Then tell the user a local checkout would help, and offer the snippet
 above (the file is gitignored, so adding it changes nothing for anyone else).
 
-## 2. Check the branch before you read anything
+## 2. Match evidence to the installed package
 
-A checkout sits on whatever branch the developer left it on, so the first command you
-run against it is the one that tells you what you are looking at:
+Start with this routing:
 
-```bash
-git -C <sdkSourcePath> fetch --quiet          # read-only, safe
-git -C <sdkSourcePath> status -sb             # branch, ahead/behind, dirty files
-```
+- Installed `.d.ts` files are authoritative for the public type surface available to
+  this consumer.
+- Source matching the installed build is authoritative for runtime implementation
+  details.
+- Docs explain intended usage and defaults, but can drift from a prerelease.
+- A dirty or ahead `next` checkout is not automatically source for the installed build.
 
-**Unless the user says otherwise, the expected state is `next`, up to date with
-`origin/next`.** That is the branch the SDK develops on, and the one the `-next`
-prereleases are cut from. Anything else and you are reading a different SDK than the
-one you are about to describe.
-
-When it is not in that state, **say so and ask** - never switch, pull, stash or reset
-it yourself. It is someone's working tree, and the read-only rule below applies:
-
-- **On another branch** - name it and ask whether to read it as-is or whether they want
-  `next`. A feature branch may be exactly what you were sent to look at.
-- **Behind `origin/next`** - report how far. The code you would quote may already be
-  fixed upstream, so read the missing commits before calling anything a bug:
-  `git -C <sdkSourcePath> log --oneline HEAD..origin/next`.
-- **Dirty** - it may contain someone's work in progress. Say so rather than quoting it
-  as SDK behaviour.
-
-## 3. Check the checkout matches what is installed
-
-Even on a clean `next`, the checkout can be months of work ahead of the installed
-package - or behind it:
+Compare the installed package version with the checkout version before attributing
+runtime behavior to the checkout:
 
 ```bash
-grep '"@ethlete/' package.json                                 # what this repo runs
-grep -m1 '"version"' <sdkSourcePath>/libs/<lib>/package.json   # what the checkout is at
+grep '"@ethlete/' package.json
+grep -m1 '"version"' <sdkSourcePath>/libs/<lib>/package.json
 ```
 
-Rules when they differ:
+Matching version strings are necessary but not sufficient when the checkout is ahead of
+the published commit. Never write consumer code against source that the installed types
+do not expose.
 
-- **The installed package wins** for anything about how this repo behaves today. The
-  `.d.ts` in `node_modules` is the truth about the API you are calling.
-- Source that is ahead describes an **unreleased** API. Never write consumer code
-  against it, and never assume it is available - say what release it needs.
+## 3. Check only the paths that answer the question
+
+Resolve the implementation, public barrel, specs, and docs relevant to the question.
+Then inspect state for those paths:
+
+```bash
+git -C <sdkSourcePath> status -sb
+git -C <sdkSourcePath> status --short -- <relevant-paths>
+git -C <sdkSourcePath> diff -- <relevant-paths>
+```
+
+Unrelated dirty files, another branch, or unrelated ahead commits do not block a source
+lookup. If relevant paths are dirty or differ in the relevant commit range, label the
+worktree behavior separately from published behavior. Ask only when that distinction
+changes the answer.
+
+Use existing remote refs first. `git fetch` preserves worktree files but uses the network
+and mutates remote refs. Fetch only when freshness is material, and request any approval
+the environment requires. Never switch, pull, stash, or reset the checkout yourself.
 
 ## 4. Where things live
 
@@ -118,8 +118,8 @@ implementation does.
 
 It is a different repository with its own branch, lint, docs and changeset workflow.
 Never edit it while working on a task in this repo - that covers its git state too, so
-no `checkout`, `pull`, `stash` or `reset` without the user asking for it (`fetch` is
-fine). Never copy its internals into consumer code either - a private helper is not a
+no `checkout`, `pull`, `stash` or `reset` without the user asking for it. Never copy its
+internals into consumer code either - a private helper is not a
 supported API and disappears without a major version (the same goes for anything under
 a `subtle` namespace).
 

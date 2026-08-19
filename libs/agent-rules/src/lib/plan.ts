@@ -17,21 +17,68 @@ import { EmitContext, EmittedFile } from './targets/shared';
 export type SyncPlan = {
   files: EmittedFile[];
   skipped: SkippedItem[];
-  /** Cross-references whose target was filtered out of this repo; rendered as a bare name. */
-  danglingLinks: { from: string; to: string }[];
   /** Config/repo mismatches that won't fail the run but will silently lose content if ignored. */
   warnings: string[];
 };
 
 const SKILL_LINK_PATTERN = /\{%\s*skill:([a-zA-Z0-9_.-]+)\s*%\}/g;
+const RESOURCE_LINK_PATTERN = /\{%\s*resource:([a-zA-Z0-9_.-]+)\s*%\}/g;
 
-const findDanglingLinks = (items: ContentItem[], emittedSkills: Set<string>) =>
-  items.flatMap((item) =>
-    [...item.body.matchAll(SKILL_LINK_PATTERN)]
-      .map((match) => match[1] as string)
-      .filter((name) => !emittedSkills.has(name))
-      .map((name) => ({ from: item.frontmatter.name, to: name })),
+export const assertResolvedContentReferences = (options: {
+  items: ContentItem[];
+  kept: ContentItem[];
+  skipped: SkippedItem[];
+}) => {
+  const { items, kept, skipped } = options;
+  const knownSkills = new Set(
+    items.filter((item) => item.frontmatter.kind === 'skill').map((item) => item.frontmatter.name),
   );
+  const emittedSkills = new Set(
+    kept.filter((item) => item.frontmatter.kind === 'skill').map((item) => item.frontmatter.name),
+  );
+  const skippedByName = new Map(skipped.map((item) => [item.name, item.reason]));
+
+  for (const item of kept) {
+    const origin = item.frontmatter.kind === 'skill' ? `skills/${item.frontmatter.name}/SKILL.md` : item.sourcePath;
+    const skillLinks = [...item.body.matchAll(SKILL_LINK_PATTERN)].map((match) => match[1] as string);
+
+    for (const target of skillLinks) {
+      if (!knownSkills.has(target)) {
+        throw new Error(`${origin}: references unknown package skill "${target}".`);
+      }
+
+      if (!emittedSkills.has(target)) {
+        const reason = skippedByName.get(target) ?? 'it was not selected for emission';
+
+        throw new Error(`${origin}: references package skill "${target}", but it is not emitted because ${reason}.`);
+      }
+    }
+
+    const resources = new Set(item.resources.map((resource) => resource.fileName));
+
+    for (const target of [...item.body.matchAll(RESOURCE_LINK_PATTERN)].map((match) => match[1] as string)) {
+      if (!resources.has(target)) {
+        throw new Error(`${origin}: references missing bundled resource "${target}".`);
+      }
+    }
+
+    const withoutStructuredLinks = item.body.replace(SKILL_LINK_PATTERN, '');
+
+    for (const target of knownSkills) {
+      if (target === item.frontmatter.name) continue;
+
+      const plainReference = new RegExp(
+        '`(?:ethlete-)?' + target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '` (?:skill|guide)',
+      );
+
+      if (plainReference.test(withoutStructuredLinks)) {
+        throw new Error(
+          `${origin}: references package skill "${target}" as plain text; use "{% skill:${target} %}" so filtering can validate it.`,
+        );
+      }
+    }
+  }
+};
 
 const readExisting = (root: string, relativePath: string) => {
   const path = join(root, relativePath);
@@ -109,6 +156,22 @@ const describeApiRepoPaths = (options: { root: string; value: unknown }) => {
   });
 };
 
+const describeApiRepoBranches = (value: unknown) => {
+  if (value === undefined) return [];
+
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return [
+      `${LOCAL_CONFIG_FILE_NAME} has an invalid "apiRepoBranches" value — use an object mapping an app name to its expected API branch.`,
+    ];
+  }
+
+  return Object.entries(value).flatMap(([app, branch]) =>
+    typeof branch === 'string' && branch.trim().length > 0
+      ? []
+      : [`${LOCAL_CONFIG_FILE_NAME} has an invalid "apiRepoBranches.${app}" value — use a non-empty branch name.`],
+  );
+};
+
 /**
  * The local file only affects runtime behavior, never sync output — so the warnings here are about
  * the mistakes that would otherwise fail silently: a file the hooks can't parse, a key that
@@ -128,12 +191,13 @@ const collectLocalConfigWarnings = (root: string) => {
 
   if (local.unknownKeys.length > 0) {
     warnings.push(
-      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports "disableHooks", "disableAutoHandoffSave", "sdkSourcePath", "apiRepoPaths" and "jira"; it never changes what sync writes.`,
+      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports "disableHooks", "disableAutoHandoffSave", "sdkSourcePath", "apiRepoPaths" and "apiRepoBranches"; it never changes what sync writes.`,
     );
   }
 
   warnings.push(...describeSdkSourcePath({ root, value: local.config.sdkSourcePath }));
   warnings.push(...describeApiRepoPaths({ root, value: local.config.apiRepoPaths }));
+  warnings.push(...describeApiRepoBranches(local.config.apiRepoBranches));
 
   const disable = local.config.disableHooks;
 
@@ -222,13 +286,13 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
   const items = loadContent();
   const { kept, skipped } = filterContent(items, config);
 
+  assertResolvedContentReferences({ items, kept, skipped });
+
   const skills = kept.filter((item) => item.frontmatter.kind === 'skill');
-  const emittedSkills = new Set(skills.map((item) => item.frontmatter.name));
 
   const context: EmitContext = {
     rules: kept.filter((item) => item.frontmatter.kind === 'rule'),
     skills,
-    emittedSkills,
     vars: config.vars,
     claudeMdImportsAgentsMd: config.claudeMdImportsAgentsMd,
     hooks: config.hooks,
@@ -275,7 +339,6 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
   return {
     files,
     skipped,
-    danglingLinks: findDanglingLinks(kept, emittedSkills),
     warnings: collectWarnings(config, items),
   };
 };

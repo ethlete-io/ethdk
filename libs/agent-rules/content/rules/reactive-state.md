@@ -12,4 +12,4 @@ scope: both
 - **Bridge, don't copy.** Cross the boundary with `toSignal()` / `toObservable()`, never by
   `.subscribe()`-ing and assigning the value somewhere.
 
-Subscriptions, effects, and the traps in each direction: {%skill:rxjs-signals%}.
+For subscriptions and effects, load the repository's focused reactive-state guidance.

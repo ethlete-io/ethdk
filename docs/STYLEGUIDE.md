@@ -16,7 +16,7 @@ Key standards at a glance. **Most are enforced by lint** (see [Enforced by lint]
 
 - **Types**: `unknown` not `any`; `type` not `interface`; `as const` objects not `enum`; `T`-prefixed descriptive generics; regular value imports (no `import type`); narrow with type guards.
 - **Code**: `const` by default (`let` only to reassign, never `var`); one declaration per statement; `===` / `!==`; arrow fns standalone, methods in classes; max two params (object param beyond that).
-- **State**: signals for synchronous state, RxJS for async - always unsubscribe; effects for signal-driven side effects.
+- **State**: signals for synchronous state, RxJS for async; tear down long-lived subscriptions; effects for signal-driven side effects.
 - **Angular**: `ViewEncapsulation.None`; `inject()` not constructor injection; no legacy lifecycle hooks - prefer `constructor` + `afterNextRender` + `DestroyRef.onDestroy`; no function calls in templates except signal reads.
 - **Naming & structure**: name things after what they do; routing components end in `-view`; mirror routes in folders; keep related files together.
 - **Changesets**: one focused, imperative-mood entry per change (see the `changeset` skill).
@@ -106,7 +106,7 @@ const logMessage = (message: string, config: LogMessageConfig) => {};
 ## Signals vs RxJS
 
 - **Synchronous state → signals. Asynchronous work → RxJS.** Never model sync state with a `BehaviorSubject`; never use RxJS just to read a value back synchronously. Bridge with `toSignal()` / `toObservable()` instead of copying values across with `.subscribe()`.
-- **Always unsubscribe.** Prefer `takeUntilDestroyed()`; otherwise `take` / `takeUntil` / `takeWhile`, and place the limiting operator **last** in the pipe. Side effects go in `tap()`, not the `subscribe()` callback. (Lint blocks bodies in `subscribe()` but cannot prove you unsubscribe.)
+- **Tear down long-lived or manual subscriptions.** Finite streams need no artificial lifecycle operator. Prefer `takeUntilDestroyed()` for Angular lifecycle cleanup and place it after higher-order operators so their inner subscriptions are covered. Do not use `takeWhile` for destruction cleanup. Use `take(1)` or `first()` only when one emission is the operation's intended semantics. Other limiting and finalization operators have no universal last position.
 - Don't reach for RxJS inside `effect()` / `computed()` - model the stream with `toObservable(signal).pipe(switchMap(...))` instead of subscribing per run.
 
 ```ts
@@ -137,10 +137,10 @@ Lint covers the mechanical Angular rules (`ViewEncapsulation.None`, no legacy ho
 
 ```html
 <!-- ❌ runs every CD cycle -->
-<button [disabled]="isDisabled()">
-  <!-- ✅ computed signal -->
-  <button [disabled]="disabled()"></button>
-</button>
+<button [disabled]="isDisabled()"></button>
+
+<!-- ✅ computed signal -->
+<button [disabled]="disabled()"></button>
 ```
 
 ## General File Structure
@@ -157,18 +157,25 @@ export const SHOP_ROUTES: Routes = [
   },
   {
     path: 'items/:id',
-    loadComponent: () => import('./item-detail-host-view/item-detail-host-view.component').then((m) => m.ItemDetailHostViewComponent),
+    loadComponent: () =>
+      import('./item-detail-host-view/item-detail-host-view.component').then((m) => m.ItemDetailHostViewComponent),
     children: [
       {
         path: '',
-        loadComponent: () => import('./item-detail-host-view/item-detail-view/item-detail-view.component').then((m) => m.ItemDetailViewComponent),
-      }
+        loadComponent: () =>
+          import('./item-detail-host-view/item-detail-view/item-detail-view.component').then(
+            (m) => m.ItemDetailViewComponent,
+          ),
+      },
       {
         path: 'reviews',
-        loadComponent: () => import('./item-detail-host-view/item-reviews-view/item-reviews-view.component').then((m) => m.ItemReviewsViewComponent),
-      }
-    ]
-  }
+        loadComponent: () =>
+          import('./item-detail-host-view/item-reviews-view/item-reviews-view.component').then(
+            (m) => m.ItemReviewsViewComponent,
+          ),
+      },
+    ],
+  },
 ];
 ```
 

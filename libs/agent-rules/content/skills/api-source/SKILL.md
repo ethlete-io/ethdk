@@ -31,7 +31,12 @@ app to checkout. They are per machine, so the map lives in the gitignored
 ```json
 {
   "apiRepoPaths": {
-    "hub": "../fut-hub-backend"
+    "hub": "../fut-hub-backend",
+    "*": "../shared-backend"
+  },
+  "apiRepoBranches": {
+    "hub": "develop",
+    "*": "main"
   }
 }
 ```
@@ -41,8 +46,8 @@ Read that file before searching anywhere. The rules:
 - **The key is the app** as this repo names it - the workspace project name, which is
   normally also the folder under `apps/`. Match the app you are working in.
 - **A relative path resolves from the repo root**, not from the app folder.
-- **One entry means one API.** If the map holds a single entry, use it whatever it is
-  called.
+- **Require an exact app key.** If several apps intentionally share one API, configure
+  the explicit `"*"` fallback. Never treat an unrelated single entry as a fallback.
 - **No matching entry - stop and ask.** Do not guess a sibling folder and do not clone
   the repository. Say which app you needed the API for and offer the snippet above; the
   file is gitignored, so adding it changes nothing for anyone else.
@@ -51,28 +56,32 @@ Without a checkout, fall back to what the running API tells you: the generated A
 description if the project serves one (`/openapi.json`, `/swagger`, `/api/doc`), and the
 real response body of the call you are debugging.
 
-## 2. Check the branch before you read anything
+## 2. Resolve the relevant files before judging checkout state
 
-A checkout sits on whatever branch its developer left it on, and the code you would
-quote must be the code that serves this app:
+Search by the route, field, or error you already know. Record the contract, serializer,
+handler, and tests that can answer the question. Then inspect checkout state only for
+those paths:
 
 ```bash
-git -C <apiRepoPath> fetch --quiet     # read-only, safe
-git -C <apiRepoPath> status -sb        # branch, ahead/behind, dirty files
+git -C <apiRepoPath> status -sb
+git -C <apiRepoPath> status --short -- <relevant-paths>
+git -C <apiRepoPath> diff -- <relevant-paths>
 ```
 
-**The state to expect is the API's own development branch, up to date with its remote.**
-Anything else, and you are describing a different API than the one the app calls.
+Unrelated dirty files are not evidence about these paths. Continue without blocking on
+them. If a relevant file is dirty, distinguish the worktree implementation from the
+committed or deployed behavior. Ask only when that difference changes the answer or the
+user has to choose which behavior matters.
 
-When it is not in that state, **say so and ask** - never switch, pull, stash or reset it
-yourself:
+`apiRepoBranches` configures the expected branch per exact app key, with `"*"` as the
+only fallback. If no branch is configured, report the current branch as context; do not
+invent a blocking “development branch” requirement. A different or ahead branch matters
+only when the relevant files differ in that commit range.
 
-- **On another branch** - name it and ask. A feature branch may be exactly the endpoint
-  you were sent to look at, but it is not what the app talks to today.
-- **Behind its remote** - report how far. The behaviour you are about to call a bug may
-  already be fixed upstream.
-- **Dirty** - it holds someone's work in progress. Say so rather than quoting it as API
-  behaviour.
+Use existing remote refs first. `git fetch` preserves the worktree but is not read-only:
+it uses the network and mutates remote refs. Fetch only when freshness is material, and
+request any approval the environment requires. Never switch, pull, stash, or reset the
+checkout yourself.
 
 ## 3. The checkout is not the environment the app calls
 
@@ -111,7 +120,7 @@ they name the status code and the body for each case.
 
 It is a different repository with its own branch, review and release process. Never edit
 it while working on a task in this repo, and never change its git state without being
-asked (`fetch` is fine).
+asked. A fetch also needs to meet the freshness and approval conditions above.
 
 When the fix belongs in the API, say so precisely: the endpoint, the field, and the
 behaviour it should have. Then handle the API as it is today - a client workaround for a

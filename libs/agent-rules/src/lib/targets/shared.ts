@@ -11,8 +11,6 @@ export type EmittedFile = {
 export type EmitContext = {
   rules: ContentItem[];
   skills: ContentItem[];
-  /** Names of the skills that actually survived filtering, so links can't point at a missing file. */
-  emittedSkills: Set<string>;
   vars: Record<string, string | string[]>;
   /**
    * The repo's `CLAUDE.md` is an `@AGENTS.md` import (or symlink), so Claude already receives the
@@ -29,22 +27,16 @@ export const agentsSkillDir = (name: string) => `${AGENTS_SKILLS_DIR}/ethlete-${
 
 export const agentsSkillPath = (name: string) => `${agentsSkillDir(name)}/SKILL.md`;
 
-/**
- * A guide can be filtered out of a given repo while another still references it. Degrade such a
- * link to the bare name rather than emitting a path to a file that was never written.
- */
 export const makeLinks = (options: {
-  context: EmitContext;
   skill: (name: string) => string;
   resource: (target: { skillName: string; fileName: string }) => string;
 }): LinkResolver => ({
-  skill: (name) => (options.context.emittedSkills.has(name) ? options.skill(name) : `\`${name}\``),
+  skill: options.skill,
   resource: options.resource,
 });
 
-export const agentsSkillsLinks = (context: EmitContext) =>
+export const agentsSkillsLinks = () =>
   makeLinks({
-    context,
     skill: (name) => `\`${agentsSkillPath(name)}\``,
     resource: (target) => `\`${agentsSkillDir(target.skillName)}/${target.fileName}\``,
   });

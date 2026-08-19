@@ -15,18 +15,15 @@ Three things arrive from Figma, and each answers a different question:
 | **`.css`** (Copy as CSS)  | Named layers, auto-layout properties, typography metrics, design-token names  | Any hierarchy at all — the dump is flat     |
 | **`.png`** (a screenshot) | Figma's own blue measurement overlays, and what the designer chose to frame   | Nothing machine-readable                    |
 
-**Ask for the `.svg` and the `.css` together, and do not start until you have both.** The two
-are complements, not alternatives: the SVG is the only export you can both look at and
-measure, and the CSS is the only one that names layers and records type. A PNG earns its place
-only when it is a _screenshot_ carrying dev-mode annotations — a PNG _render_ of the same frame
-adds nothing the SVG does not. None of the three tells you the colours.
+**Ask for the `.svg` and the `.css` together.** That pair is the preferred complete input:
+the SVG is the export you can look at and measure, and the CSS names layers and records
+type. A PNG earns its place only when it is a _screenshot_ carrying dev-mode annotations.
+Exports expose rendered color values, but they do not identify the authoritative semantic
+theme token.
 
-Say what you are missing and what it would settle, in one line — "I have the SVG; the `.css`
-export would give me the font sizes and whether these cards Hug or Fill" — and wait. Every
-number in your diff has to trace back to something in an export or to a token; a plausible
-`17px` you inferred from a 12px outlined glyph is worse than an open question, because it
-survives review as though it had been specified. If the pair genuinely cannot be produced, say
-in the write-up which numbers are therefore guesses.
+If one artifact is missing, inspect the existing code and the artifact you do have. List
+the exact facts that remain unknown and do not invent their measurements. Ask before a
+structural choice or an untraceable numeric value, not before useful read-only inspection.
 
 ## 1. Read the export before touching code
 
@@ -126,8 +123,8 @@ it; the SVG has the tree but no names. The image is what disambiguates:
 - **Authoritative:** geometry and typography metrics — widths, padding, gaps, `flex-grow`,
   border radius, font size / weight / line-height / letter-spacing, and the breakpoints at
   which the layout changes.
-- **Never authoritative: colour.** Backgrounds, text, borders and interaction states resolve
-  from the surface and colour theming tokens — see `theming`. A hex in the
+- **Never authoritative: semantic colour choice.** Backgrounds, text, borders and
+  interaction states resolve from the repository's theme tokens. A hex in the
   export is information about the _designer's_ palette, not a value to paste. Where the
   export's colour and the token disagree, keep the token and note the delta for the design
   review; the export can be wrong about contrast in a way the tokens are not. This holds
@@ -181,13 +178,14 @@ Harness gotchas, each of which will cost you an hour:
   ~1px wide of reality, so a label that wraps in the harness may well fit in the app. Check
   before calling a wrap a defect.
 - Playwright is CommonJS and unresolvable from a scratch directory — `createRequire` against
-  the repo root, as the template does. The same applies when driving a story:
-  `verify-in-storybook`.
+  the repo root, as the template does. When driving a story, follow the repository's
+  installed Storybook verification guidance if present.
 
 ## 5. Close the loop
 
 Report the measured numbers next to the export's, per width — not "matches the design". Say
 explicitly which parts of the export you deliberately did **not** implement and why (colour
 kept as tokens, a label the product decided never to render, a field the API lacks). Then
-delete the export files once their component is signed off, so the folder always shows only
-what is still outstanding.
+report that the export files are no longer needed. Delete only artifacts this workflow
+created and only when the workflow or user explicitly authorizes cleanup; otherwise let the
+user decide whether supplied exports remain useful records.

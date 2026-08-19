@@ -12,13 +12,13 @@ export const CODEX_FILE = 'AGENTS.md';
  */
 export const emitCodex = (options: { context: EmitContext; existing: string }): EmittedFile[] => {
   const { context, existing } = options;
-  const sections = context.rules.map((item) => body({ item, context, links: agentsSkillsLinks(context) }));
+  const sections = context.rules.map((item) => body({ item, context, links: agentsSkillsLinks() }));
 
   if (context.skills.length > 0) {
     sections.push(
       [
         '## Ethlete skills',
-        "On-demand guides live in `.agents/skills/ethlete-*/SKILL.md`; each one's frontmatter says when to read it. If your agent does not discover skills on its own, list that directory and read the matching guide before starting that kind of work — do not work from memory.",
+        "On-demand package guides live in `.agents/skills/ethlete-*/SKILL.md`; `ethlete-agents sync` owns and updates them. Third-party skills may be tracked separately in `skills-lock.json`, while repository-authored skills are maintained by the repository. Each skill's frontmatter says when to read it. If your agent does not discover skills on its own, list the directory and read the matching guide before starting that kind of work — do not work from memory.",
       ].join('\n\n'),
     );
   }

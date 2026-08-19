@@ -11,7 +11,7 @@ export const COPILOT_FILE = '.github/copilot-instructions.md';
 export const emitCopilot = (options: { context: EmitContext; existing: string }): EmittedFile[] => {
   const { context, existing } = options;
   const banner = BANNER;
-  const sections = context.rules.map((item) => body({ item, context, links: agentsSkillsLinks(context) }));
+  const sections = context.rules.map((item) => body({ item, context, links: agentsSkillsLinks() }));
   const block = document([banner, ...sections]).trimEnd();
 
   return [{ path: COPILOT_FILE, contents: replaceMarkedBlock({ existing, block }) }];

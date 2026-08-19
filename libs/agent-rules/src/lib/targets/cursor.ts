@@ -8,7 +8,7 @@ import { agentsSkillsLinks, body, description, document, EmitContext, EmittedFil
  */
 export const emitCursor = (context: EmitContext): EmittedFile[] => {
   const banner = BANNER;
-  const links = agentsSkillsLinks(context);
+  const links = agentsSkillsLinks();
 
   return context.rules.map((item) => {
     const { name, paths } = item.frontmatter;

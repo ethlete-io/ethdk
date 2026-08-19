@@ -400,7 +400,8 @@ differ per developer, without touching any committed file:
 {
   "disableHooks": true,
   "sdkSourcePath": "/absolute/path/to/ethlete-sdk",
-  "apiRepoPaths": { "hub": "../fut-hub-backend" }
+  "apiRepoPaths": { "hub": "../fut-hub-backend", "*": "../shared-backend" },
+  "apiRepoBranches": { "hub": "develop", "*": "main" }
 }
 ```
 
@@ -417,15 +418,18 @@ differ per developer, without touching any committed file:
 - **`apiRepoPaths`** - one checkout per app, keyed by the app's project name
   (`{ "hub": "../fut-hub-backend" }`). The `api-source` skill reads it to confirm a
   response shape, a status code or an enum in the API's own source instead of guessing it
-  from the client. Relative paths resolve from the repo root; a map with a single entry is
-  used for whatever app is in play.
+  from the client. Relative paths resolve from the repo root. Matching is exact; use the
+  explicit `"*"` key only when apps intentionally share a checkout.
+- **`apiRepoBranches`** - the expected backend branch per app. It uses the same exact-key
+  and explicit `"*"` fallback rules. Omit it when branch identity is not part of the
+  environment contract; the source guide then treats the current branch as context.
 
 Everything in this file is read at runtime, never by `sync`: the generated files stay
 identical on every machine and in CI, which is what lets `check` diff them. That is also
 why the file takes nothing beyond these keys - `sync`/`check` warn about unknown keys,
 about an `sdkSourcePath` that is missing or is not an SDK checkout, and about an
-`apiRepoPaths` entry that is not a directory. Add the filename to your repo's
-`.gitignore`.
+`apiRepoPaths` entry that is not a directory, and invalid `apiRepoBranches` values. Add
+the filename to your repo's `.gitignore`.
 
 ## Authoring content
 
@@ -450,7 +454,10 @@ compile: it is a Claude Code output style verbatim, so its frontmatter is Claude
 as it is, apart from a marker line that records where it came from.
 
 In a body, `{% varName %}` substitutes a variable, `{% skill:other-name %}` links to
-another guide the way the current target expects, and `{% resource:file.mjs %}` links to
-a bundled file. The delimiter is `{% … %}`, not `{{ … }}`, so Angular templates in
-examples pass through untouched. Resource files get variable substitution too, but no
-links.
+another emitted package guide, and `{% resource:file.mjs %}` links to a bundled file.
+Skill links are required dependencies: after scope, package, variable, and exclusion
+filtering, `sync` and `check` fail with the source and missing target instead of emitting
+a dangling name. Optional guidance must be self-contained when its guide is absent. Use
+the structured marker instead of a plain `` `name` skill`` reference so validation can
+see it. The delimiter is `{% … %}`, not `{{ … }}`, so Angular templates in examples pass
+through untouched. Resource files get variable substitution too, but no links.

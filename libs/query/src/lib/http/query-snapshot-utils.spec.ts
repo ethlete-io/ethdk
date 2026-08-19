@@ -72,7 +72,7 @@ describe('executeUntilSettled', () => {
     expect(snapshot.error()?.code).toBe(422);
   });
 
-  it('should keep the settled snapshot frozen when the query executes again', async () => {
+  it('should correlate consecutive executions while the previous response is retained', async () => {
     const createUser = createPostQuery(client)<CreateUserArgs>('/users');
     const query = TestBed.runInInjectionContext(() => createUser());
 
@@ -86,12 +86,22 @@ describe('executeUntilSettled', () => {
 
     const snapshot = await settled;
 
-    query.execute({ args: { body: { name: 'Grace' } } });
+    const secondSettled = executeUntilSettled(query, { args: { body: { name: 'Grace' } } });
     TestBed.tick();
-    httpTesting.expectOne('https://example.com/users').flush({ id: 2, name: 'Grace' });
+    query.subtle.setResponse({ id: 1, name: 'Ada' });
     TestBed.tick();
 
+    expect(query.response()).toEqual({ id: 1, name: 'Ada' });
+
+    httpTesting.expectOne('https://example.com/users').flush({ id: 2, name: 'Grace' });
+    TestBed.tick();
+    await flushMicrotasks();
+    TestBed.tick();
+
+    const secondSnapshot = await secondSettled;
+
     expect(snapshot.response()).toEqual({ id: 1, name: 'Ada' });
+    expect(secondSnapshot.response()).toEqual({ id: 2, name: 'Grace' });
     expect(query.response()).toEqual({ id: 2, name: 'Grace' });
   });
 });

@@ -37,16 +37,16 @@ The generated CSS defines the raw vars on `.et-surface--<name>` / `.et-color--<n
 classes (plus `:root` defaults) and derives the public tokens below on `:root` **and**
 every scope class - so the tokens are always resolvable and components just read them.
 
-**Theme names are yours.** `brand`, `danger`, `neutral`, `dark-elevated` are only
-examples. Never hardcode a theme-name union in a component type, a doc or an example.
+**Theme names are yours.** Never hardcode them as an SDK-defined union or reusable API
+contract. App-specific docs may name their own themes when they label them as app values.
 The portable handle is the theme **`type`**: `injectErrorTheme()` finds whichever theme
 the app registered with `type: 'error'`.
 
 ## Tokens components may consume
 
 Use these **derived** tokens - never the raw `--et-surface-background` /
-`--et-color-primary` channel triplets, and never a hardcoded color (a static fallback
-_after_ the token is fine).
+`--et-color-primary` channel triplets. Never use a hardcoded color as the primary value.
+A static fallback inside `var(--token, <fallback>)` is permitted, but not required.
 
 Surface (each exists as `-solid` = usable color, `-rgb` = `R G B` channels):
 
@@ -75,8 +75,8 @@ the interactive element itself, never on a wrapper.
 
 ## Providing context
 
-- `[etProvideSurface]="'dark-elevated'"` / `[etAutoSurface]` (auto-picks the next
-  elevation) set the surface scope; `[etProvideColor]="'brand'"` sets the color scope.
+- `[etProvideSurface]="surfaceThemeName"` / `[etAutoSurface]` (auto-picks the next
+  elevation) set the surface scope; `[etProvideColor]="colorThemeName"` sets the color scope.
   A component that owns a themed region usually adds `ProvideColorDirective` /
   `ProvideSurfaceDirective` as `hostDirectives`.
 - **Detached overlay panes (menu, dialog, tooltip…) do not inherit DOM context.**
@@ -106,12 +106,12 @@ the interactive element itself, never on a wrapper.
 - `--et-theme-color-primary-*` always resolves to the **nearest color scope**. A
   hardcoded semantic color in CSS can't be replaced by it unless the right theme is
   provided on that element.
-- Keep a static fallback (`var(--et-surface-border-solid, rgb(255 255 255 / 0.1))`) so
-  components degrade in theme-less setups. `injectErrorTheme()` is the exception: it is
-  a hard requirement wherever it is used.
+- A static fallback (`var(--et-surface-border-solid, rgb(255 255 255 / 0.1))`) is
+  permitted for theme-less setups, but themes make it unnecessary. `injectErrorTheme()`
+  is a hard requirement wherever it is used.
 - **Cascade layers, not `:where()`, are what let a Tailwind utility override component
   CSS.** Wrap every component CSS file in `@layer components { … }`; `:where()` only
   flattens a component's own modifiers to single-class weight. See the `styling` rule.
 
-Styling a **story** file rather than a component? The colour rule is the same, but the
-Tailwind side has its own traps - {%skill:story-styling%}.
+Styling a **story** file rather than a component? The colour rule is the same. Check the
+repository's Storybook guidance before assuming a Tailwind utility exists.

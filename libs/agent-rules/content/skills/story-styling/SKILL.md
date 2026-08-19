@@ -62,7 +62,7 @@ paints must come from those tokens - the same rule as component CSS
 
 - A tinted panel: put `etAutoSurface` on it (next elevation up) and read the token:
   `style="background: var(--et-surface-background-solid)"`.
-- An accent: scope it with `[etProvideColor]="'brand'"` and read
+- An accent: scope it with `[etProvideColor]="storyAccentTheme"` and read
   `--et-theme-color-primary-solid` / `--et-theme-color-ink-solid`. Theme names are
   whatever **your app** registers - fine to name in a story, never in library code.
 - Better still: don't hand-paint. Compose the component that already does it
@@ -80,4 +80,5 @@ paints must come from those tokens - the same rule as component CSS
 - Text sizes from your theme's scale, not Tailwind's default `text-sm`/`text-xs`.
 - No `dark:` variants.
 - Width/height that matters is px, not the rem container scale.
-- Then verify it actually renders - {%skill:verify-in-storybook%}.
+- Then verify it actually renders with the repository's installed Storybook verification
+  workflow, or inspect the story directly when no such guide was emitted.

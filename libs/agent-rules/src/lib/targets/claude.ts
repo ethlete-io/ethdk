@@ -15,7 +15,6 @@ const quoteList = (values: string[]) => values.map((value) => `  - '${value}'`).
 export const emitClaude = (context: EmitContext): EmittedFile[] => {
   const banner = BANNER;
   const links = makeLinks({
-    context,
     skill: (name) => `the **\`ethlete-${name}\`** skill`,
     resource: (target) => `\`${target.fileName}\` (bundled next to this skill)`,
   });

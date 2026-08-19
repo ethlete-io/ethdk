@@ -12,6 +12,6 @@ export const emitAgentsSkills = (context: EmitContext): EmittedFile[] =>
       item,
       context,
       dir: agentsSkillDir(item.frontmatter.name),
-      links: agentsSkillsLinks(context),
+      links: agentsSkillsLinks(),
     }),
   );

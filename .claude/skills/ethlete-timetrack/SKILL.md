@@ -38,7 +38,7 @@ nobody can rotate.
 | `log --issue <KEY> --minutes <n>` | The user asks to record time that nothing observed                      |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
-from a key you typed - see the `git-flow` skill.
+from a key you typed. Follow the repository's branch workflow when creating a branch.
 
 ## Writes
 
