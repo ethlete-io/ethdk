@@ -464,3 +464,13 @@ Checked in dev mode only - `ET4800` after the first render, `ET4801` when the di
 | -------- | ---------------------------------------------------------------------- | -------------------------------------------------- |
 | `ET4800` | `etCommandPaletteSearch` is used outside an `[etCommandPalette]`.      | Move the input inside the command palette element. |
 | `ET4801` | `etCommandPaletteShortcut` was given a chord of modifiers with no key. | Add a key to the chord, for example `mod+k`.       |
+
+## Scrollbar (ET49xx)
+
+Checked in dev mode only - `ET4900` whenever `for` changes, `ET4901` and `ET4902` after the first render.
+
+| Code     | Cause                                                                       | Fix                                                                     |
+| -------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `ET4900` | `for` was bound to something that is not an element - a component instance. | Bind a template reference variable on the element, or its `ElementRef`. |
+| `ET4901` | An `[etScrollbar]` rendered with nothing marked `etScrollbarThumb`.         | Add the thumb element inside the scrollbar.                             |
+| `ET4902` | An `[etScrollbar]` rendered with no `for`.                                  | Bind `for` to the element that scrolls.                                 |

@@ -131,6 +131,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Standings](/components/standings) - league and group table with position zones, a legend that can't drift from them, and column-dropping density.
 - [Sport UI recipes](/components/sport-recipes) - copy-paste compositions the library deliberately doesn't ship as components: the today's-matches rail, competition/team/player cards.
 - [Scrollable](/components/scrollable) - scroll containers with buttons, masks, snap and drag scrolling.
+- [Scrollbar](/components/scrollbar) - a custom scrollbar for a container that already scrolls, on either axis, with a drag-to-scroll thumb.
 - [Table](/components/table) - type-safe, light-by-default data table on CSS grid with a sticky header and empty state.
 - [Tabs](/components/tabs) - content tabs and router-driven nav tabs.
 - [Timeline](/components/timeline) - vertical rail of chronological events, with per-item markers and an unbroken connecting line.

@@ -281,6 +281,7 @@ export default defineConfig({
             { text: 'Progress steps', link: '/components/progress-steps' },
             { text: 'Scheduler', link: '/components/scheduler' },
             { text: 'Scrollable', link: '/components/scrollable' },
+            { text: 'Scrollbar', link: '/components/scrollbar' },
             { text: 'Standings', link: '/components/standings' },
             { text: 'Sport UI recipes', link: '/components/sport-recipes' },
             { text: 'Table', link: '/components/table' },

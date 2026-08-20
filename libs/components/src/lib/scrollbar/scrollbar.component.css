@@ -1,0 +1,109 @@
+@layer components {
+  @property --et-scrollbar-thickness {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-scrollbar-thumb-thickness {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-scrollbar-thumb-radius {
+    syntax: '<length-percentage>';
+    inherits: true;
+    initial-value: 999px;
+  }
+
+  @property --et-scrollbar-fade-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 150ms;
+  }
+
+  /* Set by `ScrollbarDirective` on the container it mirrors. */
+  .et-scrollbar-host {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .et-scrollbar {
+    position: absolute;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity var(--et-scrollbar-fade-duration) ease;
+    pointer-events: none;
+    touch-action: none;
+    user-select: none;
+
+    /* The thumb offset is a distance from the start edge, which is the right edge in a right-to-left
+       container. Mirroring the target's direction here is what maps it back to a physical side, and
+       it has to be read off the target: the scrollbar can sit outside the subtree that sets it. */
+    &:where([data-direction='rtl']) {
+      direction: rtl;
+    }
+
+    &:where([data-orientation='vertical']) {
+      inset-block: 0;
+      inset-inline-end: 0;
+      inline-size: var(--et-scrollbar-thickness);
+    }
+
+    &:where([data-orientation='horizontal']) {
+      inset-inline: 0;
+      inset-block-end: 0;
+      block-size: var(--et-scrollbar-thickness);
+    }
+
+    &:where(.et-scrollbar--visible) {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    & .et-scrollbar-thumb {
+      position: absolute;
+      transition: background-color var(--et-scrollbar-fade-duration) ease;
+      border-radius: var(--et-scrollbar-thumb-radius);
+      background-color: var(
+        --et-scrollbar-thumb-color,
+        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 35%, transparent)
+      );
+    }
+
+    &:where([data-orientation='vertical']) .et-scrollbar-thumb {
+      inset-block-start: var(--_et-scrollbar-thumb-offset, 0px);
+      inset-inline: 0;
+      block-size: var(--_et-scrollbar-thumb-size, 0px);
+      inline-size: var(--et-scrollbar-thumb-thickness);
+      margin-inline: auto;
+    }
+
+    &:where([data-orientation='horizontal']) .et-scrollbar-thumb {
+      inset-block: 0;
+      inset-inline-start: var(--_et-scrollbar-thumb-offset, 0px);
+      block-size: var(--et-scrollbar-thumb-thickness);
+      inline-size: var(--_et-scrollbar-thumb-size, 0px);
+      margin-block: auto;
+    }
+
+    & .et-scrollbar-thumb:hover,
+    &.et-scrollbar--dragging .et-scrollbar-thumb {
+      background-color: var(
+        --et-scrollbar-thumb-active-color,
+        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 60%, transparent)
+      );
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-scrollbar,
+    .et-scrollbar .et-scrollbar-thumb {
+      transition: none;
+    }
+  }
+}

@@ -33,6 +33,7 @@ export * from './lib/progress-steps';
 export * from './lib/query-error';
 export * from './lib/scheduler';
 export * from './lib/scrollable';
+export * from './lib/scrollbar';
 export * from './lib/skeleton';
 export * from './lib/standings';
 export * from './lib/stream';

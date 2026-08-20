@@ -57,6 +57,8 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 2. Build the first internal form test drivers alongside the next form change, then decide whether a
    public harness API is justified.
 3. For new component work, prefer stat tile when a bounded addition is wanted. Start charts only
-   when its palette, SVG host and animation questions are the work the team intends to take on.
+   when its palette, SVG host and animation questions are the work the team intends to take on. The
+   next opportunistic follow-up is retro-fitting `<et-scrollbar>` onto the panels that already hide
+   their native bar - menu, cascader panel, rich text editor, time picker.
 4. Treat the View Transition replacement as a separate compatibility project, not incidental overlay
    cleanup.
