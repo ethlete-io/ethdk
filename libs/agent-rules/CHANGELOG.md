@@ -1,5 +1,12 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.13
+
+### Minor Changes
+
+- [`b6fe4be`](https://github.com/ethlete-io/ethdk/commit/b6fe4beae010aaa2e0e367d636f6759442983395) Thanks [@TomTomB](https://github.com/TomTomB)! - `sdkSourcePath`, `apiRepoPaths` and `apiRepoBranches` moved to `ethlete.config.local.json`, owned by
+  `@ethlete/cli`. The old file is still read, and reports where they went.
+
 ## 0.1.0-next.12
 
 ### Patch Changes

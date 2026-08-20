@@ -1,5 +1,12 @@
 # @ethlete/cli
 
+## 2.1.0-next.4
+
+### Minor Changes
+
+- [`b6fe4be`](https://github.com/ethlete-io/ethdk/commit/b6fe4beae010aaa2e0e367d636f6759442983395) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et api` to run an app's backend from a local checkout, declared in `ethlete.apis.js`. The new
+  `ethlete.config.local.json` says where the sibling checkouts on this machine live.
+
 ## 2.1.0-next.3
 
 ### Minor Changes
