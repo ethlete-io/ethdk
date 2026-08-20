@@ -55,8 +55,18 @@ describe('doctorCommand', () => {
     expect(logs.join('\n')).toContain('No problems found.');
   });
 
-  it('says nothing about APIs when the repo declares none', () => {
+  it('says there is nothing to check when the repo has neither file', () => {
     expect(doctorCommand({ root: makeRoot() })).toBe(0);
-    expect(logs.join('\n')).not.toContain('ethlete.apis.js');
+    expect(logs.join('\n')).toContain('Nothing to check');
+    expect(logs.join('\n')).not.toContain('No problems found');
+  });
+
+  it('still checks the config when the repo declares no APIs', () => {
+    const root = makeRoot();
+
+    write(root, LOCAL_CONFIG_FILE_NAME, JSON.stringify({ sdkSourcePath: './nope' }));
+
+    expect(doctorCommand({ root })).toBe(1);
+    expect(errors.join('\n')).toContain('does not exist');
   });
 });

@@ -1,7 +1,9 @@
 import { composeToolNames, composeBinary, resolveComposeTool } from '../api/compose';
-import { loadApiDefinitions } from '../api/load-definitions';
+import { join } from 'path';
+import { API_DEFINITIONS_FILE_NAMES, loadApiDefinitions } from '../api/load-definitions';
 import { resolveApiCheckout } from '../api/resolve-checkout';
 import { diagnoseLocalConfig } from '../config/diagnose';
+import { LEGACY_LOCAL_CONFIG_FILE_NAME, LOCAL_CONFIG_FILE_NAME, readLocalConfigFile } from '../config/local-config';
 
 const indent = (text: string) => text.replace(/\n/g, '\n    ');
 
@@ -36,6 +38,19 @@ const describeApis = (root: string) => {
 
 /** Reports every problem with this machine's setup, so `et api` does not have to find them one at a time. */
 export const doctorCommand = ({ root }: { root: string }) => {
+  // A file that exists but cannot be parsed still has to be reported, so this asks whether the file
+  // is there rather than whether it could be read.
+  const hasConfig = [LOCAL_CONFIG_FILE_NAME, LEGACY_LOCAL_CONFIG_FILE_NAME].some(
+    (fileName) => readLocalConfigFile(join(root, fileName)).status !== 'absent',
+  );
+  const hasApis = loadApiDefinitions(root).found;
+
+  if (!hasConfig && !hasApis) {
+    console.log(`Nothing to check: ${root} has no ${LOCAL_CONFIG_FILE_NAME} and no ${API_DEFINITIONS_FILE_NAMES[0]}.`);
+
+    return 0;
+  }
+
   const configProblems = diagnoseLocalConfig({ root });
   const compose = describeComposeTool();
   const apis = describeApis(root);
