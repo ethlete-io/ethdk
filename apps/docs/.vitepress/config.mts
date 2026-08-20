@@ -52,7 +52,11 @@ export default defineConfig({
       '/cli/': [
         {
           text: 'CLI',
-          items: [{ text: 'Overview', link: '/cli/' }],
+          items: [
+            { text: 'Overview', link: '/cli/' },
+            { text: 'Local APIs', link: '/cli/api' },
+            { text: 'Local config', link: '/cli/config' },
+          ],
         },
       ],
       '/agent-rules/': [

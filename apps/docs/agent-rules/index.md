@@ -168,33 +168,37 @@ one machine.
 
 ## Per-machine local config
 
-A gitignored `ethlete-agents.config.local.json` at the repo root holds the values that
-differ per developer, without touching any committed file:
+A gitignored `ethlete-agents.config.local.json` at the repo root holds the agent behaviour
+that differs per developer, without touching any committed file:
 
 ```json
 {
   "disableHooks": true,
-  "sdkSourcePath": "/absolute/path/to/ethlete-sdk",
-  "apiRepoPaths": { "hub": "../fut-hub-backend", "*": "../shared-backend" },
-  "apiRepoBranches": { "hub": "develop", "*": "main" }
+  "disableAutoHandoffSave": true
 }
 ```
 
-| Option                   | What it does                                                                                                                                                                                                                                                              |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                                                                                                               |
-| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends a handoff instead of saving the handoff file itself.                                                                                            |
-| `sdkSourcePath`          | Path to a local `ethlete-sdk` checkout, read by the `sdk-source` and `sdk-local-build` skills when the agent needs the SDK's own sources, or has to build the SDK and install it here through a `file:` dependency. A relative path resolves from the repo root.          |
-| `apiRepoPaths`           | One API repo checkout per app, keyed by the app's project name, read by the `api-source` skill when a response shape, status code or enum must be confirmed. Relative paths resolve from the repo root. Matching is exact; use `"*"` only as an explicit shared fallback. |
-| `apiRepoBranches`        | Optional expected backend branch per app. It uses the same exact key and explicit `"*"` fallback. When omitted, the source guide reports the current branch as context instead of inventing a blocking development-branch requirement.                                    |
+| Option                   | What it does                                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                    |
+| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends a handoff instead of saving the handoff file itself. |
 
 Everything in this file is read at runtime - by the generated hook scripts and by the
 agent while following a skill - never by `sync`: the generated files stay identical on
 every machine and in CI, which is what lets `check` diff them. That is also why the file
-takes nothing beyond these keys - `sync`/`check` warn about unknown keys, about an
-`sdkSourcePath` that is missing or is not an SDK checkout, about an `apiRepoPaths`
-entry that is not a directory, and about invalid `apiRepoBranches` values. Add the
+takes nothing beyond these keys - `sync`/`check` warn about unknown keys. Add the
 filename to your repo's `.gitignore`.
+
+### Where the sibling checkouts live
+
+`sdkSourcePath`, `apiRepoPaths` and `apiRepoBranches` used to live in the file above. They
+moved to `ethlete.config.local.json`, which [`@ethlete/cli`](/cli/config) owns, because
+`et api` needs the same values the skills do. The old file is still read as a fallback, and
+`sync`/`check` report any of the three keys still found there so you can move them.
+
+Validation of those paths now lives with the file: run [`et doctor`](/cli/config#et-doctor)
+to check that `sdkSourcePath` is really an SDK checkout and that every `apiRepoPaths` entry
+points at a directory that exists.
 
 ## Authoring content
 

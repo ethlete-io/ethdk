@@ -1,12 +1,12 @@
 # @ethlete/cli
 
-Release tooling for repos that version with [Changesets](https://github.com/changesets/changesets). The package installs a single binary, `et`, whose one command - `et release` - turns your pending changesets into a tagged, pushed release commit in one step.
+Repo tooling. The package installs a single binary, `et`, with three commands: `et release` turns pending changesets into a tagged, pushed release commit, [`et api`](/cli/api) runs the backend an app talks to from a checkout on your own machine, and [`et doctor`](/cli/config#et-doctor) checks that machine's setup.
 
 ```bash
 yarn add --dev @ethlete/cli
 ```
 
-There is no configuration: the CLI drives the tools already present in your repo (`git`, `yarn`, and your existing `.changeset/` setup).
+`et release` needs no configuration: it drives the tools already present in your repo (`git`, `yarn`, and your existing `.changeset/` setup). `et api` and `et doctor` read two files described in [Local APIs](/cli/api) and [Local config](/cli/config).
 
 ## `et release`
 
@@ -23,16 +23,21 @@ The command runs the full release sequence synchronously and aborts on the first
 5. Stages everything and commits as `Release versions` (your pre-commit hooks run here).
 6. Runs `git push --follow-tags` (unless [`--skip-push`](#flags)).
 
-## Flags
+### Flags
 
-| Flag          | Alias | Default | Effect                                                                                                                       |
-| ------------- | ----- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `--force`     | `-f`  | off     | Proceed even when the working tree has uncommitted changes (they get committed into the release commit - use with care).     |
-| `--skip-push` | `-sp` | off     | Do everything except the final `git push --follow-tags`, e.g. to inspect the release commit and tags before publishing them. |
+| Flag          | Alias | Default | Effect                                                                                                                   |
+| ------------- | ----- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `--force`     | `-f`  | off     | Proceed even when the working tree has uncommitted changes (they get committed into the release commit - use with care). |
+| `--skip-push` | `-sp` | off     | Do everything except the final `git push --follow-tags`, e.g. to inspect the release commit and tags before publishing.  |
 
-There are no other commands or flags - running `et` with anything else prints the list of available commands (`release`).
-
-## Requirements
+### Requirements
 
 - A git repository with a clean working tree (or `--force`).
 - Yarn, with Changesets set up (`.changeset/config.json` and pending changeset files) - the CLI shells out to `yarn changeset version` / `yarn changeset tag` rather than reimplementing them.
+
+## Other commands
+
+- [`et api`](/cli/api) - start, stop and inspect the containers of a local backend, and move its checkout to the right branch.
+- [`et doctor`](/cli/config#et-doctor) - report every problem with this machine's config and API checkouts at once.
+
+Running `et` with no command, `--help` or an unknown command prints the command list.
