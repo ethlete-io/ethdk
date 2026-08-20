@@ -4,6 +4,9 @@ import { ApiDefinitions, GIT_API_COMMANDS, apiCommandNames } from './definition'
 import { checkoutApiBranch, pullApiBranch } from './git';
 import { apiHelp } from './help';
 import { resolveApiCheckout } from './resolve-checkout';
+import { cloneApiRepo, isGitIgnored, DEFAULT_CHECKOUT_DIR } from './clone';
+import { gitUrlHost, printPrivateDependencyHint } from './auth-hint';
+import { askQuestion } from '../utils';
 import { configuredApiRepoBranch, readLocalConfig } from '../config/local-config';
 
 export type RunApiCommandOptions = {
@@ -15,10 +18,29 @@ export type RunApiCommandOptions = {
   invocation?: string;
 };
 
+const confirmClone = async (options: { problem: string; repoUrl: string; into: string }) => {
+  const { problem, repoUrl, into } = options;
+
+  if (!process.stdin.isTTY) {
+    console.error(`${problem}\n\nRe-run with --clone to clone ${repoUrl} into ${into}.`);
+
+    return false;
+  }
+
+  const answer = await askQuestion(`${problem}\n\nClone ${repoUrl}\ninto ${into}? [y/N] `);
+
+  return /^y(es)?$/i.test(answer.trim());
+};
+
 const definedEntries = (record: Record<string, string | undefined>) =>
   Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as Record<string, string>;
 
-export const runApiCommand = ({ apis, argv, root = process.cwd(), invocation = 'et api' }: RunApiCommandOptions) => {
+export const runApiCommand = async ({
+  apis,
+  argv,
+  root = process.cwd(),
+  invocation = 'et api',
+}: RunApiCommandOptions): Promise<number> => {
   const exposeOnLan = argv.includes('--host');
   const [command, name] = argv.filter((arg) => !arg.startsWith('--'));
   const api = name === undefined ? undefined : apis[name];
@@ -44,16 +66,48 @@ export const runApiCommand = ({ apis, argv, root = process.cwd(), invocation = '
   }
 
   const isGitCommand = GIT_API_COMMANDS.includes(command);
-  const checkout = resolveApiCheckout({ root, name, api, requireEnvFile: !isGitCommand });
+  const checkout = resolveApiCheckout({ root, name, api, requireCompose: !isGitCommand });
 
   if (checkout.legacyConfigWarning) {
     console.warn(`${checkout.legacyConfigWarning}\n`);
   }
 
   if (!checkout.ok) {
-    console.error(checkout.problem);
+    if (!checkout.clonable) {
+      console.error(checkout.problem);
 
-    return 1;
+      return 1;
+    }
+
+    const { repoUrl, into, branch } = checkout.clonable;
+    const accepted =
+      command === 'clone' ||
+      argv.includes('--clone') ||
+      (await confirmClone({ problem: checkout.problem, repoUrl, into }));
+
+    if (!accepted) return 1;
+
+    if (!isGitIgnored(root, into)) {
+      console.warn(`\n${DEFAULT_CHECKOUT_DIR}/ is not gitignored. Add it before you commit anything.\n`);
+    }
+
+    const cloned = cloneApiRepo({ repoUrl, into, branch });
+
+    if (cloned !== 0) {
+      printPrivateDependencyHint({ repoHost: gitUrlHost(repoUrl) });
+
+      return cloned;
+    }
+
+    if (command === 'clone') return 0;
+
+    return runApiCommand({ apis, argv, root, invocation });
+  }
+
+  if (command === 'clone') {
+    console.log(`${name} already has a checkout at ${checkout.checkout.repoPath}.`);
+
+    return 0;
   }
 
   const { repoPath, composePath: cwd } = checkout.checkout;
@@ -144,6 +198,10 @@ export const runApiCommand = ({ apis, argv, root = process.cwd(), invocation = '
     runCompose('exec', api.execService, 'bash');
   } else {
     runCompose('exec', api.execService, ...(api.exec?.[command] ?? []));
+
+    if (exitCode !== 0) {
+      printPrivateDependencyHint({ repoHost: api.repoUrl ? gitUrlHost(api.repoUrl) : undefined });
+    }
   }
 
   return exitCode;

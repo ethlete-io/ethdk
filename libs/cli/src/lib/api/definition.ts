@@ -16,6 +16,8 @@ export type ApiDefinition = {
   network?: string;
   /** Example path shown in the error that asks the developer to configure this API's checkout. */
   examplePath?: string;
+  /** Where to clone this API from when the developer has no checkout of their own. */
+  repoUrl?: string;
   /** localStorage key the app reads to pick its API. Printed by `--host`. */
   envKey?: string;
   /** Extra environment for every compose call. An undefined value is dropped rather than passed as "undefined". */
@@ -26,9 +28,9 @@ export type ApiDefinition = {
 
 export type ApiDefinitions = Record<string, ApiDefinition>;
 
-export const BUILT_IN_API_COMMANDS = ['up', 'down', 'logs', 'shell', 'checkout', 'pull'] as const;
+export const BUILT_IN_API_COMMANDS = ['up', 'down', 'logs', 'shell', 'clone', 'checkout', 'pull'] as const;
 
 /** These act on the checkout itself, so they run before `make setup` and need no container engine. */
-export const GIT_API_COMMANDS: string[] = ['checkout', 'pull'];
+export const GIT_API_COMMANDS: string[] = ['clone', 'checkout', 'pull'];
 
 export const apiCommandNames = (api: ApiDefinition) => [...BUILT_IN_API_COMMANDS, ...Object.keys(api.exec ?? {})];

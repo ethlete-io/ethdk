@@ -1,5 +1,7 @@
 export * from './api-command';
 export * from './compose';
+export * from './auth-hint';
+export * from './clone';
 export * from './definition';
 export * from './git';
 export * from './help';

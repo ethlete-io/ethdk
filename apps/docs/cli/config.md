@@ -2,6 +2,8 @@
 
 `ethlete.config.local.json` at the repo root says where the sibling checkouts this repo works with live on **this** machine. It is gitignored, so every value is per-developer and changes nothing for anyone else.
 
+The whole file is optional. `et api` clones an API with a [`repoUrl`](/cli/api) into `.ethlete/<name>` when no path is configured, so a fresh clone of the repo needs no setup. Set `apiRepoPaths` when you already have a checkout, or when you work in one - the compose files mount it into the container, so your own branch is what runs.
+
 ```json
 {
   "sdkSourcePath": "/absolute/path/to/ethlete-sdk",

@@ -13,9 +13,10 @@ yarn et api up hub --host       # also print the address other devices can use
 yarn et api checkout hub        # switch the checkout to its configured branch
 yarn et api pull hub            # fetch and fast-forward the checked-out branch
 yarn et api pull hub --force    # the same, discarding local commits and tracked changes
+yarn et api clone hub           # clone the API into .ethlete/hub
 ```
 
-Two files drive it: `ethlete.apis.js` describes each API's containers and is committed, and [`ethlete.config.local.json`](/cli/config) says where each checkout lives on this machine and is gitignored.
+`ethlete.apis.js` describes each API and is committed. Where the checkout lives on this machine is optional: set [`apiRepoPaths`](/cli/config) to point at a checkout you already have, or let `et` clone the API's `repoUrl` into a gitignored `.ethlete/<name>`.
 
 ## Declaring the APIs
 
@@ -62,6 +63,36 @@ Adding an API is an entry in this map. Nothing else changes.
 
 Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service.
 
+## Where the checkout comes from
+
+`et api` looks in two places, in this order:
+
+1. `apiRepoPaths[<name>]` in [`ethlete.config.local.json`](/cli/config), when you set it. Use this when you already have the API checked out, or when you work in it - the compose files mount the checkout into the container, so your own branch is what runs.
+2. `.ethlete/<name>` in the repo root, otherwise. This is the managed checkout `et` clones for you.
+
+When the managed checkout is missing and the API declares a `repoUrl`, `et api` offers to clone it:
+
+```
+$ yarn et api up hub
+
+hub has no checkout at /repo/.ethlete/hub.
+
+Clone git@gitlab.example.com:group/fut-hub-backend.git
+into /repo/.ethlete/hub? [y/N]
+```
+
+Answer `y` and the original command continues once the clone finishes. `yarn et api clone hub` does the clone on its own, and `--clone` on any command skips the question - use it in scripts and anywhere without a terminal, where the prompt cannot be answered and the command exits instead.
+
+The clone checks out the branch [`apiRepoBranches`](/cli/config) names, when there is one. `et` warns if `.ethlete/` is not gitignored - add it to your `.gitignore`.
+
+::: tip A checkout you work in beats a managed one
+If you commit to the backend, point `apiRepoPaths` at your own checkout. The managed clone is for people who only need the API to run.
+:::
+
+## When a private dependency will not download
+
+A failed clone, or a failed `exec` entry such as `install`, prints what to check: a token with permission to **download** code rather than only read it, an SSH key the host accepts, and the token being where the package manager looks for it rather than only in your shell. A read-only token is the common case, and the server reports it as a bare `403`.
+
 ## Container commands
 
 | Command | What it runs                                                                                |
@@ -79,7 +110,7 @@ Each key of `exec` becomes a command of its own, so `yarn et api install hub` ru
 
 ## Checkout commands
 
-`checkout` and `pull` act on the git checkout rather than the containers, so they work before `setupCommand` has run and need no container engine.
+`clone`, `checkout` and `pull` act on the git checkout rather than the containers, so they work before `setupCommand` has run and need no container engine.
 
 | Command        | What it does                                                                                                   |
 | -------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -111,11 +142,15 @@ Podman needs two things that are passed for you, so the API checkout stays untou
 ```js
 const { runApiCommand } = require('@ethlete/cli');
 
-process.exitCode = runApiCommand({
+runApiCommand({
   apis: require('./my-apis'),
   argv: process.argv.slice(2),
   invocation: 'yarn api',
+}).then((code) => {
+  process.exitCode = code;
 });
 ```
+
+`runApiCommand` is async because it may ask before cloning a missing checkout.
 
 `invocation` only changes the usage line, so the help text names the command your users actually type.

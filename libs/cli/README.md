@@ -31,6 +31,7 @@ yarn et api up hub --host       # also print the address other devices can reach
 yarn et api checkout hub        # switch the checkout to the branch apiRepoBranches names
 yarn et api pull hub            # fetch and fast-forward the checked-out branch
 yarn et api pull hub --force    # the same, discarding local commits and tracked changes
+yarn et api clone hub           # clone the API into .ethlete/hub
 ```
 
 `checkout` and `pull` act on the checkout itself, so they work before `make setup` has run and need
@@ -82,8 +83,10 @@ Adding an API is an entry in this map. Nothing else changes.
 
 ### Where the checkouts live
 
-The paths differ per machine, so they live in a gitignored `ethlete.config.local.json` at the
-repo root. `@ethlete/agent-rules` reads the same file, so its skills and `et` agree on where a
+Give an API a `repoUrl` and `et api` clones it into a gitignored `.ethlete/<name>` when you have no
+checkout of your own, asking first (or use `--clone`). To point at a checkout you already have - which
+you want whenever you work in the backend, since compose mounts it into the container - set
+`apiRepoPaths` in a gitignored `ethlete.config.local.json` at the repo root. `@ethlete/agent-rules` reads the same file, so its skills and `et` agree on where a
 checkout is:
 
 ```json

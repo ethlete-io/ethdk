@@ -28,6 +28,8 @@ const describeApis = (root: string) => {
 
     if (checkout.ok) {
       lines.push(`${fileName}: ${name} → ${checkout.checkout.composePath}`);
+    } else if (checkout.clonable) {
+      problems.push(`${checkout.problem} Run "et api clone ${name}".`);
     } else {
       problems.push(checkout.problem);
     }

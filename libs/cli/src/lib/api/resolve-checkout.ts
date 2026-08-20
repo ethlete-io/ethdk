@@ -3,10 +3,12 @@ import { join } from 'path';
 import {
   LEGACY_LOCAL_CONFIG_FILE_NAME,
   LOCAL_CONFIG_FILE_NAME,
+  configuredApiRepoBranch,
   configuredApiRepoPath,
   readLocalConfig,
   resolveConfiguredPath,
 } from '../config/local-config';
+import { DEFAULT_CHECKOUT_DIR, CloneRequest } from './clone';
 import { ApiDefinition } from './definition';
 
 export type ApiCheckout = {
@@ -20,7 +22,13 @@ export type ApiCheckout = {
  * know which file the value actually came from.
  */
 export type ApiCheckoutResult = { legacyConfigWarning?: string } & (
-  { ok: true; checkout: ApiCheckout } | { ok: false; problem: string }
+  | { ok: true; checkout: ApiCheckout }
+  | {
+      ok: false;
+      problem: string;
+      /** Set when the managed directory is empty and the API declares where to clone from. */
+      clonable?: CloneRequest;
+    }
 );
 
 const isDirectory = (path: string) => existsSync(path) && statSync(path).isDirectory();
@@ -35,48 +43,67 @@ const missingPathProblem = (options: { name: string; api: ApiDefinition; reason:
   );
 };
 
+/** Where an API's managed checkout goes when the developer configured no path of their own. */
+export const managedCheckoutPath = (root: string, name: string) => join(root, DEFAULT_CHECKOUT_DIR, name);
+
 /** Resolves where an API's containers live, with the one message that explains each way it can fail. */
 export const resolveApiCheckout = (options: {
   root: string;
   name: string;
   api: ApiDefinition;
-  /** The git commands run before `make setup`, so they must not demand its output. */
-  requireEnvFile?: boolean;
+  /**
+   * The git commands act on the checkout itself, so they must not demand a compose directory or the
+   * output of `setupCommand` — both can legitimately be absent on a checkout that was just cloned.
+   */
+  requireCompose?: boolean;
 }): ApiCheckoutResult => {
-  const { root, name, api, requireEnvFile = true } = options;
+  const { root, name, api, requireCompose = true } = options;
   const { config, fileName, isLegacy } = readLocalConfig(root);
   const configured = configuredApiRepoPath(config, name);
   const legacyConfigWarning = isLegacy
     ? `${LEGACY_LOCAL_CONFIG_FILE_NAME} still holds "apiRepoPaths". Move it to ${LOCAL_CONFIG_FILE_NAME}.`
     : undefined;
 
-  if (!configured) {
-    return {
-      ok: false,
-      legacyConfigWarning,
-      problem: missingPathProblem({
-        name,
-        api,
-        reason: fileName
-          ? `${fileName} has no apiRepoPaths entry for "${name}".`
-          : `${LOCAL_CONFIG_FILE_NAME} does not exist.`,
-      }),
-    };
-  }
-
-  const repoPath = resolveConfiguredPath(root, configured);
+  const repoPath = configured ? resolveConfiguredPath(root, configured) : managedCheckoutPath(root, name);
 
   if (!isDirectory(repoPath)) {
+    if (configured) {
+      return {
+        ok: false,
+        legacyConfigWarning,
+        problem: `apiRepoPaths.${name} points at ${repoPath}, which is not a directory that exists.`,
+      };
+    }
+
+    if (!api.repoUrl) {
+      return {
+        ok: false,
+        legacyConfigWarning,
+        problem: missingPathProblem({
+          name,
+          api,
+          reason: fileName
+            ? `${fileName} has no apiRepoPaths entry for "${name}", and the API declares no repoUrl.`
+            : `${name} has no checkout, and the API declares no repoUrl.`,
+        }),
+      };
+    }
+
     return {
       ok: false,
       legacyConfigWarning,
-      problem: `apiRepoPaths.${name} points at ${repoPath}, which is not a directory that exists.`,
+      problem: `${name} has no checkout at ${repoPath}.`,
+      clonable: {
+        repoUrl: api.repoUrl,
+        into: repoPath,
+        branch: configuredApiRepoBranch(config, name),
+      },
     };
   }
 
   const composePath = join(repoPath, api.composeDir);
 
-  if (!isDirectory(composePath)) {
+  if (requireCompose && !isDirectory(composePath)) {
     return {
       ok: false,
       legacyConfigWarning,
@@ -84,7 +111,7 @@ export const resolveApiCheckout = (options: {
     };
   }
 
-  if (requireEnvFile && api.envFile && !existsSync(join(composePath, api.envFile))) {
+  if (requireCompose && api.envFile && !existsSync(join(composePath, api.envFile))) {
     return {
       ok: false,
       legacyConfigWarning,
