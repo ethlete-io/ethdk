@@ -393,15 +393,13 @@ from `AGENTS.md`, which `sync` already writes.
 
 ## Per-machine local config
 
-A gitignored `ethlete-agents.config.local.json` at the repo root holds the values that
-differ per developer, without touching any committed file:
+A gitignored `ethlete-agents.config.local.json` at the repo root holds the agent behaviour
+that differs per developer, without touching any committed file:
 
 ```json
 {
   "disableHooks": true,
-  "sdkSourcePath": "/absolute/path/to/ethlete-sdk",
-  "apiRepoPaths": { "hub": "../fut-hub-backend", "*": "../shared-backend" },
-  "apiRepoBranches": { "hub": "develop", "*": "main" }
+  "disableAutoHandoffSave": true
 }
 ```
 
@@ -411,25 +409,19 @@ differ per developer, without touching any committed file:
 - **`disableAutoHandoffSave`** - keeps the `context-warning` hook's tiered warnings but
   drops the auto-mode escalation: at the critical tier it recommends `/ethlete-handoff`
   instead of saving the handoff file itself.
-- **`sdkSourcePath`** - a local `ethlete-sdk` checkout. The `sdk-source` and
-  `sdk-local-build` skills read it when the agent needs the SDK's own sources, or has to
-  build the SDK and install it here through a `file:` dependency. A relative path is
-  resolved from the repo root.
-- **`apiRepoPaths`** - one checkout per app, keyed by the app's project name
-  (`{ "hub": "../fut-hub-backend" }`). The `api-source` skill reads it to confirm a
-  response shape, a status code or an enum in the API's own source instead of guessing it
-  from the client. Relative paths resolve from the repo root. Matching is exact; use the
-  explicit `"*"` key only when apps intentionally share a checkout.
-- **`apiRepoBranches`** - the expected backend branch per app. It uses the same exact-key
-  and explicit `"*"` fallback rules. Omit it when branch identity is not part of the
-  environment contract; the source guide then treats the current branch as context.
 
 Everything in this file is read at runtime, never by `sync`: the generated files stay
 identical on every machine and in CI, which is what lets `check` diff them. That is also
-why the file takes nothing beyond these keys - `sync`/`check` warn about unknown keys,
-about an `sdkSourcePath` that is missing or is not an SDK checkout, and about an
-`apiRepoPaths` entry that is not a directory, and invalid `apiRepoBranches` values. Add
+why the file takes nothing beyond these keys - `sync`/`check` warn about unknown keys. Add
 the filename to your repo's `.gitignore`.
+
+### Where the sibling checkouts live
+
+`sdkSourcePath`, `apiRepoPaths` and `apiRepoBranches` used to live in the file above. They
+moved to `ethlete.config.local.json`, which [`@ethlete/cli`](../cli/README.md) owns, because
+`et api` needs the same values the skills do. `sync`/`check` still read that file and warn
+about a path that is missing or is not the checkout it claims to be, and they tell you to
+move any of the three keys still found in the agents file.
 
 ## Authoring content
 

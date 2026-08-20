@@ -21,7 +21,7 @@ first. Reach for the source when the docs genuinely cannot answer the question:
 
 ## 1. Resolve the checkout
 
-The path is per machine, so it lives in the gitignored `ethlete-agents.config.local.json`
+The path is per machine, so it lives in the gitignored `ethlete.config.local.json`
 at the repo root:
 
 ```json
@@ -29,6 +29,9 @@ at the repo root:
   "sdkSourcePath": "/absolute/path/to/ethlete-sdk"
 }
 ```
+
+Older checkouts still keep this key in `ethlete-agents.config.local.json`. Read that file as a
+fallback when `ethlete.config.local.json` is absent.
 
 Read that file before searching anywhere. A relative path is resolved from the repo root.
 

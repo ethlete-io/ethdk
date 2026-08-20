@@ -1,19 +1,41 @@
-import { release } from './lib';
+import { apiCommand, release } from './lib';
 
-const cli = async (args: string[]) => {
-  const cliFunctionArg = args[0];
+const USAGE = `et — Ethlete repo tooling
 
-  switch (cliFunctionArg) {
+  et release            Turn pending changesets into a tagged, pushed release commit
+  et api <cmd> <api>    Run an API from this repo's ethlete.apis.js locally
+                        (up, down, logs, shell, plus that API's own exec entries)
+`;
+
+const cli = async (args: string[]): Promise<number> => {
+  switch (args[0]) {
     case 'release':
-      await release(args);
-      break;
+      // `release` reads its flags from a list that was split on "=" before this switch existed.
+      // Keep that shape here so its own parsing is untouched.
+      await release(args.join('=').split('='));
+
+      return 0;
+
+    case 'api':
+      return apiCommand({ root: process.cwd(), argv: args.slice(1) });
 
     default:
-      console.log(`No command found named ${cliFunctionArg}. Available commands are: release`);
-      break;
+      console.log(USAGE);
+
+      return args[0] === undefined || args[0] === '--help' || args[0] === '-h' ? 0 : 1;
   }
 };
 
-const args = process.argv.slice(2).join('=').split('=');
+export * from './lib';
 
-cli(args);
+// Guarded so the package can also be imported as a library without running the CLI.
+if (require.main === module) {
+  cli(process.argv.slice(2))
+    .then((code) => {
+      process.exitCode = code;
+    })
+    .catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : error);
+      process.exitCode = 1;
+    });
+}

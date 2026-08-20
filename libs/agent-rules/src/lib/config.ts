@@ -74,13 +74,9 @@ const readRawConfig = (root: string) => {
  * - `disableAutoHandoffSave: true` keeps the context-warning hook's normal tiered messages (including
  *   in auto mode), but at the critical tier in auto mode it falls back to just recommending
  *   a handoff instead of writing the handoff file automatically.
- * - `sdkSourcePath` points at a local `ethlete-sdk` checkout, which the SDK source and local-build
- *   skills read when they need the SDK's own sources instead of the published package.
- * - `apiRepoPaths` maps an app in this repo to the checkout of the API it talks to (`{ "hub":
- *   "../fut-hub-backend" }`), which the api-source skill reads to answer a question about the
- *   server instead of guessing it from the client.
- * - `apiRepoBranches` optionally maps each app to the backend branch that should represent its
- *   deployed development environment. Both maps may use `"*"` as an explicit shared fallback.
+ *
+ * Where the sibling checkouts live (`sdkSourcePath`, `apiRepoPaths`, `apiRepoBranches`) is not here:
+ * it moved to `@ethlete/cli`'s `ethlete.config.local.json`, because `et` reads the same values.
  *
  * No secret belongs here any more. Jira is reached through the Timetrack app, which holds the token
  * in the machine's keychain — one secret per machine rather than one per checkout.
@@ -88,23 +84,24 @@ const readRawConfig = (root: string) => {
 export type LocalConfig = {
   disableHooks?: boolean | string[];
   disableAutoHandoffSave?: boolean;
-  sdkSourcePath?: string;
-  apiRepoPaths?: Record<string, string>;
-  apiRepoBranches?: Record<string, string>;
 };
 
 export type LocalConfigState =
   | { exists: false }
   | { exists: true; valid: false }
-  | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[] };
+  | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[]; movedKeys: string[] };
 
-const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = [
-  'disableHooks',
-  'disableAutoHandoffSave',
-  'sdkSourcePath',
-  'apiRepoPaths',
-  'apiRepoBranches',
-];
+export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks', 'disableAutoHandoffSave'];
+
+/**
+ * Repo topology moved to `@ethlete/cli`'s `ethlete.config.local.json`, because `et` needs it too.
+ * Still recognised here so a checkout that has not moved them yet gets told where they went
+ * instead of an "unsupported key" warning.
+ */
+export const MOVED_LOCAL_CONFIG_KEYS = ['sdkSourcePath', 'apiRepoPaths', 'apiRepoBranches'];
+
+/** Named only to point a migration at it. `@ethlete/cli` owns the file and validates its values. */
+export const TOPOLOGY_CONFIG_FILE_NAME = 'ethlete.config.local.json';
 
 export const readLocalConfig = (root: string): LocalConfigState => {
   const path = join(root, LOCAL_CONFIG_FILE_NAME);
@@ -122,9 +119,13 @@ export const readLocalConfig = (root: string): LocalConfigState => {
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return { exists: true, valid: false };
 
   const config = parsed as LocalConfig;
-  const unknownKeys = Object.keys(config).filter((key) => !LOCAL_CONFIG_KEYS.includes(key as keyof LocalConfig));
+  const keys = Object.keys(config);
+  const movedKeys = keys.filter((key) => MOVED_LOCAL_CONFIG_KEYS.includes(key));
+  const unknownKeys = keys.filter(
+    (key) => !LOCAL_CONFIG_KEYS.includes(key as keyof LocalConfig) && !movedKeys.includes(key),
+  );
 
-  return { exists: true, valid: true, config, unknownKeys };
+  return { exists: true, valid: true, config, unknownKeys, movedKeys };
 };
 
 /**

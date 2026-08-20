@@ -22,6 +22,12 @@
         "command": "node tools/scripts/publish.mjs cli {args.ver} {args.tag}"
       }
     },
+    "test": {
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/cli"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/libs/cli"
+      }
+    },
     "lint": {
       "inputs": [
         "default",

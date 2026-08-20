@@ -1,6 +1,13 @@
-import { existsSync, lstatSync, readFileSync, readlinkSync, statSync } from 'fs';
-import { join, resolve } from 'path';
-import { CONFIG_FILE_NAME, LOCAL_CONFIG_FILE_NAME, readLocalConfig, SyncConfig } from './config';
+import { existsSync, lstatSync, readFileSync, readlinkSync } from 'fs';
+import { join } from 'path';
+import {
+  CONFIG_FILE_NAME,
+  LOCAL_CONFIG_FILE_NAME,
+  LOCAL_CONFIG_KEYS,
+  readLocalConfig,
+  SyncConfig,
+  TOPOLOGY_CONFIG_FILE_NAME,
+} from './config';
 import { filterContent, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { emitAgentsSkills } from './targets/agents-skills';
@@ -97,81 +104,6 @@ export const claudeMdImportsAgentsMd = (root: string) => {
   return /^@AGENTS\.md\s*$/m.test(readFileSync(path, 'utf8'));
 };
 
-/** Marks a directory as an `ethlete-sdk` checkout rather than some other folder. */
-const SDK_CHECKOUT_MARKERS = ['libs/components', 'libs/core', 'libs/agent-rules'];
-
-const describeSdkSourcePath = (options: { root: string; value: unknown }) => {
-  const { root, value } = options;
-
-  if (value === undefined) return [];
-
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    return [`${LOCAL_CONFIG_FILE_NAME} has an invalid "sdkSourcePath" — use a path to an ethlete-sdk checkout.`];
-  }
-
-  const absolute = resolve(root, value);
-
-  if (!existsSync(absolute)) {
-    return [`${LOCAL_CONFIG_FILE_NAME} points "sdkSourcePath" at ${absolute}, which does not exist.`];
-  }
-
-  if (SDK_CHECKOUT_MARKERS.some((marker) => !existsSync(join(absolute, marker)))) {
-    return [`${LOCAL_CONFIG_FILE_NAME} points "sdkSourcePath" at ${absolute}, which is not an ethlete-sdk checkout.`];
-  }
-
-  return [];
-};
-
-/**
- * An API repo can be any stack, so there is no marker to check the way an SDK checkout has one —
- * only that every entry names an app and points at a directory that is there.
- */
-const describeApiRepoPaths = (options: { root: string; value: unknown }) => {
-  const { root, value } = options;
-
-  if (value === undefined) return [];
-
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return [
-      `${LOCAL_CONFIG_FILE_NAME} has an invalid "apiRepoPaths" value — use an object mapping an app name to its API repo path.`,
-    ];
-  }
-
-  return Object.entries(value).flatMap(([app, path]) => {
-    if (typeof path !== 'string' || path.trim().length === 0) {
-      return [`${LOCAL_CONFIG_FILE_NAME} has an invalid "apiRepoPaths.${app}" value — use a path to the API repo.`];
-    }
-
-    const absolute = resolve(root, path);
-
-    if (!existsSync(absolute)) {
-      return [`${LOCAL_CONFIG_FILE_NAME} points "apiRepoPaths.${app}" at ${absolute}, which does not exist.`];
-    }
-
-    if (!statSync(absolute).isDirectory()) {
-      return [`${LOCAL_CONFIG_FILE_NAME} points "apiRepoPaths.${app}" at ${absolute}, which is not a directory.`];
-    }
-
-    return [];
-  });
-};
-
-const describeApiRepoBranches = (value: unknown) => {
-  if (value === undefined) return [];
-
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return [
-      `${LOCAL_CONFIG_FILE_NAME} has an invalid "apiRepoBranches" value — use an object mapping an app name to its expected API branch.`,
-    ];
-  }
-
-  return Object.entries(value).flatMap(([app, branch]) =>
-    typeof branch === 'string' && branch.trim().length > 0
-      ? []
-      : [`${LOCAL_CONFIG_FILE_NAME} has an invalid "apiRepoBranches.${app}" value — use a non-empty branch name.`],
-  );
-};
-
 /**
  * The local file only affects runtime behavior, never sync output — so the warnings here are about
  * the mistakes that would otherwise fail silently: a file the hooks can't parse, a key that
@@ -191,13 +123,16 @@ const collectLocalConfigWarnings = (root: string) => {
 
   if (local.unknownKeys.length > 0) {
     warnings.push(
-      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports "disableHooks", "disableAutoHandoffSave", "sdkSourcePath", "apiRepoPaths" and "apiRepoBranches"; it never changes what sync writes.`,
+      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports ${LOCAL_CONFIG_KEYS.map((key) => `"${key}"`).join(' and ')}; it never changes what sync writes.`,
     );
   }
 
-  warnings.push(...describeSdkSourcePath({ root, value: local.config.sdkSourcePath }));
-  warnings.push(...describeApiRepoPaths({ root, value: local.config.apiRepoPaths }));
-  warnings.push(...describeApiRepoBranches(local.config.apiRepoBranches));
+  if (local.movedKeys.length > 0) {
+    warnings.push(
+      `${LOCAL_CONFIG_FILE_NAME} still holds ${local.movedKeys.map((key) => `"${key}"`).join(', ')} — move ` +
+        `${local.movedKeys.length === 1 ? 'it' : 'them'} to ${TOPOLOGY_CONFIG_FILE_NAME}, which \`et\` reads too.`,
+    );
+  }
 
   const disable = local.config.disableHooks;
 

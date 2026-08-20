@@ -1,6 +1,6 @@
 ---
 name: api-source
-description: How to read the source of the API an app in this repo talks to, from a local backend checkout named in ethlete-agents.config.local.json. Read when a response shape, a status code, an error body, an enum or an auth rule has to be confirmed rather than guessed - and never edit that checkout as part of work in this repo.
+description: How to read the source of the API an app in this repo talks to, from a local backend checkout named in ethlete.config.local.json. Read when a response shape, a status code, an error body, an enum or an auth rule has to be confirmed rather than guessed - and never edit that checkout as part of work in this repo.
 kind: skill
 scope: consumer
 ---
@@ -26,7 +26,7 @@ the checkout is not deployed until the API team ships it.
 
 One repository can hold several apps, each with its own API, so the paths are a map from
 app to checkout. They are per machine, so the map lives in the gitignored
-`ethlete-agents.config.local.json` at the repo root:
+`ethlete.config.local.json` at the repo root:
 
 ```json
 {
@@ -40,6 +40,9 @@ app to checkout. They are per machine, so the map lives in the gitignored
   }
 }
 ```
+
+Older checkouts still keep these keys in `ethlete-agents.config.local.json`. Read that file as a
+fallback when `ethlete.config.local.json` is absent.
 
 Read that file before searching anywhere. The rules:
 

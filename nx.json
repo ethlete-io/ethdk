@@ -92,6 +92,7 @@
         "apps/timetrack-vscode/**/*",
         "libs/agent-rules/**/*",
         "libs/cdk/**/*",
+        "libs/cli/**/*",
         "libs/components/**/*",
         "libs/contentful/**/*",
         "libs/core/**/*",

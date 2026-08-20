@@ -17,7 +17,7 @@ published yet, or when you are iterating on it.
 
 ## 1. Prerequisites
 
-- The checkout path comes from `sdkSourcePath` in `ethlete-agents.config.local.json`;
+- The checkout path comes from `sdkSourcePath` in `ethlete.config.local.json`;
   {%skill:sdk-source%} covers resolving it and what to check before trusting it.
 - The checkout has its dependencies installed (`yarn install` in the checkout root - the
   SDK repo is a Yarn 4 workspace).
