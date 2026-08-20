@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.58
+
+### Minor Changes
+
+- [#3070](https://github.com/ethlete-io/ethdk/pull/3070) [`410a643`](https://github.com/ethlete-io/ethdk/commit/410a643298847070c625bff36972940eda50412b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `<et-scrollbar>`: a custom scrollbar for a container that already scrolls, on either axis, with a drag-to-scroll thumb, `autoHide` and right-to-left support.
+
 ## 1.0.0-next.57
 
 ### Patch Changes
