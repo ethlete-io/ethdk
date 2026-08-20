@@ -21,16 +21,34 @@ Turns pending changesets into a tagged, pushed release commit (version â†’ tag â
 Runs the API an app in this repo talks to, from a checkout on your own machine.
 
 ```bash
-yarn et api up hub          # start the containers
-yarn et api down hub        # stop them
-yarn et api logs hub        # follow the API's log
-yarn et api shell hub       # a shell in the API container
-yarn et api install hub     # an entry from that API's own "exec" map
-yarn et api up hub --host   # also print the address other devices can reach
+yarn et api --help              # the commands, the APIs and what each one accepts
+yarn et api up hub              # start the containers
+yarn et api down hub            # stop them
+yarn et api logs hub            # follow the API's log
+yarn et api shell hub           # a shell in the API container
+yarn et api install hub         # an entry from that API's own "exec" map
+yarn et api up hub --host       # also print the address other devices can reach
+yarn et api checkout hub        # switch the checkout to the branch apiRepoBranches names
+yarn et api pull hub            # fetch and fast-forward the checked-out branch
+yarn et api pull hub --force    # the same, discarding local commits and tracked changes
 ```
+
+`checkout` and `pull` act on the checkout itself, so they work before `make setup` has run and need
+no container engine. `pull` refuses to run on a checkout with uncommitted changes unless you pass
+`--force`. `--force` resets the branch to its remote and throws away local commits and tracked
+changes; it never touches untracked or ignored files, so a `vendor/` directory or a `.env` survives.
 
 The first container tool that answers is used, in this order: `docker compose`,
 `container compose`, `podman-compose`, `podman compose`.
+
+## `et doctor`
+
+```bash
+yarn et doctor
+```
+
+Checks `ethlete.config.local.json`, reports the container engine it would use, and resolves every
+API declared in `ethlete.apis.js`. It exits non-zero when it finds a problem, so CI can run it.
 
 ### Declaring the APIs
 

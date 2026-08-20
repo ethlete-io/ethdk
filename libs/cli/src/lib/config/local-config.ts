@@ -22,6 +22,11 @@ export type LocalConfig = {
   apiRepoBranches?: Record<string, string>;
 };
 
+export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['sdkSourcePath', 'apiRepoPaths', 'apiRepoBranches'];
+
+export type LocalConfigFileState =
+  { status: 'absent' } | { status: 'unreadable' } | { status: 'not-an-object' } | { status: 'ok'; config: LocalConfig };
+
 export type LocalConfigSource = {
   config: LocalConfig;
   /** The file the values came from, or `undefined` when neither file exists. */
@@ -30,20 +35,27 @@ export type LocalConfigSource = {
   isLegacy: boolean;
 };
 
-const readJsonObject = (path: string): LocalConfig | undefined => {
-  if (!existsSync(path)) return undefined;
+/** Reads one config file, keeping "not there" apart from "there but broken" for `et doctor`. */
+export const readLocalConfigFile = (path: string): LocalConfigFileState => {
+  if (!existsSync(path)) return { status: 'absent' };
 
   let parsed: unknown;
 
   try {
     parsed = JSON.parse(readFileSync(path, 'utf8'));
   } catch {
-    return undefined;
+    return { status: 'unreadable' };
   }
 
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return undefined;
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return { status: 'not-an-object' };
 
-  return parsed as LocalConfig;
+  return { status: 'ok', config: parsed as LocalConfig };
+};
+
+const readJsonObject = (path: string) => {
+  const state = readLocalConfigFile(path);
+
+  return state.status === 'ok' ? state.config : undefined;
 };
 
 /** Reads the local config, falling back to the file the keys used to live in. */

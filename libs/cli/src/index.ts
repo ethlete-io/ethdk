@@ -1,10 +1,12 @@
-import { apiCommand, release } from './lib';
+import { apiCommand, doctorCommand, release } from './lib';
 
 const USAGE = `et — Ethlete repo tooling
 
   et release            Turn pending changesets into a tagged, pushed release commit
   et api <cmd> <api>    Run an API from this repo's ethlete.apis.js locally
                         (up, down, logs, shell, plus that API's own exec entries)
+  et doctor             Check this machine's ethlete.config.local.json, container engine
+                        and every API checkout
 `;
 
 const cli = async (args: string[]): Promise<number> => {
@@ -18,6 +20,9 @@ const cli = async (args: string[]): Promise<number> => {
 
     case 'api':
       return apiCommand({ root: process.cwd(), argv: args.slice(1) });
+
+    case 'doctor':
+      return doctorCommand({ root: process.cwd() });
 
     default:
       console.log(USAGE);

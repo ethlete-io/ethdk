@@ -1,0 +1,62 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
+import { doctorCommand } from './doctor-command';
+
+const logs: string[] = [];
+const errors: string[] = [];
+
+vi.spyOn(console, 'log').mockImplementation((message: unknown) => void logs.push(String(message)));
+vi.spyOn(console, 'error').mockImplementation((message: unknown) => void errors.push(String(message)));
+
+afterEach(() => {
+  logs.length = 0;
+  errors.length = 0;
+});
+
+const makeRoot = () => mkdtempSync(join(tmpdir(), 'cli-doctor-'));
+
+const write = (root: string, fileName: string, contents: string) =>
+  writeFileSync(join(root, fileName), contents, 'utf8');
+
+describe('doctorCommand', () => {
+  it('reports a broken config file and fails', () => {
+    const root = makeRoot();
+
+    write(root, LOCAL_CONFIG_FILE_NAME, '{ not json');
+
+    expect(doctorCommand({ root })).toBe(1);
+    expect(errors.join('\n')).toContain('is not valid JSON');
+  });
+
+  it('reports an API whose checkout is not there', () => {
+    const root = makeRoot();
+
+    write(root, LOCAL_CONFIG_FILE_NAME, JSON.stringify({ apiRepoPaths: { hub: './missing' } }));
+    write(root, 'package.json', JSON.stringify({ name: 'host' }));
+    write(root, 'ethlete.apis.js', "module.exports = { hub: { composeDir: 'development' } };");
+
+    expect(doctorCommand({ root })).toBe(1);
+    expect(errors.join('\n')).toContain('apiRepoPaths.hub');
+  });
+
+  it('lists a resolved API and succeeds', () => {
+    const root = makeRoot();
+
+    mkdirSync(join(root, 'api/development'), { recursive: true });
+    write(root, LOCAL_CONFIG_FILE_NAME, JSON.stringify({ apiRepoPaths: { hub: './api' } }));
+    write(root, 'package.json', JSON.stringify({ name: 'host' }));
+    write(root, 'ethlete.apis.js', "module.exports = { hub: { composeDir: 'development' } };");
+
+    expect(doctorCommand({ root })).toBe(0);
+    expect(logs.join('\n')).toContain('ethlete.apis.js: hub →');
+    expect(logs.join('\n')).toContain('No problems found.');
+  });
+
+  it('says nothing about APIs when the repo declares none', () => {
+    expect(doctorCommand({ root: makeRoot() })).toBe(0);
+    expect(logs.join('\n')).not.toContain('ethlete.apis.js');
+  });
+});

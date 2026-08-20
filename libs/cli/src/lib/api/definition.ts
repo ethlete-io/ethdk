@@ -26,6 +26,9 @@ export type ApiDefinition = {
 
 export type ApiDefinitions = Record<string, ApiDefinition>;
 
-export const BUILT_IN_API_COMMANDS = ['up', 'down', 'logs', 'shell'] as const;
+export const BUILT_IN_API_COMMANDS = ['up', 'down', 'logs', 'shell', 'checkout', 'pull'] as const;
+
+/** These act on the checkout itself, so they run before `make setup` and need no container engine. */
+export const GIT_API_COMMANDS: string[] = ['checkout', 'pull'];
 
 export const apiCommandNames = (api: ApiDefinition) => [...BUILT_IN_API_COMMANDS, ...Object.keys(api.exec ?? {})];

@@ -1,15 +1,10 @@
 import { spawnSync } from 'child_process';
-import { existsSync, statSync } from 'fs';
-import { join } from 'path';
-import {
-  LEGACY_LOCAL_CONFIG_FILE_NAME,
-  LOCAL_CONFIG_FILE_NAME,
-  configuredApiRepoPath,
-  readLocalConfig,
-  resolveConfiguredPath,
-} from '../config/local-config';
 import { composeToolNames, engineEnv, lanAddress, resolveComposeTool } from './compose';
-import { ApiDefinition, ApiDefinitions, apiCommandNames } from './definition';
+import { ApiDefinitions, GIT_API_COMMANDS, apiCommandNames } from './definition';
+import { checkoutApiBranch, pullApiBranch } from './git';
+import { apiHelp } from './help';
+import { resolveApiCheckout } from './resolve-checkout';
+import { configuredApiRepoBranch, readLocalConfig } from '../config/local-config';
 
 export type RunApiCommandOptions = {
   apis: ApiDefinitions;
@@ -20,25 +15,22 @@ export type RunApiCommandOptions = {
   invocation?: string;
 };
 
-type ConfigHelp = { name: string; api: ApiDefinition; reason: string };
-
-const configHelp = ({ name, api, reason }: ConfigHelp) =>
-  `${reason}\n\nAdd the path of your ${name} API checkout to ${LOCAL_CONFIG_FILE_NAME} in the repo ` +
-  `root. The file is gitignored, so it changes nothing for anyone else:\n\n` +
-  `  {\n    "apiRepoPaths": {\n      "${name}": "${api.examplePath ?? `../${name}-api`}"\n    }\n  }`;
-
 const definedEntries = (record: Record<string, string | undefined>) =>
   Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as Record<string, string>;
-
-const isDirectory = (path: string) => existsSync(path) && statSync(path).isDirectory();
 
 export const runApiCommand = ({ apis, argv, root = process.cwd(), invocation = 'et api' }: RunApiCommandOptions) => {
   const exposeOnLan = argv.includes('--host');
   const [command, name] = argv.filter((arg) => !arg.startsWith('--'));
   const api = name === undefined ? undefined : apis[name];
 
+  if (argv.includes('--help') || argv.includes('-h') || command === 'help') {
+    console.log(apiHelp(apis, invocation));
+
+    return 0;
+  }
+
   if (command === undefined || name === undefined || !api) {
-    console.error(`Usage: ${invocation} <command> <api> [--host]\n\nAPIs: ${Object.keys(apis).join(', ')}`);
+    console.error(apiHelp(apis, invocation));
 
     return 1;
   }
@@ -51,51 +43,38 @@ export const runApiCommand = ({ apis, argv, root = process.cwd(), invocation = '
     return 1;
   }
 
-  const { config, fileName, isLegacy } = readLocalConfig(root);
-  const configured = configuredApiRepoPath(config, name);
+  const isGitCommand = GIT_API_COMMANDS.includes(command);
+  const checkout = resolveApiCheckout({ root, name, api, requireEnvFile: !isGitCommand });
 
-  if (!configured) {
-    console.error(
-      configHelp({
-        name,
-        api,
-        reason: fileName
-          ? `${fileName} has no apiRepoPaths entry for "${name}".`
-          : `${LOCAL_CONFIG_FILE_NAME} does not exist.`,
-      }),
-    );
+  if (checkout.legacyConfigWarning) {
+    console.warn(`${checkout.legacyConfigWarning}\n`);
+  }
+
+  if (!checkout.ok) {
+    console.error(checkout.problem);
 
     return 1;
   }
 
-  if (isLegacy) {
-    console.warn(
-      `${LEGACY_LOCAL_CONFIG_FILE_NAME} still holds "apiRepoPaths". Move it to ${LOCAL_CONFIG_FILE_NAME}.\n`,
-    );
-  }
+  const { repoPath, composePath: cwd } = checkout.checkout;
 
-  const repoPath = resolveConfiguredPath(root, configured);
+  if (isGitCommand) {
+    const expectedBranch = configuredApiRepoBranch(readLocalConfig(root).config, name);
 
-  if (!isDirectory(repoPath)) {
-    console.error(`apiRepoPaths.${name} points at ${repoPath}, which is not a directory that exists.`);
+    if (command === 'checkout') {
+      if (!expectedBranch) {
+        console.error(
+          `No branch configured for "${name}". Add it to apiRepoBranches:\n\n` +
+            `  {\n    "apiRepoBranches": {\n      "${name}": "main"\n    }\n  }`,
+        );
 
-    return 1;
-  }
+        return 1;
+      }
 
-  const cwd = join(repoPath, api.composeDir);
+      return checkoutApiBranch({ repoPath, branch: expectedBranch });
+    }
 
-  if (!isDirectory(cwd)) {
-    console.error(`${repoPath} has no ${api.composeDir} directory. Is apiRepoPaths.${name} the right checkout?`);
-
-    return 1;
-  }
-
-  if (api.envFile && !existsSync(join(cwd, api.envFile))) {
-    console.error(
-      `Missing ${api.envFile} in ${cwd}.${api.setupCommand ? ` Run "${api.setupCommand}" there first.` : ''}`,
-    );
-
-    return 1;
+    return pullApiBranch({ repoPath, expectedBranch, force: argv.includes('--force') });
   }
 
   const tool = resolveComposeTool();

@@ -41,21 +41,32 @@ const makeRoot = (files: Record<string, unknown> = {}) => {
 const run = (argv: string[], root: string) => runApiCommand({ apis: { hub: HUB }, argv, root });
 
 describe('runApiCommand', () => {
-  it('prints the usage and the known APIs when the API is unknown', () => {
+  it('prints the help and the known APIs when the API is unknown', () => {
     expect(run(['up', 'nope'], makeRoot())).toBe(1);
     expect(errors[0]).toContain('Usage: et api <command> <api>');
-    expect(errors[0]).toContain('APIs: hub');
+    expect(errors[0]).toContain('hub');
   });
 
-  it('prints the usage when no API is named', () => {
+  it('prints the help when no API is named', () => {
     expect(run(['up'], makeRoot())).toBe(1);
     expect(errors[0]).toContain('Usage: et api <command> <api>');
+  });
+
+  it('answers --help on stdout and succeeds', () => {
+    const logs: string[] = [];
+    const log = vi.spyOn(console, 'log').mockImplementation((message: unknown) => void logs.push(String(message)));
+
+    expect(run(['--help'], makeRoot())).toBe(0);
+    expect(logs[0]).toContain('Usage: et api <command> <api>');
+    expect(errors).toEqual([]);
+
+    log.mockRestore();
   });
 
   it('lists the API’s own commands when the command is unknown', () => {
     expect(run(['bogus', 'hub'], makeRoot())).toBe(1);
     expect(errors[0]).toContain('Unknown command "bogus" for the hub API.');
-    expect(errors[0]).toContain('up, down, logs, shell, install');
+    expect(errors[0]).toContain('up, down, logs, shell, checkout, pull, install');
   });
 
   it('names the config file when it does not exist', () => {
