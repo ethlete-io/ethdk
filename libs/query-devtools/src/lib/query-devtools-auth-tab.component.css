@@ -34,8 +34,8 @@
   }
 
   /* `flex: 0 0 auto` undoes the shared hint's `flex: 1 1 24rem`, whose basis would otherwise be read as a
-     240px block size in this column container. */
-  .et-query-devtools-auth-ttl .et-query-devtools-hint {
+     240px block size in these column containers - a paragraph of empty space above whatever follows. */
+  :is(.et-query-devtools-auth-ttl, .et-query-devtools-auth-vault) > .et-query-devtools-hint {
     flex: 0 0 auto;
     max-inline-size: 90ch;
   }
