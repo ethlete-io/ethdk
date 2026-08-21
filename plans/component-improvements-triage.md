@@ -17,20 +17,22 @@ where the browser has it, with the measured path kept behind `@supports` as the 
 `textarea-field-sizing-spike.md` for the measurements and for what to delete once the floor moves
 past Firefox ESR and iOS 26.
 
-Also done (2026-08-21): the internal form test drivers, in three passes.
+Also done (2026-08-21): the internal form test drivers, in four passes.
 `libs/components/src/lib/testing/` holds the shared core - `driver-core.ts`, the
 `control-driver.ts` base, and the two families built on it (`overlay-control-driver.ts`,
 `field-control-driver.ts`). `libs/components/src/lib/forms/testing/` holds the per-control
 drivers: `select-driver.ts`, `cascader-driver.ts`, `date-picker-driver.ts`,
 `number-input-driver.ts`, `password-input-driver.ts`, `tag-input-driver.ts`,
-`color-input-driver.ts`, `checkbox-driver.ts`, `selection-list-driver.ts` and `slider-driver.ts`.
-Twenty-one specs now drive their control through a driver instead of the DOM: select, cascader,
-all eight date-time specs, the text input, number input, password input, tag input and colour
-input, the checkbox, the selection list (group, option and the checkbox-group select-all) and both
-sliders. Every converted control went to zero direct DOM sites; the plain input needs no
-per-control driver and uses `mountFieldControl` with `InputDirective` directly. The forms specs
-are down from 383 direct DOM sites to 283. The `testing/` folder is excluded from the lib build,
-so nothing here ships.
+`color-input-driver.ts`, `checkbox-driver.ts`, `selection-list-driver.ts`, `slider-driver.ts`,
+`switch-driver.ts`, `rating-driver.ts`, `textarea-driver.ts`, `phone-input-driver.ts` and
+`otp-input-driver.ts`. Twenty-eight specs now drive their control through a driver instead of the
+DOM: select (including the option groups and the data-driven options), cascader, all eight
+date-time specs, the text input, number input, password input, tag input and colour input, the
+checkbox, the selection list (group, option and the checkbox-group select-all), both sliders, the
+switch, the rating, the textarea, the phone input and the OTP input. Every converted control went
+to zero direct DOM sites; the plain input needs no per-control driver and uses `mountFieldControl`
+with `InputDirective` directly. The forms specs are down from 383 direct DOM sites to 209. The
+`testing/` folder is excluded from the lib build, so nothing here ships.
 
 Three decisions from those passes:
 
@@ -59,9 +61,9 @@ decision before any code · `X` blocked.
 
 ### M - bounded projects
 
-| Item              | Tag | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ----------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Form test drivers | `C` | Three passes done, see the 2026-08-21 note above. What is left, by size: the rich text editor DOM utilities (48 sites - the DOM is the subject there, so leave them), the dropzone component (41), select virtual options (15), switch (12), the form-field suffix slot (12), textarea, rating and phone input (10 each). Switch is checkbox-shaped; textarea, phone input and OTP input fit `field-control-driver.ts`; the dropzone edits no `input`, so it needs its own base |
+| Item              | Tag | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Form test drivers | `C` | Four passes done, see the 2026-08-21 note above. Only the dropzone is left: `dropzone.component.spec.ts` (41 sites) plus `headless/dropzone.directive.spec.ts` (6). It edits no `input` and is drag-and-drop driven, so it needs a base of its own - one pass. The rich text editor DOM utilities (48 sites) stay as they are: the DOM is the subject there. What is left elsewhere is structural one-liners - the form-field suffix slot (12), `focus-first-invalid-field.spec.ts` (10), the label directive (9) - which a driver would not shorten |
 
 ### L - projects, not tickets
 
@@ -88,12 +90,12 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 ## Sequencing
 
-1. Extend the form test drivers to the controls that still have none. Take the field-shaped
-   stragglers first - switch, textarea, rating, phone input, OTP input - then the dropzone, which
-   needs a base of its own. Do each alongside the next change to that control. Leave
-   `rich-text-editor-dom.spec.ts` as it is: it tests DOM utilities, so direct DOM access is the
-   subject there, not ceremony. The overlay-backed controls, the text-field family, the checkbox,
-   the selection list, both sliders and the harness decision are done.
+1. Finish the form test drivers with the dropzone, the last control without one. It edits no
+   `input` and is drag-and-drop driven, so decide its base before writing it. Do it alongside the
+   next change to the dropzone. Leave `rich-text-editor-dom.spec.ts` as it is: it tests DOM
+   utilities, so direct DOM access is the subject there, not ceremony. The overlay-backed controls,
+   the text-field family, the checkbox, the selection list, both sliders, the switch, the rating,
+   the textarea, the phone input, the OTP input and the harness decision are done.
 2. For new component work, prefer stat tile when a bounded addition is wanted. Start charts only
    when its palette, SVG host and animation questions are the work the team intends to take on. The
    next opportunistic follow-up is retro-fitting `<et-scrollbar>` onto the panels that already hide
