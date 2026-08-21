@@ -112,7 +112,7 @@ describe('runApiCommand', () => {
   it('lists the API’s own commands when the command is unknown', async () => {
     expect(await run(['bogus', 'hub'], makeRoot())).toBe(1);
     expect(errors[0]).toContain('Unknown command "bogus" for the hub API.');
-    expect(errors[0]).toContain('up, down, logs, shell, clone, checkout, pull, setup, install');
+    expect(errors[0]).toContain('up, down, logs, shell, clone, clear, checkout, pull, setup, install');
   });
 
   it('names the config file when it does not exist', async () => {

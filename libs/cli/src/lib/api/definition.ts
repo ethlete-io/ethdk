@@ -28,7 +28,17 @@ export type ApiDefinition = {
 
 export type ApiDefinitions = Record<string, ApiDefinition>;
 
-export const BUILT_IN_API_COMMANDS = ['up', 'down', 'logs', 'shell', 'clone', 'checkout', 'pull', 'setup'] as const;
+export const BUILT_IN_API_COMMANDS = [
+  'up',
+  'down',
+  'logs',
+  'shell',
+  'clone',
+  'clear',
+  'checkout',
+  'pull',
+  'setup',
+] as const;
 
 /** These act on the checkout itself, so they run before `setupCommand` and need no container engine. */
 export const GIT_API_COMMANDS: string[] = ['clone', 'checkout', 'pull'];
@@ -36,7 +46,8 @@ export const GIT_API_COMMANDS: string[] = ['clone', 'checkout', 'pull'];
 const DEPENDENCY_INSTALLERS = ['composer', 'npm', 'yarn', 'pnpm', 'bun', 'bundle', 'pip', 'pip3'];
 
 /** Whether an exec entry downloads dependencies, which is the only failure the private-dependency hint explains. */
-export const installsDependencies = (execCommand: readonly string[]) => DEPENDENCY_INSTALLERS.includes(execCommand[0] ?? '');
+export const installsDependencies = (execCommand: readonly string[]) =>
+  DEPENDENCY_INSTALLERS.includes(execCommand[0] ?? '');
 
 /** The exec entry that installs dependencies, so a failure in another entry can point at it. */
 export const dependencyInstallCommandName = (api: ApiDefinition) =>

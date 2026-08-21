@@ -22,7 +22,7 @@ describe('apiHelp', () => {
   it('lists each API with the commands it accepts', () => {
     const help = apiHelp({ hub: definition({ install: ['composer', 'install'] }) }, 'et api');
 
-    expect(help).toContain('hub       up, down, logs, shell, clone, checkout, pull, install');
+    expect(help).toContain('hub       up, down, logs, shell, clone, clear, checkout, pull, install');
   });
 
   it('lists an exec entry once even when several APIs declare it', () => {

@@ -20,7 +20,21 @@ export const currentBranch = (cwd: string) => {
   return result.status === 0 ? result.stdout : undefined;
 };
 
-export const hasUncommittedChanges = (cwd: string) => git(cwd, ['status', '--porcelain']).stdout.length > 0;
+/** Modified tracked files and untracked files, as git's own porcelain lines. */
+export const uncommittedChanges = (cwd: string) => {
+  const { stdout } = git(cwd, ['status', '--porcelain']);
+
+  return stdout.length > 0 ? stdout.split('\n') : [];
+};
+
+export const hasUncommittedChanges = (cwd: string) => uncommittedChanges(cwd).length > 0;
+
+/** Commits on any local branch that no remote holds, so work is never removed with a checkout. */
+export const unpushedCommits = (cwd: string) => {
+  const { status, stdout } = git(cwd, ['log', '--branches', '--not', '--remotes', '--oneline']);
+
+  return status === 0 && stdout.length > 0 ? stdout.split('\n') : [];
+};
 
 /** Switches the API checkout to the branch configured for it. Git's own refusal is passed through. */
 export const checkoutApiBranch = (options: { repoPath: string; branch: string }) => {

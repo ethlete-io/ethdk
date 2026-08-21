@@ -69,3 +69,70 @@ export const lanAddress = () =>
 /** Path of this machine's SSH key, for a compose file that mounts one into the API container. */
 export const sshKeyPath = () =>
   [join(homedir(), '.ssh/id_ed25519'), join(homedir(), '.ssh/id_rsa')].find((path) => existsSync(path));
+
+export type ComposeCall = {
+  tool: ComposeTool;
+  /** Directory that holds the compose file. */
+  cwd: string;
+  env?: NodeJS.ProcessEnv;
+};
+
+/** Runs a compose command and captures its stdout. `undefined` when the tool itself failed. */
+export const composeOutput = (options: ComposeCall & { args: string[] }) => {
+  const { tool, cwd, env, args } = options;
+  const [binary, ...prefix] = tool.compose;
+  const result = spawnSync(binary, [...prefix, ...args], { cwd, env, encoding: 'utf8' });
+
+  return result.error || result.status !== 0 ? undefined : (result.stdout ?? '');
+};
+
+/** Container ids of a compose project, or `undefined` when the tool could not answer. */
+export const composeContainerIds = (call: ComposeCall) => {
+  const stdout = composeOutput({ ...call, args: ['ps', '-q'] });
+
+  return stdout === undefined ? undefined : stdout.split('\n').filter((id) => id.trim() !== '');
+};
+
+export type PortMapping = { host: number; container: number };
+
+export type ContainerState = {
+  id: string;
+  name: string;
+  /** Compose service, empty for a container compose did not start. */
+  service: string;
+  /** The engine's own words, for example `Up 42 minutes` or `Exited (1) 3 seconds ago`. */
+  status: string;
+  ports: PortMapping[];
+};
+
+const PUBLISHED_MAPPING = /(\d+)->(\d+)/g;
+
+const parsePortMappings = (ports: string): PortMapping[] =>
+  [...ports.matchAll(PUBLISHED_MAPPING)].map(([, host, container]) => ({
+    host: Number(host),
+    container: Number(container),
+  }));
+
+const PS_FORMAT = '{{.ID}}\t{{.Names}}\t{{.Label "com.docker.compose.service"}}\t{{.Status}}\t{{.Ports}}';
+
+/** True for a status the engine prints while the container runs. */
+export const isRunningStatus = (status: string) => /^up\b/i.test(status);
+
+/** Every container the engine knows, with its compose service and published ports. */
+export const containerStates = (engine: string): ContainerState[] => {
+  const result = spawnSync(engine, ['ps', '-a', '--format', PS_FORMAT], { encoding: 'utf8' });
+
+  if (result.error || result.status !== 0) return [];
+
+  return (result.stdout ?? '')
+    .split('\n')
+    .map((line) => line.split('\t'))
+    .filter((columns) => columns.length >= 5 && columns[0])
+    .map(([id, name, service, status, ports]) => ({
+      id: id ?? '',
+      name: name ?? '',
+      service: service ?? '',
+      status: status ?? '',
+      ports: parsePortMappings(ports ?? ''),
+    }));
+};

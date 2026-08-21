@@ -11,7 +11,16 @@ const definition = (exec?: Record<string, string[]>): ApiDefinition => ({
 
 describe('apiCommandNames', () => {
   it('leaves out setup when the API declares no setupCommand', () => {
-    expect(apiCommandNames(definition())).toEqual(['up', 'down', 'logs', 'shell', 'clone', 'checkout', 'pull']);
+    expect(apiCommandNames(definition())).toEqual([
+      'up',
+      'down',
+      'logs',
+      'shell',
+      'clone',
+      'clear',
+      'checkout',
+      'pull',
+    ]);
   });
 
   it('lists setup when the API declares a setupCommand', () => {
@@ -21,6 +30,7 @@ describe('apiCommandNames', () => {
       'logs',
       'shell',
       'clone',
+      'clear',
       'checkout',
       'pull',
       'setup',
@@ -34,6 +44,7 @@ describe('apiCommandNames', () => {
       'logs',
       'shell',
       'clone',
+      'clear',
       'checkout',
       'pull',
       'install',

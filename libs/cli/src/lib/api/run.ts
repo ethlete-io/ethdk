@@ -1,5 +1,14 @@
 import { spawnSync } from 'child_process';
-import { composeToolNames, engineEnv, lanAddress, resolveComposeTool } from './compose';
+import {
+  ComposeCall,
+  composeContainerIds,
+  composeOutput,
+  composeToolNames,
+  containerStates,
+  engineEnv,
+  lanAddress,
+  resolveComposeTool,
+} from './compose';
 import {
   ApiDefinitions,
   GIT_API_COMMANDS,
@@ -14,8 +23,11 @@ import { runApiSetup } from './setup';
 import { didYouMean } from './suggest';
 import { cloneApiRepo, isGitIgnored, DEFAULT_CHECKOUT_DIR } from './clone';
 import { gitUrlHost, printPrivateDependencyHint } from './auth-hint';
-import { askQuestion } from '../utils';
+import { confirm } from '../utils';
 import { configuredApiRepoBranch, readLocalConfig } from '../config/local-config';
+import { clearApiCheckouts } from './clear';
+import { portsInUse, publishedPorts } from './ports';
+import { serviceStateTable, serviceStates } from './state';
 
 export type RunApiCommandOptions = {
   apis: ApiDefinitions;
@@ -26,20 +38,8 @@ export type RunApiCommandOptions = {
   invocation?: string;
 };
 
-/** Asks before a fix `et api` can apply itself. Without a terminal it names the flag that skips the question. */
-const confirmFix = async (options: { problem: string; question: string; hint: string }) => {
-  const { problem, question, hint } = options;
-
-  if (!process.stdin.isTTY) {
-    console.error(`${problem}\n\n${hint}`);
-
-    return false;
-  }
-
-  const answer = await askQuestion(`${problem}\n\n${question} [y/N] `);
-
-  return /^y(es)?$/i.test(answer.trim());
-};
+const confirmFix = (options: { problem: string; question: string; hint: string }) =>
+  confirm({ ...options, defaultsToYes: true });
 
 const definedEntries = (record: Record<string, string | undefined>) =>
   Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as Record<string, string>;
@@ -51,7 +51,7 @@ export const runApiCommand = async ({
   invocation = 'et api',
 }: RunApiCommandOptions): Promise<number> => {
   const exposeOnLan = argv.includes('--host');
-  const [command, name] = argv.filter((arg) => !arg.startsWith('--'));
+  const [command, name, service] = argv.filter((arg) => !arg.startsWith('--'));
   const api = name === undefined ? undefined : apis[name];
 
   const wantsHelp = argv.includes('--help') || argv.includes('-h') || command === 'help';
@@ -78,6 +78,24 @@ export const runApiCommand = async ({
 
     return 0;
   }
+
+  const composeProjectIsRunning = (composePath: string) => {
+    const tool = resolveComposeTool();
+
+    return tool ? (composeContainerIds({ tool, cwd: composePath }) ?? []).length > 0 : false;
+  };
+
+  const clear = (names: string[]) =>
+    clearApiCheckouts({
+      apis,
+      names,
+      root,
+      invocation,
+      force: argv.includes('--force'),
+      hasContainers: composeProjectIsRunning,
+    });
+
+  if (command === 'clear' && argv.includes('--all')) return clear(Object.keys(apis));
 
   if (command === undefined || name === undefined) {
     console.error(apiHelp(apis, invocation));
@@ -107,6 +125,8 @@ export const runApiCommand = async ({
 
     return 1;
   }
+
+  if (command === 'clear') return clear([name]);
 
   const isGitCommand = GIT_API_COMMANDS.includes(command);
   const checkout = resolveApiCheckout({
@@ -239,17 +259,101 @@ export const runApiCommand = async ({
     exitCode = result.status ?? 1;
   };
 
+  const call: ComposeCall = { tool, cwd, env };
+
+  /** Ports another program already holds. Empty while this project has containers, because `up` then reconciles its own. */
+  const takenPorts = async () => {
+    const running = composeContainerIds(call);
+
+    if (running === undefined || running.length > 0) return [];
+
+    const config = composeOutput({ ...call, args: ['config'] });
+
+    return config === undefined ? [] : portsInUse(publishedPorts({ config, services: api.services }));
+  };
+
+  const freePorts = async (taken: number[]) => {
+    const containers = containerStates(engine);
+    const holders = taken.map((port) => ({
+      port,
+      container: containers.find(({ ports }) => ports.some(({ host }) => host === port))?.name,
+    }));
+    const rows = holders.map(({ port, container }) => `  ${port}  ${container ?? 'held by another program'}`);
+    const problem = `Cannot start ${name}. These ports are already in use:\n\n${rows.join('\n')}`;
+    const names = [...new Set(holders.map(({ container }) => container))].filter((holder) => holder !== undefined);
+
+    if (holders.some(({ container }) => container === undefined)) {
+      console.error(`${problem}\n\nRe-run with --force to start ${name} anyway.`);
+
+      return false;
+    }
+
+    const accepted = await confirm({
+      problem,
+      question: `Stop ${names.join(', ')} and start ${name}?`,
+      hint: `Stop them with "${engine} stop ${names.join(' ')}", or re-run with --force to start ${name} anyway.`,
+      defaultsToYes: true,
+    });
+
+    if (!accepted) return false;
+
+    return (spawnSync(engine, ['stop', ...names], { stdio: 'inherit' }).status ?? 1) === 0;
+  };
+
   if (command === 'up') {
+    const taken = argv.includes('--force') ? [] : await takenPorts();
+
+    if (taken.length > 0 && !(await freePorts(taken))) return 1;
+
     if (api.network) {
       spawnSync(engine, ['network', 'create', api.network], { stdio: 'ignore' });
     }
 
-    runCompose('up', '-d', ...api.services);
+    console.log(`Starting ${name}: ${api.services.join(', ')}.`);
+
+    const started = spawnSync(binary, [...composePrefix, 'up', '-d', ...api.services], { cwd, env, encoding: 'utf8' });
+    const startedOutput = `${started.stdout ?? ''}\n${started.stderr ?? ''}`.trim();
+
+    if (started.error) {
+      console.error(started.error.message);
+
+      return 1;
+    }
+
+    if (started.status !== 0) {
+      if (startedOutput) console.error(startedOutput);
+
+      return started.status ?? 1;
+    }
 
     // podman-compose exits 0 even when it fails to build or pull an image, so the state has to be
     // read back rather than inferred from the exit code.
-    console.log(`\n${name} API at http://localhost:${api.port}. State:\n`);
-    runCompose('ps');
+    const ids = composeContainerIds(call) ?? [];
+    const ours = containerStates(engine).filter((container) =>
+      ids.some((id) => id.startsWith(container.id) || container.id.startsWith(id)),
+    );
+    const states = serviceStates({ services: api.services, containers: ours });
+    const stopped = states.filter(({ running }) => !running);
+
+    console.log(`\n${name} API at http://localhost:${api.port}\n`);
+    console.log(serviceStateTable(states));
+
+    if (stopped.length > 0) {
+      const which = stopped.map((state) => state.service).join(', ');
+      const exited = stopped.filter(({ status }) => status !== 'no container');
+
+      console.error(`\n${which} ${stopped.length === 1 ? 'is' : 'are'} not running.`);
+
+      for (const state of exited) {
+        console.error(`Run "${invocation} logs ${name} ${state.service}" to see why.`);
+      }
+
+      // A service with no container never logged anything, so the output of `up` is the only place
+      // a failed pull or build is reported.
+      if (exited.length < stopped.length && startedOutput) console.error(`\n${startedOutput}`);
+
+      exitCode = 1;
+    }
 
     if (exposeOnLan) {
       const address = lanAddress();
@@ -273,10 +377,20 @@ export const runApiCommand = async ({
     }
   } else if (command === 'down') {
     runCompose('down');
-  } else if (command === 'logs') {
-    runCompose('logs', '-f', api.execService);
-  } else if (command === 'shell') {
-    runCompose('exec', api.execService, 'bash');
+  } else if (command === 'logs' || command === 'shell') {
+    if (service !== undefined && !api.services.includes(service)) {
+      console.error(
+        `The ${name} API does not start "${service}".${didYouMean(service, api.services)}\n\n` +
+          `Services: ${api.services.join(', ')}`,
+      );
+
+      return 1;
+    }
+
+    const target = service ?? api.execService;
+
+    if (command === 'logs') runCompose('logs', '-f', target);
+    else runCompose('exec', target, 'bash');
   } else {
     const execCommand = api.exec?.[command] ?? [];
 
