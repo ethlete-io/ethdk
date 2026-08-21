@@ -18,8 +18,8 @@ Fable for batch design, synthesis and cross-checks.
 | 1 | forms/rich-text-editor + multi-language-rich-text-editor | 11.4k | opus | done — 3 high / 13 medium / 12 low |
 | 2 | forms/date-time | 6.8k | opus | done — 4 high / 4 medium / 10 low |
 | 3 | forms/select + cascader | 8.4k | opus | done — 3 high / 6 medium / 8 low |
-| 4 | forms/form-field + input + textarea + masked-input + form + description | 6.8k | opus | pending |
-| 5 | forms/selection-list + choice-field + checkbox + switch + rating + selection-card | 5.4k | opus | pending |
+| 4 | forms/form-field + input + textarea + masked-input + form + description | 6.8k | opus | done — 1 high / 6 medium / 12 low |
+| 5 | forms/selection-list + choice-field + checkbox + switch + rating + selection-card | 5.4k | opus | done — 4 high / 4 medium / 11 low |
 | 6 | forms/slider + dropzone + color-input | 7.6k | opus | pending |
 | 7 | forms/phone-input + otp-input + tag-input + forms/testing | 3.9k | opus | pending |
 | 8 | table | 10.7k | opus | done — 3 high / 8 medium / 12 low |
@@ -30,7 +30,7 @@ Fable for batch design, synthesis and cross-checks.
 | 13 | grid + masonry | 4.5k | opus | done — 5 high / 8 medium / 15 low |
 | 14 | menu + command-palette + toggletip + tooltip | 5.5k | opus | done — 4 high / 9 medium / 10 low |
 | 15 | carousel + scrollable + scrollbar | 5.2k | opus | done — 5 high / 8 medium / 20 low |
-| 16 | calendar + time-picker | 4.0k | opus | pending |
+| 16 | calendar + time-picker | 4.0k | opus | done — 4 high / 6 medium / 9 low |
 | 17 | notification + tabs + accordion + tree | 5.6k | opus | pending |
 | 18 | match + standings | 2.6k | sonnet | pending |
 | 19 | button + chip + badge + avatar + banner + card + divider | 3.4k | sonnet | pending |
@@ -4395,5 +4395,1348 @@ every colour from `--et-surface-*` / `--et-theme-color-*` tokens (the one except
 `prefers-reduced-motion` is handled in the scrollbar CSS and in the carousel's driver resolution; and
 the `can-animate` first-render suppression is applied consistently in both the carousel and the
 scrollable.
+
+---
+
+## Batch 16 — `calendar` + `time-picker`
+
+Scope reviewed: every non-spec source file under
+`libs/components/src/lib/calendar/**` and `libs/components/src/lib/time-picker/**`
+(`.ts`/`.html`/`.css`, incl. `headless/` and `headless/internals/`), all 11 spec files in
+those trees, the story files, and `apps/docs/components/calendar.md` +
+`apps/docs/components/time-picker.md`.
+
+Runtime verification was done with two scratch specs
+(`libs/components/src/lib/calendar/__scan-verify.spec.ts`,
+`.../time-picker/__scan-verify.spec.ts`, `.../calendar/__scan-verify2.spec.ts`) run as
+`cd libs/components && NX_NO_CLOUD=true npx vitest run --config vite.config.mts <spec>`,
+plus one node subprocess for the loop-bomb case. **All scratch files were deleted**; the
+working tree in both domains is unmodified.
+
+## High
+
+- **Any range strategy whose preview does not require an already-open range paints a
+  phantom band on a calendar nobody has touched yet.**
+  `CalendarDirective.previewRange` (calendar/headless/calendar.directive.ts:526-541) takes
+  its hover point as `this.hoveredDate() ?? this.focusedDate()`. `focusedDate` is a
+  `linkedSignal` that is *never* null (calendar.directive.ts:293-310), so the fallback fires
+  on first render, before any pointer or keyboard interaction, and before
+  `CalendarGridDirective` has ever seen a `focusin`. The built-in strategy hides this
+  because its `preview` returns `null` while `current.start === null`
+  (calendar-range-strategy.ts:119-128) — but `createFixedLengthRangeStrategy` ships no
+  `preview` at all, so line 536 falls through to `strategy.select(at, current)`, which
+  always returns a closed range (calendar-range-strategy.ts:93-97); and
+  `createWeekRangeStrategy.preview` deliberately bands from "the first hover" without
+  checking whether there *is* a hover (calendar-range-strategy.ts:64-75).
+  **Runtime-verified** on `<et-calendar mode="range" [activeMonth]="July 2026">` with no
+  interaction whatsoever:
+  - default strategy → `[]` banded (correct);
+  - `createFixedLengthRangeStrategy({ days: 7 })` →
+    `["1:start","2:middle","3:middle","4:middle","5:middle","6:middle","7:end"]` plus 7
+    cells carrying `data-preview`;
+  - `createWeekRangeStrategy({ weekStartsOn: 1 })` →
+    `["29:start","30:middle","1:middle","2:middle","3:middle","4:middle","5:end"]`.
+  A consumer opening the `FixedLengthRange` / `WeekRange` calendar (both shipped stories,
+  both embedded in `calendar.md:148` and `:152`) sees a fully drawn seven-day selection
+  they did not make. Same root cause suppresses nothing in a coarse grid either: the
+  cell directive refuses to set `hoveredDate` outside the selection view
+  (calendar-cell.directive.ts:75-85, and the spec at calendar.directive.spec.ts:462 checks
+  exactly that), but `previewRange` reads `focusedDate()` regardless, so the guard only
+  covers the pointer path. The fix is a "focus/hover is real" gate — e.g. only fall back to
+  `focusedDate()` while `CalendarGridDirective.focusIsInside()`.
+
+- **`minuteStep`/`secondStep` accept values that hang or silently disable a column;
+  unlike `monthsShown`, they are not clamped.**
+  `TimePickerDirective.minuteStep`/`secondStep`
+  (time-picker/headless/time-picker.directive.ts:130-131) are
+  `input(5, { transform: numberAttribute })` with no floor, while the calendar's sibling
+  input does clamp (`Math.max(1, Math.trunc(numberAttribute(value, 1)))`,
+  calendar.directive.ts:161). `generateSteppedValues`
+  (time-picker/headless/internals/time-format.ts:42-56) is a bare
+  `for (let value = 0; value < options.end; value += options.step)`:
+  - `minuteStep="0"` or any negative → the loop never advances toward `end`.
+    **Runtime-verified** by running the function body verbatim in a node subprocess:
+    `RangeError: Invalid array length at Array.push` after seconds of allocation. In the
+    browser this happens inside the `minuteValues()` computed, i.e. during change
+    detection, so the picker (and the tab) is gone.
+  - a non-numeric value → `numberAttribute` yields `NaN` (its default fallback), the loop
+    exits after one iteration (**verified**: `generateSteppedValues({end:60,step:NaN})` →
+    `[0]`), so the minute column renders a single `00` option; worse, `anchorTime`'s
+    `this.now.getMinutes() - (this.now.getMinutes() % NaN)` is `NaN`
+    (time-picker.directive.ts:271), so no option ever gets `focused: true`
+    (time-picker.directive.ts:384), every option keeps `tabindex="-1"`, and the column
+    becomes unreachable by keyboard.
+  Not a hypothetical input: these are plain numeric attributes on a public component and a
+  `[minuteStep]="form.step()"` binding can easily be `0` while a form is empty.
+
+- **The calendar's `role="grid"` accessibility tree is not the one the docs promise:
+  the row groups are not owned by the grid, and they nest.**
+  `calendar.component.html:54-73` puts `role="grid"` on `.et-calendar-grid`, then wraps the
+  rows in a role-less `.et-calendar-weeks-viewport` (the CSS crossfade container,
+  calendar.component.css:135-148) before reaching `.et-calendar-weeks[role=rowgroup]`
+  (line 78-81), which in the day view contains another role-less `.et-calendar-months`
+  (line 106) around `.et-calendar-month[role=rowgroup]` (line 108).
+  **Runtime-verified** on the default single-month calendar:
+  `rowgroup parent role: null (.et-calendar-weeks-viewport)`,
+  `rowgroup is direct child of grid: false`, `rowgroup count: 2`, and the only
+  `role="row"` that *is* a direct child of the grid is `.et-calendar-weekdays` — the
+  header row sits at depth 1 while the data rows sit at depth 3, under two generic
+  containers and a nested rowgroup. `calendar.md:250` states "`role="grid"` with
+  `row`/`columnheader`/`gridcell` structure", and `:253` repeats the claim for the coarse
+  grids. Roles must be owned to compose; a generic element between `grid` and `rowgroup`
+  (and a `rowgroup` inside a `rowgroup`) is invalid per the ARIA `grid` required-owned-
+  elements rule, and is what makes table-navigation mode in screen readers report the
+  wrong row/column counts. Fixable without touching the layout by moving `role="rowgroup"`
+  onto the viewport/`.et-calendar-months` wrappers (or `role="presentation"` + a single
+  rowgroup), since neither wrapper needs a role of its own.
+
+- **For `precision="year"` the header's zoom button is enabled, named "Choose date", and
+  does nothing — `canZoomOut()` exists but the default component never reads it.**
+  `CalendarDirective.canZoomOut` (calendar.directive.ts:516) is `view() !== 'multiYear'`,
+  and `zoomOut()` from `multiYear` sets `view` to `selectionView()`
+  (calendar.directive.ts:652-661) — which for year precision *is* `multiYear`, i.e. a
+  no-op. The default header button (calendar.component.html:21-38) has no `[disabled]`
+  binding at all, and `resolvedZoomLabel()` returns `labels.switchToMonthView`
+  (`'Choose date'`) for the `multiYear` case (calendar.component.ts:113-124).
+  `grep canZoomOut` across `libs/` + `apps/` finds it only in its own definition, two
+  assertions in `calendar.directive.spec.ts` (:315, :862 — the latter asserts `false` for
+  exactly this configuration) and the header docs. **Runtime-verified** on
+  `<et-calendar precision="year">`: `view: multiYear`, `aria-label: "Choose date"`,
+  `disabled: false`; after `click()` the view is still `multiYear` and the header label is
+  unchanged (`2016 – 2039`). A button that announces an action it can never perform is an
+  a11y defect, and `calendar.md:62` sells the header as "never a dead end".
+  Same run also shows the month-precision variant mislabelled: at `precision="month"`,
+  view `multiYear`, the label is `"Choose date"` but clicking returns to the **month**
+  grid (`view: year`), which is what `calendar.md:90` documents ("the header zooms back to
+  the selecting grid rather than the day grid") — the label set has no string for that.
+
+## Medium
+
+- **In `range` mode an off-step value on the *inactive* end is invisible in its column,
+  contradicting the docs' "every column marks both ends".**
+  `minuteValues`/`secondValues` splice in an off-step value only from `selectedParts()`,
+  i.e. the **active** end (`time-picker.directive.ts:315-321`, `include:
+  this.selectedParts()?.minute`). The range markers are then keyed on exact option values
+  (`rangeStart: start !== null && start[unit] === optionValue`,
+  time-picker.directive.ts:655-659), so a start of `09:07` with `minuteStep=5` has no
+  option to attach to. **Runtime-verified** with
+  `rangeValue = { start: 09:07, end: 11:00 }`, `activeSide="end"`, `minuteStep=5`:
+  minute labels `00,05,…,55`; `minute [data-range-start]: 0`, `minute [data-range-end]: 1`,
+  while `hour [data-range-start]: ['09']`. `time-picker.md:165` ("The end that is **not**
+  being edited is outlined rather than filled, so both stay readable") and `:159`
+  ("Every column marks **both** ends") both promise otherwise. Reachable through the time
+  range input, whose typed entry is deliberately ungated (`time-picker.md:79`).
+
+- **12-hour typeahead: typing `1` selects 12.**
+  `selectByQuery` (time-picker.directive.ts:563-572) takes the first option whose *label*
+  or `String(value)` starts with the buffer, and the 12-hour hour column's first option is
+  value `0` labelled `"12"` (`toLabel`, time-picker.directive.ts:372-374).
+  **Runtime-verified** on `format="h:mm a"`: `hour labels: 12,1,2,…,11`; after a `1`
+  keydown the selected option is `12`. `time-picker.md:89` documents typeahead as
+  "Jump to the matching option (`2`,`3` → 23)" — true in 24-hour, wrong in 12-hour, where
+  a reader has to type `1` then wait out the 500 ms typeahead reset
+  (`internals/typeahead.ts`) to reach hour 1 at all. Preferring an exact `String(value)`
+  match over a label prefix would fix it.
+
+- **"Today" and "now" are frozen at construction, so a long-lived picker marks the wrong
+  day / anchors the wrong time after midnight.**
+  `CalendarDirective.today = startOfDay(new Date())` (calendar.directive.ts:224) feeds
+  `cell.today` in all three grids (`:396`, `:468`, `:492`) — which drives
+  `aria-current="date"` (calendar-cell.directive.ts:22) and the today ring
+  (calendar.component.css:371). `TimePickerDirective.now = new Date()`
+  (time-picker.directive.ts:188) feeds `anchorTime`, `periodLabels` and
+  `availability.day`. Both are plain fields, not signals, so nothing recomputes. An SPA
+  left open across midnight (a dashboard, a booking kiosk) shows `aria-current="date"` on
+  yesterday, and a `timeFilter` that switches on weekday
+  (`time-picker.md:76`, and the `weekdayHours` story preset) is asked about the wrong day.
+
+- **With `monthsShown > 1` some grid rows carry fewer than seven gridcells.**
+  `calendar.component.html:128-131` renders a spill-in day as
+  `<span class="et-calendar-cell--empty" aria-hidden="true">` instead of a
+  `role="gridcell"`. The reasoning (one date, one cell, one roving target) is right for
+  the pointer, but ARIA `grid` expects a rectangular grid: the first and last rows of each
+  month column then expose 3-6 cells while the middle rows expose 7, so screen-reader
+  column navigation and "column 3 of 7" announcements go wrong across the seam.
+  `role="gridcell" aria-hidden="true"` — or `aria-disabled` placeholders — would keep the
+  geometry. Code-verified only (needs a real AT to observe the announcement).
+
+- **The range picker's one-time auto-advance can never come back.**
+  `autoAdvanceSpent` (time-picker.directive.ts:190) is set by `activateOption` and by
+  `setActiveSide` (`:500-515`) and is never reset. A form that clears `rangeValue` back to
+  `{start: null, end: null}` — a reset button, a wizard step revisited — keeps the picker
+  in "already hopped" mode, so filling the start no longer opens the end and the reader
+  has to find the side switch. `time-picker.md:144` describes the hop as belonging to
+  "the pick that *completes* the start", which reads as per-range, not per-instance. A
+  `linkedSignal` sourced on `rangeValue().start === null` would restore it.
+
+- **`scrollOptionIntoView` reads layout from inside a plain `effect`, and only half of it
+  is environment-guarded.**
+  `TimePickerOptionDirective` (time-picker-option.directive.ts:64-68) calls
+  `this.column.scrollOptionIntoView(...)` from an `effect`, i.e. during change detection,
+  and the method's first statements are two `getBoundingClientRect()` calls plus a
+  `scrollTop`/`clientHeight` read (time-picker-column.directive.ts:118-127) — a forced
+  synchronous reflow per focused option per `columns()` recompute, and a read taken before
+  the browser has necessarily laid the new options out. The `columnElement.scrollTo?.()`
+  on line 127 is explicitly optional-chained for environments that lack it, which shows
+  the author knew this can run outside a real browser — but `getBoundingClientRect` on
+  line 120 is not, and this effect *does* fire without any user interaction (the anchor
+  option always has `focused: true`). `afterRenderEffect` with a `read`/`write` split is
+  the pattern this wants. The sibling calendar focus pull is safe by accident: it is gated
+  on `grid.focusIsInside()`, which needs a real `focusin`.
+
+## Low
+
+- **`time-picker-range.directive.spec.ts` names a directive that does not exist.** There is
+  no `time-picker-range.directive.ts`; the file tests `TimePickerDirective`'s range mode
+  and its own `describe` says so (`'TimePickerDirective - range mode'`). Rename to
+  `time-picker.directive.range.spec.ts` or fold into the main spec — the current name
+  makes `ls` suggest a missing source file.
+- **`CalendarDirective.hoveredDate` is a public writable signal with no JSDoc beyond
+  "Range-preview endpoint" (calendar.directive.ts:312-313) and no mention in
+  `calendar.md`.** Either document it as the hover-injection hook (useful for a custom
+  cell renderer) or mark it `@internal` — as it stands it is public API by accident.
+- **`weekNumbers` means two different things one `.` apart.**
+  `CalendarComponent.weekNumbers` is a `boolean` input (calendar.component.ts:70) while
+  `CalendarDirective.weekNumbers` is `number[]` (calendar.directive.ts:415). Both are
+  reachable from a custom header via `calendar.weekNumbers()`. `calendar.md:48` explains
+  the split, but `showWeekNumbers` on the component would remove the trap.
+- **`precision="year"` has a story (`YearPrecision`) that no docs page embeds**, and
+  `calendar.md:81` covers it in one clause with no demo, while month precision gets two
+  (`:88`, `:92`). Same for the `German` calendar story and the time picker's `WithSeconds`,
+  `Bounded`, `RangeEmpty`, `RangeWithinOneHour`, `RangeCustomLabels`. Every id the docs
+  *do* reference resolves to a real export — checked.
+- **`time-picker.md:29` types `timeFilter` as `((date: Date) => boolean) | null`**, but the
+  real signature is `(date: Date, side: TimeRangeSide) => boolean`
+  (`TimePickerTimeFilterFn`, time-picker.directive.ts:40). The range table at `:132` gets
+  it right; the first table is what a single-mode reader copies.
+- **`CalendarDirective.handleKeydown` claims every arrow/Page/Home/End key inside the
+  grid** (calendar.directive.ts:690-705) with no `event.target` check. A consumer who puts
+  a text input or a `<select>` inside `[etCalendarGrid]` — a "jump to date" field in a
+  custom grid — loses caret movement to `preventDefault()`.
+- **The time-picker band's `z-index: -1` (time-picker.component.css:160-168) has no
+  stacking context to sit in.** `.et-time-picker-option` is `position: relative` with
+  `z-index: auto`, so it does not establish one, and neither `.et-time-picker-column` nor
+  `.et-time-picker-column-wrapper` does — the band therefore paints behind the
+  backgrounds of every ancestor up to whatever the *host* establishes. It works today
+  because nothing between the option and the overlay pane paints an opaque background,
+  but a consumer who gives `.et-time-picker-columns` (or any wrapper) a background loses
+  the band entirely. `isolation: isolate` on the option, plus `z-index: 0` on its content,
+  would pin it. Code-verified only — confirming the failure needs a real browser.
+- **`hasSelectableDayIn` is O(days) per coarse cell whenever a `dateFilter` is set**
+  (calendar-view.ts:140-156, called from `isYearDisabled`, calendar.directive.ts:566-568).
+  The year grid recomputes 24 cells; a filter that rejects a whole year costs 366 calls
+  per cell, so ~8.8k `dateFilter` invocations for one `yearCells()` recompute — and that
+  recomputes on any input change. The JSDoc at calendar-view.ts:130-139 owns the trade-off
+  honestly; a memo keyed on the filter identity would still be worth having.
+- **Comment volume sits well outside the AGENTS.md allowlist.** `calendar.directive.ts`,
+  `calendar-selection.ts`, `calendar.component.html` and both stylesheets carry a lot of
+  narration that is neither an ordering constraint, an unexpressible invariant, a
+  workaround, nor public-API JSDoc — e.g. calendar.directive.ts:56-58 (migration/rationale
+  narration on an `export`), :399-400, calendar-selection.ts:70, :105-107,
+  calendar.component.html:1-2, :56-57, :63-65, calendar.component.css:26-29, :126-127,
+  :133-134, :193-195. Some are genuinely load-bearing (the `transitionParity` NG0956 note
+  at calendar.directive.ts:277-283, and the "two cells for one date" note at
+  calendar.component.html:129-130), but most restate the code below them.
+
+## Spec coverage
+
+**Very well covered** — this is one of the better-tested domains in the lib.
+
+- `calendar/headless/calendar.directive.spec.ts` (1002 lines, ~60 cases) covers single/
+  range/multiple selection, hover preview, keyboard roving in all three views, min/max +
+  filter, nav guards, `startAt`, view drilling, coarse-cell disabling, range strategies,
+  comparison ranges, multi-month spans (seam banding, one roving target, span shifting),
+  week numbers, all three precisions and `dateClass`.
+- `time-picker/headless/time-picker.directive.spec.ts` (431 lines) covers column derivation
+  per format, held picks incl. the AM/PM rule, off-step retention, 12-hour mapping, arrows/
+  typeahead/edges, bounds + filter disabling, the "finer parts move" rule and the half-day
+  hour walk. `time-picker-range.directive.spec.ts` (255) covers the side switch, the
+  one-time hop, the band in all columns and the side-aware filter.
+- All four internals modules have focused unit specs
+  (`calendar-month`, `calendar-view`, `calendar-keyboard`, `time-availability`,
+  `time-format`), and `calendar-range-strategy.spec.ts` covers the three strategies.
+
+**Files with real logic and no tests:**
+
+- `calendar/calendar-header.directive.ts` — the `ngTemplateContextGuard` and template
+  plumbing are exercised only indirectly by `calendar.component.spec.ts:48`.
+- `calendar/headless/calendar-grid.directive.ts` — `handleFocusOut`'s `queueMicrotask`
+  settle (the whole reason `focusIsInside` exists) is never asserted; nor is
+  `pointerleave` clearing `hoveredDate`, nor either `RuntimeError` guard
+  (`GRID_OUTSIDE_CALENDAR` / `CELL_OUTSIDE_CALENDAR`, or `ET3020`/`ET3021` on the time
+  picker side).
+- `time-picker/headless/time-picker-column.directive.ts` — `scrollOptionIntoView`'s
+  auto-then-smooth behaviour, and the typeahead reset on focus-out, are untested.
+- `calendar/calendar-labels.ts` / `time-picker/time-picker-labels.ts` — no test that
+  `provideCalendarLabels`/`provideTimePickerLabels` actually reach
+  `resolvedPreviousLabel()`/`resolvedHoursLabel()`, or that a partial override keeps the
+  rest of the defaults.
+- Neither component spec asserts any ARIA structure. `calendar.component.spec.ts` checks
+  `role="rowheader"` on one element (line 78) and nothing else — which is why the broken
+  `grid` → `rowgroup` ownership (High #3) went unnoticed.
+
+**Specs that encode a wrong behaviour:** none assert something false, but two are one
+assertion short of the High findings:
+
+- `calendar.directive.spec.ts:485` ("snaps a pick to its whole week, and previews the week
+  under the pointer") dispatches `pointerenter` *before* reading the band, so it cannot
+  distinguish "bands on hover" from "bands always". Its own comment — "the whole
+  Monday-13th week bands before anything is picked at all" — is accidentally describing
+  High #1.
+- `calendar.directive.spec.ts:862` asserts `calendar.canZoomOut()` is `false` at year
+  precision, which is true of the directive; nothing asserts that the **component** acts
+  on it, and it does not (High #4).
+
+**Missing test infrastructure:** there is no calendar or time-picker driver, while
+`libs/components/src/lib/forms/testing/` ships drivers for rating, slider, dropzone etc.
+Both domains' specs re-implement the same helpers by hand (`cellFor`, `focusedCell`,
+`optionButton`, `labelsWith`, a `keydown` dispatcher) in four separate files.
+
+Clean: verified sound — `generateMonthGrid` (six-week spill, week-start handling),
+`multiYearPageStart`/`multiYearPageInterval`/`isInMultiYearPage` page tiling and its `min`
+anchoring, `clampCalendarView`, `startOfCalendarUnit` + `CALENDAR_UNIT_IS_SAME` precision
+normalization, `createCalendarSelectionReader`'s single implementation across all three
+grids (incl. the either-way-round comparison interval and the `single`-band rule),
+`resolveCalendarKeyboardDate` for all three views against the documented key table
+(checked row by row against `calendar.md:193-201` — every cell matches),
+`adjacentUnit`/`canGoPrev`/`canGoNext` incl. stepping from the right end of a multi-month
+span, `moveFocus`'s minimal span shift, `toggleMultiple`'s immutable ascending updates,
+`deriveTimeFormatSpec`'s probe-date approach (correct for localized `p`/`pp`),
+`getTimeParts`/`toHour24`/`candidateFor` hour-cycle round-tripping,
+`findSelectableTime`/`hasSelectableTime` fixed-vs-open column semantics, `nextEnabledIndex`
+wrapping and its fully-disabled-column bail-out, `sides()`'s bare `sideFormat` derivation
+(which is what lets the date-time range input pass `Pp`), the held-parts state machine
+including the AM/PM exception, and both label systems' `defineLabels` wiring. Both
+stylesheets are correctly wrapped in `@layer components`, use `:where()` for config
+modifiers while leaving `:hover`/`:focus-visible`/`:active` bare, carry
+`prefers-reduced-motion` handling (calendar) and `@media (hover: hover)` guards, and use
+no Tailwind and no hardcoded colour as a primary value (the two literals present —
+`rgb(255 255 255 / 0.08)` at time-picker.component.css:129 and the `currentColor`
+fallbacks — are `var()` fallbacks, which AGENTS.md permits). Tailwind appears only in the
+two `stories/` components, as allowed. State is signals throughout with no
+subscribe-and-assign anywhere; the only RxJS in either domain is the typeahead's `timer`,
+which is torn down via `destroyRef.onDestroy` (time-picker-column.directive.ts:40).
+
+---
+
+## Improvements
+
+### Features (ranked)
+
+- **A `disabled`/`readonly` input on both headless directives.** Today "disabled belongs
+  to the hosting control" (`time-picker.md:174`) and there is no way to freeze a bare
+  `<et-calendar>` or `<et-time-picker>` — every consumer that wants a read-only summary
+  view has to wrap it in a `pointer-events: none` div and lose keyboard blocking. Material,
+  PrimeNG and Ark all ship this on the inline component.
+- **`min`/`max` awareness for the time picker's initial anchor.** `anchorTime`
+  (time-picker.directive.ts:252-277) snaps "now" to the steps but never to the bounds, so
+  an opening-hours picker opened at 07:00 lands the roving focus and the initial scroll on
+  a disabled `07`. Clamping the anchor into the first selectable time would make the column
+  open where the reader can actually pick.
+- **A `dateClass`-equivalent for time options.** The calendar has a per-cell class hook
+  (`CalendarDateClassFn`) that lets an app mark busy days; the time picker has nothing, so
+  "this slot is half-booked" has to be expressed as `timeFilter` (all or nothing). A
+  `timeClass: (date, unit) => …` mirroring the calendar's shape would close the gap.
+- **`maxSelections` for `mode="multiple"`.** `toggleMultiple`
+  (calendar.directive.ts:772-784) has no cap, so "pick up to 3 dates" needs the consumer to
+  intercept `multipleValueChange` and roll back — which fights the `model()`. A cap plus a
+  `selectionLimitReached` output is what PrimeNG's multiple-date calendar exposes.
+- **A comparison-range legend/`aria-describedby` hook.** `calendar.md:181` admits the
+  comparison band "is visual: pair it with a legend if the comparison needs naming" —
+  which means the SDK ships a presentation-only feature with a known a11y hole. A
+  `comparisonLabel` input folded into the affected cells' `aria-label` ("July 3, also in
+  the comparison period") would close it inside the component.
+
+### DX (ranked)
+
+- **Ship calendar and time-picker test drivers under a `testing/` entry, like the forms
+  domain does.** Four spec files independently re-implement `cellFor`, `focusedCell`,
+  `optionButton(unit, value)`, `labelsWith(unit, attr)` and a `keydown` helper. A
+  `calendarDriver(fixture)` / `timePickerDriver(fixture)` exposing `cell(day)`,
+  `focusedCell()`, `bandedCells()`, `column(unit)`, `option(unit, value)`, `press(key)`
+  would delete ~150 lines of duplicated harness and make the missing ARIA assertions cheap
+  to add.
+- **Clamp the numeric inputs and say so.** `minuteStep`/`secondStep`
+  (time-picker.directive.ts:130-131) should use the same
+  `Math.max(1, Math.trunc(numberAttribute(value, 1)))` transform `monthsShown` already has
+  (calendar.directive.ts:161) — one shared `positiveIntegerAttribute` helper would make the
+  three consistent and kill the High finding above. Same for `createFixedLengthRangeStrategy`,
+  which already does clamp (`Math.max(1, Math.trunc(options.days))`) — the pattern exists,
+  it is just not applied uniformly.
+- **`resolveCalendarKeyboardDate`'s `view`/`multiYearPageStart` should not be optional.**
+  Their optionality (calendar-keyboard.ts:12-16) exists only for the day-grid default, and
+  it silently degrades `Home`/`End` to `null` in the year grid when `multiYearPageStart` is
+  forgotten — a case the spec has to test for (`calendar-keyboard.spec.ts:94`, "has nowhere
+  to send Home/End without a page"). A discriminated options union per view would make the
+  omission a type error.
+- **Name the coarse-grid label strings for what they do.** `switchToMonthView`
+  (`'Choose date'`) is the string the header shows when returning to *whatever the finest
+  grid is*, which at month precision is the month grid — so the label is wrong for two of
+  the three precisions. Splitting it into `switchToSelectionView` per precision (or letting
+  the component pass `precision` into the label lookup) fixes both the year-precision
+  dead-end name and the month-precision mislabel in one change.
+- **The structural `RuntimeError`s fire in `afterNextRender`, one per element.** A grid with
+  35 misplaced cells throws 35 times, and the first throw happens after render rather than
+  at construction, so the stack points at Angular's render hooks rather than the template.
+  Hoisting the check to the constructor (where the optional `inject` result is already
+  known) would report once, earlier, with a usable stack.
+
+### Bundle size (ranked)
+
+- **Split the calendar's coarse-grid CSS into a styles-only component.** `calendar.component.css`
+  is 508 lines and its `.et-calendar-cell--coarse` / `.et-calendar-coarse-row` /
+  `[data-view='year'|'multiYear']` rules (lines 196-212, 419-438) only matter once a reader
+  drills out — which for a `precision="day"` picker may be never. Per the "Splitting a large
+  stylesheet" section of AGENTS.md, mounting a `CalendarCoarseGridStylesComponent` from an
+  `effect` when `view() !== selectionView()` first becomes true is the same on-demand trick
+  the table's detail-row animation already uses.
+- **The comparison-range and week-number CSS are opt-in features carrying no reference.**
+  `[data-comparison-band]` (calendar.component.css:304-337) is dead for every calendar
+  without `comparisonStart`, and `--_et-calendar-week-column` / `.et-calendar-week-number*`
+  (`:154-173`, `:251-263`) for every calendar without `weekNumbers`. Both are natural
+  styles-only components referenced from the feature that needs them, which also removes
+  them from the bundle of an app that never imports the feature.
+- **`CalendarDirective` imports 22 date-fns functions eagerly** (calendar.directive.ts:2-23)
+  and drags four internals modules with it, so the headless tier is not meaningfully lighter
+  than the component. `isSameMonth`/`isSameYear`/`isSameDay` are also re-imported by
+  `calendar-view.ts` and `calendar-selection.ts`; date-fns is tree-shakeable per function so
+  this is mostly fine, but `getWeek` (calendar.directive.ts:9) pulls the locale-aware week
+  machinery in for **every** calendar even though only the `weekNumbers` opt-in reads
+  `weekNumbers()`/`monthPages()[].weekNumbers` — computing it lazily behind the same feature
+  reference would drop it from the default path.
+- **`et-time-picker` pulls `ScrollbarComponent` in eagerly** (time-picker.component.ts:10)
+  for a decoration on a 240px column. If the scrollbar is heavier than the picker's own
+  chrome, an `@defer (on interaction)` or a `showScrollbar` input defaulting to the native
+  bar would keep the picker cheap for consumers who never look at it.
+- **`nextEnabledIndex` / half-day walking / `findSelectableTime` are three near-identical
+  "walk until selectable" loops** across `time-picker.directive.ts:92-102`, `:681-687` and
+  `internals/time-availability.ts:63-83`. One `firstWhere(values, predicate)` primitive
+  would collapse them and is the kind of duplication the calendar's own
+  `hasSelectableDayIn` docs (calendar-view.ts:130-139) already point at as the mirrored
+  case.
+
+### UI/UX (ranked)
+
+- **The time picker's columns have no way to reach each other by keyboard.**
+  `TimePickerColumnDirective.handleKeydown` (time-picker-column.directive.ts:55-90) handles
+  only Up/Down/Home/End and typeahead — Left/Right do nothing, so moving from hours to
+  minutes needs Tab, which in an overlay competes with the focus trap's own Tab handling.
+  Every multi-listbox time picker (Material's, Ark's) wires Left/Right between columns;
+  `time-picker.md:85-89` documents the current table honestly, which makes the gap visible.
+- **A range calendar shows no way back to a half-built state.** Once `rangeValue.end` is
+  set, the only way to re-open the range is a third pick that restarts it — there is no
+  "clear" and no way to nudge just one end. `hoveredDate` is nulled on completion
+  (calendar.directive.ts:762-764) but nothing tells the reader the range is closed. An
+  `activeRangeEnd` model mirroring the time picker's `activeSide` would make the calendar
+  and time picker behave the same way in the date-time range input, where they currently
+  do not.
+- **The leaving grid stays tab-reachable for 140ms.** `.et-calendar-weeks--leave` gets
+  `pointer-events: none` (calendar.component.css:235-238) but its previously-focused cell
+  still carries `tabindex="0"`, so a fast Tab during the crossfade can land on a cell of
+  the month the reader just left. `inert` on the leaving element (or `tabindex="-1"` in the
+  leave class's JS counterpart) would close it.
+- **Nothing scrolls the calendar's focused cell into view.** The time picker centres its
+  focused option (time-picker-column.directive.ts:118-127); the calendar's cell effect only
+  calls `.focus()` (calendar-cell.directive.ts:68-72). In a short bottom sheet where the
+  six-week grid overflows, keyboard navigation can move focus off-screen.
+- **No empty/loading affordance on either component.** A calendar whose `dateFilter`
+  rejects the entire visible month renders 35 struck-through cells with no explanation, and
+  a fully-bounded-out time column renders 12 dimmed rows. A `noSelectableDates` slot (the
+  `empty-state` domain already exists in this lib) would say why.
+- **`user-select: none` on both hosts** (calendar.component.css:18,
+  time-picker.component.css:23) also blocks copying the header label or a time — a small
+  loss, and `user-select: none` scoped to the cells/options would keep the chrome
+  selectable.
+
+### Testing (ranked)
+
+- **Assert the ARIA tree in both component specs, first.** One test per component walking
+  `role="grid"` → `rowgroup` → `row` → `gridcell` (and `listbox` → `option`) and asserting
+  parent-child ownership plus a uniform cell count per row would have caught High #3 and
+  the multi-month uneven-row Medium, and would guard `calendar.md:250`'s promise.
+- **Add a "nothing has happened yet" test per range strategy.** Reading `[data-band]` /
+  `[data-preview]` immediately after `detectChanges()`, before any pointer or key event, is
+  the whole of High #1 and is two lines.
+- **Test the numeric input edges.** `minuteStep`/`secondStep` at `0`, `-1`, `''` and `61`,
+  and `monthsShown` at `0`/`-1`/`2.7`, are all currently untested; the step cases are a
+  crash and a silently keyboard-dead column.
+- **Test the label providers.** Neither domain has a spec that
+  `provideCalendarLabels({ previousMonth: 'X' })` reaches the rendered `aria-label`, or that
+  a partial override keeps the other nine defaults — the documented contract of
+  `defineLabels` in `apps/docs/components/localization.md`.
+- **Test the focus-out microtask settle.** `CalendarGridDirective.handleFocusOut` and
+  `TimePickerColumnDirective.handleFocusOut` both exist purely to survive a cell/option
+  being removed mid-interaction; neither path has a test, so the roving-focus pull could
+  regress into "steals focus from outside the grid" without a failure.
+- **Test the day-boundary behaviour.** Freezing time with `vi.setSystemTime`, constructing a
+  calendar, advancing past midnight and asserting `aria-current="date"` would pin the
+  stale-`today` Medium — and note the repo's own memory that `vi.useFakeTimers()` never
+  fakes `window.setTimeout`, so a rAF/timer-based fix would need the bare global.
+
+---
+
+## form-field / input / textarea / masked-input / form / description
+
+Scope reviewed: every non-spec `.ts` / `.html` / `.css` under
+`libs/components/src/lib/forms/{form-field,input,textarea,masked-input,form,description}`, all 18
+spec files in those folders, plus `apps/docs/components/{forms.md,text-inputs.md}` and the
+`localization.md` / `mixed-state.md` / `description-list.md` rows that touch them.
+
+Runtime verification was done with a scratch spec at
+`libs/components/src/lib/forms/form-field/__scan-verify.spec.ts`, run with
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts <path>`
+(note: the config path must be **relative** to `--root`, the absolute form fails). The file has
+been deleted; no source file was modified.
+
+---
+
+### High
+
+- **`[warnings]` is documented as a general control input, but `et-input` is the only control in the
+  whole forms library that exposes it — on every other control the binding is a hard NG0303 error.**
+  `apps/docs/components/forms.md:391-400` presents it as the escape hatch for an unbound control
+  ("A control that is **not** bound to a signal-forms field ... takes its advisories directly -
+  `[warnings]` accepts the same shapes a `warn()` rule may return"), and
+  `forms.md:387-389` says the controls with their own support region "show warnings in the same
+  place, from the same rule". The input is declared once, on the shared base
+  (`form-field/headless/text-field-control.directive.ts:52`), and read by the field at
+  `form-field/headless/form-field.directive.ts:87`. But a `hostDirectives` entry only exposes the
+  inputs it lists, and `'warnings'` appears in exactly one list — `input/input.component.ts:27`.
+  It is absent from `input/number-input.component.ts:43-65`,
+  `input/password-input.component.ts:29-48`, `textarea/textarea.component.ts:13-36`,
+  and `color-input/color-input.component.ts`; and no other control directive in the lib declares a
+  `warnings` member at all (`grep -rn "warnings = input" libs/components/src/lib/forms` returns
+  nothing outside `text-field-control.directive.ts`).
+  **Verified at runtime.** Four hosts, one per control, each binding `[warnings]="'careful'"`:
+  ```
+  INPUT warning text: careful
+  et-textarea       [warnings] -> THREW / NG0303: Can't bind to 'warnings' since it isn't a known property of 'et-textarea'
+  et-number-input   [warnings] -> NG0303: Can't bind to 'warnings' since it isn't a known property of 'et-number-input'
+  et-password-input [warnings] -> NG0303: Can't bind to 'warnings' since it isn't a known property of 'et-password-input'
+  ```
+  Consumer failure: `<et-textarea [(value)]="x" [warnings]="advice()">` — copied from the doc
+  example one control over — fails template type-check at build. The headless form
+  (`<textarea etTextarea [warnings]="…">`) works, because the directive input is reachable
+  directly; only the wrapper components drop it.
+
+### Medium
+
+- **A warning message and the character counter keep the frame's inline padding in an
+  `underline` + `transparent` field, while the error and the hint are reset to flush — the support
+  row is visibly misaligned depending on which message is showing.**
+  `form-field/form-field-text-shell-styles.component.css:315-324` resets
+  `padding-inline-start: 0` for `.et-form-field-errors` and `.et-form-field-hint` only.
+  `.et-form-field-warnings` sets the same padding at
+  `form-field/form-field.component.css:408-410` and is not in that list, and
+  `.et-form-field-support-counter` sets `padding-inline-end` at
+  `form-field/counter.component.css:5` and is not either. Concrete result on
+  `<et-form-field appearance="underline">` at `size="md"`: the frame's `padding-inline` is 0, the
+  error text starts at x=0, and a `warn()` message on the same field starts at x=13px — the two
+  messages occupy the same slot and jump sideways as they swap. The counter sits 13px in from the
+  underline's end for the same reason. **Code-verified only** (needs real CSS cascade + layout;
+  jsdom drops these sheets whole — see the `vite.config.mts` `onConsoleLog` note).
+
+- **Two components in this scope put their inline `styles` outside `@layer components`, so a
+  consumer's Tailwind utility cannot override them.** `description/description.component.ts:10-16`
+  and `form-field/headless/label.directive.ts:23-43` both open with a bare selector. AGENTS.md
+  ("Component styling") requires the whole file inside one `@layer components` block precisely
+  because unlayered component CSS beats `@layer utilities` regardless of specificity. Every other
+  inline-`styles` component in the lib does wrap it — `tabs/tabs/tab-group.component.ts`,
+  `scrollable/headless/scrollable-masks.component.ts`,
+  `breadcrumb/breadcrumb-outlet.component.ts` all start `styles: \`\n @layer components {`.
+  Consumer failure: `<et-description class="text-base">` renders at
+  `--et-description-font-size` (12px) and `<et-label class="text-blue-500">` keeps the muted
+  label colour, because `et-description { font-size: … }` / `et-label { display: inline }` win the
+  layer comparison before specificity is even consulted. **Code-verified only** (layer precedence
+  is not observable in jsdom).
+
+- **`createCurrencyMask({ allowNegative: true })` cannot accept a minus typed into an empty field —
+  the natural way to enter a negative amount is silently erased.**
+  `masked-input/masks/currency-mask.ts:64-68`: with no digits yet, `normalized` is `''` and `toRaw`
+  returns `''` *before* the `negative` flag is applied, so the sign is dropped. The mask then
+  repaints the element from that empty raw. **Verified at runtime** through the real engine
+  (`applyMaskEdit`):
+  ```
+  typed "-":                 {"raw":"","display":"","caret":0}
+  then "5":                  {"raw":"5","display":"5","caret":1}
+  "-" before an existing 5:  {"raw":"-5","display":"-5","caret":0}
+  ```
+  So `allowNegative` only works if the user types the digits first and then goes back to insert the
+  sign. `text-inputs.md:324` documents `allowNegative` with no such caveat.
+
+- **The field's `aria-describedby` targets are built verbatim from the consumer-supplied `name`, so
+  two unbound controls that share a `name` on one page produce duplicate DOM ids and the second
+  control describes the first field's message.** `form-field/headless/form-field.directive.ts:54-73`
+  builds `et-form-field-error-${name}` / `-hint-` / `-warning-` and only falls back to the
+  unique `FALLBACK_ID` when `name` is empty. Realistic case: the same `<et-input name="search"
+  [(value)]="…">` rendered in a toolbar and in a modal — both fields emit
+  `id="et-form-field-error-search"`, and `aria-describedby` resolves to the first in document
+  order.
+  **Verified at runtime that signal-forms-bound controls are safe** — signal forms generates
+  globally unique names, so the bound path never collides:
+  ```
+  control names:      [ 'a.form0.email', 'a.form1.email' ]
+  aria-describedby:   [ 'et-form-field-error-a.form0.email', 'et-form-field-error-a.form1.email' ]
+  error ids / text:   [ '…form0.email => Create email required', '…form1.email => Edit email required' ]
+  ```
+  The exposure is limited to hand-set `name`s. Appending the `FALLBACK_ID` unconditionally would
+  close it. (Side note from the same output: those generated ids contain `.`, so they are valid
+  HTML ids but not usable in an unescaped CSS/`querySelector` id selector.)
+
+- **The counter's screen-reader announcements are hardcoded English, outside the label-token system
+  the rest of the library uses.** `form-field/counter.component.ts:106-114` emits
+  `` `${current - max} characters over the limit of ${max}` ``,
+  `` `Character limit of ${max} reached` `` and `` `${max - current} characters remaining` `` into
+  the `aria-live` region. `FORM_FIELD_LABELS` right next door
+  (`form-field/form-field-labels.ts:11-25`) exists exactly for "the strings every form control
+  shows" and carries `mixed` / `clear` / `selectAll`; `apps/docs/components/localization.md:104-135`
+  presents its table as "Every token". A German app localizes every other string the field emits
+  and still announces English here. They are also pluralization-naive ("1 characters remaining").
+
+- **A support-state swap that happens while the field is inside a `display: none` container never
+  clears `leavingState`, leaving a stale hidden message node in the DOM for the field's lifetime.**
+  `form-field/headless/support-presentation.ts:102-128` only drops the leaving state on
+  `animatable.animationEnd$`, and `libs/core/src/lib/animations/animatable.directive.ts:93-117`
+  only emits that after an `animationstart`/`transitionrun` was actually seen (`didEmitStart`).
+  A `display: none` subtree runs no transitions. So a field in a collapsed accordion or an inactive
+  tab whose error clears to a hint ends up with `renderedState: 'hint'` **and**
+  `leavingState: 'error'` permanently: `shouldRenderError()` and `shouldRenderHint()` are both true
+  (`form-field/form-field.component.ts:241-266`), and the error div stays rendered at
+  `opacity: 0; position: absolute` (`form-field.component.css:374-388`) holding on to
+  `renderedErrors`. Cosmetically invisible, but the node and the errors it pins never go away, and
+  the same reducer is shared by `injectFormSupport` (`form-field/headless/form-support.ts:139-145`)
+  so every control with its own support region inherits it. The narrower version of the same gap:
+  `createCanAnimateSignal()` (`libs/core/src/lib/signals/render-utils.ts`) only flips true on the
+  next frame, so a swap in the very first frame after creation also has no transition to end on.
+  **Code-verified only** — jsdom runs no CSS transitions at all, so this cannot be distinguished
+  from normal test behaviour there.
+
+### Low
+
+- **`FORM_FIELD_CONTROL_TYPES.RADIO` and `.SEGMENTED_BUTTON` are dead entries.**
+  `form-field/headless/form-field.tokens.ts:15,17`. No control in the lib ever sets them —
+  `grep -rn "controlType = signal"` shows radio groups and segmented button groups both register as
+  `SELECTION_LIST` (`selection-list/headless/selection-list.directive.ts:79`). They widen the public
+  `FormFieldControlType` union with values a consumer can never observe on `data-control-type`.
+  Separately, the `usesTextFieldShell` list itself
+  (`form-field/headless/form-field.directive.ts:136-155`) **is consistent** with the shipped
+  controls: all 17 shell types are claimed by a real control, and the 10 non-shell types
+  (checkbox, switch, selection-list, rating, slider, range-slider, otp-input, dropzone, plus the
+  two dead ones) are correctly excluded. Every shell type also reaches
+  `mountTextFieldShellStyles()` — via `TextFieldControlDirective` (text/number/password/color/
+  textarea), `DatePickerInputDirective` / `DateRangePickerInputDirective` (the seven date/time
+  types), or its own constructor (select, cascader, tag, phone, rich-text, duration).
+
+- **`FormFieldControl.effectiveDisabled` is declared and read but never implemented.**
+  Declared at `form-field/headless/form-field.tokens.ts:52`, read as the preferred branch at
+  `form-field/headless/label.directive.ts:51-56`. No control defines it — the only
+  `effectiveDisabled` in the lib is `selection-list/headless/selection-option.directive.ts:57`,
+  which is not a registered `FormFieldControl` (it feeds its value in as plain `disabled` at
+  line 78). The first `??` branch is unreachable.
+
+- **`control-suffix.directive.spec.ts:26` describes its fixture as "the phone input's shape: the
+  control registers outside the barrier, the suffix template inside" — the real phone input does the
+  opposite.** `phone-input/phone-input.component.html`: the `etFormFieldBarrier` div opens at line 2
+  and closes at line 57; the `ng-template etControlSuffix` is at line 61, outside it — which is what
+  `partials/form-field-barrier.directive.ts:9-10` says it must be ("never on the outer control:
+  that control's own template still has to reach the field"). The assertion itself is a valid
+  negative test of the barrier; only the comment is wrong, and AGENTS.md requires fixing a comment
+  a change made wrong rather than leaving it.
+
+- **`.et-input-clear` has no `:focus-visible` treatment while its sibling `.et-input-picker-trigger`
+  does.** `form-field/form-field-control-suffix-styles.component.css:2-40` vs `:76-80`. The clear
+  button never sets `outline: none`, so it falls back to the UA ring rather than the library's
+  `2px solid var(--et-theme-color-primary-solid)` — an inconsistent keyboard indicator on two
+  buttons that sit next to each other in the same suffix stack.
+
+- **Three tokens are live in this scope's CSS but absent from the docs' theming tables.**
+  `--et-form-field-support-gap` (`form-field/form-field.component.css:353`, no `@property`
+  declaration either), `--et-form-field-counter-over-limit-font-weight`
+  (`form-field/counter.component.css:25`) and `--et-description-font-size`
+  (`description/description.component.ts:13`). `forms.md:661` lists all 17 declared
+  `--et-form-field-*` `@property` tokens correctly, so these three are the only gaps.
+
+- **`LabelDirective` is a `@Component` living in `label.directive.ts`, and it is the only registrant
+  that writes the parent's signal directly instead of going through a `registerX` method.**
+  `form-field/headless/label.directive.ts:59` does `this.formField?.registeredLabel.set(this)`,
+  while hint (`hint.component.ts:15`), counter (`counter.component.ts:118`), control
+  (`text-field-control.directive.ts:113`) and control-suffix
+  (`partials/control-suffix.directive.ts:26`, via `registerSingleton`) all call a method.
+  `FormFieldDirectiveBase` correspondingly has `unregisterLabel` but no `registerLabel`
+  (`form-field.tokens.ts:129`). It also skips the `registerSingleton` guard that every other
+  registrant gets, so a label replaced in place has no protection against the outgoing instance
+  nulling the newcomer.
+
+- **Docs: `FORM_FIELD_IMPORTS` is listed without `[etFormField]`.** `forms.md:45` names
+  `et-form-field`, `et-label`, `et-hint`, `et-counter`, `etInputPrefix`/`etInputSuffix`; the array
+  also exports `FormFieldDirective` (`form-field/form-field.imports.ts:9`), which is what a control
+  rendering its own support region needs.
+
+- **Docs: `description-list.md:3` calls `et-description` "a single hint/help line under an input" —
+  inside an `et-form-field` it is not.** The field's template has no `select="et-description"` slot,
+  so an `<et-description>` falls to the catch-all `<ng-content />`
+  (`form-field/form-field.component.html:17`) and renders *inside the control frame*, next to the
+  input. `et-hint` is the hint. `choice-inputs.md:100,180` documents the real use (a secondary line
+  in a checkbox/radio option) correctly; only that one sentence is misleading.
+
+- **Docs: `forms.md:236` ("others fall back to an explicit `[max]`") implies a counter is usable
+  outside `et-form-field`; it is not.** None of the controls with their own support region project
+  an `et-counter` slot (`grep -rn "et-counter" choice-field dropzone otp-input rating slider
+  selection-list` is empty), and `form-field/headless/form-support.ts:72-77` — unlike the field's
+  own `shouldRenderSupport` (`form-field.component.ts:229-239`) — does not consider
+  `registeredCounter()`, so the region would not open for a counter even if one were projected.
+
+- **`ControlSuffixDirective` and `FormFieldBarrierDirective` are public exports in no imports array
+  and in no doc page.** `form-field/partials/index.ts` re-exports both, `FORM_FIELD_IMPORTS`
+  contains neither, and neither appears in `apps/docs`. They are control-authoring API (used by the
+  password input, phone input, select, cascader, date pickers), which is a legitimate reason to omit
+  them from `FORM_FIELD_IMPORTS` — but `forms.md`'s "One suffix stack" section describes the
+  behaviour without ever naming the directive that produces it, so an app writing its own control
+  has no documented way in.
+
+- **`counter-storybook.component.ts` binds `bioForm.tagline` to two different controls**
+  (lines 31 and 54), so one signal-forms field has two `formFieldBindings()`. Harmless in the story,
+  but it is the shape that makes `focusFirstInvalidField`'s DOM-order tie-break
+  (`form/focus-first-invalid-field.spec.ts:105`) ambiguous, and it is the kind of thing copied out
+  of a story.
+
+- **`[etForm]` swallows nothing but reports nothing either when the submission action rejects.**
+  `form/form.directive.ts:52-61`: `from(submit(field))` with a `tap`-only pipe and a bare
+  `.subscribe()`. A `submission.action` that throws produces an unhandled RxJS error routed to the
+  global `ErrorHandler`, and `focusFirstInvalidField` never runs. `forms.md:555-575` documents the
+  happy path and the `mapViolationsToFormErrors` path but not this one.
+
+### Spec coverage
+
+**Well covered.** The headless layer is in good shape:
+`form-field/headless/form-field.directive.spec.ts` (registration, `describedBy` precedence,
+ET2200/ET2201 dev throws), `label.directive.spec.ts` (id, required marker),
+`field-warnings.spec.ts` (`warn()` accumulation, the error taking the slot back),
+`partials/control-suffix.directive.spec.ts` (projection into the suffix, ordering before the
+consumer suffix, in-place fallback, barrier), `form-error.component.spec.ts` (resolver
+precedence + fallback), `input/headless/input.directive.spec.ts` (aria forwarding, mixed commit
+semantics, mask interop), `number-input.directive.spec.ts` (448 lines — stepping, multipliers,
+clamping, precision), `password-input.directive.spec.ts`, `textarea.directive.spec.ts` (autosize
+hooks, both bounds, teardown), `masked-input`'s three engine/pattern/mask specs plus the directive
+spec, `form/focus-first-invalid-field.spec.ts` (DOM order, unrendered skip, reaching the native
+input inside the wrapper) and `form/form.directive.spec.ts`.
+
+**Files with real logic and zero tests:**
+
+- `form-field/headless/support-presentation.ts` — the severity/direction reducer
+  (`reduceSupportPresentation`, `occupyingState`, `SUPPORT_STATE_SEVERITY`) is ~110 lines of pure,
+  trivially testable branching shared by the field shell *and* every headless support region, and
+  nothing exercises it. `grep -rln reduceSupportPresentation --include='*.spec.ts'` is empty.
+  This is the highest-value gap in the batch.
+- `form-field/counter.component.ts` — `defaultLengthOf` (string / array / Set / Map / stringify),
+  `resolvedMax` precedence, the "explicit max compares, schema max reads the validation error"
+  split at lines 81-89, and the three announcement thresholds. No spec references `et-counter` or
+  `CounterComponent` anywhere in the lib.
+- `form-field/headless/form-support.ts` — the entire `injectFormSupport` provider (the
+  non-`et-form-field` support path for slider/rating/otp/dropzone/selection groups). Untested.
+- `form-field/form-warning.component.ts` — its sibling `form-error.component.ts` has a 4-test spec
+  for exactly the same resolver-vs-message logic; the warning copy has none.
+- `form-field/form-field.component.ts` — only two tests
+  (`form-field.component.spec.ts`: label projection into the label area, `data-disabled` from the
+  registered control). Untested: `effectiveErrors` synthesising the `etParseError` entry (the
+  behaviour `forms.md:315-318` promises), `isBusy`/`showBusySpinner`, `prefixOffset`,
+  `shouldRenderSupport` for a counter-only field, and the `isHidden` → `display: none` path.
+  I did verify the counter-only case at runtime and it works — `counter rendered: true
+  hidden: false text: "0 / 5"` — but nothing in the repo guards it, and it depends on the subtle
+  fact that content projected into an `@if`-ed `<ng-content>` is still instantiated.
+- `form-field/headless/anchored-panel-controller.ts` (253 lines) — no spec in this folder; it may be
+  exercised indirectly through the select/cascader/date-picker specs, which is worth confirming.
+
+**No spec asserts a wrong behaviour.** The one thing to fix is the misleading comment at
+`control-suffix.directive.spec.ts:26` (see Low). Note also that `lib/forms/testing/` ships drivers
+for `textarea`, `number-input` and `password-input` but **not** for plain `et-input`,
+`et-form-field` or the mask — the three most-used pieces in this scope have no harness.
+
+**Clean:** the suffix-stack ordering matches `forms.md:106-114` exactly (control affordance →
+consumer `[etInputSuffix]` → busy spinner, `form-field.component.html:21-35`); the transient-vs-
+persistent split matches `forms.md:119-140` (only `.et-input-clear` and
+`.et-form-field-busy-spinner` trigger the overlap/mask rules at
+`form-field.component.css:283-346`, so the picker trigger and the reveal toggle correctly keep
+their space, and `textAlign="end"`/`"center"` correctly reserve room without focus); the 0.78
+dimming correctly targets only projected affixes and the spinner (`form-field.component.css:212`),
+not a control's own buttons; `signalDeferredLoading`'s 200ms/300ms defaults
+(`libs/core/src/lib/signals/deferred-loading.ts:31-32`) match `forms.md:249`; the
+`sm`-underline 27px figure in `forms.md:166` checks out against
+`form-field-text-shell-styles.component.css:303-306` (12 × 1.5 + 4 × 2 + 1px border); the
+`0`/`9`/`a`/`*`/`\` pattern semantics, the `31.12.2024 → 00-00-0000` paste example and the
+`31-1_-____` guide example in `text-inputs.md:316-335` all trace correctly through
+`pattern-mask.ts`; the mixed-state contract is implemented identically in all four text controls
+(display masked, placeholder swapped, empty edit keeps the raw value, `data-mixed` on the host);
+no hardcoded colour is used as a primary value anywhere in scope (the one `black` is a mask alpha
+stop, deliberately); every `.css` file in scope is wrapped in `@layer components`; `takeUntilDestroyed`
+is last in every pipe (`support-presentation.ts:125`, `number-input.component.ts:145,229`,
+`form.directive.ts:59`); no subscribe-and-assign; SSR guards are in place
+(`supportsNativeAutosize` checks `typeof CSS`, `NumberInputComponent` injects `DOCUMENT`,
+`getComputedStyle` is only reached on the measurement path behind a non-zero width check); the
+number input's scrub cleans the document class up in a `finalize` and stops the repeat timer on a
+document-level `pointerup` even when `setPointerCapture` throws; and `et-form-field` correctly
+gates every shell-only `data-*` host binding on `usesTextFieldShell()`.
+
+---
+
+### Improvements
+
+#### Features (ranked)
+
+1. **Give `et-input` a `clearable` clear button.** Every machinery it needs already exists and is
+   already paid for: the `.et-input-clear` styles
+   (`form-field/form-field-control-suffix-styles.component.css:2-40`), the enter/leave keyframes,
+   the "takes no space" suffix-overlap and mask rules keyed on that exact class
+   (`form-field.component.css:283-346`), and `mountControlSuffixStyles()`. The date/time, phone,
+   select and cascader controls all have one; the plain text field — the classic home for a clear
+   affordance on a search or filter input — does not. It is a `<ng-template etControlSuffix>` and a
+   `value.set('')`.
+2. **Ship `isComplete` on the three mask factories, and Luhn/mod-97 validators next to them.**
+   `text-inputs.md:337-341` tells the reader to "wire `complete()` into schema validation to require
+   fully-filled masks", but `createCardMask`/`createIbanMask`/`createCurrencyMask`
+   (`masked-input/masks/*.ts`) define no `isComplete`, so `complete()` returns `null` for exactly
+   the three masks a consumer is most likely to want it for. A length-based `isComplete` for card
+   (13-19) and IBAN (15-34) is two lines each; a `luhn(path)` / `iban(path)` validator alongside
+   `hexColor`/`rgbColor` would complete the story the docs already tell.
+3. **A password strength meter component.** `PasswordInputDirective.strength`
+   (`input/headless/password-input.directive.ts:35`) is a 0-4 score and the docs say "render any
+   meter you like" (`text-inputs.md:153-156`). Material, PrimeNG and shadcn all ship the meter.
+   A small `et-password-strength` reading the directive through DI would remove the one piece of
+   boilerplate every consumer writes.
+4. **`et-form-field` `[hint]` / `[error]` string inputs.** Material's `hintLabel` covers the
+   overwhelmingly common single-line case without a projected element. Cheap: forward to a
+   synthesised `HintComponentBase` registration.
+5. **`Intl.PluralRules` in the counter announcement.** Once the strings move into
+   `FORM_FIELD_LABELS` (see the Medium finding) they should take the count as a parameter rather
+   than being interpolated, so "1 characters remaining" stops happening in every language.
+
+#### DX (ranked)
+
+1. **Stop hand-listing the base control's inputs in every `hostDirectives` entry.** This is the
+   direct cause of the High finding: `input.component.ts:13-34`, `number-input.component.ts:43-65`,
+   `password-input.component.ts:29-48` and `textarea.component.ts:13-36` each repeat ~20 input names
+   from `TextFieldControlDirective`, and one of them dropped `warnings` while the other three
+   dropped it *and* nobody noticed because there is no test that a wrapper exposes what its base
+   declares. Two fixes worth doing together: export a shared `const TEXT_FIELD_CONTROL_INPUTS = [
+   'value', 'mixed', 'touched', 'mixedLabel', 'disabled', 'readonly', 'hidden', 'invalid', 'errors',
+   'warnings', 'required', 'name', 'maxLength', 'pending', 'aria-label', 'aria-labelledby' ] as
+   const` next to the base directive and spread it (`inputs: [...TEXT_FIELD_CONTROL_INPUTS,
+   'placeholder', 'rows', …]`), and add one spec that asserts every wrapper's
+   `ɵcmp.inputs` is a superset of the base's declared inputs.
+2. **An `et-input` driver and an `et-form-field` driver in `lib/forms/testing/`.** The folder has 17
+   drivers including `textarea-driver.ts`, `number-input-driver.ts` and
+   `password-input-driver.ts` — but nothing for the plain text field or for the shell itself, so
+   every assertion about the support region, the suffix stack ordering or the busy spinner is
+   written by hand against raw class selectors (`.et-form-field-warnings`,
+   `.et-form-field-support-counter`) in each spec. A `formFieldDriver(fixture)` exposing
+   `errorText()`, `warningText()`, `hintText()`, `counterText()`, `suffixOrder()`, `isBusy()` would
+   pay for itself immediately given how thin `form-field.component.spec.ts` is.
+3. **Dev-mode validation of a `MaskSpec`.** `masked-input/headless/input-mask.types.ts:7-35`
+   documents three contracts the engine relies on — `toRaw` idempotent, `toDisplay(raw)` round-trips
+   through `toRaw`, `toDisplay('') === ''` — and nothing checks any of them. A custom mask that
+   breaks one produces caret jumping and value thrash that is very hard to trace back. A dev-only
+   `assertMaskSpec(spec)` in `InputMaskDirective`'s constructor, probing the three properties with a
+   couple of sample values, would turn that into an error code in the `ET32xx` range.
+4. **`createCurrencyMask` should reject its own documented-illegal options in dev mode.**
+   `masked-input/masks/currency-mask.ts:10-11` says `prefix`/`suffix` "must not contain digits or
+   the separators", and nothing enforces it; `groupSeparator === decimalSeparator` is likewise
+   unguarded and silently produces an unparseable display. Three `ngDevMode` throws.
+5. **`et-counter`'s `lengthOf` is `(value: unknown) => number`.** Every consumer override starts by
+   casting. Making `CounterComponent` generic over the value type, or at least accepting
+   `(value: never) => number` with a typed helper, would remove that.
+
+#### Bundle size (ranked)
+
+1. **Move the suffix-overlap / mask block out of the always-injected base sheet into the existing
+   `FormFieldControlSuffixStylesComponent`.** `form-field.component.css:281-346` (~65 lines,
+   including three `:has()` selectors and a `linear-gradient` mask) only ever matches when
+   `.et-input-clear` or `.et-form-field-busy-spinner` is present in the suffix. The styles-only
+   component that owns exactly those affordances already exists
+   (`form-field-control-suffix-styles.component.css`) and is mounted by the five controls that
+   produce them. An app with only `et-input`/`et-textarea` fields pays for this block today and can
+   never match it. Same argument, smaller: the counter's `.et-form-field-support-counter` rules are
+   already correctly on `counter.component.css`, which is the pattern to copy.
+2. **Split the warning branch of the support region into its own styles-only component.**
+   `.et-form-field-warnings` (`form-field.component.css:402-411`) plus the `--et-form-field-
+   warning-font-size` `@property` are dead weight for any app that never writes a `warn()` rule —
+   and the code already goes out of its way not to resolve the warning *theme* until one renders
+   (`form-field.component.ts:271-273`, with a comment saying so). Mount the sheet from the same
+   place, for the same reason.
+3. **`FormFieldTextShellStylesComponent` is 328 lines mounted by every text control, and roughly a
+   third of it serves one `labelMode`.** The `[data-label-mode='inline']` block (lines 72-111) and
+   the two `floating-*` blocks (lines 113-185) are mutually exclusive at runtime, and `labelMode` is
+   an input on the *field*, so the field could mount a per-mode sheet from an effect the way
+   `etTableVirtualScroll` mounts `TableVirtualScrollStylesComponent`. An app that uses only the
+   default `static` mode currently ships all four. Caveat worth designing around: the comments at
+   lines 46-48 (and in the textarea/rich-text sheets) explain that these use bare attribute
+   selectors precisely so injection order cannot lose a source-order tie against the base sheet —
+   splitting further multiplies that hazard, so the split should keep each mode's rules at strictly
+   higher specificity than the base rather than relying on order.
+4. **The four `syncFromNativeInput` implementations are byte-identical modulo the parse step.**
+   `input.directive.ts:98-108`, `password-input.directive.ts:73-83`,
+   `textarea.directive.ts:158-168` and `number-input.directive.ts:166-178` all run the same
+   mixed-commit dance. A `commitFromNative(element, parse)` helper on `TextFieldControlDirective`
+   would collapse them (and give the mixed-commit rule one place to be documented, per the
+   comment-policy "explain a pattern once" rule — the same 5-line comment is currently repeated
+   four times).
+
+#### UI/UX (ranked)
+
+1. **Give `.et-input-clear` the library's focus ring** (see Low). Two buttons side by side in the
+   same suffix with two different keyboard indicators is the kind of inconsistency a keyboard user
+   notices immediately.
+2. **The counter announces on every keystroke past 90% of the limit.** `counter.component.ts:114`
+   returns a new "N characters remaining" string for each character, and the live region is
+   `polite` — so the last 18 characters of a 180-char bio produce 18 queued announcements while the
+   user is still typing. Announcing at a few thresholds (90%, 100%, and then every N over) or
+   debouncing the region's text would make it usable; the visible count needs no change (it is
+   already `aria-hidden`).
+3. **The frame shows an I-beam around a control that cannot be typed into.**
+   `.et-form-field-control-frame { cursor: text }` (`form-field.component.css:188`) applies to
+   every shell type; `et-select` and `et-cascader` set `cursor: pointer` on their own element
+   (`select/select.component.css:25`, `cascader/cascader.component.css:18`), so the frame's padding
+   and affix gutters around them still read as a text field. `forms.md:189-193` hedges this as
+   "`text` / `pointer`", but a `[data-control-type]`-keyed cursor would match what the docs
+   actually promise ("Type here, **or** open this picker").
+4. **The textarea gives no signal that it has hit `maxRows`.** Past the bound the content simply
+   scrolls (`textarea-autosize-styles.component.css:13`) with no scrollbar affordance in the
+   library's own scrollbar treatment and no shadow/fade — the reader cannot tell there is more text
+   above. The `et-scrollbar` work already in flight in this repo is the natural fit.
+5. **The number input's stepper buttons are unreachable by keyboard** (`tabindex="-1"`,
+   `number-input.component.html:36,49`). Defensible — the arrow keys on the input do the same job
+   and are documented (`text-inputs.md:86-97`) — but it means the coarse/fine modifier vocabulary is
+   the *only* keyboard path, and a touch user who cannot type has no modifier. Worth a deliberate
+   decision rather than an omission.
+
+#### Testing (ranked)
+
+1. **`reduceSupportPresentation` first.** It is pure, it is ~110 lines of nested ternaries deciding
+   four transition directions from a severity table, it is shared by the field shell and eight other
+   controls, and it has zero tests. A table-driven spec over all 12 `from → to` state pairs
+   (including `none`) asserting `renderedState`, `leavingState`, the two `directions` entries and
+   whether `renderedErrors`/`renderedWarnings` are retained or cleared would be maybe 60 lines and
+   would lock down the most-shared logic in the batch.
+2. **`counter.component.ts`.** `defaultLengthOf` across string / array / `Set` / `Map` / number /
+   `null`; `resolvedMax` preferring `[max]` over the schema limit; the deliberate asymmetry at lines
+   81-89 (explicit `max` compares the measured length, schema `maxLength` reads the validation error
+   — the property the docs promise at `forms.md:232`, that the count can never turn red while the
+   field reports itself valid); and the three announcement thresholds.
+3. **A "wrapper exposes its base's inputs" spec.** One loop over
+   `[InputComponent, NumberInputComponent, PasswordInputComponent, TextareaComponent,
+   ColorInputComponent]` asserting each `ɵcmp.inputs` covers every input declared on
+   `TextFieldControlDirective`. This single test catches the High finding and every future
+   recurrence of it, and it is the cheapest test in this list.
+4. **`form-field.component.ts`'s parse-error synthesis.** `effectiveErrors`
+   (`form-field.component.ts:176-186`) turning a bare `parseError` into a rendered
+   `etParseError` message is the behaviour `forms.md:315-318` sells as "no more silent invalid
+   state", and nothing asserts it. A fake control with `parseError: () => true` and
+   `resolvedParseErrorMessage` is enough — no date library needed.
+5. **`injectFormSupport`.** A single host component using it (a stub control plus
+   `FormFieldDirective`) exercising error → warning → hint → none would cover the second consumer of
+   the reducer and the `provideColor.forceColor`/`clearForcedColor` effect at
+   `form-support.ts:157-171`.
+6. **Test infrastructure**: the `et-input` / `et-form-field` drivers from the DX section — the
+   support-region assertions in items 1, 2 and 4 above all want them.
+
+---
+
+## Batch 05 — selection controls
+
+Scope: `libs/components/src/lib/forms/{selection-list,choice-field,checkbox,switch,rating}` plus
+`forms/selection-card-{styles.component.ts,styles.component.css,types.ts}` and `forms/selection-card.spec.ts`.
+Docs: `apps/docs/components/choice-inputs.md`, `apps/docs/components/mixed-state.md`.
+
+Runtime verification used a scratch spec at
+`libs/components/src/lib/forms/selection-list/__scan-verify.spec.ts`, run with
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts <spec>`, and deleted
+afterwards. Working tree left unmodified.
+
+### High
+
+- **Clicking a selection group's `<et-label>` silently selects (radio/segmented) or toggles (checkbox)
+  the group's first option.** `SelectionListDirective.activate()`
+  (`libs/components/src/lib/forms/selection-list/headless/selection-list.directive.ts:115-125`) calls
+  `this.selection.select(firstItem)` before focusing it. `LabelDirective` fires `activate()` on every
+  click on the projected label (`libs/components/src/lib/forms/form-field/headless/label.directive.ts:21`
+  → `:63-65` → `form-field.directive.ts:278-279`). Because the group's `et-label` is the caption for the
+  *whole* group rather than for one option, a user who clicks the words "Favorite color" mutates the form
+  value with no visible relationship to what they clicked — and in a checkbox group a second click on the
+  caption toggles option one back off. Every sibling group-shaped control only focuses on activate:
+  `slider/headless/slider.directive.ts:146-148`, `rating/headless/rating.directive.ts:119-121`,
+  `select/headless/select.directive.ts:768-770`. **Runtime verified**: `et-radio-group` value went
+  `null → "red"`, `et-checkbox-group` value went `[] → ["a"]`, `et-segmented-button-group` value went
+  `null → "day"`, each from a single `label.click()`.
+
+- **The hint / error / warning under `et-checkbox-group`, `et-radio-group`,
+  `et-segmented-button-group` and `et-rating` is never announced — `aria-describedby` points at an id
+  that does not exist.** `FormFieldDirective` writes the control's `describedBy` to
+  `hintId()`/`errorId()`/`warningId()` (`form-field/headless/form-field.directive.ts:167-192`, ids built
+  at `:54-73`), and the group hosts reflect it (`selection-list.directive.ts:19`,
+  `rating/headless/rating.directive.ts:38`). But none of those four templates ever puts that id on the
+  support block: `selection-list/checkbox-group/checkbox-group.component.html:7-51`,
+  `selection-list/radio-group/radio-group.component.html:7-51`,
+  `selection-list/segmented-button-group/segmented-button-group.component.html:12-56`,
+  `rating/rating.component.html:51-95`. The only two templates that do are
+  `choice-field/choice-field.component.html:27,46,65` and `form-field/form-field.component.html:47,68,89`
+  — so this is an omission in four of six support regions, not a design choice.
+  **Runtime verified**: `et-radio-group` rendered `aria-describedby="et-form-field-hint-ff-3"` while the
+  hint div was `<div etanimatable class="… et-radio-group-hint" data-active="true">` with no `id`;
+  `document.querySelector('#et-form-field-hint-ff-3')` → `null`. Same for `et-checkbox-group`.
+  Consequence: a screen reader announces the radiogroup with no description at all, and an error message
+  the group is showing visually is never spoken.
+
+- **`<et-description>` inside an option reaches no assistive tech.**
+  `SelectionOptionDirective` deliberately pins `aria-labelledby` to the label span
+  (`selection-list/headless/selection-option.directive.ts:29-31`) so the description does not fold into
+  the accessible name — but nothing then wires it as a description: the option never sets
+  `aria-describedby`, and `forms/description/description.component.ts` emits no `id`. Because
+  `aria-labelledby` is present, name-from-contents is off, so the description text is dropped entirely
+  rather than merely being in the wrong slot. **Runtime verified** on `<et-radio value="team">Team
+  <et-description>Everything in Solo, plus shared workspaces.</et-description></et-radio>`:
+  `aria-labelledby="et-selection-option-label-0"`, `aria-describedby` → `null`, `et-description` has no
+  `id`. The docs advertise this as the way to give an option secondary text
+  (`apps/docs/components/choice-inputs.md:100`, and the card examples at `:180` and `:203`), so a
+  consumer following the guide ships options whose explanatory text is invisible to AT.
+
+- **`et-segmented-button` has no accessible name of its own — its `aria-labelledby` is a dangling
+  IDREF.** `SelectionOptionDirective` unconditionally binds `[attr.aria-labelledby]="labelId()"`
+  (`selection-option.directive.ts:31`), and `radio.component.html:4` /
+  `checkbox-option.component.html:14` render a span carrying that id. `SegmentedButtonComponent`'s inline
+  template is only `<div #background class="et-segmented-button-bg"></div><ng-content />`
+  (`selection-list/segmented-button-group/segmented-button.component.ts:8-11`) — no element ever carries
+  `optionDirective.labelId()`. **Runtime verified**: rendered
+  `<et-segmented-button … role="radio" aria-checked="false" aria-labelledby="et-selection-option-label-10"
+  tabindex="0"><div class="et-segmented-button-bg"></div>Day</et-segmented-button>` with no element
+  matching that id. The segment currently gets a name only because browsers fall back to
+  name-from-contents when an `aria-labelledby` resolves to nothing — the third `et-description`-folding
+  problem the `labelId` mechanism exists to prevent is simultaneously unsolved here, so projecting an
+  `et-description` into a segment would silently fold into its name.
+
+### Medium
+
+- **`[checked]` / `(checkedChange)` on an option inside a group is dead config.** All three option
+  components forward the directive's `checked` model as a public input
+  (`checkbox-group/checkbox-option.component.ts:23`, `radio-group/radio.component.ts:23`,
+  `segmented-button-group/segmented-button.component.ts:18`), but the group's value↔items effect
+  (`selection-list/headless/internals/selection-state.ts:100-138`) recomputes every item's `checked` from
+  the group `value` on registration and on every value change, so a consumer-supplied `[checked]` is
+  overwritten before it can take effect and no `valueChange` is emitted either. **Runtime verified**:
+  `<et-checkbox-option [checked]="true" value="a">` inside an `et-checkbox-group` bound to `[]` rendered
+  `aria-checked` `['false','false']` and left the group value `[]`.
+
+- **`choice-inputs.md` states the opposite of the code about `mixedLabel` on `et-rating`.**
+  `apps/docs/components/choice-inputs.md:325-329` says these controls express mixed "through ARIA/visual
+  masking only (**no `mixedLabel`**): `et-rating` masks its `aria-valuetext`". `et-rating` does take
+  `mixedLabel` (`rating/headless/rating.directive.ts:58`, forwarded at
+  `rating/rating.component.ts:47-58`) and uses it as the `aria-valuetext` while mixed
+  (`rating.directive.ts:31,104-112`) with a `FORM_FIELD_LABELS.mixed` fallback (`:75`).
+  `apps/docs/components/mixed-state.md:41` documents the real behaviour, so the two pages disagree and a
+  consumer reading the component's own guide will not know the input exists. It is also missing from the
+  rating input table at `choice-inputs.md:300-304`. Code-verified only (doc/text mismatch).
+
+- **The severity-direction half of the support state machine is dead for every group and for the rating,
+  and the leaving message has no exit animation.** `reduceSupportPresentation` computes a
+  `directions` record on every transition
+  (`form-field/headless/support-presentation.ts:170-186`), but `injectFormSupport` never returns it
+  (`form-field/headless/form-support.ts:173-196`) — only `form-field.component.ts:281,290,299` exposes
+  directions, from its own duplicate copy of the same state signal (`form-field.component.ts:152`). As a
+  result the four group/rating templates bind only `data-active` and never `data-state` /
+  `data-direction` (contrast `form-field.component.html:53-54,74-75,93-94`), and their stylesheets carry
+  no `[data-state='leaving']` rules — so `checkbox-group.component.css:145-155` declares
+  `transform: translateY(0)` in both the base rule and the `[data-active]` rule (a no-op pair), and the
+  outgoing message cross-fades in place instead of sliding out the way the reducer's severity ordering
+  intends. Same shape in `radio-group.component.css:137-147`,
+  `segmented-button-group.component.css:169-179`, `rating.component.css:186-196`. Code-verified only
+  (needs a real layout to see the missing motion).
+
+- **`checkbox-group` / `radio-group` / `segmented-button-group` never expose the `activate()` /
+  focus split that `FormFieldControl` documents.** `form-field/headless/form-field.tokens.ts:96-104`
+  states `focus()` "only focuses — it never toggles, opens a panel, or selects", and every group *does*
+  implement both `focus()` (`selection-list.directive.ts:102-113`) and `activate()`. Only `activate()` is
+  reachable from a label click, so the correct, non-mutating entry point exists but is never used for the
+  group case. This is the same defect as the first High finding, recorded here as the API-shape half:
+  the group is the one control family where `activate()` cannot be a safe superset of `focus()`.
+
+### Low
+
+- **`et-radio-group` imports the selection engine through a redundant round-trip path.**
+  `selection-list/radio-group/radio-group.component.ts:7` uses
+  `'../../selection-list/headless'` where the two sibling groups use `'../headless'`
+  (`checkbox-group/checkbox-group.component.ts:7`,
+  `segmented-button-group/segmented-button-group.component.ts:18`).
+
+- **`rating.directive.ts` imports one symbol through a path that walks out of `forms/` and back in.**
+  `rating/headless/rating.directive.ts:15` is
+  `'../../../forms/form-field/form-field-labels'`; every other import in the file uses the direct
+  `'../../form-field/…'` form (`:13`). It is also the only import placed after the relative sibling
+  imports.
+
+- **`SelectionState` is part of a public type but is not exported.**
+  `selection-list/headless/selection-list.tokens.ts:22` types
+  `SelectionListDirectiveBase.selection` as `SelectionState<…>` imported from
+  `./internals/selection-state`, which `selection-list/headless/index.ts` does not re-export — a consumer
+  implementing `SELECTION_LIST_TOKEN` cannot name the type of the member it must provide.
+
+- **`SwitchDirective` does not declare the signal-forms interface its sibling does.**
+  `checkbox/headless/checkbox.directive.ts:35` is `implements FormCheckboxControl, FormFieldControl`;
+  `switch/headless/switch.directive.ts:36` is only `implements FormFieldControl` despite carrying the
+  same `checked` model. Binding still works — `@angular/forms/signals` detects a `checked` model at
+  runtime (`node_modules/@angular/forms/fesm2022/signals.mjs:1396`) — so this costs type safety, not
+  behaviour.
+
+- **`activate()` disagrees between the two boolean controls.**
+  `checkbox/headless/checkbox.directive.ts:91` focuses with
+  `{ focusVisible: false } as unknown as FocusOptions`; `switch/headless/switch.directive.ts:89` calls
+  bare `this.focus()`. Same control family, same label-click path, two behaviours (visible only in
+  Firefox, which is the sole implementor of `focusVisible`).
+
+- **`text-sm` / `text-xs` in the story files emit nothing.** Storybook's Tailwind theme resets the
+  scale with `--text-*: initial` and re-declares only `h1…h6, huge, extra-large, large, base, medium,
+  small, subline` (`apps/storybook/src/styles/storybook.css:32-97`). Dead classes:
+  `switch/stories/switch-storybook.component.ts:26,28,62,66`;
+  `rating/stories/rating-storybook.component.ts:26,31`;
+  `selection-list/radio-group/stories/radio-group-storybook.component.ts:57`;
+  `selection-list/checkbox-group/stories/checkbox-group-storybook.component.ts:51`;
+  `selection-list/segmented-button-group/stories/segmented-button-group-storybook.component.ts:30`.
+  (`text-et-surface-muted` / `bg-et-surface-bg` in the same files *are* valid —
+  `apps/storybook/src/styles/surface-themes.css:84-88`.)
+
+- **Comment-policy violations (rationale / migration narration, none of the four allowed cases).**
+  Representative, not exhaustive: `selection-list/headless/internals/selection-state.ts:55-58` (why the
+  teardown flag was introduced), `:66-70` ("Evaluating `every`/`length` over all items … meant a single
+  disabled-and-unchecked item pinned `allSelected` to false forever" — pure history),
+  `:152-156`, `:176-178`, `:210-212`; `selection-list/headless/selection-option.directive.ts:59-61`,
+  `:65-66`; `selection-list/checkbox-group/checkbox-group-select-all.component.ts:39-40` (an HTML comment
+  arguing a glyph choice); `rating/rating.component.ts:88-90`, `:111-113`, `:126-128`, `:198`;
+  `rating/rating.component.html:3-4`, `:13-14`, `:36`.
+
+- **Doc gaps.** `apps/docs/components/choice-inputs.md:362` lists 2 of the 8 rating tokens —
+  `--et-rating-label-font-size`, `-support-duration`, `-support-offset`, `-error-font-size`,
+  `-warning-font-size`, `-hint-font-size` all exist (`rating/rating.component.css:14-49`) and are absent.
+  The groups' `disabled` / `invalid` / `errors` / `required` / `name` inputs are never tabulated even
+  though all three forward them (`checkbox-group.component.ts:21-33` and siblings).
+  `et-choice-field` also takes `color` via `ProvideColorDirective` (`choice-field.component.ts:42`)
+  which the guide never mentions.
+
+- **The card variant's error state never reaches the panel border.** `data-error` on the group sets the
+  private `--_et-control-border` (`checkbox-group.component.css:124`, `radio-group.component.css:116`),
+  which is read only by the small control's border (`radio.component.css:57,88`,
+  `checkbox-option.component.css:58,92`). `.et-selection-card`'s own border
+  (`selection-card-styles.component.css:52`) resolves from `--et-surface-border-solid`, so a card
+  option in a group showing an error keeps a neutral panel edge.
+
+- **`.et-choice-field-control-slot > *::after` stretches the hit area of *every* projected root node,
+  not just the control** (`choice-field/choice-field-card-styles.component.css:33-39`). The slot is fed
+  by a catch-all `<ng-content />` (`choice-field.component.html:8`), so any stray element a consumer
+  drops next to the control gets its own full-panel overlay stacked on top.
+
+- **The choice field animates errors and hints in but not warnings.**
+  `choice-field.component.css:218-229` declares `@starting-style` for `.et-choice-field-errors[data-active]`
+  and `.et-choice-field-hint[data-active]` only; `.et-choice-field-warnings` (`:186-193`) has a resting
+  `translateY(offset)` and no entry keyframe, so a warning pops in.
+
+### Spec coverage
+
+Well covered:
+
+- `selection-list/headless/selection-list.directive.spec.ts` (399 lines) — roles, single/multi select,
+  registration, readonly (attribute reflection, blocked selection, arrow-roving without select, lifting
+  readonly), the `aria-label`/`aria-labelledby` accessible-name rules, and both mixed contracts
+  (single + multiple) through `describeMixedStateContract`, plus mixed-specific tab-stop and
+  select-all-resolution cases. This is the strongest spec in the batch.
+- `rating/headless/rating.directive.spec.ts` (292 lines) — arrow/Home/End/Backspace keyboard, half steps,
+  click-to-clear, hover preview, drag commit, `pointercancel` discard, secondary-button rejection,
+  disabled/readonly, and the full mixed block plus the shared contract.
+- `checkbox/headless/checkbox.directive.spec.ts` — role, form-field registration, `labelId`, toggle,
+  blur→touched, tabindex, and a good readonly block.
+- `selection-list/checkbox-group/checkbox-group-select-all.component.spec.ts` — tri-state, Space/Enter,
+  group-disabled propagation, shared vs per-instance label, and orientation reflection.
+- `selection-card.spec.ts` — slot order, `data-control-position` reflection and its removal in the plain
+  variant, across all three card hosts.
+
+Files with real logic and zero tests:
+
+- `selection-list/segmented-button-group/segmented-button.component.ts` — the FLIP animation effect
+  (`:34-65`), the `lastActiveBackgroundElement` handoff, the `isConnected`/`canAnimate` guards, and the
+  missing label span (High #4) are all untested. `segmented-button-group.component.ts` likewise has no
+  spec for the `TabScaleStylesComponent` mount or the `tabs` variant.
+- `choice-field/choice-field.component.ts` — no spec of its own at all. The `SelectionCardStylesComponent`
+  + `ChoiceFieldCardStylesComponent` mount effect (`:82-87`), the support wiring, and the card hit-area
+  behaviour are only touched indirectly by `selection-card.spec.ts`.
+- `checkbox/checkbox.component.ts` — the two frozen-colour effects (`:48-73`) that call
+  `getComputedStyle` are untested (and untestable in jsdom, which drops the stylesheets).
+- `selection-list/checkbox-group/checkbox-option.component.ts`,
+  `selection-list/radio-group/radio.component.ts` — the `variant === 'card'` style-manager mount effect
+  has no spec.
+- `rating/headless/rating-icon.directive.ts` — the register/deregister identity check (`:22-26`) and the
+  last-one-wins single slot are untested.
+- `rating/rating.component.ts` — `valueFromPosition` (`:199-215`) is exercised only through the directive
+  spec's synthetic pointer flows; `handleIconClick`'s `pointerCommitted` latch (`:147-163`) has no direct
+  test.
+- `switch/headless/switch.directive.spec.ts` exists but is thin (66 lines): role, default
+  `aria-checked`, click toggle, and the indeterminate pair. No readonly, no disabled, no `activate()`,
+  no form-field registration — all of which the checkbox spec covers for its twin.
+
+No existing spec asserts a wrong behaviour. Two blind spots would each have caught a High finding: no
+spec clicks a group's `et-label` (finding 1), and no spec resolves a control's `aria-describedby` back to
+a rendered element (finding 2). The three group *components* never run
+`describeMixedStateContract` either — only the headless directive does — so their forwarding of
+`mixed` / `mixedChange` through `hostDirectives` is unverified.
+
+### Improvements
+
+#### Features (ranked)
+
+- **Add `Home`/`End` to the selection-list keyboard map.** `selection-option.directive.ts:38-45` handles
+  only the four arrows plus Space/Enter. The ARIA radiogroup and checkbox-list patterns both specify
+  Home/End to jump to the first/last enabled option, and Material, PrimeNG and Ark all ship them. The
+  roving helpers at `:127-179` already know how to skip disabled items, so this is a third traversal
+  mode over the same loop.
+- **Typeahead on the groups.** With a dozen radios the only way to reach the last one is twelve arrow
+  presses. The label text is already addressable through `labelId()`, so a first-letter matcher over
+  `selection.items()` is cheap and is what a native `<select>` and Material's radio group give users.
+- **Shift-click range selection in `et-checkbox-group`.** The multi-select branch of
+  `selection-state.ts:190-196` toggles one item at a time; a shift-anchor over the registry order would
+  make a 30-topping list usable and is standard in Ark UI and shadcn checkbox lists.
+- **`size` on `et-rating`.** `et-rating` is the only control in this batch with no `size` input — a
+  consumer scaling review stars has to reach for `--et-rating-icon-size` directly
+  (`rating/rating.component.css:2-12`), while every neighbour accepts `FormFieldSize`
+  (`checkbox-group.component.ts:50` and siblings). A `size` mapping to the icon-size and gap tokens would
+  close the family gap.
+- **Track icons / on-off glyphs for `et-switch`.** `switch.component.html` is a bare track + thumb.
+  Material 3 and Ark both offer a checked/unchecked glyph inside the thumb, which is the accepted answer
+  for the "is this on?" ambiguity at small sizes and for non-colour-perceiving users.
+- **Let the standalone `et-checkbox` derive `indeterminate` from a child list.** The tri-state logic
+  already exists as `SelectionListControlDirective` (`headless/selection-list-control.directive.ts`) but
+  is reachable only through `et-checkbox-group`. A tree of checkboxes (the classic parent/child case)
+  currently has to hand-roll it.
+
+#### DX (ranked)
+
+- **Split `activate()` into "activate" and "activate from label".** The single `activate()` hook forces
+  one method to serve both "the user clicked me" and "the user clicked my caption", which is exactly what
+  produced the first High finding. A second optional member on `FormFieldControl`
+  (`form-field/headless/form-field.tokens.ts:95`) — or simply having `LabelDirective` prefer `focus()`
+  when the control reports itself as a group — would make the safe behaviour the default for every future
+  group-shaped control.
+- **Give `injectFormSupport` the support ids and the directions it already computes.**
+  `form-support.ts:173-196` returns 22 members but neither `formFieldDir.hintId()`-style ids nor
+  `supportPresentation().directions`, which is why four templates forgot the ids (High #2) and why the
+  exit animation is missing everywhere but `form-field` (Medium #3). Returning `errorId`/`warningId`/
+  `hintId`/`errorDirection`/`errorState`/… and shipping one shared support-region *partial* would make the
+  correct markup the only markup — `form-field.component.ts` could then drop its duplicate copy
+  (`:152,230-299,337-348`).
+- **A `ChoiceFieldDriver` and a `SegmentedButtonGroupDriver`.** `forms/testing/` has 17 drivers but
+  neither of these, which is why both components have no spec. `SelectionListDriver` already parameterises
+  its selectors (`checkbox-group-select-all.component.spec.ts:31-35`), so a segmented preset is one
+  constant.
+- **Reject a second `etRatingIcon` in dev mode.** `rating-icon.directive.ts:20` overwrites
+  `registeredIconTemplate` with no warning, so two templates in one rating silently pick the last one —
+  the repo's `RuntimeError` + error-code convention (`apps/docs/components/error-codes.md`) exists for
+  exactly this.
+- **Drop or hide `checked` from the option components' public inputs.** Since it is unconditionally
+  overwritten inside a group (Medium #1), keeping it as a documented input on `et-radio` /
+  `et-checkbox-option` / `et-segmented-button` is a trap; a dev-mode error when it is bound while a
+  `SELECTION_LIST_TOKEN` is present would be honest.
+
+#### Bundle size (ranked)
+
+- **Extract the support region into one styles-only component mounted by `injectFormSupport`.** The
+  ~90-line block (six `@property` declarations, `-support`, `-support-stack`, `-support-content`,
+  `-errors`, `-warnings`, `-hint`, the `[data-can-animate]` transitions and the reduced-motion override)
+  is duplicated near-verbatim five times *in this batch alone* —
+  `checkbox-group.component.css:2-38,131-207`, `radio-group.component.css:2-38,123-199`,
+  `segmented-button-group.component.css:2-38,155-231`, `rating.component.css:14-49,180-252`,
+  `choice-field.component.css:8-42,154-231` — plus copies in slider, dropzone and otp. One
+  `FormSupportStylesComponent` parameterised by a `--et-support-*` token layer, mounted from
+  `formSupportFactory`, collapses all of them and removes the drift that produced the animation
+  inconsistency above.
+- **Split the horizontal-orientation rules out of the two group stylesheets.**
+  `checkbox-group.component.css:210-240` and `radio-group.component.css:202-232` are inert for every
+  group left at the default `orientation="vertical"` (`checkbox-group.component.ts:60`). They are a
+  textbook opt-in feature slice for the `injectStyleManager().mount(...)`-from-an-effect pattern the repo
+  already uses for `TableVirtualScrollStylesComponent` and `TabScaleStylesComponent`
+  (`segmented-button-group.component.ts:98-102`).
+- **Stop computing `directions` when nobody reads them.** `reduceSupportPresentation`'s direction
+  branches (`support-presentation.ts:170-186`) run on every support transition for every
+  `injectFormSupport` consumer and are discarded. Either expose them (preferred, see DX) or gate the
+  work.
+- **The three group components are ~85% identical TypeScript.**
+  `checkbox-group.component.ts`, `radio-group.component.ts` and `segmented-button-group.component.ts`
+  repeat the same 12-entry `hostDirectives` input list, the same six `viewChild` refs and the same
+  `wireFormSupport` call. A shared base or a `provideSelectionGroup()` helper would cut three copies of
+  the boilerplate and, more importantly, stop the input lists from drifting apart.
+
+#### UI/UX (ranked)
+
+- **`Home` on `et-rating` cannot reach the value the control advertises as its minimum.** The host
+  declares `aria-valuemin="0"` (`rating.directive.ts:26`) but `Home` commits `step`
+  (`:205-209`) and `clamp` floors at `step` (`:235-240`), so a screen-reader user told the range starts
+  at 0 finds Home landing on 1. Either advertise `aria-valuemin` as `step`, or make Home clear to `null`
+  the way `ArrowLeft` from the first step does (`:196-203`).
+- **Dragging off the left edge of the stars commits one star instead of clearing.**
+  `valueFromPosition` (`rating.component.ts:199-215`) seeds `value = step` and only ever raises it, so
+  releasing a drag to the left of the first star commits `1` (`:181`). "Drag back past the start to
+  clear" is the intuition a continuous rating sets up, and it is also the only clear affordance a pointer
+  user has besides re-clicking the exact current value.
+- **The plain-variant focus ring wraps the 20px control, not the option.**
+  `radio.component.css:49` sets `outline: none` on the host and `:93-97` rings only `.et-radio-circle`
+  (same in `checkbox-option.component.css:97`). With a long label the focused option is easy to lose,
+  and the click target (the whole row, via the host `(click)`) and the focus indicator disagree about
+  what is focused. The card variant already rings the whole panel
+  (`selection-card-styles.component.css:78-82`).
+- **A disabled option cannot carry a tooltip explaining why.** `pointer-events: none` on
+  `[aria-disabled='true']` (`radio.component.css:105`, `checkbox-option.component.css:109` equivalent,
+  `segmented-button.component.css:79`) is what makes the host cursor work, but it also means "Upgrade to
+  unlock this plan" can never be surfaced on the thing it is about — the usual answer is to keep pointer
+  events and block activation in the handler (which `SelectionOptionDirective.select():110` already does).
+- **Give the card panel an error border.** See the corresponding Low finding — a required radio group in
+  error currently signals it only on the small circle inside each card.
+
+#### Testing (ranked)
+
+- **First: a spec that clicks each group's `<et-label>` and asserts the value did not change.** It is
+  one assertion per group and it is the guard the batch's worst finding needs.
+- **Second: an `aria-describedby` resolution assertion in the shared form-field test surface.** Something
+  like "for every control that registers with a `FormFieldDirective` and renders a hint, the id in
+  `aria-describedby` resolves to an element in the fixture" would have caught four components at once and
+  will catch the next one.
+- **Third: a spec for `SegmentedButtonComponent`.** Its accessible name, the `aria-checked` reflection,
+  the `tabs` variant's `TabScaleStylesComponent` mount and the FLIP guard chain
+  (`segmented-button.component.ts:47-52`) are entirely untested; the missing label span slipped through
+  precisely because nothing looks at this component.
+- **Fourth: bring the switch spec up to the checkbox spec's coverage.** Readonly, disabled, tabindex,
+  form-field registration and `activate()` are all covered for `et-checkbox`
+  (`checkbox/headless/checkbox.directive.spec.ts:101-130`) and absent for `et-switch` — the two are
+  intentionally twins, so the specs should mirror.
+- **Fifth: run `describeMixedStateContract` against the three group components**, not only the headless
+  directive, so the `hostDirectives` input/output forwarding is inside the contract.
+- **Infrastructure: a `ChoiceFieldDriver`** — the component has no spec at all, and its card variant's
+  hit-area trick (`choice-field-card-styles.component.css:33-39`) plus its `:has()`-based
+  disabled/readonly/checked propagation (`choice-field.component.css:59-152`) are the most CSS-dependent
+  logic in the batch. jsdom drops the stylesheets, so the driver should assert the DOM/attribute
+  contract those selectors key off rather than computed styles.
+
+Clean: read and found sound — `selection-list/headless/selection-list-control.directive.ts` (tri-state
+`aria-checked`, disabled/readonly gating, Space+Enter parity); the `mixed` masking, first-commit-replaces
+and pruning logic in `selection-list/headless/internals/selection-state.ts` (the teardown flag at
+`:55-61` and the microtask prune at `:157-169` correctly distinguish `@for` churn from a full teardown,
+and the `togglableItems` fallback at `:71-76` correctly avoids both the stuck-mixed and empty-set traps);
+`SelectionOptionDirective`'s roving-tabindex computation and wrap-around traversal with disabled-skipping
+and single-item termination; the `UNBOUND_VALUE` guard for late-binding required inputs (`:22,67-73`);
+`RatingDirective`'s keyboard map, clamping, hover/commit split and mixed handling;
+`rating.component.ts`'s gesture handling (`dragGestureFrom` completes with the gesture —
+`libs/core/src/lib/drag-handle/drag-gesture.ts:138-153` — so the per-pointerdown subscriptions do not
+accumulate, and the `pointerCommitted` latch is reset on both `pointerdown` and `cancelled`);
+`CheckboxDirective`/`SwitchDirective` toggle-and-resolve-indeterminate semantics and the deliberate
+`aria-checked="mixed"` vs `data-indeterminate` split (correctly documented in both docs pages);
+`SegmentedButtonComponent`'s FLIP guards (`isConnected`, identity, `canAnimate`); the `@layer components`
+wrap on all 13 stylesheets in scope; zero Tailwind in component source; no hardcoded colour used as a
+primary value (every literal is a `var(--token, fallback)` fallback, which AGENTS.md permits); signals
+used for all synchronous state with the one RxJS boundary (`rating.component.ts:129-134`) correctly
+terminated by `takeUntilDestroyed` last in the pipe; all controls signal-forms native (`FormValueControl`
+/ `FormCheckboxControl` / `checked` models, no `ControlValueAccessor` anywhere); and the documented token
+names, `orientation`, `variant="card"`/`controlPosition`, card-slot and `variant="tabs"` behaviour in
+`choice-inputs.md` all match the code.
 
 ---
