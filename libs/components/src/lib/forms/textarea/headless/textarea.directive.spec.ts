@@ -1,8 +1,8 @@
-import { Component, DebugElement, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { mountTextarea, TextareaDriver } from '../../testing/textarea-driver';
 import { TEXTAREA_IMPORTS } from '../textarea.imports';
 import { TextareaDirective } from './textarea.directive';
 
@@ -50,180 +50,153 @@ class MixedTextareaTestHost {
 
 describe('TextareaDirective', () => {
   describe('inside form field', () => {
-    let fixture: ComponentFixture<TextareaInFormFieldTestHost>;
+    let driver: TextareaDriver<TextareaInFormFieldTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [TextareaInFormFieldTestHost] });
-      fixture = TestBed.createComponent(TextareaInFormFieldTestHost);
-      fixture.detectChanges();
+      driver = mountTextarea(TextareaInFormFieldTestHost, { directiveSelector: '[etTextarea]' });
     });
 
     it('should register with parent form field', () => {
-      const formFieldDir = (fixture.debugElement.children[0] as DebugElement).injector.get(FormFieldDirective);
-      expect(formFieldDir.registeredControl()).toBeTruthy();
+      expect(driver.directive(FormFieldDirective).registeredControl()).toBeTruthy();
     });
 
     it('should compute labelId from registered label', () => {
-      const textareaDir = (fixture.debugElement.children[0] as DebugElement)
-        .query((el) => el.nativeElement.matches('[etTextarea]'))
-        .injector.get(TextareaDirective);
-
-      expect(textareaDir.labelId()).toMatch(/^et-label-\d+$/);
+      expect(driver.textarea.labelId()).toMatch(/^et-label-\d+$/);
     });
   });
 
   describe('value and state', () => {
-    let fixture: ComponentFixture<StandaloneTextareaTestHost>;
-    let textareaDir: TextareaDirective;
-    let nativeTextarea: HTMLTextAreaElement;
+    let driver: TextareaDriver<StandaloneTextareaTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneTextareaTestHost] });
-      fixture = TestBed.createComponent(StandaloneTextareaTestHost);
-      fixture.detectChanges();
-      textareaDir = (fixture.debugElement.children[0] as DebugElement).injector.get(TextareaDirective);
-      nativeTextarea = fixture.nativeElement.querySelector('[etTextarea]');
+      driver = mountTextarea(StandaloneTextareaTestHost);
     });
 
     it('should have empty value by default', () => {
-      expect(textareaDir.value()).toBe('');
-      expect(textareaDir.hasValue()).toBe(false);
+      expect(driver.textarea.value()).toBe('');
+      expect(driver.textarea.hasValue()).toBe(false);
     });
 
     it('should expose the host textarea as nativeControl', () => {
-      expect(textareaDir.nativeControl()).toBe(nativeTextarea);
+      expect(driver.textarea.nativeControl()).toBe(driver.field());
     });
 
     it('should report resize none while autosizing', () => {
-      expect(textareaDir.effectiveResize()).toBe('none');
+      expect(driver.textarea.effectiveResize()).toBe('none');
     });
 
     it('should honor the resize input when autosize is off', () => {
-      fixture.componentInstance.autosize.set(false);
-      fixture.detectChanges();
+      driver.host.autosize.set(false);
+      driver.tick();
 
-      expect(textareaDir.effectiveResize()).toBe('vertical');
+      expect(driver.textarea.effectiveResize()).toBe('vertical');
     });
 
     it('should clear the inline block-size when autosize is turned off', () => {
-      fixture.componentInstance.autosize.set(false);
-      fixture.detectChanges();
+      driver.host.autosize.set(false);
+      driver.tick();
 
-      expect(nativeTextarea.style.blockSize).toBe('');
+      expect(driver.blockSize()).toBe('');
     });
 
     it('should not display error when not touched', () => {
-      expect(textareaDir.shouldDisplayError()).toBe(false);
+      expect(driver.textarea.shouldDisplayError()).toBe(false);
     });
 
     describe('native autosize hooks', () => {
       it('should mark the textarea and derive the row floor from rows', () => {
-        expect(nativeTextarea.hasAttribute('data-et-textarea-autosize')).toBe(true);
-        expect(nativeTextarea.style.getPropertyValue('--et-textarea-min-rows')).toBe('3');
+        expect(driver.hasAttr('data-et-textarea-autosize')).toBe(true);
+        expect(driver.cssVar('--et-textarea-min-rows')).toBe('3');
       });
 
       it('should prefer minRows over rows for the row floor', () => {
-        fixture.componentInstance.minRows.set(5);
-        fixture.detectChanges();
+        driver.host.minRows.set(5);
+        driver.tick();
 
-        expect(nativeTextarea.style.getPropertyValue('--et-textarea-min-rows')).toBe('5');
+        expect(driver.cssVar('--et-textarea-min-rows')).toBe('5');
       });
 
       it('should set no upper bound while maxRows is null', () => {
-        expect(nativeTextarea.style.getPropertyValue('--et-textarea-max-block-size')).toBe('');
+        expect(driver.cssVar('--et-textarea-max-block-size')).toBe('');
       });
 
       it('should turn maxRows into a line-based upper bound', () => {
-        fixture.componentInstance.maxRows.set(6);
-        fixture.detectChanges();
+        driver.host.maxRows.set(6);
+        driver.tick();
 
-        expect(nativeTextarea.style.getPropertyValue('--et-textarea-max-block-size')).toBe('calc(6 * 1lh)');
+        expect(driver.cssVar('--et-textarea-max-block-size')).toBe('calc(6 * 1lh)');
       });
 
       it('should remove every hook when autosize is turned off', () => {
-        fixture.componentInstance.maxRows.set(6);
-        fixture.detectChanges();
-        fixture.componentInstance.autosize.set(false);
-        fixture.detectChanges();
+        driver.host.maxRows.set(6);
+        driver.tick();
+        driver.host.autosize.set(false);
+        driver.tick();
 
-        expect(nativeTextarea.hasAttribute('data-et-textarea-autosize')).toBe(false);
-        expect(nativeTextarea.style.getPropertyValue('--et-textarea-min-rows')).toBe('');
-        expect(nativeTextarea.style.getPropertyValue('--et-textarea-max-block-size')).toBe('');
+        expect(driver.hasAttr('data-et-textarea-autosize')).toBe(false);
+        expect(driver.cssVar('--et-textarea-min-rows')).toBe('');
+        expect(driver.cssVar('--et-textarea-max-block-size')).toBe('');
       });
     });
   });
 
   describe('mixed state', () => {
     const setup = () => {
-      TestBed.configureTestingModule({ imports: [MixedTextareaTestHost] });
-
-      const fixture = TestBed.createComponent(MixedTextareaTestHost);
-
-      fixture.detectChanges();
-
-      const host = fixture.componentInstance;
-      const nativeTextarea = () => fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
-      const typeInto = (text: string) => {
-        const textareaElement = nativeTextarea();
-
-        textareaElement.value = text;
-        textareaElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
-        fixture.detectChanges();
-      };
+      const driver = mountTextarea(MixedTextareaTestHost);
       const enterMixed = (rawValue: string) => {
-        host.value.set(rawValue);
-        host.mixed.set(true);
-        fixture.detectChanges();
+        driver.host.value.set(rawValue);
+        driver.host.mixed.set(true);
+        driver.tick();
       };
 
-      return { fixture, host, nativeTextarea, typeInto, enterMixed };
+      return { driver, enterMixed };
     };
 
     describeMixedStateContract(() => {
-      const { fixture, host, nativeTextarea, typeInto, enterMixed } = setup();
+      const { driver, enterMixed } = setup();
 
       return {
         enterMixed: () => enterMixed('hidden raw\nsecond line'),
         rawValue: () => 'hidden raw\nsecond line',
-        value: () => host.value(),
-        mixed: () => host.mixed(),
-        hostElement: () => fixture.nativeElement.querySelector('et-textarea') as HTMLElement,
+        value: () => driver.host.value(),
+        mixed: () => driver.host.mixed(),
+        hostElement: () => driver.hostEl(),
         writeValueExternally: () => {
-          host.value.set('server write');
-          fixture.detectChanges();
+          driver.host.value.set('server write');
+          driver.tick();
         },
         externallyWrittenValue: () => 'server write',
-        commit: () => typeInto('typed over'),
+        commit: () => driver.type('typed over'),
         committedValue: () => 'typed over',
         assertMasked: () => {
-          expect(nativeTextarea().value).toBe('');
-          expect(nativeTextarea().placeholder).toBe('Mixed values');
+          expect(driver.fieldValue()).toBe('');
+          expect(driver.placeholder()).toBe('Mixed values');
         },
       };
     });
 
     it('masks via the placeholder and restores the consumer placeholder after the commit', () => {
-      const { nativeTextarea, typeInto, enterMixed } = setup();
+      const { driver, enterMixed } = setup();
 
       enterMixed('secret');
 
-      expect(nativeTextarea().value).toBe('');
-      expect(nativeTextarea().placeholder).toBe('Mixed values');
+      expect(driver.fieldValue()).toBe('');
+      expect(driver.placeholder()).toBe('Mixed values');
 
-      typeInto('new text');
+      driver.type('new text');
 
-      expect(nativeTextarea().value).toBe('new text');
-      expect(nativeTextarea().placeholder).toBe('Write here');
+      expect(driver.fieldValue()).toBe('new text');
+      expect(driver.placeholder()).toBe('Write here');
     });
 
     it('keeps mixed and the raw value when an edit produces no content', () => {
-      const { host, typeInto, enterMixed } = setup();
+      const { driver, enterMixed } = setup();
 
       enterMixed('secret');
-      typeInto('');
+      driver.type('');
 
-      expect(host.mixed()).toBe(true);
-      expect(host.value()).toBe('secret');
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.host.value()).toBe('secret');
     });
   });
 });

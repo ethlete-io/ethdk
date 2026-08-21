@@ -1,10 +1,7 @@
-import { ApplicationRef, Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { mountSelect, SelectDriver } from '../../testing/select-driver';
 import { SELECT_IMPORTS } from '../select.imports';
-import { SelectDirective } from './select.directive';
-import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `
@@ -32,101 +29,50 @@ class GroupedSelectTestHost {
   filterMode = signal<'none' | 'internal' | 'external'>('internal');
 }
 
-const flushFrames = () =>
-  new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
 describe('SelectOptionGroupDirective', () => {
-  let fixture: ComponentFixture<GroupedSelectTestHost>;
-  let select: SelectDirective;
-  let trigger: HTMLElement;
-
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const openSelect = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
-
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const groups = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="group"]') ?? []);
-  const options = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
-  const setQuery = (query: string) => {
-    const search =
-      pane()?.querySelector<HTMLInputElement>('input') ??
-      fixture.nativeElement.querySelector<HTMLInputElement>('input');
-
-    if (search) {
-      search.value = query;
-      search.dispatchEvent(new Event('input', { bubbles: true }));
-      tick();
-    }
-  };
+  let driver: SelectDriver<GroupedSelectTestHost>;
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [GroupedSelectTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(GroupedSelectTestHost);
-    fixture.detectChanges();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    trigger = fixture.nativeElement.querySelector('[role="combobox"]');
+    driver = mountSelect(GroupedSelectTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('renders labelled groups wrapping their options', async () => {
-    await openSelect();
+    await driver.open();
 
-    const renderedGroups = groups();
-
-    expect(renderedGroups.length).toBe(2);
+    expect(driver.optionGroups().length).toBe(2);
     // aria-labelledby points at the visible header
-    const labelledBy = renderedGroups[0]!.getAttribute('aria-labelledby');
-    expect(labelledBy).toBeTruthy();
-    expect(pane()?.querySelector(`#${labelledBy}`)?.textContent?.trim()).toBe('Forwards');
-    expect(renderedGroups[0]!.querySelectorAll('[role="option"]').length).toBe(2);
-    expect(renderedGroups[1]!.querySelectorAll('[role="option"]').length).toBe(1);
+    expect(driver.groupLabel(0)).toBe('Forwards');
+    expect(driver.groupOptionCounts()).toEqual([2, 1]);
   });
 
   it('keeps keyboard navigation flat across groups', async () => {
-    await openSelect();
+    await driver.open();
 
     // three options total, registered flat in DOM order regardless of grouping
-    expect(select.visibleItems().map((item) => item.value())).toEqual(['mbappe', 'haaland', 'bellingham']);
-    expect(options().length).toBe(3);
+    expect(driver.select.visibleItems().map((item) => item.value())).toEqual(['mbappe', 'haaland', 'bellingham']);
+    expect(driver.options().length).toBe(3);
   });
 
   it('hides a group once all its options are filtered out', async () => {
-    await openSelect();
-    setQuery('bell');
-    await flushFrames();
-    tick();
-
-    const [forwards, midfielders] = groups();
+    await driver.open();
+    driver.type('bell');
+    await driver.settle();
 
     // "Forwards" has no match → hidden; "Midfielders" keeps Bellingham
-    expect(forwards!.hasAttribute('hidden')).toBe(true);
-    expect(midfielders!.hasAttribute('hidden')).toBe(false);
+    expect(driver.groupsHidden()).toEqual([true, false]);
   });
 
   it('shows all groups again when the query clears', async () => {
-    await openSelect();
-    setQuery('bell');
-    await flushFrames();
-    tick();
-    setQuery('');
-    await flushFrames();
-    tick();
+    await driver.open();
+    driver.type('bell');
+    await driver.settle();
+    driver.type('');
+    await driver.settle();
 
-    expect(groups().every((group) => !group.hasAttribute('hidden'))).toBe(true);
+    expect(driver.groupsHidden()).toEqual([false, false]);
   });
 });

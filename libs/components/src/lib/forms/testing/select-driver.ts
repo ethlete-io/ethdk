@@ -20,6 +20,8 @@ export const createSelectDriver = <T>(fixture: ComponentFixture<T>) => {
   const optionByLabel = (label: string) => visibleOptions().find((option) => textOf(option) === label) ?? null;
   const chips = () => base.queryAll('et-chip');
   const chipRemoveButton = (index: number) => chips()[index]!.querySelector<HTMLElement>('.et-chip-remove-button');
+  const optionGroups = () => base.paneEls('[role="group"]');
+  const virtualBody = () => base.paneEl('.et-select-virtual-options')!;
 
   return {
     ...base,
@@ -33,6 +35,7 @@ export const createSelectDriver = <T>(fixture: ComponentFixture<T>) => {
     chipRemoveButton,
 
     listbox: () => base.paneEl('[role="listbox"]'),
+    paneText: () => textOf(base.pane()),
     options,
     visibleOptions,
     activeOption,
@@ -40,6 +43,20 @@ export const createSelectDriver = <T>(fixture: ComponentFixture<T>) => {
     optionLabels: () => options().map(textOf),
     visibleLabels: () => visibleOptions().map(textOf),
     optionByLabel,
+
+    optionGroups,
+    groupsHidden: () => optionGroups().map((group) => group.hasAttribute('hidden')),
+    groupOptionCounts: () => optionGroups().map((group) => group.querySelectorAll('[role="option"]').length),
+    groupLabel: (index: number) => {
+      const labelledBy = optionGroups()[index]?.getAttribute('aria-labelledby');
+
+      return labelledBy ? textOf(base.paneEl(`#${labelledBy}`)) : null;
+    },
+
+    virtualPadding: () => ({
+      start: parseFloat(virtualBody().style.paddingBlockStart),
+      end: parseFloat(virtualBody().style.paddingBlockEnd),
+    }),
 
     clickOption: (index: number) => {
       options()[index]!.click();

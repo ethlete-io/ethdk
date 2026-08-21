@@ -1,6 +1,6 @@
-import { Component, DebugElement, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { mountSwitch, SwitchDriver } from '../../testing/switch-driver';
 import { SwitchDirective } from './switch.directive';
 
 @Component({
@@ -19,64 +19,48 @@ class IndeterminateSwitchTestHost {
 
 describe('SwitchDirective', () => {
   describe('standalone', () => {
-    let fixture: ComponentFixture<StandaloneSwitchTestHost>;
+    let driver: SwitchDriver<StandaloneSwitchTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneSwitchTestHost] });
-      fixture = TestBed.createComponent(StandaloneSwitchTestHost);
-      fixture.detectChanges();
+      driver = mountSwitch(StandaloneSwitchTestHost);
     });
 
     it('should have role switch', () => {
-      const switchEl = fixture.nativeElement.querySelector('[etSwitch]');
-      expect(switchEl.getAttribute('role')).toBe('switch');
+      expect(driver.attr('role')).toBe('switch');
     });
 
     it('should have aria-checked false by default', () => {
-      const switchEl = fixture.nativeElement.querySelector('[etSwitch]');
-      expect(switchEl.getAttribute('aria-checked')).toBe('false');
+      expect(driver.attr('aria-checked')).toBe('false');
     });
 
     it('should toggle checked on click', () => {
-      const switchEl = fixture.nativeElement.querySelector('[etSwitch]') as HTMLElement;
-      const switchDir = (fixture.debugElement.children[0] as DebugElement).injector.get(SwitchDirective);
+      driver.toggle();
 
-      switchEl.click();
-      fixture.detectChanges();
-
-      expect(switchDir.checked()).toBe(true);
-      expect(switchEl.getAttribute('aria-checked')).toBe('true');
+      expect(driver.switch.checked()).toBe(true);
+      expect(driver.attr('aria-checked')).toBe('true');
     });
   });
 
   describe('indeterminate', () => {
-    let fixture: ComponentFixture<IndeterminateSwitchTestHost>;
+    let driver: SwitchDriver<IndeterminateSwitchTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [IndeterminateSwitchTestHost] });
-      fixture = TestBed.createComponent(IndeterminateSwitchTestHost);
-      fixture.detectChanges();
+      driver = mountSwitch(IndeterminateSwitchTestHost);
     });
 
     it('should reflect data-indeterminate while indeterminate but keep aria-checked boolean', () => {
-      const switchEl = fixture.nativeElement.querySelector('[etSwitch]');
-
       // role=switch does not support aria-checked="mixed" - it stays boolean
-      expect(switchEl.getAttribute('aria-checked')).toBe('false');
-      expect(switchEl.getAttribute('data-indeterminate')).toBe('true');
+      expect(driver.attr('aria-checked')).toBe('false');
+      expect(driver.attr('data-indeterminate')).toBe('true');
     });
 
     it('should resolve to checked on the first toggle', () => {
-      const switchEl = fixture.nativeElement.querySelector('[etSwitch]') as HTMLElement;
-      const switchDir = (fixture.debugElement.children[0] as DebugElement).injector.get(SwitchDirective);
+      driver.toggle();
 
-      switchEl.click();
-      fixture.detectChanges();
-
-      expect(switchDir.indeterminate()).toBe(false);
-      expect(switchDir.checked()).toBe(true);
-      expect(switchEl.getAttribute('data-indeterminate')).toBeNull();
-      expect(switchEl.getAttribute('aria-checked')).toBe('true');
+      expect(driver.switch.indeterminate()).toBe(false);
+      expect(driver.switch.checked()).toBe(true);
+      expect(driver.attr('data-indeterminate')).toBeNull();
+      expect(driver.attr('aria-checked')).toBe('true');
     });
   });
 });

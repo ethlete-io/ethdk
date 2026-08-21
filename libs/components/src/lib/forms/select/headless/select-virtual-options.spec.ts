@@ -1,11 +1,8 @@
-import { ApplicationRef, Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
+import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
+import { mountSelect, SelectDriver } from '../../testing/select-driver';
 import { SELECT_IMPORTS } from '../select.imports';
 import { SelectOptionData } from './select.tokens';
-import { SelectDirective } from './select.directive';
-import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 // Deliberately not template literals: an interpolated one above the inline templates below breaks
 // Angular language service completions there. See `ethlete/no-template-literal-before-inline-template`.
@@ -57,244 +54,166 @@ class OptionTemplateTestHost {
   ]);
 }
 
-const flushFrames = () =>
-  new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
 describe('SelectDirective (data-driven options)', () => {
-  let fixture: ComponentFixture<VirtualSelectTestHost>;
-  let select: SelectDirective;
-  let trigger: HTMLElement;
-
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const openSelect = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
-
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const options = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
-  const virtualBody = () => pane()?.querySelector<HTMLElement>('.et-select-virtual-options') ?? null;
-  const searchInput = () => fixture.nativeElement.querySelector('input[etselectsearch]') as HTMLInputElement;
-
-  const search = (query: string) => {
-    const input = searchInput();
-
-    input.value = query;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-  };
+  let driver: SelectDriver<VirtualSelectTestHost>;
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [VirtualSelectTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(VirtualSelectTestHost);
-    fixture.detectChanges();
-    tick();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    trigger = fixture.nativeElement.querySelector('[role="combobox"]');
+    driver = mountSelect(VirtualSelectTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('registers every option from data and resolves labels without rendering anything', () => {
-    expect(select.selection.items().length).toBe(200);
-    expect(options().length).toBe(0);
+    expect(driver.select.selection.items().length).toBe(200);
+    expect(driver.options().length).toBe(0);
 
-    fixture.componentInstance.value.set('item-150');
-    fixture.detectChanges();
+    driver.host.value.set('item-150');
+    driver.tick();
 
-    expect(select.displayValue()).toBe('Item 150');
+    expect(driver.select.displayValue()).toBe('Item 150');
   });
 
   it('renders only a window of rows, with paddings standing in for the rest', async () => {
-    await openSelect();
+    await driver.open();
 
-    const rendered = options();
+    const rendered = driver.options();
 
     expect(rendered.length).toBeGreaterThan(0);
     expect(rendered.length).toBeLessThan(50);
     expect(rendered[0]!.textContent).toContain('Item 1');
 
-    const body = virtualBody()!;
-
-    expect(parseFloat(body.style.paddingBlockStart)).toBe(0);
-    expect(parseFloat(body.style.paddingBlockEnd)).toBeGreaterThan(0);
+    expect(driver.virtualPadding().start).toBe(0);
+    expect(driver.virtualPadding().end).toBeGreaterThan(0);
   });
 
   it('leaves a short list unwindowed: every row rendered, no paddings', async () => {
-    fixture.componentInstance.options.set(makeOptions(8));
-    fixture.detectChanges();
-    tick();
+    driver.host.options.set(makeOptions(8));
+    driver.tick();
 
-    await openSelect();
+    await driver.open();
 
-    expect(select.windowsOptions()).toBe(false);
-    expect(options().length).toBe(8);
-
-    const body = virtualBody()!;
-
-    expect(parseFloat(body.style.paddingBlockStart)).toBe(0);
-    expect(parseFloat(body.style.paddingBlockEnd)).toBe(0);
+    expect(driver.select.windowsOptions()).toBe(false);
+    expect(driver.options().length).toBe(8);
+    expect(driver.virtualPadding()).toEqual({ start: 0, end: 0 });
   });
 
   it('keyboard-navigates the full data set, not just the rendered window', async () => {
-    await openSelect();
+    await driver.open();
 
     // dispatched through the trigger handler: with an inline search input, End/Home stay
     // native caret editing on the input, but search-less selects reach this path directly
-    select.handleTriggerKeydown(new KeyboardEvent('keydown', { key: 'End' }));
-    tick();
+    driver.select.handleTriggerKeydown(new KeyboardEvent('keydown', { key: 'End' }));
+    driver.tick();
 
-    const active = select.activeItem();
+    const active = driver.select.activeItem();
 
     expect(active?.value()).toBe('item-200');
-    expect(searchInput().getAttribute('aria-activedescendant')).toBe(active?.id());
+    expect(driver.searchInput().getAttribute('aria-activedescendant')).toBe(active?.id());
 
-    select.handleTriggerKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
-    tick();
+    driver.select.handleTriggerKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
+    driver.tick();
 
-    expect(fixture.componentInstance.value()).toBe('item-200');
+    expect(driver.host.value()).toBe('item-200');
   });
 
   it('commits a clicked rendered row and reflects the selection on it', async () => {
-    await openSelect();
+    await driver.open();
 
-    const row = options()[2]!;
+    driver.clickOption(2);
+    await driver.settle();
 
-    row.click();
-    tick();
-    await flushFrames();
+    expect(driver.host.value()).toBe('item-3');
 
-    expect(fixture.componentInstance.value()).toBe('item-3');
+    await driver.open();
 
-    await openSelect();
-
-    const reopened = options()[2]!;
+    const reopened = driver.options()[2]!;
 
     expect(reopened.getAttribute('aria-selected')).toBe('true');
     expect(reopened.hasAttribute('data-selected')).toBe(true);
   });
 
   it('masks a data-driven raw value, clears virtual option selection, and resolves on commit', async () => {
-    fixture.componentInstance.value.set('item-150');
-    fixture.componentInstance.mixed.set(true);
-    fixture.detectChanges();
-    tick();
+    driver.host.value.set('item-150');
+    driver.host.mixed.set(true);
+    driver.tick();
 
-    expect(select.value()).toBe('item-150');
-    expect(select.displayValue()).toBe('Mixed');
+    expect(driver.select.value()).toBe('item-150');
+    expect(driver.select.displayValue()).toBe('Mixed');
 
-    await openSelect();
+    await driver.open();
 
-    const rendered = options();
+    const rendered = driver.options();
 
     expect(rendered.length).toBeGreaterThan(0);
     expect(rendered.every((row) => row.getAttribute('aria-selected') === 'false')).toBe(true);
-    expect(select.activeItem()?.value()).toBe('item-1');
+    expect(driver.select.activeItem()?.value()).toBe('item-1');
 
-    rendered[2]!.click();
-    tick();
-    await flushFrames();
+    driver.clickOption(2);
+    await driver.settle();
 
-    expect(fixture.componentInstance.value()).toBe('item-3');
-    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(driver.host.value()).toBe('item-3');
+    expect(driver.host.mixed()).toBe(false);
   });
 
   it('filters data options with the internal filter mode', async () => {
-    await openSelect();
-    search('item 19');
+    await driver.open();
+    driver.type('item 19');
 
     // "Item 19" and "Item 190"–"Item 199"
-    expect(select.visibleItems().length).toBe(11);
-    expect(options().length).toBe(11);
+    expect(driver.select.visibleItems().length).toBe(11);
+    expect(driver.options().length).toBe(11);
 
-    search('no such item');
+    driver.type('no such item');
 
-    expect(options().length).toBe(0);
-    expect(pane()?.textContent).toContain('No results');
+    expect(driver.options().length).toBe(0);
+    expect(driver.paneText()).toContain('No results');
   });
 
   it('updates items in place when the options data changes and keeps selected labels of removed entries', () => {
-    fixture.componentInstance.value.set('item-2');
-    fixture.detectChanges();
-    tick();
+    driver.host.value.set('item-2');
+    driver.tick();
 
-    expect(select.displayValue()).toBe('Item 2');
+    expect(driver.select.displayValue()).toBe('Item 2');
 
-    fixture.componentInstance.options.set([{ value: 'item-1', label: 'First (renamed)' }]);
-    fixture.detectChanges();
-    tick();
+    driver.host.options.set([{ value: 'item-1', label: 'First (renamed)' }]);
+    driver.tick();
 
-    expect(select.selection.items().length).toBe(1);
-    expect(select.selection.items()[0]!.label()).toBe('First (renamed)');
+    expect(driver.select.selection.items().length).toBe(1);
+    expect(driver.select.selection.items()[0]!.label()).toBe('First (renamed)');
     // the selected value's option is gone - its label survives via the label cache
-    expect(select.displayValue()).toBe('Item 2');
+    expect(driver.select.displayValue()).toBe('Item 2');
   });
 
   it('toggles values in multi mode from data rows', async () => {
-    fixture.componentInstance.multiple.set(true);
-    fixture.componentInstance.value.set([]);
-    fixture.detectChanges();
-    tick();
+    driver.host.multiple.set(true);
+    driver.host.value.set([]);
+    driver.tick();
 
-    await openSelect();
+    await driver.open();
 
-    options()[0]!.click();
-    tick();
+    driver.clickOption(0);
 
-    expect(fixture.componentInstance.value()).toEqual(['item-1']);
+    expect(driver.host.value()).toEqual(['item-1']);
 
-    options()[1]!.click();
-    tick();
+    driver.clickOption(1);
 
-    expect(fixture.componentInstance.value()).toEqual(['item-1', 'item-2']);
+    expect(driver.host.value()).toEqual(['item-1', 'item-2']);
   });
 });
 
 describe('SelectDirective (option template)', () => {
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-
-  beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-    TestBed.configureTestingModule({
-      imports: [OptionTemplateTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-  });
-
   it('renders data rows through etSelectOptionTemplate with the source entry as context', async () => {
-    const fixture = TestBed.createComponent(OptionTemplateTestHost);
+    const driver = mountSelect(OptionTemplateTestHost);
 
-    fixture.detectChanges();
-    tick();
+    await driver.open();
 
-    const select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
+    expect(driver.paneEls('.custom-row').map((row) => row.textContent?.trim())).toEqual([
+      'Alpha (first)',
+      'Beta (second)',
+    ]);
 
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-
-    const rows = Array.from(pane()?.querySelectorAll<HTMLElement>('.custom-row') ?? []);
-
-    expect(rows.map((row) => row.textContent?.trim())).toEqual(['Alpha (first)', 'Beta (second)']);
-
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 });

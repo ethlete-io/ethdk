@@ -1,11 +1,9 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
 import { LabelDirective } from '../../form-field/headless';
+import { mountOtpInput, OtpInputDriver } from '../../testing/otp-input-driver';
 import { OTP_INPUT_IMPORTS } from '../otp-input.imports';
 import { OtpInputCharset } from './otp-input.directive';
-import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `
@@ -30,105 +28,88 @@ class OtpTestHost {
 }
 
 describe('OtpInputDirective', () => {
-  let fixture: ComponentFixture<OtpTestHost>;
-  let native: HTMLInputElement;
-
-  const type = (raw: string) => {
-    native.value = raw;
-    native.dispatchEvent(new Event('input', { bubbles: true }));
-    fixture.detectChanges();
-  };
-
-  const segments = () => Array.from(fixture.nativeElement.querySelectorAll<HTMLElement>('.et-otp-input-segment'));
-  const segmentTexts = () => segments().map((segment) => segment.textContent?.trim() || null);
+  let driver: OtpInputDriver<OtpTestHost>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [OtpTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(OtpTestHost);
-    fixture.detectChanges();
-    native = fixture.nativeElement.querySelector('.et-otp-input-native');
+    driver = mountOtpInput(OtpTestHost);
   });
 
   it('renders one segment per character and a single autofill-ready input', () => {
-    expect(segments().length).toBe(4);
-    expect(native.getAttribute('autocomplete')).toBe('one-time-code');
-    expect(native.getAttribute('inputmode')).toBe('numeric');
-    expect(native.getAttribute('maxlength')).toBe('4');
+    expect(driver.segmentCount()).toBe(4);
+    expect(driver.attr('autocomplete')).toBe('one-time-code');
+    expect(driver.attr('inputmode')).toBe('numeric');
+    expect(driver.attr('maxlength')).toBe('4');
   });
 
   it('builds the value from typed characters and fills the segments', () => {
-    type('12');
+    driver.type('12');
 
-    expect(fixture.componentInstance.value()).toBe('12');
-    expect(segmentTexts()).toEqual(['1', '2', null, null]);
+    expect(driver.host.value()).toBe('12');
+    expect(driver.segmentTexts()).toEqual(['1', '2', null, null]);
   });
 
   it('strips characters outside the charset (pastes with separators included)', () => {
-    type('12-3 4x');
+    driver.type('12-3 4x');
 
-    expect(fixture.componentInstance.value()).toBe('1234');
-    expect(native.value).toBe('1234');
+    expect(driver.host.value()).toBe('1234');
+    expect(driver.fieldValue()).toBe('1234');
   });
 
   it('truncates to the configured length', () => {
-    type('1234567');
+    driver.type('1234567');
 
-    expect(fixture.componentInstance.value()).toBe('1234');
+    expect(driver.host.value()).toBe('1234');
   });
 
   it('emits completed exactly once per completion', () => {
-    type('123');
-    expect(fixture.componentInstance.completions).toEqual([]);
+    driver.type('123');
+    expect(driver.host.completions).toEqual([]);
 
-    type('1234');
-    expect(fixture.componentInstance.completions).toEqual(['1234']);
+    driver.type('1234');
+    expect(driver.host.completions).toEqual(['1234']);
 
     // editing within the completed state does not re-emit
-    type('1234');
-    expect(fixture.componentInstance.completions).toEqual(['1234']);
+    driver.type('1234');
+    expect(driver.host.completions).toEqual(['1234']);
 
     // deleting and completing again emits again
-    type('123');
-    type('1235');
-    expect(fixture.componentInstance.completions).toEqual(['1234', '1235']);
+    driver.type('123');
+    driver.type('1235');
+    expect(driver.host.completions).toEqual(['1234', '1235']);
   });
 
   it('masks the rendered characters, not the value', () => {
-    fixture.componentInstance.masked.set(true);
-    fixture.detectChanges();
+    driver.host.masked.set(true);
+    driver.tick();
 
-    type('12');
+    driver.type('12');
 
-    expect(segmentTexts()).toEqual(['•', '•', null, null]);
-    expect(fixture.componentInstance.value()).toBe('12');
+    expect(driver.segmentTexts()).toEqual(['•', '•', null, null]);
+    expect(driver.host.value()).toBe('12');
   });
 
   it('supports alphanumeric and custom charsets', () => {
-    fixture.componentInstance.charset.set('alphanumeric');
-    fixture.detectChanges();
-    type('a1-b2');
-    expect(fixture.componentInstance.value()).toBe('a1b2');
+    driver.host.charset.set('alphanumeric');
+    driver.tick();
+    driver.type('a1-b2');
+    expect(driver.host.value()).toBe('a1b2');
 
-    fixture.componentInstance.charset.set(/[a-f]/);
-    fixture.detectChanges();
-    type('abc123def');
-    expect(fixture.componentInstance.value()).toBe('abcd');
+    driver.host.charset.set(/[a-f]/);
+    driver.tick();
+    driver.type('abc123def');
+    expect(driver.host.value()).toBe('abcd');
   });
 
   it('marks the caret segment while focused', () => {
-    native.dispatchEvent(new FocusEvent('focus'));
-    type('12');
+    driver.focus();
+    driver.type('12');
 
-    expect(segments().map((segment) => segment.hasAttribute('data-caret'))).toEqual([false, false, true, false]);
+    expect(driver.segmentCarets()).toEqual([false, false, true, false]);
 
-    type('1234');
-    expect(segments().map((segment) => segment.hasAttribute('data-caret'))).toEqual([false, false, false, true]);
+    driver.type('1234');
+    expect(driver.segmentCarets()).toEqual([false, false, false, true]);
 
-    native.dispatchEvent(new FocusEvent('blur'));
-    fixture.detectChanges();
-    expect(segments().some((segment) => segment.hasAttribute('data-caret'))).toBe(false);
+    driver.blur();
+    expect(driver.segmentCarets()).toEqual([false, false, false, false]);
   });
 });
