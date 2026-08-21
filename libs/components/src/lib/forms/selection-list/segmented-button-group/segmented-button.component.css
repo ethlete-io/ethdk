@@ -148,16 +148,16 @@
 
       @media (hover: hover) {
         &[aria-checked='true']:hover:not([aria-disabled='true']):not([data-readonly]) {
-          background-color: rgb(var(--et-color-primary, 0 0 0) / 0.08);
+          background-color: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.08);
         }
       }
 
       &[aria-checked='true']:focus-visible {
-        background-color: rgb(var(--et-color-primary, 0 0 0) / 0.12);
+        background-color: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.12);
       }
 
       &[aria-checked='true']:active:not([aria-disabled='true']):not([data-readonly]) {
-        background-color: rgb(var(--et-color-primary, 0 0 0) / 0.16);
+        background-color: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.16);
       }
     }
   }

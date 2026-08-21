@@ -124,7 +124,7 @@
          in a browser without the API) the env var falls back to 0 and the measurement carries it.
          `max()` needs no feature detection and cannot place the bar too low. */
       padding-block-end: calc(6px + max(var(--_et-rte-keyboard-inset, 0px), env(keyboard-inset-height, 0px)));
-      background: var(--et-surface-background-solid, var(--et-surface-2, rgb(24 24 24)));
+      background: var(--et-surface-background-solid, rgb(24 24 24));
       border-block-end: none;
       border-block-start: var(--et-form-field-control-border-width, 1px) solid
         color-mix(in srgb, currentColor 12%, transparent);

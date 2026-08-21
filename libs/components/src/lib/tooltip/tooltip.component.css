@@ -48,8 +48,8 @@
   }
 
   .et-tooltip {
-    --_et-tooltip-background: var(--et-surface-2, rgb(32 32 32));
-    --_et-tooltip-color: var(--et-color-main-contrast, rgb(244 244 245));
+    --_et-tooltip-background: var(--et-surface-background-solid, rgb(32 32 32));
+    --_et-tooltip-color: var(--et-surface-color-solid, rgb(244 244 245));
     --_et-tooltip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     --_et-tooltip-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
     --_et-tooltip-radius: 16px;
@@ -77,8 +77,8 @@
     padding: calc(var(--et-tooltip-padding-block) + 2px) calc(var(--et-tooltip-padding-inline) + 2px);
     border-radius: var(--_et-tooltip-radius);
     border: 1px solid var(--_et-tooltip-border);
-    background: var(--et-surface-background-solid, var(--_et-tooltip-background));
-    color: var(--et-surface-color-solid, var(--_et-tooltip-color));
+    background: var(--_et-tooltip-background);
+    color: var(--_et-tooltip-color);
     box-shadow: var(--_et-tooltip-shadow);
   }
 

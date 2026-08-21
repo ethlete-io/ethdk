@@ -172,7 +172,7 @@
      renders (custom panelClass, themed pane) instead of re-deriving a possibly-divergent color */
     background-color: var(
       --et-overlay-arrow-background,
-      var(--_et-overlay-arrow-pane-background, var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32))))
+      var(--_et-overlay-arrow-pane-background, var(--et-surface-background-solid, rgb(32 32 32)))
     );
     pointer-events: none;
 

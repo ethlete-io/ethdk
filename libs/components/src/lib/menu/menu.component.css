@@ -124,8 +124,8 @@
   }
 
   .et-menu {
-    --_et-menu-background: var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)));
-    --_et-menu-color: var(--et-surface-color-solid, var(--et-color-main-contrast, rgb(244 244 245)));
+    --_et-menu-background: var(--et-surface-background-solid, rgb(32 32 32));
+    --_et-menu-color: var(--et-surface-color-solid, rgb(244 244 245));
     --_et-menu-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     --_et-menu-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
     --_et-menu-radius: 10px;

@@ -245,16 +245,16 @@ import { TabComponent } from './tab.component';
 
         @media (hover: hover) {
           &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):hover {
-            background: rgb(var(--et-color-primary, 0 0 0) / 0.08);
+            background: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.08);
           }
         }
 
         &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):focus-visible {
-          background: rgb(var(--et-color-primary, 0 0 0) / 0.12);
+          background: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.12);
         }
 
         &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):active {
-          background: rgb(var(--et-color-primary, 0 0 0) / 0.16);
+          background: rgb(var(--et-theme-color-primary-rgb, 0 0 0) / 0.16);
         }
 
         .et-tab-group__trigger-content {

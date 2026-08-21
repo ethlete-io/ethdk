@@ -33,7 +33,7 @@
      the two are the same kind of thing to a user, and each component carries its own stylesheet, so
      the rules cannot be shared without a third component whose only job is to hold them. */
   .et-overlay.et-rte-image-editor-overlay {
-    background: var(--et-surface-background-solid, var(--et-surface-2, rgb(30 30 30)));
+    background: var(--et-surface-background-solid, rgb(30 30 30));
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     box-shadow: 0 12px 32px rgb(0 0 0 / 0.24);
   }

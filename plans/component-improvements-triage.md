@@ -7,18 +7,17 @@ one contains only live work, ordered by what to do first.
 Sections excluded on purpose: "Already fixed, do not re-report", "Already covered - don't
 rebuild", "Overlay responsiveness: resolved", and "Found not to reproduce". Don't re-open them.
 
+Done and removed: the theme-token migration (2026-08-21) - tooltip, toggletip, menu, overlay arrow
+and the rich text editor panels now read the derived surface tokens directly, the toggletip focus
+ring and action divider are themed, and the tab / nav-tab / segmented-tab interaction fills go
+through `--et-theme-color-primary-rgb`.
+
 **Tags.** `A` additive (new input/slot/option, nothing existing changes) · `C` consolidation
 (dedupe or reuse; behaviour should come out identical) · `B` correctness · `D` needs a design
 decision before any code · `X` blocked.
 **Effort** is a rough order of magnitude: `S` under a day · `M` a few days · `L` a week or more.
 
 ## By effort
-
-### S - bounded cleanup
-
-| Item                             | Tag     | Note                                                                                                                                                                                                                                                              |
-| -------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Finish the theme-token migration | `C`,`S` | Tooltip/toggletip still fall back through legacy raw surface tokens; toggletip hardcodes its focus ring and action divider. Tabs and segmented tabs duplicate active interaction fills through raw `--et-color-primary`. Move these onto the derived theme tokens |
 
 ### M - bounded projects
 
@@ -52,8 +51,7 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 ## Sequencing
 
-1. Take the theme-token cleanup and the textarea `field-sizing` spike; both are bounded and remove
-   stale infrastructure or conventions.
+1. Take the textarea `field-sizing` spike; it is bounded and removes stale infrastructure.
 2. Build the first internal form test drivers alongside the next form change, then decide whether a
    public harness API is justified.
 3. For new component work, prefer stat tile when a bounded addition is wanted. Start charts only

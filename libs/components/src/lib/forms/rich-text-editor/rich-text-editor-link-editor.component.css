@@ -27,7 +27,7 @@
      radius via the overlay's `:nth-child(2) { border-radius: inherit }` rule, and the arrow reads the
      pane's background so it matches. */
   .et-overlay.et-rte-link-editor-overlay {
-    background: var(--et-surface-background-solid, var(--et-surface-2, rgb(30 30 30)));
+    background: var(--et-surface-background-solid, rgb(30 30 30));
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     box-shadow: 0 12px 32px rgb(0 0 0 / 0.24);
   }

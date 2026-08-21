@@ -62,8 +62,8 @@
   }
 
   .et-rte-token-popup {
-    --_et-rte-popup-background: var(--et-surface-background-solid, var(--et-surface-2, rgb(38 38 38)));
-    --_et-rte-popup-color: var(--et-surface-color-solid, var(--et-color-main-contrast, rgb(244 244 245)));
+    --_et-rte-popup-background: var(--et-surface-background-solid, rgb(38 38 38));
+    --_et-rte-popup-color: var(--et-surface-color-solid, rgb(244 244 245));
     --_et-rte-popup-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     --_et-rte-popup-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
     --_et-rte-popup-radius: 10px;

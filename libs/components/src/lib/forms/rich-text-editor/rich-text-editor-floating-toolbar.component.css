@@ -75,8 +75,8 @@
     padding: var(--et-rich-text-editor-toolbar-padding, 4px);
     border-radius: 10px;
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    background: var(--et-surface-background-solid, var(--et-surface-2, rgb(38 38 38)));
-    color: var(--et-surface-color-solid, var(--et-color-main-contrast, rgb(244 244 245)));
+    background: var(--et-surface-background-solid, rgb(38 38 38));
+    color: var(--et-surface-color-solid, rgb(244 244 245));
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
 
     --et-icon-button-border-radius: var(--et-rich-text-editor-button-radius, 4px);

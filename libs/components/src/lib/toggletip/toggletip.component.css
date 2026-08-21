@@ -41,13 +41,13 @@
   }
 
   .et-toggletip {
-    --_et-toggletip-background: var(--et-surface-2, rgb(32 32 32));
-    --_et-toggletip-color: var(--et-color-main-contrast, rgb(244 244 245));
+    --_et-toggletip-background: var(--et-surface-background-solid, rgb(32 32 32));
+    --_et-toggletip-color: var(--et-surface-color-solid, rgb(244 244 245));
     --_et-toggletip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     --_et-toggletip-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
     --_et-toggletip-radius: 16px;
     --_et-toggletip-max-width: min(34ch, calc(100vw - 24px));
-    --_et-toggletip-focus-ring: rgb(59 130 246 / 0.35);
+    --_et-toggletip-focus-ring: var(--et-theme-color-primary-solid, rgb(59 130 246));
 
     position: relative;
     display: block;
@@ -70,8 +70,8 @@
     padding: calc(var(--et-toggletip-padding-block) + 2px) calc(var(--et-toggletip-padding-inline) + 2px);
     border-radius: var(--_et-toggletip-radius);
     border: 1px solid var(--_et-toggletip-border);
-    background: var(--et-surface-background-solid, var(--_et-toggletip-background));
-    color: var(--et-surface-color-solid, var(--_et-toggletip-color));
+    background: var(--_et-toggletip-background);
+    color: var(--_et-toggletip-color);
     box-shadow: var(--_et-toggletip-shadow);
   }
 
@@ -119,7 +119,7 @@
       gap: 8px;
       margin-top: 2px;
       padding-top: 12px;
-      border-top: 1px solid rgb(255 255 255 / 0.08);
+      border-top: 1px solid var(--_et-toggletip-border);
     }
   }
 
