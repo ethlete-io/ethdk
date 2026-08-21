@@ -75,6 +75,10 @@ export default [
   },
   // Ethlete styleguide rules — HTML templates
   ethlete.configs.recommendedTemplate,
-  // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
-  ethlete.configs.recommendedSpec,
+  // Relaxed rules for spec files (non-null assertions are common and intentional in tests).
+  // `testing/` holds the spec-only drivers those specs call, so it needs the same exemption.
+  {
+    ...ethlete.configs.recommendedSpec,
+    files: [...ethlete.configs.recommendedSpec.files, '**/testing/**/*.ts', '**/test-helpers.ts'],
+  },
 ];

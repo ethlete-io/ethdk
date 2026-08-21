@@ -1,12 +1,11 @@
-import { ApplicationRef, Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { FormField, form, required } from '@angular/forms/signals';
-import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { flushFrames, focusEvent, textOf, tick } from '../../../testing/driver-core';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { SelectDriver, mountSelect } from '../../testing/select-driver';
 import { SELECT_IMPORTS } from '../select.imports';
-import { SelectDirective } from './select.directive';
-import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `
@@ -251,97 +250,57 @@ class MultiPickOnlyTestHost {
   }
 }
 
-const flushFrames = () =>
-  new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
 describe('SelectDirective', () => {
-  let fixture: ComponentFixture<SelectTestHost>;
-  let select: SelectDirective;
-  let trigger: HTMLElement;
-
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const keydown = (target: EventTarget, key: string) => {
-    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-    tick();
-  };
-
-  const openSelect = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
-
-  // overlays render into the document - scope queries to the newest pane so a pane
-  // stuck in its leave transition (jsdom fires no transition events) can't pollute them
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const listbox = () => pane()?.querySelector<HTMLElement>('[role="listbox"]') ?? null;
-  const options = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
-  const activeOption = () => pane()?.querySelector<HTMLElement>('[role="option"][data-active]') ?? null;
+  let driver: SelectDriver<SelectTestHost>;
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [SelectTestHost, MixedRequiredTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(SelectTestHost);
-    fixture.detectChanges();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    trigger = fixture.nativeElement.querySelector('[etselecttrigger], [role="combobox"]');
+    driver = mountSelect(SelectTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('renders a closed combobox trigger', () => {
-    expect(trigger.getAttribute('role')).toBe('combobox');
-    expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(listbox()).toBeNull();
+    expect(driver.trigger().getAttribute('role')).toBe('combobox');
+    expect(driver.trigger().getAttribute('aria-haspopup')).toBe('listbox');
+    expect(driver.trigger().getAttribute('aria-expanded')).toBe('false');
+    expect(driver.listbox()).toBeNull();
   });
 
   it('registers projected options while closed and shows the selected label in the trigger', () => {
-    expect(select.selection.items().length).toBe(3);
+    expect(driver.select.selection.items().length).toBe(3);
 
-    fixture.componentInstance.value.set('banana');
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.detectChanges();
 
-    expect(select.displayValue()).toBe('Banana');
+    expect(driver.select.displayValue()).toBe('Banana');
   });
 
   it('masks the raw value, exposes an empty selection, and resolves a same-value commit', async () => {
-    fixture.componentInstance.value.set('banana');
-    fixture.componentInstance.mixed.set(true);
-    fixture.componentInstance.mixedLabel.set('Various fruits');
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.host.mixed.set(true);
+    driver.host.mixedLabel.set('Various fruits');
+    driver.detectChanges();
 
-    const root = fixture.nativeElement.querySelector('et-select') as HTMLElement;
+    expect(driver.select.value()).toBe('banana');
+    expect(driver.select.hasValue()).toBe(true);
+    expect(driver.select.displayValue()).toBe('Various fruits');
+    expect(driver.select.selectedEntries()).toEqual([]);
+    expect(driver.element().getAttribute('data-mixed')).toBe('true');
+    expect(driver.valueText()).toBe('Various fruits');
 
-    expect(select.value()).toBe('banana');
-    expect(select.hasValue()).toBe(true);
-    expect(select.displayValue()).toBe('Various fruits');
-    expect(select.selectedEntries()).toEqual([]);
-    expect(root.getAttribute('data-mixed')).toBe('true');
-    expect(trigger.querySelector('.et-select-value')?.textContent?.trim()).toBe('Various fruits');
+    await driver.open();
 
-    await openSelect();
+    expect(driver.options().map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'false', 'false']);
+    expect(driver.options().every((option) => !option.hasAttribute('aria-checked'))).toBe(true);
+    expect(driver.activeLabel()).toBe('Apple');
 
-    expect(options().map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'false', 'false']);
-    expect(options().every((option) => !option.hasAttribute('aria-checked'))).toBe(true);
-    expect(activeOption()?.textContent?.trim()).toBe('Apple');
+    driver.clickOption(1);
 
-    options()[1]!.click();
-    tick();
-
-    expect(fixture.componentInstance.value()).toBe('banana');
-    expect(fixture.componentInstance.mixed()).toBe(false);
-    expect(select.displayValue()).toBe('Banana');
+    expect(driver.host.value()).toBe('banana');
+    expect(driver.host.mixed()).toBe(false);
+    expect(driver.select.displayValue()).toBe('Banana');
   });
 
   it('keeps required validation on the raw value while mixed presents content', () => {
@@ -360,353 +319,297 @@ describe('SelectDirective', () => {
   });
 
   it('clears mixed to null but preserves mixed across external value writes', () => {
-    fixture.componentInstance.value.set('apple');
-    fixture.componentInstance.mixed.set(true);
-    fixture.detectChanges();
+    driver.host.value.set('apple');
+    driver.host.mixed.set(true);
+    driver.detectChanges();
 
-    fixture.componentInstance.value.set('banana');
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.detectChanges();
 
-    expect(fixture.componentInstance.mixed()).toBe(true);
-    expect(select.displayValue()).toBe('Mixed');
+    expect(driver.host.mixed()).toBe(true);
+    expect(driver.select.displayValue()).toBe('Mixed');
 
-    fixture.componentInstance.mixed.set(false);
-    fixture.detectChanges();
+    driver.host.mixed.set(false);
+    driver.detectChanges();
 
-    expect(select.displayValue()).toBe('Banana');
-    expect(select.selectedEntries().map((entry) => entry.value)).toEqual(['banana']);
+    expect(driver.select.displayValue()).toBe('Banana');
+    expect(driver.select.selectedEntries().map((entry) => entry.value)).toEqual(['banana']);
 
-    fixture.componentInstance.mixed.set(true);
-    fixture.detectChanges();
+    driver.host.mixed.set(true);
+    driver.detectChanges();
 
-    select.clearValue();
+    driver.select.clearValue();
     tick();
 
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.host.mixed()).toBe(false);
   });
 
   it('opens on trigger click without moving focus off the trigger', async () => {
-    trigger.focus();
-    await openSelect();
+    driver.trigger().focus();
+    await driver.open();
 
-    expect(select.open()).toBe(true);
-    expect(listbox()).not.toBeNull();
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(trigger.getAttribute('aria-controls')).toBe(listbox()!.id);
-    expect(document.activeElement).toBe(trigger);
+    expect(driver.select.open()).toBe(true);
+    expect(driver.listbox()).not.toBeNull();
+    expect(driver.trigger().getAttribute('aria-expanded')).toBe('true');
+    expect(driver.trigger().getAttribute('aria-controls')).toBe(driver.listbox()!.id);
+    expect(document.activeElement).toBe(driver.trigger());
   });
 
   it('moves virtual focus with arrow keys and reflects it in aria-activedescendant', async () => {
-    await openSelect();
+    await driver.open();
 
     // initial virtual focus lands on the first enabled option
-    expect(activeOption()?.textContent?.trim()).toBe('Apple');
-    expect(trigger.getAttribute('aria-activedescendant')).toBe(activeOption()!.id);
+    expect(driver.activeLabel()).toBe('Apple');
+    expect(driver.trigger().getAttribute('aria-activedescendant')).toBe(driver.activeOption()!.id);
 
-    keydown(trigger, 'ArrowDown');
+    driver.press('ArrowDown');
 
-    expect(activeOption()?.textContent?.trim()).toBe('Banana');
-    expect(trigger.getAttribute('aria-activedescendant')).toBe(activeOption()!.id);
+    expect(driver.activeLabel()).toBe('Banana');
+    expect(driver.trigger().getAttribute('aria-activedescendant')).toBe(driver.activeOption()!.id);
 
     // the disabled option is skipped and there is no wrap past the last enabled one
-    keydown(trigger, 'ArrowDown');
-    expect(activeOption()?.textContent?.trim()).toBe('Banana');
+    driver.press('ArrowDown');
+    expect(driver.activeLabel()).toBe('Banana');
 
-    keydown(trigger, 'Home');
-    expect(activeOption()?.textContent?.trim()).toBe('Apple');
+    driver.press('Home');
+    expect(driver.activeLabel()).toBe('Apple');
   });
 
   it('commits the active option with Enter and closes', async () => {
-    await openSelect();
+    await driver.open();
 
-    keydown(trigger, 'ArrowDown');
-    keydown(trigger, 'Enter');
-    await flushFrames();
-    tick();
+    driver.press('ArrowDown');
+    driver.press('Enter');
+    await driver.settle();
 
-    expect(fixture.componentInstance.value()).toBe('banana');
-    expect(select.open()).toBe(false);
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(driver.host.value()).toBe('banana');
+    expect(driver.select.open()).toBe(false);
+    expect(driver.trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('commits an option on click and closes', async () => {
-    await openSelect();
+    await driver.open();
 
-    options()[1]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickOption(1);
+    await driver.settle();
 
-    expect(fixture.componentInstance.value()).toBe('banana');
-    expect(select.open()).toBe(false);
+    expect(driver.host.value()).toBe('banana');
+    expect(driver.select.open()).toBe(false);
   });
 
   it('does not commit disabled options', async () => {
-    await openSelect();
+    await driver.open();
 
-    options()[2]!.click();
-    tick();
+    driver.clickOption(2);
 
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(select.open()).toBe(true);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.select.open()).toBe(true);
   });
 
   it('closes on Escape without committing', async () => {
-    await openSelect();
+    await driver.open();
     await flushFrames();
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    tick();
-    await flushFrames();
-    tick();
+    driver.escape();
+    await driver.settle();
 
-    expect(select.open()).toBe(false);
-    expect(fixture.componentInstance.value()).toBeNull();
+    expect(driver.select.open()).toBe(false);
+    expect(driver.host.value()).toBeNull();
   });
 
   it('selects via closed typeahead without opening', () => {
-    keydown(trigger, 'b');
+    driver.press('b');
 
-    expect(fixture.componentInstance.value()).toBe('banana');
-    expect(select.open()).toBe(false);
+    expect(driver.host.value()).toBe('banana');
+    expect(driver.select.open()).toBe(false);
   });
 
   it('resolves mixed via closed typeahead without opening', () => {
-    fixture.componentInstance.value.set('banana');
-    fixture.componentInstance.mixed.set(true);
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.host.mixed.set(true);
+    driver.detectChanges();
 
-    keydown(trigger, 'a');
+    driver.press('a');
 
-    expect(fixture.componentInstance.value()).toBe('apple');
-    expect(fixture.componentInstance.mixed()).toBe(false);
-    expect(select.open()).toBe(false);
+    expect(driver.host.value()).toBe('apple');
+    expect(driver.host.mixed()).toBe(false);
+    expect(driver.select.open()).toBe(false);
   });
 
   it('marks the aria-selected option when open', async () => {
-    fixture.componentInstance.value.set('apple');
-    fixture.detectChanges();
+    driver.host.value.set('apple');
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    expect(options()[0]!.getAttribute('aria-selected')).toBe('true');
-    expect(options()[1]!.getAttribute('aria-selected')).toBe('false');
+    expect(driver.options()[0]!.getAttribute('aria-selected')).toBe('true');
+    expect(driver.options()[1]!.getAttribute('aria-selected')).toBe('false');
 
     // initial virtual focus prefers the selected option
-    expect(activeOption()?.textContent?.trim()).toBe('Apple');
+    expect(driver.activeLabel()).toBe('Apple');
   });
 
   it('does not open while disabled', async () => {
-    fixture.componentInstance.disabled.set(true);
-    fixture.detectChanges();
+    driver.host.disabled.set(true);
+    driver.detectChanges();
 
-    trigger.click();
-    tick();
+    driver.click(driver.trigger());
     await flushFrames();
 
-    expect(select.open()).toBe(false);
+    expect(driver.select.open()).toBe(false);
   });
 
   it('sets touched on trigger blur', () => {
-    trigger.dispatchEvent(new FocusEvent('focus'));
-    tick();
-    trigger.dispatchEvent(new FocusEvent('blur'));
-    tick();
+    focusEvent(driver.trigger(), 'focus');
+    focusEvent(driver.trigger(), 'blur');
 
-    expect(fixture.componentInstance.touched()).toBe(true);
+    expect(driver.host.touched()).toBe(true);
   });
 
   it('manages focusability on the non-button trigger', () => {
-    expect(trigger.tagName).not.toBe('BUTTON');
-    expect(trigger.getAttribute('tabindex')).toBe('0');
+    expect(driver.trigger().tagName).not.toBe('BUTTON');
+    expect(driver.trigger().getAttribute('tabindex')).toBe('0');
 
-    fixture.componentInstance.disabled.set(true);
-    fixture.detectChanges();
+    driver.host.disabled.set(true);
+    driver.detectChanges();
 
-    expect(trigger.getAttribute('tabindex')).toBe('-1');
-    expect(trigger.getAttribute('aria-disabled')).toBe('true');
+    expect(driver.trigger().getAttribute('tabindex')).toBe('-1');
+    expect(driver.trigger().getAttribute('aria-disabled')).toBe('true');
   });
 });
 
 describe('SelectDirective (multiple)', () => {
-  let fixture: ComponentFixture<MultiSelectTestHost>;
-  let select: SelectDirective;
-  let trigger: HTMLElement;
-
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const options = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
-
-  const openSelect = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
+  let driver: SelectDriver<MultiSelectTestHost>;
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [MultiSelectTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(MultiSelectTestHost);
-    fixture.detectChanges();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    trigger = fixture.nativeElement.querySelector('[role="combobox"]');
+    driver = mountSelect(MultiSelectTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('marks the listbox multiselectable', async () => {
-    await openSelect();
+    await driver.open();
 
-    expect(pane()?.querySelector('[role="listbox"]')?.getAttribute('aria-multiselectable')).toBe('true');
+    expect(driver.paneEl('[role="listbox"]')?.getAttribute('aria-multiselectable')).toBe('true');
   });
 
   it('toggles values on click and stays open', async () => {
-    await openSelect();
+    await driver.open();
 
-    options()[0]!.click();
-    tick();
-    options()[2]!.click();
-    tick();
+    driver.clickOption(0);
+    driver.clickOption(2);
 
-    expect(fixture.componentInstance.value()).toEqual(['apple', 'cherry']);
-    expect(select.open()).toBe(true);
+    expect(driver.host.value()).toEqual(['apple', 'cherry']);
+    expect(driver.select.open()).toBe(true);
 
-    options()[0]!.click();
-    tick();
+    driver.clickOption(0);
 
-    expect(fixture.componentInstance.value()).toEqual(['cherry']);
-    expect(select.open()).toBe(true);
+    expect(driver.host.value()).toEqual(['cherry']);
+    expect(driver.select.open()).toBe(true);
   });
 
   it('renders selected values as removable chips in the trigger', () => {
-    fixture.componentInstance.value.set(['apple', 'banana']);
-    fixture.detectChanges();
+    driver.host.value.set(['apple', 'banana']);
+    driver.detectChanges();
 
-    const chips = Array.from(trigger.querySelectorAll<HTMLElement>('et-chip'));
+    expect(driver.chipLabels()).toEqual(['Apple', 'Banana']);
 
-    expect(chips.map((chip) => chip.textContent?.trim())).toEqual(['Apple', 'Banana']);
+    driver.removeChip(0);
 
-    chips[0]!.querySelector<HTMLElement>('.et-chip-remove-button')!.click();
-    tick();
-
-    expect(fixture.componentInstance.value()).toEqual(['banana']);
+    expect(driver.host.value()).toEqual(['banana']);
     // removing a chip must not toggle the panel
-    expect(select.open()).toBe(false);
+    expect(driver.select.open()).toBe(false);
   });
 
   it('shows the placeholder while nothing is selected', () => {
-    expect(trigger.querySelector('.et-select-value')?.textContent?.trim()).toBe('Pick fruits');
-    expect(trigger.querySelectorAll('et-chip').length).toBe(0);
+    expect(driver.valueText()).toBe('Pick fruits');
+    expect(driver.chips().length).toBe(0);
   });
 
   it('masks multi chips, replaces on first commit, then toggles and clears normally', async () => {
-    fixture.componentInstance.value.set(['banana', 'cherry']);
-    fixture.componentInstance.mixed.set(true);
-    fixture.detectChanges();
+    driver.host.value.set(['banana', 'cherry']);
+    driver.host.mixed.set(true);
+    driver.detectChanges();
 
-    expect(select.value()).toEqual(['banana', 'cherry']);
-    expect(select.displayValue()).toBe('Mixed');
-    expect(trigger.querySelectorAll('et-chip').length).toBe(0);
+    expect(driver.select.value()).toEqual(['banana', 'cherry']);
+    expect(driver.select.displayValue()).toBe('Mixed');
+    expect(driver.chips().length).toBe(0);
 
-    await openSelect();
+    await driver.open();
 
-    options()[0]!.click();
+    driver.clickOption(0);
+
+    expect(driver.host.value()).toEqual(['apple']);
+    expect(driver.host.mixed()).toBe(false);
+    expect(driver.select.open()).toBe(true);
+
+    driver.clickOption(1);
+
+    expect(driver.host.value()).toEqual(['apple', 'banana']);
+    driver.host.mixed.set(true);
+    driver.detectChanges();
+
+    driver.select.clearValue();
     tick();
 
-    expect(fixture.componentInstance.value()).toEqual(['apple']);
-    expect(fixture.componentInstance.mixed()).toBe(false);
-    expect(select.open()).toBe(true);
-
-    options()[1]!.click();
-    tick();
-
-    expect(fixture.componentInstance.value()).toEqual(['apple', 'banana']);
-    fixture.componentInstance.mixed.set(true);
-    fixture.detectChanges();
-
-    select.clearValue();
-    tick();
-
-    expect(fixture.componentInstance.value()).toEqual([]);
-    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(driver.host.value()).toEqual([]);
+    expect(driver.host.mixed()).toBe(false);
   });
 
   it('applies maxSelection to the effective mixed selection, including zero', async () => {
-    fixture.componentInstance.value.set(['apple', 'banana']);
-    fixture.componentInstance.mixed.set(true);
-    fixture.componentInstance.maxSelection.set(1);
-    fixture.detectChanges();
+    driver.host.value.set(['apple', 'banana']);
+    driver.host.mixed.set(true);
+    driver.host.maxSelection.set(1);
+    driver.detectChanges();
 
-    expect(select.isFull()).toBe(false);
+    expect(driver.select.isFull()).toBe(false);
 
-    await openSelect();
+    await driver.open();
 
-    expect(options().every((option) => option.getAttribute('aria-disabled') !== 'true')).toBe(true);
+    expect(driver.options().every((option) => option.getAttribute('aria-disabled') !== 'true')).toBe(true);
 
-    options()[2]!.click();
-    tick();
+    driver.clickOption(2);
 
-    expect(fixture.componentInstance.value()).toEqual(['cherry']);
-    expect(fixture.componentInstance.mixed()).toBe(false);
-    expect(select.isFull()).toBe(true);
-    expect(options()[0]!.getAttribute('aria-disabled')).toBe('true');
-    expect(options()[2]!.hasAttribute('aria-disabled')).toBe(false);
+    expect(driver.host.value()).toEqual(['cherry']);
+    expect(driver.host.mixed()).toBe(false);
+    expect(driver.select.isFull()).toBe(true);
+    expect(driver.options()[0]!.getAttribute('aria-disabled')).toBe('true');
+    expect(driver.options()[2]!.hasAttribute('aria-disabled')).toBe(false);
 
-    fixture.componentInstance.value.set(['apple', 'banana']);
-    fixture.componentInstance.mixed.set(true);
-    fixture.componentInstance.maxSelection.set(0);
-    fixture.detectChanges();
+    driver.host.value.set(['apple', 'banana']);
+    driver.host.mixed.set(true);
+    driver.host.maxSelection.set(0);
+    driver.detectChanges();
 
-    expect(select.isFull()).toBe(true);
+    expect(driver.select.isFull()).toBe(true);
 
-    expect(options().every((option) => option.getAttribute('aria-disabled') === 'true')).toBe(true);
+    expect(driver.options().every((option) => option.getAttribute('aria-disabled') === 'true')).toBe(true);
 
-    options()[0]!.click();
-    tick();
+    driver.clickOption(0);
 
-    expect(fixture.componentInstance.value()).toEqual(['apple', 'banana']);
-    expect(fixture.componentInstance.mixed()).toBe(true);
+    expect(driver.host.value()).toEqual(['apple', 'banana']);
+    expect(driver.host.mixed()).toBe(true);
   });
 
   it('renders readonly chips without the remove affordance and without the disabled look', () => {
-    fixture.componentInstance.value.set(['apple']);
-    fixture.componentInstance.readonly.set(true);
-    fixture.detectChanges();
+    driver.host.value.set(['apple']);
+    driver.host.readonly.set(true);
+    driver.detectChanges();
 
-    const chip = trigger.querySelector<HTMLElement>('et-chip')!;
-
-    expect(chip.querySelector('.et-chip-remove-button')).toBeNull();
-    expect(chip.hasAttribute('data-disabled')).toBe(false);
+    expect(driver.chipRemoveButton(0)).toBeNull();
+    expect(driver.chips()[0]!.hasAttribute('data-disabled')).toBe(false);
   });
 });
 
 describe('SelectDirective (search)', () => {
-  let fixture: ComponentFixture<SearchSelectTestHost>;
-  let select: SelectDirective;
-  let trigger: HTMLElement;
+  let driver: SelectDriver<SearchSelectTestHost>;
 
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  // the search input renders inline in the trigger (combobox pattern), not in the panel
-  const searchInput = () => fixture.nativeElement.querySelector('input[etselectsearch]') as HTMLInputElement | null;
-  const visibleOptions = () =>
-    Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]:not([data-filtered])') ?? []);
-  const activeOption = () => pane()?.querySelector<HTMLElement>('[role="option"][data-active]') ?? null;
-  const stateRow = () => pane()?.querySelector<HTMLElement>('.et-select-state') ?? null;
-  const busyBar = () => pane()?.querySelector<HTMLElement>('.et-select-busy-bar') ?? null;
-  const loadingContent = () => pane()?.querySelector<HTMLElement>('.et-select-state-content') ?? null;
+  const stateRow = () => driver.paneEl('.et-select-state');
+  const busyBar = () => driver.paneEl('.et-select-busy-bar');
+  const loadingContent = () => driver.paneEl('.et-select-state-content');
 
   // past signalDeferredLoading's delay, so the indicator the panel defers has turned on
   const settleIndicator = async () => {
@@ -714,256 +617,218 @@ describe('SelectDirective (search)', () => {
     tick();
   };
 
-  const openSelect = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
-
-  const typeQuery = (query: string) => {
-    const input = searchInput()!;
-
-    input.value = query;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-  };
-
-  const keydownOnSearch = (key: string) => {
-    searchInput()!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-    tick();
-  };
-
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [SearchSelectTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(SearchSelectTestHost);
-    fixture.detectChanges();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    trigger = fixture.nativeElement.querySelector('[role="combobox"]');
+    driver = mountSelect(SearchSelectTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('renders the search input inline in the trigger and focuses it on open', async () => {
-    const input = searchInput()!;
+    const input = driver.searchInput();
 
     expect(input.closest('.et-select-trigger')).not.toBeNull();
     // the input owns the combobox role; the trigger container drops it
     expect(input.getAttribute('role')).toBe('combobox');
-    expect(fixture.nativeElement.querySelector('.et-select-trigger')?.getAttribute('role')).toBeNull();
+    expect(driver.query('.et-select-trigger')?.getAttribute('role')).toBeNull();
 
-    await openSelect();
+    await driver.open();
 
     expect(document.activeElement).toBe(input);
     expect(input.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('selects the mixed label on open and restores it when Escape cancels search', async () => {
-    fixture.componentInstance.value.set('banana');
-    fixture.componentInstance.mixed.set(true);
-    fixture.componentInstance.mixedLabel.set('Various fruits');
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.host.mixed.set(true);
+    driver.host.mixedLabel.set('Various fruits');
+    driver.detectChanges();
 
-    expect(searchInput()!.value).toBe('Various fruits');
+    expect(driver.searchInput().value).toBe('Various fruits');
 
-    await openSelect();
+    await driver.open();
 
-    expect(searchInput()!.selectionStart).toBe(0);
-    expect(searchInput()!.selectionEnd).toBe('Various fruits'.length);
+    expect(driver.searchInput().selectionStart).toBe(0);
+    expect(driver.searchInput().selectionEnd).toBe('Various fruits'.length);
 
-    typeQuery('ap');
+    driver.type('ap');
 
-    expect(fixture.componentInstance.mixed()).toBe(true);
-    expect(searchInput()!.value).toBe('ap');
+    expect(driver.host.mixed()).toBe(true);
+    expect(driver.searchInput().value).toBe('ap');
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    tick();
+    driver.escape();
 
-    expect(select.query()).toBe('');
-    expect(fixture.componentInstance.mixed()).toBe(true);
-    expect(fixture.componentInstance.value()).toBe('banana');
-    expect(searchInput()!.value).toBe('Various fruits');
-    expect(searchInput()!.selectionStart).toBe(0);
-    expect(searchInput()!.selectionEnd).toBe('Various fruits'.length);
+    expect(driver.select.query()).toBe('');
+    expect(driver.host.mixed()).toBe(true);
+    expect(driver.host.value()).toBe('banana');
+    expect(driver.searchInput().value).toBe('Various fruits');
+    expect(driver.searchInput().selectionStart).toBe(0);
+    expect(driver.searchInput().selectionEnd).toBe('Various fruits'.length);
   });
 
   it('clears mixed when the single display text is erased but ignores Backspace on the empty multi input', async () => {
-    fixture.componentInstance.value.set('banana');
-    fixture.componentInstance.mixed.set(true);
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.host.mixed.set(true);
+    driver.detectChanges();
 
-    await openSelect();
-    typeQuery('');
+    await driver.open();
+    driver.type('');
 
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.host.mixed()).toBe(false);
 
-    fixture.componentInstance.multiple.set(true);
-    fixture.componentInstance.value.set(['apple', 'banana']);
-    fixture.componentInstance.mixed.set(true);
-    select.describedBy.set('search-hint');
-    fixture.detectChanges();
+    driver.host.multiple.set(true);
+    driver.host.value.set(['apple', 'banana']);
+    driver.host.mixed.set(true);
+    driver.select.describedBy.set('search-hint');
+    driver.detectChanges();
 
-    const mixedLabelId = fixture.nativeElement.querySelector<HTMLElement>('.et-select-value')?.id ?? '';
+    const mixedLabelId = driver.valueEl()?.id ?? '';
 
     expect(mixedLabelId).not.toBe('');
-    expect(searchInput()!.getAttribute('aria-describedby')?.split(' ')).toEqual(['search-hint', mixedLabelId]);
+    expect(driver.searchInput().getAttribute('aria-describedby')?.split(' ')).toEqual(['search-hint', mixedLabelId]);
 
     // no visible chip to delete - Backspace must not silently clear the hidden raw selection
-    searchInput()!.value = '';
-    keydownOnSearch('Backspace');
+    driver.searchInput().value = '';
+    driver.pressInSearch('Backspace');
 
-    expect(fixture.componentInstance.value()).toEqual(['apple', 'banana']);
-    expect(fixture.componentInstance.mixed()).toBe(true);
+    expect(driver.host.value()).toEqual(['apple', 'banana']);
+    expect(driver.host.mixed()).toBe(true);
   });
 
   it('opens the panel when the user starts typing', () => {
-    typeQuery('a');
+    driver.type('a');
 
-    expect(select.open()).toBe(true);
+    expect(driver.select.open()).toBe(true);
   });
 
   it('filters options against the query and emits queryChange', async () => {
-    await openSelect();
+    await driver.open();
 
-    typeQuery('an');
+    driver.type('an');
 
-    expect(fixture.componentInstance.queries).toEqual(['an']);
-    expect(visibleOptions().map((option) => option.textContent?.trim())).toEqual(['Banana']);
-    expect(select.visibleItems().map((item) => item.label())).toEqual(['Banana']);
+    expect(driver.host.queries).toEqual(['an']);
+    expect(driver.visibleOptions().map((option) => option.textContent?.trim())).toEqual(['Banana']);
+    expect(driver.select.visibleItems().map((item) => item.label())).toEqual(['Banana']);
   });
 
   it('reconciles virtual focus when the active option is filtered away', async () => {
-    await openSelect();
+    await driver.open();
 
     // initial active: Apple
-    expect(activeOption()?.textContent?.trim()).toBe('Apple');
+    expect(driver.activeLabel()).toBe('Apple');
 
-    typeQuery('cher');
+    driver.type('cher');
 
-    expect(activeOption()?.textContent?.trim()).toBe('Cherry');
+    expect(driver.activeLabel()).toBe('Cherry');
   });
 
   it('freezes the panel filter while the panel closes', async () => {
-    await openSelect();
+    await driver.open();
 
-    typeQuery('ban');
-    expect(select.visibleItems().map((item) => item.label())).toEqual(['Banana']);
+    driver.type('ban');
+    expect(driver.select.visibleItems().map((item) => item.label())).toEqual(['Banana']);
 
     // closing clears the query (trigger display) but must NOT unfilter the closing panel
-    select.hide();
+    driver.select.hide();
     tick();
 
-    expect(select.query()).toBe('');
-    expect(select.visibleItems().map((item) => item.label())).toEqual(['Banana']);
-    expect(Array.from(pane()?.querySelectorAll('[role="option"]:not([data-filtered])') ?? []).length).toBe(1);
+    expect(driver.select.query()).toBe('');
+    expect(driver.select.visibleItems().map((item) => item.label())).toEqual(['Banana']);
+    expect(driver.visibleOptions().length).toBe(1);
   });
 
   it('commits the active option with Enter from the search input', async () => {
-    await openSelect();
+    await driver.open();
 
-    typeQuery('ban');
-    keydownOnSearch('Enter');
-    await flushFrames();
-    tick();
+    driver.type('ban');
+    driver.pressInSearch('Enter');
+    await driver.settle();
 
-    expect(fixture.componentInstance.value()).toBe('banana');
-    expect(select.open()).toBe(false);
+    expect(driver.host.value()).toBe('banana');
+    expect(driver.select.open()).toBe(false);
   });
 
   it('clears the query on the first Escape and closes on the second', async () => {
-    await openSelect();
+    await driver.open();
     await flushFrames();
 
-    typeQuery('ap');
-    expect(select.query()).toBe('ap');
+    driver.type('ap');
+    expect(driver.select.query()).toBe('ap');
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    tick();
+    driver.escape();
 
-    expect(select.query()).toBe('');
-    expect(select.open()).toBe(true);
-    expect(fixture.componentInstance.queries).toEqual(['ap', '']);
+    expect(driver.select.query()).toBe('');
+    expect(driver.select.open()).toBe(true);
+    expect(driver.host.queries).toEqual(['ap', '']);
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    tick();
+    driver.escape();
 
-    expect(select.open()).toBe(false);
+    expect(driver.select.open()).toBe(false);
   });
 
   it('commits a custom value with Enter when no option matches', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    typeQuery('kiwi');
+    driver.type('kiwi');
     // no regular option matches - only the "Create …" row remains, holding virtual focus
-    expect(visibleOptions().length).toBe(1);
-    expect(visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(true);
-    expect(activeOption()).toBe(visibleOptions()[0]);
+    expect(driver.visibleOptions().length).toBe(1);
+    expect(driver.visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(true);
+    expect(driver.activeOption()).toBe(driver.visibleOptions()[0]);
 
-    keydownOnSearch('Enter');
-    await flushFrames();
-    tick();
+    driver.pressInSearch('Enter');
+    await driver.settle();
 
-    expect(fixture.componentInstance.value()).toBe('kiwi');
-    expect(select.open()).toBe(false);
-    expect(select.displayValue()).toBe('kiwi');
+    expect(driver.host.value()).toBe('kiwi');
+    expect(driver.select.open()).toBe(false);
+    expect(driver.select.displayValue()).toBe('kiwi');
   });
 
   it('resolves mixed on custom commit but preserves it when add-new hands off the query', async () => {
-    fixture.componentInstance.value.set('banana');
-    fixture.componentInstance.mixed.set(true);
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.host.mixed.set(true);
+    driver.host.allowCustom.set(true);
+    driver.detectChanges();
 
-    await openSelect();
-    typeQuery('kiwi');
-    keydownOnSearch('Enter');
-    await flushFrames();
-    tick();
+    await driver.open();
+    driver.type('kiwi');
+    driver.pressInSearch('Enter');
+    await driver.settle();
 
-    expect(fixture.componentInstance.value()).toBe('kiwi');
-    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(driver.host.value()).toBe('kiwi');
+    expect(driver.host.mixed()).toBe(false);
 
-    fixture.componentInstance.value.set('banana');
-    fixture.componentInstance.mixed.set(true);
-    fixture.componentInstance.allowCustom.set(false);
-    fixture.componentInstance.allowAddNew.set(true);
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.host.mixed.set(true);
+    driver.host.allowCustom.set(false);
+    driver.host.allowAddNew.set(true);
+    driver.detectChanges();
 
-    await openSelect();
-    typeQuery('dragonfruit');
+    await driver.open();
+    driver.type('dragonfruit');
 
-    pane()!.querySelector<HTMLElement>('.et-select-add-new')!.click();
-    tick();
+    driver.clickInPane('.et-select-add-new');
 
-    expect(fixture.componentInstance.addNewQueries).toEqual(['dragonfruit']);
-    expect(fixture.componentInstance.value()).toBe('banana');
-    expect(fixture.componentInstance.mixed()).toBe(true);
+    expect(driver.host.addNewQueries).toEqual(['dragonfruit']);
+    expect(driver.host.value()).toBe('banana');
+    expect(driver.host.mixed()).toBe(true);
   });
 
   it('offers the "Create …" row while options still match and commits it via arrow keys', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.multiple.set(true);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
     // "app" matches Apple - previously Enter could only ever commit the option
-    typeQuery('app');
+    driver.type('app');
 
-    const visible = visibleOptions();
+    const visible = driver.visibleOptions();
 
     expect(visible.length).toBe(2);
     expect(visible[0]!.textContent).toContain('Apple');
@@ -971,340 +836,314 @@ describe('SelectDirective (search)', () => {
     expect(visible[1]!.textContent).toContain('app');
 
     // default virtual focus stays on the real option - Enter would pick Apple
-    expect(activeOption()).toBe(visible[0]);
+    expect(driver.activeOption()).toBe(visible[0]);
 
-    keydownOnSearch('ArrowDown');
-    expect(activeOption()).toBe(visible[1]);
+    driver.pressInSearch('ArrowDown');
+    expect(driver.activeOption()).toBe(visible[1]);
 
-    keydownOnSearch('Enter');
+    driver.pressInSearch('Enter');
     tick();
 
-    expect(fixture.componentInstance.value()).toEqual(['app']);
+    expect(driver.host.value()).toEqual(['app']);
     // the committed value is its own label, resolved through the label cache
-    expect(select.displayValue()).toBe('app');
+    expect(driver.select.displayValue()).toBe('app');
   });
 
   it('hides the "Create …" row for duplicate labels and existing selections', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.multiple.set(true);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
     // exact label match (case-insensitive) - creating "apple" beside Apple is a duplicate
-    typeQuery('apple');
-    expect(visibleOptions().length).toBe(1);
-    expect(visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(false);
+    driver.type('apple');
+    expect(driver.visibleOptions().length).toBe(1);
+    expect(driver.visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(false);
 
     // an already-selected custom value must not be offered again
-    typeQuery('kiwi');
-    keydownOnSearch('Enter');
+    driver.type('kiwi');
+    driver.pressInSearch('Enter');
     tick();
-    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+    expect(driver.host.value()).toEqual(['kiwi']);
 
-    typeQuery('kiwi');
-    expect(visibleOptions().length).toBe(0);
+    driver.type('kiwi');
+    expect(driver.visibleOptions().length).toBe(0);
   });
 
   it('commits custom values on separator characters while typing', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.multiple.set(true);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    typeQuery('kiwi,');
-    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
-    expect(searchInput()!.value).toBe('');
-    expect(select.query()).toBe('');
+    driver.type('kiwi,');
+    expect(driver.host.value()).toEqual(['kiwi']);
+    expect(driver.searchInput().value).toBe('');
+    expect(driver.select.query()).toBe('');
 
     // a rejected commit (duplicate) keeps the pending text minus the separator for editing
-    typeQuery('kiwi,');
-    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
-    expect(searchInput()!.value).toBe('kiwi');
-    expect(select.query()).toBe('kiwi');
+    driver.type('kiwi,');
+    expect(driver.host.value()).toEqual(['kiwi']);
+    expect(driver.searchInput().value).toBe('kiwi');
+    expect(driver.select.query()).toBe('kiwi');
   });
 
   it('splits pasted text on separators and newlines into custom values', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.multiple.set(true);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    // jsdom has no DataTransfer - fake the clipboardData surface
-    const event = new Event('paste', { bubbles: true, cancelable: true });
-
-    Object.defineProperty(event, 'clipboardData', { value: { getData: () => 'kiwi, mango\nkiwi' } });
-    searchInput()!.dispatchEvent(event);
-    tick();
+    driver.paste('kiwi, mango\nkiwi');
 
     // split on the comma and the newline, trimmed by the normalizer, duplicate dropped
-    expect(fixture.componentInstance.value()).toEqual(['kiwi', 'mango']);
+    expect(driver.host.value()).toEqual(['kiwi', 'mango']);
   });
 
   it('commits the pending query when the panel closes with commitCustomValueOnClose', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.commitOnClose.set(true);
-    fixture.componentInstance.multiple.set(true);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.host.commitOnClose.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    typeQuery('kiwi');
-    select.hide();
-    tick();
-    await flushFrames();
+    driver.type('kiwi');
+    await driver.close();
 
-    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+    expect(driver.host.value()).toEqual(['kiwi']);
 
     // Escape clears the query before the close - it must never commit
-    await openSelect();
-    typeQuery('mango');
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    tick();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    tick();
+    await driver.open();
+    driver.type('mango');
+    driver.escape();
+    driver.escape();
     await flushFrames();
 
-    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+    expect(driver.host.value()).toEqual(['kiwi']);
   });
 
   it('does not re-commit the leftover query over a picked option on close', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.commitOnClose.set(true);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.host.commitOnClose.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
     // "ban" filters to Banana; Enter picks the option - the close must not turn the
     // leftover "ban" query into a custom value overwriting it
-    typeQuery('ban');
-    keydownOnSearch('Enter');
+    driver.type('ban');
+    driver.pressInSearch('Enter');
     tick();
     await flushFrames();
 
-    expect(fixture.componentInstance.value()).toBe('banana');
-    expect(select.open()).toBe(false);
+    expect(driver.host.value()).toBe('banana');
+    expect(driver.select.open()).toBe(false);
   });
 
   it('enforces maxSelection and locks the search input while full', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.multiple.set(true);
-    fixture.componentInstance.maxSelection.set(2);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.host.maxSelection.set(2);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    typeQuery('kiwi');
-    keydownOnSearch('Enter');
+    driver.type('kiwi');
+    driver.pressInSearch('Enter');
     tick();
-    typeQuery('mango');
-    keydownOnSearch('Enter');
+    driver.type('mango');
+    driver.pressInSearch('Enter');
     tick();
 
-    expect(fixture.componentInstance.value()).toEqual(['kiwi', 'mango']);
-    expect(select.isFull()).toBe(true);
-    expect(searchInput()!.readOnly).toBe(true);
+    expect(driver.host.value()).toEqual(['kiwi', 'mango']);
+    expect(driver.select.isFull()).toBe(true);
+    expect(driver.searchInput().readOnly).toBe(true);
 
     // both the custom path and the option path reject further adds
-    expect(select.commitCustomValue('papaya')).toBe(false);
-    visibleOptions()[0]?.click();
+    expect(driver.select.commitCustomValue('papaya')).toBe(false);
+    driver.visibleOptions()[0]?.click();
     tick();
-    expect(fixture.componentInstance.value()).toEqual(['kiwi', 'mango']);
+    expect(driver.host.value()).toEqual(['kiwi', 'mango']);
 
     // deselecting frees a slot and unlocks the input
-    select.deselectValue('kiwi');
+    driver.select.deselectValue('kiwi');
     tick();
-    expect(select.isFull()).toBe(false);
-    expect(searchInput()!.readOnly).toBe(false);
+    expect(driver.select.isFull()).toBe(false);
+    expect(driver.searchInput().readOnly).toBe(false);
   });
 
   it('renders unselected options as disabled while full and keeps the selected ones deselectable', async () => {
-    fixture.componentInstance.multiple.set(true);
-    fixture.componentInstance.maxSelection.set(2);
-    fixture.detectChanges();
+    driver.host.multiple.set(true);
+    driver.host.maxSelection.set(2);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    const optionByLabel = (label: string) => visibleOptions().find((el) => el.textContent?.trim() === label) ?? null;
+    driver.clickOptionByLabel('Apple');
+    driver.clickOptionByLabel('Banana');
 
-    optionByLabel('Apple')!.click();
-    tick();
-    optionByLabel('Banana')!.click();
-    tick();
-
-    expect(select.isFull()).toBe(true);
-    expect(optionByLabel('Cherry')!.getAttribute('aria-disabled')).toBe('true');
-    expect(optionByLabel('Apple')!.hasAttribute('aria-disabled')).toBe(false);
+    expect(driver.select.isFull()).toBe(true);
+    expect(driver.optionByLabel('Cherry')!.getAttribute('aria-disabled')).toBe('true');
+    expect(driver.optionByLabel('Apple')!.hasAttribute('aria-disabled')).toBe(false);
 
     // clicking a full option is a no-op
-    optionByLabel('Cherry')!.click();
-    tick();
-    expect(fixture.componentInstance.value()).toEqual(['apple', 'banana']);
+    driver.clickOptionByLabel('Cherry');
+    expect(driver.host.value()).toEqual(['apple', 'banana']);
 
     // keyboard navigation skips full options like any other disabled option
-    expect(select.enabledItems().length).toBe(2);
+    expect(driver.select.enabledItems().length).toBe(2);
 
     // deselecting re-enables the remaining options
-    optionByLabel('Apple')!.click();
-    tick();
-    expect(select.isFull()).toBe(false);
-    expect(optionByLabel('Cherry')!.hasAttribute('aria-disabled')).toBe(false);
+    driver.clickOptionByLabel('Apple');
+    expect(driver.select.isFull()).toBe(false);
+    expect(driver.optionByLabel('Cherry')!.hasAttribute('aria-disabled')).toBe(false);
   });
 
   it('runs custom values through the normalizeCustomValue hook', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.multiple.set(true);
-    fixture.componentInstance.normalize.set((raw: string) => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.host.normalize.set((raw: string) => {
       const tag = raw.trim().toLowerCase();
 
       return tag.startsWith('x') ? null : tag;
     });
-    fixture.detectChanges();
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    typeQuery('  KiWi  ');
-    keydownOnSearch('Enter');
+    driver.type('  KiWi  ');
+    driver.pressInSearch('Enter');
     tick();
 
-    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+    expect(driver.host.value()).toEqual(['kiwi']);
 
     // rejected by the hook - no create row, Enter commits nothing
-    typeQuery('xyz');
-    expect(visibleOptions().length).toBe(0);
-    keydownOnSearch('Enter');
+    driver.type('xyz');
+    expect(driver.visibleOptions().length).toBe(0);
+    driver.pressInSearch('Enter');
     tick();
 
-    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+    expect(driver.host.value()).toEqual(['kiwi']);
   });
 
   it('keeps committed custom values when an option is picked afterwards', async () => {
-    fixture.componentInstance.allowCustom.set(true);
-    fixture.componentInstance.multiple.set(true);
-    fixture.detectChanges();
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    typeQuery('kiwi');
-    keydownOnSearch('Enter');
+    driver.type('kiwi');
+    driver.pressInSearch('Enter');
     tick();
 
-    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+    expect(driver.host.value()).toEqual(['kiwi']);
 
     // pick a regular option from the panel - the custom value must survive
-    pane()!.querySelectorAll<HTMLElement>('[role="option"]')[0]!.click();
-    tick();
+    driver.clickOption(0);
 
-    expect(fixture.componentInstance.value()).toEqual(['kiwi', 'apple']);
+    expect(driver.host.value()).toEqual(['kiwi', 'apple']);
   });
 
   it('Backspace on an empty input deletes the last selected value', async () => {
-    fixture.componentInstance.multiple.set(true);
-    fixture.componentInstance.value.set(['apple', 'banana']);
-    fixture.detectChanges();
+    driver.host.multiple.set(true);
+    driver.host.value.set(['apple', 'banana']);
+    driver.detectChanges();
 
     const backspace = () => {
-      searchInput()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
-      tick();
+      driver.pressInSearch('Backspace');
     };
 
     backspace();
-    expect(fixture.componentInstance.value()).toEqual(['apple']);
+    expect(driver.host.value()).toEqual(['apple']);
 
     backspace();
-    expect(fixture.componentInstance.value()).toEqual([]);
+    expect(driver.host.value()).toEqual([]);
 
     // nothing selected - backspace is a no-op
     backspace();
-    expect(fixture.componentInstance.value()).toEqual([]);
+    expect(driver.host.value()).toEqual([]);
   });
 
   it('clears the query when a multi commit adds a value', async () => {
-    fixture.componentInstance.multiple.set(true);
-    fixture.detectChanges();
+    driver.host.multiple.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    typeQuery('ban');
-    pane()!.querySelector<HTMLElement>('[role="option"]:not([data-filtered])')!.click();
-    tick();
+    driver.type('ban');
+    driver.clickInPane('[role="option"]:not([data-filtered])');
 
-    expect(fixture.componentInstance.value()).toEqual(['banana']);
-    expect(searchInput()!.value).toBe('');
-    expect(select.query()).toBe('');
+    expect(driver.host.value()).toEqual(['banana']);
+    expect(driver.searchInput().value).toBe('');
+    expect(driver.select.query()).toBe('');
 
     // toggling the same value off while searching keeps the query (pruning flow)
-    typeQuery('ban');
-    pane()!.querySelector<HTMLElement>('[role="option"]:not([data-filtered])')!.click();
-    tick();
+    driver.type('ban');
+    driver.clickInPane('[role="option"]:not([data-filtered])');
 
-    expect(fixture.componentInstance.value()).toEqual([]);
-    expect(select.query()).toBe('ban');
+    expect(driver.host.value()).toEqual([]);
+    expect(driver.select.query()).toBe('ban');
   });
 
   it('displays the selected label inside the input (single select) and selects it on open', async () => {
-    fixture.componentInstance.value.set('banana');
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.detectChanges();
 
     // closed: the input doubles as the value display
-    expect(searchInput()!.value).toBe('Banana');
+    expect(driver.searchInput().value).toBe('Banana');
 
-    await openSelect();
+    await driver.open();
 
     // open: the label is text-selected so typing replaces it
-    const input = searchInput()!;
+    const input = driver.searchInput();
     expect(input.value).toBe('Banana');
     expect(input.selectionStart).toBe(0);
     expect(input.selectionEnd).toBe('Banana'.length);
 
     // editing replaces the display with the query
-    typeQuery('ap');
+    driver.type('ap');
     expect(input.value).toBe('ap');
 
     // Escape reverts the query without touching the selection
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    tick();
-    expect(fixture.componentInstance.value()).toBe('banana');
+    driver.escape();
+    expect(driver.host.value()).toBe('banana');
 
     // closing restores the label display
-    select.hide();
-    tick();
-    await flushFrames();
-    tick();
-    expect(searchInput()!.value).toBe('Banana');
+    await driver.close();
+    expect(driver.searchInput().value).toBe('Banana');
   });
 
   it('erasing all input text deselects the value (single select)', async () => {
-    fixture.componentInstance.value.set('banana');
-    fixture.detectChanges();
+    driver.host.value.set('banana');
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
     // the user deletes the displayed label entirely
-    typeQuery('');
+    driver.type('');
 
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(searchInput()!.value).toBe('');
+    expect(driver.host.value()).toBeNull();
+    expect(driver.searchInput().value).toBe('');
 
     // closing shows the placeholder, not a stale label
-    select.hide();
-    tick();
-    await flushFrames();
-    tick();
+    await driver.close();
 
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(searchInput()!.value).toBe('');
+    expect(driver.host.value()).toBeNull();
+    expect(driver.searchInput().value).toBe('');
   });
 
   it('holds the loading row empty until the wait is worth reporting', async () => {
-    await openSelect();
+    await driver.open();
 
     // no option matches, so there is nothing on screen the row would replace
-    typeQuery('zzz');
-    fixture.componentInstance.loading.set(true);
-    fixture.detectChanges();
+    driver.type('zzz');
+    driver.host.loading.set(true);
+    driver.detectChanges();
 
     // the row is there from the first frame (it reserves the height the options will need) but says
     // nothing yet, and it keeps the empty state from claiming the panel
@@ -1321,36 +1160,36 @@ describe('SelectDirective (search)', () => {
   });
 
   it('runs a busy bar over options already on screen instead of replacing them', async () => {
-    await openSelect();
+    await driver.open();
 
-    fixture.componentInstance.loading.set(true);
-    fixture.detectChanges();
+    driver.host.loading.set(true);
+    driver.detectChanges();
 
     expect(stateRow()).toBeNull();
-    expect(visibleOptions().length).toBe(3);
+    expect(driver.visibleOptions().length).toBe(3);
     expect(busyBar()).toBeNull();
 
     await settleIndicator();
 
     expect(busyBar()).not.toBeNull();
     expect(stateRow()).toBeNull();
-    expect(visibleOptions().length).toBe(3);
+    expect(driver.visibleOptions().length).toBe(3);
   });
 
   it('turns the load-more control into a loading row in its own place, without a busy bar', async () => {
-    fixture.componentInstance.hasMore.set(true);
-    await openSelect();
+    driver.host.hasMore.set(true);
+    await driver.open();
 
-    const loadMoreButton = () => pane()?.querySelector<HTMLButtonElement>('button.et-select-load-more') ?? null;
-    const loadMoreLoading = () => pane()?.querySelector<HTMLElement>('.et-select-load-more--loading') ?? null;
+    const loadMoreButton = () => driver.paneEl<HTMLButtonElement>('button.et-select-load-more');
+    const loadMoreLoading = () => driver.paneEl<HTMLElement>('.et-select-load-more--loading');
 
     expect(loadMoreButton()?.disabled).toBe(false);
 
     const heightBefore = loadMoreButton()!.getBoundingClientRect().height;
 
     loadMoreButton()!.click();
-    fixture.componentInstance.loading.set(true);
-    fixture.detectChanges();
+    driver.host.loading.set(true);
+    driver.detectChanges();
 
     // until the wait is worth reporting the control stays, disabled - a live-looking no-op reads
     // as broken
@@ -1367,103 +1206,87 @@ describe('SelectDirective (search)', () => {
   });
 
   it('runs the busy bar for a refetch the reader did not ask for by loading more', async () => {
-    fixture.componentInstance.hasMore.set(true);
-    await openSelect();
+    driver.host.hasMore.set(true);
+    await driver.open();
 
-    fixture.componentInstance.loading.set(true);
-    fixture.detectChanges();
+    driver.host.loading.set(true);
+    driver.detectChanges();
     await settleIndicator();
 
     expect(busyBar()).not.toBeNull();
-    expect(pane()?.querySelector('.et-select-load-more--loading')).toBeNull();
+    expect(driver.paneEl('.et-select-load-more--loading')).toBeNull();
   });
 
   it('renders the error and empty states', async () => {
-    await openSelect();
+    await driver.open();
 
-    fixture.componentInstance.error.set('Something broke');
-    fixture.detectChanges();
+    driver.host.error.set('Something broke');
+    driver.detectChanges();
     expect(stateRow()?.classList.contains('et-select-state--error')).toBe(true);
     expect(stateRow()?.textContent?.trim()).toBe('Something broke');
 
-    fixture.componentInstance.error.set(null);
-    fixture.detectChanges();
-    typeQuery('zzz');
+    driver.host.error.set(null);
+    driver.detectChanges();
+    driver.type('zzz');
     expect(stateRow()?.classList.contains('et-select-state--empty')).toBe(true);
   });
 
   it('emits loadMore from the load-more control', async () => {
-    fixture.componentInstance.hasMore.set(true);
-    fixture.detectChanges();
+    driver.host.hasMore.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    pane()!.querySelector<HTMLElement>('.et-select-load-more')!.click();
-    tick();
+    driver.clickInPane('.et-select-load-more');
 
-    expect(fixture.componentInstance.loadMoreCount).toBe(1);
+    expect(driver.host.loadMoreCount).toBe(1);
   });
 
   it('emits addNew with the current query from the add-new row and closes', async () => {
-    fixture.componentInstance.allowAddNew.set(true);
-    fixture.detectChanges();
+    driver.host.allowAddNew.set(true);
+    driver.detectChanges();
 
-    await openSelect();
+    await driver.open();
 
-    typeQuery('drag');
+    driver.type('drag');
 
-    pane()!.querySelector<HTMLElement>('.et-select-add-new')!.click();
-    tick();
+    driver.clickInPane('.et-select-add-new');
 
-    expect(fixture.componentInstance.addNewQueries).toEqual(['drag']);
-    expect(select.open()).toBe(false);
+    expect(driver.host.addNewQueries).toEqual(['drag']);
+    expect(driver.select.open()).toBe(false);
   });
 
   it('marks pointer-set virtual focus as such (the highlight only paints while hovered)', async () => {
-    await openSelect();
+    await driver.open();
 
     // initial virtual focus comes from the open logic - keyboard-grade, always highlighted
-    expect(activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
+    expect(driver.activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
 
-    const banana = visibleOptions()[1]!;
+    const banana = driver.visibleOptions()[1]!;
 
-    banana.dispatchEvent(new PointerEvent('pointerenter', { bubbles: false }));
-    tick();
+    driver.hover(banana);
 
-    expect(activeOption()?.textContent?.trim()).toBe('Banana');
-    expect(activeOption()?.getAttribute('data-active-source')).toBe('pointer');
+    expect(driver.activeLabel()).toBe('Banana');
+    expect(driver.activeOption()?.getAttribute('data-active-source')).toBe('pointer');
 
-    keydownOnSearch('ArrowDown');
+    driver.pressInSearch('ArrowDown');
 
-    expect(activeOption()?.textContent?.trim()).toBe('Cherry');
-    expect(activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
+    expect(driver.activeLabel()).toBe('Cherry');
+    expect(driver.activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
   });
 });
 
 describe('SelectDirective (search placeholder)', () => {
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-  });
-
   it('carries the select placeholder on an inline search without one of its own', () => {
-    TestBed.configureTestingModule({
-      imports: [SearchPlaceholderTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
+    const driver = mountSelect(SearchPlaceholderTestHost);
+    const input = driver.searchInput();
 
-    const fixture = TestBed.createComponent(SearchPlaceholderTestHost);
-
-    fixture.detectChanges();
     tick();
-
-    const input = fixture.nativeElement.querySelector('input[etselectsearch]') as HTMLInputElement;
 
     expect(input.placeholder).toBe('Pick a country');
 
-    fixture.componentInstance.value.set('de');
-    fixture.detectChanges();
+    driver.host.value.set('de');
+    driver.detectChanges();
     tick();
 
     // the input now displays the selected label - a placeholder behind it would be dead weight
@@ -1472,274 +1295,184 @@ describe('SelectDirective (search placeholder)', () => {
   });
 
   it('leaves a search input that brings its own placeholder alone', () => {
-    TestBed.configureTestingModule({
-      imports: [SearchSelectTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
+    const driver = mountSelect(SearchSelectTestHost);
 
-    const fixture = TestBed.createComponent(SearchSelectTestHost);
-
-    fixture.detectChanges();
     tick();
 
-    const input = fixture.nativeElement.querySelector('input[etselectsearch]') as HTMLInputElement;
-
-    expect(input.placeholder).toBe('Search');
+    expect(driver.searchInput().placeholder).toBe('Search');
   });
 });
 
 describe('SelectDirective (panel-hosted search)', () => {
-  let fixture: ComponentFixture<PanelSearchTestHost>;
-  let select: SelectDirective;
-
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const searchInput = () => pane()?.querySelector<HTMLInputElement>('input[etselectsearch]') ?? null;
+  let driver: SelectDriver<PanelSearchTestHost>;
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [PanelSearchTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(PanelSearchTestHost);
-    fixture.detectChanges();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
+    driver = mountSelect(PanelSearchTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('is a pure query box - never displays the selected value, erasing does not deselect', async () => {
-    fixture.nativeElement.querySelector('button').click();
-    tick();
-    await flushFrames();
-    tick();
+    await driver.open();
 
-    const input = searchInput()!;
+    const input = driver.searchInput();
 
     // a trigger-inline search would show "Apple" here (value display); the panel search must not
     expect(input.value).toBe('');
     // and it does not take over the select's placeholder either - that belongs to the trigger
     expect(input.placeholder).toBe('');
 
-    input.value = 'ban';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-    input.value = '';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
+    driver.type('ban');
+    driver.type('');
 
-    expect(fixture.componentInstance.value()).toBe('apple');
+    expect(driver.host.value()).toBe('apple');
   });
 });
 
 describe('SelectDirective (custom value template)', () => {
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [CustomValueTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-  });
-
   it('renders the etSelectValue template instead of the default value display', () => {
-    const fixture = TestBed.createComponent(CustomValueTestHost);
-    fixture.detectChanges();
+    const driver = mountSelect(CustomValueTestHost);
+
     tick();
 
-    const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
-
-    expect(trigger.querySelector('.custom-value')?.textContent?.trim()).toBe('🍏 Apple');
-    expect(trigger.querySelector('.et-select-value')).toBeNull();
+    expect(textOf(driver.query('.custom-value'))).toBe('🍏 Apple');
+    expect(driver.valueEl()).toBeNull();
   });
 
   it('lets the mixed label override the custom value template', () => {
-    const fixture = TestBed.createComponent(CustomValueTestHost);
+    const driver = mountSelect(CustomValueTestHost);
 
-    fixture.componentInstance.mixed.set(true);
-    fixture.detectChanges();
+    driver.host.mixed.set(true);
+    driver.detectChanges();
     tick();
 
-    const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
-
-    expect(trigger.querySelector('.custom-value')).toBeNull();
-    expect(trigger.querySelector('.et-select-value')?.textContent?.trim()).toBe('Mixed');
+    expect(driver.query('.custom-value')).toBeNull();
+    expect(driver.valueText()).toBe('Mixed');
   });
 });
 
 describe('SelectDirective (searchable custom value)', () => {
-  let fixture: ComponentFixture<SearchableCustomValueTestHost>;
-  let select: SelectDirective;
+  let driver: SelectDriver<SearchableCustomValueTestHost>;
 
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const searchInput = () => fixture.nativeElement.querySelector('input[etselectsearch]') as HTMLInputElement;
-  const customValue = () => fixture.nativeElement.querySelector('.custom-value') as HTMLElement | null;
-
-  const typeQuery = (query: string) => {
-    const input = searchInput();
-
-    input.value = query;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-  };
+  const customValue = () => driver.query('.custom-value');
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [SearchableCustomValueTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(SearchableCustomValueTestHost);
-    fixture.detectChanges();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
+    driver = mountSelect(SearchableCustomValueTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('renders the rich value template beside the input instead of the label inside it', () => {
     expect(customValue()?.textContent?.trim()).toBe('🇩🇪 Germany');
     // the input is a pure query box - the label never gets written into it
-    expect(searchInput().value).toBe('');
+    expect(driver.searchInput().value).toBe('');
   });
 
   it('hides the value template while editing and restores it on blur', async () => {
-    select.show();
+    driver.select.show();
     tick();
-    await flushFrames();
-    tick();
+    await driver.settle();
 
-    typeQuery('fr');
+    driver.type('fr');
 
     expect(customValue()).toBeNull();
-    expect(searchInput().value).toBe('fr');
+    expect(driver.searchInput().value).toBe('fr');
 
-    select.hide();
-    tick();
-    await flushFrames();
-    tick();
+    await driver.close();
 
     // the combobox keeps focus after the close - still edit mode, so the editable label
     // (not the query) shows and the rich display stays hidden
     expect(customValue()).toBeNull();
-    expect(searchInput().value).toBe('Germany');
+    expect(driver.searchInput().value).toBe('Germany');
 
     // leaving the field settles the value: the rich template comes back, input goes empty
-    searchInput().dispatchEvent(new FocusEvent('blur'));
-    tick();
+    focusEvent(driver.searchInput(), 'blur');
 
     expect(customValue()?.textContent?.trim()).toBe('🇩🇪 Germany');
-    expect(searchInput().value).toBe('');
+    expect(driver.searchInput().value).toBe('');
   });
 
   it('edits the label text on Backspace while focused instead of nuking the value', () => {
     // focusing enters edit mode: the rich display gives way to the editable label in the input
-    searchInput().dispatchEvent(new FocusEvent('focus'));
-    tick();
+    focusEvent(driver.searchInput(), 'focus');
 
-    expect(searchInput().value).toBe('Germany');
+    expect(driver.searchInput().value).toBe('Germany');
     expect(customValue()).toBeNull();
 
     // Backspace now has text to delete - it removes a character (native), it does not wipe the
     // whole option the way a lone Backspace on an empty box would
-    searchInput().dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
-    tick();
+    driver.pressInSearch('Backspace');
 
-    expect(fixture.componentInstance.value()).toBe('de');
+    expect(driver.host.value()).toBe('de');
   });
 
   it('renders a clear control while focused that clears the selection', () => {
     // no focus yet - the control stays hidden despite the value
-    expect(fixture.nativeElement.querySelector('.et-input-clear')).toBeNull();
+    expect(driver.query('.et-input-clear')).toBeNull();
 
-    searchInput().dispatchEvent(new FocusEvent('focus'));
-    tick();
+    focusEvent(driver.searchInput(), 'focus');
 
-    const clear = fixture.nativeElement.querySelector('.et-input-clear') as HTMLButtonElement;
+    const clear = driver.query<HTMLButtonElement>('.et-input-clear')!;
 
     expect(clear).not.toBeNull();
     expect(clear.getAttribute('aria-label')).toBe('Clear');
     expect(clear.getAttribute('tabindex')).toBe('-1');
 
-    clear.click();
-    tick();
+    driver.click(clear);
 
-    expect(fixture.componentInstance.value()).toBeNull();
+    expect(driver.host.value()).toBeNull();
     // gone without a value, and the panel did not toggle open
-    expect(fixture.nativeElement.querySelector('.et-input-clear')).toBeNull();
-    expect(select.open()).toBe(false);
+    expect(driver.query('.et-input-clear')).toBeNull();
+    expect(driver.select.open()).toBe(false);
   });
 
   it('deselects when the editable label is erased to empty while focused', async () => {
-    searchInput().dispatchEvent(new FocusEvent('focus'));
-    select.show();
+    focusEvent(driver.searchInput(), 'focus');
+    driver.select.show();
     tick();
-    await flushFrames();
-    tick();
+    await driver.settle();
 
     // edit mode shows the editable label; erasing it clears the selection like a plain
     // searchable single select (the rich display only owns the resting, blurred state)
-    typeQuery('fr');
-    typeQuery('');
+    driver.type('fr');
+    driver.type('');
 
-    expect(fixture.componentInstance.value()).toBeNull();
+    expect(driver.host.value()).toBeNull();
   });
 });
 
 describe('SelectDirective (single)', () => {
   describeMixedStateContract(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
-
-    const fixture = TestBed.createComponent(SelectTestHost);
-
-    fixture.detectChanges();
-
-    const select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
-    const tick = () => TestBed.inject(ApplicationRef).tick();
+    const driver = mountSelect(SelectTestHost);
 
     return {
       enterMixed: () => {
-        fixture.componentInstance.value.set('banana');
-        fixture.componentInstance.mixed.set(true);
-        fixture.detectChanges();
+        driver.host.value.set('banana');
+        driver.host.mixed.set(true);
+        driver.detectChanges();
       },
       rawValue: () => 'banana',
-      value: () => fixture.componentInstance.value(),
-      mixed: () => fixture.componentInstance.mixed(),
-      hostElement: () => fixture.nativeElement.querySelector('et-select') as HTMLElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.element(),
       writeValueExternally: () => {
-        fixture.componentInstance.value.set('cherry');
-        fixture.detectChanges();
+        driver.host.value.set('cherry');
+        driver.detectChanges();
       },
       externallyWrittenValue: () => 'cherry',
       // closed typeahead - a real keyboard commit that needs no open panel
-      commit: () => {
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
-        tick();
-      },
+      commit: () => driver.press('a'),
       committedValue: () => 'apple',
       assertMasked: () => {
-        expect(select.displayValue()).toBe('Mixed');
-        expect(select.selectedEntries()).toEqual([]);
+        expect(driver.select.displayValue()).toBe('Mixed');
+        expect(driver.select.selectedEntries()).toEqual([]);
       },
       clear: () => {
-        select.clearValue();
+        driver.select.clearValue();
         tick();
       },
       emptyValue: () => null,
@@ -1749,45 +1482,32 @@ describe('SelectDirective (single)', () => {
 
 describe('SelectDirective (multiple, contract)', () => {
   describeMixedStateContract(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
-
-    const fixture = TestBed.createComponent(MultiSelectTestHost);
-
-    fixture.detectChanges();
-
-    const select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
-    const tick = () => TestBed.inject(ApplicationRef).tick();
+    const driver = mountSelect(MultiSelectTestHost);
 
     return {
       enterMixed: () => {
-        fixture.componentInstance.value.set(['banana', 'cherry']);
-        fixture.componentInstance.mixed.set(true);
-        fixture.detectChanges();
+        driver.host.value.set(['banana', 'cherry']);
+        driver.host.mixed.set(true);
+        driver.detectChanges();
       },
       rawValue: () => ['banana', 'cherry'],
-      value: () => fixture.componentInstance.value(),
-      mixed: () => fixture.componentInstance.mixed(),
-      hostElement: () => fixture.nativeElement.querySelector('et-select') as HTMLElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.element(),
       writeValueExternally: () => {
-        fixture.componentInstance.value.set(['apple']);
-        fixture.detectChanges();
+        driver.host.value.set(['apple']);
+        driver.detectChanges();
       },
       externallyWrittenValue: () => ['apple'],
-      commit: () => {
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
-        tick();
-      },
+      commit: () => driver.press('a'),
       // replace semantics: a fresh array around the committed option, not a toggle
       committedValue: () => ['apple'],
       assertMasked: () => {
-        expect(select.displayValue()).toBe('Mixed');
-        expect(fixture.nativeElement.querySelectorAll('et-chip').length).toBe(0);
+        expect(driver.select.displayValue()).toBe('Mixed');
+        expect(driver.chips().length).toBe(0);
       },
       clear: () => {
-        select.clearValue();
+        driver.select.clearValue();
         tick();
       },
       emptyValue: () => [],
@@ -1796,156 +1516,92 @@ describe('SelectDirective (multiple, contract)', () => {
 });
 
 describe('SelectDirective (pickOnly)', () => {
-  let fixture: ComponentFixture<PickOnlyTestHost>;
-  let select: SelectDirective;
-  let trigger: HTMLElement;
-
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const options = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
-
-  const openSelect = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
+  let driver: SelectDriver<PickOnlyTestHost>;
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [PickOnlyTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(PickOnlyTestHost);
-    fixture.detectChanges();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    trigger = fixture.nativeElement.querySelector('[role="combobox"]');
+    driver = mountSelect(PickOnlyTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('emits pickOption without retaining the value and still closes', async () => {
-    await openSelect();
+    await driver.open();
 
-    options()[1]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickOption(1);
+    await driver.settle();
 
-    expect(fixture.componentInstance.picked).toEqual(['banana']);
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(select.hasValue()).toBe(false);
-    expect(select.open()).toBe(false);
+    expect(driver.host.picked).toEqual(['banana']);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.select.hasValue()).toBe(false);
+    expect(driver.select.open()).toBe(false);
   });
 
   it('re-emits on each pick without accumulating a selection', async () => {
-    await openSelect();
-    options()[0]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    await driver.open();
+    driver.clickOption(0);
+    await driver.settle();
 
-    await openSelect();
-    options()[1]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    await driver.open();
+    driver.clickOption(1);
+    await driver.settle();
 
-    expect(fixture.componentInstance.picked).toEqual(['apple', 'banana']);
-    expect(fixture.componentInstance.value()).toBeNull();
+    expect(driver.host.picked).toEqual(['apple', 'banana']);
+    expect(driver.host.value()).toBeNull();
   });
 });
 
 describe('SelectDirective (pickOnly, multiple)', () => {
-  let fixture: ComponentFixture<MultiPickOnlyTestHost>;
-  let select: SelectDirective;
-  let trigger: HTMLElement;
-
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const options = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
-
-  const openSelect = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
+  let driver: SelectDriver<MultiPickOnlyTestHost>;
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({
-      imports: [MultiPickOnlyTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(MultiPickOnlyTestHost);
-    fixture.detectChanges();
-    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
-    trigger = fixture.nativeElement.querySelector('[role="combobox"]');
+    driver = mountSelect(MultiPickOnlyTestHost);
   });
 
   afterEach(async () => {
-    select.hide();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('keeps the panel open across repeated picks', async () => {
-    await openSelect();
+    await driver.open();
 
-    options()[1]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickOption(1);
+    await driver.settle();
 
-    expect(fixture.componentInstance.picked).toEqual(['banana']);
-    expect(select.open()).toBe(true);
+    expect(driver.host.picked).toEqual(['banana']);
+    expect(driver.select.open()).toBe(true);
 
-    options()[0]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickOption(0);
+    await driver.settle();
 
-    expect(fixture.componentInstance.picked).toEqual(['banana', 'apple']);
-    expect(select.open()).toBe(true);
+    expect(driver.host.picked).toEqual(['banana', 'apple']);
+    expect(driver.select.open()).toBe(true);
   });
 
   it('checks the options a bound value covers without displaying them in the field', async () => {
-    await openSelect();
+    await driver.open();
 
-    options()[1]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickOption(1);
+    await driver.settle();
 
-    expect(options().map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'true']);
-    expect(fixture.componentInstance.value()).toEqual(['banana']);
-    expect(select.hasValue()).toBe(false);
-    expect(select.displayValue()).toBeNull();
-    expect(trigger.querySelectorAll('et-chip').length).toBe(0);
+    expect(driver.options().map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'true']);
+    expect(driver.host.value()).toEqual(['banana']);
+    expect(driver.select.hasValue()).toBe(false);
+    expect(driver.select.displayValue()).toBeNull();
+    expect(driver.chips().length).toBe(0);
   });
 
   it('emits again for an already picked option instead of toggling it itself', async () => {
-    await openSelect();
+    await driver.open();
 
-    options()[0]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickOption(0);
+    await driver.settle();
 
-    options()[0]!.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickOption(0);
+    await driver.settle();
 
-    expect(fixture.componentInstance.picked).toEqual(['apple', 'apple']);
-    expect(options()[0]!.getAttribute('aria-selected')).toBe('false');
+    expect(driver.host.picked).toEqual(['apple', 'apple']);
+    expect(driver.options()[0]!.getAttribute('aria-selected')).toBe('false');
   });
 });
