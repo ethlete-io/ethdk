@@ -21,7 +21,7 @@ Fable for batch design, synthesis and cross-checks.
 | 4 | forms/form-field + input + textarea + masked-input + form + description | 6.8k | opus | done — 1 high / 6 medium / 12 low |
 | 5 | forms/selection-list + choice-field + checkbox + switch + rating + selection-card | 5.4k | opus | done — 4 high / 4 medium / 11 low |
 | 6 | forms/slider + dropzone + color-input | 7.6k | opus | done — 3 high / 7 medium / 12 low |
-| 7 | forms/phone-input + otp-input + tag-input + forms/testing | 3.9k | opus | pending |
+| 7 | forms/phone-input + otp-input + tag-input + forms/testing | 3.9k | opus | done — 3 high / 10 medium / 13 low |
 | 8 | table | 10.7k | opus | done — 3 high / 8 medium / 12 low |
 | 9 | overlay | 7.5k | opus | done — 2 high / 8 medium / 10 low |
 | 10 | stream | 6.9k | opus | done — 4 high / 10 medium / 15 low |
@@ -33,10 +33,10 @@ Fable for batch design, synthesis and cross-checks.
 | 16 | calendar + time-picker | 4.0k | opus | done — 4 high / 6 medium / 9 low |
 | 17 | notification + tabs + accordion + tree | 5.6k | opus | done — 3 high / 12 medium / 20 low |
 | 18 | match + standings | 2.6k | sonnet | done — 0 high / 3 medium / 3 low |
-| 19 | button + chip + badge + avatar + banner + card + divider | 3.4k | sonnet | pending |
-| 20 | icon + picture + skeleton + loader + empty-state | 3.4k | sonnet | pending |
+| 19 | button + chip + badge + avatar + banner + card + divider | 3.4k | sonnet | done — 1 high / 3 medium / 3 low |
+| 20 | icon + picture + skeleton + loader + empty-state | 3.4k | sonnet | done — 1 high / 1 medium / 3 low |
 | 21 | pagination + breadcrumb + progress-steps + timeline + kbd + toolbar + description-list + copy-button + focus-ring | 3.2k | sonnet | pending |
-| 22 | query-error + filter-overlay + floating-action + testing + internals | 2.0k | sonnet | pending |
+| 22 | query-error + filter-overlay + floating-action + testing + internals | 2.0k | sonnet | done — 1 high / 1 medium / 2 low |
 
 Severity counts so far: —
 
@@ -7038,5 +7038,754 @@ API use (`afterNextRender` guards the two dev-mode assertions; `format()` and DO
 browser-only call sites), and the `MatchScoreComponent` rolling-value mechanism (`linkedSignal` +
 negative-key `@for` tracking) traced by hand across rapid, back-to-back, and reduced-motion value
 changes without finding a stuck or duplicated element.
+
+---
+
+## icon, picture, skeleton, loader, empty-state
+
+### High
+
+- **`et-picture` gets permanently stuck in `'loading'` state, with no image and no error, when `defaultSrc` is omitted and only `sources` is set.** `sources`/`defaultSrc` are both optional inputs (`libs/components/src/lib/picture/picture.component.ts:67,74`), but `loadState`/`loadedSize` only ever change inside `markLoaded`/`markFailed` (`picture.component.ts:185-197`), which are wired to the `<img>`'s `(load)`/`(error)` events in the template (`picture.component.html:13-24`). That `<img>` only renders when `resolvedDefaultSource()` is truthy (`picture.component.html:12`) - so a consumer who supplies only `sources` (a plausible reading of the API surface, since `defaultSrc` is `null` by default and nothing marks it as effectively required at runtime) gets a `<picture>` with `<source>`s but no `<img>`, no `load`/`error` ever fires, `state()` never leaves `'loading'`, and any `etPicturePlaceholder` template stays visible forever with no error surfaced. The docs do state "`defaultSrc` is not optional in practice" (`apps/docs/components/picture.md:38`) but the component enforces nothing - `alt` is `input.required`, `defaultSrc` is not.
+  **Runtime-verified**: a scratch spec (`et-picture` with only `sources` + an `etPicturePlaceholder`, deleted after) rendered no `<img>`, kept the placeholder text in the DOM, and left `state()` at `'loading'` after `detectChanges()`.
+
+### Medium
+
+- **`SVG` dev-mode validation (`INVALID_SVG`/`MISSING_XMLNS`/`MISSING_DIMENSIONS`/`HARDCODED_COLOR`) and `allowHardcodedColor` have zero spec coverage**, despite being the majority of the directive's actual logic. `libs/components/src/lib/icon/headless/icon.directive.ts:105-138` is exercised nowhere in `icon.directive.spec.ts` - a regression in any of those four checks (e.g. the regex silently stops matching `stop-color`, or `allowHardcodedColor` stops suppressing the throw) would ship undetected. See Spec coverage below.
+
+### Low
+
+- **No dev-mode warning when `et-picture` is configured with `sources` but no `defaultSrc`.** Tying to the High finding above: since the docs explicitly call this combination unsupported ("not optional in practice"), a `ngDevMode`-gated `console.warn`/`RuntimeError` (the pattern already used for missing mime types in `picture.utils.ts:38-43`) would turn a silent, permanently-frozen UI into a caught mistake during development.
+- **`BrandLoaderComponent`'s `nextId` module-level counter (`brand-loader.component.ts:10,53-55`) is a plain `let`, not reset per bootstrap.** Functionally harmless (IDs only need to be unique, and a monotonically increasing counter across multiple app instances in one JS realm still guarantees uniqueness), but it's the kind of module-level latch AGENTS.md calls out - worth a second look only if a future change makes the IDs need to be *stable* (e.g. for SSR hydration diffing) rather than merely unique.
+- **`picture.utils.ts:75`/`withPictureBaseUrl`'s early-return only checks whether the *whole* `srcset` string starts with `data:`.** If a single `srcset` ever mixed a leading `data:` URI with additional comma-separated URL candidates (unusual, arguably invalid usage - data URIs are normally used alone), the remaining candidates would skip base-URL prefixing entirely. Not observed in practice and not covered by a test; flagging only because the per-candidate `data:` check inside `withBaseUrl` (line 60) suggests the author intended to handle mixed candidates, but the outer short-circuit prevents ever reaching it for this specific shape.
+
+### Spec coverage
+
+Well covered:
+- `IconDirective`: registry resolution, variant fallback/exact-match, `label`→`role="img"` toggle, `provideIcons`/`provideIconOverrides` merge/duplicate-detection, and the `ET_BUILT_IN_ICON_NAMES` drift guard (`icon.directive.spec.ts`).
+- `PictureComponent`: `fit`/`data-fit` reflection, `naturalSize`/`naturalAspectRatio`/`state` transitions on load/error, and the reset-on-`defaultSrc`-or-`sources`-change behavior (`picture.component.spec.ts`).
+- `picture.utils.ts`: `extractFirstImageUrl`, `normalizePictureSource`, `normalizePictureSizes`, `withPictureBaseUrl` all have thorough, well-targeted unit tests (`picture.utils.spec.ts`).
+- `SpinnerComponent`/`ProgressBarComponent`: determinate/indeterminate aria wiring, value clamping, `track`, `color`→themed class (`spinner.component.spec.ts`, `progress-bar.component.spec.ts`).
+- `BrandLoaderComponent`: role/aria-label, SVG structure, per-instance unique clip-path IDs (`brand-loader.component.spec.ts`).
+- `EmptyStateComponent`: unconfigured render, heading/description rendering, action projection (`empty-state.component.spec.ts`).
+
+Gaps / zero coverage on real logic:
+- `IconDirective`'s dev-mode SVG validation path (`INVALID_SVG`, `MISSING_XMLNS`, `MISSING_DIMENSIONS`, `HARDCODED_COLOR`) and `allowHardcodedColor` - see Medium above.
+- `SkeletonComponent`/`SkeletonTextComponent`/`SkeletonItemComponent` have **no spec files at all** - `resolvedLoadingAllyText` fallback to `LOADER_LABELS`, the `animated` class toggle, and `SkeletonTextComponent`'s `lineList` computation (line count, last-line-width, clamping `Math.max(1, lines())`) are all untested.
+- `PictureComponent`'s "`sources`-only, no `defaultSrc`" path (the High finding above) - not exercised by any existing test, which is exactly how it went unnoticed.
+- No test asserts `et-picture`'s `NgTemplateOutlet`-based placeholder/error slots actually project the right content (only implied by the component compiling); a spec driving `contentChild` resolution would catch a future selector/directive mismatch.
+
+No existing spec was found asserting a wrong behavior as correct.
+
+Clean: `icon-provider.ts` registry/override merge logic, `icon-errors.ts` code table (matches `apps/docs/components/error-codes.md` 1800-1806 exactly), all icon SVG source files spot-checked for `xmlns`/`width="100%"`/`height="100%"`/`currentColor` compliance, `skeleton.component.css`/`empty-state.component.css`/`progress-bar.component.css`/`spinner.component.css`/`brand-loader.component.css` (all correctly `@layer components`-wrapped, no hardcoded primary colors - the brand loader's `#00ffa1` fallback and story SVG placeholder colors are permitted `var(--token, fallback)` defaults/demo assets, not primary values), no RxJS/subscription leaks anywhere in scope (grepped for `console.`/`subscribe(`/`TODO`/`FIXME` - only one legitimate `console.warn` in `picture.utils.ts:39`, itself `ngDevMode`-gated), `EMPTY_STATE_IMPORTS`/`PICTURE_IMPORTS`/`SKELETON_IMPORTS`/`ICON_IMPORTS` all correctly scoped, no Tailwind found in any non-story component source file in scope, `provideIconOverrides`/`provideIcons` duplicate-key detection verified by tests, `SpinnerComponent`'s `hasExplicitColor`/host-directive `color` input correctly aliases `ProvideColorDirective`'s `etProvideColor`.
+
+### Improvements
+
+- **Features**: A `PictureComponent` "blur-up" / low-quality-image-placeholder mode - accepting a tiny inline `data:` URI to paint immediately under the real image - is a common peer feature (Next.js `Image`, Nuxt Image) that the current `etPicturePlaceholder` slot doesn't cover (it can only show a static shape, not a blurred preview of the actual photo). Also, `SkeletonItemComponent`'s three shapes (`text`/`rect`/`circle`) are the common set, but peer libraries (Ark UI, shadcn) often ship a bone-count helper for repeating rows/grids beyond `SkeletonTextComponent`'s line-only case - e.g. a generic `et-skeleton-group` that repeats an arbitrary template `n` times, useful for card/list skeletons.
+- **DX**: `PictureComponent.defaultSrc` should be either enforced (a dev-mode warning when `sources().length > 0` and `defaultSrc()` is `null`, mirroring the mime-type warning already in `picture.utils.ts:38-43`) or the docs' framing ("not optional in practice") should be backed by code. Right now the gap between the type system (fully optional) and the documented contract (effectively required) is exactly what produced the High finding above.
+- **Bundle size**: `libs/components/src/lib/icon/headless/` ships ~55 built-in icon constants as always-importable modules from one barrel (`icon/index.ts` → `headless/index.ts`, all `export *`). Since each icon is a small tree-shakeable constant this is likely fine in practice (dead-code elimination should drop unused ones), but it's worth confirming with `tools/treeshake` goldens that importing e.g. just `CHEVRON_ICON` doesn't pull in sibling icon modules' SVG string literals - `export *` re-barrels sometimes defeat tree-shaking depending on the bundler's side-effect analysis.
+- **UI/UX**: `EmptyStateComponent` renders its `heading` as a plain `<p>` (`empty-state.component.ts:20`), not a heading element - fine for the common case of an inline empty state, but for the "whole page has nothing to show" case (a documented use case: "no search results... a not-yet-configured feature") a `<p>` gives screen-reader users no landmark/heading to jump to. An optional `headingLevel` input (rendering `h2`-`h6`) would let page-level usages integrate into the document outline without forcing it on every inline usage. Separately, `PictureComponent`'s error slot swaps in visually but doesn't set `aria-live`, so a slow failure (image errors after several seconds) is never announced to a screen reader already past the image.
+- **Testing**: Add a spec file for `skeleton/` (currently none) covering `resolvedLoadingAllyText`'s fallback to `LOADER_LABELS.loadingContent`, the `animated` class toggle, and `SkeletonTextComponent`'s `lineList` (including the `Math.max(1, lines())` clamp for `lines="0"` or negative input, which is currently unverified). Add a `PictureComponent` spec for the `sources`-only / no-`defaultSrc` combination once (or as part of) the DX fix above, so the behavior is pinned down either way.
+
+---
+
+## Batch 07 — phone-input, otp-input, tag-input, forms/testing
+
+Scope: `libs/components/src/lib/forms/{phone-input,otp-input,tag-input,testing}` +
+`apps/docs/components/text-inputs.md` (the guide that owns all three), plus
+`apps/docs/components/{mixed-state.md,error-codes.md,forms.md}` where they make claims about
+these controls.
+
+Runtime verification used two scratch specs (`phone-input/headless/__scan-verify.spec.ts`,
+`otp-input/__scan-verify.spec.ts`, `tag-input/__scan-verify.spec.ts`), run with
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts <spec>`.
+All three were deleted; `git status` on the scope is clean.
+
+## phone-input / otp-input / tag-input / forms-testing
+
+### High
+
+- **Typing an international `+…` number into `et-phone-input` character by character produces a
+  corrupted value — only a whole-string paste works, and the docs promise both.**
+  `phone-input-field.directive.ts:50-53` rewrites the element text to the *national*
+  interpretation the moment the value's `+` prefix has been normalized. The next keystroke is
+  therefore read as national digits (`phone-input.directive.ts:195-210` takes the
+  no-`+` branch) and the active dial code is prepended a second time. Nothing in
+  `setNationalInput` remembers that the user is mid-way through an international entry.
+  **Verified at runtime** (`defaultCountry="de"`, focused, one `input` event per character):
+
+  ```
+  typed "+" -> el="+"         value=""             country=de
+  typed "4" -> el="4"         value="+4"           country=de
+  typed "9" -> el="49"        value="+4949"        country=de
+  typed "1" -> el="491"       value="+49491"       country=de
+  typed "7" -> el="4917"      value="+494917"      country=de
+  typed "0" -> el="49170"     value="+4949170"     country=de
+  …
+  typed "4" -> el="491701234" value="+49491701234" country=de
+  ```
+
+  The control case (same string delivered as one `input` event, i.e. a paste) gives
+  `value="+491701234"`. `text-inputs.md:445` says "Typing **or** pasting a full `+…` number
+  re-derives the country by longest dial-code match" — the typing half is false, and the
+  resulting form value is silently wrong rather than merely unformatted. The existing spec only
+  covers the paste path (`phone-input.directive.spec.ts:99` — "re-derives the country from a
+  **pasted** international number", driven by `setInputValue`, one event for the whole string),
+  which is why this never showed up.
+
+- **`et-otp-input`'s `aria-describedby` points at an element that does not exist, so its
+  hint/error/warning is never announced.** `otp-input.component.html:24` binds
+  `aria-describedby` to `otp.describedBy()`, which `FormFieldDirective` fills with
+  `hintId()`/`errorId()`/`warningId()` (`form-field/headless/form-field.directive.ts:54-73,
+  183-192`). But the OTP's own support containers
+  (`otp-input.component.html:52`, `:70`, `:88`) carry only `#errorContent`/`#warningContent`/
+  `#hintContent` — **no `[id]` binding** — unlike `form-field.component.html:47,68,89` and
+  `choice-field.component.html:27,46,65`, which both bind `[id]`. **Verified at runtime** with
+  `<et-otp-input name="code"><et-label>…</et-label><et-hint>…</et-hint></et-otp-input>`:
+  `aria-describedby="et-form-field-hint-code"`, `getElementById(...)` → `null`; the only id in
+  the whole subtree is `et-label-0`. (The same missing-`[id]` shape exists in
+  `rating/rating.component.html:52`, `slider/slider.component.html:44`,
+  `dropzone/dropzone.component.html:192` and the selection-list group templates — out of my
+  scope, but worth handing to whoever owns them, since `dropzone.component.html:22` also binds
+  `aria-describedby`.)
+
+- **`aria-label` / `aria-labelledby` on `et-tag-input` or `et-phone-input` never reaches the
+  native input — the control ends up with no accessible name at all.** Both directives
+  hand-roll the `FormFieldControl` surface and omit the `ariaLabel`/`ariaLabelledby` inputs and
+  `hasCustomAccessibleName` that `form-field/headless/text-field-control.directive.ts:76-103`
+  owns for every other text control. `tag-input.directive.ts:85` /
+  `phone-input.directive.ts:70` derive `labelId` from the projected `<et-label>` only, so a
+  host-level `aria-label` lands on a role-less custom element (ignored by AT) and dies there.
+  **Verified at runtime**: `<et-form-field><et-tag-input aria-label="Tags" /></et-form-field>`
+  (no `<et-label>`) → host has the attribute, inner `.et-tag-input-field` has
+  `aria-label=null aria-labelledby=null`. `forms.md:337-341` documents `aria-label` /
+  `aria-labelledby` as the accepted alternative to `<et-label>` for "a control" and only
+  mentions `ET2201` as the failure mode; `text-inputs.md:487-490` lists the five forwarding
+  controls but never states that these two reject it. A consumer following the overview gets an
+  unlabelled field (plus a dev-mode `ET2201` throw for a name they did supply).
+
+### Medium
+
+- **`removeLast()` and any out-of-range `removeAt()` on a tag input emit a brand-new value array
+  even though nothing changed.** `tag-input.directive.ts:181-183` calls
+  `removeAt(effectiveValues().length - 1)`, i.e. `removeAt(-1)` when there are no tags, and
+  `:178` unconditionally runs `value.set(this.value().filter(…))` — `Array.prototype.filter`
+  always allocates, so the `model` (default `===` equality) always notifies. **Verified at
+  runtime**: two `Backspace` presses on an empty field with an empty value → **2**
+  `valueChange` emissions; `removeAt(99)` on `['a']` → **1** emission. For a `[formField]`-bound
+  control that is a spurious write into the form model (dirty tracking, validator re-runs, any
+  `valueChange`-driven side effect) on a keystroke that is supposed to be a no-op. The
+  `mixed` path is guarded (`:174`), the non-mixed path is not.
+
+- **A `maxTags`-full tag input holding leftover rejected text is a keyboard dead end.**
+  `tag-input-field.directive.ts:19` binds `[readOnly]="tagInput?.readonly() || isFull()"`, and
+  `:110` only removes a tag when `element.value` is empty. Reject-keeps-the-text is deliberate
+  (`tag-input.directive.ts:132-144`, asserted at `tag-input.directive.spec.ts:64`), so the two
+  behaviours combine into a state with no keyboard exit. **Verified at runtime**: value `['a']`,
+  `maxTags=2` → type `a`+Enter (duplicate rejected, field keeps `"a"`) → paste `x,y` (adds `x`,
+  fills up) → `field.readOnly === true` with `"a"` still in it; a `Backspace` press changes
+  nothing (`value=["a","x"] field="a" readOnly=true`). The only recovery is a pointer click on a
+  chip `×`, and chip remove buttons are `tabindex="-1"` by design
+  (`chip/headless/chip-remove.directive.ts:13`) with no chip focus ring in the tag input.
+
+- **A `RegExp` charset carrying the `g` flag silently drops every other character in
+  `et-otp-input`.** `otp-input.directive.ts:83-87` returns the consumer's RegExp as-is and
+  `sanitize` (`:117-120`) calls `pattern.test(char)` per character; `test` on a global regex
+  advances `lastIndex`, so it alternates true/false. **Verified at runtime**:
+  `charset = /[0-9]/g`, typing `123456` → `value === "135"`. The public type is
+  `OtpInputCharset = 'numeric' | 'alphanumeric' | RegExp` (`:17`, documented at
+  `text-inputs.md:368`) with nothing saying the flag matters. A `new RegExp(source, flags & ~g)`
+  normalization in `charPattern` fixes it.
+
+- **Shrinking `length` on `et-otp-input` leaves the over-long value in the form.**
+  `segmentChars` (`otp-input.directive.ts:69-78`) and the native `maxlength`
+  (`otp-input.component.html:28`) both follow the new length, but nothing re-sanitizes `value`
+  and `maxlength` does not truncate an existing value. **Verified at runtime**: type `123456`
+  (length 6), set `length` to 4 → 4 segments rendered, native field `"123456"`, form value
+  `"123456"`. The user sees a 4-slot code and submits 6 characters.
+
+- **`defaultCountry` is honoured only on the first computation of `country`.**
+  `phone-input.directive.ts:84-97`: the `linkedSignal` computation prefers `previous?.value`
+  over `this.defaultCountry()`, and the computation is re-run by a change to its *source* (the
+  dial code matched out of `value`), not by a change to `defaultCountry`. **Verified at
+  runtime**: mount with `defaultCountry="de"` and an empty value, then set it to `"fr"` →
+  `country()` stays `"de"`, `dialCode()` stays `"49"`. A default derived from a locale or geo-IP
+  lookup that resolves after the first render never applies, and `text-inputs.md:437` describes
+  the input as "ISO alpha-2 country used **while** the value carries none" — which reads as
+  continuously applicable.
+
+- **Pasting into a tag input discards the text already in the field.**
+  `tag-input-field.directive.ts:116-141` `preventDefault()`s and calls `addAll(parts)` without
+  merging `element.value` or clearing it. **Verified at runtime**: field holds `"pre"`, paste
+  `one,two` → `value === ['one','two']`, field still `"pre"`. The pending fragment is neither
+  joined to the first pasted part nor committed first, so it later lands *after* the pasted tags
+  on blur — the opposite of the order the user typed things in. (Native paste-into-a-caret
+  semantics would append to / splice into the pending text.)
+
+- **`complete` never fires for a programmatic full-length value.**
+  `otp-input.directive.ts:124-149` emits only from the native `input` handler. **Verified at
+  runtime**: `length=4`, `value.set('1234')` → `completions === []`. `text-inputs.md:373` says
+  "The `complete` output emits the value each time it reaches the full length", with no
+  user-input qualifier. A form restored from saved state, or an app that reads the code out of a
+  deep link and writes it into the field, never triggers the verify callback the whole output
+  exists for.
+
+- **The phone input's country trigger never announces which country is selected.**
+  `phone-input.component.html:12` puts a static `aria-label` on the button
+  (`resolvedCountryLabel()`, default `'Select country'`), the flag span is `aria-hidden`
+  (`:18`), and `aria-label` overrides the visible `+{{ dialCode }}` text (`:25`). So the trigger
+  reads as "Select country, collapsed" whether the active country is Germany or Japan. The
+  select's own trigger composes `aria-labelledby` from the field label plus its own id
+  (`select/headless/select-trigger.directive.ts:61-69`) precisely to avoid this; here
+  `labelledBy()` is `null` because `etFormFieldBarrier` nulls `FORM_FIELD_TOKEN` and the panel
+  has an `etSelectSearch`. Fix: compose the label as `"<countryLabel>, <country name> +<dial>"`
+  or drop the `aria-hidden` and let the dial code contribute.
+
+- **Signal-forms `hidden` silently no-ops on all three controls, against a documented promise.**
+  `FormFieldDirective.isHidden` reads `registeredControl()?.hidden?.()`
+  (`form-field/headless/form-field.directive.ts:133`), and signal forms binds `hidden` only when
+  the control declares the input. Only `text-field-control.directive.ts:43` and the rich text
+  editor do (`grep -rl "hidden = input"` over `forms/` returns exactly those two).
+  `forms.md:335-336` states unconditionally that "A schema-`hidden` field (signal-forms
+  `hidden`) removes the whole `et-form-field` from layout and the accessibility tree" —
+  `hidden(s.tags)` / `hidden(s.phone)` leaves the field on screen. The same omission costs these
+  three the `warnings` input (`text-field-control.directive.ts:52`), so a control not bound to a
+  signal-forms field cannot show an advisory at all; `phone-input.directive.ts` and
+  `otp-input.directive.ts` additionally lack `maxLength` and `pending`, which
+  `tag-input.directive.ts:46,52` does declare.
+
+- **`et-otp-input` exposes no `data-disabled` / `data-readonly` on its host, unlike both
+  siblings.** `phone-input.directive.ts:26-30` and `tag-input.directive.ts:17-21` each publish
+  `data-disabled` / `data-readonly` / `data-mixed`; `OtpInputDirective` (`:24-27`) has no `host`
+  block at all, and its stylesheet reaches for `:has(.et-otp-input-native:disabled)`
+  (`otp-input.component.css:158`) instead. A consumer cannot style the readonly OTP at all
+  (there is no `:read-only`-based rule beyond a cursor at `:145`), and the `[data-*]` hook the
+  other two document is missing.
+
+### Low
+
+- **`ET2801` is defined but undocumented.** `phone-input-errors.ts:4` declares
+  `FLAG_TEMPLATE_OUTSIDE_PHONE_INPUT: 2801` and `phone-input-flag.directive.ts:43-47` throws it;
+  `error-codes.md:90-93` lists only `ET2800`.
+
+- **`clearable` and `clearLabel` on `PhoneInputComponent` are undocumented public API, and the
+  clear affordance is unmentioned.** `phone-input.component.ts:69,71`; the phone section of
+  `text-inputs.md:434-441` lists only `defaultCountry`, `preferredCountries`, `countryLabel`.
+  The date-time inputs document the identical pair (`date-time-inputs.md:49,112`), so this is a
+  gap against a house convention, not a deliberate omission.
+
+- **Six of the nine OTP design tokens are undocumented.** `text-inputs.md:501` lists
+  `--et-otp-input-segment-size/-gap/-radius`; `otp-input.component.css:30,36,42,48,54,60` also
+  `@property`-registers `--et-otp-input-label-font-size`, `-support-duration`,
+  `-support-offset`, `-error-font-size`, `-warning-font-size`, `-hint-font-size` — all
+  inheriting and therefore overridable by a consumer.
+
+- **The tag-input docs section has no `<StoryEmbed>`** even though
+  `components-forms-tag-input--default` exists (`tag-input.stories.ts:4,43`). The OTP and phone
+  sections both embed one (`text-inputs.md:365,432`), so the guide reads inconsistently.
+
+- **The tag-input and OTP input tables omit real inputs.** Tag input
+  (`text-inputs.md:403-408`): no `placeholder`, `mixedLabel`, `maxLength`, `pending`. OTP
+  (`text-inputs.md:367-371`): no `readonly` (which the story exercises,
+  `otp-input.stories.ts:16`), no `required`.
+
+- **`text-sm` in all three storybook components emits nothing.** Storybook's trimmed theme sets
+  `--text-*: initial` (`apps/storybook/src/styles/storybook.css:32`) and defines
+  `text-small`/`text-medium`/… instead, so Tailwind's own scale is absent. Occurrences:
+  `tag-input/stories/tag-input-storybook.component.ts:36,41`,
+  `otp-input/stories/otp-input-storybook.component.ts:25,27`,
+  `phone-input/stories/phone-input-storybook.component.ts:28,33`. Should be `text-small`.
+
+- **The tag-input story's `value` arg is unreachable from the controls panel.**
+  `tag-input.stories.ts:8-38` has no `argTypes.value` entry and no `args.value` default, yet
+  `Prefilled` and `MaxTags` set it (`:46,60`). The phone story lists `value` in both
+  (`phone-input.stories.ts:12,25`).
+
+- **The headless `OtpInputDirective` is exported but undrivable.** It ships in
+  `OTP_INPUT_IMPORTS` (`otp-input.imports.ts:4`) and auto-adopts an `<input>` host
+  (`otp-input.directive.ts:93-98`), but it declares no host listeners, and its only entry points
+  — `handleNativeInput`, `handleNativeFocus`, `handleNativeBlur`, `handleNativeSelectionEvent`
+  (`:123-180`) — are all `@internal`. There is no `etOtpInputField` sibling directive the way
+  phone (`phone-input-field.directive.ts`) and tag (`tag-input-field.directive.ts`) have one, so
+  the headless tier of this domain has no supported usage.
+
+- **`describeMixedStateContract` documents two contract clauses it never asserts, and one of its
+  four tests can pass vacuously.** `mixed-state-contract.ts:17-20` states clauses 5 (keyboard
+  deletion never mass-clears) and 6 (`mixedLabel` never enters the form value); the suite
+  (`:55-102`) asserts 1–4 only. And `:89-101` returns early into a green pass when a harness
+  omits `clear`/`emptyValue` — so a control that *loses* its clear affordance silently keeps a
+  passing "clears to the empty shape and resolves mixed" test. Guard with `it.skipIf` or move
+  the clear case behind an explicit opt-out flag.
+
+- **`phoneCountryName` constructs a fresh `Intl.DisplayNames` per country.**
+  `phone-countries.ts:253-262`, called once per entry in
+  `phone-input.component.ts:86-90` → ~220 `Intl.DisplayNames` instantiations on the first panel
+  open (and again on every locale change). Hoisting one instance per locale is a one-line change.
+
+- **A `+` number whose dial code matches nothing leaves value and country inconsistent.**
+  `phone-input.directive.ts:199-203` commits `+999`, `matchCountryByDialCode` returns `null`
+  (`phone-countries.ts:224-234`), the `linkedSignal` falls back to the previous country
+  (`:89-91`), and `nationalNumber` (`:102-111`) returns the whole `999` because it does not
+  start with the active dial code. So the trigger shows `+49` while the value is `+999`. No
+  crash, but a nonsense state a `dialCode`-aware consumer would trip on.
+
+- **Comment-policy violations (restating the code).** `AGENTS.md` allows four kinds only; these
+  are none of them:
+  `phone-input-field.directive.ts:51` ("a `+…` entry was normalized into value/country - show
+  the national part again") and `:85` ("editing works on the raw digits", above
+  `element.value = phoneInput.nationalNumber()`);
+  `phone-input.component.ts:78` ("only while the field is in use - mirrors the select's clear
+  affordance");
+  `phone-input.component.html:1` (a section header over the select composition);
+  `phone-input.component.css:36`, `:97` ("mirrors the menu's search field …" — a cross-reference,
+  i.e. migration narration), `:155`;
+  `otp-input.component.css:113`, `:240` ("typed characters pop in");
+  `tag-input-field.directive.ts:75`, `:148` ("leaving the field keeps what was typed - as a
+  tag").
+  The keepers in the same files are legitimate: `otp-input.component.css:136` (iOS zoom
+  workaround) and `:143-144` (explicit rule-ordering constraint),
+  `phone-input.directive.ts:158-160`, `phone-input.component.ts:112,120-121`,
+  `phone-input.component.html:34`, `phone-input.component.css:83-84`.
+
+- **`[disabled]` is not forwarded to the phone input's inner `etSelect`.**
+  `phone-input.component.html:2-10` forwards `[readonly]` only; interaction is blocked because
+  the trigger button carries the native `disabled` (`:13`), but the inner select's own
+  `disabled()` stays `false`, so `select-trigger.directive.ts:20-21`'s `aria-disabled` /
+  `data-disabled` never appear. Cosmetic today, a trap for anyone styling off those hooks.
+
+### Spec coverage
+
+**Well covered.**
+`phone-input.directive.spec.ts` (261 lines) is the strongest of the three: dial-code matching,
+trunk-zero strip and its Italy exemption, the `00` prefix, country switch keeping the national
+number, the shared-`+1` manual-pick rule, external value → country derivation, the
+focused/unfocused display swap, the clear button, and a full seven-test `mixed` block plus the
+shared contract harness. `tag-input.directive.spec.ts` (230 lines) covers Enter/separator/blur
+commit, duplicate and empty rejection, `maxTags`, Backspace-removes-last, chip removal, paste
+splitting, disabled, and six `mixed` cases plus the contract.
+
+**Gaps with real logic behind them.**
+- `phone-input-field.directive.ts` — the `effect` at `:36-54` is the source of the top High
+  finding and has no test that feeds the field more than one `input` event. Every existing
+  "typing" test is a single whole-string `setInputValue`.
+- `otp-input.directive.spec.ts` (115 lines) never touches `readonly`, `disabled`, `length`
+  changing after mount, `handleNativeSelectionEvent` (the caret pin), the `describedBy`/label
+  wiring, or a global-flag RegExp charset. Its `charset` case (`:97`) uses `/[a-f]/` — no flags —
+  which is exactly why the `g` bug survived.
+- `phone-input-flag.directive.ts` — zero tests. The `etPhoneInputFlag` projection is documented
+  public API (`text-inputs.md:455-465`) with two render sites
+  (`phone-input.component.html:19-23, 38-42`) and neither is asserted.
+- `phone-input.component.ts` — `countries()` ordering (`preferredCountries` on top, the rest
+  locale-sorted), the "+49 finds Germany" search label (`:36` of the template) and the
+  no-results row are all untested; so is `handleCountryChange`'s focus hand-off (`:117-124`).
+- `tag-input-field.directive.ts` — `handlePaste`'s early returns (`:126,135`), the regex-escaping
+  of separator characters (`:131`), and the `readOnly` interaction with `isFull()` (`:19`) have
+  no tests.
+- `forms/testing/*` — the drivers themselves have no tests (fine, they are test infrastructure),
+  but note there is **no barrel** for `forms/testing/` (no `index.ts`), so every consumer
+  deep-imports by path; and `mixed-state-contract.ts` relies on ambient `describe`/`it`/`expect`
+  (works because `vite.config.mts` sets `globals: true`, but it would break in a
+  `globals: false` consumer).
+
+**No existing spec asserts a wrong behavior.** The closest call is
+`otp-input.directive.spec.ts:64-79` ("emits completed exactly once per completion"), which
+correctly encodes the "different full-length code re-emits" rule and is *narrower* than the docs
+sentence at `text-inputs.md:373` — the docs are wrong, not the spec. Likewise
+`phone-input.directive.spec.ts:99` is honestly named "**pasted** international number", so it
+does not claim the typing path works; it just leaves it uncovered.
+
+### Improvements
+
+#### Features (ranked)
+
+- **Give the phone input a real per-country format, behind an opt-in input.** The grouping is
+  hard-coded threes (`phone-input.directive.ts:117-121`) and explicitly disclaims
+  metadata-driven formatting. Material/PrimeNG both punt to `libphonenumber`, but a middle path
+  fits the "zero dependencies" stance: add an optional `format` input taking a
+  `(national: string, iso2: string) => string` so an app that already ships
+  `libphonenumber-js` can plug it in without the SDK bundling anything.
+- **Add a `separator`/`allowedChars` display mode and a `groupSize` to the OTP input.** Peers
+  ship a `3-3` or `3-4` grouping (shadcn `InputOTPSeparator`, PrimeNG `integerOnly` + slots).
+  `segmentIndexes` (`otp-input.component.ts:58`) and the flat `.et-otp-input-segments` row make
+  a `[groupSize]="3"` that inserts a gap/dash purely presentational — no value change.
+- **Give the tag input keyboard-reachable chips.** A roving-tabindex over the chips (arrow keys
+  to move, Delete/Backspace to remove, the pattern `ChipDirective` already implements at
+  `chip/headless/chip.directive.ts:10-11`) would fix the dead end in the Medium section and
+  bring it level with Material's `mat-chip-grid`.
+- **`autoTag`/`clear-all` for the tag input.** A clear-all suffix would also let it satisfy the
+  mixed-state contract's clause 4 (`mixed-state-contract.ts:16`) instead of opting out
+  (`tag-input.directive.spec.ts:227`), and would make its `mixed` story symmetrical with the
+  phone input's.
+- **`et-phone-input`: expose the validity signal the docs already advertise.** `isPlausible`
+  (`phone-input.directive.ts:124-128`) is public and mentioned in prose (`text-inputs.md:453`)
+  but there is no schema-side helper. A `phoneLengthWindow()` validator factory in the domain
+  would stop every consumer re-deriving it.
+
+#### DX (ranked)
+
+- **Make these three extend `TextFieldControlDirective` (or a sibling base) instead of
+  hand-rolling `FormValueControl`.** That single change removes the missing `hidden`, `warnings`,
+  `aria-label`/`aria-labelledby`, `hasCustomAccessibleName`, `maxLength` and `pending` in one
+  go — every one of those Medium/High findings is a symptom of the copy divergence the base
+  directive's own JSDoc says it exists to prevent
+  (`form-field/headless/text-field-control.directive.ts:8-18`). The OTP needs a variant that is
+  not text-shell-hosted, but the input surface is the same.
+- **`separators: string[]` conflates two kinds of thing.** `tag-input.directive.ts:62` splits the
+  array by length at runtime into `characterSeparators` / `keySeparators` (`:100-102`), so
+  `['Enter', ',']` mixes a `KeyboardEvent.key` with a character and `separators: ['Tab']` looks
+  identical to `separators: [',']` in a template. A discriminated shape
+  (`{ keys?: string[]; chars?: string[] }`) or two inputs would make the intent readable and let
+  the type system reject `'Ent'`.
+- **`maxTags` (refuses) vs `maxLength` (reports) is a genuinely confusing pair.**
+  `tag-input.directive.ts:40-46` documents it well and `text-inputs.md:413` explains it, but the
+  names give no clue. Consider `maxTags` → `tagLimit` with a `limitBehavior: 'refuse' | 'report'`,
+  or at minimum a dev-mode warning when both are set to different numbers.
+- **The `FIELD_OUTSIDE_*` guards are dev-only `afterNextRender` throws with no positive
+  counterpart.** `tag-input-field.directive.ts:36-46` and
+  `phone-input-field.directive.ts:56-66` catch the misplacement, but there is no guard for the
+  much more likely mistake of *two* field directives inside one control —
+  `registerSingleton` (`form-field/headless/register-singleton.ts`) presumably handles it;
+  worth confirming the error names the domain.
+- **Add a `forms/testing/index.ts` barrel.** Seventeen drivers with no barrel means every spec
+  deep-imports `../../testing/<name>-driver`, and there is no single place to see what test
+  infrastructure exists. Also missing from the drivers: `tag-input-driver.ts` has no
+  `chipRemoveButtons()`/`isFull()` accessor and `otp-input-driver.ts` no way to read
+  `complete` emissions, so specs re-derive both.
+
+#### Bundle size
+
+- **`otp-input.component.css` (262 lines) is the split candidate here, not `form-field`'s
+  sibling.** Roughly 100 of those lines (`:166-260`) are the support-stack + animation block,
+  which only a field that actually shows an error/warning/hint needs, and `@keyframes` +
+  six `@property` registrations sit unconditionally at the top. Following the
+  `TableVirtualScrollStylesComponent` pattern from `AGENTS.md`, an
+  `OtpInputSupportStylesComponent` mounted from `formSupportFactory`'s
+  `shouldRenderSupport()` effect would keep the animation CSS out of documents that never show
+  one. Note the same block is duplicated near-verbatim across `rating`, `slider`, `dropzone`,
+  `radio-group`, `checkbox-group`, `segmented-button-group` and `choice-field` — a single shared
+  `FormSupportStylesComponent` with `--et-form-support-*` tokens would delete ~7 copies of it.
+- **`PHONE_COUNTRIES` is 220 object literals (`phone-countries.ts:13-221`) that survive
+  tree-shaking** because `phone-input.component.ts:86` maps over the whole array. A packed
+  string (`'us:1,ca:1,ru:7,…'` parsed lazily inside `countries()`) is a few hundred bytes gzipped
+  instead of a few kB, and would also let the parse happen only on first panel open — where
+  today the array literal is evaluated at module load.
+- **The country panel's `Intl.DisplayNames` churn** (see Low) is the CPU twin of the above:
+  ~220 constructor calls per panel open, hoistable to one.
+- **`phone-input.component.ts:26` spreads all 20 entries of `SELECT_IMPORTS`** (`select/select.imports.ts:24-45`)
+  to use six of them: `etSelect`, `etSelectTrigger`, `etSelectSurface`, `et-select-panel`,
+  `et-select-option`, `etSelectSearch`. That drags `SelectComponent`,
+  `SelectVirtualOptionComponent`, the viewport/virtual-option directives and the
+  loading/error/empty slots into every app that imports the phone input but never uses
+  `et-select` itself. Naming the six would be a one-line change — worth measuring against
+  `tools/treeshake` goldens.
+
+#### UI/UX
+
+- **The OTP caret cannot be moved, by design, and that surprises people.**
+  `handleNativeSelectionEvent` (`otp-input.directive.ts:167-180`) pins selection to the end on
+  every keyup/mouseup, so clicking segment 2 of a filled code jumps to the end and the only edit
+  is delete-from-the-end. shadcn's `InputOTP` and PrimeNG's per-slot inputs both let you land on
+  a slot. If per-slot editing is off the table, at least suppress the jump for a pure
+  arrow-key/Home/End press so the caret does not fight the user silently.
+- **The phone input's clear button only exists while the tel field itself has focus**
+  (`phone-input.component.ts:79-81`), so a pointer user who moves the mouse toward the `×` after
+  tabbing to the country trigger watches it vanish. The date-time inputs use the same rule, so
+  this is consistent — but consider keeping it while focus is anywhere inside the control.
+- **Nothing announces a tag being added or removed.** `tag-input.component.html:1-16` renders
+  chips into a bare `div` with no `role="list"`, no `aria-live`, and no count in the input's
+  `aria-describedby`. A screen-reader user types `alpha`+Enter and hears nothing at all.
+- **`et-otp-input` has no `data-readonly` styling** beyond `cursor: default`
+  (`otp-input.component.css:145`), so a readonly code looks identical to an editable one — while
+  `:disabled` gets `opacity: 0.4` (`:158`). Pick a middle treatment.
+- **The OTP caret blink is `steps(2, jump-none)` at 1.1s** (`:119`) — a hard 50% duty-cycle
+  flash. It is correctly disabled under `prefers-reduced-motion` (`:257-259`), but an
+  `ease-in-out` opacity ramp reads calmer and matches the segment-char pop
+  (`:241-249`) already in the same sheet.
+
+#### Testing (ranked, first-pass order)
+
+1. **A character-by-character typing driver.** `driver-core.ts:69-72`'s `typeInField` sets the
+   whole value in one event, which is why the phone-input High is invisible to the suite. Add a
+   `typeChars(field, text)` that dispatches one `input` per character and re-run the existing
+   phone tests through it — that is the single highest-value addition in this batch.
+2. **`aria-describedby` resolution as a shared assertion.** A
+   `expectDescribedByResolves(driver)` helper in `field-control-driver.ts` asserting
+   `getElementById(field.getAttribute('aria-describedby'))` is non-null would have caught the
+   OTP bug and the same latent bug in rating/slider/dropzone/radio-group in one pass.
+3. **`valueChange` emission counting in the field-control driver.** The tag-input spurious-emit
+   bug needs it; so would any future no-op-write regression in every other control. Cheap:
+   record emissions in `mountControl`'s host wiring.
+4. **OTP: `length` changing after mount, `readonly`/`disabled` interaction, a flagged RegExp
+   charset, and a programmatic full value vs `complete`.** Four small tests, four of this
+   batch's Mediums.
+5. **`etPhoneInputFlag` projection** — assert the template renders in both the trigger and the
+   option list, with the `{ iso2, dialCode, flag }` context the docs promise.
+6. **Tighten `describeMixedStateContract`** so the clear case cannot pass vacuously, and add
+   assertions for the two clauses its own doc comment claims (`mixed-state-contract.ts:17-20`).
+
+Clean: `phone-countries.ts`'s longest-prefix matcher and trunk-zero table (both spec-covered and
+correct, including the equal-length tie going to the primary country); the `mixed` semantics of
+all three domains, which are consistent, well documented, and pinned by both per-control specs
+and the shared contract; the `@layer components` wrap and the surface/colour-token discipline in
+all three stylesheets (no hardcoded primary colours, no Tailwind in component source — the
+`color-mix(in srgb, currentColor …)` placeholders are derived, not hardcoded); the `@property`
+registrations, which match the repo-wide `inherits: true` convention; the OTP's `[data-error]`
+segment border, which correctly picks up the forced error theme because
+`formSupportFactory` calls `provideColor.forceColor(errorColorTheme)` on the host
+(`form-field/headless/form-support.ts:157-171`) and `OtpInputComponent` declares
+`ProvideColorDirective` in `hostDirectives`; `FormFieldBarrierDirective` doing its job — the
+nested country `etSelect` does not hijack the outer field's control registration; the
+`registerSingleton` + `afterNextRender` dev guards; `tag-input`'s and `phone-input`'s presence in
+the `usesTextFieldShell` allowlist (`form-field/headless/form-field.directive.ts:146-147`), so
+neither hits the label-squeeze trap; signals-only state throughout (no `Subject`, no
+subscribe-and-assign, no leaked listeners — every host binding is declarative and the only
+`DestroyRef` use is the form-field unregister); and no XSS sink, no SSR-hostile global access,
+and no module-level mutable latch anywhere in the four directories.
+
+---
+
+## query-error, filter-overlay, floating-action, testing, internals, version.ts
+
+### High
+
+- **`filterOverlayPreviewFromQuery`'s submit button gets permanently stuck on "Loading results…" (disabled) when a consumer uses the documented "skip counting" escape hatch.** `libs/components/src/lib/filter-overlay/filter-overlay-preview.ts:36` documents `args` as: "Return `null` to skip the request - for a draft that is not yet worth counting." When `args` returns `null`, `@ethlete/query`'s `withArgs` feature parks the query and never executes it (confirmed against `libs/query/src/lib/http/query-features.spec.ts:426` - "parks the query while withArgs returns null" - no HTTP request ever fires). That leaves `query.loading()` at its non-loading rest value and `query.response()` at `null` forever, so `totalHits` stays `null` and `loading` stays `false` forever (`filter-overlay-preview.ts:66-69`). `resolveFilterOverlaySubmitButton` (`libs/components/src/lib/filter-overlay/filter-overlay-labels.ts:93-94`) treats `totalHits === null` as "No count yet, and nothing in flight - the first request has not started" and always returns `{ label: labels.loading, disabled: true }` - there is no other branch that distinguishes "a request just hasn't started yet" from "this draft was deliberately never going to be counted." A consumer who follows the documented pattern (e.g. skip counting until a search box has ≥3 characters) ends up with a submit button frozen on "Loading results…" and permanently unpressable, even though nothing is loading and the draft is otherwise perfectly submittable. **Runtime-verified**: wrote a scratch spec creating a real query via `createQueryCreator` + `filterOverlayPreviewFromQuery({ args: () => null })`, ticked the injector, and asserted the resulting state. Observed: `{ totalHits: null, loading: false, hasError: false, hasPreview: true, maxCountedHits: 250 }` resolving to `{ label: 'Loading results…', disabled: true }` - confirming the stuck state exactly as analyzed. Scratch file was deleted after the run; working tree is clean.
+
+### Medium
+
+- **A JSDoc comment references a component that does not exist, and could mislead a consumer trying to use it.** `libs/components/src/lib/filter-overlay/headless/filter-overlay-controls.directive.ts:48` says of `FilterOverlaySubmitDirective.label`: "Rendered by `<et-filter-overlay-submit-label>`, or read it yourself." No such component exists anywhere in `libs/components` (`grep -rn "et-filter-overlay-submit-label"` finds only this one comment). The real, documented pattern (both in `apps/docs/components/filter-overlay.md:38` and the story file) is `#submit="etFilterOverlaySubmit"` + `{{ submit.label() }}` - there never was a default-rendering label component. A consumer who trusts the comment and searches for `et-filter-overlay-submit-label` will not find it. This is also a comment-policy violation on its own (states something false, not merely undocumented) independent of the missing feature.
+
+### Low
+
+- **Comment-policy: the same file's "or read it yourself" phrasing is otherwise fine, but the dangling reference above should just be deleted** - `filter-overlay-controls.directive.ts:48`. Once the nonexistent component name is removed there is nothing else wrong with the comment.
+- **`legacyQueryErrorSource`'s internal `retry` always calls the underlying query's `execute` with `{ skipCache: true }`** (`libs/components/src/lib/query-error/query-error-legacy.ts:66-69`), which is correct for a legacy client query but would silently do nothing if `config.query` ever pointed at a current-client (`AnyV2Query`) query instead, since the current client spells cache-bypass `{ options: { allowCache: false } }` (as `QueryErrorDirective.retry()` does at `libs/components/src/lib/query-error/headless/query-error.directive.ts:123`). The adapter's own types (`AnyV2Query | AnyLegacyQuery | AnyQueryCollection`) allow a V2 query to be passed in, so this is a latent trap if `legacyQueryErrorSource` is ever pointed at a non-legacy query - not a bug today since the adapter is documented and used exclusively for legacy sources, but worth a one-line guard or narrower type if it recurs.
+
+### Spec coverage
+
+- **`query-error`**: well covered. `query-error.component.spec.ts` exercises rendering (no error, title/message, violation list, message-echoes-title suppression, empty-body fallback), the banner/`role="alert"` wiring, color override, retry gating by policy, `alwaysAllowRetry`, locale defaulting and `provideQueryErrorLabels(queryErrorLabelsForLocale)`, and `queryErrorResponseFromLegacyError`'s classification. Not covered: the dev-mode `assertInsideQueryError` guard in `query-error-slots.directive.ts` (throwing when a slot is used outside `[etQueryError]`), and `legacyQueryErrorSource`'s `retry()`/`retryTarget.execute` wiring itself (only the pure conversion function is tested, not the returned object's behavior).
+- **`filter-overlay`**: the core service (`provideFilterOverlay`/`createFilterOverlay`) is well covered in `filter-overlay.spec.ts` - draft isolation, `hasChanges`, submit writing through `setValue` (reset graph fires), `reset()`, `activeFilterCount` vs `isPristine`, and the submit-button resolver's every branch. **Zero coverage** for: `discard()` (never called in any spec), the interaction with a real `OverlayRef` (`close()` is never exercised - tests call `factory()` directly, bypassing `OVERLAY_REF` entirely, so `submit`/`discard`'s `overlayRef?.close(result)` call is unverified end-to-end), `FilterOverlaySubmitDirective` and `FilterOverlayResetDirective` themselves (no directive-level spec - `[disabled]` binding, `(click)` handler, and the `assertInsideFilterOverlay` dev-mode guard are all untested), and `filterOverlayPreviewFromQuery` (the query-backed preview factory has no spec at all; the High finding above was only caught by ad hoc runtime verification, not by an existing test).
+- **`floating-action`**: **no spec file exists for this domain at all** (`find libs/components/src/lib/floating-action -name "*.spec.ts"` returns nothing). This is real, non-trivial logic - a three-state machine (`inline`/`floating`/`hidden`) combining two intersection observers, a `disabled` override, the anchor/scope/top registration handshake between four cooperating directives, and the dev-mode `MISSING_ANCHOR` / `PART_OUTSIDE_FLOATING_ACTION` guards - with zero automated coverage. Everything here is presently verified only by the Storybook stories.
+- **`testing`**: this directory is test infrastructure, not something that itself needs specs; it is exercised indirectly by ~173 files across the components lib that import from it (`control-driver`, `field-control-driver`, `overlay-control-driver`, `driver-core`, `color-themes`). No gap here.
+- **`internals`**: `dom-order.ts` (`sortByDomOrder`) has **no dedicated spec** despite being relied on by `select`, `masonry`, and `menu` for correctness-critical DOM-order sorting of projected items - only exercised incidentally through those consumers' own specs. `typeahead.ts` (`createTypeahead`) also has **no dedicated spec** despite being shared by five consumers (`tree`, `cascader`, `select`, `time-picker`, `menu`) - the reset-delay timer behavior, buffer accumulation, and `destroy()`/`reset()` semantics are only ever exercised indirectly through each consumer's own tests. `pointer-gesture-target.ts` and `virtual-window.ts` are both well covered by their own spec files.
+
+Clean: read every non-spec source file in `query-error/`, `filter-overlay/`, `floating-action/`, `testing/`, `internals/`, and `libs/components/src/lib/version.ts`, plus their spec files and the three matching docs pages (`query-error.md`, `filter-overlay.md`, `floating-action.md`). Verified: all component CSS in scope (`query-error.component.css`, `floating-action-styles.component.css`) is wrapped in `@layer components { … }`; no hardcoded colors as primary values (floating-action's CSS only sets geometry/timing custom properties, no colors at all); no Tailwind in any in-scope component source (only present, correctly, in story files); signals used for all in-scope synchronous state, with the one RxJS subscription in scope (`virtual-window.ts`'s scroll listener) correctly piped through `takeUntilDestroyed()` last; `createTypeahead()` is correctly wired to `DestroyRef.onDestroy` in every one of its five consumers, so its internal `timer()` subscription cannot outlive its host. `FLOATING_ACTION_IMPORTS` / `FILTER_OVERLAY_IMPORTS` / `QUERY_ERROR_IMPORTS` barrels match their directories' actual exported directives/components. Docs pages (`query-error.md`, `filter-overlay.md`, `floating-action.md`) accurately describe current behavior, options, and defaults, and their `<StoryEmbed>` ids all resolve to real, matching story titles/exports. `version.ts` is a trivial generated re-export, correctly wired into the public `index.ts`, with no logic to break.
+
+### Improvements
+
+- **Features**: `floating-action` has no way to float on one edge and dock on another as viewport size changes (e.g. bottom-center on mobile, bottom-right on desktop) - peer libraries (e.g. Material's FAB patterns) typically let the anchor position vary per breakpoint via CSS alone, but here the *side* (`inset-inline-end`) is fixed by a single custom property, not responsive without a consumer overriding it via media queries themselves. A documented "how to change side per breakpoint" recipe (or a `side` input) would remove guesswork.
+- **Features**: `filter-overlay` has no built-in "N filters active, tap to clear one" affordance beyond the raw `activeFilterCount` - peer filter-panel patterns (Ark UI, shadcn combobox-filter examples) commonly ship a small chip list of active filter values with per-chip removal. Given `activeFilterCount` and `draft.resetFieldToDefault` already exist, a thin `FilterOverlayActiveFilters` headless helper enumerating `{ key, label, clear() }` per non-default field would be a natural, low-risk addition building only on existing primitives.
+- **DX**: `filterOverlayPreviewFromQuery`'s `args: () => null` skip semantics interact badly with the submit-button resolver (see the High finding) - fixing the resolver to distinguish "genuinely first-request-pending" from "this preview was configured to skip" (e.g. by having the preview itself expose an explicit `skipped` signal, or having `resolveFilterOverlaySubmitButton` treat `!loading && !hasError && totalHits === null` as "apply enabled" rather than "still loading") would remove a real footgun for exactly the use case (deferred/conditional counting) the API's own JSDoc recommends.
+- **DX**: `FloatingActionDirective`'s dev-mode guard only checks for a missing anchor (`MISSING_ANCHOR`), not a missing trigger - if a consumer wires up `[etFloatingAction]` and `[etFloatingActionAnchor]` but forgets `[etFloatingActionTrigger]` inside it, nothing throws and `scrollToTop()` silently falls back to the floating-action element itself with no signal that the trigger registration never happened. A `MISSING_TRIGGER` guard mirroring `MISSING_ANCHOR` (`floating-action.directive.ts:109-120`) would close that gap cheaply.
+- **Testing**: `floating-action` should get a first spec pass before anything else in this batch - it currently has zero automated coverage of a genuinely nontrivial derived-state machine. Priority order: (1) `state()`'s three-way branching against mocked `anchor`/`scope` intersection signals (inline/floating/hidden transitions, including the "below the fold" vs "scrolled above" distinction the docs call out), (2) `disabled` forcing `inline` regardless of intersection state, (3) `scrollToTop()` targeting `[etFloatingActionTop]` vs falling back to the host element, (4) the `MISSING_ANCHOR` / `PART_OUTSIDE_FLOATING_ACTION` dev-mode guards actually throwing `RuntimeError` with the right code.
+- **Testing**: `filter-overlay` should add: a directive-level spec for `FilterOverlaySubmitDirective`/`FilterOverlayResetDirective` mounted against a real `FILTER_OVERLAY_TOKEN` provider (not just the bare service factory) to cover the `[disabled]` binding and `(click)` wiring end-to-end; a spec exercising `discard()` and `submit()` against a real `OverlayRef` fake to confirm `close({ didUpdate, value })` is actually called with the right payload (today `close` is entirely unverified); and a spec for `filterOverlayPreviewFromQuery` itself (loading/error/totalHits derivation, the `toTotalHits` override, the `console.error` dev-mode warning when a response has no `totalHits`), which currently has no test at all.
+- **Testing**: `internals/dom-order.ts` and `internals/typeahead.ts` both deserve dedicated unit specs given how widely shared they are (dom-order: `select`, `masonry`, `menu`; typeahead: `tree`, `cascader`, `select`, `time-picker`, `menu`) - a bug in either would silently misbehave across five-plus components at once, and today a regression could only be caught by whichever consumer's own spec happens to exercise the affected edge case.
+
+---
+
+## button, chip, badge, avatar, banner, card, divider
+
+Scope reviewed: every non-spec source file (`.ts`/`.html`/`.css`) and spec file under
+`libs/components/src/lib/{button,chip,badge,avatar,banner,card,divider}/`, plus
+`apps/docs/components/{button,chip,badge,avatar,banner,card,divider}.md`.
+
+### High
+
+- **The chip domain's own documented "quick start" snippet has no keyboard path to removal.**
+  `apps/docs/components/chip.md:10` shows `<et-chip (remove)="removeTag('Design')" removable>Design</et-chip>`
+  as the introductory example, with no ancestor widget and no `tabindex`. `ChipDirective`
+  (`libs/components/src/lib/chip/headless/chip.directive.ts:1-35`) never sets a `tabindex` on the
+  chip host, and `ChipRemoveDirective` hardcodes `tabindex: '-1'` on its own host
+  (`libs/components/src/lib/chip/headless/chip-remove.directive.ts:14`) with the comment "chips are
+  never tab stops." The doc's own Accessibility section acknowledges this ("standalone chips are
+  removed via pointer or via Backspace/Delete while the chip element has (programmatic) focus") but
+  the quick-start snippet provides no such programmatic focus source. For a keyboard-only user, this
+  exact documented markup is unremovable: nothing in it is ever `Tab`-reachable, so `Backspace`/`Delete`
+  (which only fire while the chip itself is `document.activeElement`) can never trigger, and the visible
+  "×" button is reachable only by pointer.
+  **Runtime-verified**: wrote a scratch spec (`libs/components/src/lib/chip/__scan-verify.spec.ts`,
+  deleted after the run) rendering the exact docs snippet and ran it with
+  `NX_NO_CLOUD=true npx vitest run --root libs/components --config libs/components/vite.config.mts <path>`.
+  All 5 assertions passed: the chip host carries no `tabindex` attribute, `chip.focus()` does not move
+  `document.activeElement` to it, the remove button's `tabindex` is `-1`, and after `document.body.focus()`
+  neither the chip nor the remove button is the active element - i.e. there is no element in this markup
+  a `Tab` key press can ever land on. Either the quick-start example needs a caveat/an explicit
+  `tabindex="0"` plus its own keydown wiring, or the chip should default to `tabindex="0"` when
+  `removable` and not composed into a selection list/tag input that already manages focus.
+
+### Medium
+
+- **`SplitButtonDirective` silently accepts a second `etSplitButtonAction` (or trigger), with no
+  dev-mode error, and the second one clobbers the first with no way to recover it.**
+  `SplitButtonActionDirective`'s constructor unconditionally does
+  `this.splitButton?.registeredAction.set(this)` (`libs/components/src/lib/button/headless/split-button-action.directive.ts:19`),
+  overwriting whatever was registered before with no check for an existing registration, and the
+  `afterNextRender` dev-mode check in `SplitButtonDirective` (`split-button.directive.ts:21-41`) only
+  throws when the count is **zero**, never when it is more than one. **Runtime-verified**: a scratch
+  spec (`libs/components/src/lib/button/__scan-verify.spec.ts`, deleted after the run) rendered an
+  `et-split-button` with two `etSplitButtonAction` buttons; `registeredAction()` silently resolved to
+  the second one with no thrown error, and removing that second (now-registered) action set
+  `registeredAction()` to `null` even though the first action button was still present in the DOM -
+  the split button then behaves as if it has no action at all. A duplicate registration should either
+  throw in dev mode (matching the "missing" check's rigor) or fall back to the remaining directive on
+  unregister instead of going to `null`.
+
+- **`FabComponent` omits `ColorInteractiveDirective`, unlike every other themed button flavor, so its
+  outline/tonal/transparent ink color never reacts to hover/focus/active/disabled.**
+  `fab.component.ts`'s `hostDirectives` (lines 56-67) list `ButtonDirective`, `ButtonStylesDirective`,
+  `FocusRingDirective` and `ProvideColorDirective`, but not `ColorInteractiveDirective` - unlike
+  `ButtonComponent` (`button.component.ts:89-101`), `IconButtonComponent`
+  (`icon-button.component.ts:41-53`), `TextButtonComponent` (`text-button.component.ts:55-67`) and
+  `WindowControlButtonComponent` (`window-control-button.component.ts:53-65`), which all include it.
+  `--et-theme-color-ink-rgb`/`-ink-solid` (read by `fab.component.css` for the outline/tonal/transparent
+  variants' `color`/border) is only re-resolved per interaction state by the CSS
+  `ColorInteractiveDirective` mounts (`libs/core/src/lib/theming/color-interactive-styles.component.css:15-23,27-46,48-77,105-146`,
+  keyed off `--et-color-primary-ink-hover/-focus/-active/-disabled`); without that directive on the
+  host, the base `[class*="et-color--"]` alias block (`libs/core/generators/tailwind-4-color-theme/generator.ts:659-671`)
+  only ever supplies the resting ink color, so FAB's ink never shifts the way button/icon-button/text-button/
+  window-control-button's does. Chip deliberately opts out of the analogous mechanic with an explicit
+  comment explaining why (`chip.component.css:91-93`: "a plain chip does not carry [etColorInteractive]");
+  FAB has no such comment, which suggests an oversight rather than a documented decision.
+  **Code-verified only** - the effect depends on an app registering distinct `-ink-hover`/`-ink-focus`/etc.
+  theme tokens (the bundled Storybook theme happens to set them equal to the resting ink color for its
+  brand/danger themes, so the gap would not show up there); reproducing it needs a real CSS engine with a
+  theme that varies those tokens, which jsdom's cascade does not reliably model.
+
+- **`window-control-button.component.css`'s "close" kind hardcodes red/white as primary values,
+  against the repo's "never a hardcoded colour as the primary value" rule.**
+  Lines 106-121 set `background: rgba(232, 17, 35, 0.92)` / `color: #ffffff` (and a darker red for
+  `:active`) directly on `background`/`color` for `:focus-visible`/`:hover`/`:active` - not inside a
+  `var(--token, <fallback>)` fallback slot (unlike every other hardcoded value in this same file, e.g.
+  `--_et-window-control-button-fallback-color: rgba(255, 255, 255, 0.92)` at line 17, which is only ever
+  used as a `var()` fallback and is therefore permitted). This may be a deliberate "OS titlebar close
+  button is always red" convention, but as written it is unthemeable and uncommented, so a future
+  reviewer has no way to tell a deliberate exception from a plain violation. Either theme it through
+  `injectErrorTheme()`-style tokens or add the workaround comment the repo's comment policy requires
+  for a deliberate deviation.
+
+### Low
+
+- **`apps/docs/components/chip.md` contradicts itself on where a chip's color comes from.** The
+  "Filter chips" section says the selected state is "a color-theme tonal fill" (line 42, matching
+  `chip.component.css:94-103`'s use of `--et-theme-color-primary-solid`/`--et-theme-color-ink-solid`),
+  but the later "Theming" section flatly states "Colors come from the app-registered surface theme...
+  there is nothing color-related to override per chip" (`chip.md:82`), which is only true for the
+  unselected/non-filter chip. A reader who only reads "Theming" would not learn that a selected filter
+  chip's fill is themeable via `[etProvideColor]`.
+
+- **`FabComponent` and `IconButtonComponent` each redeclare an identical local type alias
+  (`FabVariant`, `IconButtonVariant`) that is structurally the same as the already-exported
+  `ButtonVariant`** (`fab.component.ts:17`, `icon-button.component.ts:9`, vs.
+  `button.component.ts:33`). Harmless, but three names for one type invites drift if a variant is
+  ever added to one and not the others.
+
+- **`avatar.component.css`'s `.et-avatar-image` rule sits outside the `.et-avatar { … }` block**
+  (`avatar.component.css:65-70`), unlike every sibling component in this batch (button, badge, chip,
+  card all nest every descendant selector inside their root class block). Low risk given the specific
+  class name, but it is an unscoped global selector where the rest of the codebase's convention is to
+  nest, and it's easy to accidentally widen later.
+
+### Spec coverage
+
+Well covered: `ButtonDirective` (headless) - type/disabled/loading/pressed/anchor-vs-button behavior,
+including the loading-blocks-click and stays-focusable cases. `ButtonComponent`, `FabComponent`,
+`IconButtonComponent`, `TextButtonComponent`, `WindowControlButtonComponent` - all input reflection to
+`data-*` attributes and the loading spinner. `SplitButtonComponent` - rendering, segment registration/
+unregistration, and both dev-mode "missing" error codes. `BadgeComponent`, `AvatarComponent`,
+`CardComponent`, `DividerComponent` - inputs, defaults, and color/surface forwarding.
+`BannerComponent` - exceptionally thorough: heading/description rendering, projected-slot ordering,
+role-per-type, `liveRegion` override, color forcing per type (including the "no throw for info without
+themes registered" case), and dismiss.
+
+Gaps:
+
+- **`ChipComponent` itself has zero tests.** There is no `chip.component.spec.ts` at all; only the
+  headless `ChipDirective`/`ChipRemoveDirective` pair is tested, via a hand-rolled `<span etChip>`
+  host template (`headless/chip.directive.spec.ts`) rather than the real `<et-chip>`. The actual
+  component - its template's `@if (chip.removable())` gating of the remove button, the projected
+  `et-times` icon, the `et-chip`/`et-chip-label` classes - is never rendered in a test.
+- **`ButtonColorDirective` has no test coverage anywhere.** No spec (button, fab, icon-button, text-
+  button, window-control-button) asserts on `color`, `pressedColor`, or the `pressed && pressedColor
+  !== undefined` branch that picks which color forces onto `ProvideColorDirective`; contrast this with
+  badge/avatar/card, which each have an explicit "forwards color to the color provider" test.
+- **`AvatarGroupComponent`'s entire reason to exist is untested.** Its spec has exactly one test
+  ("renders the projected avatars"). `maxVisible`, the `+N` overflow avatar's existence and count,
+  hiding avatars past the limit, and the overflow avatar copying the first projected avatar's
+  `size`/`shape` are all completely unexercised.
+- **`SplitButtonActionDirective`/`SplitButtonTriggerDirective` have no dedicated spec** and are only
+  exercised indirectly (one of each) through `SplitButtonComponent`'s spec - which is how the Medium
+  double-registration finding above went unnoticed.
+- **`ChipRemoveDirective`'s "outside `[etChip]`" dev-mode error (`ET1100`) is never tested**, unlike
+  the structurally identical split-button checks, which cover both directives' "outside" cases.
+
+Clean: `ButtonDirective`/`ButtonColorDirective`'s core state machine, all six button-flavor components'
+`data-*` reflection and disabled/loading semantics, `DividerComponent`, `CardComponent`, `BadgeComponent`
+and `AvatarComponent`'s public APIs, and `BannerComponent`'s theming/role logic are all sound and match
+their docs. No Tailwind classes, hardcoded primary colors (other than the one Medium finding above), or
+unlayered CSS were found outside story files. All `index.ts`/`*.imports.ts` barrels are complete with no
+dead exports. The canonical `&:where([data-size='…'])`/`&:where([disabled])` pattern from
+`button/*.component.css` is followed consistently across chip, badge, avatar, banner, card and divider.
+
+### Improvements
+
+**Features**
+
+- **A corner-anchored "dot"/overlay badge mode.** `et-badge` today is only an inline pill; Material's
+  `MatBadge`, PrimeNG's `Badge`/`OverlayBadge` and Ant Design's `Badge` all also support anchoring a
+  small indicator (with or without a count) to the corner of an arbitrary host element (an icon button
+  with an unread count, an avatar with an online dot). That's a natural, high-value extension of the
+  existing `BadgeComponent` variant/size system rather than a new component.
+- **A labeled divider.** `et-divider` has no way to render text in the middle of the rule (the "OR" in
+  an auth form, a labeled section break) - a common pattern in Ant Design's `Divider`. Given
+  `DividerComponent`'s template is currently just `` (`divider.component.ts:24`), this would need
+  content projection support, which the current attribute-selector-free component doesn't have room
+  for yet.
+- **Card sub-slots.** `et-card` is deliberately just padding/gap/chrome around `<ng-content>`
+  (`card.component.ts:24`) - fine for the common case, but there's no `CardHeaderComponent`/
+  `CardMediaComponent` for the "edge-to-edge image, breaks out of the padding" layout every dashboard
+  card library (Material, PrimeNG) ships as a first-class piece.
+
+**DX**
+
+- **`SplitButtonActionDirective`/`SplitButtonTriggerDirective` should reject a second registration in
+  dev mode**, matching the rigor of the existing "missing" check (see Medium finding above) - right now
+  a duplicate silently wins or silently zeroes out the group depending on which one gets removed.
+- **Collapse `ButtonVariant`/`FabVariant`/`IconButtonVariant` into one exported type.** Three files
+  independently declare the same `(typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS]` alias
+  (see Low finding); importing `ButtonVariant` from `button.component` everywhere would remove the
+  drift risk for free.
+
+**Bundle size**
+
+- **The per-variant hover/focus/active opacity ramps are hand-duplicated across `button.component.css`,
+  `fab.component.css` and `icon-button.component.css`** (each repeats the same filled/outline/tonal/
+  transparent `--et-theme-color-primary-opacity` escalation at 0/0.08/0.12/0.16, 0.16/0.24/0.28/0.32,
+  etc., just with different selector shells). Every consumer that imports any one button flavor ships
+  its own copy of this ramp. Given `AGENTS.md`'s guidance on splitting a large stylesheet, this looks
+  like a candidate for a shared token recipe (e.g. a `--et-button-variant-opacity-*` set computed once)
+  rather than three parallel hand-written copies - lower risk of the three drifting apart, too.
+
+**UI/UX**
+
+- **Fix the chip keyboard-reachability gap** (High finding above) - today the only two documented paths
+  to make a removable chip keyboard-operable are outside the chip domain entirely (a selection list or a
+  future tag input). A standalone chip should have a supported, documented way to be keyboard-removable
+  on its own.
+- **`AvatarComponent`'s alt-text fallback is silently empty when `name` is unset and `src` is set**
+  (`avatar.component.ts:46`, `[alt]="name() ?? ''"`) - documented as deliberate, but it would be easy for
+  a consumer to trip over an avatar that looks like a real photo to a sighted user and announces nothing
+  at all to a screen reader. Consider a dev-mode warning when `src` is set without `name` and no
+  `aria-label` on the host, the way other components in this batch throw/warn on missing structural
+  pieces.
+
+**Testing**
+
+- **Add a `chip.component.spec.ts`** rendering the real `<et-chip>` (remove-button gating on
+  `removable`, the `et-times` icon, disabled/removable data attributes on the actual component, not a
+  synthetic host) - see Spec coverage gaps above; this is the most consumer-visible piece of the domain
+  with the least direct coverage.
+- **Add `maxVisible`/overflow coverage to `avatar-group.component.spec.ts`**: the `+N` count, which
+  avatars get `hidden`, and the overflow avatar's inherited `size`/`shape` are all currently unverified
+  by any test.
+- **Add a `button-color.directive.spec.ts`** (or extend one button flavor's spec) covering `color`,
+  `pressedColor` left unset (falls back to `color`), `pressedColor="inherit"`, and the pressed/unpressed
+  toggle - this directive's branching logic is exercised by zero tests today.
 
 ---
