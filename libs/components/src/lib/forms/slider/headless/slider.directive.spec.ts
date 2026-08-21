@@ -1,12 +1,10 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
 import { LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { mountSlider, SliderDriver } from '../../testing/slider-driver';
 import { SLIDER_IMPORTS } from '../slider.imports';
 import { SliderMarks, SliderOrientation } from './slider.tokens';
-import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `
@@ -47,429 +45,378 @@ class SliderTestHost {
   readonly = signal(false);
 }
 
-const TRACK_RECT = { left: 0, width: 100, top: 0, height: 28, right: 100, bottom: 28, x: 0, y: 28 } as DOMRect;
-const VERTICAL_TRACK_RECT = { left: 0, width: 28, top: 0, height: 100, right: 28, bottom: 100, x: 0, y: 0 } as DOMRect;
-
 describe('SliderDirective', () => {
-  let fixture: ComponentFixture<SliderTestHost>;
-  let host: HTMLElement;
-
-  const thumb = () => host.querySelector<HTMLElement>('.et-slider-thumb')!;
-  const track = () => host.querySelector<HTMLElement>('.et-slider-interaction')!;
-
-  const keydown = (key: string) => {
-    thumb().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-    fixture.detectChanges();
-  };
-
-  const marks = () => Array.from(host.querySelectorAll<HTMLElement>('.et-slider-mark'));
-
-  const pointer = (type: string, clientX: number, clientY = 0) => {
-    track().dispatchEvent(new MouseEvent(type, { clientX, clientY, bubbles: true, button: 0 }));
-    fixture.detectChanges();
-  };
+  let driver: SliderDriver<SliderTestHost>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [SliderTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(SliderTestHost);
-    fixture.detectChanges();
-    host = fixture.nativeElement.querySelector('et-slider');
-    track().getBoundingClientRect = () => TRACK_RECT;
+    driver = mountSlider(SliderTestHost);
   });
 
   it('renders a slider thumb with the ARIA slider semantics', () => {
-    expect(thumb().getAttribute('role')).toBe('slider');
-    expect(thumb().getAttribute('tabindex')).toBe('0');
-    expect(thumb().getAttribute('aria-orientation')).toBe('horizontal');
-    expect(thumb().getAttribute('aria-valuemin')).toBe('0');
-    expect(thumb().getAttribute('aria-valuemax')).toBe('100');
-    expect(thumb().getAttribute('aria-valuenow')).toBe('0');
+    expect(driver.thumbAttr('role')).toBe('slider');
+    expect(driver.thumbAttr('tabindex')).toBe('0');
+    expect(driver.thumbAttr('aria-orientation')).toBe('horizontal');
+    expect(driver.thumbAttr('aria-valuemin')).toBe('0');
+    expect(driver.thumbAttr('aria-valuemax')).toBe('100');
+    expect(driver.thumbAttr('aria-valuenow')).toBe('0');
   });
 
   it('positions the thumb and fill from the value', () => {
-    fixture.componentInstance.value.set(25);
-    fixture.detectChanges();
+    driver.host.value.set(25);
+    driver.tick();
 
-    expect(thumb().style.getPropertyValue('--_et-slider-thumb-position')).toBe('25');
-    expect(host.querySelector<HTMLElement>('.et-slider-fill')!.style.getPropertyValue('--_et-slider-fill-end')).toBe(
-      '25',
-    );
+    expect(driver.thumbPosition()).toBe('25');
+    expect(driver.fillEnd()).toBe('25');
   });
 
   it('displays the value clamped and snapped to the step grid', () => {
-    fixture.componentInstance.step.set(10);
-    fixture.componentInstance.value.set(37);
-    fixture.detectChanges();
+    driver.host.step.set(10);
+    driver.host.value.set(37);
+    driver.tick();
 
-    expect(thumb().getAttribute('aria-valuenow')).toBe('40');
+    expect(driver.thumbAttr('aria-valuenow')).toBe('40');
 
-    fixture.componentInstance.value.set(999);
-    fixture.detectChanges();
+    driver.host.value.set(999);
+    driver.tick();
 
-    expect(thumb().getAttribute('aria-valuenow')).toBe('100');
+    expect(driver.thumbAttr('aria-valuenow')).toBe('100');
   });
 
   it('steps with the keyboard and clamps at the bounds', () => {
-    keydown('ArrowRight');
-    expect(fixture.componentInstance.value()).toBe(1);
+    driver.press('ArrowRight');
+    expect(driver.host.value()).toBe(1);
 
-    keydown('ArrowUp');
-    expect(fixture.componentInstance.value()).toBe(2);
+    driver.press('ArrowUp');
+    expect(driver.host.value()).toBe(2);
 
-    keydown('ArrowLeft');
-    keydown('ArrowDown');
-    keydown('ArrowDown');
-    expect(fixture.componentInstance.value()).toBe(0);
+    driver.press('ArrowLeft');
+    driver.press('ArrowDown');
+    driver.press('ArrowDown');
+    expect(driver.host.value()).toBe(0);
 
-    keydown('PageUp');
-    expect(fixture.componentInstance.value()).toBe(10);
+    driver.press('PageUp');
+    expect(driver.host.value()).toBe(10);
 
-    keydown('PageDown');
-    expect(fixture.componentInstance.value()).toBe(0);
+    driver.press('PageDown');
+    expect(driver.host.value()).toBe(0);
 
-    keydown('End');
-    expect(fixture.componentInstance.value()).toBe(100);
+    driver.press('End');
+    expect(driver.host.value()).toBe(100);
 
-    keydown('Home');
-    expect(fixture.componentInstance.value()).toBe(0);
+    driver.press('Home');
+    expect(driver.host.value()).toBe(0);
   });
 
   it('respects custom bounds and step for the keyboard model', () => {
-    fixture.componentInstance.min.set(10);
-    fixture.componentInstance.max.set(20);
-    fixture.componentInstance.step.set(5);
-    fixture.componentInstance.value.set(10);
-    fixture.detectChanges();
+    driver.host.min.set(10);
+    driver.host.max.set(20);
+    driver.host.step.set(5);
+    driver.host.value.set(10);
+    driver.tick();
 
-    expect(thumb().getAttribute('aria-valuemin')).toBe('10');
-    expect(thumb().getAttribute('aria-valuemax')).toBe('20');
+    expect(driver.thumbAttr('aria-valuemin')).toBe('10');
+    expect(driver.thumbAttr('aria-valuemax')).toBe('20');
 
-    keydown('ArrowRight');
-    expect(fixture.componentInstance.value()).toBe(15);
+    driver.press('ArrowRight');
+    expect(driver.host.value()).toBe(15);
 
-    keydown('PageUp');
-    expect(fixture.componentInstance.value()).toBe(20);
+    driver.press('PageUp');
+    expect(driver.host.value()).toBe(20);
   });
 
   it('commits the value under a track pointerdown and drags it along', () => {
-    pointer('pointerdown', 30);
-    expect(fixture.componentInstance.value()).toBe(30);
-    expect(host.hasAttribute('data-dragging')).toBe(true);
+    driver.pointer('pointerdown', 30);
+    expect(driver.host.value()).toBe(30);
+    expect(driver.hasAttr('data-dragging')).toBe(true);
 
-    pointer('pointermove', 62);
-    expect(fixture.componentInstance.value()).toBe(62);
+    driver.pointer('pointermove', 62);
+    expect(driver.host.value()).toBe(62);
 
-    pointer('pointerup', 62);
-    expect(host.hasAttribute('data-dragging')).toBe(false);
+    driver.pointer('pointerup', 62);
+    expect(driver.hasAttr('data-dragging')).toBe(false);
 
     // no longer dragging - moves are ignored
-    pointer('pointermove', 90);
-    expect(fixture.componentInstance.value()).toBe(62);
+    driver.pointer('pointermove', 90);
+    expect(driver.host.value()).toBe(62);
   });
 
   it('reverts to the pressed value when the browser takes the drag away', () => {
-    pointer('pointerdown', 30);
-    pointer('pointermove', 62);
-    expect(fixture.componentInstance.value()).toBe(62);
+    driver.pointer('pointerdown', 30);
+    driver.pointer('pointermove', 62);
+    expect(driver.host.value()).toBe(62);
 
-    pointer('pointercancel', 62);
-    expect(fixture.componentInstance.value()).toBe(30);
-    expect(host.hasAttribute('data-dragging')).toBe(false);
+    driver.pointer('pointercancel', 62);
+    expect(driver.host.value()).toBe(30);
+    expect(driver.hasAttr('data-dragging')).toBe(false);
 
     // the gesture is over - later moves belong to no drag
-    pointer('pointermove', 90);
-    expect(fixture.componentInstance.value()).toBe(30);
+    driver.pointer('pointermove', 90);
+    expect(driver.host.value()).toBe(30);
   });
 
   it('ignores interaction while disabled or readonly', () => {
-    fixture.componentInstance.disabled.set(true);
-    fixture.detectChanges();
+    driver.host.disabled.set(true);
+    driver.tick();
 
-    keydown('ArrowRight');
-    pointer('pointerdown', 50);
-    expect(fixture.componentInstance.value()).toBe(0);
-    expect(thumb().getAttribute('tabindex')).toBe('-1');
+    driver.press('ArrowRight');
+    driver.pointer('pointerdown', 50);
+    expect(driver.host.value()).toBe(0);
+    expect(driver.thumbAttr('tabindex')).toBe('-1');
 
-    fixture.componentInstance.disabled.set(false);
-    fixture.componentInstance.readonly.set(true);
-    fixture.detectChanges();
+    driver.host.disabled.set(false);
+    driver.host.readonly.set(true);
+    driver.tick();
 
-    keydown('ArrowRight');
-    pointer('pointerdown', 50);
-    expect(fixture.componentInstance.value()).toBe(0);
-    expect(thumb().getAttribute('tabindex')).toBe('0');
-    expect(thumb().getAttribute('aria-readonly')).toBe('true');
+    driver.press('ArrowRight');
+    driver.pointer('pointerdown', 50);
+    expect(driver.host.value()).toBe(0);
+    expect(driver.thumbAttr('tabindex')).toBe('0');
+    expect(driver.thumbAttr('aria-readonly')).toBe('true');
   });
 
   it('marks the control touched on blur', () => {
-    expect(fixture.componentInstance.touched()).toBe(false);
+    expect(driver.host.touched()).toBe(false);
 
-    thumb().dispatchEvent(new FocusEvent('blur'));
-    fixture.detectChanges();
+    driver.blurThumb();
 
-    expect(fixture.componentInstance.touched()).toBe(true);
+    expect(driver.host.touched()).toBe(true);
   });
 
   describe('vertical orientation', () => {
     beforeEach(() => {
-      fixture.componentInstance.orientation.set('vertical');
-      fixture.detectChanges();
-      track().getBoundingClientRect = () => VERTICAL_TRACK_RECT;
+      driver.host.orientation.set('vertical');
+      driver.tick();
+      driver.stubTrack('vertical');
     });
 
     it('exposes the orientation on the host and the thumb', () => {
-      expect(host.getAttribute('data-orientation')).toBe('vertical');
-      expect(thumb().getAttribute('aria-orientation')).toBe('vertical');
+      expect(driver.attr('data-orientation')).toBe('vertical');
+      expect(driver.thumbAttr('aria-orientation')).toBe('vertical');
     });
 
     it('swaps the blocked touch axis on the track and the thumb', () => {
-      expect(track().style.touchAction).toBe('pan-x');
-      expect(thumb().style.touchAction).toBe('pan-x');
+      expect(driver.trackTouchAction()).toBe('pan-x');
+      expect(driver.thumbTouchActions()).toEqual(['pan-x']);
 
-      fixture.componentInstance.orientation.set('horizontal');
-      fixture.detectChanges();
+      driver.host.orientation.set('horizontal');
+      driver.tick();
 
-      expect(track().style.touchAction).toBe('pan-y');
-      expect(thumb().style.touchAction).toBe('pan-y');
+      expect(driver.trackTouchAction()).toBe('pan-y');
+      expect(driver.thumbTouchActions()).toEqual(['pan-y']);
     });
 
     it('maps pointer positions bottom→up', () => {
-      pointer('pointerdown', 0, 100);
-      expect(fixture.componentInstance.value()).toBe(0);
+      driver.pointer('pointerdown', 0, 100);
+      expect(driver.host.value()).toBe(0);
 
-      pointer('pointermove', 0, 70);
-      expect(fixture.componentInstance.value()).toBe(30);
+      driver.pointer('pointermove', 0, 70);
+      expect(driver.host.value()).toBe(30);
 
-      pointer('pointerup', 0, 0);
-      expect(fixture.componentInstance.value()).toBe(100);
+      driver.pointer('pointerup', 0, 0);
+      expect(driver.host.value()).toBe(100);
     });
 
     it('keeps ArrowUp/ArrowDown incrementing and decrementing', () => {
-      keydown('ArrowUp');
-      expect(fixture.componentInstance.value()).toBe(1);
+      driver.press('ArrowUp');
+      expect(driver.host.value()).toBe(1);
 
-      keydown('ArrowDown');
-      expect(fixture.componentInstance.value()).toBe(0);
+      driver.press('ArrowDown');
+      expect(driver.host.value()).toBe(0);
 
-      keydown('End');
-      expect(fixture.componentInstance.value()).toBe(100);
+      driver.press('End');
+      expect(driver.host.value()).toBe(100);
     });
   });
 
   describe('marks', () => {
     it('renders no ticks by default', () => {
-      expect(marks().length).toBe(0);
-      expect(host.hasAttribute('data-mark-labels')).toBe(false);
+      expect(driver.markEls()).toHaveLength(0);
+      expect(driver.hasAttr('data-mark-labels')).toBe(false);
     });
 
     it('renders a tick per step and flags the ones inside the fill', () => {
-      fixture.componentInstance.step.set(25);
-      fixture.componentInstance.marks.set(true);
-      fixture.componentInstance.value.set(50);
-      fixture.detectChanges();
+      driver.host.step.set(25);
+      driver.host.marks.set(true);
+      driver.host.value.set(50);
+      driver.tick();
 
-      expect(marks().map((mark) => mark.style.getPropertyValue('--_et-slider-mark-position'))).toEqual([
-        '0',
-        '25',
-        '50',
-        '75',
-        '100',
-      ]);
-      expect(marks().map((mark) => mark.hasAttribute('data-active'))).toEqual([true, true, true, false, false]);
+      expect(driver.markPositions()).toEqual(['0', '25', '50', '75', '100']);
+      expect(driver.markActives()).toEqual([true, true, true, false, false]);
     });
 
     it('renders labelled ticks aria-hidden and flags the host so the labels get room', () => {
-      fixture.componentInstance.marks.set([{ value: 0, label: 'Low' }, { value: 50 }, { value: 100, label: 'High' }]);
-      fixture.detectChanges();
+      driver.host.marks.set([{ value: 0, label: 'Low' }, { value: 50 }, { value: 100, label: 'High' }]);
+      driver.tick();
 
-      expect(host.querySelector('.et-slider-marks')!.getAttribute('aria-hidden')).toBe('true');
-      expect(marks().map((mark) => mark.textContent)).toEqual(['Low', '', 'High']);
-      expect(host.hasAttribute('data-mark-labels')).toBe(true);
+      expect(driver.marksEl()!.getAttribute('aria-hidden')).toBe('true');
+      expect(driver.markLabels()).toEqual(['Low', '', 'High']);
+      expect(driver.hasAttr('data-mark-labels')).toBe(true);
     });
 
     it('activates no tick while mixed', () => {
-      fixture.componentInstance.marks.set(true);
-      fixture.componentInstance.step.set(50);
-      fixture.componentInstance.value.set(100);
-      fixture.componentInstance.mixed.set(true);
-      fixture.detectChanges();
+      driver.host.marks.set(true);
+      driver.host.step.set(50);
+      driver.host.value.set(100);
+      driver.host.mixed.set(true);
+      driver.tick();
 
-      expect(marks().some((mark) => mark.hasAttribute('data-active'))).toBe(false);
+      expect(driver.markActives()).not.toContain(true);
     });
 
     it('commits the exact stop when the pointer goes down on a tick', () => {
-      fixture.componentInstance.marks.set([{ value: 33 }]);
-      fixture.detectChanges();
+      driver.host.marks.set([{ value: 33 }]);
+      driver.tick();
 
-      marks()[0]!.dispatchEvent(new MouseEvent('pointerdown', { clientX: 0, bubbles: true, button: 0 }));
-      fixture.detectChanges();
+      driver.pointerOnMark(0);
 
-      expect(fixture.componentInstance.value()).toBe(33);
+      expect(driver.host.value()).toBe(33);
     });
 
     describe('snapToMarks', () => {
       beforeEach(() => {
-        fixture.componentInstance.marks.set([
+        driver.host.marks.set([
           { value: 0, label: 'Low' },
           { value: 20, label: 'Medium' },
           { value: 80, label: 'High' },
         ]);
-        fixture.componentInstance.snapToMarks.set(true);
-        fixture.detectChanges();
+        driver.host.snapToMarks.set(true);
+        driver.tick();
       });
 
       it('displays the nearest mark instead of the step grid', () => {
-        fixture.componentInstance.value.set(45);
-        fixture.detectChanges();
+        driver.host.value.set(45);
+        driver.tick();
 
-        expect(thumb().getAttribute('aria-valuenow')).toBe('20');
+        expect(driver.thumbAttr('aria-valuenow')).toBe('20');
       });
 
       it('announces the mark label as the accessible value', () => {
-        fixture.componentInstance.value.set(80);
-        fixture.detectChanges();
+        driver.host.value.set(80);
+        driver.tick();
 
-        expect(thumb().getAttribute('aria-valuetext')).toBe('High');
+        expect(driver.thumbAttr('aria-valuetext')).toBe('High');
 
-        fixture.componentInstance.snapToMarks.set(false);
-        fixture.detectChanges();
+        driver.host.snapToMarks.set(false);
+        driver.tick();
 
-        expect(thumb().hasAttribute('aria-valuetext')).toBe(false);
+        expect(driver.thumbAttr('aria-valuetext')).toBeNull();
       });
 
       it('steps from mark to mark with the keyboard', () => {
-        keydown('ArrowRight');
-        expect(fixture.componentInstance.value()).toBe(20);
+        driver.press('ArrowRight');
+        expect(driver.host.value()).toBe(20);
 
-        keydown('ArrowUp');
-        expect(fixture.componentInstance.value()).toBe(80);
+        driver.press('ArrowUp');
+        expect(driver.host.value()).toBe(80);
 
-        keydown('ArrowUp');
-        expect(fixture.componentInstance.value()).toBe(80);
+        driver.press('ArrowUp');
+        expect(driver.host.value()).toBe(80);
 
-        keydown('PageDown');
-        expect(fixture.componentInstance.value()).toBe(0);
+        driver.press('PageDown');
+        expect(driver.host.value()).toBe(0);
 
-        keydown('End');
-        expect(fixture.componentInstance.value()).toBe(80);
+        driver.press('End');
+        expect(driver.host.value()).toBe(80);
       });
 
       it('snaps pointer commits onto the marks', () => {
-        pointer('pointerdown', 45);
-        expect(fixture.componentInstance.value()).toBe(20);
+        driver.pointer('pointerdown', 45);
+        expect(driver.host.value()).toBe(20);
 
-        pointer('pointermove', 60);
-        expect(fixture.componentInstance.value()).toBe(80);
+        driver.pointer('pointermove', 60);
+        expect(driver.host.value()).toBe(80);
 
-        pointer('pointerup', 60);
+        driver.pointer('pointerup', 60);
       });
     });
   });
 
   describe('mixed', () => {
     beforeEach(() => {
-      fixture.componentInstance.value.set(40);
-      fixture.componentInstance.mixed.set(true);
-      fixture.detectChanges();
+      driver.host.value.set(40);
+      driver.host.mixed.set(true);
+      driver.tick();
     });
 
     it('removes aria-valuenow, announces the mixed label and parks the thumb at the track start', () => {
-      expect(thumb().hasAttribute('aria-valuenow')).toBe(false);
-      expect(thumb().getAttribute('aria-valuetext')).toBe('Mixed');
-      expect(thumb().style.getPropertyValue('--_et-slider-thumb-position')).toBe('0');
-      expect(host.querySelector<HTMLElement>('.et-slider-fill')!.style.getPropertyValue('--_et-slider-fill-end')).toBe(
-        '0',
-      );
+      expect(driver.thumbAttr('aria-valuenow')).toBeNull();
+      expect(driver.thumbAttr('aria-valuetext')).toBe('Mixed');
+      expect(driver.thumbPosition()).toBe('0');
+      expect(driver.fillEnd()).toBe('0');
 
-      fixture.componentInstance.mixedLabel.set('Different volumes');
-      fixture.detectChanges();
+      driver.host.mixedLabel.set('Different volumes');
+      driver.tick();
 
-      expect(thumb().getAttribute('aria-valuetext')).toBe('Different volumes');
+      expect(driver.thumbAttr('aria-valuetext')).toBe('Different volumes');
     });
 
     it('starts the first keyboard step from the effective minimum', () => {
-      fixture.componentInstance.min.set(10);
-      fixture.detectChanges();
+      driver.host.min.set(10);
+      driver.tick();
 
-      keydown('ArrowRight');
+      driver.press('ArrowRight');
 
-      expect(fixture.componentInstance.value()).toBe(11);
-      expect(fixture.componentInstance.mixed()).toBe(false);
-      expect(thumb().getAttribute('aria-valuenow')).toBe('11');
-      expect(thumb().hasAttribute('aria-valuetext')).toBe(false);
+      expect(driver.host.value()).toBe(11);
+      expect(driver.host.mixed()).toBe(false);
+      expect(driver.thumbAttr('aria-valuenow')).toBe('11');
+      expect(driver.thumbAttr('aria-valuetext')).toBeNull();
     });
 
     it('resolves on Home even though the committed value equals the effective minimum', () => {
-      keydown('Home');
+      driver.press('Home');
 
-      expect(fixture.componentInstance.value()).toBe(0);
-      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(driver.host.value()).toBe(0);
+      expect(driver.host.mixed()).toBe(false);
     });
 
     it('resolves on a pointer commit that lands on the hidden raw value', () => {
-      pointer('pointerdown', 40);
-      pointer('pointerup', 40);
+      driver.pointer('pointerdown', 40);
+      driver.pointer('pointerup', 40);
 
-      expect(fixture.componentInstance.value()).toBe(40);
-      expect(fixture.componentInstance.mixed()).toBe(false);
-      expect(host.hasAttribute('data-mixed')).toBe(false);
+      expect(driver.host.value()).toBe(40);
+      expect(driver.host.mixed()).toBe(false);
+      expect(driver.hasAttr('data-mixed')).toBe(false);
     });
 
     it('stays mixed while disabled or readonly interactions are ignored', () => {
-      fixture.componentInstance.readonly.set(true);
-      fixture.detectChanges();
+      driver.host.readonly.set(true);
+      driver.tick();
 
-      keydown('ArrowRight');
-      pointer('pointerdown', 50);
+      driver.press('ArrowRight');
+      driver.pointer('pointerdown', 50);
 
-      expect(fixture.componentInstance.value()).toBe(40);
-      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(driver.host.value()).toBe(40);
+      expect(driver.host.mixed()).toBe(true);
     });
   });
 });
 
 describe('SliderDirective (mixed contract)', () => {
   describeMixedStateContract(() => {
-    TestBed.configureTestingModule({
-      imports: [SliderTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-
-    const fixture = TestBed.createComponent(SliderTestHost);
-
-    fixture.detectChanges();
-
-    const hostElement = fixture.nativeElement.querySelector('et-slider') as HTMLElement;
-    const thumb = () => hostElement.querySelector<HTMLElement>('.et-slider-thumb')!;
+    const driver = mountSlider(SliderTestHost);
 
     return {
       enterMixed: () => {
-        fixture.componentInstance.value.set(40);
-        fixture.componentInstance.mixed.set(true);
-        fixture.detectChanges();
+        driver.host.value.set(40);
+        driver.host.mixed.set(true);
+        driver.tick();
       },
       rawValue: () => 40,
-      value: () => fixture.componentInstance.value(),
-      mixed: () => fixture.componentInstance.mixed(),
-      hostElement: () => hostElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.sliderEl(),
       writeValueExternally: () => {
-        fixture.componentInstance.value.set(70);
-        fixture.detectChanges();
+        driver.host.value.set(70);
+        driver.tick();
       },
       externallyWrittenValue: () => 70,
-      commit: () => {
-        thumb().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-        fixture.detectChanges();
-      },
+      commit: () => driver.press('ArrowRight'),
       // the first keyboard step starts from the effective minimum (0), not the hidden 40
       committedValue: () => 1,
       assertMasked: () => {
-        expect(thumb().hasAttribute('aria-valuenow')).toBe(false);
-        expect(thumb().getAttribute('aria-valuetext')).toBe('Mixed');
-        expect(thumb().style.getPropertyValue('--_et-slider-thumb-position')).toBe('0');
+        expect(driver.thumbAttr('aria-valuenow')).toBeNull();
+        expect(driver.thumbAttr('aria-valuetext')).toBe('Mixed');
+        expect(driver.thumbPosition()).toBe('0');
       },
     };
   });

@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
+import { mountSelectionList, SelectionListDriver } from '../../testing/selection-list-driver';
 import { SelectionListDirective } from './selection-list.directive';
 import { SelectionOptionDirective } from './selection-option.directive';
 
@@ -19,41 +19,34 @@ class OptionTestHost {
 }
 
 describe('SelectionOptionDirective', () => {
-  let fixture: ComponentFixture<OptionTestHost>;
+  let driver: SelectionListDriver<OptionTestHost>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [OptionTestHost] });
-    fixture = TestBed.createComponent(OptionTestHost);
-    fixture.detectChanges();
+    driver = mountSelectionList(OptionTestHost);
   });
 
   it('should create options', () => {
-    const options = fixture.nativeElement.querySelectorAll('[etSelectionOption]');
-    expect(options.length).toBe(3);
+    expect(driver.optionEls()).toHaveLength(3);
   });
 
   it('should have role radio in single select', () => {
-    const option = fixture.nativeElement.querySelector('[etSelectionOption]');
-    expect(option.getAttribute('role')).toBe('radio');
+    expect(driver.optionAttr(0, 'role')).toBe('radio');
   });
 
   it('should apply aria-disabled on disabled option', () => {
-    const options = fixture.nativeElement.querySelectorAll('[etSelectionOption]');
-    expect(options[1].getAttribute('aria-disabled')).toBe('true');
+    expect(driver.optionAttr(1, 'aria-disabled')).toBe('true');
   });
 
   it('should not select a disabled option on click', () => {
-    const options = fixture.nativeElement.querySelectorAll('[etSelectionOption]');
-    options[1].click();
-    fixture.detectChanges();
-    expect(fixture.componentInstance.value()).toBeNull();
+    driver.selectOption(1);
+
+    expect(driver.host.value()).toBeNull();
   });
 
   it('should set aria-checked on selected option', () => {
-    const options = fixture.nativeElement.querySelectorAll('[etSelectionOption]');
-    options[0].click();
-    fixture.detectChanges();
-    expect(options[0].getAttribute('aria-checked')).toBe('true');
-    expect(options[2].getAttribute('aria-checked')).toBe('false');
+    driver.selectOption(0);
+
+    expect(driver.optionAttr(0, 'aria-checked')).toBe('true');
+    expect(driver.optionAttr(2, 'aria-checked')).toBe('false');
   });
 });

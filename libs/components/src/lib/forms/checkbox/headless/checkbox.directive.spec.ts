@@ -1,7 +1,7 @@
-import { Component, DebugElement, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal } from '@angular/core';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { CheckboxDriver, mountCheckbox } from '../../testing/checkbox-driver';
 import { CheckboxDirective } from './checkbox.directive';
 
 @Component({
@@ -31,135 +31,101 @@ class ReadonlyCheckboxTestHost {
 
 describe('CheckboxDirective', () => {
   describe('inside form field', () => {
-    let fixture: ComponentFixture<CheckboxInFormFieldTestHost>;
+    let driver: CheckboxDriver<CheckboxInFormFieldTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [CheckboxInFormFieldTestHost] });
-      fixture = TestBed.createComponent(CheckboxInFormFieldTestHost);
-      fixture.detectChanges();
+      driver = mountCheckbox(CheckboxInFormFieldTestHost);
     });
 
     it('should create', () => {
-      const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]');
-      expect(checkboxEl).toBeTruthy();
+      expect(driver.checkboxEl()).toBeTruthy();
     });
 
     it('should have role checkbox', () => {
-      const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]');
-      expect(checkboxEl.getAttribute('role')).toBe('checkbox');
+      expect(driver.attr('role')).toBe('checkbox');
     });
 
     it('should register with parent form field', () => {
-      const formFieldDir = (fixture.debugElement.children[0] as DebugElement).injector.get(FormFieldDirective);
-      expect(formFieldDir.registeredControl()).toBeTruthy();
+      expect(driver.directive(FormFieldDirective).registeredControl()).toBeTruthy();
     });
 
     it('should compute labelId from registered label', () => {
-      const checkboxDir = (fixture.debugElement.children[0] as DebugElement)
-        .query((el) => el.nativeElement.matches('[etCheckbox]'))
-        .injector.get(CheckboxDirective);
-
-      expect(checkboxDir.labelId()).toMatch(/^et-label-\d+$/);
+      expect(driver.checkbox.labelId()).toMatch(/^et-label-\d+$/);
     });
   });
 
   describe('standalone', () => {
-    let fixture: ComponentFixture<StandaloneCheckboxTestHost>;
+    let driver: CheckboxDriver<StandaloneCheckboxTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneCheckboxTestHost] });
-      fixture = TestBed.createComponent(StandaloneCheckboxTestHost);
-      fixture.detectChanges();
+      driver = mountCheckbox(StandaloneCheckboxTestHost);
     });
 
     it('should create without a parent form field', () => {
-      const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]');
-      expect(checkboxEl).toBeTruthy();
+      expect(driver.checkboxEl()).toBeTruthy();
     });
 
     it('should have aria-checked false by default', () => {
-      const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]');
-      expect(checkboxEl.getAttribute('aria-checked')).toBe('false');
+      expect(driver.attr('aria-checked')).toBe('false');
     });
 
     it('should toggle checked on click', () => {
-      const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]') as HTMLElement;
-      const checkboxDir = (fixture.debugElement.children[0] as DebugElement).injector.get(CheckboxDirective);
+      expect(driver.checkbox.checked()).toBe(false);
 
-      expect(checkboxDir.checked()).toBe(false);
+      driver.toggle();
 
-      checkboxEl.click();
-      fixture.detectChanges();
-
-      expect(checkboxDir.checked()).toBe(true);
-      expect(checkboxEl.getAttribute('aria-checked')).toBe('true');
+      expect(driver.checkbox.checked()).toBe(true);
+      expect(driver.attr('aria-checked')).toBe('true');
     });
 
     it('should toggle back to unchecked on second click', () => {
-      const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]') as HTMLElement;
-      const checkboxDir = (fixture.debugElement.children[0] as DebugElement).injector.get(CheckboxDirective);
+      driver.toggle();
+      driver.toggle();
 
-      checkboxEl.click();
-      checkboxEl.click();
-      fixture.detectChanges();
-
-      expect(checkboxDir.checked()).toBe(false);
+      expect(driver.checkbox.checked()).toBe(false);
     });
 
     it('should set touched on blur', () => {
-      const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]') as HTMLElement;
-      const checkboxDir = (fixture.debugElement.children[0] as DebugElement).injector.get(CheckboxDirective);
+      expect(driver.checkbox.touched()).toBe(false);
 
-      expect(checkboxDir.touched()).toBe(false);
+      driver.blur();
 
-      checkboxEl.dispatchEvent(new Event('blur'));
-      fixture.detectChanges();
-
-      expect(checkboxDir.touched()).toBe(true);
+      expect(driver.checkbox.touched()).toBe(true);
     });
 
     it('should have tabindex 0 when not disabled', () => {
-      const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]');
-      expect(checkboxEl.getAttribute('tabindex')).toBe('0');
+      expect(driver.attr('tabindex')).toBe('0');
     });
   });
 
   describe('readonly', () => {
-    let fixture: ComponentFixture<ReadonlyCheckboxTestHost>;
-    let checkboxEl: HTMLElement;
-    let checkboxDir: CheckboxDirective;
+    let driver: CheckboxDriver<ReadonlyCheckboxTestHost>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [ReadonlyCheckboxTestHost] });
-      fixture = TestBed.createComponent(ReadonlyCheckboxTestHost);
-      fixture.detectChanges();
-      checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]');
-      checkboxDir = (fixture.debugElement.children[0] as DebugElement).injector.get(CheckboxDirective);
+      driver = mountCheckbox(ReadonlyCheckboxTestHost);
     });
 
     it('blocks toggling but stays focusable with the normal look', () => {
-      expect(checkboxEl.getAttribute('aria-readonly')).toBe('true');
-      expect(checkboxEl.getAttribute('data-readonly')).toBe('true');
+      expect(driver.attr('aria-readonly')).toBe('true');
+      expect(driver.attr('data-readonly')).toBe('true');
       // focusable and not dimmed - view-only, unlike disabled
-      expect(checkboxEl.getAttribute('tabindex')).toBe('0');
-      expect(checkboxEl.getAttribute('aria-disabled')).toBeNull();
+      expect(driver.attr('tabindex')).toBe('0');
+      expect(driver.attr('aria-disabled')).toBeNull();
 
-      checkboxEl.click();
-      fixture.detectChanges();
+      driver.toggle();
 
-      expect(checkboxDir.checked()).toBe(false);
+      expect(driver.checkbox.checked()).toBe(false);
     });
 
     it('toggles again once readonly is lifted', () => {
-      fixture.componentInstance.readonly.set(false);
-      fixture.detectChanges();
+      driver.host.readonly.set(false);
+      driver.tick();
 
-      expect(checkboxEl.getAttribute('aria-readonly')).toBeNull();
+      expect(driver.attr('aria-readonly')).toBeNull();
 
-      checkboxEl.click();
-      fixture.detectChanges();
+      driver.toggle();
 
-      expect(checkboxDir.checked()).toBe(true);
+      expect(driver.checkbox.checked()).toBe(true);
     });
   });
 });

@@ -1,12 +1,10 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
-import { RangeSliderValue } from './range-slider.directive';
+import { mountRangeSlider, RangeSliderDriver } from '../../testing/slider-driver';
 import { SLIDER_IMPORTS } from '../slider.imports';
+import { RangeSliderValue } from './range-slider.directive';
 import { SliderMarks, SliderOrientation } from './slider.tokens';
-import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `
@@ -42,234 +40,189 @@ class RangeSliderTestHost {
   disabled = signal(false);
 }
 
-const TRACK_RECT = { left: 0, width: 100, top: 0, height: 28, right: 100, bottom: 28, x: 0, y: 28 } as DOMRect;
-const VERTICAL_TRACK_RECT = { left: 0, width: 28, top: 0, height: 100, right: 28, bottom: 100, x: 0, y: 0 } as DOMRect;
-
 describe('RangeSliderDirective', () => {
-  let fixture: ComponentFixture<RangeSliderTestHost>;
-  let host: HTMLElement;
-
-  const thumbs = () => Array.from(host.querySelectorAll<HTMLElement>('.et-range-slider-thumb'));
-  const track = () => host.querySelector<HTMLElement>('.et-range-slider-interaction')!;
-
-  const keydown = (thumbIndex: number, key: string) => {
-    thumbs()[thumbIndex]!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-    fixture.detectChanges();
-  };
-
-  const marks = () => Array.from(host.querySelectorAll<HTMLElement>('.et-range-slider-mark'));
-
-  const pointer = (type: string, clientX: number, clientY = 0) => {
-    track().dispatchEvent(new MouseEvent(type, { clientX, clientY, bubbles: true, button: 0 }));
-    fixture.detectChanges();
-  };
+  let driver: RangeSliderDriver<RangeSliderTestHost>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [RangeSliderTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(RangeSliderTestHost);
-    fixture.detectChanges();
-    host = fixture.nativeElement.querySelector('et-range-slider');
-    track().getBoundingClientRect = () => TRACK_RECT;
+    driver = mountRangeSlider(RangeSliderTestHost);
   });
 
   it('renders two labelled thumbs whose ARIA bounds reflect the other thumb', () => {
-    const [start, end] = thumbs();
-
-    expect(thumbs().length).toBe(2);
-    expect(start!.getAttribute('aria-label')).toBe('Minimum');
-    expect(end!.getAttribute('aria-label')).toBe('Maximum');
-    expect(start!.getAttribute('aria-valuenow')).toBe('20');
-    expect(end!.getAttribute('aria-valuenow')).toBe('80');
-    expect(start!.getAttribute('aria-valuemin')).toBe('0');
-    expect(start!.getAttribute('aria-valuemax')).toBe('80');
-    expect(end!.getAttribute('aria-valuemin')).toBe('20');
-    expect(end!.getAttribute('aria-valuemax')).toBe('100');
+    expect(driver.thumbEls()).toHaveLength(2);
+    expect(driver.thumbAttrs('aria-label')).toEqual(['Minimum', 'Maximum']);
+    expect(driver.thumbAttrs('aria-valuenow')).toEqual(['20', '80']);
+    expect(driver.thumbAttrs('aria-valuemin')).toEqual(['0', '20']);
+    expect(driver.thumbAttrs('aria-valuemax')).toEqual(['80', '100']);
   });
 
   it('normalizes a reversed value tuple for display', () => {
-    fixture.componentInstance.value.set([90, 10]);
-    fixture.detectChanges();
+    driver.host.value.set([90, 10]);
+    driver.tick();
 
-    const [start, end] = thumbs();
-
-    expect(start!.getAttribute('aria-valuenow')).toBe('10');
-    expect(end!.getAttribute('aria-valuenow')).toBe('90');
+    expect(driver.thumbAttrs('aria-valuenow')).toEqual(['10', '90']);
   });
 
   it('keeps thumbs from crossing via the keyboard', () => {
-    fixture.componentInstance.value.set([70, 80]);
-    fixture.detectChanges();
+    driver.host.value.set([70, 80]);
+    driver.tick();
 
-    keydown(0, 'End');
-    expect(fixture.componentInstance.value()).toEqual([80, 80]);
+    driver.press('End', 0);
+    expect(driver.host.value()).toEqual([80, 80]);
 
-    keydown(1, 'Home');
-    expect(fixture.componentInstance.value()).toEqual([80, 80]);
+    driver.press('Home', 1);
+    expect(driver.host.value()).toEqual([80, 80]);
   });
 
   it('honors minDistance between the thumbs', () => {
-    fixture.componentInstance.minDistance.set(10);
-    fixture.componentInstance.value.set([60, 80]);
-    fixture.detectChanges();
+    driver.host.minDistance.set(10);
+    driver.host.value.set([60, 80]);
+    driver.tick();
 
-    keydown(0, 'End');
-    expect(fixture.componentInstance.value()).toEqual([70, 80]);
-
-    const [start] = thumbs();
-
-    expect(start!.getAttribute('aria-valuemax')).toBe('70');
+    driver.press('End', 0);
+    expect(driver.host.value()).toEqual([70, 80]);
+    expect(driver.thumbAttr('aria-valuemax', 0)).toBe('70');
   });
 
   it('moves the nearest thumb on a track pointerdown', () => {
-    pointer('pointerdown', 30);
-    expect(fixture.componentInstance.value()).toEqual([30, 80]);
-    pointer('pointerup', 30);
+    driver.pointer('pointerdown', 30);
+    expect(driver.host.value()).toEqual([30, 80]);
+    driver.pointer('pointerup', 30);
 
-    pointer('pointerdown', 70);
-    expect(fixture.componentInstance.value()).toEqual([30, 70]);
-    pointer('pointerup', 70);
+    driver.pointer('pointerdown', 70);
+    expect(driver.host.value()).toEqual([30, 70]);
+    driver.pointer('pointerup', 70);
   });
 
   it('drags a thumb without letting it cross its sibling', () => {
-    pointer('pointerdown', 25);
-    expect(fixture.componentInstance.value()).toEqual([25, 80]);
+    driver.pointer('pointerdown', 25);
+    expect(driver.host.value()).toEqual([25, 80]);
 
-    pointer('pointermove', 95);
-    expect(fixture.componentInstance.value()).toEqual([80, 80]);
+    driver.pointer('pointermove', 95);
+    expect(driver.host.value()).toEqual([80, 80]);
 
-    pointer('pointerup', 95);
-    expect(host.hasAttribute('data-dragging')).toBe(false);
+    driver.pointer('pointerup', 95);
+    expect(driver.hasAttr('data-dragging')).toBe(false);
   });
 
   it('emits nothing while disabled', () => {
-    fixture.componentInstance.disabled.set(true);
-    fixture.detectChanges();
+    driver.host.disabled.set(true);
+    driver.tick();
 
-    keydown(0, 'ArrowRight');
-    pointer('pointerdown', 50);
-    expect(fixture.componentInstance.value()).toEqual([20, 80]);
+    driver.press('ArrowRight', 0);
+    driver.pointer('pointerdown', 50);
+    expect(driver.host.value()).toEqual([20, 80]);
   });
 
   describe('vertical orientation', () => {
     beforeEach(() => {
-      fixture.componentInstance.orientation.set('vertical');
-      fixture.detectChanges();
-      track().getBoundingClientRect = () => VERTICAL_TRACK_RECT;
+      driver.host.orientation.set('vertical');
+      driver.tick();
+      driver.stubTrack('vertical');
     });
 
     it('exposes the orientation on the host and both thumbs', () => {
-      expect(host.getAttribute('data-orientation')).toBe('vertical');
-
-      for (const thumb of thumbs()) {
-        expect(thumb.getAttribute('aria-orientation')).toBe('vertical');
-        expect(thumb.style.touchAction).toBe('pan-x');
-      }
+      expect(driver.attr('data-orientation')).toBe('vertical');
+      expect(driver.thumbAttrs('aria-orientation')).toEqual(['vertical', 'vertical']);
+      expect(driver.thumbTouchActions()).toEqual(['pan-x', 'pan-x']);
     });
 
     it('moves the nearest thumb bottom→up without letting the thumbs cross', () => {
-      pointer('pointerdown', 0, 75);
-      expect(fixture.componentInstance.value()).toEqual([25, 80]);
+      driver.pointer('pointerdown', 0, 75);
+      expect(driver.host.value()).toEqual([25, 80]);
 
-      pointer('pointermove', 0, 0);
-      expect(fixture.componentInstance.value()).toEqual([80, 80]);
+      driver.pointer('pointermove', 0, 0);
+      expect(driver.host.value()).toEqual([80, 80]);
 
-      pointer('pointerup', 0, 0);
-      expect(host.hasAttribute('data-dragging')).toBe(false);
+      driver.pointer('pointerup', 0, 0);
+      expect(driver.hasAttr('data-dragging')).toBe(false);
     });
   });
 
   describe('marks', () => {
     it('flags the ticks between the thumbs as active', () => {
-      fixture.componentInstance.marks.set(true);
-      fixture.componentInstance.step.set(25);
-      fixture.detectChanges();
+      driver.host.marks.set(true);
+      driver.host.step.set(25);
+      driver.tick();
 
       // the [20, 80] value snaps onto the step grid first - the 25/50/75 ticks are inside the fill
-      expect(marks().map((mark) => mark.hasAttribute('data-active'))).toEqual([false, true, true, true, false]);
+      expect(driver.markActives()).toEqual([false, true, true, true, false]);
     });
 
     it('snaps both thumbs onto the marks while honoring minDistance', () => {
-      fixture.componentInstance.marks.set([{ value: 0 }, { value: 25 }, { value: 50 }, { value: 75 }, { value: 100 }]);
-      fixture.componentInstance.snapToMarks.set(true);
-      fixture.componentInstance.minDistance.set(25);
-      fixture.componentInstance.value.set([25, 75]);
-      fixture.detectChanges();
+      driver.host.marks.set([{ value: 0 }, { value: 25 }, { value: 50 }, { value: 75 }, { value: 100 }]);
+      driver.host.snapToMarks.set(true);
+      driver.host.minDistance.set(25);
+      driver.host.value.set([25, 75]);
+      driver.tick();
 
       // End would jump to 100 - the sibling limit stops it at 50, which is itself a mark
-      keydown(0, 'End');
-      expect(fixture.componentInstance.value()).toEqual([50, 75]);
+      driver.press('End', 0);
+      expect(driver.host.value()).toEqual([50, 75]);
 
-      fixture.componentInstance.value.set([25, 75]);
-      fixture.detectChanges();
+      driver.host.value.set([25, 75]);
+      driver.tick();
 
       // a pointer at 60 snaps the nearest thumb (the end one) down to the 50 mark
-      pointer('pointerdown', 60);
-      expect(fixture.componentInstance.value()).toEqual([25, 50]);
-      pointer('pointerup', 60);
+      driver.pointer('pointerdown', 60);
+      expect(driver.host.value()).toEqual([25, 50]);
+      driver.pointer('pointerup', 60);
 
       // one more mark down would breach the minimum distance
-      keydown(1, 'ArrowDown');
-      expect(fixture.componentInstance.value()).toEqual([25, 50]);
+      driver.press('ArrowDown', 1);
+      expect(driver.host.value()).toEqual([25, 50]);
     });
   });
 
   describe('mixed', () => {
     beforeEach(() => {
-      fixture.componentInstance.mixed.set(true);
-      fixture.detectChanges();
+      driver.host.mixed.set(true);
+      driver.tick();
     });
 
     it('masks both thumbs: no aria-valuenow, mixed label as valuetext, parked at the track start', () => {
-      for (const thumb of thumbs()) {
-        expect(thumb.hasAttribute('aria-valuenow')).toBe(false);
-        expect(thumb.getAttribute('aria-valuetext')).toBe('Mixed');
-        expect(thumb.style.getPropertyValue('--_et-slider-thumb-position')).toBe('0');
-        // parked thumbs carry no sibling constraint - the full track is announced
-        expect(thumb.getAttribute('aria-valuemin')).toBe('0');
-        expect(thumb.getAttribute('aria-valuemax')).toBe('100');
-      }
+      expect(driver.thumbAttrs('aria-valuenow')).toEqual([null, null]);
+      expect(driver.thumbAttrs('aria-valuetext')).toEqual(['Mixed', 'Mixed']);
+      expect(driver.thumbPositions()).toEqual(['0', '0']);
+      // parked thumbs carry no sibling constraint - the full track is announced
+      expect(driver.thumbAttrs('aria-valuemin')).toEqual(['0', '0']);
+      expect(driver.thumbAttrs('aria-valuemax')).toEqual(['100', '100']);
 
-      const fill = host.querySelector<HTMLElement>('.et-range-slider-fill')!;
-
-      expect(fill.style.getPropertyValue('--_et-slider-fill-start')).toBe('0');
-      expect(fill.style.getPropertyValue('--_et-slider-fill-end')).toBe('0');
+      expect(driver.fillStart()).toBe('0');
+      expect(driver.fillEnd()).toBe('0');
     });
 
     it('writes a fresh range from the start thumb: committed value plus the default upper bound', () => {
-      keydown(0, 'ArrowRight');
+      driver.press('ArrowRight', 0);
 
-      expect(fixture.componentInstance.value()).toEqual([1, 100]);
-      expect(fixture.componentInstance.mixed()).toBe(false);
-      expect(host.hasAttribute('data-mixed')).toBe(false);
+      expect(driver.host.value()).toEqual([1, 100]);
+      expect(driver.host.mixed()).toBe(false);
+      expect(driver.hasAttr('data-mixed')).toBe(false);
     });
 
     it('writes a fresh range from the end thumb: default lower bound plus the committed value', () => {
-      keydown(1, 'End');
+      driver.press('End', 1);
 
-      expect(fixture.componentInstance.value()).toEqual([0, 100]);
-      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(driver.host.value()).toEqual([0, 100]);
+      expect(driver.host.mixed()).toBe(false);
     });
 
     it('honors minDistance for the fresh range', () => {
-      fixture.componentInstance.minDistance.set(10);
-      fixture.detectChanges();
+      driver.host.minDistance.set(10);
+      driver.tick();
 
-      keydown(0, 'End');
+      driver.press('End', 0);
 
-      expect(fixture.componentInstance.value()).toEqual([90, 100]);
-      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(driver.host.value()).toEqual([90, 100]);
+      expect(driver.host.mixed()).toBe(false);
     });
 
     it('resolves via a track pointer commit', () => {
-      pointer('pointerdown', 30);
-      pointer('pointerup', 30);
+      driver.pointer('pointerdown', 30);
+      driver.pointer('pointerup', 30);
 
-      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(driver.host.mixed()).toBe(false);
 
-      const [start, end] = fixture.componentInstance.value();
+      const [start, end] = driver.host.value();
 
       // one end carries the committed 30, the other its default bound
       expect(start === 30 || end === 30).toBe(true);
@@ -280,45 +233,30 @@ describe('RangeSliderDirective', () => {
 
 describe('RangeSliderDirective (mixed contract)', () => {
   describeMixedStateContract(() => {
-    TestBed.configureTestingModule({
-      imports: [RangeSliderTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-
-    const fixture = TestBed.createComponent(RangeSliderTestHost);
-
-    fixture.detectChanges();
-
-    const hostElement = fixture.nativeElement.querySelector('et-range-slider') as HTMLElement;
-    const thumbs = () => Array.from(hostElement.querySelectorAll<HTMLElement>('.et-range-slider-thumb'));
+    const driver = mountRangeSlider(RangeSliderTestHost);
 
     return {
       enterMixed: () => {
-        fixture.componentInstance.value.set([20, 80]);
-        fixture.componentInstance.mixed.set(true);
-        fixture.detectChanges();
+        driver.host.value.set([20, 80]);
+        driver.host.mixed.set(true);
+        driver.tick();
       },
       rawValue: () => [20, 80],
-      value: () => fixture.componentInstance.value(),
-      mixed: () => fixture.componentInstance.mixed(),
-      hostElement: () => hostElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.sliderEl(),
       writeValueExternally: () => {
-        fixture.componentInstance.value.set([10, 90]);
-        fixture.detectChanges();
+        driver.host.value.set([10, 90]);
+        driver.tick();
       },
       externallyWrittenValue: () => [10, 90],
-      commit: () => {
-        thumbs()[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-        fixture.detectChanges();
-      },
+      commit: () => driver.press('ArrowRight', 0),
       // start thumb steps from the effective minimum; the untouched end gets its default bound
       committedValue: () => [1, 100],
       assertMasked: () => {
-        for (const thumb of thumbs()) {
-          expect(thumb.hasAttribute('aria-valuenow')).toBe(false);
-          expect(thumb.getAttribute('aria-valuetext')).toBe('Mixed');
-          expect(thumb.style.getPropertyValue('--_et-slider-thumb-position')).toBe('0');
-        }
+        expect(driver.thumbAttrs('aria-valuenow')).toEqual([null, null]);
+        expect(driver.thumbAttrs('aria-valuetext')).toEqual(['Mixed', 'Mixed']);
+        expect(driver.thumbPositions()).toEqual(['0', '0']);
       },
     };
   });
