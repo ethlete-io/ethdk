@@ -1,4 +1,12 @@
-import { ApplicationRef, Component, ComponentRef, ViewContainerRef, inject } from '@angular/core';
+import {
+  ApplicationRef,
+  Component,
+  ComponentRef,
+  InjectionToken,
+  Injector,
+  ViewContainerRef,
+  inject,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ColorTheme, ProvideColorDirective, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import '../../test-helpers';
@@ -52,6 +60,7 @@ class ThemedAppRootComponent {
 class ScopedOpenerComponent {
   colorProvider = inject(ProvideColorDirective);
   viewContainerRef = inject(ViewContainerRef);
+  injector = inject(Injector);
 }
 
 @Component({ template: 'overlay content' })
@@ -153,5 +162,60 @@ describe('OverlayContainerComponent color context', () => {
     const overlayRef = openDialog();
 
     expect(overlayRef.elements?.paneElement.classList.contains('et-color--inherited')).toBe(true);
+  });
+});
+
+const CONTENT_SCOPED_TOKEN = new InjectionToken<string>('CONTENT_SCOPED_TOKEN');
+
+@Component({ template: 'scoped content' })
+class ScopedContentComponent {
+  scoped = inject(CONTENT_SCOPED_TOKEN);
+}
+
+describe('OverlayContainerComponent provider context', () => {
+  let openedRef: OverlayRef<ScopedContentComponent, unknown> | null = null;
+
+  afterEach(() => {
+    openedRef?.close();
+    openedRef = null;
+  });
+
+  const openScoped = (config?: Partial<OverlayConfig>) => {
+    const overlayRef = TestBed.runInInjectionContext(() =>
+      injectOverlayManager().open<ScopedContentComponent, unknown>(ScopedContentComponent, {
+        strategies: dialogOverlayStrategy(),
+        providers: [{ provide: CONTENT_SCOPED_TOKEN, useValue: 'scoped value' }],
+        ...config,
+      }),
+    );
+
+    openedRef = overlayRef;
+    TestBed.tick();
+
+    return overlayRef;
+  };
+
+  it('resolves an overlay provider in the content component when opened without an injector', () => {
+    const overlayRef = openScoped();
+
+    expect(overlayRef.componentInstance()?.scoped).toBe('scoped value');
+  });
+
+  it('resolves an overlay provider in the content component when opened with an injector', () => {
+    const openerFixture = TestBed.createComponent(ScopedOpenerComponent);
+    openerFixture.detectChanges();
+
+    const overlayRef = openScoped({ injector: openerFixture.componentInstance.injector });
+
+    expect(overlayRef.componentInstance()?.scoped).toBe('scoped value');
+  });
+
+  it('resolves an overlay provider in the content component when opened from a viewContainerRef', () => {
+    const openerFixture = TestBed.createComponent(ScopedOpenerComponent);
+    openerFixture.detectChanges();
+
+    const overlayRef = openScoped({ viewContainerRef: openerFixture.componentInstance.viewContainerRef });
+
+    expect(overlayRef.componentInstance()?.scoped).toBe('scoped value');
   });
 });

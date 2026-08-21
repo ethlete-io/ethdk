@@ -210,7 +210,11 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       const overlayEnvironmentInjector = createEnvironmentInjector(config.providers ?? [], parentEnvironmentInjector);
       const elementInjector = Injector.create({
         parent: parentInjector,
-        providers: [],
+        // Element DI chains to the opener, so without this the opener's environment injector answers
+        // `EnvironmentInjector` from inside the overlay - and a component created through a
+        // ViewContainerRef down there (the container's own content component) never sees
+        // `config.providers`.
+        providers: [{ provide: EnvironmentInjector, useValue: overlayEnvironmentInjector }],
       }) as EnvironmentInjector;
 
       const componentRef = createComponent(config.component, {
