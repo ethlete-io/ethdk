@@ -22,12 +22,21 @@ export const latestPane = () =>
 export const hostDirective = <T>(fixture: ComponentFixture<unknown>, type: Type<T>) =>
   fixture.debugElement.children[0]!.injector.get(type);
 
+export const directiveAt = <T>(fixture: ComponentFixture<unknown>, type: Type<T>, selector: string) =>
+  fixture.debugElement
+    .query((node) => (node.nativeElement as Element | null)?.matches?.(selector) ?? false)
+    .injector.get(type);
+
 export const hostElement = (fixture: ComponentFixture<unknown>) =>
   fixture.debugElement.children[0]!.nativeElement as HTMLElement;
 
 export const pressKey = (target: EventTarget, key: string, init: KeyboardEventInit = {}) => {
-  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
+
+  target.dispatchEvent(event);
   tick();
+
+  return event;
 };
 
 export const focusEvent = (target: EventTarget, type: 'focus' | 'blur') => {
@@ -37,6 +46,11 @@ export const focusEvent = (target: EventTarget, type: 'focus' | 'blur') => {
 
 export const pointerEnter = (target: EventTarget) => {
   target.dispatchEvent(new PointerEvent('pointerenter', { bubbles: false }));
+  tick();
+};
+
+export const pointerEvent = (target: EventTarget, type: string, init: PointerEventInit = {}) => {
+  target.dispatchEvent(new PointerEvent(type, { bubbles: true, ...init }));
   tick();
 };
 
@@ -63,12 +77,12 @@ export const blurField = (field: HTMLInputElement) => {
   tick();
 };
 
-/** jsdom has no `DataTransfer`, so the clipboard payload is faked onto the event. */
 export const pointerDownOutside = () => {
   document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
   tick();
 };
 
+/** jsdom has no `DataTransfer`, so the clipboard payload is faked onto the event. */
 export const pasteInto = (target: EventTarget, text: string) => {
   const event = new Event('paste', { bubbles: true, cancelable: true });
 

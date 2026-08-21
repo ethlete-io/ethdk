@@ -1,7 +1,7 @@
-import { Component, DebugElement, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import '../../../../test-helpers';
+import { FieldControlDriver, mountFieldControl } from '../../../testing/field-control-driver';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { MASKED_INPUT_IMPORTS } from '../../masked-input/masked-input.imports';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
@@ -88,261 +88,207 @@ class NullableFieldTestHost {
 })
 class AriaLabelledbyOverrideTestHost {}
 
+const mountInput = <T>(component: new () => T, directiveSelector?: string) =>
+  mountFieldControl(component, InputDirective, { directiveSelector });
+
 describe('InputDirective', () => {
   describe('accessible name forwarding', () => {
     it('forwards a consumer aria-label onto the native input', () => {
-      TestBed.configureTestingModule({ imports: [AriaLabelInputTestHost] });
-      const fixture = TestBed.createComponent(AriaLabelInputTestHost);
-      fixture.detectChanges();
+      const driver = mountInput(AriaLabelInputTestHost);
 
-      const native = fixture.nativeElement.querySelector('.et-input-native') as HTMLInputElement;
-      expect(native.getAttribute('aria-label')).toBe('Search products');
+      expect(driver.field().getAttribute('aria-label')).toBe('Search products');
     });
 
     it('lets a consumer aria-labelledby override the projected label id', () => {
-      TestBed.configureTestingModule({ imports: [AriaLabelledbyOverrideTestHost] });
-      const fixture = TestBed.createComponent(AriaLabelledbyOverrideTestHost);
-      fixture.detectChanges();
+      const driver = mountInput(AriaLabelledbyOverrideTestHost, 'et-input');
 
-      const native = fixture.nativeElement.querySelector('.et-input-native') as HTMLInputElement;
-      expect(native.getAttribute('aria-labelledby')).toBe('external-label-id');
+      expect(driver.field().getAttribute('aria-labelledby')).toBe('external-label-id');
     });
   });
 
   describe('inside form field', () => {
-    let fixture: ComponentFixture<InputInFormFieldTestHost>;
+    let driver: FieldControlDriver<InputInFormFieldTestHost, InputDirective>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [InputInFormFieldTestHost] });
-      fixture = TestBed.createComponent(InputInFormFieldTestHost);
-      fixture.detectChanges();
+      driver = mountInput(InputInFormFieldTestHost, '[etInput]');
     });
 
     it('should create', () => {
-      const inputEl = fixture.nativeElement.querySelector('[etInput]');
-      expect(inputEl).toBeTruthy();
+      expect(driver.field()).toBeTruthy();
     });
 
     it('should register with parent form field', () => {
-      const formFieldDir = (fixture.debugElement.children[0] as DebugElement).injector.get(FormFieldDirective);
-      expect(formFieldDir.registeredControl()).toBeTruthy();
+      expect(driver.directive(FormFieldDirective).registeredControl()).toBeTruthy();
     });
 
     it('should compute labelId from registered label', () => {
-      const inputDir = (fixture.debugElement.children[0] as DebugElement)
-        .query((el) => el.nativeElement.matches('[etInput]'))
-        .injector.get(InputDirective);
-
-      expect(inputDir.labelId()).toMatch(/^et-label-\d+$/);
+      expect(driver.control.labelId()).toMatch(/^et-label-\d+$/);
     });
 
     it('should have null describedBy when no error or hint is present', () => {
-      const inputDir = (fixture.debugElement.children[0] as DebugElement)
-        .query((el) => el.nativeElement.matches('[etInput]'))
-        .injector.get(InputDirective);
-
       // describedBy is only set by the form field when there is an active error or hint
-      expect(inputDir.describedBy()).toBeNull();
+      expect(driver.control.describedBy()).toBeNull();
     });
   });
 
   describe('standalone', () => {
-    let fixture: ComponentFixture<StandaloneInputTestHost>;
+    let driver: FieldControlDriver<StandaloneInputTestHost, InputDirective>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneInputTestHost] });
-      fixture = TestBed.createComponent(StandaloneInputTestHost);
-      fixture.detectChanges();
+      driver = mountInput(StandaloneInputTestHost);
     });
 
     it('should create without a parent form field', () => {
-      const inputEl = fixture.nativeElement.querySelector('[etInput]');
-      expect(inputEl).toBeTruthy();
+      expect(driver.field()).toBeTruthy();
     });
 
     it('should have null labelId without parent', () => {
-      const inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
-      expect(inputDir.labelId()).toBeNull();
+      expect(driver.control.labelId()).toBeNull();
     });
 
     it('should have null describedBy without parent', () => {
-      const inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
-      expect(inputDir.describedBy()).toBeNull();
+      expect(driver.control.describedBy()).toBeNull();
     });
   });
 
   describe('value and state', () => {
-    let fixture: ComponentFixture<StandaloneInputTestHost>;
-    let inputDir: InputDirective;
+    let driver: FieldControlDriver<StandaloneInputTestHost, InputDirective>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [StandaloneInputTestHost] });
-      fixture = TestBed.createComponent(StandaloneInputTestHost);
-      fixture.detectChanges();
-      inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
+      driver = mountInput(StandaloneInputTestHost);
     });
 
     it('should have empty value by default', () => {
-      expect(inputDir.value()).toBe('');
+      expect(driver.control.value()).toBe('');
     });
 
     it('should not display error when not touched', () => {
-      expect(inputDir.shouldDisplayError()).toBe(false);
+      expect(driver.control.shouldDisplayError()).toBe(false);
     });
 
     it('should have text type by default', () => {
-      expect(inputDir.type()).toBe('text');
+      expect(driver.control.type()).toBe('text');
     });
   });
 
   describe('nullable bound field', () => {
-    let fixture: ComponentFixture<NullableFieldTestHost>;
-    let inputDir: InputDirective;
+    let driver: FieldControlDriver<NullableFieldTestHost, InputDirective>;
 
     beforeEach(() => {
-      TestBed.configureTestingModule({ imports: [NullableFieldTestHost] });
-      fixture = TestBed.createComponent(NullableFieldTestHost);
-      fixture.detectChanges();
-      inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
+      driver = mountInput(NullableFieldTestHost);
     });
 
     it('reads a null value as empty', () => {
-      expect(inputDir.hasValue()).toBe(false);
-      expect(inputDir.displayValue()).toBe('');
+      expect(driver.control.hasValue()).toBe(false);
+      expect(driver.control.displayValue()).toBe('');
     });
 
     it('reports a value once the field holds text', () => {
-      fixture.componentInstance.model.set({ search: 'angular' });
-      fixture.detectChanges();
+      driver.host.model.set({ search: 'angular' });
+      driver.tick();
 
-      expect(inputDir.hasValue()).toBe(true);
-      expect(inputDir.displayValue()).toBe('angular');
+      expect(driver.control.hasValue()).toBe(true);
+      expect(driver.control.displayValue()).toBe('angular');
     });
   });
 
   describe('mixed state', () => {
     const setup = () => {
-      TestBed.configureTestingModule({ imports: [MixedInputTestHost] });
+      const driver = mountInput(MixedInputTestHost);
 
-      const fixture = TestBed.createComponent(MixedInputTestHost);
-
-      fixture.detectChanges();
-
-      const host = fixture.componentInstance;
-      const nativeInput = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
-      const typeInto = (text: string) => {
-        const inputElement = nativeInput();
-
-        inputElement.value = text;
-        inputElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
-        fixture.detectChanges();
+      return {
+        driver,
+        enterMixed: (rawValue: string) => {
+          driver.host.value.set(rawValue);
+          driver.host.mixed.set(true);
+          driver.tick();
+        },
       };
-      const enterMixed = (rawValue: string) => {
-        host.value.set(rawValue);
-        host.mixed.set(true);
-        fixture.detectChanges();
-      };
-
-      return { fixture, host, nativeInput, typeInto, enterMixed };
     };
 
     describeMixedStateContract(() => {
-      const { fixture, host, nativeInput, typeInto, enterMixed } = setup();
+      const { driver, enterMixed } = setup();
 
       return {
         enterMixed: () => enterMixed('hidden raw'),
         rawValue: () => 'hidden raw',
-        value: () => host.value(),
-        mixed: () => host.mixed(),
-        hostElement: () => fixture.nativeElement.querySelector('et-input') as HTMLElement,
+        value: () => driver.host.value(),
+        mixed: () => driver.host.mixed(),
+        hostElement: () => driver.element(),
         writeValueExternally: () => {
-          host.value.set('server write');
-          fixture.detectChanges();
+          driver.host.value.set('server write');
+          driver.tick();
         },
         externallyWrittenValue: () => 'server write',
-        commit: () => typeInto('typed over'),
+        commit: () => driver.type('typed over'),
         committedValue: () => 'typed over',
         assertMasked: () => {
-          expect(nativeInput().value).toBe('');
-          expect(nativeInput().placeholder).toBe('Mixed values');
+          expect(driver.fieldValue()).toBe('');
+          expect(driver.placeholder()).toBe('Mixed values');
         },
       };
     });
 
     it('masks via the placeholder and restores the consumer placeholder after the commit', () => {
-      const { nativeInput, typeInto, enterMixed } = setup();
+      const { driver, enterMixed } = setup();
 
       enterMixed('secret');
 
-      expect(nativeInput().value).toBe('');
-      expect(nativeInput().placeholder).toBe('Mixed values');
+      expect(driver.fieldValue()).toBe('');
+      expect(driver.placeholder()).toBe('Mixed values');
 
-      typeInto('new text');
+      driver.type('new text');
 
-      expect(nativeInput().value).toBe('new text');
-      expect(nativeInput().placeholder).toBe('Type here');
+      expect(driver.fieldValue()).toBe('new text');
+      expect(driver.placeholder()).toBe('Type here');
     });
 
     it('keeps mixed and the raw value when an edit produces no content', () => {
-      const { host, nativeInput, typeInto, enterMixed } = setup();
+      const { driver, enterMixed } = setup();
 
       enterMixed('secret');
-      typeInto('');
+      driver.type('');
 
-      expect(host.mixed()).toBe(true);
-      expect(host.value()).toBe('secret');
-      expect(nativeInput().placeholder).toBe('Mixed values');
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.host.value()).toBe('secret');
+      expect(driver.placeholder()).toBe('Mixed values');
     });
 
     it('keeps an input mask from repainting the hidden raw value and commits typed content through it', async () => {
-      TestBed.configureTestingModule({ imports: [MixedMaskedInputTestHost] });
+      const driver = mountInput(MixedMaskedInputTestHost);
 
-      const fixture = TestBed.createComponent(MixedMaskedInputTestHost);
+      await driver.fixture.whenStable();
 
-      fixture.detectChanges();
-      await fixture.whenStable();
-
-      const host = fixture.componentInstance;
-      const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-
-      host.value.set('1234');
-      host.mixed.set(true);
-      fixture.detectChanges();
-      await fixture.whenStable();
+      driver.host.value.set('1234');
+      driver.host.mixed.set(true);
+      driver.tick();
+      await driver.fixture.whenStable();
 
       // the mask's display enforcement must not leak the masked raw value into the DOM
-      expect(inputElement.value).toBe('');
-      expect(inputElement.placeholder).toBe('Mixed values');
-      expect(host.value()).toBe('1234');
+      expect(driver.fieldValue()).toBe('');
+      expect(driver.placeholder()).toBe('Mixed values');
+      expect(driver.host.value()).toBe('1234');
 
-      inputElement.value = '5';
-      inputElement.setSelectionRange(1, 1);
-      inputElement.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
-      fixture.detectChanges();
-      await fixture.whenStable();
+      driver.field().value = '5';
+      driver.field().setSelectionRange(1, 1);
+      driver.field().dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      driver.tick();
+      await driver.fixture.whenStable();
 
       // replace semantics: the commit starts from an empty committed raw, not the hidden '1234'
-      expect(host.mixed()).toBe(false);
-      expect(host.value()).toBe('5');
-      expect(inputElement.value).toBe('5');
+      expect(driver.host.mixed()).toBe(false);
+      expect(driver.host.value()).toBe('5');
+      expect(driver.fieldValue()).toBe('5');
     });
 
     it('exposes data-mixed on a standalone headless input host', () => {
-      TestBed.configureTestingModule({ imports: [StandaloneInputTestHost] });
+      const driver = mountInput(StandaloneInputTestHost);
 
-      const fixture = TestBed.createComponent(StandaloneInputTestHost);
+      driver.control.mixed.set(true);
+      driver.tick();
 
-      fixture.detectChanges();
-
-      const inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
-
-      inputDir.mixed.set(true);
-      fixture.detectChanges();
-
-      const inputElement = fixture.nativeElement.querySelector('[etInput]') as HTMLInputElement;
-
-      expect(inputElement.getAttribute('data-mixed')).toBe('true');
-      expect(inputDir.hasValue()).toBe(true);
+      expect(driver.field().getAttribute('data-mixed')).toBe('true');
+      expect(driver.control.hasValue()).toBe(true);
     });
   });
 });

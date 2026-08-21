@@ -1,9 +1,8 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { mountPasswordInput, PasswordInputDriver } from '../../testing/password-input-driver';
 import { PASSWORD_INPUT_IMPORTS } from '../input.imports';
-import { PasswordInputDirective } from './password-input.directive';
 
 @Component({
   template: `
@@ -43,218 +42,183 @@ class MixedPasswordInputTestHost {
 }
 
 describe('PasswordInputDirective', () => {
-  let fixture: ComponentFixture<PasswordInputTestHost>;
-  let directive: PasswordInputDirective;
-
-  const nativeInput = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
-  const revealButton = () =>
-    fixture.nativeElement.querySelector('.et-password-input-reveal') as HTMLButtonElement | null;
-  const capsWarning = () => fixture.nativeElement.querySelector('.et-password-input-caps-warning');
-
-  const keydown = (capsLock: boolean, key = 'a') => {
-    nativeInput().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, modifierCapsLock: capsLock }));
-    fixture.detectChanges();
-  };
+  let driver: PasswordInputDriver<PasswordInputTestHost>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [PasswordInputTestHost] });
-    fixture = TestBed.createComponent(PasswordInputTestHost);
-    fixture.detectChanges();
-    directive = fixture.debugElement.children[0]!.injector.get(PasswordInputDirective);
+    driver = mountPasswordInput(PasswordInputTestHost);
   });
 
   it('renders a password input and syncs typed text into the model', () => {
-    expect(nativeInput().type).toBe('password');
+    expect(driver.fieldType()).toBe('password');
 
-    nativeInput().value = 'hunter2';
-    nativeInput().dispatchEvent(new Event('input', { bubbles: true }));
-    fixture.detectChanges();
+    driver.type('hunter2');
 
-    expect(fixture.componentInstance.value()).toBe('hunter2');
-    expect(directive.hasValue()).toBe(true);
+    expect(driver.host.value()).toBe('hunter2');
+    expect(driver.passwordInput.hasValue()).toBe(true);
   });
 
   it('reveals and re-hides the value via the toggle button', () => {
-    const button = revealButton()!;
+    expect(driver.revealButton()!.getAttribute('aria-pressed')).toBe('false');
 
-    expect(button.getAttribute('aria-pressed')).toBe('false');
+    driver.clickReveal();
 
-    button.click();
-    fixture.detectChanges();
+    expect(driver.fieldType()).toBe('text');
+    expect(driver.revealButton()!.getAttribute('aria-pressed')).toBe('true');
 
-    expect(nativeInput().type).toBe('text');
-    expect(button.getAttribute('aria-pressed')).toBe('true');
+    driver.clickReveal();
 
-    button.click();
-    fixture.detectChanges();
-
-    expect(nativeInput().type).toBe('password');
-    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(driver.fieldType()).toBe('password');
+    expect(driver.revealButton()!.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('omits the reveal button when not revealable', () => {
-    fixture.componentInstance.revealable.set(false);
-    fixture.detectChanges();
+    driver.host.revealable.set(false);
+    driver.tick();
 
-    expect(revealButton()).toBeNull();
+    expect(driver.revealButton()).toBeNull();
   });
 
   it('shows the caps-lock warning only while focused with Caps Lock on (opt-in)', () => {
-    fixture.componentInstance.capsLockWarning.set(true);
-    fixture.detectChanges();
+    driver.host.capsLockWarning.set(true);
+    driver.tick();
 
-    nativeInput().dispatchEvent(new FocusEvent('focus'));
-    keydown(true);
+    driver.focus();
+    driver.pressWithCapsLock(true);
 
-    expect(capsWarning()).toBeTruthy();
+    expect(driver.capsWarning()).toBeTruthy();
 
-    keydown(false);
+    driver.pressWithCapsLock(false);
 
-    expect(capsWarning()).toBeNull();
+    expect(driver.capsWarning()).toBeNull();
 
-    keydown(true);
-    nativeInput().dispatchEvent(new FocusEvent('blur'));
-    fixture.detectChanges();
+    driver.pressWithCapsLock(true);
+    driver.blur();
 
-    expect(capsWarning()).toBeNull();
+    expect(driver.capsWarning()).toBeNull();
   });
 
   it('drops the warning on the Caps Lock key itself, whatever state that event reports', () => {
-    fixture.componentInstance.capsLockWarning.set(true);
-    fixture.detectChanges();
+    driver.host.capsLockWarning.set(true);
+    driver.tick();
 
-    nativeInput().dispatchEvent(new FocusEvent('focus'));
-    keydown(true);
+    driver.focus();
+    driver.pressWithCapsLock(true);
 
-    expect(capsWarning()).toBeTruthy();
+    expect(driver.capsWarning()).toBeTruthy();
 
-    keydown(true, 'CapsLock');
+    driver.pressWithCapsLock(true, 'CapsLock');
 
-    expect(capsWarning()).toBeNull();
+    expect(driver.capsWarning()).toBeNull();
 
-    keydown(true);
+    driver.pressWithCapsLock(true);
 
-    expect(capsWarning()).toBeTruthy();
+    expect(driver.capsWarning()).toBeTruthy();
   });
 
   it('does not bring a stale warning back when focus returns without a keystroke', () => {
-    fixture.componentInstance.capsLockWarning.set(true);
-    fixture.detectChanges();
+    driver.host.capsLockWarning.set(true);
+    driver.tick();
 
-    nativeInput().dispatchEvent(new FocusEvent('focus'));
-    keydown(true);
-    nativeInput().dispatchEvent(new FocusEvent('blur'));
-    nativeInput().dispatchEvent(new FocusEvent('focus'));
-    fixture.detectChanges();
+    driver.focus();
+    driver.pressWithCapsLock(true);
+    driver.blur();
+    driver.focus();
 
-    expect(capsWarning()).toBeNull();
+    expect(driver.capsWarning()).toBeNull();
   });
 
   it('never renders the warning without the opt-in', () => {
-    nativeInput().dispatchEvent(new FocusEvent('focus'));
-    keydown(true);
+    driver.focus();
+    driver.pressWithCapsLock(true);
 
-    expect(capsWarning()).toBeNull();
+    expect(driver.capsWarning()).toBeNull();
   });
 
   it('exposes the typing-feedback strength score', () => {
-    expect(directive.strength()).toBe(0);
+    expect(driver.passwordInput.strength()).toBe(0);
 
-    fixture.componentInstance.value.set('Abcdefgh1!xy');
-    fixture.detectChanges();
+    driver.host.value.set('Abcdefgh1!xy');
+    driver.tick();
 
-    expect(directive.strength()).toBe(4);
+    expect(driver.passwordInput.strength()).toBe(4);
   });
 
   it('blocks the reveal toggle while disabled', () => {
-    fixture.componentInstance.disabled.set(true);
-    fixture.detectChanges();
+    driver.host.disabled.set(true);
+    driver.tick();
 
-    expect(revealButton()!.disabled).toBe(true);
+    expect(driver.revealButton()!.disabled).toBe(true);
 
-    directive.toggleRevealed();
-    fixture.detectChanges();
+    driver.passwordInput.toggleRevealed();
+    driver.tick();
 
-    expect(nativeInput().type).toBe('password');
+    expect(driver.fieldType()).toBe('password');
   });
 });
 
 describe('PasswordInputDirective mixed state', () => {
   const setup = () => {
-    TestBed.configureTestingModule({ imports: [MixedPasswordInputTestHost] });
+    const driver = mountPasswordInput(MixedPasswordInputTestHost);
 
-    const fixture = TestBed.createComponent(MixedPasswordInputTestHost);
-
-    fixture.detectChanges();
-
-    const host = fixture.componentInstance;
-    const directive = fixture.debugElement.children[0]!.injector.get(PasswordInputDirective);
-    const nativeInput = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    const typeInto = (text: string) => {
-      const inputElement = nativeInput();
-
-      inputElement.value = text;
-      inputElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
-      fixture.detectChanges();
+    return {
+      driver,
+      enterMixed: (rawValue: string) => {
+        driver.host.value.set(rawValue);
+        driver.host.mixed.set(true);
+        driver.tick();
+      },
     };
-    const enterMixed = (rawValue: string) => {
-      host.value.set(rawValue);
-      host.mixed.set(true);
-      fixture.detectChanges();
-    };
-
-    return { fixture, host, directive, nativeInput, typeInto, enterMixed };
   };
 
   describeMixedStateContract(() => {
-    const { fixture, host, nativeInput, typeInto, enterMixed } = setup();
+    const { driver, enterMixed } = setup();
 
     return {
       enterMixed: () => enterMixed('hunter2'),
       rawValue: () => 'hunter2',
-      value: () => host.value(),
-      mixed: () => host.mixed(),
-      hostElement: () => fixture.nativeElement.querySelector('et-password-input') as HTMLElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.element(),
       writeValueExternally: () => {
-        host.value.set('correct horse');
-        fixture.detectChanges();
+        driver.host.value.set('correct horse');
+        driver.tick();
       },
       externallyWrittenValue: () => 'correct horse',
-      commit: () => typeInto('new password'),
+      commit: () => driver.type('new password'),
       committedValue: () => 'new password',
       assertMasked: () => {
-        expect(nativeInput().value).toBe('');
-        expect(nativeInput().placeholder).toBe('Mixed values');
+        expect(driver.fieldValue()).toBe('');
+        expect(driver.placeholder()).toBe('Mixed values');
       },
     };
   });
 
   it('never reveals the hidden raw value, even with the reveal toggle', () => {
-    const { fixture, directive, nativeInput, enterMixed } = setup();
+    const { driver, enterMixed } = setup();
 
     enterMixed('hunter2');
-    directive.toggleRevealed();
-    fixture.detectChanges();
+    driver.passwordInput.toggleRevealed();
+    driver.tick();
 
-    expect(nativeInput().type).toBe('text');
-    expect(nativeInput().value).toBe('');
+    expect(driver.fieldType()).toBe('text');
+    expect(driver.fieldValue()).toBe('');
   });
 
   it('reports zero strength while mixed instead of scoring the hidden raw value', () => {
-    const { directive, enterMixed } = setup();
+    const { driver, enterMixed } = setup();
 
     enterMixed('Abcdefgh1!xy');
 
-    expect(directive.strength()).toBe(0);
+    expect(driver.passwordInput.strength()).toBe(0);
   });
 
   it('keeps mixed and the raw value when an edit produces no content', () => {
-    const { host, typeInto, enterMixed } = setup();
+    const { driver, enterMixed } = setup();
 
     enterMixed('hunter2');
-    typeInto('');
+    driver.type('');
 
-    expect(host.mixed()).toBe(true);
-    expect(host.value()).toBe('hunter2');
+    expect(driver.host.mixed()).toBe(true);
+    expect(driver.host.value()).toBe('hunter2');
   });
 });

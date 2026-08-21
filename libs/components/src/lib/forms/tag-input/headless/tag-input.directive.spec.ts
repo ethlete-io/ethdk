@@ -1,11 +1,8 @@
 import { Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { mountTagInput, TagInputDriver } from '../../testing/tag-input-driver';
 import { TAG_INPUT_IMPORTS } from '../tag-input.imports';
-import { TagInputDirective } from './tag-input.directive';
-import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 
 @Component({
   template: `
@@ -31,249 +28,201 @@ class TagInputTestHost {
 }
 
 describe('TagInputDirective', () => {
-  let fixture: ComponentFixture<TagInputTestHost>;
-  let field: HTMLInputElement;
-
-  const typeAndKey = (text: string, key: string) => {
-    field.value = text;
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    field.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-    fixture.detectChanges();
-  };
-
-  const chips = () =>
-    Array.from(fixture.nativeElement.querySelectorAll<HTMLElement>('et-chip .et-chip-label')).map((chip) =>
-      chip.textContent?.trim(),
-    );
+  let driver: TagInputDriver<TagInputTestHost>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [TagInputTestHost],
-      providers: [provideColorThemes(TEST_COLOR_THEMES)],
-    });
-    fixture = TestBed.createComponent(TagInputTestHost);
-    fixture.detectChanges();
-    field = fixture.nativeElement.querySelector('.et-tag-input-field');
+    driver = mountTagInput(TagInputTestHost);
   });
 
   it('commits on Enter and clears the field', () => {
-    typeAndKey('alpha', 'Enter');
+    driver.typeAndPress('alpha', 'Enter');
 
-    expect(fixture.componentInstance.value()).toEqual(['alpha']);
-    expect(field.value).toBe('');
-    expect(chips()).toEqual(['alpha']);
+    expect(driver.host.value()).toEqual(['alpha']);
+    expect(driver.fieldValue()).toBe('');
+    expect(driver.chipLabels()).toEqual(['alpha']);
   });
 
   it('commits when a separator character is typed', () => {
-    field.value = 'beta,';
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    fixture.detectChanges();
+    driver.type('beta,');
 
-    expect(fixture.componentInstance.value()).toEqual(['beta']);
-    expect(field.value).toBe('');
+    expect(driver.host.value()).toEqual(['beta']);
+    expect(driver.fieldValue()).toBe('');
   });
 
   it('commits pending text on blur and trims it', () => {
-    field.value = '  gamma  ';
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    field.dispatchEvent(new FocusEvent('blur'));
-    fixture.detectChanges();
+    driver.typeAndBlur('  gamma  ');
 
-    expect(fixture.componentInstance.value()).toEqual(['gamma']);
+    expect(driver.host.value()).toEqual(['gamma']);
   });
 
   it('rejects duplicates and empty text by default', () => {
-    typeAndKey('alpha', 'Enter');
-    typeAndKey('alpha', 'Enter');
+    driver.typeAndPress('alpha', 'Enter');
+    driver.typeAndPress('alpha', 'Enter');
 
-    expect(fixture.componentInstance.value()).toEqual(['alpha']);
+    expect(driver.host.value()).toEqual(['alpha']);
     // the rejected text stays in the field for the user to edit
-    expect(field.value).toBe('alpha');
+    expect(driver.fieldValue()).toBe('alpha');
 
-    typeAndKey('   ', 'Enter');
-    expect(fixture.componentInstance.value()).toEqual(['alpha']);
+    driver.typeAndPress('   ', 'Enter');
+    expect(driver.host.value()).toEqual(['alpha']);
 
-    field.value = '';
-    fixture.componentInstance.allowDuplicates.set(true);
-    fixture.detectChanges();
-    typeAndKey('alpha', 'Enter');
+    driver.clearField();
+    driver.host.allowDuplicates.set(true);
+    driver.tick();
+    driver.typeAndPress('alpha', 'Enter');
 
-    expect(fixture.componentInstance.value()).toEqual(['alpha', 'alpha']);
+    expect(driver.host.value()).toEqual(['alpha', 'alpha']);
   });
 
   it('stops adding at maxTags', () => {
-    fixture.componentInstance.maxTags.set(2);
-    fixture.detectChanges();
+    driver.host.maxTags.set(2);
+    driver.tick();
 
-    typeAndKey('one', 'Enter');
-    typeAndKey('two', 'Enter');
-    typeAndKey('three', 'Enter');
+    driver.typeAndPress('one', 'Enter');
+    driver.typeAndPress('two', 'Enter');
+    driver.typeAndPress('three', 'Enter');
 
-    expect(fixture.componentInstance.value()).toEqual(['one', 'two']);
+    expect(driver.host.value()).toEqual(['one', 'two']);
   });
 
   it('removes the last tag with Backspace on an empty field', () => {
-    fixture.componentInstance.value.set(['one', 'two']);
-    fixture.detectChanges();
+    driver.host.value.set(['one', 'two']);
+    driver.tick();
 
-    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
-    fixture.detectChanges();
+    driver.press('Backspace');
 
-    expect(fixture.componentInstance.value()).toEqual(['one']);
+    expect(driver.host.value()).toEqual(['one']);
   });
 
   it('removes a tag via its chip', () => {
-    fixture.componentInstance.value.set(['one', 'two']);
-    fixture.detectChanges();
+    driver.host.value.set(['one', 'two']);
+    driver.tick();
 
-    fixture.nativeElement.querySelectorAll('.et-chip-remove-button')[0]!.click();
-    fixture.detectChanges();
+    driver.removeChip(0);
 
-    expect(fixture.componentInstance.value()).toEqual(['two']);
+    expect(driver.host.value()).toEqual(['two']);
   });
 
   it('splits pastes on separators and newlines', () => {
-    // jsdom has no DataTransfer - fake the clipboardData surface
-    const event = new Event('paste', { bubbles: true, cancelable: true });
+    driver.paste('one, two\nthree');
 
-    Object.defineProperty(event, 'clipboardData', { value: { getData: () => 'one, two\nthree' } });
-    field.dispatchEvent(event);
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.value()).toEqual(['one', 'two', 'three']);
+    expect(driver.host.value()).toEqual(['one', 'two', 'three']);
   });
 
   it('ignores interaction while disabled', () => {
-    fixture.componentInstance.value.set(['one']);
-    fixture.componentInstance.disabled.set(true);
-    fixture.detectChanges();
+    driver.host.value.set(['one']);
+    driver.host.disabled.set(true);
+    driver.tick();
 
-    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
-    fixture.detectChanges();
+    driver.press('Backspace');
 
-    expect(fixture.componentInstance.value()).toEqual(['one']);
-    expect(field.disabled).toBe(true);
+    expect(driver.host.value()).toEqual(['one']);
+    expect(driver.field().disabled).toBe(true);
   });
 
   describe('mixed', () => {
     const enterMixed = (raw: string[]) => {
-      fixture.componentInstance.value.set(raw);
-      fixture.componentInstance.mixed.set(true);
-      fixture.detectChanges();
+      driver.host.value.set(raw);
+      driver.host.mixed.set(true);
+      driver.tick();
     };
 
     it('hides the chips and shows the mixedLabel as placeholder while the raw value survives', () => {
       enterMixed(['one', 'two']);
 
-      expect(chips()).toEqual([]);
-      expect(field.getAttribute('placeholder')).toBe('Mixed');
-      expect(fixture.componentInstance.value()).toEqual(['one', 'two']);
+      expect(driver.chipLabels()).toEqual([]);
+      expect(driver.placeholder()).toBe('Mixed');
+      expect(driver.host.value()).toEqual(['one', 'two']);
     });
 
     it('replaces the hidden raw value with the first committed tag, then appends normally', () => {
       enterMixed(['one', 'two']);
 
-      typeAndKey('fresh', 'Enter');
+      driver.typeAndPress('fresh', 'Enter');
 
-      expect(fixture.componentInstance.value()).toEqual(['fresh']);
-      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(driver.host.value()).toEqual(['fresh']);
+      expect(driver.host.mixed()).toBe(false);
 
-      typeAndKey('next', 'Enter');
+      driver.typeAndPress('next', 'Enter');
 
-      expect(fixture.componentInstance.value()).toEqual(['fresh', 'next']);
+      expect(driver.host.value()).toEqual(['fresh', 'next']);
     });
 
     it('checks duplicates against the fresh set, not the hidden raw value', () => {
       enterMixed(['alpha']);
 
-      typeAndKey('alpha', 'Enter');
+      driver.typeAndPress('alpha', 'Enter');
 
-      expect(fixture.componentInstance.value()).toEqual(['alpha']);
-      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(driver.host.value()).toEqual(['alpha']);
+      expect(driver.host.mixed()).toBe(false);
     });
 
     it('ignores Backspace on the empty field and removeLast while mixed', () => {
       enterMixed(['one', 'two']);
 
-      const tagInput = fixture.debugElement.children[0]!.injector.get(TagInputDirective);
+      driver.press('Backspace');
 
-      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
-      fixture.detectChanges();
+      expect(driver.host.value()).toEqual(['one', 'two']);
+      expect(driver.host.mixed()).toBe(true);
 
-      expect(fixture.componentInstance.value()).toEqual(['one', 'two']);
-      expect(fixture.componentInstance.mixed()).toBe(true);
+      driver.tagInput.removeLast();
+      driver.tagInput.removeAt(0);
+      driver.tagInput.remove('one');
+      driver.tick();
 
-      tagInput.removeLast();
-      tagInput.removeAt(0);
-      tagInput.remove('one');
-      fixture.detectChanges();
-
-      expect(fixture.componentInstance.value()).toEqual(['one', 'two']);
-      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(driver.host.value()).toEqual(['one', 'two']);
+      expect(driver.host.mixed()).toBe(true);
     });
 
     it('evaluates maxTags against the effective (empty) selection while mixed', () => {
-      fixture.componentInstance.maxTags.set(2);
+      driver.host.maxTags.set(2);
       enterMixed(['one', 'two']);
 
-      const tagInput = fixture.debugElement.children[0]!.injector.get(TagInputDirective);
+      expect(driver.tagInput.isFull()).toBe(false);
+      expect(driver.field().readOnly).toBe(false);
 
-      expect(tagInput.isFull()).toBe(false);
-      expect(field.readOnly).toBe(false);
+      driver.typeAndPress('fresh', 'Enter');
 
-      typeAndKey('fresh', 'Enter');
-
-      expect(fixture.componentInstance.value()).toEqual(['fresh']);
+      expect(driver.host.value()).toEqual(['fresh']);
     });
 
     it('preserves mixed across external value writes', () => {
       enterMixed(['one']);
 
-      fixture.componentInstance.value.set(['server']);
-      fixture.detectChanges();
+      driver.host.value.set(['server']);
+      driver.tick();
 
-      expect(fixture.componentInstance.mixed()).toBe(true);
-      expect(chips()).toEqual([]);
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.chipLabels()).toEqual([]);
     });
   });
 });
 
 describe('TagInputDirective (contract)', () => {
   describeMixedStateContract(() => {
-    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
-
-    const fixture = TestBed.createComponent(TagInputTestHost);
-
-    fixture.detectChanges();
-
-    const field = fixture.nativeElement.querySelector('.et-tag-input-field') as HTMLInputElement;
+    const driver = mountTagInput(TagInputTestHost);
 
     return {
       enterMixed: () => {
-        fixture.componentInstance.value.set(['one', 'two']);
-        fixture.componentInstance.mixed.set(true);
-        fixture.detectChanges();
+        driver.host.value.set(['one', 'two']);
+        driver.host.mixed.set(true);
+        driver.tick();
       },
       rawValue: () => ['one', 'two'],
-      value: () => fixture.componentInstance.value(),
-      mixed: () => fixture.componentInstance.mixed(),
-      hostElement: () => fixture.nativeElement.querySelector('et-tag-input') as HTMLElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.element(),
       writeValueExternally: () => {
-        fixture.componentInstance.value.set(['three']);
-        fixture.detectChanges();
+        driver.host.value.set(['three']);
+        driver.tick();
       },
       externallyWrittenValue: () => ['three'],
-      commit: () => {
-        field.value = 'fresh';
-        field.dispatchEvent(new Event('input', { bubbles: true }));
-        field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        fixture.detectChanges();
-      },
+      commit: () => driver.typeAndPress('fresh', 'Enter'),
       // replace semantics: a fresh array around the committed tag, not an append
       committedValue: () => ['fresh'],
       assertMasked: () => {
-        expect(fixture.nativeElement.querySelectorAll('et-chip').length).toBe(0);
-        expect(field.getAttribute('placeholder')).toBe('Mixed');
+        expect(driver.chips().length).toBe(0);
+        expect(driver.placeholder()).toBe('Mixed');
       },
       // no clear affordance - the tag input has no clear-all control
     };
