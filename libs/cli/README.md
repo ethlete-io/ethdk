@@ -27,9 +27,12 @@ yarn et auth glpat-xxxxxxxxxxxxxxxxxxxx                     # the host comes fro
 yarn et auth gitlab.example.com glpat-xxxxxxxxxxxxxxxxxxxx  # name it when more than one is in use
 ```
 
-The token is checked against the host first: once for the token itself, and once by downloading one
-byte of a project archive. A token that can read the API but not fetch code answers `403` there, and
-nothing is written. `--force` writes it anyway.
+The host may be written as a url. Only its host name is used.
+
+The token is checked against the host first: once for the token itself, and once with the request
+`git clone` makes for a private dependency. A token that can read the API but not fetch code answers
+`403` there, and nothing is written. A token the file already holds for that host is replaced only
+after a question. `--force` skips both.
 
 ## `et api`
 
@@ -49,15 +52,27 @@ yarn et api checkout hub        # switch the checkout to the branch apiRepoBranc
 yarn et api pull hub            # fetch and fast-forward the checked-out branch
 yarn et api pull hub --force    # the same, discarding local commits and tracked changes
 yarn et api clone hub           # clone the API into .ethlete/hub
+yarn et api clear hub           # remove that clone again
+yarn et api clear --all         # remove every managed clone
 yarn et api setup hub           # run the API's own setupCommand, which writes its .env
 ```
 
 Every command takes a comma-separated list of names, and acts on each API in turn.
 
-`checkout`, `pull` and `setup` act on the checkout itself, so they work before the API has an `.env`
-and need no container engine. `pull` refuses to run on a checkout with uncommitted changes unless you pass
-`--force`. `--force` resets the branch to its remote and throws away local commits and tracked
-changes; it never touches untracked or ignored files, so a `vendor/` directory or a `.env` survives.
+`clone`, `checkout`, `pull`, `setup` and `clear` act on the checkout itself, so they work before the
+API has an `.env` and need no container engine. `pull` refuses to run on a checkout with uncommitted
+changes unless you pass `--force`. `--force` resets the branch to its remote and throws away local
+commits and tracked changes; it never touches untracked or ignored files, so a `vendor/` directory or
+a `.env` survives.
+
+`clear` removes a managed checkout in `.ethlete/<name>`, and only that one: a path you set in
+`apiRepoPaths` is your own. It asks one question for every API you named, takes their containers down
+first, and refuses a checkout that holds uncommitted changes or commits no remote holds. `--force`
+skips those two git checks.
+
+Before it starts anything, `up` reads the host ports the requested services publish and checks
+whether something already holds them. In a terminal it offers to stop the containers that hold them.
+`--force` skips the check and lets the engine report the conflict itself.
 
 The first container tool that answers is used, in this order: `docker compose`,
 `container compose`, `podman-compose`, `podman compose`.

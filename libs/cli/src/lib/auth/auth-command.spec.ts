@@ -3,8 +3,12 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
+import * as utils from '../utils';
 import { authCommand } from './auth-command';
 import { composerAuthPath } from './composer-auth';
+
+// The replace prompt reads stdin, which never answers here and would hang the run.
+process.stdin.isTTY = false;
 
 const apisFile = (repoUrl: string, extra = '') => `module.exports = {
   hub: {
@@ -63,6 +67,9 @@ const makeRoot = (options: { apis?: string; composerRepoUrl?: string } = {}) => 
 };
 
 const makeHome = () => mkdtempSync(join(tmpdir(), 'cli-auth-home-'));
+
+const writeTokens = (home: string, tokens: Record<string, string>) =>
+  writeFileSync(composerAuthPath(home), JSON.stringify({ 'gitlab-token': tokens }, null, 4), 'utf8');
 
 /** Answers the token request and every refs request, so each case reads as a pair of statuses. */
 const stubFetch = (token: { status: number; body?: unknown }, refs: { status: number }) => {
@@ -195,6 +202,83 @@ describe('authCommand', () => {
 
     expect(await authCommand({ argv: ['b.example.com', 'glpat-good'], root, home })).toBe(0);
     expect(readTokens(home)).toEqual({ 'b.example.com': 'glpat-good' });
+  });
+
+  it('takes a host written as a url', async () => {
+    const home = makeHome();
+    const root = makeRoot({ apis: apisFile('ssh://git@a.example.com/group/hub.git', SECOND_API) });
+    const calls = stubFetch(VALID, { status: 200 });
+
+    expect(await authCommand({ argv: ['https://b.example.com/', 'glpat-good'], root, home })).toBe(0);
+    expect(readTokens(home)).toEqual({ 'b.example.com': 'glpat-good' });
+    expect(calls[0]).toBe('https://b.example.com/api/v4/personal_access_tokens/self');
+  });
+
+  it('writes nothing when the named host holds no host name', async () => {
+    const home = makeHome();
+
+    stubFetch(VALID, { status: 200 });
+
+    expect(await authCommand({ argv: ['/group/hub', 'glpat-good'], root: makeRoot(), home })).toBe(1);
+    expect(existsSync(composerAuthPath(home))).toBe(false);
+    expect(errors.join('\n')).toContain('holds no host name');
+  });
+
+  it('asks before it replaces a token the file already holds', async () => {
+    const home = makeHome();
+
+    writeTokens(home, { 'git.example.com': 'glpat-old' });
+    stubFetch(VALID, { status: 200 });
+
+    expect(await authCommand({ argv: ['glpat-new'], root: makeRoot(), home })).toBe(1);
+    expect(readTokens(home)).toEqual({ 'git.example.com': 'glpat-old' });
+    expect(errors.join('\n')).toContain('already holds a different token for git.example.com');
+  });
+
+  it('replaces the token the file holds once the question is answered', async () => {
+    const home = makeHome();
+    const asked = vi.spyOn(utils, 'confirm').mockResolvedValue(true);
+
+    writeTokens(home, { 'git.example.com': 'glpat-old' });
+    stubFetch(VALID, { status: 200 });
+
+    expect(await authCommand({ argv: ['glpat-new'], root: makeRoot(), home })).toBe(0);
+    expect(readTokens(home)).toEqual({ 'git.example.com': 'glpat-new' });
+    expect(asked).toHaveBeenCalledOnce();
+
+    asked.mockRestore();
+  });
+
+  it('replaces without a question when --force is given', async () => {
+    const home = makeHome();
+
+    writeTokens(home, { 'git.example.com': 'glpat-old' });
+    stubFetch(VALID, { status: 200 });
+
+    expect(await authCommand({ argv: ['glpat-new', '--force'], root: makeRoot(), home })).toBe(0);
+    expect(readTokens(home)).toEqual({ 'git.example.com': 'glpat-new' });
+    expect(logs.join('\n')).toContain('Replaced the git.example.com token');
+  });
+
+  it('asks no question when the file already holds this token', async () => {
+    const home = makeHome();
+
+    writeTokens(home, { 'git.example.com': 'glpat-good' });
+    stubFetch(VALID, { status: 200 });
+
+    expect(await authCommand({ argv: ['glpat-good'], root: makeRoot(), home })).toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  it('names an entry that holds the same host in another form', async () => {
+    const home = makeHome();
+
+    writeTokens(home, { 'https://git.example.com/': 'glpat-old' });
+    stubFetch(VALID, { status: 200 });
+
+    expect(await authCommand({ argv: ['glpat-good'], root: makeRoot(), home })).toBe(0);
+    expect(readTokens(home)).toEqual({ 'https://git.example.com/': 'glpat-old', 'git.example.com': 'glpat-good' });
+    expect(logs.join('\n')).toContain('"https://git.example.com/" for the same host');
   });
 
   it('prints the usage when no token is given', async () => {

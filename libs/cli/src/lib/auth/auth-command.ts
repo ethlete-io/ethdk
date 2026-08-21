@@ -1,7 +1,14 @@
-import { gitUrlHost, gitUrlProjectPath } from '../api/auth-hint';
+import { gitHostFromInput, gitUrlHost, gitUrlProjectPath } from '../api/auth-hint';
 import { loadApiDefinitions } from '../api/load-definitions';
 import { resolveApiCheckout } from '../api/resolve-checkout';
-import { composerAuthPath, defaultComposerHome, writeGitlabToken } from './composer-auth';
+import { confirm } from '../utils';
+import {
+  composerAuthPath,
+  defaultComposerHome,
+  gitlabTokenHosts,
+  storedGitlabToken,
+  writeGitlabToken,
+} from './composer-auth';
 import { composerGitRepositories } from './composer-repositories';
 import { CloneCheck, checkGitCloneAccess, describeGitlabToken } from './gitlab-token';
 
@@ -24,8 +31,11 @@ const usage = (invocation: string) =>
     '',
     'The host is optional when every API in ethlete.apis.js sits on the same one.',
     '',
+    'A host may be written as a url. Only its host name is used.',
+    '',
     'Flags',
-    '  --force  Write the token even when the check says it cannot fetch code',
+    '  --force  Write the token even when the check says it cannot fetch code, and replace',
+    '           a token the file already holds for that host without asking',
   ].join('\n');
 
 /**
@@ -118,8 +128,16 @@ export const authCommand = async ({
   const force = argv.includes('--force');
   const survey = surveyHosts(root);
   const named = positional.length === 2;
-  const host = named ? (positional[0] ?? '') : survey.hosts[0];
+  const host = named ? gitHostFromInput(positional[0] ?? '') : survey.hosts[0];
   const token = positional[named ? 1 : 0] ?? '';
+
+  if (named && host === undefined) {
+    console.error(
+      `"${positional[0]}" holds no host name. Name the host itself:\n\n  ${invocation} gitlab.example.com <token>`,
+    );
+
+    return 1;
+  }
 
   if (host === undefined) {
     console.error(
@@ -171,6 +189,23 @@ export const authCommand = async ({
     return 1;
   }
 
+  const stored = storedGitlabToken({ home, host });
+
+  if (stored !== undefined && stored !== token && !force) {
+    const accepted = await confirm({
+      problem: `\n${composerAuthPath(home)} already holds a different token for ${host}.`,
+      question: 'Replace it?',
+      hint: 'Re-run in a terminal to answer the question, or re-run with --force to replace it.',
+      defaultsToYes: false,
+    });
+
+    if (!accepted) {
+      console.error('\nNothing was written. The token already in the file was kept.');
+
+      return 1;
+    }
+  }
+
   const written = writeGitlabToken({ home, host, token });
 
   if (!written.ok) {
@@ -179,9 +214,17 @@ export const authCommand = async ({
     return 1;
   }
 
+  const strays = gitlabTokenHosts(home).filter((key) => key !== host && gitHostFromInput(key) === host);
+  const single = strays.length === 1;
+  const unused = single ? 'that entry is' : 'those entries are';
+
   console.log(
     `\n${written.replaced ? 'Replaced' : 'Wrote'} the ${host} token in ${composerAuthPath(home)}.\n` +
-      `The API containers mount that directory, so composer inside them reads it.`,
+      `The API containers mount that directory, so composer inside them reads it.` +
+      (strays.length === 0
+        ? ''
+        : `\n\nThe file also holds ${strays.map((key) => `"${key}"`).join(', ')} for the same host. Composer ` +
+          `matches a gitlab-token by host name, so ${unused} never used. You can remove ${single ? 'it' : 'them'}.`),
   );
 
   return 0;

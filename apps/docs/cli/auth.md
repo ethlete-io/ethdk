@@ -11,7 +11,7 @@ yarn et auth glpat-xxxxxxxxxxxxxxxxxxxx
 ```
 gitlab.example.com
   token     "laptop", scopes: api, read_repository
-  download  group/hub-backend can be downloaded
+  fetch     vendor/hub-bundle can be fetched
 
 Wrote the gitlab.example.com token in /home/you/.composer/auth.json.
 The API containers mount that directory, so composer inside them reads it.
@@ -26,21 +26,33 @@ the token is enough. Name the host when more than one is in use:
 yarn et auth gitlab.example.com glpat-xxxxxxxxxxxxxxxxxxxx
 ```
 
+A host may be written as a url, because that is how a host is usually pasted. Only its host name
+is used, so `https://gitlab.example.com/` and `gitlab.example.com` name the same host and share one
+entry in `auth.json`.
+
 ## What is checked
 
 Two requests, both to the host the token belongs to:
 
-| Request                                            | What it proves                                          |
-| -------------------------------------------------- | ------------------------------------------------------- |
-| `GET /api/v4/personal_access_tokens/self`          | The token exists, is unexpired, and which scopes it has |
-| `GET /api/v4/projects/…/repository/archive.tar.gz` | The token can fetch code, not only read the API         |
+| Request                                                | What it proves                                          |
+| ------------------------------------------------------ | ------------------------------------------------------- |
+| `GET /api/v4/personal_access_tokens/self`              | The token exists, is unexpired, and which scopes it has |
+| `GET /<project>.git/info/refs?service=git-upload-pack` | The token can fetch code, not only read the API         |
 
-The second request asks for one byte, so it downloads nothing of substance. A token that can read
-the API but not fetch code answers `403` there, which is the difference a private dependency fails
-on. Read access is not enough, and the server reports the difference as a bare `403`.
+The second request is the first one `git clone` over https makes, so it needs no `api` scope, which
+a project access token does not have. The projects it asks for are the `repositories` of each API
+checkout's `composer.json`, never the API repository itself: you fetch that one with your own
+credential. A token that can read the API but not fetch code answers `403` there, which is the
+difference a private dependency fails on.
 
 When either check fails, nothing is written and the reason is printed. `--force` writes the token
 anyway. When the host cannot be reached at all, the checks are skipped and the token is written.
+
+## Replacing a token
+
+When `auth.json` already holds a different token for that host, the command asks before it replaces
+it. Answer `n` to keep the token in the file. `--force` replaces it without the question, and no
+question is asked in a script, where the answer is a no.
 
 ## Where it is written
 

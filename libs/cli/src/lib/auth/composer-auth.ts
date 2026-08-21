@@ -65,6 +65,13 @@ export const writeGitlabToken = (options: { home: string; host: string; token: s
   return { ok: true, path, replaced };
 };
 
+/** The token composer already holds for one host, or undefined when it holds none. */
+export const storedGitlabToken = (options: { home: string; host: string }) => {
+  const read = readAuth(composerAuthPath(options.home));
+
+  return 'unreadable' in read ? undefined : storedTokens(read.auth)?.[options.host];
+};
+
 /** The hosts composer already holds a GitLab token for. */
 export const gitlabTokenHosts = (home: string) => {
   const read = readAuth(composerAuthPath(home));

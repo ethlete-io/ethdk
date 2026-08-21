@@ -29,6 +29,18 @@ export const gitUrlHost = (repoUrl: string) => {
   }
 };
 
+/**
+ * The host a user names on the command line, which is often pasted as a url: `https://git.example.com/`
+ * holds the same host as `git.example.com`. Undefined when there is no host name in it at all.
+ */
+export const gitHostFromInput = (value: string) => {
+  const trimmed = value.trim();
+
+  if (!trimmed || trimmed.startsWith('/')) return undefined;
+
+  return gitUrlHost(trimmed) ?? gitUrlHost(`https://${trimmed}`);
+};
+
 /** The `group/project` part of a git url, for addressing the project in a host's own API. */
 export const gitUrlProjectPath = (repoUrl: string) => {
   const scpLike = /^[^/]+@[^:]+:(.+)$/.exec(repoUrl);

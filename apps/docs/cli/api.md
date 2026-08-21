@@ -92,6 +92,7 @@ module.exports = {
     envFile: '.env',
     setupCommand: 'make setup',
     network: 'shared-fut',
+    repoUrl: 'git@gitlab.example.com:group/fut-hub-backend.git',
     envKey: 'hubApiEnv',
     examplePath: '../fut-hub-backend',
     env: () => ({ SSH_PRIVATE_KEY: sshKeyPath() }),
@@ -114,6 +115,7 @@ Adding an API is an entry in this map. Nothing else changes.
 | `envFile`      | no       | File that must exist in `composeDir` before the API can start.                                                        |
 | `setupCommand` | no       | Command that creates `envFile`, run by `setup` in `composeDir`.                                                       |
 | `network`      | no       | External container network created before the first `up`.                                                             |
+| `repoUrl`      | no       | Where to clone this API from when the developer has no checkout of their own.                                         |
 | `envKey`       | no       | localStorage key the app reads to pick its API. Printed by `--host`.                                                  |
 | `examplePath`  | no       | Example path shown in the error that asks for this API's checkout.                                                    |
 | `env`          | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`. |
