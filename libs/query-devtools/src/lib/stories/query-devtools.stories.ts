@@ -17,6 +17,19 @@ export default {
         provideQueryDevtools({
           about: { version: '1.4.2', sha: 'a3f9c1e', environment: 'storybook' },
           schema: () => QUERY_DEVTOOLS_DEMO_SCHEMA,
+          apiEnvs: [
+            {
+              name: 'Demo API',
+              storageKey: 'etQueryDevtoolsDemoApiEnv',
+              fallback: 'staging',
+              custom: true,
+              envs: [
+                { id: 'local', url: 'http://localhost:3000' },
+                { id: 'staging', url: 'https://api.staging.example.com' },
+                { id: 'production', url: 'https://api.example.com', production: true },
+              ],
+            },
+          ],
         }),
       ],
     }),

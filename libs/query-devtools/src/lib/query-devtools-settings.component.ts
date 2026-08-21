@@ -1,13 +1,18 @@
-import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, computed, inject, signal, ViewEncapsulation } from '@angular/core';
 import {
   armAllQueryDevtoolsMocks,
   clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsFaults,
+  QueryDevtoolsApiEnvSwitch,
+  queryDevtoolsApiEnvs,
+  queryDevtoolsApiEnvValues,
   queryDevtoolsArmedMocks,
   queryDevtoolsMocks,
   queryDevtoolsResponseHistory,
   queryDevtoolsSettings,
   QueryDevtoolsStorageScope,
+  setQueryDevtoolsApiEnv,
   setQueryDevtoolsArmedMocksScope,
   setQueryDevtoolsFaultsScope,
   setQueryDevtoolsOverridesScope,
@@ -126,6 +131,8 @@ const LIMIT_ROWS: LimitRow[] = [
   encapsulation: ViewEncapsulation.None,
 })
 export class QueryDevtoolsSettingsComponent {
+  private document = inject(DOCUMENT);
+
   protected host = injectQueryDevtoolsHost();
 
   protected readonly SCOPE_ROWS = SCOPE_ROWS;
@@ -145,6 +152,52 @@ export class QueryDevtoolsSettingsComponent {
   protected armedFaultCount = computed(() => this.host.faultClients().filter((client) => client.armed).length);
 
   protected resetConfirming = signal(false);
+
+  /** The backends the application declared, or an empty list - the card renders only for a declared one. */
+  protected apiEnvs = computed(queryDevtoolsApiEnvs);
+
+  /** The env id (or typed URL) a switch's key holds, or `null` while the application picks for itself. */
+  protected apiEnvValue(apiSwitch: QueryDevtoolsApiEnvSwitch) {
+    return queryDevtoolsApiEnvValues()[apiSwitch.storageKey] ?? null;
+  }
+
+  /** The env a switch falls back to with nothing stored, described for the default button. */
+  protected apiEnvFallback(apiSwitch: QueryDevtoolsApiEnvSwitch) {
+    const fallback = apiSwitch.envs.find((env) => env.id === apiSwitch.fallback);
+
+    return {
+      label: fallback ? `default (${fallback.label ?? fallback.id})` : 'default',
+      production: fallback?.production === true,
+    };
+  }
+
+  /** Whether the pick in force - the stored env, or the fallback behind an unwritten key - is production. */
+  protected apiEnvIsProduction(apiSwitch: QueryDevtoolsApiEnvSwitch) {
+    const stored = this.apiEnvValue(apiSwitch);
+
+    return apiSwitch.envs.find((env) => env.id === (stored ?? apiSwitch.fallback))?.production === true;
+  }
+
+  /** A stored value no declared env carries, which is a URL somebody typed in below. */
+  protected apiEnvCustomUrl(apiSwitch: QueryDevtoolsApiEnvSwitch) {
+    const stored = this.apiEnvValue(apiSwitch);
+
+    return stored && !apiSwitch.envs.some((env) => env.id === stored) ? stored : '';
+  }
+
+  /** Writes the application's own key and reloads - it is read before Angular boots, so nothing else can. */
+  protected pickApiEnv(apiSwitch: QueryDevtoolsApiEnvSwitch, value: string | null) {
+    setQueryDevtoolsApiEnv(apiSwitch.storageKey, value);
+    this.document.defaultView?.location.reload();
+  }
+
+  protected setCustomApiUrl(apiSwitch: QueryDevtoolsApiEnvSwitch, value: string) {
+    const url = value.trim();
+
+    if (url === this.apiEnvCustomUrl(apiSwitch)) return;
+
+    this.pickApiEnv(apiSwitch, url || null);
+  }
 
   protected settings() {
     return queryDevtoolsSettings();

@@ -3,6 +3,7 @@ import { CORE_VERSION } from '@ethlete/core';
 import { AnyCreateQueryClientResult } from '../http/query-client';
 import { QUERY_VERSION } from '../version';
 import { QueryDevtoolsAppInfo, registerEthleteVersion, setQueryDevtoolsAppInfo } from './query-devtools-about';
+import { QueryDevtoolsApiEnvSwitch, setQueryDevtoolsApiEnvs } from './query-devtools-api-envs';
 import {
   QueryDevtoolsEntry,
   QueryDevtoolsRegistration,
@@ -273,6 +274,14 @@ export type QueryDevtoolsOptions = {
    * asks for it - see {@link QueryDevtoolsSchemaLoaders}.
    */
   schema?: QueryDevtoolsSchemaLoaders;
+
+  /**
+   * The backends this application can be pointed at, one entry per `localStorage` key it reads at
+   * startup. Declaring them puts a picker next to the floating toggle and on the panel's Settings tab;
+   * picking writes the key and reloads. Nothing else changes - the application still resolves the key
+   * itself, so an env is whatever it already means to it.
+   */
+  apiEnvs?: QueryDevtoolsApiEnvSwitch[];
 };
 
 let queryDevtoolsInitialized = false;
@@ -308,6 +317,7 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
   initQueryDevtoolsMocks();
   initQueryDevtoolsFaults();
   setQueryDevtoolsSchemaLoader(options?.schema);
+  setQueryDevtoolsApiEnvs(options?.apiEnvs);
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
   setQueryDevtoolsFormLinksFactory(createQueryDevtoolsFormLinks);

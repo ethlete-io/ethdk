@@ -43,6 +43,57 @@
     font-size: 1.1rem;
   }
 
+  .et-query-devtools-settings-api--production {
+    background: color-mix(in srgb, var(--_et-qdt-error) 8%, transparent);
+    box-shadow: inset 0.3rem 0 0 var(--_et-qdt-error);
+    padding-inline-start: 0.8rem;
+  }
+
+  .et-query-devtools-settings-api-live {
+    display: block;
+    margin-block-start: 0.4rem;
+    color: var(--_et-qdt-error);
+    font-size: 1.2rem;
+  }
+
+  .et-query-devtools-btn--danger.et-query-devtools-btn--active {
+    background: color-mix(in srgb, var(--_et-qdt-error) 28%, transparent);
+    border-color: var(--_et-qdt-error);
+    color: #fff;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .et-query-devtools-settings-api-live {
+      animation: et-qdt-settings-api-live 1.6s ease-in-out infinite;
+    }
+  }
+
+  @keyframes et-qdt-settings-api-live {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .et-query-devtools-settings-api-url {
+    display: grid;
+    grid-template-columns: auto minmax(0, 32rem);
+    align-items: center;
+    margin-block-start: 0.5rem;
+    gap: 0.2rem 0.6rem;
+  }
+
+  .et-query-devtools-settings-api-url small {
+    grid-column: 1 / -1;
+    max-inline-size: 60rem;
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
   .et-query-devtools-settings-fields {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));

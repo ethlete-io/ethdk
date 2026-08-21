@@ -7,6 +7,75 @@
     </p>
   </div>
 
+  @if (apiEnvs().length) {
+    <div class="et-query-devtools-card">
+      <div class="et-query-devtools-card-head">
+        <strong>API environment</strong>
+        <span class="et-query-devtools-count">the app's own key, not the panel's - picking reloads the page</span>
+      </div>
+
+      @for (apiSwitch of apiEnvs(); track apiSwitch.storageKey) {
+        @let value = apiEnvValue(apiSwitch);
+        @let custom = apiEnvCustomUrl(apiSwitch);
+        @let fallback = apiEnvFallback(apiSwitch);
+        @let production = apiEnvIsProduction(apiSwitch);
+        <div [class.et-query-devtools-settings-api--production]="production" class="et-query-devtools-settings-row">
+          <div class="et-query-devtools-settings-row-head">
+            <span>{{ apiSwitch.name }}</span>
+            <div class="et-query-devtools-btn-group">
+              <button
+                [class.et-query-devtools-btn--active]="value === null"
+                [class.et-query-devtools-btn--danger]="fallback.production"
+                [attr.aria-pressed]="value === null"
+                (click)="pickApiEnv(apiSwitch, null)"
+                class="et-query-devtools-btn"
+                type="button"
+              >
+                {{ fallback.production ? '⚠ ' : '' }}{{ fallback.label }}
+              </button>
+              @for (env of apiSwitch.envs; track env.id) {
+                <button
+                  [class.et-query-devtools-btn--active]="value === env.id"
+                  [class.et-query-devtools-btn--danger]="env.production"
+                  [attr.aria-pressed]="value === env.id"
+                  [title]="env.url ?? env.id"
+                  (click)="pickApiEnv(apiSwitch, env.id)"
+                  class="et-query-devtools-btn"
+                  type="button"
+                >
+                  {{ env.production ? '⚠ ' : '' }}{{ env.label ?? env.id }}
+                </button>
+              }
+            </div>
+          </div>
+          @if (production) {
+            <strong class="et-query-devtools-settings-api-live">
+              Live data. Every request from this app reaches the real backend.
+            </strong>
+          }
+          <small>
+            Written to <span class="et-query-devtools-mono">{{ apiSwitch.storageKey }}</span> in
+            <code class="et-query-devtools-mono">localStorage</code>, which the app reads before it boots.
+          </small>
+          @if (apiSwitch.custom) {
+            <label class="et-query-devtools-field et-query-devtools-settings-api-url">
+              <span>Base URL</span>
+              <input
+                #customUrlInput
+                [value]="custom"
+                (change)="setCustomApiUrl(apiSwitch, customUrlInput.value)"
+                class="et-query-devtools-input"
+                type="url"
+                placeholder="http://localhost:8040"
+              />
+              <small>A backend none of the buttons above name. Empty goes back to the app's own default.</small>
+            </label>
+          }
+        </div>
+      }
+    </div>
+  }
+
   <div class="et-query-devtools-card">
     <div class="et-query-devtools-card-head">
       <strong>Storage</strong>

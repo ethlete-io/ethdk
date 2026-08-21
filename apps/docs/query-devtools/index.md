@@ -51,9 +51,10 @@ from `@ethlete/query-devtools` is the same panel loaded eagerly, if you would ra
 not have a chunk boundary there.
 
 `provideQueryDevtools()` also takes `about` (build info for the
-[About tab](#about-which-build-is-running)), `responseHistory` (how many bodies each query keeps) and
+[About tab](#about-which-build-is-running)), `responseHistory` (how many bodies each query keeps),
 `schema` (your API description, one loader or one per query client, for
-[seeding a designed mock](#seeding-from-your-api-description)).
+[seeding a designed mock](#seeding-from-your-api-description)) and `apiEnvs` (the backends this app
+can be pointed at, for [switching the API environment](#switching-the-api-environment)).
 
 Without `provideQueryDevtools()` the registry stays empty and the panel shows
 nothing. Instrumentation is a no-op until you call it - it retains no references
@@ -1906,11 +1907,81 @@ components are bound to, which the browser Network tab can't do:
   dedented, with a **⧉ Copy** button next to the heading, so it pastes straight
   into a GraphQL playground.
 
+## Switching the API environment
+
+Most applications pick their backend from a key in `localStorage`, read once at startup before
+Angular boots. Changing it means opening the console, remembering the key and the spelling of
+each value, and reloading. Declare the backends instead and the panel does all three:
+
+```ts
+provideQueryDevtools({
+  apiEnvs: [
+    {
+      name: 'Hub API',
+      storageKey: 'hubApiEnv',
+      fallback: 'staging',
+      custom: true,
+      envs: [
+        { id: 'local', url: 'http://localhost:8040' },
+        { id: 'staging', url: '/hub-api/staging' },
+        { id: 'production', url: '/hub-api/production', production: true },
+      ],
+    },
+  ],
+});
+```
+
+A picker then sits above the floating toggle button, and the same one is on the Settings tab.
+Picking writes `storageKey` and reloads the page - the app reads that key before anything the
+panel can reach exists, so a reload is the only way to apply it.
+
+The floating picker is painted onto `document.body` by `provideQueryDevtools()` itself, not by a
+component. That is deliberate: an app pointed at a backend that does not answer can hang before it
+renders anything - a blocking initial navigation waiting out an auth call, say - and that is exactly
+when somebody needs to pick a different backend. The picker is on the page before
+`bootstrapApplication` starts, so a bad pick is always recoverable without the console.
+
+| Field        | What it is                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| `name`       | what the picker calls the switch                                                         |
+| `storageKey` | the key that is written, as the plain string your app reads - not JSON-encoded           |
+| `envs`       | `id` is the value written; `label` and `url` are what the picker shows and tooltips      |
+| `fallback`   | the `id` your app uses with nothing stored, so the picker can name its **default** entry |
+| `custom`     | whether the Settings tab also takes a base URL typed in                                  |
+| `production` | on one env, marks the real backend, so the picker shouts while it is the pick             |
+
+**default** removes the key rather than writing the fallback's `id`, so an app that changes which
+env it defaults to is followed rather than pinned to yesterday's answer. A URL typed into the
+custom field is written to the same key, and the floating picker lists it so it can be switched
+away from and back.
+
+Declare one switch per key. An app whose hub API and items API move independently declares two,
+and each is picked on its own.
+
+The panel only writes the key. Which URL an `id` resolves to, when the key is read and what an env
+means stay your application's business - `url` is shown so the pick says where it points, and is
+never requested by the panel.
+
+### While production is the pick
+
+Mark the real backend with `production: true` and the picker stops being quiet about it. Its name
+carries a **⚠**, in the closed picker and in the open dropdown; the pill turns red and pulses; and a
+red frame is drawn around the whole viewport, so the warning is on screen wherever you are looking.
+The Settings tab marks the same env, and says in words that the data is real.
+
+The frame and both pulses are gated behind `prefers-reduced-motion`. Without motion the red stays,
+at full strength.
+
+An env is production because your application says so. The panel never guesses one from its `url` or
+its `id`, and it never blocks a pick: pointing a development build at production is sometimes the
+job, and this only makes sure nobody does it believing it is staging.
+
 ## Settings: what the panel keeps, and where
 
-The **⚙** button in the header opens Settings over whatever tab is showing. It holds three
-things: where each kind of panel state is kept, the limits the panel would otherwise carry as
-constants, and a copy of every panel-wide switch that lives in a tab of its own.
+The **⚙** button in the header opens Settings over whatever tab is showing. It holds where each
+kind of panel state is kept, the limits the panel would otherwise carry as constants, a copy of
+every panel-wide switch that lives in a tab of its own, and - for an app that declared any - the
+[API environment](#switching-the-api-environment) picker.
 
 Settings itself is always kept in `localStorage`, under
 `ethlete:query:devtools:settings:v1`, **whatever the scopes below say** - a scope of `none`
