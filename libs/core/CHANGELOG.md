@@ -1,5 +1,12 @@
 # @ethlete/core
 
+## 5.0.0-next.55
+
+### Patch Changes
+
+- [`c067767`](https://github.com/ethlete-io/ethdk/commit/c06776704a32d7d78ba057389ac9efb157f0e4fc) Thanks [@TomTomB](https://github.com/TomTomB)! - An overlay opened without an `injector` or a `viewContainerRef` now reaches its own `providers` from
+  the content component, instead of resolving them against the opener's environment injector.
+
 ## 5.0.0-next.54
 
 ### Major Changes

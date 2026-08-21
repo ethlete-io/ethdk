@@ -1,5 +1,35 @@
 # @ethlete/cli
 
+## 2.1.0-next.6
+
+### Minor Changes
+
+- [`a1c489e`](https://github.com/ethlete-io/ethdk/commit/a1c489e0a1da4b479fd6e47743dec4c1bad0152f) Thanks [@TomTomB](https://github.com/TomTomB)! - `et api up` now refuses a port another program holds and prints a per-service state table instead of
+  the engine's output. New `et api clear` removes a managed checkout, and offers to take its containers down first.
+
+- [`12dcd51`](https://github.com/ethlete-io/ethdk/commit/12dcd5118ca8d2089cc3e9379efe4e9d0502a0f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Every `et api` command now takes a comma-separated list of names, so `et api up hub,platform` starts
+  both APIs.
+
+- [`0e060b2`](https://github.com/ethlete-io/ethdk/commit/0e060b28436e9444726a35a93264a046242e348e) Thanks [@TomTomB](https://github.com/TomTomB)! - `et api help <name>` now answers for one API: the commands it accepts, what each one runs, its url
+  and services, and the state of its checkout. `--help` after a known API name prints the same text.
+
+- [`0e060b2`](https://github.com/ethlete-io/ethdk/commit/0e060b28436e9444726a35a93264a046242e348e) Thanks [@TomTomB](https://github.com/TomTomB)! - `et api` now runs an API's `setupCommand` itself: `et api setup <name>` on its own, or as an offer
+  when a command finds the `envFile` missing. `--setup` accepts that offer without the question.
+
+- [`c3dd7c3`](https://github.com/ethlete-io/ethdk/commit/c3dd7c3d7e0e2a060e081c7fe820f9774537418b) Thanks [@TomTomB](https://github.com/TomTomB)! - `et auth <token>` writes a GitLab token into composer's `auth.json`, which the API containers mount. It asks the host whether the token can download code before it writes anything.
+
+### Patch Changes
+
+- [`0e060b2`](https://github.com/ethlete-io/ethdk/commit/0e060b28436e9444726a35a93264a046242e348e) Thanks [@TomTomB](https://github.com/TomTomB)! - An unknown API name in `et api` now names the closest match and the APIs there are, in place of the
+  whole help text. An unknown command suggests the closest command the same way.
+
+- [`c3dd7c3`](https://github.com/ethlete-io/ethdk/commit/c3dd7c3d7e0e2a060e081c7fe820f9774537418b) Thanks [@TomTomB](https://github.com/TomTomB)! - A failing `et api` exec command no longer always blames a private dependency. That hint is kept for a command that installs dependencies; any other one suggests running the install command first.
+
+- [`0e060b2`](https://github.com/ethlete-io/ethdk/commit/0e060b28436e9444726a35a93264a046242e348e) Thanks [@TomTomB](https://github.com/TomTomB)! - `et api setup` keeps the setup command's own output back and prints one line for the result. The output is only shown when the command fails, so a checkout's advice about its Makefile no longer competes with the CLI.
+
+- [`0e060b2`](https://github.com/ethlete-io/ethdk/commit/0e060b28436e9444726a35a93264a046242e348e) Thanks [@TomTomB](https://github.com/TomTomB)! - Every `et` message now names a command the reader can type, for example `yarn api` or `npx et api`,
+  in place of a bare `et`. `et doctor` names the `et api` command that fixes each problem.
+
 ## 2.1.0-next.5
 
 ### Minor Changes
