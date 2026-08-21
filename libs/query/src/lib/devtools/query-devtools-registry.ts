@@ -5,6 +5,12 @@ import { QUERY_VERSION } from '../version';
 import { QueryDevtoolsAppInfo, registerEthleteVersion, setQueryDevtoolsAppInfo } from './query-devtools-about';
 import { QueryDevtoolsApiEnvSwitch, setQueryDevtoolsApiEnvs } from './query-devtools-api-envs';
 import {
+  initQueryDevtoolsAuthSessions,
+  QueryDevtoolsAuthAccount,
+  readQueryDevtoolsAuthSeedFor,
+  trackQueryDevtoolsAuthProvider,
+} from './query-devtools-auth-sessions';
+import {
   QueryDevtoolsEntry,
   QueryDevtoolsRegistration,
   QueryDevtoolsRoutePart,
@@ -12,6 +18,8 @@ import {
   setQueryDevtoolsFormLinksFactory,
   setQueryDevtoolsMockResolver,
   setQueryDevtoolsOverridesFactory,
+  setQueryDevtoolsAuthProviderRegistrar,
+  setQueryDevtoolsAuthSeedReader,
   setQueryDevtoolsRegistrar,
   setQueryDevtoolsStatsFactory,
   setQueryDevtoolsTokenPayloadPatcher,
@@ -282,6 +290,17 @@ export type QueryDevtoolsOptions = {
    * itself, so an env is whatever it already means to it.
    */
   apiEnvs?: QueryDevtoolsApiEnvSwitch[];
+
+  /**
+   * The accounts the panel may log in as, so a session can be switched without typing a login form
+   * again. Declare the slot only - the label, the query and the fields it needs. Whoever runs the app
+   * types the credentials into the panel once, and they stay in that browser: **never put a password in
+   * the repository.**
+   *
+   * Scope an account to the backends it exists on with `envs`, for an API whose users are not the next
+   * one's. Accounts are not offered at all while an `apiEnvs` env marked `production` is the pick.
+   */
+  authAccounts?: QueryDevtoolsAuthAccount[];
 };
 
 let queryDevtoolsInitialized = false;
@@ -318,6 +337,9 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
   initQueryDevtoolsFaults();
   setQueryDevtoolsSchemaLoader(options?.schema);
   setQueryDevtoolsApiEnvs(options?.apiEnvs);
+  initQueryDevtoolsAuthSessions(options?.authAccounts);
+  setQueryDevtoolsAuthSeedReader(readQueryDevtoolsAuthSeedFor);
+  setQueryDevtoolsAuthProviderRegistrar(trackQueryDevtoolsAuthProvider);
   setQueryDevtoolsRegistrar(registerEntry);
   setQueryDevtoolsStatsFactory(createQueryDevtoolsStats);
   setQueryDevtoolsFormLinksFactory(createQueryDevtoolsFormLinks);

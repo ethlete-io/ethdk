@@ -37,6 +37,13 @@ export type QueryDevtoolsSettings = {
   /** The faults armed per client, for the same reason and with the same default. */
   armedFaults: QueryDevtoolsStorageScope;
 
+  /**
+   * The session vault: the token pairs the panel switches between, and the credentials it logs in with.
+   * `local` by default, because a vault that forgets the other user on every reload is not one - and
+   * `none` for a machine where nothing of the sort may be kept.
+   */
+  authSessions: QueryDevtoolsStorageScope;
+
   /** How many entries the Events log keeps. */
   maxEvents: number;
 
@@ -48,6 +55,13 @@ export type QueryDevtoolsSettings = {
    * rest of this page. `null` leaves the application's value alone.
    */
   responseHistory: number | null;
+
+  /**
+   * Whether switching to another session reloads the page. On by default: a switch replaces what the
+   * query layer holds, and an application that keeps the user anywhere else - a profile service, the
+   * router, an open form - is still showing the last one until it boots again.
+   */
+  reloadOnAuthSwitch: boolean;
 };
 
 const DEFAULTS: QueryDevtoolsSettings = {
@@ -57,9 +71,11 @@ const DEFAULTS: QueryDevtoolsSettings = {
   mocks: 'local',
   armedMocks: 'none',
   armedFaults: 'none',
+  authSessions: 'local',
   maxEvents: 100,
   maxDroppedCacheEntries: 20,
   responseHistory: null,
+  reloadOnAuthSwitch: true,
 };
 
 /**
@@ -172,6 +188,7 @@ const sanitize = (value: Partial<QueryDevtoolsSettings> | null): QueryDevtoolsSe
   mocks: asScope(value?.mocks, DEFAULTS.mocks),
   armedMocks: asScope(value?.armedMocks, DEFAULTS.armedMocks),
   armedFaults: asScope(value?.armedFaults, DEFAULTS.armedFaults),
+  authSessions: asScope(value?.authSessions, DEFAULTS.authSessions),
   maxEvents: asCount(value?.maxEvents, LIMITS.maxEvents, DEFAULTS.maxEvents),
   maxDroppedCacheEntries: asCount(
     value?.maxDroppedCacheEntries,
@@ -179,6 +196,8 @@ const sanitize = (value: Partial<QueryDevtoolsSettings> | null): QueryDevtoolsSe
     DEFAULTS.maxDroppedCacheEntries,
   ),
   responseHistory: asOptionalCount(value?.responseHistory, LIMITS.responseHistory),
+  reloadOnAuthSwitch:
+    typeof value?.reloadOnAuthSwitch === 'boolean' ? value.reloadOnAuthSwitch : DEFAULTS.reloadOnAuthSwitch,
 });
 
 /**

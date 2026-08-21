@@ -1,5 +1,5 @@
 import { Signal, signal } from '@angular/core';
-import { renderQueryDevtoolsApiEnvPill } from './query-devtools-api-env-pill';
+import { setQueryDevtoolsEnvPills } from './query-devtools-pills';
 
 /** One backend a {@link QueryDevtoolsApiEnvSwitch} can point the application at. */
 export type QueryDevtoolsApiEnv = {
@@ -77,7 +77,7 @@ const read = (key: string) => {
 export const setQueryDevtoolsApiEnvs = (list: QueryDevtoolsApiEnvSwitch[] | undefined) => {
   switches.set(list ?? []);
   values.set(Object.fromEntries((list ?? []).map((entry) => [entry.storageKey, read(entry.storageKey)])));
-  renderQueryDevtoolsApiEnvPill(list ?? [], read, pickAndReload);
+  setQueryDevtoolsEnvPills({ switches: list ?? [], read, pick: pickAndReload });
 };
 
 /**
@@ -100,6 +100,45 @@ export const setQueryDevtoolsApiEnv = (storageKey: string, value: string | null)
 
   values.update((current) => ({ ...current, [storageKey]: read(storageKey) }));
 };
+
+/** The env in force for one switch, which is its own fallback while nothing is stored. */
+const resolvedIdOf = (entry: QueryDevtoolsApiEnvSwitch) => values()[entry.storageKey] ?? entry.fallback ?? '';
+
+/**
+ * Which backends the application is pointed at right now, as one string. Every declared switch is in it,
+ * so a session captured against staging is never offered on production.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
+ */
+export const queryDevtoolsApiEnvScope = () => {
+  const list = switches();
+
+  if (!list.length) return 'default';
+
+  return list
+    .map((entry) => `${entry.storageKey}=${resolvedIdOf(entry)}`)
+    .sort()
+    .join('&');
+};
+
+/**
+ * The env id in force per switch, which is what an account's declared `envs` is matched against.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
+ */
+export const queryDevtoolsApiEnvIds = () =>
+  switches()
+    .map(resolvedIdOf)
+    .filter((id) => id !== '');
+
+/**
+ * Whether any switch's pick is an env the application declared as `production`. Everything that would
+ * keep a real user's tokens on this machine refuses while this reads `true`.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
+ */
+export const queryDevtoolsApiEnvIsProduction = () =>
+  switches().some((entry) => entry.envs.find((env) => env.id === resolvedIdOf(entry))?.production === true);
 
 /**
  * What the floating pill does on a pick. The application reads the key before Angular boots, so a

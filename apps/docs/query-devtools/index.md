@@ -53,8 +53,9 @@ not have a chunk boundary there.
 `provideQueryDevtools()` also takes `about` (build info for the
 [About tab](#about-which-build-is-running)), `responseHistory` (how many bodies each query keeps),
 `schema` (your API description, one loader or one per query client, for
-[seeding a designed mock](#seeding-from-your-api-description)) and `apiEnvs` (the backends this app
-can be pointed at, for [switching the API environment](#switching-the-api-environment)).
+[seeding a designed mock](#seeding-from-your-api-description)), `apiEnvs` (the backends this app
+can be pointed at, for [switching the API environment](#switching-the-api-environment)) and
+`authAccounts` (the users the panel may log in as, for [switching the user](#switching-the-user)).
 
 Without `provideQueryDevtools()` the registry stays empty and the panel shows
 nothing. Instrumentation is a no-op until you call it - it retains no references
@@ -1948,7 +1949,7 @@ when somebody needs to pick a different backend. The picker is on the page befor
 | `envs`       | `id` is the value written; `label` and `url` are what the picker shows and tooltips      |
 | `fallback`   | the `id` your app uses with nothing stored, so the picker can name its **default** entry |
 | `custom`     | whether the Settings tab also takes a base URL typed in                                  |
-| `production` | on one env, marks the real backend, so the picker shouts while it is the pick             |
+| `production` | on one env, marks the real backend, so the picker shouts while it is the pick            |
 
 **default** removes the key rather than writing the fallback's `id`, so an app that changes which
 env it defaults to is followed rather than pinned to yesterday's answer. A URL typed into the
@@ -1976,6 +1977,96 @@ An env is production because your application says so. The panel never guesses o
 its `id`, and it never blocks a pick: pointing a development build at production is sometimes the
 job, and this only makes sure nobody does it believing it is staging.
 
+## Switching the user
+
+An auth provider holds one session, and testing what an admin sees against what a member sees means
+logging out, typing a second login form, and doing it again to get back. The Auth tab keeps both
+sessions instead, and switches between them.
+
+Nothing has to be declared for the basic version of this. Log in as you normally would and the
+session appears in the tab's **Sessions** list, named from the access token's claims. Log in as
+somebody else and the first one stays where it is, with its own token pair. **Switch** puts either
+one back in force.
+
+### The vault follows a rotated refresh token
+
+A stored session is only useful while its refresh token is still spendable, and most backends rotate
+that token on every refresh. So the vault does not snapshot: while a session is in force, every pair
+the provider issues is written back to it. Switching away and back a day later presents the newest
+refresh token, not the one the server spent hours ago.
+
+The access token in a stored session is usually expired, and the list says so. That is not a problem
+to solve - it is what the refresh token is for, and the provider refreshes on the first request the
+switch makes.
+
+### Accounts: log in as somebody, with no login form
+
+Declare the accounts the panel may log in as. Declare the **slot** only - never a password:
+
+```ts
+provideQueryDevtools({
+  authAccounts: [
+    { provider: 'hub-auth', label: 'Admin', loginQuery: 'login', note: 'every permission' },
+    { provider: 'hub-auth', label: 'Member', loginQuery: 'login', envs: ['staging'] },
+  ],
+});
+```
+
+Whoever runs the app fills the credentials in once, in the Auth tab, and they stay in that browser's
+`localStorage` - scoped to the API env in force, because a staging login is rarely a local one.
+**Log in as** then runs the provider's own login query with them, so the tokens are issued exactly
+the way the application issues them and the vault picks the session up like any other login.
+
+| Field        | What it is                                                                       |
+| ------------ | -------------------------------------------------------------------------------- |
+| `provider`   | the `createBearerAuthProvider({ name })` this account logs into                  |
+| `label`      | what the picker calls it                                                         |
+| `loginQuery` | the key of the provider query that performs the login                            |
+| `fields`     | what the login needs. Defaults to an e-mail and a password                       |
+| `buildArgs`  | turns the collected values into the query's args. Defaults to `{ body: values }` |
+| `envs`       | the env `id`s this account exists on. Omitted offers it on every env             |
+| `note`       | shown next to the label, for example the role this account has                   |
+
+An account can also be added in the panel, for a user the repository has no business naming. It is
+kept with the API env it was added under, and its login query is picked from the ones the provider
+registered.
+
+::: danger Never put a password in the repository
+This is why `authAccounts` takes no credentials at all. The panel collects them, keeps them on the
+machine that typed them, and sends them to nothing but the login query. An env marked
+`production: true` refuses the whole feature - no accounts on offer, no credentials kept, no tokens
+stored - because none of this is worth doing with a real user's session.
+:::
+
+### One tab, one user
+
+**Own this tab** takes this tab's session out of the shared one. The tab then keeps its tokens in
+`sessionStorage` and is handed them again on the next load, while every other tab stays on whoever
+it was. That makes an admin and a member reachable side by side, in two windows, against one
+backend.
+
+A tab holding its own session steps out of everything that would leak it:
+
+- `withBearerAuthMultiTabSync` sets up no `BroadcastChannel` and takes no part in the leader
+  election, so the tab neither pushes its tokens at its siblings nor adopts theirs, and refreshes for
+  itself.
+- `withPersistentAuth` writes no cookie and deletes none. The cookie is the whole browser's; a tab
+  writing its own user into it would hand that user to every tab on the next load.
+
+Both are decided while the provider is built, so **Own this tab** and **Rejoin the shared session**
+reload the page.
+
+### What a switch actually replaces
+
+A switch replaces the token pair, unbinds every secure query and drops what the last user cached -
+in memory and on disk. It cannot replace what your application keeps elsewhere: a profile service, a
+resolved route, an open form. That is why **reload on switch** is on by default, next to the
+switcher. Turn it off for an app that holds nothing outside the query layer, and switching is
+instant.
+
+The floating pill carries the same picker as the tab, next to the API env one, so a switch does not
+need the panel open.
+
 ## Settings: what the panel keeps, and where
 
 The **⚙** button in the header opens Settings over whatever tab is showing. It holds where each
@@ -1999,6 +2090,7 @@ Each kind of state picks its own scope, because `none` costs something different
 | [**Designed mocks**](#mocks-answering-a-route-the-panel-not-the-api) | `local`   | the library dies with the tab                             |
 | [**Armed mocks**](#arming-it-is-loud)                                | `none`    | the default - a reload goes back to talking to the API    |
 | [**Armed faults**](#faults-making-requests-actually-misbehave)       | `none`    | the default - a reload disarms every client               |
+| [**Sessions and accounts**](#switching-the-user)                     | `local`   | the other user is forgotten on every reload               |
 
 Changing a scope **moves** what is already stored and clears the copy the old scope left
 behind, so the next load cannot read a stale one. The two **Armed** scopes capture what is armed

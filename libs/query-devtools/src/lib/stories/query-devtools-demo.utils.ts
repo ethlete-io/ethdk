@@ -83,12 +83,12 @@ const base64Url = (value: object) =>
  * hour of life from now rather than with fixed claims, so the tab's countdown and the lifetime override
  * both have something realistic to act on.
  */
-const fakeJwt = () => {
+const fakeJwt = (user = 'demo-user') => {
   const iat = Math.floor(Date.now() / 1000);
 
   return `${base64Url({ alg: 'HS256', typ: 'JWT' })}.${base64Url({
-    sub: 'demo-user',
-    name: 'Query Devtools',
+    sub: user,
+    name: user,
     iat,
     exp: iat + 3600,
   })}.signature`;
@@ -243,8 +243,12 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
     return respond({ id, title: `Post #${id}`, publishedAt: publishedAtFor(id) } satisfies PostView);
   }
 
+  // The subject follows whoever logged in, so the Auth tab's session picker has more than one user in it.
   if (path === '/auth/login' || path === '/auth/refresh') {
-    return respond({ token: fakeJwt(), refresh_token: 'demo-refresh-token' });
+    const body = req.body as { username?: string; refresh_token?: string } | null;
+    const user = body?.username ?? body?.refresh_token?.replace('demo-refresh-', '') ?? 'demo-user';
+
+    return respond({ token: fakeJwt(user), refresh_token: `demo-refresh-${user}` });
   }
 
   if (path === '/me') return respond({ id: 'user-1', name: 'Demo User' });

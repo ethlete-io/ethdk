@@ -20,6 +20,9 @@ import {
 import {
   isQueryDevtoolsEnabled,
   patchQueryDevtoolsTokenPayload,
+  QueryDevtoolsAuthProviderHandle,
+  readQueryDevtoolsAuthSeed,
+  registerQueryDevtoolsAuthProvider,
   registerQueryDevtoolsEntry,
 } from '../devtools/query-devtools-hook';
 import {
@@ -170,6 +173,13 @@ export type BearerAuthProviderEarlySetupContext = {
 
   /** Why the last session ended, as {@link BearerAuthProvider.sessionEndCause} reports it. */
   sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
+
+  /**
+   * Whether this tab's session is its own rather than the one every tab of the app shares. Only the
+   * devtools set it, and only for a tab somebody asked to hold a different user. A feature that reaches
+   * outside the tab - a `BroadcastChannel`, a cookie - must do nothing at all while it reads `true`.
+   */
+  isTabLocalSession: Signal<boolean>;
 };
 
 /**
@@ -436,6 +446,9 @@ export type BearerAuthProviderFeatureContext<
   destroyRef: DestroyRef;
   setTokens: (access: string, refresh: string) => void;
   isLeader: () => boolean;
+
+  /** @see BearerAuthProviderEarlySetupContext.isTabLocalSession */
+  isTabLocalSession: Signal<boolean>;
   leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
 
   /**
@@ -808,6 +821,18 @@ const createBearerAuthProviderImpl = <
     unsavedChanges.abandonAll('logout');
   };
 
+  const isTabLocalSession = signal(false);
+
+  // Before the features: `withPersistentAuth` starts its cookie auto-login during setup, and a tab that
+  // was handed a session of its own must already hold it by then - both so the auto-login stands down,
+  // and so the sync and the cookie see the flag before they decide whether to run at all.
+  const devtoolsSeed = isQueryDevtoolsEnabled() ? readQueryDevtoolsAuthSeed(config.name) : null;
+
+  if (devtoolsSeed) {
+    isTabLocalSession.set(true);
+    setTokens(devtoolsSeed.accessToken, devtoolsSeed.refreshToken);
+  }
+
   const isLeader = runEarlyFeatureSetup(config.features, {
     accessToken,
     refreshToken,
@@ -817,6 +842,7 @@ const createBearerAuthProviderImpl = <
     setTokens,
     logout,
     sessionEndCause: sessionEndCause.asReadonly(),
+    isTabLocalSession: isTabLocalSession.asReadonly(),
   });
 
   const querySetupContext: BearerAuthProviderQueryContext<TBearerData, TBuilders> = {
@@ -849,6 +875,7 @@ const createBearerAuthProviderImpl = <
     destroyRef,
     setTokens,
     isLeader: isLeader.isLeaderFn,
+    isTabLocalSession: isTabLocalSession.asReadonly(),
     leaderElection: isLeader.leaderElectionContext,
     sessionAdoption: isLeader.sessionAdoption,
     activityCoordination: isLeader.activityCoordination,
@@ -912,6 +939,16 @@ const createBearerAuthProviderImpl = <
     });
 
     destroyRef.onDestroy(unregister);
+
+    destroyRef.onDestroy(
+      registerQueryDevtoolsAuthProvider({
+        name: config.name,
+        handle: provider as unknown as QueryDevtoolsAuthProviderHandle,
+        client: queryClient,
+        isTabLocalSession,
+        injector,
+      }),
+    );
   }
 
   return provider;

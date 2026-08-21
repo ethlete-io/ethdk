@@ -3,11 +3,13 @@ import { Component, computed, inject, signal, ViewEncapsulation } from '@angular
 import {
   armAllQueryDevtoolsMocks,
   clearQueryDevtoolsArmedMocks,
+  clearQueryDevtoolsAuthSessions,
   clearQueryDevtoolsFaults,
   QueryDevtoolsApiEnvSwitch,
   queryDevtoolsApiEnvs,
   queryDevtoolsApiEnvValues,
   queryDevtoolsArmedMocks,
+  queryDevtoolsAuthSessions,
   queryDevtoolsMocks,
   queryDevtoolsResponseHistory,
   queryDevtoolsSettings,
@@ -20,7 +22,7 @@ import {
 } from '@ethlete/query';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 
-type ScopeKey = 'viewState' | 'pins' | 'overrides' | 'mocks' | 'armedMocks' | 'armedFaults';
+type ScopeKey = 'viewState' | 'pins' | 'overrides' | 'mocks' | 'armedMocks' | 'armedFaults' | 'authSessions';
 
 type ScopeRow = {
   key: ScopeKey;
@@ -72,6 +74,15 @@ const SCOPE_ROWS: ScopeRow[] = [
     warn: {
       scopes: ['session', 'local'],
       text: 'The next page load starts serving these routes from the panel, before anyone opens it. The bar above the tabs says when they came back.',
+    },
+  },
+  {
+    key: 'authSessions',
+    label: 'Sessions and accounts',
+    hint: 'The token pairs the Auth tab switches between, and the credentials it logs in with. Local is the default: a vault that forgets the other user on every reload is not one. None keeps nothing at all.',
+    warn: {
+      scopes: ['local'],
+      text: 'Access and refresh tokens for every user you logged in as, plus what you typed into the account fields, stay in this browser until you forget them. They are never kept for an API env marked production.',
     },
   },
   {
@@ -148,10 +159,13 @@ export class QueryDevtoolsSettingsComponent {
   protected responseHistory = computed(queryDevtoolsResponseHistory);
 
   protected mockCount = computed(() => queryDevtoolsMocks().length);
+  protected sessionCount = computed(() => queryDevtoolsAuthSessions().length);
   protected armedMockCount = computed(() => queryDevtoolsArmedMocks().size);
   protected armedFaultCount = computed(() => this.host.faultClients().filter((client) => client.armed).length);
 
   protected resetConfirming = signal(false);
+
+  protected readonly FORGET_SESSIONS = clearQueryDevtoolsAuthSessions;
 
   /** The backends the application declared, or an empty list - the card renders only for a declared one. */
   protected apiEnvs = computed(queryDevtoolsApiEnvs);
@@ -224,7 +238,13 @@ export class QueryDevtoolsSettingsComponent {
     if (key === 'armedFaults') return setQueryDevtoolsFaultsScope(scope);
 
     setQueryDevtoolsSettings(
-      key === 'viewState' ? { viewState: scope } : key === 'pins' ? { pins: scope } : { mocks: scope },
+      key === 'viewState'
+        ? { viewState: scope }
+        : key === 'pins'
+          ? { pins: scope }
+          : key === 'authSessions'
+            ? { authSessions: scope }
+            : { mocks: scope },
     );
   }
 

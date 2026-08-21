@@ -100,7 +100,10 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
       type: BearerAuthFeatureType.MULTI_TAB_SYNC,
       instance: state.instance,
       devtools: () => [
-        { label: 'channel', value: state.channelName },
+        {
+          label: 'channel',
+          value: context.isTabLocalSession() ? "off (session is this tab's own)" : state.channelName,
+        },
         { label: 'tokens', value: config.syncTokens === false ? 'tab local' : 'synced' },
         { label: 'logout', value: config.syncLogout === false ? 'tab local' : 'synced' },
         {
@@ -115,6 +118,15 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
   // regular feature setup runs - so this half has to happen earlier than `setup`.
   const earlySetup: BearerAuthProviderEarlySetup['earlySetup'] = (context: BearerAuthProviderEarlySetupContext) => {
     const channelName = config.channelName ?? defaultSyncChannelName(context.name);
+
+    // A tab the devtools handed a session of its own is not part of this app's shared session: it must
+    // not push its tokens at its siblings, adopt theirs, or log them out - and it refreshes for itself,
+    // because a leader that speaks for a session it is not on would refresh the wrong one.
+    if (context.isTabLocalSession()) {
+      pendingSetups.push({ instance: SINGLE_TAB, channelName });
+
+      return {};
+    }
 
     // Filled in below once the election exists. Until then this tab answers as its own leader, which
     // is what it is: the sync is set up first because the auth queries read `isLeader` while being

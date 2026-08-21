@@ -26,7 +26,7 @@ const HUB_WITH_PRODUCTION: QueryDevtoolsApiEnvSwitch = {
   ],
 };
 
-const pill = () => document.getElementById('et-query-devtools-api-env-pill')?.shadowRoot;
+const pill = () => document.getElementById('et-query-devtools-pill')?.shadowRoot;
 
 describe('query devtools api envs', () => {
   beforeEach(() => {
@@ -80,7 +80,7 @@ describe('query devtools api envs', () => {
   it('should paint the pill onto the body, outside any component tree', () => {
     setQueryDevtoolsApiEnvs([HUB]);
 
-    const shadow = document.getElementById('et-query-devtools-api-env-pill')?.shadowRoot;
+    const shadow = document.getElementById('et-query-devtools-pill')?.shadowRoot;
     const options = [...(shadow?.querySelectorAll('option') ?? [])].map((option) => option.value);
 
     expect(shadow?.querySelectorAll('select').length).toBe(1);
@@ -91,21 +91,21 @@ describe('query devtools api envs', () => {
     setQueryDevtoolsApiEnvs([HUB]);
     setQueryDevtoolsApiEnvs([HUB]);
 
-    expect(document.querySelectorAll('#et-query-devtools-api-env-pill').length).toBe(1);
+    expect(document.querySelectorAll('#et-query-devtools-pill').length).toBe(1);
   });
 
   it('should paint no pill until an application declares a switch', () => {
     setQueryDevtoolsApiEnvs([HUB]);
     setQueryDevtoolsApiEnvs(undefined);
 
-    expect(document.getElementById('et-query-devtools-api-env-pill')).toBeNull();
+    expect(document.getElementById('et-query-devtools-pill')).toBeNull();
   });
 
   it('should show a typed URL the pill has no env for', () => {
     localStorage.setItem('hubApiEnv', 'http://192.168.0.2:8040');
     setQueryDevtoolsApiEnvs([HUB]);
 
-    const shadow = document.getElementById('et-query-devtools-api-env-pill')?.shadowRoot;
+    const shadow = document.getElementById('et-query-devtools-pill')?.shadowRoot;
     const selected = [...(shadow?.querySelectorAll('option') ?? [])].filter((option) => option.selected);
 
     expect(selected.map((option) => option.value)).toEqual(['http://192.168.0.2:8040']);

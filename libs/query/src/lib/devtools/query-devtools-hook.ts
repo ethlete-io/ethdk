@@ -1,3 +1,4 @@
+import { Injector, Signal, WritableSignal } from '@angular/core';
 import { QueryBatchDevtoolsHandle } from '../http/query-batch';
 import { AnyCreateQueryClientResult, QueryClient } from '../http/query-client';
 import { CreateQueryCreatorOptions, QueryConfig } from '../http/query-creator';
@@ -475,3 +476,87 @@ export const consumeSuppressQueryStackDevtools = () => {
 
   return value;
 };
+
+/**
+ * What the devtools' session vault needs of a bearer auth provider. Typed structurally, so the auth
+ * layer stays the only thing that knows how a provider is built.
+ */
+export type QueryDevtoolsAuthProviderHandle = {
+  accessToken: Signal<string | null>;
+  refreshToken: Signal<string | null>;
+  setTokens: (access: string, refresh: string) => void;
+  logout: () => void;
+
+  /**
+   * The provider's auth queries, which is how the panel logs in as a declared account.
+   *
+   * Untyped for the reason `AnyBearerAuthProvider.queries` is: with unknown builders the registry
+   * degrades to an index signature, and no structural contract survives it.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  queries: any;
+};
+
+/** One bearer auth provider, as the devtools' session vault takes it. */
+export type QueryDevtoolsAuthProviderRegistration = {
+  /** The provider's own name, which every session is stored under. */
+  name: string;
+
+  handle: QueryDevtoolsAuthProviderHandle;
+  client: QueryClient;
+
+  /**
+   * Whether this tab's session is its own rather than the one its siblings share. Written by the
+   * devtools, read by `withBearerAuthMultiTabSync` and `withPersistentAuth`.
+   */
+  isTabLocalSession: WritableSignal<boolean>;
+
+  /** The provider's injector, which the vault keeps its token-tracking effect on. */
+  injector: Injector;
+};
+
+/** The tokens one tab was seeded with, which is a session that belongs to this tab alone. */
+export type QueryDevtoolsAuthSeed = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+let authProviderRegistrar: ((registration: QueryDevtoolsAuthProviderRegistration) => () => void) | null = null;
+
+/**
+ * Installs the session vault's provider registrar. Called by `provideQueryDevtools()`; nothing else may
+ * call it.
+ * @internal
+ */
+export const setQueryDevtoolsAuthProviderRegistrar = (
+  fn: (registration: QueryDevtoolsAuthProviderRegistration) => () => void,
+) => {
+  authProviderRegistrar = fn;
+};
+
+/**
+ * Hands one auth provider to the devtools' session vault, which then keeps the live session's tokens in
+ * step with the stored one. A no-op without `provideQueryDevtools()`.
+ * @internal
+ */
+export const registerQueryDevtoolsAuthProvider = (registration: QueryDevtoolsAuthProviderRegistration): (() => void) =>
+  authProviderRegistrar?.(registration) ?? (() => undefined);
+
+let authSeedReader: ((providerName: string) => QueryDevtoolsAuthSeed | null) | null = null;
+
+/**
+ * Installs the tab-local session reader. Called by `provideQueryDevtools()`; nothing else may call it.
+ * @internal
+ */
+export const setQueryDevtoolsAuthSeedReader = (fn: (providerName: string) => QueryDevtoolsAuthSeed | null) => {
+  authSeedReader = fn;
+};
+
+/**
+ * The session the panel put in this tab alone, or `null` for a tab on the shared one. Read once while a
+ * provider is built, before its features run: the tokens have to be in place before `withPersistentAuth`
+ * decides whether to spend its cookie.
+ * @internal
+ */
+export const readQueryDevtoolsAuthSeed = (providerName: string): QueryDevtoolsAuthSeed | null =>
+  authSeedReader?.(providerName) ?? null;

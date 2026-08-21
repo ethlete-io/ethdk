@@ -39,4 +39,91 @@
     flex: 0 0 auto;
     max-inline-size: 90ch;
   }
+
+  .et-query-devtools-auth-vault {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .et-query-devtools-auth-vault-actions,
+  .et-query-devtools-auth-account-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .et-query-devtools-auth-vault-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin-block-start: 0.8rem;
+  }
+
+  .et-query-devtools-auth-vault-other {
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+  }
+
+  .et-query-devtools-auth-session,
+  .et-query-devtools-auth-account {
+    padding: 0.8rem;
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, var(--_et-qdt-bg));
+    box-shadow: inset 0 0 0 1px var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-auth-session {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.8rem;
+  }
+
+  .et-query-devtools-auth-session--active {
+    box-shadow: inset 0 0 0 1px var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-auth-session-label {
+    inline-size: 18rem;
+  }
+
+  .et-query-devtools-auth-session-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-inline-start: auto;
+  }
+
+  .et-query-devtools-auth-account {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .et-query-devtools-auth-account-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.8rem;
+  }
+
+  .et-query-devtools-auth-account-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.8rem 1.6rem;
+  }
+
+  .et-query-devtools-auth-account-fields .et-query-devtools-field {
+    color: var(--_et-qdt-fg);
+  }
+
+  /* Undoes the shared hint's `flex: 1 1 24rem`, whose basis is read as a block size in this row. */
+  .et-query-devtools-auth-account-fields .et-query-devtools-hint {
+    flex: 1 1 100%;
+    max-inline-size: 90ch;
+  }
 }

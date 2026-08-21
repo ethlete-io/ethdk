@@ -165,6 +165,11 @@ export const createPersistentAuthFeature = <
     const token = refreshToken();
     const rememberMe = rememberMeSignal();
 
+    // The cookie is the whole browser's, so a tab holding a session of its own would hand its user to
+    // every other tab on the next load. Such a tab is restored from `sessionStorage` by the devtools
+    // instead - see `setQueryDevtoolsAuthTabLocal`.
+    if (context.isTabLocalSession()) return;
+
     // A missing token is not a reason to drop the cookie. It is missing on every startup - `tryLogin`
     // reads the cookie synchronously and the auto-login only resolves a tick later - so deleting here
     // would throw away a 30-day refresh token before it was ever used. Deletion is driven by the events
@@ -186,7 +191,7 @@ export const createPersistentAuthFeature = <
   effect(() => {
     const endCause = context.sessionEndCause();
 
-    if (endCause) removeCookie();
+    if (endCause && !context.isTabLocalSession()) removeCookie();
   });
 
   effect(() => {
@@ -201,7 +206,7 @@ export const createPersistentAuthFeature = <
       (state.type === 'tokenRefresh' || state.type === 'autoLogin') &&
       (state.error.code === 401 || state.error.code === 403);
 
-    if (wasRejected) removeCookie();
+    if (wasRejected && !context.isTabLocalSession()) removeCookie();
   });
 
   const exchangeCookie = () => {

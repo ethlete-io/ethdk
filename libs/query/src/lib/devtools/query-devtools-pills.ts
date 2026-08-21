@@ -1,9 +1,9 @@
 /* eslint-disable ethlete/no-direct-dom-manipulation, ethlete/no-dom-query -- both rules assume a
-   component with a Renderer2 and a template. This pill has neither on purpose: see
-   `renderQueryDevtoolsApiEnvPill` below for why it cannot be a component. */
+   component with a Renderer2 and a template. These pills have neither on purpose: see
+   `renderPills` below for why they cannot be components. */
 import { QueryDevtoolsApiEnv, QueryDevtoolsApiEnvSwitch } from './query-devtools-api-envs';
 
-const HOST_ID = 'et-query-devtools-api-env-pill';
+const HOST_ID = 'et-query-devtools-pill';
 
 /** What the picker writes for "let the application decide", which is the key removed. */
 const DEFAULT_VALUE = '';
@@ -101,6 +101,33 @@ const STYLE = `
 
   label[data-production] option {
     background: #450a0a;
+  }
+
+  label[data-auth] {
+    --_accent: var(--et-theme-color-success-solid, #34d399);
+  }
+
+  button {
+    padding: 3px 7px;
+    border: none;
+    border-radius: 5px;
+    background: rgb(255 255 255 / 0.07);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+    color: #fafafa;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+  }
+
+  button:hover {
+    box-shadow: inset 0 0 0 1px var(--_accent);
+  }
+
+  button[data-on] {
+    background: rgb(52 211 153 / 0.18);
+    box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.7);
   }
 
   /* The whole viewport, so the warning is on screen wherever the reader is looking. Outside the pill's
@@ -230,15 +257,100 @@ const buildSwitch = (
   return label;
 };
 
-const render = (
-  doc: Document,
-  list: QueryDevtoolsApiEnvSwitch[],
-  read: (storageKey: string) => string | null,
-  pick: (storageKey: string, value: string | null) => void,
-) => {
+/** One thing a session picker can be switched to: a stored session, or an account to log in as. */
+export type QueryDevtoolsAuthPillOption = {
+  value: string;
+  label: string;
+  title: string;
+  selected: boolean;
+
+  /** An account whose credentials nobody has typed in yet. On offer, but not pickable. */
+  disabled: boolean;
+};
+
+export type QueryDevtoolsAuthPillRow = {
+  /** The auth provider's own name, shown in front of the picker. */
+  name: string;
+
+  /** What the picker reads while nothing is picked - the live session's label, or `anonymous`. */
+  current: string;
+
+  /** Whether this tab holds a session of its own rather than the one its siblings share. */
+  tabLocal: boolean;
+
+  options: QueryDevtoolsAuthPillOption[];
+  pick: (value: string) => void;
+  toggleTabLocal: () => void;
+};
+
+type EnvPillState = {
+  switches: QueryDevtoolsApiEnvSwitch[];
+  read: (storageKey: string) => string | null;
+  pick: (storageKey: string, value: string | null) => void;
+};
+
+type AuthPillState = { rows: QueryDevtoolsAuthPillRow[] };
+
+let envState: EnvPillState | null = null;
+let authState: AuthPillState | null = null;
+
+const buildAuthRow = (doc: Document, row: QueryDevtoolsAuthPillRow) => {
+  const label = doc.createElement('label');
+  label.setAttribute('data-auth', '');
+  label.title = row.tabLocal
+    ? `${row.name} holds this tab's own session. The other tabs are on theirs.`
+    : `${row.name} - the session every tab of this app shares`;
+
+  const name = doc.createElement('span');
+  name.className = 'name';
+  name.textContent = row.tabLocal ? `${row.name} · this tab` : row.name;
+
+  const select = doc.createElement('select');
+  select.setAttribute('aria-label', `${row.name} session`);
+
+  const current = doc.createElement('option');
+  current.value = '';
+  current.textContent = row.current;
+  current.selected = !row.options.some((option) => option.selected);
+  select.append(current);
+
+  for (const option of row.options) {
+    const element = doc.createElement('option');
+    element.value = option.value;
+    element.textContent = option.label;
+    element.title = option.title;
+    element.selected = option.selected;
+    element.disabled = option.disabled;
+    select.append(element);
+  }
+
+  select.addEventListener('change', () => {
+    if (select.value) row.pick(select.value);
+  });
+
+  const isolate = doc.createElement('button');
+  isolate.type = 'button';
+  isolate.textContent = row.tabLocal ? 'rejoin' : 'own tab';
+  isolate.title = row.tabLocal
+    ? 'Hands this tab back to the session every other tab shares. Reloads the page.'
+    : 'Keeps this session in this tab alone, so another tab can be somebody else. Reloads the page.';
+
+  if (row.tabLocal) isolate.setAttribute('data-on', '');
+
+  isolate.addEventListener('click', row.toggleTabLocal);
+
+  label.append(name, select, isolate);
+
+  return label;
+};
+
+const render = (doc: Document) => {
   doc.getElementById(HOST_ID)?.remove();
 
-  if (!list.length) return;
+  const switches = envState?.switches ?? [];
+  const rows = authState?.rows ?? [];
+
+  if (!switches.length && !rows.length) return;
 
   const host = doc.createElement('div');
   host.id = HOST_ID;
@@ -252,11 +364,13 @@ const render = (
 
   let production = false;
 
-  for (const apiSwitch of list) {
-    const stored = read(apiSwitch.storageKey) ?? DEFAULT_VALUE;
+  for (const row of rows) shadow.append(buildAuthRow(doc, row));
+
+  for (const apiSwitch of switches) {
+    const stored = envState?.read(apiSwitch.storageKey) ?? DEFAULT_VALUE;
 
     production ||= resolvedEnvOf(apiSwitch, stored)?.production === true;
-    shadow.append(buildSwitch(doc, apiSwitch, stored, pick));
+    shadow.append(buildSwitch(doc, apiSwitch, stored, (storageKey, value) => envState?.pick(storageKey, value)));
   }
 
   if (production) {
@@ -270,25 +384,37 @@ const render = (
 };
 
 /**
- * Paints the API env picker straight onto `document.body`, outside any Angular component tree.
+ * Paints the devtools' pills straight onto `document.body`, outside any Angular component tree.
  *
- * It cannot be a component: an application whose boot is stuck on the backend it was just pointed at -
+ * They cannot be components: an application whose boot is stuck on the backend it was just pointed at -
  * a blocking initial navigation waiting out an auth call that never answers - renders no component at
- * all, and that is exactly when somebody needs to pick a different backend. Mounted from
- * `setQueryDevtoolsApiEnvs()`, which runs while `provideQueryDevtools()` is being called, this is on
- * the page before `bootstrapApplication` starts.
- *
- * @internal
+ * all, and that is exactly when somebody needs to pick a different backend or a different user. Mounted
+ * from `setQueryDevtoolsApiEnvs()`, which runs while `provideQueryDevtools()` is being called, the env
+ * part of this is on the page before `bootstrapApplication` starts.
  */
-export const renderQueryDevtoolsApiEnvPill = (
-  list: QueryDevtoolsApiEnvSwitch[],
-  read: (storageKey: string) => string | null,
-  pick: (storageKey: string, value: string | null) => void,
-) => {
+const renderPills = () => {
   const doc = globalThis.document as Document | undefined;
 
   if (!doc) return;
 
-  if (doc.body) render(doc, list, read, pick);
-  else doc.addEventListener('DOMContentLoaded', () => render(doc, list, read, pick), { once: true });
+  if (doc.body) render(doc);
+  else doc.addEventListener('DOMContentLoaded', () => render(doc), { once: true });
+};
+
+/**
+ * Declares the API env part of the pill. Called by `setQueryDevtoolsApiEnvs()`.
+ * @internal
+ */
+export const setQueryDevtoolsEnvPills = (state: EnvPillState) => {
+  envState = state.switches.length ? state : null;
+  renderPills();
+};
+
+/**
+ * Declares the session part of the pill, which is repainted on every switch, login and logout.
+ * @internal
+ */
+export const setQueryDevtoolsAuthPill = (state: AuthPillState) => {
+  authState = state.rows.length ? state : null;
+  renderPills();
 };

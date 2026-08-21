@@ -73,6 +73,200 @@
         }
       </dl>
 
+      <h4 class="et-query-devtools-section">Sessions</h4>
+      @if (production()) {
+        <p class="et-query-devtools-hint">
+          A production env is the pick. Nothing of a real user's session is kept here - no tokens, no credentials - so
+          the vault and the accounts stand down until a different backend is picked.
+        </p>
+      } @else {
+        @let sessions = sessionsFor(entry);
+        @let accounts = accountsFor(entry);
+        <div class="et-query-devtools-auth-vault">
+          <div class="et-query-devtools-auth-vault-actions">
+            <button
+              [class.et-query-devtools-btn--active]="isTabLocal(entry)"
+              [attr.aria-pressed]="isTabLocal(entry)"
+              [title]="
+                isTabLocal(entry)
+                  ? 'Hands this tab back to the session every other tab shares. Reloads the page.'
+                  : 'Keeps this session in this tab alone, so another tab can be somebody else. Reloads the page.'
+              "
+              (click)="toggleTabLocal(entry)"
+              class="et-query-devtools-btn"
+              type="button"
+            >
+              {{ isTabLocal(entry) ? 'Rejoin the shared session' : 'Own this tab' }}
+            </button>
+            <button
+              [disabled]="!auth.isAuthenticated()"
+              (click)="logout(entry)"
+              class="et-query-devtools-btn"
+              type="button"
+            >
+              Log out
+            </button>
+            <button
+              [class.et-query-devtools-btn--active]="reloadOnSwitch()"
+              [attr.aria-pressed]="reloadOnSwitch()"
+              (click)="setReloadOnSwitch(!reloadOnSwitch())"
+              class="et-query-devtools-btn"
+              type="button"
+              title="A switch only replaces what the query layer holds. An app that keeps the user in a service, the router or an open form is still showing the last one until it boots again."
+            >
+              reload on switch
+            </button>
+          </div>
+
+          @if (isTabLocal(entry)) {
+            <p class="et-query-devtools-hint">
+              This tab holds its own session. It syncs nothing to the other tabs and writes no persistence cookie, so
+              every other tab stays on whoever it was.
+            </p>
+          }
+
+          @for (session of sessions; track session.id) {
+            <div
+              [class.et-query-devtools-auth-session--active]="isActive(entry, session)"
+              class="et-query-devtools-auth-session"
+            >
+              <input
+                #labelInput
+                [value]="session.label"
+                (change)="rename(session, labelInput.value)"
+                class="et-query-devtools-input et-query-devtools-auth-session-label"
+                type="text"
+                aria-label="Session name"
+              />
+              @if (isActive(entry, session)) {
+                <span class="et-query-devtools-chip et-query-devtools-chip--success">in force</span>
+              }
+              @if (isExpired(session)) {
+                <span
+                  class="et-query-devtools-chip et-query-devtools-chip--muted"
+                  title="The stored access token is spent. Switching to it refreshes on the stored refresh token, which works while the server has not spent that one too."
+                >
+                  token expired
+                </span>
+              }
+              <span class="et-query-devtools-count"
+                >{{ session.subject ?? 'no subject' }} · {{ sessionAge(session) }}</span
+              >
+              <div class="et-query-devtools-auth-session-buttons">
+                <button
+                  [disabled]="isActive(entry, session)"
+                  (click)="switchTo(session)"
+                  class="et-query-devtools-btn"
+                  type="button"
+                >
+                  Switch
+                </button>
+                <button (click)="forget(session)" class="et-query-devtools-btn" type="button">Forget</button>
+              </div>
+            </div>
+          } @empty {
+            <p class="et-query-devtools-hint">
+              No session stored for this backend yet. Log in as you normally would and this one appears here, ready to
+              be switched back to once you are somebody else.
+            </p>
+          }
+
+          @if (otherScopeCount(entry); as other) {
+            <small class="et-query-devtools-auth-vault-other">
+              {{ other }} more stored under a different API env. Pick that env again to switch to them.
+            </small>
+          }
+
+          <div class="et-query-devtools-auth-vault-head">
+            <strong>Accounts</strong>
+            <span class="et-query-devtools-count">credentials are typed in here and stay in this browser</span>
+            <button (click)="toggleAdding(entry)" class="et-query-devtools-btn" type="button">
+              {{ isAdding(entry) ? 'Cancel' : 'Add account' }}
+            </button>
+          </div>
+
+          @if (isAdding(entry)) {
+            <div class="et-query-devtools-auth-account-add">
+              <input
+                #newLabel
+                class="et-query-devtools-input"
+                type="text"
+                placeholder="Admin"
+                aria-label="Account name"
+              />
+              <select #newQuery class="et-query-devtools-select" aria-label="Login query">
+                @for (key of loginQueries(entry); track key) {
+                  <option [value]="key">{{ key }}</option>
+                }
+              </select>
+              <button
+                (click)="addAccount({ entry: entry, label: newLabel.value, loginQuery: newQuery.value })"
+                class="et-query-devtools-btn et-query-devtools-btn--primary"
+                type="button"
+              >
+                Add
+              </button>
+            </div>
+          }
+
+          @for (account of accounts; track account.id) {
+            <div class="et-query-devtools-auth-account">
+              <div class="et-query-devtools-auth-account-head">
+                <strong>{{ account.label }}</strong>
+                @if (account.note) {
+                  <span class="et-query-devtools-count">{{ account.note }}</span>
+                }
+                <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ account.loginQuery }}</span>
+                @if (!account.ready) {
+                  <span class="et-query-devtools-chip et-query-devtools-chip--error">needs credentials</span>
+                }
+                <div class="et-query-devtools-auth-session-buttons">
+                  <button
+                    [disabled]="!account.ready"
+                    (click)="login(account)"
+                    class="et-query-devtools-btn et-query-devtools-btn--primary"
+                    type="button"
+                  >
+                    Log in as
+                  </button>
+                  <button (click)="toggleCredentials(account)" class="et-query-devtools-btn" type="button">
+                    {{ isExpanded(account) ? 'Hide' : 'Credentials' }}
+                  </button>
+                  @if (!account.declared) {
+                    <button (click)="removeAccount(account)" class="et-query-devtools-btn" type="button">Remove</button>
+                  }
+                </div>
+              </div>
+              @if (isExpanded(account)) {
+                <div class="et-query-devtools-auth-account-fields">
+                  @for (field of account.fields; track field.name) {
+                    <label class="et-query-devtools-field">
+                      <span>{{ field.label ?? field.name }}</span>
+                      <input
+                        #fieldInput
+                        [value]="account.values[field.name] ?? ''"
+                        [type]="field.type ?? 'text'"
+                        [attr.autocomplete]="field.type === 'password' ? 'new-password' : 'off'"
+                        (change)="setCredential({ account: account, field: field.name, value: fieldInput.value })"
+                        class="et-query-devtools-input"
+                      />
+                    </label>
+                  }
+                  <button (click)="clearCredentials(account)" class="et-query-devtools-btn" type="button">
+                    Forget these
+                  </button>
+                  <p class="et-query-devtools-hint">
+                    Kept in this browser's <code class="et-query-devtools-mono">localStorage</code> under the API env in
+                    force, and sent to nothing but this provider's own login query. Never put them in the repository
+                    instead.
+                  </p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
       @if (auth.accessToken()) {
         <h4 class="et-query-devtools-section">Token lifetime</h4>
         @if (lifetime.overridable) {

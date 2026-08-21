@@ -26,9 +26,11 @@ describe('query devtools settings', () => {
       mocks: 'local',
       armedMocks: 'none',
       armedFaults: 'none',
+      authSessions: 'local',
       maxEvents: 100,
       maxDroppedCacheEntries: 20,
       responseHistory: null,
+      reloadOnAuthSwitch: true,
     });
   });
 

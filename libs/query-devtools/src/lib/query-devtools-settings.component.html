@@ -229,6 +229,27 @@
 
     <div class="et-query-devtools-settings-row">
       <div class="et-query-devtools-settings-row-head">
+        <span>Sessions</span>
+        <div class="et-query-devtools-settings-controls">
+          <span class="et-query-devtools-count">{{ sessionCount() }} stored</span>
+          <button
+            [disabled]="!sessionCount()"
+            (click)="FORGET_SESSIONS()"
+            class="et-query-devtools-btn et-query-devtools-btn--danger"
+            type="button"
+          >
+            Forget every session
+          </button>
+        </div>
+      </div>
+      <small>
+        Drops every stored token pair, every account added in the panel and every credential typed into one. The live
+        session is left alone - the Auth tab switches between them.
+      </small>
+    </div>
+
+    <div class="et-query-devtools-settings-row">
+      <div class="et-query-devtools-settings-row-head">
         <span>Events</span>
         <div class="et-query-devtools-settings-controls">
           @let errorsOnly = host.eventErrorsOnly();

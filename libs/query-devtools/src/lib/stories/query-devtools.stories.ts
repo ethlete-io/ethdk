@@ -30,6 +30,28 @@ export default {
               ],
             },
           ],
+          authAccounts: [
+            {
+              provider: 'devtools-demo',
+              label: 'Admin',
+              loginQuery: 'login',
+              note: 'every permission',
+              fields: [
+                { name: 'username', default: 'admin' },
+                { name: 'password', type: 'password' },
+              ],
+            },
+            {
+              provider: 'devtools-demo',
+              label: 'Reader',
+              loginQuery: 'login',
+              note: 'read only',
+              fields: [
+                { name: 'username', default: 'reader' },
+                { name: 'password', type: 'password' },
+              ],
+            },
+          ],
         }),
       ],
     }),

@@ -1,5 +1,6 @@
 export * from './query-devtools-about';
 export * from './query-devtools-api-envs';
+export * from './query-devtools-auth-sessions';
 export * from './query-devtools-faults';
 export * from './query-devtools-features';
 export * from './query-devtools-form';
