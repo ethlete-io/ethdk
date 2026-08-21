@@ -1,6 +1,6 @@
 # Components lib scan — noteworthy findings
 
-Scan date: 2026-08-22 (in progress). Scope: all of `libs/components` — about 125k lines of
+Scan date: 2026-08-22. Scope: all of `libs/components` — about 125k lines of
 non-spec source under `src/lib` across 48 domains, plus the matching guides under
 `apps/docs/components/`. Review agents read the source per batch; each agent verified its
 claims against the code, and runtime-verified its top claims where practical.
@@ -13,39 +13,57 @@ Fable for batch design, synthesis and cross-checks.
 
 ## Batch status
 
-| # | Scope | Lines | Model | Status |
-| - | ----- | ----- | ----- | ------ |
-| 1 | forms/rich-text-editor + multi-language-rich-text-editor | 11.4k | opus | done — 3 high / 13 medium / 12 low |
-| 2 | forms/date-time | 6.8k | opus | done — 4 high / 4 medium / 10 low |
-| 3 | forms/select + cascader | 8.4k | opus | done — 3 high / 6 medium / 8 low |
-| 4 | forms/form-field + input + textarea + masked-input + form + description | 6.8k | opus | done — 1 high / 6 medium / 12 low |
-| 5 | forms/selection-list + choice-field + checkbox + switch + rating + selection-card | 5.4k | opus | done — 4 high / 4 medium / 11 low |
-| 6 | forms/slider + dropzone + color-input | 7.6k | opus | done — 3 high / 7 medium / 12 low |
-| 7 | forms/phone-input + otp-input + tag-input + forms/testing | 3.9k | opus | done — 3 high / 10 medium / 13 low |
-| 8 | table | 10.7k | opus | done — 3 high / 8 medium / 12 low |
-| 9 | overlay | 7.5k | opus | done — 2 high / 8 medium / 10 low |
-| 10 | stream | 6.9k | opus | done — 4 high / 10 medium / 15 low |
-| 11 | bracket | 7.9k | opus | done — 3 high / 8 medium / 12 low |
-| 12 | scheduler | 5.4k | opus | done — 3 high / 8 medium / 12 low |
-| 13 | grid + masonry | 4.5k | opus | done — 5 high / 8 medium / 15 low |
-| 14 | menu + command-palette + toggletip + tooltip | 5.5k | opus | done — 4 high / 9 medium / 10 low |
-| 15 | carousel + scrollable + scrollbar | 5.2k | opus | done — 5 high / 8 medium / 20 low |
-| 16 | calendar + time-picker | 4.0k | opus | done — 4 high / 6 medium / 9 low |
-| 17 | notification + tabs + accordion + tree | 5.6k | opus | done — 3 high / 12 medium / 20 low |
-| 18 | match + standings | 2.6k | sonnet | done — 0 high / 3 medium / 3 low |
-| 19 | button + chip + badge + avatar + banner + card + divider | 3.4k | sonnet | done — 1 high / 3 medium / 3 low |
-| 20 | icon + picture + skeleton + loader + empty-state | 3.4k | sonnet | done — 1 high / 1 medium / 3 low |
-| 21 | pagination + breadcrumb + progress-steps + timeline + kbd + toolbar + description-list + copy-button + focus-ring | 3.2k | sonnet | pending |
-| 22 | query-error + filter-overlay + floating-action + testing + internals | 2.0k | sonnet | done — 1 high / 1 medium / 2 low |
+| #   | Scope                                                                                                             | Lines | Model  | Status                             |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ----- | ------ | ---------------------------------- |
+| 1   | forms/rich-text-editor + multi-language-rich-text-editor                                                          | 11.4k | opus   | done — 3 high / 13 medium / 12 low |
+| 2   | forms/date-time                                                                                                   | 6.8k  | opus   | done — 4 high / 4 medium / 10 low  |
+| 3   | forms/select + cascader                                                                                           | 8.4k  | opus   | done — 3 high / 6 medium / 8 low   |
+| 4   | forms/form-field + input + textarea + masked-input + form + description                                           | 6.8k  | opus   | done — 1 high / 6 medium / 12 low  |
+| 5   | forms/selection-list + choice-field + checkbox + switch + rating + selection-card                                 | 5.4k  | opus   | done — 4 high / 4 medium / 11 low  |
+| 6   | forms/slider + dropzone + color-input                                                                             | 7.6k  | opus   | done — 3 high / 7 medium / 12 low  |
+| 7   | forms/phone-input + otp-input + tag-input + forms/testing                                                         | 3.9k  | opus   | done — 3 high / 10 medium / 13 low |
+| 8   | table                                                                                                             | 10.7k | opus   | done — 3 high / 8 medium / 12 low  |
+| 9   | overlay                                                                                                           | 7.5k  | opus   | done — 2 high / 8 medium / 10 low  |
+| 10  | stream                                                                                                            | 6.9k  | opus   | done — 4 high / 10 medium / 15 low |
+| 11  | bracket                                                                                                           | 7.9k  | opus   | done — 3 high / 8 medium / 12 low  |
+| 12  | scheduler                                                                                                         | 5.4k  | opus   | done — 3 high / 8 medium / 12 low  |
+| 13  | grid + masonry                                                                                                    | 4.5k  | opus   | done — 5 high / 8 medium / 15 low  |
+| 14  | menu + command-palette + toggletip + tooltip                                                                      | 5.5k  | opus   | done — 4 high / 9 medium / 10 low  |
+| 15  | carousel + scrollable + scrollbar                                                                                 | 5.2k  | opus   | done — 5 high / 8 medium / 20 low  |
+| 16  | calendar + time-picker                                                                                            | 4.0k  | opus   | done — 4 high / 6 medium / 9 low   |
+| 17  | notification + tabs + accordion + tree                                                                            | 5.6k  | opus   | done — 3 high / 12 medium / 20 low |
+| 18  | match + standings                                                                                                 | 2.6k  | sonnet | done — 0 high / 3 medium / 3 low   |
+| 19  | button + chip + badge + avatar + banner + card + divider                                                          | 3.4k  | sonnet | done — 1 high / 3 medium / 3 low   |
+| 20  | icon + picture + skeleton + loader + empty-state                                                                  | 3.4k  | sonnet | done — 1 high / 1 medium / 3 low   |
+| 21  | pagination + breadcrumb + progress-steps + timeline + kbd + toolbar + description-list + copy-button + focus-ring | 3.2k  | sonnet | done — 6 high / 5 medium / 7 low   |
+| 22  | query-error + filter-overlay + floating-action + testing + internals                                              | 2.0k  | sonnet | done — 1 high / 1 medium / 2 low   |
 
-Severity counts so far: —
-
-Scope note: besides defects, each batch also collects improvement ideas (features, DX,
-bundle size, UI/UX, testing) per user request.
+Severity counts: **66 high**, **148 medium**, **219 low**, across 22 review batches.
+Besides defects, each batch also collects ranked improvement ideas (features, DX,
+bundle size, UI/UX, testing) in its `### Improvements` section.
 
 ## Summary of the worst problems
 
-(to be filled as batches complete)
+1. An unedited focus+blur on `et-date-input` / `et-time-input` re-commits the display text and silently destroys every unit the display format does not carry — with shipped defaults, `2026-08-22 14:30` becomes `2026-08-22 00:00` from tabbing through the form. (date-time)
+2. `Shift+Arrow` or `Ctrl/Cmd+Backspace` typed inside a text field within a grid item resizes or deletes the whole widget — the item's `keydown` handler never checks `event.target`. (grid)
+3. Inserting a tab anywhere but at the end of an `et-tab-group` permanently desyncs selection from the rendered panel: `aria-selected`, the roving tab stop and `aria-labelledby` all land on a different tab than the visible content. (tabs)
+4. Typing an international `+…` number into `et-phone-input` one character at a time silently corrupts the form value (`+491701234` → `+49491234…`); only a whole-string paste works. (phone-input)
+5. The swiss bracket layout throws ET3408 and renders nothing for any source whose matches carry participant ids; the shipped fixture passes only because its participants are `null`. (bracket)
+6. Out-of-order cascader level responses silently drop the drilled columns — `setColumn` truncates everything after the column it writes while several levels load concurrently. (cascader)
+7. Leaving picture-in-picture without an exit animation strands the player element in a hidden container — the video vanishes from the page permanently. (stream)
+8. An ordinary immutable `appointments` update while the edit surface is open both opens a second stacked surface and resets the user's in-progress draft. (scheduler)
+9. A `strategies` array whose every entry declares a `breakpoint` crashes `overlayManager.open()` — and the same reduce backs a `linkedSignal`, so a resize can throw later too. (overlay)
+10. `[etScrollableActiveChild]` registers nothing anywhere — the documented auto-scroll-to-active-child feature does not exist at runtime. (scrollable)
+11. Clicking a selection group's `<et-label>` caption silently selects (radio/segmented) or toggles (checkbox) the group's first option. (selection-list)
+12. The command palette's `Escape` closes the whole overlay even with a non-empty query: the overlay runtime's escape handler is a capture-phase document listener that ignores `defaultPrevented`. (command-palette, overlay runtime)
+13. Both shipped calendar range strategies paint a fully drawn selection band on an untouched calendar, and `minuteStep="0"` throws `RangeError` from inside a computed. (calendar, time-picker)
+14. `etTableReorder`'s edge auto-scroll `requestAnimationFrame` loop has no destroy hook — a drag held near the edge at destroy time leaves a self-re-queueing rAF loop running forever. (table)
+15. `etBreadcrumbSeo` on `<et-breadcrumb-outlet>` — the docs-recommended pattern — throws NG0201, because the token it injects is provided by a descendant, not an ancestor. (breadcrumb)
+16. Only `et-input` exposes the documented `[warnings]` binding; `et-textarea`, `et-number-input` and `et-password-input` throw NG0303 on it. (form-field)
+17. The RTE's `pruneEmptyInline` only prunes `strong`/`em`/`del`, so stored-mark inserts leak `<u></u>` or stray backticks into the Markdown form value. (rich-text-editor)
+18. The chip docs' own quick-start (`<et-chip removable>`) is keyboard-unreachable for removal. (chip)
+19. `et-picture` sticks in `loading` forever when only `sources` is set without `defaultSrc` — no image, no error, placeholder never clears. (picture)
+20. `filterOverlayPreviewFromQuery`'s documented "return null to skip counting" path leaves the submit button permanently disabled on "Loading results…". (filter-overlay)
 
 ---
 
@@ -58,11 +76,13 @@ Runtime verification used a scratch spec in the domain folder (since deleted); t
 ### High
 
 - **A `strategies` array whose every entry declares a `breakpoint` crashes `overlayManager.open()` below the smallest one.**
-  `strategies/overlay-strategy-controller.ts:112-114` reduces the *matched* entries with no initial value:
+  `strategies/overlay-strategy-controller.ts:112-114` reduces the _matched_ entries with no initial value:
+
   ```ts
   const activeBreakpoints = breakpointMatchResults.filter((entry) => entry.isActive());
   return activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr)).strategy;
   ```
+
   The built-in presets always include one breakpoint-less entry, so nothing in the lib hits it - but
   `strategies` is public API documented as "an array of `{ breakpoint?, strategy }` entries"
   (`overlays.md:263`) with `breakpoint` optional, so a consumer array of `[{ breakpoint: 'md', strategy }]`
@@ -73,7 +93,7 @@ Runtime verification used a scratch spec in the domain folder (since deleted); t
 
 - **An `origin` passed as anything but a click/touch/contextmenu event is silently discarded, so the
   full-screen dialog loses its signature animation and the anchored dialog its transform origin.**
-  `strategies/overlay-origin.ts:3` identifies a pointer event by the *first character* of its type:
+  `strategies/overlay-origin.ts:3` identifies a pointer event by the _first character_ of its type:
   `export const isPointerEvent = (event: Event): event is PointerEvent => event.type[0] === 'c';`
   `getOriginCoordinatesAndDimensions` (same file, lines 30-42) therefore returns `null` for
   `pointerdown`, `mousedown`, `keydown` or `focus` origins. Consequences:
@@ -92,11 +112,13 @@ Runtime verification used a scratch spec in the domain folder (since deleted); t
 - **The overlay container decides its surface elevation from `config.mode`, ignoring the strategy's own
   `hasBackdrop`, so an anchored dialog always mounts at elevation 1 instead of one above its trigger.**
   `overlay-container.component.ts:103-104`:
+
   ```ts
   const hasBackdrop = this.overlayRef.config.hasBackdrop ?? this.overlayRef.config.mode !== 'non-modal';
   const elevation = hasBackdrop || !parentSurface ? 1 : parentSurface.elevation + 1;
   ```
-  `anchoredDialogOverlayStrategy` sets `hasBackdrop: false` on the *strategy* config
+
+  `anchoredDialogOverlayStrategy` sets `hasBackdrop: false` on the _strategy_ config
   (`strategies/anchored-dialog.strategy.ts:43`), which never reaches `overlayRef.config`; `mode` defaults
   to modal. So an anchored dialog opened from inside a dialog (elevation 1) resolves `hasBackdrop = true`
   and forces elevation 1 - the same surface as its parent, with no visual separation. The controller
@@ -125,12 +147,16 @@ Runtime verification used a scratch spec in the domain folder (since deleted); t
 
 - **Destroying a query-param opener clears the URL param but leaves the overlay open and orphaned.**
   `overlay-opener.ts:248-254`:
+
   ```ts
   destroyRef.onDestroy(() => {
     teardown();
-    if (overlayRef) { updateQueryParam(null); }
+    if (overlayRef) {
+      updateQueryParam(null);
+    }
   });
   ```
+
   Clearing the param is what normally closes the overlay, via the `effect` at line 227-246 - but that
   effect belongs to the same injection context and is destroyed in the same teardown, and the
   `router.navigate` is async anyway. The overlay outlives the opener (the runtime mounts through
@@ -151,10 +177,12 @@ Runtime verification used a scratch spec in the domain folder (since deleted); t
 
 - **The unsaved-changes guard's `disableClose` warning can never fire on the default config.**
   `utils/overlay-unsaved-changes-guard.ts:83`:
+
   ```ts
   if (isDevMode() && overlayRef.config.disableClose && (dismiss.outsidePointer || dismiss.escape || dismiss.drag))
   ```
-  reads the *raw* `dismissSources` rather than the resolved `guarded` map built two lines above (76-81),
+
+  reads the _raw_ `dismissSources` rather than the resolved `guarded` map built two lines above (76-81),
   where each source defaults to `true`. With `dismissSources` omitted - the documented default
   (`overlays.md:122`) and the common case - every field is `undefined`, so the warning about escape /
   outside-pointer / drag never reaching the guard is suppressed exactly when the developer has not thought
@@ -197,9 +225,9 @@ Runtime verification used a scratch spec in the domain folder (since deleted); t
 - **Misplaced JSDoc.** `overlay-container.component.ts:198-203` documents "the element whose surface the
   container should visually continue … the first painted element in the rendered content" - that describes
   `resolvePaintedPaneElement` (line 268), not `parentDiSurface`, which it sits on.
-- **Docs: the sidebar page component is described backwards.** `overlays.md:411` says that *above*
+- **Docs: the sidebar page component is described backwards.** `overlays.md:411` says that _above_
   `renderSidebarFrom` the sidebar renders inline "with each nav target as an `<et-overlay-sidebar-page>`".
-  `OverlaySidebarPageComponent` is internal-only, mounted as a *route* by `sidebar/sidebar-overlay.ts:104-115`
+  `OverlaySidebarPageComponent` is internal-only, mounted as a _route_ by `sidebar/sidebar-overlay.ts:104-115`
   when the sidebar **collapses**, and it is never a per-nav-target element - the doc's own example
   (lines 416-421) correctly omits it.
 - **Docs: "Every factory accepts a partial `OverlayBreakpointConfig`"** (`overlays.md:219`) is false for two
@@ -238,6 +266,7 @@ both outcomes, `dismissSources`, `refreshDefaultValue`, `destroy`); the four `he
 `overlay-container.component.ts`'s colour and provider context; `overlay-template-host.component.ts`.
 
 **Real logic with zero tests.**
+
 - `overlay-opener.ts` (282 lines) - both openers are entirely untested: the additive merge at the call
   site, per-open lifecycle attachment, and in particular the whole query-param machinery (URL→open,
   external param change→model push, model write→URL, `beforeClosed` param clearing, the destroy path that
@@ -270,13 +299,14 @@ Clean: every CSS file in the domain is wrapped in `@layer components` and none u
 listeners are scoped with `takeUntil(stop$)` **and** `takeUntil(overlayRef.afterClosed())`, the settle
 timer is scoped to `stop$`, selection lock/unlock is balanced, and the snap-point math matches its docs.
 The strategy controller's child `EnvironmentInjector` is destroyed on `afterClosed`, and the `linkedSignal`
-+ `isFirstRun` guard correctly suppresses a switch on the initial match. `createOverlayRef`'s aggregate
-close guard reading a live `Set` genuinely solves the register-before-attach ordering it documents.
-`isTargetInsideOverlayTree`'s fixpoint loop over `origin` containment is the right answer for nested
-popovers and is well tested. Signals-vs-RxJS discipline holds throughout: no subscribe-and-assign,
-`takeUntilDestroyed` last in every pipe that has it, and the two places bridging (`toObservable` in the
-scroll blocker and the sidebar, `toSignal` for the frame-delayed `currentRoute`) are correct.
-`overlay-config-merger.ts` matches its documented semantics exactly.
+
+- `isFirstRun` guard correctly suppresses a switch on the initial match. `createOverlayRef`'s aggregate
+  close guard reading a live `Set` genuinely solves the register-before-attach ordering it documents.
+  `isTargetInsideOverlayTree`'s fixpoint loop over `origin` containment is the right answer for nested
+  popovers and is well tested. Signals-vs-RxJS discipline holds throughout: no subscribe-and-assign,
+  `takeUntilDestroyed` last in every pipe that has it, and the two places bridging (`toObservable` in the
+  scroll blocker and the sidebar, `toSignal` for the frame-delayed `currentRoute`) are correct.
+  `overlay-config-merger.ts` matches its documented semantics exactly.
 
 ### Improvements
 
@@ -309,7 +339,7 @@ scroll blocker and the sidebar, `toSignal` for the frame-delayed `currentRoute`)
    `touch-action` deference. A move gesture is that machinery with a two-axis `DismissAxis` and no
    dismiss threshold.
 5. **A `snapPoints`-aware programmatic API.** Snap points are gesture-only today
-   (`strategies/overlay-drag-to-dismiss.ts:125-176`); there is no way to open a sheet *at* `0.4`, read its
+   (`strategies/overlay-drag-to-dismiss.ts:125-176`); there is no way to open a sheet _at_ `0.4`, read its
    current snap index, or move it from code. Exposing `snapTo(index)` and a `snapIndex` signal on the ref
    would make the feature usable for a "peek then expand" flow, which is the main reason bottom sheets
    have snap points.
@@ -328,7 +358,7 @@ scroll blocker and the sidebar, `toSignal` for the frame-delayed `currentRoute`)
    and `:142-205` resolve `origin` differently. Both belong in one exported helper the three call sites
    share - this is the same class of bug twice.
 3. **No test driver for the overlay domain itself.** `libs/components/src/lib/testing/` has 20+ drivers,
-   but `overlay-control-driver.ts` is scoped to *form controls* backed by an overlay (it extends
+   but `overlay-control-driver.ts` is scoped to _form controls_ backed by an overlay (it extends
    `ControlDriverOptions` and defaults its trigger to `[role="combobox"]`). Driving a plain dialog, sheet,
    opener or overlay router means re-deriving `flushFrames`/`latestPane`/`resetOverlays` by hand - which
    is exactly what `overlay-strategy-controller.spec.ts:44-49` and the container spec each do
@@ -371,7 +401,7 @@ scroll blocker and the sidebar, `toSignal` for the frame-delayed `currentRoute`)
    would let the three shake out of a plain-popover app.
 3. **The drag handle is a permanent DOM node and stylesheet slice for one strategy.**
    `overlay-container.component.html:1` renders `<div class="et-overlay-container-drag-handle">` into
-   *every* overlay pane - dialogs, menus, tooltips - and the CSS (lines 270-284) hides it with
+   _every_ overlay pane - dialogs, menus, tooltips - and the CSS (lines 270-284) hides it with
    `display: none` for all but the bottom sheet (lines 127-130). It should be `@if`-gated on the same
    signal that decides `renderArrow`, with its five `--_et-overlay-drag-handle-*` tokens moving into
    `sheet-styles.component.css` where the rest of the sheet CSS already lives.
@@ -486,7 +516,7 @@ were deleted afterwards. Observed output is quoted inline.
 - **A cascader level that resolves out of order destroys the deeper columns, leaving `openPath`
   claiming a drill with no column behind it.** `setColumn` rebuilds the array as
   `columns.slice(0, columnIndex)` before writing the new state
-  (`cascader.directive.ts:1284-1292`), i.e. *every* write to column *n* deletes columns *n+1…*. Both
+  (`cascader.directive.ts:1284-1292`), i.e. _every_ write to column _n_ deletes columns _n+1…_. Both
   `resetBrowseState` (`cascader.directive.ts:1345-1353`) and `browseToPath`
   (`cascader.directive.ts:1166-1167`) start the root load **and** every committed/jumped-to level
   concurrently, and `cascaderFromQuery` runs each level as its own query
@@ -521,7 +551,7 @@ were deleted afterwards. Observed output is quoted inline.
   `C -> touched while open: true` (it is `false` before the blur).
 
 - **A cascader cannot be labelled without a projected `<et-label>`: it exposes no `aria-label` /
-  `aria-labelledby`, so the field's dev-time labelling guard throws for a control that *is*
+  `aria-labelledby`, so the field's dev-time labelling guard throws for a control that _is_
   labelled.** `FormFieldDirective` accepts a control-supplied name only through the optional
   `hasCustomAccessibleName` member (`form-field/headless/form-field.directive.ts:206`,
   `form-field.tokens.ts:76`), which `SelectDirective` implements
@@ -534,14 +564,14 @@ were deleted afterwards. Observed output is quoted inline.
 - **A select's panel filter stays frozen at the last query after any close that still had one, and
   the closed-panel typeahead then only matches inside that stale filter.** `panelFilterQuery`
   freezes while `open()` is false (`select.directive.ts:407-410`), and the close-time query clear in
-  `handlePanelBeforeClosed` (`select.directive.ts:1359-1363`) runs *after* `open` has already been
+  `handlePanelBeforeClosed` (`select.directive.ts:1359-1363`) runs _after_ `open` has already been
   set to `false` on every interactive close (`anchored-panel-controller.ts:100-106` sets
   `open` first, `select.directive.ts:752-758` likewise) - so the freeze captures the old query
   instead of the cleared one. `enabledItems` -> `visibleItems` feeds `findTypeaheadMatch`
   (`select.directive.ts:1228-1232`), which `handleClosedKeydown` uses for the native-`<select>`-style
   commit documented at `apps/docs/components/select.md:355`. Runtime-verified: after typing `gr` and
   closing with <kbd>Tab</kbd>, `query after close: "" | panelFilterQuery: "gr" | visibleItems: [
-  'Grape' ]`, and a following `e` keypress committed nothing (`closed typeahead "e" committed: null`)
+'Grape' ]`, and a following `e` keypress committed nothing (`closed typeahead "e" committed: null`)
   even though `Elderberry` is an option. The <kbd>Escape</kbd>-<kbd>Escape</kbd> path is unaffected
   (the first Escape clears the query while still open).
 
@@ -650,7 +680,7 @@ Real logic with **zero** tests:
   `cascader.component.html` (`sheetBrowse`, the header/title animation, `goBack()`,
   `titleAnimation`), the `role` swap tree<->listbox, the `panelId` set/clear lifecycle, and
   `focusin`/`focusout` -> `focusInside`.
-- `retryColumn()` (the search retry *is* tested, the column retry only renders its button).
+- `retryColumn()` (the search retry _is_ tested, the column retry only renders its button).
 - Single-mode `resolvePath` (only the `multiple` variant is tested) - which is precisely the gap that
   let High #1 through, since the docs' promise for that path is never asserted.
 - `SelectViewportDirective`'s width-floor logic (`locksWidth`/`widthFloor`/`minInlineSize`).
@@ -705,7 +735,7 @@ Ideas, not verified defects. Ranked within each category.
    the same helper from a control directive
    (`selection-list/headless/selection-list-control.directive.ts:38`). A `selectAll` input rendering a
    tri-state row above the listbox is close to free and is table stakes for filter-bar selects.
-3. **Let data-driven options carry a group.** Option groups only wrap *projected* options
+3. **Let data-driven options carry a group.** Option groups only wrap _projected_ options
    (`select-option-group.directive.ts`), which `apps/docs/components/select.md:332` has to call out as
    a limitation - so the moment a list is long enough to want `options`/virtualization it loses its
    sections. A `group?: string` on `SelectOptionData` (`select.tokens.ts:8-12`) plus group headers as
@@ -717,8 +747,8 @@ Ideas, not verified defects. Ranked within each category.
    (`cascader-panel.component.css:17-20`). One `createVirtualWindow` per visible column would drop the
    worst cascader case to a constant.
 5. **Add a cascade check strategy to cascader multi mode.** `toggleValue` only ever toggles the one
-   node (`cascader.directive.ts:739-775`); `isFullySelected` (`:1104-1121`) *reads* whole-branch
-   selection but nothing can *produce* it in one gesture. A `checkStrategy: 'node' | 'branch'` input
+   node (`cascader.directive.ts:739-775`); `isFullySelected` (`:1104-1121`) _reads_ whole-branch
+   selection but nothing can _produce_ it in one gesture. A `checkStrategy: 'node' | 'branch'` input
    that toggles the loaded subtree is the defining feature of the Ant Design / PrimeNG cascader and
    the natural completion of the indeterminate/promotion display that already exists.
 6. **Page a long cascader level.** The select has `hasMoreItems`/`loadMore`/`loadingMore`
@@ -731,7 +761,7 @@ Ideas, not verified defects. Ranked within each category.
 
 1. **Make `et-select` and `et-cascader` generic over their value type.** `SelectComponent` has no type
    parameter and `SelectDirective.value` is `model<unknown | unknown[] | null>`
-   (`select.directive.ts:99`); `CascaderDirective<T>` *is* generic but `CascaderComponent` erases it
+   (`select.directive.ts:99`); `CascaderDirective<T>` _is_ generic but `CascaderComponent` erases it
    (`cascader.component.ts:88`, `inject<CascaderDirective>` with no argument), so `(pickOption)` and
    `(valueChange)` hand the consumer `unknown` and every template does a cast. Threading `T` through
    the two components (and `SelectItem<T>`, which is already parameterized) removes the most common
@@ -820,7 +850,7 @@ Ideas, not verified defects. Ranked within each category.
    (`select.component.html:27`), so a country select shows a flag in the list and a bare name in the
    field. An `etSelectChip` template with the `SelectSelectedEntry` as context closes the gap.
 7. **Highlight the matched substring in cascader search results.** Each result renders its full
-   ancestor chain plus the label (`cascader.component.html:213-221`) with no indication of *why* it
+   ancestor chain plus the label (`cascader.component.html:213-221`) with no indication of _why_ it
    matched; the query is right there on the directive (`searchQuery()`), and marking the match is the
    convention for flat-search-over-a-tree.
 
@@ -878,7 +908,7 @@ tree was left exactly as found (`git status --porcelain libs/components/src/lib/
   loop then keeps writing `scrollLeft` on a detached element and calling `resolveDropTarget` /
   `previewLandingOrder` into the destroyed table forever, retaining the directive, the table and
   every cell element it touches.
-  *Runtime-verified*: with a manual rAF queue, after `fixture.destroy()` the queue still held a
+  _Runtime-verified_: with a manual rAF queue, after `fixture.destroy()` the queue still held a
   frame and every step re-queued another — 5/5 stepped, `still queued: 1`, and `scrollLeft` kept
   moving (`-14.8` → `-88.7`) on the detached host.
 
@@ -891,7 +921,7 @@ tree was left exactly as found (`git status --porcelain libs/components/src/lib/
   `TableRowsSource.sort` / `.filters` are optional (`headless/table-rows-source.ts:43-49`) and the
   docs state outright that "a hand-rolled object works too"
   (`apps/docs/components/table.md:675`), this is a supported configuration.
-  *Runtime-verified*: a source with only `rows` + `setSort`, clicking the sortable header →
+  _Runtime-verified_: a source with only `rows` + `setSort`, clicking the sortable header →
   `setSort` called with `[{key:'name',direction:'asc'}]`, but `table.sort()` stayed `[]`,
   `aria-sort` stayed `"none"`, and the **second** click asked for `asc` again — the column can
   never reach descending or be cleared, and `state()` never records the sort either.
@@ -908,7 +938,7 @@ tree was left exactly as found (`git status --porcelain libs/components/src/lib/
   `try/catch` (`headless/table-state-storage.ts:63-68`) only covers the parse, not the restore —
   so one hand-edited `localStorage` value (or a shared URL) hard-fails the table's first render,
   leaving `restoredColumns` already mutated and the rest of the restore skipped.
-  *Runtime-verified*: `deserializeTableState('{"v":3,"columns":[null]}')` returned the object
+  _Runtime-verified_: `deserializeTableState('{"v":3,"columns":[null]}')` returned the object
   unchanged; `restoreState({v:3,columns:[null]})` threw
   `TypeError: Cannot read properties of null (reading 'key')`.
 
@@ -917,37 +947,37 @@ tree was left exactly as found (`git status --porcelain libs/components/src/lib/
 - **`etTablePageStickyHeader` breaks the ARIA grid structure the docs promise.** In that layout the
   host takes `role="grid"` (`table.component.ts:254`) and the two grids become `role="rowgroup"`,
   but they sit behind role-less wrappers: `div.et-table-header-strip` → `div.et-table-header
-  [role=rowgroup]` and `div.et-table-scroller` → `div.et-table [role=rowgroup]`
+[role=rowgroup]` and `div.et-table-scroller` → `div.et-table [role=rowgroup]`
   (`table.component.html:381-396`). A `grid` must own `row`/`rowgroup` children; with generic divs
   in between the grid has no rows in the accessibility tree. The regular layout is correct
   (`role="grid"` directly on `.et-table`, `table.component.html:398`), so the two layouts disagree,
   and `apps/docs/components/table.md:1855-1858` documents only the correct one.
-  *Code-verified only* (needs a real AT / accessibility-tree dump).
+  _Code-verified only_ (needs a real AT / accessibility-tree dump).
 
 - **`rowInteractive` + `etTableKeyboardNav`: `Enter` on a focused cell emits `rowClick` on top of
   whatever the key was meant to do.** The row carries `(keydown.enter)="activateRow(...)"`
   (`table.component.html:182`) and the nav directive listens on the table host
   (`table-keyboard-nav.directive.ts:52`), so the row's handler always runs first (bubbling
   cell → row → host). `originatesFromInteractive` (`table.component.ts:1947-1962`) walks from the
-  event target — the *cell*, a plain `div` — so it never bails, and `rowClick` fires before
+  event target — the _cell_, a plain `div` — so it never bails, and `rowClick` fires before
   `handleKeydown` decides between `editCell` and `drillInto`
   (`table-keyboard-nav.directive.ts:177-184`). The directive's own comment claims the row handler
   only sees the event "when the cell has nothing focusable in it"
   (`table-keyboard-nav.directive.ts:179-181`), and the docs describe `Enter` purely as "into the
   cell's own control" (`apps/docs/components/table.md:1562`, `:1590`).
-  *Runtime-verified*: `Enter` on the cell holding a `<button>` produced `rowClick emissions: 1`.
+  _Runtime-verified_: `Enter` on the cell holding a `<button>` produced `rowClick emissions: 1`.
 
 - **Binding any serializer option on `etTableCsvExport` makes every later `export({ file })` throw
   `ET3507`.** `export()` merges the bound config under the per-call overrides
   (`table-csv-export.directive.ts:83`), and `assertFileOptions`
   (`headless/table-csv-export.ts:293-304`) rejects `file` whenever `rows|columns|header|delimiter|
-  formulaGuard|bom` is merely *present*. The docs advise exactly the combination that breaks —
+formulaGuard|bom` is merely _present_. The docs advise exactly the combination that breaks —
   "set `bom: false` on the directive and be done with it" (`apps/docs/components/table.md:1428`),
   and `delimiter: ';'` is the documented Excel-locale fix — while also stating the directive's
   config is just "the defaults every `export()` call starts from"
   (`headless/table-csv-export.ts:14`, `apps/docs/components/table.md:1391`). The assert should look
-  at what the *call* passed, not at the merged object.
-  *Runtime-verified*: `[etTableCsvExport]="{ bom: false }"` + `csv.export({ file: of('a,b') })`
+  at what the _call_ passed, not at the merged object.
+  _Runtime-verified_: `[etTableCsvExport]="{ bom: false }"` + `csv.export({ file: of('a,b') })`
   threw `ET3507: … was given \`file\` together with \`bom\``.
 
 - **The selection and expansion state slices write `"[object Object]"` for a table without a
@@ -959,18 +989,18 @@ tree was left exactly as found (`git status --porcelain libs/components/src/lib/
   the same ("set a `rowKey` for them to be captured at all",
   `apps/docs/components/table.md:1733`). The junk then lands in `localStorage` / a shared URL and
   restores to a `Set` that matches nothing.
-  *Runtime-verified*: `state().features` → `{"selection":["[object Object]"]}`, and after a
+  _Runtime-verified_: `state().features` → `{"selection":["[object Object]"]}`, and after a
   round-trip through `restoreState` the selection was empty (`selectedRows().length: 0`) while the
   stored payload stayed polluted.
 
 - **A cancelled resize drag leaves a width override behind, turning a flexible column rigid.**
   `cancel()` calls `setColumnWidth(key, startWidth)` (`table-resize.directive.ts:76`) rather than
-  `resetColumnWidth`. `startWidth` is the *rendered* width (`:54`), so a column that had no
+  `resetColumnWidth`. `startWidth` is the _rendered_ width (`:54`), so a column that had no
   override before the drag now has one: it stops sharing leftover space, `state()` records a
   `width`, and the column menu's "Reset width" appears
   (`hasColumnWidthOverride`, `table.component.ts:1593`). The doc comment says the cancel puts the
   column "back to the width it was grabbed at" — which is true in pixels and wrong in behaviour.
-  *Code-verified only.*
+  _Code-verified only._
 
 - **`etTableCellErrorTooltip`'s mark is a tab stop inside the grid body, breaking the single-tab-stop
   promise.** `TableCellErrorMarkComponent` renders `[attr.tabindex]="message() ? 0 : null"`
@@ -981,23 +1011,23 @@ tree was left exactly as found (`git status --porcelain libs/components/src/lib/
   (`table.component.html:239-246`, no tabindex). The docs promise "the body becomes a **single tab
   stop**" (`apps/docs/components/table.md:1554`). The mark is also an `<i>` with `aria-label` and no
   `role`, which is not reliably announced.
-  *Code-verified only.*
+  _Code-verified only._
 
-- **`etTableStatePersistence`'s `enabled` can never turn persistence *on* after the first render.**
+- **`etTableStatePersistence`'s `enabled` can never turn persistence _on_ after the first render.**
   The restore runs once from `afterNextRender` and bails when `enabled` is false at that moment
   (`headless/table-state-persistence.directive.ts:58-67`); nothing re-attempts it. The saving effect
-  has no such gate (`:71-85`), so flipping `enabled` on later starts *overwriting* the stored setup
+  has no such gate (`:71-85`), so flipping `enabled` on later starts _overwriting_ the stored setup
   with the table's current one without ever having read it — the directive's own example advertises
   the runtime switch (`headless/table-state-persistence.directive.ts:26`,
   `apps/docs/components/table.md:1750`).
-  *Code-verified only.*
+  _Code-verified only._
 
 - **Column resizing moves the wrong way in RTL.** `update()` adds the pointer's raw `totalDx` to the
   start width (`table-resize.directive.ts:63`), so in an RTL table dragging the trailing-edge grip
-  *inward* widens the column. Every other measurement in the domain is direction-aware — the table
+  _inward_ widens the column. Every other measurement in the domain is direction-aware — the table
   explicitly handles RTL `scrollLeft` (`table.component.ts:1192-1194`) and the CSS is entirely
   logical-property based — so this is the one gesture that isn't.
-  *Code-verified only* (needs a real RTL layout).
+  _Code-verified only_ (needs a real RTL layout).
 
 ## Low
 
@@ -1039,7 +1069,7 @@ tree was left exactly as found (`git status --porcelain libs/components/src/lib/
     `TableCellStateValue` allows (`table.types.ts:72`).
   - "A row link is one `<a href>` **inside the row's identity cell**"
     (`apps/docs/components/table.md:1860`) is the opposite of the implementation, which deliberately
-    makes the anchor a child of the *row* and only names it from that cell — the template comment
+    makes the anchor a child of the _row_ and only names it from that cell — the template comment
     explains why (`table.component.html:274-291`).
 
 - **`TableRowsFromQuery.rows`' JSDoc still tells callers to "Bind to `<et-table [data]>`"**
@@ -1051,11 +1081,11 @@ tree was left exactly as found (`git status --porcelain libs/components/src/lib/
   counterpart on destroy, so after the feature is switched off at runtime the host keeps writing
   `--_et-table-group-h` from a signal owned by a destroyed view
   (`table-group-headers.directive.ts:28,45-47`), which would offset the sticky header row by a
-  phantom row. *Unverified* — jsdom has no `ResizeObserver` data, so my attempt measured `0px` in
+  phantom row. _Unverified_ — jsdom has no `ResizeObserver` data, so my attempt measured `0px` in
   both states and neither confirms nor refutes it.
 
 - **Shadow colours are hardcoded as primary values**: `box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 6px
-  16px rgb(0 0 0 / .06)` (`table.component.css:178-180`) and `0 8px 24px rgb(0 0 0 / .18)`
+16px rgb(0 0 0 / .06)` (`table.component.css:178-180`) and `0 8px 24px rgb(0 0 0 / .18)`
   (`table-reorder-overlay.component.css:37`). Every other colour in the domain resolves from
   `--et-surface-*` / `--et-theme-color-*` with the literal only as a `var()` fallback — including
   the neighbouring pin/fade marks, which explicitly avoid a fixed black because it is invisible on a
@@ -1086,12 +1116,13 @@ solid specs for CSV serialization + download, `tableCsvRowsFromPages`, the state
 state storage + persistence directive, and both query adapters.
 
 **Real logic with zero tests.**
+
 - `table-reorder.directive.ts` (445 lines) — the largest untested file in the domain, and the one
   carrying the rAF leak above, the drop-target hysteresis, the landing-order preview and the edge
   auto-scroll. Nothing exercises any of it.
 - `table-drag-scroll.directive.ts` (199) — `hasOwnScroller`, the claim hand-off with reorder, the
   swallowed click.
-- `table-resize.directive.ts` (83) — only its *result* is tested, through
+- `table-resize.directive.ts` (83) — only its _result_ is tested, through
   `table.component.spec.ts`'s restored-width case; `start`/`update`/`end`/`cancel` and the grip are
   never driven.
 - `table-column-menu.directive.ts` + `table-column-menu-trigger.component.*` — every action
@@ -1143,7 +1174,7 @@ above.
 1. **Ship a "pin this column" action, since the measuring already exists.**
    `etTableStickyColumns` computes and stacks offsets dynamically
    (`table-sticky-columns.directive.ts:97-194`) and the table already answers `effectiveStickyOf`
-   (`table.component.ts:1742`), but pinning can only be *declared* on a column
+   (`table.component.ts:1742`), but pinning can only be _declared_ on a column
    (`table.types.ts:226`). There is no `setColumnSticky`, no `sticky` field in `TableColumnState`
    (`table.types.ts:293-307`), and no entry for it in `TableColumnMenuConfig`
    (`table-column-menu.directive.ts:11-18`) beside autosize / reset-width / hide. Material,
@@ -1182,7 +1213,7 @@ above.
    both wholesale.
 
 7. **A pinned totals row.** Footer cells are per column and sit in a sticky footer row
-   (`table.component.html:337-378`), but there is no way to pin a *data* row (a totals or "all"
+   (`table.component.html:337-378`), but there is no way to pin a _data_ row (a totals or "all"
    row) to the top or bottom of the body — a common request for financial tables, and adjacent to
    the existing `TableHeaderRow` registration.
 
@@ -1293,7 +1324,7 @@ above.
    `visibleColumns()`.
 
 2. **Announce the result of a sort or filter.** The sortable header's `aria-label` announces what
-   the *next* activation will do (`headless/table-labels.ts:26-30`) — good — but after activation
+   the _next_ activation will do (`headless/table-labels.ts:26-30`) — good — but after activation
    nothing says the table re-sorted, and `aria-sort` alone is not announced by every AT on change.
    A polite live region carrying "Sorted by Name, ascending" / "12 of 340 rows" would also cover
    filtering, which currently changes the body silently. The label set is the natural home for the
@@ -1350,7 +1381,7 @@ above.
    modified-click bail-out), and `headless/table-column-state.ts`'s three reconcilers directly
    rather than only through the component.
 
-4. **Test feature *composition*, not just features.** Every feature registers into a shared list on
+4. **Test feature _composition_, not just features.** Every feature registers into a shared list on
    the table (`table.component.ts:483-575`) and several read each other indirectly through it
    (pinning ↔ reorder ↔ drag-scroll ↔ filler track; keyboard nav ↔ inline edit ↔ virtual scroll).
    Only inline-edit × keyboard-nav is tested as a pair
@@ -1363,7 +1394,7 @@ above.
 5. **Add an a11y-tree assertion for the two layouts.** The page-sticky spec's
    `querySelector('.et-table-header')` (`table-page-sticky-header.directive.spec.ts:63`) passes
    over the role-less wrappers that break the grid structure (Medium #1). Asserting the
-   `role="grid"` element's *direct* row/rowgroup children in both layouts would have caught it, and
+   `role="grid"` element's _direct_ row/rowgroup children in both layouts would have caught it, and
    would guard the fix.
 
 ---
@@ -1380,18 +1411,18 @@ Runtime verification used a scratch spec at `libs/components/src/lib/forms/rich-
 - **An empty `<u>` or `<code>` shell survives every prune and lands verbatim in the Markdown value.** `pruneEmptyInline` at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/internals/rich-text-editor-dom-inline-marks.ts:326` declares `const tags: InlineTag[] = ['strong', 'em', 'del'];` even though `InlineTag` is `'strong' | 'em' | 'del' | 'u' | 'code'`, and the directive's second line of defence at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/rich-text-editor.directive.ts:760` sweeps only `clone.querySelectorAll('strong, em, del, a')`. `insertInlineText` → `splitInlineAncestorsAtCaret` (same file, `:401-432`) empties the original mark element whenever the caret sits at its start, then calls `pruneEmptyInline()` at `:482` — which skips `u`/`code`. Concrete scenario: place the caret at the start of underlined (or inline-code) text, toggle a mark off so stored marks are pending, and type one character.
   **Runtime-verified.** Observed output:
   - `<u>abc</u>` + caret at 0 + `insertInlineText('X', [])` → DOM `<u></u>X<u>abc</u>`, value `"<u></u>X<u>abc</u>"` — raw HTML leaks into the Markdown the form field emits.
-  - `<code>abc</code>` → DOM `<code></code>X<code>abc</code>`, value `` "``X`abc`" `` — a stray empty code span.
-  - Control with `<strong>` (which *is* pruned) → DOM `X<strong>abc</strong>`, value `"X**abc**"`.
-  Both corrupted values then round-trip: `markdownToHtml` re-renders the `<u></u>` and the `` `` `` on the next external write/undo.
+  - `<code>abc</code>` → DOM `<code></code>X<code>abc</code>`, value ` "`X`abc`" `` — a stray empty code span.
+  - Control with `<strong>` (which _is_ pruned) → DOM `X<strong>abc</strong>`, value `"X**abc**"`.
+    Both corrupted values then round-trip: `markdownToHtml` re-renders the `<u></u>` and the ` ` `` on the next external write/undo.
 
-- **The trigger popup opens when the caret is placed *before* an existing trigger char, and picking an item then leaves the literal text behind.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/internals/rich-text-editor-trigger-detection.ts:56` does `const charOffset = text.lastIndexOf(trigger.char, caretOffset - 1);`. With `caretOffset === 0` the negative `fromIndex` is clamped to 0 by `String.prototype.lastIndexOf`, so index 0 still matches — the guard `charOffset === -1` never fires. `insertItem` at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/rich-text-editor-triggers.directive.ts:319-323` then builds `setStart(textNode, match.charOffset)` / `setEnd(textNode, Math.min(match.caretOffset, …))` = `setStart(node, 0)` / `setEnd(node, 0)` — a **collapsed** range, so `insertAtomicToken` inserts the chip without replacing anything. Scenario: type `#alpha`, press Home (or ArrowLeft to the line start) — the popup opens with an empty query; picking a row yields `«chip»#alpha`.
+- **The trigger popup opens when the caret is placed _before_ an existing trigger char, and picking an item then leaves the literal text behind.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/internals/rich-text-editor-trigger-detection.ts:56` does `const charOffset = text.lastIndexOf(trigger.char, caretOffset - 1);`. With `caretOffset === 0` the negative `fromIndex` is clamped to 0 by `String.prototype.lastIndexOf`, so index 0 still matches — the guard `charOffset === -1` never fires. `insertItem` at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/rich-text-editor-triggers.directive.ts:319-323` then builds `setStart(textNode, match.charOffset)` / `setEnd(textNode, Math.min(match.caretOffset, …))` = `setStart(node, 0)` / `setEnd(node, 0)` — a **collapsed** range, so `insertAtomicToken` inserts the chip without replacing anything. Scenario: type `#alpha`, press Home (or ArrowLeft to the line start) — the popup opens with an empty query; picking a row yields `«chip»#alpha`.
   **Runtime-verified**: `resolveTriggerMatch` returned `{"charOffset":0,"caretOffset":0,"query":""}` for a caret at offset 0 of `#alpha`.
 
 - **A required rich text editor never announces that it is required.** The editable at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/rich-text-editor.component.html:39-61` binds `aria-invalid`, `aria-describedby`, `aria-labelledby`, `aria-disabled` and `aria-readonly` — but not `aria-required`, even though `RichTextEditorDirective.required` exists (`headless/rich-text-editor.directive.ts:74`) and is forwarded through the component's `hostDirectives` inputs. Every sibling control in the same folder binds it: `rating/headless/rating.directive.ts:35`, `checkbox/headless/checkbox.directive.ts:24`, `switch/headless/switch.directive.ts:27`, `select/headless/select-trigger.directive.ts:16`, `cascader/headless/cascader-trigger.directive.ts:18`, `tag-input/headless/tag-input-field.directive.ts:14`, `phone-input/headless/phone-input-field.directive.ts:16`, plus both date-time input fields. The visual `*` marker the docs cite (`apps/docs/components/rich-text-editor.md`, Accessibility) is not exposed to assistive tech, so a screen-reader user gets nothing. The multi-language wrapper inherits the same gap (it forwards `required` into the embedded editor). **Code-verified only.**
 
 ### Medium
 
-- **The table tool and the alignment tool commit their edits without a history boundary, so the next keystroke swallows them.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/tools/rich-text-editor-table-tool.component.ts:214` (`insert`) and `:248` (`mutate`, which backs add/remove row/column/table), and `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/tools/rich-text-editor-align-tool.component.ts:100` (`select`) all call `editor.syncFromDom()` with no `{ boundary: true }`. Every other programmatic rewrite passes it — the invariant is stated twice, at `headless/rich-text-editor.directive.ts:283-285` ("Every programmatic rewrite (paste, autoformat, a tool, a token insert) passes `true`") and at `headless/internals/rich-text-editor-history.ts:84-87`. Without the boundary, `commit` leaves `burstOpen = true` (`rich-text-editor-history.ts:111`), so a keystroke landing inside the 500 ms `COALESCE_WINDOW_MS` *replaces* the tool's entry rather than pushing a new one. A second consequence: `syncFromDom` runs `repairCodeBlock()` / `repairEmptyQuotes()` only on the non-boundary path (`rich-text-editor.directive.ts:293-296`, commented "only the browser produces those"), so a table/alignment edit takes the native-repair path it was never meant to.
+- **The table tool and the alignment tool commit their edits without a history boundary, so the next keystroke swallows them.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/tools/rich-text-editor-table-tool.component.ts:214` (`insert`) and `:248` (`mutate`, which backs add/remove row/column/table), and `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/tools/rich-text-editor-align-tool.component.ts:100` (`select`) all call `editor.syncFromDom()` with no `{ boundary: true }`. Every other programmatic rewrite passes it — the invariant is stated twice, at `headless/rich-text-editor.directive.ts:283-285` ("Every programmatic rewrite (paste, autoformat, a tool, a token insert) passes `true`") and at `headless/internals/rich-text-editor-history.ts:84-87`. Without the boundary, `commit` leaves `burstOpen = true` (`rich-text-editor-history.ts:111`), so a keystroke landing inside the 500 ms `COALESCE_WINDOW_MS` _replaces_ the tool's entry rather than pushing a new one. A second consequence: `syncFromDom` runs `repairCodeBlock()` / `repairEmptyQuotes()` only on the non-boundary path (`rich-text-editor.directive.ts:293-296`, commented "only the browser produces those"), so a table/alignment edit takes the native-repair path it was never meant to.
   **Runtime-verified** against `createRichTextEditorHistory`: with `boundary: true` on the tool commit, one undo after typing one char yields `"TABLE"`; with `boundary` omitted (current behaviour) the same undo yields `""` — the table insert is gone in the same step.
 
 - **`MultiLanguageRichTextEditorLanguage.icon` is documented public API that renders nothing.** Declared at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/multi-language-rich-text-editor/multi-language-rich-text-editor-config.ts:12-13` as "Optional icon token (e.g. a flag) rendered next to the label in the dropdown", and repeated in the docs (`apps/docs/components/rich-text-editor.md`: "Each language `{ code, label, icon? }` …"). The switcher template at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/multi-language-rich-text-editor/tools/multi-language-rich-text-editor-language-tool.component.html:26` binds `[icon]="activeIcon(language.code)"` — which returns only `'et-check'` or `null` (`…-language-tool.component.ts:44-46`). `grep -rn '\.icon' multi-language-rich-text-editor/` returns **no** hits, so the field is read nowhere. A consumer passing flags sees them silently dropped.
@@ -1401,13 +1432,13 @@ Runtime verification used a scratch spec at `libs/components/src/lib/forms/rich-
 - **The link editor accepts any URL scheme; the resulting link silently degrades to literal text on the next re-render.** `RichTextEditorLinkEditorComponent.save()` (`/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/rich-text-editor-link-editor.component.ts:94-100`) only trims and checks non-empty, and `applyLink` writes it straight to the anchor (`headless/internals/rich-text-editor-dom-links.ts:112`, `:118`). The editor's own Markdown renderer refuses it (`libs/core/src/lib/utils/markdown.ts:152`, `isSafeUrl`), so the link exists in the DOM and in the form value but not after an undo / external write.
   **Runtime-verified** with `applyLink('javascript:alert(1)')`: DOM `<a href="javascript:alert(1)">click me</a>`, value `"[click me](javascript:alert(1))"`, and `markdownToHtml` of that value → `"<p>[click me](javascript:alert(1))</p>"` (no `<a>` at all). Two defects in one: the link vanishes on undo, and the persisted value carries an unsanitized `javascript:` URL for any consumer that renders the Markdown with something other than `@ethlete/core`.
 
-- **The soft-keyboard tracker runs on every editor instance, including pointer-only devices where the docked bar can never appear.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/rich-text-editor.component.ts:159` calls `this.trackKeyboardInset()` unconditionally; the only bail-out inside is `if (!view || !viewport) return;` (`:414`). It then appends a probe `<div>` to `document.body` (`:442-451`), calls `kick()` immediately (`:502`) — which starts a rAF loop that runs up to 30 frames measuring `probe.getBoundingClientRect()` — and subscribes to `resize` + `scroll` on the visual viewport *and* the window (`:532-543`), each event re-kicking the same 30-frame loop. `dockedToolbar` requires `hasTouchInput()` (`:153`), so on a desktop page every scroll pays ~30 frames of forced layout per editor for a bar that is never shown. The fix is a `hasTouchInput()` guard around the whole method. **Code-verified only** (needs a real layout to time).
+- **The soft-keyboard tracker runs on every editor instance, including pointer-only devices where the docked bar can never appear.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/rich-text-editor.component.ts:159` calls `this.trackKeyboardInset()` unconditionally; the only bail-out inside is `if (!view || !viewport) return;` (`:414`). It then appends a probe `<div>` to `document.body` (`:442-451`), calls `kick()` immediately (`:502`) — which starts a rAF loop that runs up to 30 frames measuring `probe.getBoundingClientRect()` — and subscribes to `resize` + `scroll` on the visual viewport _and_ the window (`:532-543`), each event re-kicking the same 30-frame loop. `dockedToolbar` requires `hasTouchInput()` (`:153`), so on a desktop page every scroll pays ~30 frames of forced layout per editor for a bar that is never shown. The fix is a `hasTouchInput()` guard around the whole method. **Code-verified only** (needs a real layout to time).
 
-- **The new `et-scrollbar` is instantiated on desktop too, where the toolbar wraps and can never overflow.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/rich-text-editor.component.html:35` renders `<et-scrollbar [for]="toolbarElement" orientation="horizontal" autoHide />` unconditionally, but `overflow-x: auto` / `flex-wrap: nowrap` are applied only under `&.et-rich-text-editor--touch .et-rte-toolbar` (`rich-text-editor.component.css:144-153`) — on desktop the toolbar keeps `flex-wrap: wrap` (`:71`). Per editor that costs a `signalElementDimensions` ResizeObserver plus a `signalElementScrollState` MutationObserver (`libs/components/src/lib/scrollbar/headless/scrollbar.directive.ts:112-116`) and three event subscriptions (`scroll`, `pointerenter`, `pointerleave`, `:100-173`), and it stamps `et-scrollbar-host` on the toolbar (`:218`), suppressing its native scrollbar for good. Wrapping the element in `@if (hasTouchInput())` would keep it off desktop entirely. (Note: the mutation filter is `['class','hidden']` and `pressed` renders as `data-pressed`, so this does *not* thrash on every keystroke — the cost is instantiation, not per-edit work.)
+- **The new `et-scrollbar` is instantiated on desktop too, where the toolbar wraps and can never overflow.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/rich-text-editor.component.html:35` renders `<et-scrollbar [for]="toolbarElement" orientation="horizontal" autoHide />` unconditionally, but `overflow-x: auto` / `flex-wrap: nowrap` are applied only under `&.et-rich-text-editor--touch .et-rte-toolbar` (`rich-text-editor.component.css:144-153`) — on desktop the toolbar keeps `flex-wrap: wrap` (`:71`). Per editor that costs a `signalElementDimensions` ResizeObserver plus a `signalElementScrollState` MutationObserver (`libs/components/src/lib/scrollbar/headless/scrollbar.directive.ts:112-116`) and three event subscriptions (`scroll`, `pointerenter`, `pointerleave`, `:100-173`), and it stamps `et-scrollbar-host` on the toolbar (`:218`), suppressing its native scrollbar for good. Wrapping the element in `@if (hasTouchInput())` would keep it off desktop entirely. (Note: the mutation filter is `['class','hidden']` and `pressed` renders as `data-pressed`, so this does _not_ thrash on every keystroke — the cost is instantiation, not per-edit work.)
 
-- **`createRichTextEditorTriggerWithQuery` shows the previous query's results when `args` returns `null`, contradicting its own doc.** The JSDoc at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/rich-text-editor-trigger-with-query.ts:37-39` says: "Return `null` to skip a request (e.g. for an empty query) so the popup shows no results without hitting the backend." But `items` (`:97-116`) subscribes to `query.executionState.asObservable()` and takes the first non-`loading` state. `asObservable` is `toObservable(source)` (`libs/query/src/lib/http/observable-signal.ts:17`), which replays the signal's current value to every new subscriber. With `null` args the query never re-executes, so the replayed value is still the *previous* `success` state and `toItems` maps the stale response. The domain's own spec (`rich-text-editor-trigger-with-query.spec.ts`) fakes `executionState` with a bare `Subject` (no replay), which is exactly why this is invisible to it. **Code-verified only.**
+- **`createRichTextEditorTriggerWithQuery` shows the previous query's results when `args` returns `null`, contradicting its own doc.** The JSDoc at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/rich-text-editor-trigger-with-query.ts:37-39` says: "Return `null` to skip a request (e.g. for an empty query) so the popup shows no results without hitting the backend." But `items` (`:97-116`) subscribes to `query.executionState.asObservable()` and takes the first non-`loading` state. `asObservable` is `toObservable(source)` (`libs/query/src/lib/http/observable-signal.ts:17`), which replays the signal's current value to every new subscriber. With `null` args the query never re-executes, so the replayed value is still the _previous_ `success` state and `toItems` maps the stale response. The domain's own spec (`rich-text-editor-trigger-with-query.spec.ts`) fakes `executionState` with a bare `Subject` (no replay), which is exactly why this is invisible to it. **Code-verified only.**
 
-- **Clicking a second image while an image popover is open closes it without opening the new one.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/tools/rich-text-editor-image.provider.ts:278-282`: `openEditor` starts with `if (overlayRef) { close(); return; }` — intended as a toggle for re-clicking the *same* image, but it does not compare which image. `overlayRef` is only cleared in `afterClosedEvent()` (`:345`), which fires after the close animation, so the `closeOnOutsidePointer` dismissal triggered by pressing image B has not cleared it yet when `handleClick` runs. Net effect: the user must click image B twice. **Code-verified only** (needs the overlay runtime).
+- **Clicking a second image while an image popover is open closes it without opening the new one.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/tools/rich-text-editor-image.provider.ts:278-282`: `openEditor` starts with `if (overlayRef) { close(); return; }` — intended as a toggle for re-clicking the _same_ image, but it does not compare which image. `overlayRef` is only cleared in `afterClosedEvent()` (`:345`), which fires after the close animation, so the `closeOnOutsidePointer` dismissal triggered by pressing image B has not cleared it yet when `handleClick` runs. Net effect: the user must click image B twice. **Code-verified only** (needs the overlay runtime).
 
 - **`restoreSelection` re-applies a stale range without checking it still lives in the editor, unlike `ensureCaret`.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/internals/rich-text-editor-dom-core.ts:84-94` does `el.focus(); removeAllRanges(); addRange(lastRange)` with no containment test, while `ensureCaret` in the same file guards with `if (lastRange && el.contains(lastRange.commonAncestorContainer))` (`:375`). `writeValueToDom` replaces `root.innerHTML` wholesale (`headless/rich-text-editor.directive.ts:855`) and never invalidates `lastRange`, so after a programmatic value write / undo every `restoreSelection` caller (`toggleMark` `:781`, `runCommand` `:824`, the image tool `:227`, the link editor `:111`) hands the browser a detached range. Browsers ignore an `addRange` whose root is detached, so the practical result is the caret jumping to the start of the editor rather than back to where the user was.
 
@@ -1421,7 +1452,7 @@ Runtime verification used a scratch spec at `libs/components/src/lib/forms/rich-
 
 ### Low
 
-- **The ```` ``` ```` autoformat rule is the only one that skips the reserved-character check.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/internals/rich-text-editor-dom-autoformat.ts:79`: `} else if (codeBlock && prefix === '```') {` — no `isReserved` call, while the `-`/`*`/`+`, `\d.`, `#` and `>` rules all have one (`:73-81`) and the inline `` ` `` rule does too (`:135`). The `autoformat` input's JSDoc (`headless/rich-text-editor.directive.ts:85`) states flatly "Registered token-trigger characters never autoformat". In practice `autoformatSuppressed` usually covers it (a backtick trigger would have an active match), so this is a latent inconsistency rather than a live bug.
+- **The ` ``` ` autoformat rule is the only one that skips the reserved-character check.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/internals/rich-text-editor-dom-autoformat.ts:79`: `} else if (codeBlock && prefix === '```') {` — no `isReserved` call, while the `-`/`*`/`+`, `\d.`, `#` and `>` rules all have one (`:73-81`) and the inline `` ` `` rule does too (`:135`). The `autoformat` input's JSDoc (`headless/rich-text-editor.directive.ts:85`) states flatly "Registered token-trigger characters never autoformat". In practice `autoformatSuppressed` usually covers it (a backtick trigger would have an active match), so this is a latent inconsistency rather than a live bug.
 
 - **`aria-controls` and `aria-haspopup` are left on the editable forever after the popup's first open.** `setAriaExpanded` at `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/rich-text-editor-triggers.directive.ts:483-494` sets all three when opening but removes none when closing — only `aria-expanded` flips to `"false"`. `aria-controls` then points at a listbox id that is no longer in the document.
 
@@ -1439,7 +1470,7 @@ Runtime verification used a scratch spec at `libs/components/src/lib/forms/rich-
 
 - **Ordered-list autoformat ignores the number typed, and this is undocumented.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/rich-text-editor/headless/internals/rich-text-editor-dom-autoformat.ts:75-76` matches `/^\d{1,9}\.$/` and calls `toggleList('ol')`, which always starts the list at 1. Typing `5. ` produces a list numbered from 1; nothing in the `autoformat` JSDoc or the docs' "Markdown autoformat while typing" section says so.
 
-- **Three unused public computeds on the multi-language directive.** `hasValue` (`/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/multi-language-rich-text-editor/headless/multi-language-rich-text-editor.directive.ts:47`, JSDoc'd "used e.g. for form-field label float"), `filledCount` (`:43`) and `totalCount` (`:44`) are read by nothing in the repo — the switcher only uses `missingLanguages().length` and `isFilled`. Label float is in fact driven by the *embedded* editor's own `hasValue`, so it reflects only the active language.
+- **Three unused public computeds on the multi-language directive.** `hasValue` (`/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/multi-language-rich-text-editor/headless/multi-language-rich-text-editor.directive.ts:47`, JSDoc'd "used e.g. for form-field label float"), `filledCount` (`:43`) and `totalCount` (`:44`) are read by nothing in the repo — the switcher only uses `missingLanguages().length` and `isFilled`. Label float is in fact driven by the _embedded_ editor's own `hasValue`, so it reflects only the active language.
 
 - **The multi-language wrapper forwards neither `labels` nor `hidden` to the embedded editor.** `/Users/tom/dev/ethlete-sdk/libs/components/src/lib/forms/multi-language-rich-text-editor/multi-language-rich-text-editor.component.html` passes `value`/`disabled`/`readonly`/`invalid`/`errors`/`required`/`placeholder`/`tools`/`autoformat` but not `labels` (a per-instance label override is therefore impossible here — only the app-wide provider works) or `hidden`. The docs claim "`tools`, `autoformat`, `placeholder` and the field chrome all work the same", which is accurate as far as it goes, but the asymmetry is undocumented.
 
@@ -1450,6 +1481,7 @@ Runtime verification used a scratch spec at `libs/components/src/lib/forms/rich-
 **Well covered.** The DOM layer is the strongest part: `headless/internals/rich-text-editor-dom.spec.ts` (1346 lines, 113 `it`s) exercises inline marks (including cross-block and cross-cell slicing), lists, headings, blockquotes, code blocks, links, backspace, `markStates`, both autoformat paths, `insertNormalizedHtml` and `codeExit`, plus a second `describe` for behaviour with the block domains absent. `rich-text-editor-history.spec.ts` (26 `it`s) covers burst coalescing, word-boundary breaks, the redo-branch discard and `reset`. `headless/rich-text-editor.directive.spec.ts` (29 `it`s) covers form-field registration, the `ET2506` missing-provider throws, `pasteHtml` normalization, history at the directive level and `insertToken`. `internals/rich-text-editor-token.spec.ts` covers `serialize`/`render`/`parseTokenText`. `tools/rich-text-editor-image.util.spec.ts` and `tools/rich-text-editor-image-upload.spec.ts` cover the placeholder lifecycle, `normalizeImages` and all three upload flavours.
 
 **Real logic with zero tests.**
+
 - `rich-text-editor.component.ts` (569 lines) — the entire keyboard-interception chain (`interceptEditorKeydown`), paste/drop/click tool dispatch, `interceptFormattingCommand`, `trackKeyboardInset` and `trackEditingActive`. No spec exists for this file at all.
 - `headless/rich-text-editor-triggers.directive.ts` (519 lines) and `internals/rich-text-editor-trigger-detection.ts` — untested. `resolveTriggerMatch` is a pure function and would have caught High finding #2 with a three-line test.
 - `internals/rich-text-editor-trigger-source.ts` (`trackTriggerItems`: debouncing, keep-previous-while-loading, error mapping) — untested.
@@ -1461,7 +1493,7 @@ Runtime verification used a scratch spec at `libs/components/src/lib/forms/rich-
 - `rich-text-editor-labels.ts` (`richTextEditorToolLabel`'s open-token fallback) — untested.
 - **The whole `multi-language-rich-text-editor` domain has no spec file.** Untested: the `activeLanguage` `linkedSignal` fallback when a language is removed, `writeActiveMarkdown`'s preservation of out-of-list codes (an explicitly documented guarantee), `missingLanguages`/`isFilled`, the dev-mode duplicate/empty-language throws, and the exported `requiredLanguages` validator.
 
-**Specs asserting a wrong behaviour.** None found. One spec is misleadingly *weak*: `rich-text-editor-trigger-with-query.spec.ts` fakes `executionState.asObservable()` with a plain `Subject`, which does not replay — the real implementation (`libs/query/src/lib/http/observable-signal.ts`) does, which is precisely the mechanism behind the stale-results Medium above.
+**Specs asserting a wrong behaviour.** None found. One spec is misleadingly _weak_: `rich-text-editor-trigger-with-query.spec.ts` fakes `executionState.asObservable()` with a plain `Subject`, which does not replay — the real implementation (`libs/query/src/lib/http/observable-signal.ts`) does, which is precisely the mechanism behind the stale-results Medium above.
 
 Clean: `@layer components { … }` wraps all 17 CSS files in scope, with no Tailwind in component source and no hardcoded colour used as a primary background/text/border/interaction value. Both controls are signal-forms native (`FormValueControl`), with no `ControlValueAccessor` anywhere. Reactive state is signals throughout; RxJS appears only for genuinely async work and every long-lived subscription in scope terminates with `takeUntilDestroyed` last in the pipe. `markdownToHtml`/`htmlToMarkdown` sanitize (`libs/core/src/lib/utils/markdown.ts`), and the chip builders escape via `escapeHtmlText` with quoted attributes, so `root.innerHTML = …` in `writeValueToDom` and `template.innerHTML = html` in `insertNormalizedHtml` are not XSS sinks; the clipboard path additionally strips `style/script/noscript/meta/link/title` from an inert `DOMParser` document. SSR looks sound (`trackKeyboardInset` bails without a `defaultView`, DOM wiring is behind `afterNextRender`). The tree-shaking architecture holds up: `RICH_TEXT_EDITOR_DOM_FEATURE` / `RICH_TEXT_EDITOR_TOOL` are the only routes to the opt-in domains, the `RICH_TEXT_EDITOR_TOKEN_CODEC` token imports its codec type-only, and `resolvedTools` correctly drops unprovided tokens and collapses the orphaned dividers around them. The docs page is accurate on the theming token tables (all 5 image/link/palette/badge tokens verified present in the matching `@property` blocks), the `ET25xx` error-code list, and all six `<StoryEmbed>` ids resolve to real exported stories; the uncommitted `et-scrollbar` retrofit is correctly documented and its CSS restructuring (moving the keyboard clearance from the tools onto the new dock so the scrollbar hangs above it) is right.
 
@@ -1479,9 +1511,9 @@ Ideas, not verified defects. Ranked within each category.
 
 4. **Auto-link the selection when a URL is pasted over it.** `pasteText` (`headless/rich-text-editor.directive.ts:628-649`) bails out entirely unless the token codec recognises something, and `pasteHtml` normalizes markup — so pasting `https://…` over selected words inserts the URL as text instead of linking the selection, which is the Notion/Slack/Google Docs behaviour users expect. The link domain is already reachable via `this.editorDom.links?.applyLink` when `provideRichTextEditorLinkTool()` is present.
 
-5. **A markdown source-view toggle.** The canonical value already *is* Markdown (`value = model('')`, `headless/rich-text-editor.directive.ts:66`), so a "edit as Markdown" mode is a `<textarea>` bound to the same model plus `renderExternalValue()` on switch back — the history already resets on an external write (`:345-349`), so the two views cannot desync. Cheap relative to how often power users ask for it.
+5. **A markdown source-view toggle.** The canonical value already _is_ Markdown (`value = model('')`, `headless/rich-text-editor.directive.ts:66`), so a "edit as Markdown" mode is a `<textarea>` bound to the same model plus `renderExternalValue()` on switch back — the history already resets on an external write (`:345-349`), so the two views cannot desync. Cheap relative to how often power users ask for it.
 
-6. **Extend autoformat with typography rules only — and route every new rule through `isReserved`.** `--` → en dash, `...` → ellipsis, `->` → arrow and smart quotes are all safe because none of their trigger characters can be a token trigger. The reservation machinery already exists (`autoformatReservedChars` / `autoformatSuppressed`, `headless/rich-text-editor.directive.ts:227`, `:230`, consumed at `:417-425`), so the rule is: any new prefix keyed on a character a consumer might register — `#`, `@`, `/`, `:`, `[` — must take the `isReserved` predicate exactly like the `#{1,3}` and `>` branches do (`…-dom-autoformat.ts:76-81`), and the existing ```` ``` ```` branch should be brought in line (see the Low finding). Anything that wants a *popup* belongs in `RichTextEditorTrigger`, not in autoformat.
+6. **Extend autoformat with typography rules only — and route every new rule through `isReserved`.** `--` → en dash, `...` → ellipsis, `->` → arrow and smart quotes are all safe because none of their trigger characters can be a token trigger. The reservation machinery already exists (`autoformatReservedChars` / `autoformatSuppressed`, `headless/rich-text-editor.directive.ts:227`, `:230`, consumed at `:417-425`), so the rule is: any new prefix keyed on a character a consumer might register — `#`, `@`, `/`, `:`, `[` — must take the `isReserved` predicate exactly like the `#{1,3}` and `>` branches do (`…-dom-autoformat.ts:76-81`), and the existing ` ``` ` branch should be brought in line (see the Low finding). Anything that wants a _popup_ belongs in `RichTextEditorTrigger`, not in autoformat.
 
 7. **Image sizing and captions could follow the alignment precedent.** Alignment already persists as an inline `text-align` style round-tripped as raw HTML (`tools/rich-text-editor-align-tool.component.ts:22-25`), which is the established answer to "Markdown has no syntax for this". Width on `<img>` and a caption below it are the two most-requested image features and would reuse the same escape hatch plus the existing image popover (`rich-text-editor-image-editor.component.ts`).
 
@@ -1499,11 +1531,11 @@ Ideas, not verified defects. Ranked within each category.
 
 5. **`onFailure` is the image tool's only feedback channel and it cannot address the placeholder.** `RichTextEditorImageFailure` (`tools/rich-text-editor-image-upload.ts:21-28`) carries `file`/`reason`/`error`/`message` but no handle on the placeholder element or a retry, so a consumer cannot offer "try again" — the placeholder just removes itself after `FAILURE_VISIBLE_MS` (`tools/rich-text-editor-image.provider.ts:24`, `:209-221`). Handing the callback a `{ retry() }` would make failed uploads recoverable, which is what the dropzone's own upload handle already supports (`execute()` is documented as "the initial upload **and retries**").
 
-6. **Mark the `@floating-ui/dom` type imports as type-only, matching the codec token's own precedent.** `import { VelementElement }`-style value syntax is used for the type-only `VirtualElement` in three files (`headless/rich-text-editor-triggers.directive.ts:24`, `headless/rich-text-editor-link-editor.directive.ts:9`, `headless/rich-text-editor-floating-toolbar.directive.ts:12`), while `rich-text-editor-token-codec.token.ts:2-4` goes out of its way to comment *why* its import must stay type-only. TS elides these today, but the explicit `import type` makes the tree-shaking contract legible rather than incidental.
+6. **Mark the `@floating-ui/dom` type imports as type-only, matching the codec token's own precedent.** `import { VelementElement }`-style value syntax is used for the type-only `VirtualElement` in three files (`headless/rich-text-editor-triggers.directive.ts:24`, `headless/rich-text-editor-link-editor.directive.ts:9`, `headless/rich-text-editor-floating-toolbar.directive.ts:12`), while `rich-text-editor-token-codec.token.ts:2-4` goes out of its way to comment _why_ its import must stay type-only. TS elides these today, but the explicit `import type` makes the tree-shaking contract legible rather than incidental.
 
 #### Bundle size
 
-1. **Three opt-in tools' icons ship with every editor.** `rich-text-editor.component.ts:75-88` registers twelve icons eagerly, including `LINK_ICON`, `QUOTE_ICON` and `CODE_BLOCK_ICON` — but link, blockquote and code-block are *opt-in providers* (`tools/rich-text-editor-link.provider.ts`, `…blockquote.provider.ts`, `…code-block.provider.ts`), so an editor with only marks and lists still pays for all three. The pattern to copy already exists twice in this folder and its comments say exactly this: `RichTextEditorImageToolComponent` exists "so the tool's icon is registered here rather than in the editor's own `provideIcons`" (`tools/rich-text-editor-image-tool.component.ts:11-13`), and the table/align/heading tools do the same. Moving those three icons onto their providers' control components is a mechanical change with a measurable win.
+1. **Three opt-in tools' icons ship with every editor.** `rich-text-editor.component.ts:75-88` registers twelve icons eagerly, including `LINK_ICON`, `QUOTE_ICON` and `CODE_BLOCK_ICON` — but link, blockquote and code-block are _opt-in providers_ (`tools/rich-text-editor-link.provider.ts`, `…blockquote.provider.ts`, `…code-block.provider.ts`), so an editor with only marks and lists still pays for all three. The pattern to copy already exists twice in this folder and its comments say exactly this: `RichTextEditorImageToolComponent` exists "so the tool's icon is registered here rather than in the editor's own `provideIcons`" (`tools/rich-text-editor-image-tool.component.ts:11-13`), and the table/align/heading tools do the same. Moving those three icons onto their providers' control components is a mechanical change with a measurable win.
 
 2. **Split the content stylesheet by feature, the way the image and table tools already do.** `rich-text-editor.component.css` is 380 lines injected on first editor instantiation, and roughly 70 of them serve opt-in features: the blockquote rules plus their two `@property` blocks (`:32-42`, `:325-337`), the fenced-code rules plus `--et-rich-text-editor-code-block-radius` (`:44-48`, `:339-357`), and the token-chip rules plus their two properties (`:50-60`, `:359-377`). AGENTS.md's "Splitting a large stylesheet" section prescribes exactly this, and the domain already has two working examples — `mountRichTextEditorImageStyles()` called from the image provider (`tools/rich-text-editor-image.provider.ts:110`) and `mountRichTextEditorTableStyles()` from the table provider (`tools/rich-text-editor-table.provider.ts:24`). Blockquote, code-block and the token codec are the next three candidates, each mounted from its own provider.
 
@@ -1521,7 +1553,7 @@ Ideas, not verified defects. Ranked within each category.
 
 4. **A dropped or pasted file is refused with no feedback whatsoever.** Without the image tool, `interceptDrop` and `interceptPaste` silently `preventDefault()` a file payload (`rich-text-editor.component.ts:305-309`, `:341`) — deliberately, since the browser would embed a dying `blob:` URL, and the comment says so. But from the user's side nothing happens at all. A `rejectedPayload` output (or reusing the image tool's `onFailure` channel) would let the app say "images aren't supported here".
 
-5. **The table menu gives no indication which cell it will act on.** `refreshContext()` snapshots the caret's `TableContext` when the trigger is pressed (`tools/rich-text-editor-table-tool.component.ts:91-95`) and the menu then offers "Insert row above"/"Delete column" — but nothing highlights the target row/column, and `mutate` falls back to a *fresh* context if the snapshot is null (`:243`). Outlining the active row and column while the menu is open would make destructive entries safe to trust.
+5. **The table menu gives no indication which cell it will act on.** `refreshContext()` snapshots the caret's `TableContext` when the trigger is pressed (`tools/rich-text-editor-table-tool.component.ts:91-95`) and the menu then offers "Insert row above"/"Delete column" — but nothing highlights the target row/column, and `mutate` falls back to a _fresh_ context if the snapshot is null (`:243`). Outlining the active row and column while the menu is open would make destructive entries safe to trust.
 
 6. **The selection toolbar is invisible to the keyboard, and its ARIA role over-promises.** Every button is `tabindex="-1"` with no roving-tabindex handling (`rich-text-editor-floating-toolbar.component.html:18`) under a `role="toolbar"` host (`rich-text-editor-floating-toolbar.component.ts:34`). Since it is explicitly a pointer-only enhancement (`headless/rich-text-editor-floating-toolbar.directive.ts:34-36`), `role="group"` is the honest label — or, better, a shortcut that moves focus into it, at which point the role becomes true.
 
@@ -1537,7 +1569,7 @@ Ideas, not verified defects. Ranked within each category.
 
 3. **Add a Markdown round-trip property test over a content corpus.** `htmlToMarkdown(serialize(markdownToHtml(md)))` should equal `md` for a fixture list covering headings, nested lists, quotes, fences, links, tables, alignment and token chips. This class of test is what catches the empty-shell corruption in High finding #1 generically, rather than one tag at a time, and it is the cheapest guard against the DOM layer drifting from the value model.
 
-4. **Cover the multi-language domain at all.** It currently has no spec file. Priority order: `activeLanguage`'s `linkedSignal` fallback when the active code is removed from `languages` (`headless/multi-language-rich-text-editor.directive.ts:31-38`), `writeActiveMarkdown` preserving codes that are *not* in `languages` (`:65-69` — an explicitly documented guarantee), the dev-mode duplicate/empty throws (`:73-90`), and the exported `requiredLanguages` validator (`multi-language-rich-text-editor-validators.ts`), which is public API with zero coverage.
+4. **Cover the multi-language domain at all.** It currently has no spec file. Priority order: `activeLanguage`'s `linkedSignal` fallback when the active code is removed from `languages` (`headless/multi-language-rich-text-editor.directive.ts:31-38`), `writeActiveMarkdown` preserving codes that are _not_ in `languages` (`:65-69` — an explicitly documented guarantee), the dev-mode duplicate/empty throws (`:73-90`), and the exported `requiredLanguages` validator (`multi-language-rich-text-editor-validators.ts`), which is public API with zero coverage.
 
 5. **Marble-test `trackTriggerItems`.** Debounce, the "keep previous results while a same-trigger request loads" `scan`, the reset on trigger switch, and the error passthrough (`headless/internals/rich-text-editor-trigger-source.ts:88-128`) are all timing behaviour that no test touches.
 
@@ -1566,7 +1598,7 @@ clean.
   "nothing was typed" guard its siblings have
   (`date-time-input/headless/date-time-input.directive.ts:225`,
   `internals/date-range-picker-input.directive.ts:370`: `if (raw === this.displayValue()) return;`).
-  So blurring re-parses the *displayed* text and writes it back. With the shipped defaults this
+  So blurring re-parses the _displayed_ text and writes it back. With the shipped defaults this
   loses data: `DATE_FORMAT` is `yyyy-MM-dd'T'HH:mm:ssxxx` (carries a time) while the date input's
   default `displayFormat` is `'P'` (date only), and the docs themselves recommend
   `provideTimeFormat('HH:mm:ss')` (`date-time-inputs.md:80`) against a `'p'` display format.
@@ -1584,7 +1616,7 @@ clean.
   The form field's guard (`forms/form-field/headless/form-field.directive.ts:205-214`) therefore
   throws for any of them used without a projected `et-label`. Worse for the ranges: their
   registered control view (`internals/date-range-picker-input.directive.ts:225-243`) omits
-  `hasCustomAccessibleName`, so a range whose two fields *are* named via
+  `hasCustomAccessibleName`, so a range whose two fields _are_ named via
   `startAriaLabel`/`endAriaLabel` still throws. The docs promise the opposite
   (`date-time-inputs.md:569-572`: "A field … takes `aria-label` (or `aria-labelledby`) on the
   control itself - `[attr.aria-label]` would land on the wrapper and leave the native field
@@ -1630,7 +1662,7 @@ clean.
 
 - **The duration input never drops `inputText` after a successful commit, so `hasValue()` stays
   true once the value is reset from outside.** `duration-input/headless/duration-input.directive.ts:143`
-  sets `inputText` to the raw text on *every* commit, including the successful one (all six
+  sets `inputText` to the raw text on _every_ commit, including the successful one (all six
   date/time controls set it back to `''` instead), and `hasValue`
   (`duration-input.directive.ts:81`) reads it. After a programmatic reset the field is empty but
   the form field still floats its label (`form-field.directive.ts:158`
@@ -1723,12 +1755,13 @@ suites; `date-time-input` and `date-time-range-input` have time-zone suites and 
 for the bottom-sheet panes; six of the seven run `describeMixedStateContract`.
 
 Gaps that map directly onto the findings above:
+
 - **No spec ever uses a `valueFormat` finer than its `displayFormat`.** Every host is
   `valueFormat="yyyy-MM-dd"`, `"HH:mm"` or a matching combined format, which is why the
   unedited-blur rewrite (High #1) is invisible. `date-time-input`'s own spec host uses
   `yyyy-MM-dd HH:mm` and is protected by its guard.
 - **No spec erases unparseable text** (High #3): `date-time-input.directive.spec.ts:99-106`
-  ("clears the value on empty input") only empties a *successfully committed* field.
+  ("clears the value on empty input") only empties a _successfully committed_ field.
 - **No spec clears through `clearValue()`/`clearRange()` while a mask is attached** (High #4);
   the mask suites only cover delete-all + blur (`date-input.directive.spec.ts:458-480`).
 - **No spec in this domain renders a control inside `et-form-field`**, so nothing covers label
@@ -1801,7 +1834,7 @@ Ideas, not verified defects. Ranked within each category.
   `internals/date-range-picker-input.directive.ts` are ~90% the same file (identical standard
   control inputs, `mask`/`maskPattern`, overlay wiring, `describedByIds`, `labelId`, `interactive`,
   `shouldDisplayError`, form-field registration, the dev-mode mask warning - both even carry the
-  same comments). Three of the four High defects above exist *because* a behaviour lives in only one
+  same comments). Three of the four High defects above exist _because_ a behaviour lives in only one
   of the two copies. A shared `createPickerInputCore()` (or a common base with a per-side state map)
   would make the guard, the clear path and the readonly check single-sourced.
 - **Warn in dev when `displayFormat` carries fewer units than `valueFormat`.** This is the sharpest
@@ -1836,7 +1869,7 @@ Ideas, not verified defects. Ranked within each category.
 - **Stop dragging the optional `@date-fns/tz` peer into the zone-less controls.**
   `internals/time-zone.ts:1` statically imports `TZDate`, and
   `internals/date-range-picker-input.directive.ts:26` imports `formatInZone`/`reinterpretInZone`/
-  `zonedProxy` from it for *all three* ranges - including `et-date-range-input` and
+  `zonedProxy` from it for _all three_ ranges - including `et-date-range-input` and
   `et-time-range-input`, whose `effectiveTimeZone` is a constant `signal(null)`
   (`date-range-picker-input.directive.ts:141`). Since `@date-fns/tz` is declared optional
   (`libs/components/package.json:27-29`), an app that installs `date-fns` alone and uses only a
@@ -1938,11 +1971,11 @@ then deleted. Working tree otherwise untouched.
   `et-pip-player`, whose `onDestroy` immediately yanks the player back out of the slot into
   `div.et-stream-manager`. Nothing ever re-runs `reassignPlayer`, so the player stays there. Triggered by
   the documented public option `pipDeactivate(id, { skipAnimation: true })`
-  (`stream-manager.types.ts:240`), and also by the *default* path whenever either rect measures empty
+  (`stream-manager.types.ts:240`), and also by the _default_ path whenever either rect measures empty
   (`pip-manager.ts:161`) - e.g. the target slot sits in a `display: none` tab or has not been given a size.
   **Runtime-verified**: test A logged `AFTER REGISTER parent = slot` → `IN PIP parent = et-pip-player` →
   `RIGHT AFTER DEACTIVATE parent = slot` → `AFTER CHROME TEARDOWN parent = et-stream-manager isSlot =
-  false`; test C reproduced the identical result with `pipDeactivate('p2')` and no options.
+false`; test C reproduced the identical result with `pipDeactivate('p2')` and no options.
 
 - **The library ships no CSS for the body-level player container or for the PiP window's placement, so a
   consumer following the docs sees parked players inline in `<body>` and a mispositioned PiP window.**
@@ -1962,7 +1995,7 @@ then deleted. Working tree otherwise untouched.
   visual consequence needs a real browser), but the absence of the rules and the stories' dependence on
   them is exact.
 
-- **Accepting the consent gate after the video id changed registers the player under the *old* id, which
+- **Accepting the consent gate after the video id changed registers the player under the _old_ id, which
   silently breaks `pipDeactivate()` and the PiP placeholder for that slot.** `createStreamPlayerSlot`
   captures `currentPlayerId` once in `init()` (`libs/components/src/lib/stream/stream-player-slot.ts:265`)
   and hands that captured value to the deferred
@@ -1976,11 +2009,11 @@ then deleted. Working tree otherwise untouched.
   a second slot mounted for the real id also fails `getPlayerElement` and creates a duplicate player.
   **Runtime-verified**: test B logged `after id change, currentPlayerId = youtube-NEW`, then after
   clicking accept: `currentPlayerIdSignal = youtube-NEW | manager has youtube-OLD = true | manager has
-  youtube-NEW = false`.
+youtube-NEW = false`.
 
 - **The docs state the opposite of what the slot does with surface themes.**
   `apps/docs/components/stream.md:121` says "Slots provide a `type: 'dark'` surface scope one elevation
-  above their context (video UI always reads as a dark surface)". The slot resolves against the *ambient*
+  above their context (video UI always reads as a dark surface)". The slot resolves against the _ambient_
   type - `private surfaceType = injectSurfaceType();` then
   `resolveSurfaceByElevation(themes, type, elevation)` at
   `libs/components/src/lib/stream/stream-player-slot.directive.ts:65,72-79`. Only the PiP chrome hardcodes
@@ -2000,7 +2033,7 @@ then deleted. Working tree otherwise untouched.
 
 - **A per-entry `pipChromeComponent` / `pipChromeConfig` is honoured only for the first PiP.**
   `stream-manager.types.ts:78-81` documents them as "the chrome component to use while **this entry** is
-  active", and `PipManager.pipChromeComponent` tracks the *latest* pip
+  active", and `PipManager.pipChromeComponent` tracks the _latest_ pip
   (`pip-manager.ts:29-35`). But `PipChromeManager`'s effect only constructs a chrome when
   `!pipChromeRef` (`pip-chrome-manager.ts:39`) and has no branch for "the component changed", so a second
   `pipActivate` with a different chrome (or a different `controlsColor`) is silently ignored until every
@@ -2063,7 +2096,7 @@ then deleted. Working tree otherwise untouched.
 - **Changing a video id on one of two slots sharing a player hijacks the other slot's player
   permanently.** The id-change effect calls `streamManager.transferPlayer(oldId, newId)`
   (`stream-player-slot.ts:102`), which re-keys the single shared `StreamPlayerEntry`
-  (`stream-manager.ts:140-145`). The *other* slot's `StreamSlotEntry` still carries `oldId`
+  (`stream-manager.ts:140-145`). The _other_ slot's `StreamSlotEntry` still carries `oldId`
   (`stream-manager.ts:34` keys slots by element, and nothing rewrites their `playerId`), so it now points
   at an id with no player: `resolveBestSlot(oldId)` finds it but `reassignPlayer` bails at
   `stream-manager.ts:87` since `players.get(oldId)` is gone, and the player has physically moved into the
@@ -2163,7 +2196,7 @@ then deleted. Working tree otherwise untouched.
   `platform/kick/headless/kick-player.directive.ts:90-104`,
   `platform/soop/headless/soop-player.directive.ts:100-114`,
   `platform/dailymotion/headless/dailymotion-player.directive.ts:90-108` each carry a section-style
-  explanatory comment (which is legitimate - it names a platform limitation) *plus* an `// no-op` line
+  explanatory comment (which is legitimate - it names a platform limitation) _plus_ an `// no-op` line
   inside each of five empty methods. The per-method lines restate the code and are the "always delete"
   case in AGENTS.md.
 
@@ -2179,23 +2212,23 @@ then deleted. Working tree otherwise untouched.
 - `loading/stream-player-loading.component.spec.ts` (28 lines) - asserts an `et-spinner` renders and
   `position: absolute` applies. The second assertion is fragile-by-luck: the vite config's own comment
   says jsdom "drops the component stylesheets whole (`@layer`, nesting, `color-mix`)", and this component's
-  sheet passes only because it is *not* wrapped in `@layer` (see the Medium finding) - fixing that
+  sheet passes only because it is _not_ wrapped in `@layer` (see the Medium finding) - fixing that
   convention violation will break this assertion.
 
 Neither spec asserts wrong behaviour. Files with real logic and **zero** tests:
 
-| File | Untested logic |
-| --- | --- |
-| `stream-manager.ts` (197) | slot priority resolution, FLIP reassignment, `transferPlayer`, the `unregisterSlot` → destroy-or-reassign decision |
-| `pip-manager.ts` (218) | all three exit paths, `animatingOutIds`, `parkPlayerElement`, `getInitialRect` one-shot semantics, back-pulse queue |
-| `stream-player-slot.ts` (361) | consent gating (all four branches of `init()`), loading↔error↔ready transitions, id-change re-registration, destroy cleanup |
-| `pip/headless/internals/pip-window-position.ts` (486) | collapse/peek maths, sticky edges, resize/drag gesture pipelines, `startModeTransition` |
-| `pip/headless/internals/pip-window-size.ts` (77) | the `linkedSignal` clamp against viewport and aspect ratio |
-| `pip/headless/pip-chrome-state.ts` (210) | grid layout, featured fallback, `windowAspectRatio` locking, `close()` |
-| `pip/headless/pip-chrome-animations.ts` (139) | FLIP capture/replay bookkeeping, `pendingNewInSingleMode` |
-| `pip-chrome-manager.ts` (68) | create/destroy lifecycle, the `PIP_CHROME_REF_TOKEN` dev-mode throw |
-| all 8 platform directives (~1.2k) | resource params, ready/error state mapping, teardown; `twitch-player-params.directive.ts`'s URL→channel/video regex is pure and trivially testable |
-| `error/`, `pip/pip-slot-placeholder.component.ts`, `pip/pip-player.component.ts` | error-context retry wiring, placeholder visibility, pip-player adoption/animation |
+| File                                                                             | Untested logic                                                                                                                                     |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stream-manager.ts` (197)                                                        | slot priority resolution, FLIP reassignment, `transferPlayer`, the `unregisterSlot` → destroy-or-reassign decision                                 |
+| `pip-manager.ts` (218)                                                           | all three exit paths, `animatingOutIds`, `parkPlayerElement`, `getInitialRect` one-shot semantics, back-pulse queue                                |
+| `stream-player-slot.ts` (361)                                                    | consent gating (all four branches of `init()`), loading↔error↔ready transitions, id-change re-registration, destroy cleanup                        |
+| `pip/headless/internals/pip-window-position.ts` (486)                            | collapse/peek maths, sticky edges, resize/drag gesture pipelines, `startModeTransition`                                                            |
+| `pip/headless/internals/pip-window-size.ts` (77)                                 | the `linkedSignal` clamp against viewport and aspect ratio                                                                                         |
+| `pip/headless/pip-chrome-state.ts` (210)                                         | grid layout, featured fallback, `windowAspectRatio` locking, `close()`                                                                             |
+| `pip/headless/pip-chrome-animations.ts` (139)                                    | FLIP capture/replay bookkeeping, `pendingNewInSingleMode`                                                                                          |
+| `pip-chrome-manager.ts` (68)                                                     | create/destroy lifecycle, the `PIP_CHROME_REF_TOKEN` dev-mode throw                                                                                |
+| all 8 platform directives (~1.2k)                                                | resource params, ready/error state mapping, teardown; `twitch-player-params.directive.ts`'s URL→channel/video regex is pure and trivially testable |
+| `error/`, `pip/pip-slot-placeholder.component.ts`, `pip/pip-player.component.ts` | error-context retry wiring, placeholder visibility, pip-player adoption/animation                                                                  |
 
 Test-infrastructure gap found while verifying: the jsdom `AnimationMock` in
 `libs/components/src/test-helpers.ts:91-133` dispatches a `finish` **event** but never invokes the
@@ -2262,7 +2295,7 @@ an animated PiP path will hang mid-transition with the player stranded in the fi
 #### Bundle size
 
 1. **The PiP slice is the natural `@defer` boundary and is already opt-in-by-barrel; make it opt-in by
-   *import graph* too.** `stream-config.ts:5` statically imports `DEFAULT_PIP_CHROME_CONFIG` and
+   _import graph_ too.** `stream-config.ts:5` statically imports `DEFAULT_PIP_CHROME_CONFIG` and
    `stream-player-slot.ts:24-25` statically calls `injectPipChromeManager()` / `injectPipManager()`, which
    drags `pip-chrome-manager.ts` → `StreamPipChromeComponent` → `PipWindowComponent` →
    `ResizeHandlesComponent` + `DragHandleDirective` + `pip-window-position.ts` (486 lines) +
@@ -2378,12 +2411,12 @@ treated as intended and are not reported.
 ### High
 
 - **The swiss layout throws `ET3408` for any source whose matches carry participant ids, because the
-  group lookup uses the participant's record *including* the current match.**
+  group lookup uses the participant's record _including_ the current match.**
   `createNewMatchParticipantBase` seeds the counters with the current match's own result
   (`core/match-participant.ts:57-59`, `winsTilNow = isWinner ? 1 : 0`) and then adds only the
-  *previous* matches (`:61-80`). `generateBracketRoundSwissGroupMaps` looks a match's group up by
-  `${winCount}-${lossCount}` (`linked/swiss.ts:150-156`), but the available groups for round *n* are
-  the records after *n* games played, i.e. **before** that round
+  _previous_ matches (`:61-80`). `generateBracketRoundSwissGroupMaps` looks a match's group up by
+  `${winCount}-${lossCount}` (`linked/swiss.ts:150-156`), but the available groups for round _n_ are
+  the records after _n_ games played, i.e. **before** that round
   (`getAvailableSwissGroupsForRound`, `linked/swiss.ts:69-110`). So a decided round-1 match's winner
   is `1-0` while round 1 only offers the `0-0` group, and the lookup misses → `RuntimeError` thrown
   out of `createSwissGrid` (`drawing/grid/swiss.ts:69-75`), out of `layout.listGrouping` in
@@ -2430,13 +2463,13 @@ treated as intended and are not reported.
      active cells, i.e. the entire bracket sits at `opacity: 0.25`
      (`bracket.component.css:69-74`) with nothing highlighted. Toggling the pin through `null` and
      back fixes it (`["se-r0-m4","se-r1-m2","se-r2-m1","se-r3-m0"]`).
-  Variant 2 is the realistic one: `focusedParticipantId` restored from a query param before/while the
-  source loads, or any live-updating bracket.
+     Variant 2 is the realistic one: `focusedParticipantId` restored from a query param before/while the
+     source loads, or any live-updating bracket.
 
 ### Medium
 
 - **Every match reachable through `bracket.participants` carries the placeholder relation
-  `{ type: 'dummy' }` cast to `BracketMatchRelation`.** `createBracket` stores *copies* of each match
+  `{ type: 'dummy' }` cast to `BracketMatchRelation`.** `createBracket` stores _copies_ of each match
   in the participant maps (`linked/bracket.ts:125-137`, `{ ...newMatch, me, opponent }`) and only
   afterwards writes the resolved relations back onto the originals
   (`:157-167`, `matchRelation.currentMatch.relation = matchRelation`). The copies keep the
@@ -2460,7 +2493,7 @@ treated as intended and are not reported.
   match's loss (`:58`). A participant with one prior loss who loses again gets
   `lossCount: 2, isEliminationMatch: true, isEliminated: true`, while `SWISS_ELIMINATE_LOSSES` is `3`
   (`linked/swiss.ts:30`). Runtime-verified counts from the swiss fixture: `r1-m1 → home b 1-1,
-  away d 0-2`. `isEliminated`/`isEliminationMatch` are on the public `BracketMatchParticipant` type,
+away d 0-2`. `isEliminated`/`isEliminationMatch` are on the public `BracketMatchParticipant` type,
   are never read anywhere in the domain (grepped: only their own assignments), and appear in neither
   docs page — so the wrong value ships as undocumented public data.
 
@@ -2491,13 +2524,13 @@ treated as intended and are not reported.
 - **The docs' custom-card example reads a property that does not exist.** `bracket.md:324` shows
   `{{ bracketMatch().home?.name }} vs {{ bracketMatch().away?.name }}`, but
   `BracketMatchParticipant` is `BracketParticipantBase & …` = `{ id, shortId, result, isEliminated,
-  isEliminationMatch, tieCount, winCount, lossCount, side, matches }`
+isEliminationMatch, tieCount, winCount, lossCount, side, matches }`
   (`core/participant.ts:8-11`, `core/match-participant.ts:18-29`) — there is no `name`. The snippet
   does not compile, and it is the first thing a consumer writing a card copies. (Names only exist on
-  the *normalized* match, which is what the shipped cards use.)
+  the _normalized_ match, which is what the shipped cards use.)
 
 - **The migration table promises an API that is not exported.** `bracket.md:620` tells cdk users that
-  `createNewBracket` becomes `createBracket`, but `bracket/index.ts:44-77` re-exports only *types*
+  `createNewBracket` becomes `createBracket`, but `bracket/index.ts:44-77` re-exports only _types_
   from `./linked` plus `BRACKET_SWISS_GROUP_COLOR_TYPE` — `createBracket` is not in the public
   surface, while the cdk's `new-bracket/index.ts:3` did `export * from './linked'`. Verified by
   inspecting both index files. A consumer following that row cannot compile.
@@ -2519,13 +2552,13 @@ treated as intended and are not reported.
   files and never rendered — leftovers of a `grid-template-areas` approach the absolute-positioning
   template replaced.
 - **A guard that cannot fail.** `core/round.ts:205`: `if (!map.last()) throw … 'Last round not
-  found'` — reached only inside `if (splitRoundsRest.length)`, which implies at least one left half
+found'` — reached only inside `if (splitRoundsRest.length)`, which implies at least one left half
   was already `map.set`.
 - **Comment-policy violations throughout.** AGENTS.md allows four kinds of comment; a large share of
   these files' comments are rationale or migration narration, e.g. `bracket.component.ts:52-53`
   ("What the default cards read: …"), `:286-289`, `:294-297`, `:333-335`, `:339`;
   `drawing/draw-man.ts:88-92` ("…is why a folded lower bracket used to lose the line…"), `:99-100`,
-  `:118-119` ("this used to carry both of the *current* match's participants"), `:170-172`;
+  `:118-119` ("this used to carry both of the _current_ match's participants"), `:170-172`;
   `journey-highlight.ts:92-93`, `:226-227`, `:236-237`; `bracket.component.html:31`;
   `bracket-default-final-match.component.ts:37-39`; plus multi-line rationale blocks in
   `bracket.component.css:26-30,50-52,66-68` and `bracket-default-match.component.css:2-3,12-19`.
@@ -2547,7 +2580,7 @@ treated as intended and are not reported.
   so a bare `columnWidth` attribute poisons every derived dimension instead of falling through to the
   density preset.
 - **`curvePath` never clamps its straight run.** `straightLength = (totalInline - startCurve -
-  endCurve) / 2` (`drawing/curve.ts:30`) goes negative when the curve amounts exceed the column gap,
+endCurve) / 2` (`drawing/curve.ts:30`) goes negative when the curve amounts exceed the column gap,
   producing a self-crossing path rather than a clamped curve.
 - **`factorialCache` is an unbounded module-level `Map`** (`linked/swiss.ts:67`) — harmless in size,
   but it is module state shared across app instances, which the scan protocol flags by convention.
@@ -2600,7 +2633,7 @@ participant ids (see High #1) — they would fail on any realistic swiss source.
 
 - **Ship a swiss source generator and make swiss grouping data-driven.** `stories/generate-bracket.ts:9-17`
   says swiss "is intentionally not generated: its grouping requires cross-round win/loss record
-  consistency" — that comment is the bug report. Deriving each group from the participants' *pre-round*
+  consistency" — that comment is the bug report. Deriving each group from the participants' _pre-round_
   record (and creating groups from the records actually present rather than from a combinatorial table)
   removes both the throw and the need for a hand-built fixture.
 - **A `<et-bracket-participants>` legend.** The docs' own recommended pin affordance is "a participants
@@ -2640,7 +2673,7 @@ participant ids (see High #1) — they would fail on any realistic swiss source.
 **Bundle size** (ranked)
 
 - **`drawing/grid/swiss.ts` + `drawing/draw-man-swiss.ts` + `linked/swiss.ts` (~530 LOC) are already
-  behind `swissBracketLayout()`, but `linked/swiss.ts`'s *types* are re-exported eagerly from
+  behind `swissBracketLayout()`, but `linked/swiss.ts`'s _types_ are re-exported eagerly from
   `index.ts`** (`BRACKET_SWISS_GROUP_COLOR_TYPE` is a runtime const). Check that the const is not what
   keeps the module alive for non-swiss apps; if it is, move it next to the color-type helper the layout
   owns.
@@ -2653,7 +2686,7 @@ participant ids (see High #1) — they would fail on any realistic swiss source.
   (`bracket-components.ts:69-79`) and `isFinalMatch` inside
   `createRoundBracketSubColumnRelativeToFirstRound` (`prebuild/bracket-sub-column-relative-to-first-round.ts:79-81`)
   plus `isFinalMatchRound` (`double-elimination-stacked.ts:69-75`) encode the same rule three times.
-- **`stories/dummy-data/ET_DUMMY_DATA_SWISS.ts` is 4554 lines** and is imported by a *spec*
+- **`stories/dummy-data/ET_DUMMY_DATA_SWISS.ts` is 4554 lines** and is imported by a _spec_
   (`bracket-layout.spec.ts:21`) as well as two story files. A generated swiss source (see Features)
   would delete the file.
 
@@ -2681,7 +2714,7 @@ participant ids (see High #1) — they would fail on any realistic swiss source.
 
 **Testing** (ranked, what a spec pass should do first)
 
-1. **Swiss end to end**: a hand-written source with decided *and* pending rounds through
+1. **Swiss end to end**: a hand-written source with decided _and_ pending rounds through
    `generateBracketRoundSwissGroupMaps` → `createSwissGrid` → `drawSwissMan`, asserting group ids,
    `matches.size` per group, and the rendered `rect`/`path` count. This alone would have caught High #1
    and the `ET3409` header asymmetry.
@@ -2716,11 +2749,11 @@ is quoted per finding. Working tree left unchanged.
 - **An immutable `appointments` update while the edit surface is open opens a second, stacked edit
   surface.** `scheduler.component.ts:209-217` runs an `effect` on `headless.selectedAppointment()`
   and calls `openEditSurface()` for every non-null value. `selectedAppointment` is
-  `this.appointments().find(…)` (`headless/scheduler.directive.ts:175-177`), so it returns a *new
-  object identity* whenever the consumer replaces the array — the normal immutable update. The
+  `this.appointments().find(…)` (`headless/scheduler.directive.ts:175-177`), so it returns a _new
+  object identity_ whenever the consumer replaces the array — the normal immutable update. The
   effect has no "already open for this id" guard, so it re-opens. Failure scenario: user clicks an
   appointment, the surface opens; a poll/refetch, a websocket push, or an
-  `appointmentReschedule`/`appointmentSave` applied to a *different* appointment replaces the array;
+  `appointmentReschedule`/`appointmentSave` applied to a _different_ appointment replaces the array;
   a second overlay opens on top of the first — and because `takeSurfaceAnchor()`
   (`scheduler.component.ts:313-319`) has already cleared `surfaceAnchor`, the duplicate opens
   centered rather than anchored. The bundled `stories/scheduler-infinite-agenda-storybook.component.ts:65`
@@ -2737,7 +2770,7 @@ is quoted per finding. Working tree left unchanged.
   consumer's array — again, the normal immutable update, and the same refetch/push/reschedule paths
   as above — recomputes `currentAppointment()` to a new identity and resets `draft` from it. Every
   unsaved edit in every field is lost mid-typing, with no indication. The docs only promise this on
-  *navigation* ("Navigating discards any unsaved edits", `apps/docs/components/scheduler.md:336`),
+  _navigation_ ("Navigating discards any unsaved edits", `apps/docs/components/scheduler.md:336`),
   not on a background data refresh. **Runtime-verified**: draft title set to `'typed by the user'`,
   then `appointments.set([…new objects…])` → logged `draft title after appointments update: a`.
 
@@ -2797,7 +2830,7 @@ is quoted per finding. Working tree left unchanged.
 
 - **`hasDragged` is a latch that can stick, swallowing every subsequent click on an appointment.**
   `scheduler-month-view.component.ts:118` and `scheduler-time-grid-view.component.ts:173` reset the
-  flag only *after* the `canDragAppointments()` / `event.button` / `dateAt()` guards
+  flag only _after_ the `canDragAppointments()` / `event.button` / `dateAt()` guards
   (`scheduler-month-view.component.ts:111-116`, `scheduler-time-grid-view.component.ts:168`). Once a
   drag has set it to `true`, flipping `[etSchedulerAppointmentDrag]="{ enabled: false }"` at runtime
   means `startAppointmentDrag` returns before the reset forever, so `select()`
@@ -2909,6 +2942,7 @@ ancestors, children, navigation, add-sub-appointment, save and descendant-delete
 draft-range bail-outs, and `enabled: false`.
 
 **Real logic with zero tests.**
+
 - `scheduler.component.ts` — no spec at all. Nothing covers the two `effect`s that open the surfaces
   (both High findings above live here), `handleEditSurfaceResult`, `takeSurfaceAnchor`,
   `addAppointment`, `headerLabel`'s three date-range branches, `isNarrow`, or the
@@ -2970,7 +3004,7 @@ reset on an `appointments` identity change (High #2) is simply not covered eithe
 
 - **Give the two "opens on a signal" effects an explicit imperative API.** Making the surface open as
   a side effect of `selectedAppointmentId` (`scheduler.component.ts:209-217`) is what produces both
-  High findings, and it also means a consumer cannot select an appointment *without* opening a
+  High findings, and it also means a consumer cannot select an appointment _without_ opening a
   dialog (highlighting one from a sidebar, say). A public
   `openEditSurface(id)` / `closeEditSurface()` pair plus an id-keyed guard in the effect would fix
   the duplicate-open, the draft reset, and this missing capability at once.
@@ -3056,7 +3090,7 @@ reset on an `appointments` identity change (High #2) is simply not covered eithe
   overlays a skeleton would match how `et-table` handles the same problem.
 - **Nothing animates.** Selecting a badge, opening the all-day lane as `allDayRowCount` grows, and
   the draft-range preview all snap. The draft preview in particular
-  (`scheduler-time-grid-view.component.css:173-188`) changes border style *and* background on
+  (`scheduler-time-grid-view.component.css:173-188`) changes border style _and_ background on
   commit with no transition, which reads as a glitch rather than a state change.
 - **Drag has no autoscroll.** `startSchedulerDragGesture` tracks the pointer but never scrolls the
   body (`headless/internals/scheduler-drag-gesture.ts`), so moving an 08:00 appointment to 19:00 in
@@ -3141,14 +3175,14 @@ No source file was modified.
   escape handler on the **document in capture phase** and checks neither `defaultPrevented` nor the
   event target: `libs/core/src/lib/overlay/overlay-runtime.ts:363-381`
   (`targetDocument.addEventListener('keydown', onKeyDown, true)` →
-  `overlayRef.close(undefined, 'escape')`). The capture listener therefore runs *before* the input's
+  `overlayRef.close(undefined, 'escape')`). The capture listener therefore runs _before_ the input's
   handler. `command-palette.directive.ts` never opts out — `command-palette.overlay.ts:8-15` leaves
   `closeOnEscape` at its default `true`. `apps/docs/components/command-palette.md:202` promises
   "`Escape` | Clears the query, **or** closes the palette when the query is already empty."
   The menu gets this right by contrast: `menu.directive.ts:637` sets `closeOnEscape: false` and
   `menu.directive.ts:754-764` uses a bubble-phase document listener that skips
   `event.defaultPrevented`.
-  *Runtime verified* — real overlay-mounted palette, query `"add"`, one `Escape` on the input:
+  _Runtime verified_ — real overlay-mounted palette, query `"add"`, one `Escape` on the input:
   `[VERIFY palette esc] query after Escape = "" | overlay closed = true`. Both happened at once.
   Note `command-palette.component.spec.ts:188` ("clears the query on Escape instead of leaving it")
   passes only because it mounts the component directly, with no overlay runtime attached — the spec
@@ -3159,7 +3193,7 @@ No source file was modified.
   on every change of the button's inactive state — including its first run, where `isInactive()` is
   `false`. The write is a blanket assignment, not a merge, so the value the consumer bound is lost.
   `toggletip-trigger.directive.ts:75` does the same again on destroy.
-  *Runtime verified* — `<button [etToggletip]="'Hi'" [etToggletipDisabled]="true" etButton etToggletipTrigger>`:
+  _Runtime verified_ — `<button [etToggletip]="'Hi'" [etToggletipDisabled]="true" etButton etToggletipTrigger>`:
   `[VERIFY toggletip trigger] etToggletipDisabled=true -> disabled() = false` and
   `[VERIFY toggletip trigger] opened anyway = true`. `apps/docs/components/toggletip.md:37,51`
   documents both `etToggletipDisabled` and the trigger's disable coupling as if they compose.
@@ -3171,7 +3205,7 @@ No source file was modified.
   (`tooltip.directive.ts:181`) and on every close (`:193`). A field that already points at its own
   help text or error line loses that reference the moment a tooltip is attached, and the
   `destroyRef.onDestroy` at `:115-118` sets it to `null` rather than restoring the original.
-  *Runtime verified* — `<button [etTooltip]="…" aria-describedby="consumer-hint">` right after the
+  _Runtime verified_ — `<button [etTooltip]="…" aria-describedby="consumer-hint">` right after the
   first CD: `[VERIFY tooltip] aria-describedby after init = et-tooltip-description-1`. The
   consumer's id is gone before any interaction. (ARIA allows a space-separated list here, which is
   what the correct fix looks like.)
@@ -3185,7 +3219,7 @@ No source file was modified.
   `handleKeydown` only fires from the panel, an item, or the search input, none of which have focus.
   `apps/docs/components/menu.md:143` documents `autoFocus` / default `true` as "Focus the panel/first
   item on open" with no exception, and `:144` lists `show()` alongside `[(open)]` as the way to open.
-  *Runtime verified* — `menu.show()` with `autoFocus() === true`:
+  _Runtime verified_ — `menu.show()` with `autoFocus() === true`:
   `[VERIFY menu api-open] activeElement = BODY`, `[VERIFY menu api-open] activeItem = null`
   (the click path, covered by `menu.directive.spec.ts:132`, does focus the first item).
 
@@ -3199,7 +3233,7 @@ No source file was modified.
   merely different, so nothing re-renders. `toggletip.directive.ts:191-193` has the same problem one
   level worse: `ariaLabel`, `ariaLabelledBy` and `ariaDescribedBy` are read once into the
   `OverlayConfig` and can never be refreshed.
-  *Runtime verified* — toggletip open, `text.set('Second content')`:
+  _Runtime verified_ — toggletip open, `text.set('Second content')`:
   `before = "First content"` / `after = "First content"` / `ariaLabel config = First content`.
   Same for the tooltip: `panel before = "First tip"` / `panel after = "First tip"`. A tooltip over a
   live value ("Last saved 5 minutes ago", the very example in `tooltip.md:14`) silently goes stale.
@@ -3211,7 +3245,7 @@ No source file was modified.
   `@if (resultGroups.length)` — the empty state replaces it with a `<p>`. A combobox pointing at a
   missing id with `aria-expanded="true"` is exactly the state screen readers report as a broken
   popup.
-  *Runtime verified* — one registered command, then typing `zzzzz`:
+  _Runtime verified_ — one registered command, then typing `zzzzz`:
   `aria-expanded = true | aria-controls = et-command-palette-list-0 | listbox present = false | resolves = false`.
 
 - **A hover-shown tooltip cannot be dismissed with `Escape`, because the only Escape handler is a host listener that needs the trigger focused.**
@@ -3223,19 +3257,19 @@ No source file was modified.
   `apps/docs/components/tooltip.md:37` states unconditionally "Hides when neither hover nor focus
   remains, **or on Escape**", and `:75` repeats it in the comparison table. WCAG 2.1 SC 1.4.13
   (Content on Hover or Focus) requires the dismiss mechanism to work without moving the pointer or
-  focus. *Code-verified only* (needs a real hover to reproduce end-to-end).
+  focus. _Code-verified only_ (needs a real hover to reproduce end-to-end).
 
 - **`closeOnActivate="false"` is silently ignored on a selection item activated with `Enter`.**
   `menu-selection-item.directive.ts:153-156` closes the tree from `handleActivation` whenever
   `event.source === 'keyboard-enter'`, without consulting the item's `closeOnActivate`. Because
   `handleActivation` is driven by the `activate` output (`:79-84`) it runs synchronously inside
-  `menuItem.activate.emit()` at `menu-item.directive.ts:163` — i.e. *before* the honest check at
+  `menuItem.activate.emit()` at `menu-item.directive.ts:163` — i.e. _before_ the honest check at
   `menu-item.directive.ts:165` (`this.closeOnActivate() ?? this.defaultCloseOnActivate`) is even
   reached. So on a `<et-menu-checkbox-item [closeOnActivate]="false">` pointer clicks and `Space`
   keep the menu open as documented, but `Enter` closes it anyway. `closeOnActivate` is forwarded by
   both selection components (`menu-checkbox-item.component.ts:16`,
   `menu-radio-item.component.ts:16`) and documented as an item-level input in `menu.md:45`.
-  *Code-verified only.*
+  _Code-verified only._
 
 - **The menu panel is a `role="menu"` whose `menuitem` children are three generic elements deep, and which also owns a textbox and a decorative scrollbar element.**
   `role="menu"` sits on `.et-menu` via the `MenuPanelDirective` host directive
@@ -3249,7 +3283,7 @@ No source file was modified.
   `menuitem`/`menuitemradio`/`menuitemcheckbox`/`group`/`separator`, and a `textbox` is not among
   them — which is why the APG's searchable variant is a `combobox`, the shape the command palette
   itself uses (`command-palette-search.directive.ts:20-24`). `menu.md:172` claims "Full
-  menu-pattern semantics are emitted automatically". *Code-verified only* (AT behaviour, not
+  menu-pattern semantics are emitted automatically". _Code-verified only_ (AT behaviour, not
   reproducible in jsdom).
 
 - **`[etToggletip]` on a non-interactive element produces an `aria-haspopup="dialog"` popup nobody can open with a keyboard, with no dev-mode error.**
@@ -3260,7 +3294,7 @@ No source file was modified.
   (`toggletip.imports.ts:4-9`). A `<div [etToggletip]="…">` is a mouse-only dialog trigger that
   still advertises itself to assistive technology. The tooltip has the mirror-image gap: it listens
   for `focus` on the host (`tooltip.directive.ts:268`), which does not bubble, so `[etTooltip]` on a
-  wrapper around a focusable child never shows on keyboard focus. *Code-verified only.*
+  wrapper around a focusable child never shows on keyboard focus. _Code-verified only._
 
 - **The palette's global chord opens a second palette when one is already open from `injectCommandPalette().open()`.**
   `command-palette-shortcut.directive.ts:86-105` toggles against its own `openRef` only. A palette
@@ -3268,7 +3302,7 @@ No source file was modified.
   to it, so `mod+k` mounts a second `COMMAND_PALETTE_OVERLAY` on top of the first. The `preventDefault()`
   at `:78` fires unconditionally too, so the chord is swallowed from inside any other overlay as
   well. `command-palette.md:120` says the directive "opens the palette on a key chord, and closes it
-  again on the same chord" without qualification. *Code-verified only.*
+  again on the same chord" without qualification. _Code-verified only._
 
 - **Every `[etTooltip]` with string content appends a hidden `<div>` to `document.body` before any interaction, and one per instance.**
   `tooltip.directive.ts:92-102` runs `syncDescriptionElement` from a constructor effect, and
@@ -3276,7 +3310,7 @@ No source file was modified.
   puts 200 permanently-mounted nodes in `body` for descriptions no reader has asked for; the
   live tooltip already carries `role="tooltip"` and its own id (`tooltip.component.ts:13-18`), which
   is what `:181` switches `aria-describedby` to while shown.
-  *Runtime verified* — one tooltip directive, no hover, no focus:
+  _Runtime verified_ — one tooltip directive, no hover, no focus:
   `[VERIFY tooltip] hidden description divs in body = 1`.
 
 - **`MenuSelectionGroupDirective` never re-syncs when `multiple` changes, so a group that flips modes at runtime keeps stale checked states.**
@@ -3285,7 +3319,7 @@ No source file was modified.
   stays put leaves every item's `checked` as the old mode computed it — a single-select group turned
   multiple keeps exactly one item checked even though `value` is now read as an array (and vice
   versa: an array value under `multiple === false` matches nothing, so everything unchecks only on
-  the next `value` write). `multiple` is a documented public input (`menu.md:104`). *Code-verified only.*
+  the next `value` write). `multiple` is a documented public input (`menu.md:104`). _Code-verified only._
 
 ### Low
 
@@ -3354,6 +3388,7 @@ No source file was modified.
 ### Spec coverage
 
 **Well covered.**
+
 - `menu/headless/menu.directive.spec.ts` (435 lines) is the strongest suite in the batch: open/close
   semantics, roving focus in DOM order incl. late-registered items, disabled skipping, `loop` off,
   submenu open/close with focus restoration, Enter/Space activation, `closeOnActivate`, outside
@@ -3372,6 +3407,7 @@ No source file was modified.
   id collisions, double-destroy and `clear()`.
 
 **Real logic with zero tests.**
+
 - `command-palette-shortcut.directive.ts` (106 lines) — no spec at all. Neither chord matching, the
   bare-attribute transform at `:54`, the `ET4801` guard, nor `toggle()`'s ref tracking (the
   double-open Medium above) is exercised.
@@ -3394,6 +3430,7 @@ No source file was modified.
   `command-palette-labels.ts`'s locale selection are untested.
 
 **A spec that asserts the wrong thing.**
+
 - `command-palette/command-palette.component.spec.ts:188` — "clears the query on Escape instead of
   leaving it". It mounts `CommandPaletteComponent` directly, with no overlay runtime, so the
   document-capture escape listener that actually wins in production is absent. The spec is green and
@@ -3440,8 +3477,8 @@ No source file was modified.
 
 - **`MenuDirective.show()` should focus by default, or take focus as an explicit option.**
   `show(source: MenuOpenSource = 'api', initialFocus: 'first' | 'last' = 'first')` overloads a
-  *provenance* parameter with a *behaviour* decision — `applyInitialFocus` (`:687-690`) reads
-  `openSource` to decide whether to focus at all, so the only way to open programmatically *and*
+  _provenance_ parameter with a _behaviour_ decision — `applyInitialFocus` (`:687-690`) reads
+  `openSource` to decide whether to focus at all, so the only way to open programmatically _and_
   focus is `show('keyboard')`, which is a lie about where the gesture came from. `show({ focus: true })`
   or a separate `focusOnOpen` argument would say what it means; either way the `autoFocus` docs
   (`menu.md:143`) need the caveat.
@@ -3537,7 +3574,7 @@ No source file was modified.
   palette that found nothing is precisely where it belongs, and `noCommands` (nothing registered at
   all) deserves different treatment from `empty` (nothing matched) beyond a different string.
 
-- **Nothing in the batch reflects `prefers-reduced-motion` for the *content* transitions.**
+- **Nothing in the batch reflects `prefers-reduced-motion` for the _content_ transitions.**
   All four stylesheets guard their overlay enter/leave (`menu.component.css:393`,
   `tooltip.component.css:165`, `toggletip.component.css:187`), and
   `menu-selection-item.component.css:82-86` guards the check mark. But
@@ -3578,7 +3615,7 @@ whole across segments, and both are pinned by property-style specs. The command 
 (`command-palette-registry.ts`) is leak-free: every `registerCommands` is tied to a `DestroyRef`,
 `destroy()` is idempotent, and the id-collision rule is specified and tested. Subscription hygiene
 across the batch is good — `menu.directive.ts`'s root document listeners are attached on mount,
-detached on close *and* on destroy, `MenuContextTriggerDirective` mirrors that for its reposition
+detached on close _and_ on destroy, `MenuContextTriggerDirective` mirrors that for its reposition
 listener, `createMenuHoverIntent` cancels both timers on destroy, and the `MenuDirective` destroy
 hook also unhooks itself from its parent's `openSubmenu`. Every registration directive
 (trigger/surface/panel/search/item/selection item/group label) pairs its `set` with an
@@ -3665,7 +3702,7 @@ Runtime verification command used:
   grid's own state, an app that persists `layoutChange` asynchronously (or not at all into that same signal) and
   then touches `items` for an unrelated reason — appending a widget, a re-fetch — resurrects the deleted item.
   Nothing in `grid.md:89` warns about it. Code-verified from the reconciliation branch.
-- **`Ctrl+Shift+Arrow` performs a move *and* a resize in one keystroke.** `applyKeyboardShortcut` uses two
+- **`Ctrl+Shift+Arrow` performs a move _and_ a resize in one keystroke.** `applyKeyboardShortcut` uses two
   independent `if` blocks (`grid-item.component.ts:271` and `:297`), not an `else if`, so both branches run.
   **Runtime-verified** on a 12-column breakpoint: `before {"col":0,…,"colSpan":2}` →
   `after {"col":1,…,"colSpan":3}`. The docs describe the two modifiers as separate gestures (`grid.md:118`).
@@ -3687,7 +3724,7 @@ Runtime verification command used:
   until JS measures. Neither is documented as a limitation, and for masonry it means a failed hydration leaves a
   correctly-sized but permanently blank block (same mechanism as the High above).
 - **`masonry.isResizing()` / `data-resizing` is true for the first 150 ms after mount.**
-  `masonry-resize-settled.ts:29` filters only the `0` emission, so the *first real* width flips `isResizing` on
+  `masonry-resize-settled.ts:29` filters only the `0` emission, so the _first real_ width flips `isResizing` on
   and it clears one debounce later — the exact opposite of the comment above it ("the first real width is not a
   resize") and of `masonry.md:141` ("changed width in the last 150ms"). **Runtime-verified**: right after the
   first measurement, `isResizing() === true` and the host carries `data-resizing=""`. Harmless for the built-in
@@ -3876,7 +3913,7 @@ recently added form/dropzone drivers.
 ### Testing (ranked)
 
 1. The two High keyboard findings: a spec per shortcut, dispatched from a nested `<input>` as well as from the
-   host, asserting the layout does *not* change.
+   host, asserting the layout does _not_ change.
 2. Masonry reorder: assert `items()` equals DOM order and that placements change, not just that three
    equal-column offsets stay `0px` (the current spec cannot fail).
 3. `masonry-resize-settled`: mount → `isResizing()` false; one width change → true → false after the debounce.
@@ -3932,7 +3969,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
 
 - **A looping carousel whose slides have no layout on the first alignment pass never scrolls off the
   clones — it opens showing the second-to-last slide, permanently.**
-  `carousel-loop.ts:198-228`: the effect writes the latch (`alignedShape = shape`, line 215) *before*
+  `carousel-loop.ts:198-228`: the effect writes the latch (`alignedShape = shape`, line 215) _before_
   attempting the measurement, then bails at line 224 when `trackLength` is 0. The comment on 221-223
   says "The children signal will fire again once they do", but (a) `domCount` is a `computed` over a
   length, so a children-array change that keeps the count produces no notification, and (b) even if
@@ -3941,7 +3978,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
   is 0 — a carousel inside a hidden tab panel, a closed accordion, a `display: none` overlay, or one
   rendered before its stylesheet is applied.
   **Verified at runtime.** Case A (four slides, `loop`, `cloneCount()=2`, `domCount()=8`; layout
-  stubbed only *after* the first pass, then the children signal nudged with an ignored child):
+  stubbed only _after_ the first pass, then the children signal nudged with an ignored child):
   `scroll calls: []` — the container is never repositioned, so the track stays parked on
   `children[0]`, which is the clone of slide 3. Case B (same carousel with `offsetLeft`/`offsetWidth`/
   `clientWidth` stubbed from the very first render) reached `ScrollableDirective.scrollToOffsetUnsnapped`
@@ -3956,11 +3993,11 @@ with scratch specs in the domain folders; all scratch files were deleted and the
   `pauseReason() === null && duration() > 0`, and the template's `data-playing`
   (`carousel.component.html:74`) uses the latter. Two different `isPlaying()` in one domain.
   **Verified at runtime.** With `autoplay` on and `isHovered` set: `pauseReason: hover`,
-  `directive isPlaying: false`, `data-playing: null` (so the *play* icon is the visible one), but
+  `directive isPlaying: false`, `data-playing: null` (so the _play_ icon is the visible one), but
   `aria-pressed: "true"` and `aria-label: "Pause automatic slide show"`. A screen-reader user is told
   the slide show is running and offered a pause when it is stopped and showing a play button. The
   same mismatch holds for `reduced-motion`, `page-hidden`, `off-screen` and `focus` — and
-  `prefers-reduced-motion` means it is the *permanent* state for those users, which is exactly the
+  `prefers-reduced-motion` means it is the _permanent_ state for those users, which is exactly the
   cohort WCAG 2.2.2 is about.
 
 ### Medium
@@ -4032,9 +4069,9 @@ with scratch specs in the domain folders; all scratch files were deleted and the
 
 - **`[etScrollableActiveChild]` does nothing at all, and three doc pages promise that it does.**
   `scrollable-active-child.directive.ts:19-26` builds the `ref` object and then only registers the
-  *unregister* callback — there is no call that adds it to the scrollable. `ScrollableDirective` has
+  _unregister_ callback — there is no call that adds it to the scrollable. `ScrollableDirective` has
   no `registerActiveChild` method either: `activeChildren` (line 141) is only ever read by
-  `getActiveChildren()` (line 420) and only ever *filtered* by `unregisterActiveChild()` (line 275).
+  `getActiveChildren()` (line 420) and only ever _filtered_ by `unregisterActiveChild()` (line 275).
   Nothing anywhere reads `getActiveChildren()`, so nothing scrolls to an active child even in
   principle. Meanwhile `apps/docs/components/scrollable.md:111` says "marks a child as active so it's
   auto-scrolled into view (great for tab-bar-like lists)", line 117 says `getActiveChildren()`
@@ -4051,7 +4088,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
 - **`ScrollableNavigationComponent` puts `takeUntilDestroyed()` first in a pipe that `switchMap`s into
   `fromEvent`, so the scroll listener it opens is never torn down.**
   `scrollable-navigation.component.ts:198-215`: `takeUntilDestroyed()` is the first operator (line
-  200), then `filter` → `switchMap(() => fromEvent(container, 'scroll'))`. On destroy the *source*
+  200), then `filter` → `switchMap(() => fromEvent(container, 'scroll'))`. On destroy the _source_
   completes, but `switchMap` does not complete until its inner observable does, and `fromEvent` never
   completes — so the subscription (and the DOM listener, and the `tap` that writes
   `manualActiveNavigationIndex` on a destroyed component) outlives the component. Triggered by any
@@ -4067,7 +4104,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
   gated on `childIntersectionsActivated`, which only `activateChildIntersections()` flips —
   called by the masks component, the snap/darken/navigation directives and `etCarousel`, but never by
   the output itself (`scrollable.component.ts:72-85`). So `<et-scrollable renderMasks="false"
-  (intersectionChange)="…">` with no opt-in feature is a documented output
+(intersectionChange)="…">` with no opt-in feature is a documented output
   (`scrollable.md:116`) that never fires.
   **Verified at runtime.** `renderMasks=false`, three children: one emission, `[[]]`. With
   `renderMasks` left at its default: one emission with three entries. The output should call
@@ -4136,7 +4173,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
   (`scrollbar.directive.ts:55-56`) and the docs (`scrollbar.md:107-118`) state this and give the
   snippet to copy, so it is a documented cost rather than a surprise — but it is the one piece of the
   domain that the styles-only-component pattern used elsewhere in this repo (see
-  `CarouselTransitionStylesComponent`, mounted by the *directive* via `injectStyleManager()`) would
+  `CarouselTransitionStylesComponent`, mounted by the _directive_ via `injectStyleManager()`) would
   fix outright, and the class the directive writes has no effect without it.
 
 ### Low
@@ -4204,7 +4241,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
   opt-in-features test (`scrollable.component.spec.ts:126-138`).
 - `scrollable/headless/scrollable.directive.ts` — `suspendSnap`'s ref counting, `scrollToOffsetUnsnapped`,
   the `isScrollableChildIgnored` filter and the whole `registerChrome`/`activeChrome`
-  filter-sort-resolve pipeline. Only `snap` presence and the chrome *stamping* are asserted.
+  filter-sort-resolve pipeline. Only `snap` presence and the chrome _stamping_ are asserted.
 - `scrollbar/headless/scrollbar.directive.ts` — `startThumbDrag`'s delta→offset mapping (including the
   RTL sign flip and the `cancelled` restore) and `pageTowardsPointer`'s direction choice. The geometry
   helpers they call are tested; the mapping is not.
@@ -4246,7 +4283,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
    settle callback in `carousel.directive.ts:359-384` is already the exact place a "the carousel has
    arrived at slide N" output belongs.
 3. **A `role="scrollbar"` opt-in for `etScrollbar`.** `scrollbar.md:120-133` argues well for the
-   default, but a container that is *not* itself focusable (a virtualised list, a `contenteditable`
+   default, but a container that is _not_ itself focusable (a virtualised list, a `contenteditable`
    sibling) has no keyboard path at all, and PrimeNG/Radix both offer the ARIA scrollbar as a choice.
    `geometry().progress` already supplies `aria-valuenow`.
 4. **Expose the scrollable's `activeSnapOrigin`/`isSnapSuspended` and `suspendSnap()` as public API.**
@@ -4290,7 +4327,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
 
 ### Bundle size
 
-1. **Move the `et-scrollbar-host` rule into a styles-only component the *directive* mounts.**
+1. **Move the `et-scrollbar-host` rule into a styles-only component the _directive_ mounts.**
    `scrollbar.component.css:27-33` is four declarations that every headless consumer has to copy by
    hand (see the Medium finding). A `ScrollbarHostStylesComponent` mounted from
    `scrollbar.directive.ts:213` via `injectStyleManager()` follows the pattern AGENTS.md documents,
@@ -4334,7 +4371,7 @@ with scratch specs in the domain folders; all scratch files were deleted and the
 5. **`prefers-reduced-motion` is honoured for the carousel's transitions and autoplay but not for its
    programmatic scrolls.** `goToDomIndex` (`carousel.directive.ts:494-521`) and
    `ScrollableSnapDirective.glideToNearestChild` both request `behavior: 'smooth'` unconditionally.
-   Chrome and Firefox map `scroll-behavior: smooth` to instant under reduced motion but do *not* do
+   Chrome and Firefox map `scroll-behavior: smooth` to instant under reduced motion but do _not_ do
    the same for a `behavior: 'smooth'` argument, so the one motion a reduced-motion user cannot avoid
    is the slide change itself. `injectPrefersReducedMotion()` is already injected in
    `carousel.directive.ts:103`.
@@ -4385,7 +4422,7 @@ releases on destroy, the mutation-observer `attributeFilter` narrowing (and the 
 `style`) is right, `activeChrome`'s filter/sort/resolve is correct, and the two chrome components'
 `aria-hidden` + `tabindex="-1"` decision is deliberate and documented. Scrollbar: this is the
 best-engineered domain in the batch — the RTL handling (magnitude on read, sign on write, direction read
-off the *target*) is correct and tested, `markScrollbarHost` is properly ref-counted with a `WeakMap`,
+off the _target_) is correct and tested, `markScrollbarHost` is properly ref-counted with a `WeakMap`,
 `preventDefault` on the thumb press to avoid closing a focus-dismissed panel is a real fix with a real
 test, the drag's `cancelled` branch restores the original offset, `pageTowardsPointer` relies on the
 thumb's `stopPropagation` rather than a fragile hit test, and `measureScrollbar`'s clamps handle both
@@ -4419,7 +4456,7 @@ working tree in both domains is unmodified.
   phantom band on a calendar nobody has touched yet.**
   `CalendarDirective.previewRange` (calendar/headless/calendar.directive.ts:526-541) takes
   its hover point as `this.hoveredDate() ?? this.focusedDate()`. `focusedDate` is a
-  `linkedSignal` that is *never* null (calendar.directive.ts:293-310), so the fallback fires
+  `linkedSignal` that is _never_ null (calendar.directive.ts:293-310), so the fallback fires
   on first render, before any pointer or keyboard interaction, and before
   `CalendarGridDirective` has ever seen a `focusin`. The built-in strategy hides this
   because its `preview` returns `null` while `current.start === null`
@@ -4427,7 +4464,7 @@ working tree in both domains is unmodified.
   `preview` at all, so line 536 falls through to `strategy.select(at, current)`, which
   always returns a closed range (calendar-range-strategy.ts:93-97); and
   `createWeekRangeStrategy.preview` deliberately bands from "the first hover" without
-  checking whether there *is* a hover (calendar-range-strategy.ts:64-75).
+  checking whether there _is_ a hover (calendar-range-strategy.ts:64-75).
   **Runtime-verified** on `<et-calendar mode="range" [activeMonth]="July 2026">` with no
   interaction whatsoever:
   - default strategy → `[]` banded (correct);
@@ -4436,14 +4473,14 @@ working tree in both domains is unmodified.
     cells carrying `data-preview`;
   - `createWeekRangeStrategy({ weekStartsOn: 1 })` →
     `["29:start","30:middle","1:middle","2:middle","3:middle","4:middle","5:end"]`.
-  A consumer opening the `FixedLengthRange` / `WeekRange` calendar (both shipped stories,
-  both embedded in `calendar.md:148` and `:152`) sees a fully drawn seven-day selection
-  they did not make. Same root cause suppresses nothing in a coarse grid either: the
-  cell directive refuses to set `hoveredDate` outside the selection view
-  (calendar-cell.directive.ts:75-85, and the spec at calendar.directive.spec.ts:462 checks
-  exactly that), but `previewRange` reads `focusedDate()` regardless, so the guard only
-  covers the pointer path. The fix is a "focus/hover is real" gate — e.g. only fall back to
-  `focusedDate()` while `CalendarGridDirective.focusIsInside()`.
+    A consumer opening the `FixedLengthRange` / `WeekRange` calendar (both shipped stories,
+    both embedded in `calendar.md:148` and `:152`) sees a fully drawn seven-day selection
+    they did not make. Same root cause suppresses nothing in a coarse grid either: the
+    cell directive refuses to set `hoveredDate` outside the selection view
+    (calendar-cell.directive.ts:75-85, and the spec at calendar.directive.spec.ts:462 checks
+    exactly that), but `previewRange` reads `focusedDate()` regardless, so the guard only
+    covers the pointer path. The fix is a "focus/hover is real" gate — e.g. only fall back to
+    `focusedDate()` while `CalendarGridDirective.focusIsInside()`.
 
 - **`minuteStep`/`secondStep` accept values that hang or silently disable a column;
   unlike `monthsShown`, they are not clamped.**
@@ -4466,8 +4503,8 @@ working tree in both domains is unmodified.
     (time-picker.directive.ts:271), so no option ever gets `focused: true`
     (time-picker.directive.ts:384), every option keeps `tabindex="-1"`, and the column
     becomes unreachable by keyboard.
-  Not a hypothetical input: these are plain numeric attributes on a public component and a
-  `[minuteStep]="form.step()"` binding can easily be `0` while a form is empty.
+    Not a hypothetical input: these are plain numeric attributes on a public component and a
+    `[minuteStep]="form.step()"` binding can easily be `0` while a form is empty.
 
 - **The calendar's `role="grid"` accessibility tree is not the one the docs promise:
   the row groups are not owned by the grid, and they nest.**
@@ -4479,7 +4516,7 @@ working tree in both domains is unmodified.
   **Runtime-verified** on the default single-month calendar:
   `rowgroup parent role: null (.et-calendar-weeks-viewport)`,
   `rowgroup is direct child of grid: false`, `rowgroup count: 2`, and the only
-  `role="row"` that *is* a direct child of the grid is `.et-calendar-weekdays` — the
+  `role="row"` that _is_ a direct child of the grid is `.et-calendar-weekdays` — the
   header row sits at depth 1 while the data rows sit at depth 3, under two generic
   containers and a nested rowgroup. `calendar.md:250` states "`role="grid"` with
   `row`/`columnheader`/`gridcell` structure", and `:253` repeats the claim for the coarse
@@ -4494,7 +4531,7 @@ working tree in both domains is unmodified.
   does nothing — `canZoomOut()` exists but the default component never reads it.**
   `CalendarDirective.canZoomOut` (calendar.directive.ts:516) is `view() !== 'multiYear'`,
   and `zoomOut()` from `multiYear` sets `view` to `selectionView()`
-  (calendar.directive.ts:652-661) — which for year precision *is* `multiYear`, i.e. a
+  (calendar.directive.ts:652-661) — which for year precision _is_ `multiYear`, i.e. a
   no-op. The default header button (calendar.component.html:21-38) has no `[disabled]`
   binding at all, and `resolvedZoomLabel()` returns `labels.switchToMonthView`
   (`'Choose date'`) for the `multiYear` case (calendar.component.ts:113-124).
@@ -4512,11 +4549,11 @@ working tree in both domains is unmodified.
 
 ## Medium
 
-- **In `range` mode an off-step value on the *inactive* end is invisible in its column,
+- **In `range` mode an off-step value on the _inactive_ end is invisible in its column,
   contradicting the docs' "every column marks both ends".**
   `minuteValues`/`secondValues` splice in an off-step value only from `selectedParts()`,
   i.e. the **active** end (`time-picker.directive.ts:315-321`, `include:
-  this.selectedParts()?.minute`). The range markers are then keyed on exact option values
+this.selectedParts()?.minute`). The range markers are then keyed on exact option values
   (`rangeStart: start !== null && start[unit] === optionValue`,
   time-picker.directive.ts:655-659), so a start of `09:07` with `minuteStep=5` has no
   option to attach to. **Runtime-verified** with
@@ -4528,7 +4565,7 @@ working tree in both domains is unmodified.
   range input, whose typed entry is deliberately ungated (`time-picker.md:79`).
 
 - **12-hour typeahead: typing `1` selects 12.**
-  `selectByQuery` (time-picker.directive.ts:563-572) takes the first option whose *label*
+  `selectByQuery` (time-picker.directive.ts:563-572) takes the first option whose _label_
   or `String(value)` starts with the buffer, and the 12-hour hour column's first option is
   value `0` labelled `"12"` (`toLabel`, time-picker.directive.ts:372-374).
   **Runtime-verified** on `format="h:mm a"`: `hour labels: 12,1,2,…,11`; after a `1`
@@ -4566,7 +4603,7 @@ working tree in both domains is unmodified.
   `{start: null, end: null}` — a reset button, a wizard step revisited — keeps the picker
   in "already hopped" mode, so filling the start no longer opens the end and the reader
   has to find the side switch. `time-picker.md:144` describes the hop as belonging to
-  "the pick that *completes* the start", which reads as per-range, not per-instance. A
+  "the pick that _completes_ the start", which reads as per-range, not per-instance. A
   `linkedSignal` sourced on `rangeValue().start === null` would restore it.
 
 - **`scrollOptionIntoView` reads layout from inside a plain `effect`, and only half of it
@@ -4579,7 +4616,7 @@ working tree in both domains is unmodified.
   the browser has necessarily laid the new options out. The `columnElement.scrollTo?.()`
   on line 127 is explicitly optional-chained for environments that lack it, which shows
   the author knew this can run outside a real browser — but `getBoundingClientRect` on
-  line 120 is not, and this effect *does* fire without any user interaction (the anchor
+  line 120 is not, and this effect _does_ fire without any user interaction (the anchor
   option always has `focused: true`). `afterRenderEffect` with a `read`/`write` split is
   the pattern this wants. The sibling calendar focus pull is safe by accident: it is gated
   on `grid.focusIsInside()`, which needs a real `focusin`.
@@ -4604,7 +4641,7 @@ working tree in both domains is unmodified.
   `calendar.md:81` covers it in one clause with no demo, while month precision gets two
   (`:88`, `:92`). Same for the `German` calendar story and the time picker's `WithSeconds`,
   `Bounded`, `RangeEmpty`, `RangeWithinOneHour`, `RangeCustomLabels`. Every id the docs
-  *do* reference resolves to a real export — checked.
+  _do_ reference resolves to a real export — checked.
 - **`time-picker.md:29` types `timeFilter` as `((date: Date) => boolean) | null`**, but the
   real signature is `(date: Date, side: TimeRangeSide) => boolean`
   (`TimePickerTimeFilterFn`, time-picker.directive.ts:40). The range table at `:132` gets
@@ -4617,7 +4654,7 @@ working tree in both domains is unmodified.
   stacking context to sit in.** `.et-time-picker-option` is `position: relative` with
   `z-index: auto`, so it does not establish one, and neither `.et-time-picker-column` nor
   `.et-time-picker-column-wrapper` does — the band therefore paints behind the
-  backgrounds of every ancestor up to whatever the *host* establishes. It works today
+  backgrounds of every ancestor up to whatever the _host_ establishes. It works today
   because nothing between the option and the overlay pane paints an opaque background,
   but a consumer who gives `.et-time-picker-columns` (or any wrapper) a background loses
   the band entirely. `isolation: isolate` on the option, plus `z-index: 0` on its content,
@@ -4679,7 +4716,7 @@ working tree in both domains is unmodified.
 assertion short of the High findings:
 
 - `calendar.directive.spec.ts:485` ("snaps a pick to its whole week, and previews the week
-  under the pointer") dispatches `pointerenter` *before* reading the band, so it cannot
+  under the pointer") dispatches `pointerenter` _before_ reading the band, so it cannot
   distinguish "bands on hover" from "bands always". Its own comment — "the whole
   Monday-13th week bands before anything is picked at all" — is accidentally describing
   High #1.
@@ -4770,8 +4807,8 @@ which is torn down via `destroyRef.onDestroy` (time-picker-column.directive.ts:4
   to send Home/End without a page"). A discriminated options union per view would make the
   omission a type error.
 - **Name the coarse-grid label strings for what they do.** `switchToMonthView`
-  (`'Choose date'`) is the string the header shows when returning to *whatever the finest
-  grid is*, which at month precision is the month grid — so the label is wrong for two of
+  (`'Choose date'`) is the string the header shows when returning to _whatever the finest
+  grid is_, which at month precision is the month grid — so the label is wrong for two of
   the three precisions. Splitting it into `switchToSelectionView` per precision (or letting
   the component pass `precision` into the label lookup) fixes both the year-precision
   dead-end name and the month-precision mislabel in one change.
@@ -4944,23 +4981,24 @@ been deleted; no source file was modified.
   inline-`styles` component in the lib does wrap it — `tabs/tabs/tab-group.component.ts`,
   `scrollable/headless/scrollable-masks.component.ts`,
   `breadcrumb/breadcrumb-outlet.component.ts` all start `styles: \`\n @layer components {`.
-  Consumer failure: `<et-description class="text-base">` renders at
-  `--et-description-font-size` (12px) and `<et-label class="text-blue-500">` keeps the muted
-  label colour, because `et-description { font-size: … }` / `et-label { display: inline }` win the
+Consumer failure: `<et-description class="text-base">`renders at`--et-description-font-size`(12px) and`<et-label class="text-blue-500">`keeps the muted
+label colour, because`et-description { font-size: … }`/`et-label { display: inline }` win the
   layer comparison before specificity is even consulted. **Code-verified only** (layer precedence
   is not observable in jsdom).
 
 - **`createCurrencyMask({ allowNegative: true })` cannot accept a minus typed into an empty field —
   the natural way to enter a negative amount is silently erased.**
   `masked-input/masks/currency-mask.ts:64-68`: with no digits yet, `normalized` is `''` and `toRaw`
-  returns `''` *before* the `negative` flag is applied, so the sign is dropped. The mask then
+  returns `''` _before_ the `negative` flag is applied, so the sign is dropped. The mask then
   repaints the element from that empty raw. **Verified at runtime** through the real engine
   (`applyMaskEdit`):
+
   ```
   typed "-":                 {"raw":"","display":"","caret":0}
   then "5":                  {"raw":"5","display":"5","caret":1}
   "-" before an existing 5:  {"raw":"-5","display":"-5","caret":0}
   ```
+
   So `allowNegative` only works if the user types the digits first and then goes back to insert the
   sign. `text-inputs.md:324` documents `allowNegative` with no such caveat.
 
@@ -4969,16 +5007,18 @@ been deleted; no source file was modified.
   control describes the first field's message.** `form-field/headless/form-field.directive.ts:54-73`
   builds `et-form-field-error-${name}` / `-hint-` / `-warning-` and only falls back to the
   unique `FALLBACK_ID` when `name` is empty. Realistic case: the same `<et-input name="search"
-  [(value)]="…">` rendered in a toolbar and in a modal — both fields emit
+[(value)]="…">` rendered in a toolbar and in a modal — both fields emit
   `id="et-form-field-error-search"`, and `aria-describedby` resolves to the first in document
   order.
   **Verified at runtime that signal-forms-bound controls are safe** — signal forms generates
   globally unique names, so the bound path never collides:
+
   ```
   control names:      [ 'a.form0.email', 'a.form1.email' ]
   aria-describedby:   [ 'et-form-field-error-a.form0.email', 'et-form-field-error-a.form1.email' ]
   error ids / text:   [ '…form0.email => Create email required', '…form1.email => Edit email required' ]
   ```
+
   The exposure is limited to hand-set `name`s. Appending the `FALLBACK_ID` unconditionally would
   close it. (Side note from the same output: those generated ids contain `.`, so they are valid
   HTML ids but not usable in an unescaped CSS/`querySelector` id selector.)
@@ -5075,14 +5115,14 @@ been deleted; no source file was modified.
 - **Docs: `description-list.md:3` calls `et-description` "a single hint/help line under an input" —
   inside an `et-form-field` it is not.** The field's template has no `select="et-description"` slot,
   so an `<et-description>` falls to the catch-all `<ng-content />`
-  (`form-field/form-field.component.html:17`) and renders *inside the control frame*, next to the
+  (`form-field/form-field.component.html:17`) and renders _inside the control frame_, next to the
   input. `et-hint` is the hint. `choice-inputs.md:100,180` documents the real use (a secondary line
   in a checkbox/radio option) correctly; only that one sentence is misleading.
 
 - **Docs: `forms.md:236` ("others fall back to an explicit `[max]`") implies a counter is usable
   outside `et-form-field`; it is not.** None of the controls with their own support region project
   an `et-counter` slot (`grep -rn "et-counter" choice-field dropzone otp-input rating slider
-  selection-list` is empty), and `form-field/headless/form-support.ts:72-77` — unlike the field's
+selection-list` is empty), and `form-field/headless/form-support.ts:72-77` — unlike the field's
   own `shouldRenderSupport` (`form-field.component.ts:229-239`) — does not consider
   `registeredCounter()`, so the region would not open for a counter even if one were projected.
 
@@ -5125,7 +5165,7 @@ input inside the wrapper) and `form/form.directive.spec.ts`.
 
 - `form-field/headless/support-presentation.ts` — the severity/direction reducer
   (`reduceSupportPresentation`, `occupyingState`, `SUPPORT_STATE_SEVERITY`) is ~110 lines of pure,
-  trivially testable branching shared by the field shell *and* every headless support region, and
+  trivially testable branching shared by the field shell _and_ every headless support region, and
   nothing exercises it. `grep -rln reduceSupportPresentation --include='*.spec.ts'` is empty.
   This is the highest-value gap in the batch.
 - `form-field/counter.component.ts` — `defaultLengthOf` (string / array / Set / Map / stringify),
@@ -5142,7 +5182,7 @@ input inside the wrapper) and `form/form.directive.spec.ts`.
   behaviour `forms.md:315-318` promises), `isBusy`/`showBusySpinner`, `prefixOffset`,
   `shouldRenderSupport` for a counter-only field, and the `isHidden` → `display: none` path.
   I did verify the counter-only case at runtime and it works — `counter rendered: true
-  hidden: false text: "0 / 5"` — but nothing in the repo guards it, and it depends on the subtle
+hidden: false text: "0 / 5"` — but nothing in the repo guards it, and it depends on the subtle
   fact that content projected into an `@if`-ed `<ng-content>` is still instantiated.
 - `form-field/headless/anchored-panel-controller.ts` (253 lines) — no spec in this folder; it may be
   exercised indirectly through the select/cascader/date-picker specs, which is worth confirming.
@@ -5216,12 +5256,12 @@ gates every shell-only `data-*` host binding on `usesTextFieldShell()`.
    direct cause of the High finding: `input.component.ts:13-34`, `number-input.component.ts:43-65`,
    `password-input.component.ts:29-48` and `textarea.component.ts:13-36` each repeat ~20 input names
    from `TextFieldControlDirective`, and one of them dropped `warnings` while the other three
-   dropped it *and* nobody noticed because there is no test that a wrapper exposes what its base
+   dropped it _and_ nobody noticed because there is no test that a wrapper exposes what its base
    declares. Two fixes worth doing together: export a shared `const TEXT_FIELD_CONTROL_INPUTS = [
-   'value', 'mixed', 'touched', 'mixedLabel', 'disabled', 'readonly', 'hidden', 'invalid', 'errors',
-   'warnings', 'required', 'name', 'maxLength', 'pending', 'aria-label', 'aria-labelledby' ] as
-   const` next to the base directive and spread it (`inputs: [...TEXT_FIELD_CONTROL_INPUTS,
-   'placeholder', 'rows', …]`), and add one spec that asserts every wrapper's
+'value', 'mixed', 'touched', 'mixedLabel', 'disabled', 'readonly', 'hidden', 'invalid', 'errors',
+'warnings', 'required', 'name', 'maxLength', 'pending', 'aria-label', 'aria-labelledby' ] as
+const` next to the base directive and spread it (`inputs: [...TEXT_FIELD_CONTROL_INPUTS,
+'placeholder', 'rows', …]`), and add one spec that asserts every wrapper's
    `ɵcmp.inputs` is a superset of the base's declared inputs.
 2. **An `et-input` driver and an `et-form-field` driver in `lib/forms/testing/`.** The folder has 17
    drivers including `textarea-driver.ts`, `number-input-driver.ts` and
@@ -5258,14 +5298,14 @@ gates every shell-only `data-*` host binding on `usesTextFieldShell()`.
    already correctly on `counter.component.css`, which is the pattern to copy.
 2. **Split the warning branch of the support region into its own styles-only component.**
    `.et-form-field-warnings` (`form-field.component.css:402-411`) plus the `--et-form-field-
-   warning-font-size` `@property` are dead weight for any app that never writes a `warn()` rule —
-   and the code already goes out of its way not to resolve the warning *theme* until one renders
+warning-font-size` `@property` are dead weight for any app that never writes a `warn()` rule —
+   and the code already goes out of its way not to resolve the warning _theme_ until one renders
    (`form-field.component.ts:271-273`, with a comment saying so). Mount the sheet from the same
    place, for the same reason.
 3. **`FormFieldTextShellStylesComponent` is 328 lines mounted by every text control, and roughly a
    third of it serves one `labelMode`.** The `[data-label-mode='inline']` block (lines 72-111) and
    the two `floating-*` blocks (lines 113-185) are mutually exclusive at runtime, and `labelMode` is
-   an input on the *field*, so the field could mount a per-mode sheet from an effect the way
+   an input on the _field_, so the field could mount a per-mode sheet from an effect the way
    `etTableVirtualScroll` mounts `TableVirtualScrollStylesComponent`. An app that uses only the
    default `static` mode currently ships all four. Caveat worth designing around: the comments at
    lines 46-48 (and in the textarea/rich-text sheets) explain that these use bare attribute
@@ -5305,7 +5345,7 @@ gates every shell-only `data-*` host binding on `usesTextFieldShell()`.
 5. **The number input's stepper buttons are unreachable by keyboard** (`tabindex="-1"`,
    `number-input.component.html:36,49`). Defensible — the arrow keys on the input do the same job
    and are documented (`text-inputs.md:86-97`) — but it means the coarse/fine modifier vocabulary is
-   the *only* keyboard path, and a touch user who cannot type has no modifier. Worth a deliberate
+   the _only_ keyboard path, and a touch user who cannot type has no modifier. Worth a deliberate
    decision rather than an omission.
 
 #### Testing (ranked)
@@ -5323,7 +5363,7 @@ gates every shell-only `data-*` host binding on `usesTextFieldShell()`.
    field reports itself valid); and the three announcement thresholds.
 3. **A "wrapper exposes its base's inputs" spec.** One loop over
    `[InputComponent, NumberInputComponent, PasswordInputComponent, TextareaComponent,
-   ColorInputComponent]` asserting each `ɵcmp.inputs` covers every input declared on
+ColorInputComponent]` asserting each `ɵcmp.inputs` covers every input declared on
    `TextFieldControlDirective`. This single test catches the High finding and every future
    recurrence of it, and it is the cheapest test in this list.
 4. **`form-field.component.ts`'s parse-error synthesis.** `effectiveErrors`
@@ -5359,7 +5399,7 @@ afterwards. Working tree left unmodified.
   `this.selection.select(firstItem)` before focusing it. `LabelDirective` fires `activate()` on every
   click on the projected label (`libs/components/src/lib/forms/form-field/headless/label.directive.ts:21`
   → `:63-65` → `form-field.directive.ts:278-279`). Because the group's `et-label` is the caption for the
-  *whole* group rather than for one option, a user who clicks the words "Favorite color" mutates the form
+  _whole_ group rather than for one option, a user who clicks the words "Favorite color" mutates the form
   value with no visible relationship to what they clicked — and in a checkbox group a second click on the
   caption toggles option one back off. Every sibling group-shaped control only focuses on activate:
   `slider/headless/slider.directive.ts:146-148`, `rating/headless/rating.directive.ts:119-121`,
@@ -5392,7 +5432,7 @@ afterwards. Working tree left unmodified.
   `aria-describedby`, and `forms/description/description.component.ts` emits no `id`. Because
   `aria-labelledby` is present, name-from-contents is off, so the description text is dropped entirely
   rather than merely being in the wrong slot. **Runtime verified** on `<et-radio value="team">Team
-  <et-description>Everything in Solo, plus shared workspaces.</et-description></et-radio>`:
+<et-description>Everything in Solo, plus shared workspaces.</et-description></et-radio>`:
   `aria-labelledby="et-selection-option-label-0"`, `aria-describedby` → `null`, `et-description` has no
   `id`. The docs advertise this as the way to give an option secondary text
   (`apps/docs/components/choice-inputs.md:100`, and the card examples at `:180` and `:203`), so a
@@ -5406,7 +5446,7 @@ afterwards. Working tree left unmodified.
   (`selection-list/segmented-button-group/segmented-button.component.ts:8-11`) — no element ever carries
   `optionDirective.labelId()`. **Runtime verified**: rendered
   `<et-segmented-button … role="radio" aria-checked="false" aria-labelledby="et-selection-option-label-10"
-  tabindex="0"><div class="et-segmented-button-bg"></div>Day</et-segmented-button>` with no element
+tabindex="0"><div class="et-segmented-button-bg"></div>Day</et-segmented-button>` with no element
   matching that id. The segment currently gets a name only because browsers fall back to
   name-from-contents when an `aria-labelledby` resolves to nothing — the third `et-description`-folding
   problem the `labelId` mechanism exists to prevent is simultaneously unsolved here, so projecting an
@@ -5451,7 +5491,7 @@ afterwards. Working tree left unmodified.
 
 - **`checkbox-group` / `radio-group` / `segmented-button-group` never expose the `activate()` /
   focus split that `FormFieldControl` documents.** `form-field/headless/form-field.tokens.ts:96-104`
-  states `focus()` "only focuses — it never toggles, opens a panel, or selects", and every group *does*
+  states `focus()` "only focuses — it never toggles, opens a panel, or selects", and every group _does_
   implement both `focus()` (`selection-list.directive.ts:102-113`) and `activate()`. Only `activate()` is
   reachable from a label click, so the correct, non-mutating entry point exists but is never used for the
   group case. This is the same defect as the first High finding, recorded here as the API-shape half:
@@ -5492,13 +5532,13 @@ afterwards. Working tree left unmodified.
 
 - **`text-sm` / `text-xs` in the story files emit nothing.** Storybook's Tailwind theme resets the
   scale with `--text-*: initial` and re-declares only `h1…h6, huge, extra-large, large, base, medium,
-  small, subline` (`apps/storybook/src/styles/storybook.css:32-97`). Dead classes:
+small, subline` (`apps/storybook/src/styles/storybook.css:32-97`). Dead classes:
   `switch/stories/switch-storybook.component.ts:26,28,62,66`;
   `rating/stories/rating-storybook.component.ts:26,31`;
   `selection-list/radio-group/stories/radio-group-storybook.component.ts:57`;
   `selection-list/checkbox-group/stories/checkbox-group-storybook.component.ts:51`;
   `selection-list/segmented-button-group/stories/segmented-button-group-storybook.component.ts:30`.
-  (`text-et-surface-muted` / `bg-et-surface-bg` in the same files *are* valid —
+  (`text-et-surface-muted` / `bg-et-surface-bg` in the same files _are_ valid —
   `apps/storybook/src/styles/surface-themes.css:84-88`.)
 
 - **Comment-policy violations (rationale / migration narration, none of the four allowed cases).**
@@ -5525,7 +5565,7 @@ afterwards. Working tree left unmodified.
   (`selection-card-styles.component.css:52`) resolves from `--et-surface-border-solid`, so a card
   option in a group showing an error keeps a neutral panel edge.
 
-- **`.et-choice-field-control-slot > *::after` stretches the hit area of *every* projected root node,
+- **`.et-choice-field-control-slot > *::after` stretches the hit area of _every_ projected root node,
   not just the control** (`choice-field/choice-field-card-styles.component.css:33-39`). The slot is fed
   by a catch-all `<ng-content />` (`choice-field.component.html:8`), so any stray element a consumer
   drops next to the control gets its own full-panel overlay stacked on top.
@@ -5561,8 +5601,8 @@ Files with real logic and zero tests:
   missing label span (High #4) are all untested. `segmented-button-group.component.ts` likewise has no
   spec for the `TabScaleStylesComponent` mount or the `tabs` variant.
 - `choice-field/choice-field.component.ts` — no spec of its own at all. The `SelectionCardStylesComponent`
-  + `ChoiceFieldCardStylesComponent` mount effect (`:82-87`), the support wiring, and the card hit-area
-  behaviour are only touched indirectly by `selection-card.spec.ts`.
+  - `ChoiceFieldCardStylesComponent` mount effect (`:82-87`), the support wiring, and the card hit-area
+    behaviour are only touched indirectly by `selection-card.spec.ts`.
 - `checkbox/checkbox.component.ts` — the two frozen-colour effects (`:48-73`) that call
   `getComputedStyle` are untested (and untestable in jsdom, which drops the stylesheets).
 - `selection-list/checkbox-group/checkbox-option.component.ts`,
@@ -5579,7 +5619,7 @@ Files with real logic and zero tests:
 
 No existing spec asserts a wrong behaviour. Two blind spots would each have caught a High finding: no
 spec clicks a group's `et-label` (finding 1), and no spec resolves a control's `aria-describedby` back to
-a rendered element (finding 2). The three group *components* never run
+a rendered element (finding 2). The three group _components_ never run
 `describeMixedStateContract` either — only the headless directive does — so their forwarding of
 `mixed` / `mixedChange` through `hostDirectives` is unverified.
 
@@ -5623,7 +5663,7 @@ a rendered element (finding 2). The three group *components* never run
   `form-support.ts:173-196` returns 22 members but neither `formFieldDir.hintId()`-style ids nor
   `supportPresentation().directions`, which is why four templates forgot the ids (High #2) and why the
   exit animation is missing everywhere but `form-field` (Medium #3). Returning `errorId`/`warningId`/
-  `hintId`/`errorDirection`/`errorState`/… and shipping one shared support-region *partial* would make the
+  `hintId`/`errorDirection`/`errorState`/… and shipping one shared support-region _partial_ would make the
   correct markup the only markup — `form-field.component.ts` could then drop its duplicate copy
   (`:152,230-299,337-348`).
 - **A `ChoiceFieldDriver` and a `SegmentedButtonGroupDriver`.** `forms/testing/` has 17 drivers but
@@ -5644,7 +5684,7 @@ a rendered element (finding 2). The three group *components* never run
 - **Extract the support region into one styles-only component mounted by `injectFormSupport`.** The
   ~90-line block (six `@property` declarations, `-support`, `-support-stack`, `-support-content`,
   `-errors`, `-warnings`, `-hint`, the `[data-can-animate]` transitions and the reduced-motion override)
-  is duplicated near-verbatim five times *in this batch alone* —
+  is duplicated near-verbatim five times _in this batch alone_ —
   `checkbox-group.component.css:2-38,131-207`, `radio-group.component.css:2-38,123-199`,
   `segmented-button-group.component.css:2-38,155-231`, `rating.component.css:14-49,180-252`,
   `choice-field.component.css:8-42,154-231` — plus copies in slider, dropzone and otp. One
@@ -5783,12 +5823,12 @@ files have been deleted**. No source file was modified.
   with `active.slice(-managerConfig.maxVisible)`, and `slice(-0)` is `slice(0)` — the whole array
   (**verified**: `[1,2,3].slice(-0).length === 3`). The same value also makes
   `notification-manager.ts:129` (`currentActive.length >= managerConfig.maxVisible`) true on every
-  `open()`, so each new toast dismisses the oldest *and* the cap never applies. The config is typed
+  `open()`, so each new toast dismisses the oldest _and_ the cap never applies. The config is typed
   `number` with no clamping, so `0` is a legal value that does the opposite of what it reads as.
 - **The public JSDoc for `duration` contradicts the code and its own next sentence.**
   `notification-config.ts:38-42` opens with "`0` or `undefined` uses the manager's
   `defaultDuration` for the current status", but `notification-ref.ts:33-36` returns `cfg.duration`
-  whenever it is `!== undefined`, so `duration: 0` means *never auto-dismiss* — which is what the
+  whenever it is `!== undefined`, so `duration: 0` means _never auto-dismiss_ — which is what the
   third sentence of the same comment and `apps/docs/components/notification.md:53` both say. A
   consumer reading only the first sentence and writing `duration: 0` to mean "use the default" gets
   a permanently sticky toast.
@@ -5909,7 +5949,7 @@ change this spec.
 
 - **A tab inserted anywhere but at the end desyncs selection, ARIA and the underline from the panel
   that is actually shown.** `tab-bar.directive.ts:82-84` (`registerTrigger`) appends triggers in
-  *creation* order, while `tab-group.component.ts` indexes everything by the template's `$index`
+  _creation_ order, while `tab-group.component.ts` indexes everything by the template's `$index`
   (`:32` active class, `:35` `aria-controls`, `:58-60` panel id + `aria-labelledby`, `:60-61`
   inert/hidden). Inserting a tab before the selected one leaves the two orders permanently out of
   step: `TabBarTriggerDirective.isSelected()` (`tab-bar-trigger.directive.ts:57-65`) and `tabIndex()`
@@ -5940,7 +5980,7 @@ change this spec.
   relationships (rather than just reading roles) loses the set. Fix is `role="presentation"` on the
   scrollable wrappers, which is cheap since they are pure layout.
 - **Arrow keys are not writing-direction aware.** `tab-bar.directive.ts:100-107` maps `ArrowRight` to
-  `moveFocus(1)` unconditionally, so in an RTL bar the right arrow walks *backwards* through the
+  `moveFocus(1)` unconditionally, so in an RTL bar the right arrow walks _backwards_ through the
   visually ordered tabs. The tree in this same batch does resolve direction
   (`tree/headless/tree.directive.ts:464-466`), and `notification.md:169-175` documents RTL support in
   detail — so this is both an a11y bug and an inconsistency between siblings.
@@ -5967,7 +6007,7 @@ change this spec.
   nav link gets `[attr.disabled]` on an `<a>` (a no-op — **verified**, the anchor keeps its `href`),
   `aria-disabled`, and `pointer-events: none` from CSS (`nav-tab-link-styles.component.css:70-73`).
   Pointer clicks are blocked, but `NavTabLinkComponent.handleSpace` (`nav-tab-link.component.ts:52-55`)
-  calls `.click()` with no disabled guard, and if the *selected* link is the disabled one it keeps
+  calls `.click()` with no disabled guard, and if the _selected_ link is the disabled one it keeps
   `tabindex="0"` (`tab-bar-trigger.directive.ts:67-81`) and is therefore keyboard-reachable. Enter
   and Space then navigate.
 
@@ -6182,7 +6222,7 @@ No spec asserts a wrong behavior.
   `expandedValues`; the rows below are destroyed by the template's `@for`
   (`tree.component.html:1-20`) and nothing moves DOM focus to the surviving parent.
   `activeNode()` (`:209-219`) then falls back to `rows[0]`, so even the roving tab stop jumps to the
-  *first* row rather than the collapsed parent — which contradicts `tree.md:158` ("the tab stop stays
+  _first_ row rather than the collapsed parent — which contradicts `tree.md:158` ("the tab stop stays
   on the row the user last focused, so Shift+Tab back into the tree re-enters where they left off").
   **Runtime-verified**: a tree with `expanded = ['a']`, focus on the child row "Alpha one", then
   `expanded.set([])` →
@@ -6212,7 +6252,7 @@ No spec asserts a wrong behavior.
   (`:347-349`) do not. `tree.md:63` says a disabled tree does nothing, so a "clear filters" button
   wired to `clearSelection()` still wipes the value of a tree the app has disabled.
 - **In `selectionMode="none"`, `Space` scrolls the page.** `handleNodeKeydown`'s `case ' '`
-  (`:523-534`) returns *before* `event.preventDefault()` when the mode is `none`, so a focused row
+  (`:523-534`) returns _before_ `event.preventDefault()` when the mode is `none`, so a focused row
   passes the key through to the document's default scroll. A navigation-only tree
   (`tree.md:87` calls it "a pure navigation tree", and `stories/tree.stories.ts:28` ships a
   `NavigationOnly` story) is precisely the case where a user holds the keyboard and arrow-walks the
@@ -6227,7 +6267,7 @@ No spec asserts a wrong behavior.
   no `aria-posinset`/`aria-setsize`, which the tree's own contract says a flat DOM must state
   (`tree.md:144`, and every real row does — `tree-node.directive.ts:20-22`). While the root is
   loading there is also no tab stop anywhere in the tree.
-- `expandAll()` (`:326-338`) expands every *loaded* branch, including ones nested inside collapsed
+- `expandAll()` (`:326-338`) expands every _loaded_ branch, including ones nested inside collapsed
   parents, so a subsequent expand of an ancestor reveals a fully-open subtree. Documented ("every
   branch loaded so far") but surprising; worth an explicit sentence in `tree.md:79`.
 - Docs gap: nothing shows how to reach `expandAll`/`collapseAll`/`focusFirst`/`retry` from the
@@ -6421,7 +6461,7 @@ Three scratch specs were written, run, and deleted; no source file was modified.
   component box.** The room for tick labels is reserved by
   `slider.component.css:174-178` / `range-slider.component.css:180-184`
   (`&:where([data-mark-labels]) .et-slider-interaction { margin-block-end: … }`), which is a
-  *block*-axis margin. In vertical mode the labels move to the **inline** side
+  _block_-axis margin. In vertical mode the labels move to the **inline** side
   (`slider.component.css:370-375`: `.et-slider-mark-label { inset-inline-end: calc(100% + …) }`), and
   the vertical block at `slider.component.css:319-328` resets `margin-inline: 0` and overwrites
   `margin-block` wholesale (same specificity, later in source, so it wins). Net effect: nothing is
@@ -6476,8 +6516,8 @@ Three scratch specs were written, run, and deleted; no source file was modified.
   non-English app announces English to screen-reader users with no way to override it (there is no
   per-instance input for it either).
   **Verified at runtime.** With
-  `providers: [provideDropzoneLabels({ uploading: (count) => \`LOCALIZED ${count}\` })]` on the host
-  component, picking one file left `.et-dropzone-live-status` reading `"Uploading 1 file"`.
+  `providers: [provideDropzoneLabels({ uploading: (count) => \`LOCALIZED ${count}\` })]`on the host
+component, picking one file left`.et-dropzone-live-status`reading`"Uploading 1 file"`.
 
 ### Medium
 
@@ -6507,7 +6547,7 @@ Three scratch specs were written, run, and deleted; no source file was modified.
   `.et-dropzone-entry-size { color: rgb(255 255 255 / 0.7) }`. AGENTS.md ("Component styling") says
   never to use a hardcoded color as the primary value; every other color in this file goes through
   `--et-surface-*` / `--et-theme-color-*`. A black scrim over an arbitrary image is a defensible
-  *design*, but it is not expressible or overridable through the theming system, and the file
+  _design_, but it is not expressible or overridable through the theming system, and the file
   documents no reason for the exception (contrast with `color-picker-panel.component.css:140-141`,
   which does explain its `#fff` thumb ring).
 
@@ -6548,7 +6588,7 @@ Three scratch specs were written, run, and deleted; no source file was modified.
   the reading as intentionally un-mirrored ("the gradients paint left to right in every direction"), and
   `ColorPickerAreaDirective.commitFromPosition`
   (`headless/color-picker-area.directive.ts:78-84`) measures from `rect.left` / `rect.top`
-  unconditionally. But the thumbs are placed with **logical** offsets that *do* flip:
+  unconditionally. But the thumbs are placed with **logical** offsets that _do_ flip:
   `color-picker-panel.component.html:4` (`[style.inset-inline-start.%]="area.saturationPercent()"`),
   `:19` (hue thumb) and `:33` (alpha thumb), against gradients that are pinned physical
   (`color-picker-panel.component.css:78-80` `linear-gradient(to right, #fff, …)`, `:101-110` the hue
@@ -6595,7 +6635,7 @@ Three scratch specs were written, run, and deleted; no source file was modified.
   `color-input-validators.ts:54-83` re-declares `RGB_PATTERN`, `HEX_CHANNEL_PATTERN` and its own
   `parseColor`, duplicating `headless/internals/color-convert.ts:27-138`
   (`parseColorToRgb`) almost line for line. The duplicate handles no `hsl()`, so
-  `getColorContrastRatio` / `colorContrast` silently *pass* an `hsl()` value the picker itself reads
+  `getColorContrastRatio` / `colorContrast` silently _pass_ an `hsl()` value the picker itself reads
   and offers as a notation (`color-input.types.ts:14`). `getColorContrastRatio`'s JSDoc
   (`color-input-validators.ts:108-120`) does say "hex … and functional `rgb()`/`rgba()`", so it is
   documented — but the two parsers will drift, and `parseColorToRgb` already does everything the
@@ -6876,7 +6916,7 @@ meets the High bar.
   itself still pending).
   **Runtime-verified**: wrote a scratch spec creating `<et-standings>` with `zones: []`, calling
   `detectChanges()`, then updating the `zones` signal to two overlapping ranges and calling
-  `detectChanges()` again — no `RuntimeError` was thrown. A sibling case with the *same* overlapping
+  `detectChanges()` again — no `RuntimeError` was thrown. A sibling case with the _same_ overlapping
   zones present from the very first `detectChanges()` call did throw `ET4400` as documented. Scratch
   file was deleted after the run; the working tree is unchanged.
   The docs (`apps/docs/components/standings.md:77-79`) state flatly "Zones must not overlap: … dev
@@ -6887,7 +6927,7 @@ meets the High bar.
 - **`StandingsZone.color` is typed `string`, one step looser than its own doc comment and the
   sibling API it mirrors.**
   `libs/components/src/lib/standings/standings.types.ts:44-45`: `/** A registered color theme name
-  (or the theme object) the band is drawn in. */ color: string;` — the comment promises a
+(or the theme object) the band is drawn in. */ color: string;` — the comment promises a
   `ColorTheme` object is accepted too, but the field type only allows `string`. Compare
   `MatchCardComponent.liveColor` (`libs/components/src/lib/match/match-card.component.ts:78`),
   which types the equivalent option `RegisteredColorThemeName | ColorTheme | null` — the correct
@@ -6900,10 +6940,10 @@ meets the High bar.
 - **The dense-row docs table promises "small emblems" at every width under 320px; the code drops
   emblems entirely below 150px.**
   `apps/docs/components/match.md:115` reads: `< 320px | Dense row - … small emblems, no subtitles,
-  no game breakdown`. But `libs/components/src/lib/match/match-card.component.css:150-159` adds a
+no game breakdown`. But `libs/components/src/lib/match/match-card.component.css:150-159` adds a
   second, narrower container-query rule for `auto`/`compact` sizing:
   `@container et-match-card (max-inline-size: 149px) { … --_et-match-participant-emblem-display:
-  none; }`, which removes the emblem frame outright. The CSS comment above it explains the intent
+none; }`, which removes the emblem frame outright. The CSS comment above it explains the intent
   well ("an emblem, a name and a score is one thing too many" for a ~150px bracket cell) — this is
   a deliberate fourth density the docs simply never mention, so a reader of the width table alone
   would reasonably expect an emblem to still be present anywhere under 320px, including a 140px
@@ -6943,6 +6983,7 @@ meets the High bar.
 ### Spec coverage
 
 Well covered:
+
 - `MatchCardComponent` (`match-card.component.spec.ts`) is thorough: both result forms (score,
   points, outcome), the composed accessible name and its label overrides, the live/meta row,
   game-score breakdown, CSS state attributes, interactivity detection on `<a>` vs `<div>`, seeds, and
@@ -6960,6 +7001,7 @@ Well covered:
   overrides.
 
 Gaps:
+
 - `MatchScoreComponent` (`match-score.component.ts`) has **no dedicated spec file**. Its rolling
   logic is exercised only indirectly through `MatchCardComponent`'s "a score changing" describe
   block, which covers the common path but not: `animate=false` explicitly (only inferred from the
@@ -7055,12 +7097,13 @@ changes without finding a stuck or duplicated element.
 ### Low
 
 - **No dev-mode warning when `et-picture` is configured with `sources` but no `defaultSrc`.** Tying to the High finding above: since the docs explicitly call this combination unsupported ("not optional in practice"), a `ngDevMode`-gated `console.warn`/`RuntimeError` (the pattern already used for missing mime types in `picture.utils.ts:38-43`) would turn a silent, permanently-frozen UI into a caught mistake during development.
-- **`BrandLoaderComponent`'s `nextId` module-level counter (`brand-loader.component.ts:10,53-55`) is a plain `let`, not reset per bootstrap.** Functionally harmless (IDs only need to be unique, and a monotonically increasing counter across multiple app instances in one JS realm still guarantees uniqueness), but it's the kind of module-level latch AGENTS.md calls out - worth a second look only if a future change makes the IDs need to be *stable* (e.g. for SSR hydration diffing) rather than merely unique.
-- **`picture.utils.ts:75`/`withPictureBaseUrl`'s early-return only checks whether the *whole* `srcset` string starts with `data:`.** If a single `srcset` ever mixed a leading `data:` URI with additional comma-separated URL candidates (unusual, arguably invalid usage - data URIs are normally used alone), the remaining candidates would skip base-URL prefixing entirely. Not observed in practice and not covered by a test; flagging only because the per-candidate `data:` check inside `withBaseUrl` (line 60) suggests the author intended to handle mixed candidates, but the outer short-circuit prevents ever reaching it for this specific shape.
+- **`BrandLoaderComponent`'s `nextId` module-level counter (`brand-loader.component.ts:10,53-55`) is a plain `let`, not reset per bootstrap.** Functionally harmless (IDs only need to be unique, and a monotonically increasing counter across multiple app instances in one JS realm still guarantees uniqueness), but it's the kind of module-level latch AGENTS.md calls out - worth a second look only if a future change makes the IDs need to be _stable_ (e.g. for SSR hydration diffing) rather than merely unique.
+- **`picture.utils.ts:75`/`withPictureBaseUrl`'s early-return only checks whether the _whole_ `srcset` string starts with `data:`.** If a single `srcset` ever mixed a leading `data:` URI with additional comma-separated URL candidates (unusual, arguably invalid usage - data URIs are normally used alone), the remaining candidates would skip base-URL prefixing entirely. Not observed in practice and not covered by a test; flagging only because the per-candidate `data:` check inside `withBaseUrl` (line 60) suggests the author intended to handle mixed candidates, but the outer short-circuit prevents ever reaching it for this specific shape.
 
 ### Spec coverage
 
 Well covered:
+
 - `IconDirective`: registry resolution, variant fallback/exact-match, `label`→`role="img"` toggle, `provideIcons`/`provideIconOverrides` merge/duplicate-detection, and the `ET_BUILT_IN_ICON_NAMES` drift guard (`icon.directive.spec.ts`).
 - `PictureComponent`: `fit`/`data-fit` reflection, `naturalSize`/`naturalAspectRatio`/`state` transitions on load/error, and the reset-on-`defaultSrc`-or-`sources`-change behavior (`picture.component.spec.ts`).
 - `picture.utils.ts`: `extractFirstImageUrl`, `normalizePictureSource`, `normalizePictureSizes`, `withPictureBaseUrl` all have thorough, well-targeted unit tests (`picture.utils.spec.ts`).
@@ -7069,6 +7112,7 @@ Well covered:
 - `EmptyStateComponent`: unconfigured render, heading/description rendering, action projection (`empty-state.component.spec.ts`).
 
 Gaps / zero coverage on real logic:
+
 - `IconDirective`'s dev-mode SVG validation path (`INVALID_SVG`, `MISSING_XMLNS`, `MISSING_DIMENSIONS`, `HARDCODED_COLOR`) and `allowHardcodedColor` - see Medium above.
 - `SkeletonComponent`/`SkeletonTextComponent`/`SkeletonItemComponent` have **no spec files at all** - `resolvedLoadingAllyText` fallback to `LOADER_LABELS`, the `animated` class toggle, and `SkeletonTextComponent`'s `lineList` computation (line count, last-line-width, clamping `Math.max(1, lines())`) are all untested.
 - `PictureComponent`'s "`sources`-only, no `defaultSrc`" path (the High finding above) - not exercised by any existing test, which is exactly how it went unnoticed.
@@ -7106,7 +7150,7 @@ All three were deleted; `git status` on the scope is clean.
 
 - **Typing an international `+…` number into `et-phone-input` character by character produces a
   corrupted value — only a whole-string paste works, and the docs promise both.**
-  `phone-input-field.directive.ts:50-53` rewrites the element text to the *national*
+  `phone-input-field.directive.ts:50-53` rewrites the element text to the _national_
   interpretation the moment the value's `+` prefix has been normalized. The next keystroke is
   therefore read as national digits (`phone-input.directive.ts:195-210` takes the
   no-`+` branch) and the active dial code is prepended a second time. Nothing in
@@ -7136,7 +7180,7 @@ All three were deleted; `git status` on the scope is clean.
   hint/error/warning is never announced.** `otp-input.component.html:24` binds
   `aria-describedby` to `otp.describedBy()`, which `FormFieldDirective` fills with
   `hintId()`/`errorId()`/`warningId()` (`form-field/headless/form-field.directive.ts:54-73,
-  183-192`). But the OTP's own support containers
+183-192`). But the OTP's own support containers
   (`otp-input.component.html:52`, `:70`, `:88`) carry only `#errorContent`/`#warningContent`/
   `#hintContent` — **no `[id]` binding** — unlike `form-field.component.html:47,68,89` and
   `choice-field.component.html:27,46,65`, which both bind `[id]`. **Verified at runtime** with
@@ -7205,7 +7249,7 @@ All three were deleted; `git status` on the scope is clean.
 
 - **`defaultCountry` is honoured only on the first computation of `country`.**
   `phone-input.directive.ts:84-97`: the `linkedSignal` computation prefers `previous?.value`
-  over `this.defaultCountry()`, and the computation is re-run by a change to its *source* (the
+  over `this.defaultCountry()`, and the computation is re-run by a change to its _source_ (the
   dial code matched out of `value`), not by a change to `defaultCountry`. **Verified at
   runtime**: mount with `defaultCountry="de"` and an empty value, then set it to `"fr"` →
   `country()` stays `"de"`, `dialCode()` stays `"49"`. A default derived from a locale or geo-IP
@@ -7217,7 +7261,7 @@ All three were deleted; `git status` on the scope is clean.
   `tag-input-field.directive.ts:116-141` `preventDefault()`s and calls `addAll(parts)` without
   merging `element.value` or clearing it. **Verified at runtime**: field holds `"pre"`, paste
   `one,two` → `value === ['one','two']`, field still `"pre"`. The pending fragment is neither
-  joined to the first pasted part nor committed first, so it later lands *after* the pasted tags
+  joined to the first pasted part nor committed first, so it later lands _after_ the pasted tags
   on blur — the opposite of the order the user typed things in. (Native paste-into-a-caret
   semantics would append to / splice into the pending text.)
 
@@ -7312,7 +7356,7 @@ All three were deleted; `git status` on the scope is clean.
   four tests can pass vacuously.** `mixed-state-contract.ts:17-20` states clauses 5 (keyboard
   deletion never mass-clears) and 6 (`mixedLabel` never enters the form value); the suite
   (`:55-102`) asserts 1–4 only. And `:89-101` returns early into a green pass when a harness
-  omits `clear`/`emptyValue` — so a control that *loses* its clear affordance silently keeps a
+  omits `clear`/`emptyValue` — so a control that _loses_ its clear affordance silently keeps a
   passing "clears to the empty shape and resolves mixed" test. Guard with `it.skipIf` or move
   the clear case behind an explicit opt-out flag.
 
@@ -7364,6 +7408,7 @@ commit, duplicate and empty rejection, `maxTags`, Backspace-removes-last, chip r
 splitting, disabled, and six `mixed` cases plus the contract.
 
 **Gaps with real logic behind them.**
+
 - `phone-input-field.directive.ts` — the `effect` at `:36-54` is the source of the top High
   finding and has no test that feeds the field more than one `input` event. Every existing
   "typing" test is a single whole-string `setInputValue`.
@@ -7388,7 +7433,7 @@ splitting, disabled, and six `mixed` cases plus the contract.
 
 **No existing spec asserts a wrong behavior.** The closest call is
 `otp-input.directive.spec.ts:64-79` ("emits completed exactly once per completion"), which
-correctly encodes the "different full-length code re-emits" rule and is *narrower* than the docs
+correctly encodes the "different full-length code re-emits" rule and is _narrower_ than the docs
 sentence at `text-inputs.md:373` — the docs are wrong, not the spec. Likewise
 `phone-input.directive.spec.ts:99` is honestly named "**pasted** international number", so it
 does not claim the typing path works; it just leaves it uncovered.
@@ -7442,7 +7487,7 @@ does not claim the typing path works; it just leaves it uncovered.
 - **The `FIELD_OUTSIDE_*` guards are dev-only `afterNextRender` throws with no positive
   counterpart.** `tag-input-field.directive.ts:36-46` and
   `phone-input-field.directive.ts:56-66` catch the misplacement, but there is no guard for the
-  much more likely mistake of *two* field directives inside one control —
+  much more likely mistake of _two_ field directives inside one control —
   `registerSingleton` (`form-field/headless/register-singleton.ts`) presumably handles it;
   worth confirming the error names the domain.
 - **Add a `forms/testing/index.ts` barrel.** Seventeen drivers with no barrel means every spec
@@ -7570,7 +7615,7 @@ Clean: read every non-spec source file in `query-error/`, `filter-overlay/`, `fl
 
 ### Improvements
 
-- **Features**: `floating-action` has no way to float on one edge and dock on another as viewport size changes (e.g. bottom-center on mobile, bottom-right on desktop) - peer libraries (e.g. Material's FAB patterns) typically let the anchor position vary per breakpoint via CSS alone, but here the *side* (`inset-inline-end`) is fixed by a single custom property, not responsive without a consumer overriding it via media queries themselves. A documented "how to change side per breakpoint" recipe (or a `side` input) would remove guesswork.
+- **Features**: `floating-action` has no way to float on one edge and dock on another as viewport size changes (e.g. bottom-center on mobile, bottom-right on desktop) - peer libraries (e.g. Material's FAB patterns) typically let the anchor position vary per breakpoint via CSS alone, but here the _side_ (`inset-inline-end`) is fixed by a single custom property, not responsive without a consumer overriding it via media queries themselves. A documented "how to change side per breakpoint" recipe (or a `side` input) would remove guesswork.
 - **Features**: `filter-overlay` has no built-in "N filters active, tap to clear one" affordance beyond the raw `activeFilterCount` - peer filter-panel patterns (Ark UI, shadcn combobox-filter examples) commonly ship a small chip list of active filter values with per-chip removal. Given `activeFilterCount` and `draft.resetFieldToDefault` already exist, a thin `FilterOverlayActiveFilters` headless helper enumerating `{ key, label, clear() }` per non-default field would be a natural, low-risk addition building only on existing primitives.
 - **DX**: `filterOverlayPreviewFromQuery`'s `args: () => null` skip semantics interact badly with the submit-button resolver (see the High finding) - fixing the resolver to distinguish "genuinely first-request-pending" from "this preview was configured to skip" (e.g. by having the preview itself expose an explicit `skipped` signal, or having `resolveFilterOverlaySubmitButton` treat `!loading && !hasError && totalHits === null` as "apply enabled" rather than "still loading") would remove a real footgun for exactly the use case (deferred/conditional counting) the API's own JSDoc recommends.
 - **DX**: `FloatingActionDirective`'s dev-mode guard only checks for a missing anchor (`MISSING_ANCHOR`), not a missing trigger - if a consumer wires up `[etFloatingAction]` and `[etFloatingActionAnchor]` but forgets `[etFloatingActionTrigger]` inside it, nothing throws and `scrollToTop()` silently falls back to the floating-action element itself with no signal that the trigger registration never happened. A `MISSING_TRIGGER` guard mirroring `MISSING_ANCHOR` (`floating-action.directive.ts:109-120`) would close that gap cheaply.
@@ -7703,7 +7748,7 @@ Gaps:
   `et-times` icon, the `et-chip`/`et-chip-label` classes - is never rendered in a test.
 - **`ButtonColorDirective` has no test coverage anywhere.** No spec (button, fab, icon-button, text-
   button, window-control-button) asserts on `color`, `pressedColor`, or the `pressed && pressedColor
-  !== undefined` branch that picks which color forces onto `ProvideColorDirective`; contrast this with
+!== undefined` branch that picks which color forces onto `ProvideColorDirective`; contrast this with
   badge/avatar/card, which each have an explicit "forwards color to the color provider" test.
 - **`AvatarGroupComponent`'s entire reason to exist is untested.** Its spec has exactly one test
   ("renders the projected avatars"). `maxVisible`, the `+N` overflow avatar's existence and count,
@@ -7787,5 +7832,307 @@ dead exports. The canonical `&:where([data-size='…'])`/`&:where([disabled])` p
 - **Add a `button-color.directive.spec.ts`** (or extend one button flavor's spec) covering `color`,
   `pressedColor` left unset (falls back to `color`), `pressedColor="inherit"`, and the pressed/unpressed
   toggle - this directive's branching logic is exercised by zero tests today.
+
+---
+
+## Batch 21 review — pagination, breadcrumb, progress-steps, timeline, kbd, toolbar, description-list, copy-button, focus-ring
+
+Scope: every non-spec `.ts`/`.html`/`.css` under each domain's directory in
+`libs/components/src/lib/`, their spec files, and the matching page(s) under
+`apps/docs/components/`. Produced by three parallel sub-reviews (pagination+breadcrumb;
+progress-steps+timeline+kbd; toolbar+description-list+copy-button+focus-ring), each of
+which runtime-verified its top High/Medium claims via scratch vitest specs (written, run,
+then deleted — working tree confirmed clean in every case) and merged here without
+alteration to their findings.
+
+---
+
+## pagination
+
+### High
+
+- **`hidePreviousNext` is silently ignored whenever the compact pager renders, contradicting the documented input.** `PaginationComponent.compactControls` (`libs/components/src/lib/pagination/pagination.component.ts:184-196`) calls `paginate({ ..., hideFirstLast: true, labels: ... })` but never forwards `this.pagination.hidePreviousNext()`. The docs' Inputs table (`apps/docs/components/pagination.md:209`) states `hidePreviousNext` "Omit the previous/next controls" with no carve-out for compact mode, and the compact pager is reachable either via `[compact]="true"` or automatically once the measured width drops below 480px (`COMPACT_MAX_WIDTH`, line 28) — a very ordinary combination (e.g. a table footer that also wants no prev/next arrows on a narrow viewport). **Runtime-verified**: a scratch spec setting `hidePreviousNext=true` + `compact=true` rendered 4 DOM nodes tagged `data-type="previous"`/`"next"` (2 `<li>` + 2 controls) where 0 were expected; scratch spec deleted after confirming.
+
+- **Docs claim a coarse-pointer touch-target guarantee the CSS never implements.** `apps/docs/components/pagination.md:309-311` states: "On coarse pointers (touch) the controls grow to a comfortable ~44px tap target." There is no `@media (pointer: coarse)` (or any pointer-based) rule anywhere in `pagination.component.css` or the shared `button` CSS the paginator's `et-button` items draw from. The item size is fixed by `--et-pagination-item-size` at `36px` (`pagination.component.css:2-6`), `28px` for `size="sm"` (`:127-130`), and `34px` for the compact pager (`:144-149`) — it never reaches 44px and never reacts to input modality. Code-verified only (no browser layout needed to see the selector is simply absent).
+
+- **A static `id="et-pagination-jump-input"` breaks `<label for>` association with two or more `showJumpTo` paginators on one page.** `pagination.component.html:78-90` hardcodes both the `for` and the `id` as the literal string `et-pagination-jump-input`; every other id-needing part of this library uses `createComponentId`/a per-instance id (`libs/core/src/lib/utils/angular/component-id.ts`). **Runtime-verified**: a scratch spec mounting two `<et-pagination showJumpTo>` in one template found both inputs sharing the id `et-pagination-jump-input` (`new Set(ids).size` was `1`, not `2`); scratch spec deleted after confirming. In real markup this is a duplicate-id HTML violation and the browser will resolve the second label's `for` to the first paginator's input, moving focus to the wrong control.
+
+### Medium
+
+- **`widestStatus('range')`'s `total === null` branch is unreachable given how it's called** — `pagination.component.ts:271-274` returns `null` for the `'range'` variant when `totalItems`/`pageSize` are unset, but `widestRangeStatus()` is only ever read from the template (`pagination.component.html:4`) inside `@if (!isCompact() && rangeStatus(); as status)`, and `rangeStatus()` is itself `null` in exactly that case — so the branch can never execute in practice. Harmless, but dead logic worth deleting or noting as intentional defensive code.
+
+### Low
+
+- None found — no dead exports, unreachable branches, or comment-policy violations in this domain.
+
+### Spec coverage
+
+- **Well covered**: `paginate()`'s window/ellipsis math (`paginate.spec.ts`, 11 cases including clamping and label overrides); the component's render/click/localize/link-mode/readout paths (`pagination.component.spec.ts`, 14 cases); `PageSizeSelectComponent` (7 cases, including the "does not reset the page" contract); `PaginationSeoDirective` (canonical + prev/next reactivity).
+- **Zero coverage on real logic**: the entire responsive-collapse engine — `isCompact()` (auto width-based compaction), `slotsThatFit()` (measures rendered item widths), and `fitAttempts()` (the richest→sparsest window search) in `pagination.component.ts:140-149, 282-321` — has no test exercising it; every spec either leaves `responsive` at its default with a zero-width jsdom host (so `isCompact()` trivially stays `false`) or forces `compact` explicitly. This is also exactly the code path with the `hidePreviousNext` bug above, which a test on `compactControls()` would have caught immediately.
+- **No spec asserts a wrong behavior** — nothing found that documents/locks in the compact-controls bug as intended.
+
+### Improvements
+
+- **Features**: Add keyboard support for jumping pages without leaving the number row — e.g. `Home`/`End` on a focused page button to jump to first/last, matching the pattern other paginator libraries (MUI, Ark UI) offer. Currently every item is just a plain tab stop (`pagination.component.html:29`); there's no roving-tabindex or arrow-key navigation across the row, which this library already has elsewhere (menu, tabs).
+- **DX**: `showJumpTo`'s static id (see High above) is also a DX trap for anyone copying the pattern into their own control — worth fixing alongside the bug since it's the only hand-rolled `id`/`for` pair left in this domain instead of `createComponentId`.
+- **Bundle size**: `PaginationComponent` inlines four small hand-drawn SVGs per render call in `pagination.component.html:97-138` rather than through the shared icon system (`libs/components/src/lib/icon`) — reasonable given the stated icon-system-free goal, but worth a one-line note in the docs' Theming section since consumers may expect `provideIconOverrides` to affect the paginator's chevrons and it won't.
+- **Testing**: A spec that mocks `signalHostElementDimensions`'s underlying `ElementRef.clientWidth` (similar to what `test-helpers.ts` already mocks for `ResizeObserver`) would let `isCompact()`/`fitAttempts()` be exercised directly instead of only through the `compact` override — the single highest-value addition given the bug found above.
+
+**Clean**: `paginate()`'s pure page-window/ellipsis algorithm, label resolution/merging (`pagination-labels.ts`), the headless `PaginationDirective`'s `goTo`/clamping, `renderAs="links"` click interception (plain vs. modified clicks), the "Showing X–Y of Z" / compact readout width-reservation trick, `PageSizeSelectComponent` (native `<select>`, no page-reset side effect, correct model wiring), and `PaginationSeoDirective`'s reactive canonical/prev/next/title bindings all matched their documented behavior. No hardcoded colors as primary values (all `var(--et-surface-*, fallback)` / `var(--et-theme-color-*, fallback)`), CSS is correctly wrapped in `@layer components`, no Tailwind in component source, and no comment-policy violations were found.
+
+---
+
+## breadcrumb
+
+### High
+
+- **`etBreadcrumbSeo` crashes with `NG0201` when placed on `<et-breadcrumb-outlet>`, exactly the usage the docs describe.** `BreadcrumbSeoDirective` does `private breadcrumb = inject(BREADCRUMB_TOKEN);` with no `{ optional: true }` (`libs/components/src/lib/breadcrumb/seo/breadcrumb-seo.directive.ts:36`). `BREADCRUMB_TOKEN` is provided only by `BreadcrumbDirective` (`headless/breadcrumb.directive.ts:44`), which lives on the inner `<et-breadcrumb>` that `BreadcrumbOutletComponent` instantiates _inside its own template_ (`breadcrumb-outlet.component.ts:32`) — i.e. a descendant, not an ancestor, of the outlet's host element. Angular DI only walks up the injector tree, so a directive placed on `<et-breadcrumb-outlet>` itself can never see a token provided by an element nested inside that outlet's view. The docs explicitly say otherwise: "It works the same on `<et-breadcrumb-outlet>`, where the trail is composed from routed segments - put the attribute on the outlet" (`apps/docs/components/breadcrumb.md:254-255`), with a same-shaped code sample earlier (`:107-118`). **Runtime-verified**: a scratch spec with `<et-breadcrumb-outlet etBreadcrumbSeo />` fed by a registered segment threw `ɵNotFound: NG0201: No provider found for InjectionToken BREADCRUMB_TOKEN` on `fixture.detectChanges()`; scratch spec deleted after confirming. This is a straight crash for any consumer who follows the documented outlet+SEO recipe, not just a wrong value.
+
+### Medium
+
+- **`fullTrailWidth` can go stale while collapsed if a loading crumb's name arrives late, risking a one-frame overflow before re-collapsing** (contradicts the "never flickers" claim in `apps/docs/components/breadcrumb.md:80-82`). `BreadcrumbDirective.recordMeasurement` (`headless/breadcrumb.directive.ts:221-234`) explicitly skips updating `fullTrailWidth` while `isCollapsed()` is true, because a collapsed measurement only describes the collapsed layout. If a crumb's `loading` flag flips off with new, wider text while the trail is already collapsed (the array identity `items()` doesn't change, so the `linkedSignal` reset at line 109-112 doesn't fire either), the remembered `fullTrailWidth` under-estimates the real full-trail width. When the container later widens enough to satisfy the stale number, the trail expands, momentarily overflows by the amount the late text added, and only re-collapses on the next measurement tick. Not independently runtime-verified (needs a real `ResizeObserver` + layout timing, impractical in jsdom); flagged as **code-verified only**, and it is a narrow window (loading→named transition while already collapsed, then a subsequent widening).
+
+### Low
+
+- None found — no dead exports, unreachable branches, or comment-policy violations in this domain.
+
+### Spec coverage
+
+- **Well covered**: crumb rendering/ordering/`aria-current` tracking, custom separators, loading placeholders, localized labels (`breadcrumb.component.spec.ts`); segment registration/order/unregistration-on-destroy through the outlet; that `overflowComponent` is `null` without `etBreadcrumbCollapse` and set once it's applied; the full SEO payload shape, loading/unnamed-crumb skipping, position renumbering, the "fewer than two named crumbs emits nothing" rule, the `[etBreadcrumbSeo]="false"` gate, and reactive updates to a late name (`breadcrumb-seo.directive.spec.ts`).
+- **Zero coverage on real logic**: the width-measurement/collapse state machine itself — `isMeasuring()`, `isCollapsed()`, `fullTrailWidth` (the `linkedSignal` reset-on-new-trail), and `recordMeasurement()`'s collapsed-vs-expanded branching in `headless/breadcrumb.directive.ts:103-234` — is only checked indirectly (does `overflowComponent` exist), never for the actual fit/collapse decision. This is the exact area the Medium finding above lives in, and jsdom's zero `clientWidth`/`scrollWidth` makes it hard to exercise without a dedicated fake.
+- **No `et-breadcrumb-outlet` + `etBreadcrumbSeo` combination is tested** — which is precisely the combination that crashes (High finding above); had one existed, it would have caught the bug.
+- **No spec asserts a wrong behavior.**
+
+### Improvements
+
+- **Features**: There is no way to render a "back" affordance or truncate a single very long crumb label short of the whole-trail ellipsis in `.et-breadcrumb:where([data-collapsed])` (`breadcrumb.component.css:63-82`) — libraries like Ark UI / shadcn's breadcrumb ship a `maxItems`-style prop as an alternative, simpler collapse strategy for apps that don't want width-based measurement. Worth considering as a lighter-weight `collapse="count"` mode alongside the current measured one.
+- **DX**: Fixing the `BREADCRUMB_TOKEN` injection (High finding) is the main DX item; a secondary one is that `injectBreadcrumbManager()` (`breadcrumb-manager.ts:54`) throws Angular's generic `NG0201` rather than a friendly `ET37xx`-style `RuntimeError` when `provideBreadcrumbManager()` was never called — every other misuse in this domain (`PART_OUTSIDE_BREADCRUMB`, `MISSING_ITEMS`) gets a descriptive dev-mode error; this one doesn't.
+- **Bundle size**: `BreadcrumbOverflowComponent` is already correctly deferred via `NgComponentOutlet` so an app that never imports `BREADCRUMB_COLLAPSE_IMPORTS` doesn't pay for the toggletip/overlay runtime (`breadcrumb.component.html:9-15`) — no changes needed there; noting it as an example other domains could copy.
+- **Testing**: A lightweight fake for `signalHostElementScrollState`/`signalHostElementDimensions` (stubbing `clientWidth`/`scrollWidth` pairs and firing the `ResizeObserver` mock's callback) would let a spec drive `isCollapsed()` through actual width transitions instead of only checking which `overflowComponent` type is wired up. This would also have exercised the stale-`fullTrailWidth` Medium finding above.
+
+**Clean**: The segment-composition model (registration order, `order` override, unregister-on-destroy, crumb `isLast` marking across segments), the loading-placeholder mechanics, the custom-separator projection, the dev-mode `ET3700`/`ET3701` error checks and their documented codes matching `error-codes.md`, and the SEO directive's own filtering/renumbering/`[etBreadcrumbSeo]="false"` gate (when reachable — i.e. not via the outlet) all behaved as documented. CSS is correctly wrapped in `@layer components`, no hardcoded colors as primary values, no Tailwind in component source (only in `stories/`), and no comment-policy violations were found.
+
+---
+
+## progress-steps
+
+### High
+
+None found. No crashes, leaks, XSS sinks, or code/docs contradictions surfaced in `progress-step.component.ts`, `progress-steps.component.ts`, their templates, or CSS.
+
+### Medium
+
+- **`aria-disabled` on an interactive step does not actually block keyboard activation, despite the docs calling it "inert."** `progress-step.component.css:181-184` sets `&:is([disabled], [aria-disabled='true']) { cursor: not-allowed; pointer-events: none; }`. `pointer-events: none` only suppresses pointer/mouse hit-testing; it does not remove the anchor from the tab order and does not stop a keyboard `Enter` on a focused `<a aria-disabled="true">` from firing the browser's default navigation (native HTML behavior no CSS rule changes). `apps/docs/components/progress-steps.md:151-154` states "a `disabled` button or `aria-disabled` link is inert exactly as it would be anywhere else" — true for the native-`disabled` button, but misleading for the `aria-disabled` link case, since `aria-disabled` by itself never makes a link inert anywhere. A consumer who follows the documented pattern to keep users off an unreachable step (e.g. `<a aria-disabled="true" et-progress-step>`) will find the link is still fully keyboard-operable (focusable, and `Enter` still navigates); only mouse clicks are blocked. **Code-verified only** — a browser/HTML navigation fact jsdom's non-navigating `<a>` can't meaningfully demonstrate.
+
+### Low
+
+- **Two bare section-header comments violate the repo's comment policy.** `progress-step.component.css:128` (`/* --- Vertical --- */`) and `:153` (`/* --- Interactive --- */`) are exactly the "section headers and dividers" pattern the styleguide names as always-delete. Neither explains an ordering constraint, an invariant, or a workaround.
+- **All three icon defs are registered unconditionally per step instance.** `viewProviders: [provideIcons(CHECK_ICON, TIMES_ICON, TRIANGLE_EXCLAMATION_ICON)]` in `progress-step.component.ts:71` registers all three icons for every `et-progress-step`, even a flow that only ever uses `upcoming`/`current`/`complete`. The runtime theme injection is already lazy (only the theme in actual use is injected, per the effect at lines 89-107); the icon registration doesn't get the same treatment. Bundle impact is small, so this is Low rather than Medium.
+- **No ARIA list semantics on `et-progress-steps`/`et-progress-step`**, unlike the sibling `et-timeline`/`et-timeline-item` pair, which use `role="list"`/`role="listitem"` (`timeline.component.ts:30`, `timeline-item.component.ts:30`). The docs explain the omission is deliberate ("a static indicator has nothing to announce beyond the labels' own text" — `progress-steps.md:147-149`), but it is an inconsistency between two otherwise similar "row/column of discrete items" components worth a second look.
+
+### Spec coverage
+
+`progress-step.component.spec.ts` and `progress-steps.component.spec.ts` are thorough: default state, `data-state` reflection, marker swap (number → icon), the "no theme registered" happy path for the three plain states, the outcome states' icon/theme resolution (parametrized over success/warning/error), reverting to the ambient theme when an outcome clears, label projection, and the description slot. `progress-steps.component.spec.ts` covers ordering of projected steps and their labels. Nothing with real logic is untested. No spec asserts an incorrect behavior. Not covered by any spec (acceptably — needs real layout/keyboard): the connector CSS geometry, the vertical orientation's visual centering, and the interactive-step hover/focus/disabled CSS states discussed above.
+
+### Improvements
+
+- **Features**: Progress steps has no built-in way to mark a step as "skipped" distinct from `upcoming` — a common wizard need (e.g. a payment step skipped because the cart is free). A `'skipped'` state with its own muted/struck-through treatment would be a natural, low-risk extension of the existing `PROGRESS_STEP_STATES` map (`progress-step.component.ts:22-29`).
+- **DX**: `state` accepts any of six string literals with no dev-mode validation — a typo like `state="complet"` silently falls through `STATE_ICONS[...] ?? null` and renders as if `upcoming` with no console warning. A cheap `isDevMode()` check in the constructor (mirroring `ProvideColorDirective.colorName` at `provide-color.directive.ts:106-108`) would catch this early.
+- **Bundle size**: fold the eager `provideIcons(...)` registration noted above into the same lazy-by-state-in-use pattern the theme injection already follows, if profiling ever shows it matters.
+- **UI/UX**: there's no built-in affordance for a horizontally-scrolling row of many steps on a narrow viewport — `flex: 1` on `.et-progress-step` (`progress-step.component.css:23`) means steps just keep shrinking and their labels wrap/collide past 4-5 steps in a narrow container. A documented `overflow-x: auto` recipe, or a compact "N of M" collapsed mode, would help mobile wizards.
+
+**Clean**: The CSS counter-based auto-numbering (counter-reset/increment scoping verified correct given the DOM structure), the `@layer components` wrap on both stylesheets, the absence of hardcoded colors as primary values, the effect-based lazy theme injection and its cleanup, the `runInInjectionContext` usage (required since `effect()` callbacks aren't automatically an injection context), the vertical-orientation connector geometry logic, and the description-slot projection contract. The docs page's "throws when the semantic theme is unregistered" claim was cross-checked against `injectColorThemeByType` in `libs/core/src/lib/theming/color-theme.util.ts:115-143` and holds up exactly as documented.
+
+---
+
+## timeline
+
+### High
+
+None found.
+
+### Medium
+
+None found. `TimelineComponent`/`TimelineItemComponent` are small, side-effect-free layout components with no async work, no listeners, and no state beyond the forwarded `color` input.
+
+### Low
+
+- **No dev-mode warning for a marker that overflows its box.** The docs say a projected `[etTimelineMarker]` should fit "a `--et-timeline-marker-size` box" (`timeline.md:45`), but nothing enforces it — an oversized avatar or wide SVG will just overflow the rail visually with no console signal. Minor, and arguably not the component's job to police.
+
+### Spec coverage
+
+`timeline.component.spec.ts` covers the `role="list"`/`role="listitem"` wiring and item ordering. `timeline-item.component.spec.ts` covers the empty-marker-renders-a-dot case, content projection, `color` forwarding into `ProvideColorDirective`, a custom projected marker, and the time slot's position ahead of the default content. This is complete coverage of the component's actual logic surface (mostly template projection plus one forwarded input). No spec asserts incorrect behavior.
+
+### Improvements
+
+- **Features**: no built-in "load more" / collapsed-middle affordance for long timelines (a common activity-feed need — Ark UI and most changelog/audit-log widgets support truncating the middle with a "show N more" affordance). Would be a natural addition on top of the existing `et-timeline-item` list rather than a rewrite.
+- **DX**: the `color` input on `et-timeline-item` is documented as "registered color theme / name" but its actual type (via the `hostDirectives` alias to `ProvideColorDirective`'s `etProvideColor` input) is the broad `ColorThemeInput` (`RegisteredColorThemeName | SurfaceColor | ColorTheme | null`) — the docs table (`timeline.md:41`) could name the real type instead of paraphrasing it, the way `progress-steps.md` does for `state`.
+- **UI/UX**: the `[etTimelineTime]` slot has no built-in support for right-aligning the time next to a wide content column (a common "activity log" layout with time on the right, content on the left) — today time is always stacked above the content per `timeline-item.component.html:7-9`. Worth a documented recipe or a `--et-timeline-time-*` token set if this comes up.
+
+**Clean**: `@layer components` wrap on both stylesheets, no hardcoded colors as primary values (`--et-timeline-line-color`/`--et-timeline-marker-color` fall back to surface/theme tokens, never a literal), the `role="list"`/`role="listitem"` a11y wiring, the rail/marker paint-order dependency, the `:last-child` handling that stops the line and the trailing gap on the final item, and the `color` input forwarding through `hostDirectives`.
+
+---
+
+## kbd
+
+### High
+
+None found.
+
+### Medium
+
+None found. `kbd-match.ts`'s modifier/shift logic was traced by hand against its own test suite (exact-modifier matching, the Option-key `event.code` fallback for macOS glyph rewriting, the Shift-may-type-the-key carve-out for punctuation) and it is internally consistent and well tested; `kbd-keys.ts`'s alias table and platform detection have an explicit SSR-safe `navigator` guard (`detectKbdPlatform`, `kbd-keys.ts:65-70`).
+
+### Low
+
+- **A chord with two non-modifier keys silently keeps only the last one.** `parseChord` in `kbd-match.ts:33-54` assigns `key = canonical` unconditionally for any non-modifier token, so `matchesKbdChord(event, { keys: 'a+b', ... })` matches only `b`, with `a` discarded and no warning — an easy typo to make when composing a chord string by hand. Same nothing-happens-silently shape for `KbdComponent`: `keys=""` or `keys="++"` renders zero keycaps and an empty spoken label with no console signal (`parseKbdKeys` filters to `[]`, `kbd.component.ts:43-51`), rather than a dev-mode warning that the input was empty/malformed.
+
+### Spec coverage
+
+Excellent coverage for a small, pure-logic-heavy domain. `kbd-match.spec.ts` covers: `mod` resolving per platform, exact-modifier matching (rejecting an extra Shift), the macOS Option `event.code` fallback, matching a letter via `event.key` when `code` is absent, named keys and their aliases, `cmd`/`command` spellings, the Shift-may-type-the-key carve-out, the "modifiers alone never match" rule, and digit-by-physical-key matching. `kbd.component.spec.ts` covers per-keycap rendering, non-Apple spellings, following the injected `KBD_PLATFORM` when no `platform` input is set, the `aria-hidden` caps plus spoken-label live text, and reacting to a changed chord. `kbd-keys.ts`'s `parseKbdKeys`, `kbdKeyLabel`, and `kbdKeyName` are each directly unit-tested including alias case-insensitivity and the unknown-key capitalization fallback. Nothing with real logic is untested, and no spec asserts a wrong behavior. `canonicalKbdKey` and `detectKbdPlatform` are exported but have no _direct_ unit test (only exercised indirectly) — worth a few lines but not a gap that matters in practice.
+
+### Improvements
+
+- **Features**: no support for expressing "either of two keys" (e.g. `Enter` or the numpad Enter, or `Delete`/`Backspace` as synonyms in one binding) — a real gap when documenting a shortcut conventionally bound to more than one physical key. Would need a small syntax extension (e.g. `|`) to both `parseKbdKeys`/`kbd-keys.ts` and `parseChord`/`kbd-match.ts`.
+- **DX**: `matchesKbdChord` silently returns `false` for a chord string it can't parse into a real key (a chord like `''` or `'   '` also just returns `false` with nothing logged) — fine for production, but an `isDevMode()` console warning for the "no real key" case would help someone debugging why their keydown handler never fires.
+- **Testing**: add a couple of direct unit tests for `canonicalKbdKey` and `detectKbdPlatform` — cheap to add, and `detectKbdPlatform`'s `navigator`-undefined branch (the SSR path) is exactly the kind of thing that's easy to silently break in a refactor without a direct test catching it.
+
+**Clean**: the `@layer components` wrap, the visually-hidden `.et-kbd-ally-text` clip technique and its stated rationale, `aria-hidden` on every rendered `<kbd>`, the `color-mix()`-based key background (token-first with an allowed literal fallback), the platform-detection SSR guard, and the full modifier-matching logic in `kbd-match.ts` traced against its test suite. No comment-policy violations found — every comment in `kbd-keys.ts` and `kbd-match.ts` documents a workaround with its concrete cause (the `navigator.platform` deprecation note, the macOS Option-key `event.code` rationale) or public API JSDoc, both allowed categories.
+
+---
+
+## toolbar
+
+### High
+
+- **A nested `[etToolbar]`'s own arrow-key navigation is overridden by the outer toolbar because `handleKeydown` never stops propagation.** `libs/components/src/lib/toolbar/headless/toolbar.directive.ts:54-88` handles `keydown` on the host with no `event.stopPropagation()`. When focus is on a control _inside_ a nested toolbar and an arrow key is pressed, the inner toolbar's handler runs first (bubble order) and moves focus correctly among its own controls — but the same native `keydown` event then keeps bubbling to the outer toolbar's `(keydown)` host listener. The outer handler recomputes `document.activeElement`'s index against _its own_ `controls()` list (which excludes nested-toolbar controls by design, `toolbar.directive.ts:102-110`), gets `-1`, and re-targets/refocuses one of its own controls — silently stealing focus back out of the inner toolbar on every arrow-key press.
+  **Runtime-verified**: built a fixture with `<et-toolbar aria-label="Outer"><button>Outer</button><et-toolbar aria-label="Inner"><button>InnerA</button><button>InnerB</button></et-toolbar></et-toolbar>`, focused `InnerA`, dispatched `keydown` `ArrowRight` on it. Expected focus to land on `InnerB` (inner toolbar's own nav); observed focus jumped to the outer `Outer` button instead. Scratch spec deleted after confirming, working tree left clean.
+  This directly contradicts both the directive's own doc comment ("controls belonging to a nested toolbar stay with that toolbar", `toolbar.directive.ts:17`) and the docs page's explicit claim (`apps/docs/components/toolbar.md:43`). The existing spec `toolbar.component.spec.ts:166-181` ("leaves a nested toolbar its own controls") does not catch this: it dispatches the keydown directly on the _outer_ toolbar element with focus already on the _outer_ button, so it never exercises a keydown originating inside the inner toolbar's own control — the one path that actually triggers the bug. Anyone building a nested toolbar (e.g. a table's per-row action toolbar inside a page-level toolbar, or an RTE toolbar with a sub-toolbar for a color picker) will see arrow-key navigation randomly kick focus out to the ancestor toolbar.
+
+### Medium
+
+None beyond the High finding above.
+
+### Low
+
+- **Comment violates the "no rationale for mechanical choices" rule.** `toolbar.directive.ts:126-127` explains _why_ an imperative dirty-check was chosen over a template binding for a hot per-render loop — exactly the kind of mechanical-choice rationale the comment policy says to delete.
+- **`ToolbarDirective.focusFirst()` is public but has zero consumers and is undocumented.** Defined at `toolbar.directive.ts:50-52`, exported via `headless/index.ts` → `toolbar/index.ts`. No caller found besides the directive itself, and `apps/docs/components/toolbar.md` never mentions it.
+
+### Spec coverage
+
+`toolbar.component.spec.ts` covers: default/configured orientation reflection, first-control tab stop, tab-stop tracking on focus-in, tab-stop staying valid across a disabled→enabled round trip, arrow-key wrap with a disabled control skipped, Home/End, vertical arrow keys, and one nested-toolbar case. The nested-toolbar case is the one gap: it doesn't exercise a keydown originating _inside_ the inner toolbar, so the directive's core nesting guarantee is unverified and (per the High finding) actually broken. RTL arrow-key swapping (`getComputedStyle(...).direction === 'rtl'`, `toolbar.directive.ts:56`) has no test at all. `ToolbarComponent`'s own file has no dedicated spec; it's only exercised indirectly through `TOOLBAR_IMPORTS`, which is fine given it's a two-line template component.
+
+### Improvements
+
+- **Testing**: Replace/extend the nested-toolbar spec to dispatch the keydown on an inner-toolbar control with focus already there, and add `event.stopPropagation()` (or an "already handled" guard) to `handleKeydown` so the fix has a regression test from day one.
+- **DX**: Either delete `focusFirst()` or use it — e.g. from a toolbar-opening overlay/dialog integration — and document it under Options/Members in `toolbar.md` if kept.
+- **Features**: A 2D/grid arrow-nav mode (Home/End per row plus Up/Down across rows) would match what a toolbar with wrapped rows (e.g. an emoji-picker-style toolbar) needs; currently only a single row or single column is supported via `orientation`.
+
+**Clean**: CSS is correctly wrapped in `@layer components`, uses only custom-property tokens with sensible `initial-value`s and no hardcoded colors, and the vertical-orientation selector uses `:where()` per the repo's modifier convention. `ToolbarComponent` is a thin two-line wrapper delegating all behavior to the headless directive via `hostDirectives`, matching the three-tier architecture. Disabled-control handling (`focusableControls()` filters by `.disabled`, `controls()` still includes them so `syncTabStops` can strip a stale tab stop) is correct and covered by a test. The public JSDoc on `ToolbarDirective`/`ToolbarComponent` is within the allowed "public API JSDoc" comment category.
+
+---
+
+## description-list
+
+### High
+
+None found.
+
+### Medium
+
+- **A `<dt>` with more than one `<dd>` (a valid, common native `<dl>` pattern) breaks the grid layout instead of just looking suboptimal.** `description-list.component.css:38-43` sets the `<dl>` to `display: grid` with exactly two fixed columns and relies on default `grid-auto-flow: row` to pair up the flat `dt, dd, dt, dd, …` child sequence, exactly as the docs describe ("CSS grid auto-placement... walks the flat dt, dd, dt, dd, … sequence a cell at a time" — `apps/docs/components/description-list.md:46`). That algorithm assumes strict alternation. Native `<dl>` semantics explicitly allow one term with multiple details, e.g. `<dt>Phone</dt><dd>555-0100</dd><dd>555-0101</dd><dt>Email</dt>…` — perfectly valid markup the docs never warn against (the component's whole pitch is "write plain semantic markup and the layout follows", `description-list.md:3`). With that pattern, auto-placement puts the second `<dd>` in the _term_ column of the next row and the following `<dt>` in the _detail_ column, visibly swapping which column reads as "term" and which as "detail" from that row onward. **Code-verified only** (reasoned from the CSS grid auto-placement algorithm; no story/doc example ever uses more than one `<dd>` per `<dt>`; jsdom has no layout engine to confirm the visual swap directly).
+
+### Low
+
+None found; the file is small and every comment present is legitimate public-API JSDoc.
+
+### Spec coverage
+
+`description-list.component.spec.ts` covers: the class landing on the native `<dl>` with `dt`/`dd` children preserved verbatim, the `variant` data-attribute defaulting to `inline`, reflecting a bound `stacked` variant, and the attribute selector only matching a real `<dl>` (not a `<div>`). Adequate for what the component actually does (a thin class/attribute host), but no test — and given the Medium finding above, none could meaningfully assert grid placement without a real layout engine — covers the multiple-`<dd>`-per-`<dt>` case.
+
+### Improvements
+
+- **Features**: A multi-column variant (pairs laid out `N`-up, like Ant Design's `Descriptions` `column` prop) would suit dense summary panels; currently only 1-column (`stacked`) or 1-row-of-2-columns (`inline`) exist.
+- **DX**: Document the multiple-`<dd>`-per-`<dt>` limitation explicitly (or fix it) — right now the docs' "any content works inside a `<dd>`" framing (`description-list.md:46`) invites exactly the pattern that breaks.
+
+**Clean**: CSS is wrapped in `@layer components`, every token has a sensible `initial-value` and syntax, and colors resolve through `--et-surface-color-muted-solid` / `--et-surface-color-solid` with `currentColor` fallbacks — no hardcoded colors. The component itself is a minimal, well-scoped attribute-selector host (`dl[et-description-list]`) with a single `variant` input; no RxJS, no lifecycle concerns, nothing to leak.
+
+---
+
+## copy-button
+
+### High
+
+None found.
+
+### Medium
+
+- **`requestCopy()`'s subscription isn't tied to the directive's lifecycle, so a destroy while the clipboard write is still pending emits `copySuccess` (and sets `copied`) on a torn-down directive, producing a dev-mode Angular warning.** `copy-button.directive.ts:54-68` builds a fresh `copyToClipboard(...).pipe(tap(...)).subscribe()` on every click with no `takeUntilDestroyed()` — unlike the constructor's `reset$` pipe two lines above it (`copy-button.directive.ts:45-51`), which correctly has one. Because `copyToClipboard` always completes on its own (verified in `libs/core/src/lib/utils/clipboard.ts:3-18`), this isn't a "grows forever" leak, but if the host is destroyed _before_ the promise settles (e.g. the async Clipboard API takes a tick and the user immediately navigates away / the button is removed from an `@if`), the `tap` callback still fires afterward and calls `this.copySuccess.emit()` on an already-destroyed `OutputEmitterRef`.
+  **Runtime-verified**: stubbed `navigator.clipboard.writeText` to return a promise that resolves only after the fixture is destroyed, clicked the button, called `fixture.destroy()`, then resolved the promise and flushed microtasks. Observed `console.warn` fire with Angular's runtime error 953 ("Unexpected emit for destroyed `OutputRef`. The owning directive/component is destroyed."). Scratch spec deleted after confirming, working tree left clean.
+  Impact is a console warning rather than a thrown error or corrupted state, but it is a real, reachable "warning in the console for no reason" that a consumer removing a copy button mid-copy (e.g. inside an auto-dismissing toast, or a row removed from a list right after the click) will hit in dev mode.
+
+### Low
+
+None beyond the above; the `tap`/`switchMap` reset-timer comment (`copy-button.directive.ts:44`) is borderline but defensible as an ordering/timing choice (category 1), so it was not flagged as a violation.
+
+### Spec coverage
+
+`copy-button.directive.spec.ts` covers: copying the bound `text` and ticking `copied()`/`data-copied`, evaluating a getter-form `text` at copy time (not at bind time), resetting `copied()` after `resetDelay` (with fake timers), and the failure path (clipboard rejects and `execCommand` also returns false → no tick, no emit). Missing: the destroy-while-pending case above, and no test exercises rapid double-clicks to confirm the documented "each copy restarts the countdown via `switchMap`" behavior.
+
+### Improvements
+
+- **Testing**: Add a rapid-double-click test asserting the reset timer restarts from the _second_ click, and a destroy-while-pending test per the Medium finding, guarded with `takeUntilDestroyed()`.
+- **DX**: The `text` input's function-vs-string union (`string | (() => string)`) is a slightly unusual API shape for a single input; worth double-checking this dual-type input earns its keep over `[text]="getText()"` plus an `OnPush`-friendly computed, though `copy-button.directive.ts:30` does give a real reason (avoiding re-serialization every CD cycle).
+- **UI/UX**: There's no built-in `aria-live` announcement for the copy result; the docs correctly call out that the icon/label swap "isn't reliably announced by every screen reader" (`copy-button.md:46`) and punt to a static `aria-label`, but a static label never tells an AT user the copy _succeeded_. An opt-in visually-hidden live region driven by `copySuccess` would close that gap without forcing chrome on every consumer.
+
+**Clean**: no CSS to review (directive renders nothing of its own, matching its docs). `resetDelay`'s `numberAttribute` transform and `text`'s dual-type input are both handled correctly. SSR/no-`navigator` guard lives in `copyToClipboard` itself (`clipboard.ts:5-7`), so the directive doesn't need its own platform guard. The signals-for-state / RxJS-for-async split is respected (`copied` is a signal, the clipboard write and reset timer are RxJS).
+
+---
+
+## focus-ring
+
+### High
+
+- **The `et-focus-ring--active` class can get stuck permanently applied if focus moves away between `keydown` and `keyup`, leaving any consumer styling off it (currently `et-checkbox`'s pressed state) visually wrong forever.** `focus-ring.directive.ts:10-13` sets `active` to `true` on `keydown.enter`/`keydown.space` and back to `false` only on the matching `keyup`. There is no `blur`/`focusout` handler to reset it. If focus moves to a different element before the physical key is released — e.g. the user holds Space and then Tabs away, or pressing Enter/Space opens an overlay that steals focus (autofocus in a dialog/menu) — the browser delivers the `keyup` event to whatever element currently has focus, not the original one, so the original element's `active` signal never flips back to `false`.
+  **Runtime-verified**: focused a button with `etFocusRing`, dispatched `keydown` `Enter` on it (class present, as expected), then moved focus to a sibling button and dispatched `keyup` `Enter` there instead (simulating focus having moved away, e.g. into a just-opened overlay). Observed the original button retained `et-focus-ring--active` — confirmed stuck permanently true with no code path that would ever clear it short of another full keydown+keyup cycle on that same element. Scratch spec deleted after confirming, working tree left clean.
+  This is not cosmetic-only: `et-checkbox` is the one real consumer of this class today (`libs/components/src/lib/forms/checkbox/checkbox.component.css:124,137`), where `.et-focus-ring--active` drives `transform: scale(0.95)` and a border-color change — the "pressed" micro-interaction. Any keyboard flow where pressing Space on a checkbox triggers something that moves focus away before the key is released (autofocus into a follow-up field on toggle, a menu/combobox closing and refocusing its trigger, or simply the well-known "hold Space, hit Tab" pattern) leaves that checkbox permanently rendered as if held down — 5% smaller and wrong border color — until it happens to receive another interrupted-free press/release cycle.
+
+### Medium
+
+None beyond the above (folded into High since it's the same root cause with a concrete visual consequence today).
+
+### Low
+
+None found; the JSDoc on `focusRingDisabled` is legitimate public-API documentation and there are no other comments in the directive.
+
+### Spec coverage
+
+`focus-ring.directive.spec.ts` covers: the `et-focus-ring` class present/absent based on `focusRingDisabled`, that it coexists correctly with a native `[disabled]` binding, and `et-focus-ring--active` toggling on `keydown`/`keyup` for both Enter and Space _in isolation_ — each test's keydown and keyup are dispatched on the same element with nothing in between. None of the six tests dispatch a keydown on one element and a keyup on another (or a `blur` between them), so the stuck-active path above has zero coverage. There's also no test that `styleManager.mount(FocusRingStylesComponent)` is actually invoked/skipped based on `focusRingDisabled`'s initial value.
+
+### Improvements
+
+- **Testing**: Add a regression test for the stuck-active scenario (keydown on element A, focus moves to B, keyup on B) once fixed, plus a test that `focusRingDisabled` starting `true` truly skips the style mount (`focus-ring.directive.ts:30-32`) and mounts it once flipped to `false`.
+- **UI/UX**: The straightforward fix is a `(blur)` host listener that resets `active` to `false` unconditionally — cheap, and closes the gap for every current and future consumer of `et-focus-ring--active`, not just checkbox.
+
+**Clean**: this is the smallest of the four domains and mostly sound. The styles-only `FocusRingStylesComponent` + `injectStyleManager().mount(...)` split matches the repo's documented pattern exactly, so consumers that never use `etFocusRing` never pay for its CSS. `focus-ring-styles.component.css` is correctly wrapped in `@layer components`, uses only custom-property tokens (`--_et-focus-ring-color` resolves through `--et-theme-color-primary-solid` with a `currentColor` fallback, no hardcoded color), and the `focusRingDisabled` naming rationale (avoiding collision with native `[disabled]`) is a real, non-obvious invariant worth the JSDoc it got.
+
+---
+
+## Summary counts
+
+| Domain           | High  | Medium | Low   |
+| ---------------- | ----- | ------ | ----- |
+| pagination       | 3     | 1      | 0     |
+| breadcrumb       | 1     | 1      | 0     |
+| progress-steps   | 0     | 1      | 3     |
+| timeline         | 0     | 0      | 1     |
+| kbd              | 0     | 0      | 1     |
+| toolbar          | 1     | 0      | 2     |
+| description-list | 0     | 1      | 0     |
+| copy-button      | 0     | 1      | 0     |
+| focus-ring       | 1     | 0      | 0     |
+| **Total**        | **6** | **5**  | **7** |
+
+Worst finding overall: the nested-toolbar arrow-key focus theft (toolbar, High) and the focus-ring stuck `--active` class (focus-ring, High) are the two with the most concrete, everyday-reachable user impact; the breadcrumb outlet + SEO directive NG0201 crash is the most severe in kind (a hard crash on the documented usage) but narrower in reach (only apps combining both features).
 
 ---
