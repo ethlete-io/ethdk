@@ -18,14 +18,21 @@ const COLLAPSED_KEY = 'et-query-devtools-pills-collapsed';
 const STYLE = `
   :host {
     --_accent: var(--et-theme-color-primary-solid, #60a5fa);
+    --_surface: linear-gradient(135deg, #1f1f23, #2a2a30);
+    --_ring: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+    --_lift: 0 6px 20px rgb(0 0 0 / 0.35);
+    --_control: 24px;
 
     position: fixed;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
+    /* Stretch, not flex-end: it hands every pill the widest pill's width, so the stack keeps one left
+       edge as well as one right edge. */
+    align-items: stretch;
+    gap: 6px 8px;
     inset-block-end: 64px;
     inset-inline-end: 16px;
+    max-inline-size: min(420px, calc(100vw - 32px));
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 13px;
     /* One below the panel and the toggle button (2147483010), so an open panel covers the pill - the
@@ -33,45 +40,97 @@ const STYLE = `
     z-index: 2147483009;
   }
 
-  label {
-    display: inline-flex;
+  .pill {
+    display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 10px 8px 12px;
+    box-sizing: border-box;
+    block-size: 34px;
+    padding-inline: 12px 5px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #1f1f23, #2a2a30);
+    background: var(--_surface);
     color: #fafafa;
     box-shadow:
-      0 6px 20px rgb(0 0 0 / 0.35),
-      inset 0 0 0 1px rgb(255 255 255 / 0.08);
+      var(--_lift),
+      var(--_ring);
+  }
+
+  .lead {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
   }
 
   .name {
-    color: #a1a1aa;
-    font-size: 11px;
+    color: #8f8f98;
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   select {
-    max-inline-size: 220px;
-    padding: 3px 6px;
+    flex: 1;
+    min-inline-size: 0;
+    box-sizing: border-box;
+    block-size: var(--_control);
+    padding-inline: 8px 24px;
     border: none;
-    border-radius: 5px;
-    background: rgb(255 255 255 / 0.07);
+    border-radius: 7px;
+    appearance: none;
+    background-color: rgb(255 255 255 / 0.07);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a1a1aa' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 9px 6px;
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
     color: #fafafa;
     font: inherit;
     font-size: 12px;
+    line-height: var(--_control);
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .pill button {
+    flex: none;
+    box-sizing: border-box;
+    block-size: var(--_control);
+    padding-inline: 9px;
+    border: none;
+    border-radius: 7px;
+    background: rgb(255 255 255 / 0.07);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+    color: #d4d4d8;
+    font: inherit;
+    font-size: 11px;
     font-weight: 600;
     line-height: 1;
     cursor: pointer;
   }
 
-  select:hover {
+  select:hover,
+  .pill button:hover {
+    background-color: rgb(255 255 255 / 0.13);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--_accent) 60%, transparent);
+    color: #fafafa;
+  }
+
+  select:focus-visible,
+  .pill button:focus-visible,
+  .chip:focus-visible {
+    outline: 2px solid var(--_accent);
+    outline-offset: 2px;
+  }
+
+  .pill button[data-on] {
+    background: color-mix(in srgb, var(--_accent) 20%, transparent);
     box-shadow: inset 0 0 0 1px var(--_accent);
+    color: #fafafa;
   }
 
   /* The popup is painted by the browser, which does not inherit the pill's dark background. */
@@ -80,7 +139,7 @@ const STYLE = `
     color: #fafafa;
   }
 
-  label[data-production] {
+  .pill[data-production] {
     background: linear-gradient(135deg, #7f1d1d, #b91c1c);
     color: #fff;
     box-shadow:
@@ -88,91 +147,85 @@ const STYLE = `
       inset 0 0 0 1px rgb(254 202 202 / 0.7);
   }
 
-  label[data-production] .name {
+  .pill[data-production] .name {
     color: #fee2e2;
   }
 
-  label[data-production] .mark {
-    font-size: 15px;
+  .pill[data-production] .mark {
+    flex: none;
+    font-size: 14px;
     line-height: 1;
   }
 
-  label[data-production] select {
-    background: rgb(0 0 0 / 0.35);
+  .pill[data-production] select {
+    background-color: rgb(0 0 0 / 0.35);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23fecaca' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     box-shadow: inset 0 0 0 1px rgb(254 202 202 / 0.6);
     text-transform: uppercase;
   }
 
-  label[data-production] option {
+  .pill[data-production] select:hover {
+    background-color: rgb(0 0 0 / 0.5);
+    box-shadow: inset 0 0 0 1px #fecaca;
+  }
+
+  .pill[data-production] option {
     background: #450a0a;
-  }
-
-  label button {
-    padding: 3px 7px;
-    border: none;
-    border-radius: 5px;
-    background: rgb(255 255 255 / 0.07);
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
-    color: #fafafa;
-    font: inherit;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.4;
-    cursor: pointer;
-  }
-
-  label button:hover {
-    box-shadow: inset 0 0 0 1px var(--_accent);
-  }
-
-  label button[data-on] {
-    background: color-mix(in srgb, var(--_accent) 18%, transparent);
-    box-shadow: inset 0 0 0 1px var(--_accent);
   }
 
   .chip {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    align-self: flex-end;
+    gap: 8px;
     box-sizing: border-box;
-    min-block-size: 28px;
-    max-inline-size: min(340px, 70vw);
-    padding: 4px 12px;
+    block-size: 28px;
+    max-inline-size: 100%;
+    padding-inline: 11px 12px;
     border: none;
     border-radius: 999px;
-    background: linear-gradient(135deg, #1f1f23, #2a2a30);
+    background: var(--_surface);
     box-shadow:
-      0 6px 20px rgb(0 0 0 / 0.35),
-      inset 0 0 0 1px rgb(255 255 255 / 0.08);
+      var(--_lift),
+      var(--_ring);
     color: #fafafa;
     font: inherit;
     font-size: 12px;
     font-weight: 600;
-    line-height: 1.4;
+    line-height: 1;
     cursor: pointer;
   }
 
   .chip:hover {
     box-shadow:
-      0 6px 20px rgb(0 0 0 / 0.35),
+      var(--_lift),
       inset 0 0 0 1px var(--_accent);
   }
 
   .caret {
+    flex: none;
     color: var(--_accent);
-    font-size: 9px;
+    font-size: 8px;
     line-height: 1;
     transition: transform 0.15s ease;
   }
 
   .values {
     overflow: hidden;
+    min-inline-size: 0;
     color: #d4d4d8;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  :host([data-collapsed]) label {
+  .fold {
+    color: #8f8f98;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+
+  :host([data-collapsed]) .pill,
+  :host([data-collapsed]) .fold {
     display: none;
   }
 
@@ -182,6 +235,31 @@ const STYLE = `
 
   :host(:not([data-collapsed])) .values {
     display: none;
+  }
+
+  /* Subgrid, where it exists: one set of columns for the whole stack, so every picker starts and ends
+     on the same edge whatever its provider is called. The flex rules above are the fallback. */
+  @supports (grid-template-columns: subgrid) {
+    :host {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .pill {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+    }
+
+    /* Nothing follows the picker on an env pill, so it takes the session pill's button column too. */
+    .pill:not([data-auth]) select {
+      grid-column: 2 / -1;
+    }
+
+    .chip {
+      grid-column: 1 / -1;
+      justify-self: end;
+    }
   }
 
   /* The whole viewport, so the warning is on screen wherever the reader is looking. Outside the pill's
@@ -197,7 +275,7 @@ const STYLE = `
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    label[data-production] {
+    .pill[data-production] {
       animation: et-qd-api-env-pulse 1.6s ease-in-out infinite;
     }
 
@@ -296,24 +374,31 @@ const buildSwitch = (
 ) => {
   const production = resolvedEnvOf(apiSwitch, stored)?.production === true;
 
-  const label = doc.createElement('label');
-  label.title = production
+  // A div, not a label: a label forwards its own hover to the control it names, so a pointer over the
+  // pill's trailing button would light the picker up as well.
+  const pill = doc.createElement('div');
+  pill.className = 'pill';
+  pill.title = production
     ? `${apiSwitch.name} points at production. The data is real. Picking reloads the page.`
     : `${apiSwitch.name} — picking reloads the page`;
 
+  const lead = doc.createElement('span');
+  lead.className = 'lead';
+
   if (production) {
-    label.setAttribute('data-production', '');
+    pill.setAttribute('data-production', '');
 
     const mark = doc.createElement('span');
     mark.className = 'mark';
     mark.textContent = '⚠';
     mark.setAttribute('aria-hidden', 'true');
-    label.append(mark);
+    lead.append(mark);
   }
 
   const name = doc.createElement('span');
   name.className = 'name';
   name.textContent = production ? `${apiSwitch.name} · live` : apiSwitch.name;
+  lead.append(name);
 
   const select = doc.createElement('select');
   select.setAttribute('aria-label', apiSwitch.name);
@@ -331,9 +416,9 @@ const buildSwitch = (
     pick(apiSwitch.storageKey, select.value === DEFAULT_VALUE ? null : select.value),
   );
 
-  label.append(name, select);
+  pill.append(lead, select);
 
-  return label;
+  return pill;
 };
 
 /** One thing a session picker can be switched to: a stored session, or an account to log in as. */
@@ -374,15 +459,20 @@ let envState: EnvPillState | null = null;
 let authState: AuthPillState | null = null;
 
 const buildAuthRow = (doc: Document, row: QueryDevtoolsAuthPillRow) => {
-  const label = doc.createElement('label');
-  label.setAttribute('data-auth', '');
-  label.title = row.tabLocal
+  const pill = doc.createElement('div');
+  pill.className = 'pill';
+  pill.setAttribute('data-auth', '');
+  pill.title = row.tabLocal
     ? `${row.name} holds this tab's own session. The other tabs are on theirs.`
     : `${row.name} - the session every tab of this app shares`;
+
+  const lead = doc.createElement('span');
+  lead.className = 'lead';
 
   const name = doc.createElement('span');
   name.className = 'name';
   name.textContent = row.tabLocal ? `${row.name} · this tab` : row.name;
+  lead.append(name);
 
   const select = doc.createElement('select');
   select.setAttribute('aria-label', `${row.name} session`);
@@ -423,9 +513,9 @@ const buildAuthRow = (doc: Document, row: QueryDevtoolsAuthPillRow) => {
 
   isolate.addEventListener('click', row.toggleTabLocal);
 
-  label.append(name, select, isolate);
+  pill.append(lead, select, isolate);
 
-  return label;
+  return pill;
 };
 
 const buildChip = (doc: Document, values: string[], collapsed: boolean, toggle: () => void) => {
@@ -434,7 +524,7 @@ const buildChip = (doc: Document, values: string[], collapsed: boolean, toggle: 
   chip.className = 'chip';
   chip.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
   chip.title = collapsed ? 'Show the devtools switches' : 'Hide the devtools switches';
-  // The summary text is the only content, and the unfolded state hides it - hence a name of its own.
+  // The visible text says which state the pills are in, not what the click does - hence a name of its own.
   chip.setAttribute('aria-label', chip.title);
 
   const caret = doc.createElement('span');
@@ -446,7 +536,11 @@ const buildChip = (doc: Document, values: string[], collapsed: boolean, toggle: 
   text.className = 'values';
   text.textContent = values.join(' · ');
 
-  chip.append(caret, text);
+  const fold = doc.createElement('span');
+  fold.className = 'fold';
+  fold.textContent = 'hide';
+
+  chip.append(caret, text, fold);
   chip.addEventListener('click', toggle);
 
   return chip;

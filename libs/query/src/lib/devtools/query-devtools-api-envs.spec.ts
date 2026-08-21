@@ -117,21 +117,21 @@ describe('query devtools api envs', () => {
     localStorage.setItem('hubApiEnv', 'production');
     setQueryDevtoolsApiEnvs([HUB_WITH_PRODUCTION]);
 
-    expect(pill()?.querySelector('label[data-production]')).not.toBeNull();
+    expect(pill()?.querySelector('.pill[data-production]')).not.toBeNull();
     expect(pill()?.querySelector('.frame')).not.toBeNull();
   });
 
   it('should leave the pill alone while a production env is only on offer', () => {
     setQueryDevtoolsApiEnvs([HUB_WITH_PRODUCTION]);
 
-    expect(pill()?.querySelector('label[data-production]')).toBeNull();
+    expect(pill()?.querySelector('.pill[data-production]')).toBeNull();
     expect(pill()?.querySelector('.frame')).toBeNull();
   });
 
   it('should warn on the pill while the fallback behind an unwritten key is production', () => {
     setQueryDevtoolsApiEnvs([{ ...HUB_WITH_PRODUCTION, fallback: 'production' }]);
 
-    expect(pill()?.querySelector('label[data-production]')).not.toBeNull();
+    expect(pill()?.querySelector('.pill[data-production]')).not.toBeNull();
     expect(pill()?.querySelector('.frame')).not.toBeNull();
   });
 
@@ -139,7 +139,7 @@ describe('query devtools api envs', () => {
     localStorage.setItem('hubApiEnv', 'http://192.168.0.2:8040');
     setQueryDevtoolsApiEnvs([HUB_WITH_PRODUCTION]);
 
-    expect(pill()?.querySelector('label[data-production]')).toBeNull();
+    expect(pill()?.querySelector('.pill[data-production]')).toBeNull();
   });
 
   it('should mark a production env in the dropdown as well as the pick', () => {

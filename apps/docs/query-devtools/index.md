@@ -1951,10 +1951,10 @@ calls `setQueryDevtoolsUiMounted(true)` itself to keep them.
 
 The pickers are folded away by default. What sits above the toggle button is one small chip, which
 reads the current values and nothing else - the session first, then each switch's env. A click on the
-chip unfolds every picker, and another click folds them back. The state is kept in `localStorage`
-under `et-query-devtools-pills-collapsed`, so it survives the reload a pick causes. While a
-production env is the pick the pickers stay unfolded and the chip is dropped: the way out of
-production is never one click further away than the warning that put it there.
+chip unfolds every picker, and another click - the chip then reads **hide** - folds them back. The
+state is kept in `localStorage` under `et-query-devtools-pills-collapsed`, so it survives the reload
+a pick causes. While a production env is the pick the pickers stay unfolded and the chip is dropped:
+the way out of production is never one click further away than the warning that put it there.
 
 | Field        | What it is                                                                               |
 | ------------ | ---------------------------------------------------------------------------------------- |
