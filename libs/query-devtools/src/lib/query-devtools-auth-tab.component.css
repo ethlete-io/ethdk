@@ -54,6 +54,12 @@
     gap: 0.6rem;
   }
 
+  /* The shared input is full-width, which would put every part of this row on a line of its own. */
+  .et-query-devtools-auth-account-add .et-query-devtools-input {
+    flex: 1 1 14rem;
+    inline-size: auto;
+  }
+
   .et-query-devtools-auth-vault-head {
     display: flex;
     flex-wrap: wrap;
