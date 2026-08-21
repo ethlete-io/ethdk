@@ -17,13 +17,17 @@ where the browser has it, with the measured path kept behind `@supports` as the 
 `textarea-field-sizing-spike.md` for the measurements and for what to delete once the floor moves
 past Firefox ESR and iOS 26.
 
-Also done (2026-08-21): the first internal form test drivers. `libs/components/src/lib/testing/`
-holds the shared core (`driver-core.ts`, `overlay-control-driver.ts`) and
-`libs/components/src/lib/forms/testing/` the per-control drivers (`select-driver.ts`,
-`cascader-driver.ts`, `date-picker-driver.ts`). Ten specs now drive their control through a
-driver instead of the DOM: select, cascader, and all eight date-time specs. Direct DOM access
-across the 74 form specs fell from 631 sites to 374; the select and cascader specs went from 102
-and 45 sites to none. The `testing/` folder is excluded from the lib build, so nothing here ships.
+Also done (2026-08-21): the internal form test drivers, in two passes.
+`libs/components/src/lib/testing/` holds the shared core - `driver-core.ts`, the
+`control-driver.ts` base, and the two families built on it (`overlay-control-driver.ts`,
+`field-control-driver.ts`). `libs/components/src/lib/forms/testing/` holds the per-control
+drivers: `select-driver.ts`, `cascader-driver.ts`, `date-picker-driver.ts`,
+`number-input-driver.ts`, `password-input-driver.ts`, `tag-input-driver.ts` and
+`color-input-driver.ts`. Fifteen specs now drive their control through a driver instead of the
+DOM: select, cascader, all eight date-time specs, and the text input, number input, password
+input, tag input and colour input. Each of those five went to zero direct DOM sites; the plain
+input needs no per-control driver and uses `mountFieldControl` with `InputDirective` directly.
+The `testing/` folder is excluded from the lib build, so nothing here ships.
 
 Two decisions from that pass:
 
@@ -47,9 +51,9 @@ decision before any code · `X` blocked.
 
 ### M - bounded projects
 
-| Item              | Tag | Note                                                                                                                                                                                                                                                                                                                     |
-| ----------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Form test drivers | `C` | First pass done, see the 2026-08-21 note above. What is left is the text-field family and the remaining controls: rich text editor (47 sites), number input (27), dropzone (25), selection list (20), colour input (20), tag input (17). None of them opens an overlay, so they need a field driver, not the overlay one |
+| Item              | Tag | Note                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Form test drivers | `C` | Two passes done, see the 2026-08-21 note above. What is left is the controls with no driver yet: rich text editor (71 sites), selection list (55), dropzone (48), checkbox (25), slider (20). The field driver covers a control that edits one `input`; the rich text editor and the dropzone edit neither, so both need their own base, not `field-control-driver.ts` |
 
 ### L - projects, not tickets
 
@@ -76,9 +80,10 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 ## Sequencing
 
-1. Extend the form test drivers to the text-field family (number, password, colour, tag input) with
-   a field driver, alongside the next change to one of them. The overlay-backed controls and the
-   harness decision are done.
+1. Extend the form test drivers to the controls that still have none - selection list, checkbox and
+   slider first, because all three edit a native control the field driver already covers. Do it
+   alongside the next change to one of them. The overlay-backed controls, the text-field family and
+   the harness decision are done.
 2. For new component work, prefer stat tile when a bounded addition is wanted. Start charts only
    when its palette, SVG host and animation questions are the work the team intends to take on. The
    next opportunistic follow-up is retro-fitting `<et-scrollbar>` onto the panels that already hide
