@@ -1,0 +1,16 @@
+@layer components {
+  /* The browser sizes the textarea itself where `field-sizing` exists; `TextareaDirective`'s
+     measurement path stays as the fallback for engines that ignore this block. Both must never
+     run at once - the directive skips measuring exactly when this `@supports` condition holds.
+
+     The row bounds hold only while the native textarea has no block padding: it is a border box,
+     so any padding on it eats into the clamp, and CSS cannot add the padding back. Pad the form
+     field's frame instead. */
+  @supports (field-sizing: content) {
+    textarea[data-et-textarea-autosize] {
+      field-sizing: content;
+      min-block-size: calc(var(--et-textarea-min-rows, 1) * 1lh);
+      max-block-size: var(--et-textarea-max-block-size, none);
+    }
+  }
+}

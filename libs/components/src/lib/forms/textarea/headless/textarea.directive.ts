@@ -14,8 +14,14 @@ import {
 import { FormValueControl } from '@angular/forms/signals';
 import { injectRenderer, injectStyleManager, signalElementDimensions } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
-import { AutosizeBounds, computeAutosizeBlockSize, readTextareaStyleMetrics } from './internals/textarea-autosize';
+import {
+  AutosizeBounds,
+  computeAutosizeBlockSize,
+  readTextareaStyleMetrics,
+  supportsNativeAutosize,
+} from './internals/textarea-autosize';
 import { FormFieldTextareaStylesComponent } from '../../form-field/form-field-textarea-styles.component';
+import { TextareaAutosizeStylesComponent } from '../textarea-autosize-styles.component';
 
 export const TEXTAREA_RESIZE_MODES = {
   NONE: 'none',
@@ -59,11 +65,27 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
    */
   public nativeControl = signal<HTMLTextAreaElement | null>(null);
 
-  private nativeControlDimensions = signalElementDimensions(this.nativeControl);
+  private nativeAutosize = supportsNativeAutosize();
+
+  private autosizeMinRows = computed(() => this.minRows() ?? this.rows());
+
+  private autosizeMaxBlockSize = computed(() => {
+    const maxRows = this.maxRows();
+
+    return maxRows === null ? null : `calc(${maxRows} * 1lh)`;
+  });
+
+  // Passing `nativeControl` here instead would attach a ResizeObserver to every textarea that
+  // does not need one - only the measurement path below reads a width.
+  private measuredControl = computed(() => (this.nativeAutosize ? null : this.nativeControl()));
+
+  private nativeControlDimensions = signalElementDimensions(this.measuredControl);
 
   constructor() {
     super();
-    injectStyleManager().mount(FormFieldTextareaStylesComponent);
+    const styleManager = injectStyleManager();
+    styleManager.mount(FormFieldTextareaStylesComponent);
+    styleManager.mount(TextareaAutosizeStylesComponent);
 
     const hostRef = inject<ElementRef<HTMLElement | null>>(ElementRef);
     const hostElement = hostRef.nativeElement;
@@ -80,6 +102,32 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
         return;
       }
 
+      const autosize = this.autosize();
+      const minRows = this.autosizeMinRows();
+      const maxBlockSize = this.autosizeMaxBlockSize();
+
+      untracked(() => {
+        this.renderer.setDataAttributes(textarea, { 'et-textarea-autosize': autosize ? '' : null });
+        this.renderer.setCssProperties(textarea, {
+          '--et-textarea-min-rows': autosize ? `${minRows}` : null,
+          '--et-textarea-max-block-size': autosize ? maxBlockSize : null,
+        });
+      });
+    });
+
+    effect(() => {
+      // Reading this first keeps the effect dependency-free where the browser autosizes, so it
+      // runs once and never measures again.
+      if (this.nativeAutosize) {
+        return;
+      }
+
+      const textarea = this.nativeControl();
+
+      if (!textarea) {
+        return;
+      }
+
       if (!this.autosize()) {
         untracked(() => this.renderer.removeStyle(textarea, 'blockSize'));
 
@@ -89,7 +137,7 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
       // size against what is actually rendered - while mixed that is the empty masked display,
       // never the hidden raw value (resizeToFit would otherwise write it into the DOM)
       const value = this.displayValue();
-      const bounds: AutosizeBounds = { minRows: this.minRows() ?? this.rows(), maxRows: this.maxRows() };
+      const bounds: AutosizeBounds = { minRows: this.autosizeMinRows(), maxRows: this.maxRows() };
       const inlineSize = this.nativeControlDimensions()?.client?.width ?? 0;
 
       // A collapsed/unrendered textarea cannot be measured; the dimensions signal

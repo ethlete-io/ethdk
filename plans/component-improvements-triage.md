@@ -12,6 +12,11 @@ and the rich text editor panels now read the derived surface tokens directly, th
 ring and action divider are themed, and the tab / nav-tab / segmented-tab interaction fills go
 through `--et-theme-color-primary-rgb`.
 
+Also done (2026-08-21): native textarea autosizing. `field-sizing: content` now drives the size
+where the browser has it, with the measured path kept behind `@supports` as the fallback - see
+`textarea-field-sizing-spike.md` for the measurements and for what to delete once the floor moves
+past Firefox ESR and iOS 26.
+
 **Tags.** `A` additive (new input/slot/option, nothing existing changes) · `C` consolidation
 (dedupe or reuse; behaviour should come out identical) · `B` correctness · `D` needs a design
 decision before any code · `X` blocked.
@@ -21,10 +26,9 @@ decision before any code · `X` blocked.
 
 ### M - bounded projects
 
-| Item                       | Tag     | Note                                                                                                                                                                                                                                                                 |
-| -------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native textarea autosizing | `C`,`D` | `field-sizing: content` reached Baseline in June 2026. Spike it against `rows`, `minRows`, `maxRows`, mixed values and hidden/revealed fields; if those hold, remove the `ResizeObserver`/measurement effect and `textarea-autosize.ts`                              |
-| Form test drivers          | `C`,`D` | The old “not urgent” call has aged out: 74 form specs now contain about 500 direct DOM-access sites. Start with internal drivers for form field, select, cascader and date-time controls; decide whether a public CDK-`ComponentHarness` API buys enough beyond that |
+| Item              | Tag     | Note                                                                                                                                                                                                                                                                 |
+| ----------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Form test drivers | `C`,`D` | The old “not urgent” call has aged out: 74 form specs now contain about 500 direct DOM-access sites. Start with internal drivers for form field, select, cascader and date-time controls; decide whether a public CDK-`ComponentHarness` API buys enough beyond that |
 
 ### L - projects, not tickets
 
@@ -51,12 +55,11 @@ rejected outright, because the native top layer breaks consumers that rely on z-
 
 ## Sequencing
 
-1. Take the textarea `field-sizing` spike; it is bounded and removes stale infrastructure.
-2. Build the first internal form test drivers alongside the next form change, then decide whether a
+1. Build the first internal form test drivers alongside the next form change, then decide whether a
    public harness API is justified.
-3. For new component work, prefer stat tile when a bounded addition is wanted. Start charts only
+2. For new component work, prefer stat tile when a bounded addition is wanted. Start charts only
    when its palette, SVG host and animation questions are the work the team intends to take on. The
    next opportunistic follow-up is retro-fitting `<et-scrollbar>` onto the panels that already hide
    their native bar - menu, cascader panel, rich text editor, time picker.
-4. Treat the View Transition replacement as a separate compatibility project, not incidental overlay
+3. Treat the View Transition replacement as a separate compatibility project, not incidental overlay
    cleanup.

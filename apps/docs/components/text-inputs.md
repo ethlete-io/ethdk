@@ -173,6 +173,12 @@ resizable).
 </et-form-field>
 ```
 
+Autosizing is the browser's own `field-sizing: content` where that exists, and a
+measured fallback everywhere else - the result is the same either way. The row
+bounds resolve from the textarea's line height, so keep the frame's padding on
+the frame: padding set directly on `.et-textarea-native` is counted against
+`minRows`/`maxRows` rather than added to them.
+
 A textarea is the usual home for an [`<et-counter />`](/components/forms#character-counter) - it picks its limit up from the schema's `maxLength()`.
 
 ## Color input

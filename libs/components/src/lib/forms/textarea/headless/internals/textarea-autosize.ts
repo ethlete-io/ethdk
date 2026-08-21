@@ -49,3 +49,11 @@ export const readTextareaStyleMetrics = (textarea: HTMLTextAreaElement): Autosiz
 
   return { lineHeight, paddingBlock, borderBlock };
 };
+
+/**
+ * Whether the browser sizes a textarea from its own content, which makes
+ * {@link computeAutosizeBlockSize} and its measurement pass unnecessary. The CSS side of that
+ * path lives in `TextareaAutosizeStylesComponent` behind the same `@supports` condition.
+ */
+export const supportsNativeAutosize = () =>
+  typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('field-sizing', 'content');

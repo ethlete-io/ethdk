@@ -18,12 +18,16 @@ import { TextareaDirective } from './textarea.directive';
 class TextareaInFormFieldTestHost {}
 
 @Component({
-  template: `<textarea [autosize]="autosize()" [rows]="rows()" etTextarea></textarea>`,
+  template: `
+    <textarea [autosize]="autosize()" [rows]="rows()" [minRows]="minRows()" [maxRows]="maxRows()" etTextarea></textarea>
+  `,
   imports: [TextareaDirective],
 })
 class StandaloneTextareaTestHost {
   autosize = signal(true);
   rows = signal(3);
+  minRows = signal<number | null>(null);
+  maxRows = signal<number | null>(null);
 }
 
 @Component({
@@ -110,6 +114,42 @@ describe('TextareaDirective', () => {
 
     it('should not display error when not touched', () => {
       expect(textareaDir.shouldDisplayError()).toBe(false);
+    });
+
+    describe('native autosize hooks', () => {
+      it('should mark the textarea and derive the row floor from rows', () => {
+        expect(nativeTextarea.hasAttribute('data-et-textarea-autosize')).toBe(true);
+        expect(nativeTextarea.style.getPropertyValue('--et-textarea-min-rows')).toBe('3');
+      });
+
+      it('should prefer minRows over rows for the row floor', () => {
+        fixture.componentInstance.minRows.set(5);
+        fixture.detectChanges();
+
+        expect(nativeTextarea.style.getPropertyValue('--et-textarea-min-rows')).toBe('5');
+      });
+
+      it('should set no upper bound while maxRows is null', () => {
+        expect(nativeTextarea.style.getPropertyValue('--et-textarea-max-block-size')).toBe('');
+      });
+
+      it('should turn maxRows into a line-based upper bound', () => {
+        fixture.componentInstance.maxRows.set(6);
+        fixture.detectChanges();
+
+        expect(nativeTextarea.style.getPropertyValue('--et-textarea-max-block-size')).toBe('calc(6 * 1lh)');
+      });
+
+      it('should remove every hook when autosize is turned off', () => {
+        fixture.componentInstance.maxRows.set(6);
+        fixture.detectChanges();
+        fixture.componentInstance.autosize.set(false);
+        fixture.detectChanges();
+
+        expect(nativeTextarea.hasAttribute('data-et-textarea-autosize')).toBe(false);
+        expect(nativeTextarea.style.getPropertyValue('--et-textarea-min-rows')).toBe('');
+        expect(nativeTextarea.style.getPropertyValue('--et-textarea-max-block-size')).toBe('');
+      });
     });
   });
 
