@@ -1,8 +1,10 @@
-import { ApplicationRef, Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
+import { pressKey, tick } from '../../../../testing/driver-core';
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { silenceExpectedConsole } from '../../../../testing/expected-console';
+import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
@@ -40,355 +42,281 @@ class DateInputTestHost {
   pickDate = new Date(2026, 6, 16);
 }
 
-const flushFrames = () =>
-  new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
 describe('DateInputDirective', () => {
-  let fixture: ComponentFixture<DateInputTestHost>;
-  let host: DateInputTestHost;
-  let dateInput: DateInputDirective;
-  let field: HTMLInputElement;
-  let trigger: HTMLButtonElement;
+  let driver: DatePickerDriver<DateInputTestHost, DateInputDirective>;
 
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  // overlays render into the document - scope queries to the newest pane so a pane
-  // stuck in its leave transition (jsdom fires no transition events) can't pollute them
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const pickButton = () => pane()?.querySelector<HTMLButtonElement>('.pick-date') ?? null;
-
-  const typeAndBlur = (text: string) => {
-    field.focus();
-    field.value = text;
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-    field.blur();
-    field.dispatchEvent(new Event('blur'));
-    tick();
-  };
-
-  const openPicker = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
+  const pickButton = () => driver.paneEl<HTMLButtonElement>('.pick-date');
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({ imports: [DateInputTestHost] });
-    fixture = TestBed.createComponent(DateInputTestHost);
-    host = fixture.componentInstance;
-    fixture.detectChanges();
-    dateInput = fixture.debugElement.children[0]!.injector.get(DateInputDirective);
-    field = fixture.nativeElement.querySelector('input');
-    trigger = fixture.nativeElement.querySelector('.open-picker');
+    driver = mountDatePicker(DateInputTestHost, DateInputDirective);
   });
 
   afterEach(async () => {
-    dateInput.closePicker();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('commits a strict displayFormat parse on blur', () => {
-    typeAndBlur('07/16/2026');
+    driver.typeAndBlur('07/16/2026');
 
-    expect(host.value()).toBe('2026-07-16');
-    expect(dateInput.parseError()).toBe(false);
-    expect(field.value).toBe('07/16/2026');
-    expect(dateInput.touched()).toBe(true);
+    expect(driver.host.value()).toBe('2026-07-16');
+    expect(driver.control.parseError()).toBe(false);
+    expect(driver.field().value).toBe('07/16/2026');
+    expect(driver.control.touched()).toBe(true);
   });
 
   it('commits and reformats on Enter without losing focus', () => {
-    field.focus();
-    field.value = '7/16/2026';
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    tick();
+    driver.type('7/16/2026');
+    driver.pressInField('Enter');
 
-    expect(host.value()).toBe('2026-07-16');
-    expect(field.value).toBe('07/16/2026');
+    expect(driver.host.value()).toBe('2026-07-16');
+    expect(driver.field().value).toBe('07/16/2026');
   });
 
   it('keeps unparseable text visible and raises parseError with a null value', () => {
-    typeAndBlur('07/16/2026');
-    typeAndBlur('not a date');
+    driver.typeAndBlur('07/16/2026');
+    driver.typeAndBlur('not a date');
 
-    expect(host.value()).toBeNull();
-    expect(dateInput.parseError()).toBe(true);
-    expect(dateInput.shouldDisplayError()).toBe(true);
-    expect(field.value).toBe('not a date');
-    expect(dateInput.hasValue()).toBe(true);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.control.parseError()).toBe(true);
+    expect(driver.control.shouldDisplayError()).toBe(true);
+    expect(driver.field().value).toBe('not a date');
+    expect(driver.control.hasValue()).toBe(true);
   });
 
   it('clears the value on empty input', () => {
-    typeAndBlur('07/16/2026');
-    typeAndBlur('');
+    driver.typeAndBlur('07/16/2026');
+    driver.typeAndBlur('');
 
-    expect(host.value()).toBeNull();
-    expect(dateInput.parseError()).toBe(false);
-    expect(dateInput.hasValue()).toBe(false);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.control.parseError()).toBe(false);
+    expect(driver.control.hasValue()).toBe(false);
   });
 
   it('clearValue() resets value, pending text and the field element while focused', () => {
-    typeAndBlur('07/16/2026');
-    field.focus();
-    field.value = 'not a date';
-    field.dispatchEvent(new Event('input', { bubbles: true }));
+    driver.typeAndBlur('07/16/2026');
+    driver.type('not a date');
+
+    driver.control.clearValue();
     tick();
 
-    dateInput.clearValue();
-    tick();
-
-    expect(host.value()).toBeNull();
-    expect(dateInput.inputText()).toBe('');
-    expect(dateInput.parseError()).toBe(false);
-    expect(dateInput.hasValue()).toBe(false);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.control.inputText()).toBe('');
+    expect(driver.control.parseError()).toBe(false);
+    expect(driver.control.hasValue()).toBe(false);
     // the field only mirrors state while unfocused - the clear resets it directly
-    expect(field.value).toBe('');
+    expect(driver.field().value).toBe('');
   });
 
   it('clearValue() is a no-op while readonly or disabled', () => {
-    typeAndBlur('07/16/2026');
-    host.disabled.set(true);
-    fixture.detectChanges();
+    driver.typeAndBlur('07/16/2026');
+    driver.host.disabled.set(true);
+    driver.detectChanges();
 
-    dateInput.clearValue();
+    driver.control.clearValue();
     tick();
 
-    expect(host.value()).toBe('2026-07-16');
+    expect(driver.host.value()).toBe('2026-07-16');
   });
 
   it('displays a prefilled value in the display format', async () => {
-    host.value.set('2026-12-24');
+    driver.host.value.set('2026-12-24');
     tick();
-    await fixture.whenStable();
+    await driver.fixture.whenStable();
 
-    expect(field.value).toBe('12/24/2026');
-    expect(dateInput.date()).toEqual(new Date(2026, 11, 24));
+    expect(driver.field().value).toBe('12/24/2026');
+    expect(driver.control.date()).toEqual(new Date(2026, 11, 24));
   });
 
   it('opens the picker from the trigger and commits a picked date', async () => {
-    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(driver.trigger().getAttribute('aria-haspopup')).toBe('dialog');
+    expect(driver.trigger().getAttribute('aria-expanded')).toBe('false');
 
-    await openPicker();
+    await driver.open();
 
-    expect(dateInput.pickerOpen()).toBe(true);
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(driver.control.pickerOpen()).toBe(true);
+    expect(driver.trigger().getAttribute('aria-expanded')).toBe('true');
     expect(pickButton()).not.toBeNull();
 
-    pickButton()?.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickInPane('.pick-date');
+    await driver.settle();
 
-    expect(host.value()).toBe('2026-07-16');
-    expect(dateInput.pickerOpen()).toBe(false);
-    expect(field.value).toBe('07/16/2026');
+    expect(driver.host.value()).toBe('2026-07-16');
+    expect(driver.control.pickerOpen()).toBe(false);
+    expect(driver.field().value).toBe('07/16/2026');
   });
 
   it('closes the picker on an outside pointerdown', async () => {
-    await openPicker();
+    await driver.open();
 
-    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-    tick();
-    await flushFrames();
+    driver.pointerDownOutside();
+    await driver.settle();
 
-    expect(dateInput.pickerOpen()).toBe(false);
+    expect(driver.control.pickerOpen()).toBe(false);
   });
 
   it('opens the picker with Alt+ArrowDown from the field', async () => {
-    field.focus();
-    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true }));
-    tick();
-    await flushFrames();
-    tick();
+    driver.focusField();
+    pressKey(driver.field(), 'ArrowDown', { altKey: true });
+    await driver.settle();
 
-    expect(dateInput.pickerOpen()).toBe(true);
+    expect(driver.control.pickerOpen()).toBe(true);
   });
 
   it('ignores the trigger while disabled', async () => {
-    host.disabled.set(true);
+    driver.host.disabled.set(true);
     tick();
 
-    expect(trigger.disabled).toBe(true);
+    expect(driver.trigger<HTMLButtonElement>().disabled).toBe(true);
 
-    dateInput.openPicker();
+    driver.control.openPicker();
     tick();
 
-    expect(dateInput.pickerOpen()).toBe(false);
+    expect(driver.control.pickerOpen()).toBe(false);
   });
 
   describe('mixed (bulk edit)', () => {
     const enterMixed = () => {
-      host.value.set('2026-03-05');
-      host.mixed.set(true);
+      driver.host.value.set('2026-03-05');
+      driver.host.mixed.set(true);
       tick();
     };
 
     it('renders the field empty with the mixed label as placeholder', () => {
       enterMixed();
 
-      expect(field.value).toBe('');
-      expect(field.getAttribute('placeholder')).toBe('Mixed');
-      expect(dateInput.displayValue()).toBe('');
-      expect(dateInput.hasValue()).toBe(true);
+      expect(driver.field().value).toBe('');
+      expect(driver.field().getAttribute('placeholder')).toBe('Mixed');
+      expect(driver.control.displayValue()).toBe('');
+      expect(driver.control.hasValue()).toBe(true);
     });
 
     it('keeps mixed and the raw value on a failed typed parse', () => {
       enterMixed();
-      typeAndBlur('not a date');
+      driver.typeAndBlur('not a date');
 
-      expect(host.mixed()).toBe(true);
-      expect(host.value()).toBe('2026-03-05');
-      expect(dateInput.parseError()).toBe(true);
-      expect(field.value).toBe('not a date');
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.host.value()).toBe('2026-03-05');
+      expect(driver.control.parseError()).toBe(true);
+      expect(driver.field().value).toBe('not a date');
     });
 
     it('keeps mixed and the raw value on a blank blur commit', () => {
       enterMixed();
-      typeAndBlur('');
+      driver.typeAndBlur('');
 
-      expect(host.mixed()).toBe(true);
-      expect(host.value()).toBe('2026-03-05');
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.host.value()).toBe('2026-03-05');
     });
 
     it('gives the picker no selected date and leaves mixed set on open; a pick replaces and resolves', async () => {
       enterMixed();
 
-      expect(dateInput.date()).toBeNull();
+      expect(driver.control.date()).toBeNull();
 
-      await openPicker();
+      await driver.open();
 
-      expect(host.mixed()).toBe(true);
-      expect(dateInput.pickerOpen()).toBe(true);
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.control.pickerOpen()).toBe(true);
 
-      pickButton()?.click();
-      tick();
-      await flushFrames();
-      tick();
+      driver.clickInPane('.pick-date');
+      await driver.settle();
 
-      expect(host.mixed()).toBe(false);
-      expect(host.value()).toBe('2026-07-16');
-      expect(field.value).toBe('07/16/2026');
+      expect(driver.host.mixed()).toBe(false);
+      expect(driver.host.value()).toBe('2026-07-16');
+      expect(driver.field().value).toBe('07/16/2026');
     });
   });
   describe('precision', () => {
     it('derives a month format and normalizes typed months to the 1st', () => {
-      host.precision.set('month');
+      driver.host.precision.set('month');
       tick();
 
-      expect(dateInput.effectiveDisplayFormat()).toBe('MM/yyyy');
+      expect(driver.control.effectiveDisplayFormat()).toBe('MM/yyyy');
 
-      typeAndBlur('07/2026');
+      driver.typeAndBlur('07/2026');
 
       // the 1st, not today's day of July - a coarse format cannot say which day it meant
-      expect(host.value()).toBe('2026-07-01');
-      expect(dateInput.parseError()).toBe(false);
-      expect(field.value).toBe('07/2026');
+      expect(driver.host.value()).toBe('2026-07-01');
+      expect(driver.control.parseError()).toBe(false);
+      expect(driver.field().value).toBe('07/2026');
     });
 
     it('normalizes a picked date to the month at month precision', async () => {
-      host.precision.set('month');
+      driver.host.precision.set('month');
       tick();
 
-      await openPicker();
-      pickButton()?.click();
-      tick();
+      await driver.open();
+      driver.clickInPane('.pick-date');
 
-      expect(host.value()).toBe('2026-07-01');
+      expect(driver.host.value()).toBe('2026-07-01');
     });
 
     it('takes a bare year at year precision', () => {
-      host.precision.set('year');
+      driver.host.precision.set('year');
       tick();
 
-      expect(dateInput.effectiveDisplayFormat()).toBe('yyyy');
+      expect(driver.control.effectiveDisplayFormat()).toBe('yyyy');
 
-      typeAndBlur('2031');
+      driver.typeAndBlur('2031');
 
-      expect(host.value()).toBe('2031-01-01');
-      expect(field.value).toBe('2031');
+      expect(driver.host.value()).toBe('2031-01-01');
+      expect(driver.field().value).toBe('2031');
     });
 
     it('refuses text the derived format cannot parse', () => {
-      host.precision.set('month');
+      driver.host.precision.set('month');
       tick();
 
-      typeAndBlur('07/16/2026');
+      driver.typeAndBlur('07/16/2026');
 
-      expect(host.value()).toBeNull();
-      expect(dateInput.parseError()).toBe(true);
+      expect(driver.host.value()).toBeNull();
+      expect(driver.control.parseError()).toBe(true);
     });
 
     it('lets an explicit displayFormat win over the precision', () => {
-      host.precision.set('month');
-      host.displayFormat.set('MMMM yyyy');
+      driver.host.precision.set('month');
+      driver.host.displayFormat.set('MMMM yyyy');
       tick();
 
-      expect(dateInput.effectiveDisplayFormat()).toBe('MMMM yyyy');
+      expect(driver.control.effectiveDisplayFormat()).toBe('MMMM yyyy');
 
-      typeAndBlur('July 2026');
+      driver.typeAndBlur('July 2026');
 
-      expect(host.value()).toBe('2026-07-01');
-      expect(field.value).toBe('July 2026');
+      expect(driver.host.value()).toBe('2026-07-01');
+      expect(driver.field().value).toBe('July 2026');
     });
   });
 });
 
 describe('DateInputDirective mixed state', () => {
   describeMixedStateContract(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({ imports: [DateInputTestHost] });
-
-    const fixture = TestBed.createComponent(DateInputTestHost);
-
-    fixture.detectChanges();
-
-    const dateInput = fixture.debugElement.children[0]!.injector.get(DateInputDirective);
-    const field = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    const tick = () => TestBed.inject(ApplicationRef).tick();
-
-    const typeAndBlur = (text: string) => {
-      field.focus();
-      field.value = text;
-      field.dispatchEvent(new Event('input', { bubbles: true }));
-      tick();
-      field.blur();
-      field.dispatchEvent(new Event('blur'));
-      tick();
-    };
+    const driver = mountDatePicker(DateInputTestHost, DateInputDirective);
 
     return {
       enterMixed: () => {
-        fixture.componentInstance.value.set('2026-03-05');
-        fixture.componentInstance.mixed.set(true);
+        driver.host.value.set('2026-03-05');
+        driver.host.mixed.set(true);
         tick();
       },
       rawValue: () => '2026-03-05',
-      value: () => fixture.componentInstance.value(),
-      mixed: () => fixture.componentInstance.mixed(),
-      hostElement: () => fixture.debugElement.children[0]!.nativeElement as HTMLElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.element(),
       writeValueExternally: () => {
-        fixture.componentInstance.value.set('2026-01-01');
+        driver.host.value.set('2026-01-01');
         tick();
       },
       externallyWrittenValue: () => '2026-01-01',
-      commit: () => typeAndBlur('07/20/2026'),
+      commit: () => driver.typeAndBlur('07/20/2026'),
       committedValue: () => '2026-07-20',
       assertMasked: () => {
-        expect(dateInput.date()).toBeNull();
-        expect(dateInput.displayValue()).toBe('');
-        expect(field.value).toBe('');
-        expect(field.getAttribute('placeholder')).toBe('Mixed');
+        expect(driver.control.date()).toBeNull();
+        expect(driver.control.displayValue()).toBe('');
+        expect(driver.field().value).toBe('');
+        expect(driver.field().getAttribute('placeholder')).toBe('Mixed');
       },
       clear: () => {
-        dateInput.clearValue();
+        driver.control.clearValue();
         tick();
       },
       emptyValue: () => null,

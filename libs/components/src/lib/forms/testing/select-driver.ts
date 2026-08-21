@@ -7,6 +7,7 @@ import { SelectDirective } from '../select/headless/select.directive';
 export const createSelectDriver = <T>(fixture: ComponentFixture<T>) => {
   const base = createOverlayControlDriver(fixture, SelectDirective, {
     triggerSelector: '[etselecttrigger], [role="combobox"]',
+    hide: (select) => select.hide(),
   });
 
   // a trigger-inline search renders in the fixture, a panel-hosted one in the pane
@@ -22,7 +23,7 @@ export const createSelectDriver = <T>(fixture: ComponentFixture<T>) => {
 
   return {
     ...base,
-    select: base.directive,
+    select: base.control,
 
     searchInput,
     valueEl: () => base.query('.et-select-value'),

@@ -1,5 +1,5 @@
-import { ApplicationRef, Component, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
@@ -10,6 +10,8 @@ import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.dir
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { TimeInputFieldDirective } from './time-input-field.directive';
 import { TimeInputDirective } from './time-input.directive';
+import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
+import { pressKey, tick } from '../../../../testing/driver-core';
 
 @Component({
   template: `
@@ -53,295 +55,224 @@ class TimeInputTestHost {
   disabled = signal(false);
 }
 
-const flushFrames = () =>
-  new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
 describe('TimeInputDirective', () => {
-  let fixture: ComponentFixture<TimeInputTestHost>;
-  let host: TimeInputTestHost;
-  let timeInput: TimeInputDirective;
-  let field: HTMLInputElement;
-  let trigger: HTMLButtonElement;
+  let driver: DatePickerDriver<TimeInputTestHost, TimeInputDirective>;
 
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  // overlays render into the document - scope queries to the newest pane so a pane
-  // stuck in its leave transition (jsdom fires no transition events) can't pollute them
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-  const pickerOption = (unit: string, value: number) =>
-    pane()?.querySelector<HTMLButtonElement>(`[data-unit='${unit}'] [data-value='${value}']`) ?? null;
-
-  const typeAndBlur = (text: string) => {
-    field.focus();
-    field.value = text;
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-    field.blur();
-    field.dispatchEvent(new Event('blur'));
-    tick();
-  };
-
-  const openPicker = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
+  const pickOption = (unit: string, value: number) =>
+    driver.clickInPane(`[data-unit='${unit}'] [data-value='${value}']`);
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({ imports: [TimeInputTestHost] });
-    fixture = TestBed.createComponent(TimeInputTestHost);
-    host = fixture.componentInstance;
-    fixture.detectChanges();
-    timeInput = fixture.debugElement.children[0]!.injector.get(TimeInputDirective);
-    field = fixture.nativeElement.querySelector('input');
-    trigger = fixture.nativeElement.querySelector('.open-picker');
+    driver = mountDatePicker(TimeInputTestHost, TimeInputDirective);
   });
 
   afterEach(async () => {
-    timeInput.closePicker();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('commits a strict displayFormat parse on blur', () => {
-    typeAndBlur('09:30');
+    driver.typeAndBlur('09:30');
 
-    expect(host.value()).toBe('09:30');
-    expect(timeInput.parseError()).toBe(false);
-    expect(field.value).toBe('09:30');
-    expect(timeInput.touched()).toBe(true);
+    expect(driver.host.value()).toBe('09:30');
+    expect(driver.control.parseError()).toBe(false);
+    expect(driver.field().value).toBe('09:30');
+    expect(driver.control.touched()).toBe(true);
   });
 
   it('commits lenient entry and reformats it', () => {
-    typeAndBlur('930');
+    driver.typeAndBlur('930');
 
-    expect(host.value()).toBe('09:30');
-    expect(field.value).toBe('09:30');
+    expect(driver.host.value()).toBe('09:30');
+    expect(driver.field().value).toBe('09:30');
 
-    typeAndBlur('9pm');
+    driver.typeAndBlur('9pm');
 
-    expect(host.value()).toBe('21:00');
-    expect(field.value).toBe('21:00');
+    expect(driver.host.value()).toBe('21:00');
+    expect(driver.field().value).toBe('21:00');
   });
 
   it('commits and reformats on Enter without losing focus', () => {
-    field.focus();
-    field.value = '930';
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    tick();
+    driver.type('930');
+    driver.pressInField('Enter');
 
-    expect(host.value()).toBe('09:30');
-    expect(field.value).toBe('09:30');
+    expect(driver.host.value()).toBe('09:30');
+    expect(driver.field().value).toBe('09:30');
   });
 
   it('keeps unparseable text visible and raises parseError with a null value', () => {
-    typeAndBlur('09:30');
-    typeAndBlur('not a time');
+    driver.typeAndBlur('09:30');
+    driver.typeAndBlur('not a time');
 
-    expect(host.value()).toBeNull();
-    expect(timeInput.parseError()).toBe(true);
-    expect(timeInput.shouldDisplayError()).toBe(true);
-    expect(field.value).toBe('not a time');
-    expect(timeInput.hasValue()).toBe(true);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.control.parseError()).toBe(true);
+    expect(driver.control.shouldDisplayError()).toBe(true);
+    expect(driver.field().value).toBe('not a time');
+    expect(driver.control.hasValue()).toBe(true);
   });
 
   it('clears the value on empty input', () => {
-    typeAndBlur('09:30');
-    typeAndBlur('');
+    driver.typeAndBlur('09:30');
+    driver.typeAndBlur('');
 
-    expect(host.value()).toBeNull();
-    expect(timeInput.parseError()).toBe(false);
-    expect(timeInput.hasValue()).toBe(false);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.control.parseError()).toBe(false);
+    expect(driver.control.hasValue()).toBe(false);
   });
 
   it('displays a prefilled value in the display format', async () => {
-    host.value.set('14:05');
+    driver.host.value.set('14:05');
     tick();
-    await fixture.whenStable();
+    await driver.fixture.whenStable();
 
-    expect(field.value).toBe('14:05');
-    expect(timeInput.time()?.getHours()).toBe(14);
-    expect(timeInput.time()?.getMinutes()).toBe(5);
+    expect(driver.field().value).toBe('14:05');
+    expect(driver.control.time()?.getHours()).toBe(14);
+    expect(driver.control.time()?.getMinutes()).toBe(5);
   });
 
   it('opens the picker from the trigger and keeps it open across part picks', async () => {
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(driver.trigger().getAttribute('aria-expanded')).toBe('false');
 
-    await openPicker();
+    await driver.open();
 
-    expect(timeInput.pickerOpen()).toBe(true);
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(driver.control.pickerOpen()).toBe(true);
+    expect(driver.trigger().getAttribute('aria-expanded')).toBe('true');
 
-    pickerOption('hour', 9)?.click();
-    tick();
+    pickOption('hour', 9);
 
     // the hour alone is held by the picker - no minute nobody picked reaches the field
-    expect(host.value()).toBeNull();
-    expect(timeInput.pickerOpen()).toBe(true);
+    expect(driver.host.value()).toBeNull();
+    expect(driver.control.pickerOpen()).toBe(true);
 
-    pickerOption('minute', 30)?.click();
-    tick();
+    pickOption('minute', 30);
 
-    expect(host.value()).toBe('09:30');
-    expect(timeInput.pickerOpen()).toBe(true);
-    expect(timeInput.touched()).toBe(true);
+    expect(driver.host.value()).toBe('09:30');
+    expect(driver.control.pickerOpen()).toBe(true);
+    expect(driver.control.touched()).toBe(true);
   });
 
   it('reflects a picked value in the field after closing', async () => {
-    await openPicker();
+    await driver.open();
 
-    pickerOption('hour', 9)?.click();
-    pickerOption('minute', 30)?.click();
-    tick();
+    pickOption('hour', 9);
+    pickOption('minute', 30);
 
-    timeInput.closePicker();
+    driver.control.closePicker();
     tick();
-    await flushFrames();
-    tick();
+    await driver.settle();
 
-    expect(field.value).toBe('09:30');
+    expect(driver.field().value).toBe('09:30');
   });
 
   it('closes the picker on an outside pointerdown', async () => {
-    await openPicker();
+    await driver.open();
 
-    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-    tick();
-    await flushFrames();
+    driver.pointerDownOutside();
+    await driver.settle();
 
-    expect(timeInput.pickerOpen()).toBe(false);
+    expect(driver.control.pickerOpen()).toBe(false);
   });
 
   it('opens the picker with Alt+ArrowDown from the field', async () => {
-    field.focus();
-    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true }));
-    tick();
-    await flushFrames();
-    tick();
+    driver.field().focus();
+    pressKey(driver.field(), 'ArrowDown', { altKey: true });
+    await driver.settle();
 
-    expect(timeInput.pickerOpen()).toBe(true);
+    expect(driver.control.pickerOpen()).toBe(true);
   });
 
   it('ignores the trigger while disabled', async () => {
-    host.disabled.set(true);
+    driver.host.disabled.set(true);
     tick();
 
-    expect(trigger.disabled).toBe(true);
+    expect(driver.trigger<HTMLButtonElement>().disabled).toBe(true);
 
-    timeInput.openPicker();
+    driver.control.openPicker();
     tick();
 
-    expect(timeInput.pickerOpen()).toBe(false);
+    expect(driver.control.pickerOpen()).toBe(false);
   });
 
   describe('mixed (bulk edit)', () => {
     const enterMixed = () => {
-      host.value.set('14:20');
-      host.mixed.set(true);
+      driver.host.value.set('14:20');
+      driver.host.mixed.set(true);
       tick();
     };
 
     it('renders the field empty with the mixed label as placeholder', () => {
       enterMixed();
 
-      expect(field.value).toBe('');
-      expect(field.getAttribute('placeholder')).toBe('Mixed');
-      expect(timeInput.displayValue()).toBe('');
-      expect(timeInput.hasValue()).toBe(true);
+      expect(driver.field().value).toBe('');
+      expect(driver.field().getAttribute('placeholder')).toBe('Mixed');
+      expect(driver.control.displayValue()).toBe('');
+      expect(driver.control.hasValue()).toBe(true);
     });
 
     it('keeps mixed and the raw value on a failed typed parse', () => {
       enterMixed();
-      typeAndBlur('not a time');
+      driver.typeAndBlur('not a time');
 
-      expect(host.mixed()).toBe(true);
-      expect(host.value()).toBe('14:20');
-      expect(timeInput.parseError()).toBe(true);
-      expect(field.value).toBe('not a time');
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.host.value()).toBe('14:20');
+      expect(driver.control.parseError()).toBe(true);
+      expect(driver.field().value).toBe('not a time');
     });
 
     it('keeps mixed and the raw value on a blank blur commit', () => {
       enterMixed();
-      typeAndBlur('');
+      driver.typeAndBlur('');
 
-      expect(host.mixed()).toBe(true);
-      expect(host.value()).toBe('14:20');
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.host.value()).toBe('14:20');
     });
 
     it('gives the picker no selected time and leaves mixed set on open; a pick replaces and resolves', async () => {
       enterMixed();
 
-      expect(timeInput.time()).toBeNull();
+      expect(driver.control.time()).toBeNull();
 
-      await openPicker();
+      await driver.open();
 
-      expect(host.mixed()).toBe(true);
+      expect(driver.host.mixed()).toBe(true);
 
-      pickerOption('hour', 9)?.click();
-      pickerOption('minute', 30)?.click();
-      tick();
+      pickOption('hour', 9);
+      pickOption('minute', 30);
 
-      expect(host.mixed()).toBe(false);
+      expect(driver.host.mixed()).toBe(false);
       // replace semantics: the hidden 14:20 does not leak into the picked time
-      expect(host.value()).toBe('09:30');
+      expect(driver.host.value()).toBe('09:30');
     });
   });
 });
 
 describe('TimeInputDirective mixed state', () => {
   describeMixedStateContract(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({ imports: [TimeInputTestHost] });
-
-    const fixture = TestBed.createComponent(TimeInputTestHost);
-
-    fixture.detectChanges();
-
-    const timeInput = fixture.debugElement.children[0]!.injector.get(TimeInputDirective);
-    const field = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    const tick = () => TestBed.inject(ApplicationRef).tick();
-
-    const typeAndBlur = (text: string) => {
-      field.focus();
-      field.value = text;
-      field.dispatchEvent(new Event('input', { bubbles: true }));
-      tick();
-      field.blur();
-      field.dispatchEvent(new Event('blur'));
-      tick();
-    };
+    const driver = mountDatePicker(TimeInputTestHost, TimeInputDirective);
 
     return {
       enterMixed: () => {
-        fixture.componentInstance.value.set('14:20');
-        fixture.componentInstance.mixed.set(true);
+        driver.host.value.set('14:20');
+        driver.host.mixed.set(true);
         tick();
       },
       rawValue: () => '14:20',
-      value: () => fixture.componentInstance.value(),
-      mixed: () => fixture.componentInstance.mixed(),
-      hostElement: () => fixture.debugElement.children[0]!.nativeElement as HTMLElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.element(),
       writeValueExternally: () => {
-        fixture.componentInstance.value.set('10:00');
+        driver.host.value.set('10:00');
         tick();
       },
       externallyWrittenValue: () => '10:00',
-      commit: () => typeAndBlur('09:30'),
+      commit: () => driver.typeAndBlur('09:30'),
       committedValue: () => '09:30',
       assertMasked: () => {
-        expect(timeInput.time()).toBeNull();
-        expect(timeInput.displayValue()).toBe('');
-        expect(field.value).toBe('');
-        expect(field.getAttribute('placeholder')).toBe('Mixed');
+        expect(driver.control.time()).toBeNull();
+        expect(driver.control.displayValue()).toBe('');
+        expect(driver.field().value).toBe('');
+        expect(driver.field().getAttribute('placeholder')).toBe('Mixed');
       },
       clear: () => {
-        timeInput.clearValue();
+        driver.control.clearValue();
         tick();
       },
       emptyValue: () => null,

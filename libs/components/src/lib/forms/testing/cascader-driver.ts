@@ -5,7 +5,9 @@ import { createOverlayControlDriver, mountControl } from '../../testing/overlay-
 import { CascaderDirective } from '../cascader/headless/cascader.directive';
 
 export const createCascaderDriver = <T>(fixture: ComponentFixture<T>) => {
-  const base = createOverlayControlDriver(fixture, CascaderDirective<string>);
+  const base = createOverlayControlDriver(fixture, CascaderDirective<string>, {
+    hide: (cascader) => cascader.hide(),
+  });
 
   const columns = () => base.paneEls('[role="group"]');
   const nodesIn = (columnIndex: number) =>
@@ -24,7 +26,7 @@ export const createCascaderDriver = <T>(fixture: ComponentFixture<T>) => {
 
   return {
     ...base,
-    cascader: base.directive,
+    cascader: base.control,
 
     panel: () => base.paneEl('.et-cascader-panel'),
     valueText: () => textOf(base.query('.et-cascader-value')),

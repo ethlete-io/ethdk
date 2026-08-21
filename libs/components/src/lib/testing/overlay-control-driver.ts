@@ -2,7 +2,16 @@ import { Provider, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import { TEST_COLOR_THEMES } from './color-themes';
-import { flushFrames, hostDirective, hostElement, latestPane, pressKey, resetOverlays, tick } from './driver-core';
+import {
+  flushFrames,
+  hostDirective,
+  hostElement,
+  latestPane,
+  pointerDownOutside,
+  pressKey,
+  resetOverlays,
+  tick,
+} from './driver-core';
 
 export const mountControl = <T>(component: Type<T>, providers: Provider[] = []) => {
   resetOverlays();
@@ -16,21 +25,23 @@ export const mountControl = <T>(component: Type<T>, providers: Provider[] = []) 
   return fixture;
 };
 
-export type OverlayControlDriverOptions = {
+export type OverlayControlDriverOptions<D> = {
   /** The element the user clicks to open the overlay. */
   triggerSelector?: string;
+  /** How this control closes its overlay from code. */
+  hide: (control: D) => void;
 };
 
 /**
  * The plumbing every overlay-backed form control driver needs: the host component, the directive,
  * the trigger, the overlay pane, and the open/close dance jsdom needs two frames for.
  */
-export const createOverlayControlDriver = <T, D extends { hide: () => void }>(
+export const createOverlayControlDriver = <T, D>(
   fixture: ComponentFixture<T>,
   directiveType: Type<D>,
-  { triggerSelector = '[role="combobox"]' }: OverlayControlDriverOptions = {},
+  { triggerSelector = '[role="combobox"]', hide }: OverlayControlDriverOptions<D>,
 ) => {
-  const directive = hostDirective(fixture, directiveType);
+  const control = hostDirective(fixture, directiveType);
   const root = fixture.nativeElement as HTMLElement;
 
   const query = <E extends HTMLElement = HTMLElement>(selector: string) => root.querySelector<E>(selector);
@@ -42,7 +53,7 @@ export const createOverlayControlDriver = <T, D extends { hide: () => void }>(
   const paneEls = <E extends HTMLElement = HTMLElement>(selector: string) =>
     Array.from(pane()?.querySelectorAll<E>(selector) ?? []);
 
-  const trigger = () => query(triggerSelector)!;
+  const trigger = <E extends HTMLElement = HTMLElement>() => query<E>(triggerSelector)!;
 
   const settle = async () => {
     await flushFrames();
@@ -52,7 +63,7 @@ export const createOverlayControlDriver = <T, D extends { hide: () => void }>(
   return {
     fixture,
     host: fixture.componentInstance,
-    directive,
+    control,
     detectChanges: () => fixture.detectChanges(),
     settle,
 
@@ -71,12 +82,20 @@ export const createOverlayControlDriver = <T, D extends { hide: () => void }>(
       await settle();
     },
     close: async () => {
-      directive.hide();
+      hide(control);
       tick();
       await settle();
     },
+    // jsdom fires no transition events, so a leaving pane would linger and shadow the next open
+    closeAndRemovePanes: () => {
+      hide(control);
+      tick();
+      resetOverlays();
+      tick();
+    },
     press: (key: string) => pressKey(trigger(), key),
     escape: () => pressKey(document, 'Escape'),
+    pointerDownOutside,
     click: (element: HTMLElement) => {
       element.click();
       tick();

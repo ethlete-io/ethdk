@@ -1,10 +1,12 @@
-import { ApplicationRef, Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormField, form, required } from '@angular/forms/signals';
 import '../../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../../form-field/headless';
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { silenceExpectedConsole } from '../../../../testing/expected-console';
+import { pressKey, tick } from '../../../../testing/driver-core';
+import { DatePickerDriver, mountDatePicker } from '../../../testing/date-picker-driver';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
@@ -60,284 +62,230 @@ class DateRangeInputTestHost {
   pickEnd = new Date(2026, 6, 23);
 }
 
-const flushFrames = () =>
-  new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
 describe('DateRangeInputDirective', () => {
-  let fixture: ComponentFixture<DateRangeInputTestHost>;
-  let host: DateRangeInputTestHost;
-  let rangeInput: DateRangeInputDirective;
-  let startField: HTMLInputElement;
-  let endField: HTMLInputElement;
-  let trigger: HTMLButtonElement;
-
-  const tick = () => TestBed.inject(ApplicationRef).tick();
-
-  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
-
-  const typeAndBlur = (field: HTMLInputElement, text: string) => {
-    field.focus();
-    field.value = text;
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-    field.blur();
-    field.dispatchEvent(new Event('blur'));
-    tick();
-  };
-
-  const openPicker = async () => {
-    trigger.click();
-    tick();
-    await flushFrames();
-    tick();
-  };
+  let driver: DatePickerDriver<DateRangeInputTestHost, DateRangeInputDirective>;
 
   beforeEach(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({ imports: [DateRangeInputTestHost] });
-    fixture = TestBed.createComponent(DateRangeInputTestHost);
-    host = fixture.componentInstance;
-    fixture.detectChanges();
-    rangeInput = fixture.debugElement.children[0]!.injector.get(DateRangeInputDirective);
-    startField = fixture.nativeElement.querySelector('.start');
-    endField = fixture.nativeElement.querySelector('.end');
-    trigger = fixture.nativeElement.querySelector('.open-picker');
+    driver = mountDatePicker(DateRangeInputTestHost, DateRangeInputDirective);
   });
 
   afterEach(async () => {
-    rangeInput.closePicker();
-    tick();
-    await flushFrames();
+    await driver.close();
   });
 
   it('commits each side independently on blur', () => {
-    typeAndBlur(startField, '07/08/2026');
+    driver.typeAndBlur('07/08/2026', '.start');
 
-    expect(host.value()).toEqual({ start: '2026-07-08', end: null });
+    expect(driver.host.value()).toEqual({ start: '2026-07-08', end: null });
 
-    typeAndBlur(endField, '07/23/2026');
+    driver.typeAndBlur('07/23/2026', '.end');
 
-    expect(host.value()).toEqual({ start: '2026-07-08', end: '2026-07-23' });
-    expect(startField.value).toBe('07/08/2026');
-    expect(endField.value).toBe('07/23/2026');
-    expect(rangeInput.touched()).toBe(true);
+    expect(driver.host.value()).toEqual({ start: '2026-07-08', end: '2026-07-23' });
+    expect(driver.field('.start').value).toBe('07/08/2026');
+    expect(driver.field('.end').value).toBe('07/23/2026');
+    expect(driver.control.touched()).toBe(true);
   });
 
   it('tracks a per-side parse error without touching the other side', () => {
-    typeAndBlur(startField, '07/08/2026');
-    typeAndBlur(endField, 'garbage');
+    driver.typeAndBlur('07/08/2026', '.start');
+    driver.typeAndBlur('garbage', '.end');
 
-    expect(host.value()).toEqual({ start: '2026-07-08', end: null });
-    expect(rangeInput.startParseError()).toBe(false);
-    expect(rangeInput.endParseError()).toBe(true);
-    expect(rangeInput.parseError()).toBe(true);
-    expect(rangeInput.shouldDisplayError()).toBe(true);
-    expect(endField.value).toBe('garbage');
-    expect(rangeInput.hasValue()).toBe(true);
+    expect(driver.host.value()).toEqual({ start: '2026-07-08', end: null });
+    expect(driver.control.startParseError()).toBe(false);
+    expect(driver.control.endParseError()).toBe(true);
+    expect(driver.control.parseError()).toBe(true);
+    expect(driver.control.shouldDisplayError()).toBe(true);
+    expect(driver.field('.end').value).toBe('garbage');
+    expect(driver.control.hasValue()).toBe(true);
   });
 
   it('clears a side on empty input', () => {
-    typeAndBlur(startField, '07/08/2026');
-    typeAndBlur(startField, '');
+    driver.typeAndBlur('07/08/2026', '.start');
+    driver.typeAndBlur('', '.start');
 
-    expect(host.value()).toEqual({ start: null, end: null });
-    expect(rangeInput.hasValue()).toBe(false);
+    expect(driver.host.value()).toEqual({ start: null, end: null });
+    expect(driver.control.hasValue()).toBe(false);
   });
 
   it('commits and reformats on Enter', () => {
-    startField.focus();
-    startField.value = '7/8/2026';
-    startField.dispatchEvent(new Event('input', { bubbles: true }));
-    tick();
-    startField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    tick();
+    driver.type('7/8/2026', '.start');
+    driver.pressInField('Enter', '.start');
 
-    expect(host.value().start).toBe('2026-07-08');
-    expect(startField.value).toBe('07/08/2026');
+    expect(driver.host.value().start).toBe('2026-07-08');
+    expect(driver.field('.start').value).toBe('07/08/2026');
   });
 
   it('displays a prefilled range in the display format', async () => {
-    host.value.set({ start: '2026-07-08', end: '2026-07-23' });
+    driver.host.value.set({ start: '2026-07-08', end: '2026-07-23' });
     tick();
-    await fixture.whenStable();
+    await driver.fixture.whenStable();
 
-    expect(startField.value).toBe('07/08/2026');
-    expect(endField.value).toBe('07/23/2026');
-    expect(rangeInput.calendarRange()).toEqual({ start: new Date(2026, 6, 8), end: new Date(2026, 6, 23) });
+    expect(driver.field('.start').value).toBe('07/08/2026');
+    expect(driver.field('.end').value).toBe('07/23/2026');
+    expect(driver.control.calendarRange()).toEqual({ start: new Date(2026, 6, 8), end: new Date(2026, 6, 23) });
   });
 
   it('reflects focus of either field into the focused signal', () => {
-    expect(rangeInput.focused()).toBe(false);
+    expect(driver.control.focused()).toBe(false);
 
-    startField.focus();
-    startField.dispatchEvent(new Event('focus'));
-    tick();
+    driver.field('.start').focus();
+    driver.focusField('.start');
 
-    expect(rangeInput.focusedSide()).toBe('start');
-    expect(rangeInput.focused()).toBe(true);
+    expect(driver.control.focusedSide()).toBe('start');
+    expect(driver.control.focused()).toBe(true);
 
-    startField.dispatchEvent(new Event('blur'));
-    tick();
+    driver.blurField('.start');
 
-    expect(rangeInput.focused()).toBe(false);
+    expect(driver.control.focused()).toBe(false);
   });
 
   it('keeps the picker open for a partial pick and closes it on a completed range', async () => {
-    await openPicker();
+    await driver.open();
 
-    expect(rangeInput.pickerOpen()).toBe(true);
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(driver.control.pickerOpen()).toBe(true);
+    expect(driver.trigger().getAttribute('aria-expanded')).toBe('true');
 
-    pane()?.querySelector<HTMLButtonElement>('.pick-start')?.click();
-    tick();
-    await flushFrames();
+    driver.clickInPane('.pick-start');
+    await driver.settle();
 
-    expect(host.value()).toEqual({ start: '2026-07-08', end: null });
-    expect(rangeInput.pickerOpen()).toBe(true);
+    expect(driver.host.value()).toEqual({ start: '2026-07-08', end: null });
+    expect(driver.control.pickerOpen()).toBe(true);
 
-    pane()?.querySelector<HTMLButtonElement>('.pick-full')?.click();
-    tick();
-    await flushFrames();
-    tick();
+    driver.clickInPane('.pick-full');
+    await driver.settle();
 
-    expect(host.value()).toEqual({ start: '2026-07-08', end: '2026-07-23' });
-    expect(rangeInput.pickerOpen()).toBe(false);
-    expect(startField.value).toBe('07/08/2026');
-    expect(endField.value).toBe('07/23/2026');
+    expect(driver.host.value()).toEqual({ start: '2026-07-08', end: '2026-07-23' });
+    expect(driver.control.pickerOpen()).toBe(false);
+    expect(driver.field('.start').value).toBe('07/08/2026');
+    expect(driver.field('.end').value).toBe('07/23/2026');
   });
 
   it('closes the picker on an outside pointerdown', async () => {
-    await openPicker();
+    await driver.open();
 
-    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-    tick();
-    await flushFrames();
+    driver.pointerDownOutside();
+    await driver.settle();
 
-    expect(rangeInput.pickerOpen()).toBe(false);
+    expect(driver.control.pickerOpen()).toBe(false);
   });
 
   it('opens the picker with Alt+ArrowDown from either field', async () => {
-    endField.focus();
-    endField.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true }));
-    tick();
-    await flushFrames();
-    tick();
+    driver.field('.end').focus();
+    pressKey(driver.field('.end'), 'ArrowDown', { altKey: true });
+    await driver.settle();
 
-    expect(rangeInput.pickerOpen()).toBe(true);
+    expect(driver.control.pickerOpen()).toBe(true);
   });
 
   it('ignores the trigger while disabled', () => {
-    host.disabled.set(true);
+    driver.host.disabled.set(true);
     tick();
 
-    expect(trigger.disabled).toBe(true);
-    expect(startField.disabled).toBe(true);
+    expect(driver.trigger<HTMLButtonElement>().disabled).toBe(true);
+    expect(driver.field('.start').disabled).toBe(true);
 
-    rangeInput.openPicker();
+    driver.control.openPicker();
     tick();
 
-    expect(rangeInput.pickerOpen()).toBe(false);
+    expect(driver.control.pickerOpen()).toBe(false);
   });
 
   describe('mixed (bulk edit)', () => {
     const rawRange = { start: '2026-03-01', end: '2026-03-10' };
 
     const enterMixed = () => {
-      host.value.set({ ...rawRange });
-      host.mixed.set(true);
+      driver.host.value.set({ ...rawRange });
+      driver.host.mixed.set(true);
       tick();
     };
 
     it('renders both fields empty with the mixed label as placeholder - one flag masks the whole range', () => {
       enterMixed();
 
-      expect(startField.value).toBe('');
-      expect(endField.value).toBe('');
-      expect(startField.getAttribute('placeholder')).toBe('Mixed');
-      expect(endField.getAttribute('placeholder')).toBe('Mixed');
-      expect(rangeInput.displayValue('start')).toBe('');
-      expect(rangeInput.displayValue('end')).toBe('');
-      expect(rangeInput.calendarRange()).toEqual({ start: null, end: null });
-      expect(rangeInput.hasValue()).toBe(true);
+      expect(driver.field('.start').value).toBe('');
+      expect(driver.field('.end').value).toBe('');
+      expect(driver.field('.start').getAttribute('placeholder')).toBe('Mixed');
+      expect(driver.field('.end').getAttribute('placeholder')).toBe('Mixed');
+      expect(driver.control.displayValue('start')).toBe('');
+      expect(driver.control.displayValue('end')).toBe('');
+      expect(driver.control.calendarRange()).toEqual({ start: null, end: null });
+      expect(driver.control.hasValue()).toBe(true);
     });
 
     it('starts a fresh range on the first typed commit - the hidden other side does not leak', () => {
       enterMixed();
-      typeAndBlur(endField, '07/20/2026');
+      driver.typeAndBlur('07/20/2026', '.end');
 
-      expect(host.mixed()).toBe(false);
-      expect(host.value()).toEqual({ start: null, end: '2026-07-20' });
+      expect(driver.host.mixed()).toBe(false);
+      expect(driver.host.value()).toEqual({ start: null, end: '2026-07-20' });
     });
 
     it('keeps mixed and the raw range on a failed typed parse', () => {
       enterMixed();
-      typeAndBlur(startField, 'not a date');
+      driver.typeAndBlur('not a date', '.start');
 
-      expect(host.mixed()).toBe(true);
-      expect(host.value()).toEqual(rawRange);
-      expect(rangeInput.startParseError()).toBe(true);
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.host.value()).toEqual(rawRange);
+      expect(driver.control.startParseError()).toBe(true);
     });
 
     it('keeps mixed and the raw range on a blank blur commit', () => {
       enterMixed();
-      typeAndBlur(startField, '');
+      driver.typeAndBlur('', '.start');
 
-      expect(host.mixed()).toBe(true);
-      expect(host.value()).toEqual(rawRange);
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.host.value()).toEqual(rawRange);
     });
 
     it('gives the calendar no selection while mixed; the first pick starts a fresh range and resolves', async () => {
       enterMixed();
-      await openPicker();
+      await driver.open();
 
-      expect(host.mixed()).toBe(true);
-      expect(rangeInput.calendarRange()).toEqual({ start: null, end: null });
+      expect(driver.host.mixed()).toBe(true);
+      expect(driver.control.calendarRange()).toEqual({ start: null, end: null });
 
-      pane()?.querySelector<HTMLButtonElement>('.pick-start')?.click();
-      tick();
+      driver.clickInPane('.pick-start');
 
-      expect(host.mixed()).toBe(false);
-      expect(host.value()).toEqual({ start: '2026-07-08', end: null });
-      expect(rangeInput.pickerOpen()).toBe(true);
+      expect(driver.host.mixed()).toBe(false);
+      expect(driver.host.value()).toEqual({ start: '2026-07-08', end: null });
+      expect(driver.control.pickerOpen()).toBe(true);
     });
   });
 
   describe('precision', () => {
     it('derives a month format and normalizes both typed ends to the 1st', () => {
-      host.precision.set('month');
+      driver.host.precision.set('month');
       tick();
 
-      expect(rangeInput.effectiveDisplayFormat()).toBe('MM/yyyy');
+      expect(driver.control.effectiveDisplayFormat()).toBe('MM/yyyy');
 
-      typeAndBlur(startField, '07/2025');
-      typeAndBlur(endField, '03/2026');
+      driver.typeAndBlur('07/2025', '.start');
+      driver.typeAndBlur('03/2026', '.end');
 
-      expect(host.value()).toEqual({ start: '2025-07-01', end: '2026-03-01' });
-      expect(rangeInput.parseError()).toBe(false);
-      expect(startField.value).toBe('07/2025');
-      expect(endField.value).toBe('03/2026');
+      expect(driver.host.value()).toEqual({ start: '2025-07-01', end: '2026-03-01' });
+      expect(driver.control.parseError()).toBe(false);
+      expect(driver.field('.start').value).toBe('07/2025');
+      expect(driver.field('.end').value).toBe('03/2026');
     });
 
     it('normalizes a picked month range', async () => {
-      host.precision.set('month');
+      driver.host.precision.set('month');
       tick();
 
-      await openPicker();
-      pane()?.querySelector<HTMLButtonElement>('.pick-full')?.click();
-      tick();
+      await driver.open();
+      driver.clickInPane('.pick-full');
 
-      expect(host.value()).toEqual({ start: '2026-07-01', end: '2026-07-01' });
+      expect(driver.host.value()).toEqual({ start: '2026-07-01', end: '2026-07-01' });
     });
 
     it('refuses a full date once the format is month-only', () => {
-      host.precision.set('month');
+      driver.host.precision.set('month');
       tick();
 
-      typeAndBlur(startField, '07/08/2026');
+      driver.typeAndBlur('07/08/2026', '.start');
 
-      expect(host.value().start).toBeNull();
-      expect(rangeInput.startParseError()).toBe(true);
+      expect(driver.host.value().start).toBeNull();
+      expect(driver.control.startParseError()).toBe(true);
     });
   });
 });
@@ -379,53 +327,32 @@ describe('DateRangeInputDirective descendant (subfield) errors', () => {
 
 describe('DateRangeInputDirective mixed state', () => {
   describeMixedStateContract(() => {
-    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
-
-    TestBed.configureTestingModule({ imports: [DateRangeInputTestHost] });
-
-    const fixture = TestBed.createComponent(DateRangeInputTestHost);
-
-    fixture.detectChanges();
-
-    const rangeInput = fixture.debugElement.children[0]!.injector.get(DateRangeInputDirective);
-    const startField = fixture.nativeElement.querySelector('.start') as HTMLInputElement;
-    const endField = fixture.nativeElement.querySelector('.end') as HTMLInputElement;
-    const tick = () => TestBed.inject(ApplicationRef).tick();
-
-    const typeAndBlur = (field: HTMLInputElement, text: string) => {
-      field.focus();
-      field.value = text;
-      field.dispatchEvent(new Event('input', { bubbles: true }));
-      tick();
-      field.blur();
-      field.dispatchEvent(new Event('blur'));
-      tick();
-    };
+    const driver = mountDatePicker(DateRangeInputTestHost, DateRangeInputDirective);
 
     return {
       enterMixed: () => {
-        fixture.componentInstance.value.set({ start: '2026-03-01', end: '2026-03-10' });
-        fixture.componentInstance.mixed.set(true);
+        driver.host.value.set({ start: '2026-03-01', end: '2026-03-10' });
+        driver.host.mixed.set(true);
         tick();
       },
       rawValue: () => ({ start: '2026-03-01', end: '2026-03-10' }),
-      value: () => fixture.componentInstance.value(),
-      mixed: () => fixture.componentInstance.mixed(),
-      hostElement: () => fixture.debugElement.children[0]!.nativeElement as HTMLElement,
+      value: () => driver.host.value(),
+      mixed: () => driver.host.mixed(),
+      hostElement: () => driver.element(),
       writeValueExternally: () => {
-        fixture.componentInstance.value.set({ start: '2026-01-01', end: '2026-01-05' });
+        driver.host.value.set({ start: '2026-01-01', end: '2026-01-05' });
         tick();
       },
       externallyWrittenValue: () => ({ start: '2026-01-01', end: '2026-01-05' }),
       // replace semantics: the resolving commit starts a fresh range - no merge with the hidden end
-      commit: () => typeAndBlur(startField, '07/20/2026'),
+      commit: () => driver.typeAndBlur('07/20/2026', '.start'),
       committedValue: () => ({ start: '2026-07-20', end: null }),
       assertMasked: () => {
-        expect(rangeInput.calendarRange()).toEqual({ start: null, end: null });
-        expect(startField.value).toBe('');
-        expect(endField.value).toBe('');
-        expect(startField.getAttribute('placeholder')).toBe('Mixed');
-        expect(endField.getAttribute('placeholder')).toBe('Mixed');
+        expect(driver.control.calendarRange()).toEqual({ start: null, end: null });
+        expect(driver.field('.start').value).toBe('');
+        expect(driver.field('.end').value).toBe('');
+        expect(driver.field('.start').getAttribute('placeholder')).toBe('Mixed');
+        expect(driver.field('.end').getAttribute('placeholder')).toBe('Mixed');
       },
     };
   });

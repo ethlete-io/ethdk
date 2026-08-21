@@ -25,8 +25,8 @@ export const hostDirective = <T>(fixture: ComponentFixture<unknown>, type: Type<
 export const hostElement = (fixture: ComponentFixture<unknown>) =>
   fixture.debugElement.children[0]!.nativeElement as HTMLElement;
 
-export const pressKey = (target: EventTarget, key: string) => {
-  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+export const pressKey = (target: EventTarget, key: string, init: KeyboardEventInit = {}) => {
+  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
   tick();
 };
 
@@ -46,7 +46,29 @@ export const setInputValue = (input: HTMLInputElement, value: string) => {
   tick();
 };
 
+export const focusField = (field: HTMLInputElement) => {
+  field.focus();
+  field.dispatchEvent(new FocusEvent('focus'));
+  tick();
+};
+
+export const typeInField = (field: HTMLInputElement, text: string) => {
+  field.focus();
+  setInputValue(field, text);
+};
+
+export const blurField = (field: HTMLInputElement) => {
+  field.blur();
+  field.dispatchEvent(new Event('blur'));
+  tick();
+};
+
 /** jsdom has no `DataTransfer`, so the clipboard payload is faked onto the event. */
+export const pointerDownOutside = () => {
+  document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  tick();
+};
+
 export const pasteInto = (target: EventTarget, text: string) => {
   const event = new Event('paste', { bubbles: true, cancelable: true });
 
