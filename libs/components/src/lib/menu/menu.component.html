@@ -14,8 +14,12 @@
   }
 </div>
 
-<div class="et-menu-body">
-  <div #menuBodyContent class="et-menu-body-content">
-    <ng-content />
+<div class="et-menu-body-wrapper">
+  <div #menuBody class="et-menu-body">
+    <div #menuBodyContent class="et-menu-body-content">
+      <ng-content />
+    </div>
   </div>
+
+  <et-scrollbar [for]="menuBody" autoHide />
 </div>

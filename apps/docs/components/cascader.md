@@ -174,6 +174,10 @@ All drilled levels stay mounted on a sliding track, so a level collapsing into a
 - **Arrow Left** past the window edge slides the window along with the roving focus.
 - Activating a **different** node in a revealed column truncates the deeper levels, exactly like it does inside the window.
 
+Every column, the flat result list and the sheet's column area carry an auto-hiding
+[`et-scrollbar`](/components/scrollbar), so a scrolling level shows a themed bar rather than the
+platform's one.
+
 The bottom-sheet presentation is unaffected - it always drills one column at a time. Headless consumers get the same state as `visibleColumns()` (the windowed slice with absolute indices), `breadcrumbPath()` (the crumbs), `visibleColumnStart()`, and `showColumn(columnIndex)` (the crumb action).
 
 ## Desktop vs. mobile

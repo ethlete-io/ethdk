@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { ScrollbarComponent } from '../scrollbar';
 import { TimePickerColumnDirective, TimePickerDirective, TimePickerOptionDirective } from './headless';
 
 @Component({
@@ -6,7 +7,7 @@ import { TimePickerColumnDirective, TimePickerDirective, TimePickerOptionDirecti
   templateUrl: './time-picker.component.html',
   styleUrl: './time-picker.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [TimePickerColumnDirective, TimePickerOptionDirective],
+  imports: [TimePickerColumnDirective, TimePickerOptionDirective, ScrollbarComponent],
   hostDirectives: [
     {
       directive: TimePickerDirective,

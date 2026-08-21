@@ -268,6 +268,9 @@ export class ScrollbarDirective {
     if (event.button !== 0 || this.disabled()) return;
 
     event.stopPropagation();
+    // a scrollbar is not a focus target: without this the press blurs whatever was focused, which
+    // closes a panel that dismisses on focus loss (menu, cascader) mid-drag
+    event.preventDefault();
 
     const target = this.targetElement();
     const thumb = this.thumbElement();
@@ -329,6 +332,8 @@ export class ScrollbarDirective {
     const geometry = this.geometry();
 
     if (!target || !geometry.canScroll) return;
+
+    event.preventDefault();
 
     const orientation = this.orientation();
     const isHorizontal = orientation === 'horizontal';

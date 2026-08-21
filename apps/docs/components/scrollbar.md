@@ -125,6 +125,9 @@ Up/Down, Home and End, and is already announced by assistive technology. A secon
 with `role="scrollbar"` would duplicate all of it and add a stop to the tab order that reaches nothing
 new.
 
+A press on the track or the thumb leaves focus exactly where it was, so scrolling a panel that
+dismisses on focus loss - a menu, a cascader - does not close it mid-drag.
+
 That leaves one thing for you: a scroll container needs `tabindex="0"` to be keyboard-reachable when
 it holds no focusable content of its own. Browsers do this for you in some cases and not others, so
 set it explicitly on a container of plain text or images.

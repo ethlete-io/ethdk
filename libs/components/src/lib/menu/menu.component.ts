@@ -9,6 +9,7 @@ import {
   signalDeferredLoading,
 } from '@ethlete/core';
 import { SpinnerComponent } from '../loader';
+import { ScrollbarComponent } from '../scrollbar';
 import { MenuDirective, MenuPanelDirective } from './headless';
 
 const RESIZE_ANIMATION_CLASS = 'et-menu--resizing';
@@ -18,7 +19,7 @@ const RESIZE_ANIMATION_CLASS = 'et-menu--resizing';
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective, SpinnerComponent],
+  imports: [ProvideColorDirective, SpinnerComponent, ScrollbarComponent],
   hostDirectives: [MenuPanelDirective, ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-menu',

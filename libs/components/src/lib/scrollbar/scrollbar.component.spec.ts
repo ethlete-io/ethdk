@@ -71,6 +71,30 @@ describe('ScrollbarComponent', () => {
     expect(list.classList.contains('et-scrollbar-host')).toBe(true);
   });
 
+  it('does not let a press on the thumb move focus away', () => {
+    const { fixture } = setup();
+    const thumb = (fixture.nativeElement as HTMLElement).querySelector('.et-scrollbar-thumb') as HTMLElement;
+    const event = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 });
+
+    thumb.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('leaves a press on a disabled thumb alone', () => {
+    const { fixture, host } = setup();
+
+    host.disabled.set(true);
+    fixture.detectChanges();
+
+    const thumb = (fixture.nativeElement as HTMLElement).querySelector('.et-scrollbar-thumb') as HTMLElement;
+    const event = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 });
+
+    thumb.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it('is never visible while disabled', () => {
     const { fixture, host, scrollbars } = setup();
 

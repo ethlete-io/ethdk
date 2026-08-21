@@ -16,6 +16,7 @@ import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
 import { EMPTY, fromEvent, interval, merge, switchMap, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import { DividerComponent } from '../../divider';
+import { ScrollbarComponent } from '../../scrollbar';
 import { ToolbarDirective } from '../../toolbar';
 import {
   BOLD_ICON,
@@ -62,7 +63,14 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
   templateUrl: './rich-text-editor.component.html',
   styleUrl: './rich-text-editor.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...BUTTON_IMPORTS, DividerComponent, IconDirective, NgComponentOutlet, ToolbarDirective],
+  imports: [
+    ...BUTTON_IMPORTS,
+    DividerComponent,
+    IconDirective,
+    NgComponentOutlet,
+    ScrollbarComponent,
+    ToolbarDirective,
+  ],
   providers: [
     provideIcons(
       BOLD_ICON,

@@ -1,33 +1,39 @@
-<div [attr.aria-label]="labels().toolbar" class="et-rte-toolbar" etToolbar>
-  @for (tool of dir.resolvedTools(); track $index) {
-    @switch (tool) {
-      @case (TOOLS.DIVIDER) {
-        <et-divider orientation="vertical" decorative />
-      }
-      @default {
-        @if (dir.toolDefs.get(tool); as def) {
-          @if (def.control; as control) {
-            <ng-container [ngComponentOutlet]="control" [ngComponentOutletInputs]="{ editor: dir }" />
-          } @else {
-            <button
-              [pressed]="def.isActive?.(dir) ?? false"
-              [disabled]="dir.disabled() || dir.readonly() || (def.isDisabled?.(dir) ?? false)"
-              [attr.aria-label]="toolLabel(def)"
-              (mousedown)="$event.preventDefault()"
-              (click)="def.run?.(dir)"
-              color="surface"
-              pressedColor="inherit"
-              et-icon-button
-              size="sm"
-              type="button"
-            >
-              <i [allowHardcodedColor]="def.allowHardcodedColor ?? false" [etIcon]="def.icon ?? ''"></i>
-            </button>
+<div class="et-rte-toolbar-dock">
+  <div class="et-rte-toolbar-viewport">
+    <div #toolbarElement [attr.aria-label]="labels().toolbar" class="et-rte-toolbar" etToolbar>
+      @for (tool of dir.resolvedTools(); track $index) {
+        @switch (tool) {
+          @case (TOOLS.DIVIDER) {
+            <et-divider orientation="vertical" decorative />
+          }
+          @default {
+            @if (dir.toolDefs.get(tool); as def) {
+              @if (def.control; as control) {
+                <ng-container [ngComponentOutlet]="control" [ngComponentOutletInputs]="{ editor: dir }" />
+              } @else {
+                <button
+                  [pressed]="def.isActive?.(dir) ?? false"
+                  [disabled]="dir.disabled() || dir.readonly() || (def.isDisabled?.(dir) ?? false)"
+                  [attr.aria-label]="toolLabel(def)"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="def.run?.(dir)"
+                  color="surface"
+                  pressedColor="inherit"
+                  et-icon-button
+                  size="sm"
+                  type="button"
+                >
+                  <i [allowHardcodedColor]="def.allowHardcodedColor ?? false" [etIcon]="def.icon ?? ''"></i>
+                </button>
+              }
+            }
           }
         }
       }
-    }
-  }
+    </div>
+
+    <et-scrollbar [for]="toolbarElement" orientation="horizontal" autoHide />
+  </div>
 </div>
 
 <div

@@ -232,10 +232,18 @@
        option scrolls into the gap under the search field; padding on the content scrolls away with
        it, leaving the cut on the field's border. A margin holds the gap outside the scrollport, so a
        scrolled option is always cut a gap away from the field and from the rounded corners. */
-    .et-menu-body {
+    .et-menu-body-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
       flex: 1;
       min-block-size: 0;
       margin-block: var(--et-menu-padding-block);
+    }
+
+    .et-menu-body {
+      flex: 1;
+      min-block-size: 0;
       padding-inline: var(--et-menu-padding-inline);
       overflow-y: auto;
       overscroll-behavior: contain;

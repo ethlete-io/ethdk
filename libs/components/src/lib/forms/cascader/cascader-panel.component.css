@@ -328,6 +328,12 @@
         overflow-x: clip;
         overscroll-behavior: contain;
 
+        /* the column area, not the column, is the scrollport here - the wrapper has to pass the
+           full body height through, or the column's own 100% resolves against nothing */
+        .et-cascader-column-wrapper {
+          block-size: 100%;
+        }
+
         .et-cascader-column {
           inline-size: 100%;
           block-size: 100%;
@@ -396,6 +402,12 @@
       }
     }
 
+    .et-cascader-results-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
     .et-cascader-results {
       display: block;
       box-sizing: border-box;
@@ -410,11 +422,36 @@
     }
 
     /* sheet: the result list fills the fixed-height body like a drilled column */
+    .et-cascader-sheet-body .et-cascader-results-wrapper,
+    .et-cascader-sheet-columns-wrapper {
+      position: relative;
+      flex: 1;
+      min-block-size: 0;
+    }
+
+    .et-cascader-sheet-columns-wrapper {
+      display: flex;
+      flex-direction: column;
+    }
+
     .et-cascader-sheet-body .et-cascader-results {
       flex: 1;
       min-block-size: 0;
       inline-size: 100%;
       max-block-size: none;
+    }
+
+    /* a drilled sheet column does not scroll - the column area around it does - but its content
+       still overflows the fixed body, so its own scrollbar would read that as scrollable */
+    .et-cascader-columns[data-sheet] .et-cascader-column-wrapper > .et-scrollbar {
+      display: none;
+    }
+
+    /* the column's scrollbar has to hang outside its scrollport, so this wrapper - not the column -
+       is what the track lays out */
+    .et-cascader-column-wrapper {
+      position: relative;
+      flex: none;
     }
 
     .et-cascader-column {
@@ -428,10 +465,10 @@
       overflow-x: clip;
       overscroll-behavior: contain;
       padding: 6px;
+    }
 
-      &:not(:last-child) {
-        border-inline-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-      }
+    .et-cascader-column-wrapper:not(:last-child) .et-cascader-column {
+      border-inline-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     }
 
     /* Sheet (one visible column): it slides in from the travel direction, both ways — the

@@ -639,6 +639,9 @@ therefore measures the keyboard from `visualViewport` and offsets the bar itself
 iOS Safari needs. With the meta above, that measurement resolves to zero and the plain fixed position
 does the work.
 
+Tools that do not fit the docked bar scroll horizontally, under an auto-hiding
+[`et-scrollbar`](/components/scrollbar) at the bar's bottom edge.
+
 The toolbar follows the [ARIA toolbar pattern](https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/):
 it is a single tab stop. Tab moves focus into it (onto the last-used button),
 <kbd>ArrowLeft</kbd>/<kbd>ArrowRight</kbd> move between buttons (wrapping at the ends,

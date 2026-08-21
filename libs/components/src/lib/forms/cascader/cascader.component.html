@@ -153,124 +153,137 @@
 
   <!-- one column at a time, keyed by depth so drilling / going back re-creates it and
              re-fires the slide animation; it scrolls internally within the fixed body -->
-  <div class="et-cascader-columns" data-sheet>
-    @for (columnIndex of [cascader.deepestColumnIndex()]; track columnIndex) {
-      @let sheetColumn = cascader.columns()[columnIndex];
-      @if (sheetColumn) {
-        <ng-container
-          [ngTemplateOutlet]="columnBody"
-          [ngTemplateOutletContext]="{ $implicit: sheetColumn, columnIndex }"
-        />
+  <div class="et-cascader-sheet-columns-wrapper">
+    <div #sheetColumns class="et-cascader-columns" data-sheet>
+      @for (columnIndex of [cascader.deepestColumnIndex()]; track columnIndex) {
+        @let sheetColumn = cascader.columns()[columnIndex];
+        @if (sheetColumn) {
+          <ng-container
+            [ngTemplateOutlet]="columnBody"
+            [ngTemplateOutletContext]="{ $implicit: sheetColumn, columnIndex }"
+          />
+        }
       }
-    }
+    </div>
+
+    <et-scrollbar [for]="sheetColumns" autoHide />
   </div>
 </ng-template>
 
 <ng-template #searchResults>
-  <div class="et-cascader-results">
-    @switch (cascader.searchState().status) {
-      @case ('loading') {
-        <div class="et-cascader-state et-cascader-state--loading">
-          <span
-            [class.et-cascader-state-content--visible]="showSearchSpinner()"
-            [attr.aria-hidden]="!showSearchSpinner() || null"
-            class="et-cascader-state-content"
-          >
-            <et-spinner diameter="16" strokeWidth="2" />
-            Searching…
-          </span>
-        </div>
-      }
-      @case ('error') {
-        <div class="et-cascader-state et-cascader-state--error" role="alert">
-          <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{
-            cascader.searchState().error
-          }}</span>
-          <button (click)="cascader.retrySearch()" et-text-button size="sm" type="button">
-            {{ cascaderLabels().retry }}
-          </button>
-        </div>
-      }
-      @default {
-        @if (cascader.searchState().results.length) {
-          @for (result of cascader.searchState().results; track $index) {
-            <button
-              [path]="result"
-              [index]="$index"
-              [disabled]="resultDisabled(result)"
-              class="et-cascader-search-option"
-              etCascaderSearchOption
-              type="button"
+  <div class="et-cascader-results-wrapper">
+    <div #resultsElement class="et-cascader-results">
+      @switch (cascader.searchState().status) {
+        @case ('loading') {
+          <div class="et-cascader-state et-cascader-state--loading">
+            <span
+              [class.et-cascader-state-content--visible]="showSearchSpinner()"
+              [attr.aria-hidden]="!showSearchSpinner() || null"
+              class="et-cascader-state-content"
             >
-              @if (cascader.multiple()) {
-                <span class="et-cascader-check" aria-hidden="true"></span>
-              }
-              <span class="et-cascader-search-option-label">
-                @for (part of result; track $index; let last = $last) {
-                  @if (last) {
-                    {{ part.label }}
-                  } @else {
-                    <span class="et-cascader-search-option-ancestor">{{ part.label }} / </span>
-                  }
-                }
-              </span>
+              <et-spinner diameter="16" strokeWidth="2" />
+              Searching…
+            </span>
+          </div>
+        }
+        @case ('error') {
+          <div class="et-cascader-state et-cascader-state--error" role="alert">
+            <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{
+              cascader.searchState().error
+            }}</span>
+            <button (click)="cascader.retrySearch()" et-text-button size="sm" type="button">
+              {{ cascaderLabels().retry }}
             </button>
+          </div>
+        }
+        @default {
+          @if (cascader.searchState().results.length) {
+            @for (result of cascader.searchState().results; track $index) {
+              <button
+                [path]="result"
+                [index]="$index"
+                [disabled]="resultDisabled(result)"
+                class="et-cascader-search-option"
+                etCascaderSearchOption
+                type="button"
+              >
+                @if (cascader.multiple()) {
+                  <span class="et-cascader-check" aria-hidden="true"></span>
+                }
+                <span class="et-cascader-search-option-label">
+                  @for (part of result; track $index; let last = $last) {
+                    @if (last) {
+                      {{ part.label }}
+                    } @else {
+                      <span class="et-cascader-search-option-ancestor">{{ part.label }} / </span>
+                    }
+                  }
+                </span>
+              </button>
+            }
+          } @else {
+            <div class="et-cascader-state et-cascader-state--empty">{{ cascaderLabels().noMatches }}</div>
           }
-        } @else {
-          <div class="et-cascader-state et-cascader-state--empty">{{ cascaderLabels().noMatches }}</div>
         }
       }
-    }
+    </div>
+
+    <et-scrollbar [for]="resultsElement" autoHide />
   </div>
 </ng-template>
 
 <ng-template #columnBody let-column let-columnIndex="columnIndex">
-  <div
-    [etCascaderColumn]="columnIndex"
-    [attr.data-nav]="columnIndex === cascader.deepestColumnIndex() ? cascader.navigationDirection() : null"
-    [class.et-cascader-column--offstage]="isColumnOffstage(columnIndex)"
-    class="et-cascader-column"
-  >
-    @switch (column.status) {
-      @case ('loading') {
-        <div class="et-cascader-state et-cascader-state--loading">
-          <!-- laid out from the first frame and only faded in later, so the column cannot change
+  <div class="et-cascader-column-wrapper">
+    <div
+      #columnElement
+      [etCascaderColumn]="columnIndex"
+      [attr.data-nav]="columnIndex === cascader.deepestColumnIndex() ? cascader.navigationDirection() : null"
+      [class.et-cascader-column--offstage]="isColumnOffstage(columnIndex)"
+      class="et-cascader-column"
+    >
+      @switch (column.status) {
+        @case ('loading') {
+          <div class="et-cascader-state et-cascader-state--loading">
+            <!-- laid out from the first frame and only faded in later, so the column cannot change
                height when the spinner arrives; hidden from assistive tech until it does -->
-          <span
-            [class.et-cascader-state-content--visible]="showColumnSpinner()"
-            [attr.aria-hidden]="!showColumnSpinner() || null"
-            class="et-cascader-state-content"
-          >
-            <et-spinner diameter="16" strokeWidth="2" />
-            {{ cascaderLabels().loading }}
-          </span>
-        </div>
-      }
-      @case ('error') {
-        <div class="et-cascader-state et-cascader-state--error" role="alert">
-          <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{ column.error }}</span>
-          <button (click)="cascader.retryColumn(columnIndex)" et-text-button size="sm" type="button">
-            {{ cascaderLabels().retry }}
-          </button>
-        </div>
-      }
-      @default {
-        @if (column.nodes.length) {
-          @for (node of column.nodes; track $index) {
-            <button [node]="node" [disabled]="node.disabled" class="et-cascader-node" etCascaderNode type="button">
-              @if (cascader.multiple()) {
-                <span class="et-cascader-check" aria-hidden="true"></span>
-              }
-              <span class="et-cascader-node-label">{{ node.label }}</span>
-              @if (node.isLeaf !== true && node.hasChildren !== false) {
-                <i class="et-cascader-node-chevron" etIcon="et-chevron" aria-hidden="true"></i>
-              }
+            <span
+              [class.et-cascader-state-content--visible]="showColumnSpinner()"
+              [attr.aria-hidden]="!showColumnSpinner() || null"
+              class="et-cascader-state-content"
+            >
+              <et-spinner diameter="16" strokeWidth="2" />
+              {{ cascaderLabels().loading }}
+            </span>
+          </div>
+        }
+        @case ('error') {
+          <div class="et-cascader-state et-cascader-state--error" role="alert">
+            <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{ column.error }}</span>
+            <button (click)="cascader.retryColumn(columnIndex)" et-text-button size="sm" type="button">
+              {{ cascaderLabels().retry }}
             </button>
+          </div>
+        }
+        @default {
+          @if (column.nodes.length) {
+            @for (node of column.nodes; track $index) {
+              <button [node]="node" [disabled]="node.disabled" class="et-cascader-node" etCascaderNode type="button">
+                @if (cascader.multiple()) {
+                  <span class="et-cascader-check" aria-hidden="true"></span>
+                }
+                <span class="et-cascader-node-label">{{ node.label }}</span>
+                @if (node.isLeaf !== true && node.hasChildren !== false) {
+                  <i class="et-cascader-node-chevron" etIcon="et-chevron" aria-hidden="true"></i>
+                }
+              </button>
+            }
+          } @else {
+            <div class="et-cascader-state et-cascader-state--empty">{{ cascaderLabels().noOptions }}</div>
           }
-        } @else {
-          <div class="et-cascader-state et-cascader-state--empty">{{ cascaderLabels().noOptions }}</div>
         }
       }
-    }
+    </div>
+
+    <et-scrollbar [for]="columnElement" autoHide />
   </div>
 </ng-template>

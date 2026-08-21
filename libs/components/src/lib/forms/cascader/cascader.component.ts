@@ -9,6 +9,7 @@ import {
 import { TextButtonComponent } from '../../button';
 import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
+import { ScrollbarComponent } from '../../scrollbar';
 import { mountControlSuffixStyles } from '../form-field/form-field-control-suffix-styles.component';
 import { ControlSuffixDirective } from '../form-field/partials';
 import { CascaderPanelComponent } from './cascader-panel.component';
@@ -41,6 +42,7 @@ import { injectCascaderLabels } from '../../forms/cascader/cascader-labels';
     CascaderPanelComponent,
     IconDirective,
     NgTemplateOutlet,
+    ScrollbarComponent,
     SpinnerComponent,
     TextButtonComponent,
     ProvideColorDirective,

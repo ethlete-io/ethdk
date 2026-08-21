@@ -105,31 +105,25 @@
        gap. Everything below the tools is behind the keyboard (or behind browser chrome), so nobody can
        reach it. The padding deliberately has NO transition: it must track the viewport instantly as the
        page scrolls (a transition would make it lag a frame behind the keyboard). */
-    &.et-rich-text-editor--touch .et-rte-toolbar {
+    /* the tools' own scrollbar hangs at the bottom edge of the scrollport, so the keyboard
+       clearance below has to belong to the dock - not to the tools - or the bar sits behind the
+       keyboard */
+    &.et-rich-text-editor--touch .et-rte-toolbar-dock {
       position: fixed;
       inset-inline: 0;
       inset-block-end: 0;
       z-index: 60;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      /* scroll the tools horizontally when they overflow, without triggering browser back-swipe */
-      overscroll-behavior-x: contain;
-      -webkit-overflow-scrolling: touch;
-      padding-inline: 8px;
-      padding-block-start: 6px;
       /* Two sources, whichever is available, and never both: `env(keyboard-inset-height)` is the
          browser telling us exactly where the keyboard is — but only for a page that opted into the
          VirtualKeyboard API (`navigator.virtualKeyboard.overlaysContent = true`), which is also what
          stops the viewport from resizing, so the measured inset is 0 there. Without that opt-in (or
          in a browser without the API) the env var falls back to 0 and the measurement carries it.
          `max()` needs no feature detection and cannot place the bar too low. */
-      padding-block-end: calc(6px + max(var(--_et-rte-keyboard-inset, 0px), env(keyboard-inset-height, 0px)));
+      padding-block-end: max(var(--_et-rte-keyboard-inset, 0px), env(keyboard-inset-height, 0px));
       background: var(--et-surface-background-solid, rgb(24 24 24));
-      border-block-end: none;
       border-block-start: var(--et-form-field-control-border-width, 1px) solid
         color-mix(in srgb, currentColor 12%, transparent);
       box-shadow: 0 -6px 20px rgb(0 0 0 / 0.24);
-      scrollbar-width: none;
       opacity: 0;
       transform: translateY(100%);
       pointer-events: none;
@@ -138,11 +132,27 @@
         transform 260ms var(--ease-out-5, ease);
     }
 
-    &.et-rich-text-editor--touch .et-rte-toolbar::-webkit-scrollbar {
-      display: none;
+    .et-rte-toolbar-viewport {
+      position: relative;
     }
 
-    &.et-rich-text-editor--touch.et-rich-text-editor--docked-toolbar .et-rte-toolbar {
+    &.et-rich-text-editor--touch .et-rte-toolbar-viewport {
+      --et-scrollbar-thickness: 6px;
+      --et-scrollbar-thumb-thickness: 3px;
+    }
+
+    &.et-rich-text-editor--touch .et-rte-toolbar {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      /* scroll the tools horizontally when they overflow, without triggering browser back-swipe */
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-inline: 8px;
+      padding-block: 6px;
+      border-block-end: none;
+    }
+
+    &.et-rich-text-editor--touch.et-rich-text-editor--docked-toolbar .et-rte-toolbar-dock {
       opacity: 1;
       transform: translateY(0);
       pointer-events: auto;
@@ -156,7 +166,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      &.et-rich-text-editor--touch .et-rte-toolbar {
+      &.et-rich-text-editor--touch .et-rte-toolbar-dock {
         transition: opacity 160ms var(--ease-out-5, ease);
       }
     }

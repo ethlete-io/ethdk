@@ -99,6 +99,15 @@
       color: var(--et-surface-color-subtle-solid, currentColor);
     }
 
+    /* the column's own scrollbar has to hang outside the scrollport: an absolute child of the
+       column would scroll away with the options */
+    .et-time-picker-column-wrapper {
+      --et-scrollbar-thickness: 8px;
+      --et-scrollbar-thumb-thickness: 4px;
+
+      position: relative;
+    }
+
     .et-time-picker-column {
       display: flex;
       flex-direction: column;
@@ -108,21 +117,17 @@
       padding-block: calc((var(--et-time-picker-column-size) - var(--et-time-picker-option-size)) / 2);
       overflow-y: auto;
       scroll-snap-type: y proximity;
-      scrollbar-width: none;
       /* with the 240px column and 36px options, the row cut by each edge stays
          ~2/3 visible and fades out exactly across that visible part — the
          half-faded numbers are the scrollability cue */
       mask-image: linear-gradient(transparent, black 10%, black 90%, transparent);
+    }
 
-      &::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* the mask fades the separator out toward the column ends with the options */
-      & + .et-time-picker-column {
-        border-inline-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.08));
-        padding-inline-start: 8px;
-      }
+    /* the separator sits on the masked column, not on its wrapper, so the mask fades it out toward
+       the column ends with the options */
+    .et-time-picker-column-wrapper + .et-time-picker-column-wrapper .et-time-picker-column {
+      border-inline-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.08));
+      padding-inline-start: 8px;
     }
 
     .et-time-picker-option {

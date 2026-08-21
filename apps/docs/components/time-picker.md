@@ -38,6 +38,10 @@ The format decides the columns, not just their labels: `HH:mm` renders hour + mi
 
 While no value is set, the columns anchor their focus and scroll position to "now" (snapped to the steps).
 
+Each column carries its own auto-hiding [`et-scrollbar`](/components/scrollbar), which appears while
+that column scrolls or the pointer is over it. The half-faded rows at the column edges stay as the
+resting cue.
+
 ### Held picks {#held-picks}
 
 **From an empty picker, picks are held until they add up to a whole time.** A lone hour is not a time, and neither is a lone `PM` - so each pick marks its column and moves the anchor, but `value` stays `null` until an **hour** and a **minute** (and a **second**, where the format shows one) have all been picked. The pick that supplies the last of them commits them together. Without that, tapping `6` would commit whatever minute "now" happened to sit on, and a value nobody chose is worse than no value.
