@@ -24,9 +24,9 @@ Fable for batch design, synthesis and cross-checks.
 | 7 | forms/phone-input + otp-input + tag-input + forms/testing | 3.9k | opus | pending |
 | 8 | table | 10.7k | opus | done — 3 high / 8 medium / 12 low |
 | 9 | overlay | 7.5k | opus | done — 2 high / 8 medium / 10 low |
-| 10 | stream | 6.9k | opus | pending |
-| 11 | bracket | 7.9k | opus | pending |
-| 12 | scheduler | 5.4k | opus | pending |
+| 10 | stream | 6.9k | opus | done — 4 high / 10 medium / 15 low |
+| 11 | bracket | 7.9k | opus | done — 3 high / 8 medium / 12 low |
+| 12 | scheduler | 5.4k | opus | done — 3 high / 8 medium / 12 low |
 | 13 | grid + masonry | 4.5k | opus | pending |
 | 14 | menu + command-palette + toggletip + tooltip | 5.5k | opus | pending |
 | 15 | carousel + scrollable + scrollbar | 5.2k | opus | pending |
@@ -1542,5 +1542,1575 @@ Ideas, not verified defects. Ranked within each category.
 5. **Marble-test `trackTriggerItems`.** Debounce, the "keep previous results while a same-trigger request loads" `scan`, the reset on trigger switch, and the error passthrough (`headless/internals/rich-text-editor-trigger-source.ts:88-128`) are all timing behaviour that no test touches.
 
 6. **Replace the `Subject` fake in `rich-text-editor-trigger-with-query.spec.ts` with a replaying one.** The real `executionState.asObservable()` replays its current value (`libs/query/src/lib/http/observable-signal.ts:17`); the spec's bare `Subject` does not, which is exactly why the stale-results Medium is invisible to it. A `BehaviorSubject` (or the `query/testing` fakes) would model the actual contract.
+
+---
+
+## forms/date-time (date, date-range, time, time-range, date-time, date-time-range, duration)
+
+Scope: `libs/components/src/lib/forms/date-time/**` (all `.ts`/`.html`/`.css` + specs), docs
+`apps/docs/components/date-time-inputs.md` (+ cross-checks in `error-codes.md`).
+
+Runtime verification was done with a throwaway spec in the domain folder, run as
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts <spec>`
+(note: `--config libs/components/vite.config.mts` fails - the path is resolved relative to
+`--root`). The scratch file was deleted; `git status` for `libs/components` and `apps/docs` is
+clean.
+
+### High
+
+- **An unedited focus+blur silently rewrites the wire value of `et-date-input` and
+  `et-time-input`, destroying every unit the display format does not carry.**
+  `internals/date-picker-input-field.directive.ts:128-138` (`handleBlur`) always calls
+  `commitInput(commitText())`, and neither `date-input/headless/date-input.directive.ts:113-156`
+  nor `time-input/headless/time-input.directive.ts:93-133` has the
+  "nothing was typed" guard its siblings have
+  (`date-time-input/headless/date-time-input.directive.ts:225`,
+  `internals/date-range-picker-input.directive.ts:370`: `if (raw === this.displayValue()) return;`).
+  So blurring re-parses the *displayed* text and writes it back. With the shipped defaults this
+  loses data: `DATE_FORMAT` is `yyyy-MM-dd'T'HH:mm:ssxxx` (carries a time) while the date input's
+  default `displayFormat` is `'P'` (date only), and the docs themselves recommend
+  `provideTimeFormat('HH:mm:ss')` (`date-time-inputs.md:80`) against a `'p'` display format.
+  It also marks the form dirty/touched with no user edit.
+  **Runtime-verified**: value `2026-08-22 14:30` (`valueFormat="yyyy-MM-dd HH:mm"`) → focus, blur,
+  no typing → `2026-08-22 00:00`. Time input `14:30:45` (`valueFormat="HH:mm:ss"`) → `14:30:00`.
+  The date-time input under the same test kept `2026-08-22 14:30:45` (its guard fires).
+
+- **Six of the seven controls cannot be given an accessible name: `aria-label` /
+  `aria-labelledby` are not inputs, so the attribute stays on the wrapper and the native
+  `<input>` stays unnamed - silently in production, with an unfixable `ET2201` in dev.**
+  `internals/date-picker-input.directive.ts` and `internals/date-range-picker-input.directive.ts`
+  declare no `ariaLabel`/`ariaLabelledby` input and never report `hasCustomAccessibleName`
+  (contrast `duration-input/headless/duration-input.directive.ts:52-56,91`, which does both).
+  The form field's guard (`forms/form-field/headless/form-field.directive.ts:205-214`) therefore
+  throws for any of them used without a projected `et-label`. Worse for the ranges: their
+  registered control view (`internals/date-range-picker-input.directive.ts:225-243`) omits
+  `hasCustomAccessibleName`, so a range whose two fields *are* named via
+  `startAriaLabel`/`endAriaLabel` still throws. The docs promise the opposite
+  (`date-time-inputs.md:569-572`: "A field … takes `aria-label` (or `aria-labelledby`) on the
+  control itself - `[attr.aria-label]` would land on the wrapper and leave the native field
+  unnamed, which throws ET2201").
+  **Runtime-verified** (each inside `<et-form-field>` with no `et-label`):
+  `<et-date-input aria-label="Date of birth">` → `ET2201` thrown **and** the inner input's
+  `aria-label` is `null` (the attribute sits on `ET-DATE-INPUT`);
+  `<et-date-range-input startAriaLabel="From" endAriaLabel="To">` → inputs correctly named
+  `"From"`/`"To"` but `ET2201` still thrown; `<et-duration-input aria-label="Lap time">` → no
+  throw, input named. In a production build nothing throws, so the failure is a silently
+  unnamed date field.
+
+- **Erasing unparseable text leaves `parseError` latched on, so an empty field keeps a
+  validation error and `aria-invalid="true"` forever.** The same guard as above is the cause:
+  after a failed parse the value is `null`, so `displayValue()` is `''`
+  (`date-time-input/headless/date-time-input.directive.ts:173-200`), and the user's clearing blur
+  arrives as `raw === '' === displayValue()` → `date-time-input.directive.ts:225` (and
+  `internals/date-range-picker-input.directive.ts:370` for all three ranges) returns before the
+  `if (!raw.trim())` branch that would reset `parseError`. `shouldDisplayError()` stays true, so
+  `form-field.component.ts:183` keeps rendering `parseErrorMessage` under an empty field; the
+  only escape is typing something that parses.
+  **Runtime-verified**: type `not a date`, blur, erase, blur → `parseError: true`, field `""`,
+  `inputText: ""` for `et-date-time-input`, `et-date-range-input` and
+  `et-date-time-range-input`. `et-date-input` (no guard) correctly ends at `parseError: false`.
+
+- **The clear (×) button does not reset an attached typing mask, so the erased text comes back
+  on the next blur - with a parse error.** `internals/date-picker-input.directive.ts:213-231`
+  (`clearValue`) and `internals/date-range-picker-input.directive.ts:410-426` (`clearRange`) reset
+  `value`/`inputText`/`parseError` and blank the element, but the mask host's text lives in the
+  field's `value` linkedSignal (`internals/date-picker-input-field.directive.ts:48-56`,
+  `internals/date-range-picker-input-field.directive.ts:63-71`) whose computation reads only
+  `parseError()`, `inputText()` (when erroring) and `displayValue()`. While the user is
+  mid-entry none of those change on a clear (`displayValue` was already `''`, `parseError`
+  already `false`), so the linkedSignal keeps the mask-written override, and `commitText()`
+  (`date-picker-input-field.directive.ts:166-168`) hands that stale text to the next commit.
+  **Runtime-verified** (`et-date-input`, `mask`, `displayFormat="dd.MM.yyyy"`): type `1807`
+  (field `18.07.____`) → `clearValue()` → field `""`, `hasValue: false` (the × disappears, it
+  looks cleared) → blur → field `"18.07."`, `parseError: true`, value `null`. Clearing a fully
+  committed value is unaffected (the source does change), so the bug only bites mid-entry -
+  which is exactly when the clear button is most used.
+
+### Medium
+
+- **The duration input never drops `inputText` after a successful commit, so `hasValue()` stays
+  true once the value is reset from outside.** `duration-input/headless/duration-input.directive.ts:143`
+  sets `inputText` to the raw text on *every* commit, including the successful one (all six
+  date/time controls set it back to `''` instead), and `hasValue`
+  (`duration-input.directive.ts:81`) reads it. After a programmatic reset the field is empty but
+  the form field still floats its label (`form-field.directive.ts:158`
+  `shouldFloatLabel = focused || expanded || hasValue`) and still offers the clear button.
+  **Runtime-verified**: type `130`, blur (value `90000`), then `value.set(null)` → field `""`,
+  `displayValue: ""`, `inputText: "130"`, `hasValue: true`.
+
+- **`parseDuration` accepts unit letters but ignores what they mean, so `1h30m` commits 90 000 ms
+  instead of 5 400 000 ms.** `duration-input/headless/internals/duration-format.ts:114` allowlists
+  `hHmMsS` in the input, then line 112 splits on `\D+` and lines 120-128 map the digit groups
+  positionally onto the trailing segments. Under the default `mm:ss` that reads `1h30m` as
+  1 min 30 s - a plausible entry silently committing a value 60× too small. Either reject letters
+  or honour them.
+
+- **A readonly date/time control still commits on blur.** `commitInput`
+  (`date-input.directive.ts:113`, `time-input.directive.ts:93`, `date-time-input.directive.ts:222`)
+  and `commitSide` (`internals/date-range-picker-input.directive.ts:367`) have no
+  `interactive()` check, unlike `duration-input.directive.ts:137-139` which returns early when
+  disabled or readonly. A readonly input is still focusable, so tabbing through one runs a full
+  commit: it sets `touched`, and on `et-date-input`/`et-time-input` it also triggers the value
+  rewrite above - a readonly field mutating its own value.
+
+- **The date/time mask hosts do not implement the optional `mixed` member of `InputMaskHost`,
+  so all of the mask's mixed handling is dead code for this family.**
+  `masked-input/headless/input-mask-host.ts:16-21` declares it and
+  `input-mask.directive.ts:129-135,152-164,229-241` branches on `host.mixed?.()`;
+  `input/headless/input.directive.ts:21` (the plain text input) satisfies it, but
+  `internals/date-picker-input-field.directive.ts:34-62` and
+  `internals/date-range-picker-input-field.directive.ts:44-77` expose only
+  `value`/`focused`/`nativeControl`. Consequences: focusing a masked field while `mixed` paints
+  the guide (`__.__.____`) instead of leaving the mixed label showing through the placeholder,
+  which `date-time-inputs.md:553-558` and the `mixedLabel` JSDoc both describe as "the field
+  stays empty and the label shows through the placeholder slot"; and the mask's "first keystroke
+  replaces the hidden value and resolves mixed" contract never applies here (the control resolves
+  it on the commit instead). No value leaks, because `displayValue` already masks.
+
+### Low
+
+- **Dev-time messages and the error-code docs name only four of the six picker hosts.**
+  `picker/date-picker-trigger.directive.ts:35` and `picker/date-picker-surface.directive.ts:25`
+  list `[etDateInput]` / `[etDateRangeInput]` / `[etTimeInput]` / `[etDateTimeInput]`, omitting
+  `[etTimeRangeInput]` and `[etDateTimeRangeInput]`, and `apps/docs/components/error-codes.md:108-109`
+  repeats the same four. A time-range consumer is told to move the trigger into a host that is not
+  theirs. (`DATE_INPUT_ERROR_CODES.MISSING_SURFACE` is also thrown for all six from
+  `internals/date-picker-overlay.ts:82` - correct per the shared 3000-3099 block, worth a docs note.)
+- **Docs list `pickerTriggerLabel` as `string` with a hardcoded default** for the time input
+  (`date-time-inputs.md:272`) and the date-time input (`:390`); both are `string | null`
+  defaulting to `null` and resolving through `DATE_TIME_LABELS`, as the date input's own row
+  (with footnote ¹) correctly says.
+- **Undocumented public inputs**: the date-time input table (`date-time-inputs.md:374-392`) omits
+  `weekNumbers`, `parseErrorMessage` and `clearable`/`clearLabel`, all of which exist
+  (`date-time-input.component.ts:96-103`, `date-time-input.directive.ts:50,79`); the duration table
+  (`:529-534`) omits `parseErrorMessage`, `clearable` and `clearLabel`.
+- **Comment policy: the same explanation is repeated at every call site.** The
+  `// only while the field is in use - mirrors the select's clear affordance` comment sits on
+  `showClear` in all seven components (e.g. `date-input.component.ts:90`,
+  `time-input.component.ts:95`, `duration-input.component.ts:53`) and the identical three-line
+  "pointer-only, out of the tab order …" HTML comment in six templates (e.g.
+  `date-input.component.html:10-12`). AGENTS.md ("Always delete → The same explanation at every
+  call site") asks for one home for it.
+- **`durationFormat=""` (or any format with no `h`/`m`/`s`/`S` run) silently bricks the control**:
+  `deriveDurationFormatSpec` (`duration-format.ts:30-61`) returns empty `segments`,
+  `parseDuration` then always returns `null` (`:108`) and `formatDuration` always `''`, so every
+  entry is a parse error with no dev-mode warning - unlike the refused mask pattern, which does warn.
+- **`warnedAboutMissingDateLocale` is a module-level latch** (`date-time-formats.ts:49`), so only
+  the first injector in the process is ever warned about a missing `DATE_LOCALE`; a second app or a
+  lazily created injector with a different locale stays silent.
+- **Range field registration has no duplicate guard**: `registerField`
+  (`internals/date-range-picker-input.directive.ts:429-431`) overwrites the slot silently, while the
+  single inputs go through `registerSingleton` (`date-input-field.directive.ts:27`), which reports a
+  second registration. Two `side="start"` fields in a custom range template fight without a word.
+- **`time-range-input.component.html:50` feeds the time picker `rangeInput.calendarRange()`** - a
+  calendar-named accessor on a control that has no calendar. Naming only; the value is right.
+- **`referenceDate` is captured once at construction** in `TimeInputDirective` (`:54`) and
+  `TimeRangeInputDirective` (`:69`), so in a long-lived app the day the parsed times sit on is the
+  day the control was created. Harmless for `HH:mm` wire values, but `timeFilter` is documented as
+  receiving "the full candidate timestamp" and will see a stale day across midnight.
+- **`localReadingIdCounter`** (`date-time-input.directive.ts:24`,
+  `date-time-range-input.directive.ts:27`) ties element ids to instantiation order, so an SSR page
+  whose client order differs hydrates a mismatched `aria-describedby` target.
+
+### Spec coverage
+
+Well covered: the parsing/formatting internals each have a focused spec (`date-value`,
+`time-parse`, `date-time-parse`, `display-format-mask`, `precision-format`, `pending-date-time`,
+`time-zone`, `duration-format`); every control has a directive spec covering strict/lenient
+commits, Enter-commit, parse errors, prefilled display, picker open/close, Alt+ArrowDown, the
+disabled trigger and a `mixed` block; `date-input` and `date-range-input` have thorough mask
+suites; `date-time-input` and `date-time-range-input` have time-zone suites and component specs
+for the bottom-sheet panes; six of the seven run `describeMixedStateContract`.
+
+Gaps that map directly onto the findings above:
+- **No spec ever uses a `valueFormat` finer than its `displayFormat`.** Every host is
+  `valueFormat="yyyy-MM-dd"`, `"HH:mm"` or a matching combined format, which is why the
+  unedited-blur rewrite (High #1) is invisible. `date-time-input`'s own spec host uses
+  `yyyy-MM-dd HH:mm` and is protected by its guard.
+- **No spec erases unparseable text** (High #3): `date-time-input.directive.spec.ts:99-106`
+  ("clears the value on empty input") only empties a *successfully committed* field.
+- **No spec clears through `clearValue()`/`clearRange()` while a mask is attached** (High #4);
+  the mask suites only cover delete-all + blur (`date-input.directive.spec.ts:458-480`).
+- **No spec in this domain renders a control inside `et-form-field`**, so nothing covers label
+  wiring, `aria-labelledby`, `ET2201` or the floating label (High #2, Medium #1).
+- Zero direct tests for `date-picker-panel.component.ts`, `internals/date-time-panes.directive.ts`
+  (ResizeObserver + translateY compensation, the most timing-sensitive code here) and
+  `internals/date-picker-overlay.ts`.
+- `duration-input` has no `describeMixedStateContract` run and no `clearValue` spec (the two
+  controls' behaviours its bug touches); `time-input`/`time-range-input` have no `clearValue`
+  spec either (only `date-input` and the ranges do).
+- No existing spec asserts a behaviour I believe to be wrong.
+
+Clean: all eight stylesheets are wrapped in a single `@layer components`, contain no Tailwind, and
+resolve every colour from `--et-surface-*` / `--et-theme-color-*` tokens (the `rgb(...)` literals
+are fallbacks inside `var()`, and the panel's `box-shadow: 0 10px 24px rgb(0 0 0 / .16)` matches
+every other panel in the lib). State is signals throughout - no `BehaviorSubject`, no
+subscribe-and-assign, the only RxJS is inside the shared anchored-panel controller; all controls
+are `FormValueControl` (signal forms), not `ControlValueAccessor`. `DateTimePickerPanesDirective`
+disconnects its observer and cancels its animations on destroy, and its `no-native-observers` /
+`no-dom-query` escapes are justified in place. The time-zone layer (`TZDate`, `zonedProxy` for
+highlighting only, `instantFromZonedFields` for commits) is coherent and matches the docs' DST
+caveat, and the half-pick machinery (`pending-date-time.ts`, `renderPartialDateTime`,
+`splitDateTimeFormat`) is both sound and well specified. All seven control types are present in
+`usesTextFieldShell`, error codes stay inside the documented 3000-3099 block, every
+`<StoryEmbed>` id in the guide resolves to a real story export, and the narrow-stacking,
+precision, `timeZone` and pane-advance behaviours the docs describe all match the code.
+
+### Improvements
+
+Ideas, not verified defects. Ranked within each category.
+
+#### Features
+
+- **Ship the range-order and min/max validators the docs make every consumer hand-write.**
+  `date-time-inputs.md:242-249`, `:344-349` and `:494-511` all say "ordering is not enforced - that
+  is a validator's job" and then print the same `validate(s.range, …)` body three times, and the
+  bounds sections say the same about `minDate`/`maxDate`/`minTime` ("bounds shape the picker …
+  pair them with a schema validator"). Exporting `dateRangeOrder()`, `timeRangeOrder()`,
+  `minDate()`/`maxDate()` signal-forms rules next to `DATE_TIME_LABELS` would turn four documented
+  copy-paste recipes into one import, and they can reuse `internals/date-value.ts`'s parser so they
+  agree with the control's own `valueFormat`.
+- **Preset ranges in the range picker panel.** The date range input already has the two
+  reporting-filter features that presets belong with (`rangeSelectionStrategy`,
+  `comparisonStart`/`comparisonEnd` - `date-range-input.directive.ts:58-65`), but there is no way to
+  offer "Last 7 days" / "This month"; every peer lib (PrimeNG, AntD, shadcn's date-range recipes)
+  ships them. The surface is already a public extension point
+  (`picker/date-picker-surface.directive.ts`), so this could be a `DatePickerPresetsDirective`
+  projected into `et-date-picker-panel` rather than new inputs on six controls.
+- **Arrow-key stepping on the field.** `internals/date-picker-input-field.directive.ts:140-163`
+  handles exactly two keys (Enter, Alt+ArrowDown); a native `<input type="date">`, AntD and Ark all
+  step the segment under the caret with ArrowUp/ArrowDown (and PageUp/PageDown for the coarser
+  unit). With `maskPattern` (`internals/display-format-mask.ts`) the slot boundaries are already
+  known, so the segment under the caret is derivable - this is the single most-missed affordance of
+  a typed date field.
+- **A "Today"/"Now" action in the picker panel.** Nothing in the panel jumps to the current
+  day/time; `startAt` only sets the opening month. One action row in `et-date-picker-panel` would
+  serve all six controls, and the date-time input's half-pick machinery
+  (`internals/pending-date-time.ts`) already knows how to commit both halves at once.
+- **`'week'` / `'quarter'` precision.** `CalendarPrecision` stops at `day | month | year`
+  (`internals/precision-format.ts:16-26`), yet the calendar already renders week numbers
+  (`weekNumbers`) and reporting filters ask for ISO weeks and quarters as often as months.
+- **A confirmation mode (`Apply`/`Cancel`) for the pickers.** Every pick commits straight into the
+  form value (`selectDate`, `selectTime`, `writeRange`); Material ships
+  `mat-datepicker-actions` for the "don't touch my model until I confirm" case, which matters most
+  for the date-time controls where one interaction is two half-picks.
+
+#### DX
+
+- **Fold the two abstract bases into one core.** `internals/date-picker-input.directive.ts` and
+  `internals/date-range-picker-input.directive.ts` are ~90% the same file (identical standard
+  control inputs, `mask`/`maskPattern`, overlay wiring, `describedByIds`, `labelId`, `interactive`,
+  `shouldDisplayError`, form-field registration, the dev-mode mask warning - both even carry the
+  same comments). Three of the four High defects above exist *because* a behaviour lives in only one
+  of the two copies. A shared `createPickerInputCore()` (or a common base with a per-side state map)
+  would make the guard, the clear path and the readonly check single-sourced.
+- **Warn in dev when `displayFormat` carries fewer units than `valueFormat`.** This is the sharpest
+  edge in the public API (see High #1): the shipped `DATE_FORMAT` carries a time while the date
+  input shows `'P'`, and every commit truncates. The domain already has the machinery to detect it -
+  `internals/date-time-format-split.ts` classifies tokens as date/time and
+  `internals/display-format-mask.ts` walks token runs - so a one-time `console.warn` next to the
+  existing mask warning (`date-picker-input.directive.ts:189-198`) would surface it at authoring time.
+- **Give the six picker controls the duration input's naming API.**
+  `duration-input.directive.ts:52-56,89,91` shows the whole pattern (`aria-label`/`aria-labelledby`
+  inputs, `labelId` preferring the author's ids, `hasCustomAccessibleName`); lifting it into the two
+  bases fixes High #2 and removes the only reason these controls cannot be used in a dense row.
+- **A duration-input test driver.** `forms/testing/` has a driver for sixteen controls (and
+  `date-picker-driver.ts` covers the six picker controls) but none for the duration input, so
+  `duration-input.directive.spec.ts` hand-rolls TestBed, `dispatchEvent` and element lookups.
+  While there: the masked-typing helper loop is copy-pasted between
+  `date-input.directive.spec.ts:363-390` and the date-range mask suite - it belongs on the driver
+  as `typeMasked()`.
+- **Derive the trigger/surface dev errors from the host instead of hardcoding four names.**
+  `picker/date-picker-trigger.directive.ts:35` and `picker/date-picker-surface.directive.ts:25`
+  enumerate `[etDateInput] / [etDateRangeInput] / [etTimeInput] / [etDateTimeInput]`, which has
+  been wrong since the two newer range controls landed; the message only needs to say "a
+  `DATE_PICKER_HOST`" and point at the docs.
+- **`clearable` is per-styled-component boilerplate.** All seven components re-declare
+  `clearable`/`clearLabel` plus an identical `showClear` computed and `handleClearClick`
+  (e.g. `date-input.component.ts:75-103`, `time-input.component.ts:80-108`). A
+  `ControlClearAffordanceDirective` (or a helper returning `{ showClear, clear }`) would delete the
+  same 15 lines seven times and keep the touch/pointer rules in one place.
+
+#### Bundle size
+
+- **Stop dragging the optional `@date-fns/tz` peer into the zone-less controls.**
+  `internals/time-zone.ts:1` statically imports `TZDate`, and
+  `internals/date-range-picker-input.directive.ts:26` imports `formatInZone`/`reinterpretInZone`/
+  `zonedProxy` from it for *all three* ranges - including `et-date-range-input` and
+  `et-time-range-input`, whose `effectiveTimeZone` is a constant `signal(null)`
+  (`date-range-picker-input.directive.ts:141`). Since `@date-fns/tz` is declared optional
+  (`libs/components/package.json:27-29`), an app that installs `date-fns` alone and uses only a
+  date range input has an unnecessary hard dependency. Routing the zone helpers through the two
+  date-time controls (or a tiny injected strategy) both removes the import and honours the
+  "optional" contract.
+- **Add treeshake goldens for this family.** `tools/treeshake/goldens.json` guards
+  `form-field-input`, `select` and five table entries but nothing date-related, even though
+  `DATE_INPUT_IMPORTS` pulls the whole calendar and `DATE_TIME_INPUT_IMPORTS` additionally pulls
+  the time picker, the segmented button group and the overlay strategies. Three entries
+  (`date-input`, `date-time-input`, `duration-input`) would bound the family's cost and make any
+  future regression reviewable.
+- **De-duplicate the two range stylesheets.** `date-range-input.component.css` and
+  `time-range-input.component.css` are byte-identical apart from the class prefix and the stacking
+  threshold (`diff` shows only name/number hunks: `13em` vs `11em`), and the two date-time range
+  sheets repeat the same shell again. One shared range-shell stylesheet driven by a
+  `--et-range-input-stack-threshold` custom property removes ~120 duplicated lines across four
+  files, in the spirit of AGENTS.md's styles-only components.
+- **Move the duration input onto the shared suffix stack.** It is the only one of the seven that
+  does not use `<ng-template etControlSuffix>`, and it therefore re-implements the clear button in
+  `duration-input.component.css:39-90` - the same rules, animations and reduced-motion guard that
+  `forms/form-field/form-field-control-suffix-styles.component.css` already ships as a styles-only
+  component. Switching it deletes ~50 lines of CSS and makes the affordance consistent (it would
+  also inherit the readonly/disabled suffix handling at `:95-96` for free).
+
+#### UI/UX
+
+- **There is no keyboard path to clearing a value.** All seven templates render the × with
+  `tabindex="-1"` and the comment "keyboard users clear by erasing the text" - which for a range
+  means selecting and erasing two fields, and for a masked field means fighting the guide. A
+  focusable clear when `clearable` is set, or an `Escape`-clears-the-field rule on the fields
+  themselves, would close a real gap; at minimum the a11y section
+  (`date-time-inputs.md:560-580`) should say the button is pointer-only.
+- **The half-picked state is visual only.** The field shows `08/13/2026, __:__ __`
+  (`internals/pending-date-time.ts:23-51`) but nothing announces that the value is incomplete; the
+  control already owns an `ownDescribedBy` hook for exactly this kind of extra text
+  (`date-picker-input.directive.ts:126-137`, used by the zone reading), so a "time still required"
+  hint would ride along for free.
+- **A picker can render a fully dead grid with no message.** `dateFilter` can reject every day in
+  the visible month and `timeFilter`/`minTime`/`maxTime` can reject every option, and
+  `et-date-picker-panel` has no empty state - the reader is left clicking dimmed cells. An
+  empty/"no times available" slot on the panel would serve all six controls.
+- **Two 16px pointer targets sit side by side in the suffix stack.** The clear and the trigger are
+  both `.et-icon { 16px }` (e.g. `duration-input.component.css:52-55`) and appear together while
+  focused; outside the bottom sheet (which does raise cell/option sizes to 44px -
+  `date-picker-panel.component.css:76-78`) neither reaches the 44px touch minimum, and `showClear`
+  requiring focus makes the × appear and disappear under a tapping finger.
+- **The picker never re-focuses the field after a bottom-sheet close.** That is deliberate
+  (`internals/date-picker-input.directive.ts:170-177`: refocusing would pop the soft keyboard),
+  but it leaves focus on `<body>` on mobile, so the next Tab restarts at the top of the page.
+  Focusing the trigger button instead keeps the reading position without the keyboard.
+
+#### Testing
+
+- **A shared commit-contract suite across the six picker controls, first.** All four High defects
+  are one behaviour implemented twice; a `describePickerCommitContract()` next to the existing
+  `forms/testing/mixed-state-contract.ts`, asserting unedited-blur is a no-op, erase-after-parse-
+  error resets `parseError`, `clearValue()` survives an attached mask, and readonly blurs do not
+  commit, would have caught every one of them and pins the two bases together.
+- **Run `describeMixedStateContract` for the duration input.** It is the only one of the seven
+  without it (`duration-input.directive.spec.ts` has no contract block) and the only one whose
+  `hasValue` bookkeeping is wrong (Medium #1).
+- **One form-field integration spec per control.** Nothing in this domain renders a control inside
+  `<et-form-field>`, so label wiring, `ET2201`, the floating label and error rendering are entirely
+  untested here - which is why High #2 went unnoticed.
+- **Round-trip parse/format tests across at least de, en-US and one non-Latin-order locale.**
+  `internals/precision-format.ts:29-43` strips the day token with a regex and
+  `internals/date-time-format-split.ts` re-implements date-fns' tokenizer; both are pure
+  locale-pattern logic covered today by en-US plus a single de case.
+- **Layout behaviours need a Storybook/Playwright pass, not jsdom.** The panel's side-flip
+  threshold (`internals/date-picker-overlay.ts:21`), the pane height compensation
+  (`internals/date-time-panes.directive.ts` - a `ResizeObserver` plus `element.animate`) and the
+  range stacking container queries have no coverage at all and cannot get it in jsdom; they are the
+  natural first targets for the `verify-in-storybook` skill.
+
+---
+
+## stream
+
+Scope: `libs/components/src/lib/stream` (all non-spec `.ts` / `.html` / `.css`, both spec files, the stories,
+and `apps/docs/components/stream.md` + the `ET16xx` block of `apps/docs/components/error-codes.md`).
+
+Runtime verification used a throwaway spec at
+`libs/components/src/lib/stream/__scan-verify.spec.ts`, run with
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts src/lib/stream/__scan-verify.spec.ts`,
+then deleted. Working tree otherwise untouched.
+
+### High
+
+- **Leaving PiP without an exit animation strands the player in the hidden body container instead of the
+  slot - the video vanishes from the page.** `PipPlayerComponent` parks the player on destroy
+  (`libs/components/src/lib/stream/pip/pip-player.component.ts:72` →
+  `pipManager.parkPlayerElement(...)`), and `parkPlayerElement` only refuses when the id is in
+  `animatingOutIds` (`libs/components/src/lib/stream/pip-manager.ts:194-197`). The two animated exit paths
+  add the id (`pip-manager.ts:137`, `pip-manager.ts:162`), but the plain path at
+  `libs/components/src/lib/stream/pip-manager.ts:183-185` does not: it `moveBefore`s the player into the
+  slot, empties `pips`, which fires the `PipChromeManager` effect
+  (`libs/components/src/lib/stream/pip-chrome-manager.ts:57-59`), destroys the chrome and therefore the
+  `et-pip-player`, whose `onDestroy` immediately yanks the player back out of the slot into
+  `div.et-stream-manager`. Nothing ever re-runs `reassignPlayer`, so the player stays there. Triggered by
+  the documented public option `pipDeactivate(id, { skipAnimation: true })`
+  (`stream-manager.types.ts:240`), and also by the *default* path whenever either rect measures empty
+  (`pip-manager.ts:161`) - e.g. the target slot sits in a `display: none` tab or has not been given a size.
+  **Runtime-verified**: test A logged `AFTER REGISTER parent = slot` → `IN PIP parent = et-pip-player` →
+  `RIGHT AFTER DEACTIVATE parent = slot` → `AFTER CHROME TEARDOWN parent = et-stream-manager isSlot =
+  false`; test C reproduced the identical result with `pipDeactivate('p2')` and no options.
+
+- **The library ships no CSS for the body-level player container or for the PiP window's placement, so a
+  consumer following the docs sees parked players inline in `<body>` and a mispositioned PiP window.**
+  `injectStreamManager` creates `div.et-stream-manager` and appends it to `document.body`
+  (`libs/components/src/lib/stream/stream-manager.ts:27-29`), and every player element lives there before
+  it reaches a slot (`stream-manager.ts:104`), while parked during `pipActivate`
+  (`pip-manager.ts:86`), and permanently in the High finding above. A repo-wide grep for
+  `.et-stream-manager` in `*.css` returns nothing - the only rule that hides it is
+  `libs/components/src/lib/stream/stories/components/stream-slot-demo-styles.ts:2-9`
+  (`position: fixed; top: -9999px; left: -9999px; overflow: hidden`), which every slot story imports and
+  which is not shipped, not exported, and not mentioned anywhere in `apps/docs/components/stream.md`. The
+  same story block supplies `et-pip-window { bottom: 24px; right: 24px; z-index: 9999 }`
+  (`stream-slot-demo-styles.ts:11-18`); the shipped sheet declares only `position: fixed` with no offsets
+  and no `z-index` (`libs/components/src/lib/stream/pip/pip-window.component.css:20-41`), and
+  `et-stream-pip-chrome` gets no positioning rule at all, so an un-styled PiP window opens at its
+  static-position in body flow and can be painted under any positioned app chrome. Code-verified only (the
+  visual consequence needs a real browser), but the absence of the rules and the stories' dependence on
+  them is exact.
+
+- **Accepting the consent gate after the video id changed registers the player under the *old* id, which
+  silently breaks `pipDeactivate()` and the PiP placeholder for that slot.** `createStreamPlayerSlot`
+  captures `currentPlayerId` once in `init()` (`libs/components/src/lib/stream/stream-player-slot.ts:265`)
+  and hands that captured value to the deferred
+  `createAndRegisterPlayer(currentPlayerId)` inside the consent subscription
+  (`stream-player-slot.ts:257`; the same staleness exists on the handler-only path at
+  `stream-player-slot.ts:309`). Meanwhile the id-change effect at `stream-player-slot.ts:96-111` has
+  already advanced `currentPlayerIdSignal` to the new id. Result: the manager knows the player as
+  `youtube-OLD` while the slot handle reports `youtube-NEW`, so `pipDeactivate()`
+  (`stream-player-slot.ts:349-355`) resolves an id that is not in `pips` and no-ops, and
+  `PipSlotPlaceholderComponent.isInPip` (`pip/pip-slot-placeholder.component.ts:141-145`) never matches;
+  a second slot mounted for the real id also fails `getPlayerElement` and creates a duplicate player.
+  **Runtime-verified**: test B logged `after id change, currentPlayerId = youtube-NEW`, then after
+  clicking accept: `currentPlayerIdSignal = youtube-NEW | manager has youtube-OLD = true | manager has
+  youtube-NEW = false`.
+
+- **The docs state the opposite of what the slot does with surface themes.**
+  `apps/docs/components/stream.md:121` says "Slots provide a `type: 'dark'` surface scope one elevation
+  above their context (video UI always reads as a dark surface)". The slot resolves against the *ambient*
+  type - `private surfaceType = injectSurfaceType();` then
+  `resolveSurfaceByElevation(themes, type, elevation)` at
+  `libs/components/src/lib/stream/stream-player-slot.directive.ts:65,72-79`. Only the PiP chrome hardcodes
+  `'dark'` (`pip/pip-chrome.component.ts:95`). An app on a light surface gets a light slot scope, contrary
+  to the guide. Code-verified.
+
+### Medium
+
+- **`ET1604`'s error message and doc row give impossible remediation.**
+  `libs/components/src/lib/stream/pip-chrome-manager.ts:50` and
+  `apps/docs/components/error-codes.md:208` both say "Add `hostDirectives: [StreamPipChromeComponent]` to
+  the chrome component" - `StreamPipChromeComponent` is an `@Component`
+  (`pip/pip-chrome.component.ts:35`), and Angular rejects a component in `hostDirectives`. The actionable
+  instruction is to provide `PIP_CHROME_REF_TOKEN` / implement `PipChromeRef`
+  (`pip/headless/pip-chrome-ref.token.ts:5-10`), which is what the check actually tests
+  (`pip-chrome-manager.ts:47`).
+
+- **A per-entry `pipChromeComponent` / `pipChromeConfig` is honoured only for the first PiP.**
+  `stream-manager.types.ts:78-81` documents them as "the chrome component to use while **this entry** is
+  active", and `PipManager.pipChromeComponent` tracks the *latest* pip
+  (`pip-manager.ts:29-35`). But `PipChromeManager`'s effect only constructs a chrome when
+  `!pipChromeRef` (`pip-chrome-manager.ts:39`) and has no branch for "the component changed", so a second
+  `pipActivate` with a different chrome (or a different `controlsColor`) is silently ignored until every
+  pip closes.
+
+- **Four inline `styles:` blocks in this domain are not wrapped in `@layer components`, so Tailwind
+  utilities cannot override them.** `consent/stream-consent.component.ts:39`,
+  `error/stream-player-error.component.ts:35`, `loading/stream-player-loading.component.ts:16`,
+  `pip/pip-slot-placeholder.component.ts:35`. AGENTS.md makes the wrap mandatory ("**Wrap every component
+  CSS file in `@layer components { … }`**") precisely because unlayered component CSS beats
+  `@layer utilities` regardless of specificity; the four `.css` files in this domain do wrap
+  (`stream-player-slot-styles.component.css:1`, `pip/pip-window.component.css:1`,
+  `pip/pip-chrome.component.css:1`, `pip/pip-player.component.css:1`), and sibling domains such as
+  `tabs/tabs/tab-group.component.ts:111` and `scrollable/headless/scrollable-masks.component.ts:15` wrap
+  their inline blocks too. An app cannot override e.g. `.et-stream-consent`'s `background` with a utility.
+
+- **The `loadingComponent` / `errorComponent` overlays cannot actually be turned off through the public
+  type.** Both are typed `Type<unknown>` (non-nullable) at
+  `libs/components/src/lib/stream/stream-config.ts:60,68` while their JSDoc calls them "An optional
+  component…" and the implementation guards with `if (loadingComponent)` /
+  `if (errorComponent && !errorComponentRef)` (`stream-player-slot.ts:140,178`). Passing
+  `provideStreamConfig({ loadingComponent: null })` is a type error, so the documented "optional" is
+  unreachable without a cast. (Contrast `consentComponent` / `pipSlotPlaceholderComponent` /
+  `pipChromeComponent`, which are all `| null`.)
+
+- **Kick, SOOP and Dailymotion can never reach the error state, so the documented error overlay never
+  appears for them.** All three set `isReady` purely from `iframe.onload`
+  (`platform/kick/headless/kick-player.directive.ts:60-63`,
+  `platform/soop/headless/soop-player.directive.ts:70-73`,
+  `platform/dailymotion/headless/dailymotion-player.directive.ts:62-65`) and never call
+  `subscriber.error`, and a cross-origin iframe fires `onload` even for a platform error page. Meanwhile
+  `StreamConfig.errorComponent` is documented as "shown when the player fails to load (e.g. SDK blocked by
+  an ad-blocker)" (`stream-config.ts:63`). A blocked or dead Kick/SOOP/Dailymotion embed shows a blank
+  ready player, not the retry overlay.
+
+- **SOOP with neither `userId` nor `videoId` spins forever with no error.**
+  `SoopPlayerParamsDirective.playerId` still produces `soop-video-null`
+  (`platform/soop/headless/soop-player-params.directive.ts:13-16`), so the slot creates and registers a
+  player, but `SoopPlayerDirective`'s resource params return `null` → `EMPTY`
+  (`platform/soop/headless/soop-player.directive.ts:41-49`), so `isReady` stays false and `error` stays
+  null: the loading spinner is permanent. Twitch at least dev-warns in the same situation
+  (`platform/twitch/headless/twitch-player.directive.ts:49`); SOOP is silent.
+
+- **The Facebook SDK URL hardcodes German and a 2018 SDK version, with no way to configure either.**
+  `const FB_SDK_URL = 'https://connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v3.2'` at
+  `platform/facebook/headless/facebook-player.directive.ts:13`. Every consumer, in any locale, loads the
+  `de_DE` Facebook bundle - so the embed's own UI strings are German - and is pinned to Graph API v3.2.
+  Nothing in `StreamConfig` or `stream-labels.ts` can change it, and `apps/docs/components/stream.md` does
+  not mention it. (The repo has a locale provider - `injectStreamLabels` already reacts to it per
+  `stream.md:80`.)
+
+- **Three `timer(...).subscribe()` calls in the PiP window's position logic have no
+  `takeUntilDestroyed`, so they touch the host element after destroy.**
+  `pip/headless/internals/pip-window-position.ts:77-82` (`snapToPosition`), `:89-94` (`snapTo`) and
+  `:471-483` (`startModeTransition`). The first two only `removeStyle('transition')`, but
+  `startModeTransition`'s callback calls `snapToViewport()` → `renderer.addClass` / `removeClass` /
+  `pos.set` on a destroyed window. Every other stream over the finish line is `takeUntilDestroyed`-guarded
+  (`:418`, `:438`, `:452`), which AGENTS.md requires last in the pipe.
+
+- **Changing a video id on one of two slots sharing a player hijacks the other slot's player
+  permanently.** The id-change effect calls `streamManager.transferPlayer(oldId, newId)`
+  (`stream-player-slot.ts:102`), which re-keys the single shared `StreamPlayerEntry`
+  (`stream-manager.ts:140-145`). The *other* slot's `StreamSlotEntry` still carries `oldId`
+  (`stream-manager.ts:34` keys slots by element, and nothing rewrites their `playerId`), so it now points
+  at an id with no player: `resolveBestSlot(oldId)` finds it but `reassignPlayer` bails at
+  `stream-manager.ts:87` since `players.get(oldId)` is gone, and the player has physically moved into the
+  renaming slot. The second slot stays empty for the rest of its life.
+
+- **Four of the eight platforms produce untitled iframes.** `STREAM_LABELS.playerFrame` is applied only by
+  the four hand-rolled iframe players (`platform/{soop,kick,dailymotion,tiktok}/headless/*.directive.ts` -
+  lines 62, 52, 54, 56); YouTube, Twitch, Vimeo and Facebook let the SDK build the frame and never set a
+  `title`. `apps/docs/components/stream.md:117` is honest about this ("can't be titled from here"), but the
+  SDKs do accept a title in practice (YouTube/Vimeo via the `iframe` they create, reachable after
+  `onReady`), so it is a fixable a11y gap rather than a hard limit.
+
+- **`postMessage` to TikTok uses a wildcard target origin.**
+  `platform/tiktok/headless/tiktok-player.directive.ts:167` -
+  `this.iframe.contentWindow.postMessage(message, '*')`. Inbound messages are correctly filtered by
+  `e.source !== iframe.contentWindow` (`:68`), but outbound control commands are broadcast to whatever
+  document currently occupies the frame. `'https://www.tiktok.com'` is the right target.
+
+### Low
+
+- **`YoutubePlayerSlotDirective` is dead, exported, and referenced as the canonical example in a JSDoc.**
+  `platform/youtube/headless/youtube-player-slot.directive.ts` declares `@Directive({ providers: [...] })`
+  with **no selector**, so it cannot be applied in a template at all; it is not in
+  `STREAM_YOUTUBE_IMPORTS` (`stream.imports.ts:54-59`), not used as a `hostDirective` anywhere, and a
+  repo-wide grep finds no consumer - yet `platform/youtube/headless/index.ts:2` re-exports it into the
+  public API and `stream-manager.types.ts:11` names it as the example of a slot directive. It duplicates
+  what `StreamPlayerSlotDirective` + `STREAM_PLAYER_PARAMS_TOKEN` now do generically.
+
+- **`PipPlayerComponent`'s null cast makes two host bindings crash where a sibling binding guards.**
+  `resolvedEntry` returns `null as unknown as StreamPipEntry`
+  (`pip/pip-player.component.ts:61-63`), and the host reads `resolvedEntry().playerId` unguarded
+  (`:44`) and `resolvedEntry().thumbnail?.()` (`:65`) while the very next binding writes
+  `resolvedEntry()?.aspectRatio` (`:46`). `PipPlayerComponent` is public (`pip/index.ts:3`,
+  `STREAM_PIP_IMPORTS`), so a custom chrome placing `<et-pip-player />` without `[entry]` and without
+  `[etPipCell]` throws instead of rendering nothing.
+
+- **`stream-script-loader`'s `mountedScripts` set is unreachable dead state.**
+  `stream-script-loader.ts:9,20-26,35,40`: the `isMounted` early-return can only fire when `cache` misses
+  but `mountedScripts` hits, and the only path that deletes from `cache` (the error handler, `:39-41`)
+  deletes from `mountedScripts` in the same breath. The set can be removed.
+
+- **`stream-script-loader` never unlistens or removes a script on unsubscribe.**
+  `renderer.listen(script, 'load'|'error', …)` at `stream-script-loader.ts:32,38` discards both unlisten
+  functions, and the Observable returns no teardown, so the `<script>` and its two listeners outlive any
+  cancelled load. Bounded by the number of distinct SDK URLs, so cosmetic.
+
+- **`injectStreamScriptLoader` exports no matching provide function**, unlike every other root provider in
+  the domain (`stream-manager.ts:196`, `pip-manager.ts:217`, `pip-chrome-manager.ts:67`,
+  `stream-config.ts:134`). `stream-script-loader.ts:62` exports only the inject fn, so the loader cannot be
+  swapped for a fake in a test or in an offline shell.
+
+- **`waitForYtReady` and Facebook's `fbAsyncInit` patch leave their global hooks installed.**
+  `platform/youtube/headless/youtube-player.directive.ts:20-27` chains `win.onYouTubeIframeAPIReady` and
+  never restores the previous value on unsubscribe; same shape at
+  `platform/facebook/headless/facebook-player.directive.ts:144-148` for `win.fbAsyncInit`. A cancelled load
+  leaves a closure over a dead subscriber on `window`.
+
+- **`et-pip-player`'s layout rules are duplicated verbatim in two stylesheets.**
+  `pip/pip-chrome.component.css:91-105` repeats the `et-pip-player` block and the
+  `> :not(.et-pip-player__thumb-wrapper)` sizing rule from `pip/pip-player.component.css:2-17` (the chrome
+  copy is missing only `position: relative`). One of the two is redundant weight in every bundle that
+  pulls in PiP.
+
+- **The story CSS block is partly stale.** `stories/components/stream-slot-demo-styles.ts:20-31` re-declares
+  the `et-pip-player` rules the library now ships, and `:33-35` styles
+  `.et-stream-pip-chrome__previews`, a class that exists nowhere in the source (grep: no hits outside this
+  file).
+
+- **`etPipTitleBar` cannot forward `dragCancelled`.** `pip/headless/pip-title-bar.directive.ts:10` lists
+  `['dragTapped', 'dragStarted', 'dragMoved', 'dragEnded']` but not `dragCancelled`, which the position
+  logic itself consumes off the injected instance (`internals/pip-window-position.ts:432`). A consumer
+  composing their own title bar cannot bind the cancel case.
+
+- **Vimeo's `mute()` / `unmute()` do not optimistically update `isMuted`** the way YouTube, Twitch,
+  Facebook and TikTok's do (`platform/vimeo/headless/vimeo-player.directive.ts:184-190` vs
+  `youtube-player.directive.ts:167-175`). It self-corrects via the `volumechange` handler, but a consumer
+  reading `state().isMuted` right after `mute()` sees the stale value only on Vimeo.
+
+- **`STREAM_USER_CONSENT_PROVIDER_TOKEN` has no provide helper.**
+  `consent/headless/stream-consent.directive.ts:6` exports the raw token and an inject fn; the docs point
+  at `createUserConsentProvider` from core (`stream.md:70`), but nothing in this domain binds the two, so
+  the wiring is hand-rolled `{ provide: …, useValue: … }` at every call site.
+
+- **Slot re-registration does not refresh its position in the resolve order.**
+  `resolveBestSlot` relies on `Map` insertion order for "last-registered wins"
+  (`stream-manager.ts:36-55`), but the id-change effect re-registers via `slots.set(entry.element, …)`
+  (`stream-manager.ts:117`), which keeps a pre-existing key at its original position. A slot that re-keys
+  itself does not become the newest.
+
+- **`reassignPlayer` pulls viewport size into the id-change effect's dependency set.**
+  `isInViewport` reads `viewportSize()` (`stream-manager.ts:57-63`) and is reached synchronously from
+  `registerSlot` → `reassignPlayer` → `moveWithFlip`, which the effect at
+  `stream-player-slot.ts:96-111` calls. Every window resize therefore re-runs that effect (it early-returns
+  at `:100`, so harmless, but the dependency is unintended).
+
+- **Comment-policy: two `// no-op` bodies per method across three files.**
+  `platform/kick/headless/kick-player.directive.ts:90-104`,
+  `platform/soop/headless/soop-player.directive.ts:100-114`,
+  `platform/dailymotion/headless/dailymotion-player.directive.ts:90-108` each carry a section-style
+  explanatory comment (which is legitimate - it names a platform limitation) *plus* an `// no-op` line
+  inside each of five empty methods. The per-method lines restate the code and are the "always delete"
+  case in AGENTS.md.
+
+### Spec coverage
+
+**77 spec lines for ~6.9k source lines - effectively untested.** Only two spec files exist:
+
+- `consent/stream-consent.component.spec.ts` (49 lines) - renders `StreamConsentComponent` standalone and
+  asserts the lock icon, heading, description and accept-button text resolve from `provideStreamLabels`.
+  Sound, but it never clicks accept, so `StreamConsentAcceptDirective` → `StreamConsentDirective.grant()`
+  → `isGranted` and the `ConsentHandler` delegation branch
+  (`consent/headless/stream-consent.directive.ts:20-36`) are untested.
+- `loading/stream-player-loading.component.spec.ts` (28 lines) - asserts an `et-spinner` renders and
+  `position: absolute` applies. The second assertion is fragile-by-luck: the vite config's own comment
+  says jsdom "drops the component stylesheets whole (`@layer`, nesting, `color-mix`)", and this component's
+  sheet passes only because it is *not* wrapped in `@layer` (see the Medium finding) - fixing that
+  convention violation will break this assertion.
+
+Neither spec asserts wrong behaviour. Files with real logic and **zero** tests:
+
+| File | Untested logic |
+| --- | --- |
+| `stream-manager.ts` (197) | slot priority resolution, FLIP reassignment, `transferPlayer`, the `unregisterSlot` → destroy-or-reassign decision |
+| `pip-manager.ts` (218) | all three exit paths, `animatingOutIds`, `parkPlayerElement`, `getInitialRect` one-shot semantics, back-pulse queue |
+| `stream-player-slot.ts` (361) | consent gating (all four branches of `init()`), loading↔error↔ready transitions, id-change re-registration, destroy cleanup |
+| `pip/headless/internals/pip-window-position.ts` (486) | collapse/peek maths, sticky edges, resize/drag gesture pipelines, `startModeTransition` |
+| `pip/headless/internals/pip-window-size.ts` (77) | the `linkedSignal` clamp against viewport and aspect ratio |
+| `pip/headless/pip-chrome-state.ts` (210) | grid layout, featured fallback, `windowAspectRatio` locking, `close()` |
+| `pip/headless/pip-chrome-animations.ts` (139) | FLIP capture/replay bookkeeping, `pendingNewInSingleMode` |
+| `pip-chrome-manager.ts` (68) | create/destroy lifecycle, the `PIP_CHROME_REF_TOKEN` dev-mode throw |
+| all 8 platform directives (~1.2k) | resource params, ready/error state mapping, teardown; `twitch-player-params.directive.ts`'s URL→channel/video regex is pure and trivially testable |
+| `error/`, `pip/pip-slot-placeholder.component.ts`, `pip/pip-player.component.ts` | error-context retry wiring, placeholder visibility, pip-player adoption/animation |
+
+Test-infrastructure gap found while verifying: the jsdom `AnimationMock` in
+`libs/components/src/test-helpers.ts:91-133` dispatches a `finish` **event** but never invokes the
+`onfinish` **property**, and every animation in this domain uses the property
+(`pip/headless/internals/pip-animation.ts:72,133,212,261`, `pip-manager.ts:149`). Any spec that exercises
+an animated PiP path will hang mid-transition with the player stranded in the fixed wrapper. Wiring
+`onfinish`/`oncancel` into the mock's dispatch is a prerequisite for testing PiP at all.
+
+### Improvements
+
+#### Features
+
+1. **Ship the placement CSS the domain needs, and let the PiP window's initial corner be configured.**
+   Add `.et-stream-manager` (off-screen, `overflow: hidden`) to a styles-only component mounted by the
+   stream manager, and give `et-pip-window` a default corner + `z-index` in
+   `pip/pip-window.component.css`, driven by new `StreamPipWindowConfig` fields (`corner`,
+   `zIndex`) next to the existing `desiredSize` / `viewportPadding`
+   (`stream-config.ts:7-22`). Every peer (Material's CDK overlay, PrimeNG's dialog) ships its own stacking
+   context; today the stories carry it.
+2. **Expose the native Picture-in-Picture / fullscreen APIs alongside the custom window.**
+   `StreamPlayerCapabilities` (`stream.types.ts:1-9`) has no `canFullscreen` / `canNativePip`, and
+   `StreamPlayer` no `requestFullscreen()`. Users expect the OS-level PiP for video; the custom in-page
+   window is complementary, not a replacement.
+3. **A `volume` channel.** `StreamPlayer` has `mute`/`unmute` but no `setVolume(0..1)` / `volume` state
+   (`stream-player.ts:26-30`, `stream.types.ts:11-22`), even though YouTube, Twitch, Vimeo and Facebook
+   all support it. Every peer player component ships volume.
+4. **A playback-rate and quality channel** for the four SDK platforms, gated behind capabilities the same
+   way `canSeek` already is.
+5. **A `poster` / thumbnail capability beyond YouTube.** Only YouTube derives a thumbnail
+   (`platform/youtube/headless/youtube-player.directive.ts:55`); Vimeo and Dailymotion both have public
+   oEmbed thumbnail endpoints, and the PiP grid's preview tiles
+   (`pip/pip-player.component.ts:24-28`) render nothing for seven of eight platforms.
+6. **Let the platform script URLs be configured.** `YT_API_URL`, `TWITCH_EMBED_URL`, `VIMEO_SDK_URL`,
+   `FB_SDK_URL` are module constants; an app behind a CSP allowlist or a proxy (or one that needs a
+   locale other than `de_DE` - see the Medium finding) cannot redirect them.
+
+#### DX
+
+1. **Give `pipDeactivate` one exit path so the park bug cannot come back.** The High finding is a
+   three-branch method (`pip-manager.ts:128-186`) where two branches remember to set the
+   animating-out latch and one forgets. Setting the latch unconditionally at the top of `pipDeactivate`
+   and clearing it in a single `finally`-shaped helper removes the class of bug, not just the instance.
+2. **Pass the live `playerId` signal into the deferred player creation instead of a captured string.**
+   `createAndRegisterPlayer(currentPlayerId: StreamPlayerId)` (`stream-player-slot.ts:113`) should read
+   `options.playerId()` at call time, which fixes the consent-staleness High for both the
+   `consentComponent` and the bare-`ConsentHandler` path in one edit.
+3. **A stream test driver.** No `*.driver.ts` exists for this domain (the repo has drivers for forms,
+   dropzone, ARIA controls per the recent commit log). A driver that fakes the four SDKs, exposes
+   "register slot / activate pip / assert player parent", and wires `onfinish` on the animation mock would
+   make the whole spec-coverage table above tractable.
+4. **Fold the eight near-identical `*PlayerParamsDirective` files into one generated shape.** All eight are
+   the same 20-25 lines - `input`s, a `playerId` computed, and a `createBindings()` that mirrors the inputs
+   one-for-one (`platform/*/headless/*-params.directive.ts`). A helper that derives `createBindings()` from
+   an input map would delete ~120 lines and remove the "forgot to add the new input to createBindings"
+   failure mode entirely.
+5. **Make `loadingComponent` / `errorComponent` nullable** so the documented "optional" is expressible
+   (`stream-config.ts:60,68`).
+6. **Ship `provideStreamUserConsent(handler)`** next to `STREAM_USER_CONSENT_PROVIDER_TOKEN`
+   (`consent/headless/stream-consent.directive.ts:6`), matching the `provideX` shape every other knob in
+   the domain uses.
+7. **Fix the two error messages that cannot be acted on**: `ET1604`'s `hostDirectives` advice
+   (`pip-chrome-manager.ts:50`) and its doc row.
+
+#### Bundle size
+
+1. **The PiP slice is the natural `@defer` boundary and is already opt-in-by-barrel; make it opt-in by
+   *import graph* too.** `stream-config.ts:5` statically imports `DEFAULT_PIP_CHROME_CONFIG` and
+   `stream-player-slot.ts:24-25` statically calls `injectPipChromeManager()` / `injectPipManager()`, which
+   drags `pip-chrome-manager.ts` → `StreamPipChromeComponent` → `PipWindowComponent` →
+   `ResizeHandlesComponent` + `DragHandleDirective` + `pip-window-position.ts` (486 lines) +
+   `pip-animation.ts` into every app that renders a single YouTube slot and never touches PiP. Resolving
+   the chrome lazily (the config already stores a `Type`) would keep ~1.5k lines of drag/resize/animation
+   code out of the common path.
+2. **De-duplicate the `et-pip-player` rules** between `pip/pip-chrome.component.css:91-105` and
+   `pip/pip-player.component.css:2-17`.
+3. **The three overlay components' inline sheets are ~110 lines each of `@property` declarations plus one
+   card layout, and are 90% identical** (`consent/stream-consent.component.ts:39-152`,
+   `error/stream-player-error.component.ts:35-149`, `pip/pip-slot-placeholder.component.ts:35-119` - same
+   card, icon, heading, description, three renamed token families). One shared
+   `stream-overlay-card` styles-only component parameterised by a token prefix would cut ~200 lines of CSS
+   from every consumer that uses more than one of them.
+4. **`stream.imports.ts` builds ten `as const` tuples** (`:44-119`); per the repo's known
+   `components-import-floor` issue, tuple-destructured provider/import barrels are exactly the shape that
+   defeats tree-shaking. Worth measuring whether `STREAM_ALL_IMPORTS` (`:108`) keeps all eight platforms
+   alive for an app that imports only the YouTube barrel.
+
+#### UI/UX
+
+1. **The PiP window is not keyboard-reachable or keyboard-movable.** The title bar is a drag handle only
+   (`pip/headless/pip-title-bar.directive.ts`), the resize handles are pointer-only
+   (`ResizeHandlesComponent` with `pointerdown`), and the collapse overlay is
+   `(pointerdown)` (`pip/headless/pip-collapse-overlay.directive.ts:8`). A keyboard user can reach the
+   three title-bar buttons but can neither move, resize, nor un-collapse the window. Arrow-key nudging
+   while the title bar has focus, plus an "expand" action on the collapse overlay, would close the gap.
+2. **Nothing announces the PiP transition.** Entering PiP moves the player out of the page and
+   `PipSlotPlaceholderComponent` renders a visual card (`pip/pip-slot-placeholder.component.ts:19-31`)
+   with no live region and no focus move, so a screen-reader user loses the player silently. A
+   `role="status"` on the placeholder card and focus moved to its "Back to player" button would mirror
+   what the loading overlay already does (`loading/stream-player-loading.component.ts:13`).
+3. **Grid cells are `role="button"` but have no accessible name.**
+   `pip/headless/pip-cell.directive.ts:16-20` sets `role`/`tabindex` and the Enter/Space handlers, and the
+   cell's only content is an iframe - so each cell announces as an unnamed button. `STREAM_LABELS` has no
+   per-cell label; adding one (`pipCell: (index, total) => …`) would make grid mode usable.
+4. **`(keydown.space)` on the cell does not `preventDefault`**
+   (`pip/headless/pip-cell.directive.ts:20`), so activating a cell with Space also scrolls the page behind
+   the PiP window.
+5. **The chrome hides the window until a player reports ready, with no fallback.**
+   `pip/pip-chrome.component.css:2-12` applies `visibility: hidden` while no
+   `.et-pip-player--ready` cell exists, and `isReady` is only ever set by the adoption effect
+   (`pip/pip-player.component.ts:85-118`). If adoption's `queueMicrotask` bails (`!entryEl.isConnected`),
+   the window stays invisible forever with a live pip entry behind it. A timeout fallback or an explicit
+   loading state inside the window would be safer than a permanent `visibility: hidden`.
+6. **The 550 ms hold + 350 ms fly "new pip" animation is unskippable and unconfigurable.**
+   `animateNewPipInSingleMode` (`internals/pip-animation.ts:148-273`) hardcodes both, so activating PiP for
+   a second stream blocks the featured view for ~0.9 s. It does honour reduced motion (via
+   `motionDuration`), which is good; a config knob would let an app tune it.
+7. **`.et-pip-interacting iframe { pointer-events: none !important }`** (`pip-window.component.css:131-135`)
+   disables pointer events on **every** iframe in the document during any drag/resize, not just the ones
+   inside the PiP window. Scoping it to the window (or at least to `.et-stream-player-slot iframe`) would
+   avoid surprising a third-party embed elsewhere on the page.
+
+#### Testing
+
+Ranked for a first spec pass:
+
+1. **`stream-manager.ts` + `pip-manager.ts` as pure units.** Both are plain factories over a fake element
+   and need no rendering: slot priority (`resolveBestSlot`), the `unregisterSlot` destroy-or-reassign
+   decision, `transferPlayer`, and every `pipDeactivate` branch's final parent - which is precisely where
+   the two confirmed High bugs live. This is the highest value per line in the domain.
+2. **Fix the animation mock first** (`test-helpers.ts:91-133`, wire `onfinish`/`oncancel`), otherwise every
+   animated path is untestable - see the Spec coverage note.
+3. **`stream-player-slot.ts`'s four `init()` branches** (no consent / handler-only / component-only /
+   both), the loading→ready→error→retry overlay sequence, and the id-change effect. The scratch spec in
+   this review drove all of it in jsdom with only `test-helpers` + `provideStreamConfig`, so no new
+   infrastructure is needed.
+4. **`twitch-player-params.directive.ts`'s regex** (`:5-34`) - pure, five inputs (bare channel, channel
+   URL, `videos/<id>` URL, bare numeric id, `go.twitch.tv`), and currently the only source-parsing logic in
+   the domain with no coverage.
+5. **`pip-window-size.ts`'s `linkedSignal` clamp** (`:25-67`) - pure given a fake `params` + `titleBarH`,
+   and it encodes the trickiest arithmetic in the PiP window (aspect-ratio vs viewport-height clamping).
+6. **`pip-chrome-state.ts`'s `cells` computed** (`:93-128`) - grid col/row assignment, exit offsets and the
+   inert/role/tabindex matrix, all derivable from a fake `pips` signal.
+7. **A Storybook-driven pass** for the geometry that jsdom cannot express (collapse/peek, sticky edges,
+   the visibility-gating CSS), using the `verify-in-storybook` skill against the existing eight slot
+   stories.
+
+Clean: the eight platform directives all correctly tear down their SDK objects, event subscriptions and
+`interval` timers inside the resource's Observable teardown rather than leaking them
+(`youtube-player.directive.ts:137-141`, `twitch-player.directive.ts:149-154`,
+`vimeo-player.directive.ts:148-158`, `facebook-player.directive.ts:160-168`, and the three iframe players'
+`removeChild` teardowns); every one guards on `isPlatformBrowser(PLATFORM_ID)` in its resource params, so
+SSR does not touch `window`. `stream-config.ts`'s `createStreamConfig` correctly deep-merges the two nested
+config objects instead of letting a partial override wipe them (`:121-132`). The four shipped `.css` files
+are all `@layer components`-wrapped and resolve every colour through `--et-surface-*` /
+`--et-theme-color-*` with only static `var()` fallbacks - no hardcoded primary colours anywhere in the
+domain. All reactive state is signals (`signal`/`computed`/`linkedSignal`), asynchronous work is RxJS
+bridged with `toObservable`/`rxResource`, and there is no `BehaviorSubject` and no subscribe-and-assign;
+the two overlay pipelines in `stream-player-slot.ts` (`:201`, `:259`, `:310`) all end in
+`takeUntilDestroyed`. `matchesReducedMotion` is honoured by every animation via the shared
+`motionDuration` helper (`internals/pip-animation.ts:11`), including the deliberately-zeroed-not-skipped
+cases whose reasoning is documented. Error codes `ET1600`-`ET1608` are contiguous, all nine are thrown from
+source, and all nine are documented in `apps/docs/components/error-codes.md:200-212`. `PipCellDirective`'s
+cell registration uses `effect(onCleanup)` keyed on the player id, so a re-keyed cell unregisters its old
+entry (`pip/headless/pip-cell.directive.ts:32-38`). The consent gate carries `role="group"` +
+`aria-labelledby` off a per-instance id, the loading overlay `role="status"` with a labelled announcement,
+and the error overlay `role="alert"` - matching what `stream.md:116` claims.
+
+---
+
+## bracket
+
+Scope: `libs/components/src/lib/bracket/**` (all non-spec `.ts`/`.html`/`.css`, all specs, both story
+folders) plus `apps/docs/components/bracket.md` and `apps/docs/components/bracket-rounds-list.md`.
+
+Runtime verification used a scratch spec (`__scan-verify.spec.ts`, since deleted) run with
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts …`. The stacked
+double-elimination design calls (one chain header, dashed gutter connector, 5-embed docs cap) were
+treated as intended and are not reported.
+
+### High
+
+- **The swiss layout throws `ET3408` for any source whose matches carry participant ids, because the
+  group lookup uses the participant's record *including* the current match.**
+  `createNewMatchParticipantBase` seeds the counters with the current match's own result
+  (`core/match-participant.ts:57-59`, `winsTilNow = isWinner ? 1 : 0`) and then adds only the
+  *previous* matches (`:61-80`). `generateBracketRoundSwissGroupMaps` looks a match's group up by
+  `${winCount}-${lossCount}` (`linked/swiss.ts:150-156`), but the available groups for round *n* are
+  the records after *n* games played, i.e. **before** that round
+  (`getAvailableSwissGroupsForRound`, `linked/swiss.ts:69-110`). So a decided round-1 match's winner
+  is `1-0` while round 1 only offers the `0-0` group, and the lookup misses → `RuntimeError` thrown
+  out of `createSwissGrid` (`drawing/grid/swiss.ts:69-75`), out of `layout.listGrouping` in
+  `<et-bracket-rounds-list>` (`bracket-rounds-list.component.ts:168`) and out of
+  `bracketNaturalWidth`/`bracketFitsWidth` (`bracket-fits-width.ts:39`). Nothing renders at all.
+  **Runtime-verified**: a two-round swiss source (`a`/`b`, `c`/`d`, all `winner: 'home'`,
+  `status: 'completed'`) produced records `r0-m0 → home a 1-0, away b 0-1` and then
+  `THREW: ET3408: Group not found for match: r0-m0`, both through `generateBracketRoundSwissGroupMaps`
+  directly and through `swissBracketLayout().createGrid`. The shipped swiss story and
+  `bracket-layout.spec.ts:102-117` only pass because `ET_DUMMY_DATA_SWISS`'s matches have no
+  participant `id` (the integration maps them to `home: null, away: null` —
+  `integrations/ethlete.ts:139-140`), so every match falls into the "empty match" distribution branch
+  (`linked/swiss.ts:161-176`). Verified: the story source's first two matches are `{h: null, a: null}`
+  and grouping succeeds. Consequence: swiss is untested and unusable against a real feed.
+
+- **`swissColors` is interpolated raw into an SVG string that is then passed through
+  `bypassSecurityTrustHtml` — a public input is an attribute-injection/XSS sink.**
+  `groupBorderRect` writes `stroke="${color ?? 'currentColor'}"` (`drawing/draw-man-swiss.ts:146`) and
+  `lineGradientDef` writes `stop-color="${from}"` (`:156`); `path()` does the same for its `stroke`
+  (`drawing/path.ts:10`). The whole string reaches the DOM via
+  `svgContent = domSanitizer.bypassSecurityTrustHtml(drawManData())` (`bracket.component.ts:279`) and
+  `<svg [innerHTML]="svgContent()">` (`bracket.component.html:7`), so Angular's sanitizer never sees
+  it. **Runtime-verified**: `[swissColors]="{ neutral: '#fff\" onload=\"alert(1)' }"` rendered
+  `<rect … stroke="#fff" onload="alert(1)" fill="none" …>` and `getAttributeNames()` on the rect
+  returned `['x','y','width','height','rx','stroke','onload','fill','stroke-width','class']` — a real
+  event-handler attribute on a real element. Exploitable wherever the colors come from data (team /
+  group colors from an API are the obvious case); `BracketSwissColors`'s own JSDoc invites free-form
+  values ("Any CSS color value is allowed", `linked/swiss.ts:49-57`).
+
+- **A pinned journey breaks whenever the `source` changes: the bracket dims itself and highlights
+  nothing, or keeps stale marks.** `render()` short-circuits on an unchanged
+  `renderedKey`/`renderedPinned` (`journey-highlight.ts:143-152`) and `setFocused` short-circuits on
+  an unchanged participant id (`:206-220`), while the marks themselves are imperative classes on DOM
+  nodes that `@for (… ; track $index)` re-uses across a new grid (`bracket.component.html:9,17,40`).
+  Nothing re-renders the highlight when `journeyParticipants` changes — the only effect that could is
+  `effect(() => this.journeyController()?.setFocused(this.focusedParticipantId()))`
+  (`bracket.component.ts:340`). **Runtime-verified, two variants:**
+  1. pin `p1` on an 8-team source, then replace it with a 16-team one → active cells stay
+     `["se-r0-m0","se-r1-m0","se-r2-m0"]`, i.e. three of p1's four matches; the new final-round cell
+     is never lit.
+  2. pin `p9` while the 8-team source is showing (no such participant → nothing lit, correct), then
+     replace it with the 16-team source that does contain `p9` → host classes become
+     `et-bracket-host et-bracket-host--journey-hover et-bracket-host--journey-focused` with **zero**
+     active cells, i.e. the entire bracket sits at `opacity: 0.25`
+     (`bracket.component.css:69-74`) with nothing highlighted. Toggling the pin through `null` and
+     back fixes it (`["se-r0-m4","se-r1-m2","se-r2-m1","se-r3-m0"]`).
+  Variant 2 is the realistic one: `focusedParticipantId` restored from a query param before/while the
+  source loads, or any live-updating bracket.
+
+### Medium
+
+- **Every match reachable through `bracket.participants` carries the placeholder relation
+  `{ type: 'dummy' }` cast to `BracketMatchRelation`.** `createBracket` stores *copies* of each match
+  in the participant maps (`linked/bracket.ts:125-137`, `{ ...newMatch, me, opponent }`) and only
+  afterwards writes the resolved relations back onto the originals
+  (`:157-167`, `matchRelation.currentMatch.relation = matchRelation`). The copies keep the
+  `{ type: 'dummy' } as unknown as BracketMatchRelation` placeholder minted at `:107`. `BracketMatch`
+  is public API and `relation` is a discriminated union, so a consumer walking
+  `participant.matches` and switching on `relation.type` silently falls through every case.
+  Code-verified.
+
+- **The same placeholder leaks into `round.relation` / `match.relation` for any round the relation
+  builder cannot wire.** `generateRoundRelationsNew` only pushes a relation when one of four branches
+  matches (`linked/round-relations.ts:465-505`); a single-round source matches none, so the round and
+  its matches keep `{ type: 'dummy' }` (`generateMatchRelationsNew` explicitly skips them,
+  `linked/match-relations.ts:336-341`). Rendering survives (runtime-verified: a one-round
+  `final`-only source renders one cell with no error), but the public types claim a value that never
+  occurs, and downstream code that trusts the union is wrong. Either widen the type or expose the
+  placeholder as a named `'unresolved'` member.
+
+- **Swiss elimination flags fire one loss early and contradict the documented rule.**
+  `core/match-participant.ts:143-146` sets `isEliminationMatch = lossesTilNow >= 2` under the comment
+  "In swiss you are eliminated after 3 losses", but `lossesTilNow` already includes the current
+  match's loss (`:58`). A participant with one prior loss who loses again gets
+  `lossCount: 2, isEliminationMatch: true, isEliminated: true`, while `SWISS_ELIMINATE_LOSSES` is `3`
+  (`linked/swiss.ts:30`). Runtime-verified counts from the swiss fixture: `r1-m1 → home b 1-1,
+  away d 0-2`. `isEliminated`/`isEliminationMatch` are on the public `BracketMatchParticipant` type,
+  are never read anywhere in the domain (grepped: only their own assignments), and appear in neither
+  docs page — so the wrong value ships as undocumented public data.
+
+- **`createSwissGrid` throws `ET3409` for a theoretically-available group with no matches, but only
+  when round headers are enabled.** `drawing/grid/swiss.ts:117-121` derives the header's round from
+  `group.matches.first()?.round` and throws `SWISS_GROUP_EMPTY` when the group is empty, inside
+  `if (options.roundHeaderHeight > 0)`; with `hideRoundHeaders` the same source renders. So the same
+  data either renders or hard-fails depending on an unrelated cosmetic input. Code-verified only — I
+  could not reach `ET3409` at runtime because `ET3408` (above) fires first on every fixture that
+  would produce an empty group.
+
+- **The double-elimination column mapping only understands two upper/lower round ratios.**
+  `calculateColumnSplitFactor` returns `2` for exactly `1.5`, `1` for exactly `2`, and `1` for
+  everything else (`drawing/grid/double-elimination-utils.ts:14-28`), while
+  `calculateUpperRoundIndex` divides by the raw ratio (`:34-49`). A bracket whose
+  `upperRounds-1 : lowerRounds-1` ratio is anything else (e.g. a lower bracket with an extra
+  seeding round giving `1.33` or `2.5`) silently maps several sub-columns onto the same upper round or
+  skips one — no error, just a wrong alignment. Code-verified.
+
+- **The rounds list merges non-adjacent sections, contradicting the documented contract.**
+  `BracketListSection`'s JSDoc says "rounds whose **consecutive** sections share an `id` render under
+  one heading" (`bracket-layout.ts:29-33`), but `sections` keys a `Map` by id and appends to whatever
+  it finds (`bracket-rounds-list.component.ts:171-206`), so a source that interleaves upper- and
+  lower-bracket rounds is regrouped into one "Upper bracket" run and one "Lower bracket" run rather
+  than the order it was given. The current behaviour is arguably the nicer one — the doc comment is
+  what is wrong, and a layout author reading it will predict the wrong output.
+
+- **The docs' custom-card example reads a property that does not exist.** `bracket.md:324` shows
+  `{{ bracketMatch().home?.name }} vs {{ bracketMatch().away?.name }}`, but
+  `BracketMatchParticipant` is `BracketParticipantBase & …` = `{ id, shortId, result, isEliminated,
+  isEliminationMatch, tieCount, winCount, lossCount, side, matches }`
+  (`core/participant.ts:8-11`, `core/match-participant.ts:18-29`) — there is no `name`. The snippet
+  does not compile, and it is the first thing a consumer writing a card copies. (Names only exist on
+  the *normalized* match, which is what the shipped cards use.)
+
+- **The migration table promises an API that is not exported.** `bracket.md:620` tells cdk users that
+  `createNewBracket` becomes `createBracket`, but `bracket/index.ts:44-77` re-exports only *types*
+  from `./linked` plus `BRACKET_SWISS_GROUP_COLOR_TYPE` — `createBracket` is not in the public
+  surface, while the cdk's `new-bracket/index.ts:3` did `export * from './linked'`. Verified by
+  inspecting both index files. A consumer following that row cannot compile.
+
+- **The documented "opt in by setting the same attribute" affordance has no exported constant.**
+  `bracket.md:518-524` and `journey-highlight.ts:16-24` both tell a custom card to set
+  `data-participant-id`, and the journey CSS hooks (`et-bracket-journey-active`,
+  `…-endpoint`, `…-eliminated`, `et-bracket-host--journey-*`) are what a custom card must style — but
+  `journey-highlight.ts` is not re-exported from `bracket/index.ts` (verified), so every one of those
+  strings has to be hardcoded by the consumer with no compile-time link to the implementation.
+
+### Low
+
+- **`linked/logging.ts` is dead code.** 98 lines with `console.log`, `@internal`-tagged, exported from
+  nothing (`linked/index.ts` lists `bracket`, `match-relations`, `round-relations`, `swiss` only) and
+  imported nowhere in the repo (grepped: the only other hit is the cdk's own copy).
+- **`BracketElementBase.isHidden` is written and never read** (`drawing/grid/core/bracket-grid.ts:170`
+  sets it; no reader anywhere), and `area` (`m${match.shortId}` / `'.'`) is threaded through three
+  files and never rendered — leftovers of a `grid-template-areas` approach the absolute-positioning
+  template replaced.
+- **A guard that cannot fail.** `core/round.ts:205`: `if (!map.last()) throw … 'Last round not
+  found'` — reached only inside `if (splitRoundsRest.length)`, which implies at least one left half
+  was already `map.set`.
+- **Comment-policy violations throughout.** AGENTS.md allows four kinds of comment; a large share of
+  these files' comments are rationale or migration narration, e.g. `bracket.component.ts:52-53`
+  ("What the default cards read: …"), `:286-289`, `:294-297`, `:333-335`, `:339`;
+  `drawing/draw-man.ts:88-92` ("…is why a folded lower bracket used to lose the line…"), `:99-100`,
+  `:118-119` ("this used to carry both of the *current* match's participants"), `:170-172`;
+  `journey-highlight.ts:92-93`, `:226-227`, `:236-237`; `bracket.component.html:31`;
+  `bracket-default-final-match.component.ts:37-39`; plus multi-line rationale blocks in
+  `bracket.component.css:26-30,50-52,66-68` and `bracket-default-match.component.css:2-3,12-19`.
+- **Public types reference non-exported types.** `BracketDrawEdgesContext.settings` is
+  `BracketLayoutSettings` and `BracketLayout.components` is `BracketComponentOverrides`
+  (`bracket-layout.ts:22,98`), but neither `bracket-grid.ts` nor `bracket-components.ts` is re-exported
+  from `index.ts` — so the seam `bracket.md:150-156` advertises as public has members a consumer
+  cannot name (only infer).
+- **`<et-bracket-rounds-list>`'s `continueComponent` input does nothing** by design
+  (`bracket-rounds-list.component.ts:102-103`) and is absent from the docs table — a consumer who
+  binds it gets neither an effect nor a warning.
+- **Sibling hosts resolve the same inputs differently.** `<et-bracket>` treats every layout input as
+  an optional override via `optionalBooleanAttribute`/`optionalNumberAttribute`
+  (`bracket.component.ts:68-147`), whereas `<et-bracket-rounds-list>` reads the config eagerly into the
+  input default with plain `booleanAttribute`/`numberAttribute`
+  (`bracket-rounds-list.component.ts:94-114`). Same visible behaviour today, two patterns to keep in
+  sync.
+- **`optionalNumberAttribute('')` yields `NaN`, not `undefined`** (`bracket-input-transforms.ts:19-20`),
+  so a bare `columnWidth` attribute poisons every derived dimension instead of falling through to the
+  density preset.
+- **`curvePath` never clamps its straight run.** `straightLength = (totalInline - startCurve -
+  endCurve) / 2` (`drawing/curve.ts:30`) goes negative when the curve amounts exceed the column gap,
+  producing a self-crossing path rather than a clamped curve.
+- **`factorialCache` is an unbounded module-level `Map`** (`linked/swiss.ts:67`) — harmless in size,
+  but it is module state shared across app instances, which the scan protocol flags by convention.
+- **Docs nit:** `bracket-rounds-list.md:73` says "the four component slots also come from
+  `provideBracketConfig`" while the table above it lists three (the fourth is the no-op
+  `continueComponent`).
+
+### Spec coverage
+
+Well covered:
+
+- `bracket.component.spec.ts` — participant focus/pin, Escape, click-past-cells, endpoint +
+  eliminated marks, `disableJourneyHighlight`, final card `size="auto"`.
+- `bracket-rounds-list.component.spec.ts` — sections, final-card rule (incl. bracket reset),
+  `selectedRoundId`, custom `matchComponent`, label localization, and all of
+  `bracketNaturalWidth`/`bracketFitsWidth` (density, override precedence, ET3413).
+- `bracket-layout.spec.ts` — `resolveBracketLayout` precedence and ET3413, `layouts` input replacing
+  the config, swiss styles-only component mounting.
+- `bracket-default-cards.spec.ts` — all four default cards incl. ET3412, heading level, labels.
+- `core/round.spec.ts`, `linked/round-relations.spec.ts`, `drawing/draw-man.spec.ts`,
+  `drawing/grid/double-elimination-stacked.spec.ts`, `drawing/grid/core/bracket-grid.spec.ts`,
+  `journey-highlight.spec.ts` — the fold, relations under a fold, mirrored/LTR connector parity,
+  the stacked geometry invariants, section padding, elimination endpoints.
+
+Real logic with **zero** tests:
+
+- `linked/swiss.ts` (`getAvailableSwissGroupsForRound`, `generateBracketRoundSwissGroupMaps`,
+  `getSwissGroupColorType`) — the High #1 bug lives here.
+- `drawing/grid/swiss.ts` (`createSwissGrid`: stretch/filler maths, group box padding) and
+  `drawing/draw-man-swiss.ts` (group rects, gradients, group-to-group edges) — the High #2 sink lives
+  here.
+- `core/match-participant.ts` — the win/loss/tie counting and all three elimination rules.
+- `integrations/ethlete.ts` — `generateRoundTypeFromEthleteRoundType`,
+  `generateTournamentModeFormEthleteRounds`, `generateBracketDataForEthlete` (duplicate detection,
+  the `status === 'published' → 'completed'` mapping).
+- `linked/match-relations.ts` — every `create*Relation` branch and the `previousUpper ≠ previousLower`
+  split that turns a one-to-x into a two-to-x.
+- `drawing/grid/double-elimination.ts` + `double-elimination-utils.ts` — the non-stacked builder
+  (front-truncation padding, third-place spanning, split factors) is exercised only incidentally.
+- `bracket-input-transforms.ts`, `bracket-density.ts` presets, `bracket-components.ts`
+  (`resolveBracketComponents` precedence chain, `usesBracketFinalCard`).
+
+No spec asserts a wrong behaviour. Two specs pass only because their fixture dodges a bug:
+`bracket-layout.spec.ts:102-117` and the `Swiss` stories rely on `ET_DUMMY_DATA_SWISS` having no
+participant ids (see High #1) — they would fail on any realistic swiss source.
+
+### Improvements
+
+**Features** (ranked)
+
+- **Ship a swiss source generator and make swiss grouping data-driven.** `stories/generate-bracket.ts:9-17`
+  says swiss "is intentionally not generated: its grouping requires cross-round win/loss record
+  consistency" — that comment is the bug report. Deriving each group from the participants' *pre-round*
+  record (and creating groups from the records actually present rather than from a combinatorial table)
+  removes both the throw and the need for a hand-built fixture.
+- **A `<et-bracket-participants>` legend.** The docs' own recommended pin affordance is "a participants
+  legend beside the bracket" (`bracket.md:532-542`) and the story implements one
+  (`stories/bracket-storybook.component.ts` `withParticipantList`). Every consumer will rebuild it;
+  Material/PrimeNG-style completeness argues for shipping it, since it is also the keyboard/touch path
+  for the whole journey feature.
+- **Zoom/pan over a full-size grid.** Named as backlogged (`bracket-rounds-list.md:165-166`); with the
+  grid already absolutely positioned in a fixed-size `<section>`, a transform-based pan/zoom wrapper is
+  cheap and is what every peer bracket library (Challonge, Toornament embeds) offers on desktop.
+- **Round-level and match-level slots for state.** There is no way to mark a live match, a bye, or a
+  walkover without replacing the whole card; a `data-*` hook on the `li` (like `data-match-id`) for
+  `status`/`winner` would let CSS do it.
+
+**DX** (ranked)
+
+- **Export the journey contract.** `BRACKET_PARTICIPANT_ATTRIBUTE`, `BRACKET_MATCH_ATTRIBUTE` and the
+  four journey class constants exist in `journey-highlight.ts` but are not public; exporting them turns
+  the documented "opt in by setting the same attribute" into a typed contract.
+- **Add `bracketRoundSwissGroup` to the public card types.** `BracketMatchComponent` /
+  `BracketRoundHeaderComponent` (`drawing/grid/core/types.ts:18-34`) declare two of the three inputs
+  both hosts actually pass, so the docs are the only place the contract is stated. (Verified that
+  omitting the input does not throw — `NgComponentOutlet` ignores it — so this is purely a typing gap.)
+- **A test driver for the bracket.** Every bracket spec re-declares the same 20-line `normalizer`, the
+  same `LAYOUTS` array and its own querying helpers (`bracket.component.spec.ts:14-55`,
+  `bracket-layout.spec.ts:24-53`, `bracket-rounds-list.component.spec.ts:17-39`). A
+  `bracketTestDriver({ source, layouts })` exposing `activeMatchIds()`, `cellFor(matchId)`,
+  `pin(id)`, `sections()` would delete most of that and make the swiss path cheap to cover.
+- **Name the swiss failure better.** `ET3408: Group not found for match: <id>` says nothing about what
+  the engine expected; including the computed record and the round's available groups
+  (`linked/swiss.ts:155-156`) would have made High #1 a five-minute diagnosis.
+- **`bracketNaturalWidth` requires the same config object twice.** The docs already push consumers to
+  share one `BracketConfig` between the provider and the helper
+  (`bracket-rounds-list.md:146-151`); an `injectBracketNaturalWidth()`-style helper that reads the
+  ambient config would remove the drift class of bug entirely.
+
+**Bundle size** (ranked)
+
+- **`drawing/grid/swiss.ts` + `drawing/draw-man-swiss.ts` + `linked/swiss.ts` (~530 LOC) are already
+  behind `swissBracketLayout()`, but `linked/swiss.ts`'s *types* are re-exported eagerly from
+  `index.ts`** (`BRACKET_SWISS_GROUP_COLOR_TYPE` is a runtime const). Check that the const is not what
+  keeps the module alive for non-swiss apps; if it is, move it next to the color-type helper the layout
+  owns.
+- **`bracket.component.css` (75 lines) is ~45% journey-highlight rules.** With
+  `disableJourneyHighlight` a documented option, the `--journey-*` block is a natural styles-only
+  component mounted from the same effect that installs the listeners
+  (`bracket.component.ts:314-337`) — the AGENTS.md "opt-in feature" pattern, and it also drops the
+  `!important` at `bracket.component.css:47` by removing the competing rule from the base sheet.
+- **Two implementations of "is this the final round".** `usesBracketFinalCard`
+  (`bracket-components.ts:69-79`) and `isFinalMatch` inside
+  `createRoundBracketSubColumnRelativeToFirstRound` (`prebuild/bracket-sub-column-relative-to-first-round.ts:79-81`)
+  plus `isFinalMatchRound` (`double-elimination-stacked.ts:69-75`) encode the same rule three times.
+- **`stories/dummy-data/ET_DUMMY_DATA_SWISS.ts` is 4554 lines** and is imported by a *spec*
+  (`bracket-layout.spec.ts:21`) as well as two story files. A generated swiss source (see Features)
+  would delete the file.
+
+**UI/UX** (ranked)
+
+- **The journey dim uses `opacity` on cards, which fails contrast for the un-dimmed text too.**
+  `bracket.component.css:40-73` drops matched-out cells to `0.5`/`0.25`; at `0.25` a match card's
+  text is unreadable rather than merely de-emphasised, and there is no
+  `@media (prefers-reduced-transparency)` or high-contrast escape.
+- **Hover highlight has no pointer-type guard.** The listeners are `mouseover`/`mouseleave` on the host
+  (`journey-highlight.ts:249-255`); on a touch device a tap synthesises `mouseover` and leaves the
+  bracket dimmed with no way to clear it except tapping outside a cell. A
+  `(pointer: fine)`/`PointerEvent.pointerType` check would match the docs' claim that "hover is nothing
+  on a touch screen".
+- **Nothing in the grid is focusable, so the pin cannot be reached from the keyboard without a
+  consumer-built legend.** Documented as deliberate (`bracket.md:564-571`), but a single
+  `tabindex="0"` roving cell per round (or the participants legend above) would close the gap the docs
+  currently delegate.
+- **No loading/empty state.** `source` is `input.required` and an empty source throws `ET3401`
+  (`drawing/grid/single-elimination.ts:30-32`); a bracket page that fetches its data has to guard with
+  its own `@if`, and there is no skeleton to show meanwhile.
+- **The continue column's connector reuses `continueLineDashArray` for the stacked layout's
+  losers-champion gutter line** (`drawing/draw-man.ts:176-186`) — intentional per the docs, but it
+  means the two cannot be styled apart.
+
+**Testing** (ranked, what a spec pass should do first)
+
+1. **Swiss end to end**: a hand-written source with decided *and* pending rounds through
+   `generateBracketRoundSwissGroupMaps` → `createSwissGrid` → `drawSwissMan`, asserting group ids,
+   `matches.size` per group, and the rendered `rect`/`path` count. This alone would have caught High #1
+   and the `ET3409` header asymmetry.
+2. **Escaping**: assert that a `swissColors` value containing `"` produces no extra attributes on the
+   emitted `rect`/`path` (the exact assertion that failed above).
+3. **Journey highlight across data changes**: pin, replace the source (same shape, larger shape, and a
+   source that newly contains the pinned participant), assert the marked set matches the new data — the
+   three variants of High #3.
+4. **`core/match-participant.ts` counting table**: one spec per mode asserting
+   `winCount`/`lossCount`/`tieCount`/`isEliminated` for a participant across three rounds, which pins
+   down whether the current match counts.
+5. **`integrations/ethlete.ts`**: duplicate round/match detection, round-type derivation per mode, and
+   the `status === 'published' → 'completed'` mapping (which currently makes an unplayed published
+   match count as a tie via `core/match-participant.ts:55`).
+6. **Non-stacked double elimination**: front-truncated upper bracket, third-place spanning both finals
+   columns, and a ratio outside {1.5, 2} — the Medium #5 mis-alignment has no guard today.
+
+---
+
+## scheduler
+
+Scope: `libs/components/src/lib/scheduler` (all 55 source files, 10 spec files, `stories/`), plus
+`apps/docs/components/scheduler.md`, the scheduler rows of `apps/docs/components/error-codes.md`
+and the label table in `apps/docs/components/localization.md`.
+
+Runtime verification used a scratch spec (`__scan-verify.spec.ts`, since deleted) run with
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts …`. Observed output
+is quoted per finding. Working tree left unchanged.
+
+### High
+
+- **An immutable `appointments` update while the edit surface is open opens a second, stacked edit
+  surface.** `scheduler.component.ts:209-217` runs an `effect` on `headless.selectedAppointment()`
+  and calls `openEditSurface()` for every non-null value. `selectedAppointment` is
+  `this.appointments().find(…)` (`headless/scheduler.directive.ts:175-177`), so it returns a *new
+  object identity* whenever the consumer replaces the array — the normal immutable update. The
+  effect has no "already open for this id" guard, so it re-opens. Failure scenario: user clicks an
+  appointment, the surface opens; a poll/refetch, a websocket push, or an
+  `appointmentReschedule`/`appointmentSave` applied to a *different* appointment replaces the array;
+  a second overlay opens on top of the first — and because `takeSurfaceAnchor()`
+  (`scheduler.component.ts:313-319`) has already cleared `surfaceAnchor`, the duplicate opens
+  centered rather than anchored. The bundled `stories/scheduler-infinite-agenda-storybook.component.ts:65`
+  regenerates the whole array on every page load, so "open an appointment, then scroll the sentinel
+  into view" reproduces it in Storybook. **Runtime-verified**: after `selectedId.set('a')` then
+  `appointments.set([appointment('a'), appointment('b')])` (same ids, new objects), the stubbed
+  opener logged `opens after immutable appointments update: 2`.
+
+- **The same array update silently throws away whatever the user has typed into the edit surface.**
+  `headless/scheduler-edit-surface.directive.ts:42-54`: `currentAppointment` is a `computed` over
+  `appointments()`, and `draft` is `linkedSignal(() => this.currentAppointment())`. The surface's
+  `appointments` input is bound reactively (`scheduler.component.ts:321-326`,
+  `inputBinding('appointments', () => this.headless.appointments())`), so any replacement of the
+  consumer's array — again, the normal immutable update, and the same refetch/push/reschedule paths
+  as above — recomputes `currentAppointment()` to a new identity and resets `draft` from it. Every
+  unsaved edit in every field is lost mid-typing, with no indication. The docs only promise this on
+  *navigation* ("Navigating discards any unsaved edits", `apps/docs/components/scheduler.md:336`),
+  not on a background data refresh. **Runtime-verified**: draft title set to `'typed by the user'`,
+  then `appointments.set([…new objects…])` → logged `draft title after appointments update: a`.
+
+- **Both grid views apply `row` / `rowgroup` / `columnheader` / `gridcell` roles with no
+  `grid`/`table` owner, and the time grid's `gridcell`s have no `row` ancestor at all.**
+  `scheduler-month-view.component.html:1,9,14,16` and
+  `scheduler-time-grid-view.component.html:1,6,15,22,88` set the roles; nothing anywhere sets
+  `role="grid"`, `role="table"` or `role="treegrid"` — `scheduler.component.html` and the view hosts
+  carry classes only. Per ARIA, `row` is only valid owned by a table/grid/treegrid/rowgroup and
+  `gridcell` only inside a `row`, so the whole structure is dropped or mis-announced: the month
+  weekday strip is an orphan `row`, the time grid's seven day columns are orphan `gridcell`s, and no
+  view exposes a table structure. The docs assert the opposite —
+  `apps/docs/components/scheduler.md:392`: "Weekday/day headers are `columnheader`s …; day cells are
+  `gridcell`s in both grid views." **Runtime-verified**: month view →
+  `{"grid":0,"table":0,"rowgroup":1,"row":6,"gridcell":35}`; week view →
+  `time grid gridcells: 7 without a row ancestor: 7`.
+
+### Medium
+
+- **Agenda badges are the only ones without `[attr.title]`, so a truncated title has no tooltip and
+  a badge with the title adornment off has no accessible name.** `scheduler-month-view.component.html:36`
+  and `scheduler-time-grid-view.component.html:33,126` all bind `[attr.title]="…appointment.title"`;
+  `scheduler-agenda-view.component.html:19-27` does not. The agenda badge truncates
+  (`.et-scheduler-appointment-title` sets `text-overflow: ellipsis`,
+  `scheduler-appointment-styles.component.css:51-57`), and with
+  `[etSchedulerBadgeTitle]="{ enabled: false }"` the `title` attribute is the only remaining
+  last-resort accessible name the other two views have. Code-verified only.
+
+- **The month view's "+N more" menu ignores every registered badge adornment and has no untitled
+  fallback, so a blank appointment renders an empty, unnamed menu item.**
+  `scheduler-month-view.component.html:64-73` renders `{{ node.appointment.title }}` directly instead
+  of the `badgeAdornments()` loop used everywhere else, so a consumer's custom adornment (and the
+  built-in time-range/location/chain-count pieces) never appear there — and unlike the edit
+  surface's children list (`scheduler-edit-surface.component.html:71`, `title || untitledLabel()`)
+  there is no fallback. A just-created appointment (title `''`, e.g. from `addAppointment()` before a
+  save) that lands in an overflowing cell becomes an `et-menu-item` with no text and no accessible
+  name. Code-verified only.
+
+- **Selection is exposed only as a `data-selected` attribute, never to assistive tech.** All three
+  views set `[attr.data-selected]` (`scheduler-month-view.component.html:33`,
+  `scheduler-time-grid-view.component.html:30,122`, `scheduler-agenda-view.component.html:21`) and
+  the stylesheets restyle on it, but no `aria-selected`, `aria-pressed` or `aria-current` is set
+  anywhere in the domain. A screen-reader user cannot tell which appointment is selected, in a
+  component whose whole interaction model is "select an appointment". Code-verified only.
+
+- **The toolbar always renders its narrow (FAB) layout on the first pass, including in SSR output.**
+  `scheduler.component.ts:114-121`: `isNarrow = (this.dimensions().client?.width ?? Infinity) < 480`.
+  `signalElementDimensions` (`libs/core/src/lib/signals/element-dimensions.ts:84-96`) seeds its
+  signal from `createElementDimensions(el)` at construction, which reads `el.clientWidth` — `0` for a
+  host element that has not been laid out — so `client` is `{ width: 0 }`, not `null`, and the
+  `?? Infinity` fallback never applies. `isNarrow()` is therefore `true` on the first render, and on
+  the server (where no `ResizeObserver` ever corrects it, same file lines 100-103) the serialized
+  markup is always the FAB stack plus the icon-only Today button, which then swaps on hydration. The
+  CSS container query it is supposed to move in lockstep with
+  (`scheduler.component.css:33,46`) has no such initial state. Code-verified only (jsdom reports
+  `clientWidth` `0` for every element, so a spec cannot distinguish the two states).
+
+- **`hasDragged` is a latch that can stick, swallowing every subsequent click on an appointment.**
+  `scheduler-month-view.component.ts:118` and `scheduler-time-grid-view.component.ts:173` reset the
+  flag only *after* the `canDragAppointments()` / `event.button` / `dateAt()` guards
+  (`scheduler-month-view.component.ts:111-116`, `scheduler-time-grid-view.component.ts:168`). Once a
+  drag has set it to `true`, flipping `[etSchedulerAppointmentDrag]="{ enabled: false }"` at runtime
+  means `startAppointmentDrag` returns before the reset forever, so `select()`
+  (`scheduler-month-view.component.ts:70-77`) returns early on every later click and the appointment
+  can never be opened again. Code-verified only.
+
+- **`ET4504` is missing from the error-codes page, and the scheduler table's blanket "dev mode only,
+  after the first render" note is wrong for two of its codes.**
+  `scheduler-errors.ts:12` defines `APPOINTMENT_DRAG_OUTSIDE_SCHEDULER: 4504`;
+  `apps/docs/components/error-codes.md:426-435` documents only 4500-4503. Worse, that section's
+  preamble ("Checked in dev mode only, after the first render") holds for
+  `SchedulerMonthDirective`/`SchedulerAgendaDirective`/`SchedulerTimeGridDirective` (all
+  `if (ngDevMode) afterNextRender(…)`) but not for `SchedulerSwipeNavigationDirective`
+  (`scheduler-swipe-navigation.directive.ts:51-57`) or `SchedulerAppointmentDragDirective`
+  (`scheduler-appointment-drag.directive.ts:38-44`), which throw unconditionally from the
+  constructor — in production builds too. A consumer reading the docs would not expect a production
+  crash.
+
+- **`SCHEDULER_LABELS` / `provideSchedulerLabels` are missing from the localization page's label-set
+  table.** `scheduler-labels.ts:92-99` defines them with 26 strings; the table at
+  `apps/docs/components/localization.md:107-129` lists every other domain's pair and has no
+  scheduler row. `provideSchedulerLabels` is mentioned once in passing in the scheduler page
+  (`scheduler.md:319`, only for `colorFieldNone`), so most of the label surface is undiscoverable
+  and undocumented.
+
+- **Time-of-day is hardcoded 24-hour everywhere, so the `locale` input has no effect on it.**
+  `scheduler-time-grid-view.component.ts:108` (`'HH:mm'` for the hour gutter),
+  `scheduler-badge-time-range.component.ts:34` (`'HH:mm'–'HH:mm'`), and
+  `scheduler-edit-surface.component.ts:141` (children list) all pass a fixed `'HH:mm'` pattern with
+  the locale only as an option — which changes nothing for that pattern. An en-US app that wires
+  `locale`/`provideDateLocale(enUS)` correctly still gets `14:30`, never `2:30 PM`, while the header
+  label and weekday names do follow the locale. Code-verified only.
+
+### Low
+
+- **A misplaced JSDoc block leaves `buildSchedulerAgenda` undocumented and puts its doc on the wrong
+  symbol.** `headless/internals/scheduler-agenda.ts:21-33`: two consecutive doc blocks sit above
+  `SchedulerAgendaGuide` — the first ("Groups a sub-appointment tree into an agenda list…") describes
+  `buildSchedulerAgenda`, which is 30 lines further down at line 62 with no doc at all. A type
+  declaration was clearly inserted between a function and its comment.
+
+- **Comment-policy violations.** The same explanation is duplicated at two call sites — "only a
+  `pointerdown` sets this, and one always precedes the click it belongs to"
+  (`scheduler-month-view.component.ts:71-72` and `scheduler-time-grid-view.component.ts:149-150`),
+  which AGENTS.md calls out explicitly ("The same explanation at every call site"). Rationale-for-a-
+  mechanical-choice blocks that the docs page already covers: `scheduler.component.ts:81-83`
+  (why the badge adornments are bundled), `:158-160` and `:169-170` (what the two registration lists
+  are), `scheduler-edit-surface.component.ts:81-84` and `:115-116`. Restating-the-code JSDoc:
+  `scheduler-badge-color-dot.component.ts:17` ("unused here, present to satisfy
+  `SchedulerBadgeAdornment`").
+
+- **Public JSDoc and the docs page both point at `buildAppointmentTree`, which is not exported.**
+  `headless/scheduler-features.ts:65`, `:186`, `headless/scheduler.directive.ts:151` and
+  `apps/docs/components/scheduler.md` all say "see `buildAppointmentTree`". It lives in
+  `headless/internals/scheduler-tree.ts:16` and only `countDescendants` and the
+  `AppointmentTreeNode` type are re-exported (`headless/scheduler.directive.ts:27-28`), so a
+  consumer following the reference cannot import it. Same for `flattenAppointmentTree`,
+  `findAppointmentNode` and `collectDescendantIds`.
+
+- **Every badge and edit-field component is marked `@internal` yet exported from the public
+  barrel.** `index.ts:9-29` re-exports `scheduler-badge-*.component` and
+  `scheduler-edit-*.component`, each of whose `@Component` JSDoc ends in `@internal`
+  (e.g. `scheduler-badge-title.component.ts:7`, `scheduler-edit-title.component.ts:10`). They are
+  stamped via `ngComponentOutlet` and never need to be imported by a consumer.
+
+- **`--et-scheduler-time-grid-body-max-height` is missing from the docs' design-token table.**
+  Declared as an `@property` in `scheduler-time-grid-view.component.css:20-24` and named in prose at
+  `apps/docs/components/scheduler.md:126`, but absent from the table at `:401-407` that lists the
+  other four.
+
+- **`provideColorPalette([])` renders the colour field as a swatch picker containing only "No
+  color".** `scheduler-edit-color.component.ts:20` tests `@if (palette; as entries)`, and an empty
+  array is truthy, so the text-field fallback is skipped for a palette with nothing in it.
+
+- **The edit surface's breadcrumb and children buttons get no `:focus-visible` treatment.**
+  `scheduler-edit-surface.component.css:37-41` and `:84-91` style colour and underline only, unlike
+  every sibling bare button in the domain (`scheduler-month-view.component.css:136-140`,
+  `scheduler-appointment-styles.component.css:24-27`) — keyboard users fall back to the UA ring.
+
+- **`computeInitialScrollHour` spreads every block offset into `Math.min`.**
+  `headless/internals/scheduler-time-grid.ts:238`: `Math.min(...offsets)` over one entry per block
+  per visible day. Fine at realistic sizes, a stack overflow at pathological ones; a `reduce` costs
+  nothing.
+
+- **Swipe navigation reads `enabled` only at `touchstart`.**
+  `scheduler-swipe-navigation.directive.ts:76` — a gesture already in flight when the config flips to
+  `{ enabled: false }` still steps the period on release.
+
+- **`draftBlock` will render a month-drawn all-day range as a timed block.**
+  `headless/scheduler-time-grid.directive.ts:66-85` ignores `draft.allDay`, so a range drawn on the
+  month view (which always sets `allDay: true`, `scheduler-month-view.component.ts:166`) that is
+  still committed when the view switches to week/day draws as a full-height timed preview.
+
+- **`SchedulerComponent.setView(value: unknown)` is public API that takes `unknown` and casts.**
+  `scheduler.component.ts:231-233`. Documented as safe for the template's own bindings, but it is a
+  public method a consumer can call with anything.
+
+### Spec coverage
+
+**Well covered.** The pure layout internals are the strong point: `scheduler-tree.spec.ts` (11
+cases, incl. dangling `parentId` and depth-first flattening), `scheduler-month.spec.ts` (6),
+`scheduler-agenda.spec.ts` (12, incl. every connector-guide shape), `scheduler-time-grid.spec.ts`
+(16, incl. column packing, midnight clipping, all-day row stacking, and all four
+`computeInitialScrollHour` branches). `scheduler.directive.spec.ts` (32 cases) covers every
+`visibleRange` branch, `agendaDays` clamping/stepping, and the full draft-range and
+appointment-drag state machines. `scheduler-edit-surface.directive.spec.ts` covers the draft,
+ancestors, children, navigation, add-sub-appointment, save and descendant-delete.
+`scheduler-swipe-navigation.directive.spec.ts` covers direction, thresholds, the vertical-drag and
+draft-range bail-outs, and `enabled: false`.
+
+**Real logic with zero tests.**
+- `scheduler.component.ts` — no spec at all. Nothing covers the two `effect`s that open the surfaces
+  (both High findings above live here), `handleEditSurfaceResult`, `takeSurfaceAnchor`,
+  `addAppointment`, `headerLabel`'s three date-range branches, `isNarrow`, or the
+  register/filter/sort of badge adornments and toolbar actions.
+- `scheduler-month-view.component.ts` — no spec. `dateAt` hit-testing, `coverDraftRange`'s geometry,
+  `startAppointmentDrag`, `startDraftRange`'s click-vs-drag `settle` branches and the `hasDragged`
+  latch are all untested.
+- `scheduler-time-grid-view.component.ts` (388 lines, the largest file in the domain) — no spec.
+  `movedRange`, `resizedRange`, `allDayRange`'s three modes, `snapToSlot`, `columnAt`, `minutesAt`
+  and `draftHourAt` are all pure or near-pure functions that would test cheaply, and none is covered.
+- `headless/internals/scheduler-drag-gesture.ts` — no spec. The touch arming/disarming logic (the
+  `TOUCH_ARM_DELAY` timer, the non-passive `touchmove` block, the `!armed` move bail-out) is the
+  trickiest code in the domain.
+- `scheduler-edit-surface.component.ts` — no spec. `canSave` gating, the two `outputToObservable`
+  bridges that close the overlay, `childEntries`, and the two `defineOverlay` strategy stacks.
+- Every feature directive except the colour one — 15 directives (5 badge, 5 edit-field, 3 action,
+  drag, swipe) with no spec; nothing asserts an `order`, an `enabled` toggle, the `'' → {}` config
+  transform (`headless/scheduler-features.ts:105-106`), or the two `valid` computeds that gate save.
+- `scheduler-labels.ts` — no spec for the label override path.
+
+**No existing spec asserts a wrong behavior.** `scheduler-edit-surface.directive.spec.ts:72-83`
+comes closest — it asserts the draft resets on `navigateTo`, which is intended — but the identical
+reset on an `appointments` identity change (High #2) is simply not covered either way.
+
+### Improvements
+
+**Features** (ranked)
+
+- **Let an app choose which views the switch offers, and in what order.**
+  `scheduler.component.html:89-92` hardcodes all four `et-segmented-button`s, so a month-only or
+  week+day-only scheduler has to drop to a bare `[etScheduler]` composition and rebuild the whole
+  toolbar. Material's calendar, FullCalendar and PrimeNG all take a view list; an
+  `availableViews = input<SchedulerView[]>()` on the headless directive would be a few lines and
+  would also fix the case where `view` is set to a value the app never wants reachable.
+- **Business hours / a bounded hour range on the time grid.** `HOURS`
+  (`scheduler-time-grid-view.component.ts:30`) is a fixed 0-23 and every percentage in
+  `buildSchedulerTimeGrid` is against a full day. Every peer library lets a grid start at 07:00 and
+  end at 20:00, and dim or hide out-of-hours slots — the single most requested calendar feature and
+  the one `computeInitialScrollHour`'s "business-hours default" of `8` is a workaround for.
+- **Recurrence, even just as a display concern.** `Appointment` has no rule field, so an app must
+  expand a series into individual appointments itself before passing the list, and there is nowhere
+  to hang "edit this occurrence vs the series" on the edit surface. An `Appointment.seriesId` plus a
+  `SchedulerEditField`-level hook would let the SDK stay out of RRULE parsing while still supporting
+  the flow.
+- **A "now" indicator line on the time grid.** The grid already computes the current hour for its
+  initial scroll (`headless/internals/scheduler-time-grid.ts:227-238`) but never draws the current
+  time; it is the one piece of chrome every calendar has and the day/week views look unfinished
+  without it.
+- **A drop-target/validity hook on the drag.** `beginAppointmentDrag`/`updateAppointmentDrag`
+  (`headless/scheduler.directive.ts:263-273`) accept any range, so an app cannot mark a slot
+  unavailable, snap to a resource, or veto a move — it can only revert after the fact by not
+  applying `appointmentReschedule`, which the docs themselves call out as visibly janky
+  (`scheduler.md:240`).
+- **Resource/lane columns.** `buildSchedulerTimeGrid` packs by overlap only; a "one column per room /
+  per person" mode is the standard second axis for a scheduler and would reuse `packColumns`
+  wholesale with a grouping key.
+
+**DX** (ranked)
+
+- **Give the two "opens on a signal" effects an explicit imperative API.** Making the surface open as
+  a side effect of `selectedAppointmentId` (`scheduler.component.ts:209-217`) is what produces both
+  High findings, and it also means a consumer cannot select an appointment *without* opening a
+  dialog (highlighting one from a sidebar, say). A public
+  `openEditSurface(id)` / `closeEditSurface()` pair plus an id-keyed guard in the effect would fix
+  the duplicate-open, the draft reset, and this missing capability at once.
+- **No test driver for the domain.** Every other recently-worked domain in this lib has one
+  (`libs/components/src/lib/testing/`), and the scheduler's specs each hand-roll a host component
+  and a `debugElement.children[0].injector.get(…)` lookup. A `SchedulerDriver` exposing
+  `badges()`, `cellFor(date)`, `clickAppointment(id)`, `dragTo(…)` and `editSurface()` is the
+  prerequisite for closing the view-component coverage gap listed above.
+- **`registerBadgeAdornment` / `registerEditField` / `registerToolbarAction` have no unregister.**
+  A feature registers from its constructor and the entry lives on the host list forever
+  (`scheduler.component.ts:270-277`, `scheduler-edit-surface.component.ts:181-188`). Because a
+  directive is destroyed with its host that is fine today, but a feature applied to something
+  shorter-lived than the scheduler would leak an entry whose `enabled` signal reads a destroyed
+  injector. Returning a disposer (or hooking `DestroyRef`) is cheap insurance and matches what the
+  table's feature host does.
+- **`schedulerFeatureConfig`'s `'' → {}` normalization is repeated in all 15 feature directives.**
+  Each one duplicates the same six-line `input({} as TConfig, { alias, transform })` +
+  `computed(() => this.config().enabled ?? true)` pair. A small
+  `schedulerFeatureInput('etSchedulerBadgeTitle')` helper returning both signals would remove ~90
+  lines and make the pattern discoverable to a consumer writing their own feature.
+- **`SchedulerAppointmentDragDirective`'s only job is a boolean.** It holds no state and does no
+  work beyond `isEnabled()` (`scheduler-appointment-drag.directive.ts:35`) which the views inject
+  optionally. That reads as ceremony next to a plain `appointmentDrag = input(true)` on
+  `[etScheduler]`; if the directive form is kept for consistency with the badge features, the doc
+  should at least say why it isn't just an input.
+- **`setView(value: unknown)` should not be public.** `scheduler.component.ts:231-233` — make it
+  `protected` and type the segmented group's `valueChange` instead, or expose a typed
+  `setView(view: SchedulerView)`.
+
+**Bundle size** (ranked)
+
+- **`SchedulerEditSurfaceComponent` statically pulls in five form control families for a dialog most
+  page loads never open.** `scheduler-edit-surface.component.ts:62-73` +
+  `hostDirectives` reach `FORM_FIELD_IMPORTS`, `INPUT_IMPORTS`, `TEXTAREA_IMPORTS`,
+  `RADIO_GROUP_IMPORTS`, `DATE_TIME_RANGE_INPUT_IMPORTS` (date-time inputs being by far the
+  heaviest), plus `MENU_IMPORTS`, `BUTTON_IMPORTS` and the overlay strategies — and
+  `SchedulerComponent` imports it statically for the zero-config path. A cross-entry-point or
+  `@defer`ed surface (or at minimum lazy-stamping the field components) is the single biggest win
+  available in this domain: a consumer rendering a read-only month grid pays for the whole forms
+  stack today.
+- **`scheduler-time-grid-view.component.css` (270 lines) is loaded by the day/week view even when
+  nothing on the page is draggable.** The `[data-draggable]`/`[data-dragging]` rules and the two
+  `*-resize` handle blocks (`:114-132`, `:236-269`) only matter with
+  `etSchedulerAppointmentDrag` on. Per AGENTS.md's "CSS that belongs to an opt-in feature", those
+  belong in a styles-only component that `SchedulerAppointmentDragDirective` mounts — the same shape
+  as `ButtonPropertiesStylesComponent`. The all-day lane rules (`:91-132`) are similarly dead for
+  any app with no all-day appointments, and the view already knows (`allDayRowCount() === 0`).
+- **The three view components each duplicate the badge-stamping loop and the drag plumbing.**
+  `startAppointmentDrag` in the month and time-grid views (`scheduler-month-view.component.ts:105-142`
+  vs `scheduler-time-grid-view.component.ts:162-193`) are structurally identical apart from the
+  range math, and the `@for (adornment of badgeAdornments())` + `*ngComponentOutlet` block appears
+  four times across the templates. A shared `<et-scheduler-appointment-badge [node]>` component
+  would collapse the four copies and give the agenda view its missing `[attr.title]` for free.
+- **`et-scheduler`'s toolbar imports `FLOATING_ACTION_IMPORTS` and `SEGMENTED_BUTTON_IMPORTS`
+  unconditionally** (`scheduler.component.ts:53-62`). The floating-action machinery is only ever
+  used inside the `@if (isNarrow())` branch; since `isNarrow` is width-driven, a `@defer (when …)`
+  would keep it out of the initial chunk for desktop-first apps.
+
+**UI/UX** (ranked)
+
+- **No keyboard model beyond Tab.** The docs admit it (`scheduler.md:394`), but the practical effect
+  is that a week view with 40 appointments is 40+ tab stops with no way to move by day or hour, and
+  the month grid is worse. Roving tabindex with arrow keys across cells (the pattern the calendar
+  component already implements), `Enter` to open, and `PageUp`/`PageDown` to step the period is the
+  fix — and it is also what would make the `gridcell` roles from High #3 legitimate rather than
+  decorative.
+- **The month day cell has no accessible date.** `scheduler-month-view.component.html:25` renders the
+  bare day number, so the cell announces "15" with no month, year or weekday and no "today"
+  indication beyond a background colour (`:19-20` sets `data-today` only). An `aria-label` with the
+  formatted date plus `aria-current="date"` would cost two bindings.
+- **The 24-hour body has no sticky hour gutter or sticky day header inside its own scroll
+  container.** `.et-scheduler-time-grid-body` is the scroller
+  (`scheduler-time-grid-view.component.css:38-41`) and holds both the gutter and the columns, so
+  scrolling is fine vertically — but a week view narrower than ~700px has no horizontal affordance at
+  all: seven `1fr` columns just squeeze (`:48-53`). A minimum column width with horizontal scroll and
+  a sticky gutter is what makes a week view usable on a phone, and the docs' mobile story only shows
+  the agenda.
+- **No empty, loading or error state anywhere.** The month grid renders an empty skeleton, the agenda
+  renders literally nothing when no day has an appointment
+  (`scheduler-agenda-view.component.ts:29` filters every empty day out), and there is no way to
+  indicate "still fetching" — awkward given the docs' own headline use case is a paged query
+  (`scheduler.md:155-201`). An `et-empty-state` slot on the agenda and a `loading` input that
+  overlays a skeleton would match how `et-table` handles the same problem.
+- **Nothing animates.** Selecting a badge, opening the all-day lane as `allDayRowCount` grows, and
+  the draft-range preview all snap. The draft preview in particular
+  (`scheduler-time-grid-view.component.css:173-188`) changes border style *and* background on
+  commit with no transition, which reads as a glitch rather than a state change.
+- **Drag has no autoscroll.** `startSchedulerDragGesture` tracks the pointer but never scrolls the
+  body (`headless/internals/scheduler-drag-gesture.ts`), so moving an 08:00 appointment to 19:00 in
+  the week view is impossible without letting go — and the month view's cross-week drag has the same
+  problem once the grid is taller than the viewport.
+- **The "+N more" affordance is the only way to reach an overflowed appointment, and its menu drops
+  most of the badge's information** (see the Medium finding). Expanding the cell on click, the way
+  Google Calendar does, or at least rendering the full badge inside the menu, would keep the colour
+  dot and time visible.
+
+**Testing** (ranked, first pass order)
+
+1. **The two overlay-opening effects in `scheduler.component.ts`** — both High findings are one spec
+   away: assert exactly one surface per selection across an `appointments` identity change, and
+   assert the draft survives it. This is also where a regression would be most expensive.
+2. **The time-grid view's pure range math** — `snapToSlot`, `movedRange`, `resizedRange` and
+   `allDayRange`'s three modes need no DOM beyond a stubbed `getBoundingClientRect`, and they encode
+   every rule the docs promise ("never shrinks below one slot", "an edge dragged past the other stops
+   there", "a move keeps the duration"). Currently zero coverage of any of them.
+3. **`startSchedulerDragGesture`'s touch arming** — with `vi.useFakeTimers()` (and the bare global
+   `setTimeout`, per the repo's known jsdom quirk) assert that a move before `TOUCH_ARM_DELAY`
+   disarms and never tracks, that a long press held still arms and then blocks `touchmove`, and that
+   both listeners are torn down on `finalize`.
+4. **Feature registration** — one parameterized spec over the 15 directives asserting order,
+   `enabled: false` removal, bare-attribute (`''`) config normalization, and the two `valid`
+   computeds gating `canSave()`.
+5. **A11y structure spec** — role/name assertions per view (once the grid container is fixed), plus
+   the selected-state exposure and the month cell's accessible date. Cheap, and it locks down the
+   claims the docs' Accessibility section makes.
+6. **Test infrastructure**: a `SchedulerDriver` under `libs/components/src/lib/testing/` (see DX
+   above) is the prerequisite for 1, 2 and 5; a `pointerSequence()` helper for
+   pointerdown/move/up with `pointerType` would serve both the scheduler and the slider.
+
+Clean: the layout internals (`scheduler-tree.ts`, `scheduler-month.ts`, `scheduler-agenda.ts`,
+`scheduler-time-grid.ts`) are correct on re-reading — the column packer's cluster detection and
+monotonic `columnEnds`, the all-day row packer, the midnight clipping, the dangling-`parentId`
+fallback and the guide-continuation logic all hold up, and each is genuinely well specced. All nine
+CSS files are wrapped in `@layer components`, contain no Tailwind, use `:where()` correctly for
+config modifiers while leaving `:hover`/`:focus-visible`/`:active` bare, and resolve every colour
+from `--et-surface-*` / `--et-theme-color-*` tokens (the two `rgb(0 0 0 / 0.25)` drag shadows match
+the established lib-wide convention for shadows — `card`, `tooltip`, `slider`, `rich-text-editor` all
+do the same). Reactive state is signals throughout with RxJS confined to the two genuinely
+asynchronous places (the drag gesture's `timer`/`dragGestureFrom`, and the surface's
+`outputToObservable` bridges), both with `takeUntilDestroyed` last in the pipe; there is no
+subscribe-and-assign anywhere. The swipe directive's listeners are torn down via
+`destroyRef.onDestroy`, and the drag gesture's `finalize(dispose)` releases both its arming timer
+and its non-passive `touchmove` guard. `signalHostElementDimensions` is SSR-safe upstream, and
+`getComputedStyle` in the swipe directive is only reachable from a touch event, so nothing in the
+domain crashes on the server. `renderer.setStyle`'s object form
+(`scheduler-month-view.component.ts:207`) is the core wrapper's real signature, not `Renderer2`'s.
+The `DATE_FORMAT` round-trip in the time-range field is lossless (ISO with time by default), the
+`injectColorPalette({ optional: true })` array/null handling is right, and the label system follows
+the standard `defineLabels`/`toProvideFn` shape with `@__PURE__` annotations. The three view
+directives' `ngDevMode`-gated `afterNextRender` misplacement checks, the five error codes, and the
+feature-host injection helpers are all consistent with the rest of the lib.
 
 ---
