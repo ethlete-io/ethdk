@@ -394,6 +394,24 @@ export const trackQueryDevtoolsAuthProvider = (registration: QueryDevtoolsAuthPr
 };
 
 /**
+ * Drops what the previous user left behind. Their responses are cached under keys the next user's
+ * requests hit, and a bound secure query would go on rendering a body that was fetched for somebody else.
+ *
+ * Only ever once the new tokens are in force: `unbindAllSecure` re-arms every secure query that
+ * auto-executes on the first access token it sees, so clearing before them re-runs all of them on the
+ * token the previous user still holds - and caches that answer for the one arriving.
+ */
+const clearClientData = (entry: LiveProvider) => {
+  const { repository } = entry.client;
+
+  repository.unbindAllSecure();
+
+  for (const cacheEntry of repository.subtle.cacheEntries()) repository.subtle.evict(cacheEntry.key);
+
+  void entry.client.clearPersistedQueries();
+};
+
+/**
  * Writes a live token pair into the vault. A pair whose subject is already stored updates that session
  * rather than adding another, which is what lets a plain login in the application fill the picker.
  */
@@ -479,6 +497,14 @@ const remember = (options: { provider: string; accessToken: string; refreshToken
 
   persist();
   syncPill();
+
+  // Another session than this tab was on. A rotation of the same one is not a change of user, and a
+  // login that never landed leaves its pending entry behind for the next rotation to find.
+  if (account && session.id !== account.previous) {
+    const entry = live.get(provider);
+
+    if (entry) clearClientData(entry);
+  }
 };
 
 /** Lets go of the session a provider was on, without forgetting what the vault holds of it. */
@@ -693,20 +719,6 @@ export const clearQueryDevtoolsAuthSessions = () => {
 const reload = () => globalThis.location?.reload();
 
 /**
- * Drops what the previous user left behind. Their responses are cached under keys the next user's
- * requests hit, and a bound secure query would go on rendering a body that was fetched for somebody else.
- */
-const clearClientData = (entry: LiveProvider) => {
-  const { repository } = entry.client;
-
-  repository.unbindAllSecure();
-
-  for (const cacheEntry of repository.subtle.cacheEntries()) repository.subtle.evict(cacheEntry.key);
-
-  void entry.client.clearPersistedQueries();
-};
-
-/**
  * Puts one stored session's tokens in force. The reload is the default because a switch only replaces
  * what the query layer holds: an application that keeps the user anywhere else - a profile service, the
  * router, an open form - is still showing the last one.
@@ -719,8 +731,6 @@ export const switchQueryDevtoolsAuthSession = (options: { sessionId: string; rel
   const entry = live.get(session.provider);
 
   if (!entry || session.scope !== scopeOf()) return;
-
-  clearClientData(entry);
 
   setActive(session.provider, session.id);
 
@@ -738,6 +748,7 @@ export const switchQueryDevtoolsAuthSession = (options: { sessionId: string; rel
 
   persist();
   entry.handle.setTokens(session.accessToken, session.refreshToken);
+  clearClientData(entry);
   syncPill();
 
   if (options.reload ?? queryDevtoolsSettings().reloadOnAuthSwitch) reload();
@@ -761,7 +772,6 @@ export const loginQueryDevtoolsAuthAccount = (accountId: string) => {
 
   const previous = active()[account.provider] ?? null;
 
-  clearClientData(entry);
   setActive(account.provider, null);
   pendingLogins.set(account.provider, { id: account.id, label: account.label, previous });
   persist();

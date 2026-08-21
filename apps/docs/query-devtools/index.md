@@ -2090,6 +2090,11 @@ resolved route, an open form. That is why **reload on switch** is on by default,
 switcher. Turn it off for an app that holds nothing outside the query layer, and switching is
 instant.
 
+**Log in as** replaces the same things, and replaces them when the login's tokens land rather than
+when the request goes out. A secure query that auto-executes runs again on the first access token it
+sees, and while the login is in flight that token is still the last user's - so dropping the data any
+earlier would fill the cache with the previous user again, for the one arriving to read.
+
 The floating pill carries the same picker as the tab, next to the API env one, so a switch does not
 need the panel open. Both sit behind the same
 [summary chip](#switching-the-api-environment), folded away until you ask for them.

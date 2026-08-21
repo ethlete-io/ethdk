@@ -354,6 +354,30 @@ describe('query devtools auth sessions', () => {
       expect(provider.logins).toEqual([{ body: { email: 'admin@example.com', password: 'hunter2' } }]);
     });
 
+    it('should drop what the last user cached only once the login is in force', () => {
+      // A provider of its own: an account login left pending by an earlier test would clear on this
+      // one's first token pair.
+      const provider = createProvider('vault-auth');
+      const id = addQueryDevtoolsAuthAccount({ provider: 'vault-auth', label: 'Member', loginQuery: 'login' });
+
+      setQueryDevtoolsAuthCredentials({ accountId: id, values: { email: 'member@example.com', password: 'x' } });
+      provider.handle.setTokens(NAMED, 'refresh-1');
+      flush();
+
+      loginQueryDevtoolsAuthAccount(id);
+
+      // Unbinding here re-arms every secure query that auto-executes, on the token the previous user
+      // still holds - and its answer is then cached for the user logging in.
+      expect(provider.unbinds).toBe(0);
+      expect(provider.evictions).toBe(0);
+
+      provider.handle.setTokens(NAMED_OTHER, 'refresh-2');
+      flush();
+
+      expect(provider.unbinds).toBe(1);
+      expect(provider.evictions).toBe(2);
+    });
+
     it('should name a session after the account it was logged in as, and reuse it', () => {
       const provider = createProvider('hub-auth');
       const id = addQueryDevtoolsAuthAccount({ provider: 'hub-auth', label: 'Tester', loginQuery: 'login' });
