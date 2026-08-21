@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0-next.9
+
+### Minor Changes
+
+- [`acc396a`](https://github.com/ethlete-io/ethdk/commit/acc396aa73313204fc09d54b083562cea5afb5b1) Thanks [@TomTomB](https://github.com/TomTomB)! - `provideQueryDevtools({ apiEnvs })` puts an API environment picker beside the floating toggle and on the Settings tab; a pick writes the app's own `localStorage` key and reloads. An env marked `production` makes the picker shout.
+
+- [`d8fea59`](https://github.com/ethlete-io/ethdk/commit/d8fea594beb1094b0715ce24e308862d2ddd4f21) Thanks [@TomTomB](https://github.com/TomTomB)! - The devtools Auth tab now keeps every session you log in as and switches between them, logs in as an
+  account declared through `provideQueryDevtools({ authAccounts })`, and can hold one tab's session
+  apart from the rest.
+
 ## 1.0.0-next.8
 
 ### Patch Changes
