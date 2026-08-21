@@ -1,5 +1,20 @@
 # @ethlete/cli
 
+## 2.1.0-next.5
+
+### Minor Changes
+
+- [`612d735`](https://github.com/ethlete-io/ethdk/commit/612d73563e1689bbfcf948d26ebe7c59d2420781) Thanks [@TomTomB](https://github.com/TomTomB)! - `et api` now clones a missing API checkout from a `repoUrl` in `ethlete.apis.js`, making
+  `apiRepoPaths` optional. `runApiCommand` is async as a result.
+
+- [#3072](https://github.com/ethlete-io/ethdk/pull/3072) [`4bbbb51`](https://github.com/ethlete-io/ethdk/commit/4bbbb5167989a1c3ef2ffeba09fcfd18ba953fba) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `et doctor` to check this machine's config, container engine and API checkouts, `et api
+checkout` and `et api pull` (with `--force`) to move an API checkout to the branch it should be on,
+  and `et api --help`.
+
+### Patch Changes
+
+- [#3072](https://github.com/ethlete-io/ethdk/pull/3072) [`0fd8ba3`](https://github.com/ethlete-io/ethdk/commit/0fd8ba3dd61cc78409c397c8180f0a675282642f) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et doctor` now says when a directory has neither config file rather than reporting no problems.
+
 ## 2.1.0-next.4
 
 ### Minor Changes
