@@ -1,5 +1,12 @@
 # @ethlete/cli
 
+## 2.1.0-next.7
+
+### Patch Changes
+
+- [#3074](https://github.com/ethlete-io/ethdk/pull/3074) [`63a528a`](https://github.com/ethlete-io/ethdk/commit/63a528a0ab1b1e7163e71c1cf5f65415bdda32d9) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et auth` now takes a host written as a url, and asks before it replaces a token `auth.json`
+  already holds for that host.
+
 ## 2.1.0-next.6
 
 ### Minor Changes
