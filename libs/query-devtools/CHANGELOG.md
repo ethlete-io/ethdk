@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.0-next.10
+
+### Minor Changes
+
+- [#3074](https://github.com/ethlete-io/ethdk/pull/3074) [`ee8e7d1`](https://github.com/ethlete-io/ethdk/commit/ee8e7d12b6ef06245f18df017c217d2bbe66e616) Thanks [@github-actions](https://github.com/apps/github-actions)! - The devtools session vault keeps one session per user on a backend that issues no `sub` claim, and
+  the panel logs in as an account with the body keys that login needs.
+
+### Patch Changes
+
+- [#3074](https://github.com/ethlete-io/ethdk/pull/3074) [`bdaee24`](https://github.com/ethlete-io/ethdk/commit/bdaee24b127c7345f138bbad6dbc98bf2a8002dd) Thanks [@github-actions](https://github.com/apps/github-actions)! - The add-account row in the devtools auth tab stays on one line instead of breaking every part
+  onto its own.
+
+- [#3074](https://github.com/ethlete-io/ethdk/pull/3074) [`63201a5`](https://github.com/ethlete-io/ethdk/commit/63201a566d5577c7430293c839818b83784c2f5a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: every action in the panel now reads as a button rather than plain text, text fields
+  and buttons no longer look alike, and one focus ring covers the whole panel.
+
+- [#3074](https://github.com/ethlete-io/ethdk/pull/3074) [`33b92cf`](https://github.com/ethlete-io/ethdk/commit/33b92cf1677b8b95619cc5bf4b021a3b6146c85c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the Auth tab no longer leaves a paragraph of empty space above the stored sessions.
+
 ## 1.0.0-next.9
 
 ### Minor Changes

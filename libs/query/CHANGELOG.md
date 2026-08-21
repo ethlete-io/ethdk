@@ -1,5 +1,22 @@
 # @ethlete/query
 
+## 6.0.0-next.42
+
+### Minor Changes
+
+- [#3074](https://github.com/ethlete-io/ethdk/pull/3074) [`ee8e7d1`](https://github.com/ethlete-io/ethdk/commit/ee8e7d12b6ef06245f18df017c217d2bbe66e616) Thanks [@github-actions](https://github.com/apps/github-actions)! - The devtools' floating API env and session pickers are now folded into one small chip, which reads
+  the current values and unfolds every picker on a click. A production pick keeps them unfolded.
+
+- [#3074](https://github.com/ethlete-io/ethdk/pull/3074) [`ee8e7d1`](https://github.com/ethlete-io/ethdk/commit/ee8e7d12b6ef06245f18df017c217d2bbe66e616) Thanks [@github-actions](https://github.com/apps/github-actions)! - The devtools session vault keeps one session per user on a backend that issues no `sub` claim, and
+  the panel logs in as an account with the body keys that login needs.
+
+### Patch Changes
+
+- [`67b6128`](https://github.com/ethlete-io/ethdk/commit/67b6128035bcafa21539a7d69b8f0dd4df2737be) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix the devtools **Log in as** landing one login behind: the previous user's cached data is now dropped once the login's tokens are in force, not while the old token is still the one every secure query re-runs on.
+
+- [#3074](https://github.com/ethlete-io/ethdk/pull/3074) [`6b00cbe`](https://github.com/ethlete-io/ethdk/commit/6b00cbe0d09d44dbc292a9c1d8173021cf88a5d7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: the floating pills now share one height, one set of edges and one set of picker
+  columns, and the fold control reads as a button instead of a lone caret.
+
 ## 6.0.0-next.41
 
 ### Minor Changes
