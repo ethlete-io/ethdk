@@ -3,6 +3,7 @@
   "dest": "../../dist/libs/core",
   "assets": [
     "CHANGELOG.md",
+    "migrations.json",
     "generators/generators.json",
     {
       "glob": "**/*.js",
@@ -13,6 +14,11 @@
       "glob": "**/schema.json",
       "input": "generators",
       "output": "./generators"
+    },
+    {
+      "glob": "**/*.md",
+      "input": "migrations",
+      "output": "./migrations"
     }
   ],
   "lib": {

@@ -8,17 +8,19 @@ The whole file is optional. `et api` clones an API with a [`repoUrl`](/cli/api) 
 {
   "sdkSourcePath": "/absolute/path/to/ethlete-sdk",
   "apiRepoPaths": { "hub": "../fut-hub-backend", "*": "../shared-backend" },
-  "apiRepoBranches": { "hub": "develop", "*": "main" }
+  "apiRepoBranches": { "hub": "develop", "*": "main" },
+  "updateAgentCommand": "claude -p"
 }
 ```
 
 Add the filename to your `.gitignore`.
 
-| Key               | Read by                                       | Meaning                                                                               |
-| ----------------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `sdkSourcePath`   | the `sdk-source` and `sdk-local-build` skills | A local `ethlete-sdk` checkout, for reading its source or building it into this repo. |
-| `apiRepoPaths`    | [`et api`](/cli/api), the `api-source` skill  | The checkout of the API an app talks to, keyed by app name.                           |
-| `apiRepoBranches` | `et api checkout`, the `api-source` skill     | The branch that represents each API's deployed state, keyed by app name.              |
+| Key                  | Read by                                       | Meaning                                                                               |
+| -------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `sdkSourcePath`      | the `sdk-source` and `sdk-local-build` skills | A local `ethlete-sdk` checkout, for reading its source or building it into this repo. |
+| `apiRepoPaths`       | [`et api`](/cli/api), the `api-source` skill  | The checkout of the API an app talks to, keyed by app name.                           |
+| `apiRepoBranches`    | `et api checkout`, the `api-source` skill     | The branch that represents each API's deployed state, keyed by app name.              |
+| `updateAgentCommand` | [`et update --ai`](/cli/update)               | The command one agent-assisted migration task is handed to, for example `claude -p`.  |
 
 Both maps match on the exact app name first, then on the explicit `"*"` key. Use `"*"` only when apps intentionally share one checkout. A relative path resolves from the repo root; an absolute path is used as is.
 

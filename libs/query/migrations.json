@@ -1,0 +1,44 @@
+{
+  "migrations": [
+    {
+      "name": "to-query-v3",
+      "version": "5.42.0",
+      "kind": "auto",
+      "description": "Move the legacy query system onto the new one through the interop layer.",
+      "generator": "@ethlete/query:migrate-to-query-v3",
+      "docs": "/query/migrating-from-v2"
+    },
+    {
+      "name": "prep-for-query-v3",
+      "version": "6.0.0-beta.8",
+      "kind": "auto",
+      "description": "Prepare the call sites the v3 query system changes, before the move itself.",
+      "generator": "@ethlete/query:prep-for-query-v3",
+      "docs": "/query/migrating-from-v2"
+    },
+    {
+      "name": "query-client-features",
+      "version": "6.0.0-next.23",
+      "kind": "auto",
+      "description": "Move the createQueryClient multiTabSync and persistence options onto opt-in features.",
+      "generator": "@ethlete/query:migrate-query-client-features",
+      "docs": "/query/features"
+    },
+    {
+      "name": "query-opt-in-features",
+      "version": "6.0.0-next.23",
+      "kind": "auto",
+      "description": "Move query clients onto the opt-in error pipeline, and bearer auth onto the opt-in multi-tab sync feature.",
+      "generator": "@ethlete/query:migrate-query-opt-in-features",
+      "docs": "/query/features"
+    },
+    {
+      "name": "deprecate-legacy-queries",
+      "version": "6.0.0-next.24",
+      "kind": "auto",
+      "description": "Mark the remaining createLegacyQueryCreator wrappers as deprecated, so their call sites surface as still on v2.",
+      "generator": "@ethlete/query:deprecate-legacy-queries",
+      "docs": "/query/legacy"
+    }
+  ]
+}

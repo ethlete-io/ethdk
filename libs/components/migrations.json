@@ -1,0 +1,36 @@
+{
+  "migrations": [
+    {
+      "name": "query-error-labels",
+      "version": "1.0.0-next.33",
+      "kind": "auto",
+      "description": "Find the query-error call sites the English-only label default changes, and report where German must be opted back in.",
+      "generator": "@ethlete/components:migrate-query-error-labels",
+      "docs": "/components/query-error"
+    },
+    {
+      "name": "rich-text-editor-link-editor",
+      "version": "1.0.0-next.33",
+      "kind": "auto",
+      "description": "Find the rich text editors that lose the link editor popover, and report where to opt back in.",
+      "generator": "@ethlete/components:migrate-rich-text-editor-link-editor",
+      "docs": "/components/rich-text-editor"
+    },
+    {
+      "name": "rich-text-editor-tools",
+      "version": "1.0.0-next.36",
+      "kind": "auto",
+      "description": "Find the rich text editors that lose the heading, quote, code-block and link tools, and report where to opt back in.",
+      "generator": "@ethlete/components:migrate-rich-text-editor-tools",
+      "docs": "/components/rich-text-editor"
+    },
+    {
+      "name": "rich-text-editor-floating-toolbar",
+      "version": "1.0.0-next.36",
+      "kind": "auto",
+      "description": "Find the rich text editors that lose the selection toolbar, and report where to opt back in.",
+      "generator": "@ethlete/components:migrate-rich-text-editor-floating-toolbar",
+      "docs": "/components/rich-text-editor"
+    }
+  ]
+}

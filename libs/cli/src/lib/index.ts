@@ -4,3 +4,4 @@ export * from './config';
 export * from './doctor';
 export * from './invocation';
 export * from './release';
+export * from './update';

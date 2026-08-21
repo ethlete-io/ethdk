@@ -84,6 +84,16 @@ const describeApiRepoBranches = (options: { value: unknown; fileName: string }) 
   );
 };
 
+const describeUpdateAgentCommand = (options: { value: unknown; fileName: string }) => {
+  const { value, fileName } = options;
+
+  if (value === undefined) return [];
+
+  return typeof value === 'string' && value.trim().length > 0
+    ? []
+    : [`${fileName} has an invalid "updateAgentCommand" value — use the command that hands a prompt to an agent.`];
+};
+
 const describeValues = (options: { root: string; config: LocalConfig; fileName: string }) => {
   const { root, config, fileName } = options;
 
@@ -91,6 +101,7 @@ const describeValues = (options: { root: string; config: LocalConfig; fileName: 
     ...describeSdkSourcePath({ root, value: config.sdkSourcePath, fileName }),
     ...describeApiRepoPaths({ root, value: config.apiRepoPaths, fileName }),
     ...describeApiRepoBranches({ value: config.apiRepoBranches, fileName }),
+    ...describeUpdateAgentCommand({ value: config.updateAgentCommand, fileName }),
   ];
 };
 

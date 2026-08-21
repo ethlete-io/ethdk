@@ -3,6 +3,7 @@
   "dest": "../../dist/libs/query",
   "assets": [
     "CHANGELOG.md",
+    "migrations.json",
     "generators/generators.json",
     {
       "glob": "**/*.js",

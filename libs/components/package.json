@@ -34,5 +34,8 @@
       "optional": true
     }
   },
+  "ethlete": {
+    "migrations": "./migrations.json"
+  },
   "generators": "./generators/generators.json"
 }

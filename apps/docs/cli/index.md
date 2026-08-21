@@ -1,6 +1,6 @@
 # @ethlete/cli
 
-Repo tooling. The package installs a single binary, `et`, with four commands: `et release` turns pending changesets into a tagged, pushed release commit, [`et api`](/cli/api) runs the backend an app talks to from a checkout on your own machine, [`et auth`](/cli/auth) writes the git host token a private dependency needs, and [`et doctor`](/cli/config#et-doctor) checks that machine's setup.
+Repo tooling. The package installs a single binary, `et`, with five commands: `et release` turns pending changesets into a tagged, pushed release commit, [`et api`](/cli/api) runs the backend an app talks to from a checkout on your own machine, [`et auth`](/cli/auth) writes the git host token a private dependency needs, [`et update`](/cli/update) moves the `@ethlete/*` packages to a newer version and runs the migrations they ship, and [`et doctor`](/cli/config#et-doctor) checks that machine's setup.
 
 ```bash
 yarn add --dev @ethlete/cli
@@ -39,6 +39,7 @@ The command runs the full release sequence synchronously and aborts on the first
 
 - [`et api`](/cli/api) - start, stop and inspect the containers of a local backend, and move its checkout to the right branch.
 - [`et auth`](/cli/auth) - write a GitLab token into composer's `auth.json`, after checking that it can fetch code.
+- [`et update`](/cli/update) - move the `@ethlete/*` packages to a newer version, run the codemods those versions ship, and report what needs a decision.
 - [`et doctor`](/cli/config#et-doctor) - report every problem with this machine's config and API checkouts at once.
 
 Running `et` with no command, `--help` or an unknown command prints the command list.

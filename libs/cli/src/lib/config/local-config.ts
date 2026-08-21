@@ -20,9 +20,16 @@ export type LocalConfig = {
   apiRepoPaths?: Record<string, string>;
   /** Branch that represents each API's deployed state, keyed by app name. `"*"` matches any app. */
   apiRepoBranches?: Record<string, string>;
+  /** Command `et update --ai` hands an assisted migration task to, for example `claude -p`. */
+  updateAgentCommand?: string;
 };
 
-export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['sdkSourcePath', 'apiRepoPaths', 'apiRepoBranches'];
+export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = [
+  'sdkSourcePath',
+  'apiRepoPaths',
+  'apiRepoBranches',
+  'updateAgentCommand',
+];
 
 export type LocalConfigFileState =
   { status: 'absent' } | { status: 'unreadable' } | { status: 'not-an-object' } | { status: 'ok'; config: LocalConfig };

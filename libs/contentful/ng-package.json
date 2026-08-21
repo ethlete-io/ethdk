@@ -3,6 +3,7 @@
   "dest": "../../dist/libs/contentful",
   "assets": [
     "CHANGELOG.md",
+    "migrations.json",
     "generators/generators.json",
     {
       "glob": "**/*.js",

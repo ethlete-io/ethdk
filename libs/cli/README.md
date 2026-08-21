@@ -34,6 +34,40 @@ The token is checked against the host first: once for the token itself, and once
 `403` there, and nothing is written. A token the file already holds for that host is replaced only
 after a question. `--force` skips both.
 
+## `et update`
+
+Moves this repo's `@ethlete/*` dependencies to a newer version and runs the migrations those versions
+ship.
+
+```bash
+yarn et update --check                    # what would change; exits 1 while an update is pending
+yarn et update                            # bump, install, run the codemods, report the rest
+yarn et update core                       # only @ethlete/core
+yarn et update --tag latest               # leave the prerelease line
+yarn et update core --to 5.0.0-next.55    # an exact version for the package you name
+yarn et update --continue                 # finish a run that stopped
+yarn et update --ai                       # hand every agent-assisted task to an agent
+```
+
+The target follows the dist tag the installed version is on, so a repo on a `-next` prerelease stays
+on `next`. The working tree must be clean, because the codemods rewrite files; `--force` skips that
+check.
+
+The install runs before the migrations are read, because the migrations of a version ship inside that
+version. A run that stops leaves `.ethlete/update/pending.json` behind, and `--continue` picks it up -
+starting over would skip every migration the stopped run had not reached.
+
+Everything a codemod cannot decide is written to `.ethlete/update`: `tasks.md` for you, `tasks.json`
+for an agent, and one file per task holding the instructions the package ships. A task is `manual` (it
+needs a decision), `assisted` (written as a prompt for an agent) or `unsupported` (a codemod this repo
+has no Nx to run, with the command to run it by hand).
+
+`--ai` hands each assisted task to the command in `updateAgentCommand` in
+`ethlete.config.local.json`, one run per task. No agent is detected automatically.
+
+A package declares its migrations in `migrations.json` at its own root, pointed at from `package.json`
+with `"ethlete": { "migrations": "./migrations.json" }`. The full format is on the docs site.
+
 ## `et api`
 
 Runs the API an app in this repo talks to, from a checkout on your own machine.
@@ -141,3 +175,4 @@ fallback with a warning. Add `ethlete.config.local.json` to your `.gitignore`.
 Full command reference on the docs site:
 
 - [Overview & usage](https://ethlete-sdk-docs.web.app/cli/)
+- [Updating the SDK](https://ethlete-sdk-docs.web.app/cli/update)

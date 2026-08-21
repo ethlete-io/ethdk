@@ -3,6 +3,7 @@
   "dest": "../../dist/libs/cdk",
   "assets": [
     "CHANGELOG.md",
+    "migrations.json",
     "migration-map.json",
     "./src/lib/styles/**/*",
     "generators/generators.json",
@@ -15,6 +16,11 @@
       "glob": "**/schema.json",
       "input": "generators",
       "output": "./generators"
+    },
+    {
+      "glob": "**/*.md",
+      "input": "migrations",
+      "output": "./migrations"
     }
   ],
   "lib": {

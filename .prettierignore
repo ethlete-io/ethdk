@@ -6,7 +6,8 @@
 node_modules
 
 yarn.lock
-migrations.json
+# nx migrate writes this one at the root. A lib's own migrations.json is formatted.
+/migrations.json
 
 libs/types/src/lib/api
 /.nx/cache

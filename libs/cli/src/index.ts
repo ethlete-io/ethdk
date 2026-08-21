@@ -1,4 +1,4 @@
-import { apiCommand, authCommand, doctorCommand, release, repoInvocation } from './lib';
+import { apiCommand, authCommand, doctorCommand, release, repoInvocation, updateCommand } from './lib';
 
 const USAGE_ROWS = [
   { subcommand: 'release', args: '', lines: ['Turn pending changesets into a tagged, pushed release commit'] },
@@ -22,6 +22,11 @@ const USAGE_ROWS = [
     subcommand: 'doctor',
     args: '',
     lines: ["Check this machine's ethlete.config.local.json, container engine", 'and every API checkout'],
+  },
+  {
+    subcommand: 'update',
+    args: ' [packages...]',
+    lines: ['Move the @ethlete/* packages to a newer version and run the', 'migrations those versions ship'],
   },
 ];
 
@@ -63,6 +68,13 @@ const cli = async (args: string[]): Promise<number> => {
         root: process.cwd(),
         argv: args.slice(1),
         invocation: repoInvocation({ root: process.cwd(), subcommand: 'auth' }),
+      });
+
+    case 'update':
+      return updateCommand({
+        root: process.cwd(),
+        argv: args.slice(1),
+        invocation: repoInvocation({ root: process.cwd(), subcommand: 'update' }),
       });
 
     case 'doctor':

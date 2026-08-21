@@ -1,0 +1,28 @@
+{
+  "migrations": [
+    {
+      "name": "to-v5",
+      "version": "5.0.0-beta.12",
+      "kind": "auto",
+      "description": "Rewrite the v4 cdk API into its v5 shape.",
+      "generator": "@ethlete/cdk:migrate-to-v5",
+      "docs": "/cdk/migration"
+    },
+    {
+      "name": "from-cdk",
+      "version": "5.0.0-next.25",
+      "kind": "auto",
+      "description": "Rewrite the mechanical part of the move off @ethlete/cdk, and write migrate-from-cdk-tasks.md for the rest.",
+      "generator": "@ethlete/cdk:migrate-from-cdk",
+      "docs": "/cdk/migration"
+    },
+    {
+      "name": "from-cdk-decisions",
+      "version": "5.0.0-next.25",
+      "kind": "assisted",
+      "description": "Work through migrate-from-cdk-tasks.md: the call sites whose successor API behaves differently.",
+      "instructions": "./migrations/from-cdk-decisions.md",
+      "docs": "/cdk/migration"
+    }
+  ]
+}

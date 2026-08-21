@@ -56,6 +56,7 @@ export default defineConfig({
             { text: 'Overview', link: '/cli/' },
             { text: 'Local APIs', link: '/cli/api' },
             { text: 'Git host tokens', link: '/cli/auth' },
+            { text: 'Updating the SDK', link: '/cli/update' },
             { text: 'Local config', link: '/cli/config' },
           ],
         },
