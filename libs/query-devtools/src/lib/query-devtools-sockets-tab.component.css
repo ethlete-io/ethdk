@@ -1,7 +1,7 @@
 @layer components {
   .et-query-devtools-ws-message {
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     padding: 0.6rem;
     margin-block-end: 0.4rem;
   }

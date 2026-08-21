@@ -8,16 +8,28 @@
     --_et-qdt-subtle: var(--et-surface-color-subtle-solid, rgb(113 113 122));
     --_et-qdt-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.12));
     --_et-qdt-interaction: var(--et-surface-interaction-solid, rgb(255 255 255));
+    /* Two weights of edge, and the difference is what makes a control read as one: `--_et-qdt-border`
+       separates things that sit next to each other (rows, panes, cards), `--_et-qdt-line` outlines
+       something that can be pressed. A control drawn with the separator weight disappears into the
+       text around it. */
+    --_et-qdt-line: color-mix(in srgb, var(--_et-qdt-interaction) 24%, transparent);
+    --_et-qdt-line-strong: color-mix(in srgb, var(--_et-qdt-interaction) 42%, transparent);
     --_et-qdt-accent: var(--et-theme-color-primary-solid, rgb(96 165 250));
     --_et-qdt-hover: color-mix(in srgb, var(--_et-qdt-interaction) 10%, transparent);
+    /* The one fill a text field, a search box and a select share. A control the panel *reads* from is
+       filled and has no outline; a control it *runs* on is outlined and has no fill. */
+    --_et-qdt-field: color-mix(in srgb, var(--_et-qdt-interaction) 8%, transparent);
     --_et-qdt-active: color-mix(in srgb, var(--_et-qdt-interaction) 18%, transparent);
     --_et-qdt-success: rgb(34 197 94);
     --_et-qdt-error: rgb(239 68 68);
     --_et-qdt-loading: rgb(234 179 8);
     --_et-qdt-title-bar: 2.4rem;
-    /* One radius and one control height across the whole panel: the chrome is dense enough that a
-       second of either reads as a second kind of control. */
+    /* One control height and three radii across the whole panel: the chrome is dense enough that a
+       fourth reads as a fourth kind of box. `sm` is for things drawn inside a line of text, the
+       default for controls, `lg` for the boxes that hold them. */
+    --_et-qdt-radius-sm: 0.3rem;
     --_et-qdt-radius: 0.5rem;
+    --_et-qdt-radius-lg: 0.6rem;
     --_et-qdt-control-h: 2.4rem;
     --_et-qdt-row-h: 3.6rem;
 
@@ -110,7 +122,7 @@
     padding-inline: var(--_et-qdt-frame);
     padding-block-end: var(--_et-qdt-frame);
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.6rem;
+    border-radius: var(--_et-qdt-radius-lg);
     box-shadow: 0 1rem 4rem rgb(0 0 0 / 0.45);
     overflow: hidden;
   }
@@ -130,7 +142,7 @@
   /* The panel's own rounded corners are drawn on the border; the body inside the frame gets its own so
      the scroll areas do not square off against it. */
   .et-query-devtools-panel:where([data-dock='float']) .et-query-devtools-body {
-    border-radius: 0.3rem;
+    border-radius: var(--_et-qdt-radius-sm);
     overflow: hidden;
   }
 
@@ -617,18 +629,8 @@
     }
   }
 
-  .et-query-devtools-close {
-    appearance: none;
-    border: none;
-    background: transparent;
-    color: var(--_et-qdt-muted);
-    cursor: pointer;
-    padding: 0.6rem;
-    font: inherit;
-  }
-
   .et-query-devtools-kbd {
-    border-radius: 0.3rem;
+    border-radius: var(--_et-qdt-radius-sm);
     background: var(--_et-qdt-hover);
     box-shadow: inset 0 0 0 1px var(--_et-qdt-border);
     color: var(--_et-qdt-muted);
@@ -660,7 +662,7 @@
     pointer-events: none;
     border: 2px solid var(--_et-qdt-accent);
     background: color-mix(in srgb, var(--_et-qdt-accent) 15%, transparent);
-    border-radius: 0.2rem;
+    border-radius: var(--_et-qdt-radius-sm);
   }
 
   .et-query-devtools-inspect-tag {
@@ -669,7 +671,7 @@
     inset-inline-start: 0;
     margin-block-start: 0.2rem;
     padding: 0.2rem 0.5rem;
-    border-radius: 0.3rem;
+    border-radius: var(--_et-qdt-radius-sm);
     background: var(--_et-qdt-accent);
     color: #09090b;
     font-family: ui-monospace, monospace;
@@ -678,10 +680,12 @@
     white-space: nowrap;
   }
 
-  @media (hover: hover) {
-    .et-query-devtools-close:hover {
-      color: var(--_et-qdt-fg);
-    }
+  /* One ring for every control the panel holds, tab strip and JSON tree included. Written once here
+     rather than per control: the panel is keyboard-driven, and a control that sets its own focus style
+     is a control that can forget to. */
+  .et-query-devtools-panel :is(a, button, input, select, summary, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--_et-qdt-accent);
+    outline-offset: 1px;
   }
 
   .et-query-devtools-body {
@@ -701,7 +705,7 @@
   .et-query-devtools-drawer .et-query-devtools-meta {
     padding: 0.8rem;
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     background: color-mix(in srgb, var(--_et-qdt-interaction) 3%, transparent);
   }
 
@@ -746,12 +750,13 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
+    min-block-size: var(--_et-qdt-control-h);
+    border: 1px solid var(--_et-qdt-line);
+    border-radius: var(--_et-qdt-radius);
     background: transparent;
-    color: var(--_et-qdt-muted);
+    color: var(--_et-qdt-fg);
     cursor: pointer;
-    padding: 0.3rem 0.6rem;
+    padding: 0.25rem 0.7rem;
     font: inherit;
     font-size: 1.15rem;
     line-height: 1.4;
@@ -867,13 +872,17 @@
     /* Mixed into the panel background rather than into `transparent`: Windows draws the dropdown list
        from the select's own colours, and a see-through background there comes out white - under the
        panel's light `color`, that is white text on white. */
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, var(--_et-qdt-bg));
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 8%, var(--_et-qdt-bg));
     color: var(--_et-qdt-fg);
     border: 1px solid transparent;
     border-radius: var(--_et-qdt-radius);
-    padding: 0.4rem 0.6rem;
+    padding: 0.4rem 0.8rem;
     font: inherit;
     font-size: 1.15rem;
+  }
+
+  .et-query-devtools-select:focus-visible {
+    border-color: color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
   }
 
   /* Same reason: the list is drawn by the platform, and only what is set here reaches it. */
@@ -939,10 +948,10 @@
     background: var(--_et-qdt-loading);
   }
 
-  /* Ghost by default. The panel puts a lot of actions on screen at once, and outlining every one of
-     them made a row of six read as six equally important things; a transparent border keeps the box
-     the hover fills without drawing it until the pointer is there. Weight is spent on the modifiers
-     below - one primary per row, and the states that mean the app is being lied to. */
+  /* Outlined, but only with a hairline. The panel puts a lot of actions on screen at once, so no
+     ordinary one gets a fill - the weight is spent on the modifiers below, one primary per row and the
+     states that mean the app is being lied to. The outline is what says the label can be pressed:
+     without it a row of actions reads as a row of words. */
   .et-query-devtools-btn {
     appearance: none;
     display: inline-flex;
@@ -951,10 +960,10 @@
     gap: 0.5rem;
     flex: 0 0 auto;
     min-block-size: var(--_et-qdt-control-h);
-    border: 1px solid transparent;
+    border: 1px solid var(--_et-qdt-line);
     border-radius: var(--_et-qdt-radius);
     background: transparent;
-    color: var(--_et-qdt-muted);
+    color: var(--_et-qdt-fg);
     padding: 0.25rem 0.7rem;
     font: inherit;
     font-size: 1.15rem;
@@ -972,16 +981,15 @@
   @media (hover: hover) {
     .et-query-devtools-btn:hover:not(:disabled) {
       background: var(--_et-qdt-hover);
+      border-color: var(--_et-qdt-line-strong);
       color: var(--_et-qdt-fg);
     }
   }
 
-  .et-query-devtools-btn:focus-visible {
-    outline: 2px solid var(--_et-qdt-accent);
-    outline-offset: 1px;
-  }
-
+  /* Higher specificity than every modifier below, so a disabled primary or danger drops its accent
+     instead of keeping a coloured edge around a label that cannot be pressed. */
   .et-query-devtools-btn:disabled {
+    border-color: var(--_et-qdt-border);
     color: var(--_et-qdt-subtle);
     cursor: default;
     background: transparent;
@@ -1002,9 +1010,17 @@
     }
   }
 
+  /* Tinted at rest, not only under the pointer: a coarse pointer never reports hover, so a hover-only
+     danger colour means the destructive action in a row is the one nothing marks. */
+  .et-query-devtools-btn--danger {
+    border-color: color-mix(in srgb, var(--_et-qdt-error) 32%, transparent);
+    color: color-mix(in srgb, var(--_et-qdt-error) 55%, var(--_et-qdt-fg));
+  }
+
   @media (hover: hover) {
     .et-query-devtools-btn--danger:hover:not(:disabled) {
       background: color-mix(in srgb, var(--_et-qdt-error) 16%, transparent);
+      border-color: color-mix(in srgb, var(--_et-qdt-error) 55%, transparent);
       color: var(--_et-qdt-error);
     }
   }
@@ -1029,7 +1045,7 @@
   .et-query-devtools-btn-group {
     display: inline-flex;
     flex: 0 0 auto;
-    border: 1px solid var(--_et-qdt-border);
+    border: 1px solid var(--_et-qdt-line);
     border-radius: var(--_et-qdt-radius);
     overflow: hidden;
   }
@@ -1038,11 +1054,17 @@
     border-radius: 0;
     border-block: 0;
     border-inline-start: 0;
-    border-inline-end: 1px solid var(--_et-qdt-border);
+    border-inline-end: 1px solid var(--_et-qdt-line);
   }
 
   .et-query-devtools-btn-group > .et-query-devtools-btn:last-child {
     border-inline-end: 0;
+  }
+
+  /* The group clips to its own corners, so a ring drawn outside a segment is cut off - this one is
+     drawn inside instead. */
+  .et-query-devtools-btn-group > .et-query-devtools-btn:focus-visible {
+    outline-offset: -2px;
   }
 
   /* Trailing edge of the toolbar, whatever its leading content (client picker or inspection chip) is. */
@@ -1078,7 +1100,7 @@
   .et-query-devtools-stat {
     padding: 0.6rem 0.8rem;
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     background: color-mix(in srgb, var(--_et-qdt-interaction) 3%, transparent);
   }
 
@@ -1105,7 +1127,7 @@
     margin: 0;
     padding: 0.8rem;
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     background: color-mix(in srgb, var(--_et-qdt-interaction) 4%, transparent);
     overflow-x: auto;
     white-space: pre-wrap;
@@ -1187,6 +1209,7 @@
      plain chips, and reading as a control there would drown the row it belongs to. */
   button.et-query-devtools-chip--button {
     appearance: none;
+    border-color: var(--_et-qdt-line);
     cursor: pointer;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
@@ -1204,6 +1227,7 @@
      the ones being filtered on should read as pressed. */
   .et-query-devtools-facet {
     appearance: none;
+    border-color: var(--_et-qdt-line);
     min-block-size: var(--_et-qdt-control-h);
     padding-inline: 0.8rem;
     background: transparent;
@@ -1241,7 +1265,7 @@
 
   .et-query-devtools-card {
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.6rem;
+    border-radius: var(--_et-qdt-radius-lg);
     padding: 1rem;
   }
 
@@ -1273,7 +1297,7 @@
     text-align: start;
     appearance: none;
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     background: transparent;
     color: var(--_et-qdt-fg);
     padding: 0.4rem 0.6rem;
@@ -1410,7 +1434,7 @@
     flex: 1 1 16rem;
     min-inline-size: 0;
     min-block-size: var(--_et-qdt-control-h);
-    background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
+    background: var(--_et-qdt-field);
     color: var(--_et-qdt-fg);
     border: 1px solid transparent;
     border-radius: var(--_et-qdt-radius);
@@ -1464,12 +1488,20 @@
 
   .et-query-devtools-input {
     inline-size: 100%;
-    background: var(--_et-qdt-bg);
+    min-block-size: var(--_et-qdt-control-h);
+    background: var(--_et-qdt-field);
     color: var(--_et-qdt-fg);
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
-    padding: 0.4rem 0.6rem;
+    border: 1px solid transparent;
+    border-radius: var(--_et-qdt-radius);
+    padding: 0.4rem 0.8rem;
     font: inherit;
+    font-size: 1.15rem;
+  }
+
+  .et-query-devtools-input:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--_et-qdt-accent) 55%, transparent);
+    background: var(--_et-qdt-bg);
   }
 
   /* Shared by every tab that arms a number (faults, settings): a count is read against its neighbours, and
@@ -1483,7 +1515,7 @@
 
   .et-query-devtools-editor {
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     padding: 0.8rem;
     margin-block-end: 1rem;
   }

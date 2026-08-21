@@ -22,7 +22,7 @@
     overflow: auto;
     padding: 0.4rem 0.6rem;
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.3rem;
+    border-radius: var(--_et-qdt-radius-sm);
   }
 
   .et-query-devtools-designer-notes {

@@ -70,7 +70,7 @@
   .et-query-devtools-auth-session,
   .et-query-devtools-auth-account {
     padding: 0.8rem;
-    border-radius: 0.6rem;
+    border-radius: var(--_et-qdt-radius-lg);
     background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, var(--_et-qdt-bg));
     box-shadow: inset 0 0 0 1px var(--_et-qdt-border);
   }

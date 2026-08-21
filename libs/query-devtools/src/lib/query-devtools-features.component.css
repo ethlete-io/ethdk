@@ -35,7 +35,7 @@
     align-items: baseline;
     gap: 0.4rem;
     padding: 0.2rem 0.5rem;
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     background: color-mix(in srgb, var(--_et-qdt-interaction) 5%, transparent);
     font-size: 1.1rem;
   }

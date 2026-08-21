@@ -97,7 +97,7 @@
   .et-query-devtools-timeline-track {
     position: relative;
     block-size: 1.8rem;
-    border-radius: 0.2rem;
+    border-radius: var(--_et-qdt-radius-sm);
     overflow: hidden;
     background-color: color-mix(in srgb, var(--_et-qdt-interaction) 4%, transparent);
     background-image: repeating-linear-gradient(to right, var(--_et-qdt-border) 0 1px, transparent 1px 25%);
@@ -107,7 +107,7 @@
     position: absolute;
     inset-block: 0.4rem;
     min-inline-size: 0.2rem;
-    border-radius: 0.2rem;
+    border-radius: var(--_et-qdt-radius-sm);
     background: var(--_et-qdt-subtle);
   }
 
@@ -164,7 +164,7 @@
   .et-query-devtools-timeline-flags .et-query-devtools-chip {
     padding: 0 0.4rem;
     border-color: transparent;
-    border-radius: 0.3rem;
+    border-radius: var(--_et-qdt-radius-sm);
     background: color-mix(in srgb, currentcolor 12%, transparent);
     font-size: 1rem;
     line-height: 1.5;

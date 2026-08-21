@@ -10,7 +10,7 @@
 
   .et-query-devtools-step-item {
     border: 1px solid var(--_et-qdt-border);
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     overflow: hidden;
   }
 

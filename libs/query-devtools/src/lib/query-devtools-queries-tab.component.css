@@ -20,12 +20,13 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-block-size: var(--_et-qdt-control-h);
     border: 1px solid color-mix(in srgb, var(--_et-qdt-error) 50%, transparent);
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     background: color-mix(in srgb, var(--_et-qdt-error) 10%, transparent);
     color: var(--_et-qdt-error);
     cursor: pointer;
-    padding: 0.3rem 0.6rem;
+    padding: 0.25rem 0.7rem;
     font: inherit;
     font-size: 1.15rem;
     line-height: 1.4;
@@ -91,7 +92,7 @@
     margin-inline-end: 0.4rem;
     appearance: none;
     border: none;
-    border-radius: 0.4rem;
+    border-radius: var(--_et-qdt-radius);
     background: transparent;
     color: var(--_et-qdt-subtle);
     cursor: pointer;

@@ -20,7 +20,7 @@
     block-size: 2.2rem;
     margin-block: -0.4rem;
     border: none;
-    border-radius: 0.3rem;
+    border-radius: var(--_et-qdt-radius-sm, 0.3rem);
     background: transparent;
     color: var(--_et-qdt-subtle, currentColor);
     cursor: pointer;
@@ -61,8 +61,10 @@
     font-size: 12px;
   }
 
+  /* The panel's own error token, which does not reach a menu surface in the overlay root - so the
+     fallback is what paints here, and it has to be a red rather than the app's accent. */
   .et-query-devtools-override-error {
-    color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+    color: var(--_et-qdt-error, rgb(239 68 68));
   }
 
   .et-query-devtools-override-note {

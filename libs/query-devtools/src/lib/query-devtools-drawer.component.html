@@ -10,7 +10,14 @@
   <aside class="et-query-devtools-drawer">
     <div class="et-query-devtools-drawer-head">
       <span>Query detail</span>
-      <button (click)="dismiss.emit()" class="et-query-devtools-close" type="button" title="Close detail">✕</button>
+      <button
+        (click)="dismiss.emit()"
+        class="et-query-devtools-btn et-query-devtools-icon-btn"
+        type="button"
+        title="Close detail"
+      >
+        ✕
+      </button>
     </div>
     <et-query-devtools-detail [sel]="selected" />
   </aside>
