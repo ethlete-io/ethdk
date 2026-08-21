@@ -20,7 +20,7 @@ Fable for batch design, synthesis and cross-checks.
 | 3 | forms/select + cascader | 8.4k | opus | done — 3 high / 6 medium / 8 low |
 | 4 | forms/form-field + input + textarea + masked-input + form + description | 6.8k | opus | done — 1 high / 6 medium / 12 low |
 | 5 | forms/selection-list + choice-field + checkbox + switch + rating + selection-card | 5.4k | opus | done — 4 high / 4 medium / 11 low |
-| 6 | forms/slider + dropzone + color-input | 7.6k | opus | pending |
+| 6 | forms/slider + dropzone + color-input | 7.6k | opus | done — 3 high / 7 medium / 12 low |
 | 7 | forms/phone-input + otp-input + tag-input + forms/testing | 3.9k | opus | pending |
 | 8 | table | 10.7k | opus | done — 3 high / 8 medium / 12 low |
 | 9 | overlay | 7.5k | opus | done — 2 high / 8 medium / 10 low |
@@ -31,8 +31,8 @@ Fable for batch design, synthesis and cross-checks.
 | 14 | menu + command-palette + toggletip + tooltip | 5.5k | opus | done — 4 high / 9 medium / 10 low |
 | 15 | carousel + scrollable + scrollbar | 5.2k | opus | done — 5 high / 8 medium / 20 low |
 | 16 | calendar + time-picker | 4.0k | opus | done — 4 high / 6 medium / 9 low |
-| 17 | notification + tabs + accordion + tree | 5.6k | opus | pending |
-| 18 | match + standings | 2.6k | sonnet | pending |
+| 17 | notification + tabs + accordion + tree | 5.6k | opus | done — 3 high / 12 medium / 20 low |
+| 18 | match + standings | 2.6k | sonnet | done — 0 high / 3 medium / 3 low |
 | 19 | button + chip + badge + avatar + banner + card + divider | 3.4k | sonnet | pending |
 | 20 | icon + picture + skeleton + loader + empty-state | 3.4k | sonnet | pending |
 | 21 | pagination + breadcrumb + progress-steps + timeline + kbd + toolbar + description-list + copy-button + focus-ring | 3.2k | sonnet | pending |
@@ -5738,5 +5738,1305 @@ terminated by `takeUntilDestroyed` last in the pipe; all controls signal-forms n
 / `FormCheckboxControl` / `checked` models, no `ControlValueAccessor` anywhere); and the documented token
 names, `orientation`, `variant="card"`/`controlPosition`, card-slot and `variant="tabs"` behaviour in
 `choice-inputs.md` all match the code.
+
+---
+
+## Batch 17 — notification / tabs / accordion / tree
+
+Scope: `libs/components/src/lib/{notification,tabs,accordion,tree}` (all non-spec sources + specs) and
+`apps/docs/components/{notification,tabs,accordion,tree}.md`.
+
+Runtime verification was done with two throwaway specs
+(`src/lib/__scan-verify-b17.spec.ts`, `src/lib/__scan-verify-b17b.spec.ts`), run with
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts <spec>`, and **both
+files have been deleted**. No source file was modified.
+
+---
+
+## notification
+
+### High
+
+- **The auto-dismiss timer's pause/resume is not reference-counted, so a toast dismisses itself out
+  from under a keyboard user.** `notification.component.ts:61-64` wires four independent host
+  listeners to the same pair of methods (`mouseenter`→`pauseTimer`, `mouseleave`→`resumeTimer`,
+  `focusin`→`pauseTimer`, `focusout`→`resumeTimer`), and `notification-ref.ts:53-71` keeps no depth
+  counter — `resumeTimer()` restarts the timer whenever `remainingDuration > 0`, no matter how many
+  other reasons to stay paused are still true. Scenario: the user tabs into a toast (focus inside),
+  then moves the mouse off it → `mouseleave` resumes the timer → the toast dismisses while it still
+  holds focus, dumping focus on `<body>` mid-interaction.
+  **Runtime-verified**: dispatching `mouseenter` → `focusin` → `mouseleave` on `et-notification`
+  (default `success` duration 4000) and advancing fake timers 5000ms →
+  `after mouseenter+focusin+mouseleave, isDismissing = true`.
+- **A plain click on a hovered toast restarts its timer for the same reason.**
+  `notification-swipe-to-dismiss.directive.ts:163` pauses the timer on every accepted `pointerdown`,
+  and `:218` calls `resumeTimer()` unconditionally on `pointerup` — including the uncommitted case
+  (`wasCommitted === false`, i.e. a click rather than a drag), with no regard for the hover that
+  paused it first. So clicking anywhere non-interactive inside a toast the pointer is resting on
+  re-arms the countdown, and the toast vanishes 4s later while still hovered.
+  **Runtime-verified**: `mouseenter` → `pointerdown`(mouse, primary) → `pointerup` on document,
+  advance 5000ms → `after hover + click, isDismissing = true`.
+
+### Medium
+
+- **`maxVisible: 0` shows every notification instead of none.** `notification-manager.ts:56` caps
+  with `active.slice(-managerConfig.maxVisible)`, and `slice(-0)` is `slice(0)` — the whole array
+  (**verified**: `[1,2,3].slice(-0).length === 3`). The same value also makes
+  `notification-manager.ts:129` (`currentActive.length >= managerConfig.maxVisible`) true on every
+  `open()`, so each new toast dismisses the oldest *and* the cap never applies. The config is typed
+  `number` with no clamping, so `0` is a legal value that does the opposite of what it reads as.
+- **The public JSDoc for `duration` contradicts the code and its own next sentence.**
+  `notification-config.ts:38-42` opens with "`0` or `undefined` uses the manager's
+  `defaultDuration` for the current status", but `notification-ref.ts:33-36` returns `cfg.duration`
+  whenever it is `!== undefined`, so `duration: 0` means *never auto-dismiss* — which is what the
+  third sentence of the same comment and `apps/docs/components/notification.md:53` both say. A
+  consumer reading only the first sentence and writing `duration: 0` to mean "use the default" gets
+  a permanently sticky toast.
+- **Pending auto-dismiss timers are unmanaged subscriptions that outlive the injector.**
+  `notification-ref.ts:48` and `:68` create bare `timer(...)` subscriptions in a plain factory
+  (no injection context, no `takeUntilDestroyed`). The manager's teardown
+  (`notification-manager.ts:108`) destroys the stack component only, so after the root injector is
+  destroyed every toast that was still counting down fires once and calls `dismiss()` →
+  `beforeChange()` → a write to a detached signal. The blast radius is bounded (one late tick per
+  toast, and `captureBeforeState` is nulled at `notification-stack.directive.ts:56-58`), but it is a
+  timer per toast that nothing can cancel — `dismissAll()` is the only way, and it is not called on
+  destroy.
+- **`registeredActions` / `registeredDismiss` are write-only state that retains destroyed
+  directives.** `notification.directive.ts:40-42` declares them, `notification-action.directive.ts:37`
+  appends to the array and `notification-dismiss.directive.ts:18` sets the slot — neither ever
+  unregisters on destroy, and a repo-wide grep finds no reader outside
+  `headless/notification.directive.spec.ts:65-66`. In a custom toast that renders its action
+  conditionally (`@if`), the array grows unboundedly across toggles and holds references to
+  destroyed directives. Contrast the accordion, which solved exactly this with
+  `accordion/headless/internals/register-part.ts`.
+
+### Low
+
+- `notification.directive.ts:60` places `takeUntilDestroyed()` before the `tap()` that calls
+  `markDismissed()` — AGENTS.md requires it last in the pipe.
+- The swipe directive subscribes to three `document`-level pointer streams per toast
+  (`notification-swipe-to-dismiss.directive.ts:122-146`) even when `swipeToDismiss: false`; `isEnabled`
+  is only consulted inside `startGesture` (`:150`). With the gesture off, that is three dead document
+  listeners per visible toast.
+- `--et-notification-shadow`'s `initial-value` hardcodes `rgb(0 0 0 / 10%)` / `rgb(0 0 0 / 5%)`
+  (`notification.component.css:29-31`) as the primary value rather than a surface token.
+- Nested live regions: the stack is `role="log" aria-live="polite"` (`notification-stack.component.ts:15-17`)
+  and every toast inside it is `role="status"` or `role="alert"` (`notification.directive.ts:37`). Two
+  nested live regions is a known double-announcement shape; the docs (`notification.md:198`) present
+  it as the design, so this is a deliberate choice worth re-testing with a screen reader rather than
+  an outright bug.
+- `NotificationStackComponent` is not exported from `notification/index.ts`, while
+  `NotificationStackDirective`, `NotificationItemDirective` and `NOTIFICATION_STACK_CONTEXT_TOKEN`
+  are. A consumer following the "build your own" path has the parts but not the reference
+  implementation, and `NOTIFICATION_IMPORTS` omits `NotificationItemDirective` too.
+
+### Spec coverage
+
+Well covered: the manager's id/replace/cap semantics (`notification-manager.spec.ts`), the whole
+`promise()` surface including query following, progress and post-dismiss silence
+(`notification-promise.spec.ts`, 13 cases — the strongest spec in the batch), the component's
+rendering/icon/action matrix (`notification.component.spec.ts`), the stack's ARIA and ordering
+(`notification-stack.component.spec.ts`), surface elevation (`notification-surface.spec.ts`).
+
+Zero tests: **`notification-swipe-to-dismiss.directive.ts` (279 lines)** — a grep for
+`SwipeToDismiss` across all `*.spec.ts` in the lib returns nothing. Commit threshold, direction
+resolution per writing direction, velocity-vs-distance dismissal, `settleBack`, `pointercancel` and
+the momentum handoff are all untested. Also untested: the FLIP machinery in
+`notification-stack.directive.ts:53-173`, `pauseTimer`/`resumeTimer` on the ref itself
+(`notification-ref.spec.ts` covers id/entry/dismiss/afterDismissed only), and `dismissAll`.
+
+Asserts a behavior that is arguably wrong: `notification.component.spec.ts:93-101` ("pauses and
+resumes the timer on pointer and focus transitions") dispatches `mouseenter, focusin, mouseleave,
+focusout` and asserts `pauseTimerCalls === 2 && resumeTimerCalls === 2` — it locks in the
+unbalanced pause/resume that produces the High finding above. A ref-counted fix would have to
+change this spec.
+
+### Improvements
+
+**Features**
+
+1. **A `pause` reason set on the ref instead of a boolean latch.** `pauseTimer(reason)` /
+   `resumeTimer(reason)` keyed by `'hover' | 'focus' | 'gesture' | consumer string` is the smallest
+   fix for both High findings and makes the API honest about several owners.
+2. **`updateContent`/`promise` for a toast that reports multi-step progress.** `promise()` settles
+   once; a common shape (upload → process → done) needs a `step()` hook or an accepted
+   `Observable<NotificationContentInit>` that drives the toast until completion.
+3. **Position-per-notification override.** Every peer library (Sonner, PrimeNG, Material) lets one
+   toast opt out of the app-wide corner; `NotificationConfig` has no `position`, and the stack is a
+   single instance keyed off the static manager config (`notification-manager.ts:65`).
+
+**DX**
+
+1. **`maxVisible` should be clamped and documented at `>= 1`.** Either `Math.max(1, …)` at
+   `notification-manager.ts:56` or a dev-mode error; the current `0` behavior is a trap.
+2. **A notification test driver.** Every notification spec re-implements the same
+   `provideNotificationManagerConfig` + fake-ref boilerplate (compare `notification.component.spec.ts:26`
+   and `:44`). A `createNotificationHarness()` returning `{ open, advance, refs, dismiss }` would
+   also make the swipe gesture testable.
+
+**Bundle size**
+
+1. **Split the swipe gesture out of `et-notification`.** `NotificationSwipeToDismissDirective` is a
+   static `hostDirective` (`notification.component.ts:47`), so its 279 lines plus
+   `createSwipeTracker`/`pointer-gesture-target` ship even for apps that set
+   `swipeToDismiss: false`. Mounting it from the manager config (the way
+   `mountTabScaleStyles`/`injectStyleManager` handles opt-in CSS) would make it droppable.
+2. **`notification.component.css` (271 lines) carries the position/RTL/narrow-viewport matrix for
+   all six positions.** Only one is ever active per app; a styles-only component per docked edge is
+   the AGENTS.md pattern, though the win is smaller than the swipe split.
+
+**UI/UX**
+
+1. **A focused toast should never auto-dismiss at all**, not merely stay paused — once focus is
+   inside, the countdown is a trap for keyboard and screen-reader users. WCAG 2.2.1 argues for
+   dropping the timer entirely rather than pausing it.
+2. **No `Escape` handling at the stack level.** `Escape` only dismisses the toast that has focus
+   (`notification.component.ts:60`); there is no way to clear the stack from the keyboard without
+   tabbing to each toast.
+
+**Testing**
+
+1. Cover the swipe gesture first — it is the largest untested surface in the batch and the only one
+   that touches `setPointerCapture`, momentum and RTL sign resolution.
+2. Then the pause/resume matrix (hover+focus, click-while-hovered, gesture-while-hovered) — the two
+   High findings are one spec each.
+
+---
+
+## tabs
+
+### High
+
+- **A tab inserted anywhere but at the end desyncs selection, ARIA and the underline from the panel
+  that is actually shown.** `tab-bar.directive.ts:82-84` (`registerTrigger`) appends triggers in
+  *creation* order, while `tab-group.component.ts` indexes everything by the template's `$index`
+  (`:32` active class, `:35` `aria-controls`, `:58-60` panel id + `aria-labelledby`, `:60-61`
+  inert/hidden). Inserting a tab before the selected one leaves the two orders permanently out of
+  step: `TabBarTriggerDirective.isSelected()` (`tab-bar-trigger.directive.ts:57-65`) and `tabIndex()`
+  (`:67-81`) use `triggers().indexOf(this)`, so they name a different tab than the template does.
+  **Runtime-verified** — a `@for`-driven `et-tab-group` with `['A','B']`, then `['Z','A','B']`:
+
+  ```
+  before: [A: aria-selected=true, active=true, tabindex=0]
+  after : [Z: aria-selected=false, active=true,  tabindex=-1]
+          [A: aria-selected=true,  active=false, tabindex=0]
+  panels: [panel-0 "Z content" hidden=false labelledby=et-tab-trigger-2 (= A's trigger)]
+          [panel-1 "A content" hidden=true]
+  ```
+
+  So: the visible panel belongs to Z, `aria-selected="true"` sits on A, the roving tab stop sits on
+  A, and the visible panel is labelled by A's trigger. A screen-reader user is told the selected tab
+  is A while reading Z's content. Nothing in the DOM recovers from this — the mismatch persists for
+  the life of the group.
+
+### Medium
+
+- **`role="tab"` elements are not owned by their `role="tablist"` in either flavor.**
+  **Runtime-verified** parent chains:
+  `button[tab] < div < div < et-scrollable < div[tablist] < et-tab-group[none]` and
+  `a[tab] < div < div < et-scrollable < et-nav-tabs[tablist]`. Three generic elements sit between the
+  tablist and its tabs, none carrying `role="presentation"`, and there is no `aria-owns`. ARIA
+  requires `tab` to be an owned element of `tablist`; assistive tech that walks required-owned
+  relationships (rather than just reading roles) loses the set. Fix is `role="presentation"` on the
+  scrollable wrappers, which is cheap since they are pure layout.
+- **Arrow keys are not writing-direction aware.** `tab-bar.directive.ts:100-107` maps `ArrowRight` to
+  `moveFocus(1)` unconditionally, so in an RTL bar the right arrow walks *backwards* through the
+  visually ordered tabs. The tree in this same batch does resolve direction
+  (`tree/headless/tree.directive.ts:464-466`), and `notification.md:169-175` documents RTL support in
+  detail — so this is both an a11y bug and an inconsistency between siblings.
+  Code-verified only (jsdom does not resolve `direction` from `dir` reliably enough to assert on).
+- **A nav-tabs bar on a route that matches no link reports the first link as selected.**
+  `tab-bar.directive.ts:47` seeds `selectedIndex = 0` and nothing ever clears it; because a nav tab
+  link sets `deferSelection` (`nav-tabs/headless/nav-tab-link.directive.ts:32`) a click never selects
+  either, so on an unmatched route `activeTrigger()` is still `triggers()[0]`.
+  **Runtime-verified** — two links (`/one`, `/two`) on route `/other`:
+  `[{One: ariaSelected:"true", activeClass:false, underlineActive:true, tabindex:"0"}, {Two: ...false}]`.
+  The underline paints on link One and `aria-selected="true"` lands there, while the `--active` class
+  (which reads `NavTabLinkDirective.isActive()`) is correctly `false` — i.e. the component contradicts
+  itself on screen: an underlined tab whose text is not in the active color.
+- **`aria-orientation` is bound on an element that is `role="none"`.** `tab-group.component.ts:104`
+  puts `[attr.data-orientation]` and (via `TabBarDirective`'s host, `tab-bar.directive.ts:31`)
+  `aria-orientation` on the `et-tab-group` host, but the component's own `host` block declares
+  `role: 'none'` (`:103`) which wins (**runtime-verified**: `HOST role = "none"`,
+  `HOST aria-orientation = "horizontal"`, `INNER role = "tablist"`, `tablist count = 1`). The host's
+  `aria-orientation` is inert; the real tablist gets its own copy from the template (`:19`). Same
+  for the `role="tablist"` the host directive tries to set. Dead bindings that read as if they matter.
+- **`disabled` on `a[et-nav-tab-link]` is not equivalent to a disabled content tab, contrary to the
+  docs.** `tabs.md:53` says nav links support `disabled` "just like content tabs". A content tab
+  trigger is a native `<button [disabled]>` (`tab-group.component.ts:34`) and is genuinely inert; a
+  nav link gets `[attr.disabled]` on an `<a>` (a no-op — **verified**, the anchor keeps its `href`),
+  `aria-disabled`, and `pointer-events: none` from CSS (`nav-tab-link-styles.component.css:70-73`).
+  Pointer clicks are blocked, but `NavTabLinkComponent.handleSpace` (`nav-tab-link.component.ts:52-55`)
+  calls `.click()` with no disabled guard, and if the *selected* link is the disabled one it keeps
+  `tabindex="0"` (`tab-bar-trigger.directive.ts:67-81`) and is therefore keyboard-reachable. Enter
+  and Space then navigate.
+
+### Low
+
+- `NavTabsDirective.navigationVersion` (`nav-tabs/headless/nav-tabs.directive.ts:19-27`) is a
+  computed that is never read anywhere in the repo — dead `@internal` API.
+- `TabTriggerDirective` (`tabs/tabs/headless/tab-trigger.directive.ts`) is exported through
+  `tabs/tabs/headless/index.ts` → the lib's public API, but the selector `[etTabTrigger]` appears in
+  no template, no imports array and no doc page. Its only behavior is binding `aria-controls` from an
+  input the consumer must compute anyway.
+- `NavTabLinkStylesComponent` is marked `@internal` yet re-exported from
+  `tabs/nav-tabs/index.ts:4`, while the sibling `TabScaleStylesComponent` is deliberately not
+  exported. Pick one.
+- With `preserveContent="false"`, non-selected panels still render as empty `role="tabpanel"` divs:
+  `shouldRenderPanel` (`tab-group.component.ts:376-382`) gates only the content, and `isPanelHidden`
+  (`:368-374`) returns `false` for every panel in that mode, so they are `inert` but not `hidden`.
+  Empty tabpanels stay in the accessibility tree.
+- Docs gaps in `tabs.md`: the auto session-memory key (`tab-group.directive.ts:176-183`,
+  `createAutoSessionMemoryKey`) is mentioned only as "persists the selected tab" with no word on how
+  the implicit key is derived or when it collides; `resolveSelectedIndex`'s "a disabled target falls
+  back to the first enabled tab" behavior (`:145-167`) is compressed to "disabled tabs are skipped";
+  and only 2 of the 8 stories are embedded (`Vertical`, `WithDisabledTabs`, `LazyRendering`,
+  `SessionMemory`, `WithDisabledLinks` have no `<StoryEmbed>`).
+
+### Spec coverage
+
+Well covered: session memory in every direction (restore, persist, clamp, disabled target, auto key,
+unavailable storage, repeated groups — `tabs/tab-group.component.spec.ts:187-283`), the initial
+transition suppression (`:285-300`), panel unregistration (`:325-338`), the four structural dev
+errors (`tab-errors.spec.ts`), `et-tab` inputs (`tabs/tab.component.spec.ts`), nav-tab routing and
+the sibling-outlet labeling (`nav-tabs/nav-tabs.component.spec.ts`), and the overlay nav link's
+guard behavior (`nav-tabs/overlay-nav-tab-link.component.spec.ts` — the guard-vetoes case is a nice
+catch).
+
+Zero tests: **the entire tab-bar keyboard model.** A grep for `ArrowRight|ArrowDown|'Home'|handleKeydown`
+across `tabs/**/*.spec.ts` returns nothing, so `TabBarDirective.handleKeydown`, `moveFocus` (wrapping
+and disabled-skipping), `focusFirst`/`focusLast`, `activateFocused` and `handleFocusout`'s roving-index
+reset (`tab-bar.directive.ts:100-196`) are all unverified — 96 lines of a11y-critical logic, and
+`tabs.md:87` promises all of it. Also zero: `TabBarUnderlineDirective`'s FLIP
+(`tab-bar-underline.directive.ts`), trigger registration order under a dynamic `@for` (the High
+finding), and `NavTabsRegistry`'s "more than one bar → `single()` is null" branch
+(`nav-tabs-registry.ts:22-26`).
+
+### Improvements
+
+**Features**
+
+1. **Key selection off the tab identity, not an index.** `selectedIndex` is the root cause of the
+   High finding and of every `triggerElements()[idx]` lookup. A `selectedId` / `value`-based model
+   (with `selectedIndex` kept as a derived convenience) makes dynamic tab sets correct by
+   construction and matches Material's `<mat-tab-group>` direction of travel.
+2. **`activateOnFocus` (automatic vs manual activation).** The ARIA tabs pattern distinguishes the
+   two; today arrow keys only move focus and `Enter` activates
+   (`tab-bar.directive.ts:117-119, 188-196`), with no way to get the automatic behavior that suits
+   short, cheap tab sets.
+3. **Closable tabs / an overflow menu.** Both are standard in PrimeNG and Ark UI, and the bar already
+   owns a scrollable so the plumbing (`scrollable-buttons`) is half there.
+
+**DX**
+
+1. **`sortByDomOrder` the registered triggers, as masonry and the accordion already do.**
+   `masonry/headless/masonry.directive.ts:86` and `accordion/headless/accordion-group.directive.ts:63-69`
+   both solve exactly the ordering problem the tab bar has; reusing that helper in
+   `tab-bar.directive.ts:82-84` is a small change with a High-severity payoff.
+2. **A tab test driver.** Every tab spec re-declares the same `ResizeObserverMock` /
+   `IntersectionObserverMock` / `HTMLElement.prototype.scroll` triple
+   (`tab-group.component.spec.ts:54-84,139-152`, `nav-tabs.component.spec.ts:9-37`,
+   `overlay-nav-tab-link.component.spec.ts`). Those shims belong in `src/test-helpers.ts` next to the
+   existing ones; the missing keyboard specs are much cheaper to write once they are.
+3. **`ET2003`'s message covers two unrelated situations** (`tab-errors.ts:11`, thrown from both
+   `nav-tab-link.directive.ts:47` and `nav-tabs-outlet.directive.ts:31`); the outlet case in
+   particular says "requires an et-nav-tabs element on the page", which is confusing when one exists
+   but two bars do (the registry's `single()` returns null and the outlet silently loses its label).
+
+**Bundle size**
+
+1. **`et-tab-group` and `et-nav-tabs` duplicate ~120 lines of near-identical CSS**
+   (`tab-group.component.ts:110-348` vs `nav-tabs.component.ts:53-135` plus
+   `nav-tab-link-styles.component.css`) — the underline geometry, the `[data-variant='primary']`
+   offsets, the divider `::after` and the three hover/focus/active tints are the same rules with a
+   different class prefix. A shared styles-only component (the `TabScaleStylesComponent` pattern
+   already established at `tab-scale-styles.component.ts`) would collapse them.
+2. **`et-tab-group` pulls in the whole scrollable + scrollable-buttons stack** (`tab-group.component.ts:20-28,79-80`)
+   whether or not the bar overflows. A tab set of three fixed tabs pays for `ScrollableDirective`,
+   `ScrollableButtonsDirective` and their IntersectionObserver wiring.
+
+**UI/UX**
+
+1. **RTL arrow keys** (see Medium) — and while there, `tabs.md:87` should say what `Space` does on a
+   content tab (nothing explicit; it works only because the trigger is a native `<button>`).
+2. **A nav-tabs bar should render no selection when no route matches** (see Medium) rather than
+   defaulting to tab one; `selectedIndex` wants a `-1` sentinel for the nav flavor.
+
+**Testing**
+
+1. The keyboard model first (arrow wrapping, disabled skipping, Home/End, focusout reset) — it is
+   the largest untested block and it is what the docs sell.
+2. Then a dynamic-`@for` tab set: insert, remove and reorder, asserting `aria-selected`, `tabindex`
+   and the visible panel line up. That spec is the regression guard for the High finding.
+
+---
+
+## accordion
+
+The cleanest domain in the batch — no High findings, and several patterns here are what the other
+three domains should copy (`internals/register-part.ts` for symmetric registration,
+`accordion-group.directive.ts:63-69` for DOM-order-not-creation-order, the self-destroying seed
+effect at `accordion.directive.ts:100-111`).
+
+Two docs claims I specifically tried to break and could not:
+
+- `accordion.md:87` — "grab it with `#group="etAccordionGroup"`" on `<et-accordion-group>`, where
+  `AccordionGroupDirective` is a `hostDirective`. **Runtime-verified working**: the template reference
+  resolves to the directive instance (`ref ctor = AccordionGroupDirective`,
+  `ref is the directive instance = true`) and `group.openAll()` expands both panels
+  (`expanded triggers: ["true","true"]`).
+- `accordion.md:82-84` — `preventCloseLast` "gates the header's own toggle" while `close()`/`closeAll()`
+  still collapse. Matches `accordion.directive.ts:161-172` + `accordion-group.directive.ts:105-111`
+  exactly, and `accordion.component.spec.ts:268-281` already asserts it.
+
+### Medium
+
+- Nothing I could substantiate.
+
+### Low
+
+- **`> .et-accordion:last-child` is fragile to any non-accordion trailing child.**
+  `accordion-group.component.css:8-10` drops the trailing hairline via `:last-child`; a consumer
+  putting anything after the last `<et-accordion>` inside `<et-accordion-group>` (a footer link, a
+  "show more" button) leaves a double hairline. `:has(+ …)`-free alternative:
+  `> .et-accordion:not(:has(~ .et-accordion))`.
+- **An accordion with neither `label` nor `etAccordionLabel` renders an empty heading with no dev
+  warning.** `accordion.component.html:1-9` falls back to `{{ label() }}`, whose default is `''`
+  (`accordion.component.ts:45`). The domain already has dev-mode structural errors for a missing
+  trigger and a missing panel (`accordion.directive.ts:120-141`); an unlabeled header is the same
+  class of mistake and produces an unnavigable heading.
+- **`AccordionTriggerDirective` sets `type: 'button'` as a static host attribute** regardless of what
+  element it is applied to (`accordion-trigger.directive.ts:21`). Harmless on a `<div>`, but the
+  directive's own JSDoc says "put it on a native `<button>`" — a dev-mode check would be more useful
+  than an attribute that only means something on the element it already assumes.
+- Docs gap: the `#accordion="etAccordion"` reference is shown only on a headless `[etAccordion]` div
+  (`accordion.md:133`); that it works identically on `<et-accordion>` (giving `open`/`close`/`toggle`/
+  `hasBeenOpened`) is never stated, even though it is the more common need.
+- `accordion.md` documents `Home`/`End` (line 171) and the code implements them
+  (`accordion-group.directive.ts:174-179`), but no spec covers them (see below).
+
+### Spec coverage
+
+Well covered, and unusually thorough on the group: `autoCloseOthers` including the "turned on later"
+diff (`accordion.component.spec.ts:145-175`), unregistration of a removed accordion (`:176-186`),
+`openAll`/`closeAll` (`:187-205`), the whole `preventCloseLast` matrix in six cases (`:206-293`),
+arrow-key wrapping (`:295+`), `hasBeenOpened` surviving a collapse (`:115-132`), `aria-disabled` +
+refused toggle (`:88-104`), and the id wiring (`:46-64`).
+
+Gaps: `Home`/`End` navigation and `[arrowKeyNavigation]="false"` are untested
+(`accordion-group.directive.ts:129-146, 174-190`); `isOpenByDefault`'s "seed once, never re-open"
+contract (`accordion.directive.ts:100-111`) has no spec, and it is exactly the kind of subtlety a
+future refactor would silently break; the `etAccordionHint` slot and `headingLevel` beyond the
+default are only lightly touched; and `registerPart`'s teardown (a conditionally rendered trigger or
+panel coming and going, which is what the trigger's `aria-controls` depends on) is untested.
+
+No spec asserts a wrong behavior.
+
+### Improvements
+
+**Features**
+
+1. **A group-level `value` / `[(openValues)]` model.** The group knows its accordions but exposes
+   only imperative `openAll`/`closeAll`; a two-way set of open ids would make a
+   persisted/URL-driven FAQ trivial and mirrors what the tree already does with `expandedValues`.
+2. **`disabled` on the group.** `AccordionGroupDirective` has no `disabled`, so disabling a whole
+   FAQ section means setting it on every child.
+
+**DX**
+
+1. **`isOpenByDefault` vs `[(isOpen)]` is the one confusing interaction here.** The JSDoc explains
+   it well (`accordion.directive.ts:57-61`), but a dev-mode warning when both are bound would save
+   the debugging session; the seed effect silently wins once and then stops.
+2. **Reuse `registerPart` (or `sortByDomOrder`) in the other three domains.** This directory has the
+   right abstraction; the notification action registry and the tab-bar trigger list are both bugs
+   that this file already prevents.
+
+**Bundle size**
+
+1. `accordion.component.css` is 210 lines and every rule serves the default component — nothing worth
+   splitting. The chevron icon is already registered per-component
+   (`accordion.component.ts:29`) rather than globally, which is the right call.
+
+**UI/UX**
+
+1. **`grid-template-rows: 0fr → 1fr` has no fallback** (`accordion.component.css:165-180`). It is the
+   nicest available technique, but in a browser that does not animate it the panel snaps — worth a
+   `@supports` note in the docs rather than code.
+2. **Focus is not moved into a newly opened panel, and nothing scrolls the header into view.** With a
+   long panel above, expanding one below pushes it off screen; Material's accordion scrolls the
+   expanded header into view.
+
+**Testing**
+
+1. `Home`/`End` and `arrowKeyNavigation=false` — two cases, both promised by the docs.
+2. `isOpenByDefault` seeding semantics (set it true after first render and assert nothing reopens).
+
+---
+
+## tree
+
+### High
+
+- **Collapsing a branch programmatically while a descendant row holds focus drops focus to
+  `<body>`.** `tree.directive.ts:306-312` (`collapse`) and `:340-344` (`collapseAll`) only rewrite
+  `expandedValues`; the rows below are destroyed by the template's `@for`
+  (`tree.component.html:1-20`) and nothing moves DOM focus to the surviving parent.
+  `activeNode()` (`:209-219`) then falls back to `rows[0]`, so even the roving tab stop jumps to the
+  *first* row rather than the collapsed parent — which contradicts `tree.md:158` ("the tab stop stays
+  on the row the user last focused, so Shift+Tab back into the tree re-enters where they left off").
+  **Runtime-verified**: a tree with `expanded = ['a']`, focus on the child row "Alpha one", then
+  `expanded.set([])` →
+
+  ```
+  rows after collapse = ["Alpha","Bravo"]
+  activeElement after collapse = BODY
+  tab stops = [{Alpha, tabindex:"0"}, {Bravo, tabindex:"-1"}]
+  ```
+
+  The ArrowLeft path is safe (focus is already on the parent, `:499-506`), so this bites two-way
+  `[(expandedValues)]` writes, `collapseAll()` from a toolbar button, and a data-source swap
+  (`:254-257` clears `focusedNode`) — i.e. exactly the programmatic paths the docs encourage.
+
+### Medium
+
+- **A `loadChildren` observable that completes without emitting leaves the branch spinning
+  forever.** `load()` (`tree.directive.ts:592-615`) sets `LOADING`, then leaves that state only in
+  `tap`'s `next` (→ `LOADED`) or `error` (→ `ERROR`); `take(1)` plus a completing-empty source hits
+  neither. `idleParents` (`:228-244`) only re-queues levels whose status is `IDLE`, so the row keeps
+  `aria-busy="true"` and its spinner (`tree-node.directive.ts:30`) with no path to recovery except
+  `retry()`. An `http.get` piped through a `filter` or a `takeUntil` that fires first is an ordinary
+  way to produce this.
+- **`clearSelection()` and `retry()` ignore the tree-wide `disabled`.** Every other mutator guards on
+  it — `expand` (`:300`), `collapse` (`:307`), `expandAll` (`:327`), `collapseAll` (`:341`), `select`
+  (`:353`), `deselect` (`:367`), `activate` (`:399`) — but `clearSelection` (`:389-391`) and `retry`
+  (`:347-349`) do not. `tree.md:63` says a disabled tree does nothing, so a "clear filters" button
+  wired to `clearSelection()` still wipes the value of a tree the app has disabled.
+- **In `selectionMode="none"`, `Space` scrolls the page.** `handleNodeKeydown`'s `case ' '`
+  (`:523-534`) returns *before* `event.preventDefault()` when the mode is `none`, so a focused row
+  passes the key through to the document's default scroll. A navigation-only tree
+  (`tree.md:87` calls it "a pure navigation tree", and `stories/tree.stories.ts:28` ships a
+  `NavigationOnly` story) is precisely the case where a user holds the keyboard and arrow-walks the
+  rows, and one stray Space jumps the viewport.
+
+### Low
+
+- `--et-tree-error-color` is consumed in three places (`tree.component.css:111,132,222`) and
+  explained in `tree.md:166`, but is missing from the "Public design tokens" list at `tree.md:162` —
+  the one place a reader looks for the token names.
+- The root status rows (`tree.component.html:22-47`) are `role="treeitem"` with `aria-level="1"` but
+  no `aria-posinset`/`aria-setsize`, which the tree's own contract says a flat DOM must state
+  (`tree.md:144`, and every real row does — `tree-node.directive.ts:20-22`). While the root is
+  loading there is also no tab stop anywhere in the tree.
+- `expandAll()` (`:326-338`) expands every *loaded* branch, including ones nested inside collapsed
+  parents, so a subsequent expand of an ancestor reveals a fully-open subtree. Documented ("every
+  branch loaded so far") but surprising; worth an explicit sentence in `tree.md:79`.
+- Docs gap: nothing shows how to reach `expandAll`/`collapseAll`/`focusFirst`/`retry` from the
+  default `<et-tree>` (the headless snippet at `tree.md:129` uses `#tree="etTree"` on an `[etTree]`
+  div). The same reference does work on `<et-tree>` — that is worth one line.
+
+### Spec coverage
+
+The strongest coverage in the batch: 28 cases in `tree.component.spec.ts` covering the ARIA
+projection (`:121-141`), the single tab stop and its migration (`:142-152`), lazy load/collapse/
+re-expand without unloading (`:153-191`), all three selection modes (`:192-234`), disabled node and
+disabled tree (`:235-260`), the whole keyboard model including ArrowRight-into-branch,
+ArrowLeft-to-parent, `*` and type-ahead (`:261-355`), empty/error/root-retry states (`:356-414`),
+data-source swap (`:415-428`), promise sources (`:429-437`) and the projected row template's DI
+(`:467+`).
+
+Untested public API: `expandAll()`, `collapseAll()`, `clearSelection()`, `deselect()`,
+`focusFirst()`, `toggleExpansion()`, and a non-default `compareWith` (object values) — a grep for
+those identifiers in `tree.component.spec.ts` finds only `nodeActivate`. Given that `compareWith` is
+threaded through fourteen call sites in `tree.directive.ts`, an object-valued tree is the highest-value
+missing spec. Also untested: `toErrorMessage` as a custom function, the `seen` recursion guard
+(`:176-178`), and the `TreeNodeDefDirective` teardown path (`tree-node-def.directive.ts:33-37`).
+
+No spec asserts a wrong behavior.
+
+### Improvements
+
+**Features**
+
+1. **Checkbox cascade / tri-state selection.** `tree.md:89` explicitly defers this to the cascader,
+   but a file/permission tree is the canonical ARIA tree use case and every peer library ships it.
+   The row already renders a check box in `multiple` mode (`tree.component.html:6-8`).
+2. **Drag-and-drop reordering / re-parenting.** The flat-row design (`tree.md:136`) is unusually well
+   suited to it — "re-parenting a node moves a row instead of destroying a subtree" — and
+   `@ethlete/core` already ships the drag primitives the overlay and notification gestures use.
+3. **Filter / search over the loaded rows.** `visibleRows()` is a single computed
+   (`tree.directive.ts:135-185`); a `filterPredicate` that keeps matching rows plus their ancestor
+   path is a small addition and is what turns a deep tree into something usable.
+4. **Virtual scrolling.** A tree that flattens to rows is the easy case for it, and the table already
+   has `etTableVirtualScroll` + a styles-only companion to copy.
+
+**DX**
+
+1. **`value` typed as `T | T[] | null` forces a cast at every call site.** Splitting the API by mode
+   (or generic-narrowing on `selectionMode`) would remove the `values()` normalization
+   (`:194-202`) from the consumer's mental model.
+2. **`retry()` is doing two jobs.** `tree.directive.ts:347-349` resets a level to `IDLE`, which is
+   both "retry this failure" and "refresh this branch" (as `tree.md:101` notes). A named
+   `refresh(parent)` alias would make the intent readable at the call site.
+3. **A `TreeDataSource` test double in the lib's testing surface.** Every tree spec hand-rolls the
+   same `loadChildren` record (`tree.component.spec.ts` top, and my scratch spec did the same); a
+   `createStaticTreeSource(nodes)` helper would make the missing `compareWith`/`expandAll` specs
+   cheap.
+
+**Bundle size**
+
+1. **`tree.component.css` is 240 lines, and the `multiple`-mode check box is ~40 of them**
+   (`:180-215`). A `multiple`-only styles-only component mounted from the component when
+   `selectionMode() === 'multiple'` is exactly the AGENTS.md pattern, and single-select trees are the
+   common case.
+2. **`et-tree-marker` already pays its own way** — pulling the icon registration into a child
+   component (`tree-marker.component.ts:31-38`, with a good comment explaining the DI reason) means
+   the spinner and icons land per-marker rather than on the tree. Nothing to change; worth citing as
+   the model for other domains.
+
+**UI/UX**
+
+1. **Move focus to the parent row when a branch collapses** (the High finding). ARIA's treeview
+   pattern expects focus to follow the collapse; today only the ArrowLeft path is correct by accident.
+2. **No indent guides.** At `--et-tree-indent: 18px` (`tree.component.css:6`) a five-level tree is
+   hard to read without vertical rules; a `[data-guides]` opt-in is a few lines of CSS given the
+   per-row `--_et-tree-node-depth` already exists.
+3. **Type-ahead has no visible feedback and no timeout indication.** `createTypeahead()`
+   (`internals/typeahead`) buffers silently, so a mistyped prefix simply stops matching with nothing
+   on screen to explain it.
+
+**Testing**
+
+1. `compareWith` with object values, end to end (expand + select + focus + type-ahead) — the whole
+   directive is written around it and none of it is exercised.
+2. The collapse-focus behavior (the High finding), then `expandAll`/`collapseAll`/`clearSelection`.
+3. A branch whose source completes empty (the Medium finding) — one case, and it pins the
+   `LOADING` dead end.
+
+---
+
+## Clean
+
+Checked and found sound:
+
+- **Repo conventions.** Every stylesheet in all four domains is wrapped in `@layer components { … }`
+  (`notification.component.css`, `notification-stack.component.css`, `accordion.component.css`,
+  `accordion-group.component.css`, `tree.component.css`, `nav-tab-link-styles.component.css`,
+  `tab-scale-styles.component.css`, and the two inline `styles:` blocks in `tab-group.component.ts`
+  and `nav-tabs.component.ts`). No Tailwind outside story files. Colors resolve from
+  `--et-surface-*` / `--et-theme-color-*` throughout, with hardcoded values only as `var()`
+  fallbacks — the one exception noted above is a shadow's `@property` initial value.
+  `:where()` is used for config modifiers and left off interaction states, per the styling notes.
+- **Reactive state.** Signals for synchronous state everywhere; RxJS confined to genuinely async
+  work (the tree's per-branch loading, the notification timer and swipe streams, the FLIP
+  scheduling, `RouterLinkActive.isActiveChange`). No `BehaviorSubject` state, no
+  subscribe-and-assign. `takeUntilDestroyed` present on every long-lived subscription
+  (`tab-bar.directive.ts:73`, `nav-tab-link.directive.ts:37`, `notification-stack.directive.ts:147,164`,
+  `notification-swipe-to-dismiss.directive.ts:117-145`, `tree.directive.ts:264`) — last in the pipe
+  in all but `notification.directive.ts:60`.
+- **Notification promise API** — the `isQuery` discrimination, the `hasSettled` latch, `stopFollowing`
+  on dismissal (`notification-promise.ts:150-190`) and the deliberate "dismissing does not cancel the
+  work" contract all match the docs, and the spec covers each branch.
+- **Notification FLIP** (`notification-stack.directive.ts:60-172`): rects captured before the mutation,
+  read in `earlyRead`, written in `write`, cleanup timers tied to the DestroyRef, and
+  `captureBeforeState` nulled on destroy so a late `beforeChange()` from a ref is a no-op.
+- **Notification surface/elevation** — pinning toasts to elevation 1 regardless of what is open
+  underneath (`notification.component.ts:86-95`) is both explained and spec'd
+  (`notification-surface.spec.ts`), and `NOTIFICATION_STACK_OVERLAY_LAYER` is consistent between the
+  directive, the CSS and `notification.md:202`.
+- **Notification RTL and viewport insets** (`notification-stack.component.css`): logical insets, the
+  `center` shift computed from the reserved edges, and the `dir(rtl)` swap all match `notification.md:169-175`.
+- **Status icon resolution** — `resolveNotificationStatusIcon` (`notification-config.ts:124-128`)
+  correctly distinguishes "not listed" from "listed as `null`", the component layers the
+  per-notification override on top (`notification.component.ts:108-114`), and both the docs and the
+  spec cover the matrix. Icons are `aria-hidden` (verified in the icon directive's host binding), as
+  `notification.md:200` claims.
+- **Accordion**: `registerPart` teardown symmetry, the DOM-order sort, `enforceSingleOpen`'s
+  previous-state diff, `canCollapse` being asked by the accordion rather than enforced by the group,
+  `hasBeenOpened` as a `linkedSignal`, the trigger dropping `aria-controls` while no panel exists, and
+  the `visibility` + `inert` pairing for find-in-page. All match the docs claim for claim.
+- **Tabs**: session-memory restore/persist logic including the `restoredSessionMemoryKey` guard
+  against a write-before-read race, `resolveSelectedIndex`'s clamp-then-skip-disabled, the two
+  `selectedIndex` sync effects' equality guards, the underline FLIP cancelling its predecessor
+  (`tab-bar-underline.directive.ts:40`), `animationsReady` suppressing the initial transition, and
+  `deferSelection` letting the router (or a guard) own nav-tab selection — the overlay guard cases
+  are spec'd and correct.
+- **Tree**: the `seen` recursion guard against a self-referencing source, `mergeMap` (not `switchMap`)
+  for sibling branch loads with `switchMap` on the source swap, `defer` so a throwing `loadChildren`
+  fails one branch instead of the pipeline, `isIdle`'s re-check against a collapsed-in-flight branch,
+  RTL-aware expand/collapse keys, non-wrapping arrow navigation (as documented), the flat-row
+  `aria-level`/`posinset`/`setsize` projection, and `TreeMarkerComponent` existing specifically so
+  icon registration does not shadow a consumer's own (a genuinely subtle DI point, correctly handled
+  and correctly commented).
+- **Error codes**: all four ranges (ET17xx, ET20xx, ET36xx, ET46xx) are declared, non-overlapping,
+  thrown only under `ngDevMode`, and documented in `apps/docs/components/error-codes.md` with
+  matching text.
+- **Story ids**: every `<StoryEmbed id="…">` in the four docs pages resolves to an exported story
+  (`components-feedback-notification--bottom-end`/`--promise-api`/`--bottom-end-right-to-left`,
+  `components-navigation-tabs-tabs--default`, `components-navigation-tabs-nav-tabs--default`,
+  `components-layout-accordion--default`/`--always-one-open`/`--lazy-content`/`--headless`,
+  `components-data-display-tree--default`/`--multi-select`/`--lazy-loading`/`--custom-rows`).
+- **Comment policy**: comments in these four domains are almost entirely load-bearing — ordering
+  constraints (`notification-stack.directive.ts:56`, `accordion-group.directive.ts:157`), invariants
+  the types cannot express (`tree.directive.ts:145`, `notification-manager.ts:57`), and workarounds
+  with their cause named (`tab-scale-styles`, `tree-marker.component.ts:24-30`, the `!important` in
+  `notification.component.css:146-148`). I found nothing that needs deleting.
+
+---
+
+## Batch 06 — slider, dropzone, color-input
+
+Scope: `libs/components/src/lib/forms/{slider,dropzone,color-input}` (all non-spec `.ts`/`.html`/`.css`
+plus every spec), and the matching docs: `apps/docs/components/slider.md`,
+`apps/docs/components/dropzone.md`, and the `## Color input` section of
+`apps/docs/components/text-inputs.md` (color-input has no page of its own).
+
+Runtime verification used the lib's own vitest config:
+`NX_NO_CLOUD=true npx vitest run --root libs/components --config vite.config.mts <spec>`.
+Three scratch specs were written, run, and deleted; no source file was modified.
+
+---
+
+## slider
+
+### High
+
+- **A pointer press on a tick does not commit that tick's value unless `snapToMarks` is on — the docs
+  say it always does.** `apps/docs/components/slider.md:101` states "A pointer press that starts on a
+  tick (or its label) commits **that exact value**, not the value under the pointer." The track does
+  read the exact stop (`slider-track.directive.ts:66`, `markValueUnderPointer`), but it then hands it
+  to `commitThumbValue`, which unconditionally re-snaps through
+  `SliderDirective.snapValue` (`headless/slider.directive.ts:193,218-222`). With `snapToMarks` off,
+  `snapMarkValues()` is empty, so the tick value goes through `snapValueToStep` and is pulled onto the
+  `step` grid. Any explicit `marks` array whose values are not multiples of `step` is therefore
+  unreachable by clicking the tick that advertises it — including the exact case the docs illustrate
+  (labelled stops).
+  **Verified at runtime.** `et-slider` with `step=10` and `marks=[{value:25,label:'quarter'},{value:50}]`:
+  pressing the rendered `data-et-slider-mark-value="25"` tick committed **30**. The same press with
+  `snapToMarks` committed **25**. (Rendered tick values were `['25','50']`, so the tick itself is
+  positioned at 25 — the visual and the committed value disagree.)
+
+### Medium
+
+- **A vertical slider with labelled ticks reserves no room for the labels, so they overflow the
+  component box.** The room for tick labels is reserved by
+  `slider.component.css:174-178` / `range-slider.component.css:180-184`
+  (`&:where([data-mark-labels]) .et-slider-interaction { margin-block-end: … }`), which is a
+  *block*-axis margin. In vertical mode the labels move to the **inline** side
+  (`slider.component.css:370-375`: `.et-slider-mark-label { inset-inline-end: calc(100% + …) }`), and
+  the vertical block at `slider.component.css:319-328` resets `margin-inline: 0` and overwrites
+  `margin-block` wholesale (same specificity, later in source, so it wins). Net effect: nothing is
+  reserved on the axis the labels actually occupy, and `et-slider` sets no `overflow`, so the labels
+  spill out of the control into whatever sits inline-start of it. Same in both stylesheets.
+  Code-verified only (needs real layout; jsdom resolves no logical properties).
+- **`et-range-slider`'s pointer target is 28px tall where `et-slider` deliberately reserves 44px.**
+  `slider.component.css:93` — `block-size: max(44px, var(--et-slider-thumb-size))`;
+  `range-slider.component.css:94` — `block-size: max(28px, …)`, and the vertical counterparts differ
+  the same way (`slider.component.css:323` vs `range-slider.component.css:329`). The two stylesheets
+  are otherwise byte-identical apart from class names, so this reads as a slip rather than a decision:
+  a range slider's thumbs are the harder pointer target of the two (they can sit adjacent), yet its
+  track is 16px shorter and below the 44px minimum the sibling reserves. Code-verified only.
+
+### Low
+
+- **The docs say the mixed thumb parks "dimmed"; nothing dims it.**
+  `apps/docs/components/slider.md:129` — "the thumb(s) park **dimmed** at the track start". The only
+  `[data-mixed]` treatment on the thumb is `box-shadow: none`
+  (`slider.component.css:211-213`, `range-slider.component.css:217-219`); there is no opacity or color
+  change. Either the docs or the stylesheet is out of date.
+- **`--et-slider-warning-font-size` is public (it is an `@property` with an initial value,
+  `slider.component.css:62-66`) but absent from the token table** at
+  `apps/docs/components/slider.md:187-199`, which lists the error and hint counterparts.
+- **Self-referential import paths.** `slider.component.ts` has no issue, but
+  `range-slider.component.ts:8` imports from `'../../forms/slider/slider-labels'` and
+  `headless/slider.directive.ts:33` / `headless/range-slider.directive.ts:34` from
+  `'../../../forms/form-field/form-field-labels'` — both walk out of and back into the same tree, and
+  both sit outside the sorted import block above them. `'./slider-labels'` and
+  `'../../form-field/form-field-labels'` are the same files.
+- **`focus()` silently suppresses scroll-into-view.** `headless/slider-thumb.directive.ts:96` —
+  `this.elementRef.nativeElement.focus(options ?? { preventScroll: true })`. A consumer calling
+  `sliderComponent.focus()` with no argument (the documented way to focus a control) gets
+  `preventScroll: true`, so a slider below the fold is focused invisibly. The `preventScroll` default
+  exists for the track's pointer path, which always passes `{ origin: 'pointer' }` and therefore never
+  reaches the fallback.
+
+---
+
+## dropzone
+
+### High
+
+- **`DROPZONE_LABELS.uploading` is never read — the live region hardcodes English.**
+  `dropzone-labels.ts:24,35` declares `uploading: (count: number) => string` with the JSDoc
+  "Announced while uploads are in flight", and `provideDropzoneLabels` is documented as the way to
+  localize "every string the dropzone renders or announces itself" (`dropzone-labels.ts:3-9`, and
+  `apps/docs/components/dropzone.md:222` describes the live region). But
+  `dropzone.component.ts:144-153` builds the message inline:
+  `return uploading === 1 ? 'Uploading 1 file' : \`Uploading ${uploading} files\`;` — `dropzoneLabels()`
+  is not consulted. A grep for `uploading` across the domain finds no call site for the label. Any
+  non-English app announces English to screen-reader users with no way to override it (there is no
+  per-instance input for it either).
+  **Verified at runtime.** With
+  `providers: [provideDropzoneLabels({ uploading: (count) => \`LOCALIZED ${count}\` })]` on the host
+  component, picking one file left `.et-dropzone-live-status` reading `"Uploading 1 file"`.
+
+### Medium
+
+- **Replacing the file in single mode never fires the configured `delete`, orphaning the previous
+  upload server-side.** `headless/dropzone.directive.ts:240-249`: in single mode `selectFiles` disposes
+  the current entry and calls `syncValue()`, but never `executeDelete`. `removeEntry`
+  (`:273-281`) does. From the user's side the "Replace file" button
+  (`dropzone.component.html:86-98`) and remove-then-pick produce the same outcome, yet only one cleans
+  up. `apps/docs/components/dropzone.md:105-142` frames `delete` as "clean up the file server-side when
+  a user removes an entry" and enumerates exactly one exemption (a still-uploading entry) plus the
+  `includeExisting` rule — a silent replace is neither.
+  **Verified at runtime.** Single-mode dropzone with
+  `delete: { …, includeExisting: true }`: upload `a.png` → value `uuid-a`; then `selectFiles([b.png])`
+  → **0** requests to `/media/uuid-a`. The equivalent `removeEntry` path issues the DELETE (existing
+  spec `should fire the delete request when a successfully uploaded entry is removed`).
+- **`clear()` ignores `disabled` and `readonly`.** `headless/dropzone.directive.ts:300-312` is the only
+  mutator without an `interactive()` guard — `selectFiles` (`:192`), `removeEntry` (`:254`) and
+  `retryEntry` (`:286`) all have one. `apps/docs/components/dropzone.md:154-156` states that
+  `readonly` and `disabled` "both stop every mutation", and `:216` lists `clear()` as part of the
+  headless surface a custom UI drives. A readonly dropzone whose app calls `clear()` (e.g. from a
+  "reset form" button that is not itself disabled) wipes the value.
+  **Verified at runtime.** With `readonly` set, `clear()` took entries from 1 → 0 and the control value
+  to `null`; same with `disabled`. `removeEntry` on the same disabled dropzone correctly left the entry
+  in place.
+- **The single-file preview band hardcodes its colors instead of resolving tokens.**
+  `dropzone.component.css:202-210`: `background-color: rgb(0 0 0 / 0.6)`, `color: white`, and
+  `.et-dropzone-entry-size { color: rgb(255 255 255 / 0.7) }`. AGENTS.md ("Component styling") says
+  never to use a hardcoded color as the primary value; every other color in this file goes through
+  `--et-surface-*` / `--et-theme-color-*`. A black scrim over an arbitrary image is a defensible
+  *design*, but it is not expressible or overridable through the theming system, and the file
+  documents no reason for the exception (contrast with `color-picker-panel.component.css:140-141`,
+  which does explain its `#fff` thumb ring).
+
+### Low
+
+- **A readonly dropzone in multiple mode has no reachable focus target.**
+  `dropzone.component.css:503-505` hides the whole `.et-dropzone-area` when a readonly dropzone has a
+  list, and the browse button inside it is the element `focusTarget` points at
+  (`dropzone.component.ts:180-182`). `focus()` (`headless/dropzone.directive.ts:318-324`) then focuses a
+  `display: none` button, i.e. does nothing — so clicking the `et-label` of a readonly multi-file
+  dropzone has no effect. Harmless today, but it makes `activate()` a no-op for that shape.
+- **`--et-dropzone-warning-font-size` is public** (`dropzone.component.css:74-78`) **and undocumented**
+  in the token table at `apps/docs/components/dropzone.md:231-245`, which lists the error and hint
+  counterparts.
+- **The rejection reasons are not documented.** `DROPZONE_FILE_REJECTION_REASONS`
+  (`headless/dropzone-validation.ts:13-18`) exports four reasons, one of which (`maxFiles`) can only
+  ever occur in single mode when more than one file arrives at once
+  (`headless/dropzone.directive.ts:210-214`). `apps/docs/components/dropzone.md:188` mentions the
+  `filesReject` payload shape but never the reason union, so `maxFiles` reads as a general count
+  constraint that does not exist.
+- **Self-referential import path.** `dropzone.component.ts:37` imports from
+  `'../../forms/dropzone/dropzone-labels'`, i.e. out of and back into its own directory, and out of
+  the sorted import block. `'./dropzone-labels'` is the same file.
+- **`executeDelete`'s promise is unguarded against destroy.**
+  `headless/dropzone.directive.ts:420-426` emits `deleteSucceed`/`deleteFail` from a bare `.then()`. If
+  the view is torn down while the DELETE is in flight, the emit lands on a destroyed `OutputEmitterRef`
+  (Angular warns rather than throws, so this is cosmetic — noted only because every other async path
+  in the domain is either signal-derived or `takeUntilDestroyed`-terminated).
+
+---
+
+## color-input
+
+### High
+
+- **The picker is wrong in RTL: the thumbs are positioned with a mirroring property while the pointer
+  reading is deliberately not mirrored.** `headless/internals/color-picker-engine.ts:10-15` documents
+  the reading as intentionally un-mirrored ("the gradients paint left to right in every direction"), and
+  `ColorPickerAreaDirective.commitFromPosition`
+  (`headless/color-picker-area.directive.ts:78-84`) measures from `rect.left` / `rect.top`
+  unconditionally. But the thumbs are placed with **logical** offsets that *do* flip:
+  `color-picker-panel.component.html:4` (`[style.inset-inline-start.%]="area.saturationPercent()"`),
+  `:19` (hue thumb) and `:33` (alpha thumb), against gradients that are pinned physical
+  (`color-picker-panel.component.css:78-80` `linear-gradient(to right, #fff, …)`, `:101-110` the hue
+  ramp, `:117` the alpha ramp). In an RTL container a press at 25% from the left commits saturation
+  0.25 and then draws the thumb 25% from the **right** — the thumb lands on a visibly different color
+  from the one the click chose, and the hue track's thumb likewise runs opposite to its own gradient.
+  Nothing pins the pane to LTR (no `direction`/`dir` handling anywhere in `forms/color-input` or
+  `overlay/`). Either the thumbs must use physical `left`, or the whole picker must be pinned LTR.
+  Code-verified only (jsdom resolves no logical properties; needs a browser with `dir="rtl"`).
+
+### Medium
+
+- **`ColorInputDirective` never reports `expanded`, so the field drops its open-popup styling while
+  the picker is up.** `FormFieldControl.expanded` exists precisely for this
+  (`../form-field/headless/form-field.tokens.ts`: "True while the control's own popup … is open. The
+  field keeps its focused styling while set — focus itself has moved into the detached overlay, so
+  `:focus-visible` no longer matches the field"), and
+  `form-field-text-shell-styles.component.css:215-232` builds the accent border and the label/affix
+  highlight on `[data-expanded]`. Every sibling picker control defines it —
+  `select/headless/select.directive.ts:238`, `cascader/headless/cascader.directive.ts:161`,
+  `date-time/internals/date-picker-input.directive.ts:123`,
+  `date-time/internals/date-range-picker-input.directive.ts:180` — all as
+  `computed(() => this.open())`. `ColorInputDirective` has `pickerOpen` (`headless/color-input.directive.ts:66`)
+  and no `expanded`. Consequences: the field loses its focused border/label treatment once the overlay
+  takes focus (`autoFocus: 'first-tabbable'`,
+  `headless/internals/color-picker-overlay.ts:44`), and `shouldFloatLabel` loses its `expanded()` term
+  so a `null`-valued color field's floating label drops back down while the panel is open.
+  **Verified at runtime (partially).** `et-color-input` inside `et-form-field`: `control.expanded` is
+  `undefined` and the field carries no `data-expanded` with the picker open; an `et-select` in the same
+  harness with its panel open reports `data-focused=true data-expanded=true`. The focus-drop half is
+  browser-only — jsdom's overlay did not move focus off the trigger, so `data-focused` stayed set there.
+- **`hasValue` treats an empty string as a picked color.**
+  `headless/color-input.directive.ts:68` — `computed(() => this.mixed() || this.value() !== null)`. An
+  API or `patchValue` handing the field `''` (a common "no color" encoding) makes the form field float
+  its label over a trigger whose value slot renders nothing
+  (`displayValue`, `:83`, resolves `''` to `''`), while the swatch paints `#000000`
+  (`resolvedColor`, `:77`). The documented contract is `'#rrggbb' | null`
+  (`apps/docs/components/text-inputs.md:190`), so a stricter test — non-null **and** parseable — would
+  match it.
+
+### Low
+
+- **Two independent color parsers, and the validators' copy cannot read what the picker accepts.**
+  `color-input-validators.ts:54-83` re-declares `RGB_PATTERN`, `HEX_CHANNEL_PATTERN` and its own
+  `parseColor`, duplicating `headless/internals/color-convert.ts:27-138`
+  (`parseColorToRgb`) almost line for line. The duplicate handles no `hsl()`, so
+  `getColorContrastRatio` / `colorContrast` silently *pass* an `hsl()` value the picker itself reads
+  and offers as a notation (`color-input.types.ts:14`). `getColorContrastRatio`'s JSDoc
+  (`color-input-validators.ts:108-120`) does say "hex … and functional `rgb()`/`rgba()`", so it is
+  documented — but the two parsers will drift, and `parseColorToRgb` already does everything the
+  validator needs.
+- **`resolvedColor` cannot distinguish "nothing picked" from "black picked".**
+  `headless/color-input.directive.ts:77` collapses both to `#000000`, and
+  `apps/docs/components/text-inputs.md:190` records this ("`null` until something is picked (the swatch
+  shows black)"). It is a deliberate carry-over from `<input type="color">`, but with the platform
+  picker gone the constraint is gone too, and the field now has no empty state.
+- **Undocumented public API.** `COLOR_INPUT_IMPORTS` re-exports `ColorPickerAreaDirective`,
+  `ColorPickerChannelDirective`, `ColorPickerSurfaceDirective`, `ColorPickerTriggerDirective` and
+  `ColorPickerPanelComponent` (`color-input.imports.ts`), and `index.ts` exports the whole `headless`
+  barrel, but `apps/docs/components/text-inputs.md` documents no headless tier for this domain — unlike
+  slider (`slider.md:144-163`) and dropzone (`dropzone.md:214-216`), which both have a "Headless usage"
+  section. `COLOR_INPUT_ERROR_CODES` documents four "outside" errors for directives a consumer has no
+  documented way to compose.
+- **The panel's saturation and brightness inputs share one focus indicator.**
+  `color-picker-panel.component.css:83-86` outlines the whole area on
+  `:has(.et-color-picker-channel:focus-visible)`, so a keyboard user tabbing from saturation to
+  brightness (`color-picker-panel.component.html:13-14`) sees no change — both axes look identical
+  while focused. Not a wiring bug (both have `aria-label`s), but the visual affordance is missing.
+
+---
+
+## Spec coverage
+
+**Well covered.**
+
+- `slider/headless/internals/slider-engine.ts` — `slider-engine.spec.ts` (252 lines) covers every
+  exported function including RTL mirroring, vertical bottom→up, the dev-mode `MARKS_TOO_DENSE` throw,
+  and mark-snap directions.
+- `slider/headless/slider.directive.ts` + `slider.component.*` — `slider.directive.spec.ts` (423
+  lines) mounts the real `et-slider` through `SliderDriver`, covering ARIA, the keyboard model,
+  track pointer + drag + cancellation, vertical, marks, `snapToMarks` and the whole `mixed` contract
+  (plus `describeMixedStateContract`).
+- `slider/headless/range-slider.directive.ts` + component — `range-slider.directive.spec.ts` (263
+  lines), same shape, including non-crossing, `minDistance`, and the four `mixed` first-commit cases.
+- `dropzone/headless/dropzone.directive.ts` — `dropzone.directive.spec.ts` (736 lines) is the most
+  thorough file in the batch: upload, single-mode replace, object-URL lifecycle, cancel-on-remove,
+  retry-with-original-args, reconciliation, drag/drop, the five delete-on-remove permutations, the
+  `dropzoneFiles` rejection matrix, and all three dev-mode errors.
+- `dropzone/headless/dropzone-upload.ts` (v2 flavor) — `dropzone-upload-v2.spec.ts`, including the
+  legacy interop creator and the dispose path.
+- `dropzone/dropzone.component.ts` — `dropzone.component.spec.ts`, including the live-status region and
+  the no-layout-shift preview.
+- `color-input/headless/internals/color-convert.ts` — `color-convert.spec.ts` (299 lines), every
+  notation in and out plus a coarse round-trip grid.
+- `color-input/headless/internals/color-picker-state.ts` — `color-picker-state.spec.ts`, including the
+  hue-preservation invariant the file exists for.
+- `color-input/color-input-validators.ts` — `color-input-validators.spec.ts` (274 lines), including
+  the WCAG reference ratio and the `warn()` severity path.
+- `color-input/headless/color-input.directive.ts` + panel — `color-input.directive.spec.ts` (438
+  lines) drives the real overlay, notations, swatches, alpha and the mixed contract.
+
+**Real logic with zero direct tests.**
+
+- `color-input/headless/internals/color-picker-engine.ts` (`fractionFromPointer`) — no spec, and it is
+  the function whose RTL semantics the High finding above turns on.
+- `color-input/headless/internals/eye-dropper.ts` — no spec. `isEyeDropperSupported` and the
+  cancel-is-not-an-error `catchError(() => EMPTY)` are both untested.
+- `color-input/headless/color-picker-area.directive.ts` — the pointer drag (pointerdown + gesture
+  application) is untested; the color-input spec exercises the panel through swatches and the hex
+  field only.
+- `color-input/headless/color-picker-channel.directive.ts` — no spec drives a channel input's
+  `(input)` handler or asserts `aria-valuetext`.
+- `dropzone/dropzone.component.ts::removeEntryAnimated` — the animated + FLIP branch is never taken
+  (`dropzone.component.spec.ts:137` removes via the button but the spec asserts only the outcome), and
+  the `filePickerOpen` / `markTriggerTouched` state machine (`:185-209`) has no spec at all, despite
+  being the thing that keeps a file dialog from marking the field touched.
+- `slider/headless/slider-thumb-label.directive.ts` — no spec projects an `etSliderThumbLabel`
+  template, so `registeredThumbLabelTemplate`, `thumbLabelContext()` and the `THUMB_LABEL_OUTSIDE_SLIDER`
+  error are untested. The docs advertise the feature (`slider.md:112-123`).
+- `slider/*.component.ts::focus()` / `activate()` and `hasMarkLabels()` — the `data-mark-labels` flag
+  is asserted (`slider.directive.spec.ts:247`) but the public `focus()` methods are not.
+
+**Specs asserting a wrong behavior.** None found. `dropzone.directive.spec.ts:220` ("should replace the
+current entry in single mode") does assert the current behavior of the Medium finding above, but it
+asserts entry/value/object-URL bookkeeping only — it never mounts a `delete` config, so it is
+incomplete rather than wrong.
+
+---
+
+## Improvements
+
+### Features
+
+1. **Give the slider a `valueText` formatter.** `thumbValueText`
+   (`slider/headless/slider.directive.ts:162-177`) returns `null` unless `snapToMarks` is on, so a
+   price, duration or temperature slider announces a bare number. Material and Ark both take a
+   formatter; here it would slot straight into the existing `thumbValueText` hook and could also feed
+   the `etSliderThumbLabel` context so the bubble and the announcement never diverge.
+2. **Support more than two thumbs.** `SliderHostBase` is already index-based
+   (`slider/headless/slider.tokens.ts:52-91`) — `thumbValues`, `thumbAriaBounds(index)`,
+   `commitThumbValue(index, …)`, `nearestThumbIndex`. An N-thumb host (multi-stop gradients, price
+   band editors) needs a new directive, not a new contract.
+3. **Add paste-to-upload and reorder to the dropzone.** `handleDrop`
+   (`dropzone/headless/dropzone.directive.ts:351-364`) already funnels a `FileList` into
+   `selectFiles`; a `paste` listener reading `clipboardData.files` is a few lines and is how users
+   attach screenshots. Reordering the `multiple` list (a `value` permutation) is the other common gap —
+   the FLIP group in `dropzone.component.ts:261` is already the animation half of it.
+4. **Give the dropzone an `accept` input.** Today `accept` exists only as a `dropzoneFiles()` schema
+   constraint read through the bound field's metadata
+   (`dropzone/headless/dropzone.directive.ts:130-137`), so a dropzone not bound to signal forms cannot
+   filter its own native picker. A directive input that the schema overrides would cover both.
+5. **Add a real "no color" affordance to the color input.** The value can never return to `null`
+   through the UI once picked (`createColorPickerState`'s `emit` always writes a hex,
+   `color-input/headless/internals/color-picker-state.ts:49-65`), and `null` renders as black
+   (`headless/color-input.directive.ts:77`). A clear action in the panel plus a distinct empty swatch
+   would close the loop — and the field already ships a suffix-slot convention for exactly this kind of
+   control (see the `[etControlSuffix]` pattern the other controls use).
+6. **Recently-used colors and labelled swatch groups.** `swatches` is a flat `readonly string[]`
+   (`headless/color-input.directive.ts:55`) rendered as unlabelled buttons whose accessible name is the
+   hex string itself (`color-picker-panel.component.html:47`). `{ value, label }` entries (mirroring
+   `SliderMark`) plus an optional MRU list are what peer pickers ship.
+7. **Show the contrast ratio inside the picker.** The library already exports
+   `getColorContrastRatio` and `WCAG_CONTRAST_RATIOS` (`color-input-validators.ts:95-132`). Surfacing
+   "4.6:1 on white" in the panel footer would make the validator's verdict visible while choosing
+   rather than after committing.
+
+### DX
+
+1. **`clear()` should honour `interactive()` like its three siblings** — see the Medium finding. The
+   asymmetry is invisible from the type signature and contradicts the docs' "both stop every
+   mutation".
+2. **The `uploading` label should be wired, and the fix should be lint-visible.** Beyond the defect
+   itself, this is the second label-set member in the batch that a component re-implements inline; a
+   spec per label set asserting "every key is read by some template" would have caught it, and would be
+   cheap given every domain shares the `defineLabels` shape.
+3. **Fold `color-input-validators.ts`'s private parser into `color-convert.ts`.** Two regex copies of
+   the same grammar, one of which silently under-accepts (`hsl()`), is the kind of duplication that
+   only ever gets more expensive. `parseColorToRgb` returns exactly the `{red,green,blue,alpha}` the
+   luminance math needs.
+4. **`et-range-slider`'s `minValue`/`maxValue` deserve a doc-comment cross-reference on
+   `et-slider`.** The reason for the rename lives in a code comment
+   (`slider/headless/range-slider.directive.ts:67-68`) and in the docs
+   (`slider.md:42`), but a consumer who reaches for `[min]` on `et-range-slider` gets a
+   silently-ignored binding typed as the tuple. A JSDoc on `min`/`max` in `SliderDirective` pointing at
+   the range-slider names would shorten that detour.
+5. **The color-input domain has no test driver for the panel's surfaces.** `color-input-driver.ts`
+   exposes the trigger, the swatch, the hex field and the notation cell, but nothing for the area, the
+   hue/alpha channels or the eyedropper — which is exactly why those three files have no coverage.
+   Adding `setChannel(channel, value)` and `dragArea(x, y)` to the existing driver unblocks all of it.
+
+### Bundle size
+
+1. **Split the slider stylesheets.** `slider.component.css` (410 lines) and
+   `range-slider.component.css` (416) are the same file with a class-name substitution and two
+   deliberate differences — a normalized diff shows only the 28/44px block-size, a `z-index` rule, and
+   comment wording. The 72-line `@property` block is duplicated verbatim, as is the entire
+   support-region section (~80 lines). Per AGENTS.md's "Splitting a large stylesheet", a shared
+   styles-only component carrying the tokens + support chrome, mounted by both, removes roughly half of
+   both files. The `marks` rules (~60 lines) and the `[data-mixed]` rules (~30) are opt-in features
+   whose CSS every slider consumer currently pays for.
+2. **`@defer` the color picker panel.** `color-input.component.ts:12` statically imports
+   `ColorPickerPanelComponent`, which itself pulls in `FormFieldComponent`, `InputComponent`, both
+   affix directives and the eyedropper icon (`color-picker-panel.component.ts:32-41`) plus its own
+   350-line stylesheet. Every app importing `et-color-input` bundles the whole picker even if no user
+   ever opens it. The panel is already reached only through
+   `<ng-template etColorPickerSurface>` (`color-input.component.html:12-14`), which is the natural
+   `@defer` boundary — and it is the same "cross-boundary defer" argument AGENTS.md makes for
+   `query-devtools`.
+3. **Split the dropzone stylesheet by shape.** `dropzone.component.css` is 507 lines, of which the
+   readonly block (`:468-506`, ~40 lines), the multiple-mode list (`:243-291`) and the single-file
+   preview band (`:171-241`) are mutually exclusive for any given consumer. The list rules in
+   particular belong on a stamped child (the `et-dropzone-item`), the way the table puts its expander
+   chrome on `table-expander-cell.component.css`.
+4. **The dropzone's four icons are eager.** `provideIcons(UPLOAD_ICON, FILE_ICON, ROTATE_RIGHT_ICON, TIMES_ICON)`
+   (`dropzone.component.ts:54`) is a static provider, so a readonly dropzone — which renders neither
+   the retry nor the remove button (`dropzone.component.html:70,145`) — still ships
+   `et-rotate-right` and `et-times`.
+
+### UI/UX
+
+1. **Raise the range slider's pointer target to 44px** — the Medium finding; it is a WCAG 2.5.8
+   (Target Size, Minimum) matter as much as a consistency one, and the single slider already encodes
+   the right number.
+2. **Reserve inline room for vertical tick labels** — the other Medium finding. `data-mark-labels`
+   needs an orientation-aware counterpart (`margin-inline-start` in vertical), or the interaction box
+   needs `overflow: visible` plus explicit padding.
+3. **Distinguish the focused axis in the picker area.** Two stacked invisible range inputs share one
+   `:has(:focus-visible)` outline (`color-picker-panel.component.css:83-86`), so tabbing between
+   saturation and brightness produces no visible change. Outlining only the active axis (or moving a
+   crosshair guide) would make the keyboard path legible.
+4. **Add a fine-step modifier to the picker channels.** All four channels are `step: 1` with `max`
+   100/360 (`headless/color-picker-channel.directive.ts:13-18,32-36`), so keyboard saturation
+   resolution is 1% and the native range input even rounds the displayed value away from the picker's
+   fractional working state. `Shift`/`Alt` modifiers (or `step: 0.1`) close a gap every design tool
+   has.
+5. **Paint the drag-over state on the single-file preview.** `et-dropzone[data-drag-over]` styles only
+   `.et-dropzone-trigger` (`dropzone.component.css:448-453`), which is fully covered by the preview
+   once a file is picked (`:171-179`, `position: absolute; inset: 0`). Dragging a replacement onto a
+   dropzone that already holds a file therefore gives no feedback at all, even though the drop is
+   accepted.
+6. **Show batch progress in multiple mode.** Each entry has its own bar
+   (`dropzone.component.html:136-142`) but a ten-file upload has no aggregate signal; `anyUploading`
+   plus a count is already on the directive
+   (`dropzone/headless/dropzone.directive.ts:142-144`).
+7. **Make the internal-errors region less shouty.** `role="alert"` on the container
+   (`dropzone.component.html:180`) re-announces the entire list every time one more entry fails.
+   `role="status"` on the container with the alert semantics per message, or an atomic live region,
+   would announce only the delta.
+
+### Testing
+
+1. **First: the `snapToMarks`-off tick press** (the High finding) and the **single-mode replace/delete
+   interaction** (the Medium). Both are one-assertion additions to specs that already have the harness
+   set up (`slider.directive.spec.ts:266` and `dropzone.directive.spec.ts:220`), and both currently
+   have a spec sitting right next to the gap that asserts the incomplete half.
+2. **Then the three untested color-picker files** — `fractionFromPointer`, `eye-dropper.ts` and
+   `ColorPickerAreaDirective`'s drag. `fractionFromPointer` is a pure function (mirror
+   `slider-engine.spec.ts`); the eyedropper needs only a fake `window.EyeDropper` to cover support
+   detection, the sampled value, and the cancel-as-completion path; the area drag can reuse the
+   rect-stubbing trick `slider-driver.ts:8-33` already uses for jsdom's zero-size elements.
+3. **Then `dropzone.component.ts`'s two untested behaviors**: the `filePickerOpen` state machine
+   (open picker → blur → must **not** mark touched; cancel → must reset) and the animated remove path
+   including the FLIP group, which the `Element.animate` mock in `src/test-helpers.ts` already makes
+   reachable.
+4. **Missing infrastructure**: a slider driver hook for `etSliderThumbLabel` (the template is
+   currently unreachable from any spec) and the channel/area additions to `color-input-driver.ts`
+   described under DX. Both are additions to drivers that already exist, not new harnesses.
+
+---
+
+`Clean:` Read every non-spec source file in the three domains plus all eleven spec files and the three
+docs surfaces. Found sound and worth recording as checked: all three stylesheets are correctly wrapped
+in `@layer components` with no Tailwind in component source, and use `:where()` for config modifiers
+while leaving interaction states bare (`slider.component.css:132`, `:154`, `:174`, `:319`); the slider's
+`@property`-declared token set, `data-*` host contract and reduced-motion handling are complete. State
+management follows the repo's rules throughout — synchronous state is signals everywhere, the only RxJS
+is genuinely asynchronous (`dragGestureFrom` in the slider track and the picker area, `eyeDropperColor`),
+both pipe `takeUntilDestroyed` last, and there is no subscribe-and-assign anywhere in the batch; all
+three controls are signal-forms native (`FormValueControl`, no `ControlValueAccessor`). No leaks found:
+the drag gesture completes with the gesture, `registerSingleton` and `registerThumb`/`unregisterThumb`
+both clean up on destroy, the dropzone disposes every entry and its `EffectRef` watcher on destroy
+(`dropzone.directive.ts:160-166`, `:407-411`) and revokes object URLs (verified by an existing spec),
+and `createFileDropzoneEntry`'s handles are destroyed via `dispose()`. SSR-safe: `isEyeDropperSupported`
+goes through the injected `DOCUMENT` and tolerates a null `defaultView`, and every platform-specific
+read (`getComputedStyle`, `getBoundingClientRect`, `Element.animate`) happens inside an event handler or
+behind a `typeof … === 'function'` guard. The slider's mixed-state contract is correct in both hosts
+(parked thumbs, removed `aria-valuenow`, no tick reads as active, no fill) and matches
+`apps/docs/components/mixed-state.md`; the range slider's non-crossing, `minDistance` and
+`constrainAndSnap` double-snap logic are right, as is `nearestThumbIndex`'s coincident-thumb
+tie-break. The color engine's HSV↔RGB↔HSL math, the hue-preservation invariant `createColorPickerState`
+exists for, the `linkedSignal` sequencing around `colorDraft`/`notationWarning`, and the WCAG luminance
+formula all check out. The dropzone's value/entry reconciliation (including the
+`lastSyncedValue`/`hasSyncedValue` guard against its own writes), the three dev-mode `RuntimeError`s,
+and the five delete-on-remove permutations are all correct and specced. `support.errorColorTheme` being
+read without call parentheses in the three templates is correct — `injectErrorTheme()` returns a plain
+`ColorTheme`, not a signal (`libs/core/src/lib/theming/color-theme.util.ts:145`), and every sibling
+control in `forms/` does the same. Comment policy is respected across all three domains: the comments
+present are ordering constraints, workarounds with named causes (the Chrome `:focus-visible` note at
+`slider-thumb.directive.ts:55-60`, the NG0205 note at `dropzone-upload.ts:365-368`), invariants the
+types cannot express, or public-API JSDoc.
+
+---
+
+## Match & Standings
+
+Scope: `libs/components/src/lib/match/**`, `libs/components/src/lib/standings/**`, and
+`apps/docs/components/match.md` / `apps/docs/components/standings.md`.
+
+### High
+
+None found. This pair of domains is small, signals-only, and unusually well covered by its own
+component specs (see Spec coverage below). No crash, leak, or a11y-breaking defect was found that
+meets the High bar.
+
+### Medium
+
+- **The standings "overlapping zones" dev guard only ever checks the zones present at first
+  render — a later update that introduces an overlap is never caught.**
+  `libs/components/src/lib/standings/headless/standings.directive.ts:77-99` wraps the whole check
+  in `afterNextRender(() => { const zones = this.zones(); ... })`. `afterNextRender` callbacks run
+  exactly once, after the component's first render, so the closure captures the `zones()` value at
+  that moment and never re-runs when the `zones` input signal changes later (e.g. an app swapping
+  in a different competition's zone config on the same `<et-standings>` instance, or building the
+  zone array from a query response that resolves after the first paint with the position config
+  itself still pending).
+  **Runtime-verified**: wrote a scratch spec creating `<et-standings>` with `zones: []`, calling
+  `detectChanges()`, then updating the `zones` signal to two overlapping ranges and calling
+  `detectChanges()` again — no `RuntimeError` was thrown. A sibling case with the *same* overlapping
+  zones present from the very first `detectChanges()` call did throw `ET4400` as documented. Scratch
+  file was deleted after the run; the working tree is unchanged.
+  The docs (`apps/docs/components/standings.md:77-79`) state flatly "Zones must not overlap: … dev
+  mode throws `ET4400`" with no caveat that the check is first-render-only, so a consumer relying on
+  this as a standing invariant will not get the promised warning for zones assembled or changed
+  after mount.
+
+- **`StandingsZone.color` is typed `string`, one step looser than its own doc comment and the
+  sibling API it mirrors.**
+  `libs/components/src/lib/standings/standings.types.ts:44-45`: `/** A registered color theme name
+  (or the theme object) the band is drawn in. */ color: string;` — the comment promises a
+  `ColorTheme` object is accepted too, but the field type only allows `string`. Compare
+  `MatchCardComponent.liveColor` (`libs/components/src/lib/match/match-card.component.ts:78`),
+  which types the equivalent option `RegisteredColorThemeName | ColorTheme | null` — the correct
+  shape for `[etProvideColor]`, which `renderRow.zone?.color` is bound straight into
+  (`standings.component.html:48` and `:106`). In an app that has augmented
+  `EthleteColorThemeNameRegistry` (the pattern the theming docs recommend), `StandingsZone.color`
+  being plain `string` also means a typo'd theme name in a zone config gets no type-checking at
+  all, unlike every other themed input in this pair of domains.
+
+- **The dense-row docs table promises "small emblems" at every width under 320px; the code drops
+  emblems entirely below 150px.**
+  `apps/docs/components/match.md:115` reads: `< 320px | Dense row - … small emblems, no subtitles,
+  no game breakdown`. But `libs/components/src/lib/match/match-card.component.css:150-159` adds a
+  second, narrower container-query rule for `auto`/`compact` sizing:
+  `@container et-match-card (max-inline-size: 149px) { … --_et-match-participant-emblem-display:
+  none; }`, which removes the emblem frame outright. The CSS comment above it explains the intent
+  well ("an emblem, a name and a score is one thing too many" for a ~150px bracket cell) — this is
+  a deliberate fourth density the docs simply never mention, so a reader of the width table alone
+  would reasonably expect an emblem to still be present anywhere under 320px, including a 140px
+  bracket column, and be surprised when it isn't drawn. Code-verified only: jsdom's CSS parser drops
+  `@layer`/`@container` rules wholesale (confirmed against this lib's own `vite.config.mts` comment
+  on the same limitation), so this can't be exercised through a component spec — it was confirmed by
+  reading the shipped stylesheet directly.
+
+### Low
+
+- **The docs' `NormalizedMatch` type snippet omits `resultKind: 'outcome'`.**
+  `apps/docs/components/match.md:44`: `resultKind: 'score' | 'points'; // what those two values are`
+  — the real type (`libs/components/src/lib/match/match.types.ts:55`) is
+  `'score' | 'points' | 'outcome'`, and the very next doc section (`match.md:82-108`) correctly
+  documents and demos the `'outcome'` form with a `<StoryEmbed>`. A reader who copies the type
+  snippet as a reference will have a type that rejects the outcome example three paragraphs below
+  it.
+
+- **Neither dev-mode `RuntimeError` in this pair of domains has a test.** `ET4300`
+  (`MatchCardScoreDirective`/`MatchCardMetaDirective`/`MatchCardGameScoresDirective` used outside
+  `[etMatchCard]`, thrown from `libs/components/src/lib/match/headless/match-card-parts.directive.ts:10-24`)
+  and `ET4400` (overlapping zones, `standings.directive.ts:77-99`) are both unexercised by any spec
+  — confirmed by `grep -rn "OVERLAPPING_ZONES\|PART_OUTSIDE_MATCH_CARD"` returning only the
+  definition and throw sites, no spec file. The overlapping-zones one is also the Medium timing gap
+  above, which a test would have caught.
+
+- **Heavy rationale commenting throughout both domains' CSS and TS**, beyond the four categories
+  AGENTS.md allows (ordering/timing constraint, unexpressed invariant, workaround with cause, public
+  JSDoc). Representative examples: the "why centred, not top-packed" aside in
+  `match-card.component.css:130-132`, the "why this is a descendant selector" aside in
+  `match-card.component.css:360-362`, and "why we don't build `et-match-list`" in
+  `sport-recipes-storybook.component.ts:10-13`. In isolation each is reasonable design rationale and
+  reads as consistent, deliberate house style across the entire domain (every file in both `match/`
+  and `standings/` follows it uniformly) rather than a one-off slip, so this is flagged for
+  awareness rather than as a set of individual violations to fix.
+
+### Spec coverage
+
+Well covered:
+- `MatchCardComponent` (`match-card.component.spec.ts`) is thorough: both result forms (score,
+  points, outcome), the composed accessible name and its label overrides, the live/meta row,
+  game-score breakdown, CSS state attributes, interactivity detection on `<a>` vs `<div>`, seeds, and
+  the score-rolling transition (`digits()` states across a live update) including "first render
+  never animates" and "a finished match never animates."
+- `MatchParticipantComponent` (`match-participant.component.spec.ts`): name/code fallback chain in
+  both directions, TBD vs loading states, seed visibility, subtitle visibility and compact dropping,
+  interactive-host naming, label overrides.
+- `normalizeEthleteMatch` and friends (`integrations/ethlete.spec.ts`): media fallback chain, status
+  collapsing (including the `hidden`-as-scheduled case), gamertag-over-name, game-score filtering and
+  ordering by `matchGameNumber`, one-sided game scores, unnumbered matches.
+- `StandingsComponent` (`standings.component.spec.ts`): table semantics (caption, `scope="row"`/
+  `"col"`, `abbr`), row order preservation, signed difference, dropped detail/form columns when
+  unreported, zone banding + legend from the same config, `showLegend`, highlighted row, and label
+  overrides.
+
+Gaps:
+- `MatchScoreComponent` (`match-score.component.ts`) has **no dedicated spec file**. Its rolling
+  logic is exercised only indirectly through `MatchCardComponent`'s "a score changing" describe
+  block, which covers the common path but not: `animate=false` explicitly (only inferred from the
+  finished-match case, which is a different gate — `isLive()` — not the input itself), rapid
+  successive changes before the previous transition's `animationend` fires, or standalone use
+  outside a card.
+- `MatchCardMetaDirective` / `MatchCardScoreDirective` / `MatchCardGameScoresDirective`'s
+  `ET4300` throw-when-outside-a-card path is untested (see Low).
+- `StandingsDirective`'s `ET4400` overlapping-zones throw is untested, and as shown above the
+  current implementation only checks once — a test would have surfaced that.
+- No spec on this pair of domains asserts a wrong behavior; nothing here needed to be corrected.
+
+### Improvements
+
+**Features**
+
+- **Give `et-standings` a loading state to match `et-match-participant`'s.** The participant
+  primitive already distinguishes a pending fetch (`loading`) from a decided TBD slot
+  (`participant: null`), but `StandingsComponent` has no equivalent — a consumer fetching a table
+  has to build its own skeleton rows or flash an empty table. A `loading` input drawing skeleton
+  rows (reusing `SKELETON_IMPORTS`, already a dependency of the match domain) would bring the two
+  domains to parity.
+- **No `'postponed'`/`'cancelled'` match status.** `NormalizedMatchStatus` is
+  `'scheduled' | 'live' | 'finished'` (`match.types.ts:37`); most real fixture lists need to show a
+  postponed or abandoned match distinctly from one that simply hasn't kicked off yet — right now an
+  adapter has nowhere to put that information and a postponed match reads as merely "not started."
+
+**DX**
+
+- **Fix `StandingsZone.color`'s type** to `RegisteredColorThemeName | ColorTheme` (see Medium
+  finding) — cheap, and brings it in line with `MatchCardComponent.liveColor`'s pattern plus the
+  registry-augmentation guidance the theming skill already recommends apps follow.
+- **No test driver for either component.** Both specs poke the DOM directly with ad hoc
+  `querySelector`/`all` helpers redefined per spec file (`card`, `text`, `all`, `cells` — nearly
+  identical shapes in `match-card.component.spec.ts` and `standings.component.spec.ts`). A shared
+  driver (in the vein of the ones already built for the form controls per the repo's recent driver
+  passes) would cut the boilerplate and make the `ET4300`/`ET4400` gaps above cheaper to close.
+
+**Bundle size**
+
+- Nothing worth restructuring here: `match-card.component.css` (~455 lines) is close to the
+  "few hundred lines" split threshold in AGENTS.md, but the CSS is a single density/state machine
+  that every consumer of the card exercises (live badge, winner emphasis, three layouts) — there
+  isn't an identifiable minority slice to pull into a styles-only component the way `form-field` or
+  the table's expander cell can.
+
+**UI/UX**
+
+- **A postponed/cancelled match currently has to be represented as `'scheduled'`**, which means its
+  kick-off time is still drawn and read aloud as if the match will start then — actively misleading
+  rather than merely incomplete. Same root cause as the Features item above, called out again here
+  because it's the sharper UX consequence.
+- **Standings rows have no interactive/hover treatment**, unlike the match card
+  (`.et-match-card:where([data-interactive]):hover`). Today that's fine because the only actionable
+  element inside a row is the participant primitive itself, but if a consumer ever wants the whole
+  row clickable (a common standings pattern — click anywhere on the row to open the team), there's
+  no supported path or documented convention for it the way the match card documents "make the host
+  the link."
+
+**Testing**
+
+- Add a `match-score.component.spec.ts` covering `animate=false`, `prefers-reduced-motion` (the repo
+  already ships a `matchMedia` jsdom shim in test-helpers for exactly this), and a second value
+  change arriving before the first one's `animationend` fires.
+- Add specs for the two `RuntimeError` paths (`ET4300`, `ET4400`) — trivial to write and, per the
+  Medium finding, would have caught the overlapping-zones timing gap immediately.
+
+Clean: read every non-spec source file and every spec file in both domains
+(`headless/`, `integrations/`, the components, labels, errors, types, imports, and `stories/`), plus
+`apps/docs/components/match.md` and `apps/docs/components/standings.md`. Verified: CSS layering
+(`@layer components` wraps both stylesheets in full), no hardcoded primary colors (every color value
+is a `var(--et-surface-*|--et-theme-color-*, fallback)` — fallbacks like `gray`/`currentColor` are
+permitted per AGENTS.md and never the primary value), signals-only reactive state with no RxJS
+anywhere in either domain, no `ControlValueAccessor` (neither domain has form controls), no SSR-unsafe
+API use (`afterNextRender` guards the two dev-mode assertions; `format()` and DOM reads are
+browser-only call sites), and the `MatchScoreComponent` rolling-value mechanism (`linkedSignal` +
+negative-key `@for` tracking) traced by hand across rapid, back-to-back, and reduced-motion value
+changes without finding a stuck or duplicated element.
 
 ---
