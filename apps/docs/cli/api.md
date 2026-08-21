@@ -6,6 +6,7 @@
 yarn et api --help              # the commands, the APIs, and what each one accepts
 yarn et api help hub            # what hub accepts, and where its checkout is
 yarn et api up hub              # start the containers
+yarn et api up hub,platform     # the same, for both APIs
 yarn et api down hub            # stop them
 yarn et api logs hub            # follow the log of the API container
 yarn et api logs hub database   # follow the log of another service
@@ -22,6 +23,19 @@ yarn et api setup hub           # run the API's own setupCommand, which writes i
 ```
 
 `ethlete.apis.js` describes each API and is committed. Where the checkout lives on this machine is optional: set [`apiRepoPaths`](/cli/config) to point at a checkout you already have, or let `et` clone the API's `repoUrl` into a gitignored `.ethlete/<name>`.
+
+## Naming several APIs
+
+Every command takes a comma-separated list of names, and acts on each API in turn:
+
+```
+$ yarn et api up hub,platform
+```
+
+An unknown name, and a command one of the named APIs does not accept, stop the call before anything
+runs. Each API then prints its own output and asks its own questions - to clone a missing checkout,
+or to free a port. `clear` is the one exception: it asks a single question for every API you named.
+The exit code is `1` when any of them failed.
 
 ## Asking what an API accepts
 
@@ -254,25 +268,36 @@ lets the engine report the conflict itself.
 ## Removing a checkout
 
 `clear` removes the managed checkout in `.ethlete/<name>`, so the next `clone` starts from nothing.
-It asks first, and the question defaults to no. `--all` clears every API in one go.
+It asks first, and the question defaults to no. `--all` clears every API at once, and a
+comma-separated list clears the ones you name. Either way it is one question for all of them.
 
 It only ever removes a checkout `et` cloned. A path you set in
 [`apiRepoPaths`](/cli/config) is your own, so `clear` refuses it and says so.
 
-Three checks run before the question, and each one names the command that clears it:
+An API whose containers still exist is taken down as part of the same question:
 
-| Check                   | Why                                                         | How to pass it            |
-| ----------------------- | ----------------------------------------------------------- | ------------------------- |
-| Containers are running  | Removing the checkout would leave containers with no files. | `et api down <name>`      |
-| Uncommitted changes     | Those changes exist nowhere else.                           | Commit them, or `--force` |
-| Commits no remote holds | Those commits exist nowhere else.                           | Push them, or `--force`   |
+```
+$ yarn et api clear hub,platform
+
+This takes platform down, then removes:
+
+  /repo/.ethlete/hub
+  /repo/.ethlete/platform
+
+Take platform down and remove the checkouts? [y/N]
+```
+
+Two checks refuse the removal instead, because what they hold exists nowhere else:
+
+| Check                   | How to pass it            |
+| ----------------------- | ------------------------- |
+| Uncommitted changes     | Commit them, or `--force` |
+| Commits no remote holds | Push them, or `--force`   |
 
 The refusal lists what stands in the way, so a change you do not care about is obvious at a glance:
 
 ```
 $ yarn et api clear platform
-
-platform still has containers. Run "yarn et api down platform" first.
 
 /repo/.ethlete/platform has uncommitted changes:
 
@@ -281,8 +306,8 @@ platform still has containers. Run "yarn et api down platform" first.
 Commit them, or pass --force to lose them.
 ```
 
-`--force` skips the two git checks. It never skips the container check, because that one is about
-the containers rather than about your work.
+`--force` skips both git checks. It never skips the take-down: a checkout that is gone leaves its
+containers with no files.
 
 ## Container engines
 

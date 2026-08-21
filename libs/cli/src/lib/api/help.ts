@@ -29,7 +29,7 @@ export const apiHelp = (apis: ApiDefinitions, invocation: string) => {
   const execNames = [...new Set(entries.flatMap(([, api]) => Object.keys(api.exec ?? {})))];
 
   return [
-    `Usage: ${invocation} <command> <api> [--host]`,
+    `Usage: ${invocation} <command> <api>[,<api>] [--host]`,
     '',
     'Commands',
     ...BUILT_IN_API_COMMANDS.map((command) => `  ${pad(command, commandWidth)}  ${BUILT_IN_DESCRIPTIONS[command]}`),

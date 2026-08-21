@@ -39,6 +39,7 @@ Runs the API an app in this repo talks to, from a checkout on your own machine.
 yarn et api --help              # the commands, the APIs and what each one accepts
 yarn et api help hub            # what hub accepts, and where its checkout is
 yarn et api up hub              # start the containers
+yarn et api up hub,platform     # the same, for both APIs
 yarn et api down hub            # stop them
 yarn et api logs hub            # follow the API's log
 yarn et api shell hub           # a shell in the API container
@@ -50,6 +51,8 @@ yarn et api pull hub --force    # the same, discarding local commits and tracked
 yarn et api clone hub           # clone the API into .ethlete/hub
 yarn et api setup hub           # run the API's own setupCommand, which writes its .env
 ```
+
+Every command takes a comma-separated list of names, and acts on each API in turn.
 
 `checkout`, `pull` and `setup` act on the checkout itself, so they work before the API has an `.env`
 and need no container engine. `pull` refuses to run on a checkout with uncommitted changes unless you pass

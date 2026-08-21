@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
+import * as utils from '../utils';
 import { clearApiCheckouts, planApiClear } from './clear';
 import { ApiDefinition } from './definition';
 
@@ -63,7 +64,9 @@ describe('planApiClear', () => {
   it('plans the removal of a clean managed checkout', () => {
     const { root, repoPath } = makeManagedCheckout();
 
-    expect(plan(root)).toEqual([{ name: 'hub', repoPath, blockers: [] }]);
+    expect(plan(root)).toEqual([
+      { name: 'hub', repoPath, composePath: join(repoPath, 'development'), hasContainers: false, blockers: [] },
+    ]);
   });
 
   it('leaves out an API with no checkout', () => {
@@ -80,10 +83,10 @@ describe('planApiClear', () => {
     expect(plan(root)[0]?.blockers[0]).toContain('apiRepoPaths.hub');
   });
 
-  it('refuses while the API still has containers', () => {
+  it('marks the containers instead of refusing the removal', () => {
     const { root } = makeManagedCheckout();
 
-    expect(plan(root, { hasContainers: () => true })[0]?.blockers[0]).toContain('Run "et api down hub" first');
+    expect(plan(root, { hasContainers: () => true })[0]).toMatchObject({ hasContainers: true, blockers: [] });
   });
 
   it('refuses a checkout with uncommitted changes', () => {
@@ -106,11 +109,11 @@ describe('planApiClear', () => {
     expect(blocker).toContain('init');
   });
 
-  it('keeps the running check under --force', () => {
+  it('keeps the containers marked under --force', () => {
     const { root } = makeManagedCheckout();
     const [target] = plan(root, { force: true, hasContainers: () => true });
 
-    expect(target?.blockers).toEqual(['hub still has containers. Run "et api down hub" first.']);
+    expect(target).toMatchObject({ hasContainers: true, blockers: [] });
   });
 
   it('plans every named API at once', () => {
@@ -129,6 +132,7 @@ describe('clearApiCheckouts', () => {
       invocation: 'et api',
       force: false,
       hasContainers: () => false,
+      takeDown: () => true,
       ...overrides,
     });
 
@@ -138,10 +142,12 @@ describe('clearApiCheckouts', () => {
   });
 
   it('reports every blocker and fails', async () => {
-    const { root } = makeManagedCheckout();
+    const { root, repoPath } = makeManagedCheckout();
 
-    expect(await clear(root, { hasContainers: () => true })).toBe(1);
-    expect(errors[0]).toContain('still has containers');
+    writeFileSync(join(repoPath, 'README.md'), 'changed', 'utf8');
+
+    expect(await clear(root)).toBe(1);
+    expect(errors[0]).toContain('has uncommitted changes');
   });
 
   it('keeps the checkout when the question cannot be answered', async () => {
@@ -150,5 +156,46 @@ describe('clearApiCheckouts', () => {
     expect(await clear(root, { force: true })).toBe(1);
     expect(existsSync(repoPath)).toBe(true);
     expect(errors.join('\n')).toContain('This removes:');
+  });
+
+  it('offers to take the containers down instead of refusing', async () => {
+    const { root } = makeManagedCheckout();
+
+    expect(await clear(root, { hasContainers: () => true })).toBe(1);
+    expect(errors.join('\n')).toContain('This takes hub down, then removes:');
+    expect(errors.join('\n')).toContain('or run "et api down hub" and remove the directories yourself');
+  });
+
+  it('takes the containers down before it removes the checkout', async () => {
+    const { root, repoPath } = makeManagedCheckout();
+    const asked = vi.spyOn(utils, 'confirm').mockResolvedValue(true);
+    const taken: string[] = [];
+
+    const code = await clear(root, {
+      hasContainers: () => true,
+      takeDown: (composePath) => {
+        taken.push(composePath);
+
+        return true;
+      },
+    });
+
+    expect(code).toBe(0);
+    expect(taken).toEqual([join(repoPath, 'development')]);
+    expect(existsSync(repoPath)).toBe(false);
+    expect(asked.mock.calls[0]?.[0].question).toBe('Take hub down and remove the checkout?');
+
+    asked.mockRestore();
+  });
+
+  it('keeps the checkout when the take-down fails', async () => {
+    const { root, repoPath } = makeManagedCheckout();
+    const asked = vi.spyOn(utils, 'confirm').mockResolvedValue(true);
+
+    expect(await clear(root, { hasContainers: () => true, takeDown: () => false })).toBe(1);
+    expect(existsSync(repoPath)).toBe(true);
+    expect(errors.join('\n')).toContain('Could not take hub down');
+
+    asked.mockRestore();
   });
 });

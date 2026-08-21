@@ -14,7 +14,7 @@ describe('apiHelp', () => {
   it('lists the built-in commands', () => {
     const help = apiHelp({ hub: definition() }, 'et api');
 
-    expect(help).toContain('Usage: et api <command> <api> [--host]');
+    expect(help).toContain('Usage: et api <command> <api>[,<api>] [--host]');
     expect(help).toContain('up        Start the containers of the API');
     expect(help).toContain('shell     Open a shell in the API container');
   });

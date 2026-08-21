@@ -10,6 +10,7 @@ import {
   resolveComposeTool,
 } from './compose';
 import {
+  ApiDefinition,
   ApiDefinitions,
   GIT_API_COMMANDS,
   apiCommandNames,
@@ -44,89 +45,46 @@ const confirmFix = (options: { problem: string; question: string; hint: string }
 const definedEntries = (record: Record<string, string | undefined>) =>
   Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as Record<string, string>;
 
-export const runApiCommand = async ({
-  apis,
-  argv,
-  root = process.cwd(),
-  invocation = 'et api',
-}: RunApiCommandOptions): Promise<number> => {
+const namedApis = (argument: string) =>
+  argument
+    .split(',')
+    .map((name) => name.trim())
+    .filter((name) => name !== '');
+
+const composeProjectHasContainers = (composePath: string) => {
+  const tool = resolveComposeTool();
+
+  return tool ? (composeContainerIds({ tool, cwd: composePath }) ?? []).length > 0 : false;
+};
+
+const takeComposeProjectDown = (composePath: string) => {
+  const tool = resolveComposeTool();
+
+  if (!tool) return false;
+
+  const [binary, ...prefix] = tool.compose;
+  const result = spawnSync(binary, [...prefix, 'down'], {
+    cwd: composePath,
+    env: { ...engineEnv(tool.engine), ...process.env },
+    stdio: 'inherit',
+  });
+
+  return !result.error && result.status === 0;
+};
+
+type SingleApiOptions = {
+  argv: string[];
+  root: string;
+  invocation: string;
+  command: string;
+  name: string;
+  api: ApiDefinition;
+  service: string | undefined;
+};
+
+const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
+  const { argv, root, invocation, command, name, api, service } = options;
   const exposeOnLan = argv.includes('--host');
-  const [command, name, service] = argv.filter((arg) => !arg.startsWith('--'));
-  const api = name === undefined ? undefined : apis[name];
-
-  const wantsHelp = argv.includes('--help') || argv.includes('-h') || command === 'help';
-
-  if (wantsHelp && name === undefined) {
-    console.log(apiHelp(apis, invocation));
-
-    return 0;
-  }
-
-  if (wantsHelp && api && name !== undefined) {
-    const checkout = resolveApiCheckout({ root, name, api });
-
-    console.log(
-      singleApiHelp({
-        name,
-        api,
-        invocation,
-        checkout: checkout.ok
-          ? checkout.checkout.composePath
-          : checkoutProblem({ failure: checkout, name, invocation }),
-      }),
-    );
-
-    return 0;
-  }
-
-  const composeProjectIsRunning = (composePath: string) => {
-    const tool = resolveComposeTool();
-
-    return tool ? (composeContainerIds({ tool, cwd: composePath }) ?? []).length > 0 : false;
-  };
-
-  const clear = (names: string[]) =>
-    clearApiCheckouts({
-      apis,
-      names,
-      root,
-      invocation,
-      force: argv.includes('--force'),
-      hasContainers: composeProjectIsRunning,
-    });
-
-  if (command === 'clear' && argv.includes('--all')) return clear(Object.keys(apis));
-
-  if (command === undefined || name === undefined) {
-    console.error(apiHelp(apis, invocation));
-
-    return 1;
-  }
-
-  if (!api) {
-    const names = Object.keys(apis);
-
-    console.error(
-      names.length === 0
-        ? apiHelp(apis, invocation)
-        : `Unknown API "${name}".${didYouMean(name, names)}\n\nAPIs: ${names.join(', ')}`,
-    );
-
-    return 1;
-  }
-
-  const commands = apiCommandNames(api);
-
-  if (!commands.includes(command)) {
-    console.error(
-      `Unknown command "${command}" for the ${name} API.${didYouMean(command, commands)}\n\n` +
-        `Commands: ${commands.join(', ')}`,
-    );
-
-    return 1;
-  }
-
-  if (command === 'clear') return clear([name]);
 
   const isGitCommand = GIT_API_COMMANDS.includes(command);
   const checkout = resolveApiCheckout({
@@ -168,7 +126,7 @@ export const runApiCommand = async ({
 
       if (command === 'clone') return 0;
 
-      return runApiCommand({ apis, argv, root, invocation });
+      return runOneApiCommand(options);
     }
 
     if (checkout.setupable) {
@@ -187,7 +145,7 @@ export const runApiCommand = async ({
 
       if (prepared !== 0) return prepared;
 
-      return runApiCommand({ apis, argv, root, invocation });
+      return runOneApiCommand(options);
     }
 
     console.error(checkout.problem);
@@ -408,6 +366,106 @@ export const runApiCommand = async ({
         );
       }
     }
+  }
+
+  return exitCode;
+};
+
+export const runApiCommand = async ({
+  apis,
+  argv,
+  root = process.cwd(),
+  invocation = 'et api',
+}: RunApiCommandOptions): Promise<number> => {
+  const [command, nameArgument, service] = argv.filter((arg) => !arg.startsWith('--'));
+  const wantsHelp = argv.includes('--help') || argv.includes('-h') || command === 'help';
+
+  if (wantsHelp && nameArgument === undefined) {
+    console.log(apiHelp(apis, invocation));
+
+    return 0;
+  }
+
+  const clear = (names: string[]) =>
+    clearApiCheckouts({
+      apis,
+      names,
+      root,
+      invocation,
+      force: argv.includes('--force'),
+      hasContainers: composeProjectHasContainers,
+      takeDown: takeComposeProjectDown,
+    });
+
+  if (command === 'clear' && argv.includes('--all')) return clear(Object.keys(apis));
+
+  const names = nameArgument === undefined ? [] : namedApis(nameArgument);
+
+  if (command === undefined || names.length === 0) {
+    console.error(apiHelp(apis, invocation));
+
+    return 1;
+  }
+
+  const known = Object.keys(apis);
+  const unknown = names.find((candidate) => apis[candidate] === undefined);
+
+  if (unknown !== undefined) {
+    console.error(
+      known.length === 0
+        ? apiHelp(apis, invocation)
+        : `Unknown API "${unknown}".${didYouMean(unknown, known)}\n\nAPIs: ${known.join(', ')}`,
+    );
+
+    return 1;
+  }
+
+  const targets = names.flatMap((name) => {
+    const api = apis[name];
+
+    return api === undefined ? [] : [{ name, api }];
+  });
+
+  if (wantsHelp) {
+    const texts = targets.map(({ name, api }) => {
+      const checkout = resolveApiCheckout({ root, name, api });
+
+      return singleApiHelp({
+        name,
+        api,
+        invocation,
+        checkout: checkout.ok
+          ? checkout.checkout.composePath
+          : checkoutProblem({ failure: checkout, name, invocation }),
+      });
+    });
+
+    console.log(texts.join('\n\n'));
+
+    return 0;
+  }
+
+  const rejected = targets.find(({ api }) => !apiCommandNames(api).includes(command));
+
+  if (rejected) {
+    const commands = apiCommandNames(rejected.api);
+
+    console.error(
+      `Unknown command "${command}" for the ${rejected.name} API.${didYouMean(command, commands)}\n\n` +
+        `Commands: ${commands.join(', ')}`,
+    );
+
+    return 1;
+  }
+
+  if (command === 'clear') return clear(names);
+
+  let exitCode = 0;
+
+  for (const { name, api } of targets) {
+    const code = await runOneApiCommand({ argv, root, invocation, command, name, api, service });
+
+    if (code !== 0) exitCode = code;
   }
 
   return exitCode;

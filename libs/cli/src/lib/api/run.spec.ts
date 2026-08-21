@@ -211,6 +211,37 @@ describe('runApiCommand', () => {
     expect(errors[0]).toContain('Unknown command "setup"');
   });
 
+  it('acts on every API a comma-separated argument names', async () => {
+    const root = makeRoot();
+
+    expect(await runApiCommand({ apis: { hub: HUB, shop: HUB }, argv: ['up', 'hub,shop'], root })).toBe(1);
+    expect(errors[0]).toContain('"hub"');
+    expect(errors[1]).toContain('"shop"');
+  });
+
+  it('reports an unknown name in a list of names', async () => {
+    expect(await run(['up', 'hub,nope'], makeRoot())).toBe(1);
+    expect(errors[0]).toContain('Unknown API "nope".');
+  });
+
+  it('answers help for every API a list names', async () => {
+    const logs = captureLogs();
+    const apis = { hub: HUB, shop: HUB };
+
+    expect(await runApiCommand({ apis, argv: ['help', 'hub,shop'], root: makeRoot() })).toBe(0);
+    expect(logs.lines[0]).toContain('Usage: et api <command> hub');
+    expect(logs.lines[0]).toContain('Usage: et api <command> shop');
+
+    logs.restore();
+  });
+
+  it('refuses the command before it runs when one named API rejects it', async () => {
+    const apis = { hub: HUB, shop: { ...HUB, exec: undefined } };
+
+    expect(await runApiCommand({ apis, argv: ['install', 'hub,shop'], root: makeRoot() })).toBe(1);
+    expect(errors[0]).toContain('Unknown command "install" for the shop API.');
+  });
+
   it('warns once when the paths still live in the legacy file', async () => {
     const root = makeRoot({ [LEGACY_LOCAL_CONFIG_FILE_NAME]: { apiRepoPaths: { hub: './missing' } } });
 

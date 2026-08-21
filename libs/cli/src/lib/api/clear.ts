@@ -8,6 +8,10 @@ export type ApiClearTarget = {
   name: string;
   /** Absolute path that would be removed. */
   repoPath: string;
+  /** Directory that holds the compose file. */
+  composePath: string;
+  /** Whether any container of its compose project still exists. Those are taken down before the removal. */
+  hasContainers: boolean;
   /** Why it must stay. Empty when it can be removed. */
   blockers: string[];
 };
@@ -26,7 +30,7 @@ export type ApiClearPlanOptions = {
   names: string[];
   root: string;
   invocation: string;
-  /** Skips the checks on uncommitted changes and unpushed commits. Never skips the running check. */
+  /** Skips the checks on uncommitted changes and unpushed commits. */
   force: boolean;
   /** Whether any container of the API's compose project exists. */
   hasContainers: (composePath: string) => boolean;
@@ -56,6 +60,8 @@ export const planApiClear = (options: ApiClearPlanOptions): ApiClearTarget[] => 
         {
           name,
           repoPath,
+          composePath,
+          hasContainers: false,
           blockers: [
             `${repoPath} is your own checkout, not the one ${invocation} manages. ` +
               `Remove it yourself, or drop apiRepoPaths.${name} first.`,
@@ -71,10 +77,9 @@ export const planApiClear = (options: ApiClearPlanOptions): ApiClearTarget[] => 
       {
         name,
         repoPath,
+        composePath,
+        hasContainers: hasContainers(composePath),
         blockers: [
-          ...(hasContainers(composePath)
-            ? [`${name} still has containers. Run "${invocation} down ${name}" first.`]
-            : []),
           ...(!force && changes.length > 0
             ? [
                 `${repoPath} has uncommitted changes:\n\n${listed(changes)}\n\n` +
@@ -93,12 +98,17 @@ export const planApiClear = (options: ApiClearPlanOptions): ApiClearTarget[] => 
   });
 };
 
+export type ApiClearOptions = ApiClearPlanOptions & {
+  /** Takes the containers of one compose project down. False when the compose command failed. */
+  takeDown: (composePath: string) => boolean;
+};
+
 /**
- * Removes the managed checkout of each named API, after one question that defaults to no. It refuses
- * an API whose containers still exist, and an API with work only this checkout holds.
+ * Removes the managed checkout of each named API, after one question that defaults to no. It offers to
+ * take down the containers that still exist, and refuses an API with work only this checkout holds.
  */
-export const clearApiCheckouts = async (options: ApiClearPlanOptions): Promise<number> => {
-  const { names, invocation } = options;
+export const clearApiCheckouts = async (options: ApiClearOptions): Promise<number> => {
+  const { names, invocation, takeDown } = options;
   const targets = planApiClear(options);
   const blocked = targets.filter(({ blockers }) => blockers.length > 0);
   const removable = targets.filter(({ blockers }) => blockers.length === 0);
@@ -117,20 +127,39 @@ export const clearApiCheckouts = async (options: ApiClearPlanOptions): Promise<n
     return blocked.length > 0 ? 1 : 0;
   }
 
-  const paths = removable.map(({ repoPath }) => repoPath);
+  const paths = removable.map(({ repoPath }) => `  ${repoPath}`).join('\n');
+  const running = removable.filter(({ hasContainers }) => hasContainers).map(({ name }) => name);
+  const stopped = running.join(', ');
+  const checkouts = removable.length === 1 ? 'the checkout' : 'the checkouts';
   const accepted = await confirm({
-    problem: `This removes:\n\n${paths.map((path) => `  ${path}`).join('\n')}`,
-    question: `Remove ${removable.map(({ name }) => name).join(', ')}?`,
-    hint: 'Re-run in a terminal to answer the question, or remove the directories yourself.',
+    problem: running.length > 0 ? `This takes ${stopped} down, then removes:\n\n${paths}` : `This removes:\n\n${paths}`,
+    question:
+      running.length > 0
+        ? `Take ${stopped} down and remove ${checkouts}?`
+        : `Remove ${removable.map(({ name }) => name).join(', ')}?`,
+    hint:
+      running.length > 0
+        ? `Re-run in a terminal to answer the question, or run "${invocation} down ${stopped}" and remove the ` +
+          'directories yourself.'
+        : 'Re-run in a terminal to answer the question, or remove the directories yourself.',
     defaultsToYes: false,
   });
 
   if (!accepted) return 1;
 
-  for (const { name, repoPath } of removable) {
+  let failed = 0;
+
+  for (const { name, repoPath, composePath, hasContainers } of removable) {
+    if (hasContainers && !takeDown(composePath)) {
+      console.error(`Could not take ${name} down, so ${repoPath} stays.`);
+      failed += 1;
+
+      continue;
+    }
+
     rmSync(repoPath, { recursive: true, force: true });
     console.log(`Removed ${repoPath}. Run "${invocation} clone ${name}" to get it back.`);
   }
 
-  return blocked.length > 0 ? 1 : 0;
+  return blocked.length > 0 || failed > 0 ? 1 : 0;
 };
